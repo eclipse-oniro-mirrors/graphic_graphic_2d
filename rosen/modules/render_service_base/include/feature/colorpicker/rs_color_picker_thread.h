@@ -38,7 +38,7 @@ using NodeDirtyCallback = std::function<void(uint64_t)>;
     void NotifyNodeDirty(uint64_t nodeId);
 
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-    void InitRenderContext(RenderContext* context);
+    void InitRenderContext(std::shared_ptr<RenderContext> context);
     std::shared_ptr<Drawing::GPUContext> GetShareGPUContext() const;
 #endif
 
@@ -55,11 +55,7 @@ private:
     NodeDirtyCallback callback_ = nullptr;
 
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-#ifdef RS_ENABLE_GL
-    void CreateShareEglContext();
-    EGLContext eglShareContext_ = static_cast<EGLContext>(0);
-#endif
-    RenderContext* renderContext_ = nullptr;
+    std::shared_ptr<RenderContext> renderContext_ = nullptr;
     std::shared_ptr<Drawing::GPUContext> CreateShareGPUContext();
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;
 #endif

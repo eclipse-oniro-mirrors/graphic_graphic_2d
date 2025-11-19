@@ -263,11 +263,7 @@ void RSColor::ConvertToSRGBColorSpace()
 
 Drawing::Color RSColor::ConvertToDrawingColor() const
 {
-    auto color = Drawing::Color(AsArgbInt());
-    if (IsPlaceholder()) {
-        color.SetPlaceholder(GetPlaceholder());
-    }
-    return color;
+    return IsPlaceholder() ? Drawing::Color(GetPlaceholder()) : Drawing::Color(AsArgbInt());
 }
 
 void RSColor::Dump(std::string& out) const
@@ -289,7 +285,7 @@ void RSColor::Dump(std::string& out) const
             break;
     }
     if (placeholder_ != ColorPlaceholder::NONE) {
-        out += " is placeholder";
+        out += " placeholder[" + std::to_string(static_cast<int>(placeholder_)) + "]";
     }
 }
 } // namespace Rosen

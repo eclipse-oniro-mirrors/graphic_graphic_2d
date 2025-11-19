@@ -81,7 +81,7 @@ private:
     uint64_t interval_ = 0;
 
     bool needSync_ = false;
-    std::unique_ptr<RSColorPickerManager> colorPickerManager_;
+    std::shared_ptr<RSColorPickerManager> colorPickerManager_;
 };
 
 // RSCustomModifierDrawable, for drawing custom modifiers

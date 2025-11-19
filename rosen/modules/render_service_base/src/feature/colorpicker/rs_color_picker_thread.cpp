@@ -65,28 +65,7 @@ void RSColorPickerThread::NotifyNodeDirty(uint64_t nodeId)
 }
 
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
-#ifdef RS_ENABLE_GL
-void RSColorPickerThread::CreateShareEglContext()
-{
-    if (RSSystemProperties::IsUseVulkan()) {
-        return;
-    }
-    if (renderContext_ == nullptr) {
-        RS_LOGE("RSColorPickerThread renderContext_ is nullptr.");
-        return;
-    }
-    eglShareContext_ = renderContext_->CreateShareContext();
-    if (eglShareContext_ == EGL_NO_CONTEXT) {
-        RS_LOGE("RSColorPickerThread eglShareContext_ is EGL_NO_CONTEXT");
-        return;
-    }
-    if (!eglMakeCurrent(renderContext_->GetEGLDisplay(), EGL_NO_SURFACE, EGL_NO_SURFACE, eglShareContext_)) {
-        RS_LOGE("RSColorPickerThread eglMakeCurrent failed.");
-        return;
-    }
-}
-#endif
-void RSColorPickerThread::InitRenderContext(RenderContext* context)
+void RSColorPickerThread::InitRenderContext(std::shared_ptr<RenderContext> context)
 {
     renderContext_ = context;
     PostTask([this]() {
@@ -114,7 +93,7 @@ std::shared_ptr<Drawing::GPUContext> RSColorPickerThread::CreateShareGPUContext(
         if (gpuContext == nullptr) {
             return nullptr;
         }
-        CreateShareEglContext();
+        renderContext_->CreateShareContext();
 
         Drawing::GPUContextOptions options = {};
         auto handler = std::make_shared<MemoryHandler>();

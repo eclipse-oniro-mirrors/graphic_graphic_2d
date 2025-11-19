@@ -158,7 +158,7 @@ Drawing::RecordingCanvas::DrawFunc RSChildrenDrawable::CreateDrawFunc() const
 // ==================== RSColorPickerDrawable =====================
 RSColorPickerDrawable::RSColorPickerDrawable()
 {
-    colorPickerManager_ = std::make_unique<RSColorPickerManager>();
+    colorPickerManager_ = std::make_shared<RSColorPickerManager>();
 }
 RSDrawable::Ptr RSColorPickerDrawable::OnGenerate(const RSRenderNode& node)
 {

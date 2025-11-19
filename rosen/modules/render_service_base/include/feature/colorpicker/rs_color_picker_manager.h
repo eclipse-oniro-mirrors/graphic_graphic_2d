@@ -27,7 +27,7 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSColorPickerManager {
+class RSColorPickerManager : public std::enable_shared_from_this<RSColorPickerManager> {
 public:
     RSColorPickerManager() = default;
     ~RSColorPickerManager() noexcept = default;

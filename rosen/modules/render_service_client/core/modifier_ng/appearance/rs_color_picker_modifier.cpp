@@ -14,7 +14,6 @@
  */
 
 #include "modifier_ng/appearance/rs_color_picker_modifier.h"
-#include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen::ModifierNG {
 void RSColorPickerModifier::SetColorPickerPlaceholder(ColorPlaceholder placeholder)

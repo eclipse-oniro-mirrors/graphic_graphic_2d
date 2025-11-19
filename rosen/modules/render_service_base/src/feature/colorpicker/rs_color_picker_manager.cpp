@@ -16,6 +16,7 @@
 #include "feature/colorpicker/rs_color_picker_manager.h"
 
 #include <chrono>
+#include <memory>
 
 #include "feature/colorpicker/rs_color_picker_thread.h"
 #include "platform/common/rs_log.h"
@@ -57,7 +58,12 @@ Drawing::ColorQuad RSColorPickerManager::GetColorPicked(RSPaintFilterCanvas& can
         return colorPicked_;
     }
     lastUpdateTime_ = currTime;
-    auto colorPickTask = [snapshot, nodeId, strategy, this]() {
+    auto colorPickTask = [snapshot, nodeId, strategy, weakThis = weak_from_this()]() {
+        auto manager = weakThis.lock();
+        if (!manager) {
+            RS_LOGD("RSColorPickerThread manager not valid, return");
+            return;
+        }
         Drawing::ColorQuad colorPicked;
 #if defined(RS_ENABLE_UNI_RENDER)
         if (RSPropertyDrawableUtils::PickColor(RSColorPickerThread::Instance().GetShareGPUContext(), snapshot,
@@ -65,12 +71,11 @@ Drawing::ColorQuad RSColorPickerManager::GetColorPicked(RSPaintFilterCanvas& can
         if (RSPropertyDrawableUtils::PickColor(nullptr, snapshot,
 #endif
             colorPicked, strategy)) {
-            if (colorPicked != colorPicked_.load()) {
-                colorPicked_ = colorPicked;
+            if (manager->colorPicked_.exchange(colorPicked) != colorPicked) {
                 RSColorPickerThread::Instance().NotifyNodeDirty(nodeId);
             }
-            RS_LOGD("RSColorPickerThread colorPicked_:0x%{public}" PRIX64, static_cast<uint64_t>(colorPicked_.load()));
-            RS_TRACE_NAME_FMT("RSColorPickerThread colorPicked_:%d", colorPicked_.load());
+            RS_LOGD("RSColorPickerThread colorPicked_:0x%{public}" PRIX64, static_cast<uint64_t>(colorPicked));
+            RS_TRACE_NAME_FMT("RSColorPickerThread colorPicked_:%d", colorPicked);
         } else {
             RS_LOGE("RSColorPickerThread colorPick failed");
         }
