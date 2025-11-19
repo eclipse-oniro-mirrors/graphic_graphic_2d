@@ -48,7 +48,7 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorFilter = {
 };
 
 // Default values
-const Vector2f DEFAULT_BORDER_WIDTH = Vector2f{200.0f, 100.0f};
+const Vector2f defaultBorderSize = Vector2f{200.0f, 100.0f};
 const Vector2f defaultBlurParams = Vector2f{48.0f, 4.0f};
 const float DEFAULT_CORNER_RADIUS = 100.0f;
 const float DEFAULT_BORDER_WIDTH = 2.9f;
@@ -356,10 +356,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_Test)
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -393,7 +393,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_BorderSizeTe
 
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -426,9 +426,9 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_BlurParamsTe
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -461,9 +461,9 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_CornerRadius
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -496,7 +496,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_BorderWidthT
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
@@ -531,10 +531,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_OffsetTest)
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassInnerShadowParamsTag>(defaultInnerShadowParams);
@@ -566,10 +566,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_DownSampleFa
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassInnerShadowParamsTag>(defaultInnerShadowParams);
@@ -601,10 +601,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_BgFactorTest
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassInnerShadowParamsTag>(defaultInnerShadowParams);
@@ -636,10 +636,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_InnerShadowP
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -671,10 +671,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_SdParamsTest
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -706,10 +706,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_RefractOutPx
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -741,10 +741,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_EnvParamsTes
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -776,10 +776,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_EdgeLightAng
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -811,10 +811,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_EdgeLightBlu
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -846,10 +846,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_EdgeLightDir
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
@@ -881,10 +881,10 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_HlParamsTest
         auto filter = CreateFilter(RSNGEffectType::FROSTED_GLASS);
         auto frostedGlassFilter = std::static_pointer_cast<RSNGFrostedGlassFilter>(filter);
 
-        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(DEFAULT_BORDER_WIDTH);
+        frostedGlassFilter->Setter<FrostedGlassBorderSizeTag>(defaultBorderSize);
         frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(defaultBlurParams);
         frostedGlassFilter->Setter<FrostedGlassCornerRadiusTag>(DEFAULT_CORNER_RADIUS);
-        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(defaultBorderWidth);
+        frostedGlassFilter->Setter<FrostedGlassBorderWidthTag>(DEFAULT_BORDER_WIDTH);
         frostedGlassFilter->Setter<FrostedGlassOffsetTag>(DEFAULT_OFFSET);
         frostedGlassFilter->Setter<FrostedGlassDownSampleFactorTag>(DEFAULT_DOWNSAMPLING_FACTOR);
         frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(DEFAULT_BG_FACTOR);
