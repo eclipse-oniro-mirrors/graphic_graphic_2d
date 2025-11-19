@@ -138,6 +138,8 @@ std::shared_ptr<RSMagnifierParams> RandomDataCustomizedType::GetRandomRSMagnifie
     rsMagnifierParams->borderWidth_ = RandomDataBasicType::GetRandomFloat();
     rsMagnifierParams->offsetX_ = RandomDataBasicType::GetRandomFloat();
     rsMagnifierParams->offsetY_ = RandomDataBasicType::GetRandomFloat();
+    rsMagnifierParams->zoomOffsetX_ = RandomDataBasicType::GetRandomFloat();
+    rsMagnifierParams->zoomOffsetY_ = RandomDataBasicType::GetRandomFloat();
     rsMagnifierParams->shadowOffsetX_ = RandomDataBasicType::GetRandomFloat();
     rsMagnifierParams->shadowOffsetY_ = RandomDataBasicType::GetRandomFloat();
     rsMagnifierParams->shadowSize_ = RandomDataBasicType::GetRandomFloat();
