@@ -193,7 +193,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, PlaybackInCorrespondThreadTest, 
     drawable->PostPlaybackInCorrespondThread();
     ASSERT_FALSE(drawable->canvas_);
 
-    drawable->renderParams_ = std::make_unique<RSRenderParams>(0);
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
     drawable->PostPlaybackInCorrespondThread();
     ASSERT_FALSE(drawable->canvas_);
 
