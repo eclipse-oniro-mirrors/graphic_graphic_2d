@@ -628,8 +628,10 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level0)
             frameRateMgr.HandleRefreshRateEvent(i, {});
 
             // HandleTouchEvent
-            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_DOWN, touchCnt);
-            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_UP, touchCnt);
+            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_DOWN, touchCnt,
+                TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_UP, touchCnt,
+                TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
             // HandleRefreshRateMode
             // param -1、0、1、2、3：refresh rate mode
@@ -697,20 +699,20 @@ HWTEST_F(HgmFrameRateMgrTest, UpdateGuaranteedPlanVoteTest, Function | SmallTest
     mgr->idleDetector_.SetAppSupportedState(true);
     mgr->UpdateGuaranteedPlanVote(currTime);
 
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     mgr->UpdateGuaranteedPlanVote(currTime);
 
     mgr->idleDetector_.bufferFpsMap_["AceAnimato"] = 90;
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     mgr->UpdateGuaranteedPlanVote(currTime);
 
     mgr->idleDetector_.SetAceAnimatorIdleState(false);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     mgr->UpdateGuaranteedPlanVote(currTime);
     EXPECT_FALSE(mgr->idleDetector_.GetAceAnimatorIdleState());
@@ -1530,37 +1532,42 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandleTouchEvent, Function | SmallTest | Level
     mgr.touchManager_.eventCallbacks_.clear();
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::DOWN_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1);
+    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_MOVE, 1);
+    mgr.HandleTouchEvent(0, TOUCH_MOVE, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_BUTTON_DOWN, 1);
+    mgr.HandleTouchEvent(0, TOUCH_BUTTON_DOWN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_BUTTON_UP, 1);
+    mgr.HandleTouchEvent(0, TOUCH_BUTTON_UP, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, AXIS_BEGIN, 1);
+    mgr.HandleTouchEvent(0, AXIS_BEGIN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, AXIS_UPDATE, 1);
+    mgr.HandleTouchEvent(0, AXIS_UPDATE, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, AXIS_END, 1);
+    mgr.HandleTouchEvent(0, AXIS_END, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1);
-    mgr.HandleTouchEvent(0, TOUCH_UP, 1);
+    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr.HandleTouchEvent(0, TOUCH_UP, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     mgr.touchManager_.ChangeState(TouchState::IDLE_STATE);
+
+    // mouse situation
+    mgr.frameVoter_.voterGamesEffective_ = true;
+    mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
+    mgr.HandleTouchEvent(0, TOUCH_MOVE, 1, TouchSourceType::SOURCE_TYPE_MOUSE);
     sleep(1);
     EXPECT_EQ(mgr.touchManager_.pkgName_, "");
 }
@@ -1764,6 +1771,34 @@ HWTEST_F(HgmFrameRateMgrTest, TestSyncHgmConfigUpdateCallback, Function | SmallT
 
     HgmCore::Instance().hgmFrameRateMgr_->curScreenId_.store(curScreenId);
     HgmCore::Instance().mPolicyConfigData_ = std::move(policyConfigData);
+}
+
+/**
+ * @tc.name: TestSyncHgmConfigUpdateCallback
+ * @tc.desc: Verify the result of SyncHgmConfigUpdateCallback
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, TestSyncHgmConfigUpdateCallback, Function | SmallTest | Level2)
+{
+    HgmFrameRateManager mgr;
+    int32_t touchStatus = TOUCH_MOVE;
+    int32_t sourceType = TouchSourceType::SOURCE_TYPE_MOUSE;
+    bool isMousesMove = mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+    EXPECT_EQ(isMousesMove, true);
+
+    sourceType = TouchSourceType::SOURCE_TYPE_TOUCHSCREEN;
+    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+
+    sourceType = TouchSourceType::SOURCE_TYPE_TOUCHPAD;
+    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+
+    touchStatus = AXIS_BEGIN;
+    sourceType = TouchSourceType::SOURCE_TYPE_TOUCHSCREEN;
+    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+
+    touchStatus = -1;
+    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
 }
 } // namespace Rosen
 } // namespace OHOS

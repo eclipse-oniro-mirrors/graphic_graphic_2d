@@ -1040,7 +1040,7 @@ public:
      * @param touchStatus status of touch.
      * @param touchCnt the count of touch.
      */
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType);
 
     /**
      * @brief Notify dynamic mode event.

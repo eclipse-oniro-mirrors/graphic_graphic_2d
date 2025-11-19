@@ -680,7 +680,7 @@ void RSRenderServiceClient::NotifyXComponentExpectedFrameRate(const std::string&
 {
 }
 
-void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
 }
 
