@@ -113,6 +113,7 @@ enum class RSNGEffectType : int16_t {
     GASIFY_BLUR,
     GASIFY,
     FROSTED_GLASS,
+    CIRCLE_FLOWLIGHT,
 };
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;
