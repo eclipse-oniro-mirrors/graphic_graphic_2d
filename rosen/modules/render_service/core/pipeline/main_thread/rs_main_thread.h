@@ -462,7 +462,7 @@ public:
 
     uint32_t GetVsyncRefreshRate();
     void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
-    void MarkNodeImageDirty(uint64_t nodeId);
+    void MarkNodeDirty(uint64_t nodeId);
 
     void SetHasSurfaceLockLayer(bool hasSurfaceLockLayer);
     bool HasDRMOrSurfaceLockLayer() const;
@@ -625,7 +625,7 @@ private:
     };
 
     bool IfStatusBarDirtyOnly();
-    
+
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
     void HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
         const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);

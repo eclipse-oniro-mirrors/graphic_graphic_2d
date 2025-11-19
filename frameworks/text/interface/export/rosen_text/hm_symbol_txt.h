@@ -99,6 +99,8 @@ public:
 
     std::vector<Drawing::DrawingSColor> GetRenderColor() const;
 
+    std::vector<ColorPlaceholder> GetRenderColorPlaceholder() const;
+
     Drawing::DrawingSymbolRenderingStrategy GetRenderMode() const;
 
     Drawing::DrawingEffectStrategy GetEffectStrategy() const;
