@@ -718,10 +718,11 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         mergeHistoryDirty.left_, mergeHistoryDirty.top_, mergeHistoryDirty.width_, mergeHistoryDirty.height_,
         surfaceParams->GetVisibleRegion().GetRegionInfo().c_str());
 
+    const auto& bounds = surfaceParams->GetBounds();
     RS_LOGD("RSSurfaceRenderNodeDrawable::OnDraw node:%{public}" PRIu64 ", name:%{public}s,"
-            "OcclusionVisible:%{public}d Bound:%{public}s",
-        surfaceParams->GetId(), name_.c_str(), surfaceParams->GetOcclusionVisible(),
-        surfaceParams->GetBounds().ToString().c_str());
+            "OcclusionVisible:%{public}d Bound:(%{public}f, %{public}f, %{public}f, %{public}f)",
+        surfaceParams->GetId(), name_.c_str(), surfaceParams->GetOcclusionVisible(), bounds.GetLeft(), bounds.GetTop(),
+        bounds.GetWidth(), bounds.GetHeight());
 
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), nodeId_);
@@ -863,6 +864,8 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             curCanvas_->PopDirtyRegion();
         }
         RS_TRACE_NAME_FMT("RSUniRenderThread::Render() the number of total ProcessedNodes: %d",
+            RSRenderNodeDrawable::GetTotalProcessedNodeCount());
+        RSUniRenderThread::Instance().CollectProcessNodeNum(
             RSRenderNodeDrawable::GetTotalProcessedNodeCount());
         const RSNodeStatsType nodeStats = CreateRSNodeStatsItem(
             RSRenderNodeDrawable::GetTotalProcessedNodeCount(), GetId(), GetName());
@@ -1207,8 +1210,7 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
             surfaceParams.GetUifirstNodeEnableParam() != MultiThreadCacheType::NONE) {
             return;
         }
-        if (RSSystemParameters::GetUIFirstCaptrueReuseEnabled() &&
-            surfaceParams.IsCaptureEnableUifirst() &&
+        if (!canvas.GetUICapture() && RSSystemParameters::GetUIFirstCaptrueReuseEnabled() &&
             subThreadCache_.DealWithUIFirstCache(this, canvas, surfaceParams, *uniParams)) {
             if (RSUniRenderThread::GetCaptureParam().isSingleSurface_) {
                 RS_LOGI("%{public}s DealWithUIFirstCache", __func__);

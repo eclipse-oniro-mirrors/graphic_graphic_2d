@@ -24,6 +24,7 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "effect/rs_render_filter_base.h"
 #include "effect/rs_render_shader_base.h"
+#include "effect/rs_render_shape_base.h"
 #include "effect/runtime_blender_builder.h"
 #include "memory/rs_tag_tracker.h"
 #ifdef ROSEN_OHOS
@@ -95,13 +96,25 @@ bool RSShadowDrawable::OnUpdate(const RSRenderNode& node)
     stagingRadius_ = properties.GetShadowRadius();
     needSync_ = true;
 
-    if (auto sdfEffectFilter = properties.GetSDFEffectFilter()) {
-        stagingDrawWithSDF_ = true;
-        Drawing::Color color(
-            stagingColor_.GetRed(), stagingColor_.GetGreen(), stagingColor_.GetBlue(), stagingColor_.GetAlpha());
-        
-        sdfEffectFilter->SetShadow(color, stagingOffsetX_, stagingOffsetY_,
-            stagingRadius_, stagingPath_, stagingIsFilled_);
+    if (auto sdfShape = properties.GetSDFShape()) {
+        std::shared_ptr<Drawing::GEVisualEffect> geVisualEffect = sdfShape->GenerateGEVisualEffect();
+        std::shared_ptr<Drawing::GEShaderShape> geShape =
+            geVisualEffect ? geVisualEffect->GenerateShaderShape() : nullptr;
+        auto geFilter = std::make_shared<Drawing::GEVisualEffect>(
+            Drawing::GE_SHADER_SDF_SHADOW, Drawing::DrawingPaintType::BRUSH);
+        geFilter->SetParam(Drawing::GE_SHADER_SDF_SHADOW_SHAPE, geShape);
+
+        Drawing::GESDFShadowParams shadow;
+        shadow.color = Drawing::Color(stagingColor_.GetRed(), stagingColor_.GetGreen(),
+            stagingColor_.GetBlue(), stagingColor_.GetAlpha());
+        shadow.offsetX = stagingOffsetX_;
+        shadow.offsetY = stagingOffsetY_;
+        shadow.radius = stagingRadius_;
+        shadow.path = stagingPath_;
+        shadow.isFilled = stagingIsFilled_;
+        geFilter->SetParam(Drawing::GE_SHADER_SDF_SHADOW_SHADOW, shadow);
+        geContainer_ = std::make_shared<Drawing::GEVisualEffectContainer>();
+        geContainer_->AddToChainedFilter(geFilter);
     }
     return true;
 }
@@ -119,7 +132,6 @@ void RSShadowDrawable::OnSync()
     isFilled_ = stagingIsFilled_;
     radius_ = stagingRadius_;
     colorStrategy_ = stagingColorStrategy_;
-    drawWithSDF_ = stagingDrawWithSDF_;
     needSync_ = false;
 }
 
@@ -127,7 +139,11 @@ Drawing::RecordingCanvas::DrawFunc RSShadowDrawable::CreateDrawFunc() const
 {
     auto ptr = std::static_pointer_cast<const RSShadowDrawable>(shared_from_this());
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        if (ptr->drawWithSDF_) {
+        if (ptr->geContainer_) {
+            if (canvas && rect) {
+                auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
+                geRender->DrawShaderEffect(*canvas, *ptr->geContainer_, *rect);
+            }
             return;
         }
 
@@ -355,6 +371,9 @@ Drawing::RecordingCanvas::DrawFunc RSBackgroundNGShaderDrawable::CreateDrawFunc(
         if (effectData != nullptr) {
             ptr->visualEffectContainer_->UpdateCachedBlurImage(canvas, effectData->cachedImage_,
                 effectData->cachedRect_.GetLeft(), effectData->cachedRect_.GetTop());
+            ptr->visualEffectContainer_->UpdateTotalMatrix(effectData->cachedMatrix_);
+        } else {
+            ptr->visualEffectContainer_->UpdateCachedBlurImage(canvas, nullptr, 0, 0);
         }
         ptr->visualEffectContainer_->UpdateCornerRadius(ptr->cornerRadius_);
         geRender->DrawShaderEffect(*canvas, *(ptr->visualEffectContainer_), *rect);
@@ -915,5 +934,34 @@ std::shared_ptr<Drawing::Blender> RSDynamicLightUpDrawable::MakeDynamicLightUpBl
     builder->SetUniform("dynamicLightUpDeg", degree * alpha);
     return builder->MakeBlender();
 }
+
+RSDrawable::Ptr RSMaterialFilterDrawable::OnGenerate(const RSRenderNode& node)
+{
+    auto& rsFilter = node.GetRenderProperties().GetMaterialFilter();
+    if (!rsFilter) {
+        return nullptr;
+    }
+
+    if (auto ret = std::make_shared<RSMaterialFilterDrawable>(); ret->OnUpdate(node)) {
+        return std::move(ret);
+    }
+    return nullptr;
+}
+
+bool RSMaterialFilterDrawable::OnUpdate(const RSRenderNode& node)
+{
+    stagingNodeId_ = node.GetId();
+    stagingNodeName_ = node.GetNodeName();
+    auto& rsFilter = node.GetRenderProperties().GetMaterialFilter();
+    if (!rsFilter) {
+        return false;
+    }
+    RecordFilterInfos(rsFilter);
+    needSync_ = true;
+    stagingFilter_ = rsFilter;
+    PostUpdate(node);
+    return true;
+}
+
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

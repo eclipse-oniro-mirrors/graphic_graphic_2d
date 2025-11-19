@@ -168,6 +168,22 @@ public:
         return hdrBrightness_;
     }
 
+    void UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd);
+
+    void ClearHDRVideoStatus();
+
+    HdrStatus GetHDRStatus() const
+    {
+        return hdrStatus_;
+    }
+
+    void SetChildHasVisibleHDRContent(bool val);
+
+    bool ChildHasVisibleHDRContent() const
+    {
+        return childHasVisibleHDRContent_;
+    }
+
     void SetNeedFilter(bool needFilter);
 
     inline bool NeedFilter() const
@@ -251,6 +267,11 @@ public:
     bool GetDrawingCacheChanged() const
     {
         return isDrawingCacheChanged_;
+    }
+    void SetForceDisableNodeGroup(bool forceDisable);
+    bool IsForceDisableNodeGroup() const
+    {
+        return isForceDisableNodeGroup_;
     }
     void SetNeedUpdateCache(bool needUpdateCache)
     {
@@ -536,11 +557,14 @@ private:
     Gravity frameGravity_ = Gravity::CENTER;
     // default 1.0f means max available headroom
     float hdrBrightness_ = 1.0f;
+    HdrStatus hdrStatus_ = HdrStatus::NO_HDR;
+    bool childHasVisibleHDRContent_ = false;
     bool freezeFlag_ = false;
     bool childHasVisibleEffect_ = false;
     bool childHasVisibleFilter_ = false;
     bool hasSandBox_ = false;
     bool isDrawingCacheChanged_ = false;
+    bool isForceDisableNodeGroup_ = false;
     std::atomic_bool isNeedUpdateCache_ = false;
     bool drawingCacheIncludeProperty_ = false;
     bool isNodeGroupHasChildInBlacklist_ = false;

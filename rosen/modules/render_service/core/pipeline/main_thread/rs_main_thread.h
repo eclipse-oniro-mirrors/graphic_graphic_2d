@@ -45,6 +45,7 @@
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "pipeline/hwc/rs_direct_composition_helper.h"
+#include "pipeline/hwc/rs_hwc_context.h"
 #include "feature/hyper_graphic_manager/hgm_context.h"
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 #include "feature/vrate/rs_vsync_rate_reduce_manager.h"
@@ -60,7 +61,6 @@
 #endif
 
 #include "hgm_core.h"
-#include "pipeline/hwc/rs_hwc_context.h"
 namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver;
@@ -96,7 +96,8 @@ class RSMainThread {
 public:
     static RSMainThread* Instance();
 
-    void Init();
+    void Init(const std::shared_ptr<AppExecFwk::EventRunner>& runner,
+        const std::shared_ptr<AppExecFwk::EventHandler>& handler);
     void Start();
     bool IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void UpdateFocusNodeId(NodeId focusNodeId);
@@ -468,7 +469,15 @@ public:
 
     bool IsReadyForSyncTask() const;
 
+    bool TransitionDataMutexLockIfNoCommands();
+    void TransitionDataMutexUnlock();
+
     const std::shared_ptr<RSHwcContext>& GetHwcContext() const { return hwcContext_; }
+
+    std::unordered_map<ScreenId, RSRenderNode::WeakPtrSet>& GetMutableAIBarNodes()
+    {
+        return aibarNodes_;
+    }
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -803,6 +812,9 @@ private:
     bool lastAnimateNeedRequestNextVsync_ = false;
     RSDirectCompositionHelper directComposeHelper_;
     std::shared_ptr<RSHwcContext> hwcContext_ = nullptr;
+
+    // for aibar
+    std::unordered_map<ScreenId, RSRenderNode::WeakPtrSet> aibarNodes_;
 
     // for client node tree dump
     struct NodeTreeDumpTask {

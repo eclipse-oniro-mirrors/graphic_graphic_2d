@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -62,8 +62,8 @@ void RSUniRenderThreadTest::TearDownTestCase()
     auto& rsJankStats = RSJankStats::GetInstance();
     rsJankStats.isFlushEarlyZ_ = false;
     rsJankStats.ddgrEarlyZEnable_ = false;
-    uniRenderThread.uniRenderEngine_->renderContext_ = std::make_shared<RenderContext>();
-    uniRenderThread.uniRenderEngine_->renderContext_->drGPUContext_ = std::make_shared<Drawing::GPUContext>();
+    uniRenderThread.uniRenderEngine_->renderContext_ = RenderContext::Create();
+    uniRenderThread.uniRenderEngine_->renderContext_->SetDrGPUContext(std::make_shared<Drawing::GPUContext>());
     sleep(25); // wait 25s ensure async task is executed.
 }
 
@@ -294,6 +294,10 @@ HWTEST_F(RSUniRenderThreadTest, Render001, TestSize.Level1)
     instance.vmaCacheCount_ = 1;
     instance.Render();
     ASSERT_EQ(instance.vmaCacheCount_, 0);
+
+    instance.SetScreenPowerOnChanged(true);
+    instance.Render();
+    EXPECT_FALSE(instance.screenPowerOnChanged_);
 }
 
 #ifdef RES_SCHED_ENABLE
@@ -407,8 +411,8 @@ HWTEST_F(RSUniRenderThreadTest, PurgeCacheBetweenFrames001, TestSize.Level1)
     EXPECT_TRUE(instance.clearMemoryFinished_);
 
     instance.uniRenderEngine_ = std::make_shared<RSRenderEngine>();
-    instance.uniRenderEngine_->renderContext_ = std::make_shared<RenderContext>();
-    instance.uniRenderEngine_->renderContext_->drGPUContext_ = std::make_shared<Drawing::GPUContext>();
+    instance.uniRenderEngine_->renderContext_ = RenderContext::Create();
+    instance.uniRenderEngine_->renderContext_->SetDrGPUContext(std::make_shared<Drawing::GPUContext>());
     instance.PurgeCacheBetweenFrames();
     EXPECT_TRUE(instance.uniRenderEngine_);
 }
@@ -692,7 +696,7 @@ HWTEST_F(RSUniRenderThreadTest, PostClearMemoryTask001, TestSize.Level1)
     instance.PostClearMemoryTask(ClearMemoryMoment::FILTER_INVALID, true, true);
     EXPECT_TRUE(instance.exitedPidSet_.size());
 
-    instance.GetRenderEngine()->GetRenderContext()->drGPUContext_ = nullptr;
+    instance.GetRenderEngine()->GetRenderContext()->SetDrGPUContext(nullptr);
     instance.PostClearMemoryTask(moment, deeply, isDefaultClean);
     ASSERT_EQ(instance.GetRenderEngine()->GetRenderContext()->GetDrGPUContext(), nullptr);
 }
@@ -892,5 +896,38 @@ HWTEST_F(RSUniRenderThreadTest, IsTaskQueueEmpty, TestSize.Level1)
         }
     }
     EXPECT_TRUE(instance.IsTaskQueueEmpty());
+}
+
+/**
+ * @tc.name: SetScreenPowerOnChanged
+ * @tc.desc: Test SetScreenPowerOnChanged
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderThreadTest, SetScreenPowerOnChangedTest, TestSize.Level1)
+{
+    auto& instance = RSUniRenderThread::Instance();
+    instance.SetScreenPowerOnChanged(false);
+    EXPECT_FALSE(instance.GetSetScreenPowerOnChanged());
+
+    instance.SetScreenPowerOnChanged(true);
+    EXPECT_TRUE(instance.GetSetScreenPowerOnChanged());
+}
+
+
+/**
+ * @tc.name: CollectProcessNodeNum
+ * @tc.desc: Test CollectProcessNodeNum
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderThreadTest, CollectProcessNodeNumTest, TestSize.Level1)
+{
+    auto& instance = RSUniRenderThread::Instance();
+    EXPECT_EQ(instance.totalProcessNodeNum_, 0);
+
+    instance.CollectProcessNodeNum(10);
+    instance.Render();
+    EXPECT_EQ(instance.totalProcessNodeNum_, 0);
 }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -394,6 +394,13 @@ void RSUniRenderThread::Render()
     rootNodeDrawable_->OnDraw(paintFilterCanvas);
     RSNodeStats::GetInstance().ReportRSNodeLimitExceeded();
     PerfForBlurIfNeeded();
+
+    if (screenPowerOnChanged_) {
+        RS_LOGI("RSUniRenderThread Power On First Frame finish, processNode:%{public}d",
+                 totalProcessNodeNum_);
+        screenPowerOnChanged_ = false;
+    }
+    totalProcessNodeNum_ = 0;
 }
 
 void RSUniRenderThread::CollectReleaseTasks(std::vector<std::function<void()>>& releaseTasks)
@@ -751,14 +758,14 @@ static void TrimMemEmptyType(Drawing::GPUContext* gpuContext)
     SkGraphics::PurgeAllCaches();
     gpuContext->FreeGpuResources();
     gpuContext->PurgeUnlockedResources(true);
-    std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
+    std::shared_ptr<RenderContext> rendercontext = RenderContext::Create();
     rendercontext->CleanAllShaderCache();
     gpuContext->FlushAndSubmit(true);
 }
 
 static void TrimMemShaderType()
 {
-    std::shared_ptr<RenderContext> rendercontext = std::make_shared<RenderContext>();
+    std::shared_ptr<RenderContext> rendercontext = RenderContext::Create();
     rendercontext->CleanAllShaderCache();
 }
 
@@ -785,7 +792,7 @@ static void TrimMemGpuLimitType(Drawing::GPUContext* gpuContext, std::string& du
         + "==>" + FormatNumber(maxResourcesBytes) + "\n");
 }
 
-void RSUniRenderThread::DumpMem(DfxString& log)
+void RSUniRenderThread::DumpMem(DfxString& log, bool isLite)
 {
     std::vector<std::pair<NodeId, std::string>> nodeTags;
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
@@ -794,7 +801,7 @@ void RSUniRenderThread::DumpMem(DfxString& log)
         std::string name = node->GetName() + " " + std::to_string(ExtractPid(nodeId)) + " " + std::to_string(nodeId);
         nodeTags.push_back({nodeId, name});
     });
-    PostSyncTask([&log, &nodeTags, this]() {
+    PostSyncTask([&log, &nodeTags, this, isLite]() {
         if (!uniRenderEngine_) {
             return;
         }
@@ -803,7 +810,7 @@ void RSUniRenderThread::DumpMem(DfxString& log)
             return;
         }
         auto gpuContext = renderContext->GetDrGPUContext();
-        MemoryManager::DumpDrawingGpuMemory(log, gpuContext, nodeTags);
+        MemoryManager::DumpDrawingGpuMemory(log, gpuContext, nodeTags, isLite);
     });
 }
 
@@ -1216,6 +1223,21 @@ void RSUniRenderThread::DumpVkImageInfo(std::string &dumpString)
             engine->DumpVkImageInfo(dumpString);
         }
     });
+}
+
+void RSUniRenderThread::SetScreenPowerOnChanged(bool val)
+{
+    screenPowerOnChanged_ = val;
+}
+
+bool RSUniRenderThread::GetSetScreenPowerOnChanged()
+{
+    return screenPowerOnChanged_;
+}
+
+void RSUniRenderThread::CollectProcessNodeNum(int num)
+{
+    totalProcessNodeNum_ += num;
 }
 } // namespace Rosen
 } // namespace OHOS

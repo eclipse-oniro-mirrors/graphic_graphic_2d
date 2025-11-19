@@ -713,23 +713,6 @@ HWTEST_F(RSSubThreadCacheTest, DrawUIFirstDfx, TestSize.Level1)
 }
 
 /**
- * @tc.name: BufferFormatNeedUpdate
- * @tc.desc: Test BufferFormatNeedUpdate
- * @tc.type: FUNC
- * @tc.require: issueIAEDYI
- */
-HWTEST_F(RSSubThreadCacheTest, BufferFormatNeedUpdateTest, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
-    ASSERT_NE(surface, nullptr);
-    RSPaintFilterCanvas paintFilterCanvas(surface.get());
-    surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
-    EXPECT_TRUE(surfaceDrawable_->GetRsSubThreadCache().BufferFormatNeedUpdate(surface, true));
-    EXPECT_FALSE(surfaceDrawable_->GetRsSubThreadCache().BufferFormatNeedUpdate(surface, false));
-}
-
-/**
  * @tc.name: DealWithUIFirstCache
  * @tc.desc: Test not use uifirst cache
  * @tc.type: FUNC
@@ -1278,5 +1261,23 @@ HWTEST_F(RSSubThreadCacheTest, GetSubAppNodeIdTest, TestSize.Level1)
     surfaceParams->allSubSurfaceNodeIds_.insert(102);
     NodeId nodeId1 = subCache.GetSubAppNodeId(surfaceDrawable.get());
     ASSERT_EQ(nodeId1, 102);
+}
+
+/**
+ * @tc.name: CacheReuseCountTest
+ * @tc.desc: Test uifirst cache reuse count
+ * @tc.type: FUNC
+ * @tc.require: issues20692
+ */
+HWTEST_F(RSSubThreadCacheTest, CacheReuseCountTest, TestSize.Level1)
+{
+    RsSubThreadCache subCache;
+    subCache.ResetCacheReuseCount();
+    subCache.AddCacheReuseCount();
+    subCache.AddCacheReuseCount();
+    ASSERT_EQ(subCache.GetCacheReuseCount(), 2);
+
+    subCache.ResetCacheReuseCount();
+    ASSERT_EQ(subCache.GetCacheReuseCount(), 0);
 }
 }

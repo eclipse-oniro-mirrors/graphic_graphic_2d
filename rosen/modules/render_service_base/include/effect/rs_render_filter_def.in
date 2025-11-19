@@ -111,3 +111,42 @@ DECLARE_FILTER(Gasify, GASIFY,
     ADD_PROPERTY_TAG(Gasify, SourceImage),
     ADD_PROPERTY_TAG(Gasify, Mask)
 );
+
+DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
+    ADD_PROPERTY_TAG(FrostedGlass, BorderSize),
+    ADD_PROPERTY_TAG(FrostedGlass, BlurParams),
+    ADD_PROPERTY_TAG(FrostedGlass, CornerRadius),
+    ADD_PROPERTY_TAG(FrostedGlass, BorderWidth),
+    ADD_PROPERTY_TAG(FrostedGlass, Offset),
+    ADD_PROPERTY_TAG(FrostedGlass, DownSampleFactor),
+    ADD_PROPERTY_TAG(FrostedGlass, BgFactor),
+    ADD_PROPERTY_TAG(FrostedGlass, InnerShadowParams),
+    ADD_PROPERTY_TAG(FrostedGlass, SdParams),
+    ADD_PROPERTY_TAG(FrostedGlass, RefractOutPx),
+    ADD_PROPERTY_TAG(FrostedGlass, EnvParams),
+    ADD_PROPERTY_TAG(FrostedGlass, EdgeLightAngleParams),
+    ADD_PROPERTY_TAG(FrostedGlass, EdgeLightBlurParams),
+    ADD_PROPERTY_TAG(FrostedGlass, EdgeLightDirParams),
+    ADD_PROPERTY_TAG(FrostedGlass, HlParams)
+);
+
+DECLARE_FILTER(GridWarp, GRID_WARP,
+    ADD_PROPERTY_TAG(GridWarp, GridPoint0),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint1),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint2),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint3),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint4),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint5),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint6),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint7),
+    ADD_PROPERTY_TAG(GridWarp, GridPoint8),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle0),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle1),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle2),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle3),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle4),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle5),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle6),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle7),
+    ADD_PROPERTY_TAG(GridWarp, RotationAngle8)
+);

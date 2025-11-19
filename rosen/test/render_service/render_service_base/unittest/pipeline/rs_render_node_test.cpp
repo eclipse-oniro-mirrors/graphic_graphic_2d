@@ -1561,33 +1561,9 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDirtyTest003, TestSize.Level1)
     EXPECT_NE(child2, nullptr);
     child2->parent_ = child1;
 
-    child2->SetParentTreeStateChangeDirty(true);
+    child2->SetParentTreeStateChangeDirty();
     EXPECT_TRUE(child1->IsTreeStateChangeDirty());
     EXPECT_TRUE(parent->IsTreeStateChangeDirty());
-}
-
-/**
- * @tc.name: SetChildrenTreeStateChangeDirtyTest
- * @tc.desc: SetChildrenTreeStateChangeDirty test
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSRenderNodeTest, SetChildrenTreeStateChangeDirtyTest, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(0);
-    EXPECT_NE(parent, nullptr);
-    std::shared_ptr<RSRenderNode> child1 = std::make_shared<RSRenderNode>(1);
-    EXPECT_NE(child1, nullptr);
-    parent->AddChild(child1, -1);
-    child1->parent_ = parent;
-    std::shared_ptr<RSRenderNode> child2 = std::make_shared<RSRenderNode>(2);
-    EXPECT_NE(child2, nullptr);
-    child2->SetTreeStateChangeDirty(true);
-    child2->parent_ = child1;
-    parent->AddChild(child1, -1);
-
-    parent->SetChildrenTreeStateChangeDirty();
-    EXPECT_TRUE(child2->IsTreeStateChangeDirty());
 }
 
 /**
@@ -2160,6 +2136,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeTreeTest007, TestSize.Level1)
     // SetIsOnTheTree test
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
 
     nodeTest->isOnTheTree_ = false;
     nodeTest->SetIsOnTheTree(false, 0, 1, 1, 1);
@@ -2448,6 +2425,38 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoAfterChildrenTest003, TestSize.
     auto& stagingRenderParams = nodeTest->GetStagingRenderParams();
     EXPECT_NE(stagingRenderParams, nullptr);
     EXPECT_EQ(stagingRenderParams->NodeGroupHasChildInBlacklist(), true);
+}
+
+/**
+ * @tc.name: UpdateDrawingCacheInfoAfterChildrenTest004
+ * @tc.desc: Test ForceDisableNodeGroup
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoAfterChildrenTest004, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
+ 
+    std::shared_ptr<RSRenderNode> childNode = std::make_shared<RSSurfaceRenderNode>(1);
+    EXPECT_NE(childNode, nullptr);
+    childNode->InitRenderParams();
+    nodeTest->AddChild(childNode, 1);
+    nodeTest->GenerateFullChildrenList();
+    bool isInBlackList = false;
+ 
+    nodeTest->nodeGroupType_ = RSRenderNode::GROUPED_BY_USER;
+    nodeTest->CheckDrawingCacheType();
+    EXPECT_EQ(nodeTest->GetDrawingCacheType(), RSDrawingCacheType::FORCED_CACHE);
+
+    childNode->SetUIFirstSwitch(RSUIFirstSwitch::FORCE_DISABLE_CARD);
+    childNode->UpdateDrawingCacheInfoAfterChildren(isInBlackList);
+    EXPECT_TRUE(childNode->IsForceDisableNodeGroup());
+    EXPECT_TRUE(nodeTest->IsForceDisableNodeGroup());
+
+    nodeTest->UpdateDrawingCacheInfoAfterChildren(isInBlackList);
+    EXPECT_EQ(nodeTest->GetDrawingCacheType(), RSDrawingCacheType::DISABLED_CACHE);
 }
 
 /**

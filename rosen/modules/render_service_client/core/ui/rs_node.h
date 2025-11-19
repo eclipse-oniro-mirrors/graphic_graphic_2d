@@ -68,6 +68,7 @@ class RSUIContext;
 class RSNGFilterBase;
 class RSNGShaderBase;
 class RSNGMaskBase;
+class RSNGShapeBase;
 class Blender;
 enum class CancelAnimationStatus;
 enum class AnimationCallbackEvent : uint16_t;
@@ -1129,6 +1130,13 @@ public:
     void SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter);
 
     /**
+     * @brief Sets the material filter for the UI.
+     *
+     * @param materialFilter Pointer to a Filter that defines the material filter effect.
+     */
+    void SetUIMaterialFilter(const OHOS::Rosen::Filter* materialFilter);
+
+    /**
      * @brief Sets the visual effect for the UI.
      *
      * @param visualEffect Pointer to a VisualEffect that defines the visual effect.
@@ -1183,6 +1191,13 @@ public:
      * @param filter Indicates the filter to be applied.
      */
     void SetFilter(const std::shared_ptr<RSFilter>& filter);
+
+    /**
+     * @brief Sets the material filter.
+     *
+     * @param materialFilter Indicates the material filter to be applied.
+     */
+    void SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& materialFilter);
 
     /**
      * @brief Sets the parameters for linear gradient blur.
@@ -1543,11 +1558,11 @@ public:
     void SetUseUnion(bool useUnion);
 
     /**
-     * @brief Sets the SDF Mask.
+     * @brief Sets the SDF Shape.
      *
-     * @param mask SDF Mask (SDF Union OP mask, SDF Smooth Union OP Mask, SDF RRect Mask)
+     * @param shape SDF Shape (SDF Union OP Shape, SDF Smooth Union OP Shape, SDF RRect Shape)
      */
-    void SetSDFMask(const std::shared_ptr<RSNGMaskBase>& mask);
+    void SetSDFShape(const std::shared_ptr<RSNGShapeBase>& shape);
 
     // driven render was shelved, functions will be deleted soon [start]
     void MarkDrivenRender(bool flag) {}
@@ -1757,7 +1772,7 @@ public:
      *
      * @return A shared pointer to the RSUIContext object.
      */
-    std::shared_ptr<RSUIContext> GetRSUIContext()
+    std::shared_ptr<RSUIContext> GetRSUIContext() const
     {
         return rsUIContext_;
     }
@@ -1828,8 +1843,13 @@ protected:
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr, bool isOnTheTree = false);
 
+    virtual void CreateRenderNode() const
+    {
+    }
+
     void DumpModifiers(std::string& out) const;
 
+    mutable bool lazyLoad_ = false;
     bool isRenderServiceNode_;
     bool isTextureExportNode_ = false;
     bool skipDestroyCommandInDestructor_ = false;
@@ -1874,6 +1894,8 @@ protected:
         return propertyMutex_;
     }
 
+    std::shared_ptr<RSNode> GetNodeInMap(NodeId id) const;
+
     /**
      * @brief Checks if the function is being accessed from multiple threads.
      *
@@ -1913,19 +1935,17 @@ protected:
      */
     void SetIsOnTheTree(bool flag);
 
-private:
-    static NodeId GenerateId();
-    static void InitUniRenderEnabled();
-    NodeId id_;
-    WeakPtr parent_;
-    int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
-    int32_t frameNodeId_ = -1;
-    std::string frameNodeTag_;
-    std::string nodeName_ = "";
-    std::vector<WeakPtr> children_;
-    void SetParent(WeakPtr parent);
-    void RemoveChildByNode(SharedPtr child);
-    virtual void CreateRenderNodeForTextureExportSwitch() {};
+    bool IsCreateNodeCommand(const RSCommand& command) const
+    {
+        return createNodeCommandTypes_.find(std::make_pair(command.GetType(), command.GetSubType())) !=
+            createNodeCommandTypes_.end();
+    }
+
+    bool IsLazyLoadCommand(const RSCommand& command) const
+    {
+        return lazyLoadCommandTypes_.find(std::make_pair(command.GetType(), command.GetSubType())) !=
+            lazyLoadCommandTypes_.end();
+    }
 
     /**
      * @brief Sets a property value for a specific modifier.
@@ -1936,7 +1956,21 @@ private:
      * @param value The value to assign to the property.
      */
     template<typename ModifierType, auto Setter, typename T>
-    void SetPropertyNG(T value);
+    void SetPropertyNG(T value)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
+        // Create corresponding modifier if not exist
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>();
+            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
+            modifiersNGCreatedBySetter_.emplace(ModifierType::Type, modifier);
+            AddModifier(modifier);
+        } else {
+            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value);
+            NotifyPageNodeChanged();
+        }
+    }
 
     /**
      * @brief Sets a property value for a specific modifier.
@@ -1948,7 +1982,38 @@ private:
      * @param animatable The property is animatable or not.
      */
     template<typename ModifierType, auto Setter, typename T>
-    void SetPropertyNG(T value, bool animatable);
+    void SetPropertyNG(T value, bool animatable)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        auto modifier = GetModifierCreatedBySetter(ModifierType::Type);
+        // Create corresponding modifier if not exist
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>();
+            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value, animatable);
+            modifiersNGCreatedBySetter_.emplace(ModifierType::Type, modifier);
+            AddModifier(modifier);
+        } else {
+            (*std::static_pointer_cast<ModifierType>(modifier).*Setter)(value, animatable);
+            NotifyPageNodeChanged();
+        }
+    }
+
+private:
+    static NodeId GenerateId();
+    static void InitUniRenderEnabled();
+
+    static const std::set<std::pair<uint16_t, uint16_t>> createNodeCommandTypes_; // <CommandType, CommandSubType>
+    static const std::set<std::pair<uint16_t, uint16_t>> lazyLoadCommandTypes_; // <CommandType, CommandSubType>
+    NodeId id_;
+    WeakPtr parent_;
+    int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
+    int32_t frameNodeId_ = -1;
+    std::string frameNodeTag_;
+    std::string nodeName_ = "";
+    std::vector<WeakPtr> children_;
+    void SetParent(WeakPtr parent);
+    void RemoveChildByNode(SharedPtr child);
+    virtual void CreateRenderNodeForTextureExportSwitch() {};
 
     /**
      * @brief Sets a UIFilter property value for a specific modifier.
@@ -1981,7 +2046,7 @@ private:
 
     void SetShadowBlenderParams(const RSShadowBlenderPara& params);
 
-    void NotifyPageNodeChanged();
+    void NotifyPageNodeChanged() const;
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
     bool HasPropertyAnimation(const PropertyId& id);
     std::vector<AnimationId> GetAnimationByPropertyId(const PropertyId& id);
@@ -2015,6 +2080,13 @@ private:
      * Planning: refactor RSUIAnimationManager and remove this method
      */
     void ClearAllModifiers();
+
+    void LoadRenderNodeIfNeed() const;
+
+    void AddChildInner(SharedPtr child, int index);
+
+    bool AddCommandInner(std::unique_ptr<RSCommand>& command, bool isRenderServiceCommand,
+        FollowType followType, NodeId nodeId) const;
 
     uint32_t dirtyType_ = static_cast<uint32_t>(NodeDirtyType::NOT_DIRTY);
 
@@ -2057,6 +2129,27 @@ private:
     std::unordered_map<PropertyId, uint32_t> animatingPropertyNum_;
     std::shared_ptr<RSMotionPathOption> motionPathOption_;
     std::shared_ptr<const RSTransitionEffect> transitionEffect_;
+
+    struct CommandInfo {
+        CommandInfo()
+            : command_(nullptr), isRenderServiceCommand_(false),
+            followType_(FollowType::NONE), nodeId_(0)
+        {
+        }
+
+        CommandInfo(std::unique_ptr<RSCommand> command, bool isRenderServiceCommand,
+            FollowType followType, NodeId nodeId)
+            : command_(std::move(command)), isRenderServiceCommand_(isRenderServiceCommand),
+            followType_(followType), nodeId_(nodeId)
+        {
+        }
+
+        std::unique_ptr<RSCommand> command_;
+        bool isRenderServiceCommand_;
+        FollowType followType_;
+        NodeId nodeId_;
+    };
+    mutable std::vector<CommandInfo> lazyLoadCommands_;
 
     std::recursive_mutex animationMutex_;
     mutable std::recursive_mutex propertyMutex_;

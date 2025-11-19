@@ -176,11 +176,12 @@ void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncContr
             appController->SetPhaseOffset(0);
             CreateVSyncGenerator()->SetVSyncMode(VSYNC_MODE_LTPO);
         } else {
+            auto& hgmCore = HgmCore::Instance();
             if (RSUniRenderJudgement::IsUniRender()) {
-                int64_t offset = HgmCore::Instance().IsDelayMode() ?
+                int64_t offset = hgmCore.IsDelayMode() ?
                     UNI_RENDER_VSYNC_OFFSET_DELAY_MODE : UNI_RENDER_VSYNC_OFFSET;
-                rsController->SetPhaseOffset(offset);
-                appController->SetPhaseOffset(offset);
+                rsController->SetPhaseOffset(hgmCore.GetRsPhaseOffset(offset));
+                appController->SetPhaseOffset(hgmCore.GetAppPhaseOffset(offset));
             }
             CreateVSyncGenerator()->SetVSyncMode(VSYNC_MODE_LTPS);
         }
@@ -1419,21 +1420,23 @@ bool HgmFrameRateManager::HandleGameNode(const RSRenderNodeMap& nodeMap)
     bool isOtherSelfNodeOnTree = false;
     std::string gameNodeName = GetGameNodeName();
     nodeMap.TraverseSurfaceNodes(
-        [&isGameSelfNodeOnTree, &gameNodeName, &isOtherSelfNodeOnTree]
+        [&isGameSelfNodeOnTree, &gameNodeName, &isOtherSelfNodeOnTree, &nodeMap]
         (const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) mutable {
             if (surfaceNode == nullptr) {
                 return;
             }
             if (surfaceNode->IsOnTheTree() &&
                 surfaceNode->GetSurfaceNodeType() == RSSurfaceNodeType::SELF_DRAWING_NODE) {
+                auto appNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
+                    nodeMap.GetRenderNode(surfaceNode->GetInstanceRootNodeId()));
                 if (gameNodeName == surfaceNode->GetName()) {
                     isGameSelfNodeOnTree = true;
-                } else {
+                } else if (!appNode || !appNode->GetVisibleRegion().IsEmpty()) {
                     isOtherSelfNodeOnTree = true;
                 }
             }
         });
-    RS_TRACE_NAME_FMT("HgmFrameRateManager::HandleGameNode, game node on tree: %d, other node no tree: %d",
+    RS_TRACE_NAME_FMT("HgmFrameRateManager::HandleGameNode, game node on tree: %d, other visible node on tree: %d",
                       isGameSelfNodeOnTree, isOtherSelfNodeOnTree);
     isGameNodeOnTree_.store(isGameSelfNodeOnTree && !isOtherSelfNodeOnTree);
     return isGameSelfNodeOnTree && !isOtherSelfNodeOnTree;
@@ -1589,7 +1592,6 @@ void HgmFrameRateManager::SetHgmConfigUpdateCallback(
 void HgmFrameRateManager::SyncHgmConfigUpdateCallback()
 {
     auto data = std::make_shared<RPHgmConfigData>();
-    const std::string settingMode = std::to_string(curRefreshRateMode_);
     auto& hgmCore = HgmCore::Instance();
     auto configData = hgmCore.GetPolicyConfigData();
     if (configData == nullptr) {
@@ -1605,6 +1607,7 @@ void HgmFrameRateManager::SyncHgmConfigUpdateCallback()
             hgmCore.GetLtpoEnabled(), hgmCore.IsDelayMode(), hgmCore.GetPipelineOffsetPulseNum());
         return;
     }
+    const std::string settingMode = std::to_string(curRefreshRateMode_);
     auto modeIter = iter->second.find(settingMode);
     if (modeIter == iter->second.end()) {
         TriggerHgmConfigUpdateCallback(data,

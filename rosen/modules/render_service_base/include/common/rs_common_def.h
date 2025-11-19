@@ -72,6 +72,7 @@ enum class RSUINodeType : uint32_t {
     EFFECT_NODE          = 0x0101u,
     ROOT_NODE            = 0x1081u,
     CANVAS_DRAWING_NODE  = 0x2081u,
+    UNION_NODE           = 0x4081u,
 };
 
 enum class FollowType : uint8_t {
@@ -117,6 +118,7 @@ enum class RSRenderNodeType : uint32_t {
     LOGICAL_DISPLAY_NODE   = 0x0401u,
     ROOT_NODE              = 0x1081u,
     CANVAS_DRAWING_NODE    = 0x2081u,
+    UNION_NODE             = 0x4081u,
 };
 
 // types for Processor
@@ -270,6 +272,7 @@ enum class RSRenderNodeDrawableType : uint32_t {
     EFFECT_NODE_DRAWABLE,
     ROOT_NODE_DRAWABLE,
     CANVAS_DRAWING_NODE_DRAWABLE,
+    UNION_NODE_DRAWABLE,
 };
 
 // zOrder of topLayer
@@ -316,7 +319,8 @@ struct RSSurfaceCaptureConfig {
         return mainScreenRect == config.mainScreenRect &&
             specifiedAreaRect == config.specifiedAreaRect &&
             uiCaptureInRangeParam.endNodeId == config.uiCaptureInRangeParam.endNodeId &&
-            uiCaptureInRangeParam.useBeginNodeSize == config.uiCaptureInRangeParam.useBeginNodeSize;
+            uiCaptureInRangeParam.useBeginNodeSize == config.uiCaptureInRangeParam.useBeginNodeSize &&
+            blackList == config.blackList;
     }
 };
 
@@ -449,6 +453,7 @@ enum class RSUIFirstSwitch {
     FORCE_ENABLE = 3,       // force open uifirst
     FORCE_ENABLE_LIMIT = 4, // force open uifirst, but for limited
     FORCE_DISABLE_NONFOCUS = 5, // force close uifirst when only in nonfocus window
+    FORCE_DISABLE_CARD = 6, // force close uifirst on card
 };
 
 enum class SelfDrawingNodeType : uint8_t {

@@ -18,6 +18,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_optional_trace.h"
 #include "display_engine/rs_luminance_control.h"
+#include "feature/hdr/rs_hdr_util.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "include/gpu/vk/GrVulkanTrackerInterface.h"
@@ -314,22 +315,12 @@ bool RSRenderNodeDrawable::SkipDrawByWhiteList(Drawing::Canvas& canvas)
         return false;
     }
 
-    // 2. if it's neither on the security display nor on the mirror screen, don't skip draw
-    const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    if (uniParam == nullptr) {
-        return false;
-    }
-    const auto& captureParam = RSUniRenderThread::GetCaptureParam();
-    if (!(uniParam->IsSecurityDisplay() || captureParam.isMirror_)) {
-        return false;
-    }
-
-    // 3. if node is in the white list, don't filter the node
+    // 2. if node is in the white list, don't filter the node
     if (IsWhiteListNode()) {
         return false;
     }
     
-    // 4. if node's child is in the white list, only draw children
+    // 3. if node's child is in the white list, only draw children
     const auto& params = GetRenderParams();
     if (params != nullptr) {
         // info : map<ScreenId, hasWhiteList>
@@ -929,6 +920,34 @@ bool RSRenderNodeDrawable::CheckIfNeedUpdateCache(RSRenderParams& params, int32_
     return false;
 }
 
+void ReleaseSurface(void* holder)
+{
+    std::shared_ptr<Drawing::Surface>* surface = static_cast<std::shared_ptr<Drawing::Surface>*>(holder);
+    if (surface != nullptr) {
+        delete surface;
+    }
+}
+
+std::shared_ptr<Drawing::Image> RSRenderNodeDrawable::GetImageAlias(
+    std::shared_ptr<Drawing::Surface>& surface, Drawing::TextureOrigin textureOrigin)
+{
+    auto canvas = surface != nullptr ? surface->GetCanvas() : nullptr;
+    if (canvas == nullptr) {
+        return nullptr;
+    }
+    const auto& backendTexture = surface->GetBackendTexture();
+    if (!backendTexture.IsValid()) {
+        return nullptr;
+    }
+    auto imageInfo = surface->GetImageInfo();
+    Drawing::BitmapFormat bitmapFormat = Drawing::BitmapFormat { imageInfo.GetColorType(), imageInfo.GetAlphaType() };
+    auto image = std::make_shared<Drawing::Image>();
+    auto surfaceHolder = new std::shared_ptr<Drawing::Surface>(surface);
+    bool ret = image->BuildFromTexture(*canvas->GetGPUContext(), backendTexture.GetTextureInfo(), textureOrigin,
+        bitmapFormat, imageInfo.GetColorSpace(), ReleaseSurface, surfaceHolder);
+    return ret ? image : nullptr;
+}
+
 void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSRenderParams& params)
 {
     auto startTime = RSPerfMonitorReporter::GetInstance().StartRendergroupMonitor();
@@ -939,20 +958,22 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
 
-    bool isHdrOn = false; // todo: temporary set false, fix in future
+    bool isHdrOn = params.ChildHasVisibleHDRContent() || params.GetHDRStatus() != HdrStatus::NO_HDR;
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(curCanvas->GetTargetColorGamut()) &&
         RSUifirstManager::Instance().GetUiFirstSwitch();
     bool isNeedFP16 = isHdrOn || isScRGBEnable;
     auto cacheSurface = GetCachedSurface(threadId);
-    if (cacheSurface == nullptr) {
+    if (RSHdrUtil::BufferFormatNeedUpdate(cacheSurface, isNeedFP16)) {
         // renderGroup memory tagTracer
         std::optional<RSTagTracker> tagTracer;
         if (GetOpincDrawCache().OpincGetCachedMark()) {
             tagTracer.emplace(curCanvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_OPINC);
         } else {
-            tagTracer.emplace(curCanvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_RENDER_GROUP);
+            tagTracer.emplace(curCanvas->GetGPUContext(), params.GetInstanceRootNodeId(),
+                RSTagTracker::TAGTYPE::TAG_RENDER_GROUP, params.GetInstanceRootNodeName());
         }
-        RS_TRACE_NAME_FMT("InitCachedSurface size:[%.2f, %.2f]", params.GetCacheSize().x_, params.GetCacheSize().y_);
+        RS_TRACE_NAME_FMT("InitCachedSurface size:[%.2f, %.2f], isFP16:%d, HdrStatus:%d, isScRGBEnable:%d",
+            params.GetCacheSize().x_, params.GetCacheSize().y_, isNeedFP16, params.GetHDRStatus(), isScRGBEnable);
         InitCachedSurface(curCanvas->GetGPUContext().get(), params.GetCacheSize(), threadId, isNeedFP16,
             curCanvas->GetTargetColorGamut());
         cacheSurface = GetCachedSurface(threadId);
@@ -1005,7 +1026,18 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     // get image & backend
     {
         std::scoped_lock<std::recursive_mutex> lock(cacheMutex_);
-        cachedImage_ = cacheSurface->GetImageSnapshot();
+        std::optional<RSTagTracker> tagTracer;
+        if (GetOpincDrawCache().OpincGetCachedMark()) {
+            tagTracer.emplace(curCanvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_OPINC);
+        } else {
+            tagTracer.emplace(curCanvas->GetGPUContext(), params.GetInstanceRootNodeId(),
+                RSTagTracker::TAGTYPE::TAG_RENDER_GROUP, params.GetInstanceRootNodeName());
+        }
+        if (RSSystemProperties::GetOpincCacheMemThresholdEnabled()) {
+            cachedImage_ = GetImageAlias(cacheSurface);
+        } else {
+            cachedImage_ = cacheSurface->GetImageSnapshot();
+        }
         if (cachedImage_) {
             SetCacheType(DrawableCacheType::CONTENT);
         }

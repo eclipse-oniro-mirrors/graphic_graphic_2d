@@ -130,6 +130,7 @@ ohos_source_set("render_service_base_src") {
     "src/modifier_ng/appearance/rs_foreground_filter_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_hdr_brightness_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_mask_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_material_filter_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_outline_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_particle_effect_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_pixel_stretch_render_modifier.cpp",
@@ -166,6 +167,7 @@ ohos_source_set("render_service_base_src") {
     "src/command/rs_proxy_node_command.cpp",
     "src/command/rs_root_node_command.cpp",
     "src/command/rs_surface_node_command.cpp",
+    "src/command/rs_union_node_command.cpp",
 
     #offscreen_render
     "src/offscreen_render/rs_offscreen_render_thread.cpp",
@@ -266,6 +268,7 @@ ohos_source_set("render_service_base_src") {
     "src/pipeline/rs_surface_render_node.cpp",
     "src/pipeline/rs_task_dispatcher.cpp",
     "src/pipeline/rs_uni_render_judgement.cpp",
+    "src/pipeline/rs_union_render_node.cpp",
     "src/pipeline/sk_resource_manager.cpp",
 
     #property
@@ -278,6 +281,7 @@ ohos_source_set("render_service_base_src") {
     "src/effect/rs_render_effect_template.cpp",
     "src/effect/rs_render_filter_base.cpp",
     "src/effect/rs_render_mask_base.cpp",
+    "src/effect/rs_render_shape_base.cpp",
     "src/effect/rs_render_shader_base.cpp",
 
     #hpae

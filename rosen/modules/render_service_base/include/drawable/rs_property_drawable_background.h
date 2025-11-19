@@ -71,8 +71,7 @@ private:
     Drawing::Path stagingPath_;
     Color color_;
     Color stagingColor_;
-    bool drawWithSDF_ = false;
-    bool stagingDrawWithSDF_ = false;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> geContainer_ = nullptr;
 };
 
 class RSMaskDrawable : public RSPropertyDrawable {
@@ -223,6 +222,15 @@ private:
     float dynamicLightUpDeg_ = 0.0f;
     float stagingDynamicLightUpRate_ = 0.0f;
     float stagingDynamicLightUpDeg_ = 0.0f;
+};
+
+class RSMaterialFilterDrawable : public RSFilterDrawable {
+public:
+    RSMaterialFilterDrawable() = default;
+    ~RSMaterialFilterDrawable() override = default;
+
+    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
+    bool OnUpdate(const RSRenderNode& node) override;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

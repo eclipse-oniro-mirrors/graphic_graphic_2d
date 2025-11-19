@@ -14,6 +14,7 @@
  */
 
 #include <iterator>
+#include <numeric>
 #include <unistd.h>
 #include "memory/rs_memory_snapshot.h"
 #include "render/rs_typeface_cache.h"
@@ -23,6 +24,9 @@
 #include "rs_trace.h"
 #include <sstream>
 #include <algorithm>
+#ifdef IS_OHOS
+#include <file_ex.h>
+#endif
 
 #ifdef USE_M133_SKIA
 #include "src/core/SkChecksum.h"
@@ -344,15 +348,51 @@ void RSTypefaceCache::Dump() const
     RS_LOGI("RSTypefaceCache Dump ]");
 }
 
+uint32_t CalcCustomFontPss()
+{
+    std::string s;
+#ifdef IS_OHOS
+    LoadStringFromFile("/proc/self/smaps", s);
+#endif
+    std::stringstream iss(s);
+    std::string line;
+    bool inCustomFont = false;
+    uint32_t pss = 0;
+
+    while (std::getline(iss, line)) {
+        if (line.find('-') != std::string::npos && line.find("dev/ashmem/") != std::string::npos) {
+            inCustomFont = (line.find("[custom font]") != std::string::npos);
+            continue;
+        }
+
+        if (inCustomFont && line.rfind("Pss:", 0) == 0) {
+            std::istringstream pssLine(line);
+            std::string key;
+            std::string unit;
+            uint32_t value = 0;
+            pssLine >> key >> value >> unit;
+            pss += value;
+            inCustomFont = false;
+        }
+    }
+
+    return pss;
+}
+
 void RSTypefaceCache::Dump(DfxString& log) const
 {
     std::lock_guard<std::mutex> lock(mapMutex_);
-    log.AppendFormat("------------------------------------\n");
-    log.AppendFormat("RSTypefaceCache Dump: \n");
-    log.AppendFormat("%-6s %-16s %-4s %-26s %10s %10s\n",
-        "pid", "hash_value", "ref", "familyname", "size(B)", "size(MB)");
+    uint32_t totalMem = std::accumulate(typefaceHashMap_.begin(), typefaceHashMap_.end(), 0u,
+        [](uint32_t sum, const auto& item) { return sum + std::get<0>(item.second)->GetSize(); });
     constexpr double KB = 1024.0;
     constexpr double MB = KB * KB;
+    log.AppendFormat("------------------------------------\n");
+    log.AppendFormat("RSTypefaceCache Dump:\nTotal: %.2fKB, %.2fMB\n",
+        static_cast<double>(totalMem) / KB, static_cast<double>(totalMem) / MB);
+    double pssMem = static_cast<double>(CalcCustomFontPss());
+    log.AppendFormat("Pss:   %.2fKB %.2fMB\n", pssMem, pssMem / KB);
+    log.AppendFormat("%-6s %-16s %-4s %-26s %-10s %-10s\n",
+        "pid", "hash_value", "ref", "familyname", "size(B)", "size(MB)");
     std::set<std::pair<int, uint64_t>> processedPairs;
     for (auto co : typefaceHashCode_) {
         auto iter = typefaceHashMap_.find(co.second);
@@ -368,7 +408,7 @@ void RSTypefaceCache::Dump(DfxString& log) const
         
         std::pair<int, uint64_t> currentPair = {pid, hash};
         if (processedPairs.find(currentPair) == processedPairs.end()) {
-                log.AppendFormat("%6d %16" PRIu64 " %4u %26s %10u %10.2f\n",
+            log.AppendFormat("%-6d %-16" PRIu64 " %-4u %-26s %-10u %-10.2f\n",
                 pid, hash, ref, family.c_str(), typeface->GetSize(), sizeMB);
             processedPairs.insert(currentPair);
         }

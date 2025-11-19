@@ -185,6 +185,15 @@ void RSRenderParams::SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced
     }
 }
 
+void RSRenderParams::SetForceDisableNodeGroup(bool forceDisable)
+{
+    if (isForceDisableNodeGroup_ == forceDisable) {
+        return;
+    }
+    isForceDisableNodeGroup_ = forceDisable;
+    needSync_ = true;
+}
+
 void RSRenderParams::SetDrawingCacheType(RSDrawingCacheType cacheType)
 {
     if (drawingCacheType_ == cacheType) {
@@ -280,6 +289,37 @@ void RSRenderParams::SetHDRBrightness(float hdrBrightness)
         return;
     }
     hdrBrightness_ = hdrBrightness;
+    needSync_ = true;
+}
+
+void RSRenderParams::UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd)
+{
+    HdrStatus newStatus =
+        isAdd ? static_cast<HdrStatus>(hdrStatus_ | hdrStatus) : static_cast<HdrStatus>(hdrStatus_ & ~hdrStatus);
+    if (newStatus == hdrStatus_) {
+        return;
+    }
+    hdrStatus_ = newStatus;
+    needSync_ = true;
+}
+
+void RSRenderParams::ClearHDRVideoStatus()
+{
+    HdrStatus newStatus = static_cast<HdrStatus>(
+        hdrStatus_ & ~(HdrStatus::HDR_VIDEO | HdrStatus::AI_HDR_VIDEO_GTM | HdrStatus::AI_HDR_VIDEO_GAINMAP));
+    if (newStatus == hdrStatus_) {
+        return;
+    }
+    hdrStatus_ = newStatus;
+    needSync_ = true;
+}
+
+void RSRenderParams::SetChildHasVisibleHDRContent(bool val)
+{
+    if (childHasVisibleHDRContent_ == val) {
+        return;
+    }
+    childHasVisibleHDRContent_ = val;
     needSync_ = true;
 }
 
@@ -420,6 +460,7 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     // use flag in render param and staging render param to determine if cache should be updated
     // (flag in render param may be not used because of occlusion skip, so we need to update cache in next frame)
     target->isDrawingCacheChanged_ = target->isDrawingCacheChanged_ || isDrawingCacheChanged_;
+    target->isForceDisableNodeGroup_ = isForceDisableNodeGroup_;
     target->shadowRect_ = shadowRect_;
     target->drawingCacheIncludeProperty_ = drawingCacheIncludeProperty_;
     target->isNodeGroupHasChildInBlacklist_ = isNodeGroupHasChildInBlacklist_;
@@ -427,6 +468,8 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->isRepaintBoundary_ = isRepaintBoundary_;
     target->alphaOffScreen_ = alphaOffScreen_;
     target->hdrBrightness_ = hdrBrightness_;
+    target->hdrStatus_ = hdrStatus_;
+    target->childHasVisibleHDRContent_ = childHasVisibleHDRContent_;
     target->needFilter_ = needFilter_;
     target->renderNodeType_ = renderNodeType_;
     target->globalAlpha_ = globalAlpha_;

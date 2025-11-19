@@ -53,6 +53,23 @@ const RectF DEFAULT_SELF_DRAW_RECT = { 0, 0, 200, 200 };
 
 const int DEFAULT_NODE_ID = 1;
 const uint64_t BUFFER_USAGE_GPU_RENDER_DIRTY = BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_AUXILLARY_BUFFER0;
+
+class RSRenderNodeDrawableAdapterBoy : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit RSRenderNodeDrawableAdapterBoy(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {
+        renderParams_ = std::make_unique<RSRenderParams>(renderNode_.lock()->GetId());
+        uifirstRenderParams_ = std::make_unique<RSRenderParams>(renderNode_.lock()->GetId());
+    }
+    ~RSRenderNodeDrawableAdapterBoy() override = default;
+
+    void Draw(Drawing::Canvas& canvas) override
+    {
+        printf("Draw:GetRecordingState: %d \n", canvas.GetRecordingState());
+    }
+};
+
 class RSRenderNodeTest2 : public testing::Test {
 public:
     constexpr static float floatData[] = {
@@ -185,7 +202,7 @@ HWTEST_F(RSRenderNodeTest2, ActivateDisplaySync, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     node.ActivateDisplaySync();
-    node.displaySync_ = std::make_shared<RSRenderDisplaySync>(id);
+    node.displaySync_ = std::make_unique<RSRenderDisplaySync>(id);
     node.ActivateDisplaySync();
     ASSERT_TRUE(true);
 }
@@ -200,7 +217,7 @@ HWTEST_F(RSRenderNodeTest2, UpdateDisplaySyncRange, TestSize.Level1)
 {
     RSRenderNode node(id, context);
     node.UpdateDisplaySyncRange();
-    node.displaySync_ = std::make_shared<RSRenderDisplaySync>(1);
+    node.displaySync_ = std::make_unique<RSRenderDisplaySync>(1);
     node.UpdateDisplaySyncRange();
     ASSERT_TRUE(true);
 }
@@ -219,7 +236,7 @@ HWTEST_F(RSRenderNodeTest2, Animate, TestSize.Level1)
     bool isDisplaySyncEnabled = true;
     int64_t leftDelayTime = 0;
     node.Animate(timestamp, leftDelayTime, period, isDisplaySyncEnabled);
-    node.displaySync_ = std::make_shared<RSRenderDisplaySync>(1);
+    node.displaySync_ = std::make_unique<RSRenderDisplaySync>(1);
     node.Animate(timestamp, leftDelayTime, period, isDisplaySyncEnabled);
     auto context_shared = std::make_shared<RSContext>();
     std::weak_ptr<RSContext> context2 = context_shared;
@@ -964,6 +981,31 @@ HWTEST_F(RSRenderNodeTest2, CheckAndUpdateAIBarCacheStatus, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ForceReduceAIBarCacheInterval
+ * @tc.desc: test function RSRenderNode::ForceReduceAIBarCacheInterval
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest2, ForceReduceAIBarCacheInterval, TestSize.Level1)
+{
+    RSRenderNode node(id, context);
+#ifdef RS_ENABLE_GPU
+    RSProperties::filterCacheEnabled_ = false;
+    EXPECT_FALSE(node.ForceReduceAIBarCacheInterval());
+
+    RSProperties::filterCacheEnabled_ = true;
+    EXPECT_FALSE(node.ForceReduceAIBarCacheInterval());
+
+    RSDrawableSlot slot = RSDrawableSlot::BACKGROUND_FILTER;
+    auto drawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    node.GetDrawableVec(__func__)[static_cast<uint32_t>(slot)] = drawable;
+    EXPECT_FALSE(node.ForceReduceAIBarCacheInterval());
+#else
+    EXPECT_FALSE(node.ForceReduceAIBarCacheInterval());
+#endif
+}
+
+/**
  * @tc.name: GetFilterCachedRegionAndHasBlurFilter
  * @tc.desc: test
  * @tc.type: FUNC
@@ -1353,7 +1395,7 @@ HWTEST_F(RSRenderNodeTest2, DumpSubClassNodeTest032, TestSize.Level1)
     std::string outTest7;
     auto canvasDrawingNode = std::make_shared<RSCanvasDrawingRenderNode>(1);
     canvasDrawingNode->DumpSubClassNode(outTest7);
-    EXPECT_EQ(outTest7, ", lastResetSurfaceTime: 0, opCountAfterReset: 0");
+    EXPECT_EQ(outTest7, ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: []");
 }
 
 /**
@@ -1366,6 +1408,7 @@ HWTEST_F(RSRenderNodeTest2, ForceMergeSubTreeDirtyRegionTest033, TestSize.Level1
 {
     std::shared_ptr<RSSurfaceRenderNode> nodeTest = std::make_shared<RSSurfaceRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
 
     RSDirtyRegionManager dirtyManagerTest1;
     RectI clipRectTest1 = RectI { 0, 0, 1, 1 };
@@ -1622,6 +1665,30 @@ HWTEST_F(RSRenderNodeTest2, SetIsOnTheTreeTest02, TestSize.Level1)
 }
 
 /**
+ * @tc.name: HDRStatusTest
+ * @tc.desc: Test function GetHDRStatus UpdateHDRStatus ClearHDRVideoStatus
+ * @tc.type: FUNC
+ * @tc.require: issueI9US6V
+ */
+HWTEST_F(RSRenderNodeTest2, HDRStatusTest, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    EXPECT_NE(rsContext, nullptr);
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(0);
+    EXPECT_NE(stagingRenderParams, nullptr);
+    node->stagingRenderParams_ = std::move(stagingRenderParams);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, true);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::HDR_PHOTO);
+    node->UpdateHDRStatus(HdrStatus::HDR_PHOTO, false);
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+    node->UpdateHDRStatus(HdrStatus::HDR_VIDEO, true);
+    node->ClearHDRVideoStatus();
+    EXPECT_EQ(node->GetHDRStatus(), HdrStatus::NO_HDR);
+}
+
+/**
  * @tc.name: SetHdrNum
  * @tc.desc: SetHdrNum test
  * @tc.type: FUNC
@@ -1656,8 +1723,10 @@ HWTEST_F(RSRenderNodeTest2, SetEnableHdrEffect, TestSize.Level1)
     auto rsContext = std::make_shared<RSContext>();
     EXPECT_NE(rsContext, nullptr);
     auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    node->InitRenderParams();
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(1);
     EXPECT_NE(surfaceNode, nullptr);
+    surfaceNode->InitRenderParams();
     rsContext->nodeMap.renderNodeMap_[ExtractPid(1)][1] = surfaceNode;
     node->SetEnableHdrEffect(false);
     EXPECT_EQ(surfaceNode->hdrEffectNum_, 0);
@@ -2456,16 +2525,16 @@ HWTEST_F(RSRenderNodeTest2, ResortChildrenTest02, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateDrawableBehindWindowTest
- * @tc.desc: UpdateDrawableBehindWindowTest
+ * @tc.name: UpdateDrawableAfterPostPrepareTest
+ * @tc.desc: UpdateDrawableAfterPostPrepareTest
  * @tc.type: FUNC
  * @tc.require: issueIBDI0L
  */
-HWTEST_F(RSRenderNodeTest2, UpdateDrawableBehindWindowTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest2, UpdateDrawableAfterPostPrepareTest, TestSize.Level1)
 {
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSRenderNode>(0, rsContext);
-    node->UpdateDrawableBehindWindow();
+    node->UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType::BACKGROUND_FILTER);
     EXPECT_TRUE(node->dirtySlots_.count(RSDrawableSlot::BACKGROUND_FILTER) != 0);
 }
 
@@ -2657,6 +2726,82 @@ HWTEST_F(RSRenderNodeTest2, ClearDrawableVec2Test001, TestSize.Level1)
         std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
     node->ClearDrawableVec2();
     EXPECT_EQ(node->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::OVERLAY)], nullptr);
+#endif
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: InitRenderDrawableAndDrawableVec001
+ * @tc.desc: InitRenderDrawableAndDrawableVec test if not reset node on the tree
+ * @tc.type: FUNC
+ * @tc.require: issues20621
+ */
+HWTEST_F(RSRenderNodeTest2, InitRenderDrawableAndDrawableVec001, TestSize.Level1)
+{
+#ifdef RS_ENABLE_MEMORY_DOWNTREE
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    EXPECT_NE(node, nullptr);
+    node->released_ = false;
+
+    std::shared_ptr<RSRenderNode> child = std::make_shared<RSRenderNode>(1);
+    EXPECT_NE(child, nullptr);
+
+    // renderDrawable_ not null, drawableVec_ not null
+    node->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterBoy>(child);
+    EXPECT_NE(node->renderDrawable_, nullptr);
+    node->drawableVec_ = std::make_unique<RSDrawable::Vec>();
+    node->InitRenderDrawableAndDrawableVec();
+    EXPECT_NE(static_cast<int>(node->dirtyStatus_), 1);
+    EXPECT_FALSE(node->released_);
+
+    // renderDrawable_ null, drawableVec_ null
+    node->renderDrawable_ = nullptr;
+    EXPECT_EQ(node->renderDrawable_, nullptr);
+    node->drawableVec_ = nullptr;
+    node->InitRenderDrawableAndDrawableVec();
+    EXPECT_NE(static_cast<int>(node->dirtyStatus_), 1);
+    EXPECT_FALSE(node->released_);
+#endif
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: InitRenderDrawableAndDrawableVec002
+ * @tc.desc: InitRenderDrawableAndDrawableVec test if reset on node the tree
+ * @tc.type: FUNC
+ * @tc.require: issues20621
+ */
+HWTEST_F(RSRenderNodeTest2, InitRenderDrawableAndDrawableVec002, TestSize.Level1)
+{
+#ifdef RS_ENABLE_MEMORY_DOWNTREE
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    EXPECT_NE(node, nullptr);
+
+    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(1);
+    EXPECT_NE(parent, nullptr);
+    std::shared_ptr<RSRenderNode> child = std::make_shared<RSRenderNode>(2);
+    EXPECT_NE(child, nullptr);
+
+    node->renderDrawable_ = std::make_shared<RSRenderNodeDrawableAdapterBoy>(child);
+    EXPECT_NE(node->renderDrawable_, nullptr);
+    node->drawableVec_ = std::make_unique<RSDrawable::Vec>();
+
+    node->released_ = true;
+    EXPECT_TRUE(node->parent_.expired());
+    node->InitRenderDrawableAndDrawableVec();
+    EXPECT_EQ(static_cast<int>(node->dirtyStatus_), 1);
+    EXPECT_FALSE(node->released_);
+
+    node->released_ = true;
+    node->SetParent(parent);
+    EXPECT_FALSE(node->parent_.expired());
+    node->InitRenderDrawableAndDrawableVec();
+    EXPECT_EQ(static_cast<int>(node->dirtyStatus_), 1);
+    EXPECT_TRUE(node->parent_.lock()->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CHILDREN)));
+    EXPECT_FALSE(node->released_);
+
 #endif
     ASSERT_TRUE(true);
 }

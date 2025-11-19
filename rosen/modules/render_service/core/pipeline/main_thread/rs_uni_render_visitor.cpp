@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -54,10 +54,12 @@
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_union_render_node.h"
 #include "pipeline/hwc/rs_uni_hwc_visitor.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_point_light_manager.h"
 #include "render/rs_effect_luminance_manager.h"
 #include "system/rs_system_parameters.h"
 #include "hgm_core.h"
@@ -183,7 +185,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (renderEngine_ && renderEngine_->GetRenderContext()) {
         auto subThreadManager = RSSubThreadManager::Instance();
-        subThreadManager->Start(renderEngine_->GetRenderContext().get());
+        subThreadManager->Start(renderEngine_->GetRenderContext());
     }
 #endif
     isUIFirstDebugEnable_ = RSSystemProperties::GetUIFirstDebugEnabled();
@@ -966,9 +968,7 @@ void RSUniRenderVisitor::QuickPrepareLogicalDisplayRenderNode(RSLogicalDisplayRe
         node.UpdateDrawRectAndDirtyRegion(*dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
     node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
     node.UpdateRotation();
-    if (RSMainThread::Instance()->GetSystemAnimatedScenes() != SystemAnimatedScenes::SNAPSHOT_ROTATION) {
-        node.UpdateFixedSize();
-    }
+    UpdateFixedSize(node);
     RSUifirstManager::Instance().PreStatusProcess(displayNodeRotationChanged_ || isScreenRotationAnimating_);
 
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
@@ -1268,7 +1268,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     node.RenderTraceDebug();
     node.SetNeedOffscreen(isScreenRotationAnimating_);
     if (node.NeedUpdateDrawableBehindWindow()) {
-        node.UpdateDrawableBehindWindow();
+        node.UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType::BACKGROUND_FILTER);
         node.SetOldNeedDrawBehindWindow(node.NeedDrawBehindWindow());
     }
     if (node.IsUIBufferAvailable()) {
@@ -1277,6 +1277,93 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     HandleTunnelLayerId(node);
     PrepareForMultiScreenViewSurfaceNode(node);
     CollectSurfaceLockLayer(node);
+    RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
+}
+
+void RSUniRenderVisitor::QuickPrepareUnionRenderNode(RSUnionRenderNode& node)
+{
+    RS_OPTIONAL_TRACE_BEGIN_LEVEL(TRACE_LEVEL_PRINT_NODEID, "QuickPrepareUnionRenderNode nodeId[%llu]", node.GetId());
+    UpdateCurFrameInfoDetail(node);
+    // 0. check current node need to traverse
+    auto dirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curScreenDirtyManager_;
+    auto dirtyFlag = dirtyFlag_;
+    auto prevAlpha = curAlpha_;
+    auto curCornerRadius = curCornerRadius_;
+    auto curCornerRect = curCornerRect_;
+    auto prevUnionNode = curUnionNode_;
+    curUnionNode_ = node.ReinterpretCastTo<RSUnionRenderNode>();
+    curAlpha_ *= std::clamp(node.GetRenderProperties().GetAlpha(), 0.f, 1.f);
+    auto preGlobalShouldPaint = globalShouldPaint_;
+    auto preOffscreenCanvasNodeId = offscreenCanvasNodeId_;
+    globalShouldPaint_ &= node.ShouldPaint();
+    CheckFilterCacheNeedForceClearOrSave(node);
+    bool isAccessibilityConfigChanged = IsAccessibilityConfigChanged();
+    if (isAccessibilityConfigChanged) {
+        node.SetIsAccessibilityConfigChanged(true);
+    }
+    UpdateDrawingCacheInfoBeforeChildren(node);
+    UpdateOffscreenCanvasNodeId(node);
+    MarkFilterInForegroundFilterAndCheckNeedForceClearCache(node);
+    node.SetIsAccessibilityConfigChanged(false);
+    RSOpincManager::Instance().QuickMarkStableNode(node, unchangeMarkInApp_, unchangeMarkEnable_,
+        isAccessibilityConfigChanged);
+    RectI prepareClipRect = prepareClipRect_;
+    bool hasAccumulatedClip = hasAccumulatedClip_;
+
+    if (!dirtyManager) {
+        RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
+        return;
+    }
+    dirtyFlag_ =
+        node.UpdateDrawRectAndDirtyRegion(*dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
+
+    // update prepare clip before children
+    hwcVisitor_->UpdatePrepareClip(node);
+    node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
+
+    bool isCurrOffscreen = hwcVisitor_->UpdateIsOffscreen(node);
+    hwcVisitor_->UpdateForegroundColorValid(node);
+
+    node.GetHwcRecorder().UpdatePositionZ(node.GetRenderProperties().GetPositionZ());
+    if (node.GetHwcRecorder().GetZorderChanged() && curSurfaceNode_) {
+        curSurfaceNode_->SetNeedCollectHwcNode(true);
+    }
+
+    // 1. Recursively traverse child nodes if above curSurfaceNode and subnode need draw
+    hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
+    bool isOpincSubTreeDirty = RSOpincManager::Instance().IsOpincSubTreeDirty(node, autoCacheEnable_);
+    bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
+        ForcePrepareSubTree() || isOpincSubTreeDirty;
+    isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
+        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareClipRect_);
+
+    PostPrepare(node, !isSubTreeNeedPrepare);
+    // the only difference between QuickPrepareUnionRenderNode and QuickPrepareCanvasRenderNode is to process SDFShape
+    node.ProcessSDFShape();
+    curUnionNode_ = prevUnionNode;
+    prepareClipRect_ = prepareClipRect;
+    hasAccumulatedClip_ = hasAccumulatedClip;
+    dirtyFlag_ = dirtyFlag;
+    curAlpha_ = prevAlpha;
+    curCornerRadius_ = curCornerRadius;
+    curCornerRect_ = curCornerRect;
+    RSOpincManager::Instance().UpdateRootFlag(node, unchangeMarkEnable_);
+    offscreenCanvasNodeId_ = preOffscreenCanvasNodeId;
+#ifdef SUBTREE_PARALLEL_ENABLE
+    // used in subtree, add node into parallel list
+    node.UpdateSubTreeParallelNodes();
+#endif
+    // [Attention] Only used in PC window resize scene now
+    NodeId linedRootNodeId = node.GetLinkedRootNodeId();
+    if (UNLIKELY(linedRootNodeId != INVALID_NODEID)) {
+        windowKeyFrameNodeInf_.UpdateLinkedNodeId(node.GetId(), linedRootNodeId);
+    }
+
+    globalShouldPaint_ = preGlobalShouldPaint;
+
+    hwcVisitor_->RestoreIsOffscreen(isCurrOffscreen);
+
+    node.RenderTraceDebug();
     RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
 }
 
@@ -1825,6 +1912,9 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     ancestorNodeHasAnimation_ = ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation();
     node.ResetChildRelevantFlags();
     node.ResetChildUifirstSupportFlag();
+    if (node.IsInstanceOf<RSUnionRenderNode>()) {
+        RSBaseRenderNode::ReinterpretCast<RSUnionRenderNode>(node.shared_from_this())->ResetVisibleUnionChildren();
+    }
 #ifdef SUBTREE_PARALLEL_ENABLE
     node.ClearSubtreeParallelNodes();
     node.ResetRepaintBoundaryInfo();
@@ -2966,8 +3056,24 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
         nodeParent->UpdateVisibleEffectChild(node);
         nodeParent->SetChildHasVisibleEffect(!nodeParent->GetVisibleEffectChild().empty());
     }
+    if (auto& illuminated = node.GetRenderProperties().GetIlluminated();
+        (node.ShouldPaint() && (illuminated && illuminated->IsIlluminatedValid())) ||
+        RSPointLightManager::Instance()->GetChildHasVisibleIlluminated(node.shared_from_this())) {
+        RSPointLightManager::Instance()->SetChildHasVisibleIlluminated(nodeParent, true);
+    }
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);
+    }
+    if (node.ChildHasVisibleHDRContent() || node.GetHDRStatus() != HdrStatus::NO_HDR) {
+        nodeParent->SetChildHasVisibleHDRContent(true);
+    }
+}
+
+void RSUniRenderVisitor::CollectUnionInfo(RSRenderNode& node)
+{
+    if ((node.GetRenderProperties().GetUseUnion() || node.GetRenderProperties().GetSDFShape() != nullptr) &&
+        node.ShouldPaint()) {
+        curUnionNode_->UpdateVisibleUnionChildren(node);
     }
 }
 
@@ -3026,6 +3132,7 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
         node.SetGlobalAlpha(curAlpha_);
     }
     CollectEffectInfo(node);
+    CollectUnionInfo(node);
     node.NodePostPrepare(curSurfaceNode_, prepareClipRect_);
 
     if (isDrawingCacheEnabled_) {
@@ -3693,6 +3800,17 @@ void RSUniRenderVisitor::CheckFilterNeedEnableDebug(RSEffectRenderNode& node,
     }
 
     node.MarkFilterDebugEnabled();
+}
+
+void RSUniRenderVisitor::UpdateFixedSize(RSLogicalDisplayRenderNode& node)
+{
+    if (node.IsRotationChanged() ||
+        RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION) {
+        // skip getting fixed size during rotation and snapshot rotation.
+        return;
+    }
+
+    node.UpdateFixedSize();
 }
 } // namespace Rosen
 } // namespace OHOS

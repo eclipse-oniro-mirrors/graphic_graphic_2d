@@ -123,6 +123,7 @@ template("render_service_client_source_set") {
       "core/modifier_ng/appearance/rs_foreground_filter_modifier.cpp",
       "core/modifier_ng/appearance/rs_hdr_brightness_modifier.cpp",
       "core/modifier_ng/appearance/rs_mask_modifier.cpp",
+      "core/modifier_ng/appearance/rs_material_filter_modifier.cpp",
       "core/modifier_ng/appearance/rs_outline_modifier.cpp",
       "core/modifier_ng/appearance/rs_particle_effect_modifier.cpp",
       "core/modifier_ng/appearance/rs_pixel_stretch_modifier.cpp",
@@ -167,6 +168,7 @@ template("render_service_client_source_set") {
       #transaction
       "core/transaction/rs_application_agent_impl.cpp",
       "core/transaction/rs_interfaces.cpp",
+      "core/transaction/rs_render_interface.cpp",
       "core/transaction/rs_render_thread_client.cpp",
       "core/transaction/rs_sync_transaction_controller.cpp",
       "core/transaction/rs_sync_transaction_handler.cpp",
@@ -190,6 +192,7 @@ template("render_service_client_source_set") {
       "core/ui/rs_ui_context.cpp",
       "core/ui/rs_ui_context_manager.cpp",
       "core/ui/rs_ui_director.cpp",
+      "core/ui/rs_union_node.cpp",
 
       #ui_effect
       "core/ui_effect/effect/src/visual_effect_para.cpp",
@@ -213,6 +216,7 @@ template("render_service_client_source_set") {
       "core/ui_effect/property/src/rs_ui_color_gradient_filter.cpp",
       "core/ui_effect/property/src/rs_ui_filter_base.cpp",
       "core/ui_effect/property/src/rs_ui_mask_base.cpp",
+      "core/ui_effect/property/src/rs_ui_shape_base.cpp",
       "core/ui_effect/property/src/rs_ui_shader_base.cpp",
     ]
 

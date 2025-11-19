@@ -61,6 +61,7 @@ class RSRenderParams;
 class RSContext;
 class RSNodeVisitor;
 class RSCommand;
+class RSCanvasDrawingRenderNode;
 namespace NativeBufferUtils {
 class VulkanCleanupHelper;
 }
@@ -83,6 +84,7 @@ struct CurFrameInfoDetail {
 class RSB_EXPORT RSRenderNode : public std::enable_shared_from_this<RSRenderNode> {
 public:
     using WeakPtr = std::weak_ptr<RSRenderNode>;
+    using WeakPtrSet = std::set<WeakPtr, std::owner_less<WeakPtr>>;
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     using ModifierNGContainer = std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>;
     using ModifiersNGMap = std::map<ModifierNG::RSModifierType, ModifierNGContainer>;
@@ -192,8 +194,7 @@ public:
     void SetParentSubTreeDirty();
     bool IsTreeStateChangeDirty() const;
     void SetTreeStateChangeDirty(bool val);
-    void SetParentTreeStateChangeDirty(bool isUpdateAllParentNode = false);
-    void SetChildrenTreeStateChangeDirty();
+    void SetParentTreeStateChangeDirty();
     // attention: current all base node's dirty ops causing content dirty
     // if there is any new dirty op, check it
     bool IsContentDirty() const;
@@ -590,6 +591,8 @@ public:
     }
     void SetDrawingCacheChanged(bool cacheChanged);
     bool GetDrawingCacheChanged() const;
+    void SetForceDisableNodeGroup(bool forceDisable);
+    bool IsForceDisableNodeGroup() const;
     // manage cache root nodeid
     void SetDrawingCacheRootId(NodeId id);
     NodeId GetDrawingCacheRootId() const;
@@ -659,6 +662,8 @@ public:
     bool IsFilterCacheValid() const;
     bool IsAIBarFilter() const;
     bool CheckAndUpdateAIBarCacheStatus(bool intersectHwcDamage) const;
+    // Return true if the cache interval of aibar has been successfully reduced; otherwise, return false.
+    bool ForceReduceAIBarCacheInterval();
     void MarkForceClearFilterCacheWithInvisible();
     void MarkFilterInForegroundFilterAndCheckNeedForceClearCache(NodeId offscreenCanvasNodeId);
 
@@ -889,6 +894,17 @@ public:
     {
         isFirstLevelCrossNode_ = isFirstLevelCrossNode;
     }
+
+    void UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd);
+
+    void ClearHDRVideoStatus();
+
+    HdrStatus GetHDRStatus() const;
+
+    void SetChildHasVisibleHDRContent(bool val);
+
+    bool ChildHasVisibleHDRContent() const;
+
     void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType);
 
     void SetEnableHdrEffect(bool enableHdrEffect);
@@ -918,7 +934,7 @@ public:
 
     void ProcessBehindWindowOnTreeStateChanged();
     void ProcessBehindWindowAfterApplyModifiers();
-    void UpdateDrawableBehindWindow();
+    void UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType type);
     virtual bool NeedUpdateDrawableBehindWindow() const { return false; }
     virtual bool NeedDrawBehindWindow() const { return false; }
     virtual void AddChildBlurBehindWindow(NodeId id) {}
@@ -977,6 +993,7 @@ public:
     bool GetNeedUseCmdlistDrawRegion();
     void ReleaseNodeMem();
     bool IsNodeMemClearEnable();
+    virtual void AfterTreeStatueChanged() {}
 
 protected:
     void ResetDirtyStatus();
@@ -996,7 +1013,7 @@ protected:
 
     static void DumpNodeType(RSRenderNodeType nodeType, std::string& out);
 
-    void DumpSubClassNode(std::string& out) const;
+    virtual void DumpSubClassNode(std::string& out) const;
     void DumpDrawCmdModifiers(std::string& out) const;
     void DumpModifiers(std::string& out) const;
 
@@ -1165,7 +1182,7 @@ private:
     // When an empty list is needed, use EmptyChildrenList instead.
     static const inline auto EmptyChildrenList = std::make_shared<const std::vector<std::shared_ptr<RSRenderNode>>>();
     ChildrenListSharedPtr fullChildrenList_ = EmptyChildrenList ;
-    std::shared_ptr<RSRenderDisplaySync> displaySync_ = nullptr;
+    std::unique_ptr<RSRenderDisplaySync> displaySync_ = nullptr;
     std::shared_ptr<RectF> drawRegion_ = nullptr;
     std::shared_ptr<std::unordered_set<std::shared_ptr<RSRenderNode>>> stagingUECChildren_ =
         std::make_shared<std::unordered_set<std::shared_ptr<RSRenderNode>>>();
