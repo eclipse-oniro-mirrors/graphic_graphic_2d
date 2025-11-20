@@ -233,6 +233,8 @@ public:
     void RestoreEnv();
     int GetEnvSaveCount() const;
     void RestoreEnvToCount(int count);
+    void SetColorPicked(ColorPlaceholder placeholder, Drawing::ColorQuad color);
+    Drawing::ColorQuad GetColorPicked(ColorPlaceholder placeholder) const;
 
     // blendmode and blender related
     void SaveLayer(const Drawing::SaveLayerOps& saveLayerOps) override;
@@ -469,6 +471,7 @@ protected:
         std::shared_ptr<CachedEffectData> behindWindowData_;
         std::shared_ptr<Drawing::Blender> blender_;
         bool hasOffscreenLayer_;
+        std::map<ColorPlaceholder, Drawing::ColorQuad> pickedColorMap_;
     };
 
     bool OnFilter() const override;

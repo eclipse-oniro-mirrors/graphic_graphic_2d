@@ -1118,6 +1118,10 @@ CoreCanvas& RSPaintFilterCanvas::AttachPen(const Pen& pen)
         p.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
     }
 
+    if (p.GetColor().IsPlaceholder()) {
+        p.SetColor(GetColorPicked(p.GetColor().GetPlaceholder()));
+    }
+
     // use alphaStack_.top() to multiply alpha
     if (alphaStack_.top() < 1 && alphaStack_.top() > 0) {
         p.SetAlpha(p.GetAlpha() * alphaStack_.top());
@@ -1153,6 +1157,10 @@ CoreCanvas& RSPaintFilterCanvas::AttachBrush(const Brush& brush)
         b.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
     }
 
+    if (b.GetColor().IsPlaceholder()) {
+        b.SetColor(GetColorPicked(b.GetColor().GetPlaceholder()));
+    }
+
     // use alphaStack_.top() to multiply alpha
     if (alphaStack_.top() < 1 && alphaStack_.top() > 0) {
         b.SetAlpha(b.GetAlpha() * alphaStack_.top());
@@ -1186,6 +1194,10 @@ CoreCanvas& RSPaintFilterCanvas::AttachPaint(const Drawing::Paint& paint)
     Paint p(paint);
     if (p.GetColor() == 0x00000001) { // foreground color and foreground color strategy identification
         p.SetColor(envStack_.top().envForegroundColor_.AsArgbInt());
+    }
+
+    if (p.GetColor().IsPlaceholder()) {
+        p.SetColor(GetColorPicked(p.GetColor().GetPlaceholder()));
     }
 
     // use alphaStack_.top() to multiply alpha
@@ -1350,6 +1362,22 @@ Drawing::ColorQuad RSPaintFilterCanvas::GetEnvForegroundColor() const
         return Drawing::Color::COLOR_BLACK; // 0xFF000000 is default value -- black
     }
     return envStack_.top().envForegroundColor_.AsArgbInt();
+}
+
+void RSPaintFilterCanvas::SetColorPicked(ColorPlaceholder placeholder, Drawing::ColorQuad color)
+{
+    if (envStack_.empty()) {
+        return;
+    }
+    envStack_.top().pickedColorMap_[placeholder] = color;
+}
+
+Drawing::ColorQuad RSPaintFilterCanvas::GetColorPicked(ColorPlaceholder placeholder) const
+{
+    if (envStack_.empty() || envStack_.top().pickedColorMap_.count(placeholder) == 0) {
+        return Drawing::Color::COLOR_BLACK;
+    }
+    return envStack_.top().pickedColorMap_.at(placeholder);
 }
 
 RSPaintFilterCanvas::SaveStatus RSPaintFilterCanvas::SaveAllStatus(SaveType type)

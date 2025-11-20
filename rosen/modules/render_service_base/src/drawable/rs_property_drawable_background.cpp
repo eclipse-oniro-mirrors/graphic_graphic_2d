@@ -274,7 +274,7 @@ bool RSBackgroundColorDrawable::OnUpdate(const RSRenderNode& node)
     Drawing::Canvas& canvas = *updater.GetRecordingCanvas();
     Drawing::Brush brush;
     if (bgColor.GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB) {
-        brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
+        brush.SetColor(bgColor.ConvertToDrawingColor());
     } else {
         // Currently, only P3 wide color space is supported, and it will be expanded soon.
         brush.SetColor(bgColor.GetColor4f(),

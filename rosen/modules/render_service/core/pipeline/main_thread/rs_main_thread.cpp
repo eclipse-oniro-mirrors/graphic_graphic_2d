@@ -54,6 +54,7 @@
 #include "display_engine/rs_color_temperature.h"
 #include "display_engine/rs_luminance_control.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature/colorpicker/rs_color_picker_thread.h"
 #include "feature/drm/rs_drm_util.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/lpp/lpp_video_handler.h"
@@ -396,7 +397,7 @@ public:
 };
 #endif
 
-void RSMainThread::MarkNodeImageDirty(uint64_t nodeId)
+void RSMainThread::MarkNodeDirty(uint64_t nodeId)
 {
     RSMainThread::Instance()->PostTask([nodeId]() {
         if (!RSMainThread::Instance()->IsRequestedNextVSync()) {
@@ -405,7 +406,7 @@ void RSMainThread::MarkNodeImageDirty(uint64_t nodeId)
         auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
         auto node = nodeMap.GetRenderNode(nodeId);
         if (node) {
-            RS_LOGD("MarkNodeImageDirty success: %{public}" PRIu64 ".", nodeId);
+            RS_LOGD("MarkNodeDirty success: %{public}" PRIu64 ".", nodeId);
             RSMainThread::Instance()->SetDirtyFlag();
             node->SetDirty(true);
         }
@@ -597,7 +598,9 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventRunner>& runner,
     RsFrameReport::GetInstance().Init();
     RegisterHwcEvent();
     RSImageDetailEnhancerThread::Instance().RegisterCallback(
-        std::bind(&RSMainThread::MarkNodeImageDirty, this, std::placeholders::_1));
+        std::bind(&RSMainThread::MarkNodeDirty, this, std::placeholders::_1));
+    RSColorPickerThread::Instance().RegisterNodeDirtyCallback(std::bind(&RSMainThread::MarkNodeDirty, this,
+        std::placeholders::_1));
     RSSystemProperties::WatchSystemProperty(HIDE_NOTCH_STATUS, OnHideNotchStatusCallback, nullptr);
     RSSystemProperties::WatchSystemProperty(DRAWING_CACHE_DFX, OnDrawingCacheDfxSwitchCallback, nullptr);
     if (isUniRender_) {
@@ -696,6 +699,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventRunner>& runner,
     RS_LOGI("InitRenderContext");
     /* move to render thread ? */
     RSBackgroundThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext());
+    RSColorPickerThread::Instance().InitRenderContext(GetRenderEngine()->GetRenderContext());
 #endif
 #ifdef RS_ENABLE_GPU
     RSRcdRenderManager::InitInstance();
@@ -2623,7 +2627,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         RS_LOGW("DoDirectComposition: hardwareThread task has too many to Execute");
     }
 #ifdef RS_ENABLE_GPU
-    
+
     for (auto& surfaceNode : hardwareEnabledNodes_) {
         if (surfaceNode == nullptr) {
             RS_LOGE("DoDirectComposition: surfaceNode is null!");

@@ -62,6 +62,7 @@
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
 #include "modifier_ng/appearance/rs_blend_modifier.h"
 #include "modifier_ng/appearance/rs_border_modifier.h"
+#include "modifier_ng/appearance/rs_color_picker_modifier.h"
 #include "modifier_ng/appearance/rs_compositing_filter_modifier.h"
 #include "modifier_ng/appearance/rs_dynamic_light_up_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
@@ -145,6 +146,7 @@ static const std::unordered_map<RSUINodeType, std::string> RSUINodeTypeStrs = {
     {RSUINodeType::ROOT_NODE,           "RootNode"},
     {RSUINodeType::EFFECT_NODE,         "EffectNode"},
     {RSUINodeType::CANVAS_DRAWING_NODE, "CanvasDrawingNode"},
+    {RSUINodeType::UNION_NODE,          "UnionNode"},
     {RSUINodeType::WINDOW_KEYFRAME_NODE, "WindowKeyFrameNode"},
 };
 
@@ -1949,6 +1951,17 @@ void RSNode::SetOutlineRadius(const Vector4f& radius)
     SetPropertyNG<ModifierNG::RSOutlineModifier, &ModifierNG::RSOutlineModifier::SetOutlineRadius>(radius);
 }
 
+void RSNode::SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrategyType strategy, uint64_t interval)
+{
+    SetPropertyNG<ModifierNG::RSColorPickerModifier,
+        &ModifierNG::RSColorPickerModifier::SetColorPickerPlaceholder>(placeholder);
+    SetPropertyNG<ModifierNG::RSColorPickerModifier,
+        &ModifierNG::RSColorPickerModifier::SetColorPickerStrategy>(strategy);
+    static constexpr uint64_t MIN_INTERVAL = 500; // unit: ms
+    SetPropertyNG<ModifierNG::RSColorPickerModifier,
+        &ModifierNG::RSColorPickerModifier::SetColorPickerInterval>(std::max(interval, MIN_INTERVAL));
+}
+
 void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
 {
     if (backgroundFilter == nullptr) {
@@ -2124,7 +2137,7 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
             visualEffectPara->GetParaType() == VisualEffectPara::HARMONIUM_EFFECT) {
             SetBackgroundNGShader(RSNGShaderBase::Create(visualEffectPara));
         }
-        
+
         if (visualEffectPara->GetParaType() != VisualEffectPara::BACKGROUND_COLOR_EFFECT) {
             continue;
         }
@@ -4047,7 +4060,7 @@ void RSNode::Dump(std::string& out) const
     if (!animations_.empty()) {
         out.pop_back();
     }
-    
+
     out += "], modifiers[";
     DumpModifiers(out);
     out += "]";
