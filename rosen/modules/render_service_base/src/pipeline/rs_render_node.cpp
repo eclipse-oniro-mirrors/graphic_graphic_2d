@@ -4341,6 +4341,9 @@ void RSRenderNode::UpdatePointLightDirtySlot()
     }
     drawablePtr->OnUpdate(*shared_from_this());
     UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::POINT_LIGHT);
+    // The illuminated node has no attribute changes, so it does not call applymodifier, and consequently does not
+    // call SetEnableHdrEffect. Therefore, here we need call SetEnableHdrEffect.
+    SetEnableHdrEffect(drawablePtr->GetEnableEDR());
 }
 
 void RSRenderNode::AddToPendingSyncList()
