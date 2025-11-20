@@ -1267,6 +1267,8 @@ void RSRenderNode::DumpNodeType(RSRenderNodeType nodeType, std::string& out)
         }
         case RSRenderNodeType::WINDOW_KEYFRAME_NODE: {
             out += "WINDOW_KEYFRAME_NODE";
+            break;
+        }
         default: {
             out += "UNKNOWN_NODE";
             break;
