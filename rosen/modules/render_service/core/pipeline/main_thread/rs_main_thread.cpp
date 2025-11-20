@@ -2592,66 +2592,53 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 #endif
     }
 
-    if (!RSMainThread::Instance()->WaitHardwareThreadTaskExecute()) {
-        RS_LOGW("DoDirectComposition: hardwareThread task has too many to Execute");
+    if (!RSRenderComposerManager::GetInstance().WaitComposerTaskExecute(screenNode->GetScreenId())) {
+        RS_LOGW("DoDirectComposition: ComposerThread task has too many to Execute");
     }
 #ifdef RS_ENABLE_GPU
-
-    for (auto& surfaceNode : hardwareEnabledNodes_) {
-        if (surfaceNode == nullptr) {
-            RS_LOGE("DoDirectComposition: surfaceNode is null!");
-            continue;
-        }
-        SetHasSurfaceLockLayer(surfaceNode->GetFixRotationByUser());
-        RSHdrUtil::UpdateSurfaceNodeNit(*surfaceNode, screenId);
-        screenNode->CollectHdrStatus(surfaceNode->GetVideoHdrStatus());
-        auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
-        if (!surfaceNode->IsHardwareForcedDisabled()) {
-            auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
-            HandleTunnelLayerId(surfaceHandler, surfaceNode);
-            if (!surfaceHandler->IsCurrentFrameBufferConsumed() && params->GetPreBuffer() != nullptr) {
-                if (!surfaceNode->GetDeviceOfflineEnable()) {
-                    // while using hpae_offline, prebuffer is not consumed, should not be reset
-                    params->SetPreBuffer(nullptr);
-                }
-                surfaceNode->AddToPendingSyncList();
-            }
-            if (surfaceNode->GetDeviceOfflineEnable() && processor->ProcessOfflineLayer(surfaceNode)) {
-                // use offline buffer instead of original buffer,
-                // if succeed, params->SetBufferSynced will not be set true,
-                // origianl buffer will be released at next acquirement
-                params->SetOfflineOriginBufferSynced(false);
+    RSUniRenderThread::Instance().PostSyncTask([this, processor, screenNode, screenInfo]() mutable {
+        RS_TRACE_NAME("DoDirectComposition PostProcess");
+        for (auto& surfaceNode : hardwareEnabledNodes_) {
+            if (surfaceNode == nullptr) {
+                RS_LOGE("DoDirectComposition: surfaceNode is null!");
                 continue;
             }
-            processor->CreateLayer(*surfaceNode, *params);
-            // buffer is synced to directComposition
-            params->SetBufferSynced(true);
+            SetHasSurfaceLockLayer(surfaceNode->GetFixRotationByUser());
+            RSHdrUtil::UpdateSurfaceNodeNit(*surfaceNode, screenId);
+            screenNode->CollectHdrStatus(surfaceNode->GetVideoHdrStatus());
+            auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
+            if (!surfaceNode->IsHardwareForcedDisabled()) {
+                auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
+                HandleTunnelLayerId(surfaceHandler, surfaceNode);
+                if (!surfaceHandler->IsCurrentFrameBufferConsumed() && params->GetPreBuffer() != nullptr) {
+                    if (!surfaceNode->GetDeviceOfflineEnable()) {
+                        // while using hpae_offline, prebuffer is not consumed, should not be reset
+                        params->SetPreBuffer(nullptr);
+                    }
+                    surfaceNode->AddToPendingSyncList();
+                }
+                if (surfaceNode->GetDeviceOfflineEnable() && processor->ProcessOfflineLayer(surfaceNode)) {
+                    // use offline buffer instead of original buffer,
+                    // if succeed, params->SetBufferSynced will not be set true,
+                    // origianl buffer will be released at next acquirement
+                    params->SetOfflineOriginBufferSynced(false);
+                    continue;
+                }
+                processor->CreateLayer(*surfaceNode, *params);
+                // buffer is synced to directComposition
+                params->SetBufferSynced(true);
+            }
         }
-    }
-    RSLuminanceControl::Get().SetHdrStatus(screenId,
-        screenNode->GetForceCloseHdr() ? HdrStatus::NO_HDR : screenNode->GetDisplayHdrStatus());
-#endif
-#ifdef RS_ENABLE_GPU
-    RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
-    auto rcdInfo = std::make_unique<RcdInfo>();
-    DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenInfo);
-#endif
-    if (waitForRT) {
-#ifdef RS_ENABLE_GPU
-        RSUniRenderThread::Instance().PostSyncTask([processor, screenNode]() {
-            RS_TRACE_NAME("DoDirectComposition PostProcess");
-            HgmCore::Instance().SetDirectCompositionFlag(true);
-            processor->ProcessScreenSurface(*screenNode);
-            processor->PostProcess();
-        });
-#endif
-    } else {
+        RSLuminanceControl::Get().SetHdrStatus(screenId,
+            screenNode->GetForceCloseHdr() ? HdrStatus::NO_HDR : screenNode->GetDisplayHdrStatus());
+        RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
+        auto rcdInfo = std::make_unique<RcdInfo>();
+        DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenInfo);
         HgmCore::Instance().SetDirectCompositionFlag(true);
-#ifdef RS_ENABLE_GPU
         processor->ProcessScreenSurface(*screenNode);
         processor->PostProcess();
+    });
 #endif
-    }
 
     RS_LOGD("DoDirectComposition end");
     return true;
