@@ -55,7 +55,7 @@ void RSCanvasCallbackRouterTest::TearDown()
 
 void RSCanvasCallbackRouterTest::SetUpTestNodes()
 {
-    // Create test nodes
+    // Create 3 test nodes
     for (int i = 0; i < 3; ++i) {
         auto node = RSCanvasDrawingNode::Create(false, false);
         ASSERT_NE(node, nullptr);

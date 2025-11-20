@@ -536,7 +536,7 @@ HWTEST_F(RSRenderServiceConnectionTest, RegisterCanvasCallbackAndCleanTest, Test
 
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
     pid_t testPid = 12345;
-    auto rsRenderServiceConnection = new RSRenderServiceConnection(
+    auto rsRenderServiceConnection = new RSClientToServiceConnection(
         testPid, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
     ASSERT_NE(rsRenderServiceConnection, nullptr);
 
@@ -557,7 +557,7 @@ HWTEST_F(RSRenderServiceConnectionTest, RegisterCanvasCallbackAndCleanTest, Test
 
     // Test error handling when mainThread is nullptr
     sptr<RSIConnectionToken> token2 = new IRemoteStub<RSIConnectionToken>();
-    auto rsRenderServiceConnectionWithNullThread = new RSRenderServiceConnection(
+    auto rsRenderServiceConnectionWithNullThread = new RSClientToServiceConnection(
         testPid, nullptr, nullptr, CreateOrGetScreenManager(), token2->AsObject(), nullptr);
     ASSERT_NE(rsRenderServiceConnectionWithNullThread, nullptr);
 
