@@ -327,8 +327,8 @@ void ColorPicker::GenerateMorandiBackgroundColor(HSV& hsv) const
 double ColorPicker::GetAlphaZeroTransparentProportion() const
 {
     const double PERCENTAGE_SCALE = 10000.;
-    return std::floor(static_cast<double>(fullyTransparentPixelNum_) / (SCALED_WIDTH * SCALED_HEIGHT) * PERCENTAGE_SCALE) /
-           PERCENTAGE_SCALE;
+    return std::floor(static_cast<double>(fullyTransparentPixelNum_) / (SCALED_WIDTH * SCALED_HEIGHT) *
+        PERCENTAGE_SCALE) / PERCENTAGE_SCALE;
 }
 
 // Get morandi background color
