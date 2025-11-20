@@ -890,7 +890,7 @@ void RSPaintFilterCanvasBase::Restore()
     // ClipRRect Optimization
     if (!pCanvasList_.empty()) {
         if (auto canvas = *pCanvasList_.begin()) {
-            RestoreClipRRect(canvas->GetSaveCount());
+            CustomRestore(canvas->GetSaveCount());
         }
     }
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
@@ -900,7 +900,7 @@ void RSPaintFilterCanvasBase::Restore()
     }
 #else
     if (canvas_ != nullptr) {
-        RestoreClipRRect(canvas_->GetSaveCount()); // ClipRRect Optimization
+        CustomRestore(canvas_->GetSaveCount()); // ClipRRect Optimization
         canvas_->Restore();
     }
 #endif
@@ -1851,47 +1851,59 @@ bool RSPaintFilterCanvas::GetDarkColorMode() const
 
 uint32_t RSPaintFilterCanvasBase::SaveClipRRect(std::shared_ptr<ClipRRectData> data)
 {
-    clipRRectStack_.push(data);
-    return clipRRectStack_.size();
+    RSPaintFilterCanvas::DrawFunc customFunc = [clipRRectData = data](Drawing::Canvas *canvas) {
+        if (canvas == nullptr || clipRRectData == nullptr) {
+            return;
+        }
+        canvas->Save();
+        canvas->ClipRoundRect(clipRRectData->rRect_, Drawing::ClipOp::DIFFERENCE, true);
+        canvas->ResetMatrix();
+        for (auto& corner : clipRRectData->data_) {
+            if (corner != nullptr && corner->image_ != nullptr && !corner->rect_.IsEmpty()) {
+                Drawing::Brush brush;
+                brush.SetBlendMode(Drawing::BlendMode::SRC);
+                canvas->AttachBrush(brush);
+                canvas->DrawImageRect(*(corner->image_), corner->rect_, Drawing::SamplingOptions());
+                canvas->DetachBrush();
+            }
+        }
+    };
+    return CustomSaveLayer(customFunc);
 }
 
-void RSPaintFilterCanvasBase::RestoreClipRRect(uint32_t saveCount)
+uint32_t RSPaintFilterCanvasBase::CustomSaveLayer(DrawFunc customFunc)
 {
-    if (clipRRectStack_.empty()) {
+    std::pair<uint32_t, DrawFunc> data(GetSaveCount(), customFunc);
+    customStack_.push(data);
+    return customStack_.size();
+}
+
+void RSPaintFilterCanvasBase::CustomRestore(uint32_t saveCount)
+{
+    if (customStack_.empty()) {
         return;
     }
-    if (saveCount != clipRRectStack_.top()->saveCount_) {
+    if (saveCount != customStack_.top().first) {
         return;
     }
-    auto data = clipRRectStack_.top();
-    clipRRectStack_.pop();
+    auto data = customStack_.top();
+    customStack_.pop();
 #ifdef SKP_RECORDING_ENABLED
     for (auto iter = pCanvasList_.begin(); iter != pCanvasList_.end(); ++iter) {
         auto canvas = *iter;
-        DrawOptimizationClipRRect(canvas, data);
+        DrawCustomFunc(canvas, data.second);
     }
 #else
-    DrawOptimizationClipRRect(canvas_, data);
+    DrawCustomFunc(canvas_, data.second);
 #endif
 }
 
-void RSPaintFilterCanvasBase::DrawOptimizationClipRRect(Drawing::Canvas* canvas, std::shared_ptr<ClipRRectData> data)
+void RSPaintFilterCanvasBase::DrawCustomFunc(Drawing::Canvas* canvas, DrawFunc drawFunc)
 {
-    if (canvas == nullptr || data == nullptr) {
+    if (canvas == nullptr) {
         return;
     }
-    canvas->Save();
-    canvas->ClipRoundRect(data->rRect_, Drawing::ClipOp::DIFFERENCE, true);
-    canvas->ResetMatrix();
-    for (auto& corner : data->data_) {
-        if (corner != nullptr && corner->image_ != nullptr && !corner->rect_.IsEmpty()) {
-            Drawing::Brush brush;
-            brush.SetBlendMode(Drawing::BlendMode::SRC);
-            canvas->AttachBrush(brush);
-            canvas->DrawImageRect(*(corner->image_), corner->rect_, Drawing::SamplingOptions());
-            canvas->DetachBrush();
-        }
-    }
+    drawFunc(canvas);
     canvas->Restore();
 }
 
