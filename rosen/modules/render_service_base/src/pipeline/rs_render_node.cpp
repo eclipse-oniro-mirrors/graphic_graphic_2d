@@ -51,6 +51,7 @@
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/sk_resource_manager.h"
+#include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_point_light_manager.h"
@@ -1264,6 +1265,10 @@ void RSRenderNode::DumpNodeType(RSRenderNodeType nodeType, std::string& out)
             out += "UNION_NODE";
             break;
         }
+        case RSRenderNodeType::WINDOW_KEYFRAME_NODE: {
+            out += "WINDOW_KEYFRAME_NODE";
+            break;
+        }
         default: {
             out += "UNKNOWN_NODE";
             break;
@@ -1307,12 +1312,9 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", skipLayer: " + std::to_string(displayNode->GetSecurityDisplay());
         out += ", securityExemption: " + std::to_string(displayNode->GetSecurityExemption());
         out += ", virtualScreenMuteStatus: " + std::to_string(displayNode->GetVirtualScreenMuteStatus());
-    } else if (GetType() == RSRenderNodeType::CANVAS_NODE) {
-        auto canvasNode = static_cast<const RSCanvasRenderNode*>(this);
-        NodeId linkedRootNodeId = canvasNode->GetLinkedRootNodeId();
-        if (linkedRootNodeId != INVALID_NODEID) {
-            out += ", linkedRootNodeId: " + std::to_string(linkedRootNodeId);
-        }
+    } else if (GetType() == RSRenderNodeType::WINDOW_KEYFRAME_NODE) {
+        auto wndKeyframeNode = static_cast<const RSWindowKeyFrameRenderNode*>(this);
+        out += ", linkedNodeId: " + std::to_string(wndKeyframeNode->GetLinkedNodeId());
     }
 }
 

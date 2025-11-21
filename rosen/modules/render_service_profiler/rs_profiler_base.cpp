@@ -42,6 +42,7 @@
 #include "command/rs_proxy_node_command.h"
 #include "command/rs_root_node_command.h"
 #include "command/rs_surface_node_command.h"
+#include "feature/window_keyframe/rs_window_keyframe_node_command.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_render_node.h"
@@ -1023,6 +1024,8 @@ std::string RSProfiler::UnmarshalNode(RSContext& context, std::stringstream& dat
         RootNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     } else if (nodeType == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         RSCanvasDrawingNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
+    } else if (nodeType == RSRenderNodeType::WINDOW_KEYFRAME_NODE) {
+        RSWindowKeyFrameNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     } else {
         RootNodeCommandHelper::Create(context, nodeId, isTextureExportNode);
     }

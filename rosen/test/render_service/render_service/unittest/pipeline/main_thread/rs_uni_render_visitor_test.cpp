@@ -53,6 +53,7 @@
 #include "feature/round_corner_display/rs_round_corner_display.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
+#include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "gmock/gmock.h"
 
@@ -4712,6 +4713,30 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode003, TestSize.Level2
     rsSurfaceRenderNode->HwcSurfaceRecorder().SetIntersectWithPreviousFilter(true);
     rsUniRenderVisitor->hwcVisitor_->isHardwareForcedDisabled_ = true;
     rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
+}
+
+/**
+ * @tc.name: QuickPrepareWindowKeyFrameRenderNode
+ * @tc.desc: Test QuickPrepareWindowKeyFrameRenderNode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderVisitorTest, QuickPrepareWindowKeyFrameRenderNode, TestSize.Level2)
+{
+    NodeId nodeId = 1;
+    NodeId surfaceNodeId = 2;
+    auto keyframeNode = std::make_shared<RSWindowKeyFrameRenderNode>(nodeId);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(keyframeNode, nullptr);
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    keyframeNode->stagingRenderParams_ = std::make_unique<RSRenderParams>(nodeId);
+ 
+    EXPECT_EQ(rsUniRenderVisitor->curSurfaceNode_, nullptr);
+    rsUniRenderVisitor->QuickPrepareWindowKeyFrameRenderNode(*keyframeNode);
+ 
+    rsUniRenderVisitor->curSurfaceNode_ = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    rsUniRenderVisitor->QuickPrepareWindowKeyFrameRenderNode(*keyframeNode);
+    EXPECT_EQ(keyframeNode->GetLinkedNodeId(), INVALID_NODEID);
 }
 
 /**
