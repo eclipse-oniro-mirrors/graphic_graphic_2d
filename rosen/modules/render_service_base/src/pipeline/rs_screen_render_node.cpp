@@ -496,12 +496,14 @@ void RSScreenRenderNode::SetForceCloseHdr(bool isForceCloseHdr)
     isForceCloseHdr_ = isForceCloseHdr;
 }
 
+// ScreeNode disable HDR only when all children displayNode disable HDR
 bool RSScreenRenderNode::GetForceCloseHdr() const
 {
     auto childList = GetChildrenList();
     if (childList.empty()) {
         return false;
     }
+    // Todo: This condition will be removed after EDR is adapted
     if (static_cast<HdrStatus>(GetDisplayHdrStatus() & HdrStatus::HDR_EFFECT) == HdrStatus::HDR_EFFECT) {
         return false;
     }

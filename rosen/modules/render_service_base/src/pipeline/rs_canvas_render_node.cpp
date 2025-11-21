@@ -125,12 +125,14 @@ void RSCanvasRenderNode::OnTreeStateChanged()
 void RSCanvasRenderNode::UpdateHDRNodeOnTreeState(NodeId displayNodeId)
 {
     // Need to count upper or lower trees of HDR nodes
+    bool isOntheTree = IsOnTheTree();
+    NodeId instanceRootNodeId = GetInstanceRootNodeId();
     if (GetHDRPresent()) {
-        SetHdrNum(IsOnTheTree(), GetInstanceRootNodeId(), HDRComponentType::IMAGE);
+        SetHdrNum(isOntheTree, instanceRootNodeId, HDRComponentType::IMAGE);
         UpdateDisplayHDRNodeList(IsOnTheTree(), displayNodeId);
     }
     if (GetRenderProperties().IsHDRUIBrightnessValid()) {
-        SetHdrNum(IsOnTheTree(), GetInstanceRootNodeId(), HDRComponentType::UICOMPONENT);
+        SetHdrNum(isOntheTree, instanceRootNodeId, HDRComponentType::UICOMPONENT);
         UpdateDisplayHDRNodeList(IsOnTheTree(), displayNodeId);
     }
 }
