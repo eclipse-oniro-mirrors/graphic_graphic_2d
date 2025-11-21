@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 
 #include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_draw_cmd.h"
@@ -198,36 +199,34 @@ HWTEST_F(RSCanvasRenderNodeTest, ProcessShadowBatchingTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdateScreenHDRNodeList001
- * @tc.desc: test UpdateScreenHDRNodeList
+ * @tc.name: UpdateDisplayHDRNodeList001
+ * @tc.desc: test UpdateDisplayHDRNodeList
  * @tc.type: FUNC
  * @tc.require: #IBPVN9
  */
-HWTEST_F(RSCanvasRenderNodeTest, UpdateScreenHDRNodeList001, TestSize.Level1)
+HWTEST_F(RSCanvasRenderNodeTest, UpdateDisplayHDRNodeList001, TestSize.Level1)
 {
     NodeId nodeId = 0;
     RSCanvasRenderNode node1(nodeId);
-    node1.UpdateScreenHDRNodeList(false, 0);
+    node1.UpdateDisplayHDRNodeList(false, 0);
 
-    NodeId screenRenderNodeId = 1;
-    ScreenId screenId = 0;
+    NodeId displayNodeId = 1;
+    RSDisplayNodeConfig config;
     auto context = std::make_shared<RSContext>();
     RSCanvasRenderNode node(nodeId, context);
-    node.UpdateScreenHDRNodeList(false, 1);
+    node.UpdateDisplayHDRNodeList(false, 1);
 
     auto& nodeMap = context->GetMutableNodeMap();
-    auto screenRenderNode = std::make_shared<RSScreenRenderNode>(screenRenderNodeId, screenId, context);
-    bool res = nodeMap.RegisterRenderNode(screenRenderNode);
+    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId, config);
+    bool res = nodeMap.RegisterRenderNode(displayNode);
     ASSERT_EQ(res, true);
-    node.screenNodeId_ = screenRenderNodeId;
+    node.logicalDisplayNodeId_ = displayNodeId;
 
-    node.UpdateScreenHDRNodeList(true, 1);
-    EXPECT_NE(screenRenderNode->hdrNodeList_.find(nodeId), screenRenderNode->hdrNodeList_.end());
+    node.UpdateDisplayHDRNodeList(true, 1);
+    EXPECT_NE(displayNode->hdrNodeList_.find(nodeId), displayNode->hdrNodeList_.end());
 
-    node.UpdateScreenHDRNodeList(false, 1);
-    EXPECT_EQ(screenRenderNode->hdrNodeList_.find(nodeId), screenRenderNode->hdrNodeList_.end());
-
-    screenRenderNode->GetHDRNodeList();
+    node.UpdateDisplayHDRNodeList(false, 1);
+    EXPECT_EQ(displayNode->hdrNodeList_.find(nodeId), displayNode->hdrNodeList_.end());
 }
 
 /**
@@ -238,16 +237,16 @@ HWTEST_F(RSCanvasRenderNodeTest, UpdateScreenHDRNodeList001, TestSize.Level1)
  */
 HWTEST_F(RSCanvasRenderNodeTest, GetHDRNodeList001, TestSize.Level1)
 {
-    NodeId screenRenderNodeId = 1;
-    ScreenId screenId = 0;
+    NodeId displayNodeId = 1;
+    RSDisplayNodeConfig config;
     auto context = std::make_shared<RSContext>();
-    auto screenRenderNode = std::make_shared<RSScreenRenderNode>(screenRenderNodeId, screenId, context);
+    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId, config);
 
-    auto& hdrNodeList = screenRenderNode->GetHDRNodeList();
+    auto& hdrNodeList = displayNode->GetHDRNodeList();
     EXPECT_TRUE(hdrNodeList.empty());
 
-    screenRenderNode->InsertHDRNode(1);
-    EXPECT_NE(screenRenderNode->hdrNodeList_.find(1), screenRenderNode->hdrNodeList_.end());
+    displayNode->InsertHDRNode(1);
+    EXPECT_NE(displayNode->hdrNodeList_.find(1), displayNode->hdrNodeList_.end());
 }
 
 /**

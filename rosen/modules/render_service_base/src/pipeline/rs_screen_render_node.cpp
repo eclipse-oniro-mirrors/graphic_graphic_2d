@@ -20,6 +20,7 @@
 #include "common/rs_special_layer_manager.h"
 #include "feature/hdr/rs_colorspace_util.h"
 #include "params/rs_screen_render_params.h"
+#include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
@@ -497,7 +498,30 @@ void RSScreenRenderNode::SetForceCloseHdr(bool isForceCloseHdr)
 
 bool RSScreenRenderNode::GetForceCloseHdr() const
 {
-    return ROSEN_EQ(GetRenderProperties().GetHDRBrightnessFactor(), 0.0f);
+    auto childList = GetChildrenList();
+    if (childList.empty()) {
+        return false;
+    }
+    if (static_cast<HdrStatus>(GetDisplayHdrStatus() & HdrStatus::HDR_EFFECT) == HdrStatus::HDR_EFFECT) {
+        return false;
+    }
+    for (const auto& child : childList) {
+        auto childPtr = child.lock();
+        if (!childPtr) {
+            RS_LOGE("RSScreenRenderNode::GetForceCloseHdr child is null");
+            return false;
+        }
+        auto displayNode = childPtr->ReinterpretCastTo<RSLogicalDisplayRenderNode>();
+        if (!displayNode) {
+            RS_LOGE("RSScreenRenderNode::GetForceCloseHdr child is not displayNode");
+            return false;
+        }
+        bool disableHDR = ROSEN_EQ(displayNode->GetRenderProperties().GetHDRBrightnessFactor(), 0.0f);
+        if (!disableHDR) {
+            return false;
+        }
+    }
+    return true;
 }
 
 Occlusion::Region RSScreenRenderNode::GetDisappearedSurfaceRegionBelowCurrent(NodeId currentSurface) const

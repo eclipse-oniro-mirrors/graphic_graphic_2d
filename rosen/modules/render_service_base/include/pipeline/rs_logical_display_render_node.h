@@ -77,6 +77,21 @@ public:
         return screenRotation_;
     }
 
+    void InsertHDRNode(NodeId id)
+    {
+        hdrNodeList_.insert(id);
+    }
+
+    void RemoveHDRNode(NodeId id)
+    {
+        hdrNodeList_.erase(id);
+    }
+
+    const std::unordered_set<NodeId>& GetHDRNodeList() const
+    {
+        return hdrNodeList_;
+    }
+
     void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
         NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
         NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
@@ -185,6 +200,8 @@ private:
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation mirrorSourceRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
 
+    // save children hdr canvasNode id
+    std::unordered_set<NodeId> hdrNodeList_;
     bool isSecurityDisplay_ = false;
     bool isMirrorDisplay_ = false;
     WeakPtr mirrorSource_;
