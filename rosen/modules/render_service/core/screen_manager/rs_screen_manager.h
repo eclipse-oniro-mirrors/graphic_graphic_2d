@@ -110,6 +110,8 @@ public:
     virtual int32_t GetDisplayIdentificationData(
         ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData) const = 0;
 
+    virtual ScreenConnectionType GetScreenConnectionType(ScreenId id) const = 0;
+
     virtual int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) = 0;
     virtual ScreenRotation GetScreenCorrection(ScreenId id) const = 0;
 
@@ -295,6 +297,8 @@ public:
     RSScreenCapability GetScreenCapability(ScreenId id) const override;
     RSScreenData GetScreenData(ScreenId id) const  override;
     int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData) const override;
+
+    ScreenConnectionType GetScreenConnectionType(ScreenId id) const override;
 
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation) override;
     ScreenRotation GetScreenCorrection(ScreenId id) const override;

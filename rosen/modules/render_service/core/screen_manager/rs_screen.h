@@ -58,6 +58,7 @@ public:
     virtual bool IsEnable() const = 0;
     virtual bool IsVirtual() const = 0;
     virtual const RSScreenType& GetScreenType() const = 0;
+    virtual const ScreenConnectionType& GetConnectionType() const = 0;
 
     virtual int32_t SetResolution(uint32_t width, uint32_t height) = 0;
     virtual void SetRogResolution(uint32_t width, uint32_t height) = 0;
@@ -211,6 +212,7 @@ public:
     bool IsEnable() const override;
     bool IsVirtual() const override;
     const RSScreenType& GetScreenType() const override;
+    const ScreenConnectionType& GetConnectionType() const override;
 
     int32_t SetResolution(uint32_t width, uint32_t height) override;
     void SetRogResolution(uint32_t width, uint32_t height) override;
@@ -418,6 +420,7 @@ private:
         NOT_SUPPORT_HDR };
     std::vector<ScreenHDRFormat> supportedPhysicalHDRFormats_;
     RSScreenType screenType_ = RSScreenType::UNKNOWN_TYPE_SCREEN;
+    ScreenConnectionType connectionType_ = ScreenConnectionType::INVALID_DISPLAY_CONNECTION_TYPE;
 
     mutable std::shared_mutex skipFrameMutex_;
     uint32_t skipFrameInterval_ = DEFAULT_SKIP_FRAME_INTERVAL;

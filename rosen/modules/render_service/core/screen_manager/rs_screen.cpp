@@ -193,6 +193,14 @@ void RSScreen::PhysicalScreenInit() noexcept
     }
     ScreenCapabilityInit();
 
+    auto outType = GraphicDisplayConnectionType::GRAPHIC_DISPLAY_CONNECTION_TYPE_INTERNAL;
+    if (hdiScreen_->GetScreenConnectionType(outType) < 0) {
+        RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetScreenConnectionType.", __func__, id_);
+        connectionType_ = ScreenConnectionType::INVALID_DISPLAY_CONNECTION_TYPE;
+    } else {
+        connectionType_ = static_cast<ScreenConnectionType>(outType);
+    }
+
     std::vector<GraphicColorGamut> supportedColorGamuts;
     if (hdiScreen_->GetScreenSupportedColorGamuts(supportedColorGamuts) != GRAPHIC_DISPLAY_SUCCESS) {
         RS_LOGE("%{public}s: RSScreen(id %{public}" PRIu64 ") failed to GetScreenSupportedColorGamuts.",
@@ -1134,6 +1142,11 @@ const GraphicHDRCapability& RSScreen::GetHDRCapability()
 const RSScreenType& RSScreen::GetScreenType() const
 {
     return screenType_;
+}
+
+const ScreenConnectionType& RSScreen::GetConnectionType() const
+{
+    return connectionType_;
 }
 
 void RSScreen::SetScreenSkipFrameInterval(uint32_t skipFrameInterval)
