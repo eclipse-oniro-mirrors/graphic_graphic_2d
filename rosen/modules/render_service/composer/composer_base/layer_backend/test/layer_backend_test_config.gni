@@ -106,6 +106,7 @@ layer_backend_fuzz_external_deps = [
   "drivers_interface_display:libdisplay_commontype_proxy_2.0",
   "drivers_interface_display:libdisplay_commontype_proxy_2.1",
   "drivers_interface_display:libdisplay_commontype_proxy_2.2",
+  "eventhandler:libeventhandler",
   "graphic_surface:surface",
   "hilog:libhilog",
   "hisysevent:libhisysevent",
