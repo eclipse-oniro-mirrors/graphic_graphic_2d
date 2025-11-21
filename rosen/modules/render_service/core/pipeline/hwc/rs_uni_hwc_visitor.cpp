@@ -119,7 +119,6 @@ void RSUniHwcVisitor::UpdateDstRect(RSSurfaceRenderNode& node, const RectI& absR
         dstRect.top_ = static_cast<int32_t>(std::floor(dstRect.top_ * heightRatio));
         dstRect.width_ = static_cast<int32_t>(std::ceil(dstRect.width_ * widthRatio));
         dstRect.height_ = static_cast<int32_t>(std::ceil(dstRect.height_ * heightRatio));
-        node.SetHardwareEnabledTopSurface(true);
     }
     if (uniRenderVisitor_.curSurfaceNode_ && (node.GetId() != uniRenderVisitor_.curSurfaceNode_->GetId()) &&
         !node.GetHwcGlobalPositionEnabled()) {
