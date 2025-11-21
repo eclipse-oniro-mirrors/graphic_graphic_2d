@@ -37,6 +37,7 @@ using namespace OHOS::HDI::Display::Composer::V1_0;
 using namespace OHOS::HDI::Display::Composer::V1_1;
 using namespace OHOS::HDI::Display::Composer::V1_2;
 using namespace OHOS::HDI::Display::Composer::V1_3;
+using namespace OHOS::HDI::Display::Composer::V1_4;
 using IDisplayComposerInterfaceSptr = sptr<Composer::V1_4::IDisplayComposerInterface>;
 static IDisplayComposerInterfaceSptr g_composer;
 }
