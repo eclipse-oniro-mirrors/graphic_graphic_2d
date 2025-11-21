@@ -4915,8 +4915,9 @@ GlobalDirtyRegionInfo RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo
     int32_t frameAnimationCount{0};
     int32_t mostSendingPidWhenDisplayNodeSkip{0};
     if (!reply.ReadInt64(globalDirtyRegionAreas) || !reply.ReadInt32(globalFramesNumber) ||
-        !reply.ReadInt32(skipProcessFramesNumber) || !reply.ReadInt32(commandCount) || !reply.ReadInt32(consumeBufferSize) ||
-        !reply.ReadInt32(frameAnimationCount) || !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip)) {
+        !reply.ReadInt32(skipProcessFramesNumber) || !reply.ReadInt32(commandCount) ||
+        !reply.ReadInt32(consumeBufferSize) || !reply.ReadInt32(frameAnimationCount) ||
+        !reply.ReadInt32(mostSendingPidWhenDisplayNodeSkip)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo Read parcel failed");
         return globalDirtyRegionInfo;
     }
