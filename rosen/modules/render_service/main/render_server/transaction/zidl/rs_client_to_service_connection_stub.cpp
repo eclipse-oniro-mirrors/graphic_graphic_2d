@@ -925,8 +925,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
             int32_t status = RegisterCanvasCallback(callback);
             if (!reply.WriteInt32(status)) {
-                RS_LOGE("RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK Write status failed, pid=%{public}d, "
-                    "status=%{public}d!", GetCallingPid(), status);
+                RS_LOGE("RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK Write status failed, "
+                    "pid=%{public}d, status=%{public}d!", GetCallingPid(), status);
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -940,8 +940,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (!data.ReadUint32(resetSurfaceIndex)) {
-                RS_LOGE(
-                    "RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Read resetSurfaceIndex failed!");
+                RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Read resetSurfaceIndex "
+                    "failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
@@ -955,7 +955,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (hasBuffer) {
                 buffer = SurfaceBuffer::Create();
                 if (buffer == nullptr) {
-                    RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Create buffer failed!");
+                    RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Create buffer failed");
                     ret = ERR_INVALID_DATA;
                     break;
                 }
