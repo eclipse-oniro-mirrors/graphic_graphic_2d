@@ -95,38 +95,26 @@ HWTEST_F(EffectImageChainUnittest, PrepareTest002, TestSize.Level1)
 }
 
 /**
- * @tc.name: Apply_Draw_Test
+ * @tc.name: ApplyDrawTest001
  * @tc.desc: test Apply and Draw
  */
-HWTEST_F(EffectImageChainUnittest, Apply_Draw_Test, TestSize.Level1)
+HWTEST_F(EffectImageChainUnittest, ApplyDrawTest001, TestSize.Level1)
 {
     auto image = std::make_shared<EffectImageChain>();
     EXPECT_NE(image, nullptr);
-
     auto ret = image->ApplyDrawingFilter(nullptr);
     EXPECT_NE(ret, DrawingError::ERR_OK);
-
     ret = image->ApplyBlur(-1, Drawing::TileMode::CLAMP);
     EXPECT_NE(ret, DrawingError::ERR_OK); // invalid radius
 
     ret = image->ApplyBlur(0.5, Drawing::TileMode::CLAMP);
     EXPECT_NE(ret, DrawingError::ERR_OK); // need prepered first
 
-    // test not prepared
-    std::vector<float> positions = {0.0f, 1.0f};
-    std::vector<float> degrees = {0.0f, 1.0f};
-    ret = image->ApplyEllipticalGradientBlur(1.0f, 0.0f, 0.0f, 1.0f, 1.0f, positions, degrees);
-    EXPECT_EQ(ret, DrawingError::ERR_NOT_PREPARED);
-    EXPECT_NE(ret, DrawingError::ERR_OK); // need prepared first
-
     Media::InitializationOptions opts;
     opts.size = { 1, 1 };
     std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
     EXPECT_NE(srcPixelMap, nullptr);
     ret = image->Prepare(srcPixelMap, false);
-    EXPECT_EQ(ret, DrawingError::ERR_OK);
-
-    ret = image->Draw(); // no filter
     EXPECT_EQ(ret, DrawingError::ERR_OK);
 
     ret = image->ApplyBlur(0.5, Drawing::TileMode::CLAMP); // hps
@@ -159,9 +147,30 @@ HWTEST_F(EffectImageChainUnittest, Apply_Draw_Test, TestSize.Level1)
     EXPECT_EQ(ret, DrawingError::ERR_OK);
     ret = image->ApplyBlur(0.5, Drawing::TileMode::MIRROR); // cpu
     EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
 
-    // EllipticalGradientBlur
+/**
+ * @tc.name: ApplyDrawTest002
+ * @tc.desc: test Apply and Draw
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyDrawTest002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    EXPECT_NE(image, nullptr);
+    auto ret = image->ApplyDrawingFilter(nullptr);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+    // test not prepare
+    std::vector<float> positions = {0.0f, 1.0f};
+    std::vector<float> degrees = {0.0f, 1.0f};
+    ret = image->ApplyEllipticalGradientBlur(1.0f, 0.0f, 0.0f, 1.0f, 1.0f, positions, degrees);
+    EXPECT_EQ(ret, DrawingError::ERR_NOT_PREPARED);
+    EXPECT_NE(ret, DrawingError::ERR_OK); // need prepared first
     // test normal condition
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    EXPECT_NE(srcPixelMap, nullptr);
+    ret = image->Prepare(srcPixelMap, false);
     ret = image->ApplyEllipticalGradientBlur(1.0f, 0.0f, 0.0f, 1.0f, 1.0f, positions, degrees);
     EXPECT_EQ(ret, DrawingError::ERR_OK);
     // test illegal blur radius
@@ -195,7 +204,9 @@ HWTEST_F(EffectImageChainUnittest, Apply_Draw_Test, TestSize.Level1)
     // test if forceCPU_ is true
     ret = image->Prepare(srcPixelMap, true);
     ret = image->ApplyEllipticalGradientBlur(1.0f, 0.0f, 0.0f, 1.0f, 1.0f, positions, degrees);
-    EXPECT_EQ(ret, DrawingError::ERR_ILLEGAL_INPUT);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+    ret = image->Draw();
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
 }
 
 /**

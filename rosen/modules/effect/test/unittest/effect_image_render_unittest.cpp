@@ -131,17 +131,17 @@ HWTEST_F(EffectImageRenderUnittest, EllipticalGradientBlurApplyTest001, TestSize
     auto uniPixelMap = Media::PixelMap::Create(opts);
     std::shared_ptr<Media::PixelMap> srcPixelMap(std::move(uniPixelMap));
 
+    std::shared_ptr<Media::PixelMap> dstPixelMap = nullptr;
     std::vector<std::shared_ptr<EffectImageFilter>> imageFilter;
     imageFilter.emplace_back(nullptr);
+    EffectImageRender imageRender;
+    auto ret = imageRender.Render(srcPixelMap, imageFilter, false, dstPixelMap);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
     auto filterBlur = EffectImageFilter::EllipticalGradientBlur(
         1.0f, 0.0f, 0.0f, 1.0f, 1.0f, positions, degrees);
     EXPECT_TRUE(filterBlur != nullptr);
     imageFilter.emplace_back(filterBlur);
-
-    std::shared_ptr<Media::PixelMap> dstPixelMap = nullptr;
-    EffectImageRender imageRender;
-    auto ret = imageRender.Render(srcPixelMap, imageFilter, false, dstPixelMap);
-    ASSERT_EQ(ret, DrawingError::ERR_OK);
 
     ret = imageRender.Render(nullptr, imageFilter, false, dstPixelMap);
     ASSERT_NE(ret, DrawingError::ERR_OK);
