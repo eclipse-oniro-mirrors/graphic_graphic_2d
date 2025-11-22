@@ -48,6 +48,7 @@
 #include "transaction/rs_render_service_client.h"
 #include "visitor/rs_node_visitor.h"
 #include "render/rs_image_cache.h"
+#include "pipeline/rs_render_node_map.h"
 #ifndef ROSEN_CROSS_PLATFORM
 #include "metadata_helper.h"
 #include <v1_0/cm_color_space.h>
@@ -2898,6 +2899,11 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
         if (parentNode && parentNode->GetFirstLevelNodeId() != INVALID_NODEID) {
             firstLevelNodeId = parentNode->GetFirstLevelNodeId();
         }
+    }
+    if (auto context = GetContext().lock(); context && onTree) {
+        context->GetMutableNodeMap().ObtainLauncherNodeId(
+            std::static_pointer_cast<RSSurfaceRenderNode>(shared_from_this())
+        );
     }
     if (IsSecureUIExtension() || IsUnobscuredUIExtensionNode()) {
         if (onTree) {
