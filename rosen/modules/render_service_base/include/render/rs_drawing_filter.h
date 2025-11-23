@@ -119,11 +119,6 @@ public:
 
     bool NeedForceSubmit() const override;
 
-    std::shared_ptr<RSNGRenderFilterBase> GetRenderFilter() const
-    {
-        return renderFilter_;
-    }
-
 private:
     struct DrawImageRectAttributes {
         Drawing::Rect src;

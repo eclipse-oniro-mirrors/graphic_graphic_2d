@@ -1697,7 +1697,7 @@ void RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(const RSProperti
     if (!drawingFilter) {
         return;
     }
-    const auto& renderFilter = drawingFilter->GetRenderFilter();
+    const auto& renderFilter = drawingFilter->GetNGRenderFilter();
     if (!renderFilter || renderFilter->GetType() != RSNGEffectType::FROSTED_GLASS) {
         return;
     }
@@ -1711,11 +1711,11 @@ void RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(const RSProperti
     }
     RRect sdfRRect{};
     if (properties.GetClipToRRect()) {
-        auto childRRect = properties.GetClipRRect();
-        sdfRRect = RRect(childRRect.rect_, childRRect.radius_[0].x_, childRRect.radius_[0].y_);
+        auto rrect = properties.GetClipRRect();
+        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
     } else if (!properties.GetCornerRadius().IsZero()) {
-        auto childRRect = properties.GetRRect();
-        sdfRRect = RRect(childRRect.rect_, childRRect.radius_[0].x_, childRRect.radius_[0].y_);
+        auto rrect = properties.GetRRect();
+        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
     } else {
         sdfRRect.rect_ = properties.GetBoundsRect();
     }
