@@ -456,7 +456,7 @@ int32_t HdiDeviceImpl::GetScreenConnectionType(uint32_t screenId, GraphicDisplay
     Composer::V1_4::DisplayConnectionType displayConnectionType;
     int32_t ret = g_composer->GetDisplayConnectionType(screenId, displayConnectionType);
     if (ret == GRAPHIC_DISPLAY_SUCCESS) {
-        status = static_cast<GraphicDisplayConnectionType>(displayConnectionType);
+        outType = static_cast<GraphicDisplayConnectionType>(displayConnectionType);
     }
     return ret;
 }

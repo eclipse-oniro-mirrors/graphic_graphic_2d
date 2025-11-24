@@ -2415,7 +2415,6 @@ ScreenConnectionType RSScreenManager::GetScreenConnectionType(ScreenId id) const
     auto screen = GetScreen(id);
     if (screen == nullptr) {
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
-        status = INVALID_POWER_STATUS;
         return ScreenConnectionType::INVALID_DISPLAY_CONNECTION_TYPE;
     }
     return screen->GetConnectionType();

@@ -1144,7 +1144,7 @@ const RSScreenType& RSScreen::GetScreenType() const
     return screenType_;
 }
 
-const ScreenConnectionType& RSScreen::GetConnectionType() const
+ScreenConnectionType RSScreen::GetConnectionType() const
 {
     return connectionType_;
 }
