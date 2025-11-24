@@ -902,20 +902,26 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK): {
-            bool enableReadRemoteObject = false;
-            if (!data.ReadBool(enableReadRemoteObject)) {
+            bool hasCallback = false;
+            if (!data.ReadBool(hasCallback)) {
                 RS_LOGE("RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK Read bool failed, pid=%{public}d!",
                     GetCallingPid());
                 ret = ERR_INVALID_DATA;
                 break;
             }
             sptr<IRemoteObject> remoteObject = nullptr;
-            if (enableReadRemoteObject) {
+            if (hasCallback) {
                 remoteObject = data.ReadRemoteObject();
                 if (remoteObject == nullptr) {
                     ret = ERR_INVALID_DATA;
                     RS_LOGE("RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK ReadRemoteObject failed, "
                         "pid=%{public}d!", GetCallingPid());
+                    break;
+                }
+                if (!remoteObject->IsProxyObject()) {
+                    ret = ERR_UNKNOWN_OBJECT;
+                    RS_LOGE(
+                        "RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK remoteObject is not ProxyObject");
                     break;
                 }
             }
@@ -933,12 +939,12 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER): {
             NodeId nodeId = INVALID_NODEID;
-            uint32_t resetSurfaceIndex = 0;
             if (!data.ReadUint64(nodeId)) {
                 RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Read nodeId failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
+            uint32_t resetSurfaceIndex = 0;
             if (!data.ReadUint32(resetSurfaceIndex)) {
                 RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Read resetSurfaceIndex "
                     "failed!");

@@ -830,11 +830,6 @@ bool RSSystemProperties::GetRSNodeExceedKillEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetCanvasDrawingNodeDmaEnabled()
-{
-    return false;
-}
-
 bool RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()
 {
     return false;

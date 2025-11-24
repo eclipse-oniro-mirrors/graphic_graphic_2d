@@ -40,9 +40,10 @@ namespace Rosen {
 namespace {
 constexpr int EDGE_WIDTH_LIMIT = 1000;
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-const bool DMA_ENABLED = RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeDmaEnabled();
 const bool PRE_ALLOCATE_DMA_ENABLED =
     RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled();
+const bool RENDER_DMA_ENABLED =
+    RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled();
 
 // Global Canvas SurfaceBuffer callback implementation
 // This callback is registered once per process and routes notifications to specific nodes
@@ -71,7 +72,7 @@ RSCanvasDrawingNode::RSCanvasDrawingNode(
 RSCanvasDrawingNode::~RSCanvasDrawingNode()
 {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    if (DMA_ENABLED) {
+    if (PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) {
         // Unregister from callback router
         RSCanvasCallbackRouter::GetInstance().UnregisterNode(GetId());
         // Clear DMA buffer reference (releases DMA memory from app process)
@@ -95,7 +96,7 @@ RSCanvasDrawingNode::SharedPtr RSCanvasDrawingNode::Create(
     }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    if (DMA_ENABLED) {
+    if (PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) {
         // Register node in Canvas Callback Router for SurfaceBuffer callback routing
         RSCanvasCallbackRouter::GetInstance().RegisterNode(node->GetId(), std::weak_ptr<RSCanvasDrawingNode>(node));
         // Register global callback once per process (thread-safe with std::call_once)
@@ -122,7 +123,7 @@ bool RSCanvasDrawingNode::ResetSurface(int width, int height)
     }
     uint32_t resetSurfaceIndex = 0;
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    if (DMA_ENABLED) {
+    if (PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) {
         std::lock_guard<std::mutex> lock(surfaceBufferMutex_);
         resetSurfaceIndex_ = GenerateResetSurfaceIndex();
         resetSurfaceIndex = resetSurfaceIndex_;
@@ -153,10 +154,8 @@ uint32_t RSCanvasDrawingNode::GenerateResetSurfaceIndex()
 void RSCanvasDrawingNode::PreAllocateDMABuffer(
     std::weak_ptr<RSCanvasDrawingNode> weakNode, NodeId nodeId, int width, int height, uint32_t resetSurfaceIndex)
 {
-    // 1. Allocate DMA buffer based on width and height
-    auto node = weakNode.lock();
-    if (node == nullptr) {
-        RS_LOGE("PreAllocateDMABuffer: Node destroyed before pre-allocation, skip allocating, nodeId=%{public}" PRIu64,
+    if (!CheckNodeAndSurfaceBufferState(weakNode, nodeId, resetSurfaceIndex)) {
+        RS_LOGE("PreAllocateDMABuffer: CheckNodeAndSurfaceBufferState fail, skip allocating, nodeId=%{public}" PRIu64,
             nodeId);
         return;
     }
@@ -167,38 +166,52 @@ void RSCanvasDrawingNode::PreAllocateDMABuffer(
         return;
     }
 
-    // 2. After successful allocation, check if node is still alive
-    node = weakNode.lock();
-    if (node == nullptr) {
-        RS_LOGE("PreAllocateDMABuffer: Node destroyed after pre-allocation, skip submitting to RS, "
-            "nodeId=%{public}" PRIu64, nodeId);
+    if (!CheckNodeAndSurfaceBufferState(weakNode, nodeId, resetSurfaceIndex)) {
+        RS_LOGE("PreAllocateDMABuffer: CheckNodeAndSurfaceBufferState fail, skip submit to RS, nodeId=%{public}" PRIu64,
+            nodeId);
         return;
     }
 
-    // 3. Update canvasSurfaceBuffer_
-    {
-        std::lock_guard<std::mutex> lock(node->surfaceBufferMutex_);
-        if (resetSurfaceIndex != node->resetSurfaceIndex_) {
-            RS_LOGW("PreAllocateDMABuffer: Ignore stale resetSurfaceIndex, lastIndex=%{public}u, newIndex=%{public}u",
-                node->resetSurfaceIndex_, resetSurfaceIndex);
-            return;
-        }
-        if (node->canvasSurfaceBuffer_ != nullptr) {
-            RS_LOGW("PreAllocateDMABuffer: Ignore stale resetSurfaceIndex, buffer already exists.");
-            return;
-        }
+    auto result = RSInterfaces::GetInstance().SubmitCanvasPreAllocatedBuffer(nodeId, buffer, resetSurfaceIndex);
+    if (!CheckNodeAndSurfaceBufferState(weakNode, nodeId, resetSurfaceIndex)) {
+        RS_LOGE(
+            "PreAllocateDMABuffer: CheckNodeAndSurfaceBufferState fail, skip update, nodeId=%{public}" PRIu64, nodeId);
+        return;
     }
 
-    // 4. Submit to RS, Pre-allocation is an optimization; if submission fails, RS will allocate on-demand
-    auto result = RSInterfaces::GetInstance().SubmitCanvasPreAllocatedBuffer(nodeId, buffer, resetSurfaceIndex);
+    auto node = weakNode.lock(); // After CheckNodeAndSurfaceBufferState, node not be nullptr
     if (result == StatusCode::SUCCESS) {
         std::lock_guard<std::mutex> lock(node->surfaceBufferMutex_);
         node->canvasSurfaceBuffer_ = buffer;
     } else {
+        // !!! Do not set canvasSurfaceBuffer_ to nullptr, it was set to nullptr in function ResetSurface,
+        // if it's not nullptr at this time, then it must have been changed by callback.
         RS_LOGE("PreAllocateDMABuffer: Pre-allocated DMA buffer submitted to RS fail, nodeId=%{public}" PRIu64
                 ", width=%{public}d, height=%{public}d, resetSurfaceIndex=%{public}u",
             nodeId, width, height, resetSurfaceIndex);
     }
+}
+
+bool RSCanvasDrawingNode::CheckNodeAndSurfaceBufferState(
+    std::weak_ptr<RSCanvasDrawingNode> weakNode, NodeId nodeId, uint32_t resetSurfaceIndex)
+{
+    auto node = weakNode.lock();
+    if (node == nullptr) {
+        RS_LOGE("CheckNodeAndSurfaceBufferState: Node destroyed, nodeId=%{public}" PRIu64, nodeId);
+        return false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(node->surfaceBufferMutex_);
+        if (resetSurfaceIndex != node->resetSurfaceIndex_) {
+            RS_LOGW("CheckNodeAndSurfaceBufferState: Ignore stale resetSurfaceIndex, nodeId=%{public}" PRIu64, nodeId);
+            return false;
+        }
+        if (node->canvasSurfaceBuffer_ != nullptr) {
+            RS_LOGW("CheckNodeAndSurfaceBufferState: buffer already exists, nodeId=%{public}" PRIu64, nodeId);
+            return false;
+        }
+    }
+    return true;
 }
 
 void RSCanvasDrawingNode::OnSurfaceBufferChanged(sptr<SurfaceBuffer> buffer, uint32_t resetSurfaceIndex)

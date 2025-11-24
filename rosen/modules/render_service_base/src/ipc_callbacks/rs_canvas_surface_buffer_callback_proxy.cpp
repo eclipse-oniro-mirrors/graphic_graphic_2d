@@ -37,6 +37,7 @@ void RSCanvasSurfaceBufferCallbackProxy::OnCanvasSurfaceBufferChanged(
     MessageParcel reply;
     MessageOption option;
 
+    option.SetFlags(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(RSICanvasSurfaceBufferCallback::GetDescriptor())) {
         ROSEN_LOGE("OnCanvasSurfaceBufferChanged WriteInterfaceToken failed, nodeId=%{public}" PRIu64, nodeId);
         return;
@@ -54,7 +55,8 @@ void RSCanvasSurfaceBufferCallbackProxy::OnCanvasSurfaceBufferChanged(
 
     if (buffer != nullptr) {
         if (!data.WriteBool(true)) {
-            ROSEN_LOGE("OnCanvasSurfaceBufferChanged write hasBuffer flag failed, nodeId=%{public}" PRIu64, nodeId);
+            ROSEN_LOGE(
+                "OnCanvasSurfaceBufferChanged write hasBuffer flag[true] failed, nodeId=%{public}" PRIu64, nodeId);
             return;
         }
         GSError ret = buffer->WriteToMessageParcel(data);
@@ -63,14 +65,11 @@ void RSCanvasSurfaceBufferCallbackProxy::OnCanvasSurfaceBufferChanged(
                 "nodeId=%{public}" PRIu64, ret, nodeId);
             return;
         }
-    } else {
-        if (!data.WriteBool(false)) {
-            ROSEN_LOGE("OnCanvasSurfaceBufferChanged write hasBuffer flag failed, nodeId=%{public}" PRIu64, nodeId);
-            return;
-        }
+    } else if (!data.WriteBool(false)) {
+        ROSEN_LOGE("OnCanvasSurfaceBufferChanged write hasBuffer flag[false] failed, nodeId=%{public}" PRIu64, nodeId);
+        return;
     }
 
-    option.SetFlags(MessageOption::TF_ASYNC);
     uint32_t code =
         static_cast<uint32_t>(RSICanvasSurfaceBufferCallbackInterfaceCode::ON_CANVAS_SURFACE_BUFFER_CHANGED);
     int32_t err = SendRequestRemote::SendRequest(Remote(), code, data, reply, option);

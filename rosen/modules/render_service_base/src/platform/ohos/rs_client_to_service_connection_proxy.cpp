@@ -5656,22 +5656,24 @@ int32_t RSClientToServiceConnectionProxy::RegisterCanvasCallback(sptr<RSICanvasS
     MessageParcel reply;
     MessageOption option;
 
+    option.SetFlags(MessageOption::TF_SYNC);
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("RegisterCanvasCallback: WriteInterfaceToken GetDescriptor err.");
         return RS_CONNECTION_ERROR;
     }
 
-    option.SetFlags(MessageOption::TF_SYNC);
     if (callback) {
-        if (!data.WriteBool(true) || !data.WriteRemoteObject(callback->AsObject())) {
-            ROSEN_LOGE("RegisterCanvasCallback: WriteBool[T] OR WriteRemoteObject[CB] err");
+        if (!data.WriteBool(true)) {
+            ROSEN_LOGE("RegisterCanvasCallback: WriteBool[true] err");
             return WRITE_PARCEL_ERR;
         }
-    } else {
-        if (!data.WriteBool(false)) {
-            ROSEN_LOGE("RegisterCanvasCallback: WriteBool [false] err.");
+        if (!data.WriteRemoteObject(callback->AsObject())) {
+            ROSEN_LOGE("RegisterCanvasCallback: WriteRemoteObject callback err");
             return WRITE_PARCEL_ERR;
         }
+    } else if (!data.WriteBool(false)) {
+        ROSEN_LOGE("RegisterCanvasCallback: WriteBool[false] err.");
+        return WRITE_PARCEL_ERR;
     }
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK);
@@ -5696,6 +5698,7 @@ int32_t RSClientToServiceConnectionProxy::SubmitCanvasPreAllocatedBuffer(
     MessageParcel reply;
     MessageOption option;
 
+    option.SetFlags(MessageOption::TF_SYNC);
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("SubmitCanvasPreAllocatedBuffer: WriteInterfaceToken GetDescriptor err.");
         return RS_CONNECTION_ERROR;
@@ -5733,7 +5736,13 @@ int32_t RSClientToServiceConnectionProxy::SubmitCanvasPreAllocatedBuffer(
         return RS_CONNECTION_ERROR;
     }
 
-    return SUCCESS;
+    int32_t result = 0;
+    if (!reply.ReadInt32(result)) {
+        ROSEN_LOGE("SubmitCanvasPreAllocatedBuffer: Read result failed");
+        return READ_PARCEL_ERR;
+    }
+
+    return result;
 }
 #endif // ROSEN_OHOS && RS_ENABLE_VK
 } // namespace Rosen

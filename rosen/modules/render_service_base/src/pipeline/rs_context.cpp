@@ -123,27 +123,35 @@ void RSContext::NotifyCanvasSurfaceBufferChanged(
         }
         callback = it->second;
     }
-
     if (callback != nullptr) {
         callback->OnCanvasSurfaceBufferChanged(nodeId, buffer, resetSurfaceIndex);
     }
 }
 
-void RSContext::AddPendingBuffer(NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex)
+bool RSContext::AddPendingBuffer(NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex)
 {
-    auto node = GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(nodeId);
-    if (node != nullptr && resetSurfaceIndex < node->GetResetSurfaceIndex()) {
-        RS_LOGW("RSContext::AddPendingBuffer nodeId=%{public}" PRIu64 " ignored (old resetSurfaceIndex)", nodeId);
-        return;
-    }
-
     std::lock_guard<std::mutex> lock(pendingBufferMutex_);
     auto it = pendingBufferMap_.find(nodeId);
+    // Cache first buffer for the node
     if (it == pendingBufferMap_.end()) {
-        pendingBufferMap_[nodeId] = { { resetSurfaceIndex, buffer } };
-        return;
+        pendingBufferMap_[nodeId] = { std::make_pair(0, BufferMap { { resetSurfaceIndex, buffer } }) };
+        return true;
     }
-    auto& nodeBufferMap = it->second; // resetSurfaceIndex -> SurfaceBuffer
+
+    auto& cache = it->second; // std::pair<currentResetSurfaceIndex, BufferMap>
+    auto currentResetSurfaceIndex = cache.first;
+    auto& nodeBufferMap = cache.second; // resetSurfaceIndex -> SurfaceBuffer
+    auto node = GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(nodeId);
+    if (node == nullptr) {
+        RS_LOGE("RSContext::AddPendingBuffer nodeId=%{public}" PRIu64 ", node not exists", nodeId);
+        nodeBufferMap.clear();
+        pendingBufferMap_.erase(it);
+        return false;
+    } else if (resetSurfaceIndex <= currentResetSurfaceIndex) {
+        RS_LOGW("RSContext::AddPendingBuffer nodeId=%{public}" PRIu64 " ignored (old resetSurfaceIndex)", nodeId);
+        return false;
+    }
+
     auto bufferIt = nodeBufferMap.find(resetSurfaceIndex);
     if (bufferIt == nodeBufferMap.end()) {
         nodeBufferMap.emplace(resetSurfaceIndex, buffer);
@@ -151,55 +159,52 @@ void RSContext::AddPendingBuffer(NodeId nodeId, const sptr<SurfaceBuffer>& buffe
             RS_LOGW("RSContext::AddPendingBuffer, Cached surfaceBuffer out of limit, nodeId=%{public}" PRIu64, nodeId);
             nodeBufferMap.erase(nodeBufferMap.begin());
         }
+        return true;
     }
+    return false;
 }
 
-sptr<SurfaceBuffer> RSContext::GetPendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex, bool placeholder)
+sptr<SurfaceBuffer> RSContext::AcquirePendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex)
 {
     std::lock_guard<std::mutex> lock(pendingBufferMutex_);
     auto it = pendingBufferMap_.find(nodeId);
+    // Node has no cached buffers, add placeholder
     if (it == pendingBufferMap_.end()) {
-        if (placeholder) {
-            pendingBufferMap_[nodeId] = { { resetSurfaceIndex, nullptr } };
-        }
-        RS_LOGW("RSContext::GetPendingBuffer, no cache, nodeId=%{public}" PRIu64, nodeId);
+        pendingBufferMap_[nodeId] = { std::make_pair(resetSurfaceIndex, BufferMap {}) };
+        RS_LOGW("RSContext::AcquirePendingBuffer, no cache, nodeId=%{public}" PRIu64, nodeId);
         return nullptr;
     }
-    auto& nodeBufferMap = it->second;
-    auto bufferIt = nodeBufferMap.find(resetSurfaceIndex);
-    if (bufferIt == nodeBufferMap.end()) {
-        if (placeholder) {
-            nodeBufferMap.emplace(resetSurfaceIndex, nullptr);
-        }
-        RS_LOGW("RSContext::GetPendingBuffer, failed to hit cache, nodeId=%{public}" PRIu64, nodeId);
-        return nullptr;
-    }
-    return bufferIt->second;
-}
 
-void RSContext::CleanupUnconsumedPendingBuffers()
-{
-    std::lock_guard<std::mutex> lock(pendingBufferMutex_);
-    auto it = pendingBufferMap_.end();
-    while (it != pendingBufferMap_.begin()) {
-        it--;
-        auto nodeId = it->first;
-        auto node = GetNodeMap().GetRenderNode<RSCanvasDrawingRenderNode>(nodeId);
-        if (node == nullptr) {
-            it = pendingBufferMap_.erase(it);
+    auto& cache = it->second; // std::pair<currentResetSurfaceIndex, BufferMap>
+    auto& nodeBufferMap = cache.second;
+    cache.first = resetSurfaceIndex; // Update current resetSurfaceIndex, it will used in function AddPendingBuffer
+    auto bufferIt = nodeBufferMap.find(resetSurfaceIndex);
+    sptr<SurfaceBuffer> buffer = nullptr;
+    if (bufferIt != nodeBufferMap.end()) {
+        buffer = bufferIt->second; // Hit the cache
+    } else {
+        RS_LOGW("RSContext::AcquirePendingBuffer, failed to hit cache, nodeId=%{public}" PRIu64, nodeId);
+    }
+
+    bufferIt = nodeBufferMap.begin();
+    while (bufferIt != nodeBufferMap.end()) {
+        if (bufferIt->first <= resetSurfaceIndex) {
+            bufferIt = nodeBufferMap.erase(bufferIt);
             continue;
         }
-        auto& nodeBufferMap = it->second;
-        auto bufferIt = nodeBufferMap.end();
-        while (bufferIt != nodeBufferMap.begin()) {
-            bufferIt--;
-            if (bufferIt->first < node->GetResetSurfaceIndex()) {
-                bufferIt = nodeBufferMap.erase(bufferIt);
-            }
-        }
-        if (it->second.empty()) {
-            it = pendingBufferMap_.erase(it);
-        }
+        ++bufferIt;
+    }
+
+    return buffer;
+}
+
+void RSContext::ClearPendingBuffer(NodeId nodeId)
+{
+    std::lock_guard<std::mutex> lock(pendingBufferMutex_);
+    auto it = pendingBufferMap_.find(nodeId);
+    if (it != pendingBufferMap_.end()) {
+        it->second.second.clear();
+        pendingBufferMap_.erase(it);
     }
 }
 #endif

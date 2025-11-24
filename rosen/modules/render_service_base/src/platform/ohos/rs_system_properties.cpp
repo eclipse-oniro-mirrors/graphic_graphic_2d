@@ -1762,21 +1762,14 @@ bool RSSystemProperties::GetScaleImageAsyncEnabled()
     return ConvertToInt(enable, 1) != 0;
 }
 
-bool RSSystemProperties::GetCanvasDrawingNodeDmaEnabled()
-{
-    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_dma", true);
-}
-
 bool RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()
 {
-    return GetCanvasDrawingNodeDmaEnabled() &&
-           system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", true);
+    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", true);
 }
 
 bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()
 {
-    return GetCanvasDrawingNodeDmaEnabled() &&
-           system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_render_dma", false);
+    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_render_dma", false);
 }
 } // namespace Rosen
 } // namespace OHOS

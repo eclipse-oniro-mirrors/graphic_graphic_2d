@@ -134,20 +134,11 @@ public:
     void NotifyCanvasSurfaceBufferChanged(
         NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex) const;
 
-    void AddPendingBuffer(NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex);
+    bool AddPendingBuffer(NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex);
 
-    sptr<SurfaceBuffer> GetPendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex, bool placeholder = false);
+    sptr<SurfaceBuffer> AcquirePendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex);
 
-    /**
-     * @brief Cleanup unconsumed pre-allocated buffers from pendingBufferMap
-     *
-     * Called at frame end to clean up buffers that were not consumed during this frame.
-     * This prevents pendingBufferMap from growing unbounded if buffers are allocated
-     * faster than they are consumed.
-     *
-     * @return Number of buffers cleaned up
-     */
-    void CleanupUnconsumedPendingBuffers();
+    void ClearPendingBuffer(NodeId nodeId);
 #endif
 
     void SetVsyncRequestFunc(const std::function<void()>& taskRunner)
@@ -261,11 +252,12 @@ private:
     std::unordered_map<pid_t, sptr<RSIBrightnessInfoChangeCallback>> brightnessInfoChangeCallbackMap_;
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     std::unordered_map<pid_t, sptr<RSICanvasSurfaceBufferCallback>> canvasSurfaceBufferCallbackMap_;
-    mutable std::mutex canvasCallbackMutex_;  // Protects canvasSurfaceBufferCallbackMap_
+    mutable std::mutex canvasCallbackMutex_; // Protects canvasSurfaceBufferCallbackMap_
 
-    // Canvas pre-allocated buffer map: nodeId -> map(resetSurfaceIndex -> buffer)
-    std::map<NodeId, std::map<uint32_t, sptr<SurfaceBuffer>>> pendingBufferMap_;
-    std::mutex pendingBufferMutex_;  // Protects pendingBufferMap_
+    using BufferMap = std::map<uint32_t, sptr<SurfaceBuffer>>;
+    // Canvas pre-allocated buffer map: nodeId -> pair<currentResetSurfaceIndex, map(resetSurfaceIndex -> buffer)>
+    std::map<NodeId, std::pair<uint32_t, BufferMap>> pendingBufferMap_;
+    std::mutex pendingBufferMutex_; // Protects pendingBufferMap_
 #endif
     // The list of animating nodes in this frame.
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> animatingNodeList_;

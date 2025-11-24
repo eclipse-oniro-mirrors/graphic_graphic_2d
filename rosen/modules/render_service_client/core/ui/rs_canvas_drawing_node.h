@@ -159,6 +159,9 @@ private:
     static void PreAllocateDMABuffer(
         std::weak_ptr<RSCanvasDrawingNode> weakNode, NodeId nodeId, int width, int height, uint32_t resetSurfaceIndex);
 
+    static bool CheckNodeAndSurfaceBufferState(
+        std::weak_ptr<RSCanvasDrawingNode> weakNode, NodeId nodeId, uint32_t resetSurfaceIndex);
+
     bool isNeverOnTree_ = true;
 
     // Canvas SurfaceBuffer management for memory attribution

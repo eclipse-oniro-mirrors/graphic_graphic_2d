@@ -1059,8 +1059,7 @@ void RSClientToServiceConnection::CleanCanvasCallbacks() noexcept
     if (mainThread_ == nullptr) {
         return;
     }
-    auto& context = mainThread_->GetContext();
-    context.RegisterCanvasCallback(remotePid_, nullptr);
+    mainThread_->GetContext().RegisterCanvasCallback(remotePid_, nullptr);
 }
 
 int32_t RSClientToServiceConnection::RegisterCanvasCallback(sptr<RSICanvasSurfaceBufferCallback> callback)
@@ -1068,8 +1067,7 @@ int32_t RSClientToServiceConnection::RegisterCanvasCallback(sptr<RSICanvasSurfac
     if (mainThread_ == nullptr) {
         return INVALID_ARGUMENTS;
     }
-    auto& context = mainThread_->GetContext();
-    context.RegisterCanvasCallback(remotePid_, callback);
+    mainThread_->GetContext().RegisterCanvasCallback(remotePid_, callback);
     return ERR_OK;
 }
 
@@ -1080,9 +1078,8 @@ int32_t RSClientToServiceConnection::SubmitCanvasPreAllocatedBuffer(
         return INVALID_ARGUMENTS;
     }
     auto task = [this, nodeId, buffer, resetSurfaceIndex]() {
-        auto& context = mainThread_->GetContext();
-        context.AddPendingBuffer(nodeId, buffer, resetSurfaceIndex);
-        return SUCCESS;
+        bool success = mainThread_->GetContext().AddPendingBuffer(nodeId, buffer, resetSurfaceIndex);
+        return success ? SUCCESS : INVALID_ARGUMENTS;
     };
     return mainThread_->ScheduleTask(task).get();
 }

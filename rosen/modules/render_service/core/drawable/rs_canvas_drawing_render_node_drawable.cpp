@@ -42,9 +42,10 @@ namespace {
 constexpr int EDGE_WIDTH_LIMIT = 1000;
 constexpr float DRAW_REGION_FOR_DFX_BORDER = 5.0f;
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-const bool DMA_ENABLED = RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeDmaEnabled();
 const bool RENDER_DMA_ENABLED =
     RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled();
+const bool PRE_ALLOCATE_DMA_ENABLED =
+    RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled();
 #endif
 } // namespace
 RSCanvasDrawingRenderNodeDrawable::Registrar RSCanvasDrawingRenderNodeDrawable::instance_;
@@ -66,6 +67,12 @@ RSCanvasDrawingRenderNodeDrawable::~RSCanvasDrawingRenderNodeDrawable()
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     if (curThreadInfo_.second && surface_) {
         curThreadInfo_.second(std::move(surface_));
+    }
+#endif
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    if (PRE_ALLOCATE_DMA_ENABLED) {
+        RSMainThread::Instance()->GetContext().ClearPendingBuffer(GetId());
     }
 #endif
 }
@@ -776,7 +783,7 @@ bool RSCanvasDrawingRenderNodeDrawable::ReleaseSurfaceVK(int width, int height)
 #ifdef ROSEN_OHOS
 bool RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture(pid_t pid, int width, int height)
 {
-    if (!DMA_ENABLED) {
+    if (!PRE_ALLOCATE_DMA_ENABLED && !RENDER_DMA_ENABLED) {
         return false;
     }
 
@@ -787,17 +794,25 @@ bool RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture(pid_t pid, int w
     }
 
     bool willNotify = false;
+    bool hasClientBuffer = false;
     auto& context = RSMainThread::Instance()->GetContext();
-    // Step 1: Check Pending Buffer
-    auto surfaceBuffer = context.GetPendingBuffer(nodeId_, resetSurfaceIndex, true);
-    dmaAllocationCount_.fetch_add(1, std::memory_order_relaxed);
+    sptr<SurfaceBuffer> surfaceBuffer = nullptr;
+    if (PRE_ALLOCATE_DMA_ENABLED) {
+        // Step 1: Check Pending Buffer
+        surfaceBuffer = context.AcquirePendingBuffer(nodeId_, resetSurfaceIndex);
+        dmaAllocationCount_.fetch_add(1, std::memory_order_relaxed);
+    }
     if (surfaceBuffer == nullptr) {
-        dmaFallbackCount_.fetch_add(1, std::memory_order_relaxed);
+        if (PRE_ALLOCATE_DMA_ENABLED) {
+            dmaFallbackCount_.fetch_add(1, std::memory_order_relaxed);
+        }
         if (RENDER_DMA_ENABLED) {
             // Step 2: Create DMA SurfaceBuffer if no pending buffer
             surfaceBuffer = SurfaceBufferUtils::CreateCanvasSurfaceBuffer(pid, width, height);
+            willNotify = surfaceBuffer != nullptr;
         }
-        willNotify = true;
+    } else {
+        hasClientBuffer = true;
     }
 
     bool dmaTextureCreated = false;
@@ -807,14 +822,16 @@ bool RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture(pid_t pid, int w
         dmaTextureCreated = backendTexture_.IsValid();
     }
     if (!dmaTextureCreated) {
+        willNotify = hasClientBuffer;
+        surfaceBuffer = nullptr;
+        backendTexture_ = {};
         RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK: Create DMA BackendTexture fail, "
                 "width=%{public}d, height=%{public}d, null surfaceBuffer: %{public}d",
             width, height, surfaceBuffer == nullptr);
     }
     if (willNotify) {
         // Step 4: Notify application to hold SurfaceBuffer
-        context.NotifyCanvasSurfaceBufferChanged(
-            nodeId_, dmaTextureCreated ? surfaceBuffer : nullptr, resetSurfaceIndex);
+        context.NotifyCanvasSurfaceBufferChanged(nodeId_, surfaceBuffer, resetSurfaceIndex);
     }
     return dmaTextureCreated;
 }
@@ -857,7 +874,7 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK(int width, int height,
         REAL_ALLOC_CONFIG_SET_STATUS(false);
         if (!surface_) {
 #ifdef ROSEN_OHOS
-            if (DMA_ENABLED && params != nullptr) {
+            if ((PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) && params != nullptr) {
                 RSMainThread::Instance()->GetContext().NotifyCanvasSurfaceBufferChanged(
                     nodeId_, nullptr, params->GetCanvasDrawingResetSurfaceIndex());
             }
@@ -996,7 +1013,7 @@ bool RSCanvasDrawingRenderNodeDrawable::GpuContextResetVK(
     if (!surface_) {
 #ifdef ROSEN_OHOS
         const auto& params = GetRenderParams();
-        if (DMA_ENABLED && params != nullptr) {
+        if ((PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) && params != nullptr) {
             RSMainThread::Instance()->GetContext().NotifyCanvasSurfaceBufferChanged(
                 nodeId_, nullptr, params->GetCanvasDrawingResetSurfaceIndex());
         }

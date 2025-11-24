@@ -32,35 +32,43 @@ int RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest(
     }
 
     int ret = ERR_NONE;
-    switch (code) {
-        case static_cast<uint32_t>(RSICanvasSurfaceBufferCallbackInterfaceCode::ON_CANVAS_SURFACE_BUFFER_CHANGED): {
-            NodeId nodeId = data.ReadUint64();
-            uint32_t resetSurfaceIndex = data.ReadUint32();
-            bool hasBuffer = data.ReadBool();
-            sptr<SurfaceBuffer> buffer = nullptr;
+    if (code == static_cast<uint32_t>(RSICanvasSurfaceBufferCallbackInterfaceCode::ON_CANVAS_SURFACE_BUFFER_CHANGED)) {
+        NodeId nodeId = 0;
+        if (!data.ReadUint64(nodeId)) {
+            ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest read nodeId failed");
+            return ERR_INVALID_DATA;
+        }
 
-            if (hasBuffer) {
-                buffer = SurfaceBuffer::Create();
-                if (buffer == nullptr) {
-                    ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest SurfaceBuffer::Create failed");
-                    return ERR_INVALID_DATA;
-                }
-                GSError gsRet = buffer->ReadFromMessageParcel(data);
-                if (gsRet != GSERROR_OK) {
-                    ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest ReadFromMessageParcel failed, "
-                        "ret=%{public}d", gsRet);
-                    return ERR_INVALID_DATA;
-                }
+        uint32_t resetSurfaceIndex = 0;
+        if (!data.ReadUint32(resetSurfaceIndex)) {
+            ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest read resetSurfaceIndex failed");
+            return ERR_INVALID_DATA;
+        }
+
+        bool hasBuffer = false;
+        if (!data.ReadBool(hasBuffer)) {
+            ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest read hasBuffer failed");
+            return ERR_INVALID_DATA;
+        }
+
+        sptr<SurfaceBuffer> buffer = nullptr;
+        if (hasBuffer) {
+            buffer = SurfaceBuffer::Create();
+            if (buffer == nullptr) {
+                ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest SurfaceBuffer::Create failed");
+                return ERR_INVALID_DATA;
             }
-
-            OnCanvasSurfaceBufferChanged(nodeId, buffer, resetSurfaceIndex);
-            break;
+            GSError gsRet = buffer->ReadFromMessageParcel(data);
+            if (gsRet != GSERROR_OK) {
+                ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest ReadFromMessageParcel failed, "
+                    "ret=%{public}d", gsRet);
+                return ERR_INVALID_DATA;
+            }
         }
-        default: {
-            ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest unhandled code=%{public}u", code);
-            ret = IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-            break;
-        }
+        OnCanvasSurfaceBufferChanged(nodeId, buffer, resetSurfaceIndex);
+    } else {
+        ROSEN_LOGE("RSCanvasSurfaceBufferCallbackStub::OnRemoteRequest unhandled code=%{public}u", code);
+        ret = IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
     return ret;
 }
