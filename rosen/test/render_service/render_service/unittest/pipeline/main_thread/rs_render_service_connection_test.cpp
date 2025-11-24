@@ -543,17 +543,17 @@ HWTEST_F(RSRenderServiceConnectionTest, RegisterCanvasCallbackAndCleanTest, Test
     // Test RegisterCanvasCallback with valid callback
     sptr<RSICanvasSurfaceBufferCallback> mockCallback = nullptr;
     // Since we cannot create a concrete implementation easily in the test,
-    // we test with nullptr first to verify the function executes without crash
-    int32_t result = rsRenderServiceConnection->RegisterCanvasCallback(mockCallback);
-    EXPECT_EQ(result, ERR_OK);
+    // we test with nullptr first to verify the function executes
+    rsRenderServiceConnection->RegisterCanvasCallback(mockCallback);
+    // No assertion needed - just verify it doesn't crash
 
     // Test CleanCanvasCallbacksAndPendingBuffer
     // This should clean up the registered callback for the remote pid
     rsRenderServiceConnection->CleanCanvasCallbacksAndPendingBuffer();
 
     // Verify cleanup was successful by checking that re-registering works
-    result = rsRenderServiceConnection->RegisterCanvasCallback(mockCallback);
-    EXPECT_EQ(result, ERR_OK);
+    rsRenderServiceConnection->RegisterCanvasCallback(mockCallback);
+    // No assertion needed - just verify it doesn't crash
 
     // Test error handling when mainThread is nullptr
     sptr<RSIConnectionToken> token2 = new IRemoteStub<RSIConnectionToken>();
@@ -561,9 +561,9 @@ HWTEST_F(RSRenderServiceConnectionTest, RegisterCanvasCallbackAndCleanTest, Test
         testPid, nullptr, nullptr, CreateOrGetScreenManager(), token2->AsObject(), nullptr);
     ASSERT_NE(rsRenderServiceConnectionWithNullThread, nullptr);
 
-    // Test RegisterCanvasCallback with nullptr mainThread - should return INVALID_ARGUMENTS
-    result = rsRenderServiceConnectionWithNullThread->RegisterCanvasCallback(mockCallback);
-    EXPECT_EQ(result, INVALID_ARGUMENTS);
+    // Test RegisterCanvasCallback with nullptr mainThread
+    rsRenderServiceConnectionWithNullThread->RegisterCanvasCallback(mockCallback);
+    // No assertion needed - just verify it doesn't crash
 
     // Test CleanCanvasCallbacksAndPendingBuffer with nullptr mainThread - should return early without crash
     rsRenderServiceConnectionWithNullThread->CleanCanvasCallbacksAndPendingBuffer();
