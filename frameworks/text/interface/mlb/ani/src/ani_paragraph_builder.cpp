@@ -289,7 +289,7 @@ ani_object AniParagraphBuilder::NativeTransferStatic(ani_env* env, ani_class cls
             return AniTextUtils::CreateAniUndefined(env);
         }
         AniParagraphBuilder* aniParagraphBuilder = new AniParagraphBuilder();
-        aniParagraphBuilder->typographyCreate_ = typographyCreatePtr;
+        aniParagraphBuilder->typographyCreate_ = std::move(typographyCreatePtr);
         ani_status ret = env->Object_CallMethodByName_Void(
             staticObj, TEXT_BIND_NATIVE, "l:", reinterpret_cast<ani_long>(aniParagraphBuilder));
         if (ret != ANI_OK) {
