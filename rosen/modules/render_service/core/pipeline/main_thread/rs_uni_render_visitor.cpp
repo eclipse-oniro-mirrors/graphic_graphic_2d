@@ -872,6 +872,10 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node)
         needRequestNextVsync_ = false;
     }
 
+    if (auto parent = node.GetParent().lock()) {
+        rsScreenNodeNum_ = parent->GetChildren()->size();
+    }
+
     rsScreenNodeChildNum_ = 0;
     RSHdrUtil::LuminanceChangeSetDirty(node);
     QuickPrepareChildren(node);
@@ -1100,10 +1104,85 @@ bool RSUniRenderVisitor::CheckIfSkipDrawInVirtualScreen(RSSurfaceRenderNode& nod
     return false;
 }
 
+// If a foreground SCB window and its subtree are not dirty, skip the prepare phase.
+bool RSUniRenderVisitor::CheckSkipAndUpdateForegroundSurfaceRenderNode(RSSurfaceRenderNode& node)
+{
+    if (node.IsDirty() || node.IsSubTreeDirty()) {
+        node.SetStableSkipReached(false);
+        return false;
+    }
+    if (!node.IsStableSkipReached()) {
+        auto windowType = node.GetSurfaceWindowType();
+        if ((windowType == SurfaceWindowType::SYSTEM_SCB_WINDOW || windowType == SurfaceWindowType::SCB_GESTURE_BACK) &&
+            node.IsAlphaTransparent()) {
+            node.SetStableSkipReached(true); // delay 1 frame to skip
+        }
+        return false;
+    }
+    // Record the surfaceNode object for later use in RSScreenRenderParams::OnSync to collect its drawable.
+    // This ensures the drawable can updates the latest drawRegion, thus correctly skip drawing.
+    if (node.IsLeashOrMainWindow() && curScreenNode_) {
+        curScreenNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
+    }
+    if (node.ChildHasVisibleFilter()) {
+        if (const auto& curDirtyManager = node.GetDirtyManager()) {
+            UpdateFilterRegionInSkippedSurfaceNode(node, *curDirtyManager);
+        }
+    }
+    return true;
+}
+
+// If a background window is not dirty, and it is occluded by some foreground window, skip the prepare phase.
+bool RSUniRenderVisitor::CheckSkipBackgroundSurfaceRenderNode(RSSurfaceRenderNode& node)
+{
+    if (node.IsDirty()) {
+        return false;
+    }
+    auto isSubTreeNeedPrepare = !node.GetVisibleRegion().IsEmpty() || node.IsTreeStateChangeDirty();
+    if (isSubTreeNeedPrepare || accumulatedOcclusionRegion_.IsEmpty() || !curScreenNode_) {
+        return false;
+    }
+    const auto& screenInfo = curScreenNode_->GetScreenInfo();
+    const auto& rect = accumulatedOcclusionRegion_.GetRegionRects()[0];
+    auto isFullScreenOcclusion = rect.GetWidth() * rect.GetHeight() && screenInfo.width * screenInfo.height;
+    if (isFullScreenOcclusion) {
+        return true;
+    }
+    return false;
+}
+
+bool RSUniRenderVisitor::CheckQuickSkipSurfaceRenderNode(RSSurfaceRenderNode& node)
+{
+    if (!isBgWindowTraversalStarted_) {
+        auto windowType = node.GetSurfaceWindowType();
+        if (windowType == SurfaceWindowType::DEFAULT_WINDOW || windowType == SurfaceWindowType::SCB_DESKTOP ||
+            windowType == SurfaceWindowType::SCB_DROPDOWN_PANEL) {
+            isBgWindowTraversalStarted_ = true;
+            return false;
+        }
+    }
+    if (isBgWindowTraversalStarted_) {
+        return CheckSkipBackgroundSurfaceRenderNode(node);
+    } else {
+        return CheckSkipAndUpdateForegroundSurfaceRenderNode(node);
+    }
+}
+
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
 {
     RS_OPTIONAL_TRACE_BEGIN_LEVEL(TRACE_LEVEL_PRINT_NODEID, "QuickPrepareSurfaceRenderNode nodeId[%llu]", node.GetId());
     UpdateCurFrameInfoDetail(node);
+    auto isQuickSkip = !RSSystemProperties::IsFoldScreenFlag() &&
+                       RSSystemProperties::GetPreparePhaseQuickSkipEnabled() && rsScreenNodeNum_ <= 1 &&
+                       CheckQuickSkipSurfaceRenderNode(node);
+    if (isQuickSkip) {
+        RS_TRACE_NAME_FMT("RSUniRender::QuickPrepare:[%s] nodeId[%" PRIu64 "] pid[%d] nodeType[%u]"
+                          " subTreeDirty[%d], crossDisplay:[%d], isBackgroundSkip:[%d], childHasFilter:[%d]",
+            node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
+            static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(), node.IsFirstLevelCrossNode(),
+            isBgWindowTraversalStarted_, node.ChildHasVisibleFilter());
+        return;
+    }
     RS_TRACE_NAME_FMT("RSUniRender::QuickPrepare:[%s] nodeId[%" PRIu64 "] pid[%d] nodeType[%u]"
         " subTreeDirty[%d], crossDisplay:[%d]", node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
         static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(), node.IsFirstLevelCrossNode());
@@ -3219,6 +3298,22 @@ void RSUniRenderVisitor::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> 
         return;
     }
     RSDrmUtil::MarkBlurIntersectWithDRM(node, drmNodes_, curScreenNode_);
+}
+
+void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
+    const RSRenderNode& rootNode, RSDirtyRegionManager& dirtyManager)
+{
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    for (auto& child : rootNode.GetVisibleFilterChild()) {
+        auto& filterNode = nodeMap.GetRenderNode<RSRenderNode>(child);
+        if (filterNode == nullptr) {
+            continue;
+        }
+        RS_OPTIONAL_TRACE_NAME_FMT("UpdateFilterRegionInSkippedSurfaceNode node[%" PRIu64 "]", filterNode->GetId());
+        RectI filterRect;
+        filterNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
+        CollectFilterInfoAndUpdateDirty(*filterNode, dirtyManager, filterRect, filterRect);
+    }
 }
 
 void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(

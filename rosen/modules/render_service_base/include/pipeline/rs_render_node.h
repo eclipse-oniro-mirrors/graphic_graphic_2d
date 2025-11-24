@@ -191,9 +191,15 @@ public:
     {
         isSubTreeDirty_ = val;
     }
+    bool IsTreeStateChangeDirty() const
+    {
+        return isTreeStateChangeDirty_;
+    }
+    void SetTreeStateChangeDirty(bool val)
+    {
+        isTreeStateChangeDirty_ = val;
+    }
     void SetParentSubTreeDirty();
-    bool IsTreeStateChangeDirty() const;
-    void SetTreeStateChangeDirty(bool val);
     void SetParentTreeStateChangeDirty();
     // attention: current all base node's dirty ops causing content dirty
     // if there is any new dirty op, check it
