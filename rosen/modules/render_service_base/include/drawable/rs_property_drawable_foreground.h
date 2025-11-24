@@ -216,6 +216,8 @@ private:
     RRect stagingRRect_ = {};
     bool stagingEnableEDREffect_ = false;
     bool enableEDREffect_ = false;
+    std::shared_ptr<Drawing::ShaderEffect> stagingSDFShaderEffect_;
+    std::shared_ptr<Drawing::ShaderEffect> sdfShaderEffect_;
 
     Drawing::RoundRect borderRRect_ = {};
     Drawing::RoundRect contentRRect_ = {};
@@ -236,8 +238,12 @@ private:
     std::shared_ptr<Drawing::RuntimeShaderBuilder> MakeNormalLightShaderBuilder() const;
     void DrawContentLight(Drawing::Canvas& canvas, std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
         Drawing::Brush& brush, const std::array<float, MAX_LIGHT_SOURCES>& lightIntensityArray) const;
+    bool DrawSDFContentLight(Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::ShaderEffect>& lightShaderEffect, Drawing::Brush& brush) const;
     void DrawBorderLight(Drawing::Canvas& canvas, std::shared_ptr<Drawing::RuntimeShaderBuilder>& lightBuilder,
         Drawing::Pen& pen, const std::array<float, MAX_LIGHT_SOURCES>& lightIntensityArray) const;
+    bool DrawSDFBorderLight(Drawing::Canvas& canvas,
+        std::shared_ptr<Drawing::ShaderEffect>& lightShaderEffect) const;
 
     template <const char* lightString>
     static const std::shared_ptr<Drawing::RuntimeShaderBuilder>& GetLightShaderBuilder()
