@@ -367,7 +367,7 @@ NapiTextResult JsFontCollection::OnClearCaches(napi_env env, napi_callback_info 
         TEXT_LOGE("Null font collection");
         return NapiTextResult::Invalid(
             "Internal Error", NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM,
-                                  "JsFontCollection::OnClearCaches fontCollection is nullptr."));
+                "JsFontCollection::OnClearCaches fontCollection is nullptr."));
     }
     uint64_t envAddress = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(env));
     if (!FontCollectionMgr::GetInstance().CheckInstanceIsValid(envAddress, fontcollection_)) {
@@ -399,7 +399,7 @@ void JsFontCollection::OnLoadFontAsyncExecutor(sptr<FontArgumentsConcreteContext
         FontCollectionMgr::GetInstance().CheckInstanceIsValid(
             static_cast<uint64_t>(reinterpret_cast<uintptr_t>(context->env)), fontCollection->fontcollection_),
         napi_generic_failure, TextErrorCode::ERROR_INVALID_PARAM, return, context->result = NapiTextResult::Invalid(),
-        "Failed to check local instance, familyName " + context->familyName);
+        "Failed to check local instance, familyName %s", context->familyName.c_str());
 
     if (!context->filePath.empty()) {
         NAPI_CHECK_ARGS_WITH_STATEMENT(context, SplitAbsolutePath(context->filePath), napi_invalid_arg,
@@ -421,7 +421,7 @@ void JsFontCollection::OnLoadFontAsyncExecutor(sptr<FontArgumentsConcreteContext
         };
         auto fileCB = [context, fontCollection](const void* data, size_t size) {
             if (fontCollection->fontcollection_->LoadFont(
-                    context->familyName.c_str(), static_cast<const uint8_t*>(data), size, context->index) != nullptr) {
+                context->familyName.c_str(), static_cast<const uint8_t*>(data), size, context->index) != nullptr) {
                 return NapiTextResult::Success(NapiGetUndefined(context->env));
             } else {
                 return NapiTextResult::Error(MLB::ERROR_FILE_CORRUPTED, "Internal error");
@@ -441,12 +441,12 @@ NapiTextResult JsFontCollection::OnLoadFontAsync(napi_env env, napi_callback_inf
         TEXT_ERROR_CHECK(argv != nullptr, return, "Argv is null");
         NAPI_CHECK_ARGS_WITH_STATEMENT(context, context->status == napi_ok, napi_invalid_arg,
             TextErrorCode::ERROR_INVALID_PARAM, return, context->result = NapiTextResult::Invalid(),
-            "Status error, status=" + std::to_string(context->status));
+            "Status error, status=%d", context->status);
         NAPI_CHECK_ARGS_WITH_STATEMENT(context, argc >= ARGC_TWO, napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM,
-            return, context->result = NapiTextResult::Invalid(), "Argc is invalid " + std::to_string(argc));
+            return, context->result = NapiTextResult::Invalid(), "Argc is invalid: %zu", argc);
         NAPI_CHECK_ARGS_WITH_STATEMENT(context, ConvertFromJsValue(env, argv[0], context->familyName), napi_invalid_arg,
             TextErrorCode::ERROR_INVALID_PARAM, return, context->result = NapiTextResult::Invalid(),
-            "FamilyName is invalid " + context->familyName);
+            "FamilyName is invalid: %s", context->familyName.c_str());
         ConvertFromJsValue(env, argv[ARGC_TWO], context->index);
         GetFilePathResource(env, argv, context);
     };

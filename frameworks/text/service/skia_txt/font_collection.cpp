@@ -167,7 +167,7 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
     TypefaceWithAlias ta(familyName, typeface);
     FontCallbackGuard cb(this, ta.GetAlias(), loadFontStartCallback_, loadFontFinishCallback_);
     RegisterError err = RegisterTypeface(ta);
-    if (err != RegisterError::SUCCESS) {
+    if (err != RegisterError::SUCCESS && err != RegisterError::ALREADY_EXIST) {
         TEXT_LOGE("Failed to register typeface %{public}s", ta.GetAlias().c_str());
         return nullptr;
     }

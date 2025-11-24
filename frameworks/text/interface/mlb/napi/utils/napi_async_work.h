@@ -49,15 +49,16 @@ using NapiTextResult = OHOS::MLB::TextResult<napi_value>;
     } while (0)
 
 /* check condition related to argc/argv, return and logging. */
-#define NAPI_CHECK_ARGS_WITH_STATEMENT(context, condition, specifyStatus, code, retValue, statement, message) \
-    if (!(condition)) {                                                                                       \
-        (context)->status = specifyStatus;                                                                    \
-        (context)->errCode = static_cast<int32_t>(code);                                                      \
-        char buffer[MAX_LOG_SIZE] = { 0 };                                                                    \
-        (context)->errMessage = message;                                                                      \
-        statement;                                                                                            \
-        TEXT_LOGE("Test (" #condition ") failed: %{public}s", buffer);                                        \
-        retValue;                                                                                             \
+#define NAPI_CHECK_ARGS_WITH_STATEMENT(context, condition, specifyStatus, code, retValue, statement, fmt, ...) \
+    if (!(condition)) {                                                                                        \
+        (context)->status = specifyStatus;                                                                     \
+        (context)->errCode = static_cast<int32_t>(code);                                                       \
+        char buffer[MAX_LOG_SIZE] = { 0 };                                                                     \
+        snprintf_s(buffer, MAX_LOG_SIZE, MAX_LOG_SIZE - 1, fmt, ##__VA_ARGS__);                                \
+        (context)->errMessage = buffer;                                                                        \
+        statement;                                                                                             \
+        TEXT_LOGE("Test (" #condition ") failed: %{public}s", buffer);                                         \
+        retValue;                                                                                              \
     }
 
 #define NAPI_CHECK_STATUS_RETURN_VOID(context, message, code)                        \
