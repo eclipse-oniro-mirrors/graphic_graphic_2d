@@ -450,7 +450,7 @@ int32_t HdiDeviceImpl::GetDisplayIdentificationData(uint32_t screenId, uint8_t& 
     return g_composer->GetDisplayIdentificationData(screenId, outPort, edidData);
 }
 
-int32_t HdiDeviceImpl::GetScreenConnectionType(uint32_t screenId, GraphicDisplayConnectionType &outType)
+int32_t HdiDeviceImpl::GetScreenConnectionType(uint32_t screenId, GraphicDisplayConnectionType& outType)
 {
     CHECK_FUNC(g_composer);
     Composer::V1_4::DisplayConnectionType displayConnectionType;

@@ -304,7 +304,7 @@ int32_t HdiScreen::GetDisplayIdentificationData(uint8_t& outPort, std::vector<ui
     return device_->GetDisplayIdentificationData(screenId_, outPort, edidData);
 }
 
-int32_t HdiScreen::GetScreenConnectionType(GraphicDisplayConnectionType &outType) const
+int32_t HdiScreen::GetScreenConnectionType(GraphicDisplayConnectionType& outType) const
 {
     CHECK_DEVICE_NULL(device_);
     return device_->GetScreenConnectionType(screenId_, outType);
