@@ -122,15 +122,6 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, BgPos),
     ADD_PROPERTY_TAG(FrostedGlass, BgNeg),
     ADD_PROPERTY_TAG(FrostedGlass, SdParams),
-<<<<<<< HEAD
-    ADD_PROPERTY_TAG(FrostedGlass, RefractOutPx),
-    ADD_PROPERTY_TAG(FrostedGlass, EnvParams),
-    ADD_PROPERTY_TAG(FrostedGlass, EdgeLightAngleParams),
-    ADD_PROPERTY_TAG(FrostedGlass, EdgeLightBlurParams),
-    ADD_PROPERTY_TAG(FrostedGlass, EdgeLightDirParams),
-    ADD_PROPERTY_TAG(FrostedGlass, HlParams),
-    ADD_PROPERTY_TAG(FrostedGlass, Shape)
-=======
     ADD_PROPERTY_TAG(FrostedGlass, SdRates),
     ADD_PROPERTY_TAG(FrostedGlass, SdKBS),
     ADD_PROPERTY_TAG(FrostedGlass, SdPos),
@@ -149,7 +140,6 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, EdLightNeg),
     ADD_PROPERTY_TAG(FrostedGlass, BorderSize),
     ADD_PROPERTY_TAG(FrostedGlass, CornerRadius)
->>>>>>> 1125dev
 );
 
 DECLARE_FILTER(GridWarp, GRID_WARP,

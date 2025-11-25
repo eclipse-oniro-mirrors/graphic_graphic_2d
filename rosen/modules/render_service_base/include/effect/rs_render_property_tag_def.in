@@ -298,15 +298,6 @@ DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, BgKBS, Vector3f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, BgPos, Vector3f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, BgNeg, Vector3f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, SdParams, Vector3f);
-<<<<<<< HEAD
-DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, RefractOutPx, float);
-DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, EnvParams, Vector3f);
-DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, EdgeLightAngleParams, Vector3f);
-DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, EdgeLightBlurParams, Vector2f);
-DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, EdgeLightDirParams, Vector2f);
-DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, HlParams, Vector3f);
-DECLARE_NONANIMATABLE_PROPERTY_TAG(FrostedGlass, Shape, std::shared_ptr<RSNGRenderShapeBase>);
-=======
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, SdRates, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, SdKBS, Vector3f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, SdPos, Vector3f);
@@ -325,7 +316,6 @@ DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, EdLightPos, Vector3f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, EdLightNeg, Vector3f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, BorderSize, Vector2f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(FrostedGlass, CornerRadius, float);
->>>>>>> 1125dev
 
 DECLARE_ANIMATABLE_PROPERTY_TAG(CircleFlowlight, Color0, Vector4f);
 DECLARE_ANIMATABLE_PROPERTY_TAG(CircleFlowlight, Color1, Vector4f);
