@@ -1277,7 +1277,7 @@ HWTEST_F(RSImageTest, RsImageDrawTest, TestSize.Level1)
     EXPECT_NE(rsImage, nullptr);
 
     // isAstc branch
-    rsImage->pixelMap_ = std:make_shared<Media::PixelMap>();
+    rsImage->pixelMap_ = std::make_shared<Media::PixelMap>();
     rsImage->pixelMap_->SetAstc(true);
     rsImage->RsImageDraw(sampling, drawingCanvas, false);
     EXPECT_NE(rsImage, nullptr);
