@@ -15,6 +15,7 @@
 
 #include "customized/random_typeface.h"
 
+#include "file_ex.h"
 #include "random/random_data.h"
 #include "random/random_engine.h"
 
@@ -224,25 +225,24 @@ const std::vector<std::string> FONTS = {
     "Roboto-Regular.ttf",
     "ShuS-SC.ttf",
 };
-
-Drawing::FontStyle::Slant GetRandomSlant()
-{
-    static constexpr int FONT_STYLE_SLANT_INDEX_MAX = 2;
-    int randomIndex = RandomEngine::GetRandomIndex(FONT_STYLE_SLANT_INDEX_MAX);
-    return static_cast<Drawing::FontStyle::Slant>(randomIndex);
-}
 } // namespace
 
 std::shared_ptr<Drawing::Typeface> RandomTypeface::GetRandomTypeface()
 {
     int index = RandomEngine::GetRandomIndex(FONTS.size() - 1);
-    std::string familyName = FONTS[index];
-    int weight = RandomData::GetRandomUint8();
-    int width = RandomData::GetRandomUint8();
-    Drawing::FontStyle::Slant slant = GetRandomSlant();
-    Drawing::FontStyle fontStyle = Drawing::FontStyle(weight, width, slant);
-    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromName(familyName.c_str(), fontStyle);
-    return typeface;
+    std::string fileName = FONTS[index];
+    std::vector<char> content;
+    LoadBufferFromFile(std::string("/system/fonts/") + fileName, content);
+
+    int maxIndex = 5;
+    uint32_t ttcIndex = static_cast<uint32_t>(RandomEngine::GetRandomIndex(maxIndex));
+    if (fileName.find("ttc") != std::string::npos) {
+        return Drawing::Typeface::MakeFromAshmem(
+            reinterpret_cast<uint8_t*>(content.data()), content.size(), 0, "safuzz", ttcIndex);
+    } else {
+        return Drawing::Typeface::MakeFromAshmem(
+            reinterpret_cast<uint8_t*>(content.data()), content.size(), 0, "safuzz");
+    }
 }
 } // namespace Rosen
 } // namespace OHOS
