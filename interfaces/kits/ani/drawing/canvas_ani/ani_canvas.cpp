@@ -965,7 +965,7 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
         AniThrowError(env, "Invalid params.");
         return;
     }
-    uint32_t colorsSize = aniLength;
+    uint32_t colorsSize = static_cast<uint32_t>(aniLength);
     int64_t tempColorsSize = (args.column + 1) * (args.row + 1) + colorOffset;
     if (colorsSize != 0 && colorsSize != tempColorsSize) {
         ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors are invalid");
@@ -996,7 +996,7 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
             AniThrowError(env, "Incorrect DrawPixelMapMesh parameter color type.");
             return;
         }
-        colors[i] = color;
+        colors[i] = static_cast<uint32_t>(color);
     }
     uint32_t* colorsMesh = colors + colorOffset;
     DrawingPixelMapMesh(args.pixelMap, args.column, args.row, verticesMesh, colorsMesh, canvas);
