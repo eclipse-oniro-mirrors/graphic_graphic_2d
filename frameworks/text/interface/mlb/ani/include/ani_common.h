@@ -15,9 +15,9 @@
 #ifndef OHOS_TEXT_ANI_COMMON_H
 #define OHOS_TEXT_ANI_COMMON_H
 
+#include <ani.h>
 #include <cstdint>
 
-#include "ani.h"
 #include "utils/error_code.h"
 namespace OHOS::Text::ANI {
 /**
