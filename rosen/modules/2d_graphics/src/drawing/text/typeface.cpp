@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -167,6 +167,14 @@ size_t Typeface::GetTableData(uint32_t tag, size_t offset, size_t length, void* 
         return typefaceImpl_->GetTableData(tag, offset, length, data);
     }
     return 0;
+}
+
+bool Typeface::GetBold() const
+{
+    if (typefaceImpl_) {
+        return typefaceImpl_->GetBold();
+    }
+    return false;
 }
 
 bool Typeface::GetItalic() const
@@ -350,6 +358,7 @@ uint32_t Typeface::CalculateHash(const uint8_t* data, size_t datalen)
         }
         size_t size =
             extraOffset + STATIC_HEADER_LEN + TABLE_ENTRY_LEN * read<uint16_t>(data + extraOffset + TABLE_COUNT);
+        size = size > datalen ? datalen : size;
 #ifdef USE_M133_SKIA
         hash ^= SkChecksum::Hash32(data, size, datalen);
 #else
