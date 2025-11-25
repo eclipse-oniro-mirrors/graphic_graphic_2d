@@ -584,7 +584,7 @@ void RSImage::DrawImageRepeatOffScreen(const Drawing::SamplingOptions& samplingO
     }
 
     auto offScreenSurface = surface->MakeSurface(frameRect_.width_, dstRect.height_);
-    if(!offScreenSurface) {
+    if (!offScreenSurface) {
         RS_LOGE("RSImage::DrawImageRepeatOffScreen make offScreenSurface null");
         return;
     }
@@ -595,7 +595,7 @@ void RSImage::DrawImageRepeatOffScreen(const Drawing::SamplingOptions& samplingO
         dst_ = Drawing::Rect(left, 0, right, dstRect.height_);
         RsImageDraw(samplingOptions, offScreenCanvas, false);
     }
-    auto imageLine = offScreenSurface->GetImageSnapShot();
+    auto imageLine = offScreenSurface->GetImageSnapshot();
     if (imageLine == nullptr) {
         RS_LOGE("RSImage::DrawImageRepeatOffScreen imageLine null");
         return;
