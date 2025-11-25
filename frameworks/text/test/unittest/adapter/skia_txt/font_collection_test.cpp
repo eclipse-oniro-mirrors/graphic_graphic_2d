@@ -47,7 +47,7 @@ private:
 
 void OH_Drawing_FontCollectionTest::SetUp()
 {
-    OHOS::Rosen::Drawing::Typeface::RegisterCallBackFunc([](auto) { return true; });
+    OHOS::Rosen::Drawing::Typeface::RegisterCallBackFunc([](auto tf) { return tf->GetFd(); });
     auto callback = [](const FontCollection* fc, const FontEventInfo& info) {
         EXPECT_NE(fc, nullptr);
         EXPECT_FALSE(info.familyName.empty());

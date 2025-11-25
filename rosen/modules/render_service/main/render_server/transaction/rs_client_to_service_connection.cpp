@@ -2309,6 +2309,7 @@ int32_t RSClientToServiceConnection::RegisterTypeface(
         RSTypefaceCache::Instance().CacheDrawingTypeface(id, tf);
         return tf->GetFd();
     }
+    ::close(fd);
     RS_LOGE("RegisterTypeface: failed to register typeface");
     return -1;
 }

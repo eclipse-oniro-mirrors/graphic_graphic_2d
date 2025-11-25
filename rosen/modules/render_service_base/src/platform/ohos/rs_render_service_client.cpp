@@ -1292,7 +1292,7 @@ int32_t RSRenderServiceClient::RegisterTypeface(std::shared_ptr<Drawing::Typefac
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
         ROSEN_LOGE("RSRenderServiceClient::RegisterTypeface: clientToService is nullptr");
-        return false;
+        return -1;
     }
     uint64_t id = RSTypefaceCache::GenGlobalUniqueId(typeface->GetHash());
     ROSEN_LOGD("RSRenderServiceClient::RegisterTypeface: pid[%{public}d] register typface[%{public}u]",
