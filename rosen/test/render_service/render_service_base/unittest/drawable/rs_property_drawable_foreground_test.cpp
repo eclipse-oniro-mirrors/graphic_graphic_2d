@@ -577,7 +577,8 @@ HWTEST_F(RSPropertyDrawableForegroundTest, CreateDrawFuncAndRunTest001, TestSize
     std::vector<std::shared_ptr<RSRenderFilterParaBase>> shaderFilters;
     shaderFilters.push_back(filterPtr);
     uint32_t hash = 1;
-    std::shared_ptr<RSDrawingFilter> drawingFilter = std::make_shared<RSDrawingFilter>(imageFilter, shaderFilters, hash);
+    std::shared_ptr<RSDrawingFilter> drawingFilter =
+        std::make_shared<RSDrawingFilter>(imageFilter, shaderFilters, hash);
     drawingFilter->SetImageFilter(imageFilter);
 
     // create and sync a foreground filter

@@ -480,7 +480,7 @@ Drawing::RecordingCanvas::DrawFunc RSForegroundFilterRestoreDrawable::CreateDraw
     return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
         if (ptr->foregroundFilter_ && ptr->foregroundFilter_->IsDrawingFilter() && rect) {
             auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(ptr->foregroundFilter_);
-            drawingFilter->SetGeometry(*canvas, rect->GetWidth(), rect->GetHeight());
+            drawingFilter->SetGeometry(canvas->GetTotalMatrix(), canvas->GetDeviceClipBounds(), rect->GetWidth(), rect->GetHeight());
         }
 
         auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
