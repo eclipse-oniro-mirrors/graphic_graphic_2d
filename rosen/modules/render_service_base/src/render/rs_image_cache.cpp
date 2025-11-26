@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-#include "rs_trace.h"
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 #include "memory/rs_memory_snapshot.h"
 #include "render/rs_image_cache.h"
+#include "rs_trace.h"
 #include "pixel_map.h"
 #include "params/rs_render_params.h"
 
