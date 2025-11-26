@@ -19,6 +19,7 @@
 #include "display_engine/rs_luminance_control.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "render_thread/rs_render_thread_visitor.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -825,8 +826,25 @@ HWTEST_F(RSScreenRenderNodeTest, ForceCloseHdrTest, TestSize.Level1)
     auto node = std::make_shared<RSScreenRenderNode>(id, 1, context);
     ASSERT_NE(node, nullptr);
     node->InitRenderParams();
-    node->SetForceCloseHdr(false);
     EXPECT_EQ(node->GetForceCloseHdr(), false);
+
+    RSDisplayNodeConfig config;
+    std::shared_ptr<RSLogicalDisplayRenderNode> displayNode1;
+    auto displayNode2 = std::make_shared<RSLogicalDisplayRenderNode>(id + 1, config);
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id + 2, context);
+    node->children_.emplace_back(displayNode1); // null
+    EXPECT_EQ(node->GetForceCloseHdr(), false);
+    node->children_.emplace_back(displayNode2); // not null and 1.0 factor
+    EXPECT_EQ(node->GetForceCloseHdr(), false);
+    node->children_.emplace_back(surfaceNode); // not displayNode
+    EXPECT_EQ(node->GetForceCloseHdr(), false);
+
+    node->children_.clear();
+    node->children_.emplace_back(displayNode2); // displayNode
+    displayNode2->GetMutableRenderProperties().SetHDRBrightnessFactor(0.5f); // not equal 0
+    EXPECT_EQ(node->GetForceCloseHdr(), false);
+    displayNode2->GetMutableRenderProperties().SetHDRBrightnessFactor(0.0f); // equal 0
+    EXPECT_EQ(node->GetForceCloseHdr(), true);
 }
 
 /**

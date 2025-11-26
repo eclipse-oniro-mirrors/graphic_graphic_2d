@@ -1985,7 +1985,7 @@ HWTEST_F(RSMainThreadTest, UniRender004, TestSize.Level1)
     ASSERT_NE(mainThread, nullptr);
     mainThread->isUniRender_ = true;
     mainThread->renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    
+
     auto rsContext = std::make_shared<RSContext>();
     auto rootNode = rsContext->GetGlobalRootRenderNode();
     NodeId id = 1;
@@ -4809,6 +4809,43 @@ HWTEST_F(RSMainThreadTest, UiCaptureTasks, TestSize.Level2)
 }
 
 /**
+ * @tc.name: AddUiCaptureTaskTest
+ * @tc.desc: test AddUiCaptureTask
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, AddUiCaptureTasksTest, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    auto node1 = RSTestUtil::CreateSurfaceNode();
+    auto node2 = RSTestUtil::CreateSurfaceNode();
+    auto task = []() {};
+
+    mainThread->ProcessUiCaptureTasks();
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), true);
+
+    mainThread->context_->nodeMap.RegisterRenderNode(node1);
+    mainThread->AddUiCaptureTask(node1->GetId(), task);
+    mainThread->AddUiCaptureTask(node2->GetId(), task);
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), false);
+    ASSERT_EQ(mainThread->uiCaptureTasks_.empty(), true);
+
+    node1->SetDirty();
+    mainThread->AddUiCaptureTask(node1->GetId(), task);
+    mainThread->PrepareUiCaptureTasks(nullptr);
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), true);
+    ASSERT_EQ(mainThread->uiCaptureTasks_.empty(), false);
+
+    mainThread->ProcessUiCaptureTasks();
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), true);
+    ASSERT_EQ(mainThread->uiCaptureTasks_.empty(), true);
+
+    mainThread->context_->nodeMap.UnregisterRenderNode(node1->GetId());
+}
+
+/**
  * @tc.name: CheckUIExtensionCallbackDataChanged001
  * @tc.desc: test CheckUIExtensionCallbackDataChanged, no need to callback (2 frames of empty callback data)
  * @tc.type: FUNC
@@ -6794,17 +6831,17 @@ HWTEST_F(RSMainThreadTest, CreateNodeAndSurfaceTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: MarkNodeImageDirty001
- * @tc.desc: Test MarkNodeImageDirty001
+ * @tc.name: MarkNodeDirty001
+ * @tc.desc: Test MarkNodeDirty001
  * @tc.type: FUNC
  * @tc.require:IBZ6NM
  */
-HWTEST_F(RSMainThreadTest, MarkNodeImageDirty001, TestSize.Level1)
+HWTEST_F(RSMainThreadTest, MarkNodeDirty001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
     uint64_t nodeId = 12345;
-    mainThread->MarkNodeImageDirty(nodeId);
+    mainThread->MarkNodeDirty(nodeId);
 }
 
 /**

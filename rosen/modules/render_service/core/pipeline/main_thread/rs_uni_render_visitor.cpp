@@ -70,6 +70,7 @@
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/round_corner_display/rs_message_bus.h"
+#include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 // hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 
@@ -1260,7 +1261,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     parentSurfaceNodeMatrix_ = parentSurfaceNodeMatrix;
 
     // [Attention] Only used in PC window resize scene now
-    windowKeyFrameNodeInf_.PrepareRootNodeOffscreen(node);
+    RSWindowKeyFrameRenderNode::PrepareLinkedNodeOffscreen(node, RSMainThread::Instance()->GetContext());
 
     node.RenderTraceDebug();
     node.SetNeedOffscreen(isScreenRotationAnimating_);
@@ -1350,11 +1351,6 @@ void RSUniRenderVisitor::QuickPrepareUnionRenderNode(RSUnionRenderNode& node)
     // used in subtree, add node into parallel list
     node.UpdateSubTreeParallelNodes();
 #endif
-    // [Attention] Only used in PC window resize scene now
-    NodeId linedRootNodeId = node.GetLinkedRootNodeId();
-    if (UNLIKELY(linedRootNodeId != INVALID_NODEID)) {
-        windowKeyFrameNodeInf_.UpdateLinkedNodeId(node.GetId(), linedRootNodeId);
-    }
 
     globalShouldPaint_ = preGlobalShouldPaint;
 
@@ -1842,11 +1838,6 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     // used in subtree, add node into parallel list
     node.UpdateSubTreeParallelNodes();
 #endif
-    // [Attention] Only used in PC window resize scene now
-    NodeId linedRootNodeId = node.GetLinkedRootNodeId();
-    if (UNLIKELY(linedRootNodeId != INVALID_NODEID)) {
-        windowKeyFrameNodeInf_.UpdateLinkedNodeId(node.GetId(), linedRootNodeId);
-    }
 
     globalShouldPaint_ = preGlobalShouldPaint;
 
@@ -1854,6 +1845,25 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
 
     node.RenderTraceDebug();
     RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
+}
+
+void RSUniRenderVisitor::QuickPrepareWindowKeyFrameRenderNode(RSWindowKeyFrameRenderNode& node)
+{
+    UpdateCurFrameInfoDetail(node);
+
+    auto dirtyManager = curSurfaceNode_ ? curSurfaceDirtyManager_ : curScreenDirtyManager_;
+    if (!dirtyManager) {
+        RS_LOGE("QuickPrepareWindowKeyFrameRenderNode dirtyManager is nullptr");
+        return;
+    }
+
+    dirtyFlag_ = node.UpdateDrawRectAndDirtyRegion(
+        *dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
+    node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
+    PostPrepare(node, true);
+    node.CollectLinkedNodeInfo();
+
+    node.RenderTraceDebug();
 }
 
 void RSUniRenderVisitor::UpdateRotationStatusForEffectNode(RSEffectRenderNode& node)
@@ -2067,7 +2077,7 @@ bool RSUniRenderVisitor::InitScreenInfo(RSScreenRenderNode& node)
     node.SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 
     // [Attention] Only used in PC window resize scene now
-    windowKeyFrameNodeInf_.ClearLinkedNodeInfo();
+    RSWindowKeyFrameRenderNode::ClearLinkedNodeInfo();
 
     return true;
 }
@@ -2560,11 +2570,12 @@ void RSUniRenderVisitor::CheckMergeFilterDirtyWithPreDirty(const std::shared_ptr
             // foregroundfilter affected by below dirty
             filterNode->UpdateFilterCacheWithBelowDirty(belowDirtyToConsider, true);
         }
-        RectI filterRect = filterNode->GetFilterRect();
-        bool isIntersect = belowDirtyToConsider.IsIntersectWith(Occlusion::Rect(filterRect));
+        RectI filterSnapshotRect = filterNode->GetAbsRect().JoinRect(filterNode->GetFilterDrawableSnapshotRegion());
+        bool isIntersect = belowDirtyToConsider.IsIntersectWith(Occlusion::Rect(filterSnapshotRect));
         filterNode->PostPrepareForBlurFilterNode(*dirtyManager, needRequestNextVsync_);
         RsFrameBlurPredict::GetInstance().PredictDrawLargeAreaBlur(*filterNode);
         if (isIntersect) {
+            RectI filterRect = filterNode->GetFilterRect();
             RectI filterDirty = effectNodeIntersectBgDirty ? filterRect : filterInfo.filterDirty_.GetBound().ToRectI();
             RS_OPTIONAL_TRACE_NAME_FMT("CheckMergeFilterDirtyWithPreDirty [%" PRIu64 "] type %d intersects below dirty"
                 " Add %s to dirty.", filterInfo.id_, filterDirtyType, filterDirty.ToString().c_str());
@@ -3072,8 +3083,7 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
 
 void RSUniRenderVisitor::CollectUnionInfo(RSRenderNode& node)
 {
-    if ((node.GetRenderProperties().GetUseUnion() || node.GetRenderProperties().GetSDFShape() != nullptr) &&
-        node.ShouldPaint()) {
+    if (node.GetRenderProperties().GetUseUnion() && node.ShouldPaint()) {
         curUnionNode_->UpdateVisibleUnionChildren(node);
     }
 }
@@ -3428,7 +3438,8 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
         parentSurfaceNodeMatrix_ = geoPtr->GetAbsMatrix();
     }
 
-    node.EnableWindowKeyFrame(false);
+    // [Attention] Only used in PC window resize scene
+    RSWindowKeyFrameRenderNode::ResetLinkedWindowKeyFrameInfo(node);
 
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :

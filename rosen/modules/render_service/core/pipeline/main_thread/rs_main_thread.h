@@ -204,6 +204,7 @@ public:
 
     void ReleaseSurface();
     void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface);
+    void ReleaseImageMem();
 
     void AddUiCaptureTask(NodeId id, std::function<void()> task);
     void ProcessUiCaptureTasks();
@@ -456,13 +457,11 @@ public:
 
     // Enable HWCompose
     bool IsHardwareEnabledNodesNeedSync();
-    bool WaitHardwareThreadTaskExecute();
-    void NotifyHardwareThreadCanExecuteTask();
     void SetTaskEndWithTime(int64_t time);
 
     uint32_t GetVsyncRefreshRate();
     void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
-    void MarkNodeImageDirty(uint64_t nodeId);
+    void MarkNodeDirty(uint64_t nodeId);
 
     void SetHasSurfaceLockLayer(bool hasSurfaceLockLayer);
     bool HasDRMOrSurfaceLockLayer() const;
@@ -625,7 +624,7 @@ private:
     };
 
     bool IfStatusBarDirtyOnly();
-    
+
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
     void HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
         const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
@@ -784,10 +783,6 @@ private:
     // Used to refresh the whole display when luminance is changed
     std::unordered_map<ScreenId, bool> displayLuminanceChanged_;
     std::mutex luminanceMutex_;
-
-    // used for blocking mainThread when hardwareThread has 2 and more task to Execute
-    mutable std::mutex hardwareThreadTaskMutex_;
-    std::condition_variable hardwareThreadTaskCond_;
 
     VisibleData lastVisVec_;
     std::map<NodeId, uint64_t> lastDrawStatusMap_;
