@@ -463,21 +463,6 @@ public:
         return lastDisplayTotalHdrStatus_;
     }
 
-    void InsertHDRNode(NodeId id)
-    {
-        hdrNodeList_.insert(id);
-    }
-
-    void RemoveHDRNode(NodeId id)
-    {
-        hdrNodeList_.erase(id);
-    }
-
-    std::unordered_set<NodeId>& GetHDRNodeList()
-    {
-        return hdrNodeList_;
-    }
-
     // rcd node setter and getter, should be removed in OH 6.0 rcd refactoring
     void SetRcdSurfaceNodeTop(RSBaseRenderNode::SharedPtr node)
     {
@@ -552,8 +537,6 @@ private:
     mutable HdrStatus lastDisplayTotalHdrStatus_ = HdrStatus::NO_HDR;
     uint64_t screenId_ = 0;
     RectI screenRect_;
-    // save children hdr canvasNode id
-    std::unordered_set<NodeId> hdrNodeList_;
     // Use in MultiLayersPerf
     size_t surfaceCountForMultiLayersPerf_ = 0;
     int64_t lastRefreshTime_ = 0;
