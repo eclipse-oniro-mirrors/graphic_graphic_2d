@@ -191,9 +191,15 @@ public:
     {
         isSubTreeDirty_ = val;
     }
+    bool IsTreeStateChangeDirty() const
+    {
+        return isTreeStateChangeDirty_;
+    }
+    void SetTreeStateChangeDirty(bool val)
+    {
+        isTreeStateChangeDirty_ = val;
+    }
     void SetParentSubTreeDirty();
-    bool IsTreeStateChangeDirty() const;
-    void SetTreeStateChangeDirty(bool val);
     // set when tree state changed or in uicapture task for each parent node recursively
     void SetParentTreeStateChangeDirty(bool isUpdateAllParentNode = false);
     // set in uicapture task for each child node recursively

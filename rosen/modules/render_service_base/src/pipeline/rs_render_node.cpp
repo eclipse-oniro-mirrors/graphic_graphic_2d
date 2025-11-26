@@ -2274,16 +2274,6 @@ void RSRenderNode::SetParentSubTreeDirty()
     }
 }
 
-bool RSRenderNode::IsTreeStateChangeDirty() const
-{
-    return isTreeStateChangeDirty_;
-}
-
-void RSRenderNode::SetTreeStateChangeDirty(bool val)
-{
-    isTreeStateChangeDirty_ = val;
-}
-
 void RSRenderNode::SetParentTreeStateChangeDirty(bool isUpdateAllParentNode)
 {
     auto parentNode = parent_.lock();
