@@ -184,6 +184,13 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     }
     skStyle.setReplaceTabCharacters(true);
     skStyle.setTextSplitRatio(txt.textSplitRatio);
+    SetRemainingParagraphProperties(skStyle, txt);
+
+    return skStyle;
+}
+
+void ParagraphBuilderImpl::SetRemainingParagraphProperties(skt::ParagraphStyle& skStyle, const ParagraphStyle& txt)
+{
     skStyle.setTextHeightBehavior(static_cast<skt::TextHeightBehavior>(txt.textHeightBehavior));
     skStyle.setTextTab(ConvertToSkTextTab(txt.tab));
     skStyle.setParagraphSpacing(txt.paragraphSpacing);
@@ -193,8 +200,6 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     skStyle.setEnableAutoSpace(txt.enableAutoSpace);
     skStyle.setVerticalAlignment(static_cast<skt::TextVerticalAlign>(txt.verticalAlignment));
     skStyle.setLineSpacing(txt.lineSpacing);
-
-    return skStyle;
 }
 
 skt::TextStyle ParagraphBuilderImpl::TextStyleToSkStyle(const TextStyle& txt)
