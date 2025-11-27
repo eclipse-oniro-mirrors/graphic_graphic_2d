@@ -2146,4 +2146,5 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkStub001, Test
     data2.WriteString(name);
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
 }
+
 } // namespace OHOS::Rosen
