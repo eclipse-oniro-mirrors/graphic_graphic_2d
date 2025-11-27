@@ -1200,30 +1200,31 @@ bool FilterNapi::FillFrostedGlassBg(napi_env env, napi_value* argv, std::shared_
         FILTER_LOG_E("FillFrostedGlassInner: para is nullptr");
         return false;
     }
-
-    float bgFactor = 0.f;
-    bgFactor = GetSpecialValue(env, argv[NUM_3]);
-    para->SetBgFactor(bgFactor);
  
     Vector2f bgRates;
-    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector2f(env, argv[NUM_4], bgRates), false,
+    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector2f(env, argv[NUM_3], bgRates), false,
         FILTER_LOG_E("FillFrostedGlassCommon: bgRates parse fail"));
     para->SetBgRates(bgRates);
  
     Vector3f bgKBS;
-    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_5], bgKBS), false,
+    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_4], bgKBS), false,
         FILTER_LOG_E("FillFrostedGlassInner: bgKBS parse fail"));
     para->SetBgKBS(bgKBS);
  
     Vector3f bgPos;
-    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_6], bgPos), false,
+    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_5], bgPos), false,
         FILTER_LOG_E("FillFrostedGlassInner: bgPos parse fail"));
     para->SetBgPos(bgPos);
  
     Vector3f bgNeg;
-    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_7], bgNeg), false,
+    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_6], bgNeg), false,
         FILTER_LOG_E("FillFrostedGlassInner: bgNeg parse fail"));
     para->SetBgNeg(bgNeg);
+
+    Vector3f refractParams;
+    UIEFFECT_NAPI_CHECK_RET_D(ParseJsVector3f(env, argv[NUM_7], refractParams), false,
+        FILTER_LOG_E("FillFrostedGlassInner: refractParams parse fail"));
+    para->SetRefractParams(refractParams);
  
     return true;
 }
