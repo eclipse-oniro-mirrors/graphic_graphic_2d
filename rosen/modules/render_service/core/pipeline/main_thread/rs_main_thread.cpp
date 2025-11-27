@@ -4303,13 +4303,11 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
     }
     if (!IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp)) {
-        RequestNextVSync();
-        return;
+        return false;
     }
     if (ret != VSYNC_ERROR_OK || !context_ ||
         !IsFastComposeAllow(unsignedVsyncPeriod, nextVsyncRequested, unsignedNowTime, lastVsyncTime)) {
-        RequestNextVSync();
-        return;
+        return false;
     }
     // if buffer come near vsync and next vsync not requested, do fast compose
     if (!nextVsyncRequested && (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod >
@@ -4328,10 +4326,9 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
         unsignedLastFlushedDesiredPresentTimeStamp < lastVsyncTime &&
         unsignedNowTime - lastVsyncTime < REFRESH_PERIOD / 2) { // invoke when late less than 1/2 refresh period
         RS_TRACE_NAME("RSMainThread::CheckFastCompose success, start fastcompose");
-        ForceRefreshForUni(true);
-        return;
+        return true;
     }
-    RequestNextVSync();
+    return false;
 }
 
 bool RSMainThread::CheckAdaptiveCompose()
