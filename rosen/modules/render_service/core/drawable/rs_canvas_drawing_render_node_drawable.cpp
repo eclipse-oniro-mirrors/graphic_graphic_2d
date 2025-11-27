@@ -802,10 +802,13 @@ bool RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture(pid_t pid, int w
         // Step 1: Check Pending Buffer
         surfaceBuffer = bufferCache.AcquirePendingBuffer(nodeId_, resetSurfaceIndex);
         dmaAllocationCount_.fetch_add(1, std::memory_order_relaxed);
+        RS_TRACE_NAME_FMT("AcquirePendingBuffer: nodeId=%" PRIu64, nodeId_);
     }
     if (surfaceBuffer == nullptr) {
         if (PRE_ALLOCATE_DMA_ENABLED) {
             dmaFallbackCount_.fetch_add(1, std::memory_order_relaxed);
+            RS_TRACE_NAME_FMT("AcquirePendingBuffer fail, nodeId=%" PRIu64, nodeId_);
+            RS_LOGE("AcquirePendingBuffer fail, nodeId=%{public}" PRIu64, nodeId_);
         }
         if (RENDER_DMA_ENABLED) {
             // Step 2: Create DMA SurfaceBuffer if no pending buffer
@@ -826,7 +829,7 @@ bool RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture(pid_t pid, int w
         willNotify = hasClientBuffer;
         surfaceBuffer = nullptr;
         backendTexture_ = {};
-        RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK: Create DMA BackendTexture fail, "
+        RS_LOGE("RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture: Create DMA BackendTexture fail, "
                 "width=%{public}d, height=%{public}d, null surfaceBuffer: %{public}d",
             width, height, surfaceBuffer == nullptr);
     }
