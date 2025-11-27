@@ -304,11 +304,11 @@ std::shared_ptr<RSNGFilterBase> ConvertFrostedGlassPara(std::shared_ptr<FilterPa
     frostedGlassFilter->Setter<FrostedGlassBlurParamsTag>(frostedGlassFilterPara->GetBlurParams());
     frostedGlassFilter->Setter<FrostedGlassWeightsEmbossTag>(frostedGlassFilterPara->GetWeightsEmboss());
     frostedGlassFilter->Setter<FrostedGlassWeightsEdlTag>(frostedGlassFilterPara->GetWeightsEdl());
-    frostedGlassFilter->Setter<FrostedGlassBgFactorTag>(frostedGlassFilterPara->GetBgFactor());
     frostedGlassFilter->Setter<FrostedGlassBgRatesTag>(frostedGlassFilterPara->GetBgRates());
     frostedGlassFilter->Setter<FrostedGlassBgKBSTag>(frostedGlassFilterPara->GetBgKBS());
     frostedGlassFilter->Setter<FrostedGlassBgPosTag>(frostedGlassFilterPara->GetBgPos());
     frostedGlassFilter->Setter<FrostedGlassBgNegTag>(frostedGlassFilterPara->GetBgNeg());
+    frostedGlassFilter->Setter<FrostedGlassRefractParamsTag>(frostedGlassFilterPara->GetRefractParams());
     frostedGlassFilter->Setter<FrostedGlassSdParamsTag>(frostedGlassFilterPara->GetSdParams());
     frostedGlassFilter->Setter<FrostedGlassSdRatesTag>(frostedGlassFilterPara->GetSdRates());
     frostedGlassFilter->Setter<FrostedGlassSdKBSTag>(frostedGlassFilterPara->GetSdKBS());
