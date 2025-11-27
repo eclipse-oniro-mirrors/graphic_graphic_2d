@@ -16,6 +16,7 @@
 #include <gtest/gtest.h>
 #include "drawable/rs_property_drawable_foreground.h"
 #include "effect/rs_render_shape_base.h"
+#include "ge_visual_effect_container.h"
 #include "pipeline/rs_render_node.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_foreground_effect_filter.h"
