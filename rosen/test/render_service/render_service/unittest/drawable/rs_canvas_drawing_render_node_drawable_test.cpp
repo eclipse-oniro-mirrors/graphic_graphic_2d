@@ -18,6 +18,7 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "params/rs_canvas_drawing_render_params.h"
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+#include "memory/rs_canvas_dma_buffer_cache.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #endif
 #include "pipeline/render_thread/rs_render_engine.h"
@@ -921,7 +922,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ResetSurfaceforPlaybackTest, Tes
  */
 HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, TestSize.Level1)
 {
-    RSContext& context = RSMainThread::Instance()->GetContext();
+    auto& context = RSMainThread::Instance()->GetContext();
+    auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
     auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
     auto ret = drawable->CreateDmaBackendTexture(1, 100, 100);
@@ -933,17 +935,17 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
     ASSERT_EQ(ret, false);
     auto node1 = std::make_shared<RSRenderNode>(1);
-    context.pendingBufferMap_.clear();
+    bufferCache.pendingBufferMap_.clear();
     context.GetMutableNodeMap().RegisterRenderNode(node1);
     node1->stagingRenderParams_->canvasDrawingResetSurfaceIndex_ = 1;
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
-    context.AddPendingBuffer(1, buffer, 1);
+    bufferCache.AddPendingBuffer(1, buffer, 1);
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
     ASSERT_EQ(ret, false);
-    context.pendingBufferMap_.clear();
+    bufferCache.pendingBufferMap_.clear();
     buffer = SurfaceBufferUtils::CreateCanvasSurfaceBuffer(1, 100, 100);
     ASSERT_NE(buffer, nullptr);
-    context.AddPendingBuffer(1, buffer, 1);
+    bufferCache.AddPendingBuffer(1, buffer, 1);
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
     ASSERT_EQ(ret, true);
     drawable->backendTexture_ = {};

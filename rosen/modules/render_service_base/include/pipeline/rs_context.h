@@ -26,9 +26,6 @@
 #include "animation/rs_render_interactive_implict_animator_map.h"
 #include "feature/capture/rs_ui_capture_helper.h"
 #include "ipc_callbacks/brightness_info_change_callback.h"
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-#include "ipc_callbacks/rs_icanvas_surface_buffer_callback.h"
-#endif
 #include "pipeline/rs_render_node_map.h"
 #include "feature/hyper_graphic_manager/rs_render_frame_rate_linker_map.h"
 
@@ -128,22 +125,6 @@ public:
     int32_t SetBrightnessInfoChangeCallback(pid_t remotePid, const sptr<RSIBrightnessInfoChangeCallback>& callback);
     void NotifyBrightnessInfoChangeCallback(ScreenId screenId, const BrightnessInfo& brightnessInfo) const;
     bool IsBrightnessInfoChangeCallbackMapEmpty() const;
-
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    void RegisterCanvasCallback(pid_t remotePid, const sptr<RSICanvasSurfaceBufferCallback>& callback);
-    void NotifyCanvasSurfaceBufferChanged(
-        NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex) const;
-
-    bool AddPendingBuffer(NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex);
-
-    sptr<SurfaceBuffer> AcquirePendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex);
-
-    void RemovePendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex);
-
-    void ClearPendingBufferByNodeId(NodeId nodeId);
-
-    void ClearPendingBufferByPid(pid_t pid);
-#endif
 
     void SetVsyncRequestFunc(const std::function<void()>& taskRunner)
     {
@@ -254,15 +235,6 @@ private:
     RSRenderFrameRateLinkerMap frameRateLinkerMap;
     RSRenderInteractiveImplictAnimatorMap interactiveImplictAnimatorMap_;
     std::unordered_map<pid_t, sptr<RSIBrightnessInfoChangeCallback>> brightnessInfoChangeCallbackMap_;
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    std::unordered_map<pid_t, sptr<RSICanvasSurfaceBufferCallback>> canvasSurfaceBufferCallbackMap_;
-    mutable std::mutex canvasCallbackMutex_; // Protects canvasSurfaceBufferCallbackMap_
-
-    using BufferMap = std::map<uint32_t, sptr<SurfaceBuffer>>;
-    // Canvas pre-allocated buffer map: nodeId -> pair<currentResetSurfaceIndex, map(resetSurfaceIndex -> buffer)>
-    std::map<NodeId, std::pair<uint32_t, BufferMap>> pendingBufferMap_;
-    std::mutex pendingBufferMutex_; // Protects pendingBufferMap_
-#endif
     // The list of animating nodes in this frame.
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> animatingNodeList_;
     std::unordered_map<NodeId, std::weak_ptr<RSRenderNode>> curFrameAnimatingNodeList_;

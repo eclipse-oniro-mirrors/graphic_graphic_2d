@@ -14,10 +14,11 @@
  */
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+#include "buffer_utils.h"
 #include "gtest/gtest.h"
+#include "surface_buffer.h"
 
 #include "ipc_callbacks/rs_canvas_surface_buffer_callback_stub.h"
-#include "surface_buffer.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -118,9 +119,11 @@ HWTEST_F(RSCanvasSurfaceBufferCallbackStubTest, OnRemoteRequest002, TestSize.Lev
         ON_CANVAS_SURFACE_BUFFER_CHANGED);
 
     NodeId testNodeId = 12345;
+    uint32_t resetSurfaceIndex = 1;
     data.WriteInterfaceToken(RSICanvasSurfaceBufferCallback::GetDescriptor());
     data.WriteUint64(testNodeId);
-    data.WriteBool(false); // hasBuffer = false
+    data.WriteUint32(resetSurfaceIndex);
+    WriteSurfaceBufferImpl(data, 0, nullptr);
 
     int res = stub->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(res, ERR_NONE);

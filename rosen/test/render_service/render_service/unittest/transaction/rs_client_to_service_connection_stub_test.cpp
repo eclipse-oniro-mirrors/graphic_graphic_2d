@@ -27,9 +27,6 @@
 #include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
 #include "ipc_callbacks/brightness_info_change_callback_stub.h"
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-#include "ipc_callbacks/rs_canvas_surface_buffer_callback_stub.h"
-#endif
 #include "pipeline/render_thread/rs_composer_adapter.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
@@ -173,15 +170,6 @@ public:
     void OnFrameRateLinkerExpectedFpsUpdate(pid_t dstPid,
         const std::string& xcomponentId, int32_t expectedFps) override {};
 };
-
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-class RSCanvasSurfaceBufferCallbackStubMock : public RSCanvasSurfaceBufferCallbackStub {
-public:
-    RSCanvasSurfaceBufferCallbackStubMock() = default;
-    virtual ~RSCanvasSurfaceBufferCallbackStubMock() = default;
-    void OnCanvasSurfaceBufferChanged(NodeId nodeId, sptr<SurfaceBuffer> buffer, uint32_t resetSurfaceIndex) override {}
-};
-#endif
 
 void RSClientToServiceConnectionStubTest::CreateComposerAdapterWithScreenInfo(uint32_t width, uint32_t height,
     ScreenColorGamut colorGamut, ScreenState state, ScreenRotation rotation)
@@ -2158,51 +2146,4 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkStub001, Test
     data2.WriteString(name);
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
 }
-
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-/**
- * @tc.name: RegisterCanvasCallbackTest
- * @tc.desc: Test REGISTER_CANVAS_CALLBACK with various scenarios
- * @tc.type: FUNC
- * @tc.require: issue
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, RegisterCanvasCallbackTest, TestSize.Level1)
-{
-    MessageParcel reply;
-    MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK);
-
-    // Scenario 1: Cannot read enableReadRemoteObject - should fail with ERR_INVALID_DATA
-    MessageParcel data1;
-    data1.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    int res = toServiceConnectionStub_->OnRemoteRequest(code, data1, reply, option);
-    ASSERT_EQ(res, ERR_INVALID_DATA);
-
-    // Scenario 2: enableReadRemoteObject = false, callback will be nullptr
-    MessageParcel data2;
-    data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data2.WriteBool(false);
-    res = toServiceConnectionStub_->OnRemoteRequest(code, data2, reply, option);
-    ASSERT_EQ(res, ERR_NONE);
-
-    // Scenario 3: enableReadRemoteObject = true with valid callback
-    MessageParcel data3;
-    data3.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data3.WriteBool(true);
-    sptr<RSICanvasSurfaceBufferCallback> callback = new RSCanvasSurfaceBufferCallbackStubMock();
-    data3.WriteRemoteObject(callback->AsObject());
-    res = toServiceConnectionStub_->OnRemoteRequest(code, data3, reply, option);
-    ASSERT_EQ(res, ERR_NONE);
-
-    // Scenario 4: reply write fails - should fail with ERR_INVALID_REPLY
-    MessageParcel data4;
-    MessageParcel reply4;
-    data4.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data4.WriteBool(false);
-    reply4.writable_ = false;
-    reply4.data_ = nullptr;
-    res = toServiceConnectionStub_->OnRemoteRequest(code, data4, reply4, option);
-    ASSERT_EQ(res, ERR_INVALID_REPLY);
-}
-#endif
 } // namespace OHOS::Rosen

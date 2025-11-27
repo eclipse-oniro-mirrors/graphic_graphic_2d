@@ -25,10 +25,6 @@
 #include "securec.h"
 #include "sys_binder.h"
 
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-#include "buffer_utils.h"
-#endif
-
 #include "command/rs_command_factory.h"
 #include "command/rs_command_verify_helper.h"
 #include "common/rs_xcollie.h"
@@ -79,10 +75,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO),
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK),
-    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER),
-#endif
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_MODE),
@@ -904,72 +896,6 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
             break;
         }
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK): {
-            bool hasCallback = false;
-            if (!data.ReadBool(hasCallback)) {
-                RS_LOGE("RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK Read bool failed, pid=%{public}d!",
-                    GetCallingPid());
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            sptr<IRemoteObject> remoteObject = nullptr;
-            if (hasCallback) {
-                remoteObject = data.ReadRemoteObject();
-                if (remoteObject == nullptr) {
-                    ret = ERR_INVALID_DATA;
-                    RS_LOGE("RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK ReadRemoteObject failed, "
-                        "pid=%{public}d!", GetCallingPid());
-                    break;
-                }
-                if (!remoteObject->IsProxyObject()) {
-                    ret = ERR_UNKNOWN_OBJECT;
-                    RS_LOGE(
-                        "RSClientToServiceConnectionStub::REGISTER_CANVAS_CALLBACK remoteObject is not ProxyObject");
-                    break;
-                }
-            }
-            sptr<RSICanvasSurfaceBufferCallback> callback = nullptr;
-            if (remoteObject != nullptr) {
-                callback = iface_cast<RSICanvasSurfaceBufferCallback>(remoteObject);
-            }
-            RegisterCanvasCallback(callback);
-            break;
-        }
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER): {
-            NodeId nodeId = INVALID_NODEID;
-            if (!data.ReadUint64(nodeId)) {
-                RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Read nodeId failed!");
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            uint32_t resetSurfaceIndex = 0;
-            if (!data.ReadUint32(resetSurfaceIndex)) {
-                RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Read resetSurfaceIndex "
-                    "failed!");
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            sptr<SurfaceBuffer> buffer = nullptr;
-            uint32_t sequence = 0U;
-            auto readSafeFdFunc = [](Parcel& parcel, std::function<int(Parcel&)> readFdDefaultFunc) -> int {
-                return AshmemFdContainer::Instance().ReadSafeFd(parcel, readFdDefaultFunc);
-            };
-            GSError gsRet = ReadSurfaceBufferImpl(data, sequence, buffer, readSafeFdFunc);
-            if (gsRet != GSERROR_OK) {
-                RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER ReadFromMessageParcel "
-                    "failed, ret=%{public}d!", gsRet);
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            int32_t status = SubmitCanvasPreAllocatedBuffer(nodeId, buffer, resetSurfaceIndex);
-            if (!reply.WriteInt32(status)) {
-                RS_LOGE("RSClientToServiceConnectionStub::SUBMIT_CANVAS_PRE_ALLOCATED_BUFFER Write status failed!");
-                ret = ERR_INVALID_REPLY;
-            }
-            break;
-        }
-#endif
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK): {
             auto remoteObject = data.ReadRemoteObject();
             if (remoteObject == nullptr) {

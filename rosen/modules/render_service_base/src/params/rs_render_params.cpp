@@ -425,7 +425,7 @@ void RSRenderParams::SetCanvasDrawingResetSurfaceIndex(uint32_t index)
     if (index == canvasDrawingResetSurfaceIndex_) {
         return;
     }
-    canvasDrawingResetSurfaceIndex_ = index;
+    canvasDrawingResetSurfaceIndex_.store(index);
     needSync_ = true;
 }
 

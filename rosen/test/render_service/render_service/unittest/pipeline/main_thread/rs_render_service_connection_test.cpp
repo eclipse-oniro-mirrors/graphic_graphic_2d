@@ -20,6 +20,7 @@
 
 #include "ipc_callbacks/brightness_info_change_callback.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "render_service/core/transaction/rs_client_to_render_connection.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/rs_test_util.h"
 #include "platform/ohos/rs_render_service_connect_hub.h"
@@ -534,39 +535,49 @@ HWTEST_F(RSRenderServiceConnectionTest, RegisterCanvasCallbackAndCleanTest, Test
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
 
-    sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
     pid_t testPid = 12345;
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        testPid, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
-    ASSERT_NE(rsRenderServiceConnection, nullptr);
+    sptr<RSIConnectionToken> token1 = new IRemoteStub<RSIConnectionToken>();
+    auto clientToServiceConnection = new RSClientToServiceConnection(
+        testPid, nullptr, mainThread, CreateOrGetScreenManager(), token1->AsObject(), nullptr);
+    ASSERT_NE(clientToServiceConnection, nullptr);
+
+    sptr<RSIConnectionToken> token2 = new IRemoteStub<RSIConnectionToken>();
+    auto clientToRenderConnection = new RSClientToRenderConnection(
+        testPid, nullptr, mainThread, CreateOrGetScreenManager(), token2->AsObject(), nullptr);
+    ASSERT_NE(clientToRenderConnection, nullptr);
 
     // Test RegisterCanvasCallback with valid callback
     sptr<RSICanvasSurfaceBufferCallback> mockCallback = nullptr;
     // Since we cannot create a concrete implementation easily in the test,
     // we test with nullptr first to verify the function executes
-    rsRenderServiceConnection->RegisterCanvasCallback(mockCallback);
+    clientToRenderConnection->RegisterCanvasCallback(mockCallback);
     // No assertion needed - just verify it doesn't crash
 
     // Test CleanCanvasCallbacksAndPendingBuffer
     // This should clean up the registered callback for the remote pid
-    rsRenderServiceConnection->CleanCanvasCallbacksAndPendingBuffer();
+    clientToServiceConnection->CleanCanvasCallbacksAndPendingBuffer();
 
     // Verify cleanup was successful by checking that re-registering works
-    rsRenderServiceConnection->RegisterCanvasCallback(mockCallback);
+    clientToRenderConnection->RegisterCanvasCallback(mockCallback);
     // No assertion needed - just verify it doesn't crash
 
     // Test error handling when mainThread is nullptr
-    sptr<RSIConnectionToken> token2 = new IRemoteStub<RSIConnectionToken>();
-    auto rsRenderServiceConnectionWithNullThread = new RSClientToServiceConnection(
-        testPid, nullptr, nullptr, CreateOrGetScreenManager(), token2->AsObject(), nullptr);
-    ASSERT_NE(rsRenderServiceConnectionWithNullThread, nullptr);
+    sptr<RSIConnectionToken> token3 = new IRemoteStub<RSIConnectionToken>();
+    auto clientToServiceConnectionWithNullThread = new RSClientToServiceConnection(
+        testPid, nullptr, nullptr, CreateOrGetScreenManager(), token3->AsObject(), nullptr);
+    ASSERT_NE(clientToServiceConnectionWithNullThread, nullptr);
+
+    sptr<RSIConnectionToken> token4 = new IRemoteStub<RSIConnectionToken>();
+    auto clientToRenderConnectionWithNullThread = new RSClientToRenderConnection(
+        testPid, nullptr, nullptr, CreateOrGetScreenManager(), token4->AsObject(), nullptr);
+    ASSERT_NE(clientToRenderConnectionWithNullThread, nullptr);
 
     // Test RegisterCanvasCallback with nullptr mainThread
-    rsRenderServiceConnectionWithNullThread->RegisterCanvasCallback(mockCallback);
+    clientToRenderConnectionWithNullThread->RegisterCanvasCallback(mockCallback);
     // No assertion needed - just verify it doesn't crash
 
     // Test CleanCanvasCallbacksAndPendingBuffer with nullptr mainThread - should return early without crash
-    rsRenderServiceConnectionWithNullThread->CleanCanvasCallbacksAndPendingBuffer();
+    clientToServiceConnectionWithNullThread->CleanCanvasCallbacksAndPendingBuffer();
     // No assertion needed - just verify it doesn't crash
 }
 #endif
