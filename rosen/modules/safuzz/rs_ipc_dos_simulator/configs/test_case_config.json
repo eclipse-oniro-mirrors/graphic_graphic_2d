@@ -1332,6 +1332,24 @@
     "commandListRepeat": 1
   },
   {
+    "testCaseDesc": "COMMIT_TRANSACTION_TEST_154",
+    "interfaceName": "COMMIT_TRANSACTION",
+    "inputParams": "WriteRSTransactionData",
+    "writeInterfaceToken": false,
+    "messageOption": "TF_ASYNC",
+    "commandList": "RSSurfaceNodeSetSourceVirtualDisplayId*100",
+    "commandListRepeat": 1
+  },
+  {
+    "testCaseDesc": "COMMIT_TRANSACTION_TEST_155",
+    "interfaceName": "COMMIT_TRANSACTION",
+    "inputParams": "WriteRSTransactionData",
+    "writeInterfaceToken": false,
+    "messageOption": "TF_ASYNC",
+    "commandList": "RSDisplayNodeSetVirtualScreenMuteStatus*100",
+    "commandListRepeat": 1
+  },
+  {
     "testCaseDesc": "GET_UNI_RENDER_ENABLED_TEST_001",
     "interfaceName": "GET_UNI_RENDER_ENABLED",
     "inputParams": "",
@@ -1596,6 +1614,27 @@
     "inputParams": "WriteUint64;WriteUint32",
     "writeInterfaceToken": true,
     "messageOption": "TF_SYNC"
+  },
+  {
+    "testCaseDesc": "SET_SCREEN_OFFSET_TEST_001",
+    "interfaceName": "SET_SCREEN_OFFSET",
+    "inputParams": "WriteUint64;WriteInt32;WriteInt32",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "SET_ROG_SCREEN_RESOLUTION_TEST_001",
+    "interfaceName": "SET_ROG_SCREEN_RESOLUTION",
+    "inputParams": "WriteUint64;WriteUint32;WriteUint32",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "GET_ROG_SCREEN_RESOLUTION_TEST_001",
+    "interfaceName": "GET_ROG_SCREEN_RESOLUTION",
+    "inputParams": "WriteUint64",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
   },
   {
     "testCaseDesc": "TAKE_SURFACE_CAPTURE_TEST_001",
@@ -2249,6 +2288,13 @@
     "messageOption": "TF_ASYNC"
   },
   {
+    "testCaseDesc": "SET_SCREEN_FRAME_GRAVITY_001",
+    "interfaceName": "SET_SCREEN_FRAME_GRAVITY",
+    "inputParams": "WriteUint64;WriteUint32",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
     "testCaseDesc": "REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK_TEST_001",
     "interfaceName": "REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK",
     "inputParams": "WriteSelfDrawingNodeRectChangeCallbackSptr",
@@ -2270,6 +2316,13 @@
     "messageOption": "TF_ASYNC"
   },
   {
+    "testCaseDesc": "CLEAR_UIFIRST_CACHE_TEST_001",
+    "interfaceName": "CLEAR_UIFIRST_CACHE",
+    "inputParams": "WriteUint64",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
     "testCaseDesc": "NOTIFY_LIGHT_FACTOR_STATUS_TEST_001",
     "interfaceName": "NOTIFY_LIGHT_FACTOR_STATUS",
     "inputParams": "WriteInt32",
@@ -2280,6 +2333,27 @@
     "testCaseDesc": "NOTIFY_PACKAGE_EVENT_TEST_001",
     "interfaceName": "NOTIFY_PACKAGE_EVENT",
     "inputParams": "WriteUint32;WriteNString",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID_TEST_001",
+    "interfaceName": "NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID",
+    "inputParams": "WriteUint32;WriteUint64AndEventInfoPairVector",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME_TEST_001",
+    "interfaceName": "NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME",
+    "inputParams": "WriteUint32;WriteStringAndEventInfoPairVector",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
+  },
+  {
+    "testCaseDesc": "NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT_TEST_001",
+    "interfaceName": "NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT",
+    "inputParams": "WriteString;WriteUint32;WriteStringAndStringPairVector",
     "writeInterfaceToken": true,
     "messageOption": "TF_ASYNC"
   },
@@ -2377,7 +2451,7 @@
   {
     "testCaseDesc": "TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS_TEST_001",
     "interfaceName": "TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS",
-    "inputParams": "WriteUint64;WriteBool;WriteSurfaceCaptureCallbackSptr;WriteFloat;WriteFloat;WriteBool;WriteBool;WriteUint8;WriteBool;WriteBool;WriteBool;WriteFloat;WriteFloat;WriteFloat;WriteFloat;WriteUint64;WriteBool;WriteFloat;WriteFloat;WriteFloat;WriteFloat;WriteUInt64Vector;WriteUInt32",
+    "inputParams": "WriteUint64;WriteBool;WriteSurfaceCaptureCallbackSptr;WriteFloat;WriteFloat;WriteBool;WriteBool;WriteUint8;WriteBool;WriteBool;WriteBool;WriteFloat;WriteFloat;WriteFloat;WriteFloat;WriteUint64;WriteBool;WriteFloat;WriteFloat;WriteFloat;WriteFloat;WriteUInt64Vector;WriteUint32",
     "writeInterfaceToken": true,
     "messageOption": "TF_ASYNC"
   },

@@ -636,15 +636,15 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                     surface = Surface::CreateSurfaceAsProducer(bufferProducer);
                 }
             }
-            ScreenId mirrorId{INVALID_SCREEN_ID};
+            ScreenId associatedScreenId{INVALID_SCREEN_ID};
             int32_t flags{0};
             std::vector<NodeId> whiteList;
-            if (!data.ReadUint64(mirrorId) || !data.ReadInt32(flags) || !data.ReadUInt64Vector(&whiteList)) {
+            if (!data.ReadUint64(associatedScreenId) || !data.ReadInt32(flags) || !data.ReadUInt64Vector(&whiteList)) {
                 RS_LOGE("RSClientToServiceConnectionStub::CREATE_VIRTUAL_SCREEN read ScreenId failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            ScreenId id = CreateVirtualScreen(name, width, height, surface, mirrorId, flags, whiteList);
+            ScreenId id = CreateVirtualScreen(name, width, height, surface, associatedScreenId, flags, whiteList);
             if (!reply.WriteUint64(id)) {
                 RS_LOGE("RSClientToServiceConnectionStub::CREATE_VIRTUAL_SCREEN Write id failed!");
                 ret = ERR_INVALID_REPLY;
@@ -3193,6 +3193,9 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (!reply.WriteInt64(globalDirtyRegionInfo.globalDirtyRegionAreas) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.globalFramesNumber) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.skipProcessFramesNumber) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.commandCount) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.consumeBufferSize) ||
+                !reply.WriteInt32(globalDirtyRegionInfo.frameAnimationCount) ||
                 !reply.WriteInt32(globalDirtyRegionInfo.mostSendingPidWhenDisplayNodeSkip)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_GLOBAL_DIRTY_REGION_INFO Write globalDirtyRegionInfo "
                         "failed!");

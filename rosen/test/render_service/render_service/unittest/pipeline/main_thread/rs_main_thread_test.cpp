@@ -44,6 +44,7 @@
 #include "screen_manager/rs_screen.h"
 #include "string_utils.h"
 #include "pipeline/rs_render_node_gc.h"
+#include "pipeline/mock/mock_rs_luminance_control.h"
 #if defined(ACCESSIBILITY_ENABLE)
 #include "accessibility_config.h"
 #endif
@@ -122,14 +123,14 @@ void RSMainThreadTest::SetUpTestCase()
     ASSERT_NE(psurface, nullptr);
     auto id = screenManager->CreateVirtualScreen(name, width, height, psurface);
     ASSERT_NE(INVALID_SCREEN_ID, id);
-    screenManager->SetDefaultScreenId(id);
+    screenManager->defaultScreenId_ = id;
 }
 
 void RSMainThreadTest::TearDownTestCase()
 {
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(nullptr, screenManager);
-    screenManager->SetDefaultScreenId(INVALID_SCREEN_ID);
+    screenManager->defaultScreenId_ = INVALID_SCREEN_ID;
 }
 
 void RSMainThreadTest::SetUp() {}
@@ -164,13 +165,13 @@ std::shared_ptr<RSScreenRenderNode> RSMainThreadTest::GetAndInitScreenRenderNode
     if (hdiOutput == nullptr) {
         return screenNode;
     }
-    auto rsScreen = std::make_shared<impl::RSScreen>(screenId, false, hdiOutput, nullptr);
+    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
     if (rsScreen == nullptr) {
         return screenNode;
     }
 
-    rsScreen->phyWidth_ = SCREEN_PHYSICAL_WIDTH;
-    rsScreen->phyHeight_ = SCREEN_PHYSICAL_HEIGHT;
+    rsScreen->property_.SetPhyWidth(SCREEN_PHYSICAL_WIDTH);
+    rsScreen->property_.SetPhyHeight(SCREEN_PHYSICAL_HEIGHT);
     screenManager->MockHdiScreenConnected(rsScreen);
     return screenNode;
 }
@@ -1963,10 +1964,8 @@ HWTEST_F(RSMainThreadTest, UniRender003, TestSize.Level1)
     if (RSSystemProperties::GetSkipDisplayIfScreenOffEnabled()) {
         ScreenId screenId = 1;
         auto screenManager = CreateOrGetScreenManager();
-        impl::RSScreenManager& screenManagerImpl =
-            static_cast<impl::RSScreenManager&>(*screenManager);
-        screenManagerImpl.powerOffNeedProcessOneFrame_ = false;
-        screenManagerImpl.screenPowerStatus_[screenId] = ScreenPowerStatus::POWER_STATUS_OFF;
+        screenManager->powerOffNeedProcessOneFrame_ = false;
+        screenManager->screenPowerStatus_[screenId] = ScreenPowerStatus::POWER_STATUS_OFF;
     }
     mainThread->UniRender(rootNode);
     ASSERT_FALSE(mainThread->doDirectComposition_);
@@ -4808,6 +4807,43 @@ HWTEST_F(RSMainThreadTest, UiCaptureTasks, TestSize.Level2)
 }
 
 /**
+ * @tc.name: AddUiCaptureTaskTest
+ * @tc.desc: test AddUiCaptureTask
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, AddUiCaptureTasksTest, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    auto node1 = RSTestUtil::CreateSurfaceNode();
+    auto node2 = RSTestUtil::CreateSurfaceNode();
+    auto task = []() {};
+
+    mainThread->ProcessUiCaptureTasks();
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), true);
+
+    mainThread->context_->nodeMap.RegisterRenderNode(node1);
+    mainThread->AddUiCaptureTask(node1->GetId(), task);
+    mainThread->AddUiCaptureTask(node2->GetId(), task);
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), false);
+    ASSERT_EQ(mainThread->uiCaptureTasks_.empty(), true);
+
+    node1->SetDirty();
+    mainThread->AddUiCaptureTask(node1->GetId(), task);
+    mainThread->PrepareUiCaptureTasks(nullptr);
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), true);
+    ASSERT_EQ(mainThread->uiCaptureTasks_.empty(), false);
+
+    mainThread->ProcessUiCaptureTasks();
+    ASSERT_EQ(mainThread->pendingUiCaptureTasks_.empty(), true);
+    ASSERT_EQ(mainThread->uiCaptureTasks_.empty(), true);
+
+    mainThread->context_->nodeMap.UnregisterRenderNode(node1->GetId());
+}
+
+/**
  * @tc.name: CheckUIExtensionCallbackDataChanged001
  * @tc.desc: test CheckUIExtensionCallbackDataChanged, no need to callback (2 frames of empty callback data)
  * @tc.type: FUNC
@@ -5944,8 +5980,7 @@ HWTEST_F(RSMainThreadTest, RegisterScreenNodeListenerTest, TestSize.Level2)
     ASSERT_NE(mainThread, nullptr);
 
     mainThread->RegisterScreenNodeListener();
-    auto screenManagerPtr = impl::RSScreenManager::GetInstance();
-    auto* screenManager = static_cast<impl::RSScreenManager*>(screenManagerPtr.GetRefPtr());
+    auto screenManager = RSScreenManager::GetInstance();
     EXPECT_NE(screenManager->screenNodeListener_, nullptr);
 
     screenManager->screens_.insert(std::make_pair(100, nullptr));
@@ -5956,12 +5991,12 @@ HWTEST_F(RSMainThreadTest, RegisterScreenNodeListenerTest, TestSize.Level2)
 }
 
 /**
- * @tc.name: OnScreenConnectTest
- * @tc.desc: test OnScreenDisConnect
+ * @tc.name: OnScreenConnect001
+ * @tc.desc: test OnScreenConnect
  * @tc.type: FUNC
  * @tc.require: issueIBF9OU
  */
-HWTEST_F(RSMainThreadTest, OnScreenConnectTest, TestSize.Level2)
+HWTEST_F(RSMainThreadTest, OnScreenConnect001, TestSize.Level2)
 {
     auto mainThread1 = RSMainThread::Instance();
     ASSERT_NE(mainThread1, nullptr);
@@ -5980,15 +6015,28 @@ HWTEST_F(RSMainThreadTest, OnScreenConnectTest, TestSize.Level2)
     auto displayNode2 = std::make_shared<RSLogicalDisplayRenderNode>(displayNodeId2, config);
     mainThread1->context_->nodeMap.logicalDisplayNodeMap_.insert({displayNodeId2, displayNode2});
 
-    auto screenManagerPtr = impl::RSScreenManager::GetInstance();
-    auto* screenManager = static_cast<impl::RSScreenManager*>(screenManagerPtr.GetRefPtr());
-    screenManager->screenNodeListener_->OnScreenConnect(1);
+    auto screenManager = RSScreenManager::GetInstance();
+    auto property = sptr<RSScreenProperty>::MakeSptr();
+    screenManager->screenNodeListener_->OnScreenConnect(1, property);
     mainThread1->isRunning_ = backUpState;
 }
 
 /**
+ * @tc.name: OnScreenConnect002
+ * @tc.desc: test OnScreenConnect
+ * @tc.type: FUNC
+ * @tc.require: issueIBF9OU
+ */
+HWTEST_F(RSMainThreadTest, OnScreenConnect002, TestSize.Level2)
+{
+    auto screenNodeListener = std::make_shared<RSMainThread::RSScreenNodeListener>();
+    ASSERT_NE(screenNodeListener, nullptr);
+    screenNodeListener->OnScreenConnect(0, nullptr);
+}
+
+/**
  * @tc.name: OnScreenDisconnectTest
- * @tc.desc: test OnScreenDisconnectTest
+ * @tc.desc: test OnScreenDisconnect
  * @tc.type: FUNC
  * @tc.require: issueIBF9OU
  */
@@ -5997,10 +6045,27 @@ HWTEST_F(RSMainThreadTest, OnScreenDisconnectTest, TestSize.Level2)
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
 
-    auto screenManagerPtr = impl::RSScreenManager::GetInstance();
-    auto* screenManager = static_cast<impl::RSScreenManager*>(screenManagerPtr.GetRefPtr());
+    auto screenManager = RSScreenManager::GetInstance();
     screenManager->screenNodeListener_->OnScreenDisconnect(0);
 }
+
+/**
+ * @tc.name: OnScreenPropertyChangedTest
+ * @tc.desc: test OnScreenPropertyChanged
+ * @tc.type: FUNC
+ * @tc.require: issueIBF9OU
+ */
+HWTEST_F(RSMainThreadTest, OnScreenPropertyChangedTest, TestSize.Level2)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    auto listener = std::make_shared<RSMainThread::RSScreenNodeListener>();
+    auto property = sptr<RSScreenProperty>::MakeSptr();
+
+    listener->OnScreenPropertyChanged(0, property);
+}
+
 /**
  * @tc.name: IsFastComposeVsyncTimeSync001
  * @tc.desc: test IsFastComposeVsyncTimeSync input value error condition
@@ -6398,7 +6463,7 @@ HWTEST_F(RSMainThreadTest, InitHgmTaskHandleThreadTest, TestSize.Level1)
 HWTEST_F(RSMainThreadTest, RegisterHwcEvent001, TestSize.Level1)
 {
     auto screenManager = CreateOrGetScreenManager();
-    auto screenManagerImpl = static_cast<impl::RSScreenManager*>(screenManager.GetRefPtr());
+    auto screenManagerImpl = static_cast<RSScreenManager*>(screenManager.GetRefPtr());
     ASSERT_NE(screenManagerImpl, nullptr);
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
@@ -6407,7 +6472,7 @@ HWTEST_F(RSMainThreadTest, RegisterHwcEvent001, TestSize.Level1)
     screenManagerImpl->instance_ = nullptr;
     mainThread->RegisterHwcEvent();
     // reset screenManager in TearDownTestCase, so it can't be nullptr
-    screenManagerImpl->instance_ = new impl::RSScreenManager();
+    screenManagerImpl->instance_ = new RSScreenManager();
 }
 
 /**
@@ -6421,7 +6486,7 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition004_BufferSync, TestSize.Level1)
     // INIT SCREEN
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(screenManager, nullptr);
-    auto rsScreen = std::make_shared<impl::RSScreen>(5, false, HdiOutput::CreateHdiOutput(5), nullptr);
+    auto rsScreen = std::make_shared<RSScreen>(HdiOutput::CreateHdiOutput(5));
     ASSERT_NE(rsScreen, nullptr);
     screenManager->MockHdiScreenConnected(rsScreen);
 
@@ -6679,7 +6744,7 @@ HWTEST_F(RSMainThreadTest, DoDirectCompositionWithAIBar, TestSize.Level1)
     // INIT SCREEN
     auto screenManager = CreateOrGetScreenManager();
     ASSERT_NE(screenManager, nullptr);
-    auto rsScreen = std::make_shared<impl::RSScreen>(5, false, HdiOutput::CreateHdiOutput(5), nullptr);
+    auto rsScreen = std::make_shared<RSScreen>(HdiOutput::CreateHdiOutput(5));
     ASSERT_NE(rsScreen, nullptr);
     screenManager->MockHdiScreenConnected(rsScreen);
 
@@ -6722,12 +6787,12 @@ HWTEST_F(RSMainThreadTest, DoDirectCompositionWithAIBar, TestSize.Level1)
 
     // add nullptr
     RSRenderNode::WeakPtr nullNode;
-    mainThread->aibarNodes_[0].insert(nullNode);
+    mainThread->aibarNodes_[childNode->GetScreenId()].insert(nullNode);
     EXPECT_TRUE(mainThread->DoDirectComposition(rootNode, false));
 
     // add not aibar node
     auto node = std::make_shared<RSRenderNode>(100, mainThread->context_);
-    mainThread->aibarNodes_[0].insert(node);
+    mainThread->aibarNodes_[childNode->GetScreenId()].insert(node);
     EXPECT_FALSE(mainThread->DoDirectComposition(rootNode, false));
 }
 
@@ -6882,5 +6947,48 @@ HWTEST_F(RSMainThreadTest, SetScreenPowerOnChangedTest, TestSize.Level1)
 
     mainThread->SetScreenPowerOnChanged(false);
     EXPECT_FALSE(mainThread->screenPowerOnChanged_);
+}
+
+/**
+ * @tc.name: DisableHdrDirectCompositionTest001
+ * @tc.desc: Test CollectInfoForHardwareComposer when hardware hdr is disabled.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, DisableHdrDirectCompositionTest001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    bool isUniRender = mainThread->isUniRender_;
+    bool doDirectComposition = mainThread->doDirectComposition_;
+    mainThread->isUniRender_ = true;
+    mainThread->context_->GetMutableNodeMap().renderNodeMap_.clear();
+    mainThread->context_->GetMutableNodeMap().surfaceNodeMap_.clear();
+    RSSurfaceRenderNodeConfig config;
+    config.id = 1;
+    auto node1 = std::make_shared<RSSurfaceRenderNode>(config);
+    node1->SetIsOnTheTree(true);
+    mainThread->context_->GetMutableNodeMap().RegisterRenderNode(node1);
+    auto& originalInterface = RSLuminanceControl::Get().rSLuminanceControlInterface_;
+    Mock::RSLuminanceControlInterfaceMock mockInterface;
+    RSLuminanceControl::Get().rSLuminanceControlInterface_ = &mockInterface;
+
+    mockInterface.isHardwareHdrDisabled_ = true;
+    node1->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
+    mainThread->CollectInfoForHardwareComposer();
+    ASSERT_FALSE(mainThread->doDirectComposition_);
+    node1->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+    mainThread->CollectInfoForHardwareComposer();
+    ASSERT_FALSE(mainThread->doDirectComposition_);
+    node1->SetVideoHdrStatus(HdrStatus::NO_HDR);
+    mainThread->CollectInfoForHardwareComposer();
+    ASSERT_FALSE(mainThread->doDirectComposition_);
+    mockInterface.isHardwareHdrDisabled_ = false;
+    mainThread->CollectInfoForHardwareComposer();
+    ASSERT_FALSE(mainThread->doDirectComposition_);
+
+    mainThread->isUniRender_ = isUniRender;
+    mainThread->doDirectComposition_ = doDirectComposition;
+    RSLuminanceControl::Get().rSLuminanceControlInterface_ = originalInterface;
 }
 } // namespace OHOS::Rosen

@@ -103,7 +103,7 @@ void RSClientToRenderConnectionStubTest::SetUpTestCase()
     RsVulkanContext::SetRecyclable(false);
 #endif
     hdiOutput_ = HdiOutput::CreateHdiOutput(screenId_);
-    auto rsScreen = std::make_shared<impl::RSScreen>(screenId_, true, hdiOutput_, nullptr);
+    auto rsScreen = std::make_shared<RSScreen>(hdiOutput_);
     screenManager_ = CreateOrGetScreenManager();
     screenManager_->MockHdiScreenConnected(rsScreen);
     hdiDeviceMock_ = Mock::HdiDeviceMock::GetInstance();
@@ -150,7 +150,7 @@ void g_WriteSurfaceCaptureConfigMock(RSSurfaceCaptureConfig& captureConfig, Mess
 HWTEST_F(RSClientToRenderConnectionStubTest, NotifySurfaceCaptureRemoteTest001, TestSize.Level1)
 {
     auto newPid = getpid();
-    auto screenManagerPtr = impl::RSScreenManager::GetInstance();
+    auto screenManagerPtr = RSScreenManager::GetInstance();
     auto mainThread = RSMainThread::Instance();
 
     sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
@@ -222,7 +222,6 @@ void RSClientToRenderConnectionStubTest::SetUp()
 {
     CreateComposerAdapterWithScreenInfo(DEFAULT_WIDTH, DEFAULT_HEIGHT,
         ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN, ScreenRotation::ROTATION_0);
-    RSHardwareThread::Instance().Start();
 
     auto mainThread = RSMainThread::Instance();
     if (!mainThread) {
@@ -251,7 +250,7 @@ public:
     RSScreenChangeCallbackStubMock() = default;
     virtual ~RSScreenChangeCallbackStubMock() = default;
     void OnScreenChanged(ScreenId id, ScreenEvent event,
-        ScreenChangeReason reason) override {};
+        ScreenChangeReason reason, sptr<IRemoteObject> obj = nullptr) override {};
 };
 
 
