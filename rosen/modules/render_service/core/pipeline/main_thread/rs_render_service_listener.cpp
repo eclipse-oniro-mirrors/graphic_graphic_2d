@@ -82,6 +82,7 @@ void RSRenderServiceListener::SetBufferInfoAndRequest(const std::shared_ptr<RSSu
     if (doFastCompose) {
         return;
     }
+    uint64_t id = 0;
     int64_t lastConsumeTime = 0;
     uint32_t queueSize = 0;
     if (consumer != nullptr) {
