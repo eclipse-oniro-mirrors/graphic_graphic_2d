@@ -2365,7 +2365,7 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareScreenRenderNode005, TestSize.Level
     auto screenManager = CreateOrGetScreenManager();
     auto screenId = CreateVirtualScreen(screenManager);
     ASSERT_NE(screenId, INVALID_SCREEN_ID);
-    
+
     rsScreenRenderNode->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(screenId);
     ASSERT_NE(rsScreenRenderNode->stagingRenderParams_, nullptr);
     rsUniRenderVisitor->curScreenNode_ = rsScreenRenderNode;
@@ -2377,7 +2377,7 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareScreenRenderNode005, TestSize.Level
 
 /*
  * @tc.name: QuickPrepareSurfaceRenderNode006
- * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node is should be skipped
+ * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node should be skipped
  * @tc.type: FUNC
  * @tc.require: issue20827
  */
@@ -2386,6 +2386,7 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareSurfaceRenderNode006, TestSize.Leve
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
     surfaceNode->SetStableSkipReached(true);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
@@ -2613,8 +2614,8 @@ HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode00
 
 /*
  * @tc.name: CheckSkipAndUpdateForegroundSurfaceRenderNode006
- * @tc.desc: Test RSUniRenderVisitorTest.CheckSkipAndUpdateForegroundSurfaceRenderNode while met skip and is app
- * window, and child has visible filter
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckSkipAndUpdateForegroundSurfaceRenderNode while met skip, and child has
+ * visible filter
  * @tc.type: FUNC
  * @tc.require: issue20827
  */
@@ -2635,8 +2636,26 @@ HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode00
 }
 
 /*
+ * @tc.name: CheckSkipAndUpdateForegroundSurfaceRenderNode007
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckSkipAndUpdateForegroundSurfaceRenderNode while parent tree is dirty
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode007, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetParentTreeDirty(true);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto isQuickSkip = rsUniRenderVisitor->CheckSkipAndUpdateForegroundSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(isQuickSkip);
+}
+
+/*
  * @tc.name: CheckQuickSkipSurfaceRenderNode001
- * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while surface node is not app window
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while surface node is not app window or has sub
+ * surface node
  * @tc.type: FUNC
  * @tc.require: issue20827
  */
@@ -2644,9 +2663,17 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode001, TestSize.Le
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(!isQuickSkip);
+
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    auto rsContext = std::make_shared<RSContext>();
+    auto subNodeTwo = std::make_shared<RSSurfaceRenderNode>(22, rsContext);
+    surfaceNode->childSubSurfaceNodes_[subNodeTwo->GetId()] = subNodeTwo;
+    isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
     ASSERT_TRUE(!isQuickSkip);
 }
 
@@ -2662,6 +2689,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode002, TestSize.Le
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
     surfaceNode->SetDirty(true);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
@@ -2680,6 +2708,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode003, TestSize.Le
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
     surfaceNode->SetForcePrepare(true);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
@@ -2689,7 +2718,6 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode003, TestSize.Le
 /*
  * @tc.name: CheckQuickSkipSurfaceRenderNode004
  * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while background surface node quick skip
- * region is empty
  * @tc.type: FUNC
  * @tc.require: issue20827
  */
@@ -2699,10 +2727,10 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode004, TestSize.Le
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
 
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->isBgWindowTraversalStarted_ = true;
     RectI rect = RectI(0, 0, 100, 100);
     auto occlusionRegion = Occlusion::Region(rect);
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     rsUniRenderVisitor->accumulatedOcclusionRegion_.OrSelf(occlusionRegion);
     auto rsContext = std::make_shared<RSContext>();
     rsUniRenderVisitor->curScreenNode_ = std::make_shared<RSScreenRenderNode>(1, 0, rsContext);
@@ -2723,15 +2751,62 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode005, TestSize.Le
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
 
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    surfaceNode->SetStableSkipReached(true);
+    auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(isQuickSkip);
+}
+
+/*
+ * @tc.name: CheckQuickSkipSurfaceRenderNode006
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while surfaceWindowType_ is DEFAULT_WINDOW
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode006, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
-    ASSERT_TRUE(!isQuickSkip);    
+    ASSERT_TRUE(!isQuickSkip);
+}
 
-    surfaceNode->SetStableSkipReached(true);
-    isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
-    ASSERT_TRUE(isQuickSkip);
+/*
+ * @tc.name: CheckQuickSkipSurfaceRenderNode007
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while surfaceWindowType_ is SCB_DESKTOP
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode007, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SCB_DESKTOP;
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(!isQuickSkip);
+}
+
+/*
+ * @tc.name: CheckQuickSkipSurfaceRenderNode008
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while surfaceWindowType_ is SCB_DROPDOWN_PANEL
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode008, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SCB_DROPDOWN_PANEL;
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(!isQuickSkip);
 }
 
 /*
@@ -5174,6 +5249,37 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareChildren, TestSize.Level2)
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
+    rsUniRenderVisitor->curSurfaceNode_ = rsSurfaceRenderNode;
+    rsUniRenderVisitor->QuickPrepareChildren(*rsSurfaceRenderNode);
+}
+
+/**
+ * @tc.name: QuickPrepareChildren002
+ * @tc.desc: Test QuickPrepareChildren
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, QuickPrepareChildren002, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    rsSurfaceRenderNode->lastFrameSubTreeSkipped_ = true;
+    auto dirtyManager = rsSurfaceRenderNode->GetDirtyManager();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    rsSurfaceRenderNode->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
+    rsSurfaceRenderNode->hasRemovedChild_ = true;
+    rsSurfaceRenderNode->SetParentTreeDirty(true);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetIsOnTheTree(true, surfaceNode->GetId(), surfaceNode->GetId());
+    surfaceNode->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
+    surfaceNode->name_ = "TestWindow";
+
+    rsSurfaceRenderNode->AddChild(surfaceNode, 0);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     rsUniRenderVisitor->curSurfaceNode_ = rsSurfaceRenderNode;
     rsUniRenderVisitor->QuickPrepareChildren(*rsSurfaceRenderNode);
 }

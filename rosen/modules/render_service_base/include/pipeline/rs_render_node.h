@@ -191,6 +191,7 @@ public:
     {
         isSubTreeDirty_ = val;
     }
+    // Only used in quick skip prepare phase
     void SetForcePrepare(bool isForcePrepare)
     {
         isForcePrepare_ = isForcePrepare;
@@ -198,6 +199,14 @@ public:
     bool IsForcePrepare() const
     {
         return isForcePrepare_;
+    }
+    void SetParentTreeDirty(bool isParentTreeDirty)
+    {
+        isParentTreeDirty_ = isParentTreeDirty;
+    }
+    bool IsParentTreeDirty() const
+    {
+        return isParentTreeDirty_;
     }
     bool IsTreeStateChangeDirty() const
     {
@@ -1182,6 +1191,7 @@ private:
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
     bool isForcePrepare_ = false;
+    bool isParentTreeDirty_ = false;
     DrawNodeType drawNodeType_ = DrawNodeType::PureContainerType;
     std::atomic<bool> isTunnelHandleChange_ = false;
     std::atomic<bool> commandExecuted_ = false;
