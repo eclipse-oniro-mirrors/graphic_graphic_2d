@@ -1330,6 +1330,27 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             SetScreenPowerStatus(id, static_cast<ScreenPowerStatus>(status));
             break;
         }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DUAL_SCREEN_STATE): {
+            ScreenId id{INVALID_SCREEN_ID};
+            uint64_t status{0};
+            if (!data.ReadUint64(id) || !data.ReadUint64(status)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_DUAL_SCREEN_STATE Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (status >= static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_STATUS_BUTT)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_DUAL_SCREEN_STATE invalid status: %{public}" PRIu64,
+                        status);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t ret = SetDualScreenState(id, static_cast<DualScreenStatus>(status));
+            if (!reply.WriteInt32(ret)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_DUAL_SCREEN_STATE write ret failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
             pid_t pid = GetCallingPid();
             RS_PROFILER_PATCH_PID(data, pid);

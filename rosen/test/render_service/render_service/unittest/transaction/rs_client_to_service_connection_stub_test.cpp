@@ -2251,4 +2251,75 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest005, Te
  
     clientToServiceConnection->mainThread_ = mainThread;
 }
+
+/**
+ * @tc.name: SetDualScreenStateTest001
+ * @tc.desc: Test SetDualScreenState
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetDualScreenStateTest001, TestSize.Level1)
+{
+    sptr<RSClientToServiceConnectionStub> connectionStub =
+        new RSClientToServiceConnection(0, nullptr, mainThread_, screenManager_, token_->AsObject(), nullptr);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DUAL_SCREEN_STATE);
+
+    // case 1: only write descriptor
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    // case 2: only write descriptor and screen id
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    // case 3: write invalid dual screen status
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_STATUS_BUTT));
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    // case 4: write valid data, but error occurs in reply
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_ENTER));
+        reply.writable_ = false;
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_REPLY);
+    }
+
+    // case 5: write valid data
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_ENTER));
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_OK);
+    }
+}
 } // namespace OHOS::Rosen
