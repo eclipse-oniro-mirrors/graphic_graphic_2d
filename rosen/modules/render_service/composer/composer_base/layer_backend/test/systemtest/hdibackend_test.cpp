@@ -83,6 +83,9 @@ namespace {
 */
 HWTEST_F(HdiBackendSysTest, Repaint001, Function | MediumTest| Level3)
 {
+    // Repaint before SetHdiBackendDevice
+    output_->Repaint();
+
     // repaint when layermap in output is empty
     output_->Repaint();
 
@@ -104,9 +107,6 @@ HWTEST_F(HdiBackendSysTest, Repaint001, Function | MediumTest| Level3)
     // client composition while onPrepareCompleteCb_ is not nullptr
     auto func = [](sptr<Surface> &, const struct PrepareCompleteParam &param, void* data) -> void {};
     ASSERT_EQ(output_->RegPrepareComplete(func, nullptr), ROSEN_ERROR_OK);
-    output_->Repaint();
-
-    output_->SetScreenPowerOnChanged(true);
     output_->Repaint();
 }
 
