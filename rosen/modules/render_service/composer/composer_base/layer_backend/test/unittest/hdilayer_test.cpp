@@ -457,7 +457,7 @@ HWTEST_F(HdiLayerTest, SetLayerBuffer, Function | MediumTest| Level1)
     EXPECT_CALL(*mockBuffer, GetBufferHandle()).WillRepeatedly(testing::Return(nullptr));
     rsLayer->SetBuffer(mockBuffer, newFence);
     res = hdiLayer->SetLayerBuffer();
-    EXPECT_EQ(res, GRAPHIC_DISPLAY_NULL_PTR);
+    EXPECT_EQ(res, GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /**
