@@ -58,6 +58,7 @@ Drawing::ColorQuad RSColorPickerManager::GetColorPicked(RSPaintFilterCanvas& can
         return colorPicked_;
     }
     lastUpdateTime_ = currTime;
+    
     auto colorPickTask = [snapshot, nodeId, strategy, weakThis = weak_from_this()]() {
         auto manager = weakThis.lock();
         if (!manager) {
