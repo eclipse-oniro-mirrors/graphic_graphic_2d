@@ -266,6 +266,7 @@ static std::unordered_map<VisualEffectPara::ParaType, ShaderConvertor> convertor
     { VisualEffectPara::ParaType::COLOR_GRADIENT_EFFECT, ConvertColorGradientEffectPara },
     { VisualEffectPara::ParaType::BORDER_LIGHT_EFFECT, ConvertBorderLightPara },
     { VisualEffectPara::ParaType::HARMONIUM_EFFECT, ConvertHarmoniumEffectPara },
+    { VisualEffectPara::ParaType::FROSTED_GLASS_EFFECT, ConvertFrostedGlassEffectPara },
 };
 
 std::shared_ptr<RSNGShaderBase> RSNGShaderBase::Create(RSNGEffectType type)
