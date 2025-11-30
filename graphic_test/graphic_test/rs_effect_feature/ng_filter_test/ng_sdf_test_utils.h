@@ -84,30 +84,32 @@ const std::vector<RRect> rrectParams = {
 
 const std::vector<Matrix3f> matrix3fParams1 = {
     // scale_x, skew_x, trans_x, skew_y, scale_y, trans_y, persp_0, persp_1, persp_2
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-    Matrix3f{1.0f, 0.0f, -50.0f, 0.0f, 1.0f, -50.0f, 0.0f, 0.0f, 1.0f},
-    Matrix3f{1.5f, 0.577f, -50.0f, 0.577f, 1.5f, -200.0f, 0.0f, 0.0f, 1.0f},
-    Matrix3f{1.5f, 0.577f, -20.0f, 0.577f, 1.5f, -20.0f, 0.0f, 0.0f, 1.0f},
-    Matrix3f{0.5f, 1.17f, -100.0f, 1.17f, 0.5f, -30.0f, 0.0f, 0.0f, 1.0f},
-    Matrix3f{0.0f, 0.0f, -30.0f, 0.0f, 0.0f, -30.0f, 0.0f, 0.0f, 1.0f},
+    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}, // unit
+    Matrix3f{1.0f, 0.0f, -50.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}, // translateX
+    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, -50.0f, 0.0f, 0.0f, 1.0f}, // translateY
+    Matrix3f{1.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}, // scaleX
+    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f,1.5f, 0.0f, 0.0f, 0.0f, 1.0f}, // scaleY
+    Matrix3f{0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}, // invaid
 };
 
 const std::vector<Matrix3f> matrix3fParams2 = {
     // scale_x, skew_x, trans_x, skew_y, scale_y, trans_y, persp_0, persp_1, persp_2
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0003f, 1.0f},
-    Matrix3f{1.0f, 0.0f, -50.0f, 0.0f, 1.0f, -50.0f, 0.0f, -0.0003f, 1.0f},
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0003f, 1.0f},
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.00022f, 1.0f},
+    Matrix3f{0.866f, -0.5f, 0.0f, 0.5f, 0.866f, 0.0f, 0.0f, 0.0f, 1.0f}, // rotation30
+    Matrix3f{0.5f, -0.866f, 0.0f, 0.866f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f}, // rotation60
+    Matrix3f{0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f}, // rotation90
+    Matrix3f{1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}, //skewX
+    Matrix3f{1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}, //skewY
+    Matrix3f{1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}, //skewXY
 };
 
 const std::vector<Matrix3f> matrix3fParams3 = {
     // scale_x, skew_x, trans_x, skew_y, scale_y, trans_y, persp_0, persp_1, persp_2
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0003f, 0.0f, 1.0f},
-    Matrix3f{1.0f, 0.0f, -50.0f, 0.0f, 1.0f, -50.0f, -0.0003f, 0.0f, 1.0f},
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0003f, 0.0f, 1.0f},
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.00022f, 0.0f, 1.0f},
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.005f, 0.0f, 1.0f},
-    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.1f, 0.0f, 1.0f},
+    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0003f, 0.0f, 1.0f}, // perpX
+    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,0.0f, 0.0003f, 1.0f}, //perpY
+    Matrix3f{1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0003f, 0.0003f, 1.0f}, //perspXY
+    Matrix3f{1.5f, 0.577f, -20.0f, 0.577f, 1.5f, -20.0f, 0.0f, 0.0f, 1.0f}, // combination1
+    Matrix3f{0.5f, 1.17f, -100.0f, 1.17f, 0.5f, -30.0f, 0.0f, 0.0f, 1.0f}, // combination2
+    Matrix3f{0.866f, -0.5f, 0.0f, 0.5f, 0.866f, 0.0f, 0.0f, 0.0006f, 1.0f}, // combination3
 };
 const std::vector<float> sdfShapeSpacingParams = {0.0f, 30.0f, 50.0f, 100.0f, 500000.0f, -5.0f};
 }  // namespace OHOS::Rosen

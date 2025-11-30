@@ -668,7 +668,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_Frosted_Glass_Material_Filter_Test)
         RegisterNode(backgroundTestNode);
 
         float shrinkX = 25.f;
-        float shrinkY = 25.f
+        float shrinkY = 25.f;
         Rosen::Vector4f materialNodeBounds(x + shrinkX, y + shrinkY, sizeX - 2 * shrinkX, sizeY - 2 * shrinkY);
         auto materialNode = Rosen::RSCanvasNode::Create();
         materialNode->SetBounds(materialNodeBounds);
