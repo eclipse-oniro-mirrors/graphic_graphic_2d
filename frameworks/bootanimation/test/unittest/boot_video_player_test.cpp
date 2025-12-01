@@ -205,7 +205,7 @@ HWTEST_F(BootVideoPlayerTest, BootVideoPlayerTest_006, TestSize.Level1)
     std::shared_ptr<BootVideoPlayer> player = std::make_shared<BootVideoPlayer>(params);
     bool result = player->IsNormalBoot();
     std::string bootReason = system::GetParameter("ohos.boot.reboot_reason", "");
-        std::vector<std::string> NORMAL_REBOOT_REASON_ARR = {"AP_S_COLDBOOT", "bootloader", "recovery", "fastbootd",
+    std::vector<std::string> reasonArr = {"AP_S_COLDBOOT", "bootloader", "recovery", "fastbootd",
         "resetfactory", "at2resetfactory", "atfactoryreset0", "resetuser", "sdupdate", "chargereboot", "resize",
         "erecovery", "usbupdate", "cust", "oem_rtc", "UNKNOWN", "mountfail", "hungdetect", "COLDBOOT", "updatedataimg",
         "AP_S_FASTBOOTFLASH", "gpscoldboot", "AP_S_COMBINATIONKEY", "CP_S_NORMALRESET", "IOM3_S_USER_EXCEPTION",
