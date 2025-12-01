@@ -22,6 +22,7 @@
 #include "command/rs_node_command.h"
 #include "command/rs_node_showing_command.h"
 #include "command/rs_surface_node_command.h"
+#include "variable_frame_rate/rs_variable_frame_rate.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -46,6 +47,9 @@ public:
         const std::string& sizeType = "normal");
     static Vector4<uint32_t> GetRandomUint32Vector4();
     static Vector4<Color> GetRandomColorVector4();
+    static ModifierNG::RSPropertyType GetRandomRSPropertyType();
+    static ModifierNG::RSModifierType GetRandomRSModifierType();
+    static std::shared_ptr<ModifierNG::RSRenderModifier> GetRandomRSRenderModifierSharedPtr();
     static std::shared_ptr<RSFilter> GetRandomRSFilterSharedPtr();
     static std::shared_ptr<RSImage> GetRandomRSImageSharedPtr();
     static std::shared_ptr<RSMask> GetRandomRSMaskSharedPtr();
@@ -67,6 +71,7 @@ public:
     static Vector2f GetRandomVector2f();
     static Vector3f GetRandomVector3f();
     static Vector4f GetRandomVector4f();
+    static Vector4<int> GetRandomVector4i();
     static Quaternion GetRandomQuaternion();
     static RectF GetRandomRectF();
     static std::shared_ptr<RectF> GetRandomRectFSharedPtr();
@@ -100,6 +105,11 @@ public:
     // RSFrameRateLinkerCommand params
     static ComponentScene GetRandomComponentScene();
     static FrameRateRange GetRandomFrameRateRange();
+
+    static EventInfo GetRandomEventInfo();
+    static std::vector<std::pair<uint64_t, EventInfo>> GetRandomUint64AndEventInfoPairVector();
+    static std::vector<std::pair<std::string, EventInfo>> GetRandomStringAndEventInfoPairVector();
+    static std::vector<std::pair<std::string, std::string>> GetRandomStringAndStringPairVector();
 
     static Drawing::Point GetRandomDrawingPoint();
     static Drawing::Color GetRandomDrawingColor();

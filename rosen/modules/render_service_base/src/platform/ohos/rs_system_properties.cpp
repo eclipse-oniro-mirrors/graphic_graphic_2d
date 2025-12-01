@@ -305,7 +305,7 @@ PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
 
 bool RSSystemProperties::GetRenderNodeLazyLoadEnabled()
 {
-    static bool enabled = system::GetParameter("persist.rosen.rendernodelazyload.enabled", "1") != "0";
+    static bool enabled = system::GetParameter("persist.rosen.rendernodelazyload.enabled", "0") != "0";
     return enabled;
 }
 
@@ -1703,6 +1703,12 @@ bool RSSystemProperties::GetSupportScreenFreezeEnabled()
     return ConvertToInt(enable, 1) != 0;
 }
 
+bool RSSystemProperties::GetPreparePhaseQuickSkipEnabled()
+{
+    static bool quickSkipEnabled = system::GetIntParameter("persist.rosen.graphic.quick.skip.enabled", 1) != 0;
+    return quickSkipEnabled;
+}
+
 bool RSSystemProperties::GetSelfDrawingDirtyRegionEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
@@ -1760,6 +1766,16 @@ bool RSSystemProperties::GetScaleImageAsyncEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()
+{
+    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", true);
+}
+
+bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()
+{
+    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_render_dma", false);
 }
 } // namespace Rosen
 } // namespace OHOS
