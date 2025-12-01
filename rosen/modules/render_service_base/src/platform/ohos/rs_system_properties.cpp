@@ -305,11 +305,7 @@ PartialRenderType RSSystemProperties::GetUniPartialRenderEnabled()
 
 bool RSSystemProperties::GetRenderNodeLazyLoadEnabled()
 {
-#ifdef RS_ENABLE_MEMORY_DOWNTREE
-    static bool enabled = system::GetParameter("persist.rosen.rendernodelazyload.enabled", "1") != "0";
-#else
     static bool enabled = system::GetParameter("persist.rosen.rendernodelazyload.enabled", "0") != "0";
-#endif
     return enabled;
 }
 
@@ -1780,6 +1776,13 @@ bool RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()
 bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()
 {
     return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_render_dma", false);
+}
+
+bool RSSystemProperties::GetDefaultMemClearEnabled()
+{
+    static bool defaultMemClearEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.default.mem.clear.enabled", "1")).c_str()) != 0;
+    return defaultMemClearEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS
