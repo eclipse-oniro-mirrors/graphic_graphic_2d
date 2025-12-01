@@ -2321,5 +2321,17 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetDualScreenStateTest001, TestSiz
         auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
         EXPECT_EQ(res, ERR_OK);
     }
+
+    // case 6: empty screen manager
+    {
+        ScreenId id = hdiOutput_->GetScreenId();
+        sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub);
+        ASSERT_NE(connection, nullptr);
+        auto screenManager = connection->screenManager_;
+        connection->screenManager_ = nullptr;
+        int32_t res = connection->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+        connection->screenManager_ = screenManager;
+        EXPECT_EQ(res, StatusCode::SCREEN_MANAGER_NULL);
+    }
 }
 } // namespace OHOS::Rosen

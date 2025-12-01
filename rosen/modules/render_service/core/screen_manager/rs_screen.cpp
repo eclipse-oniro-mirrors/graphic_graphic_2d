@@ -693,13 +693,13 @@ ScreenPowerStatus RSScreen::GetPowerStatus()
 
 int32_t RSScreen::SetDualScreenState(DualScreenStatus status)
 {
-    if (!hdiScreen_) {
-        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
-        return StatusCode::HDI_ERROR;
-    }
     if (IsVirtual()) {
         RS_LOGW("%{public}s: virtual screen not support SetDualScreenState.", __func__);
         return StatusCode::VIRTUAL_SCREEN;
+    }
+    if (!hdiScreen_) {
+        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
+        return StatusCode::HDI_ERROR;
     }
     uint64_t value = static_cast<uint64_t>(status);
     auto id = property_.GetId();

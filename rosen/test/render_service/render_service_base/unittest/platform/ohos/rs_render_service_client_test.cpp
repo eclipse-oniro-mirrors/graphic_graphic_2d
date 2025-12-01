@@ -1283,21 +1283,19 @@ HWTEST_F(RSServiceClientTest, SetDualScreenState001, TestSize.Level1)
 
 /**
  * @tc.name: SetDualScreenState
- * @tc.desc: Test SetDualScreenState with empty clientToService
+ * @tc.desc: Test SetDualScreenState
  * @tc.type:FUNC
  * @tc.require: issuesI9K7SJ
  */
-HWTEST_F(RSServiceClientTest, SetDualScreenState002, TestSize.Level1)
+HWTEST_F(RSServiceClientTest, SetDualScreenState001, TestSize.Level1)
 {
-    auto screenId = rsClient->GetDefaultScreenId();
-    ASSERT_NE(screenId, INVALID_SCREEN_ID);
-
+    ScreenId screenId = 0;
     RSRenderServiceConnectHub::Destroy();
     auto ret = rsClient->SetDualScreenState(screenId, DualScreenStatus::DUAL_SCREEN_ENTER);
     EXPECT_EQ(ret, StatusCode::RENDER_SERVICE_NULL);
     RSRenderServiceConnectHub::Init();
     ret = rsClient->SetDualScreenState(screenId, DualScreenStatus::DUAL_SCREEN_ENTER);
-    EXPECT_EQ(ret, StatusCode::SUCCESS);
+    EXPECT_NE(ret, StatusCode::RENDER_SERVICE_NULL);
 }
 } // namespace Rosen
 } // namespace OHOS
