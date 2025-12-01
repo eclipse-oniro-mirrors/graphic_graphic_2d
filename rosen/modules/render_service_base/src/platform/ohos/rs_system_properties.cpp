@@ -1777,5 +1777,12 @@ bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()
 {
     return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_render_dma", false);
 }
+
+bool RSSystemProperties::GetDefualtMemClearEnabled()
+{
+    static bool enable =
+        std::atoi((system::GetParameter("persist.sys.graphic.defualt.mem.clear.enabled", "1")).c_str()) != 0;
+    return enable;
+}
 } // namespace Rosen
 } // namespace OHOS

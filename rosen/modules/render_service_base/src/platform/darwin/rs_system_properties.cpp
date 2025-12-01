@@ -844,5 +844,10 @@ bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()
 {
     return false;
 }
+
+bool RSSystemProperties::GetDefualtMemClearEnabled()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS
