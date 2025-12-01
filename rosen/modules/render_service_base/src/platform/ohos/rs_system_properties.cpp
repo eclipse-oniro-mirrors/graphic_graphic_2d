@@ -1780,9 +1780,9 @@ bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()
 
 bool RSSystemProperties::GetDefualtMemClearEnabled()
 {
-    static bool enable =
+    static bool defualtMemClearEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.defualt.mem.clear.enabled", "1")).c_str()) != 0;
-    return enable;
+    return defualtMemClearEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS
