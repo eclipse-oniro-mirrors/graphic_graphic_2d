@@ -1887,12 +1887,12 @@ HWTEST_F(HgmFrameRateMgrTest, TestUpdateSoftVSync, Function | SmallTest | Level0
 }
 
 /**
- * @tc.name: TestSyncHgmConfigUpdateCallback
- * @tc.desc: Verify the result of SyncHgmConfigUpdateCallback
+ * @tc.name: TestIsMouseOrTouchPadEvent
+ * @tc.desc: Verify the result of IsMouseOrTouchPadEvent
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmFrameRateMgrTest, TestSyncHgmConfigUpdateCallback, Function | SmallTest | Level2)
+HWTEST_F(HgmFrameRateMgrTest, TestIsMouseOrTouchPadEvent, Function | SmallTest | Level2)
 {
     HgmFrameRateManager mgr;
     int32_t touchStatus = TOUCH_MOVE;
