@@ -1897,21 +1897,26 @@ HWTEST_F(HgmFrameRateMgrTest, TestIsMouseOrTouchPadEvent, Function | SmallTest |
     HgmFrameRateManager mgr;
     int32_t touchStatus = TOUCH_MOVE;
     int32_t sourceType = TouchSourceType::SOURCE_TYPE_MOUSE;
-    bool isMousesMove = mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
-    EXPECT_EQ(isMousesMove, true);
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    ASSERT_EQ(mgr.pointerManager_.GetState(), PointerState::POINTER_ACTIVE_STATE);
+    usleep(10);
 
     sourceType = TouchSourceType::SOURCE_TYPE_TOUCHSCREEN;
-    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
 
     sourceType = TouchSourceType::SOURCE_TYPE_TOUCHPAD;
-    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
 
     touchStatus = AXIS_BEGIN;
     sourceType = TouchSourceType::SOURCE_TYPE_TOUCHSCREEN;
-    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
 
     touchStatus = -1;
-    mgr.IsMouseOrTouchPadEvent(touchStatus, sourceType);
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
 }
 } // namespace Rosen
 } // namespace OHOS
