@@ -1330,11 +1330,11 @@ HWTEST_F(RSImageTest, DrawImageRepeatOffScreenTest, TestSize.Level1)
     surfacePtr->impl_ = std::make_shared<Drawing::SkiaSurface>();
     RSPaintFilterCanvas canvas(&drawingCanvas);
     canvas.surface_ = surfacePtr.get();
-    rsImage->DrawImageRepeatOffScreen(sampling, drawingCanvas, minX, maxX, minY, maxY);
+    rsImage->DrawImageRepeatOffScreen(sampling, canvas, minX, maxX, minY, maxY);
  
     // get offScreenCanvas null
     rsImage->dstRect_ = RectF(0, 0, 100, 100);
     rsImage->frameRect_ = RectF(0, 0, 100, 100);
-    rsImage->DrawImageRepeatOffScreen(sampling, drawingCanvas, minX, maxX, minY, maxY);
+    rsImage->DrawImageRepeatOffScreen(sampling, canvas, minX, maxX, minY, maxY);
 }
 } // namespace OHOS::Rosen
