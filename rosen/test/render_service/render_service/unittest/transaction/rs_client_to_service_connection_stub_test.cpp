@@ -2253,12 +2253,12 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest005, Te
 }
 
 /**
- * @tc.name: SetSystemAnimatedScenesTest005
- * @tc.desc: Test SetSystemAnimatedScenes when mainThread_ is nullptr
+ * @tc.name: NotifyTouchEventTest001
+ * @tc.desc: Test NotifyTouchEvent when mainThread_ is nullptr
  * @tc.type: FUNC
  * @tc.require: issue20726
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest005, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionStubTest, NotifyTouchEventTest001, TestSize.Level1)
 {
     MessageParcel data1;
     MessageParcel reply;
@@ -2273,7 +2273,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest005, Te
     data1.WriteInt32(touchStatus);
     data1.WriteInt32(touchCount);
     data1.WriteInt32(sourceType);
-    connectionStub_->OnRemoteRequest(code, data1, reply, option);
+    int ret = connectionStub_->OnRemoteRequest(code, data1, reply, option);
+    ASSERT_EQ(ret, ERR_NONE);
 
     MessageParcel data2;
     data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
