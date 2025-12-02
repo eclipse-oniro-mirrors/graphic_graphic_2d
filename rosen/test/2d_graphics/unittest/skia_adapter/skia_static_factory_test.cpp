@@ -118,14 +118,14 @@ HWTEST_F(SkiaStaticFactoryTest, MakeFromBackendRenderTarget001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:I91EDT
  */
-#ifdef RS_ENABLE_GPU
+
 HWTEST_F(SkiaStaticFactoryTest, MakeFromYUVAPixmaps001, TestSize.Level1)
 {
     OHOS::Rosen::Drawing::GPUContext gpuContext;
     YUVInfo info(100, 100, YUVInfo::PlaneConfig::Y_UV, YUVInfo::SubSampling::K420,
         YUVInfo::YUVColorSpace::JPEG_FULL_YUVCOLORSPACE,
         YUVInfo::YUVDataType::UNORM_8);
-    std::shared_ptr<ColorSpaces> colorSpace = nullptr;
+    std::shared_ptr<ColorSpace> colorSpace = nullptr;
     auto skiaStatic = SkiaStaticFactory::MakeFromYUVAPixmaps(gpuContext, info, nullptr, nullptr);
     ASSERT_TRUE(skiaStatic == nullptr);
 }
@@ -143,11 +143,11 @@ HWTEST_F(SkiaStaticFactoryTest, MakeFromYUVAPixmaps002, TestSize.Level1)
     YUVInfo info(100, 100, YUVInfo::PlaneConfig::Y_UV, YUVInfo::SubSampling::K420,
         YUVInfo::YUVColorSpace::JPEG_FULL_YUVCOLORSPACE,
         YUVInfo::YUVDataType::UNORM_8);
-    std::shared_ptr<ColorSpaces> colorSpace = std::make_shared<ColorSpace>(ColorSpace::ColorSpaceType::NO_TYPE);
+    std::shared_ptr<ColorSpace> colorSpace = std::make_shared<ColorSpace>(ColorSpace::ColorSpaceType::NO_TYPE);
     auto skiaStatic = SkiaStaticFactory::MakeFromYUVAPixmaps(gpuContext, info, nullptr, colorSpace);
     ASSERT_TRUE(skiaStatic == nullptr);
 }
-#endif
+
 /**
  * @tc.name: DeserializeTypeface001
  * @tc.desc: Test DeserializeTypeface
