@@ -2157,6 +2157,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkStub001, Test
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, NotifyTouchEvent, TestSize.Level1)
 {
+    ASSERT_NE(connectionStub_, nullptr);
     MessageOption option;
     MessageParcel reply;
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT);
