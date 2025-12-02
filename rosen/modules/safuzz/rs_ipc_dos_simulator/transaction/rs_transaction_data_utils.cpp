@@ -107,8 +107,11 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUnregisterGeometryTransitionNodePair),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSDumpClientNodeTree),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSCommitDumpClientNodeTree),
+    DECLARE_ADD_RANDOM(RSNodeCommand, RSMarkRepaintBoundary),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSModifierNGAttachProperty),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSModifierNGDetachProperty),
+    DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdateOcclusionCullingStatus),
+    DECLARE_ADD_RANDOM(RSNodeCommand, RSSetDrawNodeType),
 
     /********** RSCanvasNodeCommand **********/
     DECLARE_ADD_RANDOM(RSCanvasNodeCommand, RSCanvasNodeCreate),
@@ -161,6 +164,7 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetSurfaceBufferOpaque),
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetFrameGravityNewVersionEnabled),
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetAncoSrcCrop),
+    DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeSetContainerWindowTransparent),
 
     /********** RSProxyNodeCommand **********/
     DECLARE_ADD_RANDOM(RSProxyNodeCommand, RSProxyNodeCreate),

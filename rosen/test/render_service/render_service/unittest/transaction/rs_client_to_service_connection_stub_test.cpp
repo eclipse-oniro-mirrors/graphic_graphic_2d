@@ -2150,6 +2150,89 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkStub001, Test
 }
 
 /**
+ * @tc.name: SetDualScreenStateTest001
+ * @tc.desc: Test SetDualScreenState
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetDualScreenStateTest001, TestSize.Level1)
+{
+    sptr<RSClientToServiceConnectionStub> connectionStub =
+        new RSClientToServiceConnection(0, nullptr, mainThread_, screenManager_, token_->AsObject(), nullptr);
+    uint32_t interfaceCode = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DUAL_SCREEN_STATE);
+
+    // case 1: only write descriptor
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    // case 2: only write descriptor and screen id
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    // case 3: write invalid dual screen status
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_STATUS_BUTT));
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    // case 4: write valid data, but error occurs in reply
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_ENTER));
+        reply.writable_ = false;
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_INVALID_REPLY);
+    }
+
+    // case 5: write valid data
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteUint64(hdiOutput_->GetScreenId());
+        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_ENTER));
+        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
+        EXPECT_EQ(res, ERR_OK);
+    }
+
+    // case 6: empty screen manager
+    {
+        ScreenId id = hdiOutput_->GetScreenId();
+        sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub);
+        ASSERT_NE(connection, nullptr);
+        auto screenManager = connection->screenManager_;
+        connection->screenManager_ = nullptr;
+        int32_t res = connection->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+        connection->screenManager_ = screenManager;
+        EXPECT_EQ(res, StatusCode::SCREEN_MANAGER_NULL);
+    }
+}
+
+/**
  * @tc.name: SetSystemAnimatedScenesTest001
  * @tc.desc: Test SetSystemAnimatedScenes when ReadBool and ReadUint32 fail
  * @tc.type: FUNC
@@ -2253,85 +2336,36 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest005, Te
 }
 
 /**
- * @tc.name: SetDualScreenStateTest001
- * @tc.desc: Test SetDualScreenState
+ * @tc.name: SetVirtualScreenTypeBlackList001
+ * @tc.desc: Test SetVirtualScreenTypeBlackList001
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issue20886
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetDualScreenStateTest001, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackList001, TestSize.Level2)
 {
-    sptr<RSClientToServiceConnectionStub> connectionStub =
-        new RSClientToServiceConnection(0, nullptr, mainThread_, screenManager_, token_->AsObject(), nullptr);
-    uint32_t interfaceCode = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DUAL_SCREEN_STATE);
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST);
+    ScreenId id = INVALID_SCREEN_ID;
+    std::vector<NodeType> typeBlackListVector;
 
-    // case 1: only write descriptor
-    {
-        MessageParcel data;
-        MessageParcel reply;
-        MessageOption option;
-        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
-        EXPECT_EQ(res, ERR_INVALID_DATA);
-    }
+    MessageParcel data1;
+    data1.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    auto res = connectionStub_->OnRemoteRequest(code, data1, reply, option);
+    EXPECT_NE(res, ERR_NONE);
 
-    // case 2: only write descriptor and screen id
-    {
-        MessageParcel data;
-        MessageParcel reply;
-        MessageOption option;
-        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-        data.WriteUint64(hdiOutput_->GetScreenId());
-        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
-        EXPECT_EQ(res, ERR_INVALID_DATA);
-    }
+    MessageParcel data2;
+    data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data2.WriteUint64(id);
+    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
 
-    // case 3: write invalid dual screen status
-    {
-        MessageParcel data;
-        MessageParcel reply;
-        MessageOption option;
-        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-        data.WriteUint64(hdiOutput_->GetScreenId());
-        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_STATUS_BUTT));
-        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
-        EXPECT_EQ(res, ERR_INVALID_DATA);
-    }
-
-    // case 4: write valid data, but error occurs in reply
-    {
-        MessageParcel data;
-        MessageParcel reply;
-        MessageOption option;
-        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-        data.WriteUint64(hdiOutput_->GetScreenId());
-        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_ENTER));
-        reply.writable_ = false;
-        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
-        EXPECT_EQ(res, ERR_INVALID_REPLY);
-    }
-
-    // case 5: write valid data
-    {
-        MessageParcel data;
-        MessageParcel reply;
-        MessageOption option;
-        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-        data.WriteUint64(hdiOutput_->GetScreenId());
-        data.WriteUint64(static_cast<uint64_t>(DualScreenStatus::DUAL_SCREEN_ENTER));
-        auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
-        EXPECT_EQ(res, ERR_OK);
-    }
-
-    // case 6: empty screen manager
-    {
-        ScreenId id = hdiOutput_->GetScreenId();
-        sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub);
-        ASSERT_NE(connection, nullptr);
-        auto screenManager = connection->screenManager_;
-        connection->screenManager_ = nullptr;
-        int32_t res = connection->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
-        connection->screenManager_ = screenManager;
-        EXPECT_EQ(res, StatusCode::SCREEN_MANAGER_NULL);
-    }
+    MessageParcel data3;
+    data3.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data3.WriteUint64(id);
+    data3.WriteUInt8Vector(typeBlackListVector);
+    res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
 }
 } // namespace OHOS::Rosen

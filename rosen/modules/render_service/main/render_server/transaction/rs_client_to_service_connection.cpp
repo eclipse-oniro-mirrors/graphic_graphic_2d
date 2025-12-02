@@ -247,6 +247,9 @@ void RSClientToServiceConnection::CleanAll(bool toDelete) noexcept
             }
             RS_TRACE_NAME_FMT("ClearTransactionDataPidInfo %d", connection->remotePid_);
             connection->mainThread_->ClearTransactionDataPidInfo(connection->remotePid_);
+            if (connection->mainThread_->IsRequestedNextVSync()) {
+                connection->mainThread_->SetDirtyFlag();
+            }
         }).wait();
     mainThread_->ScheduleTask(
         [weakThis = wptr<RSClientToServiceConnection>(this)]() {
@@ -2858,6 +2861,7 @@ ErrCode RSClientToServiceConnection::ReportEventResponse(DataBaseRs info)
     RSUifirstManager::Instance().OnProcessEventResponse(info);
 #endif
     RSUifirstFrameRateControl::Instance().SetAnimationStartInfo(info);
+    UpdateAnimationOcclusionStatus(info.sceneId, true);
     return ERR_OK;
 }
 
@@ -2883,7 +2887,23 @@ ErrCode RSClientToServiceConnection::ReportEventJankFrame(DataBaseRs info)
     renderThread_.PostTask(task);
 #endif
     RSUifirstFrameRateControl::Instance().SetAnimationEndInfo(info);
+    UpdateAnimationOcclusionStatus(info.sceneId, false);
     return ERR_OK;
+}
+
+void RSClientToServiceConnection::UpdateAnimationOcclusionStatus(const std::string& sceneId, bool isStart)
+{
+    if (mainThread_ == nullptr) {
+        return;
+    }
+    auto task = [weakThis = wptr<RSClientToServiceConnection>(this), sceneId, isStart]() -> void {
+        sptr<RSClientToServiceConnection> connection = weakThis.promote();
+        if (connection == nullptr || connection->mainThread_ == nullptr) {
+            return;
+        }
+        connection->mainThread_->SetAnimationOcclusionInfo(sceneId, isStart);
+    };
+    mainThread_->PostTask(task);
 }
 
 void RSClientToServiceConnection::ReportRsSceneJankStart(AppInfo info)
