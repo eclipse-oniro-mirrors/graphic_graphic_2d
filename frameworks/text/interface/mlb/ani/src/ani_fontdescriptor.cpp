@@ -135,7 +135,7 @@ ani_status ParseFontDescriptorToAni(ani_env* env, const FontDescSharedPtr fontDe
         AniTextUtils::CreateAniStringObj(env, fontDesc->fontFamily),
         AniTextUtils::CreateAniStringObj(env, fontDesc->fontSubfamily),
         AniTextUtils::CreateAniOptionalEnum(env, AniGlobalEnum::GetInstance().fontWeight,
-            aniGetEnumIndex(AniTextEnum::fontWeight, static_cast<ani_size>(iter->second))),
+            aniGetEnumIndex(AniTextEnum::fontWeight, static_cast<uint32_t>(iter->second))),
         ani_int(fontDesc->width), ani_int(fontDesc->italic), ani_boolean(fontDesc->monoSpace),
         ani_boolean(fontDesc->symbolic));
 
@@ -162,7 +162,7 @@ ani_object CreateFontDescriptorArray(ani_env* env, const std::vector<FontDescSha
             TEXT_LOGE("Failed to parse FontDescriptor to ani,index %{public}zu,status %{public}d", index, status);
             continue;
         }
-        status = env->Object_CallMethodByName_Void(arrayObj, "$_set", "iC{std.core.Object}:", index, aniObj);
+        status = env->Object_CallMethod_Void(arrayObj, AniGlobalMethod::GetInstance().arraySet, index, aniObj);
         if (status != ANI_OK) {
             TEXT_LOGE("Failed to set FontDescriptor item,index %{public}zu,status %{public}d", index, status);
             continue;
@@ -308,13 +308,13 @@ ani_object AniFontDescriptor::MatchFontDescriptors(ani_env* env, ani_object desc
 ani_object AniFontDescriptor::GetFontDescriptorsFromPath(ani_env* env, ani_object path)
 {
     ani_boolean isString = false;
-    env->Object_InstanceOf(path, AniFindClass(env, ANI_STRING), &isString);
+    env->Object_InstanceOf(path, AniGlobalClass::GetInstance().aniString, &isString);
     if (isString) {
         return ProcessStringPath(env, path);
     }
 
     ani_boolean isResource = false;
-    env->Object_InstanceOf(path, AniFindClass(env, ANI_GLOBAL_RESOURCE), &isResource);
+    env->Object_InstanceOf(path, AniGlobalClass::GetInstance().globalResource, &isResource);
     if (isResource) {
         return ProcessResourcePath(env, path);
     }

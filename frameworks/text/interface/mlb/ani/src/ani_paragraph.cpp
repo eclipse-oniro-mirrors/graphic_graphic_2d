@@ -592,7 +592,7 @@ ani_object AniParagraph::GetLineMetricsAt(ani_env* env, ani_object object, ani_i
 void AniParagraph::UpdateColor(ani_env* env, ani_object object, ani_object color)
 {
     AniParagraph* aniParagraph =
-        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniClassFindMethod(env, PARAGRAPH_GET_NATIVE_KEY));
+        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniGlobalMethod::GetInstance().paragraphGetNative);
     if (aniParagraph == nullptr || aniParagraph->typography_ == nullptr) {
         TEXT_LOGE("Paragraph is null");
         return;
@@ -614,7 +614,7 @@ void AniParagraph::UpdateColor(ani_env* env, ani_object object, ani_object color
 void AniParagraph::UpdateDecoration(ani_env* env, ani_object object, ani_object decoration)
 {
     AniParagraph* aniParagraph =
-        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniClassFindMethod(env, PARAGRAPH_GET_NATIVE_KEY));
+        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniGlobalMethod::GetInstance().paragraphGetNative);
     if (aniParagraph == nullptr || aniParagraph->typography_ == nullptr) {
         TEXT_LOGE("Paragraph is null");
         return;

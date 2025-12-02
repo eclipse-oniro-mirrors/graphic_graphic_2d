@@ -32,7 +32,8 @@ std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyle
         AniTextUtils::ReadOptionalField(env, obj, AniGlobalMethod::GetInstance().paragraphStyleMaxLines, ref);
     if (ret == ANI_OK && ref != nullptr) {
         int maxLines = 0;
-        ret = env->Object_CallMethodByName_Int(reinterpret_cast<ani_object>(ref), "toInt", ":i", &maxLines);
+        ret = env->Object_CallMethod_Int(
+            reinterpret_cast<ani_object>(ref), AniGlobalMethod::GetInstance().intGet, &maxLines);
         if (ret == ANI_OK) {
             maxLines = maxLines < 0 ? 0 : maxLines;
             paragraphStyle->maxLines = static_cast<size_t>(maxLines);
@@ -77,13 +78,14 @@ std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyle
         ParseTextTabToNative(env, reinterpret_cast<ani_object>(tabRef), paragraphStyle->tab);
     }
 
-    AniTextUtils::ReadOptionalBoolField(env, obj, AniClassFindMethod(env, PARAGRAPH_STYLE_TRAILING_SPACE_OPTIMIZED_KEY),
+    AniTextUtils::ReadOptionalBoolField(env, obj, AniGlobalMethod::GetInstance().paragraphStyleTrailingSpaceOptimized,
         paragraphStyle->isTrailingSpaceOptimized);
     AniTextUtils::ReadOptionalBoolField(
-        env, obj, AniClassFindMethod(env, PARAGRAPH_STYLE_AUTO_SPACE_KEY), paragraphStyle->enableAutoSpace);
-    AniTextUtils::ReadOptionalBoolField(env, obj, "compressHeadPunctuation", paragraphStyle->compressHeadPunctuation);
+        env, obj, AniGlobalMethod::GetInstance().paragraphStyleAutoSpace, paragraphStyle->enableAutoSpace);
+    AniTextUtils::ReadOptionalBoolField(env, obj, AniGlobalMethod::GetInstance().paragraphStyleCompressHeadPunctuation,
+        paragraphStyle->compressHeadPunctuation);
     AniTextUtils::ReadOptionalEnumField(env, obj, AniTextEnum::textVerticalAlign,
-        AniClassFindMethod(env, PARAGRAPH_STYLE_VERTICAL_ALIGN_KEY), paragraphStyle->verticalAlignment);
+        AniGlobalMethod::GetInstance().paragraphStyleVerticalAlign, paragraphStyle->verticalAlignment);
 
     return paragraphStyle;
 }

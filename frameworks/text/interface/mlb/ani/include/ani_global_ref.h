@@ -116,6 +116,7 @@ public:
     ani_enum ellipsisMode;
     ani_enum textDecorationType;
     ani_enum textDecorationStyle;
+    ani_enum textBadgeType;
 
 private:
     AniGlobalEnum() = default;
@@ -180,6 +181,10 @@ public:
     ani_method paragraphStyleTextHeightBehavior;
     ani_method paragraphStyleStrutStyle;
     ani_method paragraphStyleTab;
+    ani_method paragraphStyleTrailingSpaceOptimized;
+    ani_method paragraphStyleAutoSpace;
+    ani_method paragraphStyleCompressHeadPunctuation;
+    ani_method paragraphStyleVerticalAlign;
     ani_method strutStyleFontStyle;
     ani_method strutStyleFontWidth;
     ani_method strutStyleFontWeight;
@@ -214,6 +219,7 @@ public:
     ani_method textStyleFontFeatures;
     ani_method textStyleFontVariations;
     ani_method textStyleBackgroundRect;
+    ani_method textStyleBadgeType;
     ani_method decorationCtor;
     ani_method decorationDecorationType;
     ani_method decorationDecorationStyle;

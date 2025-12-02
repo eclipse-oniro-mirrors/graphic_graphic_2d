@@ -172,8 +172,8 @@ ani_object AniFontCollection::GetLocalInstance(ani_env* env, ani_class cls)
         FontCollectionMgr::GetInstance().InsertLocalInstance(envAddress, aniFontCollection->fontCollection_);
     }
 
-    ani_object obj = AniTextUtils::CreateAniObject(env, AniFindClass(env, ANI_CLASS_FONT_COLLECTION),
-        AniClassFindMethod(env, FONT_COLLECTION_KEY), reinterpret_cast<ani_long>(aniFontCollection));
+    ani_object obj = AniTextUtils::CreateAniObject(env, AniGlobalClass::GetInstance().fontCollection,
+        AniGlobalMethod::GetInstance().fontCollection, reinterpret_cast<ani_long>(aniFontCollection));
     if (AniTextUtils::IsUndefined(env, obj)) {
         TEXT_LOGE("Failed to create ani font collection obj");
         delete aniFontCollection;
@@ -229,7 +229,7 @@ void AniFontCollection::LoadFontSyncWithCheck(
     int32_t nativeIndex = 0;
     ani_boolean isUndefined = false;
     if (env->Reference_IsUndefined(index, &isUndefined) == ANI_OK && !isUndefined) {
-        env->Object_CallMethodByName_Int(index, "unboxed", ":i", &nativeIndex);
+        env->Object_CallMethod_Int(index, AniGlobalMethod::GetInstance().intGet, &nativeIndex);
     }
     auto result = OnLoadFontSync(env, obj, name, path, nativeIndex);
     if (!result.success) {
@@ -261,7 +261,7 @@ void AniFontCollection::UnloadFontSync(ani_env* env, ani_object obj, ani_string 
         return;
     }
     auto aniFontCollection = AniTextUtils::GetNativeFromObj<AniFontCollection>(
-        env, obj, AniClassFindMethod(env, FONT_COLLECTION_GET_NATIVE_KEY));
+        env, obj, AniGlobalMethod::GetInstance().fontCollectionGetNative);
     if (aniFontCollection == nullptr || aniFontCollection->fontCollection_ == nullptr) {
         TEXT_LOGE("Null font collection");
         return;

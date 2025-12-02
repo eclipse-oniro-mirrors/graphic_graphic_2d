@@ -485,21 +485,21 @@ ani_object AniRun::GetImageBounds(ani_env* env, ani_object object)
 
 ani_object AniRun::GetTextDirection(ani_env* env, ani_object object)
 {
-    AniRun* aniRun = AniTextUtils::GetNativeFromObj<AniRun>(env, object, AniClassFindMethod(env, RUN_GET_NATIVE_KEY));
+    AniRun* aniRun = AniTextUtils::GetNativeFromObj<AniRun>(env, object, AniGlobalMethod::GetInstance().runGetNative);
     if (aniRun == nullptr || aniRun->run_ == nullptr) {
         TEXT_LOGE("Run is null");
         AniTextUtils::ThrowBusinessError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return AniTextUtils::CreateAniUndefined(env);
     }
     TextDirection textDirection = aniRun->run_->GetTextDirection();
-    ani_enum_item textDirectionEnum = AniTextUtils::CreateAniEnum(env, AniFindEnum(env, ANI_ENUM_TEXT_DIRECTION),
+    ani_enum_item textDirectionEnum = AniTextUtils::CreateAniEnum(env, AniGlobalEnum::GetInstance().textDirection,
         aniGetEnumIndex(AniTextEnum::textDirection, static_cast<uint32_t>(textDirection)).value_or(0));
     return static_cast<ani_object>(textDirectionEnum);
 }
 
 ani_object AniRun::GetAdvances(ani_env* env, ani_object object, ani_object range)
 {
-    AniRun* aniRun = AniTextUtils::GetNativeFromObj<AniRun>(env, object, AniClassFindMethod(env, RUN_GET_NATIVE_KEY));
+    AniRun* aniRun = AniTextUtils::GetNativeFromObj<AniRun>(env, object, AniGlobalMethod::GetInstance().runGetNative);
     if (aniRun == nullptr || aniRun->run_ == nullptr) {
         TEXT_LOGE("Run is null");
         AniTextUtils::ThrowBusinessError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
@@ -531,7 +531,7 @@ ani_object AniRun::GetAdvances(ani_env* env, ani_object object, ani_object range
             TEXT_LOGE("Failed to create point ani obj, index %{public}zu, status %{public}d", index, status);
             continue;
         }
-        status = env->Object_CallMethodByName_Void(arrayObj, "$_set", "ILstd/core/Object;:V", index, aniObj);
+        status = env->Object_CallMethod_Void(arrayObj, AniGlobalMethod::GetInstance().arraySet, index, aniObj);
         if (ANI_OK != status) {
             TEXT_LOGE("Failed to set points item, index %{public}zu, status %{public}d", index, status);
             continue;

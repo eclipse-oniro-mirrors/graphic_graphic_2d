@@ -23,7 +23,7 @@ namespace OHOS::Text::ANI {
 namespace {
 constexpr std::string_view RUNMETRICS_SIGN = "C{" ANI_INTERFACE_TEXT_STYLE "}C{" ANI_INTERFACE_FONT_METRICS "}:";
 constexpr CacheKey RUNMETRICS_KEY{ANI_CLASS_RUNMETRICS, "<ctor>", RUNMETRICS_SIGN};
-constexpr CacheKey MAP_SET_KEY{ANI_MAP, "set", "C{std.core.Object}C{std.core.Object}:C{std.core.Map}"};
+constexpr CacheKey MAP_SET_KEY{ANI_MAP, "set", "C{std.core.Object}C{std.core.Object}:C{escompat.Map}"};
 constexpr CacheKey BUSINESS_ERROR_KEY{ANI_BUSINESS_ERROR, "<ctor>", "C{std.core.String}C{escompat.ErrorOptions}:"};
 constexpr CacheKey ARRAY_KEY{ANI_ARRAY, "<ctor>", "i:"};
 constexpr CacheKey MAP_KEY{ANI_MAP, "<ctor>", ":"};
@@ -84,6 +84,14 @@ constexpr CacheKey PARAGRAPH_STYLE_STRUT_STYLE_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>strutStyle", ANI_WRAP_RETURN_C(ANI_INTERFACE_STRUT_STYLE)};
 constexpr CacheKey PARAGRAPH_STYLE_TAB_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>tab", ANI_WRAP_RETURN_C(ANI_INTERFACE_TEXT_TAB)};
+constexpr CacheKey PARAGRAPH_STYLE_TRAILING_SPACE_OPTIMIZED_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>trailingSpaceOptimized", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey PARAGRAPH_STYLE_AUTO_SPACE_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>autoSpace", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey PARAGRAPH_STYLE_COMPRESS_HEAD_PUNCTUATION_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>compressHeadPunctuation", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey PARAGRAPH_STYLE_VERTICAL_ALIGN_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>verticalAlign", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_VERTICAL_ALIGN)};
 
 constexpr CacheKey STRUT_STYLE_FONT_STYLE_KEY{
     ANI_INTERFACE_STRUT_STYLE, "<get>fontStyle", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_STYLE)};
@@ -106,7 +114,7 @@ constexpr CacheKey STRUT_STYLE_FONT_FAMILIES_KEY{
 constexpr CacheKey TEXT_TAB_ALIGNMENT_KEY{
     ANI_INTERFACE_TEXT_TAB, "<get>alignment", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_ALIGN)};
 constexpr CacheKey TEXT_TAB_LOCATION_KEY{ANI_INTERFACE_TEXT_TAB, "<get>location", ":d"};
-constexpr CacheKey LINEMETRICS_KEY{ANI_CLASS_LINEMETRICS, "<ctor>", "iiddddddidC{std.core.Map}:"};
+constexpr CacheKey LINEMETRICS_KEY{ANI_CLASS_LINEMETRICS, "<ctor>", "iiddddddidC{escompat.Map}:"};
 
 constexpr CacheKey TEXT_STYLE_COLOR_KEY{ANI_INTERFACE_TEXT_STYLE, "<get>color", ANI_WRAP_RETURN_C(ANI_INTERFACE_COLOR)};
 constexpr CacheKey TEXT_STYLE_FONT_WEIGHT_KEY{
@@ -144,6 +152,8 @@ constexpr CacheKey TEXT_STYLE_FONT_FEATURES_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontFeatures", ANI_WRAP_RETURN_C(ANI_ARRAY)};
 constexpr CacheKey TEXT_STYLE_FONT_VARIATIONS_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontVariations", ANI_WRAP_RETURN_C(ANI_ARRAY)};
+constexpr CacheKey TEXT_STYLE_BADGE_TYPE_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>badgeType", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_BADGE_TYPE)};
 
 constexpr CacheKey DECORATION_DECORATION_TYPE_KEY{
     ANI_INTERFACE_DECORATION, "<get>textDecoration", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_DECORATION_TYPE)};
@@ -177,7 +187,7 @@ constexpr CacheKey RECT_STYLE_LEFT_BOTTOM_RADIUS_KEY{ANI_INTERFACE_RECT_STYLE, "
 constexpr std::string_view TEXT_STYLE_SIGN =
     "C{" ANI_INTERFACE_DECORATION "}C{" ANI_INTERFACE_COLOR "}E{" ANI_ENUM_FONT_WEIGHT "}E{" ANI_ENUM_FONT_STYLE
     "}E{" ANI_ENUM_TEXT_BASELINE "}C{" ANI_ARRAY "}ddddzzC{" ANI_STRING "}E{" ANI_ENUM_ELLIPSIS_MODE "}C{" ANI_STRING
-    "}dC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_INTERFACE_RECT_STYLE "}:";
+    "}dC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_INTERFACE_RECT_STYLE "}E{" ANI_ENUM_TEXT_BADGE_TYPE "}:";
 constexpr CacheKey TEXT_STYLE_KEY{ANI_CLASS_TEXT_STYLE, "<ctor>", TEXT_STYLE_SIGN};
 
 constexpr std::string_view TEXT_SHADOW_SIGN = "C{" ANI_INTERFACE_COLOR "}C{" ANI_INTERFACE_POINT "}d:";
@@ -276,6 +286,7 @@ void AniGlobalEnum::Init(ani_env* env)
     ellipsisMode = AniFindEnum(env, ANI_ENUM_ELLIPSIS_MODE);
     textDecorationType = AniFindEnum(env, ANI_ENUM_TEXT_DECORATION_TYPE);
     textDecorationStyle = AniFindEnum(env, ANI_ENUM_TEXT_DECORATION_STYLE);
+    textBadgeType = AniFindEnum(env, ANI_ENUM_TEXT_BADGE_TYPE);
 }
 
 void AniGlobalMethod::Init(ani_env* env)
@@ -381,7 +392,16 @@ void AniGlobalMethod::InitParagraphStyleMethod(ani_env* env)
         AniClassFindMethod(env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_TEXT_HEIGHT_BEHAVIOR_KEY);
     paragraphStyleStrutStyle =
         AniClassFindMethod(env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_STRUT_STYLE_KEY);
-    paragraphStyleTab = AniClassFindMethod(env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_TAB_KEY);
+    paragraphStyleTab =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_TAB_KEY);
+    paragraphStyleTrailingSpaceOptimized = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_TRAILING_SPACE_OPTIMIZED_KEY);
+    paragraphStyleAutoSpace = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_AUTO_SPACE_KEY);
+    paragraphStyleCompressHeadPunctuation = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_COMPRESS_HEAD_PUNCTUATION_KEY);
+    paragraphStyleVerticalAlign = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_VERTICAL_ALIGN_KEY);
 }
 void AniGlobalMethod::InitStrutStyleMethod(ani_env* env)
 {
@@ -436,6 +456,8 @@ void AniGlobalMethod::InitTextStyleMethod(ani_env* env)
         AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_VARIATIONS_KEY);
     textStyleBackgroundRect =
         AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_BACKGROUND_RECT_KEY);
+    textStyleBadgeType =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_BADGE_TYPE_KEY);
 }
 
 void AniGlobalMethod::InitDecorationMethod(ani_env* env)

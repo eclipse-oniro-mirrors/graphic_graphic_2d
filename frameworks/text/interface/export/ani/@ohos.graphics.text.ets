@@ -70,17 +70,9 @@ namespace text {
     native loadFontSync(name: string, path: Resource | string): void;
     native loadFontSyncWithCheck(name: string, path: Resource | string, index?: int): void;
     async loadFont(name: string, path: string | Resource): Promise<void> {
-      await new Promise<void>((resolve, reject) => {
-        try {
-          taskpool.execute((): void => {
-            this.loadFontSync(name, path);
-          }).then(() => {
-            resolve(undefined);
-          })
-        } catch (err) {
-          reject(err as BusinessError);
-        }
-      });
+      return taskpool.execute((): void => {
+        this.loadFontSync(name, path);
+      }) as Promise<void>;
     }
     async loadFontWithCheck(name: string, path: Resource | string, index?: int): Promise<void> {
       return taskpool.execute((): void => {
@@ -89,17 +81,9 @@ namespace text {
     }
     native unloadFontSync(name: string): void;
     async unloadFont(name: string): Promise<void> {
-      await new Promise<void>((resolve, reject) => {
-        try {
-          taskpool.execute((): void => {
-            this.unloadFontSync(name);
-          }).then(() => {
-            resolve(undefined);
-          })
-        } catch (err) {
-          reject(err as BusinessError);
-        }
-      });
+      return taskpool.execute((): void => {
+        this.unloadFontSync(name);
+      }) as Promise<void>;
     }
     native clearCaches(): void;
 
@@ -185,17 +169,9 @@ namespace text {
     }
     native layoutSync(width: double): void;
     async layout(width: double): Promise<void> {
-      await new Promise<void>((resolve, reject) => {
-        try {
-          taskpool.execute((): void => {
-            this.layoutSync(width);
-          }).then(() => {
-            resolve(undefined);
-          })
-        } catch (err) {
-          reject(err as BusinessError);
-        }
-      });
+      return taskpool.execute((): void => {
+        this.layoutSync(width);
+      }) as Promise<void>;
     }
     native paint(canvas: drawing.Canvas, x: double, y: double): void;
     native paintOnPath(canvas: drawing.Canvas, path: drawing.Path, hOffset: double, vOffset: number): void;
@@ -334,6 +310,7 @@ namespace text {
     tab?: TextTab;
     trailingSpaceOptimized?: boolean;
     autoSpace?: boolean;
+    compressHeadPunctuation?: boolean;
     verticalAlign?: TextVerticalAlign;
   }
 
@@ -940,65 +917,33 @@ namespace text {
   native function getSystemFontFullNamesByTypeSync(fontType: SystemFontType): Array<string>;
 
   export async function getSystemFontFullNamesByType(fontType: SystemFontType): Promise<Array<string>> {
-    return await new Promise<Array<string>>((resolve, reject) => {
-      try {
-        taskpool.execute((): Array<string> => {
-          return getSystemFontFullNamesByTypeSync(fontType);
-        }).then((result) => {
-          resolve(result);
-        })
-      } catch (err) {
-        reject(err as BusinessError);
-      }
-    });
+    return taskpool.execute((): Array<string> => {
+      return getSystemFontFullNamesByTypeSync(fontType);
+    }) as Promise<Array<string>>;
   }
 
   native function getFontDescriptorByFullNameSync(fullName: string, fontType: SystemFontType): FontDescriptor;
 
   export async function getFontDescriptorByFullName(fullName: string, fontType: SystemFontType): Promise<FontDescriptor> {
-    return await new Promise<FontDescriptor>((resolve, reject) => {
-      try {
-        taskpool.execute((): FontDescriptor => {
-          return getFontDescriptorByFullNameSync(fullName, fontType);
-        }).then((result) => {
-          resolve(result);
-        })
-      } catch (err) {
-        reject(err as BusinessError);
-      }
-    });
+    return taskpool.execute((): FontDescriptor => {
+      return getFontDescriptorByFullNameSync(fullName, fontType);
+    }) as Promise<FontDescriptor>;
   }
 
   native function matchFontDescriptorsSync(desc: FontDescriptor): Array<FontDescriptor>;
 
   export async function matchFontDescriptors(desc: FontDescriptor): Promise<Array<FontDescriptor>> {
-    return await new Promise<Array<FontDescriptor>>((resolve, reject) => {
-      try {
-        taskpool.execute((): Array<FontDescriptor> => {
-          return matchFontDescriptorsSync(desc);
-        }).then((result) => {
-          resolve(result);
-        })
-      } catch (err) {
-        reject(err as BusinessError);
-      }
-    });
+    return taskpool.execute((): Array<FontDescriptor> => {
+      return matchFontDescriptorsSync(desc);
+    }) as Promise<Array<FontDescriptor>>;
   }
 
   native function getFontDescriptorsFromPathSync(path: Resource | string): Array<FontDescriptor>;
 
   export async function getFontDescriptorsFromPath(path: Resource | string): Promise<Array<FontDescriptor>> {
-    return await new Promise<Array<FontDescriptor>>((resolve, reject) => {
-      try {
-        taskpool.execute((): Array<FontDescriptor> => {
-          return getFontDescriptorsFromPathSync(path);
-        }).then((result) => {
-          resolve(result);
-        })
-      } catch (err) {
-        reject(err as BusinessError);
-      }
-    });
+    return taskpool.execute((): Array<FontDescriptor> => {
+      return getFontDescriptorsFromPathSync(path);
+    }) as Promise<Array<FontDescriptor>>;
   }
 
   export enum SystemFontType {
