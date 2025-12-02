@@ -311,8 +311,6 @@ void RSUniRenderVisitor::CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode&
         RS_LOGD("CheckColorSpaceWithSelfDrawingNode curScreenNode_ is nullptr");
         return;
     }
-    // currently, P3 is the only supported wide color gamut, this may be modified later.
-    node.UpdateColorSpaceWithMetadata();
     auto appSurfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node.GetInstanceRootNode());
     if (ColorGamutParam::SkipOccludedNodeDuringColorGamutCollection() && appSurfaceNode
         && appSurfaceNode->IsMainWindowType() && appSurfaceNode->GetVisibleRegion().IsEmpty() && GetIsOpDropped()) {
@@ -2015,6 +2013,7 @@ void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
     ancestorNodeHasAnimation_ = ancestorNodeHasAnimation_ || node.GetCurFrameHasAnimation();
     node.ResetChildRelevantFlags();
     node.ResetChildUifirstSupportFlag();
+    node.ResetNodeColorSpace();
     if (node.IsInstanceOf<RSUnionRenderNode>()) {
         RSBaseRenderNode::ReinterpretCast<RSUnionRenderNode>(node.shared_from_this())->ResetVisibleUnionChildren();
     }
@@ -3180,6 +3179,8 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     if (node.HasChildExcludedFromNodeGroup() || node.IsExcludedFromNodeGroup()) {
         nodeParent->SetHasChildExcludedFromNodeGroup(true);
     }
+    node.UpdateNodeColorSpace();
+    nodeParent->SetNodeColorSpace(node.GetNodeColorSpace());
 }
 
 void RSUniRenderVisitor::CollectUnionInfo(RSRenderNode& node)

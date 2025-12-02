@@ -339,6 +339,14 @@ void RSRenderParams::UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd)
     needSync_ = true;
 }
 
+void RSRenderParams::SetNodeColorSpace(GraphicColorGamut colorSpace)
+{
+    if (colorSpace != nodeColorSpace_) {
+        nodeColorSpace_ = colorSpace;
+        needSync_ = true;
+    }
+}
+
 void RSRenderParams::ClearHDRVideoStatus()
 {
     HdrStatus newStatus = static_cast<HdrStatus>(

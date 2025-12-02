@@ -34,6 +34,7 @@
 #include "drawable/rs_misc_drawable.h"
 #include "drawable/rs_property_drawable_foreground.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "feature/hdr/rs_colorspace_util.h"
 #ifdef RS_MEMORY_INFO_MANAGER
 #include "feature/memory_info_manager/rs_memory_info_manager.h"
 #endif
@@ -474,6 +475,22 @@ void RSRenderNode::SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentT
             parentSurface->ReduceHDRNum(hdrType);
         }
     }
+}
+
+void RSRenderNode::ResetNodeColorSpace()
+{
+    stagingRenderParams_->SetNodeColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+void RSRenderNode::SetNodeColorSpace(GraphicColorGamut colorSpace)
+{
+    colorSpace = RSColorSpaceUtil::SelectBigGamut(colorSpace, stagingRenderParams_->GetNodeColorSpace());
+    stagingRenderParams_->SetNodeColorSpace(colorSpace);
+}
+
+GraphicColorGamut RSRenderNode::GetNodeColorSpace() const
+{
+    return stagingRenderParams_->GetNodeColorSpace();
 }
 
 void RSRenderNode::SetEnableHdrEffect(bool enableHdrEffect)
@@ -1075,6 +1092,7 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
 #endif
 
     DumpSubClassNode(out);
+    out += ", NodeColorSpace: " + std::to_string(GetNodeColorSpace());
     out += ", Properties: " + GetRenderProperties().Dump();
     if (!uiContextTokenList_.empty()) {
         out += ", RSUIContextToken: [";

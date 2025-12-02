@@ -932,6 +932,11 @@ public:
 
     void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType);
 
+    virtual void UpdateNodeColorSpace() {};
+    void ResetNodeColorSpace();
+    void SetNodeColorSpace(GraphicColorGamut colorSpace);
+    GraphicColorGamut GetNodeColorSpace() const;
+
     void SetEnableHdrEffect(bool enableHdrEffect);
 
     void SetIsAccessibilityConfigChanged(bool isAccessibilityConfigChanged)

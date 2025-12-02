@@ -1241,7 +1241,7 @@ void RSSurfaceRenderNode::ReduceHDRNum(HDRComponentType hdrType)
 void RSSurfaceRenderNode::IncreaseCanvasGamutNum(GraphicColorGamut gamut)
 {
 #ifndef ROSEN_CROSS_PLATFORM
-    GraphicColorGamut canvasGamut = GamutCollector::MapGamutToStandard(gamut);
+    GraphicColorGamut canvasGamut = RSColorSpaceUtil::MapGamutToStandard(gamut);
     if (canvasGamut == GRAPHIC_COLOR_GAMUT_SRGB) {
         return;
     }
@@ -1264,7 +1264,7 @@ void RSSurfaceRenderNode::IncreaseCanvasGamutNum(GraphicColorGamut gamut)
 void RSSurfaceRenderNode::ReduceCanvasGamutNum(GraphicColorGamut gamut)
 {
 #ifndef ROSEN_CROSS_PLATFORM
-    GraphicColorGamut canvasGamut = GamutCollector::MapGamutToStandard(gamut);
+    GraphicColorGamut canvasGamut = RSColorSpaceUtil::MapGamutToStandard(gamut);
     if (gamut == GRAPHIC_COLOR_GAMUT_SRGB) {
         return;
     }
@@ -1406,7 +1406,7 @@ void RSSurfaceRenderNode::SetHardCursorStatus(bool status)
 
 void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
-    GraphicColorGamut newGamut = GamutCollector::MapGamutToStandard(colorSpace);
+    GraphicColorGamut newGamut = RSColorSpaceUtil::MapGamutToStandard(colorSpace);
     if (colorSpace_ == newGamut) {
         return;
     }
@@ -1435,7 +1435,7 @@ GraphicColorGamut RSSurfaceRenderNode::GetColorSpace() const
         bt2020Num = gamutCollector_.bt2020Num_;
         p3Num = gamutCollector_.p3Num_;
     }
-    GraphicColorGamut selfGamut = GamutCollector::MapGamutToStandard(colorSpace_);
+    GraphicColorGamut selfGamut = RSColorSpaceUtil::MapGamutToStandard(colorSpace_);
     GamutCollector::IncreaseInner(selfGamut, bt2020Num, p3Num);
     return GamutCollector::DetermineGamutStandard(bt2020Num, p3Num);
 }
@@ -1488,6 +1488,18 @@ void RSSurfaceRenderNode::UpdateColorSpaceWithMetadata()
     }
     SetColorSpace(RSColorSpaceUtil::PrimariesToGraphicGamut(colorSpaceInfo.primaries));
 #endif
+}
+
+void RSSurfaceRenderNode::UpdateNodeColorSpace()
+{
+    GraphicColorGamut nodeColorSpace = GetNodeColorSpace();
+    if (IsAppWindow()) {
+        nodeColorSpace = RSColorSpaceUtil::SelectBigGamut(colorSpace_, nodeColorSpace);
+    } else if (IsSelfDrawingType()) {
+        UpdateColorSpaceWithMetadata();
+        nodeColorSpace = RSColorSpaceUtil::SelectBigGamut(colorSpace_, nodeColorSpace);
+    }
+    SetNodeColorSpace(nodeColorSpace);
 }
 
 void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
@@ -3805,23 +3817,6 @@ GraphicColorGamut RSSurfaceRenderNode::GamutCollector::GetFirstLevelNodeGamut() 
     }
     GraphicColorGamut finalGamut = DetermineGamutStandard(bt2020Num, p3Num);
     return finalGamut;
-}
-
-GraphicColorGamut RSSurfaceRenderNode::GamutCollector::MapGamutToStandard(GraphicColorGamut gamut)
-{
-    switch (gamut) {
-        case GRAPHIC_COLOR_GAMUT_ADOBE_RGB:
-        case GRAPHIC_COLOR_GAMUT_DCI_P3:
-        case GRAPHIC_COLOR_GAMUT_DISPLAY_P3:
-            return GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
-        case GRAPHIC_COLOR_GAMUT_BT2020:
-        case GRAPHIC_COLOR_GAMUT_BT2100_PQ:
-        case GRAPHIC_COLOR_GAMUT_BT2100_HLG:
-        case GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020:
-            return GRAPHIC_COLOR_GAMUT_BT2020;
-        default:
-            return GRAPHIC_COLOR_GAMUT_SRGB;
-    }
 }
 
 GraphicColorGamut RSSurfaceRenderNode::GamutCollector::DetermineGamutStandard(int bt2020Num, int p3Num)

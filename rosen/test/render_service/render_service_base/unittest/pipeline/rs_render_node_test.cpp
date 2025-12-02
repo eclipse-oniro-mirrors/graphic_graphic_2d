@@ -47,11 +47,12 @@ const std::string OUT_STR1 =
     "DISPLAY_NODERS_NODESURFACE_NODECANVAS_NODEROOT_NODEPROXY_NODECANVAS_DRAWING_NODEEFFECT_NODEUNKNOWN_NODE";
 const std::string OUT_STR2 =
     "| RS_NODE[0], instanceRootNodeId[0], SharedTransitionParam: [0 -> 0], [nodeGroup1], uifirstRootNodeId_: 1, "
-    "Properties: Bounds[-inf -inf -inf -inf] Frame[-inf -inf -inf -inf], RSUIContextToken: NO_RSUIContext, "
+    "Properties: Bounds[-inf -inf -inf -inf] Frame[-inf -inf -inf -inf], NodeColorSpace: 4, "
+    "RSUIContextToken: NO_RSUIContext, "
     "GetBootAnimation: true, isContainBootAnimation: true, isNodeDirty: 1, isPropertyDirty: true, "
     "isSubTreeDirty: true, IsPureContainer: true, Children list needs update, current count: 0 expected count: 0, "
     "disappearingChildren: 1(0 )\n  | RS_NODE[0], instanceRootNodeId[0], Properties: Bounds[-inf -inf -inf -inf] "
-    "Frame[-inf -inf -inf -inf], RSUIContextToken: NO_RSUIContext, IsPureContainer: true\n";
+    "Frame[-inf -inf -inf -inf], NodeColorSpace: 4, RSUIContextToken: NO_RSUIContext, IsPureContainer: true\n";
 const int DEFAULT_BOUNDS_SIZE = 10;
 const int DEFAULT_NODE_ID = 1;
 const NodeId TARGET_NODE_ID = 9999999999;
@@ -1796,6 +1797,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest002, TestSize.Level1)
 {
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
+    nodeTest->InitRenderParams();
 
     std::string outTest1 = "";
     nodeTest->DumpNodeType(RSRenderNodeType::SCREEN_NODE, outTest1);
@@ -1826,7 +1828,9 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest002, TestSize.Level1)
     nodeTest->renderProperties_.isDrawn_ = false;
     nodeTest->renderProperties_.alphaNeedApply_ = false;
     nodeTest->isFullChildrenListValid_ = false;
-    nodeTest->disappearingChildren_.emplace_back(std::make_shared<RSRenderNode>(0), 0);
+    auto childNode = std::make_shared<RSRenderNode>(0);
+    childNode->InitRenderParams();
+    nodeTest->disappearingChildren_.emplace_back(childNode, 0);
     nodeTest->DumpTree(0, outTest2);
     EXPECT_EQ(outTest2, OUT_STR2);
 
@@ -1845,6 +1849,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest003, TestSize.Level1)
 {
     std::string outTest = "";
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0);
+    surfaceNode->InitRenderParams();
     auto consumerSurfacePtr = IConsumerSurface::Create();
     auto buffer = SurfaceBuffer::Create();
     ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler() != nullptr);
@@ -1879,6 +1884,7 @@ HWTEST_F(RSRenderNodeTest, RSRenderNodeDumpTest004, TestSize.Level1)
 {
     std::string outTest = "";
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0);
+    surfaceNode->InitRenderParams();
     surfaceNode->isSubSurfaceNode_ = true;
     surfaceNode->DumpTree(0, outTest);
     ASSERT_TRUE(outTest.find("isSubSurfaceId") != string::npos);
@@ -1912,6 +1918,7 @@ HWTEST_F(RSRenderNodeTest, RSScreenRenderNodeDumpTest, TestSize.Level1)
     std::string outTest = "";
     auto context = std::make_shared<RSContext>();
     auto renderNode = std::make_shared<RSScreenRenderNode>(0, 0, context);
+    renderNode->InitRenderParams();
     renderNode->DumpSubClassNode(outTest);
     EXPECT_EQ(outTest, ", colorSpace: 4");
     
@@ -1942,6 +1949,7 @@ HWTEST_F(RSRenderNodeTest, RSUIContextDumpTest, TestSize.Level1)
 {
     std::string outTest = "";
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(0);
+    canvasNode->InitRenderParams();
     uint64_t token = 1000;
     canvasNode->SetUIContextToken(token++);
     canvasNode->SetUIContextToken(token);
@@ -3847,6 +3855,37 @@ HWTEST_F(RSRenderNodeTest, GetHDRBrightness, TestSize.Level1)
     nodeTest->modifiersNG_.emplace(ModifierNG::RSModifierType::HDR_BRIGHTNESS, modifiers);
     float result = nodeTest->GetHDRBrightness();
     ASSERT_EQ(result, 0.0f);
+}
+
+/**
+ * @tc.name: UpdateNodeColorSpace
+ * @tc.desc: Test function UpdateNodeColorSpace
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeTest, UpdateNodeColorSpace, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    nodeTest->InitRenderParams();
+
+    nodeTest->UpdateNodeColorSpace();
+    EXPECT_EQ(nodeTest->GetNodeColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+/**
+ * @tc.name: SetAndResetNodeColorSpace
+ * @tc.desc: Test function SetNodeColorSpace and ResetNodeColorSpace
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeTest, SetAndResetNodeColorSpace, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
+    nodeTest->InitRenderParams();
+
+    nodeTest->SetNodeColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    EXPECT_EQ(nodeTest->GetNodeColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+
+    nodeTest->ResetNodeColorSpace();
+    EXPECT_EQ(nodeTest->GetNodeColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 }
 } // namespace Rosen
 } // namespace OHOS
