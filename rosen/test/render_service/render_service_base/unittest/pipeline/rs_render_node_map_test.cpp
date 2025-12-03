@@ -19,6 +19,7 @@
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_logical_display_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
