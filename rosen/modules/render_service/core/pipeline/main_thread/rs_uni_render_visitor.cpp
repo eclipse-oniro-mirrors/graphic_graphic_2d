@@ -38,6 +38,7 @@
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
+#include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "memory/rs_tag_tracker.h"
 #include "monitor/self_drawing_node_monitor.h"
@@ -97,7 +98,6 @@ constexpr int EXPAND_ONE_PIX = 1;
 constexpr int MAX_ALPHA = 255;
 constexpr int TRACE_LEVEL_THREE = 3;
 constexpr float EPSILON_SCALE = 0.00001f;
-static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr uint64_t INPUT_HWC_LAYERS = 3;
 constexpr int TRACE_LEVEL_PRINT_NODEID = 6;
 
@@ -589,7 +589,7 @@ void RSUniRenderVisitor::UpdateSpecialLayersRecord(RSSurfaceRenderNode& node)
     if (node.GetName().find(CAPTURE_WINDOW_NAME) != std::string::npos) {
         specialLayerType &= ~SpecialLayerType::HAS_SKIP;
     }
-    curLogicalDisplayNode_->GetMultableSpecialLayerMgr().AddIds((specialLayerType >> SPECIAL_TYPE_NUM), node.GetId());
+    curLogicalDisplayNode_->GetMultableSpecialLayerMgr().MergeChildren(specialLayerMgr);
     if (node.IsSpecialLayerChanged()) {
         curLogicalDisplayNode_->SetDisplaySpecialSurfaceChanged(true);
     }
@@ -754,6 +754,8 @@ void RSUniRenderVisitor::UpdateVirtualDisplayInfo(RSLogicalDisplayRenderNode& no
     }
 
     UpdateVirtualDisplaySecurityExemption(node, *mirrorNode);
+    RSSpecialLayerUtils::CheckSpecialLayerIntersectMirrorDisplay(
+        node, *mirrorNode, curScreenNode_->GetScreenInfo().enableVisibleRect);
     UpdateVirtualDisplayVisibleRectSecurity(node, *mirrorNode);
 }
 
@@ -916,7 +918,7 @@ bool RSUniRenderVisitor::InitLogicalDisplayInfo(RSLogicalDisplayRenderNode& node
     curLogicalDisplayNode_->SetDisplaySpecialSurfaceChanged(false);
     curLogicalDisplayNode_->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, false);
     curLogicalDisplayNode_->GetMultableSpecialLayerMgr().ClearScreenSpecialLayer();
-    curLogicalDisplayNode_->GetMultableSpecialLayerMgr().ClearSpecialLayerIds();
+    curLogicalDisplayNode_->GetMultableSpecialLayerMgr().Clear();
     curLogicalDisplayNode_->SetCompositeType(curScreenNode_->GetCompositeType());
     curLogicalDisplayNode_->SetHasCaptureWindow(false);
     occlusionSurfaceOrder_ = TOP_OCCLUSION_SURFACES_NUM;
