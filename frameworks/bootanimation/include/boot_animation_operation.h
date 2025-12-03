@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-1
+
 #ifndef FRAMEWORKS_BOOTANIMATION_INCLUDE_BOOT_ANIMATION_OPERATION_H
 #define FRAMEWORKS_BOOTANIMATION_INCLUDE_BOOT_ANIMATION_OPERATION_H
 
@@ -51,7 +51,7 @@ private:
     bool InitRsDisplayNode();
     bool InitRsSurfaceNode(int32_t degree);
     bool InitRsSurface();
-    void PlayVideo(const std::string& path);
+    void PlayVideo(const BootAnimationConfig& config);
     void PlayPicture(const std::string& path);
     void PlaySound(const std::string& path);
     void StopBootAnimation();
