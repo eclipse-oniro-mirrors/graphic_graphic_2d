@@ -4807,8 +4807,9 @@ void RSRenderNode::RemoveModifier(ModifierNG::RSModifierType type, ModifierId id
             PRIu64 ", ModifierType %{public}hu", id, type);
         return;
     }
-    (*it)->OnDetachModifier();
+    auto modifier = *it;
     slot.erase(it);
+    modifier->OnDetachModifier();
 }
 
 void RSRenderNode::RemoveModifierNG(ModifierId id)
@@ -4820,9 +4821,9 @@ void RSRenderNode::RemoveModifierNG(ModifierId id)
         if (it == slot.end()) {
             continue;
         }
-        AddDirtyType((*it)->GetType());
-        (*it)->OnDetachModifier();
+        auto modifier = *it;
         slot.erase(it);
+        modifier->OnDetachModifier();
     }
 }
 
