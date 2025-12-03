@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-1
+
 #ifndef FRAMEWORKS_BOOTANIMATION_INCLUDE_BOOT_PLAYER_H
 #define FRAMEWORKS_BOOTANIMATION_INCLUDE_BOOT_PLAYER_H
 
@@ -106,6 +106,7 @@ public:
     std::string resPath_;
     bool isSoundEnabled_ = false;
     std::shared_ptr<Media::Player> mediaPlayer_;
+    bool isFrameRateEnable_ = false;
 };
 } // namespace OHOS
 
