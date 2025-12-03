@@ -2582,6 +2582,7 @@ void RSMainThread::Render()
 #ifdef RS_ENABLE_GPU
         UniRender(rootNode);
 #endif
+#endif
     } else {
         auto rsVisitor = std::make_shared<RSRenderServiceVisitor>();
         rsVisitor->SetAnimateState(doWindowAnimate_);
