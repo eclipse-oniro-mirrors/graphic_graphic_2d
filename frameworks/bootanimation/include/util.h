@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-1
+
 #ifndef FRAMEWORKS_BOOTANIMATION_INCLUDE_UTIL_H
 #define FRAMEWORKS_BOOTANIMATION_INCLUDE_UTIL_H
 
@@ -141,6 +141,7 @@ using PlayerParams = struct PlayerParams {
     bool soundEnabled = false;
     BootAnimationCallback* callback;
     std::string resPath;
+    bool isFrameRateEnable = false;
 };
 
 void PostTask(std::function<void()> func, uint32_t delayTime = 0);
