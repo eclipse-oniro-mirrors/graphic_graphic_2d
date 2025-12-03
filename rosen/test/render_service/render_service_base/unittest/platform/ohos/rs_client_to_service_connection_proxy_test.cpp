@@ -766,6 +766,21 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenPowerStatus, TestSize.Le
 }
 
 /**
+ * @tc.name: GetPanelPowerStatus Test
+ * @tc.desc: GetPanelPowerStatus Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetPanelPowerStatus001, TestSize.Level1)
+{
+    ScreenId id = 1;
+    uint32_t panelPowerStatus = PanelPowerStatus::PANEL_POWER_STATUS_ON;
+    auto ret = proxy->GetPanelPowerStatus(id, panelPowerStatus);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+    EXPECT_EQ(panelPowerStatus, PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
+}
+
+/**
  * @tc.name: SetScreenBacklight Test
  * @tc.desc: SetScreenBacklight Test
  * @tc.type:FUNC
