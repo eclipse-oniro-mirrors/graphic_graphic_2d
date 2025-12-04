@@ -541,7 +541,7 @@ std::unique_ptr<Media::PixelMap> RSUiCaptureTaskParallel::CreatePixelMapByColorS
     Media::InitializationOptions& opts, OHOS::ColorManager::ColorSpaceName colorSpaceName) const
 {
     std::unique_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
-    if (PixelMap) {
+    if (pixelMap) {
         pixelMap->InnerSetColorSpace(static_cast<OHOS::ColorManager::ColorSpaceName>(colorSpaceName));
     }
     return pixelMap;
