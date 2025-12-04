@@ -231,7 +231,6 @@ constexpr const char* WALLPAPER_VIEW = "WallpaperView";
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DESKTOP_NAME_FOR_ROTATION = "SCBDesktop";
 const std::string PERF_FOR_BLUR_IF_NEEDED_TASK_NAME = "PerfForBlurIfNeeded";
-constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr const char* HIDE_NOTCH_STATUS = "persist.sys.graphic.hideNotch.status";
 constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
