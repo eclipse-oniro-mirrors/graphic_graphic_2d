@@ -262,10 +262,8 @@ void FontDescriptorCache::GetFontPathsByType(const int32_t& systemFontType, std:
             for (const auto& item : fontPtr->genericSet) {
                 fontPaths.insert(rootPath + item.path);
             }
-            for (const auto& item : fontPtr->fallbackGroupSet) {
-                for (const auto& info : item.fallbackInfoSet) {
-                    fontPaths.insert(rootPath + info.path);
-                }
+            for (const auto& info : fontPtr->fallbackGroupSet[0].fallbackInfoSet) {
+                fontPaths.insert(rootPath + info.path);
             }
         }
     }
