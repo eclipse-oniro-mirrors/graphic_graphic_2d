@@ -561,7 +561,7 @@ std::shared_ptr<Drawing::Surface> RSUiCaptureTaskParallel::CreateSurface(
     }
     OHOS::ColorManager::ColorSpaceName colorSpaceName = pixelmap->InnerGetGrColorSpace().GetColorSpaceName();
     auto colorSpace = RSBaseRenderEngine::ConvertColorSpaceNameToDrawingColorSpace(colorSpaceName);
-    auto colorType = pixelMap->GetPixelFormat() == Media::PixelFormat::RGBA_F16 ?
+    auto colorType = pixelmap->GetPixelFormat() == Media::PixelFormat::RGBA_F16 ?
         Drawing::ColorType::COLORTYPE_RGBA_F16 :
         Drawing::ColorType::COLORTYPE_RGBA_8888;
     Drawing::ImageInfo info = Drawing::ImageInfo{pixelmap->GetWidth(), pixelmap->GetHeight(),
@@ -622,9 +622,9 @@ std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
                 std::move(std::get<0>(*wrapperSf)), nullptr, UNI_MAIN_THREAD_INDEX, 0);
             return;
         }
-        OHOS::ColorManager::ColorSpaceName colorSpaceName = pixelMap->InnerGetGrColorSpace().GetColorSpaceName();
+        OHOS::ColorManager::ColorSpaceName colorSpaceName = pixelmap->InnerGetGrColorSpace().GetColorSpaceName();
         auto colorSpace = RSBaseRenderEngine::ConvertColorSpaceNameToDrawingColorSpace(colorSpaceName);
-        auto colorType = pixelMap->GetPixelFormat() == Media::PixelFormat::RGBA_F16 ?
+        auto colorType = pixelmap->GetPixelFormat() == Media::PixelFormat::RGBA_F16 ?
             Drawing::ColorType::COLORTYPE_RGBA_F16 :
             Drawing::ColorType::COLORTYPE_RGBA_8888;
         Drawing::ImageInfo info = Drawing::ImageInfo{ pixelmap->GetWidth(), pixelmap->GetHeight(),
@@ -647,9 +647,6 @@ std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             sptr<SurfaceBuffer> surfaceBuffer = dmaMem.DmaMemAlloc(info, pixelmap);
             surface = dmaMem.GetSurfaceFromSurfaceBuffer(surfaceBuffer, grContext);
-            if (surfaceBuffer !=nullptr && colorSpace != nullptr && !colorSpace->IsSRGB()) {
-                surfaceBuffer->SetSurfaceBufferColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
-            }
             if (surface == nullptr) {
                 RS_LOGE("RSUiCaptureTaskParallel: GetSurfaceFromSurfaceBuffer fail.");
                 ProcessUiCaptureCallback(callback, id, captureConfig, nullptr, CaptureError::CAPTURE_RENDER_FAIL);
