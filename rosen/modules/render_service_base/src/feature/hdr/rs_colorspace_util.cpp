@@ -106,22 +106,21 @@ GraphicColorGamut RSColorSpaceUtil::ColorSpaceNameToGraphicGamut(OHOS::ColorMana
 OHOS::ColorManager::ColorSpaceName RSColorSpaceUtil::GraphicGamutToColorSpaceName(GraphicColorGamut gamut)
 {
     using OHOS::ColorManager::ColorSpaceName;
-    static const std::unordered_map<ColorSpaceName, GraphicColorGamut> RS_GRAPHIC_GAMUT_TO_COLORSPACE_MAP {
+    static const std::unordered_map<GraphicColorGamut, ColorSpaceName> RS_GRAPHIC_GAMUT_TO_COLORSPACE_MAP {
         {GRAPHIC_COLOR_GAMUT_STANDARD_BT601, ColorSpaceName::BT601_EBU},
-        {GRAPHIC_COLOR_GAMUT_STANDARD_BT709, ColorSpaceName::BT709,},
-        {GRAPHIC_COLOR_GAMUTDCI_P3, ColorSpaceName::DCI_P3},
+        {GRAPHIC_COLOR_GAMUT_STANDARD_BT709, ColorSpaceName::BT709},
+        {GRAPHIC_COLOR_GAMUT_DCI_P3, ColorSpaceName::DCI_P3},
         {GRAPHIC_COLOR_GAMUT_SRGB, ColorSpaceName::SRGB},
         {GRAPHIC_COLOR_GAMUT_ADOBE_RGB, ColorSpaceName::ADOBE_RGB},
         {GRAPHIC_COLOR_GAMUT_DISPLAY_P3, ColorSpaceName::DISPLAY_P3},
         {GRAPHIC_COLOR_GAMUT_BT2020, ColorSpaceName::BT2020},
         {GRAPHIC_COLOR_GAMUT_BT2100_PQ, ColorSpaceName::BT2020_PQ},
         {GRAPHIC_COLOR_GAMUT_BT2100_HLG, ColorSpaceName::BT2020_HLG},
-        {GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, ColorSpaceName::DISPLAY_BT2020_SRGB},
     };
-    if (auto itr = RS_GRAPHIC_GAMUT_TO_COLORSPACE_MAP.find(name); itr != RS_GRAPHIC_GAMUT_TO_COLORSPACE_MAP.end()) {
+    if (auto itr = RS_GRAPHIC_GAMUT_TO_COLORSPACE_MAP.find(gamut); itr != RS_GRAPHIC_GAMUT_TO_COLORSPACE_MAP.end()) {
         return itr->second;
     }
-    return ColorSpaceNameP::NONE;
+    return ColorSpaceName::NONE;
 }
 
 GraphicColorGamut RSColorSpaceUtil::SelectBigGamut(GraphicColorGamut gamut1, GraphicColorGamut gamut2)
