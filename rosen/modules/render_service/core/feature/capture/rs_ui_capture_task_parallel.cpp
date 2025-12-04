@@ -308,7 +308,7 @@ bool RSUiCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback, cons
     canvas.SetDisableFilterCache(true);
     canvas.SetUICapture(true);
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(nodeId_);
-    if (IsHdrUiCapture(pixelMap_->InnerGetGrColorSpace().GetColorSpaceName())) {
+    if (IsHdrCapture(pixelMap_->InnerGetGrColorSpace().GetColorSpaceName())) {
         captureConfig_.useDma = true;
         canvas.SetHdrOn(true);
     }
@@ -447,7 +447,7 @@ std::unique_ptr<Media::PixelMap> RSUiCaptureTaskParallel::CreatePixelMapByRect(
     auto colorSpaceName = static_cast<OHOS::ColorManager::ColorSpaceName>(captureConfig_.colorSpace.first);
     bool isAutoAdjust = captureConfig_.colorSpace.second;
     auto resColorSpace = SelectColorSpace(colorSpaceName, isAutoAdjust);
-    bool isHdrUiCapture = IsHdrUiCapture(resColorSpace);
+    bool isHdrUiCapture = IsHdrCapture(resColorSpace);
     opts.pixelFormat = isHdrUiCapture ? Media::PixelFormat::RGBA_F16 : Media::PixelFormat::RGBA_8888;
     RS_LOGD("RSUiCaptureTaskParallel::CreatePixelMapByRect:"
         " origin pixelmap width is [%{public}f], height is [%{public}f],"
@@ -471,7 +471,7 @@ std::unique_ptr<Media::PixelMap> RSUiCaptureTaskParallel::CreatePixelMapByNode(
     auto colorSpaceName = static_cast<OHOS::ColorManager::ColorSpaceName>(captureConfig_.colorSpace.first);
     bool isAutoAdjust = captureConfig_.colorSpace.second;
     auto resColorSpace = SelectColorSpace(colorSpaceName, isAutoAdjust);
-    bool isHdrUiCapture = IsHdrUiCapture(resColorSpace);
+    bool isHdrUiCapture = IsHdrCapture(resColorSpace);
     opts.pixelFormat = isHdrUiCapture ? Media::PixelFormat::RGBA_F16 : Media::PixelFormat::RGBA_8888;
     RS_LOGD("RSUiCaptureTaskParallel::CreatePixelMapByNode: NodeId:[%{public}" PRIu64 "],"
         " origin pixelmap width is [%{public}f], height is [%{public}f],"
@@ -510,7 +510,7 @@ OHOS::ColorManager::ColorSpaceName RSUiCaptureTaskParallel::SelectColorSpace(
     return retColorSpace;
 }
 
-bool RSUiCaptureTaskParallel::IsHdrUiCapture(OHOS::ColorManager::ColorSpaceName colorSpace)
+bool RSUiCaptureTaskParallel::IsHdrCapture(OHOS::ColorManager::ColorSpaceName colorSpace)
 {
     // valid input hdr param valid, dynamic range mode should be 0 or 2.
     // color space should be 2020.
