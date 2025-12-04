@@ -60,7 +60,7 @@ constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
 static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr uint32_t DEFAULT_DYNAMIC_RANGE_MODE_STANDARD = 2;
 constexpr uint32_t DYNAMIC_RANGE_MODE_HIGH = 0;
-constexpr uint32_t DYNAMIC_RANGE_MODE_CONSTRAINT = 0;
+constexpr uint32_t DYNAMIC_RANGE_MODE_CONSTRAINT = 1;
 
 /**
  * Bitmask enumeration for hierarchical type identification
