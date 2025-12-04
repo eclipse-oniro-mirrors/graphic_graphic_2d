@@ -170,8 +170,9 @@ bool RSRenderInterface::TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, 
     return TakeUICaptureInRangeWithConfig(beginNode, endNode, useBeginNodeSize, callback, captureConfig);
 }
 
-bool TakeUICaptureInRangeWithConfig(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode,
-    bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
+bool RSRenderInterface::TakeUICaptureInRangeWithConfig(std::shared_ptr<RSNode> beginNode,
+    std::shared_ptr<RSNode> endNode, bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback,
+    RSSurfaceCaptureConfig captureConfig)
 {
     if (!beginNode) {
         ROSEN_LOGW("RSRenderInterface::TakeUICaptureInRangeWithConfig beginNode is nullpter return");
