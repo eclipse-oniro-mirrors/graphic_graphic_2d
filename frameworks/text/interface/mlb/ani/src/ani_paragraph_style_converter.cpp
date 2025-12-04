@@ -43,20 +43,11 @@ void AniParagraphStyleConverter::ParseSimpleParagraphStyleToNative(
         paragraphStyle->compressHeadPunctuation);
     AniTextUtils::ReadOptionalEnumField(env, obj, AniTextEnum::textVerticalAlign,
         AniGlobalMethod::GetInstance().paragraphStyleVerticalAlign, paragraphStyle->verticalAlignment);
-
-    AniTextUtils::ReadOptionalBoolField(env, obj, "includeFontPadding", paragraphStyle->includeFontPadding);
-    AniTextUtils::ReadOptionalBoolField(env, obj, "fallbackLineSpacing", paragraphStyle->fallbackLineSpacing);
+    AniTextUtils::ReadOptionalBoolField(env, obj, AniGlobalMethod::GetInstance().paragraphStyleIncludeFontPadding,
+        paragraphStyle->includeFontPadding);
+    AniTextUtils::ReadOptionalBoolField(env, obj, AniGlobalMethod::GetInstance().paragraphStyleFallbackLineSpacing,
+        paragraphStyle->fallbackLineSpacing);
 }
-
-std::unique_ptr<TypographyStyle> AniParagraphStyleConverter::ParseParagraphStyleToNative(ani_env* env, ani_object obj)
-{
-    ani_boolean isObj = false;
-    ani_status ret = AniTextUtils::Object_InstanceOf(env, obj, ANI_INTERFACE_PARAGRAPH_STYLE, &isObj);
-    if (ret != ANI_OK || !isObj) {
-        TEXT_LOGE("Object mismatch, ret %{public}d", ret);
-        return nullptr;
-    }
-    std::unique_ptr<TypographyStyle> paragraphStyle = std::make_unique<TypographyStyle>();
 
 ani_status ParagraphStyleGetMaxLine(ani_env* env, ani_object obj, std::unique_ptr<TypographyStyle>& paragraphStyle)
 {

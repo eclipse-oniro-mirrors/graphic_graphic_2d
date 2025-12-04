@@ -185,6 +185,8 @@ public:
     ani_method paragraphStyleAutoSpace;
     ani_method paragraphStyleCompressHeadPunctuation;
     ani_method paragraphStyleVerticalAlign;
+    ani_method paragraphStyleIncludeFontPadding;
+    ani_method paragraphStyleFallbackLineSpacing;
     ani_method strutStyleFontStyle;
     ani_method strutStyleFontWidth;
     ani_method strutStyleFontWeight;
