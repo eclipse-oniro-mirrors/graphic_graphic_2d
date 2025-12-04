@@ -705,7 +705,7 @@ std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
         }
         RS_LOGI("RSUiCaptureTaskParallel::Capture capture success nodeId:[%{public}" PRIu64
                 "], pixelMap width: %{public}d, height: %{public}d, colorspace:%{public}d, format:%{public}d",
-            id, pixelmap->GetWidth(), pixelmap->GetHeight(), pixelMap->InnerGetGrColorSpace().GetColorSpaceName(),
+            id, pixelmap->GetWidth(), pixelmap->GetHeight(), pixelmap->InnerGetGrColorSpace().GetColorSpaceName(),
             pixelmap->GetPixelFormat());
         ProcessUiCaptureCallback(callback, id, captureConfig, pixelmap.get(), errorCode);
         RSBackgroundThread::Instance().CleanGrResource();
