@@ -244,6 +244,48 @@ void FontDescriptorCache::GetSystemFontFullNamesByType(
     }
 }
 
+void FontDescriptorCache::GetFontPathsByType(const int32_t& systemFontType, std::unordered_set<std::string>& fontPaths)
+{
+    int32_t fontType = 0;
+    if (!ProcessSystemFontType(systemFontType, fontType)) {
+        fontPaths.clear();
+        return;
+    }
+    uint32_t fontCategory = static_cast<uint32_t>(fontType);
+    TextEngine::FontConfigJson fcj;
+    int res = -1;
+    if (fontCategory & TextEngine::FontParser::SystemFontType::GENERIC) {
+        res = fcj.ParseFile();
+        auto fontPtr = fcj.GetFontConfigJsonInfo();
+        if (fontPtr != nullptr) {
+            auto rootPath = fontPtr->fontDirSet[0];
+            for (const auto& item : fontPtr->genericSet) {
+                fontPaths.insert(rootPath + item.path);
+            }
+            for (const auto& item : fontPtr->fallbackGroupSet) {
+                for (const auto& info : item.fallbackInfoSet) {
+                    fontPaths.insert(rootPath + info.path);
+                }
+            }
+        }
+    }
+    if (fontCategory & TextEngine::FontParser::SystemFontType::STYLISH) {
+        if (res == -1) {
+            res = fcj.ParseFile();
+        }
+        auto list = fcj.GetFontSet();
+        fontPaths.insert(list.begin(), list.end());
+    }
+    if (fontCategory & TextEngine::FontParser::SystemFontType::INSTALLED) {
+        TextEngine::FullNameToPath fullNameToPath;
+        ParserInstallFontsPathList(fullNameToPath);
+        for (const auto& item : fullNameToPath) {
+            fontPaths.insert(item.second.second);
+        }
+    }
+    return;
+}
+
 bool FontDescriptorCache::ParseInstallFontDescSharedPtrByName(
     const std::string& fullName, FontDescSharedPtr& result) const
 {
