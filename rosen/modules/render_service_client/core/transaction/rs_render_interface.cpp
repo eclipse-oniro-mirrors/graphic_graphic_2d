@@ -98,10 +98,6 @@ bool RSRenderInterface::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY,
     bool isSync, const Drawing::Rect& specifiedAreaRect)
 {
-    if (!node) {
-        ROSEN_LOGW("RSRenderInterface::TakeSurfaceCaptureForUI rsnode is nullpter return");
-        return false;
-    }
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.scaleX = scaleX;
     captureConfig.scaleY = scaleY;
@@ -118,8 +114,6 @@ bool RSRenderInterface::TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode
         ROSEN_LOGW("RSRenderInterface::TakeSurfaceCaptureForUIWithConfig rsnode is nullpter return");
         return false;
     }
-    ROSEN_LOGI("RSRenderInterface::TakeSurfaceCaptureForUIWithConfig rsNode [%{public}" PRIu64
-            "]", node->GetId());
     // textureExportNode process cmds in renderThread of application, isSync is unnecessary.
     if (node->IsTextureExportNode()) {
         ROSEN_LOGD("RSRenderInterface::TakeSurfaceCaptureForUI rsNode [%{public}" PRIu64
@@ -166,10 +160,6 @@ bool RSRenderInterface::TakeSurfaceCaptureForUIWithoutUni(NodeId id,
 bool RSRenderInterface::TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode,
     bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync)
 {
-    if (!beginNode) {
-        ROSEN_LOGW("RSRenderInterface::TakeUICaptureInRange beginNode is nullpter return");
-        return false;
-    }
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.scaleX = scaleX;
     captureConfig.scaleY = scaleY;
