@@ -380,6 +380,6 @@ HWTEST_F(RSPipelineClientTest, FreezeScreen, TestSize.Level1)
     ret = rsClient->FreezeScreen(TEST_ID, false);
     ASSERT_EQ(ret, true);
 }
-
+// trigger
 } // namespace Rosen
 } // namespace OHOS
