@@ -340,16 +340,6 @@ public:
         bool isSync = false, const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f));
 
     /**
-     * @brief Get component snapshot.
-     * @param node can be rootNode、surfaceNode、canvasNode、CanvasDrawingNode.
-     * @param callback When the snapshot is complete, the callback will be triggered.
-     * @param RSSurfaceCaptureConfig Indicates RSSurfaceCaptureConfig.
-     * @return return true if snaphot success, else return false.
-     */
-    bool TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode> node,
-        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig = {});
-
-    /**
      * @brief Get a list of pixelmap information, each node of the component node tree will have a pixelmap.
      * @param node can be rootNode、surfaceNode、canvasNode、CanvasDrawingNode.
      * @return return a vector of pair, the first element is the NodeId, the second element is the pixelmap.

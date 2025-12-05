@@ -114,13 +114,13 @@ bool RSRenderInterface::TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode
         ROSEN_LOGW("RSRenderInterface::TakeSurfaceCaptureForUIWithConfig rsnode is nullpter return");
         return false;
     }
+    captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     // textureExportNode process cmds in renderThread of application, isSync is unnecessary.
     if (node->IsTextureExportNode()) {
         ROSEN_LOGD("RSRenderInterface::TakeSurfaceCaptureForUI rsNode [%{public}" PRIu64
             "] is textureExportNode, set isSync false", node->GetId());
         captureConfig.isSync = false;
     }
-    captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     if (!((node->GetType() == RSUINodeType::ROOT_NODE) ||
           (node->GetType() == RSUINodeType::CANVAS_NODE) ||
           (node->GetType() == RSUINodeType::CANVAS_DRAWING_NODE) ||
