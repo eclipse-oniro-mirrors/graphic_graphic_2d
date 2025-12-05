@@ -398,6 +398,13 @@ void RSScreenManager::ProcessPendingConnections()
     }
 }
 
+bool RSScreenManager::CheckFoldScreenIdBuiltIn(ScreenId id)
+{
+    if (id == BUILT_IN_MAIN_SCREEN_ID || id == BUILT_IN_EXTERNAL_SCREEN_ID) {
+        return true;
+    }
+    
+
 void RSScreenManager::ProcessScreenConnected(ScreenId id, std::shared_ptr<HdiOutput>& output)
 {
     auto screen = std::make_shared<RSScreen>(id, output);
@@ -408,7 +415,7 @@ void RSScreenManager::ProcessScreenConnected(ScreenId id, std::shared_ptr<HdiOut
 
     std::unique_lock<std::mutex> lock(screenMapMutex_);
     screens_[id] = screen;
-    if (isFoldScreenFlag_ && foldScreenIds_.size() < ORIGINAL_FOLD_SCREEN_AMOUNT) {
+    if (isFoldScreenFlag_ && CheckFoldScreenIdBuiltIn(id) && foldScreenIds_.size() < ORIGINAL_FOLD_SCREEN_AMOUNT) {
         foldScreenIds_[id] = {true, false};
     }
     lock.unlock();
@@ -1016,6 +1023,20 @@ int32_t RSScreenManager::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surf
     return SUCCESS;
 }
 
+// only used in dirtyRegion
+bool RSScreenManager::CheckVirtualScreenStatusChanged(ScreenId id)
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return false;
+    }
+    if (!screen->IsVirtual()) {
+        return false;
+    }
+    return screen->GetAndResetPSurfaceChange() || screen->GetAndResetVirtualScreenPlay();
+}
+
 void RSScreenManager::RemoveVirtualScreen(ScreenId id)
 {
     {
@@ -1102,6 +1123,28 @@ int32_t RSScreenManager::SetVirtualScreenResolution(ScreenId id, uint32_t width,
     screen->SetResolution(width, height);
     RS_LOGI("%{public}s: set virtual screen resolution success", __func__);
     return SUCCESS;
+}
+
+int32_t RSScreenManager::SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height)
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    RS_LOGI("%{public}s: set rog screen resolution success", __func__);
+    screen->SetRogResolution(width, height);
+    return SUCCESS;
+}
+
+int32_t RSScreenManager::GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height)
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return SCREEN_NOT_FOUND;
+    }
+    return screen->GetRogResolution(width, height);
 }
 
 void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
