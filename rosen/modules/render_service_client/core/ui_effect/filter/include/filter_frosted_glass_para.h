@@ -24,6 +24,12 @@ namespace OHOS {
 namespace Rosen {
 class FrostedGlassPara : public FilterPara {
 public:
+    enum BaseMaterialType {
+        NO_BLUR = 0,
+        BLUR = 1,
+        NEW_MATERIAL = 2
+    };
+
     FrostedGlassPara()
     {
         this->type_ = FilterPara::ParaType::FROSTED_GLASS;
@@ -320,6 +326,42 @@ public:
         return samplingScale_;
     }
 
+    void SetBaseVibrancyEnabled(bool baseVibrancyEnabled)
+    {
+        baseVibrancyEnabled_ = baseVibrancyEnabled;
+    }
+
+    bool GetBaseVibrancyEnabled() const
+    {
+        return baseVibrancyEnabled_;
+    }
+
+    void SetBaseMaterialType(float baseMaterialType)
+    {
+        if (baseMaterialType >= 0.0 && baseMaterialType < 1.0) {
+            baseMaterialType_ = static_cast<float>(NO_BLUR);
+        } else if (baseMaterialType >= 1.0 && baseMaterialType < 2.0) {
+            baseMaterialType_ = static_cast<float>(BLUR);
+        } else {
+            baseMaterialType_ = static_cast<float>(NEW_MATERIAL);
+        }
+    }
+
+    float GetBaseMaterialType()
+    {
+        return baseMaterialType_;
+    }
+
+    void SetMaterialColor(Vector4f& materialColor)
+    {
+        materialColor_ = materialColor;
+    }
+
+    const Vector4f GetMaterialColor()
+    {
+        return materialColor_;
+    }
+
 private:
     Vector2f blurParams_ = Vector2f(0.0f, 0.0f);
     Vector2f weightsEmboss_ = Vector2f(0.0f, 0.0f); // (envLight, sd)
@@ -353,11 +395,11 @@ private:
     Vector3f edLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector2f borderSize_ = Vector2f(0.0f, 0.0f);
     float cornerRadius_ = 0.0f;
-<<<<<<< 1204dev
     bool innerShadowEnabled_ = true;
-=======
+    bool baseVibrancyEnabled_ = true;
+    float baseMaterialType_ = static_cast<float>(NEW_MATERIAL);
+    Vector4f materialColor_ = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
     float samplingScale_ = 1.0f;
->>>>>>> master
 };
 } // namespace Rosen
 } // namespace OHOS
