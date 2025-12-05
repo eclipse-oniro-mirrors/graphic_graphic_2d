@@ -114,38 +114,6 @@ struct ScreenInfo {
         ret += "\n}\n";
         return ret;
     }
-    ScreenInfo& operator=(const ScreenInfo& other) {
-        if (this != &other) {
-            id = other.id;
-            width = other.width;
-            height = other.height;
-            phyWidth = other.phyWidth;
-            phyHeight = other.phyHeight;
-            offsetX = other.offsetX;
-            offsetY = other.offsetY;
-            isSamplingOn = other.isSamplingOn;
-            samplingDistance = other.samplingDistance;
-            samplingTranslateX = other.samplingTranslateX;
-            samplingTranslateY = other.samplingTranslateY;
-            samplingScale = other.samplingScale;
-            colorGamut = other.colorGamut;
-            gamutMap = other.gamutMap;
-            state = other.state;
-            rotation = other.rotation;
-            whiteList = other.whiteList;
-            activeRect = other.activeRect;
-            maskRect = other.maskRect;
-            reviseRect = other.reviseRect;
-            skipFrameInterval = other.skipFrameInterval;
-            expectedRefreshRate = other.expectedRefreshRate;
-            skipFrameStrategy = other.skipFrameStrategy;
-            pixelFormat = other.pixelFormat;
-            hdrFormat = other.hdrFormat;
-            enableVisibleRect = other.enableVisibleRect;
-            powerStatus = other.powerStatus;
-        }
-        return *this;
-    }
 };
 
 }  // namespace OHOS::Rosen
