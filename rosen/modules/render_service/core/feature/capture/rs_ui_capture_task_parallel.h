@@ -85,6 +85,8 @@ private:
     static void DumpInfo(NodeId id);
     bool HasEndNodeRect() const;
     bool UpdateStartAndEndNodeRect();
+    void BuildPixelMapOpts(float pixmapWidth, float pixmapHeight,
+        Media::InitializationOptions& opts, OHOS::ColorManager::ColorSpaceName& colorSpace);
     bool IsHdrCapture(OHOS::ColorManager::ColorSpaceName colorSpace);
     std::shared_ptr<Drawing::Surface> CreateSurface(const std::unique_ptr<Media::PixelMap>& pixelmap) const;
     std::unique_ptr<Media::PixelMap> CreatePixelMapByNode(std::shared_ptr<RSRenderNode> node);
@@ -106,6 +108,7 @@ private:
     RectI endRect_ = {};
     bool isStartEndNodeSame_ = false;
     bool needDump_ = false;
+    bool isHdrCapture_ = false;
     CaptureError errorCode_ = CaptureError::CAPTURE_OK;
 };
 } // namespace Rosen
