@@ -165,7 +165,9 @@ bool RSRenderInterface::TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, 
     captureConfig.scaleY = scaleY;
     captureConfig.captureType = SurfaceCaptureType::UICAPTURE;
     captureConfig.isSync = isSync;
-    captureConfig.uiCaptureInRangeParam.endNodeId = endNode->GetId();
+    if (endNode) {
+        captureConfig.uiCaptureInRangeParam.endNodeId = endNode->GetId();
+    }
     captureConfig.uiCaptureInRangeParam.useBeginNodeSize = useBeginNodeSize;
     return TakeUICaptureInRangeWithConfig(beginNode, endNode, useBeginNodeSize, callback, captureConfig);
 }
