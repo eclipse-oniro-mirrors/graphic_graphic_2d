@@ -1402,6 +1402,7 @@ void RSRenderNode::SetDirty(bool forceAddToActiveList)
             context->AddActiveNode(shared_from_this());
         }
     }
+    isParentTreeDirty_ = true;
     SetParentSubTreeDirty();
     dirtyStatus_ = NodeDirty::DIRTY;
 }
@@ -2303,6 +2304,8 @@ void RSRenderNode::SetParentSubTreeDirty()
     auto parentNode = parent_.lock();
     if (parentNode && !parentNode->IsSubTreeDirty()) {
         parentNode->SetSubTreeDirty(true);
+        // Only used in quick skip prepare phase
+        parentNode->SetForcePrepare(true);
         parentNode->SetParentSubTreeDirty();
     }
 }
