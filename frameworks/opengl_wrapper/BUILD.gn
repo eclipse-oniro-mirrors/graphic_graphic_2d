@@ -165,7 +165,7 @@ ohos_shared_library("GLESv1") {
     "opengles:libGLES",
   ]
 
-  external_deps = [ 
+  external_deps = [
     "hilog:libhilog",
     "graphic_surface:surface",
   ]
@@ -208,7 +208,7 @@ ohos_shared_library("GLESv2") {
     "opengles:libGLES",
   ]
 
-  external_deps = [ 
+  external_deps = [
     "hilog:libhilog",
     "graphic_surface:surface",
   ]
@@ -257,7 +257,7 @@ if (current_os != "ohos") {
       "opengles:libGLES",
     ]
 
-    external_deps = [ 
+    external_deps = [
       "hilog:libhilog",
       "graphic_surface:surface",
     ]
