@@ -84,11 +84,11 @@ HWTEST_F(NdkRegisterFontIndexTest, NdkRegisterFontIndexTest001, TestSize.Level0)
     uint32_t errorCode = OH_Drawing_RegisterFontBufferByIndex(fontCollection_, nullptr, nullptr, 0, 0);
     EXPECT_EQ(errorCode, ERROR_NULL_FONT_BUFFER);
     errorCode = OH_Drawing_RegisterFontBufferByIndex(nullptr, nullptr, nullptr, 0, 0);
-    EXPECT_EQ(errorCode, ERROR_NULL_FONT_COLLECTION);
+    EXPECT_EQ(errorCode, ERROR_NULL_FONT_BUFFER);
 
     errorCode = OH_Drawing_RegisterFontByIndex(nullptr, nullptr, nullptr, 0);
     EXPECT_EQ(errorCode, ERROR_NULL_FONT_COLLECTION);
-    errorCode = OH_Drawing_RegisterFontBufferByIndex(fontCollection_, nullptr, nullptr, 0, 0);
+    errorCode = OH_Drawing_RegisterFontByIndex(fontCollection_, nullptr, nullptr, 0);
     EXPECT_EQ(errorCode, ERROR_NULL_FONT_COLLECTION);
 }
 
@@ -120,10 +120,10 @@ HWTEST_F(NdkRegisterFontIndexTest, NdkRegisterFontIndexTest003, TestSize.Level0)
 
     errorCode = OH_Drawing_RegisterFontByIndex(
         fontCollection_, fontFamily_, existFontPath_, fontCount);
-    EXPECT_EQ(errorCode, ERROR_READ_FILE_FAILED);
+    EXPECT_EQ(errorCode, ERROR_FILE_CORRUPTION);
     errorCode = OH_Drawing_RegisterFontByIndex(
         fontCollection_, fontFamily_, existFontPath_, fontCount + invalidFontCount);
-    EXPECT_EQ(errorCode, ERROR_READ_FILE_FAILED);
+    EXPECT_EQ(errorCode, ERROR_FILE_CORRUPTION);
 }
 
 /*
@@ -171,10 +171,10 @@ HWTEST_F(NdkRegisterFontIndexTest, NdkRegisterFontIndexTest006, TestSize.Level0)
 
     errorCode = OH_Drawing_RegisterFontBufferByIndex(
         fontCollection_, fontFamily_, existFontBuffer_.get(), bufferSize_, fontCount);
-    EXPECT_EQ(errorCode, ERROR_READ_FILE_FAILED);
+    EXPECT_EQ(errorCode, ERROR_FILE_CORRUPTION);
     errorCode = OH_Drawing_RegisterFontBufferByIndex(
         fontCollection_, fontFamily_, existFontBuffer_.get(), bufferSize_, fontCount + invalidFontCount);
-    EXPECT_EQ(errorCode, ERROR_READ_FILE_FAILED);
+    EXPECT_EQ(errorCode, ERROR_FILE_CORRUPTION);
 }
 
 /*
