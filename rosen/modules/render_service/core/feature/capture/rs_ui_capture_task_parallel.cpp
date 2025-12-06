@@ -305,7 +305,6 @@ bool RSUiCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback, cons
     canvas.Scale(captureConfig_.scaleX, captureConfig_.scaleY);
     canvas.SetDisableFilterCache(true);
     canvas.SetUICapture(true);
-    auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(nodeId_);
     if (isHdrCapture_) {
         captureConfig_.useDma = true;
         canvas.SetHdrOn(true);
