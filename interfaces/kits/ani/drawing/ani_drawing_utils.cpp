@@ -238,10 +238,10 @@ bool GetRectFromAniRectObj(ani_env* env, ani_object obj, Drawing::Rect& rect)
         return false;
     }
 
-    ani_double left;
-    ani_double top;
-    ani_double right;
-    ani_double bottom;
+    ani_double left = 0;
+    ani_double top = 0;
+    ani_double right = 0;
+    ani_double bottom = 0;
     RectPropertyConfig leftConfig = { "left", "<get>left", gGetLeftMethod, left };
     RectPropertyConfig topConfig = { "top", "<get>top", gGetTopMethod, top };
     RectPropertyConfig rightConfig = { "right", "<get>right", gGetRightMethod, right };
@@ -335,7 +335,12 @@ bool ConvertFromAniPointsArray(ani_env* env, ani_object aniPointArray, Drawing::
 bool GetPoint3FromPoint3dObj(ani_env* env, ani_object obj, Drawing::Point3& point3d)
 {
     ani_class point3dClass;
-    env->FindClass("@ohos.graphics.common2D.common2D.Point3d", &point3dClass);
+    ani_status status = env->FindClass("@ohos.graphics.common2D.common2D.Point3d", &point3dClass);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("[ANI] can't find class @ohos.graphics.common2D.common2D.Point3d, status = %{public}d",
+            static_cast<int>(status));
+        return false;
+    }
     ani_boolean isPoint3dClass;
     env->Object_InstanceOf(obj, point3dClass, &isPoint3dClass);
     if (!isPoint3dClass) {

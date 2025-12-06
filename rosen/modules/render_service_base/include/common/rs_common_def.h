@@ -56,6 +56,7 @@ constexpr uint8_t TOP_OCCLUSION_SURFACES_NUM = 3;
 constexpr uint8_t OCCLUSION_ENABLE_SCENE_NUM = 2;
 constexpr int16_t DEFAULT_OCCLUSION_SURFACE_ORDER = -1;
 constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
+static const std::string CAPTURE_WINDOW_NAME = "CapsuleWindow";
 
 /**
  * Bitmask enumeration for hierarchical type identification
@@ -70,6 +71,7 @@ enum class RSUINodeType : uint32_t {
     PROXY_NODE           = 0x0041u,
     CANVAS_NODE          = 0x0081u,
     EFFECT_NODE          = 0x0101u,
+    WINDOW_KEYFRAME_NODE = 0x0801u,
     ROOT_NODE            = 0x1081u,
     CANVAS_DRAWING_NODE  = 0x2081u,
     UNION_NODE           = 0x4081u,
@@ -116,6 +118,7 @@ enum class RSRenderNodeType : uint32_t {
     EFFECT_NODE            = 0x0101u,
     ROUND_CORNER_NODE      = 0x0201u,
     LOGICAL_DISPLAY_NODE   = 0x0401u,
+    WINDOW_KEYFRAME_NODE   = 0x0801u,
     ROOT_NODE              = 0x1081u,
     CANVAS_DRAWING_NODE    = 0x2081u,
     UNION_NODE             = 0x4081u,
@@ -273,6 +276,7 @@ enum class RSRenderNodeDrawableType : uint32_t {
     ROOT_NODE_DRAWABLE,
     CANVAS_DRAWING_NODE_DRAWABLE,
     UNION_NODE_DRAWABLE,
+    WINDOW_KEYFRAME_NODE_DRAWABLE,
 };
 
 // zOrder of topLayer

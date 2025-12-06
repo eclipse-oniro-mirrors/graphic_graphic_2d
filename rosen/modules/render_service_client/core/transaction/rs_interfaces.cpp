@@ -81,11 +81,12 @@ ScreenId RSInterfaces::CreateVirtualScreen(
     uint32_t width,
     uint32_t height,
     sptr<Surface> surface,
-    ScreenId mirrorId,
+    ScreenId associatedScreenId,
     int flags,
     std::vector<NodeId> whiteList)
 {
-    return renderServiceClient_->CreateVirtualScreen(name, width, height, surface, mirrorId, flags, whiteList);
+    return renderServiceClient_->CreateVirtualScreen(
+        name, width, height, surface, associatedScreenId, flags, whiteList);
 }
 
 int32_t RSInterfaces::SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector)
@@ -436,7 +437,7 @@ int32_t RSInterfaces::RegisterTypeface(std::shared_ptr<Drawing::Typeface>& tf)
         }
         RS_LOGI("RSInterfaces: Register typeface with share memory, name: %{public}s hash: %{public}u",
             tf->GetFamilyName().c_str(), tf->GetHash());
-        return renderServiceClient_->RegisterTypeface(tf->GetHash(), tf->GetSize(), tf->GetFd());
+        return renderServiceClient_->RegisterTypeface(tf, tf->GetIndex());
     }
 
     RS_LOGI("RSInterfaces:Succeed in reg typeface, family name:%{public}s, uniqueid:%{public}u",
@@ -539,6 +540,11 @@ void RSInterfaces::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
     renderServiceClient_->SetScreenPowerStatus(id, status);
 }
 
+int32_t RSInterfaces::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    return renderServiceClient_->SetDualScreenState(id, status);
+}
+
 #endif // !ROSEN_ARKUI_X
 bool RSInterfaces::TakeSurfaceCaptureForUIWithoutUni(NodeId id,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY)
@@ -581,6 +587,11 @@ void RSInterfaces::SetScreenBacklight(ScreenId id, uint32_t level)
 {
     RS_LOGD("RSInterfaces::SetScreenBacklight: ScreenId: %{public}" PRIu64 ", level: %{public}u", id, level);
     renderServiceClient_->SetScreenBacklight(id, level);
+}
+
+PanelPowerStatus RSInterfaces::GetPanelPowerStatus(ScreenId id)
+{
+    return renderServiceClient_->GetPanelPowerStatus(id);
 }
 
 int32_t RSInterfaces::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
@@ -907,12 +918,12 @@ bool RSInterfaces::NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::str
     return renderServiceClient_->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
 }
 
-void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     if (!RSFrameRatePolicy::GetInstance()->GetTouchOrPointerAction(touchStatus)) {
         return;
     }
-    renderServiceClient_->NotifyTouchEvent(touchStatus, touchCnt);
+    renderServiceClient_->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
 }
 
 void RSInterfaces::NotifyDynamicModeEvent(bool enableDynamicMode)
