@@ -62,8 +62,7 @@ protected:
 
 void NdkRegisterFontIndexTest::TearDown()
 {
-    if (fontCollection_)
-    {
+    if (fontCollection_) {
         OH_Drawing_DestroyFontCollection(fontCollection);
     }
 }
