@@ -39,30 +39,26 @@ protected:
     int invalidFontCount = 100;
     int32_t* unicodeArray = nullptr;
     int32_t arrayLength = 0;
+    uint32_t bufferSize_ = 0;
 
     OH_Drawing_FontCollection* fontCollection_ = nullptr;
     std::unique_ptr <uint8_t[]> existFontBuffer_ = nullptr;
     std::vector<uint8_t> invalidBuffer_ = {};
 
-    uint32_t bufferSize_ = 0;
-
-public:
-public:
     void TearDown() override;
     void SetUp() override;
+    void LoadFontBuffers()
+    {
+        std::ifstream fileStream(ttcFontPath_);
+        ASSERT_TRUE(fileStream.is_open());
+        fileStream.seekg(0, std::ios::end);
+        bufferSize_ = fileStream.tellg();
+        fileStream.seekg(0, std::ios::beg);
+        existFontBuffer_ = std::make_unique<uint8_t[]>(bufferSize_);
+        fileStream.read(reinterpret_cast<char*>(existFontBuffer_.get()), bufferSize_);
+        fileStream.close();
+    }
 };
-
-void LoadFontBuffers()
-{
-    std::ifstream fileStream(ttcFontPath_);
-    ASSERT_TRUE(fileStream.is_open());
-    fileStream.seekg(0, std::ios::end);
-    bufferSize_ = fileStream.tellg();
-    fileStream.seekg(0, std::ios::beg);
-    existFontBuffer_ = std::make_unique<uint8_t[]>(bufferSize_);
-    fileStream.read(reinterpret_cast<char*>(existFontBuffer_.get()), bufferSize_);
-    fileStream.close();
-}
 
 void NdkFontUnicodeTest::TearDown() override
 {

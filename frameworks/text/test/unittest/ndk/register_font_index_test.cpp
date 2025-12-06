@@ -45,22 +45,20 @@ protected:
     int invalidFontCount = 100;
     uint32_t bufferSize_ = 0;
 
-public:
     void TearDown() override;
     void SetUp() override;
+    void LoadFontBuffers()
+    {
+        std::ifstream fileStream(existFontPath_);
+        ASSERT_TRUE(fileStream.is_open());
+        fileStream.seekg(0, std::ios::end);
+        bufferSize_ = fileStream.tellg();
+        fileStream.seekg(0, std::ios::beg);
+        existFontBuffer_ = std::make_unique<uint8_t[]>(bufferSize_);
+        fileStream.read(reinterpret_cast<char*>(existFontBuffer_.get()), bufferSize_);
+        fileStream.close();
+    }
 };
-
-void LoadFontBuffers()
-{
-    std::ifstream fileStream(existFontPath_);
-    ASSERT_TRUE(fileStream.is_open());
-    fileStream.seekg(0, std::ios::end);
-    bufferSize_ = fileStream.tellg();
-    fileStream.seekg(0, std::ios::beg);
-    existFontBuffer_ = std::make_unique<uint8_t[]>(bufferSize_);
-    fileStream.read(reinterpret_cast<char*>(existFontBuffer_.get()), bufferSize_);
-    fileStream.close();
-}
 
 void NdkRegisterFontIndexTest::TearDown()
 {
