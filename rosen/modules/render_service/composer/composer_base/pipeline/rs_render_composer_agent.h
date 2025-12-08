@@ -30,7 +30,7 @@ public:
     void ComposerProcess(const std::shared_ptr<RSLayerTransactionData>& transactionData);
     void OnScreenConnected(const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property);
     void OnScreenDisconnected();
-    GSError ClearFrameBuffers(bool isNeedResetContext = true);
+    GSError ClearFrameBuffers(bool isNeedResetContext = true);  // majingtao
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
     void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds);
     void SetScreenBacklight(uint32_t level);
