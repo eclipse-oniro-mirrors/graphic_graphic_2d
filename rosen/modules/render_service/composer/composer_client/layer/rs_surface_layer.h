@@ -36,9 +36,10 @@ class RSSurfaceLayer : public RSLayer {
 public:
     RSSurfaceLayer(RSLayerId rsLayerId = 0, std::shared_ptr<RSLayerContext> rsLayerContext = nullptr);
     ~RSSurfaceLayer() = default;
+
     RSLayerId GetRSLayerId() const override;
     void SetRSLayerId(RSLayerId rsLayerId) override;
-    std::shared_ptr<RSLayerContext> GetRSLayerContext() override;
+    std::shared_ptr<RSLayerContext> GetRSLayerContext() const override;
     void SetRSLayerContext(std::shared_ptr<RSLayerContext> rsLayerContext) override;
     void UpdateRSLayerCmd(const std::shared_ptr<RSRenderLayerCmd>& command) override {}
 
@@ -140,9 +141,9 @@ public:
     void SetAcquireFence(const sptr<SyncFence>& acquireFence) override;
     sptr<SyncFence> GetAcquireFence() const override;
     void SetCycleBuffersNum(uint32_t cycleBuffersNum) override;
-    uint32_t GetCycleBuffersNum() override;
+    uint32_t GetCycleBuffersNum() const override;
     void SetSurfaceName(std::string surfaceName) override;
-    std::string GetSurfaceName() override;
+    std::string GetSurfaceName() const override;
     void SetBufferOwnerCount(std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount) override;
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetSeqNumFromBufferOwnerCounts(uint64_t seqNum) const override;
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetBufferOwnerCount() const override;

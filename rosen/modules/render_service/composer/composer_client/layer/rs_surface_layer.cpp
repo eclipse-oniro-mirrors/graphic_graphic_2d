@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
-std::shared_ptr<RSLayerContext> RSSurfaceLayer::GetRSLayerContext()
+std::shared_ptr<RSLayerContext> RSSurfaceLayer::GetRSLayerContext() const
 {
     return rsLayerContext_.lock();
 }
@@ -856,7 +856,7 @@ void RSSurfaceLayer::SetCycleBuffersNum(uint32_t cycleBuffersNum)
         RSLayerCmdType::CYCLE_BUFFERS_NUM, cycleBuffersNum);
 }
 
-uint32_t RSSurfaceLayer::GetCycleBuffersNum()
+uint32_t RSSurfaceLayer::GetCycleBuffersNum() const
 {
     return cycleBuffersNum_;
 }
@@ -871,7 +871,7 @@ void RSSurfaceLayer::SetSurfaceName(std::string surfaceName)
         RSLayerCmdType::SURFACE_NAME, surfaceName);
 }
 
-std::string RSSurfaceLayer::GetSurfaceName()
+std::string RSSurfaceLayer::GetSurfaceName() const
 {
     return surfaceName_;
 }
