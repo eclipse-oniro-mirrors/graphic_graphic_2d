@@ -374,7 +374,13 @@ OH_Drawing_String* OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType fontT
         *num = 0;
         return nullptr;
     }
-    std::unique_ptr<OH_Drawing_String[]> stringArr = std::make_unique<OH_Drawing_String[]>(fontPaths.size());
+    std::unique_ptr<OH_Drawing_String[]> stringArr = std::make_unique<OH_Drawing_String[]>(fontPaths.size() + 1);
+    size_t byteLength = sizeof(OH_Drawing_String) * (fontPaths.size() + 1);
+    if (memset_s(stringArr.get(), byteLength, 0, byteLength) != EOK) {
+        TEXT_LOGE("Failed to memset_s length: %{public}zu", byteLength);
+        *num = 0;
+        return nullptr;
+    }
     for (const auto& path : fontPaths) {
         std::u16string utf16String = OHOS::Str8ToStr16(path);
         if (utf16String.empty()) {
@@ -390,11 +396,10 @@ OH_Drawing_String* OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType fontT
         stringArr[index].strData = strData.release();
         index += 1;
     }
+    *num = index;
     if (index == 0) {
         TEXT_LOGI_LIMIT3_MIN("Failed to get font path, font type: %{public}d", static_cast<int32_t>(fontType));
-        *num = 0;
         return nullptr;
     }
-    *num = index;
     return stringArr.release();
 }

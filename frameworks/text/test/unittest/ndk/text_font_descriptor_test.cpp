@@ -896,7 +896,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest020, TestSize.Level0)
     size_t pathCount = 0;
     OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::ALL, &pathCount);
     EXPECT_NE(fontPaths, nullptr);
-    EXPECT_EQ(pathCount, 1);
+    EXPECT_EQ(pathCount, 141);
     for (size_t i = 0; i < pathCount; i++) {
         OH_Drawing_String fontPath = fontPaths[i];
         std::u16string path(reinterpret_cast<char16_t*>(fontPath.strData),

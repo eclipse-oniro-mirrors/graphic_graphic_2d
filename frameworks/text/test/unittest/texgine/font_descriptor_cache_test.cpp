@@ -476,9 +476,9 @@ HWTEST_F(FontDescriptorTest, GetFontPathsByTypeNormalTest, TestSize.Level0)
         }
         paths.clear();
     };
-    expectFunc(TextEngine::FontParser::SystemFontType::ALL, 0);
-    expectFunc(TextEngine::FontParser::SystemFontType::STYLISH, 0);
-    expectFunc(TextEngine::FontParser::SystemFontType::INSTALLED, 0);
+    expectFunc(TextEngine::FontParser::SystemFontType::ALL, 141);
+    expectFunc(TextEngine::FontParser::SystemFontType::STYLISH, 1);
+    expectFunc(TextEngine::FontParser::SystemFontType::INSTALLED, 3);
     expectFunc(TextEngine::FontParser::SystemFontType::CUSTOMIZED, 0);
 }
 
@@ -492,22 +492,22 @@ HWTEST_F(FontDescriptorTest, GetFontPathsByTypeInvalidTest, TestSize.Level0)
     std::string initPath = "init";
     std::unordered_set<std::string> paths = { initPath };
     TextEngine::FontParser::SystemFontType fontType = TextEngine::FontParser::SystemFontType::ALL;
-    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + 1, paths);
+    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + UINT16_MAX, paths);
     EXPECT_TRUE(paths.empty());
 
     paths.insert(initPath);
     fontType = TextEngine::FontParser::SystemFontType::STYLISH;
-    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + 1, paths);
+    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + UINT16_MAX, paths);
     EXPECT_TRUE(paths.empty());
 
     paths.insert(initPath);
     fontType = TextEngine::FontParser::SystemFontType::INSTALLED;
-    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + 1, paths);
+    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + UINT16_MAX, paths);
     EXPECT_TRUE(paths.empty());
 
     paths.insert(initPath);
     fontType = TextEngine::FontParser::SystemFontType::CUSTOMIZED;
-    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + 1, paths);
+    FontDescriptorMgrInstance.GetFontPathsByType(static_cast<int32_t>(fontType) + UINT16_MAX, paths);
     EXPECT_TRUE(paths.empty());
 }
 } // namespace Rosen
