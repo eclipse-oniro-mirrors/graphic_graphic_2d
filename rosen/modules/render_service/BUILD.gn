@@ -183,7 +183,8 @@ ohos_shared_library("librender_service") {
     "core/transaction/zidl/rs_client_to_render_connection_stub.cpp",
     "main/render_server/transaction/zidl/rs_client_to_service_connection_stub.cpp",
     "main/render_server/transaction/zidl/rs_render_service_stub.cpp",
-    "core/transaction/zidl/rs_connect_to_render_process.cpp",
+    "core/transaction/rs_connect_to_render_process.cpp",
+    "core/transaction/zidl/rs_connect_to_render_process_stub.cpp",
     "core/feature/hyper_graphic_manager/hgm_client.cpp",
     "core/feature/hyper_graphic_manager/hgm_info_parcel.cpp",
     "main/render_process/transaction/rs_service_to_render_connection.cpp",
@@ -288,9 +289,9 @@ ohos_shared_library("librender_service") {
     "core/drawable/dfx/rs_refresh_rate_dfx.cpp", 
     "core/drawable/dfx/rs_skp_capture_dfx.cpp",
     "main/render_server/dfx/rs_service_dump_manager.cpp",
-    "main/render_server/dfx/rs_service_dump.cpp",
+    "main/render_server/dfx/rs_service_dumper.cpp",
     "main/render_process/dfx/rs_process_dump_manager.cpp",
-    "main/render_process/dfx/rs_process_dump.cpp",
+    "main/render_process/dfx/rs_process_dumper.cpp",
   ]
 
   if (defined(input_ext_feature_magiccursor) && input_ext_feature_magiccursor) {
