@@ -1485,7 +1485,7 @@
     "commandListRepeat": 1
   },
   {
-    "testCaseDesc": "COMMIT_TRANSACTION_TEST_171",
+    "testCaseDesc": "COMMIT_TRANSACTION_TEST_172",
     "interfaceName": "COMMIT_TRANSACTION",
     "inputParams": "WriteRSTransactionData",
     "writeInterfaceToken": false,
