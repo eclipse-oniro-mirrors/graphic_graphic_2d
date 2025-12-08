@@ -2680,5 +2680,12 @@
     "inputParams": "",
     "writeInterfaceToken": true,
     "messageOption": "TF_SYNC"
+  },
+  {
+    "testCaseDesc": "GET_PID_GPU_MEMORY_IN_MB_TEST_001",
+    "interfaceName": "GET_PID_GPU_MEMORY_IN_MB",
+    "inputParams": "WriteUint32",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_ASYNC"
   }
 ]
