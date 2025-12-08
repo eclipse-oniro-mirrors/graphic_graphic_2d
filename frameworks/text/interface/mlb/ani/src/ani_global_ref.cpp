@@ -42,8 +42,11 @@ constexpr CacheKey RUN_KEY{ANI_CLASS_RUN, "<ctor>", ":"};
 constexpr CacheKey RUN_GET_NATIVE_KEY{ANI_CLASS_RUN, TEXT_GET_NATIVE, ":l"};
 constexpr CacheKey TEXT_LINE_KEY{ANI_CLASS_TEXT_LINE, "<ctor>", ":"};
 constexpr CacheKey TEXT_LINE_GET_NATIVE_KEY{ANI_CLASS_TEXT_LINE, TEXT_GET_NATIVE, ":l"};
+
 constexpr const std::string_view FONT_DESCRIPTOR_SIGN = "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}"
-    "C{" ANI_STRING "}" "C{" ANI_STRING "}" "E{" ANI_ENUM_FONT_WEIGHT "}iizz:";
+    "C{" ANI_STRING "}" "C{" ANI_STRING "}" "E{" ANI_ENUM_FONT_WEIGHT "}iizz" "C{" ANI_STRING "}" "C{" ANI_STRING "}"
+    "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}"
+    "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_INT "}" ":";
 constexpr CacheKey FONT_DESCRIPTOR_KEY{ANI_CLASS_FONT_DESCRIPTOR, "<ctor>", FONT_DESCRIPTOR_SIGN};
 constexpr CacheKey FONT_DESCRIPTOR_POST_SCRIPT_NAME_KEY{
     ANI_INTERFACE_FONT_DESCRIPTOR, "<get>postScriptName", ANI_WRAP_RETURN_C(ANI_STRING)};
