@@ -102,9 +102,10 @@ private:
     std::shared_ptr<Drawing::ShaderEffect> MakeBrightnessAdjustmentShader(const std::shared_ptr<Drawing::Image>& image,
         const Drawing::SamplingOptions& sampling, float hdrBrightnessRatio);
 
-    void DrawHardwareEnabledNodes(Drawing::Canvas& canvas, RSLogicalDisplayRenderParams& params);
-    void DrawAdditionalContent(RSPaintFilterCanvas& canvas, bool isOffScreenCanvas = false);
-    void DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas, bool isOffScreenCanvas = false);
+    void DrawHardwareEnabledNodes(Drawing::Canvas& canvas, RSLogicalDisplayRenderParams& params,
+        sptr<SurfaceBuffer> virtualBuffer = nullptr, spr<SyncFence> virtualFence = nullptr);
+    void DrawAdditionalContent(RSPaintFilterCanvas& canvas);
+    void DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas);
 
     void MirrorRedrawDFX(bool mirrorRedraw, ScreenId screenId);
 

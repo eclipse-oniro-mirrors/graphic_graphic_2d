@@ -630,6 +630,40 @@ HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam011, TestSize.Level2)
 }
 
 /*
+ * @tc.name: CreateBufferDrawParam003
+ * @tc.desc: test CreateBufferDrawParam with surfaceRenderNode
+ * @tc.type: FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam003, TestSize.Level2)
+{
+    bool forceCPU = false;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    auto fence = surfaceNode->GetRSSurfaceHandler()->GetAcquireFence();
+    BufferDrawParam params = RSUniRenderUtil::CreateBufferDrawParam(buffer, fence, forceCPU);
+    ASSERT_EQ(params.buffer, nullptr);
+}
+
+/*
+ * @tc.name: CreateBufferDrawParam004
+ * @tc.desc: test CreateBufferDrawParam with surfaceRenderNode
+ * @tc.type: FUNC
+ * @tc.require: issueIAJOWI
+ */
+HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParam004, TestSize.Level2)
+{
+    bool forceCPU = false;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto buffer = nullptr;
+    auto fence = surfaceNode->GetRSSurfaceHandler()->GetAcquireFence();
+    BufferDrawParam params = RSUniRenderUtil::CreateBufferDrawParam(buffer, fence, forceCPU);
+    ASSERT_EQ(params.buffer, nullptr);
+}
+
+/*
  * @tc.name: DealWithRotationAndGravityForRotationFixed
  * @tc.desc: test DealWithRotationAndGravityForRotationFixed
  * @tc.type: FUNC
