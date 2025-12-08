@@ -45,8 +45,9 @@ void RSUIContextTest::TearDown() {}
  */
 HWTEST_F(RSUIContextTest, PostDelayTaskTest001, TestSize.Level1)
 {
-    auto uiContext1 = RSUIContextManager::MutableInstance().CreateRSUIContext();
-    auto uiContext2 = RSUIContextManager::MutableInstance().CreateRSUIContext();
+    sptr<IRemoteObject> remoteObject = nullptr;
+    auto uiContext1 = RSUIContextManager::MutableInstance().CreateRSUIContext(remoteObject);
+    auto uiContext2 = RSUIContextManager::MutableInstance().CreateRSUIContext(remoteObject);
     ASSERT_TRUE(RSUIContextManager::Instance().rsUIContextMap_.size() > 1);
     bool flag = false;
     const std::function<void()>& task = [&flag]() { flag = true; };
@@ -62,8 +63,9 @@ HWTEST_F(RSUIContextTest, PostDelayTaskTest001, TestSize.Level1)
  */
 HWTEST_F(RSUIContextTest, PostDelayTaskTest002, TestSize.Level1)
 {
-    auto uiContext1 = RSUIContextManager::MutableInstance().CreateRSUIContext();
-    auto uiContext2 = RSUIContextManager::MutableInstance().CreateRSUIContext();
+    sptr<IRemoteObject> remoteObject = nullptr;
+    auto uiContext1 = RSUIContextManager::MutableInstance().CreateRSUIContext(remoteObject);
+    auto uiContext2 = RSUIContextManager::MutableInstance().CreateRSUIContext(remoteObject);
     ASSERT_TRUE(RSUIContextManager::Instance().rsUIContextMap_.size() > 1);
     uiContext2->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) { task(); });
     ASSERT_FALSE(uiContext1->HasTaskRunner());
@@ -101,7 +103,8 @@ HWTEST_F(RSUIContextTest, DumpNodeTreeProcessorTest001, TestSize.Level1)
  */
 HWTEST_F(RSUIContextTest, DumpNodeTreeProcessorTest002, TestSize.Level1)
 {
-    auto uiContext = RSUIContextManager::MutableInstance().CreateRSUIContext();
+    sptr<IRemoteObject> remoteObject = nullptr;
+    auto uiContext = RSUIContextManager::MutableInstance().CreateRSUIContext(remoteObject);
     auto transaction = uiContext->GetRSTransaction();
     ASSERT_NE(transaction, nullptr);
     std::string out = "";
@@ -119,7 +122,8 @@ HWTEST_F(RSUIContextTest, DumpNodeTreeProcessorTest003, TestSize.Level1)
 {
     bool enable = RSSystemProperties::GetRSClientMultiInstanceEnabled();
     if (enable) {
-        auto uiContext = RSUIContextManager::MutableInstance().CreateRSUIContext();
+        sptr<IRemoteObject> remoteObject = nullptr;
+        auto uiContext = RSUIContextManager::MutableInstance().CreateRSUIContext(remoteObject);
         uiContext->rsTransactionHandler_ = nullptr;
         auto transaction = uiContext->GetRSTransaction();
         ASSERT_EQ(transaction, nullptr);

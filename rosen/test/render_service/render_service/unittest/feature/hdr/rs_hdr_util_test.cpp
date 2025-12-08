@@ -548,28 +548,6 @@ HWTEST_F(RSHdrUtilTest, UpdateHDRCastPropertiesTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetScreenColorGamut
- * @tc.desc: Test GetScreenColorGamut
- * @tc.type: FUNC
- * @tc.require: issueI6QM6E
- */
-HWTEST_F(RSHdrUtilTest, GetScreenColorGamutTest, TestSize.Level1)
-{
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(screenManager, nullptr);
-    auto virtualScreenId = screenManager->CreateVirtualScreen("virtual screen 001", 0, 0, nullptr);
-    ASSERT_NE(INVALID_SCREEN_ID, virtualScreenId);
-    auto rsContext = std::make_shared<RSContext>();
-    auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0, rsContext->weak_from_this());
-
-    EXPECT_EQ(RSHdrUtil::GetScreenColorGamut(*screenNode, screenManager), COLOR_GAMUT_INVALID);
-    screenNode->screenId_ = virtualScreenId; // pass GetScreenColorGamut
-    // COLOR_GAMUT_BT2100_HLG index in supportedVirtualColorGamuts_ is 4
-    screenManager->SetScreenColorGamut(virtualScreenId, 4);
-    EXPECT_EQ(RSHdrUtil::GetScreenColorGamut(*screenNode, screenManager), COLOR_GAMUT_BT2100_HLG);
-}
-
-/**
  * @tc.name: NeedUseF16Capture
  * @tc.desc: Test NeedUseF16Capture
  * @tc.type: FUNC
@@ -618,19 +596,19 @@ HWTEST_F(RSHdrUtilTest, HandleVirtualScreenHDRStatusTest, TestSize.Level1)
     auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0, rsContext->weak_from_this());
 
     screenNode->SetCompositeType(CompositeType::UNI_RENDER_MIRROR_COMPOSITE);
-    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode, screenManager); // failed GetScreenColorGamut
+    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode); // failed GetScreenColorGamut
 
     screenNode->screenId_ = virtualScreenId; // pass GetScreenColorGamut
     // COLOR_GAMUT_BT2100_HLG index in supportedVirtualColorGamuts_ is 4
     screenManager->SetScreenColorGamut(virtualScreenId, 4);
-    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode, screenManager); // mirror node is null
+    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode); // mirror node is null
 
     screenNode->SetIsMirrorScreen(true);
     NodeId id = 1;
     auto mirrorSourceNode = std::make_shared<RSScreenRenderNode>(id, 0);
     screenNode->SetMirrorSource(mirrorSourceNode);
     mirrorSourceNode->CollectHdrStatus(HdrStatus::HDR_VIDEO);
-    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode, screenManager); // mirror node is not null
+    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode); // mirror node is not null
 
     ScreenColorGamut colorGamut;
     EXPECT_EQ(screenManager->GetScreenColorGamut(screenNode->GetScreenId(), colorGamut), StatusCode::SUCCESS);
@@ -653,16 +631,16 @@ HWTEST_F(RSHdrUtilTest, HandleVirtualScreenHDRStatusTest002, TestSize.Level1)
     auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
 
     screenNode->SetCompositeType(CompositeType::UNI_RENDER_COMPOSITE);
-    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode, screenManager);
+    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode);
     screenNode->SetCompositeType(CompositeType::UNI_RENDER_EXPAND_COMPOSITE);
     ScreenColorGamut colorGamut;
     EXPECT_NE(screenManager->GetScreenColorGamut(screenNode->GetScreenId(), colorGamut), StatusCode::SUCCESS);
-    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode, screenManager); // failed GetScreenColorGamut
+    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode); // failed GetScreenColorGamut
 
     screenNode->screenId_ = virtualScreenId; // pass GetScreenColorGamut
     // COLOR_GAMUT_BT2100_HLG index in supportedVirtualColorGamuts_ is 4
     screenManager->SetScreenColorGamut(virtualScreenId, 4);
-    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode, screenManager);
+    RSHdrUtil::HandleVirtualScreenHDRStatus(*screenNode);
     EXPECT_EQ(screenManager->GetScreenColorGamut(screenNode->GetScreenId(), colorGamut), StatusCode::SUCCESS);
     EXPECT_EQ(static_cast<GraphicColorGamut>(colorGamut), GRAPHIC_COLOR_GAMUT_BT2100_HLG);
 }
