@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
-#define ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
+#ifndef RENDER_SERVICE_BASE_PLATFORM_OHOS_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
+#define RENDER_SERVICE_BASE_PLATFORM_OHOS_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
 
-#include "rs_iclient_to_render_connection.h"
-#include "rs_iclient_to_service_connection.h"
+#include "zidl/rs_iclient_to_render_connection.h"
+#include "zidl/rs_iclient_to_service_connection.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -32,4 +32,4 @@ public:
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // ROSEN_RENDER_SERVICE_BASE_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
+#endif // RENDER_SERVICE_BASE_PLATFORM_OHOS_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H

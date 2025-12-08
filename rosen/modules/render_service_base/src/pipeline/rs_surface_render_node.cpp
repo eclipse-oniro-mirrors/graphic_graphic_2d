@@ -1670,9 +1670,11 @@ void RSSurfaceRenderNode::SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvaila
 void RSSurfaceRenderNode::ConnectToNodeInRenderService(sptr<IRemoteObject> connectToRender)
 {
     ROSEN_LOGI("RSSurfaceRenderNode::ConnectToNodeInRenderService nodeId = %{public}" PRIu64, GetId());
-    rsRenderPipelineClient_ = std::make_shared<RSRenderPipelineClient>(connectToRender);
-    if (rsRenderPipelineClient_ != nullptr) {
-        rsRenderPipelineClient_->RegisterBufferAvailableListener(
+    auto renderPipelineClient =
+        std::static_pointer_cast<RSRenderPipelineClient>(RSIRenderClient::CreateRenderPiplineClient());
+
+    if (renderPipelineClient != nullptr) {
+        renderPipelineClient->RegisterBufferAvailableListener(
             GetId(), [weakThis = weak_from_this()]() {
                 auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(weakThis.lock());
                 if (node == nullptr) {
@@ -1680,7 +1682,7 @@ void RSSurfaceRenderNode::ConnectToNodeInRenderService(sptr<IRemoteObject> conne
                 }
                 node->NotifyRTBufferAvailable(node->GetIsTextureExportNode());
             }, true);
-        rsRenderPipelineClient_->RegisterBufferClearListener(
+        renderPipelineClient->RegisterBufferClearListener(
             GetId(), [weakThis = weak_from_this()]() {
                 auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(weakThis.lock());
                 if (node == nullptr) {
