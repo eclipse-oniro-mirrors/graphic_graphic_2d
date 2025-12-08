@@ -68,7 +68,6 @@
 #undef LOG_TAG
 #define LOG_TAG "RSRenderService"
 
-
 namespace OHOS {
 namespace Rosen {
 namespace {
