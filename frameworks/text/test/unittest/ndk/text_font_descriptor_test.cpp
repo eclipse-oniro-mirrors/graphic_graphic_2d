@@ -22,6 +22,7 @@
 #include "drawing_text_font_descriptor.h"
 #include "font_descriptor_mgr.h"
 #include "gtest/gtest.h"
+#include "string_ex.h"
 #include "unicode/unistr.h"
 
 using namespace testing;
@@ -883,5 +884,46 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest019, TestSize.Level0)
     EXPECT_EQ(num1, 0);
     FontDescriptorMgrInstance.ClearFontFileCache();
     OH_Drawing_DestroyFontCollection(fc);
+}
+
+/*
+ * @tc.name: NdkFontDescriptorTest020
+ * @tc.desc: test for registering a font with a local fontCollection.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest020, TestSize.Level0)
+{
+    size_t pathCount = 0;
+    OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::ALL, &pathCount);
+    EXPECT_NE(fontPaths, nullptr);
+    EXPECT_EQ(pathCount, 1);
+    for (size_t i = 0; i < pathCount; i++) {
+        OH_Drawing_String fontPath = fontPaths[i];
+        std::u16string path(reinterpret_cast<char16_t*>(fontPath.strData),
+            fontPath.strLen / sizeof(char16_t));
+        std::string u8Path = OHOS::Str16ToStr8(path);
+        EXPECT_TRUE(fs::exists(u8Path));
+        free(fontPath.strData);
+    }
+    free(fontPaths);
+}
+
+/*
+ * @tc.name: NdkFontDescriptorTest021
+ * @tc.desc: test for registering a font with a local fontCollection.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest021, TestSize.Level0)
+{
+    size_t pathCount = SIZE_MAX;
+    OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::ALL, nullptr);
+    EXPECT_NE(fontPaths, nullptr);
+    for (size_t i = 0; fontPaths[i].strData != nullptr; i++) {
+        free(fontPaths[i].strData);
+    }
+    free(fontPaths);
+    fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::CUSTOMIZED, &pathCount);
+    EXPECT_EQ(fontPaths, nullptr);
+    EXPECT_EQ(pathCount, 0);
 }
 } // namespace OHOS
