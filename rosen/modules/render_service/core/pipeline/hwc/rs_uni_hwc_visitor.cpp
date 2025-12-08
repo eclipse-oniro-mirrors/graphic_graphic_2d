@@ -900,7 +900,7 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceR
         }
         auto screenNodeId = uniRenderVisitor_.curScreenNode_->GetId();
         const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
-        for (auto& hwcNode : selfDrawingNodes) {
+        for (auto hwcNode : selfDrawingNodes) {
             if (!hwcNode || hwcNode->GetScreenNodeId() != screenNodeId) {
                 continue;
             }
