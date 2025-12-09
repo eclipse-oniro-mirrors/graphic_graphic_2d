@@ -32,7 +32,7 @@ class RSRenderProcessManager : public RSIScreenManagerListener {
 public:
     static sptr<RSRenderProcessManager> Create(RSRenderService& renderService);
 
-    explicit RSRenderProcessManger(RSRenderService& renderService) : renderService_(renderService) {}
+    explicit RSRenderProcessManager(RSRenderService& renderService) : renderService_(renderService) {}
     virtual ~RSRenderProcessManager() noexcept = default;
 
     virtual sptr<IRemoteObject> OnScreenConnected(ScreenId id, const ScreenEventData& data,
@@ -48,9 +48,9 @@ public:
     virtual std::vector<sptr<RSIServiceToRenderConnection>> GetServiceToRenderConns() const = 0;
     virtual sptr<RSIConnectToRenderProcess> GetConnectToRenderConnection(ScreenId screenId) const = 0;
 
-private:
+protected:
     RSRenderService& renderService_;
-}
+};
 } // namespace Rosen
 } // namespace OHOS
 

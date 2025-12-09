@@ -25,15 +25,13 @@ constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config
 
 HgmRPContext::HgmRPContext()
 {
-    InitHgmConfig();
-
     hgmRPEnergy_ = std::make_shared<HgmRPEnergy>();
     convertFrameRateFunc_ = [this](const RSPropertyUnit unit, float velocity, int32_t area, int32_t length) -> int32_t {
         return rpFrameRatePolicy_.GetExpectedFrameRate(unit, velocity, area, length);
     };
 }
 
-int32_t HgmContext::InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,
+int32_t HgmRPContext::InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,
     std::unordered_map<std::string, std::string>& solidLayerConfig, std::vector<std::string>& appBufferList)
 {
     auto parser = std::make_unique<RPHgmXMLParser>();

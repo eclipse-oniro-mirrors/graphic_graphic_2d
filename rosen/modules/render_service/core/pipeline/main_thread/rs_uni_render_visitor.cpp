@@ -161,8 +161,6 @@ std::string VisibleDataToString(const VisibleData& val)
 
 } // namespace
 
-std::unordered_set<NodeId> RSUniRenderVisitor::allBlackList_;
-std::unordered_set<NodeId> RSUniRenderVisitor::allWhiteList_;
 bool RSUniRenderVisitor::isLastFrameRotating_ = false;
 
 RSUniRenderVisitor::RSUniRenderVisitor()
@@ -440,12 +438,9 @@ void RSUniRenderVisitor::HandlePixelFormat(RSScreenRenderNode& node)
         RSSystemProperties::GetHdrImageEnabled(), RSSystemProperties::GetHdrVideoEnabled());
     ScreenId screenId = node.GetScreenId();
     bool hasUniRenderHdrSurface = node.GetHasUniRenderHdrSurface();
-    if ((RSLuminanceControl::Get().IsCloseHardwareHdr() && !drmNodes_.empty()) || node.GetForceCloseHdr()) {
-        // Disable hdr when drm videos exist to avoid flicker
-        RSLuminanceControl::Get().SetHdrStatus(screenId, HdrStatus::NO_HDR);
-    } else {
-        RSLuminanceControl::Get().SetHdrStatus(screenId, node.GetDisplayHdrStatus());
-    }
+    bool forceCloseHDR = node.GetForceCloseHdr();
+    bool isCloseHdr = forceCloseHDR || (RSLuminanceControl::Get().IsHardwareHdrDisabled() && !drmNodes_.empty());
+    RSLuminanceControl::Get().SetHdrStatus(screenId, isCloseHdr ? HdrStatus::NO_HDR : node.GetDisplayHdrStatus());
     bool isHdrOn = RSLuminanceControl::Get().IsHdrOn(screenId);
     rsHdrCollection_->HandleHdrState(isHdrOn);
     float brightnessRatio = RSLuminanceControl::Get().GetHdrBrightnessRatio(screenId, 0);
@@ -2131,16 +2126,16 @@ bool RSUniRenderVisitor::InitScreenInfo(RSScreenRenderNode& node)
     curScreenDirtyManager_->SetSurfaceSize(
         curScreenNode_->GetScreenInfo().width, curScreenNode_->GetScreenInfo().height);
     curScreenDirtyManager_->SetActiveSurfaceRect(curScreenNode_->GetScreenInfo().activeRect);
-    screenManager_->SetScreenHasProtectedLayer(node.GetScreenId(), false);
-    auto allBlackList = screenManager_->GetAllBlackList();
-    auto allWhiteList = screenManager_->GetAllWhiteList();
-    if (allBlackList_ != allBlackList || allWhiteList_ != allWhiteList) {
-        allBlackList_ = std::move(allBlackList);
-        allWhiteList_ = std::move(allWhiteList);
-        needRecalculateOcclusion_ = true;
-    } else {
-        needRecalculateOcclusion_ = false;
-    }
+    // screenManager_->SetScreenHasProtectedLayer(node.GetScreenId(), false);
+    // auto allBlackList = screenManager_->GetAllBlackList();
+    // auto allWhiteList = screenManager_->GetAllWhiteList();
+    // if (allBlackList_ != allBlackList || allWhiteList_ != allWhiteList) {
+    //     allBlackList_ = std::move(allBlackList);
+    //     allWhiteList_ = std::move(allWhiteList);
+    //     needRecalculateOcclusion_ = true;
+    // } else {
+    //     needRecalculateOcclusion_ = false;
+    // }
     screenWhiteList_ = screenManager_->GetScreenWhiteList();
     screenState_ = screenInfo.state;
     node.GetLogicalDisplayNodeDrawables().clear();
@@ -2501,7 +2496,7 @@ void RSUniRenderVisitor::UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceR
         surfaceNode->SetHardwareForcedDisabledState(true);
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " use hardCursor to display",
             surfaceNode->GetName().c_str(), surfaceNode->GetId());
-        bool isMirrorMode = RSPointerWindowManager::Instance().HasMirrorOrVirtualScreen();
+        bool hasMirrorOrVirtualScreen = RSPointerWindowManager::Instance().HasMirrorOrVirtualScreen();
         RSPointerWindowManager::Instance().SetIsPointerEnableHwc(isHardCursor && !hasMirrorOrVirtualScreen);
         auto transform = RSUniHwcComputeUtil::GetLayerTransform(*surfaceNode, curScreenNode_->GetScreenInfo());
         surfaceNode->UpdateHwcNodeLayerInfo(transform, isHardCursor);
@@ -3160,8 +3155,8 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     }
     if (auto& illuminated = node.GetRenderProperties().GetIlluminated();
         (node.ShouldPaint() && (illuminated && illuminated->IsIlluminatedValid())) ||
-        RSPointLightManager::Instance()->GetChildHasVisibleIlluminated(node.shared_from_this())) {
-        RSPointLightManager::Instance()->SetChildHasVisibleIlluminated(nodeParent, true);
+        RSPointLightManager::Instance(node.GetLogicalDisplayNodeId())->GetChildHasVisibleIlluminated(node.shared_from_this())) {
+        RSPointLightManager::Instance(node.GetLogicalDisplayNodeId())->SetChildHasVisibleIlluminated(nodeParent, true);
     }
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);

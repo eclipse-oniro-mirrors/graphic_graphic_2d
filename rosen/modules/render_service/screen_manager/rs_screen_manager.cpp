@@ -403,17 +403,18 @@ bool RSScreenManager::CheckFoldScreenIdBuiltIn(ScreenId id)
     if (id == BUILT_IN_MAIN_SCREEN_ID || id == BUILT_IN_EXTERNAL_SCREEN_ID) {
         return true;
     }
-    
+}
 
-void RSScreenManager::ProcessScreenConnected(ScreenId id, std::shared_ptr<HdiOutput>& output)
+void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
 {
-    auto screen = std::make_shared<RSScreen>(id, output);
+    auto screen = std::make_shared<RSScreen>(output);
     screen->SetOnPropertyChangedCallback(
         std::bind(&RSScreenManager::OnScreenPropertyChanged, this, std::placeholders::_1));
     screen->SetOnBacklightChangedCallback(
         std::bind(&RSScreenManager::OnScreenBacklightChanged, this, std::placeholders::_1, std::placeholders::_2));
 
     std::unique_lock<std::mutex> lock(screenMapMutex_);
+    ScreenId id = ToScreenId(output->GetScreenId());
     screens_[id] = screen;
     if (isFoldScreenFlag_ && CheckFoldScreenIdBuiltIn(id) && foldScreenIds_.size() < ORIGINAL_FOLD_SCREEN_AMOUNT) {
         foldScreenIds_[id] = {true, false};
@@ -807,7 +808,7 @@ int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vecto
             }
             screen->SetGlobalBlackList(globalBlackList_);
         }
-        PrintScreenBlackList(std::string(__func__), id, castScreenBlackList_);
+        PrintScreenBlackList(std::string(__func__), id, globalBlackList_);
         return SUCCESS;
     }
     auto virtualScreen = GetScreen(id);
@@ -856,7 +857,7 @@ int32_t RSScreenManager::AddVirtualScreenBlackList(ScreenId id, const std::vecto
             }
             screen->AddGlobalBlackList(blackList);
         }
-        PrintScreenBlackList(std::string(__func__), id, castScreenBlackList_);
+        PrintScreenBlackList(std::string(__func__), id, globalBlackList_);
         return SUCCESS;
     }
     auto virtualScreen = GetScreen(id);
@@ -888,7 +889,7 @@ int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::ve
             }
             screen->RemoveGlobalBlackList(blackList);
         }
-        PrintScreenBlackList(std::string(__func__), id, castScreenBlackList_);
+        PrintScreenBlackList(std::string(__func__), id, globalBlackList_);
         return SUCCESS;
     }
     auto virtualScreen = GetScreen(id);

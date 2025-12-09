@@ -37,12 +37,12 @@ public:
     static std::shared_ptr<RSRenderComposerClient> Create(bool isMultiProcess,
         const sptr<IRSRenderToComposerConnection>& conn);
 
-    void AddLayer(const std::shared_ptr<RSLayer>& rsLayer);
-    void RemoveLayer(RSLayerId layerId);
-    void ClearAllLayers();
-    std::shared_ptr<RSLayer> GetLayer(RSLayerId rsLayerId);
+    void AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer);
+    void RemoveRSLayer(RSLayerId layerId);
+    void ClearAllRSLayers();
+    std::shared_ptr<RSLayer> GetRSLayer(RSLayerId rsLayerId);
 
-    void CommitLayer(CommitLayerInfo& commitLayerInfo);
+    void CommitRSLayer(CommitLayerInfo& commitLayerInfo);
     void ReleaseLayerBuffers(uint64_t screenId,
         std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
@@ -64,13 +64,14 @@ public:
     void DumpLayersInfo(std::string &dumpString);
     void DumpCurrentFrameLayers();
     void InitRsVsyncManagerAgent(const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
-    void ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds);
+    void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds);
     void SetScreenBacklight(uint32_t level);
 private:
     bool WaitComposerThreadTaskExecute(std::unique_lock<std::mutex>& lock);
     void NotifyComposerThreadCanExecuteTask();
     void IncUnExecuteTaskNum();
     void SubUnExecuteTaskNum();
+    std::mutex clientMutex_;
     std::shared_ptr<RSLayerContext> rsLayerContext_;
     bool isMultiProcess_;
     sptr<IRSRenderToComposerConnection> connection_;

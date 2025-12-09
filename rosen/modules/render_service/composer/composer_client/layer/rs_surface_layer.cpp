@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
-std::shared_ptr<RSLayerContext> RSSurfaceLayer::GetRSLayerContext()
+std::shared_ptr<RSLayerContext> RSSurfaceLayer::GetRSLayerContext() const
 {
     return rsLayerContext_.lock();
 }
@@ -539,17 +539,17 @@ const GraphicPresentTimestamp& RSSurfaceLayer::GetPresentTimestamp() const
 
 void RSSurfaceLayer::SetIsSupportedPresentTimestamp(bool isSupported)
 {
-    if (IsSupportedPresentTimestamp_ == isSupported) {
+    if (isSupportedPresentTimestamp_ == isSupported) {
         return;
     }
-    IsSupportedPresentTimestamp_ = isSupported;
+    isSupportedPresentTimestamp_ = isSupported;
     SetRSLayerCmd<RSLayerIsSupportedPresentTimestampCmd, RSLayerCmdProperty<bool>>(
         RSLayerCmdType::IS_SUPPORTED_PRESENT_TIMESTAMP, isSupported);
 }
 
 bool RSSurfaceLayer::IsSupportedPresentTimestamp() const
 {
-    return IsSupportedPresentTimestamp_;
+    return isSupportedPresentTimestamp_;
 }
 
 void RSSurfaceLayer::SetSdrNit(float sdrNit)
@@ -856,7 +856,7 @@ void RSSurfaceLayer::SetCycleBuffersNum(uint32_t cycleBuffersNum)
         RSLayerCmdType::CYCLE_BUFFERS_NUM, cycleBuffersNum);
 }
 
-uint32_t RSSurfaceLayer::GetCycleBuffersNum()
+uint32_t RSSurfaceLayer::GetCycleBuffersNum() const
 {
     return cycleBuffersNum_;
 }
@@ -871,7 +871,7 @@ void RSSurfaceLayer::SetSurfaceName(std::string surfaceName)
         RSLayerCmdType::SURFACE_NAME, surfaceName);
 }
 
-std::string RSSurfaceLayer::GetSurfaceName()
+std::string RSSurfaceLayer::GetSurfaceName() const
 {
     return surfaceName_;
 }
@@ -884,7 +884,7 @@ void RSSurfaceLayer::SetSolidColorLayerProperty(GraphicSolidColorLayerProperty s
         RSLayerCmdType::SOLID_COLOR_LAYER_PROPERTY, solidColorLayerProperty);
 }
 
-GraphicSolidColorLayerProperty RSSurfaceLayer::GetSolidColorLayerProperty()
+GraphicSolidColorLayerProperty RSSurfaceLayer::GetSolidColorLayerProperty() const
 {
     return solidColorLayerProperty_;
 }
@@ -987,7 +987,7 @@ void RSSurfaceLayer::Dump(std::string& result) const
     result += "solidColorLayer Composition type = " + std::to_string(solidColorLayerProperty_.compositionType) +
         " Zorder = " + std::to_string(solidColorLayerProperty_.zOrder) + ", ";
     result += "useDeviceOffline" + std::to_string(useDeviceOffline_) + ", ";
-    result += "ignoreAlpha" + td::to_string(ignoreAlpha_) + ", ";
+    result += "ignoreAlpha" + std::to_string(ignoreAlpha_) + ", ";
     result += "ancoSrcRect = [" + std::to_string(ancoSrcRect_.x) + ", " + std::to_string(ancoSrcRect_.y) + ", " +
         std::to_string(ancoSrcRect_.w) + ", " + std::to_string(ancoSrcRect_.h) + "]" + ";";
 }
@@ -1026,7 +1026,7 @@ std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::GetSeqNumFro
     return nullptr;
 }
 
-std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::GetBufferOwnerCount()
+std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::GetBufferOwnerCount() const
 {
     std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);
     return bufferOwnerCount_;

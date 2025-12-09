@@ -40,12 +40,12 @@ public:
     std::shared_ptr<RSLayerTransactionHandler> GetRSLayerTransaction() const;
     void SetRenderComposerClientConnection(const sptr<IRSRenderToComposerConnection>& conn);
 
-    void AddLayer(const std::shared_ptr<RSLayer>& rsLayer);
-    void RemoveLayer(RSLayerId layerId);
-    void ClearAllLayers();
-    std::shared_ptr<RSLayer> GetLayer(RSLayerId rsLayerId) const;
+    void AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer);
+    void RemoveRSLayer(RSLayerId layerId);
+    void ClearAllRSLayers();
+    std::shared_ptr<RSLayer> GetRSLayer(RSLayerId rsLayerId) const;
 
-    void CommitLayer(CommitLayerInfo& commitLayerInfo);
+    void CommitRSLayer(CommitLayerInfo& commitLayerInfo);
     void ReleaseLayerBuffers(uint64_t screenId,
         std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
@@ -64,7 +64,9 @@ public:
 
 private:
     void ANCOTransactionOnComplete(const std::shared_ptr<RSLayer>& rsLayer, const sptr<SyncFence>& previousReleaseFence);
+    mutable std::recursive_mutex rsLayerTransMutex_;
     std::shared_ptr<RSLayerTransactionHandler> rsLayerTransactionHandler_;
+    mutable std::mutex rsLayerMutex_;
     std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers_;
     sptr<IRSRenderToComposerConnection> rsComposerConnection_;
 

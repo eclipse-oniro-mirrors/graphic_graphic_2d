@@ -96,40 +96,38 @@ public:
     void CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
-    ErrCode CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
-        bool& success);
+    bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
 
-    ErrCode CreateNode(const RSSurfaceRenderNodeConfig& config, bool& success);
+    bool CreateNode(const RSSurfaceRenderNodeConfig& config);
 
-    ErrCode CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
-        sptr<Surface>& sfc, bool unobscured);
+    std::shared_ptr<RSSurface> CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, bool unobscured = false);
 
-    ErrCode RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app); // proxy Single
+    void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app); // proxy Single
 
-    ErrCode RegisterBufferClearListener(
-        NodeId id, sptr<RSIBufferClearCallback> callback);
+    bool RegisterBufferClearListener(
+        NodeId id, const BufferClearCallback& callback);
 
-    ErrCode RegisterBufferAvailableListener(
-        NodeId id, sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread);
+    bool RegisterBufferAvailableListener(
+        NodeId id, const BufferAvailableCallback &callback, bool isFromRenderThread);
 
     std::shared_ptr<RSSurface> CreateRSSurface(const sptr<Surface> &surface);
 
     bool UnregisterBufferAvailableListener(NodeId id);
 
-    ErrCode GetBitmap(NodeId id, Drawing::Bitmap& bitmap, bool& success);
+    bool GetBitmap(NodeId id, Drawing::Bitmap& bitmap);
 
-    ErrCode SetGlobalDarkColorMode(bool isDark);
+    bool SetGlobalDarkColorMode(bool isDark);
 
-    ErrCode GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
-        const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList, bool& success);
+    bool GetPixelmap(NodeId id, std::shared_ptr<Media::PixelMap> pixelmap,
+        const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList);
 
-    ErrCode SetSystemAnimatedScenes(
-        SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success);
+    bool SetSystemAnimatedScenes(
+        SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation);
 
-    ErrCode SetHardwareEnabled(NodeId id, bool isEnabled,
+    void SetHardwareEnabled(NodeId id, bool isEnabled,
         SelfDrawingNodeType selfDrawingType, bool dynamicHardwareEnable);
 
-    ErrCode SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent, uint32_t& resCode);
+    uint32_t SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent);
 
     bool GetHighContrastTextState();
 

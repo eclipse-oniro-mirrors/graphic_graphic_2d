@@ -82,6 +82,7 @@ ohos_unittest("RSVirtualScreenProcessorTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -287,6 +288,7 @@ ohos_unittest("RSComposerAdapterTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -421,6 +423,7 @@ ohos_unittest("RSPhysicalScreenProcessorTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -485,6 +488,7 @@ ohos_unittest("RSBaseRenderUtilTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
@@ -519,6 +523,7 @@ ohos_unittest("RSUniRenderComposerAdapterTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -825,6 +830,7 @@ ohos_unittest("RSBaseRenderEngineUnitTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -1020,6 +1026,7 @@ ohos_unittest("RSUniRenderEngineTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -1165,6 +1172,9 @@ config("rs_test_common_public_config") {
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/soft_vsync_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
+    "$graphic_2d_root/rosen/modules/render_service",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/layer",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
     "$graphic_2d_root/rosen/modules/render_service/main",
     "$graphic_2d_root/rosen/modules/render_service/core",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg",
@@ -1175,6 +1185,7 @@ config("rs_test_common_public_config") {
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser/performance_feature_parser",
     "$graphic_2d_root/rosen/modules/render_service_client/core",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
     "$graphic_2d_root/rosen/test/include",
     "$graphic_2d_root/utils/socketpair/export",

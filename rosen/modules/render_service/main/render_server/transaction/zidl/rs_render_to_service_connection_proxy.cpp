@@ -32,7 +32,7 @@ void RSRenderToServiceConnectionProxy::ReplyDumpResultToService(std::string& dum
     option.SetFlags(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(RSIRenderToServiceConnection::GetDescriptor())) {
         RS_LOGE("%{public}s: WriteInterfaceToken failed", __func__);
-        return false;
+        return;
     }
     int32_t dumpStringLength = static_cast<int32_t>(dumpString.length());
     const char* dumpData = dumpString.c_str();
@@ -53,7 +53,7 @@ void RSRenderToServiceConnectionProxy::ReplyDumpResultToService(std::string& dum
     }
 }
 
-sptr<HgmServiceToProcessInfo> RSRenderToServiceConnectionProxy::NotifyRPHgmFrameRate(uint64_t timestamp,
+sptr<HgmServiceToProcessInfo> RSRenderToServiceConnectionProxy::NotifyRpHgmFrameRate(uint64_t timestamp,
     uint64_t vsyncId, const std::unordered_set<ScreenId>& screenIds,
     const sptr<HgmProcessToServiceInfo>& processToServiceInfo)
 {
@@ -63,7 +63,7 @@ sptr<HgmServiceToProcessInfo> RSRenderToServiceConnectionProxy::NotifyRPHgmFrame
     option.SetFlags(MessageOption::TF_SYNC);
     if (!data.WriteInterfaceToken(RSIRenderToServiceConnection::GetDescriptor())) {
         RS_LOGE("%{public}s: WriteInterfaceToken failed", __func__);
-        return false;
+        return nullptr;
     }
     if (!data.WriteUint64(timestamp)) {
         RS_LOGI("dmulti_process RSRenderToServiceConnectionProxy::NotifyRenderServiceProcessHgmFrameRate writeuint64 failed");
@@ -106,7 +106,7 @@ void RSRenderToServiceConnectionProxy::NotifyScreenSwitchFinished(ScreenId scree
     option.SetFlags(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(RSIRenderToServiceConnection::GetDescriptor())) {
         RS_LOGE("%{public}s: WriteInterfaceToken failed", __func__);
-        return false;
+        return;
     }
     uint32_t code = static_cast<uint32_t>(RSIRenderToServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCH_FINISHED);
     if (!data.WriteUint64(screenId)) {

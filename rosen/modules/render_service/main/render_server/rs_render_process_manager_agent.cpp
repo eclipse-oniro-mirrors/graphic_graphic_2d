@@ -14,7 +14,6 @@
  */
 
 #include "rs_render_process_manager_agent.h"
-#include "rs_render_multi_process_manager.h"
 
 #undef LOG_TAG
 #define LOG_TAG "RSRenderProcessManagerAgent"
@@ -23,12 +22,6 @@ namespace OHOS {
 namespace Rosen {
 RSRenderProcessManagerAgent::RSRenderProcessManagerAgent(sptr<RSRenderProcessManager> renderProcessManager) :
     renderProcessManager_(renderProcessManager) {}
-
-void RSRenderProcessManagerAgent::GetRenderProcessReadyPromise(pid_t pid)
-{
-    auto renderProcessManager = static_cast<RSMultiRenderProcessManager*>(renderProcessManager_.GetRefPtr());
-    renderProcessManager->SetRenderProcessReadyPromise(pid);
-}
 
 sptr<RSIServiceToRenderConnection> RSRenderProcessManagerAgent::GetServiceToRenderConn(ScreenId screenId) const
 {

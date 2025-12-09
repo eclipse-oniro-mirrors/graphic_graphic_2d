@@ -17,6 +17,7 @@
 #include <parameters.h>
 #include "common/rs_background_thread.h"
 #include "graphic_feature_param_manager.h"
+#include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_effect_render_node.h"

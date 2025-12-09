@@ -43,30 +43,34 @@ void RSRenderComposerClient::InitRsVsyncManagerAgent(const sptr<RSVsyncManagerAg
     rsVsyncManagerAgent_ = rsVsyncManagerAgent;
 }
 
-void RSRenderComposerClient::AddLayer(const std::shared_ptr<RSLayer>& rsLayer)
+void RSRenderComposerClient::AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer)
 {
-    rsLayerContext_->AddLayer(rsLayer);
+    std::unique_lock<std::mutex> lock(clientMutex_);
+    rsLayerContext_->AddRSLayer(rsLayer);
 }
 
-void RSRenderComposerClient::RemoveLayer(RSLayerId layerId)
+void RSRenderComposerClient::RemoveRSLayer(RSLayerId layerId)
 {
-    rsLayerContext_->RemoveLayer(layerId);
+    std::unique_lock<std::mutex> lock(clientMutex_);
+    rsLayerContext_->RemoveRSLayer(layerId);
 }
 
-void RSRenderComposerClient::ClearAllLayers()
+void RSRenderComposerClient::ClearAllRSLayers()
 {
     RS_TRACE_NAME_FMT("RSRenderComposerClient::ClearAllLayers");
-    rsLayerContext_->ClearAllLayers();
+	std::unique_lock<std::mutex> lock(clientMutex_);
+    rsLayerContext_->ClearAllRSLayers();
 }
 
-std::shared_ptr<RSLayer> RSRenderComposerClient::GetLayer(RSLayerId rsLayerId)
+std::shared_ptr<RSLayer> RSRenderComposerClient::GetRSLayer(RSLayerId rsLayerId)
 {
-    return rsLayerContext_->GetLayer(rsLayerId);
+    std::unique_lock<std::mutex> lock(clientMutex_);
+    return rsLayerContext_->GetRSLayer(rsLayerId);
 }
 
-void RSRenderComposerClient::CommitLayer(CommitLayerInfo& commitLayerInfo)
+void RSRenderComposerClient::CommitRSLayer(CommitLayerInfo& commitLayerInfo)
 {
-
+    std::unique_lock<std::mutex> lock(clientMutex_);
     if (!WaitComposerThreadTaskExecute(lock)) {
         RS_LOGW("CommitRSLayer task has too many to Execute TaskNum:[%{public}d]", GetUnExecuteTaskNum());
     }
@@ -76,21 +80,24 @@ void RSRenderComposerClient::CommitLayer(CommitLayerInfo& commitLayerInfo)
     if (rsVsyncManagerAgent_ != nullptr) {
         rsVsyncManagerAgent_->SetHardwareTaskNum(GetUnExecuteTaskNum());
     }
-    rsLayerContext_->CommitLayer(commitLayerInfo);
+    rsLayerContext_->CommitRSLayer(commitLayerInfo);
 }
 
 PipelineParam RSRenderComposerClient::GetPipelineParam()
 {
+    std::unique_lock<std::mutex> lock(clientMutex_);
     return pipelineParam_;
 }
 
 void RSRenderComposerClient::UpdatePipelineParam(const PipelineParam& pipelineParam)
 {
+    std::unique_lock<std::mutex> lock(clientMutex_);
     pipelineParam_ = pipelineParam;
 }
 
 bool RSRenderComposerClient::RegistOnBufferReleaseFunc(OnBufferReleaseFunc onBufferReleaseFunc)
 {
+    std::unique_lock<std::mutex> lock(clientMutex_);
     return rsLayerContext_->RegistOnBufferReleaseFunc(onBufferReleaseFunc);
 }
 
@@ -98,6 +105,7 @@ void RSRenderComposerClient::ReleaseLayerBuffers(uint64_t screenId,
     std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
     std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec)
 {
+    std::unique_lock<std::mutex> lock(clientMutex_);
     SubUnExecuteTaskNum();
     if (GetUnExecuteTaskNum() <= COMPOSER_THREAD_TASK_NUM) {
         NotifyComposerThreadCanExecuteTask();
@@ -113,11 +121,13 @@ std::shared_ptr<RSLayerContext> RSRenderComposerClient::GetRSLayerContext() cons
 
 void RSRenderComposerClient::CleanLayerBufferBySurfaceId(uint64_t surfaceId)
 {
+    std::lock_guard<std::mutex> lock(clientMutex_);
     rsLayerContext_->CleanLayerBufferBySurfaceId(surfaceId);
 }
 
 void RSRenderComposerClient::ClearFrameBuffers()
 {
+    std::lock_guard<std::mutex> lock(clientMutex_);
     rsLayerContext_->ClearFrameBuffers();
 }
 
@@ -126,8 +136,9 @@ int RSRenderComposerClient::GetAccumulatedBufferCount()
     return std::max(acquiredBufferCount_.load() - 1, 0);
 }
 
-void RSRenderComposerClient::ClearRedrawGPUCompositionCache(const std::set<uint32_t>& bufferIds)
+void RSRenderComposerClient::ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds)
 {
+    std::lock_guard<std::mutex> lock(clientMutex_);
     if (connection_ != nullptr) {
         connection_->ClearRedrawGPUCompositionCache(bufferIds);
     }
@@ -135,6 +146,7 @@ void RSRenderComposerClient::ClearRedrawGPUCompositionCache(const std::set<uint3
 
 void RSRenderComposerClient::SetScreenBacklight(uint32_t level)
 {
+    std::lock_guard<std::mutex> lock(clientMutex_);
     if (connection_ != nullptr) {
         connection_->SetScreenBacklight(level);
     }
@@ -179,11 +191,13 @@ void RSRenderComposerClient::NotifyComposerThreadCanExecuteTask()
 
 void RSRenderComposerClient::DumpLayersInfo(std::string &dumpString)
 {
+    std::lock_guard<std::mutex> lock(clientMutex_);
     rsLayerContext_->DumpLayersInfo(dumpString);
 }
 
 void RSRenderComposerClient::DumpCurrentFrameLayers()
 {
+    std::lock_guard<std::mutex> lock(clientMutex_);
     rsLayerContext_->DumpCurrentFrameLayers();
 }
 } // namespace Rosen
