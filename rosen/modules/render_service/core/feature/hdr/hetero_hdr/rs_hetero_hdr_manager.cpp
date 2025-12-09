@@ -735,7 +735,7 @@ void RSHeteroHDRManager::GenerateHDRHeteroShader(
 void RSHeteroHDRManager::WaitHardwareThreadTaskExecute(ScreenId screenId)
 {
     std::unique_lock<std::mutex> lock(hardwareThreadTaskMutex_);
-    bool ret = hardwareThreadTaskCond_.wait_util(lock, std::chrono::system_clock::now() +
+    bool ret = hardwareThreadTaskCond_.wait_until(lock, std::chrono::system_clock::now() +
         std::chrono::milliseconds(RS_WAIT_FOR_HARDWARE_THREAD_TASK_TIMEOUT),
         [screenId]() {
             return RSRenderComposerManager::GetInstance()
