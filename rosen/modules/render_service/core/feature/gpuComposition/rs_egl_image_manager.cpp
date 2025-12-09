@@ -20,7 +20,6 @@
 #include <platform/common/rs_log.h>
 #include "sync_fence.h"
 #include "pipeline/main_thread/rs_main_thread.h"
-#include "rs_render_composer_manager.h"
 #include "rs_trace.h"
 #include "common/rs_optional_trace.h"
 #include "pipeline/rs_task_dispatcher.h"
@@ -328,14 +327,12 @@ void RSEglImageManager::UnMapImageFromSurfaceBuffer(uint64_t seqNum)
 
 void RSEglImageManager::UnMapEglImageFromSurfaceBufferForUniRedraw(uint64_t seqNum)
 {
-    RSRenderComposerManager::GetInstance().PostTaskToAllScreens([this, seqNum]() {
-        std::lock_guard<std::mutex> lock(opMutex_);
-        if (imageCacheSeqs_.count(seqNum) == 0) {
-            return;
-        }
-        (void)imageCacheSeqs_.erase(seqNum);
-        RS_LOGD("RSEglImageManager::UnMapEglImageFromSurfaceBufferForRedraw");
-    });
+    std::lock_guard<std::mutex> lock(opMutex_);
+    if (imageCacheSeqs_.count(seqNum) == 0) {
+        return;
+    }
+    (void)imageCacheSeqs_.erase(seqNum);
+    RS_LOGD("RSEglImageManager::UnMapEglImageFromSurfaceBufferForRedraw");
 }
 
 std::shared_ptr<Drawing::Image> RSEglImageManager::CreateImageFromBuffer(
