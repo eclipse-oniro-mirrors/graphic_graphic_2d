@@ -32,7 +32,7 @@ class RSRenderProcessManager : public RSIScreenManagerListener {
 public:
     static sptr<RSRenderProcessManager> Create(RSRenderService& renderService);
 
-    explicit RSRenderProcessManger(RSRenderService& renderService) : renderService_(renderService) {}
+    explicit RSRenderProcessManager(RSRenderService& renderService) : renderService_(renderService) {}
     virtual ~RSRenderProcessManager() noexcept = default;
 
     virtual sptr<IRemoteObject> OnScreenConnected(ScreenId id, const ScreenEventData& data,
