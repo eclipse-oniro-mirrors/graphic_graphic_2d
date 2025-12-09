@@ -58,8 +58,7 @@ void RSRenderProcessManager::OnScreenDisconnected(ScreenId id)
     renderService_.vsyncSampler_->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId, renderService_.handler_);
 }
 
-void RSRenderProcessManager::OnScreenPropertyChanged(ScreenId id, const sptr<RSScreenProperty>& property,
-    std::optional<ScreenId> associatedScreenId)
+void RSRenderProcessManager::OnScreenPropertyChanged(ScreenId id, const sptr<RSScreenProperty>& property)
 {
     RS_LOGD("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
     if (!property->IsVirtual()) {
@@ -68,9 +67,9 @@ void RSRenderProcessManager::OnScreenPropertyChanged(ScreenId id, const sptr<RSS
     }
 }
 
-void RSRenderProcessManager::ONVBlankIdle(ScreenId id, uint64_t ns)
+void RSRenderProcessManager::OnVBlankIdle(ScreenId id, uint64_t ns)
 {
-    if (auto composerConn = renderService_.rsRenderProcessManager_->GetRSComposerConnection(id)) {
+    if (auto composerConn = renderService_.rsRenderComposerManager_->GetRSComposerConnection(id)) {
         composerConn->OnScreenVBlankIdleCallback(id, ns);
     }
 }

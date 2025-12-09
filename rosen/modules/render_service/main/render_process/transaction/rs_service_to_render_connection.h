@@ -71,7 +71,7 @@ public:
     ErrCode SetWatermark(
         pid_t callingPid, const std::string& name, std::shared_ptr<Media::PixelMap> watermark, bool& success) override;
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) override;
-    Errcode GetSurfaceRootNodeId(NodeId& windowNodeId) override;
+    ErrCode GetSurfaceRootNodeId(NodeId& windowNodeId) override;
     int32_t RegisterSelfDrawingNodeRectChangeCallback(pid_t remotePid, const RectConstraint& constraint,
         sptr<RSISelfDrawingNodeRectChangeCallback> callback) override;
     int32_t UnRegisterSelfDrawingNodeRectChangeCallback(pid_t remotePid) override;
