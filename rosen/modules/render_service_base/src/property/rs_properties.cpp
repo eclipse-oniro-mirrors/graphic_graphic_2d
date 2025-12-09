@@ -3577,6 +3577,7 @@ void RSProperties::GenerateForegroundFilter()
 
 void RSProperties::GenerateMaterialFilter()
 {
+    GetEffect().materialFilter_ = nullptr;
     // not support compose yet, so do not use ComposeNGRenderFilter
     if (!GetMaterialNGFilter()) {
         return;
