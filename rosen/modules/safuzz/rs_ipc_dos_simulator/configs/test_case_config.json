@@ -2697,7 +2697,7 @@
     "writeInterfaceToken": true,
     "messageOption": "TF_ASYNC"
   },
-    {
+  {
     "testCaseDesc": "SET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST_TEST_001",
     "interfaceName": "SET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST",
     "inputParams": "WriteInt32Vector",
