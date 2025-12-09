@@ -1157,7 +1157,7 @@ bool RSUniRenderVisitor::CheckQuickSkipSurfaceRenderNode(RSSurfaceRenderNode& no
             return false;
         }
     }
-    if (!node.IsAppWindow()) {
+    if (!node.IsAppWindow() || !node.GetChildHardwareEnabledNodes().empty()) {
         return false;
     }
     if (node.IsDirty() || node.IsForcePrepare() || node.HasSubSurfaceNodes()) {
