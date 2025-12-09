@@ -58,7 +58,7 @@ RSUniRenderProcessor::~RSUniRenderProcessor() noexcept
 {
 }
 
-bool RSUniRenderProcessor::Init(RSScreenRenderNode& node, int32_t offsetX, int32_t offsetY
+bool RSUniRenderProcessor::Init(RSScreenRenderNode& node, int32_t offsetX, int32_t offsetY,
                                 std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
     if (!RSProcessor::Init(node, offsetX, offsetY, renderEngine)) {
@@ -109,7 +109,8 @@ void RSUniRenderProcessor::PostProcess()
     if (uniLayer_) {
         auto uniBufferOwnerCount = uniLayer_->GetBufferOwnerCount();
         if (uniBufferOwnerCount) {
-            for (auto layer : layers_) {
+            for (auto layerPtr : layers_) {
+                auto layer = layerPtr.lock();
                 if (layer == nullptr || layer == uniLayer_ || layer->GetBuffer() == nullptr) {
                     continue;
                 }
