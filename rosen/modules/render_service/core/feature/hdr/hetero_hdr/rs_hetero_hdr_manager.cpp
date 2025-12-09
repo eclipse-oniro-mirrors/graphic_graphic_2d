@@ -633,12 +633,13 @@ void RSHeteroHDRManager::ProcessParamsUpdate(RSPaintFilterCanvas& canvas,
             break;
         case HdrStatus::HDR_VIDEO:
             hdrHeteroType = RSHeteroHDRUtilConst::HDR_HETERO | RSHeteroHDRUtilConst::HDR_HETERO_HDR;
+            RSHeteroHDRUtil::GenDrawHDRBufferParams(surfaceDrawable,
+                validHpaeDstRect_, isFixedDstBuffer_, drawableParams);
             break;
         default:
             hdrHeteroType = RSHeteroHDRUtilConst::HDR_HETERO_NO;
             break;
     }
-    RSHeteroHDRUtil::GenDrawHDRBufferParams(surfaceDrawable, validHpaeDstRect_, isFixedDstBuffer_, drawableParams);
     drawableParams.buffer = hdrSurfaceHandler->GetBuffer();
     drawableParams.acquireFence = hdrSurfaceHandler->GetAcquireFence();
     drawableParams.hdrHeteroType = hdrHeteroType;
