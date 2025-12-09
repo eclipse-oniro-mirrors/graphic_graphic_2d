@@ -896,7 +896,13 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest020, TestSize.Level0)
     size_t pathCount = 0;
     OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::ALL, &pathCount);
     EXPECT_NE(fontPaths, nullptr);
-    EXPECT_EQ(pathCount, 141);
+    if (ExistStylishFontConfigFile()) {
+        // 141 = 1 stylish font + 139 generic fonts + 1 rare font
+        EXPECT_EQ(pathCount, 141);
+    } else {
+        // 139 = 139 generic fonts
+        EXPECT_EQ(pathCount, 139);
+    }
     for (size_t i = 0; i < pathCount; i++) {
         OH_Drawing_String fontPath = fontPaths[i];
         std::u16string path(reinterpret_cast<char16_t*>(fontPath.strData),
