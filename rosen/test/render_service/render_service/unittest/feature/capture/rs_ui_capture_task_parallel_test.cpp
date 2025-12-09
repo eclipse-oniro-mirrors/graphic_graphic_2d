@@ -606,7 +606,7 @@ HWTEST_F(RSUiCaptureTaskParallelTest, Capture001, Function | SmallTest | Level2)
     nodeMap.RegisterRenderNode(renderNode);
     Drawing::Rect specifiedRect(0.f, 0.f, 0.f, 0.f);
     auto callback = sptr<MockSurfaceCaptureCallback>(new MockSurfaceCaptureCallback);
-    RSUiCaptureTaskParallel::Capture(NodeId, callback, captureConfig, specifiedRect);
+    RSUiCaptureTaskParallel::Capture(nodeId, callback, captureConfig, specifiedRect);
     ASSERT_EQ(callback->isCallbackCalled_, true);
 }
 
@@ -622,7 +622,7 @@ HWTEST_F(RSUiCaptureTaskParallelTest, Capture002, Function | SmallTest | Level2)
     RSSurfaceCaptureConfig captureConfig;
     Drawing::Rect specifiedRect(0.f, 0.f, 0.f, 0.f);
     auto callback = sptr<MockSurfaceCaptureCallback>(new MockSurfaceCaptureCallback);
-    RSUiCaptureTaskParallel::Capture(NodeId, callback, captureConfig, specifiedRect);
+    RSUiCaptureTaskParallel::Capture(nodeId, callback, captureConfig, specifiedRect);
     ASSERT_EQ(callback->isCallbackCalled_, true);
 }
 
@@ -816,20 +816,19 @@ HWTEST_F(RSUiCaptureTaskParallelTest, IsCapture001, Function | SmallTest | Level
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.dynamicRangeMode.first = -1;
     captureConfig.dynamicRangeMode.second = false;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
+    auto renderNode = std::make_shared<RSCavasRenderNode>(nodeId, std::make_shared<RSContext>(), true);
     renderNode->renderProperties_.SetBoundsWidth(500.f);
     renderNode->renderProperties_.SetBoundsHeight(500.f);
     renderNode->InitRenderParams();
     nodeMap.RegisterRenderNode(renderNode);
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, captureConfig);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, captureConfig);
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
-    captureConfig.dynamicRangeMode.first = DEFAULT_DYNAMIC_RANGE_MODE_STANDARD;
+    renderNodeHandle->captureConfig_.dynamicRangeMode.first = DEFAULT_DYNAMIC_RANGE_MODE_STANDARD;
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
-    captureConfig.dynamicRangeMode.first = DYNAMIC_RANGE_MODE_HIGH;
+    renderNodeHandle->captureConfig_.dynamicRangeMode.first = DYNAMIC_RANGE_MODE_HIGH;
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
-    captureConfig.dynamicRangeMode.first = DYNAMIC_RANGE_MODE_CONSTRAINT;
+    renderNodeHandle->captureConfig_.dynamicRangeMode.first = DYNAMIC_RANGE_MODE_CONSTRAINT;
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
-
 }
 
 /*
@@ -845,14 +844,14 @@ HWTEST_F(RSUiCaptureTaskParallelTest, IsCapture002, Function | SmallTest | Level
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.dynamicRangeMode.first = DEFAULT_DYNAMIC_RANGE_MODE_STANDARD;
     captureConfig.dynamicRangeMode.second = true;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
+    auto renderNode = std::make_shared<RSCavasRenderNode>(nodeId, std::make_shared<RSContext>(), true);
     renderNode->renderProperties_.SetBoundsWidth(500.f);
     renderNode->renderProperties_.SetBoundsHeight(500.f);
     renderNode->InitRenderParams();
     nodeMap.RegisterRenderNode(renderNode);
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, captureConfig);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, captureConfig);
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
-    captureConfig.dynamicRangeMode.first = DYNAMIC_RANGE_MODE_HIGH;
+    renderNodeHandle->captureConfig_.dynamicRangeMode.first = DYNAMIC_RANGE_MODE_HIGH;
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
 }
 
@@ -869,11 +868,11 @@ HWTEST_F(RSUiCaptureTaskParallelTest, IsCapture003, Function | SmallTest | Level
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.dynamicRangeMode.first = DEFAULT_DYNAMIC_RANGE_MODE_STANDARD;
     captureConfig.dynamicRangeMode.second = true;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
+    auto renderNode = std::make_shared<RSCavasRenderNode>(nodeId, std::make_shared<RSContext>(), true);
     renderNode->renderProperties_.SetBoundsWidth(500.f);
     renderNode->renderProperties_.SetBoundsHeight(500.f);
     renderNode->InitRenderParams();
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, captureConfig);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, captureConfig);
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_HLG), false);
     nodeMap.RegisterRenderNode(renderNode);
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020), false);
@@ -883,22 +882,22 @@ HWTEST_F(RSUiCaptureTaskParallelTest, IsCapture003, Function | SmallTest | Level
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020_PQ_LIMIT), false);
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(nodeId);
     if (node) {
-        node->staginRenderParams_->hdrStatus_ = HdrStatus::HDR_PHOTO;
+        node->stagingRenderParams_->hdrStatus_ = HdrStatus::HDR_PHOTO;
         node->SetChildHasVisibleHDRContent(true);
     }
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020), true);
     if (node) {
-        node->staginRenderParams_->hdrStatus_ = HdrStatus::NO_HDR;
+        node->stagingRenderParams_->hdrStatus_ = HdrStatus::NO_HDR;
         node->SetChildHasVisibleHDRContent(true);
     }
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020), true);
     if (node) {
-        node->staginRenderParams_->hdrStatus_ = HdrStatus::NO_HDR;
+        node->stagingRenderParams_->hdrStatus_ = HdrStatus::NO_HDR;
         node->SetChildHasVisibleHDRContent(false);
     }
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020), false);
     if (node) {
-        node->staginRenderParams_->hdrStatus_ = HdrStatus::HDR_PHOTO;
+        node->stagingRenderParams_->hdrStatus_ = HdrStatus::HDR_PHOTO;
         node->SetChildHasVisibleHDRContent(false);
     }
     ASSERT_EQ(renderNodeHandle->IsHdrCapture(ColorManager::BT2020), true);
@@ -915,15 +914,15 @@ HWTEST_F(RSUiCaptureTaskParallelTest, SelectColorSpace001, Function | SmallTest 
     auto& nodeMap = RSMainThread::Instance()->GetContext().nodeMap;
     NodeId nodeId = 110;
     RSSurfaceCaptureConfig config;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(nodeId, std::make_shared<RSContext>(), true);
     renderNode->renderProperties_.SetBoundsWidth(500.f);
     renderNode->renderProperties_.SetBoundsHeight(500.f);
     renderNode->InitRenderParams();
     nodeMap.RegisterRenderNode(renderNode);
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, config);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(nodeId);
     if (node) {
-        node->staginRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+        node->stagingRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     }
     ASSERT_EQ(renderNodeHandle->SelectColorSpace(ColorManager::NONE, false), ColorManager::SRGB);
     ASSERT_EQ(renderNodeHandle->SelectColorSpace(ColorManager::SRGB, false), ColorManager::SRGB);
@@ -941,7 +940,7 @@ HWTEST_F(RSUiCaptureTaskParallelTest, SelectColorSpace002, Function | SmallTest 
 {
     NodeId nodeId = 111;
     RSSurfaceCaptureConfig config;
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, config);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     ASSERT_EQ(renderNodeHandle->SelectColorSpace(ColorManager::SRGB, true), ColorManager::SRGB);
 }
 
@@ -956,25 +955,25 @@ HWTEST_F(RSUiCaptureTaskParallelTest, SelectColorSpace003, Function | SmallTest 
     auto& nodeMap = RSMainThread::Instance()->GetContext().nodeMap;
     NodeId nodeId = 112;
     RSSurfaceCaptureConfig config;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(nodeId, std::make_shared<RSContext>(), true);
     renderNode->renderProperties_.SetBoundsWidth(500.f);
     renderNode->renderProperties_.SetBoundsHeight(500.f);
     renderNode->InitRenderParams();
     nodeMap.RegisterRenderNode(renderNode);
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, config);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(nodeId);
     if (node) {
-        node->staginRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+        node->stagingRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     }
     renderNodeHandle->errorCode_ = CaptureError::COLOR_SPACE_NOT_SUPPORT;
     ASSERT_EQ(renderNodeHandle->SelectColorSpace(ColorManager::NONE, true), ColorManager::SRGB);
     renderNodeHandle->errorCode_ = CaptureError::CAPTURE_OK;
     if (node) {
-        node->staginRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+        node->stagingRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     }
     ASSERT_EQ(renderNodeHandle->SelectColorSpace(ColorManager::NONE, true), ColorManager::DISPLAY_P3);
     if (node) {
-        node->staginRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020;
+        node->stagingRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020;
     }
     ASSERT_EQ(renderNodeHandle->SelectColorSpace(ColorManager::NONE, true), ColorManager::BT2020);
 }
@@ -994,15 +993,15 @@ HWTEST_F(RSUiCaptureTaskParallelTest, RunForHdr001, Function | SmallTest | Level
     NodeId nodeId = 109;
     RSSurfaceCaptureConfig config;
     config.captureType = SurfaceCaptureType::UICAPTURE;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(nodeId, std::make_shared<RSContext>(), true);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(nodeId, std::make_shared<RSContext>(), true);
     renderNode->renderProperties_.SetBoundsWidth(500.f);
     renderNode->renderProperties_.SetBoundsHeight(500.f);
     renderNode->InitRenderParams();
     nodeMap.RegisterRenderNode(renderNode);
-    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallelTest>(nodeId, config);
+    auto renderNodeHandle = std::make_shared<RSUiCaptureTaskParallel>(nodeId, config);
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode(nodeId);
     if (node) {
-        node->staginRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+        node->stagingRenderParams_->nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     }
     Drawing::Rect specifiedAreaRect(0.f, 0.f, 0.f, 0.f);
     renderNodeHandle->CreateResources(specifiedAreaRect);
