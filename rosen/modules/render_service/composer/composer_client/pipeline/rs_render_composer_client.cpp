@@ -43,10 +43,10 @@ void RSRenderComposerClient::InitRsVsyncManagerAgent(const sptr<RSVsyncManagerAg
     rsVsyncManagerAgent_ = rsVsyncManagerAgent;
 }
 
-void RSRenderComposerClient::AddLayer(const std::shared_ptr<RSLayer>& rsLayer)
+void RSRenderComposerClient::AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer)
 {
     std::unique_lock<std::mutex> lock(clientMutex_);
-    rsLayerContext_->AddLayer(rsLayer);
+    rsLayerContext_->AddRSLayer(rsLayer);
 }
 
 void RSRenderComposerClient::RemoveLayer(RSLayerId layerId)
@@ -62,10 +62,10 @@ void RSRenderComposerClient::ClearAllLayers()
     rsLayerContext_->ClearAllLayers();
 }
 
-std::shared_ptr<RSLayer> RSRenderComposerClient::GetLayer(RSLayerId rsLayerId)
+std::shared_ptr<RSLayer> RSRenderComposerClient::GetRSLayer(RSLayerId rsLayerId)
 {
     std::unique_lock<std::mutex> lock(clientMutex_);
-    return rsLayerContext_->GetLayer(rsLayerId);
+    return rsLayerContext_->GetRSLayer(rsLayerId);
 }
 
 void RSRenderComposerClient::CommitLayer(CommitLayerInfo& commitLayerInfo)

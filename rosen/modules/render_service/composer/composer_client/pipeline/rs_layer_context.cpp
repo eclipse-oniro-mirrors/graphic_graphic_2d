@@ -42,7 +42,7 @@ void RSLayerContext::SetRenderComposerClientConnection(const sptr<IRSRenderToCom
     rsLayerTransactionHandler_->SetRSComposerConnectionProxy(conn);
 }
 
-void RSLayerContext::AddLayer(const std::shared_ptr<RSLayer>& rsLayer)
+void RSLayerContext::AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer)
 {
     std::unique_lock<std::mutex> lock(rsLayerMutex_);
     if (rsLayer == nullptr) {
@@ -72,7 +72,7 @@ void RSLayerContext::ClearAllLayers()
     rsLayers_.clear();
 }
 
-std::shared_ptr<RSLayer> RSLayerContext::GetLayer(RSLayerId rsLayerId) const
+std::shared_ptr<RSLayer> RSLayerContext::GetRSLayer(RSLayerId rsLayerId) const
 {
     std::unique_lock<std::mutex> lock(rsLayerMutex_);
     auto it = rsLayers_.find(rsLayerId);
