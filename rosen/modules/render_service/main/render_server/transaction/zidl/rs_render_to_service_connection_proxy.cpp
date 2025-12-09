@@ -106,7 +106,7 @@ void RSRenderToServiceConnectionProxy::NotifyScreenSwitchFinished(ScreenId scree
     option.SetFlags(MessageOption::TF_ASYNC);
     if (!data.WriteInterfaceToken(RSIRenderToServiceConnection::GetDescriptor())) {
         RS_LOGE("%{public}s: WriteInterfaceToken failed", __func__);
-        return false;
+        return;
     }
     uint32_t code = static_cast<uint32_t>(RSIRenderToServiceConnectionInterfaceCode::NOTIFY_SCREEN_SWITCH_FINISHED);
     if (!data.WriteUint64(screenId)) {
