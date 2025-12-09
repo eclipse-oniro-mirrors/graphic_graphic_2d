@@ -735,7 +735,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
     hgmRPContext_ = std::make_shared<HgmRPContext>();
     hwcContext_ = std::make_shared<RSHwcContext>(
         HWCParam::GetSourceTuningForAppMap(), HWCParam::GetSolidColorLayerMap());
-    hgmRPContext_.InitHgmConfig(hwcContext_->GetMutableSourceTuningConfig(), hwcContext_->GetMutableSolidLayerConfig(),
+    hgmRPContext_->InitHgmConfig(hwcContext_->GetMutableSourceTuningConfig(), hwcContext_->GetMutableSolidLayerConfig(),
         context_->GetMutableUiFrameworkTypeTable());
 
     RSRenderNodeGC::Instance().SetImageReleaseFunc([this]() {
@@ -1770,7 +1770,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
     }
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
     lppVideoHandler_.JudgeRequestVsyncForLpp(vsyncId_);
-    DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi();
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CheckSurfaceAndUi(timestamp_);
     RSJankStats::GetInstance().AvcodecVideoCollectFinish();
     prevHdrSwitchStatus_ = RSLuminanceControl::Get().IsHdrPictureOn();
     if (requestNextVsyncTime_ != -1) {
@@ -2587,8 +2587,12 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     }
 
 #ifdef RS_ENABLE_GPU
+<<<<<<< HEAD
     RSUniRenderThread::Instance().PostSyncTask([this, processor, screenNode,
             client, pipelineParam = pipelineParam_, &screenProperty]() mutable {
+=======
+    RSUniRenderThread::Instance().PostSyncTask([this, processor, client, screenNode, screenProperty.GetScreenInfo()]() mutable {
+>>>>>>> 02ad9e1b8c655cafa06bf4aab1653eb637b9324d
         RS_TRACE_NAME("DoDirectComposition PostProcess");
         auto screenId = screenNode->GetScreenId();
         for (auto& surfaceNode : hardwareEnabledNodes_) {
@@ -2606,7 +2610,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 if (!surfaceHandler->IsCurrentFrameBufferConsumed() && params->GetPreBuffer() != nullptr) {
                     if (!surfaceNode->GetDeviceOfflineEnable()) {
                         // while using hpae_offline, prebuffer is not consumed, should not be reset
-                        params->SetPreBuffer(nullptr);
+                        params->SetPreBuffer(nullptr, nullptr);
                     }
                     surfaceNode->AddToPendingSyncList();
                 }
@@ -2627,6 +2631,10 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
         auto rcdInfo = std::make_unique<RcdInfo>();
         DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenProperty.GetScreenInfo());
+<<<<<<< HEAD
+=======
+        HgmCore::Instance().SetDirectCompositionFlag(true);
+>>>>>>> 02ad9e1b8c655cafa06bf4aab1653eb637b9324d
         processor->ProcessScreenSurface(*screenNode);
         if (client) {
             client->UpdatePipelineParam(pipelineParam);
@@ -3382,16 +3390,17 @@ std::string RSMainThread::SubPriorityEventQueue(std::string input)
 // todo: 存疑
 void RSMainThread::ProcessScreenHotPlugEvents()
 {
-    auto screenManager_ = CreateOrGetScreenManager();
-    if (!screenManager_) {
-        RS_LOGE("%{public}s screenManager_ is nullptr", __func__);
-        return;
-    }
-#ifdef RS_ENABLE_GPU
-    if (!screenManager_->TrySimpleProcessHotPlugEvents()) {
-        PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
-    }
-#endif
+    // ToDo
+//     auto screenManager_ = CreateOrGetScreenManager();
+//     if (!screenManager_) {
+//         RS_LOGE("%{public}s screenManager_ is nullptr", __func__);
+//         return;
+//     }
+// #ifdef RS_ENABLE_GPU
+//     if (!screenManager_->TrySimpleProcessHotPlugEvents()) {
+//         PostTask([=]() { screenManager_->ProcessScreenHotPlugEvents(); });
+//     }
+// #endif
 }
 
 void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
@@ -3565,14 +3574,9 @@ void RSMainThread::Animate(uint64_t timestamp)
             RS_LOGD("Animate removing expired animating node");
             return true;
         }
-        if (cacheCmdSkippedInfo_.count(ExtractPid(node->GetId())) > 0) {
-            hgmRPContext_->GetRSCurrRangeRef().Merge(node->animationManager_.GetDecideFrameRateRange());
-            RS_LOGD("Animate skip the cached node");
-            return false;
-        }
         totalAnimationSize += node->animationManager_.GetAnimationsSize();
         node->animationManager_.SetRateDeciderEnable(
-            isRateDeciderEnabled, hgmRPContext_.GetConvertFrameRateFunc());
+            isRateDeciderEnabled, hgmRPContext_->GetConvertFrameRateFunc());
         auto [hasRunningAnimation, nodeNeedRequestNextVsync, nodeCalculateAnimationValue] =
             node->Animate(timestamp, minLeftDelayTime, period, isDisplaySyncEnabled);
         if (!hasRunningAnimation) {
@@ -3580,7 +3584,7 @@ void RSMainThread::Animate(uint64_t timestamp)
             RS_LOGD("Animate removing finished animating node %{public}" PRIu64, node->GetId());
         } else {
             node->UpdateDisplaySyncRange();
-            hgmRPContext_.GetRSCurrRangeRef().Merge(node->animationManager_.GetDecideFrameRateRange());
+            hgmRPContext_->GetRSCurrRangeRef().Merge(node->animationManager_.GetDecideFrameRateRange());
         }
         // request vsync if: 1. node has running animation, or 2. transition animation just ended
         needRequestNextVsync = needRequestNextVsync || nodeNeedRequestNextVsync || (node.use_count() == 1);
@@ -5441,17 +5445,6 @@ void RSMainThread::OnFmtTraceSwitchCallback(const char *key, const char *value, 
     }
     bool isTraceEnable = (std::atoi(value) != 0);
     RSSystemProperties::SetDebugFmtTraceEnabled(isTraceEnable);
-}
-
-void RSMainThread::RegisterScreenNodeListener()
-{
-    auto screenManager = CreateOrGetScreenManager();
-    if (!screenManager) {
-        RS_LOGE("%{public}s failed: screenManager is null.", __func__);
-        return;
-    }
-
-    screenManager->RegisterScreenNodeListener(std::make_shared<RSScreenNodeListener>());
 }
 
 void RSMainThread::CreateScreenNode(const sptr<RSScreenProperty>& property)
