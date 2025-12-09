@@ -14,7 +14,6 @@
  */
 
 #include "rs_render_process_manager_agent.h"
-#include "rs_render_multi_process_manager.h"
 
 #undef LOG_TAG
 #define LOG_TAG "RSRenderProcessManagerAgent"

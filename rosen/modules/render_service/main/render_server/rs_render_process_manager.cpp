@@ -17,7 +17,6 @@
 
 #include "hgm_core.h"
 #include "rs_render_composer_manager.h"
-#include "rs_render_mode_config.h"
 #include "rs_render_pipeline.h"
 #include "rs_render_service.h"
 #include "transaction/rs_service_to_render_connection.h"

@@ -48,9 +48,9 @@ public:
     virtual std::vector<sptr<RSIServiceToRenderConnection>> GetServiceToRenderConns() const = 0;
     virtual sptr<RSIConnectToRenderProcess> GetConnectToRenderConnection(ScreenId screenId) const = 0;
 
-private:
+protected:
     RSRenderService& renderService_;
-}
+};
 } // namespace Rosen
 } // namespace OHOS
 
