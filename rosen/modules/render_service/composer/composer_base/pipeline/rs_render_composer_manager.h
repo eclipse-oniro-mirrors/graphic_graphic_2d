@@ -42,6 +42,7 @@ public:
     void ClearRefreshRateCounts(std::string& dumpString);
     void SetScreenPowerOnChanged(ScreenId screenId, bool flag);
     void InitRsVsyncManagerAgent(const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
+
 private:
     std::unordered_map<ScreenId, std::shared_ptr<RSRenderComposer>> rsRenderComposerMap_;
     std::unordered_map<ScreenId, sptr<RSRenderToComposerConnection>> rsComposerConnectionMap_;

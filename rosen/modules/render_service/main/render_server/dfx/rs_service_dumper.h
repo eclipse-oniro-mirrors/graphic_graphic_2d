@@ -15,6 +15,7 @@
 
 #ifndef RENDER_SERVICE_RS_SERVICE_DUMPER_H
 #define RENDER_SERVICE_RS_SERVICE_DUMPER_H
+
 #include <map>
 #include <unordered_set>
 

@@ -69,16 +69,16 @@ RSUniHwcPrevalidateUtil::RSUniHwcPrevalidateUtil()
     isCopybitSupported_ = RSSystemParameters::GetIsCopybitSupported();
 }
 
-void RSUniHwcPrevalidateUtil::OnHwcEvent(
+void RSUniHwcPrevalidateUtil::HandleHwcEvent(
     uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData)
 {
     if (!handleEventFunc_) {
         RS_LOGI("RSUniHwcPrevalidateUtil::HandleEvent handleEventFunc is null");
         return;
     }
-    RS_LOGI("RSUniHwcPrevalidateUtil::HandleEvent deviceId:%{public}" PRIu64 ", eventId:%{public}" PRIu32 "",
+    RS_LOGI("RSUniHwcPrevalidateUtil::HandleEvent deviceId:%{public}" PRIu32 ", eventId:%{public}" PRIu32 "",
         deviceId, eventId);
-    handleEventFunc_(devId, eventId, eventData);
+    handleEventFunc_(deviceId, eventId, eventData);
 }
 
 RSUniHwcPrevalidateUtil::~RSUniHwcPrevalidateUtil()
