@@ -853,5 +853,10 @@ bool RSSystemProperties::GetDefaultMemClearEnabled()
 {
     return true;
 }
+
+bool RSSystemProperties::GetSceneBoardIsPcMode()
+{
+    return false;
+}
 } // namespace Rosen
 } // namespace OHOS

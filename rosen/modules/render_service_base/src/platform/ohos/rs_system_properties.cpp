@@ -1800,5 +1800,16 @@ bool RSSystemProperties::GetDefaultMemClearEnabled()
         std::atoi((system::GetParameter("persist.sys.graphic.default.mem.clear.enabled", "1")).c_str()) != 0;
     return defaultMemClearEnabled;
 }
+
+bool RSSystemProperties::GetSceneBoardIsPcMode()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("persist.sceneboard.ispcmode", "false");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    if (enable == nullptr || strcmp(enable, "false") == 0) {
+        return false;
+    }
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
