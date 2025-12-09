@@ -281,26 +281,6 @@ public:
         return edLightNeg_;
     }
 
-    void SetBorderSize(Vector2f& borderSize)
-    {
-        borderSize_ = borderSize;
-    }
-
-    const Vector2f GetBorderSize() const
-    {
-        return borderSize_;
-    }
-
-    void SetCornerRadius(float& cornerRadius)
-    {
-        cornerRadius_ = cornerRadius;
-    }
-
-    const float& GetCornerRadius() const
-    {
-        return cornerRadius_;
-    }
-
 private:
     float blurParam_ = 0.0f; // K times downsample
     Vector2f weightsEmboss_ = Vector2f(0.0f, 0.0f);
@@ -332,8 +312,6 @@ private:
     Vector3f edLightKBS_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightPos_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
-    Vector2f borderSize_ = Vector2f(0.0f, 0.0f);
-    float cornerRadius_ = 0.0f;
 };
 } // namespace Rosen
 } // namespace OHOS
