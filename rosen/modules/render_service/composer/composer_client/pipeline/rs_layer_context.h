@@ -40,10 +40,10 @@ public:
     std::shared_ptr<RSLayerTransactionHandler> GetRSLayerTransaction() const;
     void SetRenderComposerClientConnection(const sptr<IRSRenderToComposerConnection>& conn);
 
-    void AddLayer(const std::shared_ptr<RSLayer>& rsLayer);
+    void AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer);
     void RemoveLayer(RSLayerId layerId);
     void ClearAllLayers();
-    std::shared_ptr<RSLayer> GetLayer(RSLayerId rsLayerId) const;
+    std::shared_ptr<RSLayer> GetRSLayer(RSLayerId rsLayerId) const;
 
     void CommitLayer(CommitLayerInfo& commitLayerInfo);
     void ReleaseLayerBuffers(uint64_t screenId,

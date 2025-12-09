@@ -37,10 +37,10 @@ public:
     static std::shared_ptr<RSRenderComposerClient> Create(bool isMultiProcess,
         const sptr<IRSRenderToComposerConnection>& conn);
 
-    void AddLayer(const std::shared_ptr<RSLayer>& rsLayer);
+    void AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer);
     void RemoveLayer(RSLayerId layerId);
     void ClearAllLayers();
-    std::shared_ptr<RSLayer> GetLayer(RSLayerId rsLayerId);
+    std::shared_ptr<RSLayer> GetRSLayer(RSLayerId rsLayerId);
 
     void CommitLayer(CommitLayerInfo& commitLayerInfo);
     void ReleaseLayerBuffers(uint64_t screenId,
