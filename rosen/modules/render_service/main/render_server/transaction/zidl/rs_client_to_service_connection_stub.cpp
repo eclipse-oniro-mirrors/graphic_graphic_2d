@@ -3380,47 +3380,47 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             SetVmaCacheStatus(flag);
             break;
         }
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE) : {
-            uint64_t id{0};
-            if (!data.ReadUint64(id)) {
-                RS_LOGE("RSClientToServiceConnectionStub::CREATE_DISPLAY_NODE Read id failed!");
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            bool isNonSystemCalling = false;
-            bool isTokenTypeValid = true;
-            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemCalling);
-            if (isNonSystemCalling && !IsValidCallingPid(ExtractPid(id), callingPid)) {
-                RS_LOGW("CREATE_DISPLAY_NODE invalid nodeId[%{public}" PRIu64 "] pid[%{public}d]", id, callingPid);
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            uint64_t mirroredId{0};
-            uint64_t screenId{0};
-            bool isMirror{false};
-            uint32_t mirrorSourceRotation{static_cast<uint32_t>(ScreenRotation::INVALID_SCREEN_ROTATION)};
-            if (!data.ReadUint64(mirroredId) ||
-                !data.ReadUint64(screenId) ||
-                !data.ReadBool(isMirror) ||
-                !data.ReadUint32(mirrorSourceRotation)) {
-                RS_LOGE("RSClientToServiceConnectionStub::CREATE_DISPLAY_NODE Read config failed!");
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            RSDisplayNodeConfig config = {
-                .screenId = screenId,
-                .isMirrored = isMirror,
-                .mirrorNodeId = mirroredId,
-                .isSync = true,
-                .mirrorSourceRotation = mirrorSourceRotation,
-            };
-            bool success;
-            if (CreateNode(config, id, success) != ERR_OK || reply.WriteBool(success)) {
-                RS_LOGE("RSClientToServiceConnectionStub::CREATE_DISPLAY_NODE Write success failed!");
-                ret = ERR_INVALID_REPLY;
-            }
-            break;
-        }
+        // case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE) : {
+        //     uint64_t id{0};
+        //     if (!data.ReadUint64(id)) {
+        //         RS_LOGE("RSClientToServiceConnectionStub::CREATE_DISPLAY_NODE Read id failed!");
+        //         ret = ERR_INVALID_DATA;
+        //         break;
+        //     }
+        //     bool isNonSystemCalling = false;
+        //     bool isTokenTypeValid = true;
+        //     RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemCalling);
+        //     if (isNonSystemCalling && !IsValidCallingPid(ExtractPid(id), callingPid)) {
+        //         RS_LOGW("CREATE_DISPLAY_NODE invalid nodeId[%{public}" PRIu64 "] pid[%{public}d]", id, callingPid);
+        //         ret = ERR_INVALID_DATA;
+        //         break;
+        //     }
+        //     uint64_t mirroredId{0};
+        //     uint64_t screenId{0};
+        //     bool isMirror{false};
+        //     uint32_t mirrorSourceRotation{static_cast<uint32_t>(ScreenRotation::INVALID_SCREEN_ROTATION)};
+        //     if (!data.ReadUint64(mirroredId) ||
+        //         !data.ReadUint64(screenId) ||
+        //         !data.ReadBool(isMirror) ||
+        //         !data.ReadUint32(mirrorSourceRotation)) {
+        //         RS_LOGE("RSClientToServiceConnectionStub::CREATE_DISPLAY_NODE Read config failed!");
+        //         ret = ERR_INVALID_DATA;
+        //         break;
+        //     }
+        //     RSDisplayNodeConfig config = {
+        //         .screenId = screenId,
+        //         .isMirrored = isMirror,
+        //         .mirrorNodeId = mirroredId,
+        //         .isSync = true,
+        //         .mirrorSourceRotation = mirrorSourceRotation,
+        //     };
+        //     bool success;
+        //     if (CreateNode(config, id, success) != ERR_OK || reply.WriteBool(success)) {
+        //         RS_LOGE("RSClientToServiceConnectionStub::CREATE_DISPLAY_NODE Write success failed!");
+        //         ret = ERR_INVALID_REPLY;
+        //     }
+        //     break;
+        // }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS) : {
             bool enable{false};
             if (!data.ReadBool(enable)) {
