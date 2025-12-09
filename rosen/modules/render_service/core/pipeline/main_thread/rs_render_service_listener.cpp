@@ -58,6 +58,7 @@ void RSRenderServiceListener::OnBufferAvailable()
     auto surfaceHandler = node->GetMutableRSSurfaceHandler();
     surfaceHandler->IncreaseAvailableBuffer();
     auto consumer = surfaceHandler->GetConsumer();
+    bool doFastCompose = false;
     if (consumer) {
         bool supportFastCompose = false;
         GSError ret =  consumer->GetBufferSupportFastCompose(supportFastCompose);
@@ -67,17 +68,20 @@ void RSRenderServiceListener::OnBufferAvailable()
             if (ret == GSERROR_OK) {
                 RS_TRACE_NAME_FMT("RSRenderServiceListener::OnBufferAvailable SupportFastCompose : %d, " \
                 "bufferTimeStamp : %" PRId64, supportFastCompose, lastFlushedDesiredPresentTimeStamp);
-                RSMainThread::Instance()->CheckFastCompose(lastFlushedDesiredPresentTimeStamp);
-                return;
+                doFastCompose = RSMainThread::Instance()->CheckFastCompose(lastFlushedDesiredPresentTimeStamp);
             }
         }
     }
-    SetBufferInfoAndRequest(node, surfaceHandler, surfaceHandler->GetConsumer());
+    SetBufferInfoAndRequest(node, surfaceHandler, surfaceHandler->GetConsumer(), doFastCompose);
 }
 
 void RSRenderServiceListener::SetBufferInfoAndRequest(const std::shared_ptr<RSSurfaceRenderNode> &node,
-    const std::shared_ptr<RSSurfaceHandler> &surfaceHandler, const sptr<IConsumerSurface> &consumer)
+    const std::shared_ptr<RSSurfaceHandler> &surfaceHandler, const sptr<IConsumerSurface> &consumer,
+    bool doFastCompose)
 {
+    if (doFastCompose) {
+        return;
+    }
     uint64_t id = 0;
     int64_t lastConsumeTime = 0;
     uint32_t queueSize = 0;
