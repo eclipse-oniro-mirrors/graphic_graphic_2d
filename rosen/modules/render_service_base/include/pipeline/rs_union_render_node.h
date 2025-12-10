@@ -97,7 +97,7 @@ private:
                     childId);
                 continue;
             }
-            auto childShape = GetOrCreateChildSDFShape(childRelativeMatrix, child);
+            auto childShape = GetOrCreateChildSDFShape(child);
             if (!childShape) {
                 RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] GetChildSDFShape fail",
                     childId);
