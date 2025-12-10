@@ -468,6 +468,13 @@ public:
         needCollectHwcNode_ = false;
     }
 
+    /**
+     * @brief Querry whether the damage region of self drawing node (hwcNode) intersects with the given rect
+     *
+     * Return false when doesn't have its own buffer or the buffer has not been comsumed.
+     */
+    bool IntersectHwcDamageWith(const RectI& rect) const;
+
     bool GetCalcRectInPrepare() const
     {
         return calcRectInPrepare_;

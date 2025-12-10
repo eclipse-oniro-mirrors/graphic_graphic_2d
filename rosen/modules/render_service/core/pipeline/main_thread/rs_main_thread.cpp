@@ -2347,7 +2347,8 @@ bool RSMainThread::IfStatusBarDirtyOnly()
 }
 
 namespace {
-bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& nodeSet)
+bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& nodeSet,
+    const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hwcNodes)
 {
     if (RSSystemProperties::GetAIBarDirectCompositeFullEnabled()) {
         return false;
@@ -2359,8 +2360,16 @@ bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& no
         if (nodePtr == nullptr) {
             continue;
         }
+        bool intersectHwcDamage = false;
+        if (RSSystemProperties::GetAIBarOptEnabled()) {
+            intersectHwcDamage = std::any_of(hwcNodes.begin(), hwcNodes.end(),
+                [&nodePtr](const auto& hwcNode) {
+                    return hwcNode && hwcNode->IntersectHwcDamageWith(nodePtr->GetFilterRegion());
+                });
+        }
+
         // try to reduce the cache interval, i.e., consume the cache
-        if (!nodePtr->ForceReduceAIBarCacheInterval()) {
+        if (!nodePtr->ForceReduceAIBarCacheInterval(intersectHwcDamage)) {
             // consume cache failed, we need to update cache, which means DoDirectComposition should be disabled
             aibarNeedUpdate = true;
             break;
@@ -2411,8 +2420,8 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 
     auto screenId = screenNode->GetScreenId();
     // check just before CreateProcessor, otherwise the cache interval will be reduced twice
-    if (auto nodeSetIter = aibarNodes_.find(screenId);
-        nodeSetIter != aibarNodes_.end() && CheckReduceIntervalForAIBarNodesIfNeeded(nodeSetIter->second)) {
+    if (auto nodeSetIter = aibarNodes_.find(screenId); nodeSetIter != aibarNodes_.end() &&
+        CheckReduceIntervalForAIBarNodesIfNeeded(nodeSetIter->second, hardwareEnabledNodes_)) {
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by aibar need update cache");
         return false;
     }
