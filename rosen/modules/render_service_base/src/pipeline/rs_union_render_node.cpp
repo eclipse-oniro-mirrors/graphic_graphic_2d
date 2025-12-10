@@ -143,11 +143,11 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::CreateSDFOpShapeWithBase
 }
 
 std::shared_ptr<RSNGRenderSDFTransformShape> RSUnionRenderNode::CreateChildToContainerSDFTransformShape(
-    std::shared_ptr<RSRenderNode>& child)
+    std::shared_ptr<RSRenderNode>& child, std::shared_ptr<RSNGRenderShapeBase>& childShape)
 {
     Drawing::Matrix relativeMatrix;
     if (!GetChildRelativeMatrixToUnionNode(relativeMatrix, child)) {
-        return nullptr;
+        return childShape;
     }
     Matrix3f matrix(relativeMatrix.Get(Drawing::Matrix::Index::SCALE_X),
         relativeMatrix.Get(Drawing::Matrix::Index::SKEW_X), relativeMatrix.Get(Drawing::Matrix::Index::TRANS_X),
@@ -157,6 +157,7 @@ std::shared_ptr<RSNGRenderSDFTransformShape> RSUnionRenderNode::CreateChildToCon
     auto transformShape = std::static_pointer_cast<RSNGRenderSDFTransformShape>(
         RSNGRenderShapeBase::Create(RSNGEffectType::SDF_TRANSFORM_SHAPE));
     transformShape->Setter<SDFTransformShapeMatrixRenderTag>(matrix);
+    transformShape->Setter<SDFTransformShapeShapeRenderTag>(childShape);
     return transformShape;
 }
 

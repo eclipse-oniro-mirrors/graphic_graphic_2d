@@ -91,19 +91,8 @@ private:
                 RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] Get fail", childId);
                 continue;
             }
-            auto transformShape = CreateChildToContainerSDFTransformShape(child);
-            if (!transformShape) {
-                RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] CreateTransformShape fail",
-                    childId);
-                continue;
-            }
             auto childShape = GetOrCreateChildSDFShape(child);
-            if (!childShape) {
-                RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, child[%{public}" PRIu64 "] GetChildSDFShape fail",
-                    childId);
-                continue;
-            }
-            transformShape->Setter<SDFTransformShapeShapeRenderTag>(childShape);
+            auto transformShape = CreateChildToContainerSDFTransformShape(child, childShape);
             if (shapeQueue.empty()) {
                 RS_LOGE("RSUnionRenderNode::GenerateSDFLeaf, shapeTree full");
                 break;
@@ -121,8 +110,8 @@ private:
 
     bool GetChildRelativeMatrixToUnionNode(Drawing::Matrix& relativeMatrix, std::shared_ptr<RSRenderNode>& child);
     std::shared_ptr<RSNGRenderShapeBase> CreateSDFOpShapeWithBaseInitialization(RSNGEffectType type);
-    std::shared_ptr<RSNGRenderSDFTransformShape> CreateChildToContainerSDFTransformShape(
-        std::shared_ptr<RSRenderNode>& child);
+    std::shared_ptr<RSNGRenderShapeBase> CreateChildToContainerSDFTransformShape(
+        std::shared_ptr<RSRenderNode>& child, std::shared_ptr<RSNGRenderShapeBase>& childShape);
     std::shared_ptr<RSNGRenderShapeBase> GetOrCreateChildSDFShape(std::shared_ptr<RSRenderNode>& child);
 
     std::unordered_set<NodeId> visibleUnionChildren_;

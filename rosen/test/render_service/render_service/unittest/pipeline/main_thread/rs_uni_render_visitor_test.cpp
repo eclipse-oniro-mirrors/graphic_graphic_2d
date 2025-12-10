@@ -6820,7 +6820,7 @@ HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo004, TestSize.Level2)
  * @tc.desc: Test CollectUnionInfo
  * @tc.type: FUNC
  */
-HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo004, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo005, TestSize.Level2)
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);

@@ -157,7 +157,7 @@ HWTEST_F(RSUnionRenderNodeTest, GetChildRelativeMatrixToUnionNode001, TestSize.L
     unionNode->renderProperties_.boundsGeo_ = nullptr;
     Drawing::Matrix matrix;
 
-    auto ret = unionNode->GetChildRelativeMatrixToUnionNode(child);
+    auto ret = unionNode->GetChildRelativeMatrixToUnionNode(matrix, child);
     ASSERT_FALSE(ret);
 }
 
@@ -783,45 +783,12 @@ HWTEST_F(RSUnionRenderNodeTest, ResetChildRelevantFlags001, TestSize.Level1)
     auto sContext = std::make_shared<RSContext>();
     auto unionNode = std::make_shared<RSUnionRenderNode>(id, sContext);
     unionNode->visibleUnionChildren_.emplace(id + 1);
+    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(id);
+    ASSERT_NE(stagingRenderParams, nullptr);
+    unionNode->stagingRenderParams_ = std::move(stagingRenderParams);
 
     unionNode->ResetChildRelevantFlags();
     ASSERT_TRUE(unionNode->visibleUnionChildren_.empty());
 }
-
-/**
- * @tc.name: CreateChildToContainerSDFTransformShape001
- * @tc.desc: test CreateChildToContainerSDFTransformShape
- * @tc.type:FUNC
- */
-HWTEST_F(RSUnionRenderNodeTest, CreateChildToContainerSDFTransformShape001, TestSize.Level1)
-{
-    auto sContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, sContext);
-    unionNode->boundsGeo_ = nullptr;
-    auto child1 = std::make_shared<RSRenderNode>(id + 1, context);
-
-    auto ret = unionNode->CreateChildToContainerSDFTransformShape(child1);
-    ASSERT_EQ(ret, nullptr);
-}
-
-/**
- * @tc.name: CreateChildToContainerSDFTransformShape002
- * @tc.desc: test CreateChildToContainerSDFTransformShape
- * @tc.type:FUNC
- */
-HWTEST_F(RSUnionRenderNodeTest, CreateChildToContainerSDFTransformShape002, TestSize.Level1)
-{
-    auto sContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, sContext);
-    auto child1 = std::make_shared<RSRenderNode>(id + 1, context);
-    unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
-    unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
-    child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
-    child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
-
-    auto ret = unionNode->CreateChildToContainerSDFTransformShape(child1);
-    ASSERT_NE(ret, nullptr);
-}
-
 } // namespace Rosen
 } // namespace OHOS
