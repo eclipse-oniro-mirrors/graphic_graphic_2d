@@ -43,7 +43,7 @@
 
 #include "rs_render_to_composer_connection.h"
 #include "rs_render_composer_manager.h"
-#include "gfx/rs_service_dump_manager.h" // todo dfx or dfx ?
+#include "dfx/rs_service_dump_manager.h" // todo dfx or dfx ?
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "graphic_feature_param_manager.h"
 #include "system/rs_system_parameters.h"
