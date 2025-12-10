@@ -112,7 +112,7 @@ void DestroyInstallConfig()
 
 class InstallConfig {
 public:
-    InstallConfig(const std::string& content = INSTALL_CONFIG_THREE)
+    explicit InstallConfig(const std::string& content = INSTALL_CONFIG_THREE)
     {
         InitInstallConfig(content);
     }
@@ -889,11 +889,11 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest019, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkFontDescriptorTest020
+ * @tc.name: NdkGetFontPathsByType001
  * @tc.desc: test for get all font paths.
  * @tc.type: FUNC
  */
-HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest020, TestSize.Level0)
+HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType001, TestSize.Level0)
 {
     InstallConfig installConfig;
     size_t pathCount = 0;
@@ -918,11 +918,11 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest020, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkFontDescriptorTest021
+ * @tc.name: NdkGetFontPathsByType002
  * @tc.desc: test for get installed font paths with empty installed font.
  * @tc.type: FUNC
  */
-HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest021, TestSize.Level0)
+HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType002, TestSize.Level0)
 {
     InstallConfig installConfig(INSTALL_CONFIG_EMPTY);
     size_t pathCount = SIZE_MAX;
@@ -933,11 +933,11 @@ HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest021, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkFontDescriptorTest022
+ * @tc.name: NdkGetFontPathsByType003
  * @tc.desc: test for get all font paths and customized font paths with empty installed font.
  * @tc.type: FUNC
  */
-HWTEST_F(NdkFontDescriptorTest, NdkFontDescriptorTest022, TestSize.Level0)
+HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType003, TestSize.Level0)
 {
     size_t pathCount = SIZE_MAX;
     OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::ALL, nullptr);

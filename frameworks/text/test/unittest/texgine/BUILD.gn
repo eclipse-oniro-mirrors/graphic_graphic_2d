@@ -17,10 +17,7 @@ import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 group("unittest") {
   testonly = true
-  deps = [
-    ":texgine_unittest_part3",
-    ":texgine_unittest_part7",
-  ]
+  deps = [ ":texgine_test" ]
 }
 
 config("texgine_test_config") {
@@ -46,28 +43,17 @@ group("common_deps") {
   ]
 }
 
-ohos_unittest("texgine_unittest_part3") {
+ohos_unittest("texgine_test") {
   module_out_path = text_ut_out_path
-  sources = [ "font_parser_test.cpp" ]
+  sources = [
+    "font_descriptor_cache_test.cpp",
+    "font_parser_test.cpp",
+  ]
 
   public_configs = [ ":texgine_test_config" ]
   public_deps = [ ":common_deps" ]
 
   external_deps = [ "i18n:intl_util" ]
-
-  use_exceptions = true
-
-  part_name = "graphic_2d"
-  subsystem_name = "graphic"
-}
-
-ohos_unittest("texgine_unittest_part7") {
-  module_out_path = text_ut_out_path
-
-  sources = [ "font_descriptor_cache_test.cpp" ]
-
-  public_configs = [ ":texgine_test_config" ]
-  public_deps = [ ":common_deps" ]
 
   use_exceptions = true
 
