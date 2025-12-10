@@ -418,7 +418,7 @@ void RSHeteroHDRManager::UpdateHardwareHandleCondition()
     isPrevHandleByHWMap_.clear();
     for (uint32_t i = 0; i < pendingPostNodes_.size(); i++) {
         NodeId nodeId = pendingPostNodes_[i]->GetId();
-        auto nodeDrawable = RSHeteroHDRUtil::GetSurfaceDrawableByID(curNodeId_);
+        auto nodeDrawable = RSHeteroHDRUtil::GetSurfaceDrawableByID(nodeId);
         if (!nodeDrawable) {
             RS_LOGE("[hdrHetero]:RSHeteroHDRManager UpdateHardwareHandleCondition nodeDrawable is nullptr");
             return;
