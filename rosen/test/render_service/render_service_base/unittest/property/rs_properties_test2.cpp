@@ -1366,11 +1366,11 @@ HWTEST_F(PropertiesTest, GenerateMaterialFilter002, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetRRectForSDF001
- * @tc.desc: GetClipRRect == true test
+ * @tc.name: GetRRectForSDFTest001
+ * @tc.desc: GetClipToRRect == true test
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, GetRRectForSDF001, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetRRectForSDFTest001, TestSize.Level1)
 {
     RSProperties properties;
     properties.clipRRect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 2.f, 2.f);
@@ -1379,11 +1379,11 @@ HWTEST_F(PropertiesTest, GetRRectForSDF001, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetRRectForSDF002
+ * @tc.name: GetRRectForSDFTest002
  * @tc.desc: GetCornerRadius().IsZero() == false test
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, GetRRectForSDF002, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetRRectForSDFTest002, TestSize.Level1)
 {
     RSProperties properties;
     properties.cornerRadius_ = Vector4f(5.f);
@@ -1392,14 +1392,14 @@ HWTEST_F(PropertiesTest, GetRRectForSDF002, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetRRectForSDF003
+ * @tc.name: GetRRectForSDFTest003
  * @tc.desc: else test
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, GetRRectForSDF003, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetRRectForSDFTest003, TestSize.Level1)
 {
     RSProperties properties;
-    properties.boundsGeo_ = std::make_shared<RSObjGeometry>();
+    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     properties.boundsGeo_->width_ = 10.f;
     properties.boundsGeo_->height_ = 10.f;
     ASSERT_FALSE(properties.GetRRectForSDF().rect_.IsEmpty());
