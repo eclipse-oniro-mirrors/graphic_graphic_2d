@@ -585,7 +585,7 @@ ErrCode RSRenderPipeline::CreatePixelMapFromSurface(sptr<Surface> surface, const
 
 void RSRenderPipeline::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
 {
-    // HandleHwcPackageEvent(listSize, packageList);
+    HandleHwcPackageEvent(listSize, packageList);
     HandleDisplayPackageEvent(listSize, packageList);
 }
 
