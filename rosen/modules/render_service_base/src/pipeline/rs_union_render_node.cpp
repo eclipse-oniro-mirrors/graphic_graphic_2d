@@ -165,16 +165,7 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GetOrCreateChildSDFShape
     if (auto shape = child->GetRenderProperties().GetSDFShape()) {
         return shape;
     }
-    RRect sdfRRect{};
-    if (child->GetRenderProperties().GetClipToRRect()) {
-        auto childRRect = child->GetRenderProperties().GetClipRRect();
-        sdfRRect = RRect(childRRect.rect_, childRRect.radius_[0].x_, childRRect.radius_[0].y_);
-    } else if (!child->GetRenderProperties().GetCornerRadius().IsZero()) {
-        auto childRRect = child->GetRenderProperties().GetRRect();
-        sdfRRect = RRect(childRRect.rect_, childRRect.radius_[0].x_, childRRect.radius_[0].y_);
-    } else {
-        sdfRRect.rect_ = child->GetRenderProperties().GetBoundsRect();
-    }
+    auto sdfRRect = child->GetRenderProperties().GetRRectForSDF();
     auto childShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
         RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE));
     childShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);
