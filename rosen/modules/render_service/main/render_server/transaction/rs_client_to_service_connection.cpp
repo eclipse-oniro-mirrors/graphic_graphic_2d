@@ -830,7 +830,7 @@ int32_t RSClientToServiceConnection::GetBrightnessInfo(ScreenId screenId, Bright
 {
     // brightnessInfo = RSLuminanceControl::Get().GetBrightnessInfo(screenId);
     // return StatusCode::SUCCESS;
-    return 0; // ??? todo
+    return StatusCode::SUCCESS; // ??? todo
 }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
