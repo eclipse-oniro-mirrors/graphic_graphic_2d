@@ -465,6 +465,8 @@ bool RSUniDirtyComputeUtil::CheckCurrentFrameHasDirtyInVirtual(
             continue;
         }
         ScreenId screenId = displayParams->GetScreenId();
+        const std::map<RSSurfaceNodeType, RectI>& typeHwcRectList =	
+            screenDirtyManager->GetTypeHwcDirtyRegion();
         for (auto& typeHwcRect : typeHwcRectList) {
             NodeType nodeType = static_cast<NodeType>(typeHwcRect.first);
             if (curTypeBlackList.find(nodeType) == curTypeBlackList.end() &&
