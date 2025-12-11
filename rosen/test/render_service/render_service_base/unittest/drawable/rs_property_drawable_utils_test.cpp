@@ -1164,12 +1164,6 @@ Vector2f DARK_BG_RATES(0.3f, 0.4f);
 Vector3f DARK_BG_KBS(0.5f, 0.6f, 0.7f);
 Vector3f DARK_BG_POS(0.8f, 0.9f, 1.0f);
 Vector3f DARK_BG_NEG(1.1f, 1.2f, 1.3f);
-Vector2f LIGHT_BLUR(3.5f, 4.5f);
-Vector2f LIGHT_WEIGHTS(0.9f, 0.8f);
-Vector2f LIGHT_BG_RATES(0.7f, 0.6f);
-Vector3f LIGHT_BG_KBS(0.5f, 0.4f, 0.3f);
-Vector3f LIGHT_BG_POS(0.2f, 0.1f, 0.0f);
-Vector3f LIGHT_BG_NEG(-0.1f, -0.2f, -0.3f);
 } // namespace
 
 /**
@@ -1201,39 +1195,20 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplyAdaptiveFrostedGlassParamsTest002, te
     glass->Setter<FrostedGlassDarkModeBgPosRenderTag>(DARK_BG_POS);
     glass->Setter<FrostedGlassDarkModeBgNegRenderTag>(DARK_BG_NEG);
 
-    glass->Setter<FrostedGlassLightModeBlurParamsRenderTag>(LIGHT_BLUR);
-    glass->Setter<FrostedGlassLightModeWeightsEmbossRenderTag>(LIGHT_WEIGHTS);
-    glass->Setter<FrostedGlassLightModeBgRatesRenderTag>(LIGHT_BG_RATES);
-    glass->Setter<FrostedGlassLightModeBgKBSRenderTag>(LIGHT_BG_KBS);
-    glass->Setter<FrostedGlassLightModeBgPosRenderTag>(LIGHT_BG_POS);
-    glass->Setter<FrostedGlassLightModeBgNegRenderTag>(LIGHT_BG_NEG);
-
     // prepare canvas and set picked color to black -> dark
     Drawing::Canvas canvasDark;
     RSPaintFilterCanvas paintFilterCanvasDark(&canvasDark);
     paintFilterCanvasDark.SetColorPicked(ColorPlaceholder::SURFACE_CONTRAST, Drawing::Color::COLOR_BLACK);
 
-    // apply and verify dark-mode values are copied to the main properties
     RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&paintFilterCanvasDark, renderFilter);
-    EXPECT_EQ(glass->Getter<FrostedGlassBlurParamsRenderTag>()->Get(), DARK_BLUR);
-    EXPECT_EQ(glass->Getter<FrostedGlassWeightsEmbossRenderTag>()->Get(), DARK_WEIGHTS);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgRatesRenderTag>()->Get(), DARK_BG_RATES);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgKBSRenderTag>()->Get(), DARK_BG_KBS);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgPosRenderTag>()->Get(), DARK_BG_POS);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgNegRenderTag>()->Get(), DARK_BG_NEG);
+    EXPECT_EQ(glass->Getter<FrostedGlassDarkScaleRenderTag>()->Get(), 1.0f);
 
     // prepare canvas and set picked color to white -> light
     Drawing::Canvas canvasLight;
     RSPaintFilterCanvas paintFilterCanvasLight(&canvasLight);
     paintFilterCanvasLight.SetColorPicked(ColorPlaceholder::SURFACE_CONTRAST, Drawing::Color::COLOR_WHITE);
-
-    // apply and verify light-mode values are copied to the main properties
+    
     RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&paintFilterCanvasLight, renderFilter);
-    EXPECT_EQ(glass->Getter<FrostedGlassBlurParamsRenderTag>()->Get(), LIGHT_BLUR);
-    EXPECT_EQ(glass->Getter<FrostedGlassWeightsEmbossRenderTag>()->Get(), LIGHT_WEIGHTS);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgRatesRenderTag>()->Get(), LIGHT_BG_RATES);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgKBSRenderTag>()->Get(), LIGHT_BG_KBS);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgPosRenderTag>()->Get(), LIGHT_BG_POS);
-    EXPECT_EQ(glass->Getter<FrostedGlassBgNegRenderTag>()->Get(), LIGHT_BG_NEG);
+    EXPECT_EQ(glass->Getter<FrostedGlassDarkScaleRenderTag>()->Get(), 0.0f);
 }
 } // namespace OHOS::Rosen
