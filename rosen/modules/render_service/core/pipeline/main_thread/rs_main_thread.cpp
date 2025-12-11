@@ -5746,7 +5746,7 @@ void RSMainThread::MarkNodeDirty(uint64_t nodeId)
 
 void RSMainThread::CheckPackageInConfigList(const std::vector<std::string>& packageList)
 {
-    hwcContext_->CheckPackageInConfigList(packageList)
+    hwcContext_->CheckPackageInConfigList(packageList);
 }
 } // namespace Rosen
 } // namespace OHOS
