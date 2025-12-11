@@ -377,7 +377,7 @@ uint32_t OH_Drawing_GetFontCountFromBuffer(uint8_t* fontBuffer, size_t length);
  * @brief Obtains an array of font paths from the system.
  * @param fontType The type of system fonts to retrieve.
  * @param pathCount Output parameter to receive the number of font paths retrieved.
- * @return Returns a pointer to an array of <b>OH_Drawing_String</
+ * @return Returns a pointer to an array of <b>OH_Drawing_String</b>
  *         representing the font paths. Returns <b>NULL</b> if no fonts are found or an error occurs.
  * @since 23
  *
