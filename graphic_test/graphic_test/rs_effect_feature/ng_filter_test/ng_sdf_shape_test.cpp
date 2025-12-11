@@ -222,7 +222,7 @@ GRAPHIC_TEST(NGSDFShapeTest, EFFECT_TEST, Set_SDF_TransformShape_Test_1)
         backgroundTestNode->SetMaterialNGFilter(frostedGlassFilter);
         auto sdfShape = CreateShape(RSNGEffectType::SDF_TRANSFORM_SHAPE);
         auto transformShape = std::static_pointer_cast<RSNGSDFTransformShape>(sdfShape);
-        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix3fParams1[i]);
+        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix3fParams1[i].Inverse());
 
         auto childShape = CreateShape(RSNGEffectType::SDF_RRECT_SHAPE);
         auto rRectChildShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
@@ -257,7 +257,7 @@ GRAPHIC_TEST(NGSDFShapeTest, EFFECT_TEST, Set_SDF_TransformShape_Test_2)
         backgroundTestNode->SetMaterialNGFilter(frostedGlassFilter);
         auto sdfShape = CreateShape(RSNGEffectType::SDF_TRANSFORM_SHAPE);
         auto transformShape = std::static_pointer_cast<RSNGSDFTransformShape>(sdfShape);
-        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix3fParams2[i]);
+        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix3fParams2[i].Inverse());
 
         auto childShape = CreateShape(RSNGEffectType::SDF_RRECT_SHAPE);
         auto rRectChildShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
@@ -292,7 +292,7 @@ GRAPHIC_TEST(NGSDFShapeTest, EFFECT_TEST, Set_SDF_TransformShape_Test_3)
         backgroundTestNode->SetMaterialNGFilter(frostedGlassFilter);
         auto sdfShape = CreateShape(RSNGEffectType::SDF_TRANSFORM_SHAPE);
         auto transformShape = std::static_pointer_cast<RSNGSDFTransformShape>(sdfShape);
-        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix3fParams3[i]);
+        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix3fParams3[i].Inverse());
 
         auto childShape = CreateShape(RSNGEffectType::SDF_RRECT_SHAPE);
         auto rRectChildShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
@@ -331,7 +331,7 @@ GRAPHIC_TEST(NGSDFShapeTest, EFFECT_TEST, Set_SDF_TransformShape_Test_4)
 
         auto sdfShape1 = CreateShape(RSNGEffectType::SDF_TRANSFORM_SHAPE);
         auto transformShape1 = std::static_pointer_cast<RSNGSDFTransformShape>(sdfShape1);
-        transformShape1->Setter<SDFTransformShapeMatrixTag>(matrix1);
+        transformShape1->Setter<SDFTransformShapeMatrixTag>(matrix1.Inverse());
         auto childShape = CreateShape(RSNGEffectType::SDF_RRECT_SHAPE);
         auto rRectChildShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
         rRectChildShape->Setter<SDFRRectShapeRRectTag>(rrect);
@@ -339,12 +339,12 @@ GRAPHIC_TEST(NGSDFShapeTest, EFFECT_TEST, Set_SDF_TransformShape_Test_4)
 
         auto sdfShape2 = CreateShape(RSNGEffectType::SDF_TRANSFORM_SHAPE);
         auto transformShape2 = std::static_pointer_cast<RSNGSDFTransformShape>(sdfShape2);
-        transformShape2->Setter<SDFTransformShapeMatrixTag>(matrix);
+        transformShape2->Setter<SDFTransformShapeMatrixTag>(matrix.Inverse());
         transformShape2->Setter<SDFTransformShapeShapeTag>(sdfShape1);
     
         auto sdfShape = CreateShape(RSNGEffectType::SDF_TRANSFORM_SHAPE);
         auto transformShape = std::static_pointer_cast<RSNGSDFTransformShape>(sdfShape);
-        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix2);
+        transformShape->Setter<SDFTransformShapeMatrixTag>(matrix2.Inverse());
         transformShape->Setter<SDFTransformShapeShapeTag>(sdfShape2);
 
         backgroundTestNode->SetSDFShape(sdfShape);

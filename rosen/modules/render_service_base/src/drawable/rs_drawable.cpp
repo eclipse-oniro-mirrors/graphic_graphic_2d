@@ -352,7 +352,6 @@ constexpr std::array boundsDirtyTypes = {
     RSDrawableSlot::FOREGROUND_FILTER,
     RSDrawableSlot::CLIP_TO_BOUNDS,
     RSDrawableSlot::BACKGROUND_COLOR,
-    RSDrawableSlot::BACKGROUND_NG_SHADER,
     RSDrawableSlot::BACKGROUND_SHADER,
     RSDrawableSlot::BACKGROUND_IMAGE,
     RSDrawableSlot::ENV_FOREGROUND_COLOR_STRATEGY,
