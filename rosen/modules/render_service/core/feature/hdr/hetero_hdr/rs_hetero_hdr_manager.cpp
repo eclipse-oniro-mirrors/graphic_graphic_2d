@@ -406,7 +406,7 @@ bool RSHeteroHDRManager::HasHdrHeteroNode()
     if (ret) {
         auto iterHardware = isPrevHandleByHWMap_.find(pendingPostNodes_.front()->GetId());
         bool prevHardware = iterHardware == isPrevHandleByHWMap_.end() ||
-            iterHardware->second || curFrameId != prevFrameId_+1;
+            iterHardware->second || curFrameId != prevFrameId_ + 1;
         ret = ret && prevHardware;
         RS_LOGD("[hdrHetero]:RSHeteroHDRManager HasHdrHeteroNode prevHardware %{public}d", prevHardware);
     }
