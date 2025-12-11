@@ -27,6 +27,7 @@ public:
 private:
     static std::shared_ptr<RSNGRenderMaskBase> GetRandomSingleMask();
     static std::shared_ptr<RSNGRenderMaskBase> GetRandomMaskChain();
+    static std::shared_ptr<RSNGRenderMaskBase> GetNullValue();
 
 #define DECLARE_MASK(MaskName, MaskType, ...) \
     static std::shared_ptr<RSNGRenderMaskBase> GetRandom##MaskName()

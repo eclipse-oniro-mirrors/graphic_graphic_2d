@@ -121,8 +121,7 @@ DECLARE_SHADER(FrostedGlassEffect, FROSTED_GLASS_EFFECT,
     ADD_PROPERTY_TAG(FrostedGlassEffect, EdLightKBS) SEPARATOR
     ADD_PROPERTY_TAG(FrostedGlassEffect, EdLightPos) SEPARATOR
     ADD_PROPERTY_TAG(FrostedGlassEffect, EdLightNeg) SEPARATOR
-    ADD_PROPERTY_TAG(FrostedGlassEffect, BorderSize) SEPARATOR
-    ADD_PROPERTY_TAG(FrostedGlassEffect, CornerRadius) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlassEffect, MaterialColor) SEPARATOR
     ADD_PROPERTY_TAG(FrostedGlassEffect, Shape)
 );
 

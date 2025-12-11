@@ -63,6 +63,7 @@ public:
     std::string GetFamilyName() const;
 
     std::string GetFontPath() const;
+    int32_t GetFontIndex() const;
 
     /**
      * @brief   Get the fontStyle for this typeface.
@@ -167,6 +168,9 @@ public:
      * @brief   Update stream for this typeface.
      */
     void UpdateStream(std::unique_ptr<MemoryStream> stream);
+
+    int GetVariationDesignPosition(FontArguments::VariationPosition::Coordinate coordinates[],
+        int coordinateCount) const;
 
     uint32_t GetIndex() const;
 private:

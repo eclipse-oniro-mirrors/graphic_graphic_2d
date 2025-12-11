@@ -494,10 +494,7 @@ void RSProperties::SetCornerApplyType(int type)
 
 bool RSProperties::NeedCornerOptimization() const
 {
-    bool isSameRadius = ROSEN_EQ(GetCornerRadius().x_, GetCornerRadius().y_) &&
-                        ROSEN_EQ(GetCornerRadius().y_, GetCornerRadius().z_) &&
-                        ROSEN_EQ(GetCornerRadius().z_, GetCornerRadius().w_);
-    return isSameRadius && cornerApplyType_ != static_cast<int>(RSCornerApplyType::FAST);
+    return cornerApplyType_ != static_cast<int>(RSCornerApplyType::FAST);
 }
 
 void RSProperties::SetQuaternion(Quaternion quaternion)
@@ -3582,6 +3579,7 @@ void RSProperties::GenerateMaterialFilter()
 {
     // not support compose yet, so do not use ComposeNGRenderFilter
     if (!GetMaterialNGFilter()) {
+        GetEffect().materialFilter_ = nullptr;
         return;
     }
     auto filter = std::make_shared<RSDrawingFilter>();

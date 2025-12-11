@@ -69,8 +69,8 @@ uint8_t* GetRandomUInt8Array()
 
 Media::InitializationOptions GetInitialRandomOpts()
 {
-    int32_t width = GetData<uint16_t>() % (MAX_LENGTH_MODULO + (MAX_LENGTH_MODULO >> 3));
-    int32_t height = GetData<uint16_t>() % (MAX_LENGTH_MODULO + (MAX_LENGTH_MODULO >> 3));
+    int32_t width = (GetData<uint16_t>() % (MAX_LENGTH_MODULO + (MAX_LENGTH_MODULO >> 3))) % 1080; // 1080: max width
+    int32_t height = (GetData<uint16_t>() % (MAX_LENGTH_MODULO + (MAX_LENGTH_MODULO >> 3))) % 1080; // 1080: max height
     Media::InitializationOptions opts;
     opts.useDMA = GetData<uint8_t>() % BOOL_MODULO;
     if (opts.useDMA) {

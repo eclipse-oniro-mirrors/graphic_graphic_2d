@@ -466,6 +466,7 @@ void RSScreenManager::OnHwcDeadEvent()
     }
     isHwcDead_ = true;
     defaultScreenId_ = INVALID_SCREEN_ID;
+    mipiCheckInFirstHotPlugEvent_ = false;
 #ifdef RS_ENABLE_GPU
     std::atomic<size_t> composerCount = screens.size();
     for (const auto& [screenId, screen] : screens) {
@@ -702,7 +703,11 @@ void RSScreenManager::ProcessScreenConnected(std::shared_ptr<HdiOutput>& output)
     ScreenId defaultScreenId = defaultScreenId_;
     if (screen->GetCapability().type == GraphicInterfaceType::GRAPHIC_DISP_INTF_MIPI) {
         if (!mipiCheckInFirstHotPlugEvent_.exchange(true)) {
+            RS_LOGI("%{public}s The screen id %{public}" PRIu64
+                " is set to defaultScreenId. last defaultScreenId is %{public}" PRIu64, __func__, id, defaultScreenId);
             defaultScreenId = id;
+        } else {
+            RS_LOGI("%{public}s The screen id %{public}" PRIu64 " is not set to defaultScreenId", __func__, id);
         }
     } else if (defaultScreenId == INVALID_SCREEN_ID) {
         RS_LOGI("%{public}s The screen id %{public}" PRIu64
@@ -856,6 +861,9 @@ void RSScreenManager::HandleDefaultScreenDisConnected()
         defaultScreenId = screens_.cbegin()->first;
     }
     defaultScreenId_ = defaultScreenId;
+    if (defaultScreenId_ == INVALID_SCREEN_ID) {
+        mipiCheckInFirstHotPlugEvent_ = false;
+    }
 }
 
 void RSScreenManager::UpdateFoldScreenConnectStatusLocked(ScreenId screenId, bool connected)
@@ -1957,6 +1965,17 @@ void RSScreenManager::SetScreenBacklight(ScreenId id, uint32_t level)
         return;
     }
     screenBacklight_[id] = level;
+}
+
+PanelPowerStatus RSScreenManager::GetPanelPowerStatus(ScreenId id) const
+{
+    auto screen = GetScreen(id);
+    if (screen == nullptr) {
+        RS_LOGE("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
+        return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    }
+    auto status = screen->GetPanelPowerStatus();
+    return status;
 }
 
 ScreenInfo RSScreenManager::QueryDefaultScreenInfo() const

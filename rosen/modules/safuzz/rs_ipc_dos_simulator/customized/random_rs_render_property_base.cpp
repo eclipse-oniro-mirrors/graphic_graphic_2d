@@ -61,11 +61,11 @@ std::shared_ptr<RSRenderPropertyBase> RandomRSRenderPropertyBase::GetRandom<TYPE
 #undef DECLARE_PROPERTY
 #undef DECLARE_ANIMATABLE_PROPERTY
 
-#define DECLARE_PROPERTY(TYPE, RANDOM_FACTORY, FUNC_NAME)                           \
-template<>                                                                                 \
-TYPE RandomRSRenderPropertyBase::GetRandomValue<TYPE>() \
-{                                                                                          \
-    return RANDOM_FACTORY::GetRandom##FUNC_NAME();               \
+#define DECLARE_PROPERTY(TYPE, RANDOM_FACTORY, FUNC_NAME)     \
+template<>                                                    \
+TYPE RandomRSRenderPropertyBase::GetRandomValue<TYPE>()       \
+{                                                             \
+    return RANDOM_FACTORY::GetRandom##FUNC_NAME();            \
 }
 
 #define DECLARE_ANIMATABLE_PROPERTY(TYPE, RANDOM_FACTORY, FUNC_NAME)

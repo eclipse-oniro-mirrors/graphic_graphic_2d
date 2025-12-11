@@ -138,9 +138,15 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, EdLightKBS) SEPARATOR
     ADD_PROPERTY_TAG(FrostedGlass, EdLightPos) SEPARATOR
     ADD_PROPERTY_TAG(FrostedGlass, EdLightNeg) SEPARATOR
-    ADD_PROPERTY_TAG(FrostedGlass, BorderSize) SEPARATOR
-    ADD_PROPERTY_TAG(FrostedGlass, CornerRadius) SEPARATOR	
-    ADD_PROPERTY_TAG(FrostedGlass, Shape)
+    ADD_PROPERTY_TAG(FrostedGlass, Shape) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, BaseVibrancyEnabled) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, BaseMaterialType) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, MaterialColor) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, RefractEnabled) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, InnerShadowEnabled) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, EnvLightEnabled) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, HighLightEnabled) SEPARATOR
+    ADD_PROPERTY_TAG(FrostedGlass, SamplingScale)
 );
 
 DECLARE_FILTER(GridWarp, GRID_WARP,

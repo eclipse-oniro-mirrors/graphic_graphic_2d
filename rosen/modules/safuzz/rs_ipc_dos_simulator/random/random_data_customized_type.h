@@ -62,6 +62,8 @@ public:
     static std::shared_ptr<Drawing::DrawCmdList> GetRandomDrawingDrawCmdListPtr();
     static std::shared_ptr<RSNGRenderFilterBase> GetRandomRSNGFilterPtr();
     static std::shared_ptr<RSNGRenderMaskBase> GetRandomRSNGMaskPtr();
+    static std::shared_ptr<RSNGRenderShaderBase> GetRandomRSNGShaderPtr();
+    static std::shared_ptr<RSNGRenderShapeBase> GetRandomRSNGShapePtr();
     static DrawNodeType GetRandomDrawNodeType();
 
     // RSDisplayNodeCommand params
@@ -81,8 +83,8 @@ public:
     static RectF GetRandomRectF();
     static std::shared_ptr<RectF> GetRandomRectFSharedPtr();
     static RRect GetRandomRRect();
-    static std::vector<float> GetRandomVectorFloat();
     static std::vector<Vector2f> GetRandomVectorVector2f();
+    static std::vector<float> GetRandomSmallFloatVector();
     static std::shared_ptr<Media::PixelMap> GetRandomPixelMap();
     static RSShadowBlenderPara GetRandomRSShadowBlenderPara();
 #ifndef ROSEN_CROSS_PLATFORM

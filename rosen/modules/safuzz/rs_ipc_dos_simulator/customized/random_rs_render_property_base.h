@@ -26,6 +26,7 @@
 #include "customized/random_rs_path.h"
 #include "customized/random_rs_render_particle.h"
 #include "customized/random_rs_shader.h"
+#include "customized/random_rs_ng_shape.h"
 #include "random/random_data.h"
 
 namespace OHOS {

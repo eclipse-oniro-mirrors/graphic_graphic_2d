@@ -14,20 +14,29 @@
  */
 
 #include "customized/random_rs_ng_filter.h"
-
+#include "customized/random_rs_render_property_base.h"
 #include "random/random_data.h"
 #include "random/random_engine.h"
-
 
 namespace OHOS {
 namespace Rosen {
 
-static const std::vector<std::function<std::shared_ptr<RSNGRenderFilterBase>()>> filterRandomGenerator = {
-    RandomRSNGFilterPtr::GetRandomDispDistortFilter,
-};
+static bool IS_INIT = false;
+static std::vector<std::function<std::shared_ptr<RSNGRenderFilterBase>()>> RANDOM_FILTER_GENERATOR;
 
 std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetRandomValue()
 {
+    if (!IS_INIT) {
+        RANDOM_FILTER_GENERATOR.push_back(RandomRSNGFilterPtr::GetNullValue);
+        #define DECLARE_FILTER(FilterName, FilterType, ...)     \
+            RANDOM_FILTER_GENERATOR.push_back(RandomRSNGFilterPtr::GetRandom##FilterName);
+
+        #include "effect/rs_render_filter_def.in"
+
+        #undef DECLARE_FILTER
+        IS_INIT = true;
+    }
+
     bool generateChain = RandomData::GetRandomBool();
     if (generateChain) {
         return RandomRSNGFilterPtr::GetRandomFilterChain();
@@ -36,33 +45,52 @@ std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetRandomValue()
     return RandomRSNGFilterPtr::GetRandomSingleFilter();
 }
 
+std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetNullValue()
+{
+    return nullptr;
+}
+
 std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetRandomSingleFilter()
 {
-    int index = RandomEngine::GetRandomIndex(filterRandomGenerator.size() - 1);
-    return filterRandomGenerator[index]();
+    int index = RandomEngine::GetRandomIndex(RANDOM_FILTER_GENERATOR.size() - 1);
+    return RANDOM_FILTER_GENERATOR[index]();
 }
 
 std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetRandomFilterChain()
 {
     std::shared_ptr<RSNGRenderFilterBase> head = nullptr;
+    auto current = head;
     int filterChainSize = RandomEngine::GetRandomSmallVectorLength();
     for (int i = 0; i < filterChainSize; ++i) {
         auto filter = GetRandomSingleFilter();
-        if (!head) {
-            head = filter;
+        if (!current) {
+            head = filter; // init head
         } else {
-            head->nextEffect_ = filter;
+            current->nextEffect_ = filter;
         }
+        current = filter;
     }
 
     return head;
 }
 
-std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetRandomDispDistortFilter()
-{
-    auto filter = std::make_shared<RSNGRenderDispDistortFilter>();
-    filter->Setter<DispDistortFactorRenderTag>(RandomData::GetRandomVector2f());
-    return filter;
+#define SEPARATOR
+#define ADD_PROPERTY_TAG(Effect, Prop) \
+    value->Setter<Effect##Prop##RenderTag>( \
+        RandomRSRenderPropertyBase::GetRandomValue<typename Effect##Prop##RenderTag::ValueType>());
+#define DECLARE_FILTER(FilterName, FilterType, ...)                                 \
+std::shared_ptr<RSNGRenderFilterBase> RandomRSNGFilterPtr::GetRandom##FilterName()  \
+{                                                                                   \
+    auto value = std::make_shared<RSNGRender##FilterName##Filter>();                \
+    __VA_ARGS__                                                                     \
+    return value;                                                                   \
 }
+
+#include "effect/rs_render_filter_def.in"
+
+#undef SEPARATOR
+#undef ADD_PROPERTY_TAG
+#undef DECLARE_FILTER
+
 } // namespace Rosen
 } // namespace OHOS

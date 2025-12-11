@@ -422,8 +422,7 @@ RSMainThread* RSMainThread::Instance()
     return &instance;
 }
 
-RSMainThread::RSMainThread() : rsParallelType_(RSSystemParameters::GetRsParallelType()),
-    mainThreadId_(std::this_thread::get_id())
+RSMainThread::RSMainThread() : rsParallelType_(RSSystemParameters::GetRsParallelType())
 {
     context_ = std::make_shared<RSContext>();
     context_->Initialize();
@@ -569,7 +568,6 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventRunner>& runner,
 
     isUniRender_ = RSUniRenderJudgement::IsUniRender();
     SetDeviceType();
-    isFoldScreenDevice_ = RSSystemProperties::IsFoldScreenFlag();
     auto taskDispatchFunc = [](const RSTaskDispatcher::RSTask& task, bool isSyncTask = false) {
         RSMainThread::Instance()->PostTask(task);
     };
@@ -845,7 +843,7 @@ void RSMainThread::UpdateGpuContextCacheSize()
         GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[GPU_CACHE]));
     if (gpuCacheParam != nullptr && gpuCacheParam->GetGpuCacheConfigEnable()) {
         // set gpu cache size from param config
-        cacheLimitsResourceSize = gpuCacheParam->GetRSGpuCacheSize() * MEMUNIT_RATE * MEMUNIT_RATE;
+        cacheLimitsResourceSize = static_cast<size_t>(gpuCacheParam->GetRSGpuCacheSize()) * MEMUNIT_RATE * MEMUNIT_RATE;
         gpuContext->SetResourceCacheLimits(maxResources, cacheLimitsResourceSize);
         RS_LOGI("UpdateGpuContextCacheSize, gpu cache size of param config: %{public}zu Bytes",
             cacheLimitsResourceSize);
@@ -1065,27 +1063,7 @@ void RSMainThread::UpdateFocusNodeId(NodeId focusNodeId)
     if (focusNodeId_ == focusNodeId || focusNodeId == INVALID_NODEID) {
         return;
     }
-    UpdateNeedDrawFocusChange(focusNodeId_);
-    UpdateNeedDrawFocusChange(focusNodeId);
     focusNodeId_ = focusNodeId;
-}
-
-void RSMainThread::UpdateNeedDrawFocusChange(NodeId id)
-{
-    const auto& nodeMap = context_->GetNodeMap();
-    auto node = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(nodeMap.GetRenderNode(id));
-    // while nodeMap can't find node, return instantly
-    if (!node) {
-        return;
-    }
-    auto parentNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(node->GetParent().lock());
-    // while node's parent isn't LEASH_WINDOW_NODE, itselt need SetNeedDrawFocusChange
-    if (!parentNode || parentNode->GetSurfaceNodeType() != RSSurfaceNodeType::LEASH_WINDOW_NODE) {
-        node->SetNeedDrawFocusChange(true);
-        return;
-    }
-    // while node's parent is LEASH_WINDOW_NODE, parent need SetNeedDrawFocusChange
-    parentNode->SetNeedDrawFocusChange(true);
 }
 
 void RSMainThread::Start()
@@ -2583,7 +2561,6 @@ void RSMainThread::Render()
 #ifdef RS_ENABLE_GPU
         UniRender(rootNode);
 #endif
-        frameCount_++;
 #endif
     } else {
         auto rsVisitor = std::make_shared<RSRenderServiceVisitor>();
@@ -3214,7 +3191,6 @@ void RSMainThread::OnVsync(uint64_t timestamp, uint64_t frameCount, void* data)
     RS_PROFILER_PATCH_TIME(curTime_);
     requestNextVsyncNum_ = 0;
     vsyncId_ = frameCount;
-    frameCount_++;
     if (isUniRender_) {
 #ifdef RS_ENABLE_GPU
         MergeToEffectiveTransactionDataMap(cachedTransactionDataMap_);
@@ -4303,7 +4279,7 @@ bool RSMainThread::IsFastComposeVsyncTimeSync(uint64_t unsignedVsyncPeriod, bool
     return true;
 }
 
-void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
+bool RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
 {
     auto nowTime = SystemTime();
     uint64_t unsignedNowTime = static_cast<uint64_t>(nowTime);
@@ -4327,13 +4303,11 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
     }
     if (!IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp)) {
-        RequestNextVSync();
-        return;
+        return false;
     }
     if (ret != VSYNC_ERROR_OK || !context_ ||
         !IsFastComposeAllow(unsignedVsyncPeriod, nextVsyncRequested, unsignedNowTime, lastVsyncTime)) {
-        RequestNextVSync();
-        return;
+        return false;
     }
     // if buffer come near vsync and next vsync not requested, do fast compose
     if (!nextVsyncRequested && (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod >
@@ -4353,9 +4327,9 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
         unsignedNowTime - lastVsyncTime < REFRESH_PERIOD / 2) { // invoke when late less than 1/2 refresh period
         RS_TRACE_NAME("RSMainThread::CheckFastCompose success, start fastcompose");
         ForceRefreshForUni(true);
-        return;
+        return true;
     }
-    RequestNextVSync();
+    return false;
 }
 
 bool RSMainThread::CheckAdaptiveCompose()
@@ -4579,22 +4553,6 @@ SystemAnimatedScenes RSMainThread::GetSystemAnimatedScenes()
     return systemAnimatedScenes_;
 }
 
-bool RSMainThread::CheckNodeHasToBePreparedByPid(NodeId nodeId, bool isClassifyByRoot)
-{
-    std::lock_guard<std::mutex> lock(context_->activeNodesInRootMutex_);
-    if (context_->activeNodesInRoot_.empty() || nodeId == INVALID_NODEID) {
-        return false;
-    }
-    if (!isClassifyByRoot) {
-        // Match by PID
-        auto pid = ExtractPid(nodeId);
-        return std::any_of(context_->activeNodesInRoot_.begin(), context_->activeNodesInRoot_.end(),
-            [pid](const auto& iter) { return ExtractPid(iter.first) == pid; });
-    } else {
-        return context_->activeNodesInRoot_.count(nodeId);
-    }
-}
-
 void RSMainThread::ResetHardwareEnabledState(bool isUniRender)
 {
     if (isUniRender) {
@@ -4753,16 +4711,6 @@ std::shared_ptr<Drawing::Image> RSMainThread::GetWatermarkImg()
 bool RSMainThread::GetWatermarkFlag()
 {
     return watermarkFlag_;
-}
-
-bool RSMainThread::IsSingleDisplay()
-{
-    const std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
-    if (rootNode == nullptr) {
-        RS_LOGE("IsSingleDisplay GetGlobalRootRenderNode fail");
-        return false;
-    }
-    return rootNode->GetChildrenCount() == 1;
 }
 
 bool RSMainThread::HasMirrorDisplay() const
@@ -4987,11 +4935,6 @@ bool RSMainThread::ExchangeLuminanceChangingStatus(ScreenId id)
         it->second = false;
     }
     return ret;
-}
-
-bool RSMainThread::IsCurtainScreenOn() const
-{
-    return isCurtainScreenOn_;
 }
 
 int64_t RSMainThread::GetCurrentSystimeMs() const

@@ -117,6 +117,7 @@ bool RSRenderNode::IsPureContainer() const
 bool RSRenderNode::IsPureBackgroundColor() const
 {
     static const std::unordered_set<RSDrawableSlot> pureBackgroundColorSlots = {
+        RSDrawableSlot::SAVE_ALL,
         RSDrawableSlot::BG_SAVE_BOUNDS,
         RSDrawableSlot::CLIP_TO_BOUNDS,
         RSDrawableSlot::BACKGROUND_COLOR,
@@ -125,7 +126,8 @@ bool RSRenderNode::IsPureBackgroundColor() const
         RSDrawableSlot::FRAME_OFFSET,
         RSDrawableSlot::CLIP_TO_FRAME,
         RSDrawableSlot::CHILDREN,
-        RSDrawableSlot::RESTORE_FRAME
+        RSDrawableSlot::RESTORE_FRAME,
+        RSDrawableSlot::RESTORE_ALL
     };
 
 #ifdef RS_ENABLE_MEMORY_DOWNTREE
@@ -145,6 +147,12 @@ bool RSRenderNode::IsPureBackgroundColor() const
     for (int8_t i = 0; i < static_cast<int8_t>(RSDrawableSlot::MAX); ++i) {
         if (drawableVec[i] &&
             !pureBackgroundColorSlots.count(static_cast<RSDrawableSlot>(i))) {
+            const auto& property = GetRenderProperties();
+            if (i == static_cast<int8_t>(RSDrawableSlot::BLENDER) &&
+                property.GetColorBlendMode() == static_cast<int>(RSColorBlendMode::SRC_OVER) &&
+                property.GetColorBlendApplyType() == static_cast<int>(RSColorBlendApplyType::FAST)) {
+                continue;
+            }
             return false;
         }
     }
@@ -700,6 +708,7 @@ void RSRenderNode::ResetChildRelevantFlags()
     hasChildrenOutOfRect_ = false;
     SetHasChildExcludedFromNodeGroup(false);
     SetChildHasVisibleHDRContent(false);
+    ResetNodeColorSpace();
     SetForceDisableNodeGroup(false);
     RSPointLightManager::Instance()->SetChildHasVisibleIlluminated(shared_from_this(), false);
 }
@@ -1402,6 +1411,7 @@ void RSRenderNode::SetDirty(bool forceAddToActiveList)
             context->AddActiveNode(shared_from_this());
         }
     }
+    isParentTreeDirty_ = true;
     SetParentSubTreeDirty();
     dirtyStatus_ = NodeDirty::DIRTY;
 }
@@ -1873,6 +1883,12 @@ void RSRenderNode::UpdateBufferDirtyRegion(RectF& selfDrawingNodeDirtyRect)
     auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
     if (buffer != nullptr) {
         isSelfDrawingNode_ = true;
+        // if the buffer size changed, use the node size as dirty rect
+        if (surfaceNode->GetRSSurfaceHandler()->GetBufferSizeChanged()) {
+            selfDrawingNodeDirtyRect = selfDrawRect_;
+            RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode id: %" PRIu64 ", buffer size changed.", GetId());
+            return;
+        }
         // Use the matrix from buffer to relative coordinate and the absolute matrix
         // to calculate the buffer damageRegion's absolute rect
         auto rect = surfaceNode->GetRSSurfaceHandler()->GetDamageRegion();
@@ -2303,6 +2319,8 @@ void RSRenderNode::SetParentSubTreeDirty()
     auto parentNode = parent_.lock();
     if (parentNode && !parentNode->IsSubTreeDirty()) {
         parentNode->SetSubTreeDirty(true);
+        // Only used in quick skip prepare phase
+        parentNode->SetForcePrepare(true);
         parentNode->SetParentSubTreeDirty();
     }
 }
@@ -2803,15 +2821,16 @@ void RSRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDraw
         isDirtyRegionUpdated_ = true;
         return;
     }
-    // force update if no next vsync when skip-frame enabled
-    if (!needRequestNextVsync && filterDrawable->IsSkippingFrame()) {
-        filterDrawable->MarkForceClearCacheWithLastFrame();
-        return;
-    }
 
     // when background changed, skip-frame will enabled if filter region > 400 and blur radius > 25
     if (IsLargeArea(snapshotRegion.GetWidth(), snapshotRegion.GetHeight())) {
         filterDrawable->MarkFilterRegionIsLargeArea();
+    }
+    
+    // force update if no next vsync when skip-frame enabled
+    if (!needRequestNextVsync && filterDrawable->IsSkippingFrame()) {
+        filterDrawable->MarkForceClearCacheWithLastFrame();
+        return;
     }
 }
 

@@ -23,19 +23,22 @@
 namespace OHOS {
 namespace Rosen {
 
-static const std::vector<RSNGEffectType> MASK_TYPE_VEC = {
-    RSNGEffectType::RIPPLE_MASK,
-    RSNGEffectType::DOUBLE_RIPPLE_MASK,
-    RSNGEffectType::RADIAL_GRADIENT_MASK,
-    RSNGEffectType::PIXEL_MAP_MASK,
-    RSNGEffectType::WAVE_GRADIENT_MASK,
-    RSNGEffectType::FRAME_GRADIENT_MASK,
-    RSNGEffectType::IMAGE_MASK,
-    RSNGEffectType::USE_EFFECT_MASK,
-};
+static bool IS_INIT = false;
+static std::vector<std::function<std::shared_ptr<RSNGRenderMaskBase>()>> RANDOM_MASK_GENERATOR;
 
 std::shared_ptr<RSNGRenderMaskBase> RandomRSNGMaskPtr::GetRandomValue()
 {
+    if (!IS_INIT) {
+        RANDOM_MASK_GENERATOR.push_back(RandomRSNGMaskPtr::GetNullValue);
+        #define DECLARE_MASK(MaskName, MaskType, ...)     \
+            RANDOM_MASK_GENERATOR.push_back(RandomRSNGMaskPtr::GetRandom##MaskName);
+
+        #include "effect/rs_render_mask_def.in"
+
+        #undef DECLARE_MASK
+        IS_INIT = true;
+    }
+
     bool generateChain = RandomData::GetRandomBool();
     if (generateChain) {
         return RandomRSNGMaskPtr::GetRandomMaskChain();
@@ -44,37 +47,30 @@ std::shared_ptr<RSNGRenderMaskBase> RandomRSNGMaskPtr::GetRandomValue()
     return RandomRSNGMaskPtr::GetRandomSingleMask();
 }
 
+std::shared_ptr<RSNGRenderMaskBase> RandomRSNGMaskPtr::GetNullValue()
+{
+    return nullptr;
+}
+
 std::shared_ptr<RSNGRenderMaskBase> RandomRSNGMaskPtr::GetRandomSingleMask()
 {
-    std::shared_ptr<RSNGRenderMaskBase> value;
-    RSNGEffectType type = MASK_TYPE_VEC[RandomEngine::GetRandomIndex(MASK_TYPE_VEC.size() - 1)];
-
-#define DECLARE_MASK(MaskName, MaskType, ...)                           \
-        case RSNGEffectType::MaskType: value = GetRandom##MaskName(); break
-
-    switch (type) {
-        #include "effect/rs_render_mask_def.in"
-        default: {
-            SAFUZZ_LOGE("RandomRSNGMaskPtr::GetRandomSingleMask: wrong type");
-            break;
-        }
-    }
-
-#undef DECLARE_MASK
-    return value;
+    int index = RandomEngine::GetRandomIndex(RANDOM_MASK_GENERATOR.size() - 1);
+    return RANDOM_MASK_GENERATOR[index]();
 }
 
 std::shared_ptr<RSNGRenderMaskBase> RandomRSNGMaskPtr::GetRandomMaskChain()
 {
     std::shared_ptr<RSNGRenderMaskBase> head = nullptr;
+    auto current = head;
     int maskChainSize = RandomEngine::GetRandomSmallVectorLength();
     for (int i = 0; i < maskChainSize; ++i) {
         auto mask = GetRandomSingleMask();
-        if (!head) {
-            head = mask;
+        if (!current) {
+            head = mask; // init head
         } else {
-            head->nextEffect_ = mask;
+            current->nextEffect_ = mask;
         }
+        current = mask;
     }
 
     return head;
@@ -90,7 +86,6 @@ std::shared_ptr<RSNGRenderMaskBase> RandomRSNGMaskPtr::GetRandom##MaskName()    
     auto value = std::make_shared<RSNGRender##MaskName>();                          \
     __VA_ARGS__                                                                     \
     return value;                                                                   \
-                                                                                    \
 }
 
 #include "effect/rs_render_mask_def.in"

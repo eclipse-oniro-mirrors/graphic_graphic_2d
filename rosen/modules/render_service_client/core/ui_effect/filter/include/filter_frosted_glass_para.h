@@ -300,6 +300,86 @@ public:
         return cornerRadius_;
     }
 
+    void SetSamplingScale(float samplingScale)
+    {
+        samplingScale_ = samplingScale;
+    }
+
+    float GetSamplingScale() const
+    {
+        return samplingScale_;
+    }
+
+    void SetBaseVibrancyEnabled(bool baseVibrancyEnabled)
+    {
+        baseVibrancyEnabled_ = baseVibrancyEnabled;
+    }
+
+    bool GetBaseVibrancyEnabled() const
+    {
+        return baseVibrancyEnabled_;
+    }
+
+    void SetBaseMaterialType(float baseMaterialType)
+    {
+        baseMaterialType_ = baseMaterialType;
+    }
+
+    float GetBaseMaterialType() const
+    {
+        return baseMaterialType_;
+    }
+
+    void SetMaterialColor(Vector4f& materialColor)
+    {
+        materialColor_ = materialColor;
+    }
+
+    const Vector4f GetMaterialColor() const
+    {
+        return materialColor_;
+    }
+
+    void SetRefractEnabled(bool refractEnabled)
+    {
+        refractEnabled_ = refractEnabled;
+    }
+
+    bool GetRefractEnabled() const
+    {
+        return refractEnabled_;
+    }
+
+    void SetInnerShadowEnabled(bool innerShadowEnabled)
+    {
+        innerShadowEnabled_ = innerShadowEnabled;
+    }
+
+    bool GetInnerShadowEnabled() const
+    {
+        return innerShadowEnabled_;
+    }
+
+    void SetEnvLightEnabled(bool envLightEnabled)
+    {
+        envLightEnabled_ = envLightEnabled;
+    }
+
+    bool GetEnvLightEnabled() const
+    {
+        return envLightEnabled_;
+    }
+
+    void SetHighLightEnabled(bool highLightEnabled)
+    {
+        highLightEnabled_ = highLightEnabled;
+    }
+
+    bool GetHighLightEnabled() const
+    {
+        return highLightEnabled_;
+    }
+
 private:
     Vector2f blurParams_ = Vector2f(0.0f, 0.0f);
     Vector2f weightsEmboss_ = Vector2f(0.0f, 0.0f); // (envLight, sd)
@@ -333,6 +413,14 @@ private:
     Vector3f edLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector2f borderSize_ = Vector2f(0.0f, 0.0f);
     float cornerRadius_ = 0.0f;
+    bool baseVibrancyEnabled_ = true;
+    float baseMaterialType_ = 0.0f;
+    Vector4f materialColor_ = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    bool refractEnabled_ = true;
+    bool innerShadowEnabled_ = true;
+    bool envLightEnabled_ = true;
+    bool highLightEnabled_ = true;
+    float samplingScale_ = 1.0f;
 };
 } // namespace Rosen
 } // namespace OHOS

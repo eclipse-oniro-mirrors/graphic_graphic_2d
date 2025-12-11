@@ -147,6 +147,13 @@ std::string Typeface::GetFontPath() const
     return (typefaceImpl_ == nullptr) ? "" : typefaceImpl_->GetFontPath();
 }
 
+// LCOV_EXCL_START
+std::int32_t Typeface::GetFontIndex() const
+{
+    return (typefaceImpl_ == nullptr) ? 0 : typefaceImpl_->GetFontIndex();
+}
+// LCOV_EXCL_STOP
+
 FontStyle Typeface::GetFontStyle() const
 {
     if (typefaceImpl_) {
@@ -327,6 +334,16 @@ void Typeface::UpdateStream(std::unique_ptr<MemoryStream> stream)
     if (typefaceImpl_) {
         typefaceImpl_->UpdateStream(std::move(stream));
     }
+}
+
+int Typeface::GetVariationDesignPosition(FontArguments::VariationPosition::Coordinate coordinates[],
+    int coordinateCount) const
+{
+    if (typefaceImpl_) {
+        return typefaceImpl_->GetVariationDesignPosition(coordinates,
+            coordinateCount);
+    }
+    return 0;
 }
 
 // Opentype font table constants

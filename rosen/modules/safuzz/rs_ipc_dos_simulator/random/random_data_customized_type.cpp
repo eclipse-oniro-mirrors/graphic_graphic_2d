@@ -30,6 +30,8 @@
 #include "customized/random_rs_mask.h"
 #include "customized/random_rs_ng_filter.h"
 #include "customized/random_rs_ng_mask.h"
+#include "customized/random_rs_ng_shader.h"
+#include "customized/random_rs_ng_shape.h"
 #include "customized/random_rs_path.h"
 #include "customized/random_rs_render_modifier_ng.h"
 #include "customized/random_rs_render_particle.h"
@@ -292,12 +294,25 @@ std::shared_ptr<Drawing::DrawCmdList> RandomDataCustomizedType::GetRandomDrawing
 
 std::shared_ptr<RSNGRenderFilterBase> RandomDataCustomizedType::GetRandomRSNGFilterPtr()
 {
+    RandomRSNGShapePtr::ResetShapeDepth();
     return RandomRSNGFilterPtr::GetRandomValue();
 }
 
 std::shared_ptr<RSNGRenderMaskBase> RandomDataCustomizedType::GetRandomRSNGMaskPtr()
 {
     return RandomRSNGMaskPtr::GetRandomValue();
+}
+
+std::shared_ptr<RSNGRenderShaderBase> RandomDataCustomizedType::GetRandomRSNGShaderPtr()
+{
+    RandomRSNGShapePtr::ResetShapeDepth();
+    return RandomRSNGShaderPtr::GetRandomValue();
+}
+
+std::shared_ptr<RSNGRenderShapeBase> RandomDataCustomizedType::GetRandomRSNGShapePtr()
+{
+    RandomRSNGShapePtr::ResetShapeDepth();
+    return RandomRSNGShapePtr::GetRandomValue();
 }
 
 RSDisplayNodeConfig RandomDataCustomizedType::GetRandomRSDisplayNodeConfig()
@@ -434,10 +449,20 @@ RRect RandomDataCustomizedType::GetRandomRRect()
 std::vector<Vector2f> RandomDataCustomizedType::GetRandomVectorVector2f()
 {
     std::vector<Vector2f> out;
-    size_t outSize = static_cast<size_t>(RandomEngine::GetRandomVectorLength());
+    size_t outSize = static_cast<size_t>(RandomEngine::GetRandomSmallVectorLength());
     out.reserve(outSize);
     for (size_t i = 0; i < outSize; ++i) {
         out.push_back(GetRandomVector2f());
+    }
+    return out;
+}
+
+std::vector<float> RandomDataCustomizedType::GetRandomSmallFloatVector()
+{
+    std::vector<float> out;
+    auto vectorLength = RandomEngine::GetRandomSmallVectorLength();
+    for (auto i = 0; i < vectorLength; ++i) {
+        out.push_back(RandomDataBasicType::GetRandomFloat());
     }
     return out;
 }

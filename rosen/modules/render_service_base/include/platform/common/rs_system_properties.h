@@ -405,6 +405,8 @@ public:
     static bool GetCanvasDrawingNodeRenderDmaEnabled();
     static bool GetDefaultMemClearEnabled();
 
+    static bool GetSceneBoardIsPcMode();
+
 private:
     RSSystemProperties() = default;
 

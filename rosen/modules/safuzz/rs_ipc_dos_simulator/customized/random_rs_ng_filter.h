@@ -27,8 +27,14 @@ public:
 private:
     static std::shared_ptr<RSNGRenderFilterBase> GetRandomSingleFilter();
     static std::shared_ptr<RSNGRenderFilterBase> GetRandomFilterChain();
+    static std::shared_ptr<RSNGRenderFilterBase> GetNullValue();
 
-    static std::shared_ptr<RSNGRenderFilterBase> GetRandomDispDistortFilter();
+#define DECLARE_FILTER(FilterName, FilterType, ...)     \
+    static std::shared_ptr<RSNGRenderFilterBase> GetRandom##FilterName()
+
+    #include "effect/rs_render_filter_def.in"
+
+#undef DECLARE_FILTER
 };
 
 } // namespace Rosen

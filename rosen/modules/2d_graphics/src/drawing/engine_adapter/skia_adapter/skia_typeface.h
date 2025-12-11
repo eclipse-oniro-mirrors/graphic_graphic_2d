@@ -42,6 +42,7 @@ public:
 
     std::string GetFamilyName() const override;
     std::string GetFontPath() const override;
+    int32_t GetFontIndex() const override;
     FontStyle GetFontStyle() const override;
     size_t GetTableSize(uint32_t tag) const override;
     size_t GetTableData(uint32_t tag, size_t offset, size_t length, void* data) const override;
@@ -75,7 +76,8 @@ public:
     int32_t GetFd() const override;
     void SetFd(int32_t fd) override;
     void UpdateStream(std::unique_ptr<MemoryStream> stream) override;
-
+    int GetVariationDesignPosition(FontArguments::VariationPosition::Coordinate  coordinates[],
+        int coordinateCount) const override;
 private:
     SkiaTypeface() = default;
 
