@@ -492,8 +492,8 @@ bool MessageParcelCustomizedTypeUtils::WriteRandomSurfaceBufferSptr(
 {
     uint16_t min = 1; // Min width or height is 1
     uint16_t max = 10000; // Max width or height is 10000
-    uint16_t width = min + RandomDataBasicType::GetRandomInt() % (max - min + 1);
-    uint16_t height = min + RandomDataBasicType::GetRandomInt() % (max - min + 1);
+    uint16_t width = min + RandomDataBasicType::GetRandomUint16() % (max - min + 1);
+    uint16_t height = min + RandomDataBasicType::GetRandomUint16() % (max - min + 1);
     pid_t pid = RandomDataBasicType::GetRandomPid();
     auto buffer = SurfaceBufferUtils::CreateCanvasSurfaceBuffer(pid, width, height);
     auto ret = buffer->WriteToMessageParcel(messageParcel);
