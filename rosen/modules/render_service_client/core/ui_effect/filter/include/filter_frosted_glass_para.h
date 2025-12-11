@@ -391,24 +391,24 @@ public:
         return highLightEnabled_;
     }
 
-    void SetLightAdaptiveParams(AdaptiveFrostedGlassParams lightParams)
-    {
-        lightAdaptiveParams_ = std::make_shared<AdaptiveFrostedGlassParams>(std::move(lightParams));
-    }
-
     void SetDarkAdaptiveParams(AdaptiveFrostedGlassParams darkParams)
     {
         darkAdaptiveParams_ = std::make_shared<AdaptiveFrostedGlassParams>(std::move(darkParams));
     }
 
-    const std::shared_ptr<AdaptiveFrostedGlassParams>& GetLightAdaptiveParams() const
-    {
-        return lightAdaptiveParams_;
-    }
-
     const std::shared_ptr<AdaptiveFrostedGlassParams>& GetDarkAdaptiveParams() const
     {
         return darkAdaptiveParams_;
+    }
+
+    void SetDarkScale(float scale)
+    {
+        darkScale_ = scale;
+    }
+
+    float GetDarkScale() const
+    {
+        return darkScale_;
     }
 
 private:
@@ -451,9 +451,9 @@ private:
     bool innerShadowEnabled_ = true;
     bool envLightEnabled_ = true;
     bool highLightEnabled_ = true;
+    float darkScale_ = 0.0f; // later will use interpolation between 0.0 and 1.0
     float samplingScale_ = 1.0f;
 
-    std::shared_ptr<AdaptiveFrostedGlassParams> lightAdaptiveParams_;
     std::shared_ptr<AdaptiveFrostedGlassParams> darkAdaptiveParams_;
 };
 } // namespace Rosen

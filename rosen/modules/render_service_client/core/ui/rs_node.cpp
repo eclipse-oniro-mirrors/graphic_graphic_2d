@@ -1963,7 +1963,7 @@ void RSNode::SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrateg
         &ModifierNG::RSColorPickerModifier::SetColorPickerPlaceholder>(placeholder);
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
         &ModifierNG::RSColorPickerModifier::SetColorPickerStrategy>(strategy);
-    static constexpr uint64_t MIN_INTERVAL = 500; // unit: ms
+    static constexpr uint64_t MIN_INTERVAL = 180; // unit: ms
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
         &ModifierNG::RSColorPickerModifier::SetColorPickerInterval>(std::max(interval, MIN_INTERVAL));
 }

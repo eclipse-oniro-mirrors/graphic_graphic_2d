@@ -59,29 +59,8 @@ void RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(
     }
     auto glass = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(effect);
     auto color = static_cast<RSPaintFilterCanvas*>(canvas)->GetColorPicked(ColorPlaceholder::SURFACE_CONTRAST);
-    const bool isDark = (color == Drawing::Color::COLOR_BLACK);
-    // Read adaptive properties directly from corresponding per-mode property tags.
-    // Use a small helper to avoid repeating the dark/light setter/getter pairs.
-    auto setFromMode = [&glass](auto SetterTag, auto DarkGetterTag, auto LightGetterTag, bool isDarkMode) {
-        if (isDarkMode) {
-            glass->Setter<decltype(SetterTag)>(glass->Getter<decltype(DarkGetterTag)>()->Get());
-        } else {
-            glass->Setter<decltype(SetterTag)>(glass->Getter<decltype(LightGetterTag)>()->Get());
-        }
-    };
-
-    setFromMode(FrostedGlassBlurParamsRenderTag(), FrostedGlassDarkModeBlurParamsRenderTag(),
-        FrostedGlassLightModeBlurParamsRenderTag(), isDark);
-    setFromMode(FrostedGlassWeightsEmbossRenderTag(), FrostedGlassDarkModeWeightsEmbossRenderTag(),
-        FrostedGlassLightModeWeightsEmbossRenderTag(), isDark);
-    setFromMode(FrostedGlassBgRatesRenderTag(), FrostedGlassDarkModeBgRatesRenderTag(),
-        FrostedGlassLightModeBgRatesRenderTag(), isDark);
-    setFromMode(FrostedGlassBgKBSRenderTag(), FrostedGlassDarkModeBgKBSRenderTag(),
-        FrostedGlassLightModeBgKBSRenderTag(), isDark);
-    setFromMode(FrostedGlassBgPosRenderTag(), FrostedGlassDarkModeBgPosRenderTag(),
-        FrostedGlassLightModeBgPosRenderTag(), isDark);
-    setFromMode(FrostedGlassBgNegRenderTag(), FrostedGlassDarkModeBgNegRenderTag(),
-        FrostedGlassLightModeBgNegRenderTag(), isDark);
+    const bool isDark = (color == Drawing::Color::COLOR_WHITE); // contrast color white means dark mode
+    glass->Setter<FrostedGlassDarkScaleRenderTag>(isDark ? 1.0f : 0.0f);
 }
 
 Drawing::RoundRect RSPropertyDrawableUtils::RRect2DrawingRRect(const RRect& rr)
