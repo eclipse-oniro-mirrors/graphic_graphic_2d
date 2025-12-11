@@ -2341,7 +2341,7 @@ void RSNode::SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& material
         &ModifierNG::RSMaterialFilterModifier::SetMaterialNGFilter>(materialFilter);
 }
 
-void RSNode::SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase> &materialFilter, FilterQuality quality)
+void RSNode::SetMaterialWithQualityLevel(const std::shared_ptr<RSNGFilterBase> &materialFilter, FilterQuality quality)
 {
     SetMaterialNGFilter(materialFilter);
     if (!materialFilter) {
