@@ -526,7 +526,7 @@ void RSDrawingFilter::DrawKawaseEffect(Drawing::Canvas& canvas, const std::share
     tmpFilter->GenerateGEVisualEffect(effectContainer);
     auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
     auto blurImage = geRender->ApplyImageEffect(
-        canvas, *effectContainer, outImage, attr.src, attr.src, Drawing::SamplingOptions());
+        canvas, *effectContainer, {outImage, attr.src, attr.src}, Drawing::SamplingOptions());
     if (blurImage == nullptr) {
         ROSEN_LOGE("RSDrawingFilter::DrawImageRect blurImage is null");
         return;
@@ -571,8 +571,8 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
     visualEffectContainer->RemoveFilterWithType(
         static_cast<int32_t>(Drawing::GEVisualEffectImpl::FilterType::KAWASE_BLUR));
     if (outImage == nullptr) {
-        outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer, image, attr.src, attr.src,
-            Drawing::SamplingOptions());
+        outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer,
+            {image, attr.src, attr.src, attr.geCacheProvider}, Drawing::SamplingOptions());
         ProfilerLogImageEffect(visualEffectContainer, image, attr.src, outImage);
         if (outImage == nullptr) {
             ROSEN_LOGE("RSDrawingFilter::DrawImageRect outImage is null");
