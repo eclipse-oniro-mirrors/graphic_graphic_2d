@@ -28,8 +28,7 @@ struct LayerComposeInfo {
     int32_t offlineComposeFrameNumber = 0;
     int32_t redrawFrameNumber = 0;
     int32_t drawImageNumber = 0;
-    LayerComposeInfo()
-        : uniformRenderFrameNumber(), offlineComposeFrameNumber(), redrawFrameNumber(), drawImageNumber() {}
+    LayerComposeInfo() = default;
     LayerComposeInfo(int32_t uniformRenderFrameNumber_, int32_t offlineComposeFrameNumber_,
         int32_t redrawFrameNumber_, int32_t drawImageNumber_)
         : uniformRenderFrameNumber(uniformRenderFrameNumber_), offlineComposeFrameNumber(offlineComposeFrameNumber_),
