@@ -54,7 +54,8 @@ public:
     };
 
     void DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image> image,
-        const Drawing::Rect& src, const Drawing::Rect& dst, const DrawImageRectParams params = { false, false, nullptr });
+        const Drawing::Rect& src, const Drawing::Rect& dst,
+        const DrawImageRectParams params = { false, false, nullptr });
     std::vector<std::shared_ptr<RSRenderFilterParaBase>> GetShaderFilters() const;
     void InsertShaderFilter(std::shared_ptr<RSRenderFilterParaBase> shaderFilter);
     std::shared_ptr<Drawing::ImageFilter> GetImageFilter() const;
