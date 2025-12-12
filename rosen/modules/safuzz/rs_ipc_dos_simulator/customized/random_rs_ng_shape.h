@@ -13,37 +13,31 @@
  * limitations under the License.
  */
 
-#ifndef ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_SHAPE_BASE_H
-#define ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_SHAPE_BASE_H
+#ifndef SAFUZZ_RANDOM_RS_NG_SHAPE_H
+#define SAFUZZ_RANDOM_RS_NG_SHAPE_H
 
 #include "effect/rs_render_shape_base.h"
-#include "ui_effect/property/include/rs_ui_property_tag.h"
-#include "ui_effect/property/include/rs_ui_template.h"
 
 namespace OHOS {
 namespace Rosen {
-
-class RSNGShapeBase : public RSNGEffectBase<RSNGShapeBase, RSNGRenderShapeBase> {
+class RandomRSNGShapePtr {
 public:
-    virtual ~RSNGShapeBase() = default;
+    static std::shared_ptr<RSNGRenderShapeBase> GetRandomValue();
+    static void ResetShapeDepth();
 
-    static std::shared_ptr<RSNGShapeBase> Create(RSNGEffectType type);
-};
-
-template<RSNGEffectType Type, typename... PropertyTags>
-using RSNGShapeTemplate = RSNGEffectTemplate<RSNGShapeBase, Type, PropertyTags...>;
-
-#define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##Tag
+private:
+    static std::shared_ptr<RSNGRenderShapeBase> GetRandomSingleShape();
+    static std::shared_ptr<RSNGRenderShapeBase> GetRandomShapeChain();
+    static std::shared_ptr<RSNGRenderShapeBase> GetNullValue();
 
 #define DECLARE_SHAPE(ShapeName, ShapeType, ...) \
-    using RSNG##ShapeName = RSNGShapeTemplate<RSNGEffectType::ShapeType, __VA_ARGS__>
+    static std::shared_ptr<RSNGRenderShapeBase> GetRandom##ShapeName()
 
 #include "effect/rs_render_shape_def.in"
 
 #undef DECLARE_SHAPE
-#undef ADD_PROPERTY_TAG
+};
 
 } // namespace Rosen
 } // namespace OHOS
-
-#endif // ROSEN_RENDER_SERVICE_CLIENT_CORE_UI_EFFECT_UI_SHAPE_BASE_H
+#endif // SAFUZZ_RANDOM_RS_NG_SHAPE_H
