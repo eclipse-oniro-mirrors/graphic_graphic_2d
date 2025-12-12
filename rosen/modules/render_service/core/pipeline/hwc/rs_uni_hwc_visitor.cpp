@@ -314,7 +314,7 @@ void RSUniHwcVisitor::ProcessSolidLayerDisabled(RSSurfaceRenderNode& node)
         PrintHiperfLog(&node, "background solidColor && HDR");
         node.SetHardwareForcedDisabledState(true);
         Statistics().UpdateHwcDisabledReasonForDFX(
-            node.GetId(), HwcDisabledReasons::DISABLED_BY_BACKGROUND_ALPHA, node.GetName());
+            node.GetId(), HwcDisabledReasons::DISABLED_BY_SOLID_BACKGROUND_ALPHA, node.GetName());
     }
 }
 
