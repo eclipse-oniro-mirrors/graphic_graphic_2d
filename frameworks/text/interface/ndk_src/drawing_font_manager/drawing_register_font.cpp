@@ -197,3 +197,22 @@ uint32_t OH_Drawing_UnregisterFont(OH_Drawing_FontCollection* fontCollection, co
     auto fc = ConvertToOriginalText<FontCollection>(fontCollection);
     return !fc->UnloadFont(fontFamily);
 }
+
+bool OH_Drawing_IsSupportedFontByPath(const char* fontPath)
+{
+    if (fontPath == nullptr) {
+        return false;
+    }
+    return Drawing::Typeface::MakeFromFile(fontPath) != nullptr;
+}
+
+bool OH_Drawing_IsSupportedFontByBuffer(uint8_t* fontBuffer, size_t length)
+{
+    if (fontBuffer == nullptr) {
+        return false;
+    }
+    if (length == 0) {
+        return false;
+    }
+    return Drawing::Typeface::MakeFromStream(std::make_unique<Drawing::MemoryStream>(fontBuffer, length)) != nullptr;
+}

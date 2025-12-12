@@ -112,6 +112,10 @@ uint32_t OH_Drawing_RegisterFontBufferByIndex(OH_Drawing_FontCollection* fontCol
  * @version 1.0
  */
 uint32_t OH_Drawing_UnregisterFont(OH_Drawing_FontCollection* fontCollection, const char* fontFamily);
+
+bool OH_Drawing_IsSupportedFontByPath(const char* fontPath);
+
+bool OH_Drawing_IsSupportedFontByBuffer(uint8_t* fontBuffer, size_t length);
 #ifdef __cplusplus
 }
 #endif
