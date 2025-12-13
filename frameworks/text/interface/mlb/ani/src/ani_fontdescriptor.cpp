@@ -24,26 +24,11 @@
 #include "font_parser.h"
 #include "typography_types.h"
 #include "utils/text_log.h"
+#include "utils/include/font_utils.h"
 namespace OHOS::Text::ANI {
 using namespace OHOS::Rosen;
 
 namespace {
-std::unordered_map<int, int> g_weightMap = {
-    {100, static_cast<int>(FontWeight::W100)},
-    {200, static_cast<int>(FontWeight::W200)},
-    {300, static_cast<int>(FontWeight::W300)},
-    {400, static_cast<int>(FontWeight::W400)},
-    {500, static_cast<int>(FontWeight::W500)},
-    {600, static_cast<int>(FontWeight::W600)},
-    {700, static_cast<int>(FontWeight::W700)},
-    {800, static_cast<int>(FontWeight::W800)},
-    {900, static_cast<int>(FontWeight::W900)}
-};
-constexpr int MIN_FONT_WEIGHT = 100;
-constexpr int MAX_FONT_WEIGHT = 900;
-constexpr int WEIGHT_STEP = 100;
-constexpr int ROUNDING_HALD_STEP = 50;
-
 const std::string FONT_PATH_IN_SIGN =
     "X{C{" + std::string(ANI_GLOBAL_RESOURCE) + "}C{" + std::string(ANI_STRING) + "}}";
 
@@ -133,10 +118,8 @@ ani_status ParseFontDescriptorToAni(ani_env* env, const FontDescSharedPtr fontDe
         return ANI_ERROR;
     }
 
-    int clampWeight = std::max(MIN_FONT_WEIGHT, std::min(MAX_FONT_WEIGHT, fontDesc->weight));
-    int roundedWeight = (clampWeight + ROUNDING_HALD_STEP) / WEIGHT_STEP * WEIGHT_STEP;
-    auto iter = g_weightMap.find(roundedWeight);
-    if (iter == g_weightMap.end()) {
+    std::pair<int,int> result;
+    if(!OHOS::MLB::FindFontWeight(fontDesc->weight, result)) {
         TEXT_LOGE("Failed to parse weight");
         return ANI_ERROR;
     }
@@ -148,7 +131,7 @@ ani_status ParseFontDescriptorToAni(ani_env* env, const FontDescSharedPtr fontDe
         AniTextUtils::CreateAniStringObj(env, fontDesc->fontFamily),
         AniTextUtils::CreateAniStringObj(env, fontDesc->fontSubfamily),
         AniTextUtils::CreateAniEnum(env, AniGlobalEnum::GetInstance().fontWeight,
-            aniGetEnumIndex(AniTextEnum::fontWeight, static_cast<uint32_t>(iter->second))
+            aniGetEnumIndex(AniTextEnum::fontWeight, static_cast<uint32_t>(result.second))
             .value_or(static_cast<uint32_t>(FontWeight::W400))),
         ani_int(fontDesc->width),
         ani_int(fontDesc->italic),
@@ -184,6 +167,9 @@ ani_object CreateFontDescriptorArray(ani_env* env, const std::vector<FontDescSha
     ani_size index = 0;
     for (const auto& item : fontDescripterList) {
         ani_object aniObj = nullptr;
+        if (item != nullptr) {
+            item->weight = OHOS::MLB::RegularWeight(item->weight);
+        }
         ani_status status = ParseFontDescriptorToAni(env, item, aniObj);
         if (status != ANI_OK) {
             TEXT_LOGE("Failed to parse FontDescriptor to ani,index %{public}zu,status %{public}d", index, status);
@@ -288,6 +274,9 @@ ani_object AniFontDescriptor::GetFontDescriptorByFullName(ani_env* env, ani_stri
     FontDescSharedPtr resultDesc = nullptr;
     FontDescriptorMgrInstance.GetFontDescSharedPtrByFullName(fullNameStr, systemFontType, resultDesc);
     ani_object descAniObj = nullptr;
+    if (resultDesc != nullptr) {
+        resultDesc->weight = OHOS::MLB::RegularWeight(resultDesc->weight);
+    }
     ret = ParseFontDescriptorToAni(env, resultDesc, descAniObj);
     if (ret != ANI_OK) {
         TEXT_LOGE("Failed to parse FontDescSharedPtr,ret %{public}d", ret);
