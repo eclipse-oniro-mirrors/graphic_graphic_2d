@@ -31,6 +31,7 @@
 #include "typography_style.h"
 #include "typography_types.h"
 #include "utils/rect.h"
+#include "pixel_map.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -183,6 +184,8 @@ public:
     virtual std::vector<TextBlobRecordInfo> GetTextBlobRecordInfo() const = 0;
     virtual bool CanPaintAllText() const = 0;
     virtual std::string GetDumpInfo() const = 0;
+    virtual std::vector<std::shared_ptr<OHOS::Media::PixelMap>> GetTextPathImageByIndex(
+        size_t from, size_t to, bool fill) const = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -161,6 +161,9 @@ public:
 
     std::string GetDumpInfo() const override;
 
+    std::vector<std::shared_ptr<OHOS::Media::PixelMap>> GetTextPathImageByIndex(
+        size_t from, size_t to, bool fill) const override;
+
 private:
     void ParagraphStyleUpdater(skt::Paragraph& skiaParagraph, const ParagraphStyle& spParagraphStyle,
         skt::InternalState& state);

@@ -59,6 +59,7 @@ ohos_unittest("rosen_text_adapt_test") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hilog:libhilog",
+    "image_framework:image_native",
   ]
 
   if (graphic_2d_feature_upgrade_skia) {
