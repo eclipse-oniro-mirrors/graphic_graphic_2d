@@ -45,6 +45,7 @@ ohos_unittest("text_effect_test") {
     "bounds_checking_function:libsec_shared",
     "googletest:gmock",
     "hilog:libhilog",
+    "image_framework:image_native",
   ]
 
   part_name = "graphic_2d"

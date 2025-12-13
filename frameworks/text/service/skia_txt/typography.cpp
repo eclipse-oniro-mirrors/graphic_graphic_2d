@@ -579,6 +579,16 @@ std::string Typography::GetDumpInfo() const
     return paragraph_->GetDumpInfo();
 }
 
+std::vector<std::shared_ptr<OHOS::Media::PixelMap>> Typography::GetTextPathImageByIndex(
+    size_t from, size_t to, bool fill) const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return {};
+    }
+    return paragraph_->GetTextPathImageByIndex(from, to, fill);
+}
+
 } // namespace AdapterTxt
 } // namespace Rosen
 } // namespace OHOS
