@@ -55,12 +55,12 @@ void RSProxyTest::SetUp() {}
 void RSProxyTest::TearDown() {}
 
 /**
- * @tc.name: CreateConnection Test
- * @tc.desc: CreateConnection Test
+ * @tc.name: CreateConnectionTest001
+ * @tc.desc: CreateConnectionTest
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSProxyTest, CreateConnection_Test, TestSize.Level1)
+HWTEST_F(RSProxyTest, CreateConnectionTest001, TestSize.Level1)
 {
     ASSERT_NE(renderService, nullptr);
     std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> connPair =
@@ -70,24 +70,53 @@ HWTEST_F(RSProxyTest, CreateConnection_Test, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreateConnection Test
- * @tc.desc: CreateConnection Test
+ * @tc.name: CreateConnectionTest002
+ * @tc.desc: CreateConnectionTest
  * @tc.type:FUNC
  * @tc.require: issueI9KXXE
  */
-HWTEST_F(RSProxyTest, CreateConnection, TestSize.Level1)
+HWTEST_F(RSProxyTest, CreateConnectionTest002, TestSize.Level1)
 {
     ASSERT_NE(renderService, nullptr);
     MessageParcel data;
     auto remoteObj = data.ReadRemoteObject();
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
     ASSERT_NE(token, nullptr);
-    std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> connPair =
-        renderService->CreateConnection(token);
-    ASSERT_NE(connPair.first, nullptr);
-    ASSERT_NE(connPair.second, nullptr);
+    sptr<RSIRenderServiceConnection> conn = renderService->CreateConnection(token);
+    ASSERT_NE(conn, nullptr);
+    bool isConnectionRemoved = renderService->RemoveConnection(token);
+    EXPECT_TRUE(isConnectionRemoved);
 }
 
+/**
+ * @tc.name: RemoveConnectionTest001
+ * @tc.desc: CreateConnectionTest
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSProxyTest, RemoveConnectionTest001, TestSize.Level1)
+{
+    ASSERT_NE(renderService, nullptr);
+    bool isConnectionRemoved = renderService->RemoveConnection(nullptr);
+    EXPECT_FALSE(isConnectionRemoved);
+}
+
+/**
+ * @tc.name: RemoveConnectionTest002
+ * @tc.desc: CreateConnectionTest
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSProxyTest, RemoveConnectionTest002, TestSize.Level1)
+{
+    ASSERT_NE(renderService, nullptr);
+    MessageParcel data;
+    auto remoteObj = data.ReadRemoteObject();
+    sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
+    ASSERT_NE(token, nullptr);
+    bool isConnectionRemoved = renderService->RemoveConnection(token);
+    EXPECT_FALSE(isConnectionRemoved);
+}
 /**
  * @tc.name: SetRenderContext Test
  * @tc.desc: SetRenderContext Test
