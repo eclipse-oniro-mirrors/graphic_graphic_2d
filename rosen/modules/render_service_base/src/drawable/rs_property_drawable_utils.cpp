@@ -43,14 +43,25 @@ namespace Rosen {
 namespace {
 constexpr int TRACE_LEVEL_TWO = 2;
 constexpr int PARAM_DOUBLE = 2;
-}
-
+} // namespace
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::binarizationShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicDimShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicBrightnessBlenderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicBrightnessLinearBlenderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::lightUpShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::shadowBlenderEffect_ = nullptr;
+
+void RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(
+    Drawing::Canvas* canvas, const std::shared_ptr<RSNGRenderFilterBase>& effect)
+{
+    if (!effect || effect->GetType() != RSNGEffectType::FROSTED_GLASS || canvas == nullptr) {
+        return;
+    }
+    auto glass = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(effect);
+    auto color = static_cast<RSPaintFilterCanvas*>(canvas)->GetColorPicked(ColorPlaceholder::SURFACE_CONTRAST);
+    const bool isDark = (color == Drawing::Color::COLOR_WHITE); // contrast color white means dark mode
+    glass->Setter<FrostedGlassDarkScaleRenderTag>(isDark ? 1.0f : 0.0f);
+}
 
 Drawing::RoundRect RSPropertyDrawableUtils::RRect2DrawingRRect(const RRect& rr)
 {
@@ -1711,21 +1722,9 @@ void RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(const RSProperti
         filter->Setter<FrostedGlassShapeRenderTag>(sdfShape);
         return;
     }
-    RRect sdfRRect{};
-    if (properties.GetClipToRRect()) {
-        auto rrect = properties.GetClipRRect();
-        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
-    } else if (!properties.GetCornerRadius().IsZero()) {
-        auto rrect = properties.GetRRect();
-        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
-    } else {
-        sdfRRect.rect_ = properties.GetBoundsRect();
-    }
+    auto sdfRRect = properties.GetRRectForSDF();
     auto sdfRRectShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
         RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE));
-    if (!sdfRRectShape) {
-        return;
-    }
     ROSEN_LOGD("RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter, rrect %{public}s, node %{public}" PRIu64,
         sdfRRect.rect_.ToString().c_str(), nodeId);
     sdfRRectShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);

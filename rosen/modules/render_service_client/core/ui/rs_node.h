@@ -72,6 +72,7 @@ class RSNGShapeBase;
 class Blender;
 enum class CancelAnimationStatus;
 enum class AnimationCallbackEvent : uint16_t;
+enum class FilterQuality;
 
 namespace ModifierNG {
 class RSModifier;
@@ -1209,6 +1210,14 @@ public:
     void SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& materialFilter);
 
     /**
+     * @brief Sets the material filter with a quality level.
+     *
+     * @param materialFilter Indicates the material filter to be applied.
+     * @param quality Quality level of the filter.
+     */
+    void SetMaterialWithQualityLevel(const std::shared_ptr<RSNGFilterBase>& materialFilter, FilterQuality quality);
+
+    /**
      * @brief Sets the parameters for linear gradient blur.
      *
      * @param para Indicates the parameters for linear gradient blur.
@@ -2132,7 +2141,7 @@ private:
     bool isUifirstNode_ = true;
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
-    bool isSkipCheckInMultiInstance_ = false;
+    bool isSkipCheckInMultiInstance_ = true;
     RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     std::shared_ptr<RSUIContext> rsUIContext_;
 

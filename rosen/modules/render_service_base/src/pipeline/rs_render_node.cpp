@@ -1883,6 +1883,12 @@ void RSRenderNode::UpdateBufferDirtyRegion(RectF& selfDrawingNodeDirtyRect)
     auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
     if (buffer != nullptr) {
         isSelfDrawingNode_ = true;
+        // if the buffer size changed, use the node size as dirty rect
+        if (surfaceNode->GetRSSurfaceHandler()->GetBufferSizeChanged()) {
+            selfDrawingNodeDirtyRect = selfDrawRect_;
+            RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode id: %" PRIu64 ", buffer size changed.", GetId());
+            return;
+        }
         // Use the matrix from buffer to relative coordinate and the absolute matrix
         // to calculate the buffer damageRegion's absolute rect
         auto rect = surfaceNode->GetRSSurfaceHandler()->GetDamageRegion();
@@ -2428,7 +2434,7 @@ bool RSRenderNode::CheckAndUpdateAIBarCacheStatus(bool intersectHwcDamage) const
 return false;
 }
 
-bool RSRenderNode::ForceReduceAIBarCacheInterval()
+bool RSRenderNode::ForceReduceAIBarCacheInterval(bool intersectHwcDamage)
 {
 #ifdef RS_ENABLE_GPU
     if (!RSSystemProperties::GetBlurEnabled() || !RSProperties::filterCacheEnabled_) {
@@ -2440,7 +2446,7 @@ bool RSRenderNode::ForceReduceAIBarCacheInterval()
     if (filterDrawable == nullptr) {
         return false;
     }
-    return filterDrawable->ForceReduceAIBarCacheInterval();
+    return filterDrawable->ForceReduceAIBarCacheInterval(intersectHwcDamage);
 #else
     return false;
 #endif
@@ -2815,15 +2821,16 @@ void RSRenderNode::MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDraw
         isDirtyRegionUpdated_ = true;
         return;
     }
-    // force update if no next vsync when skip-frame enabled
-    if (!needRequestNextVsync && filterDrawable->IsSkippingFrame()) {
-        filterDrawable->MarkForceClearCacheWithLastFrame();
-        return;
-    }
 
     // when background changed, skip-frame will enabled if filter region > 400 and blur radius > 25
     if (IsLargeArea(snapshotRegion.GetWidth(), snapshotRegion.GetHeight())) {
         filterDrawable->MarkFilterRegionIsLargeArea();
+    }
+    
+    // force update if no next vsync when skip-frame enabled
+    if (!needRequestNextVsync && filterDrawable->IsSkippingFrame()) {
+        filterDrawable->MarkForceClearCacheWithLastFrame();
+        return;
     }
 }
 

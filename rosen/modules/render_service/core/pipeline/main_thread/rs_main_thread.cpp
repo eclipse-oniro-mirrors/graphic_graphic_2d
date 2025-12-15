@@ -91,6 +91,7 @@
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
+#include "pipeline/rs_surface_render_node_utils.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_unmarshal_task_manager.h"
@@ -843,7 +844,7 @@ void RSMainThread::UpdateGpuContextCacheSize()
         GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[GPU_CACHE]));
     if (gpuCacheParam != nullptr && gpuCacheParam->GetGpuCacheConfigEnable()) {
         // set gpu cache size from param config
-        cacheLimitsResourceSize = gpuCacheParam->GetRSGpuCacheSize() * MEMUNIT_RATE * MEMUNIT_RATE;
+        cacheLimitsResourceSize = static_cast<size_t>(gpuCacheParam->GetRSGpuCacheSize()) * MEMUNIT_RATE * MEMUNIT_RATE;
         gpuContext->SetResourceCacheLimits(maxResources, cacheLimitsResourceSize);
         RS_LOGI("UpdateGpuContextCacheSize, gpu cache size of param config: %{public}zu Bytes",
             cacheLimitsResourceSize);
@@ -1511,6 +1512,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         dividedRenderbufferTimestamps_.clear();
     }
     RSDrmUtil::ClearDrmNodes();
+    RSHeteroHDRManager::Instance().ClearPendingPostNodes();
     const auto& nodeMap = GetContext().GetNodeMap();
     isHdrSwitchChanged_ = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
     isColorTemperatureOn_ = RSColorTemperature::Get().IsColorTemperatureOn();
@@ -2325,7 +2327,8 @@ bool RSMainThread::IfStatusBarDirtyOnly()
 }
 
 namespace {
-bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& nodeSet)
+bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& nodeSet,
+    const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hwcNodes)
 {
     if (RSSystemProperties::GetAIBarDirectCompositeFullEnabled()) {
         return false;
@@ -2337,8 +2340,19 @@ bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& no
         if (nodePtr == nullptr) {
             continue;
         }
+        bool intersectHwcDamage = true;
+        if (RSSystemProperties::GetAIBarOptEnabled()) {
+            auto filterRect = nodePtr->GetFilterRegion();
+            intersectHwcDamage = std::any_of(hwcNodes.begin(), hwcNodes.end(),
+                [&filterRect](const auto& hwcNode) {
+                    return hwcNode && RSSurfaceRenderNodeUtils::IntersectHwcDamageWith(*hwcNode, filterRect);
+                });
+        }
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckReduceIntervalForAIBarNodesIfNeeded: intersectHwcDamage[%d]",
+            static_cast<int>(intersectHwcDamage));
+
         // try to reduce the cache interval, i.e., consume the cache
-        if (!nodePtr->ForceReduceAIBarCacheInterval()) {
+        if (!nodePtr->ForceReduceAIBarCacheInterval(intersectHwcDamage)) {
             // consume cache failed, we need to update cache, which means DoDirectComposition should be disabled
             aibarNeedUpdate = true;
             break;
@@ -2389,8 +2403,8 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 
     auto screenId = screenNode->GetScreenId();
     // check just before CreateProcessor, otherwise the cache interval will be reduced twice
-    if (auto nodeSetIter = aibarNodes_.find(screenId);
-        nodeSetIter != aibarNodes_.end() && CheckReduceIntervalForAIBarNodesIfNeeded(nodeSetIter->second)) {
+    if (auto nodeSetIter = aibarNodes_.find(screenId); nodeSetIter != aibarNodes_.end() &&
+        CheckReduceIntervalForAIBarNodesIfNeeded(nodeSetIter->second, hardwareEnabledNodes_)) {
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by aibar need update cache");
         return false;
     }
@@ -4279,7 +4293,7 @@ bool RSMainThread::IsFastComposeVsyncTimeSync(uint64_t unsignedVsyncPeriod, bool
     return true;
 }
 
-void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
+bool RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
 {
     auto nowTime = SystemTime();
     uint64_t unsignedNowTime = static_cast<uint64_t>(nowTime);
@@ -4303,13 +4317,11 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
     }
     if (!IsFastComposeVsyncTimeSync(unsignedVsyncPeriod, nextVsyncRequested,
         unsignedNowTime, lastVsyncTime, vsyncTimeStamp)) {
-        RequestNextVSync();
-        return;
+        return false;
     }
     if (ret != VSYNC_ERROR_OK || !context_ ||
         !IsFastComposeAllow(unsignedVsyncPeriod, nextVsyncRequested, unsignedNowTime, lastVsyncTime)) {
-        RequestNextVSync();
-        return;
+        return false;
     }
     // if buffer come near vsync and next vsync not requested, do fast compose
     if (!nextVsyncRequested && (unsignedNowTime - lastVsyncTime) % unsignedVsyncPeriod >
@@ -4329,9 +4341,9 @@ void RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
         unsignedNowTime - lastVsyncTime < REFRESH_PERIOD / 2) { // invoke when late less than 1/2 refresh period
         RS_TRACE_NAME("RSMainThread::CheckFastCompose success, start fastcompose");
         ForceRefreshForUni(true);
-        return;
+        return true;
     }
-    RequestNextVSync();
+    return false;
 }
 
 bool RSMainThread::CheckAdaptiveCompose()

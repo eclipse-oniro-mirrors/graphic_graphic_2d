@@ -965,7 +965,7 @@ bool RSSystemProperties::GetHeterogeneousHDREnabled()
         std::atoi((system::GetParameter("persist.rosen.heterogeneous.hdr.enabled", "1")).c_str()) == 1;
     return flag;
 }
- 
+
 bool RSSystemProperties::GetSurfaceOffscreenEnadbled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.surfaceOffscreenEnabled", "1");
@@ -1696,7 +1696,7 @@ bool RSSystemProperties::GetEarlyZEnable()
 
 bool RSSystemProperties::GetAIBarOptEnabled()
 {
-    static bool isAIBarOptEnabled = system::GetIntParameter("persist.rosen.aibaropt.enabled", 0) != 0;
+    static bool isAIBarOptEnabled = system::GetIntParameter("persist.rosen.aibaropt.enabled", 1) != 0;
     return isAIBarOptEnabled;
 }
 
@@ -1799,6 +1799,28 @@ bool RSSystemProperties::GetDefaultMemClearEnabled()
     static bool defaultMemClearEnabled =
         std::atoi((system::GetParameter("persist.sys.graphic.default.mem.clear.enabled", "1")).c_str()) != 0;
     return defaultMemClearEnabled;
+}
+
+bool RSSystemProperties::GetSceneBoardIsPcMode()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("persist.sceneboard.ispcmode", "false");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    if (enable == nullptr || strcmp(enable, "false") == 0) {
+        return false;
+    }
+    return true;
+}
+
+bool RSSystemProperties::GetReleaseImageOneByOneFlag()
+{
+    if (!IsUseVulkan()) {
+        return false;
+    }
+    static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.release.image.onebyone.flag", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -3579,6 +3579,7 @@ void RSProperties::GenerateMaterialFilter()
 {
     // not support compose yet, so do not use ComposeNGRenderFilter
     if (!GetMaterialNGFilter()) {
+        GetEffect().materialFilter_ = nullptr;
         return;
     }
     auto filter = std::make_shared<RSDrawingFilter>();
@@ -5195,6 +5196,21 @@ std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetMaterialNGFilter() const
         return effect_->mtNGRenderFilter_;
     }
     return nullptr;
+}
+
+RRect RSProperties::GetRRectForSDF() const
+{
+    RRect sdfRRect;
+    if (GetClipToRRect()) {
+        auto rrect = GetClipRRect();
+        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
+    } else if (!GetCornerRadius().IsZero()) {
+        auto rrect = GetRRect();
+        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
+    } else {
+        sdfRRect.rect_ = GetBoundsRect();
+    }
+    return sdfRRect;
 }
 
 } // namespace Rosen
