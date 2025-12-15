@@ -103,7 +103,7 @@ bool JsFontCollection::CreateConstructor(napi_env env)
         DECLARE_NAPI_FUNCTION("unloadFont", JsFontCollection::UnloadFontAsync),
         DECLARE_NAPI_FUNCTION("loadFontWithCheck", JsFontCollection::LoadFontAsyncWithCheck),
         DECLARE_NAPI_FUNCTION("loadFontSyncWithCheck", JsFontCollection::LoadFontSyncWithCheck),
-        DECLARE_NAPI_STATIC_FUNCTION("isSupportedFont", JsFontCollection::IsSupportedFont),
+        DECLARE_NAPI_STATIC_FUNCTION("isFontSupported", JsFontCollection::IsFontSupported),
     };
 
     napi_value constructor = nullptr;
@@ -541,7 +541,7 @@ NapiTextResult JsFontCollection::OnUnloadFont(napi_env env, napi_callback_info i
     return NapiTextResult::Success(NapiGetUndefined(env));
 }
 
-napi_value JsFontCollection::IsSupportedFont(napi_env env, napi_callback_info info)
+napi_value JsFontCollection::IsFontSupported(napi_env env, napi_callback_info info)
 {
     size_t argc = ARGC_ONE;
     napi_value argv[ARGC_ONE] = { nullptr };
