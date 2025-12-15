@@ -64,7 +64,7 @@ const std::string INSTALL_CONFIG_THREE = R"(
 }
 )";
 
-const std::string INSTALL_CONFIG_EMPTY = R"({"fontlist": [{ "fontfullpath": "", "fullname": [""] },]})";
+const std::string INSTALL_CONFIG_EMPTY = R"({"fontlist": [{ "fontfullpath": "", "fullname": [""] }]})";
 
 bool ExistStylishFontConfigFile()
 {
@@ -897,10 +897,11 @@ HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType001, TestSize.Level0)
 {
     InstallConfig installConfig;
     auto expectFunc = [](OH_Drawing_SystemFontType type, size_t num) {
-        OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(type, nullptr);
-        EXPECT_NE(fontPaths, nullptr);
+        size_t pathCount = 0;
+        OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(type, &pathCount);
+        EXPECT_EQ(pathCount, num);
         size_t i = 0;
-        for (i = 0; fontPaths[i].strData != nullptr; i+=1) {
+        for (i = 0; fontPaths != nullptr && fontPaths[i].strData != nullptr; i+=1) {
             OH_Drawing_String fontPath = fontPaths[i];
             std::u16string path(reinterpret_cast<char16_t*>(fontPath.strData), fontPath.strLen / sizeof(char16_t));
             std::string u8Path = OHOS::Str16ToStr8(path);
@@ -911,15 +912,15 @@ HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType001, TestSize.Level0)
         free(fontPaths);
     };
     if (ExistStylishFontConfigFile()) {
-        // 144 = 1 stylish font + 139 generic fonts + 1 rare font + 3 installed fonts
-        expectFunc(OH_Drawing_SystemFontType::ALL, 144);
+        // 141 = 1 stylish font + 139 generic fonts + 1 rare font + 3 installed fonts but duplicate with generic fonts
+        expectFunc(OH_Drawing_SystemFontType::ALL, 141);
         // 140 = 139 generic fonts + 1 rare font
         expectFunc(OH_Drawing_SystemFontType::GENERIC, 140);
         // 1 = 1 stylish font
         expectFunc(OH_Drawing_SystemFontType::STYLISH, 1);
     } else {
-        // 142 = 139 generic fonts + 3 installed fonts
-        expectFunc(OH_Drawing_SystemFontType::ALL, 142);
+        // 139 = 139 generic fonts + 3 installed fonts but duplicate with generic fonts
+        expectFunc(OH_Drawing_SystemFontType::ALL, 139);
         // 139 = 139 generic font
         expectFunc(OH_Drawing_SystemFontType::GENERIC, 139);
         expectFunc(OH_Drawing_SystemFontType::STYLISH, 0);
@@ -939,7 +940,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType002, TestSize.Level0)
     InstallConfig installConfig(INSTALL_CONFIG_EMPTY);
     size_t pathCount = SIZE_MAX;
     OH_Drawing_String* fontPaths = OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType::INSTALLED, &pathCount);
-    EXPECT_NE(fontPaths, nullptr);
+    EXPECT_EQ(fontPaths, nullptr);
     EXPECT_EQ(pathCount, 0);
     free(fontPaths);
 }
@@ -960,5 +961,7 @@ HWTEST_F(NdkFontDescriptorTest, NdkGetFontPathsByType003, TestSize.Level0)
     fontPaths = OH_Drawing_GetFontPathsByType(static_cast<OH_Drawing_SystemFontType>(UINT16_MAX), &pathCount);
     EXPECT_EQ(fontPaths, nullptr);
     EXPECT_EQ(pathCount, 0);
+    fontPaths = OH_Drawing_GetFontPathsByType(static_cast<OH_Drawing_SystemFontType>(UINT16_MAX), nullptr);
+    EXPECT_EQ(fontPaths, nullptr);
 }
 } // namespace OHOS
