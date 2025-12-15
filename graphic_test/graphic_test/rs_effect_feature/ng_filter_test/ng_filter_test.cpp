@@ -57,30 +57,30 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorFilter = {
 
 // Default values
 const Vector2f defaultBlurParams = Vector2f(20.0f, 3.0f);
-const Vector2f defaultWeightsEmboss = Vector2f(1.0f, 1.0f); // (envLight, sd)
+const Vector2f defaultWeightsEmboss = Vector2f(1.0f, 0.5f); // (envLight, sd)
 const Vector2f defaultWeightsEdl = Vector2f(1.0f, 1.0f); // (envLight, sd)
-const Vector2f defaultBgRates = Vector2f(-1.8792225f, 2.76f);
-const Vector3f defaultBgKBS = Vector3f(0.0073494f, 0.0998895f, 1.2f);
+const Vector2f defaultBgRates = Vector2f(-1.8792225f, 2.7626955f);
+const Vector3f defaultBgKBS = Vector3f(0.0073494f, 0.0998859f, 1.2f);
 const Vector3f defaultBgPos = Vector3f(0.3f, 0.5f, 0.5f);
 const Vector3f defaultBgNeg = Vector3f(0.5f, 1.0f, 1.0f);
 const Vector3f defaultRefractParams = Vector3f(0.0f, 0.3f, 0.3f);
-const Vector3f defaultSdParams = Vector3f(-50.0f, 4.0f, 2.0f);
+const Vector3f defaultSdParams = Vector3f(-50.0f, 4.0f, 4.62f);
 const Vector2f defaultSdRates = Vector2f(0.0f, 0.0f);
 const Vector3f defaultSdKBS = Vector3f(0.9f, 0.0f, 1.0f);
-const Vector3f defaultSdPos = Vector3f(1.7f, 1.5f, 3.0f);
+const Vector3f defaultSdPos = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f defaultSdNeg = Vector3f(3.0f, 2.0f, 1.0f);
-const Vector3f defaultEnvLightParams = Vector3f(50.0f, 5.0f, 2.0f);
+const Vector3f defaultEnvLightParams = Vector3f(50.0f, 20.0f, 5.0f);
 const Vector2f defaultEnvLightRates = Vector2f(0.0f, 0.0f);
-const Vector3f defaultEnvLightKBS = Vector3f(0.8f, 0.2745f, 2.0f);
-const Vector3f defaultEnvLightPos = Vector3f(1.7f, 1.5f, 3.0f);
+const Vector3f defaultEnvLightKBS = Vector3f(0.8f, 0.27451f, 2.0f);
+const Vector3f defaultEnvLightPos = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f defaultEnvLightNeg = Vector3f(3.0f, 2.0f, 1.0f);
-const Vector2f defaultEdLightParams = Vector2f(2.0f, 0.7f);
-const Vector2f defaultEdLightAngles = Vector2f(30.0f, 30.0f);
-const Vector2f defaultEdLightDir = Vector2f(-1.0f, 1.0f);
+const Vector2f defaultEdLightParams = Vector2f(2.0f, 2.0f);
+const Vector2f defaultEdLightAngles = Vector2f(40.0f, 2.0f);
+const Vector2f defaultEdLightDir = Vector2f(2.5f, 2.5f);
 const Vector2f defaultEdLightRates = Vector2f(0.0f, 0.0f);
-const Vector3f defaultEdLightKBS = Vector3f(0.6027f, 0.64f, 2.0f);
+const Vector3f defaultEdLightKBS = Vector3f(0.6027f, 0.627451f, 2.0f);
 const Vector3f defaultEdLightPos = Vector3f(1.0f, 1.7f, 1.5f);
-const Vector3f defaultEdLightNeg = Vector3f(3.2f, 2.0f, 1.0f);
+const Vector3f defaultEdLightNeg = Vector3f(3.0f, 2.0f, 1.0f);
  
 // FrostedGlass Params
 // 1. blurParams: [1e-6, 200], [1, 20]
