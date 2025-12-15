@@ -81,6 +81,7 @@ public:
         pathWidthList = { -0.5, 0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0, 5.0 };
         inverseEffectList = { false, true, false, true, false, true, false, true, false };
     }
+
 };
 
 GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_Shader_Test)
@@ -122,6 +123,21 @@ void SetNormalParams(Rosen::RSNGDotMatrixShader& shader, Drawing::Color dotColor
     shader.Setter<Rosen::DotMatrixShaderEffectTypeTag>(0);
 }
 
+void IniDotMatrixData(std::vector<Drawing::Color>& dotColorList, std::vector<float>& dotRadiusList,
+ std::vector<float>& dotSpacingList, std::vector<Drawing::Color>& bgColorList)
+ {
+    dotColorList = { Drawing::Color::COLOR_RED, Drawing::Color::COLOR_RED,
+        Drawing::Color::COLOR_RED, Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_GREEN,
+        Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_BLUE, Drawing::Color::COLOR_BLUE,
+        Drawing::Color::COLOR_BLUE };
+    dotRadiusList = { -0.7, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0, 10.0 };
+    dotSpacingList = { -10.0, 10.0, 50.0, 20.0, 40.0, 60.0, 10.0, 50.0, 100.0 };
+    bgColorList = { Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
+        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
+        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
+        Drawing::Color::COLOR_BLACK };
+ }
+
 GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_DotMatrix_Shader_NoEffect_Test)
 {
     int columnCount = 3;
@@ -129,16 +145,11 @@ GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_DotMatrix_Shader_N
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight / rowCount;
 
-    std::vector<Drawing::Color> dotColorList = { Drawing::Color::COLOR_RED, Drawing::Color::COLOR_RED,
-        Drawing::Color::COLOR_RED, Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_GREEN,
-        Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_BLUE, Drawing::Color::COLOR_BLUE,
-        Drawing::Color::COLOR_BLUE };
-    std::vector<float> dotRadiusList = { -0.7, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0, 10.0 };
-    std::vector<float> dotSpacingList = { -10.0, 10.0, 50.0, 20.0, 40.0, 60.0, 10.0, 50.0, 100.0 };
-    std::vector<Drawing::Color> bgColorList = { Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK };
+    std::vector<Drawing::Color> dotColorList = {};
+    std::vector<float> dotRadiusList = {};
+    std::vector<float> dotSpacingList = {};
+    std::vector<Drawing::Color> bgColorList = {};
+    IniDotMatrixData(dotColorList, dotRadiusList, dotSpacingList, bgColorList);
 
     for (int i = 0; i < dotColorList.size(); i++) {
         auto dotMatShader = std::make_shared<Rosen::RSNGDotMatrixShader>();
@@ -181,16 +192,11 @@ GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_DotMatrix_Shader_R
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight / rowCount;
 
-    std::vector<Drawing::Color> dotColorList = { Drawing::Color::COLOR_RED, Drawing::Color::COLOR_RED,
-        Drawing::Color::COLOR_RED, Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_GREEN,
-        Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_BLUE, Drawing::Color::COLOR_BLUE,
-        Drawing::Color::COLOR_BLUE };
-    std::vector<float> dotRadiusList = { -0.7, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0, 10.0 };
-    std::vector<float> dotSpacingList = { -10.0, 10.0, 50.0, 20.0, 40.0, 60.0, 10.0, 50.0, 100.0 };
-    std::vector<Drawing::Color> bgColorList = { Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK };
+    std::vector<Drawing::Color> dotColorList = {};
+    std::vector<float> dotRadiusList = {};
+    std::vector<float> dotSpacingList = {};
+    std::vector<Drawing::Color> bgColorList = {};
+    IniDotMatrixData(dotColorList, dotRadiusList, dotSpacingList, bgColorList);
     std::vector<std::vector<Drawing::Color>> effectColorList = {
         { Drawing::Color::COLOR_YELLOW, Drawing::Color::COLOR_YELLOW, Drawing::Color::COLOR_CYAN,
         Drawing::Color::COLOR_CYAN }, { Drawing::Color::COLOR_MAGENTA, Drawing::Color::COLOR_MAGENTA,
@@ -256,16 +262,11 @@ GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_DotMatrix_Shader_R
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight / rowCount;
 
-    std::vector<Drawing::Color> dotColorList = { Drawing::Color::COLOR_RED, Drawing::Color::COLOR_RED,
-        Drawing::Color::COLOR_RED, Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_GREEN,
-        Drawing::Color::COLOR_GREEN, Drawing::Color::COLOR_BLUE, Drawing::Color::COLOR_BLUE,
-        Drawing::Color::COLOR_BLUE };
-    std::vector<float> dotRadiusList = { -0.7, 0.02, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0, 10.0 };
-    std::vector<float> dotSpacingList = { -10.0, 10.0, 50.0, 20.0, 40.0, 60.0, 10.0, 50.0, 100.0 };
-    std::vector<Drawing::Color> bgColorList = { Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK, Drawing::Color::COLOR_WHITE, Drawing::Color::COLOR_GRAY,
-        Drawing::Color::COLOR_BLACK };
+    std::vector<Drawing::Color> dotColorList = {};
+    std::vector<float> dotRadiusList = {};
+    std::vector<float> dotSpacingList = {};
+    std::vector<Drawing::Color> bgColorList = {};
+    IniDotMatrixData(dotColorList, dotRadiusList, dotSpacingList, bgColorList);
     std::vector<std::vector<Drawing::Color>> effectColorList = {
         { Drawing::Color::COLOR_YELLOW, Drawing::Color::COLOR_YELLOW, Drawing::Color::COLOR_CYAN,
         Drawing::Color::COLOR_CYAN }, { Drawing::Color::COLOR_MAGENTA, Drawing::Color::COLOR_MAGENTA,
