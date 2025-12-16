@@ -52,7 +52,9 @@
 
 #include "native_window.h"
 
+#ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/native_buffer_utils.h"
+#endif
 
 namespace OHOS::Rosen {
 
@@ -1098,6 +1100,7 @@ void RSProfiler::SurfaceNodeUpdateBuffer(std::shared_ptr<RSRenderNode> node, spt
 
 void RSProfiler::RenderToReadableBuffer(std::shared_ptr<RSSurfaceRenderNode> node, sptr<SurfaceBuffer> toSurfaceBuffer)
 {
+#ifdef RS_ENABLE_VK
     std::function<void()> selfCaptureTask = [node, toSurfaceBuffer]() mutable -> void {
         // copypaste from RSSurfaceCaptureTaskParallel
         RSUniRenderThread::SetCaptureParam(CaptureParam(true, true, false, true,
@@ -1150,6 +1153,7 @@ void RSProfiler::RenderToReadableBuffer(std::shared_ptr<RSSurfaceRenderNode> nod
         toSurfaceBuffer->FlushCache();
     };
     RSUniRenderThread::Instance().PostSyncTask(selfCaptureTask);
+#endif
 }
 
 std::string RSProfiler::FirstFrameMarshalling(uint32_t fileVersion, bool betaRecordStarted)
