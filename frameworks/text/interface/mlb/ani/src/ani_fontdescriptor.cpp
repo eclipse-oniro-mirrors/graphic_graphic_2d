@@ -58,7 +58,9 @@ const std::string GET_FONT_DESCRIPTORS_FROM_PATH_SIGNATURE = std::string(FONT_PA
 const std::string GET_FONT_UNICODE_SET_SIGNATURE = std::string(FONT_PATH_IN_SIGN) + "i" +
     ":C{" + std::string(ANI_ARRAY) + "}";
 const std::string GET_FONT_COUNT_SIGNATURE = std::string(FONT_PATH_IN_SIGN) + ":i";
-}
+const std::string GET_FONT_PATHS_BY_TYPE_SIGNATURE =
+    "E{" + std::string(ANI_ENUM_SYSTEM_FONT_TYPE) + "}:C{" + std::string(ANI_ARRAY) + "}";
+} // namespace
 
 #define READ_OPTIONAL_FIELD(env, obj, method, field, type, fontDescPtr, error_var)                                     \
     do {                                                                                                               \
@@ -91,6 +93,8 @@ ani_status AniFontDescriptor::AniInit(ani_vm* vm, uint32_t* result)
             reinterpret_cast<void*>(GetFontUnicodeSet)},
         ani_native_function{"getFontCount", GET_FONT_COUNT_SIGNATURE.c_str(),
             reinterpret_cast<void*>(GetFontCount)},
+        ani_native_function{"getFontPathsByType", GET_FONT_PATHS_BY_TYPE_SIGNATURE.c_str(),
+            reinterpret_cast<void*>(GetFontPathsByType)},
     };
 
     ret = env->Namespace_BindNativeFunctions(AniGlobalNamespace::GetInstance().text, methods.data(), methods.size());
@@ -459,5 +463,40 @@ ani_int AniFontDescriptor::GetFontCount(ani_env* env, ani_object path)
         return GetFontCountByResource(env, path);
     }
     return 0;
+}
+
+ani_object AniFontDescriptor::GetFontPathsByType(ani_env* env, ani_enum_item fontType)
+{
+    ani_int typeIndex;
+    ani_status ret = env->EnumItem_GetValue_Int(fontType, &typeIndex);
+    if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to parse fontType, ret %{public}d", ret);
+        AniTextUtils::ThrowBusinessError(env, TextErrorCode::ERROR_INVALID_PARAM, "Parameter fontType is invalid");
+        return AniTextUtils::CreateAniUndefined(env);
+    }
+
+    TextEngine::FontParser::SystemFontType systemFontType =
+        static_cast<TextEngine::FontParser::SystemFontType>(typeIndex);
+
+    std::unordered_set<std::string> fontPaths;
+    FontDescriptorMgrInstance.GetFontPathsByType(systemFontType, fontPaths);
+
+    ani_object arrayObj = AniTextUtils::CreateAniArray(env, fontPaths.size());
+    ani_boolean isUndefined = false;
+    env->Reference_IsUndefined(arrayObj, &isUndefined);
+    if (isUndefined) {
+        TEXT_LOGE("Failed to create arrayObject");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    ani_size index = 0;
+    for (const auto& item : fontPaths) {
+        ani_string aniStr = AniTextUtils::CreateAniStringObj(env, item);
+        if (ANI_OK != env->Object_CallMethod_Void(arrayObj, AniGlobalMethod::GetInstance().arraySet, index, aniStr)) {
+            TEXT_LOGE("Failed to set fontList item %{public}zu", index);
+            continue;
+        }
+        index += 1;
+    }
+    return arrayObj;
 }
 } // namespace OHOS::Text::ANI
