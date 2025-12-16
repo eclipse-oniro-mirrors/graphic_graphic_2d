@@ -484,7 +484,7 @@ ani_object AniFontDescriptor::GetFontPathsByType(ani_env* env, ani_enum_item fon
     ani_size index = 0;
     for (const auto& item : fontPaths) {
         ani_string aniStr = AniTextUtils::CreateAniStringObj(env, item);
-        if (ANI_OK != env->Object_CallMethodByName_Void(arrayObj, "$_set", "iC{std.core.Object}:", index, aniStr)) {
+        if (ANI_OK != env->Object_CallMethod_Void(arrayObj, AniGlobalMethod::GetInstance().arraySet, index, aniStr)) {
             TEXT_LOGE("Failed to set fontList item %{public}zu", index);
             continue;
         }
