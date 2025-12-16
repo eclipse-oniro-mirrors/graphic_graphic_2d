@@ -224,7 +224,7 @@ int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>&
 }
 
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
-    const Rect &srcRect)
+    const Rect &srcRect, bool transformEnabled)
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
@@ -235,7 +235,8 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfac
         return nullptr;
     }
     std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
-    return clientToService->CreatePixelMapFromSurface(surface, srcRect, pixelMap) == ERR_OK ? pixelMap : nullptr;
+    return clientToService->CreatePixelMapFromSurface(surface, srcRect, pixelMap,
+        transformEnabled) == ERR_OK ? pixelMap : nullptr;
 }
 
 ScreenId RSRenderServiceClient::GetDefaultScreenId()
@@ -859,6 +860,17 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
     clientToService->SetScreenPowerStatus(id, status);
 }
 
+int32_t RSRenderServiceClient::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s clientToService is nullptr", __func__);
+        return StatusCode::RENDER_SERVICE_NULL;
+    }
+
+    return clientToService->SetDualScreenState(id, status);
+}
+
 RSScreenModeInfo RSRenderServiceClient::GetScreenActiveMode(ScreenId id)
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
@@ -933,6 +945,19 @@ void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
     }
 
     clientToService->SetScreenBacklight(id, level);
+}
+
+PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
+{
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::%{public}s clientToService is nullptr", __func__);
+        return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    }
+
+    uint32_t status{static_cast<uint32_t>(PanelPowerStatus::INVALID_PANEL_POWER_STATUS)};
+    clientToService->GetPanelPowerStatus(id, status);
+    return static_cast<PanelPowerStatus>(status);
 }
 
 class CustomBufferAvailableCallback : public RSBufferAvailableCallbackStub
@@ -1833,11 +1858,11 @@ void RSRenderServiceClient::NotifyXComponentExpectedFrameRate(const std::string&
     }
 }
 
-void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     if (clientToService != nullptr) {
-        clientToService->NotifyTouchEvent(touchStatus, touchCnt);
+        clientToService->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     }
 }
 

@@ -39,9 +39,6 @@ public:
     void OnDraw(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
 
-    int32_t GetSpecialLayerType(RSLogicalDisplayRenderParams& mainDisplayParams,
-        RSLogicalDisplayRenderParams* mirrorDisplayParams = nullptr, bool isSecLayerInVisibleRect = true);
-
     void SetOriginScreenRotation(const ScreenRotation& rotate)
     {
         originScreenRotation_ = rotate;
@@ -102,7 +99,8 @@ private:
     std::shared_ptr<Drawing::ShaderEffect> MakeBrightnessAdjustmentShader(const std::shared_ptr<Drawing::Image>& image,
         const Drawing::SamplingOptions& sampling, float hdrBrightnessRatio);
 
-    void DrawHardwareEnabledNodes(Drawing::Canvas& canvas, RSLogicalDisplayRenderParams& params);
+    void DrawHardwareEnabledNodes(Drawing::Canvas& canvas, RSLogicalDisplayRenderParams& params,
+        sptr<SurfaceBuffer> virtualBuffer = nullptr, sptr<SyncFence> virtualFence = nullptr);
     void DrawAdditionalContent(RSPaintFilterCanvas& canvas);
     void DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas);
 

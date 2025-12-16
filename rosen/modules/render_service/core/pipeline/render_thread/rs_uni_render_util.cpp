@@ -76,7 +76,6 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr float GAMMA2_2 = 2.2f;
 constexpr int64_t PERF_TIME_OUT = 950;
 constexpr uint32_t PERF_LEVEL_INTERVAL = 10;
@@ -650,6 +649,29 @@ BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(const RSSurfaceHandler& s
     bufferDrawParam.dstRect = Drawing::Rect(0, 0, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
     RS_LOGD_IF(DEBUG_COMPOSER,
         "RSUniRenderUtil::CreateBufferDrawParam(RSSurfaceHandler): Parameters creation completed");
+    return bufferDrawParam;
+}
+
+BufferDrawParam RSUniRenderUtil::CreateBufferDrawParam(sptr<SurfaceBuffer> buffer, sptr<SyncFence> acquireFence,
+    bool forceCPU)
+{
+    BufferDrawParam bufferDrawParam;
+    bufferDrawParam.useCPU = forceCPU;
+    Drawing::Filter filter;
+    filter.SetFilterQuality(Drawing::Filter::FilterQuality::LOW);
+    bufferDrawParam.paint.SetFilter(filter);
+
+    if (!buffer) {
+        RS_LOGE("RSUniRenderUtil::CreateBufferDrawParam buffer is null.");
+        return bufferDrawParam;
+    }
+
+    bufferDrawParam.buffer = buffer;
+    bufferDrawParam.acquireFence = acquireFence;
+    bufferDrawParam.srcRect = Drawing::Rect(0, 0, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
+    bufferDrawParam.dstRect = Drawing::Rect(0, 0, buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight());
+    RS_LOGD_IF(DEBUG_COMPOSER,
+        "RSUniRenderUtil::CreateBufferDrawParam(buffer): Parameters creation completed");
     return bufferDrawParam;
 }
 

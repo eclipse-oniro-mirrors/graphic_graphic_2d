@@ -117,9 +117,7 @@ ohos_unittest("RSRenderServiceUnitTest") {
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
-    "ability_base:want",
     "c_utils:utils",
-    "common_event_service:cesfwk_core",
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
@@ -245,6 +243,7 @@ ohos_unittest("RSUniRenderThreadTest") {
 ohos_unittest("RSRenderServiceVisitorTest") {
   module_out_path = module_output_path
   sources = [
+    "$graphic_2d_root/rosen/modules/render_service_base/src/feature/hdr/rs_colorspace_util.cpp",
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
     "main_thread/rs_render_service_visitor_test.cpp",
   ]
@@ -620,6 +619,7 @@ ohos_unittest("RSUniRenderUtilSecUIExtensionTest") {
 ohos_unittest("RSUniRenderVisitorTest") {
   module_out_path = module_output_path
   sources = [
+    "$graphic_2d_root/rosen/modules/render_service_base/src/feature/hdr/rs_colorspace_util.cpp",
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
     "main_thread/rs_uni_render_visitor_test.cpp",
     "mock/mock_matrix.cpp",
@@ -1122,6 +1122,7 @@ ohos_unittest("RSHwcContextTest") {
 ohos_unittest("RSUniHwcVisitorTest") {
   module_out_path = module_output_path
   sources = [
+    "$graphic_2d_root/rosen/modules/render_service_base/src/feature/hdr/rs_colorspace_util.cpp",
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
     "hwc/rs_uni_hwc_visitor_test.cpp",
     "mock/mock_matrix.cpp",

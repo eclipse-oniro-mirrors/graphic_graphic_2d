@@ -37,16 +37,6 @@ void MultiScreenParam::SetSlrScaleEnabled(bool isEnabled)
     isSlrScaleEnabled_ = isEnabled;
 }
 
-bool MultiScreenParam::IsRsReportHwcDead()
-{
-    return isRsReportHwcDead_;
-}
-
-void MultiScreenParam::SetRsReportHwcDead(bool isEnabled)
-{
-    isRsReportHwcDead_ = isEnabled;
-}
-
 bool MultiScreenParam::IsRsSetScreenPowerStatus()
 {
     return isRsSetScreenPowerStatus_;
@@ -85,5 +75,15 @@ bool MultiScreenParam::IsSkipFrameByActiveRefreshRate()
 void MultiScreenParam::SetSkipFrameByActiveRefreshRate(bool isEnabled)
 {
     isSkipFrameByActiveRefreshRate_ = isEnabled;
+}
+
+bool MultiScreenParam::IsForceRenderForMirror()
+{
+    return isForceRenderForMirror_;
+}
+
+void MultiScreenParam::SetForceRenderForMirror(bool isEnabled)
+{
+    isForceRenderForMirror_ = isEnabled;
 }
 } // namespace OHOS::Rosen

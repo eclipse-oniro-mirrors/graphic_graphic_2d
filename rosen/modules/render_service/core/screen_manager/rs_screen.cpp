@@ -691,6 +691,27 @@ ScreenPowerStatus RSScreen::GetPowerStatus()
     return static_cast<ScreenPowerStatus>(status);
 }
 
+int32_t RSScreen::SetDualScreenState(DualScreenStatus status)
+{
+    if (IsVirtual()) {
+        RS_LOGW("%{public}s: virtual screen not support SetDualScreenState.", __func__);
+        return StatusCode::VIRTUAL_SCREEN;
+    }
+    if (!hdiScreen_) {
+        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
+        return StatusCode::HDI_ERROR;
+    }
+    uint64_t value = static_cast<uint64_t>(status);
+    auto id = property_.GetId();
+    RS_TRACE_NAME_FMT("Screen_%llu SetDualScreenState %llu", id, value);
+    int32_t ret = hdiScreen_->SetDisplayProperty(value);
+    if (ret < 0) {
+        RS_LOGE("%{public}s: failed to set DualScreenStatus. ret: %{public}d", __func__, ret);
+        return StatusCode::HDI_ERROR;
+    }
+    return StatusCode::SUCCESS;
+}
+
 std::shared_ptr<HdiOutput> RSScreen::GetOutput() const
 {
     return hdiOutput_;
@@ -1004,6 +1025,27 @@ int32_t RSScreen::GetScreenBacklight() const
         return INVALID_BACKLIGHT_VALUE;
     }
     return static_cast<int32_t>(level);
+}
+
+PanelPowerStatus RSScreen::GetPanelPowerStatus() const
+{
+    if (IsVirtual()) {
+        RS_LOGW("%{public}s: virtual screen not support GetPanelPowerStatus.", __func__);
+        return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    }
+    if (!hdiScreen_) {
+        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
+        return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    }
+    auto status = GraphicPanelPowerStatus::GRAPHIC_PANEL_POWER_STATUS_ON;
+    auto ret = hdiScreen_->GetPanelPowerStatus(status);
+    if ((ret < 0) || (status >= GraphicPanelPowerStatus::GRAPHIC_PANEL_POWER_STATUS_BUTT)) {
+        RS_LOGE("%{public}s failed, ret: %{public}d, status: %{public}d",
+                __func__, ret, static_cast<uint32_t>(status));
+        return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    }
+    RS_LOGI("%{public}s acquired status: %{public}d", __func__, static_cast<uint32_t>(status));
+    return static_cast<PanelPowerStatus>(status);
 }
 
 int32_t RSScreen::GetScreenSupportedColorGamuts(std::vector<ScreenColorGamut> &mode) const

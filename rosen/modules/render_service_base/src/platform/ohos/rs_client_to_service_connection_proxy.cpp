@@ -419,7 +419,7 @@ ErrCode RSClientToServiceConnectionProxy::GetPixelMapByProcessId(
 }
 
 ErrCode RSClientToServiceConnectionProxy::CreatePixelMapFromSurface(sptr<Surface> surface,
-    const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap)
+    const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -445,6 +445,10 @@ ErrCode RSClientToServiceConnectionProxy::CreatePixelMapFromSurface(sptr<Surface
         !data.WriteInt32(srcRect.w) || !data.WriteInt32(srcRect.h)) {
         ROSEN_LOGE("CreatePixelMapFromSurface: WriteInt32 srcRect err.");
         return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteBool(transformEnabled)) {
+        ROSEN_LOGE("CreatePixelMapFromSurface: WriteBool err.");
+        return -1;
     }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE);
@@ -1884,6 +1888,39 @@ void RSClientToServiceConnectionProxy::SetScreenPowerStatus(ScreenId id, ScreenP
     }
 }
 
+int32_t RSClientToServiceConnectionProxy::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetDualScreenState: WriteInterfaceToken GetDescriptor err.");
+        return StatusCode::WRITE_PARCEL_ERR;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("SetDualScreenState: WriteUint64 id err.");
+        return StatusCode::WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(static_cast<uint64_t>(status))) {
+        ROSEN_LOGE("SetDualScreenState: WriteUint64 status err.");
+        return StatusCode::WRITE_PARCEL_ERR;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_DUAL_SCREEN_STATE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("SetDualScreenState: SendRequest error: %{public}d", err);
+        return StatusCode::RS_CONNECTION_ERROR;
+    }
+    int32_t ret{0};
+    if (!reply.ReadInt32(ret)) {
+        ROSEN_LOGE("SetDualScreenState: Read ret failed");
+        return StatusCode::READ_PARCEL_ERR;
+    }
+    return ret;
+}
+
 ErrCode RSClientToServiceConnectionProxy::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app)
 {
     if (app == nullptr) {
@@ -1916,6 +1953,7 @@ bool RSClientToServiceConnectionProxy::WriteSurfaceCaptureConfig(
         !data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType)) || !data.WriteBool(captureConfig.isSync) ||
         !data.WriteBool(captureConfig.isHdrCapture) ||
         !data.WriteBool(captureConfig.needF16WindowCaptureForScRGB) ||
+        !data.WriteBool(captureConfig.needErrorCode) ||
         !data.WriteFloat(captureConfig.mainScreenRect.left_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.top_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.right_) ||
@@ -1927,7 +1965,11 @@ bool RSClientToServiceConnectionProxy::WriteSurfaceCaptureConfig(
         !data.WriteFloat(captureConfig.specifiedAreaRect.right_) ||
         !data.WriteFloat(captureConfig.specifiedAreaRect.bottom_) ||
         !data.WriteUInt64Vector(captureConfig.blackList) ||
-        !data.WriteUint32(captureConfig.backGroundColor)) {
+        !data.WriteUint32(captureConfig.backGroundColor) ||
+        !data.WriteUint32(captureConfig.colorSpace.first) ||
+        !data.WriteBool(captureConfig.colorSpace.second) ||
+        !data.WriteUint32(captureConfig.dynamicRangeMode.first) ||
+        !data.WriteBool(captureConfig.dynamicRangeMode.second)) {
         ROSEN_LOGE("WriteSurfaceCaptureConfig: WriteSurfaceCaptureConfig captureConfig err.");
         return false;
     }
@@ -2290,6 +2332,37 @@ void RSClientToServiceConnectionProxy::SetScreenBacklight(ScreenId id, uint32_t 
         ROSEN_LOGE("SetScreenBacklight: SendRequest failed");
         return;
     }
+}
+
+ErrCode RSClientToServiceConnectionProxy::GetPanelPowerStatus(uint64_t screenId, uint32_t& status)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        ROSEN_LOGE("GetPanelPowerStatus: WriteInterfaceToken GetDescriptor err.");
+        status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(screenId)) {
+        ROSEN_LOGE("GetPanelPowerStatus: WriteUint64 id err.");
+        status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PANEL_POWER_STATUS);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("%{public}s: sendrequest error: %{public}d", __func__, err);
+        status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_OPERATION;
+    }
+    if (!reply.ReadUint32(status)) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetPanelPowerStatus Read status failed");
+        status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
 }
 
 ErrCode RSClientToServiceConnectionProxy::RegisterBufferClearListener(
@@ -4720,7 +4793,7 @@ bool RSClientToServiceConnectionProxy::NotifySoftVsyncRateDiscountEvent(uint32_t
     return enable;
 }
 
-ErrCode RSClientToServiceConnectionProxy::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+ErrCode RSClientToServiceConnectionProxy::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -4735,6 +4808,10 @@ ErrCode RSClientToServiceConnectionProxy::NotifyTouchEvent(int32_t touchStatus, 
     }
     if (!data.WriteInt32(touchCnt)) {
         ROSEN_LOGE("NotifyTouchEvent: WriteInt32 touchCnt err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteInt32(sourceType)) {
+        ROSEN_LOGE("NotifyTouchEvent: WriteInt32 sourceType err.");
         return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
@@ -4952,12 +5029,13 @@ LayerComposeInfo RSClientToServiceConnectionProxy::GetLayerComposeInfo()
     int32_t uniformRenderFrameNumber{0};
     int32_t offlineComposeFrameNumber{0};
     int32_t redrawFrameNumber{0};
+    int32_t drawImageNumber{0};
     if (!reply.ReadInt32(uniformRenderFrameNumber) || !reply.ReadInt32(offlineComposeFrameNumber) ||
-        !reply.ReadInt32(redrawFrameNumber)) {
+        !reply.ReadInt32(redrawFrameNumber) || !reply.ReadInt32(drawImageNumber)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::GetLayerComposeInfo Read parcel failed");
         return layerComposeInfo;
     }
-    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber);
+    return LayerComposeInfo(uniformRenderFrameNumber, offlineComposeFrameNumber, redrawFrameNumber, drawImageNumber);
 }
 
 HwcDisabledReasonInfos RSClientToServiceConnectionProxy::GetHwcDisabledReasonInfo()

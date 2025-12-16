@@ -1366,56 +1366,43 @@ HWTEST_F(PropertiesTest, GenerateMaterialFilter002, TestSize.Level1)
 }
 
 /**
- * @tc.name: OnSDFShapeChangeTest001
- * @tc.desc: test OnSDFShapeChangeTest
+ * @tc.name: GetRRectForSDFTest001
+ * @tc.desc: GetClipToRRect == true test
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, OnSDFShapeChangeTest001, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetRRectForSDFTest001, TestSize.Level1)
 {
     RSProperties properties;
-
-    auto sdfShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_UNION_OP_SHAPE);
-    EXPECT_NE(sdfShape, nullptr);
-    properties.renderSDFShape_ = sdfShape;
-
-    properties.OnSDFShapeChange();
-    EXPECT_NE(RSProperties::IS_UNI_RENDER ?
-        properties.GetEffect().foregroundFilterCache_ : properties.GetEffect().foregroundFilter_, nullptr);
+    properties.clipRRect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 2.f, 2.f);
+    ASSERT_TRUE(properties.GetClipToRRect());
+    ASSERT_FALSE(properties.GetRRectForSDF().rect_.IsEmpty());
 }
 
 /**
- * @tc.name: OnSDFShapeChangeTest002
- * @tc.desc: test OnSDFShapeChangeTest
+ * @tc.name: GetRRectForSDFTest002
+ * @tc.desc: GetCornerRadius().IsZero() == false test
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, OnSDFShapeChangeTest002, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetRRectForSDFTest002, TestSize.Level1)
 {
     RSProperties properties;
-
-    auto sdfShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_UNION_OP_SHAPE);
-    EXPECT_NE(sdfShape, nullptr);
-    properties.renderSDFShape_ = sdfShape;
-    properties.sdfFilter_ = std::make_shared<RSSDFEffectFilter>(sdfShape);
-
-    properties.OnSDFShapeChange();
-    EXPECT_NE(RSProperties::IS_UNI_RENDER ?
-        properties.GetEffect().foregroundFilterCache_ : properties.GetEffect().foregroundFilter_, nullptr);
+    properties.cornerRadius_ = Vector4f(5.f);
+    properties.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 2.f, 2.f);
+    ASSERT_FALSE(properties.GetRRectForSDF().rect_.IsEmpty());
 }
 
 /**
- * @tc.name: OnSDFShapeChangeTest003
- * @tc.desc: test OnSDFShapeChangeTest
+ * @tc.name: GetRRectForSDFTest003
+ * @tc.desc: else test
  * @tc.type: FUNC
  */
-HWTEST_F(PropertiesTest, OnSDFShapeChangeTest003, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetRRectForSDFTest003, TestSize.Level1)
 {
     RSProperties properties;
-    properties.SetSDFShape(nullptr);
-
-    properties.OnSDFShapeChange();
-
-    EXPECT_EQ(properties.GetEffect().foregroundFilter_, nullptr);
-    EXPECT_EQ(properties.GetEffect().foregroundFilterCache_, nullptr);
+    properties.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    properties.boundsGeo_->width_ = 10.f;
+    properties.boundsGeo_->height_ = 10.f;
+    ASSERT_FALSE(properties.GetRRectForSDF().rect_.IsEmpty());
 }
 } // namespace Rosen
 } // namespace OHOS

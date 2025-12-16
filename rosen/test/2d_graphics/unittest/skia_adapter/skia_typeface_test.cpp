@@ -471,6 +471,44 @@ HWTEST_F(SkiaTypefaceTest, Serialize001, TestSize.Level1)
     ASSERT_NE(typeface, nullptr);
     ASSERT_TRUE(typeface->Serialize() != nullptr);
 }
+
+/**
+ * @tc.name: GetVariationDesignPosition001
+ * @tc.desc: Test GetVariationDesignPosition
+ * @tc.type: FUNC
+ * @tc.require:I91EDT
+ */
+HWTEST_F(SkiaTypefaceTest, GetVariationDesignPosition001, TestSize.Level1)
+{
+    auto typeface = SkiaTypeface::MakeDefault();
+    ASSERT_NE(typeface, nullptr);
+    uint32_t axis = 10;
+    float coValue = 10;
+    int coordinateCount = 2;
+    FontArguments::VariationPosition::Coordinate coordinates[] = {
+        {axis, coValue},
+        {axis, coValue}
+    };
+    int result = typeface->GetVariationDesignPosition(coordinates, coordinateCount);
+    ASSERT_EQ(result, 1);
+}
+
+/**
+ * @tc.name: GetFontIndex001
+ * @tc.desc: Test for get font index
+ * @tc.type: FUNC
+ */
+HWTEST_F(SkiaTypefaceTest, GetFontIndex001, TestSize.Level1)
+{
+    std::string TEST_TTC_PATH = "/system/fonts/NotoSansCJK-Regular.ttc";
+    auto typeface = SkiaTypeface::MakeFromFile(TEST_TTC_PATH.c_str(), 1);
+    EXPECT_EQ(typeface->GetFontIndex(), 1);
+
+    // improved the test case coverage rate
+    SkiaTypeface emptyTypeface(nullptr);
+    EXPECT_EQ(emptyTypeface.GetTypeface(), nullptr);
+    EXPECT_EQ(emptyTypeface.GetFontIndex(), 0);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

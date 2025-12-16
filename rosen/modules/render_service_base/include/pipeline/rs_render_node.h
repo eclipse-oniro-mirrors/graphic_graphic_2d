@@ -191,6 +191,23 @@ public:
     {
         isSubTreeDirty_ = val;
     }
+    // Only used in quick skip prepare phase
+    void SetForcePrepare(bool isForcePrepare)
+    {
+        isForcePrepare_ = isForcePrepare;
+    }
+    bool IsForcePrepare() const
+    {
+        return isForcePrepare_;
+    }
+    void SetParentTreeDirty(bool isParentTreeDirty)
+    {
+        isParentTreeDirty_ = isParentTreeDirty;
+    }
+    bool IsParentTreeDirty() const
+    {
+        return isParentTreeDirty_;
+    }
     bool IsTreeStateChangeDirty() const
     {
         return isTreeStateChangeDirty_;
@@ -438,7 +455,7 @@ public:
     void UpdateTreeUifirstRootNodeId(NodeId id);
 
     // reset accumulated vals before traverses children
-    void ResetChildRelevantFlags();
+    virtual void ResetChildRelevantFlags();
     // accumulate all valid children's area
     void UpdateChildrenRect(const RectI& subRect);
     void UpdateCurCornerInfo(Vector4f& curCornerRadius, RectI& curCornerRect);
@@ -667,11 +684,13 @@ public:
     void UpdateLastFilterCacheRegion();
     void UpdateFilterRegionInSkippedSubTree(RSDirtyRegionManager& dirtyManager,
         const RSRenderNode& subTreeRoot, RectI& filterRect, const RectI& clipRect);
-    void MarkFilterStatusChanged(bool isForeground, bool isFilterRegionChanged);
+    void MarkFilterStatusChanged(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
+        bool isForeground, bool isFilterRegionChanged);
     void UpdateFilterCacheWithBackgroundDirty();
-    virtual bool UpdateFilterCacheWithBelowDirty(const Occlusion::Region& belowDirty, bool isForeground = false);
+    virtual bool UpdateFilterCacheWithBelowDirty(const Occlusion::Region& belowDirty,
+        RSDrawableSlot slot = RSDrawableSlot::BACKGROUND_FILTER);
     virtual void UpdateFilterCacheWithSelfDirty();
-    void UpdatePendingPurgeFilterDirtyRect(RSDirtyRegionManager& dirtyManager, bool isForeground);
+    void UpdatePendingPurgeFilterDirtyRect(RSDirtyRegionManager& dirtyManager, RSDrawableSlot slot);
     bool IsBackgroundInAppOrNodeSelfDirty() const
     {
         return backgroundFilterInteractWithDirty_ || backgroundFilterRegionChanged_;
@@ -685,7 +704,7 @@ public:
     bool IsAIBarFilter() const;
     bool CheckAndUpdateAIBarCacheStatus(bool intersectHwcDamage) const;
     // Return true if the cache interval of aibar has been successfully reduced; otherwise, return false.
-    bool ForceReduceAIBarCacheInterval();
+    bool ForceReduceAIBarCacheInterval(bool intersectHwcDamage);
     void MarkForceClearFilterCacheWithInvisible();
     void MarkFilterInForegroundFilterAndCheckNeedForceClearCache(NodeId offscreenCanvasNodeId);
 
@@ -940,6 +959,11 @@ public:
 
     void SetHdrNum(bool flag, NodeId instanceRootNodeId, HDRComponentType hdrType);
 
+    virtual void UpdateNodeColorSpace() {};
+    void ResetNodeColorSpace();
+    void SetNodeColorSpace(GraphicColorGamut colorSpace);
+    GraphicColorGamut GetNodeColorSpace() const;
+
     void SetEnableHdrEffect(bool enableHdrEffect);
 
     void SetIsAccessibilityConfigChanged(bool isAccessibilityConfigChanged)
@@ -1076,6 +1100,11 @@ protected:
 
 #ifdef RS_ENABLE_GPU
     std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(bool isForeground) const;
+    std::shared_ptr<DrawableV2::RSFilterDrawable> GetFilterDrawable(RSDrawableSlot slot) const;
+
+    bool InvokeFilterDrawable(RSDrawableSlot slot,
+        std::function<void(std::shared_ptr<DrawableV2::RSFilterDrawable>)> checkMethodInvokeFunc);
+
     virtual void MarkFilterCacheFlags(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,
         RSDirtyRegionManager& dirtyManager, bool needRequestNextVsync);
     bool IsForceClearOrUseFilterCache(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable);
@@ -1188,6 +1217,8 @@ private:
     bool childrenHasUIExtension_ = false;
     bool isAccessibilityConfigChanged_ = false;
     const bool isPurgeable_;
+    bool isForcePrepare_ = false;
+    bool isParentTreeDirty_ = false;
     DrawNodeType drawNodeType_ = DrawNodeType::PureContainerType;
     std::atomic<bool> isTunnelHandleChange_ = false;
     std::atomic<bool> commandExecuted_ = false;

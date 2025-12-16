@@ -144,7 +144,7 @@ int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>&
 }
 
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
-    const Rect &srcRect)
+    const Rect &srcRect, bool transformEnabled)
 {
     return nullptr;
 }
@@ -317,6 +317,11 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
 {
 }
 
+int32_t RSRenderServiceClient::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    return StatusCode::RS_CONNECTION_ERROR;
+}
+
 void RSRenderServiceClient::DisablePowerOffRenderControl(ScreenId id)
 {
 }
@@ -353,6 +358,11 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
 
 void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
 {
+}
+
+PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
+{
+    return {};
 }
 
 bool RSRenderServiceClient::RegisterBufferAvailableListener(
@@ -680,7 +690,7 @@ void RSRenderServiceClient::NotifyXComponentExpectedFrameRate(const std::string&
 {
 }
 
-void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
 }
 

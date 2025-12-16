@@ -574,6 +574,11 @@ std::shared_ptr<Drawing::ColorSpace> RSBaseRenderEngine::ConvertColorSpaceNameTo
             colorSpace = Drawing::ColorSpace::CreateRGB(
                 Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::ADOBE_RGB);
             break;
+        case OHOS::ColorManager::ColorSpaceName::DISPLAY_BT2020_SRGB:
+        case OHOS::ColorManager::ColorSpaceName::BT2020:
+            colorSpace = Drawing::ColorSpace::CreateRGB(
+                Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::REC2020);
+            break;
         default:
             colorSpace = Drawing::ColorSpace::CreateSRGB();
             break;
@@ -636,6 +641,7 @@ std::shared_ptr<Drawing::Image> RSBaseRenderEngine::CreateImageFromBuffer(RSPain
 void RSBaseRenderEngine::DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params)
 {
     RS_TRACE_NAME_FMT("RSBaseRenderEngine::DrawImage(GPU) targetColorGamut=%d", params.targetColorGamut);
+    LayerComposeCollection::GetInstance().UpdateDrawImageNumberForDFX();
 
     RS_LOGD_IF(DEBUG_COMPOSER, "RSBaseRenderEngine::DrawImage: Starting to draw image with gamut:%{public}d, "
         "src:[%{public}.2f,%{public}.2f,%{public}.2f,%{public}.2f],"
@@ -892,8 +898,12 @@ void RSBaseRenderEngine::ShrinkCachesIfNeeded(bool isForUniRedraw)
 void RSBaseRenderEngine::ClearCacheSet(const std::set<uint64_t>& unmappedCache)
 {
     if (imageManager_ != nullptr) {
-        for (auto id : unmappedCache) {
-            imageManager_->UnMapImageFromSurfaceBuffer(id);
+        if (RSSystemProperties::GetReleaseImageOneByOneFlag()) {
+            imageManager_->UnMapImageFromSurfaceBuffer(unmappedCache);
+        } else {
+            for (auto id : unmappedCache) {
+                imageManager_->UnMapImageFromSurfaceBuffer(id);
+            }
         }
     }
 }

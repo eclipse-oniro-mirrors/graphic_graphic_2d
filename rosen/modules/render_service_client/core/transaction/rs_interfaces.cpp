@@ -407,8 +407,14 @@ bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY,
     bool isSync, const Drawing::Rect& specifiedAreaRect)
 {
-    return RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(
-        node, callback, scaleX, scaleY, isSync, specifiedAreaRect);
+    return RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(node, callback, scaleX, scaleY,
+        isSync, specifiedAreaRect);
+}
+
+bool RSInterfaces::TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode> node,
+    std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
+{
+    return RSRenderInterface::GetInstance().TakeSurfaceCaptureForUIWithConfig(node, callback, captureConfig);
 }
 
 std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>
@@ -422,6 +428,13 @@ bool RSInterfaces::TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, std::
 {
     return RSRenderInterface::GetInstance().TakeUICaptureInRange(
         beginNode, endNode, useBeginNodeSize, callback, scaleX, scaleY, isSync);
+}
+
+bool RSInterfaces::TakeUICaptureInRangeWithConfig(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode,
+    bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig)
+{
+    return RSRenderInterface::GetInstance().TakeUICaptureInRangeWithConfig(beginNode, endNode,
+        useBeginNodeSize, callback, captureConfig);
 }
 
 int32_t RSInterfaces::RegisterTypeface(std::shared_ptr<Drawing::Typeface>& tf)
@@ -540,6 +553,11 @@ void RSInterfaces::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
     renderServiceClient_->SetScreenPowerStatus(id, status);
 }
 
+int32_t RSInterfaces::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    return renderServiceClient_->SetDualScreenState(id, status);
+}
+
 #endif // !ROSEN_ARKUI_X
 bool RSInterfaces::TakeSurfaceCaptureForUIWithoutUni(NodeId id,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY)
@@ -582,6 +600,11 @@ void RSInterfaces::SetScreenBacklight(ScreenId id, uint32_t level)
 {
     RS_LOGD("RSInterfaces::SetScreenBacklight: ScreenId: %{public}" PRIu64 ", level: %{public}u", id, level);
     renderServiceClient_->SetScreenBacklight(id, level);
+}
+
+PanelPowerStatus RSInterfaces::GetPanelPowerStatus(ScreenId id)
+{
+    return renderServiceClient_->GetPanelPowerStatus(id);
 }
 
 int32_t RSInterfaces::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
@@ -636,9 +659,10 @@ std::shared_ptr<VSyncReceiver> RSInterfaces::CreateVSyncReceiver(
     return renderServiceClient_->CreateVSyncReceiver(name, looper, id, windowNodeId, fromXcomponent);
 }
 
-std::shared_ptr<Media::PixelMap> RSInterfaces::CreatePixelMapFromSurfaceId(uint64_t surfaceId, const Rect &srcRect)
+std::shared_ptr<Media::PixelMap> RSInterfaces::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
+    const Rect &srcRect, bool transformEnabled)
 {
-    return renderServiceClient_->CreatePixelMapFromSurfaceId(surfaceId, srcRect);
+    return renderServiceClient_->CreatePixelMapFromSurfaceId(surfaceId, srcRect, transformEnabled);
 }
 
 int32_t RSInterfaces::GetScreenHDRCapability(ScreenId id, RSScreenHDRCapability& screenHdrCapability)
@@ -908,12 +932,12 @@ bool RSInterfaces::NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::str
     return renderServiceClient_->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
 }
 
-void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSInterfaces::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     if (!RSFrameRatePolicy::GetInstance()->GetTouchOrPointerAction(touchStatus)) {
         return;
     }
-    renderServiceClient_->NotifyTouchEvent(touchStatus, touchCnt);
+    renderServiceClient_->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
 }
 
 void RSInterfaces::NotifyDynamicModeEvent(bool enableDynamicMode)

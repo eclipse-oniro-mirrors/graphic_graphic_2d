@@ -135,7 +135,7 @@ void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     if (LIKELY(isDrawingCacheEnabled_)) {
         GetOpincDrawCache().BeforeDrawCache(canvas, *params, isOpincDropNodeExt_);
-        if (!drawBlurForCache_) {
+        if (!IsDrawingBlurForCache()) {
             GenerateCacheIfNeed(canvas, *params);
         }
         CheckCacheTypeAndDraw(canvas, *params);
@@ -156,6 +156,13 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
 {
 #ifdef RS_ENABLE_GPU
     auto& captureParam = RSUniRenderThread::GetCaptureParam();
+    bool stopDrawForRangeCapture = (canvas.GetUICapture() &&
+        captureParam.endNodeId_ == GetId() &&
+        captureParam.endNodeId_ != INVALID_NODEID);
+    if (stopDrawForRangeCapture || captureParam.captureFinished_) {
+        captureParam.captureFinished_ = true;
+        return;
+    }
     // Capture only when should paint is valid or when this node is the end node of the range ui-capture
     bool shouldPaint = ShouldPaint() || (canvas.GetUICapture() && IsUiRangeCaptureEndNode());
     if (!shouldPaint) {
@@ -183,15 +190,12 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     if (LIKELY(uniParam) && uniParam->IsSecurityDisplay() && RSRenderNodeDrawable::SkipDrawByWhiteList(canvas)) {
         return;
     }
-    bool stopDrawForRangeCapture = (canvas.GetUICapture() &&
-        captureParam.endNodeId_ == GetId() &&
-        captureParam.endNodeId_ != INVALID_NODEID);
     if (captureParam.isSoloNodeUiCapture_ || stopDrawForRangeCapture) {
         RSRenderNodeDrawable::OnDraw(canvas);
         return;
     }
     if (LIKELY(isDrawingCacheEnabled_)) {
-        if (canvas.GetUICapture() && !drawBlurForCache_) {
+        if (canvas.GetUICapture() && !IsDrawingBlurForCache()) {
             GenerateCacheIfNeed(canvas, *params);
         }
         CheckCacheTypeAndDraw(canvas, *params, true);

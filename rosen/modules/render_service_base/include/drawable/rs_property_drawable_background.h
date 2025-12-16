@@ -71,6 +71,7 @@ private:
     Drawing::Path stagingPath_;
     Color color_;
     Color stagingColor_;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> stagingGeContainer_ = nullptr;
     std::shared_ptr<Drawing::GEVisualEffectContainer> geContainer_ = nullptr;
 };
 
@@ -181,6 +182,9 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
     Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+private:
+    Drawing::RectI GetAbsRenderEffectRect(const Drawing::Canvas& canvas,
+        EffectRectType type, const RectF& bound) const override;
 };
 
 class RSUseEffectDrawable : public RSDrawable {

@@ -109,6 +109,7 @@
 #include "ui/rs_ui_context.h"
 #include "ui/rs_ui_director.h"
 #include "ui/rs_ui_patten_vec.h"
+#include "ui/rs_union_node.h"
 
 #ifdef RS_ENABLE_VK
 #include "modifier_render_thread/rs_modifiers_draw.h"
@@ -1958,11 +1959,21 @@ void RSNode::SetOutlineRadius(const Vector4f& radius)
 
 void RSNode::SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrategyType strategy, uint64_t interval)
 {
+    if (placeholder == ColorPlaceholder::NONE || ColorPickStrategyType::NONE == strategy) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::COLOR_PICKER);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::COLOR_PICKER_PLACEHOLDER);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::COLOR_PICKER_INTERVAL);
+            modifier->DetachProperty(ModifierNG::RSPropertyType::COLOR_PICKER_STRATEGY);
+        }
+        return;
+    }
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
         &ModifierNG::RSColorPickerModifier::SetColorPickerPlaceholder>(placeholder);
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
         &ModifierNG::RSColorPickerModifier::SetColorPickerStrategy>(strategy);
-    static constexpr uint64_t MIN_INTERVAL = 500; // unit: ms
+    static constexpr uint64_t MIN_INTERVAL = 180; // unit: ms
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
         &ModifierNG::RSColorPickerModifier::SetColorPickerInterval>(std::max(interval, MIN_INTERVAL));
 }
@@ -2338,6 +2349,19 @@ void RSNode::SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& material
     }
     SetPropertyNG<ModifierNG::RSMaterialFilterModifier,
         &ModifierNG::RSMaterialFilterModifier::SetMaterialNGFilter>(materialFilter);
+}
+
+void RSNode::SetMaterialWithQualityLevel(const std::shared_ptr<RSNGFilterBase> &materialFilter, FilterQuality quality)
+{
+    SetMaterialNGFilter(materialFilter);
+    if (!materialFilter) {
+        SetColorPickerParams(ColorPlaceholder::NONE, ColorPickStrategyType::NONE, 0);
+        return;
+    }
+    if (materialFilter->GetType() == RSNGEffectType::FROSTED_GLASS && quality == FilterQuality::ADAPTIVE) {
+        constexpr uint64_t DEFAULT_INTERVAL = 100; // unit: ms
+        SetColorPickerParams(ColorPlaceholder::SURFACE_CONTRAST, ColorPickStrategyType::CONTRAST, DEFAULT_INTERVAL);
+    }
 }
 
 void RSNode::SetFilter(const std::shared_ptr<RSFilter>& filter)
@@ -4138,6 +4162,7 @@ template bool RSNode::IsInstanceOf<RSRootNode>() const;
 template bool RSNode::IsInstanceOf<RSCanvasDrawingNode>() const;
 template bool RSNode::IsInstanceOf<RSEffectNode>() const;
 template bool RSNode::IsInstanceOf<RSWindowKeyFrameNode>() const;
+template bool RSNode::IsInstanceOf<RSUnionNode>() const;
 
 void RSNode::SetInstanceId(int32_t instanceId)
 {

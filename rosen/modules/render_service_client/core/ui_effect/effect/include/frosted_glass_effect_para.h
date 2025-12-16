@@ -281,24 +281,14 @@ public:
         return edLightNeg_;
     }
 
-    void SetBorderSize(Vector2f& borderSize)
+    void SetMaterialColor(Vector4f& materialColor)
     {
-        borderSize_ = borderSize;
+        materialColor_ = materialColor;
     }
 
-    const Vector2f GetBorderSize() const
+    const Vector4f GetMaterialColor() const
     {
-        return borderSize_;
-    }
-
-    void SetCornerRadius(float& cornerRadius)
-    {
-        cornerRadius_ = cornerRadius;
-    }
-
-    const float& GetCornerRadius() const
-    {
-        return cornerRadius_;
+        return materialColor_;
     }
 
 private:
@@ -332,8 +322,7 @@ private:
     Vector3f edLightKBS_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightPos_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
-    Vector2f borderSize_ = Vector2f(0.0f, 0.0f);
-    float cornerRadius_ = 0.0f;
+    Vector4f materialColor_ = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 };
 } // namespace Rosen
 } // namespace OHOS

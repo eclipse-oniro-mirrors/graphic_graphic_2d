@@ -78,9 +78,21 @@ public:
     ~TestSurfaceCaptureCallback() override {}
     void OnSurfaceCapture(std::shared_ptr<Media::PixelMap> pixelmap) override
     {
+        isOnCallBack_ = true;
     }
     void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelMap,
-        std::shared_ptr<Media::PixelMap> pixelMapHDR) override {}
+        std::shared_ptr<Media::PixelMap> pixelMapHDR) override
+    {
+        isOnCallBack_ = true;
+    }
+
+    void OnSurfaceCaptureWithErrorCode(std::shared_ptr<Media::PixelMap> pixelmap,
+        std::shared_ptr<Media::PixelMap> pixelMapHDR, CaptureError captureErrorCode) override
+    {
+        isOnCallBack_ = true;
+    }
+
+    bool isOnCallBack_ = false;
 };
 
 /**
@@ -381,5 +393,102 @@ HWTEST_F(RSPipelineClientTest, FreezeScreen, TestSize.Level1)
     ASSERT_EQ(ret, true);
 }
 
+/**
+ * @tc.name: TriggerSurfaceCaptureCallback001
+ * @tc.desc: TriggerSurfaceCaptureCallback
+ * @tc.type:FUNC
+ * @tc.require: issuesICE0QR
+ */
+HWTEST_F(RSPipelineClientTest, TriggerSurfaceCaptureCallback001, TestSize.Level1)
+{
+    NodeId id = 0;
+    ASSERT_NE(rsClient, nullptr);
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.isHdrCapture = true;
+    std::shared_ptr<TestSurfaceCaptureCallback> callback = std::make_shared<TestSurfaceCaptureCallback>();
+ 
+    std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
+ 
+    Media::InitializationOptions opts;
+    opts.size.width = 480;
+    opts.size.height = 320;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+    std::shared_ptr<Media::PixelMap> pixelMapHDR = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMapHDR, nullptr);
+ 
+    rsClient->TriggerSurfaceCaptureCallback(id, captureConfig, pixelMap,
+        CaptureError::CAPTURE_OK, pixelMapHDR);
+    EXPECT_TRUE(callback->isOnCallBack_);
+}
+ 
+/**
+ * @tc.name: TriggerSurfaceCaptureCallback002
+ * @tc.desc: TriggerSurfaceCaptureCallback
+ * @tc.type:FUNC
+ * @tc.require: issuesICE0QR
+ */
+HWTEST_F(RSPipelineClientTest, TriggerSurfaceCaptureCallback002, TestSize.Level1)
+{
+    NodeId id = 0;
+    ASSERT_NE(rsClient, nullptr);
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.needErrorCode = true;
+    std::shared_ptr<TestSurfaceCaptureCallback> callback = std::make_shared<TestSurfaceCaptureCallback>();
+ 
+    std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector = {callback};
+    rsClient->surfaceCaptureCbMap_.emplace(std::make_pair(id, captureConfig), callbackVector);
+ 
+    Media::InitializationOptions opts;
+    opts.size.width = 480;
+    opts.size.height = 320;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+    std::shared_ptr<Media::PixelMap> pixelMapHDR = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMapHDR, nullptr);
+ 
+    rsClient->TriggerSurfaceCaptureCallback(id, captureConfig, pixelMap,
+        CaptureError::CAPTURE_OK, pixelMapHDR);
+    EXPECT_TRUE(callback->isOnCallBack_);
+}
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+/**
+ * @tc.name: RegisterCanvasCallbackTest
+ * @tc.desc: RegisterCanvasCallback Test
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPipelineClientTest, RegisterCanvasCallbackTest, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    auto renderServiceConnectHub = RSRenderServiceConnectHub::GetInstance();
+    RSRenderServiceConnectHub::instance_ = nullptr;
+    rsClient->RegisterCanvasCallback(nullptr);
+    ASSERT_EQ(RSRenderServiceConnectHub::GetClientToRenderConnection(), nullptr);
+    RSRenderServiceConnectHub::instance_ = renderServiceConnectHub;
+    rsClient->RegisterCanvasCallback(nullptr);
+    ASSERT_NE(RSRenderServiceConnectHub::GetClientToRenderConnection(), nullptr);
+}
+
+/**
+ * @tc.name: SubmitCanvasPreAllocatedBufferTest
+ * @tc.desc: SubmitCanvasPreAllocatedBuffer Test
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPipelineClientTest, SubmitCanvasPreAllocatedBufferTest, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    auto renderServiceConnectHub = RSRenderServiceConnectHub::GetInstance();
+    RSRenderServiceConnectHub::instance_ = nullptr;
+    ASSERT_EQ(RSRenderServiceConnectHub::GetClientToRenderConnection(), nullptr);
+    auto ret = rsClient->SubmitCanvasPreAllocatedBuffer(1, nullptr, 1);
+    ASSERT_NE(ret, 0);
+    RSRenderServiceConnectHub::instance_ = renderServiceConnectHub;
+    ASSERT_NE(RSRenderServiceConnectHub::GetClientToRenderConnection(), nullptr);
+    ret = rsClient->SubmitCanvasPreAllocatedBuffer(1, nullptr, 1);
+    ASSERT_NE(ret, 0);
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

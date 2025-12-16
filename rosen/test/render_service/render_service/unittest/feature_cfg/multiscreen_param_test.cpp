@@ -66,20 +66,6 @@ HWTEST_F(MultiScreenParamTest, SetSlrScaleEnabled, Function | SmallTest | Level1
 }
 
 /**
- * @tc.name: SetRsReportHwcDead
- * @tc.desc: Verify the SetRsReportHwcDead/IsRsReportHwcDead function
- * @tc.type: FUNC
- * @tc.require: #IBOA5Q
- */
-HWTEST_F(MultiScreenParamTest, SetRsReportHwcDead, Function | SmallTest | Level1)
-{
-    MultiScreenParam::SetRsReportHwcDead(true);
-    EXPECT_TRUE(MultiScreenParam::IsRsReportHwcDead());
-    MultiScreenParam::SetRsReportHwcDead(false);
-    EXPECT_FALSE(MultiScreenParam::IsRsReportHwcDead());
-}
-
-/**
  * @tc.name: SetRsSetScreenPowerStatus
  * @tc.desc: Verify the SetRsSetScreenPowerStatus/IsRsSetScreenPowerStatus function
  * @tc.type: FUNC
@@ -119,6 +105,20 @@ HWTEST_F(MultiScreenParamTest, SetMipmapMode, Function | SmallTest | Level1)
     ASSERT_EQ(MultiScreenParam::GetMipmapMode(), Drawing::MipmapMode::NONE);
     MultiScreenParam::SetMipmapMode(Drawing::MipmapMode::NEAREST);
     ASSERT_EQ(MultiScreenParam::GetMipmapMode(), Drawing::MipmapMode::NEAREST);
+}
+
+/**
+ * @tc.name: ForceRenderForMirror
+ * @tc.desc: Verify the SetForceRenderForMirror function
+ * @tc.type: FUNC
+ * @tc.require: #27057
+ */
+HWTEST_F(MultiScreenParamTest, SetForceRenderForMirror, Function | SmallTest | Level1)
+{
+    MultiScreenParam::SetForceRenderForMirror(true);
+    EXPECT_TRUE(MultiScreenParam::IsForceRenderForMirror());
+    MultiScreenParam::SetForceRenderForMirror(false);
+    EXPECT_FALSE(MultiScreenParam::IsForceRenderForMirror());
 }
 } // namespace Rosen
 } // namespace OHOS

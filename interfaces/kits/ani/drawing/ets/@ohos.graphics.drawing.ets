@@ -505,7 +505,7 @@ namespace drawing {
     static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj : long = 0;
     private cleaner: Cleaner | null = null;
-
+    private getNative() { return this.nativeObj; }
     registerCleaner(ptr: long): void {
       this.cleaner = new Cleaner("Canvas", ptr);
       destroyRegister.register(this, this.cleaner!, unregisterToken);
@@ -2152,6 +2152,22 @@ namespace drawing {
      * @since 20
      */
     static native makeFromFileWithArguments(filePath: string, typefaceArguments: TypefaceArguments): Typeface;
+
+    /**
+     * Checks if the typeface is bold.
+     * @returns { boolean } Returns true if the typeface is bold; return false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 23
+     */
+    native isBold(): boolean;
+
+    /**
+     * Checks if the typeface is italic.
+     * @returns { boolean } Returns true if the typeface is italic; return false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 23
+     */
+    native isItalic(): boolean;
   }
 
   /**
@@ -3897,7 +3913,7 @@ namespace drawing {
     static { loadLibraryWithPermissionCheck("drawing_ani_core", "@ohos.graphics.drawing"); }
     private nativeObj: long = 0;
     private cleaner: Cleaner | null = null;
-
+    private getNative() { return this.nativeObj; }
     registerCleaner(ptr: long): void {
       this.cleaner = new Cleaner("Path", ptr);
       destroyRegister.register(this, this.cleaner!, unregisterToken);
@@ -5057,6 +5073,37 @@ namespace drawing {
      * @since 20
      */
     native setPath(path: Path, clip: Region): boolean;
+
+    /**
+     * Checks if the region is equivalent to a single rectangle.
+     * @returns { boolean } Returns true if the region contains a single rectangle; return false otherwise.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 23
+     */
+    native isRect(): boolean;
+
+    /**
+     * Checks if the region is equivalent to a single rectangle and it contains the specified rectangle.
+     * @param { int } left - Indicates the left position of the rect.
+     * @param { int } top - Indicates the top position of the rect.
+     * @param { int } right - Indicates the right position of the rect.
+     * @param { int } bottom - Indicates the bottom position of the rect.
+     * @returns { boolean } Returning true guarantees that the rectangle is contained by this region; however, returning
+     *     false indicates that the region is not equivalent to a single rectangle or the rectangle is not contained by
+     *     this region.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 23
+     */
+    native quickContains(left: int, top: int, right: int, bottom: int): boolean;
+
+    /**
+     * Offsets the region by adding dx along the x-axis and dy along the y-axis.
+     * @param { int } dx - Indicates the x coordinate of the point. The parameter must be an integer.
+     * @param { int } dy - Indicates the y coordinate of the point. The parameter must be an integer.
+     * @syscap SystemCapability.Graphics.Drawing
+     * @since 23
+     */
+    native offset(dx: int, dy: int): void;
   }
 
   /**

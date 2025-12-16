@@ -109,7 +109,8 @@ public:
 
     int32_t GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid);
 
-    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid, const Rect &srcRect);
+    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid,
+        const Rect &srcRect, bool transformEnabled = false);
 
     ScreenId GetDefaultScreenId();
     ScreenId GetActiveScreenId();
@@ -217,6 +218,8 @@ public:
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
 
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
+
     RSScreenModeInfo GetScreenActiveMode(ScreenId id);
 
     std::vector<RSScreenModeInfo> GetScreenSupportedModes(ScreenId id);
@@ -236,6 +239,8 @@ public:
     int32_t GetScreenBacklight(ScreenId id);
 
     void SetScreenBacklight(ScreenId id, uint32_t level);
+
+    PanelPowerStatus GetPanelPowerStatus(ScreenId id);
 
     bool RegisterBufferAvailableListener(
         NodeId id, const BufferAvailableCallback &callback, bool isFromRenderThread = false);
@@ -347,7 +352,7 @@ public:
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount);
 
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType);
 
     void NotifyDynamicModeEvent(bool enableDynamicMode);
 

@@ -677,7 +677,7 @@ float RSClientToServiceConnection::GetRotationInfoFromSurfaceBuffer(const sptr<S
 }
 
 ErrCode RSClientToServiceConnection::CreatePixelMapFromSurface(sptr<Surface> surface,
-    const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap)
+    const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled)
 {
     OHOS::Media::Rect rect = {
         .left = srcRect.x,
@@ -1432,6 +1432,25 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
     }
 }
 
+int32_t RSClientToServiceConnection::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    if (!screenManager_) {
+        RS_LOGE("%{public}s screenManager is null, id: %{public}" PRIu64, __func__, id);
+        return StatusCode::SCREEN_MANAGER_NULL;
+    }
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+        return RSRenderComposerManager::GetInstance().PostSyncTask(id,
+            [=]() {return screenManager_->SetDualScreenState(id, status); });
+    } else if (mainThread_ != nullptr) {
+        return mainThread_->ScheduleTask(
+            [=]() { return screenManager_->SetDualScreenState(id, status); }).get();
+    } else {
+        RS_LOGE("%{public}s mainThread_ is null, id: %{public}" PRIu64, __func__, id);
+        return StatusCode::MAIN_THREAD_NULL;
+    }
+}
+
 namespace {
 void TakeSurfaceCaptureForUiParallel(
     NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
@@ -1739,6 +1758,31 @@ void RSClientToServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level
         mainThread_->ScheduleTask(
             [=]() { screenManager_->SetScreenBacklight(id, level); }).wait();
     }
+}
+
+ErrCode RSClientToServiceConnection::GetPanelPowerStatus(ScreenId screenId, uint32_t& status)
+{
+    if (!screenManager_) {
+        RS_LOGE("%{public}s screenManager_ is nullptr.", __func__);
+        status = INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_OPERATION;
+    }
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+#ifdef RS_ENABLE_GPU
+        status = RSRenderComposerManager::GetInstance().PostSyncTask(screenId,
+            [=]() { return screenManager_->GetPanelPowerStatus(screenId); });
+#else
+        status = INVALID_PANEL_POWER_STATUS;
+#endif
+    } else if (mainThread_ != nullptr) {
+        status = mainThread_->ScheduleTask(
+            [=]() { return screenManager_->GetPanelPowerStatus(screenId); }).get();
+    } else {
+        status = INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
 }
 
 ErrCode RSClientToServiceConnection::RegisterBufferClearListener(
@@ -2772,7 +2816,7 @@ bool RSClientToServiceConnection::NotifySoftVsyncRateDiscountEvent(uint32_t pid,
     return true;
 }
 
-ErrCode RSClientToServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+ErrCode RSClientToServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     if (mainThread_ != nullptr) {
         mainThread_->HandleTouchEvent(touchStatus, touchCnt);
@@ -2780,7 +2824,7 @@ ErrCode RSClientToServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32
     }
     auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
     if (frameRateMgr != nullptr) {
-        frameRateMgr->HandleTouchEvent(remotePid_, touchStatus, touchCnt);
+        frameRateMgr->HandleTouchEvent(remotePid_, touchStatus, touchCnt, sourceType);
     }
     return ERR_OK;
 }

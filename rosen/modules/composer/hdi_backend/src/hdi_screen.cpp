@@ -280,6 +280,13 @@ int32_t HdiScreen::SetScreenConstraint(uint64_t frameId, uint64_t timestamp, uin
     return device_->SetScreenConstraint(screenId_, frameId, timestamp, type);
 }
 
+int32_t HdiScreen::SetDisplayProperty(uint64_t value)
+{
+    CHECK_DEVICE_NULL(device_);
+    uint32_t propertyId = HDI::Display::Composer::V1_4::DISPLAY_PROPERTY_ID_MULTI_DISPLAY_COORDINATION;
+    return device_->SetDisplayProperty(screenId_, propertyId, value);
+}
+
 bool HdiScreen::GetDisplayPropertyForHardCursor(uint32_t screenId)
 {
     if (device_ == nullptr) {
@@ -296,6 +303,12 @@ bool HdiScreen::GetDisplayPropertyForHardCursor(uint32_t screenId)
         return true;
     }
     return false;
+}
+
+int32_t HdiScreen::GetPanelPowerStatus(GraphicPanelPowerStatus& status)
+{
+    CHECK_DEVICE_NULL(device_);
+    return device_->GetPanelPowerStatus(screenId_, status);
 }
 
 int32_t HdiScreen::GetDisplayIdentificationData(uint8_t& outPort, std::vector<uint8_t>& edidData) const

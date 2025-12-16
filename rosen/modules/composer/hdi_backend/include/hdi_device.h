@@ -36,6 +36,7 @@ public:
     virtual bool RegHwcDeadCallback(OnHwcDeadCallback callback, void *data) = 0;
     virtual int32_t RegScreenVBlankIdleCallback(OnVBlankIdleCallback callback, void *data) = 0;
     virtual int32_t SetScreenConstraint(uint32_t screenId, uint64_t frameId, uint64_t timestamp, uint32_t type) = 0;
+    virtual int32_t SetDisplayProperty(uint32_t screenId, uint32_t propertyId, uint64_t propertyValue) = 0;
     virtual int32_t GetDisplayProperty(uint32_t screenId, uint32_t propertyId, uint64_t& propertyValue) = 0;
     virtual int32_t GetScreenCapability(uint32_t screenId, GraphicDisplayCapability &info) = 0;
     virtual int32_t GetScreenSupportedModes(uint32_t screenId, std::vector<GraphicDisplayModeInfo> &modes) = 0;
@@ -116,6 +117,7 @@ public:
     virtual int32_t ClearClientBuffer(uint32_t screenId) = 0;
     virtual void Destroy() = 0;
     virtual int32_t RegHwcEventCallback(const RSHwcEventCallback& callback, void *data) = 0;
+    virtual int32_t GetPanelPowerStatus(uint32_t devId, GraphicPanelPowerStatus& status) = 0;
 
 private:
     HdiDevice(const HdiDevice& rhs) = delete;

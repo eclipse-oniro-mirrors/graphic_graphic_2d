@@ -87,6 +87,8 @@ void RSScreenManagerTest::SetUpTestCase()
         DoAll(SaveArg<1>(&Mock::HdiDeviceMock::powerStatusMock_), testing::Return(0)));
     EXPECT_CALL(*hdiDeviceMock_, GetScreenPowerStatus(mockScreenId_, _)).WillRepeatedly(
         DoAll(SetArgReferee<1>(ByRef(Mock::HdiDeviceMock::powerStatusMock_)), testing::Return(0)));
+    EXPECT_CALL(*hdiDeviceMock_, GetPanelPowerStatus(mockScreenId_, _)).WillRepeatedly(
+        DoAll(SetArgReferee<1>(ByRef(Mock::HdiDeviceMock::panelPowerStatusMock_)), testing::Return(0)));
 #ifdef RS_ENABLE_VK
     RsVulkanContext::SetRecyclable(false);
 #endif
@@ -467,6 +469,51 @@ HWTEST_F(RSScreenManagerTest, SetPhysicalScreenResolution_001, TestSize.Level1)
     uint32_t height = 1080;
     auto result = screenManager->SetPhysicalScreenResolution(id, width, height);
     ASSERT_EQ(result, SCREEN_NOT_FOUND);
+}
+
+/*
+ * @tc.name: SetDualScreenState_001
+ * @tc.desc: Test SetDualScreenState with invalid screen id
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, SetDualScreenState_001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(screenManager, nullptr);
+
+    ScreenId id = INVALID_SCREEN_ID;
+    int32_t ret = screenManager->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_EQ(ret, static_cast<int32_t>(StatusCode::SCREEN_NOT_FOUND));
+}
+
+/*
+ * @tc.name: SetDualScreenState_002
+ * @tc.desc: Test SetDualScreenState with valid screen id
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, SetDualScreenState_002, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(screenManager, nullptr);
+
+    // mock HDI device
+    ScreenId id = mockScreenId_;
+    auto rsScreen = std::make_shared<RSScreen>(HdiOutput::CreateHdiOutput(id));
+    ASSERT_NE(rsScreen, nullptr);
+    ASSERT_NE(rsScreen->hdiScreen_, nullptr);
+    ASSERT_NE(hdiDeviceMock_, nullptr);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+
+    // mount rsScreen to screen manager
+    screenManager->screens_[mockScreenId_] = rsScreen;
+    EXPECT_CALL(*hdiDeviceMock_, SetDisplayProperty(id, _, _)).WillOnce(testing::Return(0));
+    int32_t ret = screenManager->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_EQ(ret, static_cast<int32_t>(StatusCode::SUCCESS));
+
+    // unmount rsScreen
+    screenManager->screens_.erase(mockScreenId_);
 }
 
 /*
@@ -1467,6 +1514,53 @@ HWTEST_F(RSScreenManagerTest, GetScreenPowerStatus_003, TestSize.Level1)
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_DOZE);
     screenManager->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_DOZE_SUSPEND);
     ASSERT_EQ(screenManager->GetScreenPowerStatus(screenId), POWER_STATUS_DOZE_SUSPEND);
+}
+
+/*
+ * @tc.name: GetPanelPowerStatus_001
+ * @tc.desc: Test GetPanelPowerStatus, with INVALID_SCREEN_ID
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetPanelPowerStatus_001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ScreenId screenId = INVALID_SCREEN_ID;
+    ASSERT_EQ(screenManager->GetPanelPowerStatus(screenId), PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
+}
+
+/*
+ * @tc.name: GetPanelPowerStatus_002
+ * @tc.desc: Test GetPanelPowerStatus, with virtual screen
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetPanelPowerStatus_002, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ScreenId screenId = 1;
+    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
+    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
+    screenManager->MockHdiScreenConnected(rsScreen);
+    ASSERT_EQ(screenManager->GetPanelPowerStatus(screenId), PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
+}
+
+/*
+ * @tc.name: GetPanelPowerStatus_003
+ * @tc.desc: Test GetPanelPowerStatus, with mock HDI device
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetPanelPowerStatus_003, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    ScreenId screenId = mockScreenId_;
+    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
+    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    screenManager->MockHdiScreenConnected(rsScreen);
+    ASSERT_EQ(screenManager->GetPanelPowerStatus(screenId), PanelPowerStatus::PANEL_POWER_STATUS_ON);
 }
 
 /*

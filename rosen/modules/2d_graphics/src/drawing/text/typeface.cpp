@@ -147,6 +147,13 @@ std::string Typeface::GetFontPath() const
     return (typefaceImpl_ == nullptr) ? "" : typefaceImpl_->GetFontPath();
 }
 
+// LCOV_EXCL_START
+std::int32_t Typeface::GetFontIndex() const
+{
+    return (typefaceImpl_ == nullptr) ? 0 : typefaceImpl_->GetFontIndex();
+}
+// LCOV_EXCL_STOP
+
 FontStyle Typeface::GetFontStyle() const
 {
     if (typefaceImpl_) {
@@ -329,6 +336,16 @@ void Typeface::UpdateStream(std::unique_ptr<MemoryStream> stream)
     }
 }
 
+int Typeface::GetVariationDesignPosition(FontArguments::VariationPosition::Coordinate coordinates[],
+    int coordinateCount) const
+{
+    if (typefaceImpl_) {
+        return typefaceImpl_->GetVariationDesignPosition(coordinates,
+            coordinateCount);
+    }
+    return 0;
+}
+
 // Opentype font table constants
 constexpr size_t MIN_HEADER_LEN = 6;            // first four bytes tell the type, two subsequent bytes toc size
 constexpr size_t TABLE_COUNT = 4;               // Tables count is defined in fourth and fifth bytes
@@ -363,8 +380,11 @@ uint32_t Typeface::CalculateHash(const uint8_t* data, size_t datalen, uint32_t i
                 return hash;
             }
         }
-        size_t size =
-            extraOffset + STATIC_HEADER_LEN + TABLE_ENTRY_LEN * read<uint16_t>(data + extraOffset + TABLE_COUNT);
+        size_t size = extraOffset + STATIC_HEADER_LEN;
+        // prevent reading beyond the data length
+        if (datalen >= extraOffset + TABLE_COUNT + sizeof(uint16_t)) {
+            size += TABLE_ENTRY_LEN * read<uint16_t>(data + extraOffset + TABLE_COUNT);
+        }
         size = size > datalen ? datalen : size;
 #ifdef USE_M133_SKIA
         hash ^= SkChecksum::Hash32(data, size, datalen);

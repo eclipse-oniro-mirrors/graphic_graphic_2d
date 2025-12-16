@@ -121,8 +121,7 @@ DECLARE_SHADER(FrostedGlassEffect, FROSTED_GLASS_EFFECT,
     ADD_PROPERTY_TAG(FrostedGlassEffect, EdLightKBS),
     ADD_PROPERTY_TAG(FrostedGlassEffect, EdLightPos),
     ADD_PROPERTY_TAG(FrostedGlassEffect, EdLightNeg),
-    ADD_PROPERTY_TAG(FrostedGlassEffect, BorderSize),
-    ADD_PROPERTY_TAG(FrostedGlassEffect, CornerRadius),
+    ADD_PROPERTY_TAG(FrostedGlassEffect, MaterialColor),
     ADD_PROPERTY_TAG(FrostedGlassEffect, Shape)
 );
 
@@ -213,5 +212,8 @@ DECLARE_SHADER(CircleFlowlight, CIRCLE_FLOWLIGHT,
     ADD_PROPERTY_TAG(CircleFlowlight, GradientX),
     ADD_PROPERTY_TAG(CircleFlowlight, GradientY),
     ADD_PROPERTY_TAG(CircleFlowlight, Progress),
+    ADD_PROPERTY_TAG(CircleFlowlight, Strength),
+    ADD_PROPERTY_TAG(CircleFlowlight, DistortStrength),
+    ADD_PROPERTY_TAG(CircleFlowlight, BlendGradient),
     ADD_PROPERTY_TAG(CircleFlowlight, Mask)
 );

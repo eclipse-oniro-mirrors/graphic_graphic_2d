@@ -88,7 +88,7 @@ public:
         int32_t& repCode) = 0;
 
     virtual ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
-        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap) = 0;
+        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) = 0;
 
     virtual ErrCode GetDefaultScreenId(uint64_t& screenId) = 0;
 
@@ -205,6 +205,8 @@ public:
 
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
 
+    virtual int32_t SetDualScreenState(ScreenId id, DualScreenStatus status) = 0;
+
     virtual ErrCode RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app) = 0;
 
     virtual RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) = 0;
@@ -228,6 +230,8 @@ public:
     virtual ErrCode GetScreenBacklight(uint64_t id, int32_t& level) = 0;
 
     virtual void SetScreenBacklight(ScreenId id, uint32_t level) = 0;
+
+    virtual ErrCode GetPanelPowerStatus(ScreenId id, uint32_t& status) = 0;
 
     virtual ErrCode RegisterBufferAvailableListener(
         NodeId id, sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread) = 0;
@@ -341,7 +345,7 @@ public:
 
     virtual bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) = 0;
 
-    virtual ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) = 0;
+    virtual ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) = 0;
 
     virtual void NotifyDynamicModeEvent(bool enableDynamicMode) = 0;
 

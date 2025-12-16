@@ -49,7 +49,7 @@ public:
         int32_t& repCode) override;
     
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
-        std::shared_ptr<Media::PixelMap> &pixelMap) override;
+        std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) override;
 
     ErrCode GetDefaultScreenId(uint64_t& screenId) override;
     ErrCode GetActiveScreenId(uint64_t& screenId) override;
@@ -162,6 +162,8 @@ public:
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
 
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status) override;
+
     ErrCode RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app) override;
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) override;
 
@@ -181,6 +183,8 @@ public:
     ErrCode GetScreenBacklight(uint64_t id, int32_t& level) override;
 
     void SetScreenBacklight(ScreenId id, uint32_t level) override;
+
+    ErrCode GetPanelPowerStatus(uint64_t screenId, uint32_t& status) override;
 
     ErrCode RegisterBufferAvailableListener(
         NodeId id, sptr<RSIBufferAvailableCallback> callback, bool isFromRenderThread) override;
@@ -293,7 +297,7 @@ public:
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) override;
 
-    ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
+    ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) override;
 
     void NotifyDynamicModeEvent(bool enableDynamicMode) override;
 
