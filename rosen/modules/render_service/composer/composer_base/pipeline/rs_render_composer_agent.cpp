@@ -310,22 +310,5 @@ void RSRenderComposerAgent::ClearRefreshRateCounts(std::string& dumpString)
         }
     ).wait();
 }
-
-void RSRenderComposerAgent::SetScreenPowerOnChanged(bool flag)
-{
-    if (rsRenderComposer_ == nullptr) {
-        return;
-    }
-    std::weak_ptr<RSRenderComposerAgent> weakThis = shared_from_this();
-    rsRenderComposer_->PostTask(
-        [weakThis, flag]() {
-            std::shared_ptr<RSRenderComposerAgent> renderComposerAgent = weakThis.lock();
-            if (renderComposerAgent == nullptr || renderComposerAgent->rsRenderComposer_ == nullptr) {
-                return;
-            }
-            renderComposerAgent->rsRenderComposer_->SetScreenPowerOnChanged(flag);
-        }
-    );
-}
 } // namespace Rosen
 } // namespace OHOS

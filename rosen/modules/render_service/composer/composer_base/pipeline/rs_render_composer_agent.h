@@ -42,7 +42,6 @@ public:
     void HitchsDump(std::string& dumpString, std::string& layerArg);
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
-    void SetScreenPowerOnChanged(bool flag);
 
 private:
     std::shared_ptr<RSRenderComposer> rsRenderComposer_;
