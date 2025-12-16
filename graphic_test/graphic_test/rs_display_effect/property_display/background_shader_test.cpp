@@ -246,12 +246,13 @@ void SetRippleEffect(Rosen::RSNGDotMatrixShader& shader,
         Vector2f point = {startPoints[i].GetX(), startPoints[i].GetY()};
         StartPoints.emplace_back(point);
     }
+    int rippleType = 2;
     shader.Setter<Rosen::DotMatrixShaderEffectColorsTag>(EffectColors);
     shader.Setter<Rosen::DotMatrixShaderColorFractionsTag>(colorFractions);
     shader.Setter<Rosen::DotMatrixShaderStartPointsTag>(StartPoints);
     shader.Setter<Rosen::DotMatrixShaderPathWidthTag>(pathWidth);
     shader.Setter<Rosen::DotMatrixShaderInverseEffectTag>(inverseEffect);
-    shader.Setter<Rosen::DotMatrixShaderEffectTypeTag>(2.0f);
+    shader.Setter<Rosen::DotMatrixShaderEffectTypeTag>(rippleType);
 }
 
 GRAPHIC_TEST(BackgroundTest, CONTENT_DISPLAY_TEST, BackGround_DotMatrix_Shader_RippleEffect_Test)
