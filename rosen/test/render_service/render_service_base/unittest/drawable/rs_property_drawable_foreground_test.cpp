@@ -752,7 +752,6 @@ HWTEST_F(RSPropertyDrawableForegroundTest, DrawBorderTest001, TestSize.Level1)
 }
 
 /**
-<<<<<<< HEAD
  * @tc.name: DrawBorderTest002
  * @tc.desc: DrawBorder test with sdf effect filter
  * @tc.type: FUNC
