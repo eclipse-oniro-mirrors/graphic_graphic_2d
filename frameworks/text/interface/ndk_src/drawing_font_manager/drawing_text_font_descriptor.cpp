@@ -370,10 +370,11 @@ OH_Drawing_String* OH_Drawing_GetFontPathsByType(OH_Drawing_SystemFontType fontT
     }
     FontDescriptorMgrInstance.GetFontPathsByType(systemFontType, fontPaths);
     if (fontPaths.empty()) {
-        TEXT_LOGI_LIMIT3_MIN("Failed to GetFontPathsByType, font type: %{public}d", systemFontType);
+        TEXT_LOGI_LIMIT3_MIN("Failed to get font path by type: %{public}d", systemFontType);
         *num = 0;
         return nullptr;
     }
+    // +1 for nullptr termination
     std::unique_ptr<OH_Drawing_String[]> stringArr = std::make_unique<OH_Drawing_String[]>(fontPaths.size() + 1);
     size_t byteLength = sizeof(OH_Drawing_String) * (fontPaths.size() + 1);
     if (memset_s(stringArr.get(), byteLength, 0, byteLength) != EOK) {

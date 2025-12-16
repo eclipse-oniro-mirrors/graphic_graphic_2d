@@ -482,7 +482,7 @@ ani_object AniFontDescriptor::GetFontPathsByType(ani_env* env, ani_enum_item fon
     ani_int typeIndex;
     ani_status ret = env->EnumItem_GetValue_Int(fontType, &typeIndex);
     if (ret != ANI_OK) {
-        TEXT_LOGE("Failed to parse fontType,ret %{public}d", ret);
+        TEXT_LOGE("Failed to parse fontType, ret %{public}d", ret);
         AniTextUtils::ThrowBusinessError(env, TextErrorCode::ERROR_INVALID_PARAM, "Parameter fontType is invalid");
         return AniTextUtils::CreateAniUndefined(env);
     }
@@ -494,11 +494,11 @@ ani_object AniFontDescriptor::GetFontPathsByType(ani_env* env, ani_enum_item fon
     FontDescriptorMgrInstance.GetFontPathsByType(systemFontType, fontPaths);
 
     ani_object arrayObj = AniTextUtils::CreateAniArray(env, fontPaths.size());
-    ani_boolean isUndefined;
+    ani_boolean isUndefined = false;
     env->Reference_IsUndefined(arrayObj, &isUndefined);
     if (isUndefined) {
         TEXT_LOGE("Failed to create arrayObject");
-        return AniTextUtils::CreateAniUndefined(env);
+        return AniTextUtils::CreateAniArray(env, 0);
     }
     ani_size index = 0;
     for (const auto& item : fontPaths) {
@@ -507,7 +507,7 @@ ani_object AniFontDescriptor::GetFontPathsByType(ani_env* env, ani_enum_item fon
             TEXT_LOGE("Failed to set fontList item %{public}zu", index);
             continue;
         }
-        index++;
+        index += 1;
     }
     return arrayObj;
 }
