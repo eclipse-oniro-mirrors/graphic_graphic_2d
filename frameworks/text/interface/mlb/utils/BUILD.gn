@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Copyright (c) 2025 Huawei Device Co., Ltd.. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,42 +11,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/test.gni")
+import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/frameworks/text/config.gni")
-import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-ohos_unittest("text_utils_test") {
-  module_out_path = text_ut_out_path
-  sources = [
-    "mlb_utils_test.cpp",
-    "string_util_test.cpp",
-    "typeface_map_test.cpp",
-  ]
-
-  cflags_cc = [
-    "-std=c++17",
-    "-Dprivate=public",
-    "-Dprotected=public",
-  ]
-
+ohos_source_set("mlb_utils") {
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    debug = false
+  }
+  sources = [ "src/font_utils.cpp" ]
   include_dirs = [
-    "$rosen_text_root/adapter/skia",
+    "include",
     "$rosen_text_root/interface/export/rosen_text",
-    "$rosen_text_root/interface/mlb/utils/include",
-  ]
-
-  deps = [
-    "$rosen_root/modules/2d_graphics:2d_graphics",
-    "$rosen_text_root:rosen_text",
-    "$rosen_text_root/interface/mlb/utils:mlb_utils",
   ]
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"
-}
-
-group("unittest") {
-  testonly = true
-
-  deps = [ ":text_utils_test" ]
 }

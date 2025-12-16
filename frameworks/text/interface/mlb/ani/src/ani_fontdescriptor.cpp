@@ -24,26 +24,11 @@
 #include "font_parser.h"
 #include "typography_types.h"
 #include "utils/text_log.h"
+#include "utils/include/font_utils.h"
 namespace OHOS::Text::ANI {
 using namespace OHOS::Rosen;
 
 namespace {
-std::unordered_map<int, int> g_weightMap = {
-    {100, static_cast<int>(FontWeight::W100)},
-    {200, static_cast<int>(FontWeight::W200)},
-    {300, static_cast<int>(FontWeight::W300)},
-    {400, static_cast<int>(FontWeight::W400)},
-    {500, static_cast<int>(FontWeight::W500)},
-    {600, static_cast<int>(FontWeight::W600)},
-    {700, static_cast<int>(FontWeight::W700)},
-    {800, static_cast<int>(FontWeight::W800)},
-    {900, static_cast<int>(FontWeight::W900)}
-};
-constexpr int MIN_FONT_WEIGHT = 100;
-constexpr int MAX_FONT_WEIGHT = 900;
-constexpr int WEIGHT_STEP = 100;
-constexpr int ROUNDING_HALD_STEP = 50;
-
 const std::string FONT_PATH_IN_SIGN =
     "X{C{" + std::string(ANI_GLOBAL_RESOURCE) + "}C{" + std::string(ANI_STRING) + "}}";
 
@@ -105,11 +90,37 @@ ani_status AniFontDescriptor::AniInit(ani_vm* vm, uint32_t* result)
     return ANI_OK;
 }
 
+ani_status FontDescriptorGetFontWeight(ani_env* env, ani_object obj, FontDescSharedPtr& fontDesc)
+{
+    ani_ref ref = nullptr;
+    ani_status result = AniTextUtils::ReadOptionalField(
+        env, obj, AniGlobalMethod::GetInstance().fontDescriptorGetWeight, ref);
+    if (result == ANI_OK && ref != nullptr) {
+        ani_size index = 0;
+        result = env->EnumItem_GetIndex(reinterpret_cast<ani_enum_item>(ref), &index);
+        if (result != ANI_OK || index >= AniTextEnum::fontWeight.size()) {
+            TEXT_LOGE("Index is invalid %{public}zu, ret %{public}d", index, result);
+            return ANI_ERROR;
+        }
+        int weightValue = 0;
+        if (OHOS::MLB::FindFontWeightEnum(static_cast<int>(AniTextEnum::fontWeight[index]), weightValue)) {
+            fontDesc.get()->weight = weightValue;
+            return ANI_OK;
+        } else {
+            TEXT_LOGE("Failed to parse font weight, ret %{public}d", result);
+            return ANI_ERROR;
+        }
+    }
+    return result;
+}
+
 ani_status ParseFontDescriptorToNative(ani_env* env, ani_object& aniObj, FontDescSharedPtr& fontDesc)
 {
     fontDesc = std::make_shared<TextEngine::FontParser::FontDescriptor>();
 
     ani_status status = ANI_OK;
+    READ_OPTIONAL_FIELD(env, aniObj, AniGlobalMethod::GetInstance().fontDescriptorGetPath, path,
+        String, fontDesc.get(), status);
     READ_OPTIONAL_FIELD(env, aniObj, AniGlobalMethod::GetInstance().fontDescriptorGetPostScriptName, postScriptName,
         String, fontDesc.get(), status);
     READ_OPTIONAL_FIELD(env, aniObj, AniGlobalMethod::GetInstance().fontDescriptorGetFullName, fullName, String,
@@ -127,6 +138,7 @@ ani_status ParseFontDescriptorToNative(ani_env* env, ani_object& aniObj, FontDes
     READ_OPTIONAL_FIELD(
         env, aniObj, AniGlobalMethod::GetInstance().fontDescriptorGetSymbolic, symbolic, Bool, fontDesc.get(), status);
 
+    status = FontDescriptorGetFontWeight(env, aniObj, fontDesc);
     return status;
 }
 
@@ -137,10 +149,8 @@ ani_status ParseFontDescriptorToAni(ani_env* env, const FontDescSharedPtr fontDe
         return ANI_ERROR;
     }
 
-    int clampWeight = std::max(MIN_FONT_WEIGHT, std::min(MAX_FONT_WEIGHT, fontDesc->weight));
-    int roundedWeight = (clampWeight + ROUNDING_HALD_STEP) / WEIGHT_STEP * WEIGHT_STEP;
-    auto iter = g_weightMap.find(roundedWeight);
-    if (iter == g_weightMap.end()) {
+    int result = -1;
+    if (!OHOS::MLB::FindFontWeight(OHOS::MLB::RegularWeight(fontDesc->weight), result)) {
         TEXT_LOGE("Failed to parse weight");
         return ANI_ERROR;
     }
@@ -152,7 +162,7 @@ ani_status ParseFontDescriptorToAni(ani_env* env, const FontDescSharedPtr fontDe
         AniTextUtils::CreateAniStringObj(env, fontDesc->fontFamily),
         AniTextUtils::CreateAniStringObj(env, fontDesc->fontSubfamily),
         AniTextUtils::CreateAniEnum(env, AniGlobalEnum::GetInstance().fontWeight,
-            aniGetEnumIndex(AniTextEnum::fontWeight, static_cast<uint32_t>(iter->second))
+            aniGetEnumIndex(AniTextEnum::fontWeight, static_cast<uint32_t>(result))
             .value_or(static_cast<uint32_t>(FontWeight::W400))),
         ani_int(fontDesc->width),
         ani_int(fontDesc->italic),

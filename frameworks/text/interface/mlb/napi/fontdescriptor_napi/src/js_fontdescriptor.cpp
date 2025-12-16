@@ -20,25 +20,10 @@
 #include "font_descriptor_mgr.h"
 #include "napi_async_work.h"
 #include "napi_common.h"
+#include "utils/include/font_utils.h"
 
 namespace OHOS::Rosen {
 namespace {
-std::unordered_map<int, int> g_weightMap = {
-    {100, static_cast<int>(FontWeight::W100)},
-    {200, static_cast<int>(FontWeight::W200)},
-    {300, static_cast<int>(FontWeight::W300)},
-    {400, static_cast<int>(FontWeight::W400)},
-    {500, static_cast<int>(FontWeight::W500)},
-    {600, static_cast<int>(FontWeight::W600)},
-    {700, static_cast<int>(FontWeight::W700)},
-    {800, static_cast<int>(FontWeight::W800)},
-    {900, static_cast<int>(FontWeight::W900)}
-};
-constexpr int MIN_FONT_WEIGHT = 100;
-constexpr int MAX_FONT_WEIGHT = 900;
-constexpr int WEIGHT_STEP = 100;
-constexpr int ROUNDING_HALD_STEP = 50;
-
 using FontDescriptorProperty = std::variant<
     std::reference_wrapper<int>,
     std::reference_wrapper<bool>,
@@ -139,11 +124,10 @@ bool JsFontDescriptor::ParseFontDescWeight(napi_env env, napi_value obj, int& we
         if (!ConvertFromJsValue(env, napiVal, weightEnum)) {
             return false;
         }
-        for (auto& item : g_weightMap) {
-            if (item.second == weightEnum) {
-                weight = item.first;
-                return true;
-            }
+        int result = 0;
+        if (OHOS::MLB::FindFontWeightEnum(weightEnum, result)) {
+            weight = result;
+            return true;
         }
         return false;
     }
@@ -201,13 +185,11 @@ bool JsFontDescriptor::SetProperty(napi_env env, napi_value object, const char* 
 
 bool JsFontDescriptor::ConvertFontDescWeight(napi_env env, napi_value obj, int weight)
 {
-    int clampWeight = std::max(MIN_FONT_WEIGHT, std::min(MAX_FONT_WEIGHT, weight));
-    int roundedWeight = (clampWeight + ROUNDING_HALD_STEP) / WEIGHT_STEP * WEIGHT_STEP;
-    auto iter = g_weightMap.find(roundedWeight);
-    if (iter == g_weightMap.end()) {
+    int result = -1;
+    if (!OHOS::MLB::FindFontWeight(OHOS::MLB::RegularWeight(weight), result)) {
         return false;
     }
-    TEXT_CHECK_RETURN_VALUE(SetProperty(env, obj, "weight", CreateJsValue(env, iter->second)), false);
+    TEXT_CHECK_RETURN_VALUE(SetProperty(env, obj, "weight", CreateJsValue(env, result)), false);
     return true;
 }
 
@@ -233,8 +215,10 @@ napi_value JsFontDescriptor::CreateFontDescriptorArray(napi_env env, const std::
         napi_value fontDescriptor = nullptr;
         TEXT_ERROR_CHECK(napi_create_object(env, &fontDescriptor) == napi_ok, return nullptr,
             "Failed to create object");
-        TEXT_CHECK(CreateAndSetProperties(env, fontDescriptor, item), return nullptr);
-        TEXT_CHECK(ConvertFontDescWeight(env, fontDescriptor, item->weight), return nullptr);
+        TEXT_ERROR_CHECK(CreateAndSetProperties(env, fontDescriptor, item), return nullptr,
+            "Failed to set font descriptor");
+        TEXT_ERROR_CHECK(ConvertFontDescWeight(env, fontDescriptor, item->weight), return nullptr,
+            "Failed to convert weight");
         TEXT_ERROR_CHECK(napi_set_element(env, descArray, index++, fontDescriptor) == napi_ok, return nullptr,
             "Failed to set element");
     }
