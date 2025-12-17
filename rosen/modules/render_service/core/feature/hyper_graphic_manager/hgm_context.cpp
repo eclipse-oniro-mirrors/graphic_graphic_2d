@@ -516,6 +516,14 @@ bool HgmContext::NotifySoftVsyncRateDiscountEvent(
     return true;
 }
 
+void HgmContext::NotifyPageName(pid_t pid, const std::string& packageName, const std::string& pageName, bool isEnter)
+{
+    HgmTaskHandleThread::Instance().PostTask([frameRateManager = frameRateManager_,
+        pid, packageName, pageName, isEnter] {
+        frameRateManager->NotifyPageName(pid, packageName, pageName, isEnter);
+    });
+}
+
 void HgmContext::UpdateRenderProcessPid(ScreenId screenId, pid_t pid)
 {
     HgmTaskHandleThread::Instance().PostTask([frameRateManager = frameRateManager_, screenId, pid] {
