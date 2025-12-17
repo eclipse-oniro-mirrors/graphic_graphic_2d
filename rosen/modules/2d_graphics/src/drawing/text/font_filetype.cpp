@@ -126,7 +126,8 @@ FontFileType::FontFileFormat FontFileType::GetFontFileType(const std::string& pa
         fontFile.seekg(0, std::ios::beg);
         std::vector<uint8_t> fontData(ttfLen);
         fontFile.read(reinterpret_cast<char*>(fontData.data()), ttfLen);
-        if (!fontFile.good()) {
+        if (fontFile.bad() || fontFile.fail()) { // bad() indicates physical errors (disk failure, permission issues)
+                                                 // fail() indicates logical errors (format mismatch, read failure)
             LOGE("Drawing_Text [GetFontFileType] font file can't be read!");
             fileCount = INVALID_FONT_FILE_NUM;
             return FontFileType::FontFileFormat::UNKNOWN;
