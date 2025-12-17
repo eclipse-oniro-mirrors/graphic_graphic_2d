@@ -51,15 +51,13 @@ struct DistortChromaInfo {
     float progress = 0.0f;
 };
 
-struct DupoliNoiseMaskInfo
-{
+struct DupoliNoiseMaskInfo {
     float granularity = 0.0f;
     float progress = 0.0f;
-    float moveDistance =0.0f;
+    float moveDistance = 0.0f;
 };
 
-struct RippleMaskInfo
-{
+struct RippleMaskInfo {
     Vector2f center = Vector2f(0.0f, 0.0f);
     float radius = 0.0f;
     float width = 0.0f;
@@ -68,30 +66,30 @@ struct RippleMaskInfo
 
 std::vector<DistortChromaInfo> DistortChromaParams = {
     // Strength brightness dispersion saturation granularity frequency sharpness distortFactor moveDistance progress
-    {{0.3f, 0.5f, 0.3f}, 1.0f, 0.2f, 0.2f, {10.1f, 10.1f}, 2.1f, 1.0f, {0.1f, 0.1f}, 0.0f, 0.0f},
-    {{0.2f, 0.2f, 0.2f}, 5.0f, 1.0f, 2.0f, {2.1f, 2.1f}, 1.0f, 1.5f, {0.2f, 0.3f},1.0f, 1.0f},
-    {{1.0f, 1.3f, 1.3f}, 1.0f, 1.0f, 0.3f, {3.1f, 3.1f}, 0.8f, 1.0f, {0.3f, 0.4f},-1.0f, -1.0f},
-    {{2.0f, 2.0f, 2.0f}, 3.0f, 2.0f, 3.0f, {4.1f,4.1f}, 2.0f, 2.0f, {0.5f, 0.6f},2.0f, 2.0f},
-    {{0.5f, 0.5f, 0.5f}, 10.0f, 0.5f, 1.0f, {5.1f, 5.1f}, 0.5f, 0.5f, {-0.1f, -0.1f},0.5f, 0.5f},
-    {{0.6f, 0.2f, 0.2f}, 1.2f, 0.2f, 0.2f, {6.1f, 6.1f}, 0.2f, 0.2f, {-0.2f, 0.3f},0.2f, 0.2f},
+    { { 0.3f, 0.5f, 0.3f }, 1.0f, 0.2f, 0.2f, { 10.1f, 10.1f }, 2.1f, 1.0f, { 0.1f, 0.1f }, 0.0f, 0.0f },
+    { { 0.2f, 0.2f, 0.2f }, 5.0f, 1.0f, 2.0f, { 2.1f, 2.1f }, 1.0f, 1.5f, { 0.2f, 0.3f }, 1.0f, 1.0f },
+    { { 1.0f, 1.3f, 1.3f }, 1.0f, 1.0f, 0.3f, { 3.1f, 3.1f }, 0.8f, 1.0f, { 0.3f, 0.4f }, -1.0f, -1.0f },
+    { { 2.0f, 2.0f, 2.0f }, 3.0f, 2.0f, 3.0f, { 4.1f, 4.1f }, 2.0f, 2.0f, { 0.5f, 0.6f }, 2.0f, 2.0f },
+    { { 0.5f, 0.5f, 0.5f }, 10.0f, 0.5f, 1.0f, { 5.1f, 5.1f }, 0.5f, 0.5f, { -0.1f, -0.1f }, 0.5f, 0.5f },
+    { { 0.6f, 0.2f, 0.2f }, 1.2f, 0.2f, 0.2f, { 6.1f, 6.1f }, 0.2f, 0.2f, { -0.2f, 0.3f }, 0.2f, 0.2f },
 };
 
 std::vector<DupoliNoiseMaskInfo> DupoliNoiseMaskParams = {
-    {5.0f, -1.0f, 1.5f},
-    {-2.0f, 2.0f, 2.7f},
-    {20.5f, 3.0f, 1.0f},
-    {10.0f, 0.4f, 5.0f},
-    {3.0f, 5.0f, 2.0f},
-    {4.0f, 1.0f, 1.0f},
+    { 5.0f, -1.0f, 1.5f },
+    { -2.0f, 2.0f, 2.7f },
+    { 20.5f, 3.0f, 1.0f },
+    { 10.0f, 0.4f, 5.0f },
+    { 3.0f, 5.0f, 2.0f },
+    { 4.0f, 1.0f, 1.0f },
 };
 
 std::vector<RippleMaskInfo> RippleMaskParams = {
-    {{0.5f, 0.8f},0.5f,0.1f,0.0f},
-    {{0.5f, 0.4f},0.8f,0.2f,0.2f},
-    {{0.2f, 1.4f},0.7f,0.3f,0.0f},
-    {{0.3f, 0.1f},1.5f,0.5f,0.1f},
-    {{0.8f, 1.0f},0.2f,0.6f,0.3f},
-    {{0.8f, 1.0f},0.5f,0.3f,0.0f},
+    { { 0.5f, 0.8f }, 0.5f, 0.1f, 0.0f },
+    { { 0.5f, 0.4f }, 0.8f, 0.2f, 0.2f },
+    { { 0.2f, 1.4f }, 0.7f, 0.3f, 0.0f },
+    { { 0.3f, 0.1f }, 1.5f, 0.5f, 0.1f },
+    { { 0.8f, 1.0f }, 0.2f, 0.6f, 0.3f },
+    { { 0.8f, 1.0f }, 0.5f, 0.3f, 0.0f },
 };
 
 void SetParameter(std::shared_ptr<RSNGDistortChroma> distortChroma, int index)
@@ -116,8 +114,8 @@ void SetParameter(std::shared_ptr<RSNGDistortChroma> distortChroma, int index)
     distortChroma->Setter<DistortChromaProgressTag>(DistortChromaParams[index].progress);
 }
 
-void SetDistortChromaRippleMask(std::shared_ptr<RSNGDistortChroma> distortChroma, int index){
-
+void SetDistortChromaRippleMask(std::shared_ptr<RSNGDistortChroma> distortChroma, int index)
+{
     auto mask = std::make_shared<RSNGRippleMask>();
     mask->Setter<RippleMaskCenterTag>(RippleMaskParams[index].center);
     mask->Setter<RippleMaskRadiusTag>(RippleMaskParams[index].radius);
@@ -138,7 +136,7 @@ GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_DupoliNoiseMask_T
         SetParameter(distortChroma, index);
         int x = (index % columnCount) * sizeX;
         int y = (index / columnCount) * sizeY;
-        auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {x, y, sizeX, sizeY});
+        auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { x, y, sizeX, sizeY });
         backgroundTestNode->SetForegroundShader(distortChroma);
         GetRootNode()->AddChild(backgroundTestNode);
         RegisterNode(backgroundTestNode);
@@ -157,7 +155,7 @@ GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_RippleMask_Test)
         SetDistortChromaRippleMask(distortChroma, index);
         int x = (index % columnCount) * sizeX;
         int y = (index / columnCount) * sizeY;
-        auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {x, y, sizeX, sizeY});
+        auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { x, y, sizeX, sizeY });
         backgroundTestNode->SetForegroundShader(distortChroma);
         GetRootNode()->AddChild(backgroundTestNode);
         RegisterNode(backgroundTestNode);
