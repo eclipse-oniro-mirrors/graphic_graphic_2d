@@ -30,6 +30,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_render_node_map.h"
+#include "ipc_callbacks/rs_surface_buffer_callback.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_surface_handler.h"
@@ -436,6 +437,15 @@ bool RSSurfaceCallbackManagerFuzzerTest(const uint8_t* data, size_t size)
     uint32_t id = GetData<uint32_t>();
     std::vector<uint32_t> bufferIdVec{id};
     RSSurfaceBufferCallbackManager::Instance().SerializeBufferIdVec(bufferIdVec);
+    pid_t pid = GetData<pid_t>();
+    uint64_t uid = GetData<uint64_t>();
+    RSSurfaceBufferCallbackManager::Instance().RegisterSurfaceBufferCallback(
+        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback ({
+            .OnFinish = [](const FinishCallbackRet& ret) {
+            },
+            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {
+            },
+        }));
     RSSurfaceBufferCallbackManager::Instance().RunSurfaceBufferCallback();
 
     return true;
