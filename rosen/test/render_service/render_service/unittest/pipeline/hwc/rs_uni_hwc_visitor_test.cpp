@@ -3490,7 +3490,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateForegroundColorValid_001, TestSize.Level2)
     rsUniRenderVisitor->hwcVisitor_->UpdateForegroundColorValid(node);
     EXPECT_FALSE(node.GetHwcRecorder().IsForegroundColorValid());
 
-    auto property = std::make_shared<RSRenderProperty<IsForegroundColorValid>>();
+    auto property = std::make_shared<RSRenderProperty<ForegroundColorStrategyType>>();
     property->GetRef() = ForegroundColorStrategyType::INVERT_BACKGROUNDCOLOR;
     std::shared_ptr<ModifierNG::RSRenderModifier> modifier =
         std::make_shared<ModifierNG::RSEnvForegroundColorRenderModifier>();
