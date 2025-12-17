@@ -1689,7 +1689,9 @@ std::tuple<bool, bool, bool> RSRenderNode::Animate(
 
 bool RSRenderNode::IsClipBound() const
 {
-    return GetRenderProperties().GetClipToBounds() || GetRenderProperties().GetClipToFrame();
+    auto& renderProperties = GetRenderProperties();
+    return renderProperties.GetClipToBounds() || renderProperties.GetClipToFrame() ||
+        renderProperties.GetClipToRRect() || renderProperties.GetClipBounds() != nullptr;
 }
 
 bool RSRenderNode::SetAccumulatedClipFlag(bool clipChange)
