@@ -3488,9 +3488,9 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateForegroundColorValid_001, TestSize.Level2)
     NodeId id = 0;
     RSCanvasRenderNode node(id);
     rsUniRenderVisitor->hwcVisitor_->UpdateForegroundColorValid(node);
-    EXPECT_FALSE(node.GetHwcRecorder().IsForegroundColorStrategyValid());
+    EXPECT_FALSE(node.GetHwcRecorder().IsForegroundColorValid());
 
-    auto property = std::make_shared<RSRenderProperty<IsForegroundColorStrategyValid>>();
+    auto property = std::make_shared<RSRenderProperty<IsForegroundColorValid>>();
     property->GetRef() = ForegroundColorStrategyType::INVERT_BACKGROUNDCOLOR;
     std::shared_ptr<ModifierNG::RSRenderModifier> modifier =
         std::make_shared<ModifierNG::RSEnvForegroundColorRenderModifier>();
@@ -3612,8 +3612,8 @@ HWTEST_F(RSUniHwcVisitorTest, GetSolidLayerHwcEnableCount_001, TestSize.Level2)
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     ASSERT_NE(rsUniRenderVisitor->hwcVisitor_, nullptr);
 
-    rsUniHwcVisitor->hwcVisitor_->solidLayerHwcEnableCount_ = 1;
-    EXPECT_EQ(rsUniHwcVisitor->hwcVisitor_->GetSolidLayerHwcEnableCount(), 1);
+    rsUniRenderVisitor->hwcVisitor_->solidLayerHwcEnableCount_ = 1;
+    EXPECT_EQ(rsUniRenderVisitor->hwcVisitor_->GetSolidLayerHwcEnableCount(), 1);
 }
 
 /**
@@ -3640,6 +3640,6 @@ HWTEST_F(RSUniHwcVisitorTest, IsTargetSolidLayer_001, TestSize.Level2)
     hwcSolidLayerConfigFromHgm["key1"] = "value1";
     RsCommonHook::Instance().SetSolidColorLayerConfigFromHgm(solidLayerConfigFromHgm);
     RsCommonHook::Instance().SetHwcSolidColorLayerConfigFromHgm(hwcSolidLayerConfigFromHgm);
-    EXPECT_TRUE(rsUniHwcVisitor->hwcVisitor_->IsTargetSolidLayer(*rsSurfaceRenderNode));
+    EXPECT_TRUE(rsUniRenderVisitor->hwcVisitor_->IsTargetSolidLayer(*rsSurfaceRenderNode));
 }
 } // namespace OHOS::Rosen
