@@ -21,7 +21,6 @@
 #include <memory>
 #include <string>
 #include <type_traits>
-#include <unistd.h>
 
 #include "buffer_utils.h"
 #include "common/rs_macros.h"
@@ -38,7 +37,7 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSRenderLayerPropertyBase : public std::enable_shared_from_this<RSRenderLayerPropertyBase> {
+class RSRenderLayerPropertyBase {
 public:
     RSRenderLayerPropertyBase() = default;
     RSRenderLayerPropertyBase(const RSLayerPropertyId& id) : propertyId_(id) {}
@@ -53,7 +52,7 @@ public:
         propertyId_ = id;
     }
 
-    RSLayerPropertyId GetPropertyId() const 
+    RSLayerPropertyId GetPropertyId() const
     {
         return propertyId_;
     }
@@ -61,58 +60,7 @@ public:
     virtual void SetCmdType(RSLayerCmdType type) = 0;
 
 protected:
-    virtual const std::shared_ptr<RSRenderLayerPropertyBase> Clone() const
-    {
-        return nullptr;
-    }
-
-    RSLayerPropertyId propertyId_;
-
-private:
-    virtual std::shared_ptr<RSRenderLayerPropertyBase> Add(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& value)
-    {
-        return shared_from_this();
-    }
-
-    virtual std::shared_ptr<RSRenderLayerPropertyBase> Minus(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& value)
-    {
-        return shared_from_this();
-    }
-
-    virtual std::shared_ptr<RSRenderLayerPropertyBase> Multiply(const float scale)
-    {
-        return shared_from_this();
-    }
-
-    virtual bool IsEqual(const std::shared_ptr<const RSRenderLayerPropertyBase>& value) const
-    {
-        return true;
-    }
-
-    friend std::shared_ptr<RSRenderLayerPropertyBase> operator+=(
-        const std::shared_ptr<RSRenderLayerPropertyBase>& a,
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& b);
-    friend std::shared_ptr<RSRenderLayerPropertyBase> operator-=(
-        const std::shared_ptr<RSRenderLayerPropertyBase>& a,
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& b);
-    friend std::shared_ptr<RSRenderLayerPropertyBase> operator*=(
-        const std::shared_ptr<RSRenderLayerPropertyBase>& a, const float scale);
-    friend std::shared_ptr<RSRenderLayerPropertyBase> operator+(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& a,
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& b);
-    friend std::shared_ptr<RSRenderLayerPropertyBase> operator-(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& a,
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& b);
-    friend std::shared_ptr<RSRenderLayerPropertyBase> operator*(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& a, const float scale);
-    friend bool operator==(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& a,
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& b);
-    friend bool operator!=(
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& a,
-        const std::shared_ptr<const RSRenderLayerPropertyBase>& b);
+    RSLayerPropertyId propertyId_ = 0;
 };
 
 template<typename T>
