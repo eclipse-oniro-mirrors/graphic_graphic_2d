@@ -67,6 +67,7 @@ static constexpr size_t BYTE0_SHIFT = 24;  // First byte shift for big-endian co
 static constexpr size_t BYTE1_SHIFT = 16;  // Second byte shift for big-endian conversion
 static constexpr size_t BYTE2_SHIFT = 8;   // Third byte shift for big-endian conversion
 static constexpr size_t BYTE3_SHIFT = 0;   // Fourth byte shift for big-endian conversion
+static constexpr uint8_t SHIFT_4_U32 = 4;
 
 // Read a big-endian 32-bit unsigned integer from byte array
 static uint32_t ReadUInt32BE(const uint8_t* data)
@@ -164,7 +165,7 @@ FontFileType::FontFileFormat DetectOutlineType(const std::string& fileName)
     if (bufferSize < (HEADER_MIN_SIZE + TABLE_DIR_ENTRY_SIZE)) {
         return FontFileType::FontFileFormat::UNKNOWN;
     }
-    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(bufferSize);
+    auto buffer = std::make_unique<uint8_t[]>(bufferSize);
     if (!ReadFileHeader(fileName, buffer.get(), bufferSize)) {
         return FontFileType::FontFileFormat::UNKNOWN;
     }
@@ -197,8 +198,8 @@ FontFileType::FontFileFormat DetectOutlineType(const std::string& fileName)
 
 static bool ReadFirstFontOffset(const std::string& fileName, uint32_t& outOffset)
 {
-    const size_t neededSize = OFFSET_TTC_FIRST_FONT_OFFSET + 4; // 4 for uint32_t
-    std::unique_ptr<uint8_t[]> header(new uint8_t[neededSize]);
+    const size_t neededSize = OFFSET_TTC_FIRST_FONT_OFFSET + SHIFT_4_U32;
+    auto header = std::make_unique<uint8_t[]>(neededSize);
     if (!ReadFileHeader(fileName, header.get(), neededSize)) {
         return false;
     }
@@ -218,8 +219,8 @@ FontFileType::FontFileFormat DetectCollectionType(const std::string& fileName)
         return FontFileType::FontFileFormat::TTC;
     }
     // Read SFNT signature of first font
-    uint8_t signatureBuffer[4]; // 4 for uint32_t
-    if (!ReadFileAtOffset(fileName, signatureBuffer, 4, firstFontOffset)) { // 4 for uint32_t
+    uint8_t signatureBuffer[SHIFT_4_U32];
+    if (!ReadFileAtOffset(fileName, signatureBuffer, SHIFT_4_U32, firstFontOffset)) {
         return FontFileType::FontFileFormat::TTC;
     }
     uint32_t signature = ReadUInt32BE(signatureBuffer);
