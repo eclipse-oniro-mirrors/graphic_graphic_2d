@@ -969,6 +969,28 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSMaterialFilterDrawableOnUpdate002, Test
 }
 
 /**
+ * @tc.name: RSMaterialFilterDrawableOnUpdate003
+ * @tc.desc: Test OnUpdate
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRSBinarizationDrawableTest, RSMaterialFilterDrawableOnUpdate003, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSRenderNode node(id);
+    auto emptyShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_EMPTY_SHAPE);
+    properties.SetSDFShape(emptyShape);
+    auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
+    const auto& filter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(renderFilter);
+    EXPECT_EQ(filter->Getter<FrostedGlassShapeRenderTag>()->stagingValue_, nullptr);
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(renderFilter);
+    node.GetMutableRenderProperties().GetEffect().materialFilter_ = drawingFilter;
+
+    auto drawable = std::make_shared<DrawableV2::RSMaterialFilterDrawable>();
+    ASSERT_FALSE(drawable->OnUpdate(node));
+}
+
+/**
  * @tc.name: RSMaterialFilterDrawableGetAbsRenderEffectRect001
  * @tc.desc: Test GetAbsRenderEffectRect
  * @tc.type:FUNC

@@ -190,12 +190,15 @@ HWTEST_F(RSUnionRenderNodeTest, GetChildRelativeMatrixToUnionNode003, TestSize.L
     auto unionNode = std::make_shared<RSUnionRenderNode>(id, context);
     auto child = std::make_shared<RSRenderNode>(id + 1, context);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
-    child->renderProperties_.boundsGeo_ = nullptr;
+    child->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    child->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child->parent_ = unionNode;
     
     Drawing::Matrix matrix;
     auto ret = unionNode->GetChildRelativeMatrixToUnionNode(matrix, child);
-    ASSERT_FALSE(ret);
+    ASSERT_TRUE(ret);
 }
 
 /**
@@ -208,13 +211,13 @@ HWTEST_F(RSUnionRenderNodeTest, GetChildRelativeMatrixToUnionNode004, TestSize.L
     auto unionNode = std::make_shared<RSUnionRenderNode>(id, context);
     auto child = std::make_shared<RSRenderNode>(id + 1, context);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
-    child->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
-    child->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child->renderProperties_.boundsGeo_ = nullptr;
     
     Drawing::Matrix matrix;
     auto ret = unionNode->GetChildRelativeMatrixToUnionNode(matrix, child);
-    ASSERT_TRUE(ret);
+    ASSERT_FALSE(ret);
 }
 
 /**
@@ -654,6 +657,40 @@ HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape003, TestSize.Level1)
 
     unionNode->ProcessSDFShape();
     ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_ != nullptr);
+}
+
+/**
+ * @tc.name: ProcessSDFShape004
+ * @tc.desc: test ProcessSDFShape
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape004, TestSize.Level1)
+{
+    auto sContext = std::make_shared<RSContext>();
+    auto unionNode = std::make_shared<RSUnionRenderNode>(id, sContext);
+    EXPECT_NE(unionNode->GetContext().lock(), nullptr);
+    auto shape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_EMPTY_SHAPE);
+    unionNode->renderProperties_.SetSDFShape(shape);
+
+    unionNode->ProcessSDFShape();
+    ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_->GetType == RSNGEffectType::SDF_EMPTY_SHAPE);
+}
+
+/**
+ * @tc.name: ProcessSDFShape005
+ * @tc.desc: test ProcessSDFShape
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape005, TestSize.Level1)
+{
+    auto sContext = std::make_shared<RSContext>();
+    auto unionNode = std::make_shared<RSUnionRenderNode>(id, sContext);
+    EXPECT_NE(unionNode->GetContext().lock(), nullptr);
+    auto shape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    unionNode->renderProperties_.SetSDFShape(shape);
+
+    unionNode->ProcessSDFShape();
+    ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_->GetType == RSNGEffectType::SDF_EMPTY_SHAPE);
 }
 
 /**
