@@ -318,6 +318,7 @@ public:
         }
     }
     void ConsumeAndUpdateBuffer(SurfaceBufferEntry buffer);
+    //
 #endif
 
 protected:
@@ -331,6 +332,7 @@ private:
 
 #ifndef ROSEN_CROSS_PLATFORM
     ScalingMode scalingModePre = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
+    //
 #endif
     NodeId id_ = 0;
     // mutex buffer_ & preBuffer_ & bufferCache_

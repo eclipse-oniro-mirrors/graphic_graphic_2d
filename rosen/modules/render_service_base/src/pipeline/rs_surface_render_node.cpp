@@ -3840,5 +3840,7 @@ void RSSurfaceRenderNode::SetUIFirstVisibleFilterRect(const RectI& rect)
     stagingSurfaceParams->SetUIFirstVisibleFilterRect(rect);
     AddToPendingSyncList();
 }
+
+//
 } // namespace Rosen
 } // namespace OHOS

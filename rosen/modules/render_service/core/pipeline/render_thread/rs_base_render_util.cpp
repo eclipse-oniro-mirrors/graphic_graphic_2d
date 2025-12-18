@@ -969,7 +969,7 @@ void RSBaseRenderUtil::MergeBufferDamages(Rect& surfaceDamage, const std::vector
 }
 
 CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen,
-    bool dropFrameByPidEnable, uint64_t parentNodeId)
+    bool dropFrameByPidEnable, uint64_t parentNodeId, bool dropFrameByScreenFrozen)
 {
     if (surfaceHandler.GetAvailableBufferCount() <= 0) {
         return true;
@@ -1005,7 +1005,9 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
                 "AcquireBuffer failed(ret: %{public}d)!", surfaceHandler.GetNodeId(), ret);
             surfaceBuffer = nullptr;
             return false;
+            //
         }
+        //
         surfaceBuffer = std::make_shared<RSSurfaceHandler::SurfaceBufferEntry>();
         surfaceBuffer->buffer = returnValue.buffer;
         surfaceBuffer->acquireFence = returnValue.fence;

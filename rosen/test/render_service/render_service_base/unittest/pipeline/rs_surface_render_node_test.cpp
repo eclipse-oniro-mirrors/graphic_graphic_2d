@@ -2862,5 +2862,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetUIFirstVisibleFilterRectTest, TestSize.Leve
     ASSERT_FALSE(surfaceParams->GetUifirstVisibleFilterRect().IsEmpty());
 }
 
+//
+
 } // namespace Rosen
 } // namespace OHOS

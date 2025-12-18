@@ -1741,6 +1741,8 @@ public:
     bool GetSurfaceBufferOpaque() const;
 
     void AfterTreeStatueChanged() override;
+
+    //
 protected:
     void OnSync() override;
     void OnSkipSync() override;

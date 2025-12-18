@@ -404,6 +404,18 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_005, TestSize.Level2)
     // release buffer
     surfaceConsumer->ReleaseBuffer(buffer, SyncFence::INVALID_FENCE);
 }
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_006
+ * @tc.desc: Test ConsumeAndUpdateBuffer while dropFrameByScreenFrozen
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
+{
+
+}
+
 /*
  * @tc.name: ReleaseBuffer_001
  * @tc.desc: Test ReleaseBuffer

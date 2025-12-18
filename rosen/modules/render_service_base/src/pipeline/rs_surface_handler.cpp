@@ -99,6 +99,8 @@ void RSSurfaceHandler::UpdateBuffer(
     bufferSizeChanged_ =
         buffer->GetWidth() != preBuffer_.buffer->GetWidth() || buffer->GetHeight() != preBuffer_.buffer->GetHeight();
 }
+
+//
 #endif
 }
 }
