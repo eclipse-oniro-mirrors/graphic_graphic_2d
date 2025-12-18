@@ -60,6 +60,8 @@ static constexpr size_t OFFSET_TTC_FONT_COUNT = 8;           // Font count in TT
 static constexpr size_t OFFSET_TTC_FIRST_FONT_OFFSET = 12;   // First font offset in TTC header (12 bytes)
 // Limit constants for validation
 static constexpr int MAX_TABLE_COUNT = 100;                  // Maximum reasonable number of tables in a font
+static constexpr size_t MAX_READ_SIZE = 0x1000000;
+static constexpr size_t MAX_SAFE_OFFSET = 0x7FFFFFFF;
 // Assistant constants
 static constexpr size_t BYTE0_SHIFT = 24;  // First byte shift for big-endian conversion
 static constexpr size_t BYTE1_SHIFT = 16;  // Second byte shift for big-endian conversion
@@ -69,10 +71,10 @@ static constexpr size_t BYTE3_SHIFT = 0;   // Fourth byte shift for big-endian c
 // Read a big-endian 32-bit unsigned integer from byte array
 static uint32_t ReadUInt32BE(const uint8_t* data)
 {
-    return (static_cast<uint32_t>(data[0]) << BYTE0_SHIFT) |
-           (static_cast<uint32_t>(data[1]) << BYTE1_SHIFT) |
-           (static_cast<uint32_t>(data[2]) << BYTE2_SHIFT) |
-           static_cast<uint32_t>(data[3]);
+    return (static_cast<uint32_t>(data[0]) << BYTE0_SHIFT) | // 0 means first char
+           (static_cast<uint32_t>(data[1]) << BYTE1_SHIFT) | // 1 means second char
+           (static_cast<uint32_t>(data[2]) << BYTE2_SHIFT) | // 2 means third char
+           static_cast<uint32_t>(data[3]);                   // 3 means last char
 }
 
 // Read a big-endian 16-bit unsigned integer from byte array
@@ -96,6 +98,9 @@ static bool ReadFileAtOffset(const std::string& fileName, uint8_t* buffer,
 {
     std::unique_ptr<FILE, decltype(&fclose)> file(fopen(fileName.c_str(), "rb"), fclose);
     if (!file) {
+        return false;
+    }
+    if (offset > MAX_SAFE_OFFSET || bufferSize > MAX_READ_SIZE) {
         return false;
     }
     if (fseek(file.get(), static_cast<long>(offset), SEEK_SET) != 0) {
@@ -143,23 +148,34 @@ FontFileType::FontFileFormat DetectOutlineType(const std::string& fileName)
         return FontFileType::FontFileFormat::UNKNOWN;
     }
     uint16_t numTables = ReadUInt16BE(minimalHeader + OFFSET_TABLE_COUNT);
-    if (numTables == 0 || numTables > MAX_TABLE_COUNT) { // exceed openType definition
+    if (numTables == 0 || numTables > MAX_TABLE_COUNT) {
         return FontFileType::FontFileFormat::UNKNOWN;
     }
-    size_t neededBufferSize = HEADER_MIN_SIZE + (numTables * TABLE_DIR_ENTRY_SIZE);
+    if (static_cast<size_t>(numTables) > (SIZE_MAX / TABLE_DIR_ENTRY_SIZE)) {
+        return FontFileType::FontFileFormat::UNKNOWN;
+    }
+    size_t tableDirSize = static_cast<size_t>(numTables) * TABLE_DIR_ENTRY_SIZE;
+    if (HEADER_MIN_SIZE > (SIZE_MAX - tableDirSize)) {
+        return FontFileType::FontFileFormat::UNKNOWN;
+    }
+    size_t neededBufferSize = HEADER_MIN_SIZE + tableDirSize;
     size_t bufferSize = (neededBufferSize > SAFE_TABLE_SCAN_BUFFER_SIZE) ?
                         SAFE_TABLE_SCAN_BUFFER_SIZE : neededBufferSize;
-
-    std::unique_ptr<uint8_t[]> buffer(new uint8_t[bufferSize]);
+    if (bufferSize < (HEADER_MIN_SIZE + TABLE_DIR_ENTRY_SIZE)) {
+        return FontFileType::FontFileFormat::UNKNOWN;
+    }
+    std::unique_ptr<uint8_t[]> buffer = std::make_unique<uint8_t[]>(bufferSize);
     if (!ReadFileHeader(fileName, buffer.get(), bufferSize)) {
         return FontFileType::FontFileFormat::UNKNOWN;
     }
     bool hasGlyfTable = false;
-    bool hasCffTable = false;
     size_t tableDirOffset = HEADER_MIN_SIZE;
-    size_t maxOffset = bufferSize;
+    size_t maxPossibleTables = (bufferSize - HEADER_MIN_SIZE) / TABLE_DIR_ENTRY_SIZE;
+    if (numTables > static_cast<int>(maxPossibleTables)) {
+        numTables = static_cast<int>(maxPossibleTables);
+    }
     for (int i = 0; i < numTables; i++) {
-        if (tableDirOffset + TABLE_DIR_ENTRY_SIZE > maxOffset) {
+        if (tableDirOffset + TABLE_DIR_ENTRY_SIZE > bufferSize) {
             break;
         }
         uint32_t tableTag = ReadUInt32BE(buffer.get() + tableDirOffset);
@@ -173,22 +189,19 @@ FontFileType::FontFileFormat DetectOutlineType(const std::string& fileName)
         }
         tableDirOffset += TABLE_DIR_ENTRY_SIZE;
     }
-    if (hasGlyfTable && !hasCffTable) {
-        return FontFileType::FontFileFormat::TTF;
-    } else if (hasCffTable && !hasGlyfTable) {
-        return FontFileType::FontFileFormat::OTF;
-    }
-    return FontFileType::FontFileFormat::UNKNOWN;
+    return (hasGlyfTable && !hasCffTable) ? FontFileType::FontFileFormat::TTF :
+           (hasCffTable && !hasGlyfTable) ? FontFileType::FontFileFormat::OTF :
+                                            FontFileType::FontFileFormat::UNKNOWN;
 }
 
 static bool ReadFirstFontOffset(const std::string& fileName, uint32_t& outOffset)
 {
     const size_t neededSize = OFFSET_TTC_FIRST_FONT_OFFSET + 4; // 4 for uint32_t
-    uint8_t header[neededSize];
-    if (!ReadFileHeader(fileName, header, neededSize)) {
+    std::unique_ptr<uint8_t[]> header(new uint8_t[neededSize]);
+    if (!ReadFileHeader(fileName, header.get(), neededSize)) {
         return false;
     }
-    outOffset = ReadUInt32BE(header + OFFSET_TTC_FIRST_FONT_OFFSET);
+    outOffset = ReadUInt32BE(header.get() + OFFSET_TTC_FIRST_FONT_OFFSET);
     return true;
 }
 
@@ -196,6 +209,7 @@ FontFileType::FontFileFormat DetectCollectionType(const std::string& fileName)
 {
     int fontCount = 0;
     if (!IsCollectionFont(fileName, fontCount) || fontCount == 0) {
+        fontCount = 0;
         return FontFileType::FontFileFormat::UNKNOWN;
     }
     uint32_t firstFontOffset = 0;
