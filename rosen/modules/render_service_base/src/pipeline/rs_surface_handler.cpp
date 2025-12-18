@@ -100,7 +100,17 @@ void RSSurfaceHandler::UpdateBuffer(
         buffer->GetWidth() != preBuffer_.buffer->GetWidth() || buffer->GetHeight() != preBuffer_.buffer->GetHeight();
 }
 
-//
+void RSSurfaceHandler::SetHoldReturnValue(const IConsumerSurface::AcquireBufferReturnValue& returnValue)
+{
+    holdReturnValue_ = std::make_shared<IConsumerSurface::AcquireBufferReturnValue>();
+    if (holdReturnValue_ == nullptr) {
+        return;
+    }
+    holdReturnValue_->buffer = returnValue.buffer;
+    holdReturnValue_->fence = returnValue.fence;
+    holdReturnValue_->timestamp = returnValue.timestamp;
+    holdReturnValue_->damages = returnValue.damages;
+}
 #endif
 }
 }

@@ -318,7 +318,16 @@ public:
         }
     }
     void ConsumeAndUpdateBuffer(SurfaceBufferEntry buffer);
-    //
+
+    void SetHoldReturnValue(const IConsumerSurface::AcquireBufferReturnValue& returnValue);
+    std::shared_ptr<IConsumerSurface::AcquireBufferReturnValue> GetHoldReturnValue()
+    {
+        return holdReturnValue_;
+    }
+    void ResetHoldReturnValue()
+    {
+        holdReturnValue_ = nullptr;
+    }
 #endif
 
 protected:
@@ -332,7 +341,7 @@ private:
 
 #ifndef ROSEN_CROSS_PLATFORM
     ScalingMode scalingModePre = ScalingMode::SCALING_MODE_SCALE_TO_WINDOW;
-    //
+    std::shared_ptr<IConsumerSurface::AcquireBufferReturnValue> holdReturnValue_ = nullptr;
 #endif
     NodeId id_ = 0;
     // mutex buffer_ & preBuffer_ & bufferCache_

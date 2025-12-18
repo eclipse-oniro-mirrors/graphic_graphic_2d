@@ -1001,13 +1001,31 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
             ret = consumer->AcquireBuffer(returnValue, static_cast<int64_t>(acquireTimeStamp), false);
         }
         if (returnValue.buffer == nullptr || ret != SURFACE_ERROR_OK) {
-            RS_LOGD_IF(DEBUG_PIPELINE, "RsDebug surfaceHandler(id: %{public}" PRIu64 ") "
-                "AcquireBuffer failed(ret: %{public}d)!", surfaceHandler.GetNodeId(), ret);
-            surfaceBuffer = nullptr;
-            return false;
-            //
+            auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
+            if (LIKELY(!dropFrameByScreenFrozen) && UNLIKELY(holdReturnValue)) {
+                RS_TRACE_NAME_FMT("Reuse buffer.seq = %lld after screen frozen", holdReturnValue->buffer->GetSeqNum());
+                returnValue.buffer = holdReturnValue->buffer;
+                returnValue.fence = holdReturnValue->fence;
+                returnValue.timestamp = holdReturnValue->timestamp;
+                returnValue.damages = holdReturnValue->damages;
+                surfaceHandler.ResetHoldReturnValue();
+            } else {
+                RS_LOGD_IF(DEBUG_PIPELINE, "RsDebug surfaceHandler(id: %{public}" PRIu64 ") "
+                    "AcquireBuffer failed(ret: %{public}d)!", surfaceHandler.GetNodeId(), ret);
+                surfaceBuffer = nullptr;
+                return false;
+            }
         }
-        //
+        auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
+        if (UNLIKELY(holdReturnValue)) {
+            consumer->ReleaseBuffer(holdReturnValue->buffer, holdReturnValue->fence);
+            surfaceHandler.ResetHoldReturnValue();
+        }
+        if (UNLIKELY(dropFrameByScreenFrozen)) {
+            surfaceHandler.SetHoldReturnValue(returnValue);
+            RS_TRACE_NAME_FMT("stash buffer.seq = %lld by screen frozen", returnValue.buffer->GetSeqNum());
+            return false;
+        }
         surfaceBuffer = std::make_shared<RSSurfaceHandler::SurfaceBufferEntry>();
         surfaceBuffer->buffer = returnValue.buffer;
         surfaceBuffer->acquireFence = returnValue.fence;

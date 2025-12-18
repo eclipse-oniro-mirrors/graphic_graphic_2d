@@ -3841,6 +3841,19 @@ void RSSurfaceRenderNode::SetUIFirstVisibleFilterRect(const RectI& rect)
     AddToPendingSyncList();
 }
 
-//
+bool RSSurfaceRenderNode::IsAncestorScreenFrozen() const
+{
+    auto screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(ancestorScreenNode_.lock());
+    if (screenNode) {
+        return screenNode->GetForceFreeze();
+    }
+    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+    if (firstLevelNode == nullptr) {
+        RS_LOGW("%{public}s firstLevelNode is nullptr", __func__);
+        return false;
+    }
+    screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(firstLevelNode->GetAncestorScreenNode().lock());
+    return screenNode == nullptr ? false : screenNode->GetForceFreeze();
+}
 } // namespace Rosen
 } // namespace OHOS
