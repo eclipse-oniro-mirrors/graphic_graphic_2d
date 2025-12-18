@@ -978,7 +978,7 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSMaterialFilterDrawableOnUpdate003, Test
     NodeId id = 1;
     RSRenderNode node(id);
     auto emptyShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_EMPTY_SHAPE);
-    properties.SetSDFShape(emptyShape);
+    node.GetMutableRenderProperties().SetSDFShape(emptyShape);
     auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
     const auto& filter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(renderFilter);
     EXPECT_EQ(filter->Getter<FrostedGlassShapeRenderTag>()->stagingValue_, nullptr);

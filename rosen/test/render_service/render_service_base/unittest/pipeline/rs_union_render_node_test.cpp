@@ -440,8 +440,11 @@ HWTEST_F(RSUnionRenderNodeTest, GenerateSDFLeaf007, TestSize.Level1)
     unionNode->visibleUnionChildren_.emplace(id + 1);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child1->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child1->parent_ = unionNode;
     Drawing::Matrix matrix;
     EXPECT_TRUE(unionNode->GetChildRelativeMatrixToUnionNode(matrix, child1));
     child1->renderProperties_.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 3.f, 3.f);
@@ -471,8 +474,11 @@ HWTEST_F(RSUnionRenderNodeTest, GenerateSDFLeaf008, TestSize.Level1)
     unionNode->visibleUnionChildren_.emplace(id + 1);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child1->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child1->parent_ = unionNode;
     Drawing::Matrix matrix;
     EXPECT_TRUE(unionNode->GetChildRelativeMatrixToUnionNode(matrix, child1));
     child1->renderProperties_.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 3.f, 3.f);
@@ -506,10 +512,15 @@ HWTEST_F(RSUnionRenderNodeTest, GenerateSDFLeaf009, TestSize.Level1)
     unionNode->visibleUnionChildren_.emplace(id + 2);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child1->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child2->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child2->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child2->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child1->parent_ = unionNode;
+    child2->parent_ = unionNode;
     Drawing::Matrix matrix;
     EXPECT_TRUE(unionNode->GetChildRelativeMatrixToUnionNode(matrix, child1));
     child1->renderProperties_.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 3.f, 3.f);
@@ -546,10 +557,15 @@ HWTEST_F(RSUnionRenderNodeTest, GenerateSDFLeaf010, TestSize.Level1)
     unionNode->visibleUnionChildren_.emplace(id + 2);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child1->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child2->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child2->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child2->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child1->parent_ = unionNode;
+    child2->parent_ = unionNode;
     Drawing::Matrix matrix;
     EXPECT_TRUE(unionNode->GetChildRelativeMatrixToUnionNode(matrix, child1));
     child1->renderProperties_.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 3.f, 3.f);
@@ -601,10 +617,15 @@ HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape002, TestSize.Level1)
     unionNode->visibleUnionChildren_.emplace(id + 2);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child1->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child2->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child2->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child2->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child1->parent_ = unionNode;
+    child2->parent_ = unionNode;
     Drawing::Matrix matrix;
     EXPECT_TRUE(unionNode->GetChildRelativeMatrixToUnionNode(matrix, child1));
     child1->renderProperties_.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 3.f, 3.f);
@@ -640,10 +661,15 @@ HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape003, TestSize.Level1)
     unionNode->visibleUnionChildren_.emplace(id + 2);
     unionNode->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     unionNode->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    unionNode->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child1->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
     child2->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
     child2->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
+    child2->renderProperties_.boundsGeo_->matrix_ = Drawing::Matrix();
+    child1->parent_ = unionNode;
+    child2->parent_ = unionNode;
     Drawing::Matrix matrix;
     EXPECT_TRUE(unionNode->GetChildRelativeMatrixToUnionNode(matrix, child1));
     child1->renderProperties_.rrect_ = RRect(RectF(0.f, 0.f, 10.f, 10.f), 3.f, 3.f);
@@ -673,7 +699,7 @@ HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape004, TestSize.Level1)
     unionNode->renderProperties_.SetSDFShape(shape);
 
     unionNode->ProcessSDFShape();
-    ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_->GetType == RSNGEffectType::SDF_EMPTY_SHAPE);
+    ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_->GetType() == RSNGEffectType::SDF_EMPTY_SHAPE);
 }
 
 /**
@@ -690,7 +716,7 @@ HWTEST_F(RSUnionRenderNodeTest, ProcessSDFShape005, TestSize.Level1)
     unionNode->renderProperties_.SetSDFShape(shape);
 
     unionNode->ProcessSDFShape();
-    ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_->GetType == RSNGEffectType::SDF_EMPTY_SHAPE);
+    ASSERT_TRUE(unionNode->renderProperties_.renderSDFShape_->GetType() == RSNGEffectType::SDF_EMPTY_SHAPE);
 }
 
 /**
