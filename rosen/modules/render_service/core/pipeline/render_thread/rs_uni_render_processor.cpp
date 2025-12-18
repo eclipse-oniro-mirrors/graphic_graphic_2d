@@ -107,6 +107,11 @@ void RSUniRenderProcessor::PostProcess()
                     continue;
                 }
                 uniBufferOwnerCount->InsertUniOnDrawSet(layer->GetRSLayerId(), layer->GetBuffer()->GetSeqNum());
+                auto bufferOwnerCount = layer->GetBufferOwnerCount();
+                if (bufferOwnerCount == nullptr) {
+                    continue;
+                }
+                bufferOwnerCount->SetUniBufferOwner(uniBufferOwnerCount->seqNum_);
             }
         }
     } else {
@@ -144,8 +149,8 @@ void RSUniRenderProcessor::CreateLayer(/*const ??? todo */ RSSurfaceRenderNode& 
     layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
     auto bufferOwnerCount = params.GetBufferOwnerCount();
     if (bufferOwnerCount) {
-        RS_TRACE_NAME_FMT("RSBufferManager CreateLayer seqNum %u layerID %" PRIu64, uint32_t(bufferOwnerCount->seqNum_), layer->GetRSLayerId());
-        RS_LOGI("RSBufferManager CreateLayer seqNum %{public}u layerID %{public}" PRIu64, uint32_t(bufferOwnerCount->seqNum_), layer->GetRSLayerId());
+        RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::CreateLayer seqNum %u layerID %" PRIu64,
+            uint32_t(bufferOwnerCount->seqNum_), layer->GetRSLayerId());
         layer->SetBufferOwnerCount(bufferOwnerCount);
     }
 #ifdef RS_ENABLE_TV_PQ_METADATA
@@ -210,8 +215,8 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     layer->SetLayerLinearMatrix(renderParams.GetLayerLinearMatrix());
     auto bufferOwnerCount = renderParams.GetBufferOwnerCount();
     if (bufferOwnerCount) {
-        RS_TRACE_NAME_FMT("RSBufferManager CreateLayerForRenderThread seqNum %u ", uint32_t(bufferOwnerCount->seqNum_));
-        RS_LOGI("RSBufferManager CreateLayerForRenderThread seqNum %{public}u", uint32_t(bufferOwnerCount->seqNum_));
+        RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager CreateLayerForRenderThread seqNum %u ",
+            uint32_t(bufferOwnerCount->seqNum_));
         layer->SetBufferOwnerCount(bufferOwnerCount);
     }
     RS_OPTIONAL_TRACE_NAME_FMT(
