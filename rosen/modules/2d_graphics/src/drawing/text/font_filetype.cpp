@@ -326,7 +326,7 @@ FontFileType::FontFileFormat FontFileType::GetFontFileType(const std::string& pa
         LOGD("Drawing_Text [GetFontFileType] path is empty!");
         return FontFileType::FontFileFormat::UNKNOWN;
     }
-    outType = FontFileType::FontFileFormat::UNKNOWN;
+    auto outType = FontFileType::FontFileFormat::UNKNOWN;
     // Detect font type
     outType = DetectFontTypeComplete(fileName);
     // If collection font, get detailed font count
