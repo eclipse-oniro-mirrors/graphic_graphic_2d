@@ -423,7 +423,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
     psurf = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurf, nullptr);
     psurf->SetQueueSize(2);
- 
+
     // acquire buffer
     uint64_t presentWhen = 100; // let presentWhen smaller than INT64_MAX
     auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
@@ -435,7 +435,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
     holdReturnValue.buffer = sptr<SurfaceBufferImpl>::MakeSptr();
     surfaceHandler.SetHoldReturnValue(holdReturnValue);
     EXPECT_TRUE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, false));
- 
+
     // produce buffer
     sptr<SurfaceBuffer> buffer1 = sptr<SurfaceBufferImpl>::MakeSptr();
     sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
@@ -444,13 +444,13 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
     sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
     ret = psurf->FlushBuffer(buffer1, flushFence, flushConfig);
     ASSERT_EQ(ret, GSERROR_OK);
- 
+
     // consume buffer
     surfaceHandler.ResetHoldReturnValue();
     surfaceHandler.SetAvailableBufferCount(1);
     EXPECT_TRUE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, false));
     RSBaseRenderUtil::ReleaseBuffer(surfaceHandler);
- 
+
     // produce buffer
     sptr<SurfaceBuffer> buffer2 = sptr<SurfaceBufferImpl>::MakeSptr();
     ret = psurf->RequestBuffer(buffer2, requestFence, requestConfig);

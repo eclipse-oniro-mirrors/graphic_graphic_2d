@@ -2882,14 +2882,12 @@ HWTEST_F(RSSurfaceRenderNodeTest, IsAncestorScreenFrozenTest, TestSize.Level1)
     screenNode->forceFreeze_ = true;
     firstLevelNode->SetAncestorScreenNode(screenNode);
     ASSERT_TRUE(firstLevelNode->IsAncestorScreenFrozen());
- 
+
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(id + 2, context);
     ASSERT_NE(surfaceNode, nullptr);
     surfaceNode->firstLevelNodeId_ = firstLevelNode->GetId();
     EXPECT_TRUE(surfaceNode->IsAncestorScreenFrozen());
     context->GetMutableNodeMap().UnregisterRenderNode(firstLevelNode->GetId());
 }
-
-
 } // namespace Rosen
 } // namespace OHOS
