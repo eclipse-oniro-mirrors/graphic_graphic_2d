@@ -2592,6 +2592,12 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
             if (!surfaceNode->IsHardwareForcedDisabled()) {
                 auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
+                if (surfaceHandler->IsCurrentFrameBufferConsumed()) {
+                    auto preBufferOwnerCount = params->GetPreBufferOwnerCount();
+                    if (preBufferOwnerCount) {
+                        preBufferOwnerCount->DecRef();
+                    }
+                }
                 HandleTunnelLayerId(surfaceHandler, surfaceNode);
                 if (!surfaceHandler->IsCurrentFrameBufferConsumed() && params->GetPreBuffer() != nullptr) {
                     if (!surfaceNode->GetDeviceOfflineEnable()) {
