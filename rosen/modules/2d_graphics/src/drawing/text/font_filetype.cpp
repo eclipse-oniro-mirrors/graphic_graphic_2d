@@ -71,6 +71,9 @@ static constexpr uint8_t SHIFT_4_U32 = 4;
 // Read a big-endian 32-bit unsigned integer from byte array
 static uint32_t ReadUInt32BE(const uint8_t* data)
 {
+    if (!data) {
+        return 0;
+    }
     return (static_cast<uint32_t>(data[0]) << BYTE0_SHIFT) | // 0 means first char
            (static_cast<uint32_t>(data[1]) << BYTE1_SHIFT) | // 1 means second char
            (static_cast<uint32_t>(data[2]) << BYTE2_SHIFT) | // 2 means third char
@@ -80,6 +83,9 @@ static uint32_t ReadUInt32BE(const uint8_t* data)
 // Read a big-endian 16-bit unsigned integer from byte array
 static uint16_t ReadUInt16BE(const uint8_t* data)
 {
+    if (!data) {
+        return 0;
+    }
     return (static_cast<uint16_t>(data[0]) << BYTE2_SHIFT) |
            static_cast<uint16_t>(data[1]);
 }
