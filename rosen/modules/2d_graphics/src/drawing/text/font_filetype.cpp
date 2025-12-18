@@ -216,12 +216,12 @@ FontFileType::FontFileFormat DetectCollectionType(const std::string& fileName)
     }
     uint32_t firstFontOffset = 0;
     if (!ReadFirstFontOffset(fileName, firstFontOffset)) {
-        return FontFileType::FontFileFormat::TTC;
+        return FontFileType::FontFileFormat::UNKNOWN;
     }
     // Read SFNT signature of first font
     uint8_t signatureBuffer[SHIFT_4_U32];
     if (!ReadFileAtOffset(fileName, signatureBuffer, SHIFT_4_U32, firstFontOffset)) {
-        return FontFileType::FontFileFormat::TTC;
+        return FontFileType::FontFileFormat::UNKNOWN;
     }
     uint32_t signature = ReadUInt32BE(signatureBuffer);
     if (signature == TAG_TT_1_0 || signature == TAG_TRUE) {
@@ -336,6 +336,8 @@ FontFileType::FontFileFormat FontFileType::GetFontFileType(const std::string& pa
         IsCollectionFont(fileName, fileCount);
     } else if (outType != FontFileType::FontFileFormat::UNKNOWN) {
         fileCount = 1;
+    } else {
+        fileCount = 0;
     }
 }
 
