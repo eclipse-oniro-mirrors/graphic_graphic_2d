@@ -21,6 +21,7 @@
 
  namespace OHOS::Rosen {
 class MockAccessTokenKit {
+public:
     static void MockProcessName(const std::string &processName);
     static void MockAccessTokenKitRet(int accessTokenKitRet);
     static void MockTokenType(bool isNative);
