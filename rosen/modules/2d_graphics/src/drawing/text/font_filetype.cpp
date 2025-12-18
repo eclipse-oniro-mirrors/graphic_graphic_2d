@@ -232,7 +232,7 @@ FontFileType::FontFileFormat DetectCollectionType(const std::string& fileName)
     } else if (signature == TAG_OTTO) {
         return FontFileType::FontFileFormat::OTC;
     }
-    return FontFileType::FontFileFormat::TTC;
+    return FontFileType::FontFileFormat::UNKNOWN;
 }
 
 FontFileType::FontFileFormat DetectFontTypeComplete(const std::string& fileName)
