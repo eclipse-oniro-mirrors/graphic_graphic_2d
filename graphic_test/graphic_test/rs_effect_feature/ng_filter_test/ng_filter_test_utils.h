@@ -50,6 +50,8 @@ const Vector2f FrostedGlassDefaultEdLightRates = Vector2f(0.0f, 0.0f);
 const Vector3f FrostedGlassDefaultEdLightKBS = Vector3f(0.6027f, 0.627451f, 2.0f);
 const Vector3f FrostedGlassDefaultEdLightPos = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f FrostedGlassDefaultEdLightNeg = Vector3f(3.2f, 2.0f, 1.0f);
+const bool FrostedGlassDefaultBaseVibrancyEnabled = true;
+const float FrostedGlassDefaultSamplingScale = 1.0f;
  
 // FrostedGlass Params
 // 1. blurParams: [1e-6, 200], [1, 20]
@@ -302,6 +304,12 @@ const std::vector<Vector2f> edLightDirParams = {
     Vector2f{-2.0f, -2.0f},
     Vector2f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()}
 };
+
+// 26. baseVibrancyEnabled: {true, false}
+const std::vector<bool> baseVibrancyEnabledParams = {true, false};
+
+// 27. samplingScale
+const std::vector<float> samplingScaleParams = {-1.0f, 0.0f, 0.5f, 1.0f, 2.0f, 100.0f};
 
 constexpr int DOUBLE_RIPPLE_MASK_PARAMS_COUNT = 7;
 const std::vector<std::array<float, DOUBLE_RIPPLE_MASK_PARAMS_COUNT>> doubleRippleMaskParams = {

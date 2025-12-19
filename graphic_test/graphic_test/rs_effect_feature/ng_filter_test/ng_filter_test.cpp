@@ -71,6 +71,9 @@ static void InitFrostedGlassFilter(std::shared_ptr<RSNGFrostedGlassFilter>& fros
     frostedGlassFilter->Setter<FrostedGlassEdLightKBSTag>(FrostedGlassDefaultEdLightKBS);
     frostedGlassFilter->Setter<FrostedGlassEdLightPosTag>(FrostedGlassDefaultEdLightPos);
     frostedGlassFilter->Setter<FrostedGlassEdLightNegTag>(FrostedGlassDefaultEdLightNeg);
+
+    frostedGlassFilter->Setter<FrostedGlassBaseVibrancyEnabledTag>(FrostedGlassDefaultBaseVibrancyEnabled);
+    frostedGlassFilter->Setter<FrostedGlassSamplingScaleTag>(FrostedGlassDefaultSamplingScale);
 }
 
 static std::shared_ptr<OHOS::Rosen::RSCanvasNode> CreateSdfChildNode(
@@ -388,6 +391,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_SdParamsTest
     for (int i = 0; i < rowCount; i++) {
         auto frostedGlassFilter = std::make_shared<RSNGFrostedGlassFilter>();
         InitFrostedGlassFilter(frostedGlassFilter);
+        frostedGlassFilter->Setter<FrostedGlassRefractParamsTag>(sdParamsParams[i]);
 
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
@@ -701,6 +705,55 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_EdLightNegTe
         auto frostedGlassFilter = std::make_shared<RSNGFrostedGlassFilter>();
         InitFrostedGlassFilter(frostedGlassFilter);
         frostedGlassFilter->Setter<FrostedGlassEdLightNegTag>(edLightNegParams[i]);
+
+        int x = (i % columnCount) * sizeX;
+        int y = (i / columnCount) * sizeY;
+        auto backgroundTestNode =
+            SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {x, y, sizeX, sizeY});
+        GetRootNode()->AddChild(backgroundTestNode);
+        RegisterNode(backgroundTestNode);
+
+        auto childTestNode = CreateSdfChildNode(x, y, sizeX, sizeY, frostedGlassFilter);
+        backgroundTestNode->AddChild(childTestNode);
+        RegisterNode(childTestNode);
+    }
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_BaseVibrancyEnabledTest)
+{
+    int columnCount = 1;
+    int rowCount = static_cast<int>(baseVibrancyEnabledParams.size());
+    auto sizeX = screenWidth / columnCount;
+    auto sizeY = screenHeight * columnCount / rowCount;
+    for (int i = 0; i < rowCount; i++) {
+        auto frostedGlassFilter = std::make_shared<RSNGFrostedGlassFilter>();
+        InitFrostedGlassFilter(frostedGlassFilter);
+        bool baseVibrancyEnabled = baseVibrancyEnabledParams[i];
+        frostedGlassFilter->Setter<FrostedGlassBaseVibrancyEnabledTag>(baseVibrancyEnabled);
+
+        int x = (i % columnCount) * sizeX;
+        int y = (i / columnCount) * sizeY;
+        auto backgroundTestNode =
+            SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {x, y, sizeX, sizeY});
+        GetRootNode()->AddChild(backgroundTestNode);
+        RegisterNode(backgroundTestNode);
+
+        auto childTestNode = CreateSdfChildNode(x, y, sizeX, sizeY, frostedGlassFilter);
+        backgroundTestNode->AddChild(childTestNode);
+        RegisterNode(childTestNode);
+    }
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Frosted_Glass_SamplingScaleTest)
+{
+    int columnCount = 2;
+    int rowCount = static_cast<int>(samplingScaleParams.size());
+    auto sizeX = screenWidth / columnCount;
+    auto sizeY = screenHeight * columnCount / rowCount;
+    for (int i = 0; i < rowCount; i++) {
+        auto frostedGlassFilter = std::make_shared<RSNGFrostedGlassFilter>();
+        InitFrostedGlassFilter(frostedGlassFilter);
+        frostedGlassFilter->Setter<FrostedGlassSamplingScaleTag>(samplingScaleParams[i]);
 
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
