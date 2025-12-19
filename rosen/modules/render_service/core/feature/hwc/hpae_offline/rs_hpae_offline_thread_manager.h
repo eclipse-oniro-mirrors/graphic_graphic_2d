@@ -18,12 +18,28 @@
 #include "event_handler.h"
 #include "common/rs_macros.h"
 
+#if defined(ROSEN_OHOS)
+namespace ffrt {
+class queue;
+}
+#endif
+
 namespace OHOS::Rosen {
 class RSB_EXPORT RSHpaeOfflineThreadManager final {
 public:
-    RSHpaeOfflineThreadManager() {}
-    ~RSHpaeOfflineThreadManager() {}
+    RSHpaeOfflineThreadManager();
+    ~RSHpaeOfflineThreadManager()
+    {
+#if defined(ROSEN_OHOS)
+        queue_ = nullptr;
+#endif
+    }
     bool PostTask(const std::function<void()>& task);
+
+private:
+#if defined(ROSEN_OHOS)
+    std::shared_ptr<ffrt::queue> queue_ = nullptr;
+#endif
 };
 }
 #endif // RS_CORE_FEATURE_HPAE_OFFLINE_THREAD_MANAGER_H
