@@ -352,8 +352,9 @@ public:
     // effect cache data relate
     struct CachedEffectData {
         CachedEffectData() = default;
-        CachedEffectData(std::shared_ptr<Drawing::Image>&& image, const Drawing::RectI& rect);
-        CachedEffectData(const std::shared_ptr<Drawing::Image>& image, const Drawing::RectI& rect);
+        CachedEffectData(std::shared_ptr<Drawing::Image> image, const Drawing::RectI& rect);
+        CachedEffectData(std::shared_ptr<Drawing::Image> image, const Drawing::RectI& rect,
+                         std::shared_ptr<IGECacheProvider> cacheProvider);
         ~CachedEffectData() = default;
         std::string GetInfo() const;
         std::shared_ptr<Drawing::Image> cachedImage_ = nullptr;

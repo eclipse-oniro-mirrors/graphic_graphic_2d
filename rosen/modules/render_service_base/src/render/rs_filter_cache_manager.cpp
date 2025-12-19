@@ -374,7 +374,8 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
         }
     }
     cachedFilteredSnapshot_ =
-        std::make_shared<RSPaintFilterCanvas::CachedEffectData>(std::move(filteredSnapshot), offscreenRect);
+        std::make_shared<RSPaintFilterCanvas::CachedEffectData>(std::move(filteredSnapshot), offscreenRect,
+                                                                cachedSnapshot_->geCacheProvider_);
     isHpaeCachedFilteredSnapshot_ = false;
 }
 
