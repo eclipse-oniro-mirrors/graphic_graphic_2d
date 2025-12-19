@@ -48,11 +48,11 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
     bool isNonSystemAppCalling = false;
     RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemAppCalling);
     if (!isTokenTypeValid) {
-        RS_LOGE("RSClientToRenderConnectionStub::OnRemoteRequest invalid token type");
+        RS_LOGE("RSServiceToRenderConnectionStub::OnRemoteRequest invalid token type");
         return ERR_INVALID_STATE;
     }
     if (isNonSystemAppCalling) {
-        RS_LOGE("RSClientToRenderConnectionStub::OnRemoteRequest isNonSystemAppCalling");
+        RS_LOGE("RSServiceToRenderConnectionStub::OnRemoteRequest isNonSystemAppCalling");
         return ERR_INVALID_STATE;
     }
     switch (code) {
@@ -80,7 +80,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
                 ret = ERR_NULL_OBJECT;
                 break;
             }
-            int32_t status = RegisterOcclusionChangeCallback(pid, callback); 
+            int32_t status = RegisterOcclusionChangeCallback(pid, callback);
             if (!reply.WriteInt32(status)) {
                 RS_LOGE("RSServiceToRenderStub::REGISTER_OCCLUSION_CHANGE_CALLBACK Write status failed!");
                 ret = ERR_INVALID_REPLY;
@@ -129,8 +129,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             }
             int32_t status = RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
             if (!reply.WriteInt32(status)) {
-                RS_LOGE(
-                    "RSServiceToRenderStub::REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK Write status failed!");
+                RS_LOGE("RSServiceToRenderStub::REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK Write status failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -160,7 +159,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
                 break;
             }
             if (!data.ReadBool(discardJankFrames)) {
-                RS_LOGE("RSClientToRenderConnectionStub::SET_DISCARD_JANK_FRAME read flag failed!");
+                RS_LOGE("RSServiceToRenderStub::SET_DISCARD_JANK_FRAME read flag failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
@@ -432,7 +431,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             GetSurfaceRootNodeId(windowNodeId);
             if (!reply.WriteUint64(windowNodeId)) {
                 RS_LOGE("RSServiceToRenderStub::GET_SURFACE_ROOT_NODE Write result failed!");
-                ret = ERR_INVALID_DATA;
+                ret = ERR_INVALID_REPLY;
             }
             break;
         }
@@ -468,7 +467,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             DoDump(argSets);
             break;
         }
-        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT) : {
+        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT): {
             auto interfaceToken = data.ReadInterfaceToken();
             if (interfaceToken != RSIServiceToRenderConnection::GetDescriptor()) {
                 ret = ERR_INVALID_STATE;

@@ -60,6 +60,7 @@ private:
     void FilterCCMInit();
 
     void CoreComponentsInit();
+    void FeatureComponentInit();
     void VsyncComponentInit();
     void RenderProcessManagerInit();
     bool SAMgrRegister();

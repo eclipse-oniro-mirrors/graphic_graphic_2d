@@ -70,7 +70,8 @@ class RSRenderPipeline final : public RefBase {
 public:
     static std::shared_ptr<RSRenderPipeline> Create(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
         const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
 
     void PostMainThreadTask(RSTaskMessage::RSTask task);
 
@@ -102,7 +103,8 @@ public:
 private:
     void Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
         const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void InitEnvironment();
     void InitUniRenderConfig();
     void InitCCMConfig();
@@ -111,7 +113,8 @@ private:
     void RegisterRcdMsg();
     void InitMainThread(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
         const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void InitUniRenderThread();
     void InitDumper();
 

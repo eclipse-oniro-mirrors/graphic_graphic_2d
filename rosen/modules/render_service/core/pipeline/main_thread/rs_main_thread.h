@@ -99,7 +99,8 @@ public:
     static RSMainThread* Instance();
 
     void Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler, const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void OnScreenConnected(const sptr<RSScreenProperty>& property);
     void OnScreenDisconnected(ScreenId screenId);
     void OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty);
@@ -484,6 +485,8 @@ public:
     {
         return aibarNodes_;
     }
+
+    uint64_t GetVsyncId() const { return vsyncId_; }
 
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,

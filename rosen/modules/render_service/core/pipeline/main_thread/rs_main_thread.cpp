@@ -470,7 +470,9 @@ void RSMainThread::TraverseCanvasDrawingNodes()
 }
 
 void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
-    const std::shared_ptr<VSyncReceiver>& receiver, const sptr<RSIRenderToServiceConnection>& renderToServiceConnection)
+    const std::shared_ptr<VSyncReceiver>& receiver,
+    const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+    const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent)
 {
     RS_LOGI("RSMainThread init.");
     mainLoop_ = [&]() {
@@ -608,6 +610,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         std::placeholders::_1));
     RSSystemProperties::WatchSystemProperty(HIDE_NOTCH_STATUS, OnHideNotchStatusCallback, nullptr);
     RSSystemProperties::WatchSystemProperty(DRAWING_CACHE_DFX, OnDrawingCacheDfxSwitchCallback, nullptr);
+    rsVsyncManagerAgent_ = rsVsyncManagerAgent_;
     if (isUniRender_) {
 #ifdef RS_ENABLE_GPU
         unmarshalBarrierTask_ = [this]() {
@@ -739,6 +742,8 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
     hgmRPContext_ = std::make_shared<HgmRPContext>();
     hgmRPContext_->InitHgmConfig(hwcContext_->GetMutableSourceTuningConfig(), hwcContext_->GetMutableSolidLayerConfig(),
         context_->GetMutableUiFrameworkTypeTable());
+
+    RegisterScreenSwitchFinishCallback(renderToServiceConnection);
 
     RSRenderNodeGC::Instance().SetImageReleaseFunc([this]() {
         PostTask([this]() {
