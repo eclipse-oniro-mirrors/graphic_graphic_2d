@@ -33,7 +33,7 @@ static std::unordered_map<RSNGEffectType, MaskCreator> creatorMask = {
      [] {
          return std::make_shared<RSNGDoubleRippleMask>();
      }},
-     {RSNGEffectType::NOISY_FRAME_GRADIENT_MASK,
+    {RSNGEffectType::NOISY_FRAME_GRADIENT_MASK,
      [] {
          return std::make_shared<RSNGNoisyFrameGradientMask>();
      }},
