@@ -434,7 +434,7 @@ void SetColorGradientEffectParams(const std::shared_ptr<RSNGColorGradientEffect>
         std::get<float>(colorGradientEffectParams[index][NUM_12]));
     colorGradient->Setter<ColorGradientEffectBlendTag>(
         std::get<float>(colorGradientEffectParams[index][NUM_13]));
-    colorGradient->Setter<ColorGradientEffectBlendKITag>(
+    colorGradient->Setter<ColorGradientEffectBlendKTag>(
         std::get<float>(colorGradientEffectParams[index][NUM_14]));
 
 }
@@ -702,7 +702,7 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Foregro
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         auto foregroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { x, y, sizeX, sizeY });
-        foregroundTestNode->SetForegroundShader(roundedRectFlowlight);
+        foregroundTestNode->SetForegroundShader(colorGradient);
         GetRootNode()->AddChild(foregroundTestNode);
         RegisterNode(foregroundTestNode);
     }
