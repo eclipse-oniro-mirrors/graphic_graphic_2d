@@ -87,7 +87,7 @@ sptr<RSITransactionDataCallback> RSTransactionDataCallbackManager::PopTransactio
 RSTransactionDataCallbackManager::RSTransactionDataCallbackManager()
 {
     isDebugEnabled_ = RSSystemProperties::GetTransactionDataTraceEnabled();
-    RSSystemProperties::WatchSystemProperty(        
+    RSSystemProperties::WatchSystemProperty(
         GRAPHIC_TEST_MODE_TRACE_NAME, TransactionChangedCallback, nullptr);
 }
 
