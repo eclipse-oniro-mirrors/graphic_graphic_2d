@@ -78,12 +78,12 @@ static std::shared_ptr<OHOS::Rosen::RSCanvasNode> CreateSdfChildNode(
     std::shared_ptr<RSNGFrostedGlassFilter>& frostedGlassFilter)
 {
     auto childTestNode = RSCanvasNode::Create();
-    Rosen::Vector4f bounds{x, y, sizeX, sizeY};
+    Rosen::Vector4f bounds{0, 0, sizeX, sizeY};
     childTestNode->SetBounds(bounds);
     childTestNode->SetFrame(bounds);
     childTestNode->SetMaterialNGFilter(frostedGlassFilter);
 
-    const RRect defaultRectParam = {RectT<float>{x + sizeX/4, y + sizeY/4, sizeX/2, sizeY/2}, sizeX/16, sizeX/16};
+    const RRect defaultRectParam = {RectT<float>{sizeX/4, sizeY/4, sizeX/2, sizeY/2}, sizeX/16, sizeX/16};
     std::shared_ptr<RSNGShapeBase> sdfShape;
     InitSmoothUnionShapes(sdfShape, defaultRectParam, defaultRectParam, 0.0);
     childTestNode->SetSDFShape(sdfShape);

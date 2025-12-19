@@ -26,279 +26,269 @@ std::shared_ptr<RSNGFilterBase> CreateFilter(RSNGEffectType type);
 
 // Default values
 const Vector2f FrostedGlassDefaultBlurParams = Vector2f(20.0f, 3.0f);
-const Vector2f FrostedGlassDefaultWeightsEmboss = Vector2f(1.0f, 1.0f); // (envLight, sd)
+const Vector2f FrostedGlassDefaultWeightsEmboss = Vector2f(1.0f, 0.5f); // (envLight, sd)
 const Vector2f FrostedGlassDefaultWeightsEdl = Vector2f(1.0f, 1.0f); // (envLight, sd)
-const Vector2f FrostedGlassDefaultBgRates = Vector2f(-1.8792225f, 2.76f);
-const Vector3f FrostedGlassDefaultBgKBS = Vector3f(0.0073494f, 0.0998895f, 1.2f);
+const Vector2f FrostedGlassDefaultBgRates = Vector2f(-1.8792225f, 2.7626955f);
+const Vector3f FrostedGlassDefaultBgKBS = Vector3f(0.0073494f, 0.0998859f, 1.2f);
 const Vector3f FrostedGlassDefaultBgPos = Vector3f(0.3f, 0.5f, 0.5f);
 const Vector3f FrostedGlassDefaultBgNeg = Vector3f(0.5f, 1.0f, 1.0f);
 const Vector3f FrostedGlassDefaultRefractParams = Vector3f(1.0f, 0.3f, 0.3f);
-const Vector3f FrostedGlassDefaultSdParams = Vector3f(-50.0f, 4.0f, 2.0f);
+const Vector3f FrostedGlassDefaultSdParams = Vector3f(-50.0f, 6.0f, 6.62f);
 const Vector2f FrostedGlassDefaultSdRates = Vector2f(0.0f, 0.0f);
 const Vector3f FrostedGlassDefaultSdKBS = Vector3f(0.9f, 0.0f, 1.0f);
-const Vector3f FrostedGlassDefaultSdPos = Vector3f(1.7f, 1.5f, 3.0f);
+const Vector3f FrostedGlassDefaultSdPos = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f FrostedGlassDefaultSdNeg = Vector3f(3.0f, 2.0f, 1.0f);
-const Vector3f FrostedGlassDefaultEnvLightParams = Vector3f(50.0f, 5.0f, 2.0f);
+const Vector3f FrostedGlassDefaultEnvLightParams = Vector3f(50.0f, 20.0f, 5.0f);
 const Vector2f FrostedGlassDefaultEnvLightRates = Vector2f(0.0f, 0.0f);
-const Vector3f FrostedGlassDefaultEnvLightKBS = Vector3f(0.8f, 0.2745f, 2.0f);
-const Vector3f FrostedGlassDefaultEnvLightPos = Vector3f(1.7f, 1.5f, 3.0f);
+const Vector3f FrostedGlassDefaultEnvLightKBS = Vector3f(0.8f, 0.27451f, 2.0f);
+const Vector3f FrostedGlassDefaultEnvLightPos = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f FrostedGlassDefaultEnvLightNeg = Vector3f(3.0f, 2.0f, 1.0f);
-const Vector2f FrostedGlassDefaultEdLightParams = Vector2f(2.0f, 0.7f);
-const Vector2f FrostedGlassDefaultEdLightAngles = Vector2f(30.0f, 30.0f);
-const Vector2f FrostedGlassDefaultEdLightDir = Vector2f(-1.0f, 1.0f);
+const Vector2f FrostedGlassDefaultEdLightParams = Vector2f(2.0f, 2.0f);
+const Vector2f FrostedGlassDefaultEdLightAngles = Vector2f(40.0f, 20.0f);
+const Vector2f FrostedGlassDefaultEdLightDir = Vector2f(2.5f, 2.5f);
 const Vector2f FrostedGlassDefaultEdLightRates = Vector2f(0.0f, 0.0f);
-const Vector3f FrostedGlassDefaultEdLightKBS = Vector3f(0.6027f, 0.64f, 2.0f);
+const Vector3f FrostedGlassDefaultEdLightKBS = Vector3f(0.6027f, 0.627451f, 2.0f);
 const Vector3f FrostedGlassDefaultEdLightPos = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f FrostedGlassDefaultEdLightNeg = Vector3f(3.2f, 2.0f, 1.0f);
  
 // FrostedGlass Params
 // 1. blurParams: [1e-6, 200], [1, 20]
 const std::vector<Vector2f> blurparamsParams = {
-    Vector2f{20.0f, 5.0f},
-    Vector2f{-10.0f, 5.0f},
-    Vector2f{100.0f, -5.0f},
-    Vector2f{100.0f, 50.0f},
-    Vector2f{-1000.0f, 1000.0f},
+    Vector2f{5.0f, 5.0f},
+    Vector2f{10.0f, 5.0f},
+    Vector2f{100.0f, 1.0f},
+    Vector2f{100.0f, 20.0f},
+    Vector2f{0.0f, 0.0f},
     Vector2f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
-// 2. weightsEmboss: [-5, 5]
+// 2. weightsEmboss: [0, 5]
 const std::vector<Vector2f> weightsEmbossParams = {
     Vector2f{0.0f, 0.0f},
     Vector2f{3.0f, 3.0f},
-    Vector2f{-10.0f, 5.0f},
-    Vector2f{5.0f, -10.0f},
-    Vector2f{10.0f, 10.0f},
+    Vector2f{0.0f, 5.0f},
+    Vector2f{5.0f, 0.0f},
+    Vector2f{-10.0f, -10.0f},
     Vector2f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
-// 3. weightsEdl: [-5, 5]
+// 3. weightsEdl: [0, 5]
 const std::vector<Vector2f> weightsEdlParams = {
     Vector2f{0.0f, 0.0f},
-    Vector2f{3.0f, 3.0f},
-    Vector2f{-10.0f, 5.0f},
-    Vector2f{5.0f, -10.0f},
-    Vector2f{10.0f, 10.0f},
+    Vector2f{0.0f, 1.0f},
+    Vector2f{1.0f, 0.0f},
+    Vector2f{1.1f, 1.1f},
+    Vector2f{-10.0f, -10.0f},
     Vector2f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
 // 4. bgRates: [-20, 20]
 const std::vector<Vector2f> bgRatesParams = {
     Vector2f{0.0f, 0.0f},
-    Vector2f{1.0f, 1.0f},
+    Vector2f{-1.8f, 2.8f},
+    Vector2f{-1.8f, 15.0f},
+    Vector2f{-10.0f, 2.5f},
     Vector2f{-100.0f, -100.0f},
-    Vector2f{25.0f, 25.0f},
-    Vector2f{100.0f, 0.0f},
-    Vector2f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()}
+    Vector2f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
 // 5. sdRates: [-20, 20]
 const std::vector<Vector2f> sdRatesParams = {
-    Vector2f{-100.0f, -100.0f},
-    Vector2f{-20.0f, -20.0f},
     Vector2f{0.0f, 0.0f},
-    Vector2f{20.0f, 20.0f},
+    Vector2f{1.0f, 1.0f},
+    Vector2f{10.0f, 10.0f},
+    Vector2f{-25.0f, -25.0f},
     Vector2f{100.0f, 100.0f},
     Vector2f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()}
 };
 
 // 6. envLightRates: [-20, 20]
 const std::vector<Vector2f> envLightRatesParams = {
-    Vector2f{-100.0f, -100.0f},
-    Vector2f{-20.0f, -20.0f},
     Vector2f{0.0f, 0.0f},
-    Vector2f{20.0f, 20.0f},
+    Vector2f{1.0f, 1.0f},
+    Vector2f{10.0f, 10.0f},
+    Vector2f{-25.0f, -25.0f},
     Vector2f{100.0f, 100.0f},
     Vector2f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()}
 };
 
 // 7. edLightRates: [-20, 20]
 const std::vector<Vector2f> edLightRatesParams = {
-    Vector2f{-100.0f, -100.0f},
-    Vector2f{-20.0f, -20.0f},
     Vector2f{0.0f, 0.0f},
-    Vector2f{20.0f, 20.0f},
+    Vector2f{1.0f, 1.0f},
+    Vector2f{10.0f, 10.0f},
+    Vector2f{-25.0f, -25.0f},
     Vector2f{100.0f, 100.0f},
     Vector2f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()}
 };
 
 // 8. bgKBS: KB[-20,20], S[0,20]
 const std::vector<Vector3f> bgKBSParams = {
-    Vector3f{-100.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, -100.0f, 10.0f},
-    Vector3f{30.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, 30.0f, 10.0f},
-    Vector3f{0.0f, 0.0f, -10.0f},
-    Vector3f{0.0f, 0.0f, 30.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
+    Vector3f{1.0f, 0.0f, 1.0f},
+    Vector3f{1.0f, 10.0f, 1.0f},
+    Vector3f{10.0f, 10.0f, 10.0f},
+    Vector3f{-10.0f, 0.0f, 1.0f},
+    Vector3f{0.0f, 0.0f, 0.0f},
     Vector3f{std::numeric_limits<float>::infinity(), 0.0f, std::numeric_limits<float>::infinity()}
 };
 
-// 9. sdKBS
+// 9. sdKBS: KB[-20,20], S[0,20]
 const std::vector<Vector3f> sdKBSParams = {
-    Vector3f{-100.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, -100.0f, 10.0f},
-    Vector3f{30.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, 30.0f, 10.0f},
-    Vector3f{0.0f, 0.0f, -10.0f},
-    Vector3f{0.0f, 0.0f, 30.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
+    Vector3f{1.0f, 0.0f, 1.0f},
+    Vector3f{1.0f, 10.0f, 1.0f},
+    Vector3f{10.0f, 10.0f, 10.0f},
+    Vector3f{-10.0f, 0.0f, 1.0f},
+    Vector3f{0.0f, 0.0f, 0.0f},
     Vector3f{std::numeric_limits<float>::infinity(), 0.0f, std::numeric_limits<float>::infinity()}
 };
 
-// 10. envLightKBS
+// 10. envLightKBS: KB[-20,20], S[0,20]
 const std::vector<Vector3f> envLightKBSParams = {
-    Vector3f{-100.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, -100.0f, 10.0f},
-    Vector3f{30.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, 30.0f, 10.0f},
-    Vector3f{0.0f, 0.0f, -10.0f},
-    Vector3f{0.0f, 0.0f, 30.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
+    Vector3f{1.0f, 0.0f, 1.0f},
+    Vector3f{1.0f, 10.0f, 1.0f},
+    Vector3f{10.0f, 10.0f, 10.0f},
+    Vector3f{-10.0f, 0.0f, 1.0f},
+    Vector3f{0.0f, 0.0f, 0.0f},
     Vector3f{std::numeric_limits<float>::infinity(), 0.0f, std::numeric_limits<float>::infinity()}
 };
 
-// 11. edLightKBS
+// 11. edLightKBS: KB[-20,20], S[0,20]
 const std::vector<Vector3f> edLightKBSParams = {
-    Vector3f{-100.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, -100.0f, 10.0f},
-    Vector3f{30.0f, 0.0f, 10.0f},
-    Vector3f{0.0f, 30.0f, 10.0f},
-    Vector3f{0.0f, 0.0f, -10.0f},
-    Vector3f{0.0f, 0.0f, 30.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
+    Vector3f{0.6f, 0.6f, 2.0f},
+    Vector3f{0.6f, 10.0f, 2.0f},
+    Vector3f{0.6f, 0.8f, 10.0f},
+    Vector3f{0.0f, 0.0f, 0.0f},
+    Vector3f{-10.0f, -10.0f, 10.0f},
     Vector3f{std::numeric_limits<float>::infinity(), 0.0f, std::numeric_limits<float>::infinity()}
 };
 
-// 12. bgPos [-20,20]
+// 12. bgPos: [-20,20]
 const std::vector<Vector3f> bgPosParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
-    Vector3f{100.0f, 100.0f, 100.0f},
-    Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
+    Vector3f{0.5f, 0.5f, 0.5f},
+    Vector3f{10.0f, 0.5f, 0.5f},
+    Vector3f{0.5f, 10.0f, 0.1f},
+    Vector3f{0.5f, 0.5f, 10.0f},
+    Vector3f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
-// 13. bgNeg
+// 13. bgNeg: [-20,20]
 const std::vector<Vector3f> bgNegParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
+    Vector3f{3.2f, 2.0f, 1.2f},
+    Vector3f{0.0f, 2.0f, 1.2f},
+    Vector3f{3.0f, 0.0f, 1.0f},
+    Vector3f{3.5f, 2.0f, 0.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
-    Vector3f{100.0f, 100.0f, 100.0f},
-    Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
+    Vector3f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
-// 14. sdPos
+// 14. sdPos: [-20,20]
 const std::vector<Vector3f> sdPosParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
+    Vector3f{1.0f, 2.0f, 1.5f},
+    Vector3f{0.0f, 2.0f, 1.5f},
+    Vector3f{1.0f, 0.0f, 1.5f},
+    Vector3f{1.0f, 2.0f, 0.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
-    Vector3f{100.0f, 100.0f, 100.0f},
     Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
 };
 
-// 15. sdNeg
+// 15. sdNeg: [-20,20]
 const std::vector<Vector3f> sdNegParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
+    Vector3f{3.0f, 2.0f, 1.0f},
+    Vector3f{0.0f, 2.0f, 1.0f},
+    Vector3f{3.0f, 0.0f, 1.0f},
+    Vector3f{3.0f, 2.0f, 0.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
-    Vector3f{100.0f, 100.0f, 100.0f},
     Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
 };
 
-// 16. envLightPos
+// 16. envLightPos: [-20,20]
 const std::vector<Vector3f> envLightPosParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
+    Vector3f{-10.0f, 0.0f, 0.0f},
+    Vector3f{10.0f, 10.0f, 10.0f},
+    Vector3f{0.0f, 10.0f, 0.0f},
     Vector3f{100.0f, 100.0f, 100.0f},
     Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
 };
 
-// 17. envLightNeg
+// 17. envLightNeg: [-20,20]
 const std::vector<Vector3f> envLightNegParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
+    Vector3f{-10.0f, 0.0f, 0.0f},
+    Vector3f{10.0f, 10.0f, 10.0f},
+    Vector3f{0.0f, 10.0f, 0.0f},
     Vector3f{100.0f, 100.0f, 100.0f},
     Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
 };
 
-// 18. edLightPos
+// 18. edLightPos: [-20,20]
 const std::vector<Vector3f> edLightPosParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
+    Vector3f{1.5f, 1.5f, 1.5f},
+    Vector3f{0.0f, 1.5f, 1.5f},
+    Vector3f{1.5f, 0.0f, 1.5f},
+    Vector3f{1.5f, 1.5f, 0.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
-    Vector3f{100.0f, 100.0f, 100.0f},
-    Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
+    Vector3f{-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0}
 };
 
-// 19. edLightNeg
+// 19. edLightNeg: [-20,20]
 const std::vector<Vector3f> edLightNegParams = {
-    Vector3f{-100.0f, -100.0f, -100.0f},
-    Vector3f{-20.0f, -20.0f, -20.0f},
+    Vector3f{3.2f, 2.0f, 1.2f},
+    Vector3f{0.0f, 2.0f, 1.2f},
+    Vector3f{3.0f, 0.0f, 1.0f},
+    Vector3f{3.5f, 2.0f, 0.0f},
     Vector3f{0.0f, 0.0f, 0.0f},
-    Vector3f{20.0f, 20.0f, 20.0f},
-    Vector3f{100.0f, 100.0f, 100.0f},
-    Vector3f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), 0.0f}
+    Vector3f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
 // 20. sdParams: [−500,500], [0,250], [0,250]
 const std::vector<Vector3f> sdParamsParams = {
-    Vector3f{-1000.0f, -10.0f, -10.0f},
-    Vector3f{-500.0f, 0.0f, 0.0f},
-    Vector3f{0.0f, 125.0f, 125.0f},
-    Vector3f{500.0f, 250.0f, 250.0f},
-    Vector3f{1000.0f, 300.0f, 300.0f},
-    Vector3f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(),
-             std::numeric_limits<float>::infinity()}
+    Vector3f{-50.0f, 6.0f, 6.0f},
+    Vector3f{-50.0f, 60.0f, 6.0f},
+    Vector3f{-50.0f, 6.0f, 60.0f},
+    Vector3f{50.0f, 6.0f, 6.0f},
+    Vector3f{50.0f, 60.0f, 6.0f},
+    Vector3f{50.0f, 6.0f, 60.0f},
 };
 
-// 21. envLightParams: the same as sdParams
+// 21. envLightParams: [0,500], [0,250], [0,250]
 const std::vector<Vector3f> envLightParamsParams = {
-    Vector3f{-1000.0f, -10.0f, -10.0f},
-    Vector3f{-500.0f, 0.0f, 0.0f},
-    Vector3f{0.0f, 125.0f, 125.0f},
-    Vector3f{500.0f, 250.0f, 250.0f},
-    Vector3f{1000.0f, 300.0f, 300.0f},
-    Vector3f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(),
-             std::numeric_limits<float>::infinity()}
+    Vector3f{0.0f, 6.0f, 6.0f},
+    Vector3f{50.0f, 60.0f, 6.0f},
+    Vector3f{500.0f, 6.0f, 60.0f},
+    Vector3f{500.0f, 60.0f, 60.0f},
+    Vector3f{0.0f, 0.0f, 0.0f},
+    Vector3f{50.0f, 0.0f, 0.0f},
 };
 
 // 22. refractParams: [-1,1], [0,10], [0,1]
 const std::vector<Vector3f> refractParamsParams = {
-    Vector3f{-2.0f, -1.0f, -1.0f},
-    Vector3f{-1.0f, 0.0f, 0.0f},
-    Vector3f{0.0f, 5.0f, 0.5f},
-    Vector3f{1.0f, 10.0f, 1.0f},
-    Vector3f{2.0f, 20.0f, 2.0f},
+    Vector3f{0.0f, 0.2f, 0.2f},
+    Vector3f{1.0f, 0.2f, 0.2f},
+    Vector3f{1.0f, 5.0f, 0.2f},
+    Vector3f{-1.0f, 5.0f, 0.2f},
+    Vector3f{-1.0f, 2.0f, 10.0f},
     Vector3f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(),
              std::numeric_limits<float>::infinity()}
 };
 
-// 23. edLightParams: [0,500]
+// 23. edLightParams: [0,250]
 const std::vector<Vector2f> edLightParamsParams = {
-    Vector2f{-100.0f, -100.0f},
     Vector2f{0.0f, 0.0f},
-    Vector2f{250.0f, 250.0f},
+    Vector2f{10.0f, 10.0f},
+    Vector2f{100.0f, 100.0f},
     Vector2f{500.0f, 500.0f},
-    Vector2f{1000.0f, 1000.0f},
+    Vector2f{-100.0f, -100.0f},
     Vector2f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
 
 // 24. edLightAngles: [0,180]
 const std::vector<Vector2f> edLightAnglesParams = {
-    Vector2f{-10.0f, -10.0f},
     Vector2f{0.0f, 0.0f},
+    Vector2f{45.0f, 45.0f},
     Vector2f{90.0f, 90.0f},
-    Vector2f{180.0f, 180.0f},
+    Vector2f{-180.0f, -180.0f},
     Vector2f{200.0f, 200.0f},
     Vector2f{std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()}
 };
@@ -306,10 +296,10 @@ const std::vector<Vector2f> edLightAnglesParams = {
 // 25. edLightDir: [-1,1]
 const std::vector<Vector2f> edLightDirParams = {
     Vector2f{0.0f, 0.0f},
-    Vector2f{2.0f, 2.0f},
-    Vector2f{-2.0f, -2.0f},
+    Vector2f{1.0f, 1.0f},
     Vector2f{1.0f, 0.0f},
     Vector2f{0.0f, 1.0f},
+    Vector2f{-2.0f, -2.0f},
     Vector2f{std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()}
 };
 
