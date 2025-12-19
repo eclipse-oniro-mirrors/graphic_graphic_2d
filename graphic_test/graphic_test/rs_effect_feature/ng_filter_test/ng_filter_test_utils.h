@@ -309,7 +309,7 @@ const std::vector<Vector2f> edLightDirParams = {
 const std::vector<bool> baseVibrancyEnabledParams = {true, false};
 
 // 27. samplingScale
-const std::vector<float> samplingScaleParams = {-1.0f, 0.0f, 0.5f, 1.0f, 2.0f, 100.0f};
+const std::vector<float> samplingScaleParams = {-1.0f, 0.0f, 0.1f, 0.2f, 0.5f, 10.0f};
 
 constexpr int DOUBLE_RIPPLE_MASK_PARAMS_COUNT = 7;
 const std::vector<std::array<float, DOUBLE_RIPPLE_MASK_PARAMS_COUNT>> doubleRippleMaskParams = {
