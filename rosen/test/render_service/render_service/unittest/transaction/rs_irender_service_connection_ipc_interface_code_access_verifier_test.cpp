@@ -237,21 +237,21 @@ HWTEST_F(RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest, IsExfusio
     auto verifier = std::make_unique<RSIRenderServiceConnectionInterfaceCodeAccessVerifier>();
     const std::string callingCode = "exfusion_test";
 #ifdef ENABLE_IPC_SECURITY
-    ASSERT_EQ(verifier->IsStylusServiceCalling(callingCode), false);
+    ASSERT_EQ(verifier->IsExfusionServiceCalling(callingCode), false);
     MockAccessTokenKit::MockAccessTokenKitRet(0);
     MockAccessTokenKit::MockTokenType(true);
     MockAccessTokenKit::MockProcessName(EXFUSION_SERVICE_PROCESS_NAME);
-    SSERT_EQ(verifier->IsStylusServiceCalling(callingCode), false);
+    ASSERT_EQ(verifier->IsExfusionServiceCalling(callingCode), false);
     setuid(EXFUSION_UID);
-    SSERT_EQ(verifier->IsStylusServiceCalling(callingCode), true);
+    ASSERT_EQ(verifier->IsExfusionServiceCalling(callingCode), true);
 #else
-    ASSERT_EQ(verifier->IsStylusServiceCalling(callingCode), false);
+    ASSERT_EQ(verifier->IsExfusionServiceCalling(callingCode), false);
     MockAccessTokenKit::MockAccessTokenKitRet(0);
     MockAccessTokenKit::MockTokenType(true);
     MockAccessTokenKit::MockProcessName(EXFUSION_SERVICE_PROCESS_NAME);
-    SSERT_EQ(verifier->IsStylusServiceCalling(callingCode), false);
+    ASSERT_EQ(verifier->IsExfusionServiceCalling(callingCode), false);
     setuid(EXFUSION_UID);
-    SSERT_EQ(verifier->IsStylusServiceCalling(callingCode), true);
+    ASSERT_EQ(verifier->IsExfusionServiceCalling(callingCode), true);
 #endif
     setuid(ROOT_UID);
 }
