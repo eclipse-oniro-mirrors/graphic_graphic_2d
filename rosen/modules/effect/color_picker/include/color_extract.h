@@ -56,7 +56,7 @@ public:
     std::vector<std::pair<uint32_t, uint32_t>> featureColors_;
 
     // Specified number of extracted theme colors, default value is 10;
-    int specifiedFeatureColorNum_ = 10;
+    int specifiedFeatureColorNum_ = 20;
 
     std::vector<uint32_t> hist_;
     int distinctColorCount_ = 0;
