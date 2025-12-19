@@ -182,12 +182,12 @@ void RSUIContext::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t taskI
 
 int32_t RSUIContext::GetUiPiplineNum() const
 {
-    return uiPiplineNum_;
+    return uiPiplineNum_.load();
 }
  
 void RSUIContext::DetachFromUI()
 {
-    if (uiPiplineNum_ == 0) {
+    if (uiPiplineNum_.load() == 0) {
         ROSEN_LOGD("RSUIContext::DetachFromUI failed");
         return;
     }
@@ -196,7 +196,7 @@ void RSUIContext::DetachFromUI()
  
 void RSUIContext::AttachFromUI()
 {
-    if (uiPiplineNum_ == UI_PiPLINE_NUM_UNDEFINED) {
+    if (uiPiplineNum_.load() == UI_PiPLINE_NUM_UNDEFINED) {
         uiPiplineNum_ = 1;
         return;
     }
