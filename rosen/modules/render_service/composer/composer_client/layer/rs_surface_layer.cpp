@@ -15,30 +15,25 @@
 
 #include "rs_surface_layer.h"
 #include <memory>
-#include "rs_layer_context.h"
+#include "rs_composer_context.h"
 #include "rs_layer_parcel.h"
 #include "rs_surface_layer_parcel.h"
 #include "surface_type.h"
 
 namespace OHOS {
 namespace Rosen {
-std::shared_ptr<RSLayer> RSSurfaceLayer::CreateRSLayer(const std::shared_ptr<RSRenderComposerClient>& client,
+std::shared_ptr<RSLayer> RSSurfaceLayer::Create(const std::shared_ptr<RSComposerContext>& context,
     RSLayerId rsLayerId)
 {
-    if (client == nullptr) {
-        RS_LOGE("RSSurfaceLayer::CreateRSLayer client is nullptr");
-        return nullptr;
-    }
-    auto context = client->GetRSLayerContext();
     if (context == nullptr) {
-        RS_LOGE("RSSurfaceLayer::CreateRSLayer context is nullptr");
+        RS_LOGE("RSSurfaceLayer::Create context is nullptr");
         return nullptr;
     }
     std::shared_ptr<RSLayer> layer = context->GetRSLayer(rsLayerId);
     if (layer != nullptr) {
-        RS_TRACE_NAME_FMT("RSSurfaceLayer::CreateRSLayer: use exist layer, id: %" PRIu64 ", name: %s",
+        RS_TRACE_NAME_FMT("RSSurfaceLayer::Create use exist layer, id: %" PRIu64 ", name: %s",
             rsLayerId, layer->GetSurfaceName().c_str());
-        RS_LOGD("RSSurfaceLayer::CreateRSLayer get cache layer by layer id: %{public}" PRIu64, rsLayerId);
+        RS_LOGD("RSSurfaceLayer::Create get cache layer by layer id: %{public}" PRIu64, rsLayerId);
         layer->SetRSLayerId(rsLayerId);
         return layer;
     }
@@ -47,22 +42,22 @@ std::shared_ptr<RSLayer> RSSurfaceLayer::CreateRSLayer(const std::shared_ptr<RSR
     return layer;
 }
 
-std::shared_ptr<RSLayerContext> RSSurfaceLayer::GetRSLayerContext() const
+std::shared_ptr<RSComposerContext> RSSurfaceLayer::GetComposerContext() const
 {
-    return rsLayerContext_.lock();
+    return rsComposerContext_.lock();
 }
 
-void RSSurfaceLayer::SetRSLayerContext(std::shared_ptr<RSLayerContext> rsLayerContext)
+void RSSurfaceLayer::SetComposerContext(std::shared_ptr<RSComposerContext> rsComposerContext)
 {
-    rsLayerContext_ = rsLayerContext;
+    rsComposerContext_ = rsComposerContext;
 }
 
-RSSurfaceLayer::RSSurfaceLayer(RSLayerId rsLayerId, std::shared_ptr<RSLayerContext> rsLayerContext)
+RSSurfaceLayer::RSSurfaceLayer(RSLayerId rsLayerId, std::shared_ptr<RSComposerContext> rsComposerContext)
 {
     RS_TRACE_NAME_FMT("RSSurfaceLayer::RSSurfaceLayer id: %" PRIu64, rsLayerId);
     ROSEN_LOGI("Constructing RSSurfaceLayer, id: %{public}" PRIu64, rsLayerId);
     rsLayerId_ = rsLayerId;
-    rsLayerContext_ = rsLayerContext;
+    rsComposerContext_ = rsComposerContext;
 
     SetRSLayerCmd<RSLayerRSLayerIdCmd, RSLayerCmdProperty<uint64_t>>(
         RSLayerCmdType::ID, rsLayerId);
@@ -85,7 +80,7 @@ RSSurfaceLayer::~RSSurfaceLayer()
     } else {
         ROSEN_LOGI("RSSurfaceLayer::~RSSurfaceLayer destroy command sent successfully, layerId: %{public}" PRIu64, GetRSLayerId());
     }
-    auto context = rsLayerContext_.lock();
+    auto context = rsComposerContext_.lock();
     if (context) {
         context->RemoveRSLayer(rsLayerId_);
     }
@@ -105,11 +100,11 @@ RSLayerId RSSurfaceLayer::GetRSLayerId() const
 
 std::shared_ptr<RSLayerTransactionHandler> RSSurfaceLayer::GetRSLayerTransaction() const
 {
-    auto rsLayerContext = rsLayerContext_.lock();
-    if (!rsLayerContext) {
+    auto rsComposerContext = rsComposerContext_.lock();
+    if (!rsComposerContext) {
         return nullptr;
     }
-    return rsLayerContext->GetRSLayerTransaction();
+    return rsComposerContext->GetRSLayerTransaction();
 }
 
 bool RSSurfaceLayer::AddRSLayerParcel(std::shared_ptr<RSLayerParcel>& layerParcel, RSLayerId rsLayerId)

@@ -24,7 +24,7 @@
 #include <mutex>
 #include <vector>
 #include "irs_render_to_composer_connection.h"
-#include "rs_layer_context.h"
+#include "rs_composer_context.h"
 #include "vsync_manager_agent.h"
 
 namespace OHOS {
@@ -36,21 +36,12 @@ public:
 
     static std::shared_ptr<RSRenderComposerClient> Create(bool isMultiProcess,
         const sptr<IRSRenderToComposerConnection>& conn);
-
-    void AddRSLayer(const std::shared_ptr<RSLayer>& rsLayer);
-    void RemoveRSLayer(RSLayerId layerId);
-    void ClearAllRSLayers();
-    std::shared_ptr<RSLayer> GetRSLayer(RSLayerId rsLayerId);
-
-    void CommitRSLayer(CommitLayerInfo& commitLayerInfo);
+    void CommitLayers(ComposerInfo& composerInfo);
     void ReleaseLayerBuffers(uint64_t screenId,
         std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
-
     bool RegistOnBufferReleaseFunc(OnBufferReleaseFunc onBufferReleaseFunc);
-
-    std::shared_ptr<RSLayerContext> GetRSLayerContext() const;
-
+    std::shared_ptr<RSComposerContext> GetComposerContext() const;
     inline bool IsMultiProcess() const
     {
         return isMultiProcess_;
@@ -73,7 +64,7 @@ private:
     void IncUnExecuteTaskNum();
     void SubUnExecuteTaskNum();
     std::mutex clientMutex_;
-    std::shared_ptr<RSLayerContext> rsLayerContext_;
+    std::shared_ptr<RSComposerContext> rsComposerContext_;
     bool isMultiProcess_;
     sptr<IRSRenderToComposerConnection> connection_;
     std::condition_variable composerThreadTaskCond_;
