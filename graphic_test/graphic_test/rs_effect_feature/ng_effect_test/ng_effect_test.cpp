@@ -653,7 +653,7 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_Multi_NG_Effect_Circle_Flowlight_Sec
     }
 }
 
-// Test Noisy Frame Gradient
+// Test Background Noisy Frame Gradient Mask and Color Gradient Effect
 GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Background_Test)
 {
     const int columnCount = 2;
@@ -661,12 +661,12 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Backgro
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
     for (int i = 0; i < rowCount; i++) {
-        // Create double ripple mask
+        // Create Noisy Frame Gradient Mask
         auto mask = CreateMask(RSNGEffectType::NOISY_FRAME_GRADIENT_MASK);
         auto noisyFrameGradientMask = std::static_pointer_cast<RSNGNoisyFrameGradientMask>(mask);
         SetNoisyFrameGradientMaskParams(noisyFrameGradientMask, i);
 
-        // Create rounded rect flowlight effect
+        // Create Color Gradient Effect
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
         SetColorGradientEffectParams(colorGradient, i);
         colorGradient->Setter<ColorGradientEffectMaskTag>(
@@ -683,6 +683,7 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Backgro
     }
 }
 
+// Test Foreground Noisy Frame Gradient Mask and Color Gradient Effect
 GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Foreground_Test)
 {
     const int columnCount = 2;
@@ -690,12 +691,12 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Foregro
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
     for (int i = 0; i < rowCount; i++) {
-        // Create double ripple mask
+        // Create Noisy Frame Gradient Mask
         auto mask = CreateMask(RSNGEffectType::NOISY_FRAME_GRADIENT_MASK);
         auto noisyFrameGradientMask = std::static_pointer_cast<RSNGNoisyFrameGradientMask>(mask);
         SetNoisyFrameGradientMaskParams(noisyFrameGradientMask, i);
 
-        // Create rounded rect flowlight effect
+        // Create Color Gradient Effect
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
         SetColorGradientEffectParams(colorGradient, i);
         colorGradient->Setter<ColorGradientEffectMaskTag>(
