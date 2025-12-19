@@ -26,7 +26,7 @@ namespace OHOS::Rosen {
 namespace {
 using MaskCreator = std::function<std::shared_ptr<RSNGMaskBase>()>;
 using MaskConvertor = std::function<std::shared_ptr<RSNGMaskBase>(std::shared_ptr<MaskPara>)>;
-const std:string FGImagePath = "/data/local/tmp/fg_test.jpg";
+const std::string FGImagePath = "/data/local/tmp/fg_test.jpg";
 
 static std::unordered_map<RSNGEffectType, MaskCreator> creatorMask = {
     {RSNGEffectType::DOUBLE_RIPPLE_MASK,
@@ -437,7 +437,6 @@ void SetColorGradientEffectParams(const std::shared_ptr<RSNGColorGradientEffect>
         std::get<float>(colorGradientEffectParams[index][NUM_13]));
     colorGradient->Setter<ColorGradientEffectBlendKTag>(
         std::get<float>(colorGradientEffectParams[index][NUM_14]));
-
 }
 
 void SetNoisyFrameGradientMaskParams(const std::shared_ptr<RSNGNoisyFrameGradientMask>& mask, int index)
