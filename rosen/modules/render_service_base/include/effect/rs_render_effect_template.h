@@ -83,6 +83,7 @@ public:
             case RSNGEffectType::CONTENT_LIGHT: return "ContentLight";
             case RSNGEffectType::BORDER_LIGHT: return "BorderLight";
             case RSNGEffectType::AIBAR_GLOW: return "AIBarGlow";
+            case RSNGEffectType::AIBAR_RECT_HALO: return "AIBarRectHalo";
             case RSNGEffectType::ROUNDED_RECT_FLOWLIGHT: return "RoundedRectFlowlight";
             case RSNGEffectType::FRAME_GRADIENT_MASK: return "FrameGradientMask";
             case RSNGEffectType::GRADIENT_FLOW_COLORS: return "GradientFlowColors";
@@ -92,6 +93,7 @@ public:
             case RSNGEffectType::SDF_RRECT_SHAPE: return "SDFRRectShape";
             case RSNGEffectType::SDF_TRANSFORM_SHAPE: return "SDFTransformShape";
             case RSNGEffectType::SDF_PIXELMAP_SHAPE: return "SDFPixelmapShape";
+            case RSNGEffectType::SDF_EMPTY_SHAPE: return "SDFEmptyShape";
             case RSNGEffectType::HARMONIUM_EFFECT: return "HarmoniumEffect";
             case RSNGEffectType::GASIFY_SCALE_TWIST: return "GasifyScaleTwist";
             case RSNGEffectType::GASIFY_BLUR: return "GasifyBlur";

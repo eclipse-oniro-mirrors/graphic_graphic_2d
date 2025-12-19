@@ -297,6 +297,115 @@ std::vector<std::array<std::variant<Vector2f, float, Vector4f>, NOISY_FRAME_GRAD
     }
 };
 
+constexpr int ROUNDED_RECT_AIBAR_RECT_HALO_COUNT = 12;
+std::vector<std::array<std::variant<Vector4f, Vector2f, float>, ROUNDED_RECT_AIBAR_RECT_HALO_COUNT>>
+    aibarRectHaloParams = {
+    {
+        Vector4f{0.0f, -0.8f, 0.3f, 0.1f},
+        Vector4f{0.5f, 0.3f, 1.0f, 1.0f},
+        Vector4f{1.0f, 0.6f, 0.5f, 1.0f},
+        Vector4f{0.6f, 0.4f, 0.8f, 1.0f},
+        Vector4f{1.0f, 0.95f, 0.9f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.5f
+    },
+    {
+        Vector4f{0.0f, -0.8f, 0.5f, 0.1f},
+        Vector4f{0.5f, 0.3f, 1.0f, 1.0f},
+        Vector4f{1.0f, 0.6f, 0.5f, 1.0f},
+        Vector4f{0.6f, 0.4f, 0.8f, 1.0f},
+        Vector4f{1.0f, 0.95f, 0.9f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.6f
+    },
+    {
+        Vector4f{0.0f, -0.8f, 0.3f, 0.6f},
+        Vector4f{0.3f, 1.0f, 0.5f, 1.0f},
+        Vector4f{1.0f, 0.5f, 0.6f, 1.0f},
+        Vector4f{0.6f, 0.8f, 0.4f, 1.0f},
+        Vector4f{0.9f, 1.0f, 0.95f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.7f
+    },
+    {
+        Vector4f{0.5f, -0.8f, 0.3f, 0.1f},
+        Vector4f{0.3f, 1.0f, 0.5f, 1.0f},
+        Vector4f{1.0f, 0.5f, 0.6f, 1.0f},
+        Vector4f{0.6f, 0.8f, 0.4f, 1.0f},
+        Vector4f{0.9f, 1.0f, 0.95f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.3f
+    },
+    {
+        Vector4f{0.5f, -0.8f, 0.0f, 0.1f},
+        Vector4f{0.3f, 1.0f, 0.5f, 1.0f},
+        Vector4f{1.0f, 0.5f, 0.6f, 1.0f},
+        Vector4f{0.6f, 0.8f, 0.4f, 1.0f},
+        Vector4f{0.9f, 1.0f, 0.95f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.5f
+    },
+    {
+        Vector4f{0.5f, -0.8f, 1.3f, 0.1f},
+        Vector4f{0.3f, 1.0f, 0.5f, 1.0f},
+        Vector4f{1.0f, 0.5f, 0.6f, 1.0f},
+        Vector4f{0.6f, 0.8f, 0.4f, 1.0f},
+        Vector4f{0.9f, 1.0f, 0.95f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.5f
+    },
+    {
+        Vector4f{0.5f, -0.5f, 0.1f, 1.8f},
+        Vector4f{0.3f, 1.0f, 0.5f, 1.0f},
+        Vector4f{1.0f, 0.5f, 0.6f, 1.0f},
+        Vector4f{0.6f, 0.8f, 0.4f, 1.0f},
+        Vector4f{0.9f, 1.0f, 0.95f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.5f
+    },
+    {
+        Vector4f{0.5f, -0.5f, 0.1f, -0.5f},
+        Vector4f{0.3f, 1.0f, 0.5f, 1.0f},
+        Vector4f{1.0f, 0.5f, 0.6f, 1.0f},
+        Vector4f{0.6f, 0.8f, 0.4f, 1.0f},
+        Vector4f{0.9f, 1.0f, 0.95f, 1.0f},
+        Vector2f{0.2f, 0.2f},
+        Vector2f{0.8f, 0.2f},
+        Vector2f{0.8f, 0.8f},
+        Vector2f{0.2f, 0.8f},
+        Vector4f{0.2f, 0.3f, 0.4f, 0.5f},
+        5.0f, 0.5f
+    }
+};
+
 enum class TestDataGroupParamsType {
     INVALID_DATA_MIN,
     VALID_DATA1,
@@ -462,6 +571,22 @@ void SetNoisyFrameGradientMaskParams(const std::shared_ptr<RSNGNoisyFrameGradien
         std::get<float>(noisyFrameGradientMaskParams[index][NUM_7]));
     mask->Setter<NoisyFrameGradientMaskProgressTag>(
         std::get<float>(noisyFrameGradientMaskParams[index][NUM_8]));
+}
+
+static void SetAIBarRectHaloParams(const std::shared_ptr<RSNGAIBarRectHalo>& aiBarRectHalo, int index)
+{
+    aiBarRectHalo->Setter<AIBarRectHaloLTWHTag>(std::get<Vector4f>(aibarRectHaloParams[index][NUM_0]));
+    aiBarRectHalo->Setter<AIBarRectHaloColor0Tag>(std::get<Vector4f>(aibarRectHaloParams[index][NUM_1]));
+    aiBarRectHalo->Setter<AIBarRectHaloColor1Tag>(std::get<Vector4f>(aibarRectHaloParams[index][NUM_2]));
+    aiBarRectHalo->Setter<AIBarRectHaloColor2Tag>(std::get<Vector4f>(aibarRectHaloParams[index][NUM_3]));
+    aiBarRectHalo->Setter<AIBarRectHaloColor3Tag>(std::get<Vector4f>(aibarRectHaloParams[index][NUM_4]));
+    aiBarRectHalo->Setter<AIBarRectHaloPosition0Tag>(std::get<Vector2f>(aibarRectHaloParams[index][NUM_5]));
+    aiBarRectHalo->Setter<AIBarRectHaloPosition1Tag>(std::get<Vector2f>(aibarRectHaloParams[index][NUM_6]));
+    aiBarRectHalo->Setter<AIBarRectHaloPosition2Tag>(std::get<Vector2f>(aibarRectHaloParams[index][NUM_7]));
+    aiBarRectHalo->Setter<AIBarRectHaloPosition3Tag>(std::get<Vector2f>(aibarRectHaloParams[index][NUM_8]));
+    aiBarRectHalo->Setter<AIBarRectHaloStrengthTag>(std::get<Vector4f>(aibarRectHaloParams[index][NUM_9]));
+    aiBarRectHalo->Setter<AIBarRectHaloBrightnessTag>(std::get<float>(aibarRectHaloParams[index][NUM_10]));
+    aiBarRectHalo->Setter<AIBarRectHaloProgressTag>(std::get<float>(aibarRectHaloParams[index][NUM_11]));
 }
 
 GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Effect_Circle_Flowlight_Foreground_Test)
@@ -670,6 +795,28 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Backgro
         SetColorGradientEffectParams(colorGradient, i);
         colorGradient->Setter<ColorGradientEffectMaskTag>(
             std::static_pointer_cast<RSNGMaskBase>(noisyFrameGradientMask));
+        int x = (i % columnCount) * sizeX;
+        int y = (i / columnCount) * sizeY;
+        auto node = Rosen::RSCanvasNode::Create();
+        node->SetBounds({ x, y, sizeX, sizeY });
+        node->SetFrame({ x, y, sizeX, sizeY });
+        node->SetBackgroundNGShader(colorGradient);
+        GetRootNode()->AddChild(node);
+        RegisterNode(node);
+    }
+}
+
+GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Effect_AIBAR_RECT_HALO_Test_1)
+{
+    int columnCount = 2;
+    int rowCount = 4;
+    auto sizeX = screenWidth / columnCount;
+    auto sizeY = screenHeight * columnCount / rowCount;
+    for (int i = 0; i < rowCount; i++) {
+
+        // Create circle flowLight effect
+        auto aiBarRectHalo = std::make_shared<RSNGAIBarRectHalo>();
+        SetAIBarRectHaloParams(aiBarRectHalo, i);
 
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
@@ -710,4 +857,50 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Mask_Noisy_Frame_Gradient_Foregro
     }
 }
 
+GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Effect_AIBAR_RECT_HALO_Test_2)
+{
+    int columnCount = 2;
+    int rowCount = 4;
+    auto sizeX = screenWidth / columnCount;
+    auto sizeY = screenHeight * columnCount / rowCount;
+    for (int i = 0; i < rowCount; i++) {
+
+        // Create circle flowLight effect
+        auto aiBarRectHalo = std::make_shared<RSNGAIBarRectHalo>();
+        SetAIBarRectHaloParams(aiBarRectHalo, 4 + i); // invalid LTWH params
+        int x = (i % columnCount) * sizeX;
+        int y = (i / columnCount) * sizeY;
+        auto node = Rosen::RSCanvasNode::Create();
+        node->SetBounds({ x, y, sizeX, sizeY });
+        node->SetFrame({ x, y, sizeX, sizeY });
+        node->SetBackgroundNGShader(aiBarRectHalo);
+        node->SetBackgroundColor(0x88888888);
+        GetRootNode()->AddChild(node);
+        RegisterNode(node);
+    }
+}
+
+GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_NG_Effect_AIBAR_RECT_HALO_Foreground_Test)
+{
+    int columnCount = 2;
+    int rowCount = 4;
+    auto sizeX = screenWidth / columnCount;
+    auto sizeY = screenHeight * columnCount / rowCount;
+    for (int i = 0; i < rowCount; i++) {
+
+        // Create circle flowLight effect
+        auto aiBarRectHalo = std::make_shared<RSNGAIBarRectHalo>();
+        SetAIBarRectHaloParams(aiBarRectHalo, i);
+
+        int x = (i % columnCount) * sizeX;
+        int y = (i / columnCount) * sizeY;
+        auto node = Rosen::RSCanvasNode::Create();
+        node->SetBounds({ x, y, sizeX, sizeY });
+        node->SetFrame({ x, y, sizeX, sizeY });
+        node->SetForegroundShader(aiBarRectHalo);
+        node->SetBackgroundColor(0x88888888);
+        GetRootNode()->AddChild(node);
+        RegisterNode(node);
+    }
+}
 }  // namespace OHOS::Rosen
