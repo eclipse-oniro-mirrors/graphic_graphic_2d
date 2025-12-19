@@ -13,21 +13,20 @@
  * limitations under the License.
  */
 
- #ifndef RENDER_SERVICE_MOCK_ACCESSTOKEN_KIT_H
- #define RENDER_SERVICE_MOCK_ACCESSTOKEN_KIT_H
+#ifndef RENDER_SERVICE_MOCK_ACCESSTOKEN_KIT_H
+#define RENDER_SERVICE_MOCK_ACCESSTOKEN_KIT_H
 
- #include <cstdint>
- #include <string>
+#include <cstdint>
+#include <string>
 
- namespace OHOS::Rosen {
+namespace OHOS::Rosen {
 class MockAccessTokenKit {
 public:
     static void MockProcessName(const std::string &processName);
     static void MockAccessTokenKitRet(int accessTokenKitRet);
     static void MockTokenType(bool isNative);
-
 };
-    
+
 } // namespace OHOS::Rosen
 #endif  // RENDER_SERVICE_MOCK_ACCESSTOKEN_KIT_H
  
