@@ -120,12 +120,14 @@ template("skia_libtxt") {
       ]
     } else {
       defines += [ "MODULE_TEXTING" ]
+      include_dirs += [
+        "$multimedia_root/image_framework/interfaces/innerkits/include",
+      ]
     }
 
     if (is_arkui_x) {
       include_dirs += [
         "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter",
-        "//foundation/multimedia/image_framework/interfaces/innerkits/include",
       ]
       defines += [ "CROSS_PLATFORM" ]
       deps = [
