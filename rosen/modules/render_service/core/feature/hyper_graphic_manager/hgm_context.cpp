@@ -23,7 +23,6 @@
 #include "parameters.h"
 #include "rs_frame_report.h"
 #include "rs_frame_blur_predict.h"
-#include "rs_render_process_manager_agent.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "system/rs_system_parameters.h"
 
@@ -36,11 +35,13 @@ const std::string VOTER_SCENE_GPU = "VOTER_SCENE_GPU";
 
 HgmContext::HgmContext(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
     const std::shared_ptr<HgmFrameRateManager>& frameRateMgr,
+    std::function<void(bool, ScreenId)> requestRSNextVsyncFunc,
     const sptr<VSyncDistributor>& appVSyncDistributor,
-    const sptr<VSyncDistributor>& rsVSyncDistributor,
+    const sptr<VSyncDistributor>& rsVSyncDistributor)
     : renderServiceHandler_(handler),
       frameRateManager_(frameRateMgr),
       hgmCore_(HgmCore::Instance()),
+      requestRSNextVsyncFunc_(std::move(requestRSNextVsyncFunc)),
       appVSyncDistributor_(appVSyncDistributor),
       rsVSyncDistributor_(rsVSyncDistributor)
 {

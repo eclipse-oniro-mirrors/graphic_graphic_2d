@@ -34,10 +34,7 @@ struct PipelineParam;
 
 class HgmRPContext {
 public:
-    HgmRPContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
-        std::unordered_map<std::string, std::string>& sourceTuningConfig,
-        std::unordered_map<std::string, std::string>& solidLayerConfig,
-        std::vector<std::string>& appBufferList);
+    HgmRPContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
     ~HgmRPContext() noexcept = default;
 
     int32_t InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,

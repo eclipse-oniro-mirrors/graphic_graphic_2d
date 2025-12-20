@@ -27,12 +27,12 @@ namespace OHOS {
 namespace Rosen {
 class HgmCore;
 class HgmFrameRateManager;
-class RSRenderProcessManager;
 
 class HgmContext {
 public:
     HgmContext(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
         const std::shared_ptr<HgmFrameRateManager>& frameRateMgr,
+        std::function<void(bool, ScreenId)> callbackFunc,
         const sptr<VSyncDistributor>& appVSyncDistributor,
         const sptr<VSyncDistributor>& rsVSyncDistributor);
     ~HgmContext() noexcept = default;
