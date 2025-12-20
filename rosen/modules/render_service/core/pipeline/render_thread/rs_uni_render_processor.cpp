@@ -305,7 +305,7 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     sptr<SurfaceBuffer>& preBuffer, const sptr<IConsumerSurface>& consumer, const sptr<SyncFence>& acquireFence,
     const std::shared_ptr<ProcessOfflineResult>& offlineResult)
 {
-    RSLayerPtr layer = RSSurfaceLayer::CreateRSLayer(composerClient_, params.GetId());
+    RSLayerPtr layer = RSSurfaceLayer::Create(composerClient_->GetComposerContext(), params.GetId());
     if (layer == nullptr) {
         RS_LOGE("RSUniRenderProcessor::GetLayerInfo failed to create layer");
         return nullptr;

@@ -81,9 +81,9 @@ bool RSUniRenderComposerAdapter::UpdateMirrorInfo(float mirrorAdaptiveCoefficien
 void RSUniRenderComposerAdapter::CommitLayers()
 {
     if (composerClient_ != nullptr) {
-        CommitLayerInfo commitLayerInfo;
-        commitLayerInfo.screenInfo = screenInfo_;
-        composerClient_->CommitRSLayer(commitLayerInfo);
+        ComposerInfo composerInfo;
+        composerInfo.screenInfo = screenInfo_;
+        composerClient_->CommitLayers(composerInfo);
         RSRealtimeRefreshRateManager::Instance().CountRealtimeFrame(screenInfo_.id);
     }
 }
@@ -1105,7 +1105,7 @@ RSLayerPtr RSUniRenderComposerAdapter::CreateLayer(DrawableV2::RSScreenRenderNod
             info.buffer->GetSurfaceBufferHeight(), info.zOrder, info.blendType,
             surfaceHandler->GetBuffer()->GetFormat());
     }
-    RSLayerPtr layer = RSSurfaceLayer::CreateRSLayer(composerClient_, surfaceHandler->GetNodeId());
+    RSLayerPtr layer = RSSurfaceLayer::Create(composerClient_->GetComposerContext(), surfaceHandler->GetNodeId());
     if (layer != nullptr) {
         layer->SetNodeId(surfaceHandler->GetNodeId());  // node id only for dfx
         layer->SetUniRenderFlag(true);
@@ -1153,7 +1153,7 @@ RSLayerPtr RSUniRenderComposerAdapter::CreateLayer(RSScreenRenderNode& node)
             info.buffer->GetSurfaceBufferHeight(), info.zOrder, info.blendType,
             surfaceHandler->GetBuffer()->GetFormat());
     }
-    RSLayerPtr layer = RSSurfaceLayer::CreateRSLayer(composerClient_, surfaceHandler->GetNodeId());
+    RSLayerPtr layer = RSSurfaceLayer::Create(composerClient_->GetComposerContext(), surfaceHandler->GetNodeId());
     if (layer != nullptr) {
         layer->SetNodeId(node.GetId());
         layer->SetUniRenderFlag(true);
@@ -1183,7 +1183,7 @@ RSLayerPtr RSUniRenderComposerAdapter::CreateLayer(RSRcdSurfaceRenderNode& node)
             info.buffer->GetWidth(), info.buffer->GetHeight(), info.buffer->GetSurfaceBufferWidth(),
             info.buffer->GetSurfaceBufferHeight(), info.zOrder, info.blendType);
     }
-    auto layer = RSSurfaceRCDLayer::CreateRSLayer(composerClient_, node.GetId());
+    auto layer = RSSurfaceRCDLayer::Create(composerClient_->GetComposerContext(), node.GetId());
     if (layer != nullptr) {
         auto rcdLayer = std::static_pointer_cast<RSSurfaceRCDLayer>(layer);
         rcdLayer->SetPixelMap(node.GetPixelMap());

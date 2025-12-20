@@ -78,7 +78,7 @@
 #include "graphic_feature_param_manager.h"
 // hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
-// #include "rs_layer_context.h"
+// #include "rs_composer_context.h"
 // #include "rs_layer_factory.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
