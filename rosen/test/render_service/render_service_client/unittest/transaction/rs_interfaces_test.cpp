@@ -24,6 +24,7 @@
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_render_pipeline_client.h"
 #include "ui/rs_canvas_node.h"
+#include "utils/typeface_map.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -196,6 +197,9 @@ HWTEST_F(RSInterfacesTest, RegisterTypeface001, TestSize.Level1)
     RSTypefaceCache& typefaceCache = RSTypefaceCache::Instance();
     typefaceCache.typefaceHashCode_.emplace(globalUniqueId, 0);
     instance.RegisterTypeface(typeface);
+    EXPECT_NE(TypefaceMap::GetTypefaceByUniqueId(typeface->GetUniqueID()), nullptr);
+    typeface = nullptr;
+    EXPECT_EQ(instance.RegisterTypeface(typeface), -1);
     typefaceCache.typefaceHashCode_.clear();
 }
 
@@ -213,9 +217,39 @@ HWTEST_F(RSInterfacesTest, RegisterTypeface002, TestSize.Level1)
         Drawing::Typeface::MakeFromAshmem(reinterpret_cast<const uint8_t*>(content.data()), content.size(), 0, "test");
     ASSERT_NE(typeface, nullptr);
     int32_t result = instance.RegisterTypeface(typeface);
-    EXPECT_NE(result, -1);
+    EXPECT_EQ(result, typeface->GetFd());
+    EXPECT_NE(TypefaceMap::GetTypefaceByUniqueId(typeface->GetUniqueID()), nullptr);
     EXPECT_TRUE(instance.UnRegisterTypeface(typeface->GetHash()));
 }
+
+/**
+ * @tc.name: RegisterTypeface003
+ * @tc.desc: test register invalid shared mem typeface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSInterfacesTest, RegisterTypeface003, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    std::vector<char> content;
+    LoadBufferFromFile("/system/fonts/NotoSansCJK-Regular.ttc", content);
+    auto typeface =
+        Drawing::Typeface::MakeFromAshmem(reinterpret_cast<const uint8_t*>(content.data()), content.size(), 0, "test");
+    ASSERT_NE(typeface, nullptr);
+    int32_t fd = OHOS::AshmemCreate("test", content.size());
+    auto ashmem = std::make_unique<Ashmem>(fd, content.size());
+    bool mapResult = ashmem->MapReadAndWriteAshmem();
+    const void* ptr = ashmem->ReadFromAshmem(content.size(), 0);
+    EXPECT_TRUE(mapResult);
+    EXPECT_NE(ptr, nullptr);
+    auto stream = std::make_unique<Drawing::MemoryStream>(
+        ptr, content.size(), [](const void* ptr, void* context) { delete reinterpret_cast<Ashmem*>(context); },
+        ashmem.release());
+    typeface->UpdateStream(std::move(stream));
+    typeface->SetFd(fd);
+    int32_t result = instance.RegisterTypeface(typeface);
+    EXPECT_EQ(result, -1);
+}
+
 
 /**
  * @tc.name: UnRegisterTypeface001
