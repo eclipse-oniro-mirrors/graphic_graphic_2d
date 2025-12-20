@@ -37,7 +37,7 @@ bool RSHpaeOfflineThreadManager::PostTask(const std::function<void()>& task)
 {
 #if defined(ROSEN_OHOS)
     if (queue_) {
-        queue_->submit(std::move(task));
+        queue_->submit(task);
     }
 #endif
     return true;

@@ -15,7 +15,8 @@
 
 #ifndef RS_CORE_FEATURE_HPAE_OFFLINE_THREAD_MANAGER_H
 #define RS_CORE_FEATURE_HPAE_OFFLINE_THREAD_MANAGER_H
-#include "event_handler.h"
+#include <functional>
+#include <memory>
 #include "common/rs_macros.h"
 
 #if defined(ROSEN_OHOS)
@@ -28,12 +29,7 @@ namespace OHOS::Rosen {
 class RSB_EXPORT RSHpaeOfflineThreadManager final {
 public:
     RSHpaeOfflineThreadManager();
-    ~RSHpaeOfflineThreadManager()
-    {
-#if defined(ROSEN_OHOS)
-        queue_ = nullptr;
-#endif
-    }
+    ~RSHpaeOfflineThreadManager() {}
     bool PostTask(const std::function<void()>& task);
 
 private:
