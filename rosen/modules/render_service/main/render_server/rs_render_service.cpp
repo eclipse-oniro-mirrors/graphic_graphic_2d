@@ -182,7 +182,7 @@ void RSRenderService::CoreComponentsInit()
     FeatureComponentInit();
 }
 
-void FeatureComponentInit()
+void RSRenderService::FeatureComponentInit()
 {
     rsDumper_ = std::make_shared<RSServiceDumper>(handler_, screenManager_, rsRenderComposerManager_);
     rsDumper_->RsDumpInit();
