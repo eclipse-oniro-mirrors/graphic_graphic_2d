@@ -57,7 +57,7 @@ using SetBufferInfoFunc = bool (*)(uint64_t id, const std::string& name, int32_t
     int64_t lastConsumeTime);
 using IsAppRequestedFunc = bool (*)(); 
 using GetVSyncConnectionAppFunc = void (*)(sptr<VSyncConnection>& connection);
-using NeedUpdateVsyncTimeFunc = bool (*)(int32_t& pid);
+using NeedUpdateVSyncTimeFunc = bool (*)(int32_t& pid);
 using GetLastUpdateTimeFunc = int64_t (*)();
 using DVSyncUpdateFunc = void (*)(uint64_t dvsyncTime, uint64_t vsyncTime); 
 using ForceRsDVsyncFunc = void (*)(const std::string& sceneId);
@@ -113,14 +113,14 @@ public:
     void RecordEnableVsync(const sptr<VSyncDistributor>& distributor);
     void RecordRNV(const sptr<VSyncConnection>& connection, const std::string& fromWhom,
         VSyncMode vsyncMode, int64_t lastVSyncTS, int64_t requestVsyncTime);
-    bool NeedPreexecuteAndUpdateTs(const sptr<VSyncConnection>& connection, int64_t timeStamp, int64_t& period);
+    bool NeedPreexecuteAndUpdateTs(const sptr<VSyncConnection>& connection, int64_t& timeStamp, int64_t& period);
     void NotifyPackageEvent(const std::vector<std::string>& packageList);
     void HandleTouchEvent(int32_t touchStatus, int32_t touchCnt);
     bool SetBufferInfo(uint64_t id, const std::string& name, int32_t queueSize, int32_t bufferCount,
         int64_t lastConsumeTime);
     bool IsAppRequested(); 
     void GetVSyncConnectionApp(sptr<VSyncConnection>& connection);
-    bool NeedUpdateVsyncTime(int32_t& pid);
+    bool NeedUpdateVSyncTime(int32_t& pid);
     int64_t GetLastUpdateTime();
     void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime); 
     void ForceRsDVsync(const std::string& sceneId);
@@ -130,7 +130,7 @@ public:
     bool DVSyncRateChanged(uint32_t currRefreshRate, uint32_t& dvsyncRate);
     void SetToCurrentPeriod();
     int64_t GetVsyncCount(int64_t& VsyncCount);
-    void InitDvsyncController(const sptr<VSyncGenerator>& gen, int64_t offset);
+    void InitDvsyncController(const sptr<VSyncGenerator>& gen, int64_t offset, sptr<VSyncController>& controller);
     void SetVSyncTimeUpdated();
 
 //dvsync delay
