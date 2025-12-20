@@ -411,7 +411,7 @@ GRAPHIC_TEST(AppearanceTest05, CONTENT_DISPLAY_TEST, Appearance_Alpha_Border_Das
     RegisterNode(testNodeFourDashWidth);
 
     // not dash style, set dash width
-    auto testNodeSolid = RSCanvasNode::Create();\
+    auto testNodeSolid = RSCanvasNode::Create();
     testNodeSolid->SetAlpha(0.6f);
     testNodeSolid->SetBounds({ nodePos, nodePos * 3, nodeSize, nodeSize });
     // solid style
