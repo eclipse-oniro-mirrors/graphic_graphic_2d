@@ -403,7 +403,7 @@ void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(ScreenId id
 
 void RSRenderService::ScreenManagerListener::OnScreenRefresh(ScreenId id)
 {
-    renderService_.renderProcessManager_->OnScreenRefresh(id, property);
+    renderService_.renderProcessManager_->OnScreenRefresh(id);
 }
 
 void RSRenderService::ScreenManagerListener::OnVBlankIdle(ScreenId id, uint64_t ns)
