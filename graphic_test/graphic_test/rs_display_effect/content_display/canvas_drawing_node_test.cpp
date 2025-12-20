@@ -13,11 +13,12 @@
  * limitations under the License.
  */
  
+#include "modifier_ng/custom/rs_content_style_modifier.h"
+
 #include "pixel_map.h"
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
  
-#include "modifier_ng/custom/rs_content_style_modifier.h"
 #include "ui/rs_canvas_drawing_node.h"
 #include "ui/rs_canvas_node.h"
  
