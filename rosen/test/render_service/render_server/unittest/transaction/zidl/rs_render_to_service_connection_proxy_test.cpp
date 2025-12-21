@@ -20,7 +20,7 @@
 #include <iservice_registry.h>
 #include <mutex>
 #include <system_ability_definition.h>
-#include <unisted.h>
+#include <unistd.h>
 #include <refbase.h>
 
 #include "transaction/zidl/rs_render_to_service_connection_proxy.h"

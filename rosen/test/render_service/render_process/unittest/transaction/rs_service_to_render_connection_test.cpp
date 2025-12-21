@@ -58,7 +58,7 @@ void RSServiceToRenderConnectionTest::TearDown() {}
  */
 HWTEST_F(RSServiceToRenderConnectionTest, GetRealtimeRefreshRateTest, TestSize.Level1)
 {
-    EXEPECT_GE(rsConn_->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
+    EXPECT_GE(rsConn_->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
     ASSERT_TRUE(rsConn_);
 }
 

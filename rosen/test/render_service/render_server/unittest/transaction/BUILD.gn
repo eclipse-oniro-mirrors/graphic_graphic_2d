@@ -15,7 +15,7 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/ace_platforms.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-module_output_path = "graphic_2d/graphic_2d/render_service/render_process/transaction"
+module_output_path = "graphic_2d/graphic_2d/render_service/render_server/transaction"
 
 ###############################################################################
 ohos_unittest("RSRenderToServiceConnectionProxyTest") {

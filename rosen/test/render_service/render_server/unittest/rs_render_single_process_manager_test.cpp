@@ -49,12 +49,12 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-}
+};
 
 void RSRenderSingleProcessManagerTest::SetUpTestCase()
 {
     OHOS::system::SetParameter("bootevent.samgr.ready", false);
-    renderservice.Init();
+    renderService.Init();
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
 }
 void RSRenderSingleProcessManagerTest::TearDownTestCase() {}
@@ -69,9 +69,9 @@ void RSRenderSingleProcessManagerTest::TearDown() {}
  */
 HWTEST_F(RSRenderSingleProcessManagerTest, OnScreenConnectedTest, TestSize.Level1)
 {
-    renderservice.renderProcessManager_->OnScreenDisconnected(screenId);
-    renderservice.renderProcessManager_->OnScreenRefresh(screenId);
-    ASSERT_TRUE(renderservice.renderProcessManager_);
+    renderService.renderProcessManager_->OnScreenDisconnected(screenId);
+    renderService.renderProcessManager_->OnScreenRefresh(screenId);
+    ASSERT_TRUE(renderService.renderProcessManager_);
 }
 
 /**
@@ -82,10 +82,10 @@ HWTEST_F(RSRenderSingleProcessManagerTest, OnScreenConnectedTest, TestSize.Level
  */
 HWTEST_F(RSRenderSingleProcessManagerTest, OnVirtualScreenConnectedTest, TestSize.Level1)
 {
-    renderservice.renderProcessManager_->OnVirtualScreenDisconnectedTest(screenId);
-    renderservice.renderProcessManager_->GetServiceToRenderConn(screenId);
-    renderservice.renderProcessManager_->GetServiceToRenderConns();
-    renderservice.renderProcessManager_->GetConnectToRenderConnection(screenId);
-    ASSERT_TRUE(renderservice.renderProcessManager_);
+    renderService.renderProcessManager_->OnVirtualScreenDisconnectedTest(screenId);
+    renderService.renderProcessManager_->GetServiceToRenderConn(screenId);
+    renderService.renderProcessManager_->GetServiceToRenderConns();
+    renderService.renderProcessManager_->GetConnectToRenderConnection(screenId);
+    ASSERT_TRUE(renderService.renderProcessManager_);
 }
 } // namespace OHOS::Rosen

@@ -40,7 +40,7 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-}
+};
 
 void RenderServiceTest::SetUpTestCase()
 {
@@ -59,7 +59,7 @@ void RenderServiceTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require: issueIBRN69
  */
-HWTEST_F(RSRenderSingleProcessManagerTest, HandleTouchEventTest, TestSize.Level1)
+HWTEST_F(RenderServiceTest, HandleTouchEventTest, TestSize.Level1)
 {
     int32_t touchStatus = 1;
     int32_t touchCnt = 1;

@@ -55,7 +55,7 @@ void RSServiceToRenderConnectionStubTest::SetUpTestCase()
     RSRenderService renderService;
     auto rsRenderServceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline);
-    connectionStub_ = sptr<RSServiceToRendrConnection>::MakeSptr(rsRenderServceAgent, renderPipelineAgent);
+    connectionStub_ = sptr<RSServiceToRenderConnection>::MakeSptr(rsRenderServceAgent, renderPipelineAgent);
 }
 void RSServiceToRenderConnectionStubTest::TearDownTestCase() {}
 void RSServiceToRenderConnectionStubTest::SetUp() {}
@@ -75,8 +75,8 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, TestRSServiceToRenderConnectionStu
     if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
         return;
     }
-    optional.SetFlags(MessageOption::TF_ASYNC);
-    uint32_t code = static_cast<unit32_t>(
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(
         RSIServiceToRenderConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE);
     uint64_t screenId = 1;
     data.WriteUint64(screenId);
@@ -98,8 +98,8 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, TestRSServiceToRenderConnectionStu
     if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
         return;
     }
-    optional.SetFlags(MessageOption::TF_ASYNC);
-    uint32_t code = static_cast<unit32_t>(
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(
         RSIServiceToRenderConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED);
     bool enabled = true;
     int32_t type = 1;
@@ -123,8 +123,8 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, TestRSServiceToRenderConnectionStu
     if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
         return;
     }
-    optional.SetFlags(MessageOption::TF_ASYNC);
-    uint32_t code = static_cast<unit32_t>(
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(
         RSIServiceToRenderConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED);
     connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_TRUE(connectionStub_);

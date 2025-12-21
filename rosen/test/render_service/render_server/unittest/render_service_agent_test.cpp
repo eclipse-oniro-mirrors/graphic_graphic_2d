@@ -34,15 +34,15 @@ namespace {
 RSRenderService renderService;
 static inline sptr<RSRenderServiceAgent> rsAgent_ = nullptr;
 }
-class RSRenderServiceAgentTest : public testing::Test {
+class RenderServiceAgentTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-}
+};
 
-void RSRenderServiceAgentTest::SetUpTestCase()
+void RenderServiceAgentTest::SetUpTestCase()
 {
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
     renderService.Init_V2();
@@ -50,9 +50,9 @@ void RSRenderServiceAgentTest::SetUpTestCase()
     rsAgent_ = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
 }
 
-void RSRenderServiceAgentTest::TearDownTestCase() {}
-void RSRenderServiceAgentTest::SetUp() {}
-void RSRenderServiceAgentTest::TearDown() {}
+void RenderServiceAgentTest::TearDownTestCase() {}
+void RenderServiceAgentTest::SetUp() {}
+void RenderServiceAgentTest::TearDown() {}
 
 /**
  * @tc.name: HandleTouchEventTest
@@ -60,7 +60,7 @@ void RSRenderServiceAgentTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require: issueIBRN69
  */
-HWTEST_F(RSRenderSingleProcessManagerTest, HandleTouchEventTest, TestSize.Level1)
+HWTEST_F(RenderServiceAgentTest, HandleTouchEventTest, TestSize.Level1)
 {
     int32_t touchStatus = 1;
     int32_t touchCnt = 1;
@@ -74,11 +74,11 @@ HWTEST_F(RSRenderSingleProcessManagerTest, HandleTouchEventTest, TestSize.Level1
  * @tc.type: FUNC
  * @tc.require: issueIBRN69
  */
-HWTEST_F(RSRenderSingleProcessManagerTest, ProcessHgmFrameRateTest, TestSize.Level1)
+HWTEST_F(RenderServiceAgentTest, ProcessHgmFrameRateTest, TestSize.Level1)
 {
     int32_t timeStamp = 1;
     int32_t vsyncId = 1;
-    std::unorder_set<ScreenId> screenIds = {1, 2, 3};
+    std::unordered_set<ScreenId> screenIds = {1, 2, 3};
     sptr<HgmProcessToServiceInfo> processToServiceInfo = sptr<HgmProcessToServiceInfo>::MakeSptr();
     sptr<HgmProcessToServiceInfo> serviceToProcessInfo = sptr<HgmProcessToServiceInfo>::MakeSptr();
     rsAgent_->ProcessHgmFrameRate(timeStamp, vsyncId, screenIds, processToServiceInfo, serviceToProcessInfo);

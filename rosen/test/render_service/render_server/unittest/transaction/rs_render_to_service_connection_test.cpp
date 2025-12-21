@@ -46,11 +46,11 @@ public:
 void RSRenderToServiceConnectionTest::SetUpTestCase()
 {
     OHOS::system::SetParameter("bootevent.samgr.ready", false);
-    renderservice.Init();
+    renderService.Init();
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    sptr<RSRenderServiceAgent> renderServiceAgent_ = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
+    sptr<RSRenderServiceAgent> renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
     sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent =
-        sptr<RSRenderProcessManagerAgent>::MakeSptr(renderservice.renderProcessManager_);
+        sptr<RSRenderProcessManagerAgent>::MakeSptr(renderService.renderProcessManager_);
     rsConn_ = sptr<RSRenderToServiceConnection>::MakeSptr(renderServiceAgent, renderProcessManagerAgent);
 }
 void RSRenderToServiceConnectionTest::TearDownTestCase() {}
