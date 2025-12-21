@@ -517,69 +517,6 @@ ErrCode RSClientToServiceConnection::SetWatermark(pid_t callingPid, const std::s
     return ERR_OK;
 }
 
-uint32_t RSClientToServiceConnection::SetSurfaceWatermark(pid_t pid, const std::string &name,
-    const std::shared_ptr<Media::PixelMap> &watermark,
-    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType)
-{
-    // if (!mainThread_) {
-    //     return WATER_MARK_IPC_ERROR;
-    // }
-    // auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
-    //     RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
-    //     "::SET_SURFACE_WATERMARK");
-    // uint32_t res =  SurfaceWatermarkStatusCode::WATER_MARK_RS_CONNECTION_ERROR;
-    // auto task = [weakThis = wptr<RSClientToServiceConnection>(this), &name, &nodeIdList, &watermark, &watermarkType,
-    //     pid, isSystemCalling, &res]() -> void {
-    //     sptr<RSClientToServiceConnection> connection = weakThis.promote();
-    //     if (connection == nullptr || connection->mainThread_ == nullptr) {
-    //         return;
-    //     }
-    //     res = connection->mainThread_->SetSurfaceWatermark(pid, name, watermark,
-    //         nodeIdList, watermarkType, isSystemCalling);
-    // };
-    // mainThread_->PostSyncTask(task);
-    // return res;
-    return 0; // ??? todo
-}
-    
-void RSClientToServiceConnection::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string &name,
-    const std::vector<NodeId> &nodeIdList)
-{
-    // if (!mainThread_) {
-    //     return;
-    // }
-    // auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
-    //     RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
-    //     "::CLEAR_SURFACE_WATERMARK_FOR_NODES");
-    // auto task = [weakThis = wptr<RSClientToServiceConnection>(this), &name, pid,
-    //     &nodeIdList, isSystemCalling]() -> void {
-    //     sptr<RSClientToServiceConnection> connection = weakThis.promote();
-    //     if (connection == nullptr || connection->mainThread_ == nullptr) {
-    //         return;
-    //     }
-    //     connection->mainThread_->ClearSurfaceWatermarkForNodes(pid, name, nodeIdList, isSystemCalling);
-    // };
-    // mainThread_->PostTask(task);
-}
-    
-void RSClientToServiceConnection::ClearSurfaceWatermark(pid_t pid, const std::string &name)
-{
-    // if (!mainThread_) {
-    //     return;
-    // }
-    // auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
-    //     RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
-    //     "::CLEAR_SURFACE_WATERMARK");
-    // auto task = [weakThis = wptr<RSClientToServiceConnection>(this), &name, pid, isSystemCalling]() -> void {
-    //     sptr<RSClientToServiceConnection> connection = weakThis.promote();
-    //     if (connection == nullptr || connection->mainThread_ == nullptr) {
-    //         return;
-    //     }
-    //     connection->mainThread_->ClearSurfaceWatermark(pid, name, isSystemCalling);
-    // };
-    // mainThread_->PostTask(task);
-}
-
 ErrCode RSClientToServiceConnection::GetDefaultScreenId(uint64_t& screenId)
 {
     if (screenManagerAgent_ == nullptr) {

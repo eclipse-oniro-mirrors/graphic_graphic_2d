@@ -298,36 +298,6 @@ bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_pt
     return success;
 }
 
-uint32_t RSRenderServiceClient::SetSurfaceWatermark(pid_t pid, const std::string &name,
-    const std::shared_ptr<Media::PixelMap> &watermark,
-    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType)
-{
-    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
-    if (clientToService == nullptr) {
-        return WATER_MARK_RENDER_SERVICE_NULL;
-    }
-    return clientToService->SetSurfaceWatermark(pid, name, watermark, nodeIdList, watermarkType);
-}
-    
-void RSRenderServiceClient::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string& name,
-    const std::vector<NodeId> &nodeIdList)
-{
-    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
-    if (clientToService == nullptr) {
-        return;
-    }
-    clientToService->ClearSurfaceWatermarkForNodes(pid, name, nodeIdList);
-}
-    
-void RSRenderServiceClient::ClearSurfaceWatermark(pid_t pid, const std::string &name)
-{
-    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
-    if (clientToService == nullptr) {
-        return;
-    }
-    clientToService->ClearSurfaceWatermark(pid, name);
-}
-
 int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
     ScreenId id,
     const std::vector<NodeId>& securityExemptionList)
