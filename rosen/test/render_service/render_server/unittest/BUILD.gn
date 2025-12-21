@@ -171,7 +171,7 @@ ohos_unittest("RenderServiceTest") {
     }
 
     if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
-        external_deps += [ "sensor_interface_native" ]
+        external_deps += [ "sensor:sensor_interface_native" ]
     }
     subsystem_name = "graphic"
 }
@@ -243,7 +243,7 @@ ohos_unittest("RSRenderProcessManagerAgentTest") {
     ]
 
     if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
-        external_deps += [ "sensor_interface_native" ]
+        external_deps += [ "sensor:sensor_interface_native" ]
     }
     subsystem_name = "graphic"
 }
@@ -315,7 +315,7 @@ ohos_unittest("RSRenderSingleProcessManagerTest") {
     ]
 
     if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
-        external_deps += [ "sensor_interface_native" ]
+        external_deps += [ "sensor:sensor_interface_native" ]
     }
     subsystem_name = "graphic"
 }
