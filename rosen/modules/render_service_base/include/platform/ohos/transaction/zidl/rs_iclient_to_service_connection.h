@@ -111,7 +111,7 @@ public:
     virtual ErrCode RemoveVirtualScreenBlackList(
         ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) = 0;
 
-    virtual ErrCode SetWatermark(pid_t callingPid, const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+    virtual ErrCode SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         bool& success) = 0;
 
     virtual int32_t SetVirtualScreenSecurityExemptionList(

@@ -294,7 +294,7 @@ bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_pt
         return false;
     }
     bool success;
-    clientToService->SetWatermark(0, name, watermark, success); // ??? todo
+    clientToService->SetWatermark(name, watermark, success);
     return success;
 }
 

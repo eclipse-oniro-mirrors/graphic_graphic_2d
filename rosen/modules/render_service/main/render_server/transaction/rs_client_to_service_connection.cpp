@@ -491,7 +491,7 @@ ErrCode RSClientToServiceConnection::CreatePixelMapFromSurface(sptr<Surface> sur
     return res;
 }
 
-ErrCode RSClientToServiceConnection::SetWatermark(pid_t callingPid, const std::string& name,
+ErrCode RSClientToServiceConnection::SetWatermark(const std::string& name,
     std::shared_ptr<Media::PixelMap> watermark, bool& success)
 {
     if (renderProcessManagerAgent_ == nullptr) {
@@ -505,6 +505,7 @@ ErrCode RSClientToServiceConnection::SetWatermark(pid_t callingPid, const std::s
         success = false;
         return ERR_INVALID_VALUE;
     }
+    auto callingPid = GetCallingPid();
     for (auto conn : serviceToRenderConns) {
         bool successTmp = true;
         if (conn->SetWatermark(callingPid, name, watermark, successTmp) != ERR_OK || successTmp != true) {

@@ -290,7 +290,7 @@ private:
 
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow) override;
 
-    ErrCode SetWatermark(pid_t callingPid, const std::string& name,
+    ErrCode SetWatermark(const std::string& name,
         std::shared_ptr<Media::PixelMap> watermark, bool& success) override;
     
     int32_t ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height) override;

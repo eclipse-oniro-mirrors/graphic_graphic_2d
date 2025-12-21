@@ -1431,7 +1431,7 @@ uint32_t RSClientToRenderConnectionProxy::SetSurfaceWatermark(pid_t pid, const s
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SURFACE_WATERMARK);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSClientToRenderConnectionProxy::SetWatermark: Send Request err.");
+        ROSEN_LOGE("RSClientToRenderConnectionProxy::SetSurfaceWatermark: Send Request err.");
         return WATER_MARK_IPC_ERROR;
     }
     uint32_t status{0};

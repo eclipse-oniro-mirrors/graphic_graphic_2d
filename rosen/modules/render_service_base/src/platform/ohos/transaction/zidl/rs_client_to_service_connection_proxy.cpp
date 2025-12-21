@@ -3392,7 +3392,7 @@ ErrCode RSClientToServiceConnectionProxy::SetAppWindowNum(uint32_t num)
     return ERR_OK;
 }
 
-ErrCode RSClientToServiceConnectionProxy::SetWatermark(pid_t callingPid, const std::string& name,
+ErrCode RSClientToServiceConnectionProxy::SetWatermark(const std::string& name,
     std::shared_ptr<Media::PixelMap> watermark, bool& success)
 {
     MessageParcel data;
