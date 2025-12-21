@@ -248,7 +248,7 @@ ohos_unittest("RSRenderToServiceConnectionTest") {
 group("unittest") {
     testonly = true
 
-    dep = [
+    deps = [
         ":RSRenderToServiceConnectionProxyTest",
         ":RSRenderToServiceConnectionStubTest",
         ":RSRenderToServiceConnectionTest",
