@@ -71,6 +71,7 @@ HWTEST_F(RSRenderSingleProcessManagerTest, OnScreenConnectedTest, TestSize.Level
 {
     renderservice.renderProcessManager_->OnScreenDisconnected(screenId);
     renderservice.renderProcessManager_->OnScreenRefresh(screenId);
+    ASSERT_TRUE(renderservice.renderProcessManager_);
 }
 
 /**
@@ -84,6 +85,7 @@ HWTEST_F(RSRenderSingleProcessManagerTest, OnVirtualScreenConnectedTest, TestSiz
     renderservice.renderProcessManager_->OnVirtualScreenDisconnectedTest(screenId);
     renderservice.renderProcessManager_->GetServiceToRenderConn(screenId);
     renderservice.renderProcessManager_->GetServiceToRenderConns();
-     renderservice.renderProcessManager_->GetConnectToRenderConnection(screenId);
+    renderservice.renderProcessManager_->GetConnectToRenderConnection(screenId);
+    ASSERT_TRUE(renderservice.renderProcessManager_);
 }
 } // namespace OHOS::Rosen

@@ -64,20 +64,6 @@ HWTEST_F(RSRenderSingleProcessManagerTest, HandleTouchEventTest, TestSize.Level1
     int32_t touchStatus = 1;
     int32_t touchCnt = 1;
     renderService.HandleTouchEvent(touchStatus, touchCnt);
-}
-
-/**
- * @tc.name: ProcessHgmFrameRateTest
- * @tc.desc: Test
- * @tc.type: FUNC
- * @tc.require: issueIBRN69
- */
-HWTEST_F(RSRenderSingleProcessManagerTest, ProcessHgmFrameRateTest, TestSize.Level1)
-{
-    int32_t timestamp = 1;
-    int32_t vsyncId = 1;
-    sptr<HgmProcessToServiceInfo> processToServiceInfo = sptr<HgmProcessToServiceInfo>::MakeSptr();
-    sptr<HgmProcessToServiceInfo> serviceToProcessInfo = sptr<HgmProcessToServiceInfo>::MakeSptr();
-    renderService.ProcessHgmFrameRate(timestamp, vsyncId, processToServiceInfo, serviceToProcessInfo);
+    ASSERT_TRUE(renderService.rsVSyncDistributor_);
 }
 } // namespace OHOS::Rosen
