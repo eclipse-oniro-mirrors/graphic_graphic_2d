@@ -29,13 +29,7 @@
 using namespace testing;
 using namespace testing::ext;
 
-
 namespace OHOS::Rosen {
-namespace {
-ScreenId screenid = 1;
-RSRenderService renderService;
-}
-
 class RSRenderToServiceConnectionProxyTest : public testing::Test {
 public:
     static void SetUpTestCase();

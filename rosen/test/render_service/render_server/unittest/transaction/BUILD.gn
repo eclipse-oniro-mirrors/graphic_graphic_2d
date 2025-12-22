@@ -22,7 +22,7 @@ ohos_unittest("RSRenderToServiceConnectionProxyTest") {
     module_out_path = module_output_path
 
 
-    sources = [ "rs_render_to_service_connection_proxy_test.cpp" ]
+    sources = [ "zidl/rs_render_to_service_connection_proxy_test.cpp" ]
 
     cflags = [
         "-Dprivate=public",
@@ -90,7 +90,7 @@ ohos_unittest("RSRenderToServiceConnectionStubTest") {
     module_out_path = module_output_path
 
 
-    sources = [ "rs_render_to_service_connection_stub_test.cpp" ]
+    sources = [ "zidl/rs_render_to_service_connection_stub_test.cpp" ]
 
     cflags = [
         "-Dprivate=public",
