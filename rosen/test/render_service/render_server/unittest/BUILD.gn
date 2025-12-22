@@ -325,9 +325,9 @@ group("unittest") {
     testonly = true
 
     deps = [
-        "RenderServiceAgentTest",
-        "RenderServiceTest",
-        "RSRenderProcessManagerAgentTest",
-        "RSRenderSingleProcessManagerTest",
+        ":RenderServiceAgentTest",
+        ":RenderServiceTest",
+        ":RSRenderProcessManagerAgentTest",
+        ":RSRenderSingleProcessManagerTest",
     ]
 }
