@@ -42,7 +42,7 @@
 
 #include "rs_render_to_composer_connection.h"
 #include "rs_render_composer_manager.h"
-#include "dfx/rs_service_dump_manager.h" // todo dfx or dfx ?
+#include "dfx/rs_service_dump_manager.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/rs_surface_render_node.h"

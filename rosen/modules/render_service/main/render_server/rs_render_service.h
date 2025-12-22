@@ -81,6 +81,7 @@ private:
 
     void CoreComponentsInit();
     void HgmInit();
+    void FeatureComponentInit();
     void VsyncComponentInit();
     void RenderProcessManagerInit();
     bool SAMgrRegister();
