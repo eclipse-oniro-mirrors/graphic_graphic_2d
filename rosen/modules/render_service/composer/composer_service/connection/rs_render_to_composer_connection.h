@@ -16,7 +16,7 @@
 #define RENDER_SERVICE_COMPOSER_SERVICE_CONNECTION_RS_RENDER_TO_COMPOSER_CONNECTION_H
 
 #include "rs_render_composer_agent.h"
-#include "rs_render_to_composer_connection_stub.h"
+#include "zidl/rs_render_to_composer_connection_stub.h"
 
 namespace OHOS::Rosen {
 class RSRenderToComposerConnection : public RSRenderToComposerConnectionStub {
