@@ -1635,7 +1635,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_ZeroTest)
 
 GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case1)
 {
-    const int caseIndex = 0; 
+    const int caseIndex = 0;
 
     // Create double ripple mask
     auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
@@ -1668,7 +1668,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case1)
 
 GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case2)
 {
-    const int caseIndex = 1; 
+    const int caseIndex = 1;
 
     // Create double ripple mask
     auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
@@ -1767,7 +1767,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case4)
 
 GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case5)
 {
-    const int caseIndex = 4; 
+    const int caseIndex = 4;
 
     // Create double ripple mask
     auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
@@ -1800,7 +1800,7 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case5)
 
 GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case6)
 {
-    const int caseIndex = 5; 
+    const int caseIndex = 5;
 
     // Create double ripple mask
     auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
