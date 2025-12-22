@@ -208,10 +208,7 @@ bool OH_Drawing_IsFontSupportedByPath(const char* fontPath)
 
 bool OH_Drawing_IsFontSupportedByBuffer(uint8_t* fontBuffer, size_t length)
 {
-    if (fontBuffer == nullptr) {
-        return false;
-    }
-    if (length == 0) {
+    if (fontBuffer == nullptr || length == 0) {
         return false;
     }
     return Drawing::Typeface::MakeFromStream(std::make_unique<Drawing::MemoryStream>(fontBuffer, length)) != nullptr;
