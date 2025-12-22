@@ -66,7 +66,6 @@ namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver;
 #endif
-class HgmClient;
 class HgmRPContext;
 class RSIRenderToServiceConnection;
 class RSUniRenderVisitor;
@@ -579,8 +578,6 @@ private:
         const Occlusion::Region& visibleRegion);
     void PrintCurrentStatus();
     void UpdateGpuContextCacheSize();
-    // todo:存疑
-    void ProcessScreenHotPlugEvents();
 #ifdef RES_SCHED_ENABLE
     void SubScribeSystemAbility();
 #endif
@@ -631,8 +628,6 @@ private:
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
     void HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
         const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
-
-    void NotifyRpHgmFrameRate();
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;
@@ -893,7 +888,6 @@ private:
 
     bool hasCanvasDrawingNodeCachedOp_ = false;
 
-    std::shared_ptr<HgmClient> hgmClient_ = nullptr;
     std::shared_ptr<HgmRPContext> hgmRPContext_ = nullptr;
 };
 } // namespace OHOS::Rosen
