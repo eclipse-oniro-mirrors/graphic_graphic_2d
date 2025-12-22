@@ -51,7 +51,7 @@ void RSServiceToRenderConnectionStubTest::SetUpTestCase()
 {
     auto runner = AppExecFwk::EventRunner::Create(false);
     auto handler = std::make_shared<AppExecFwk::EventHandler>(runner);
-    auto renderPipeline = RSRenderPipeline::Create(handler, nullptr);
+    auto renderPipeline = RSRenderPipeline::Create(handler, nullptr, nullptr);
     RSRenderService renderService;
     auto rsRenderServceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline);
