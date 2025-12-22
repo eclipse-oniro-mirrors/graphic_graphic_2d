@@ -383,17 +383,41 @@ void RSRenderService::FpsDump(std::string& dumpString, std::string& arg)
 sptr<IRemoteObject> RSRenderService::ScreenManagerListener::OnScreenConnected(ScreenId screenId,
     const ScreenEventData& data, const sptr<RSScreenProperty>& property)
 {
+    RS_LOGD("%{public}s: rsScreenProperty.id[%{public}" PRIu64 "] .width[%{public}d] .height[%{public}d]",
+        __func__, property->GetScreenId(), property->GetWidth(), property->GetHeight());
+    renderService_.rsRenderComposerManager_->OnScreenConnected(data.output, property);
+    if (const auto& hgmContext = renderService_.GetHgmContext()) {
+        hgmContext->AddScreenToHgm(id);
+    }
+    uint64_t vsyncEnabledScreenId = renderService_.vsyncSampler_->JudgeVSyncEnabledScreenWhileHotPlug(id, true);
+    renderService_.vsyncSampler_->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId,
+        renderService_.handler_);
+    renderService_.screenManager_->SetScreenVsyncEnableById(vsyncEnabledScreenId, id, false);
     return renderService_.renderProcessManager_->OnScreenConnected(screenId, data, property);
 }
 
 void RSRenderService::ScreenManagerListener::OnScreenDisconnected(ScreenId id)
 {
+    RS_LOGD("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
+    renderService_.rsRenderComposerManager_->OnScreenDisconnected(id);
+    if (const auto& hgmContext = renderService_.GetHgmContext()) {
+        hgmContext->RemoveScreenFromHgm(id);
+    }
+    uint64_t vsyncEnabledScreenId = renderService_.vsyncSampler_->JudgeVSyncEnabledScreenWhileHotPlug(id, false);
+    renderService_.vsyncSampler_->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId,
+        renderService_.handler_);
     renderService_.renderProcessManager_->OnScreenDisconnected(id);
 }
 
 void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(ScreenId id,
     const sptr<RSScreenProperty>& property)
 {
+    RS_LOGD("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
+    if (!property->IsVirtual()) {
+        auto status = property->GetScreenPowerStatus();
+        renderService_.vsyncSampler_->ProcessVSyncScreenIdWhilePowerStatusChanged(id, status,
+            renderService_.handler_, renderService_.screenManager_->GetIsFoldScreenFlag());
+    }
     renderService_.renderProcessManager_->OnScreenPropertyChanged(id, property);
 }
 
@@ -404,7 +428,9 @@ void RSRenderService::ScreenManagerListener::OnScreenRefresh(ScreenId id)
 
 void RSRenderService::ScreenManagerListener::OnVBlankIdle(ScreenId id, uint64_t ns)
 {
-    renderService_.renderProcessManager_->OnVBlankIdle(id, ns);
+    if (auto composerConn = renderService_.rsRenderComposerManager_->GetRSComposerConnection(id)) {
+        composerConn->OnScreenVBlankIdleCallback(id, ns);
+    }
 }
 
 void RSRenderService::ScreenManagerListener::OnVirtualScreenConnected(ScreenId id, ScreenId associatedScreenId,
@@ -426,7 +452,7 @@ void RSRenderService::ScreenManagerListener::OnHwcEvent(uint32_t deviceId, uint3
 
 void RSRenderService::ScreenManagerListener::OnActiveScreenIdChanged(ScreenId activeScreenId)
 {
-    renderService_.renderProcessManager_->OnActiveScreenIdChanged(activeScreenId);
+    HgmCore::Instance().SetActiveScreenId(activeScreenId);
 }
 
 void RSRenderService::ScreenManagerListener::OnScreenBacklightChanged(ScreenId id, uint32_t level)
