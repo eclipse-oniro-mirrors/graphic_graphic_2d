@@ -45,8 +45,7 @@ void RSServiceToRenderConnectionTest::SetUpTestCase()
     auto renderPipeline = RSRenderPipeline::Create(handler, nullptr, nullptr);
     RSRenderService renderService;
     auto rsRenderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
-    sptr<RSRenderPipelineAgent> renderPipelineAgent =
-        new sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    sptr<RSRenderPipelineAgent> renderPipelineAgent = RSRenderPipelineAgent(renderPipeline);
     rsConn_ = sptr<RSServiceToRenderConnection>::MakeSptr(rsRenderServiceAgent, renderPipelineAgent);
 }
 void RSServiceToRenderConnectionTest::TearDownTestCase() {}
