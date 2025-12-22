@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+
 #include <iremote_broker.h>
 #include "transaction/rs_service_to_render_connection.h"
 #include "rs_render_process_manager.h"
@@ -24,6 +25,8 @@
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "rs_render_single_process_manager.h"
 
+using namespace testing;
+using namespace testing::ext;
 
 namespace OHOS::Rosen {
 class RSServiceToRenderConnectionTest : public testing::Test {
