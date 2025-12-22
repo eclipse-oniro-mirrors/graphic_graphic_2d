@@ -133,7 +133,6 @@ interfaces/inner_api/hyper_graphic_manager/ @wh_qwe
 interfaces/kits/napi/graphic/hyper_graphic_manager/ @wh_qwe
 rosen/modules/hyper_graphic_manager/ @wh_qwe
 rosen/modules/render_service/core/feature/hyper_graphic_manager/ @wh_qwe
-rosen/modules/render_service/core/pipeline/hardware_thread/ @wh_qwe
 rosen/modules/render_service_base/include/feature/hyper_graphic_manager/ @wh_qwe
 rosen/modules/render_service_base/include/ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback_ipc_interface_code.h @wh_qwe
 rosen/modules/render_service_base/include/ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback.h @wh_qwe
