@@ -425,16 +425,17 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
     psurf->SetQueueSize(2);
 
     // acquire buffer
+    uint64_t parentNodeId = 0;
     uint64_t presentWhen = 100; // let presentWhen smaller than INT64_MAX
     auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
     surfaceHandler.SetConsumer(surfaceConsumer);
     surfaceHandler.SetAvailableBufferCount(1);
-    EXPECT_FALSE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, false));
-    EXPECT_FALSE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, true));
+    EXPECT_FALSE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, parentNodeId, false));
+    EXPECT_FALSE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, parentNodeId, true));
     IConsumerSurface::AcquireBufferReturnValue holdReturnValue;
     holdReturnValue.buffer = sptr<SurfaceBufferImpl>::MakeSptr();
     surfaceHandler.SetHoldReturnValue(holdReturnValue);
-    EXPECT_TRUE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, false));
+    EXPECT_TRUE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, parentNodeId, false));
 
     // produce buffer
     sptr<SurfaceBuffer> buffer1 = sptr<SurfaceBufferImpl>::MakeSptr();
@@ -448,7 +449,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
     // consume buffer
     surfaceHandler.ResetHoldReturnValue();
     surfaceHandler.SetAvailableBufferCount(1);
-    EXPECT_TRUE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, false));
+    EXPECT_TRUE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, parentNodeId, false));
     RSBaseRenderUtil::ReleaseBuffer(surfaceHandler);
 
     // produce buffer
@@ -460,7 +461,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_006, TestSize.Level2)
     // consume buffer
     surfaceHandler.SetHoldReturnValue(holdReturnValue);
     surfaceHandler.SetAvailableBufferCount(1);
-    EXPECT_FALSE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, true));
+    EXPECT_FALSE(RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, false, parentNodeId, true));
 }
 
 /*
