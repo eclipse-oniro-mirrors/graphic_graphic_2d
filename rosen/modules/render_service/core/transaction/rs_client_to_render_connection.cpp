@@ -417,6 +417,14 @@ ErrCode RSClientToRenderConnection::SetHwcNodeBounds(int64_t rsNodeId, float pos
     return renderPipelineAgent_->SetHwcNodeBounds(rsNodeId, positionX, positionY, positionZ, positionW);
 }
 
+int32_t RSClientToRenderConnection::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
+{
+    if (!renderPipelineAgent_) {
+        return ERR_INVALID_VALUE;
+    }
+    return renderPipelineAgent_->GetBrightnessInfo(screenId, brightnessInfo);
+}
+
 ErrCode RSClientToRenderConnection::GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus, int32_t& resCode)
 {
     if (!renderPipelineAgent_) {
@@ -519,5 +527,43 @@ int32_t RSClientToRenderConnection::SubmitCanvasPreAllocatedBuffer(
     return renderPipelineAgent_->SubmitCanvasPreAllocatedBuffer(remotePid_, nodeId, buffer, resetSurfaceIndex);
 }
 #endif
+
+uint32_t RSClientToRenderConnection::SetSurfaceWatermark(pid_t pid, const std::string &name,
+    const std::shared_ptr<Media::PixelMap> &watermark,
+    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType)
+{
+    if (!renderPipelineAgent_) {
+        return WATER_MARK_RS_CONNECTION_ERROR;
+    }
+    auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
+        RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
+        "::SET_SURFACE_WATERMARK");
+    return renderPipelineAgent_->SetSurfaceWatermark(pid, name, watermark,
+            nodeIdList, watermarkType, isSystemCalling);
+}
+    
+void RSClientToRenderConnection::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string &name,
+    const std::vector<NodeId> &nodeIdList)
+{
+    if (!renderPipelineAgent_) {
+        return;
+    }
+    auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
+        RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
+        "::CLEAR_SURFACE_WATERMARK_FOR_NODES");
+    renderPipelineAgent_->ClearSurfaceWatermarkForNodes(pid, name, nodeIdList, isSystemCalling);
+}
+    
+void RSClientToRenderConnection::ClearSurfaceWatermark(pid_t pid, const std::string &name)
+{
+    if (!renderPipelineAgent_) {
+        return;
+    }
+    auto isSystemCalling = RSInterfaceCodeAccessVerifierBase::IsSystemCalling(
+        RSIRenderServiceConnectionInterfaceCodeAccessVerifier::codeEnumTypeName_ +
+        "::CLEAR_SURFACE_WATERMARK");
+    renderPipelineAgent_->ClearSurfaceWatermark(pid, name, isSystemCalling);
+}
+
 } // namespace Rosen
 } // namespace OHOS

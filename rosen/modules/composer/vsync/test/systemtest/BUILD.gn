@@ -728,7 +728,10 @@ ohos_unittest("vsync_limit_test_st") {
 
   sources = [ "vsync_limit_test.cpp" ]
 
-  include_dirs = [ "$graphic_2d_root/interfaces/inner_api/composer" ]
+  include_dirs = [
+    "$graphic_2d_root/interfaces/inner_api/composer",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+  ]
 
   cflags = [
     "-Wall",
@@ -751,6 +754,7 @@ ohos_unittest("nativeVsync_getPeriod_test_st") {
   include_dirs = [
     "$graphic_2d_root/interfaces/inner_api/common",
     "$graphic_2d_root/interfaces/inner_api/composer",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
   ]
 
   cflags = [
@@ -771,7 +775,10 @@ ohos_unittest("nativeVsync_requestFrame_test_st") {
 
   sources = [ "nativeVsync_requestFrame_test.cpp" ]
 
-  include_dirs = [ "$graphic_2d_root/interfaces/inner_api/composer" ]
+  include_dirs = [
+    "$graphic_2d_root/interfaces/inner_api/composer",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+  ]
 
   cflags = [
     "-Wall",
@@ -791,7 +798,10 @@ ohos_unittest("nativeVsync_requestMultiCB_test_st") {
 
   sources = [ "nativeVsync_requestMultiCB_test.cpp" ]
 
-  include_dirs = [ "$graphic_2d_root/interfaces/inner_api/composer" ]
+  include_dirs = [
+    "$graphic_2d_root/interfaces/inner_api/composer",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
+    ]
 
   cflags = [
     "-Wall",

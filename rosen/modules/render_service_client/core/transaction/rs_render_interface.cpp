@@ -36,7 +36,8 @@
 
 namespace OHOS {
 namespace Rosen {
-
+constexpr uint32_t WATERMARK_PIXELMAP_SIZE_LIMIT = 500 * 1024;
+constexpr uint32_t WATERMARK_NAME_LENGTH_LIMIT = 128;
 RSRenderInterface &RSRenderInterface::GetInstance()
 {
     static RSRenderInterface instance;
@@ -357,6 +358,11 @@ void RSRenderInterface::SetWindowContainer(NodeId nodeId, bool value)
     renderPipelineClient_->SetWindowContainer(nodeId, value);
 }
 
+int32_t RSRenderInterface::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
+{
+    return renderPipelineClient_->GetBrightnessInfo(screenId, brightnessInfo);
+}
+
 int32_t RSRenderInterface::GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus)
 {
     return renderPipelineClient_->GetScreenHDRStatus(id, hdrStatus);
@@ -403,5 +409,53 @@ int32_t RSRenderInterface::SubmitCanvasPreAllocatedBuffer(
     return renderPipelineClient_->SubmitCanvasPreAllocatedBuffer(nodeId, buffer, resetSurfaceIndex);
 }
 #endif
+
+uint32_t RSRenderInterface::SetSurfaceWatermark(pid_t pid, const std::string &name,
+    const std::shared_ptr<Media::PixelMap> &watermark,
+    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType)
+{
+#ifdef ROSEN_OHOS
+    if (name.length() > WATERMARK_NAME_LENGTH_LIMIT || name.empty()) {
+        ROSEN_LOGE("SetSurfaceWatermark failed, name[%{public}s] is error.", name.c_str());
+        return SurfaceWatermarkStatusCode::WATER_MARK_NAME_ERROR;
+    }
+    if (watermark && watermark->IsAstc()) {
+        ROSEN_LOGE("SetSurfaceWatermark failed, watermark[%{public}d, %{public}u] is error",
+            watermark->IsAstc(), watermark->GetCapacity());
+        return SurfaceWatermarkStatusCode::WATER_MARK_IMG_ASTC_ERROR;
+    }
+
+    if (watermarkType >= SurfaceWatermarkType::INVALID_WATER_MARK) {
+        return SurfaceWatermarkStatusCode::WATER_MARK_INVALID_WATERMARK_TYPE;
+    }
+    return renderPipelineClient_->SetSurfaceWatermark(pid, name, watermark,
+        nodeIdList, watermarkType);
+#else
+    return 0 ;
+#endif
+}
+
+void RSRenderInterface::ClearSurfaceWatermarkForNodes(pid_t pid,
+    const std::string& name, const std::vector<NodeId>& nodeIdList)
+{
+#ifdef ROSEN_OHOS
+    if (name.length() > WATERMARK_NAME_LENGTH_LIMIT || name.empty()) {
+        ROSEN_LOGE("ClearSurfaceWatermarkForNodes failed, name[%{public}s] is error.", name.c_str());
+        return;
+    }
+    return renderPipelineClient_->ClearSurfaceWatermarkForNodes(pid, name, nodeIdList);
+#endif
+}
+
+void RSRenderInterface::ClearSurfaceWatermark(pid_t pid, const std::string &name)
+{
+#ifdef ROSEN_OHOS
+    if (name.length() > WATERMARK_NAME_LENGTH_LIMIT || name.empty()) {
+        ROSEN_LOGE("ClearSurfaceWatermark failed, name[%{public}s] is error.", name.c_str());
+        return;
+    }
+    return renderPipelineClient_->ClearSurfaceWatermark(pid, name);
+#endif
+}
 }
 }

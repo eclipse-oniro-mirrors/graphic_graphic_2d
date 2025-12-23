@@ -123,7 +123,8 @@ public:
         const std::vector<std::string>& surfaceNameList, uint32_t fps);
     ErrCode CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, sptr<Surface>& sfc,
         bool unobscured = false);
-
+    int32_t SetBrightnessInfoChangeCallback(pid_t pid, sptr<RSIBrightnessInfoChangeCallback> callback);
+    int32_t GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo);
     int32_t RegisterOcclusionChangeCallback(pid_t pid, sptr<RSIOcclusionChangeCallback> callback);
     int32_t RegisterSurfaceOcclusionChangeCallback(
         NodeId id, pid_t pid, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints);
@@ -131,7 +132,7 @@ public:
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
         std::shared_ptr<Media::PixelMap> &pixelMap);  
     ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic);
-    void NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList);
+    void NotifyPackageEvent(const std::vector<std::string>& packageList);
     void HgmForceUpdateTask(bool flag, const std::string& fromWhom);
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop);
     ErrCode GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize);
@@ -145,7 +146,7 @@ public:
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);
     void GetSurfaceRootNodeId(NodeId &windowNodeId);
     ErrCode SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh);
-    void DoDump(std::unordered_set<std::u16string> &argSets);
+    void DoDump(std::unordered_set<std::u16string>& argSets);
     void NotifyHwcEventToRender(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData);
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     ErrCode SetOverlayDisplayMode(int32_t mode);
@@ -179,7 +180,12 @@ public:
     void OnScreenBacklightChanged(ScreenId screenId, uint32_t level);
     void SetScreenFrameGravity(ScreenId id, Gravity gravity);
     int32_t NotifyScreenRefresh(ScreenId screenId);
-
+    uint32_t SetSurfaceWatermark(pid_t pid, const std::string& name,
+        const std::shared_ptr<Media::PixelMap> &watermark, const std::vector<NodeId>& nodeIdList,
+        SurfaceWatermarkType watermarkType, bool isSystemCalling = false);
+    void ClearSurfaceWatermark(pid_t pid, const std::string& name, bool isSystemCalling);
+    void ClearSurfaceWatermarkForNodes(pid_t pid, const std::string& name,
+        const std::vector<NodeId>& nodeIdList, bool isSystemCalling);
 private:
     // TODO: maybe do not use reference of a std::shared pointer
     std::shared_ptr<RSRenderPipeline>& rsRenderPipeline_;

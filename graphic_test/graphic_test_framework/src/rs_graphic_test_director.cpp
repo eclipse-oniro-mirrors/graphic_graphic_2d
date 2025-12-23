@@ -136,7 +136,7 @@ RSGraphicTestDirector::~RSGraphicTestDirector()
 
 void RSGraphicTestDirector::Run()
 {
-    rsUiDirector_ = RSUIDirector::Create(nullptr);
+    rsUiDirector_ = RSUIDirector::Create();
 
     rsUiDirector_->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) {
         if (task) {

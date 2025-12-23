@@ -66,7 +66,6 @@ namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver;
 #endif
-class HgmClient;
 class HgmRPContext;
 class RSIRenderToServiceConnection;
 class RSUniRenderVisitor;
@@ -99,7 +98,8 @@ public:
     static RSMainThread* Instance();
 
     void Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler, const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void OnScreenConnected(const sptr<RSScreenProperty>& property);
     void OnScreenDisconnected(ScreenId screenId);
     void OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty);
@@ -485,6 +485,8 @@ public:
         return aibarNodes_;
     }
 
+    uint64_t GetVsyncId() const { return vsyncId_; }
+
 private:
     using TransactionDataIndexMap = std::unordered_map<pid_t,
         std::pair<uint64_t, std::vector<std::unique_ptr<RSTransactionData>>>>;
@@ -579,8 +581,6 @@ private:
         const Occlusion::Region& visibleRegion);
     void PrintCurrentStatus();
     void UpdateGpuContextCacheSize();
-    // todo:存疑
-    void ProcessScreenHotPlugEvents();
 #ifdef RES_SCHED_ENABLE
     void SubScribeSystemAbility();
 #endif
@@ -631,8 +631,6 @@ private:
     void UpdateDirectCompositionByAnimate(bool animateNeedRequestNextVsync);
     void HandleTunnelLayerId(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
         const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
-
-    void NotifyRpHgmFrameRate();
 
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;
@@ -893,7 +891,6 @@ private:
 
     bool hasCanvasDrawingNodeCachedOp_ = false;
 
-    std::shared_ptr<HgmClient> hgmClient_ = nullptr;
     std::shared_ptr<HgmRPContext> hgmRPContext_ = nullptr;
 };
 } // namespace OHOS::Rosen

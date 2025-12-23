@@ -35,7 +35,6 @@
 #include "rs_render_composer_client.h"
 #include "vsync_receiver.h"
 #include "screen_manager/screen_types.h"
-#include "feature/hyper_graphic_manager/hgm_client.h"
 #include "memory/rs_memory_manager.h"
 
 namespace OHOS {
@@ -61,6 +60,7 @@ private:
 };
 } // namespace ST
 
+class RSIRenderToServiceConnection;
 class RSMainThread;
 class RSUniRenderThread;
 class RSBufferThread;
@@ -70,7 +70,8 @@ class RSRenderPipeline final : public RefBase {
 public:
     static std::shared_ptr<RSRenderPipeline> Create(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
         const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
 
     void PostMainThreadTask(RSTaskMessage::RSTask task);
 
@@ -96,13 +97,11 @@ public:
     void OnScreenDisconnected(ScreenId screenId);
     void OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty);
     void OnScreenRefresh(ScreenId screenId);
-    void InitRsVsyncManagerAgent(const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
-    void RegisterScreenSwitchFinishCallback(const sptr<RSIRenderToServiceConnection>& conn);
 
 private:
-    void Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
-        const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+    void Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler, const std::shared_ptr<VSyncReceiver>& receiver,
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void InitEnvironment();
     void InitUniRenderConfig();
     void InitCCMConfig();
@@ -111,7 +110,8 @@ private:
     void RegisterRcdMsg();
     void InitMainThread(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
         const std::shared_ptr<VSyncReceiver>& receiver,
-        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+        const sptr<RSIRenderToServiceConnection>& renderToServiceConnection,
+        const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void InitUniRenderThread();
     void InitDumper();
 

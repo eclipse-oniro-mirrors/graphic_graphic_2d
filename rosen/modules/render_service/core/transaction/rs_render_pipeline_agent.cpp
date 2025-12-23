@@ -1110,6 +1110,28 @@ ErrCode RSRenderPipelineAgent::CreateNodeAndSurface(const RSSurfaceRenderNodeCon
     return ERR_INVALID_VALUE;
 }
 
+int32_t RSRenderPipelineAgent::SetBrightnessInfoChangeCallback(pid_t pid,
+    sptr<RSIBrightnessInfoChangeCallback> callback)
+{
+    if (!rsRenderPipeline_) {
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+    if (!rsRenderPipeline_->mainThread_) {
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+    auto task = [this, &callback, &pid]() {
+        auto& context = rsRenderPipeline_->mainThread_->GetContext();
+        return context.SetBrightnessInfoChangeCallback(pid, callback);
+    };
+    return rsRenderPipeline_->mainThread_->ScheduleTask(task).get();
+}
+
+int32_t RSRenderPipelineAgent::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
+{
+    brightnessInfo = RSLuminanceControl::Get().GetBrightnessInfo(screenId);
+    return StatusCode::SUCCESS;
+}
+
 int32_t RSRenderPipelineAgent::RegisterOcclusionChangeCallback(pid_t pid, sptr<RSIOcclusionChangeCallback> callback)
 {
     if (!rsRenderPipeline_) {
@@ -1189,7 +1211,7 @@ ErrCode RSRenderPipelineAgent::GetMemoryGraphic(int pid, MemoryGraphic& memoryGr
     return ERR_INVALID_VALUE;
 }
 
-void RSRenderPipelineAgent::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
+void RSRenderPipelineAgent::NotifyPackageEvent(const std::vector<std::string>& packageList)
 {
     if (rsRenderPipeline_ != nullptr) {
         rsRenderPipeline_->PostMainThreadTask([this, packageList] {
@@ -1409,7 +1431,7 @@ int32_t RSRenderPipelineAgent::NotifyScreenRefresh(ScreenId screenId)
     return 0;
 }
 
-void RSRenderPipelineAgent::DoDump(std::unordered_set<std::u16string> &argSets)
+void RSRenderPipelineAgent::DoDump(std::unordered_set<std::u16string>& argSets)
 {
     if (rsRenderPipeline_ != nullptr) {
         std::string dumpString;
@@ -1603,6 +1625,7 @@ ErrCode RSRenderPipelineAgent::CleanResources(pid_t pid)
             }
             auto& context = mainThread->GetContext();
             auto& nodeMap = context.GetMutableNodeMap();
+            context.SetBrightnessInfoChangeCallback(pid, nullptr);
             MemoryTrack::Instance().RemovePidRecord(pid);
 
             nodeMap.FilterNodeByPid(pid);
@@ -1864,6 +1887,78 @@ void RSRenderPipelineAgent::SetScreenFrameGravity(ScreenId id, Gravity gravity)
         return;
     }
     rsRenderPipeline_->mainThread_->SetScreenFrameGravity(id, gravity);
+}
+
+uint32_t RSRenderPipelineAgent::SetSurfaceWatermark(pid_t pid, const std::string &name,
+    const std::shared_ptr<Media::PixelMap> &watermark,
+    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType, bool isSystemCalling)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return WATER_MARK_IPC_ERROR;
+    }
+
+    uint32_t res =  SurfaceWatermarkStatusCode::WATER_MARK_RS_CONNECTION_ERROR;
+    auto task = [this, &name, &nodeIdList, &watermark, &watermarkType,
+        pid, isSystemCalling, &res]() -> void {
+        if (rsRenderPipeline_ == nullptr) {
+            RS_LOGE("RSRenderPipelineAgent:%{public}s renderPipeline is nullptr", __func__);
+            return;
+        }
+
+        if (!rsRenderPipeline_->mainThread_) {
+            RS_LOGE("RSRenderPipeline::%{public}s, mainThread_ is null.", __func__);
+            return;
+        }
+
+        res = rsRenderPipeline_->mainThread_->SetSurfaceWatermark(pid, name, watermark,
+            nodeIdList, watermarkType, isSystemCalling);
+    };
+    rsRenderPipeline_->PostMainThreadSyncTask(task);
+    return res;
+}
+    
+void RSRenderPipelineAgent::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string &name,
+    const std::vector<NodeId> &nodeIdList, bool isSystemCalling)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return;
+    }
+
+    auto task = [this, name, pid, nodeIdList, isSystemCalling]() -> void {
+
+        if (rsRenderPipeline_ == nullptr) {
+            RS_LOGE("RSRenderPipelineAgent:%{public}s renderPipeline is nullptr", __func__);
+            return;
+        }
+
+        if (!rsRenderPipeline_->mainThread_) {
+            RS_LOGE("RSRenderPipeline::%{public}s, mainThread_ is null.", __func__);
+            return;
+        }
+        rsRenderPipeline_->mainThread_->ClearSurfaceWatermarkForNodes(pid, name, nodeIdList, isSystemCalling);
+    };
+    rsRenderPipeline_->PostMainThreadTask(task);
+}
+    
+void RSRenderPipelineAgent::ClearSurfaceWatermark(pid_t pid,
+    const std::string &name, bool isSystemCalling)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return;
+    }
+    auto task = [this, name, pid, isSystemCalling]() -> void {
+        if (rsRenderPipeline_ == nullptr) {
+            RS_LOGE("RSRenderPipelineAgent:%{public}s renderPipeline is nullptr", __func__);
+            return;
+        }
+
+        if (!rsRenderPipeline_->mainThread_) {
+            RS_LOGE("RSRenderPipeline::%{public}s, mainThread_ is null.", __func__);
+            return;
+        }
+        rsRenderPipeline_->mainThread_->ClearSurfaceWatermark(pid, name, isSystemCalling);
+    };
+    rsRenderPipeline_->PostMainThreadTask(task);
 }
 } // namespace Rosen
 } // namespace OHOS
