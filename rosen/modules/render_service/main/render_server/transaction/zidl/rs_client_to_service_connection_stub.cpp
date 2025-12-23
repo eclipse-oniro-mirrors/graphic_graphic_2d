@@ -74,7 +74,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_MODE),
@@ -108,8 +107,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_BACK_LIGHT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_DATA),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_VIRTUAL_SCREEN_RESOLUTION),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_GAMUTS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_METADATAKEYS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_GAMUT),
@@ -119,7 +116,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_AUTO_ROTATION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_GLOBAL_DARK_COLOR_MODE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_GAMUT_MAP),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_HDR_CAPABILITY),
@@ -136,10 +132,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_REFRESH_RATE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_ACTIVE_RECT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_OFFSET),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_FRAME_GRAVITY),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_OCCLUSION_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_APP_WINDOW_NUM),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_WATERMARK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SHOW_WATERMARK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::RESIZE_VIRTUAL_SCREEN),
@@ -147,9 +141,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_MEMORY_GRAPHICS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_TOTAL_APP_MEM_SIZE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REPORT_JANK_STATS),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BITMAP),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_PIXELMAP),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT),
@@ -168,8 +159,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_HGMCONFIG_EVENT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_XCOMPONENT_EXPECTED_FRAMERATE),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_HARDWARE_ENABLED),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_HIDE_PRIVACY_CONTENT),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK),
@@ -193,7 +182,6 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VMA_CACHE_STATUS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NEED_REGISTER_TYPEFACE),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_LAYER_TOP),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_FORCE_REFRESH),
@@ -340,8 +328,6 @@ void RSClientToServiceConnectionStub::SetQos()
 int RSClientToServiceConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    uint32_t parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
-
     AshmemFdContainer::SetIsUnmarshalThread(false);
     pid_t callingPid = GetCallingPid();
     RSMarshallingHelper::SetCallingPid(callingPid);
@@ -369,90 +355,12 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
     auto accessible = securityManager_.IsInterfaceCodeAccessible(code);
     if (!accessible &&
         code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_MEMORY_GRAPHIC) &&
-        code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO) &&
-        code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER) &&
-        code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER)) {
+        code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO)) {
         RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest no permission code:%{public}u", code);
         return ERR_INVALID_STATE;
     }
     int ret = ERR_NONE;
     switch (code) {
-        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::COMMIT_TRANSACTION): {
-            bool isTokenTypeValid = true;
-            bool isNonSystemAppCalling = false;
-            RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemAppCalling);
-            if (!isTokenTypeValid) {
-                RS_LOGE("RSClientToServiceConnectionStub::COMMIT_TRANSACTION invalid token type");
-                return ERR_INVALID_STATE;
-            }
-            if (isNonSystemAppCalling) {
-                RsCommandVerifyHelper::GetInstance().RegisterNonSystemPid(callingPid);
-            }
-            RS_TRACE_NAME_FMT("Recv Parcel Size:%zu, fdCnt:%zu", data.GetDataSize(), data.GetOffsetsSize());
-            static bool isUniRender = RSUniRenderJudgement::IsUniRender();
-            std::shared_ptr<MessageParcel> parsedParcel;
-            std::unique_ptr<AshmemFdWorker> ashmemFdWorker = nullptr;
-            std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit = nullptr;
-            int32_t readData{0};
-            if (!data.ReadInt32(readData)) {
-                RS_LOGE("RSClientToServiceConnectionStub::COMMIT_TRANSACTION read parcel failed");
-                return ERR_INVALID_DATA;
-            }
-            if (readData == 0) { // indicate normal parcel
-                if (isUniRender) {
-                    // in uni render mode, if parcel size over threshold,
-                    // Unmarshalling task will be post to RSUnmarshalThread,
-                    // copy the origin parcel to maintain the parcel lifetime
-                    parsedParcel = CopyParcelIfNeed(data, callingPid);
-                }
-                if (parsedParcel == nullptr) {
-                    // no need to copy or copy failed, use original parcel
-                    // execute Unmarshalling immediately
-
-                    RSMarshallingHelper::UnmarshallingTransactionVer(data);
-
-                    auto transactionData = RSBaseRenderUtil::ParseTransactionData(data, parcelNumber);
-                    if (transactionData && isNonSystemAppCalling) {
-                        const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-                        if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
-                            RS_LOGE("RSClientToServiceConnectionStub::COMMIT_TRANSACTION IsCallingPidValid "
-                                "check failed");
-                        }
-                    }
-                    CommitTransaction(transactionData);
-                    break;
-                }
-            } else {
-                // indicate ashmem parcel
-                // should be parsed to normal parcel before Unmarshalling
-                parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFdWorker, ashmemFlowControlUnit,
-                    callingPid);
-                if (parsedParcel) {
-                    parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, *parsedParcel, reply, option);
-                }
-            }
-            if (parsedParcel == nullptr) {
-                RS_LOGE("RSClientToServiceConnectionStub::COMMIT_TRANSACTION failed: parsed parcel is nullptr");
-                return ERR_INVALID_DATA;
-            }
-            RSMarshallingHelper::UnmarshallingTransactionVer(*parsedParcel);
-            if (isUniRender) {
-                // post Unmarshalling task to RSUnmarshalThread
-                RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid,
-                    std::move(ashmemFdWorker), ashmemFlowControlUnit, parcelNumber);
-            } else {
-                // execute Unmarshalling immediately
-                auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel, parcelNumber);
-                if (transactionData && isNonSystemAppCalling) {
-                    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-                    if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
-                        RS_LOGE("RSClientToServiceConnectionStub::COMMIT_TRANSACTION IsCallingPidValid check failed");
-                    }
-                }
-                CommitTransaction(transactionData);
-            }
-            break;
-        }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_UNI_RENDER_ENABLED): {
             bool enable;
             if (GetUniRenderEnabled(enable) != ERR_OK || !reply.WriteBool(enable)) {
@@ -2322,40 +2230,6 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             ReportGameStateData(info);
-            break;
-        }
-        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK): {
-            int16_t type{0};
-            int16_t subType{0};
-            if (!data.ReadInt16(type) || !data.ReadInt16(subType)) {
-                RS_LOGE("RSClientToServiceConnectionStub::EXECUTE_SYNCHRONOUS_TASK Read parcel failed!");
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            if (type != RS_NODE_SYNCHRONOUS_READ_PROPERTY && type != RS_NODE_SYNCHRONOUS_GET_VALUE_FRACTION) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            auto func = RSCommandFactory::Instance().GetUnmarshallingFunc(type, subType);
-            if (func == nullptr) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            auto command = static_cast<RSSyncTask*>((*func)(data));
-            if (command == nullptr) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            std::shared_ptr<RSSyncTask> task(command);
-            const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-            if (!task->IsCallingPidValid(callingPid, nodeMap)) {
-                ret = ERR_INVALID_STATE;
-                break;
-            }
-            ExecuteSynchronousTask(task);
-            if (!task->Marshalling(reply)) {
-                ret = ERR_INVALID_STATE;
-            }
             break;
         }
         // case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_HARDWARE_ENABLED) : {

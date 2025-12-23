@@ -63,176 +63,29 @@ constexpr const char* RS_BUNDLE_NAME = "render_service";
 #endif
 static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_FOCUS_APP_INFO),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_DEFAULT_SCREEN_ID),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_ACTIVE_SCREEN_ID),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_ALL_SCREEN_IDS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_VIRTUAL_SCREEN),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_ROG_SCREEN_RESOLUTION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_ROG_SCREEN_RESOLUTION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_PHYSICAL_SCREEN_RESOLUTION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_BLACKLIST),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SECURITY_EXEMPTION_LIST),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_SECURITY_MASK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_MIRROR_SCREEN_VISIBLE_RECT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BRIGHTNESS_INFO),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_ACTIVE_MODE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_REFRESH_RATE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_REFRESH_RATE_MODE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SYNC_FRAME_RATE_RANGE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_FRAME_RATE_LINKER),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_CURRENT_REFRESH_RATE_MODE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_SUPPORTED_REFRESH_RATES),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SHOW_REFRESH_RATE_ENABLED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPAINT_EVERYTHING),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::DISABLE_RENDER_CONTROL_SCREEN),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_DISPLAY_IDENTIFICATION_DATA),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_REFRESH_INFO_TO_SP),
-#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_POINTER_LUMINANCE_CALLBACK),
-#endif
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_POWER_STATUS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_ACTIVE_MODE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_SUPPORTED_MODES),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_CAPABILITY),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_POWER_STATUS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_BACK_LIGHT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_DATA),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_VIRTUAL_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_SUPPORTED_GAMUTS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_SUPPORTED_METADATAKEYS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_GAMUT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_GAMUT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_GAMUT_MAP),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_CORRECTION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_AUTO_ROTATION),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_GLOBAL_DARK_COLOR_MODE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_GAMUT_MAP),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_HDR_CAPABILITY),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_PIXEL_FORMAT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_PIXEL_FORMAT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_SUPPORTED_HDR_FORMATS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_HDR_FORMAT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_HDR_FORMAT),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_HDR_STATUS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_SUPPORTED_COLORSPACES),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_COLORSPACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_COLORSPACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_TYPE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_SKIP_FRAME_INTERVAL),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_REFRESH_RATE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_ACTIVE_RECT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_OFFSET),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SCREEN_FRAME_GRAVITY),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_OCCLUSION_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_APP_WINDOW_NUM),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_WATERMARK),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SURFACE_WATERMARK),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK_FOR_NODES),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SHOW_WATERMARK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::RESIZE_VIRTUAL_SCREEN),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_MEMORY_GRAPHIC),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_MEMORY_GRAPHICS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_TOTAL_APP_MEM_SIZE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_JANK_STATS),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BITMAP),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_PIXELMAP),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_PACKAGE_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_APP_STRATEGY_CONFIG_CHANGE_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_REFRESH_RATE_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_VSYNC_NAME),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_EVENT_RESPONSE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_EVENT_COMPLETE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_EVENT_JANK_FRAME),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_RS_SCENE_JANK_START),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_RS_SCENE_JANK_END),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REPORT_EVENT_GAMESTATE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_TOUCH_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_DYNAMIC_MODE_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_HGMCONFIG_EVENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_XCOMPONENT_EXPECTED_FRAMERATE),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_HARDWARE_ENABLED),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_HIDE_PRIVACY_CONTENT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_HGM_CFG_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_SCREEN_SWITCHED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_TP_FEATURE_CONFIG),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_USING_STATUS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REFRESH_RATE_MODE_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_CURTAIN_SCREEN_USING_STATUS),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::DROP_FRAME_BY_PID),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_TYPEFACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_TYPEFACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_SHARED_TYPEFACE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REFRESH_RATE_UPDATE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::ON_FIRST_FRAME_COMMIT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_ACTIVE_DIRTY_REGION_INFO),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_GLOBAL_DIRTY_REGION_INFO),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_LAYER_COMPOSE_INFO),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_UIEXTENSION_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VMA_CACHE_STATUS),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NEED_REGISTER_TYPEFACE),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_DISPLAY_NODE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_SURFACE_BUFFER_CALLBACK),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_LAYER_TOP),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_FORCE_REFRESH),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_COLOR_FOLLOW),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_WINDOW_CONTAINER),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::AVCODEC_VIDEO_START),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::AVCODEC_VIDEO_STOP),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_GPU_CRC_DIRTY_ENABLED_PIDLIST),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST),
-#ifdef RS_ENABLE_OVERLAY_DISPLAY
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE),
-#endif
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::NOTIFY_PAGE_NAME),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_PID_GPU_MEMORY_IN_MB),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::PROFILER_SERVICE_OPEN_FILE),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::PROFILER_SERVICE_POPULATE_FILES),
-    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::PROFILER_IS_SECURE_SCREEN),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::FREEZE_SCREEN),
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
@@ -415,8 +268,7 @@ void RSClientToRenderConnectionStub::SetQos()
 int RSClientToRenderConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {
-    // uint32_t parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
-    uint32_t parcelNumber = 0;
+    uint32_t parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, data, reply, option);
     AshmemFdContainer::SetIsUnmarshalThread(false);
     pid_t callingPid = GetCallingPid();
     RSMarshallingHelper::SetCallingPid(callingPid);
@@ -432,19 +284,11 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
         std::cend(descriptorCheckList)) {
         auto token = data.ReadInterfaceToken();
         if (token != RSIClientToRenderConnection::GetDescriptor()) {
-            if (code == static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE)) {
-                if (!reply.WriteInt32(0)) {
-                    RS_LOGE("RSClientToRenderConnectionStub::OnRemoteRequest Write failed.");
-                    return ERR_INVALID_REPLY;
-                }
-            }
             return ERR_INVALID_STATE;
         }
     }
     auto accessible = securityManager_.IsInterfaceCodeAccessible(code);
     if (!accessible && code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE) &&
-        code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_MEMORY_GRAPHIC) &&
-        code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_REFRESH_INFO) &&
         code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER) &&
         code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER) &&
         code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS)) {
@@ -508,9 +352,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                 parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFdWorker, ashmemFlowControlUnit,
                     callingPid);
                 if (parsedParcel) {
-                    // TODO Car
-                    // parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, *parsedParcel, reply, option);
-                    parcelNumber = 0;
+                    parcelNumber = RS_PROFILER_ON_REMOTE_REQUEST(this, code, *parsedParcel, reply, option);
                 }
             }
             if (parsedParcel == nullptr) {
