@@ -43,7 +43,27 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorFilter = {
     {RSNGEffectType::GRID_WARP,
      [] {
          return std::make_shared<RSNGGridWarpFilter>();
-     }}
+     }},
+    {RSNGEffectType::DIRECTION_LIGHT,
+     [] {
+         return std::make_shared<RSNGDirectionLightFilter>();
+     }},
+    {RSNGEffectType::EDGE_LIGHT,
+     [] {
+         return std::make_shared<RSNGEdgeLightFilter>();
+     }},
+    {RSNGEffectType::DISPERSION,
+     [] {
+         return std::make_shared<RSNGDispersionFilter>();
+     }},
+    {RSNGEffectType::BEZIER_WARP,
+     [] {
+         return std::make_shared<RSNGBezierWarpFilter>();
+     }},
+    {RSNGEffectType::SOUND_WAVE,
+     [] {
+         return std::make_shared<RSNGSoundWaveFilter>();
+     }},
 };
 
 std::shared_ptr<RSNGMaskBase> CreateMask(RSNGEffectType type)

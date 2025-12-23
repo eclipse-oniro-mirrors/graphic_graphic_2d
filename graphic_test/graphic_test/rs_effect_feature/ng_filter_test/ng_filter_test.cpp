@@ -928,4 +928,1062 @@ GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Grid_Warp_Displacement_Dis
         RegisterNode(backgroundTestNode);
     }
 }
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_EdgeLight_Test_1)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[0][0], doubleRippleMaskParams[0][1] });
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[0][2], doubleRippleMaskParams[0][3] });
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[0][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[0][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[0][6]);
+    
+    // Create edge light filter
+    auto filter = CreateFilter(RSNGEffectType::EDGE_LIGHT);
+    auto edgeLightFilter = std::static_pointer_cast<RSNGEdgeLightFilter>(filter);
+    edgeLightFilter->Setter<EdgeLightAlphaTag>(1.0f);
+    edgeLightFilter->Setter<EdgeLightColorTag>(Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+    edgeLightFilter->Setter<EdgeLightMaskTag>(mask);
+    edgeLightFilter->Setter<EdgeLightBloomTag>(false);
+    edgeLightFilter->Setter<EdgeLightUseRawColorTag>(false);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(edgeLightFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_EdgeLight_Test_2)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[1][0], doubleRippleMaskParams[1][1] });
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[1][2], doubleRippleMaskParams[1][3] });
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[1][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[1][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[1][6]);
+    
+    // Create edge light filter
+    auto filter = CreateFilter(RSNGEffectType::EDGE_LIGHT);
+    auto edgeLightFilter = std::static_pointer_cast<RSNGEdgeLightFilter>(filter);
+    edgeLightFilter->Setter<EdgeLightAlphaTag>(0.5f);
+    edgeLightFilter->Setter<EdgeLightColorTag>(Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+    edgeLightFilter->Setter<EdgeLightMaskTag>(mask);
+    edgeLightFilter->Setter<EdgeLightBloomTag>(false);
+    edgeLightFilter->Setter<EdgeLightUseRawColorTag>(false);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(edgeLightFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_EdgeLight_Test_3)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[2][0], doubleRippleMaskParams[2][1] });
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[2][2], doubleRippleMaskParams[2][3] });
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[2][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[2][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[2][6]);
+    
+    // Create edge light filter
+    auto filter = CreateFilter(RSNGEffectType::EDGE_LIGHT);
+    auto edgeLightFilter = std::static_pointer_cast<RSNGEdgeLightFilter>(filter);
+    edgeLightFilter->Setter<EdgeLightAlphaTag>(1.0f);
+    edgeLightFilter->Setter<EdgeLightColorTag>(Vector4f(1.0f, 0.0f, 0.0f, 1.0f)); // 红色
+    edgeLightFilter->Setter<EdgeLightMaskTag>(mask);
+    edgeLightFilter->Setter<EdgeLightBloomTag>(false);
+    edgeLightFilter->Setter<EdgeLightUseRawColorTag>(false);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(edgeLightFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_EdgeLight_Test_4)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[3][0], doubleRippleMaskParams[3][1] });
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[3][2], doubleRippleMaskParams[3][3] });
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[3][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[3][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[3][6]);
+    
+    // Create edge light filter
+    auto filter = CreateFilter(RSNGEffectType::EDGE_LIGHT);
+    auto edgeLightFilter = std::static_pointer_cast<RSNGEdgeLightFilter>(filter);
+    edgeLightFilter->Setter<EdgeLightAlphaTag>(1.0f);
+    edgeLightFilter->Setter<EdgeLightColorTag>(Vector4f(0.0f, 1.0f, 0.0f, 1.0f)); // 绿色
+    edgeLightFilter->Setter<EdgeLightMaskTag>(mask);
+    edgeLightFilter->Setter<EdgeLightBloomTag>(true);
+    edgeLightFilter->Setter<EdgeLightUseRawColorTag>(false);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(edgeLightFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_EdgeLight_Test_5)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[4][0], doubleRippleMaskParams[4][1] });
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[4][2], doubleRippleMaskParams[4][3] });
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[4][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[4][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[4][6]);
+    
+    // Create edge light filter
+    auto filter = CreateFilter(RSNGEffectType::EDGE_LIGHT);
+    auto edgeLightFilter = std::static_pointer_cast<RSNGEdgeLightFilter>(filter);
+    edgeLightFilter->Setter<EdgeLightAlphaTag>(1.0f);
+    edgeLightFilter->Setter<EdgeLightColorTag>(Vector4f(0.0f, 0.0f, 1.0f, 1.0f)); // 蓝色
+    edgeLightFilter->Setter<EdgeLightMaskTag>(mask);
+    edgeLightFilter->Setter<EdgeLightBloomTag>(false);
+    edgeLightFilter->Setter<EdgeLightUseRawColorTag>(true);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(edgeLightFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Dispersion_Filter_Basic_Offset)
+{
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(Vector2f{0.3f, 0.3f});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(Vector2f{0.7f, 0.7f});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(0.4f);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(0.1f);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(0.05f);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPERSION);
+    auto dispersionFilter = std::static_pointer_cast<RSNGDispersionFilter>(filter);
+    dispersionFilter->Setter<DispersionMaskTag>(mask);
+    dispersionFilter->Setter<DispersionOpacityTag>(1.0f);
+    dispersionFilter->Setter<DispersionRedOffsetTag>(Vector2f{5.0f, 0.0f});
+    dispersionFilter->Setter<DispersionGreenOffsetTag>(Vector2f{0.0f, 5.0f});
+    dispersionFilter->Setter<DispersionBlueOffsetTag>(Vector2f{-5.0f, 0.0f});
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(dispersionFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Dispersion_Filter_High_Transparency)
+{
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(Vector2f{0.5f, 0.5f});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(Vector2f{0.6f, 0.6f});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(0.3f);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(0.08f);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(0.03f);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPERSION);
+    auto dispersionFilter = std::static_pointer_cast<RSNGDispersionFilter>(filter);
+    dispersionFilter->Setter<DispersionMaskTag>(mask);
+    dispersionFilter->Setter<DispersionOpacityTag>(0.3f);
+    dispersionFilter->Setter<DispersionRedOffsetTag>(Vector2f{10.0f, 0.0f});
+    dispersionFilter->Setter<DispersionGreenOffsetTag>(Vector2f{0.0f, 10.0f});
+    dispersionFilter->Setter<DispersionBlueOffsetTag>(Vector2f{-10.0f, 0.0f});
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(dispersionFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Dispersion_Filter_Subtle_Offset)
+{
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(Vector2f{0.2f, 0.8f});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(Vector2f{0.8f, 0.2f});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(0.2f);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(0.05f);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(0.01f);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPERSION);
+    auto dispersionFilter = std::static_pointer_cast<RSNGDispersionFilter>(filter);
+    dispersionFilter->Setter<DispersionMaskTag>(mask);
+    dispersionFilter->Setter<DispersionOpacityTag>(0.8f);
+    dispersionFilter->Setter<DispersionRedOffsetTag>(Vector2f{2.0f, 0.0f});
+    dispersionFilter->Setter<DispersionGreenOffsetTag>(Vector2f{0.0f, 2.0f});
+    dispersionFilter->Setter<DispersionBlueOffsetTag>(Vector2f{-2.0f, 0.0f});
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(dispersionFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Dispersion_Filter_Strong_Diagonal_Offset)
+{
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(Vector2f{0.1f, 0.9f});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(Vector2f{0.9f, 0.1f});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(0.5f);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(0.15f);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(0.07f);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPERSION);
+    auto dispersionFilter = std::static_pointer_cast<RSNGDispersionFilter>(filter);
+    dispersionFilter->Setter<DispersionMaskTag>(mask);
+    dispersionFilter->Setter<DispersionOpacityTag>(1.0f);
+    dispersionFilter->Setter<DispersionRedOffsetTag>(Vector2f{15.0f, 15.0f});
+    dispersionFilter->Setter<DispersionGreenOffsetTag>(Vector2f{-15.0f, -15.0f});
+    dispersionFilter->Setter<DispersionBlueOffsetTag>(Vector2f{0.0f, 0.0f});
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(dispersionFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Dispersion_Filter_Extreme_Offset_Transparent)
+{
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(Vector2f{0.0f, 1.0f});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(Vector2f{1.0f, 0.0f});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(0.6f);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(0.2f);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(0.1f);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPERSION);
+    auto dispersionFilter = std::static_pointer_cast<RSNGDispersionFilter>(filter);
+    dispersionFilter->Setter<DispersionMaskTag>(mask);
+    dispersionFilter->Setter<DispersionOpacityTag>(0.1f);
+    dispersionFilter->Setter<DispersionRedOffsetTag>(Vector2f{30.0f, 0.0f});
+    dispersionFilter->Setter<DispersionGreenOffsetTag>(Vector2f{0.0f, 30.0f});
+    dispersionFilter->Setter<DispersionBlueOffsetTag>(Vector2f{-30.0f, 0.0f});
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(dispersionFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_DirectionLight_Test_Negative_Boundary)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[0][0], doubleRippleMaskParams[0][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[0][2], doubleRippleMaskParams[0][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[0][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[0][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[0][6]);
+
+    // Create DirectionLight filter
+    auto filter = CreateFilter(RSNGEffectType::DIRECTION_LIGHT);
+    auto directionLightFilter = std::static_pointer_cast<RSNGDirectionLightFilter>(filter);
+    directionLightFilter->Setter<DirectionLightMaskTag>(mask);
+    directionLightFilter->Setter<DirectionLightFactorTag>(-1.0f);
+    directionLightFilter->Setter<DirectionLightDirectionTag>(Vector3f{-1.0f, -1.0f, -1.0f});
+    directionLightFilter->Setter<DirectionLightColorTag>(Vector4f{-1.0f, -1.0f, -1.0f, -1.0f});
+    directionLightFilter->Setter<DirectionLightIntensityTag>(-1.0f);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(filter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_DirectionLight_Test_Warm_Color_Normal)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[1][0], doubleRippleMaskParams[1][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[1][2], doubleRippleMaskParams[1][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[1][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[1][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[1][6]);
+
+    // Create DirectionLight filter
+    auto filter = CreateFilter(RSNGEffectType::DIRECTION_LIGHT);
+    auto directionLightFilter = std::static_pointer_cast<RSNGDirectionLightFilter>(filter);
+    directionLightFilter->Setter<DirectionLightMaskTag>(mask);
+    directionLightFilter->Setter<DirectionLightFactorTag>(0.5f);
+    directionLightFilter->Setter<DirectionLightDirectionTag>(Vector3f{0.5f, -0.6f, -0.9f});
+    directionLightFilter->Setter<DirectionLightColorTag>(Vector4f{0.9f, 0.9f, 0.8f, 1.0f});
+    directionLightFilter->Setter<DirectionLightIntensityTag>(3.0f);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(filter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_DirectionLight_Test_Low_Factor_Intensity)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[2][0], doubleRippleMaskParams[2][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[2][2], doubleRippleMaskParams[2][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[2][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[2][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[2][6]);
+
+    // Create DirectionLight filter
+    auto filter = CreateFilter(RSNGEffectType::DIRECTION_LIGHT);
+    auto directionLightFilter = std::static_pointer_cast<RSNGDirectionLightFilter>(filter);
+    directionLightFilter->Setter<DirectionLightMaskTag>(mask);
+    directionLightFilter->Setter<DirectionLightFactorTag>(0.3f);
+    directionLightFilter->Setter<DirectionLightDirectionTag>(Vector3f{0.3f, 0.3f, 0.3f});
+    directionLightFilter->Setter<DirectionLightColorTag>(Vector4f{0.3f, 0.3f, 0.3f, 1.0f});
+    directionLightFilter->Setter<DirectionLightIntensityTag>(1.5f);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(filter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_DirectionLight_Test_High_White_Light)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[3][0], doubleRippleMaskParams[3][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[3][2], doubleRippleMaskParams[3][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[3][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[3][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[3][6]);
+
+    // Create DirectionLight filter
+    auto filter = CreateFilter(RSNGEffectType::DIRECTION_LIGHT);
+    auto directionLightFilter = std::static_pointer_cast<RSNGDirectionLightFilter>(filter);
+    directionLightFilter->Setter<DirectionLightMaskTag>(mask);
+    directionLightFilter->Setter<DirectionLightFactorTag>(0.9f);
+    directionLightFilter->Setter<DirectionLightDirectionTag>(Vector3f{0.9f, 0.9f, -0.9f});
+    directionLightFilter->Setter<DirectionLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
+    directionLightFilter->Setter<DirectionLightIntensityTag>(3.0f);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(filter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_DirectionLight_Test_Mid_Neutral_Color)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[4][0], doubleRippleMaskParams[4][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[4][2], doubleRippleMaskParams[4][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[4][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[4][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[4][6]);
+
+    // Create DirectionLight filter
+    auto filter = CreateFilter(RSNGEffectType::DIRECTION_LIGHT);
+    auto directionLightFilter = std::static_pointer_cast<RSNGDirectionLightFilter>(filter);
+    directionLightFilter->Setter<DirectionLightMaskTag>(mask);
+    directionLightFilter->Setter<DirectionLightFactorTag>(0.6f);
+    directionLightFilter->Setter<DirectionLightDirectionTag>(Vector3f{0.6f, 0.6f, 0.6f});
+    directionLightFilter->Setter<DirectionLightColorTag>(Vector4f{0.6f, 0.6f, 0.6f, 1.0f});
+    directionLightFilter->Setter<DirectionLightIntensityTag>(0.6f);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(filter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_DirectionLight_Test_Extreme_Large_Params)
+{
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[5][0], doubleRippleMaskParams[5][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[5][2], doubleRippleMaskParams[5][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[5][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[5][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[5][6]);
+
+    // Create DirectionLight filter
+    auto filter = CreateFilter(RSNGEffectType::DIRECTION_LIGHT);
+    auto directionLightFilter = std::static_pointer_cast<RSNGDirectionLightFilter>(filter);
+    directionLightFilter->Setter<DirectionLightMaskTag>(mask);
+    directionLightFilter->Setter<DirectionLightFactorTag>(999.0f);
+    directionLightFilter->Setter<DirectionLightDirectionTag>(Vector3f{999.0f, 999.0f, 999.0f});
+    directionLightFilter->Setter<DirectionLightColorTag>(Vector4f{999.0f, 999.0f, 999.0f, 999.0f});
+    directionLightFilter->Setter<DirectionLightIntensityTag>(999.0f);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(filter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Bezier_Warp_BasicTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::BEZIER_WARP);
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    
+    bezierWarpFilter->Setter<BezierWarpControlPoint0Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint1Tag>(Vector2f{ 0.5f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint2Tag>(Vector2f{ 1.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint3Tag>(Vector2f{ 0.0f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint4Tag>(Vector2f{ 0.5f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint5Tag>(Vector2f{ 1.0f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint6Tag>(Vector2f{ 0.0f, 1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint7Tag>(Vector2f{ 0.5f, 1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint8Tag>(Vector2f{ 1.0f, 1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint9Tag>(Vector2f{ 0.25f, 0.25f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint10Tag>(Vector2f{ 0.75f, 0.25f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint11Tag>(Vector2f{ 0.25f, 0.75f });
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(bezierWarpFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Bezier_Warp_BoundaryTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::BEZIER_WARP);
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    
+    bezierWarpFilter->Setter<BezierWarpControlPoint0Tag>(Vector2f{ -1.0f, -1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint1Tag>(Vector2f{ 0.5f, -1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint2Tag>(Vector2f{ 2.0f, -1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint3Tag>(Vector2f{ -1.0f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint4Tag>(Vector2f{ 0.5f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint5Tag>(Vector2f{ 2.0f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint6Tag>(Vector2f{ -1.0f, 2.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint7Tag>(Vector2f{ 0.5f, 2.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint8Tag>(Vector2f{ 2.0f, 2.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint9Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint10Tag>(Vector2f{ 1.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint11Tag>(Vector2f{ 0.0f, 1.0f });
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(bezierWarpFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Bezier_Warp_CenterDeformTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::BEZIER_WARP);
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    
+    bezierWarpFilter->Setter<BezierWarpControlPoint0Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint1Tag>(Vector2f{ 0.5f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint2Tag>(Vector2f{ 1.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint3Tag>(Vector2f{ 0.0f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint4Tag>(Vector2f{ 0.4f, 0.4f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint5Tag>(Vector2f{ 1.0f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint6Tag>(Vector2f{ 0.0f, 1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint7Tag>(Vector2f{ 0.5f, 1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint8Tag>(Vector2f{ 1.0f, 1.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint9Tag>(Vector2f{ 0.3f, 0.3f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint10Tag>(Vector2f{ 0.7f, 0.3f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint11Tag>(Vector2f{ 0.3f, 0.7f });
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(bezierWarpFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Bezier_Warp_TwistTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::BEZIER_WARP);
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    
+    bezierWarpFilter->Setter<BezierWarpControlPoint0Tag>(Vector2f{ 0.1f, 0.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint1Tag>(Vector2f{ 0.6f, -0.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint2Tag>(Vector2f{ 0.9f, 0.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint3Tag>(Vector2f{ -0.1f, 0.6f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint4Tag>(Vector2f{ 0.5f, 0.5f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint5Tag>(Vector2f{ 1.1f, 0.6f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint6Tag>(Vector2f{ 0.1f, 0.9f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint7Tag>(Vector2f{ 0.4f, 1.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint8Tag>(Vector2f{ 0.9f, 0.9f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint9Tag>(Vector2f{ 0.2f, 0.2f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint10Tag>(Vector2f{ 0.8f, 0.2f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint11Tag>(Vector2f{ 0.2f, 0.8f });
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(bezierWarpFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Bezier_Warp_WaveTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::BEZIER_WARP);
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    
+    bezierWarpFilter->Setter<BezierWarpControlPoint0Tag>(Vector2f{ 0.0f, 0.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint1Tag>(Vector2f{ 0.25f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint2Tag>(Vector2f{ 0.5f, 0.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint3Tag>(Vector2f{ 0.75f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint4Tag>(Vector2f{ 1.0f, 0.1f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint5Tag>(Vector2f{ 0.0f, 0.33f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint6Tag>(Vector2f{ 0.25f, 0.4f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint7Tag>(Vector2f{ 0.5f, 0.33f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint8Tag>(Vector2f{ 0.75f, 0.4f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint9Tag>(Vector2f{ 1.0f, 0.33f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint10Tag>(Vector2f{ 0.0f, 0.67f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint11Tag>(Vector2f{ 0.25f, 0.6f });
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(bezierWarpFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Bezier_Warp_ZeroTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::BEZIER_WARP);
+    auto bezierWarpFilter = std::static_pointer_cast<RSNGBezierWarpFilter>(filter);
+    
+    bezierWarpFilter->Setter<BezierWarpControlPoint0Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint1Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint2Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint3Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint4Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint5Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint6Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint7Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint8Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint9Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint10Tag>(Vector2f{ 0.0f, 0.0f });
+    bezierWarpFilter->Setter<BezierWarpControlPoint11Tag>(Vector2f{ 0.0f, 0.0f });
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(bezierWarpFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_BasicTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::SOUND_WAVE);
+    auto soundWaveFilter = std::static_pointer_cast<RSNGSoundWaveFilter>(filter);
+    
+    soundWaveFilter->Setter<SoundWaveColorATag>(Vector4f{ 1.0f, 0.0f, 0.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorBTag>(Vector4f{ 0.0f, 1.0f, 0.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorCTag>(Vector4f{ 0.0f, 0.0f, 1.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorProgressTag>(0.5f);
+    soundWaveFilter->Setter<SoundWaveIntensityTag>(0.8f);
+    soundWaveFilter->Setter<SoundWaveAlphaATag>(0.7f);
+    soundWaveFilter->Setter<SoundWaveAlphaBTag>(0.9f);
+    soundWaveFilter->Setter<SoundWaveProgressATag>(0.3f);
+    soundWaveFilter->Setter<SoundWaveProgressBTag>(0.7f);
+    soundWaveFilter->Setter<SoundWaveTotalAlphaTag>(0.85f);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(soundWaveFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_BoundaryTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::SOUND_WAVE);
+    auto soundWaveFilter = std::static_pointer_cast<RSNGSoundWaveFilter>(filter);
+    
+    soundWaveFilter->Setter<SoundWaveColorATag>(Vector4f{ 0.0f, 0.0f, 0.0f, 0.0f });
+    soundWaveFilter->Setter<SoundWaveColorBTag>(Vector4f{ 1.0f, 1.0f, 1.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorCTag>(Vector4f{ 0.5f, 0.5f, 0.5f, 0.5f });
+    soundWaveFilter->Setter<SoundWaveColorProgressTag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveIntensityTag>(1.0f);
+    soundWaveFilter->Setter<SoundWaveAlphaATag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveAlphaBTag>(1.0f);
+    soundWaveFilter->Setter<SoundWaveProgressATag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveProgressBTag>(1.0f);
+    soundWaveFilter->Setter<SoundWaveTotalAlphaTag>(1.0f);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(soundWaveFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_HighSaturationTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::SOUND_WAVE);
+    auto soundWaveFilter = std::static_pointer_cast<RSNGSoundWaveFilter>(filter);
+    
+    soundWaveFilter->Setter<SoundWaveColorATag>(Vector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorBTag>(Vector4f{ 0.0f, 1.0f, 1.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorCTag>(Vector4f{ 1.0f, 1.0f, 0.0f, 1.0f });
+    soundWaveFilter->Setter<SoundWaveColorProgressTag>(1.0f);
+    soundWaveFilter->Setter<SoundWaveIntensityTag>(2.0f);
+    soundWaveFilter->Setter<SoundWaveAlphaATag>(0.5f);
+    soundWaveFilter->Setter<SoundWaveAlphaBTag>(0.5f);
+    soundWaveFilter->Setter<SoundWaveProgressATag>(0.5f);
+    soundWaveFilter->Setter<SoundWaveProgressBTag>(0.5f);
+    soundWaveFilter->Setter<SoundWaveTotalAlphaTag>(0.6f);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(soundWaveFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_LowAlphaTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::SOUND_WAVE);
+    auto soundWaveFilter = std::static_pointer_cast<RSNGSoundWaveFilter>(filter);
+    
+    soundWaveFilter->Setter<SoundWaveColorATag>(Vector4f{ 0.2f, 0.3f, 0.4f, 0.1f });
+    soundWaveFilter->Setter<SoundWaveColorBTag>(Vector4f{ 0.4f, 0.5f, 0.6f, 0.2f });
+    soundWaveFilter->Setter<SoundWaveColorCTag>(Vector4f{ 0.6f, 0.7f, 0.8f, 0.3f });
+    soundWaveFilter->Setter<SoundWaveColorProgressTag>(0.25f);
+    soundWaveFilter->Setter<SoundWaveIntensityTag>(0.3f);
+    soundWaveFilter->Setter<SoundWaveAlphaATag>(0.1f);
+    soundWaveFilter->Setter<SoundWaveAlphaBTag>(0.2f);
+    soundWaveFilter->Setter<SoundWaveProgressATag>(0.1f);
+    soundWaveFilter->Setter<SoundWaveProgressBTag>(0.9f);
+    soundWaveFilter->Setter<SoundWaveTotalAlphaTag>(0.15f);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(soundWaveFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_MediumAlphaTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::SOUND_WAVE);
+    auto soundWaveFilter = std::static_pointer_cast<RSNGSoundWaveFilter>(filter);
+    
+    soundWaveFilter->Setter<SoundWaveColorATag>(Vector4f{ 0.8f, 0.2f, 0.6f, 0.7f });
+    soundWaveFilter->Setter<SoundWaveColorBTag>(Vector4f{ 0.2f, 0.8f, 0.4f, 0.6f });
+    soundWaveFilter->Setter<SoundWaveColorCTag>(Vector4f{ 0.4f, 0.6f, 0.8f, 0.5f });
+    soundWaveFilter->Setter<SoundWaveColorProgressTag>(0.6f);
+    soundWaveFilter->Setter<SoundWaveIntensityTag>(0.6f);
+    soundWaveFilter->Setter<SoundWaveAlphaATag>(0.4f);
+    soundWaveFilter->Setter<SoundWaveAlphaBTag>(0.6f);
+    soundWaveFilter->Setter<SoundWaveProgressATag>(0.2f);
+    soundWaveFilter->Setter<SoundWaveProgressBTag>(0.8f);
+    soundWaveFilter->Setter<SoundWaveTotalAlphaTag>(0.5f);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(soundWaveFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Sound_Wave_ZeroTest)
+{
+    auto filter = CreateFilter(RSNGEffectType::SOUND_WAVE);
+    auto soundWaveFilter = std::static_pointer_cast<RSNGSoundWaveFilter>(filter);
+    
+    soundWaveFilter->Setter<SoundWaveColorATag>(Vector4f{ 0.0f, 0.0f, 0.0f, 0.0f });
+    soundWaveFilter->Setter<SoundWaveColorBTag>(Vector4f{ 0.0f, 0.0f, 0.0f, 0.0f });
+    soundWaveFilter->Setter<SoundWaveColorCTag>(Vector4f{ 0.0f, 0.0f, 0.0f, 0.0f });
+    soundWaveFilter->Setter<SoundWaveColorProgressTag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveIntensityTag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveAlphaATag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveAlphaBTag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveProgressATag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveProgressBTag>(0.0f);
+    soundWaveFilter->Setter<SoundWaveTotalAlphaTag>(0.0f);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(soundWaveFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case1)
+{
+    const int caseIndex = 0;
+
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    // Create color gradient filter
+    auto filter = CreateFilter(RSNGEffectType::COLOR_GRADIENT);
+    auto colorGradientFilter = std::static_pointer_cast<RSNGColorGradientFilter>(filter);
+    std::vector<float> colors = {colorGradientParams[caseIndex][0], colorGradientParams[caseIndex][1],
+                                 colorGradientParams[caseIndex][2], colorGradientParams[caseIndex][3]};
+    std::vector<float> positions = {colorGradientParams[caseIndex][4], colorGradientParams[caseIndex][5]};
+    std::vector<float> strengths = {colorGradientParams[caseIndex][6]};
+    colorGradientFilter->Setter<ColorGradientColorsTag>(colors);
+    colorGradientFilter->Setter<ColorGradientPositionsTag>(positions);
+    colorGradientFilter->Setter<ColorGradientStrengthsTag>(strengths);
+    colorGradientFilter->Setter<ColorGradientMaskTag>(mask);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(colorGradientFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case2)
+{
+    const int caseIndex = 1;
+
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    // Create color gradient filter
+    auto filter = CreateFilter(RSNGEffectType::COLOR_GRADIENT);
+    auto colorGradientFilter = std::static_pointer_cast<RSNGColorGradientFilter>(filter);
+    std::vector<float> colors = {colorGradientParams[caseIndex][0], colorGradientParams[caseIndex][1],
+                                 colorGradientParams[caseIndex][2], colorGradientParams[caseIndex][3]};
+    std::vector<float> positions = {colorGradientParams[caseIndex][4], colorGradientParams[caseIndex][5]};
+    std::vector<float> strengths = {colorGradientParams[caseIndex][6]};
+    colorGradientFilter->Setter<ColorGradientColorsTag>(colors);
+    colorGradientFilter->Setter<ColorGradientPositionsTag>(positions);
+    colorGradientFilter->Setter<ColorGradientStrengthsTag>(strengths);
+    colorGradientFilter->Setter<ColorGradientMaskTag>(mask);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(colorGradientFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case3)
+{
+    const int caseIndex = 2;
+
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    // Create color gradient filter
+    auto filter = CreateFilter(RSNGEffectType::COLOR_GRADIENT);
+    auto colorGradientFilter = std::static_pointer_cast<RSNGColorGradientFilter>(filter);
+    std::vector<float> colors = {colorGradientParams[caseIndex][0], colorGradientParams[caseIndex][1],
+                                 colorGradientParams[caseIndex][2], colorGradientParams[caseIndex][3]};
+    std::vector<float> positions = {colorGradientParams[caseIndex][4], colorGradientParams[caseIndex][5]};
+    std::vector<float> strengths = {colorGradientParams[caseIndex][6]};
+    colorGradientFilter->Setter<ColorGradientColorsTag>(colors);
+    colorGradientFilter->Setter<ColorGradientPositionsTag>(positions);
+    colorGradientFilter->Setter<ColorGradientStrengthsTag>(strengths);
+    colorGradientFilter->Setter<ColorGradientMaskTag>(mask);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(colorGradientFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case4)
+{
+    const int caseIndex = 3;
+
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    // Create color gradient filter
+    auto filter = CreateFilter(RSNGEffectType::COLOR_GRADIENT);
+    auto colorGradientFilter = std::static_pointer_cast<RSNGColorGradientFilter>(filter);
+    std::vector<float> colors = {colorGradientParams[caseIndex][0], colorGradientParams[caseIndex][1],
+                                 colorGradientParams[caseIndex][2], colorGradientParams[caseIndex][3]};
+    std::vector<float> positions = {colorGradientParams[caseIndex][4], colorGradientParams[caseIndex][5]};
+    std::vector<float> strengths = {colorGradientParams[caseIndex][6]};
+    colorGradientFilter->Setter<ColorGradientColorsTag>(colors);
+    colorGradientFilter->Setter<ColorGradientPositionsTag>(positions);
+    colorGradientFilter->Setter<ColorGradientStrengthsTag>(strengths);
+    colorGradientFilter->Setter<ColorGradientMaskTag>(mask);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(colorGradientFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case5)
+{
+    const int caseIndex = 4;
+
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    // Create color gradient filter
+    auto filter = CreateFilter(RSNGEffectType::COLOR_GRADIENT);
+    auto colorGradientFilter = std::static_pointer_cast<RSNGColorGradientFilter>(filter);
+    std::vector<float> colors = {colorGradientParams[caseIndex][0], colorGradientParams[caseIndex][1],
+                                 colorGradientParams[caseIndex][2], colorGradientParams[caseIndex][3]};
+    std::vector<float> positions = {colorGradientParams[caseIndex][4], colorGradientParams[caseIndex][5]};
+    std::vector<float> strengths = {colorGradientParams[caseIndex][6]};
+    colorGradientFilter->Setter<ColorGradientColorsTag>(colors);
+    colorGradientFilter->Setter<ColorGradientPositionsTag>(positions);
+    colorGradientFilter->Setter<ColorGradientStrengthsTag>(strengths);
+    colorGradientFilter->Setter<ColorGradientMaskTag>(mask);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(colorGradientFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Color_Gradient_Test_Case6)
+{
+    const int caseIndex = 5;
+
+    // Create double ripple mask
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    // Create color gradient filter
+    auto filter = CreateFilter(RSNGEffectType::COLOR_GRADIENT);
+    auto colorGradientFilter = std::static_pointer_cast<RSNGColorGradientFilter>(filter);
+    std::vector<float> colors = {colorGradientParams[caseIndex][0], colorGradientParams[caseIndex][1],
+                                 colorGradientParams[caseIndex][2], colorGradientParams[caseIndex][3]};
+    std::vector<float> positions = {colorGradientParams[caseIndex][4], colorGradientParams[caseIndex][5]};
+    std::vector<float> strengths = {colorGradientParams[caseIndex][6]};
+    colorGradientFilter->Setter<ColorGradientColorsTag>(colors);
+    colorGradientFilter->Setter<ColorGradientPositionsTag>(positions);
+    colorGradientFilter->Setter<ColorGradientStrengthsTag>(strengths);
+    colorGradientFilter->Setter<ColorGradientMaskTag>(mask);
+
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {0, 0, screenWidth, screenHeight});
+    backgroundTestNode->SetBackgroundNGFilter(colorGradientFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Displacement_Distort_Test_Case1)
+{
+    const int caseIndex = 0;
+
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPLACEMENT_DISTORT);
+    auto dispDistortFilter = std::static_pointer_cast<RSNGDispDistortFilter>(filter);
+    dispDistortFilter->Setter<DispDistortFactorTag>(
+        Vector2f{ displacementDistortParams[caseIndex][0], displacementDistortParams[caseIndex][1] });
+    dispDistortFilter->Setter<DispDistortMaskTag>(mask);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(dispDistortFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Displacement_Distort_Test_Case2)
+{
+    const int caseIndex = 1;
+
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPLACEMENT_DISTORT);
+    auto dispDistortFilter = std::static_pointer_cast<RSNGDispDistortFilter>(filter);
+    dispDistortFilter->Setter<DispDistortFactorTag>(
+        Vector2f{ displacementDistortParams[caseIndex][0], displacementDistortParams[caseIndex][1] });
+    dispDistortFilter->Setter<DispDistortMaskTag>(mask);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(dispDistortFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Displacement_Distort_Test_Case3)
+{
+    const int caseIndex = 2;
+
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPLACEMENT_DISTORT);
+    auto dispDistortFilter = std::static_pointer_cast<RSNGDispDistortFilter>(filter);
+    dispDistortFilter->Setter<DispDistortFactorTag>(
+        Vector2f{ displacementDistortParams[caseIndex][0], displacementDistortParams[caseIndex][1] });
+    dispDistortFilter->Setter<DispDistortMaskTag>(mask);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(dispDistortFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Displacement_Distort_Test_Case4)
+{
+    const int caseIndex = 3;
+
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPLACEMENT_DISTORT);
+    auto dispDistortFilter = std::static_pointer_cast<RSNGDispDistortFilter>(filter);
+    dispDistortFilter->Setter<DispDistortFactorTag>(
+        Vector2f{ displacementDistortParams[caseIndex][0], displacementDistortParams[caseIndex][1] });
+    dispDistortFilter->Setter<DispDistortMaskTag>(mask);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(dispDistortFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Displacement_Distort_Test_Case5)
+{
+    const int caseIndex = 4;
+
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPLACEMENT_DISTORT);
+    auto dispDistortFilter = std::static_pointer_cast<RSNGDispDistortFilter>(filter);
+    dispDistortFilter->Setter<DispDistortFactorTag>(
+        Vector2f{ displacementDistortParams[caseIndex][0], displacementDistortParams[caseIndex][1] });
+    dispDistortFilter->Setter<DispDistortMaskTag>(mask);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(dispDistortFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
+
+GRAPHIC_TEST(NGFilterTest, EFFECT_TEST, Set_NG_Filter_Displacement_Distort_Test_Case6)
+{
+    const int caseIndex = 5;
+
+    auto mask = CreateMask(RSNGEffectType::DOUBLE_RIPPLE_MASK);
+    auto doubleRippleMask = std::static_pointer_cast<RSNGDoubleRippleMask>(mask);
+    doubleRippleMask->Setter<DoubleRippleMaskCenter1Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][0], doubleRippleMaskParams[caseIndex][1]});
+    doubleRippleMask->Setter<DoubleRippleMaskCenter2Tag>(
+        Vector2f{ doubleRippleMaskParams[caseIndex][2], doubleRippleMaskParams[caseIndex][3]});
+    doubleRippleMask->Setter<DoubleRippleMaskRadiusTag>(doubleRippleMaskParams[caseIndex][4]);
+    doubleRippleMask->Setter<DoubleRippleMaskWidthTag>(doubleRippleMaskParams[caseIndex][5]);
+    doubleRippleMask->Setter<DoubleRippleMaskTurbulenceTag>(doubleRippleMaskParams[caseIndex][6]);
+
+    auto filter = CreateFilter(RSNGEffectType::DISPLACEMENT_DISTORT);
+    auto dispDistortFilter = std::static_pointer_cast<RSNGDispDistortFilter>(filter);
+    dispDistortFilter->Setter<DispDistortFactorTag>(
+        Vector2f{ displacementDistortParams[caseIndex][0], displacementDistortParams[caseIndex][1] });
+    dispDistortFilter->Setter<DispDistortMaskTag>(mask);
+    
+    auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 0, 0, screenWidth, screenHeight });
+    backgroundTestNode->SetBackgroundNGFilter(dispDistortFilter);
+    GetRootNode()->AddChild(backgroundTestNode);
+    RegisterNode(backgroundTestNode);
+}
 }  // namespace OHOS::Rosen
