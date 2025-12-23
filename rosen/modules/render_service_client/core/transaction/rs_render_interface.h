@@ -280,7 +280,7 @@ public:
 private:
     RSRenderInterface();
     ~RSRenderInterface() noexcept;
-    std::unique_ptr<RSRenderPipelineClient> renderPiplineClient_;
+    std::unique_ptr<RSRenderPipelineClient> renderPipelineClient_;
     friend class RSUIContext;
     friend class RSApplicationAgentImpl;
     friend class RSDisplayNode;

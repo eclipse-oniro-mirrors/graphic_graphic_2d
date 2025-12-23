@@ -191,8 +191,7 @@ std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureAndWait
     }
 
     auto callback = std::make_shared<TestSurfaceCaptureCallback>();
-    auto rsRenderInterface = rsUiDirector_->GetRSUIContext()->GetRSRenderInterface();
-    if (!rsRenderInterface->TakeSurfaceCaptureForUI(rootNode_->screenSurfaceNode_, callback)) {
+    if (!RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(rootNode_->screenSurfaceNode_, callback)) {
         return nullptr;
     }
 
