@@ -1454,7 +1454,10 @@ void RSProfiler::MarshalDrawingImage(std::shared_ptr<Drawing::Image>& image,
 
 void RSProfiler::EnableBetaRecord()
 {
-    RSSystemProperties::SetBetaRecordingMode(1);
+    static constexpr uint32_t recordingMode = 1u;
+    if (RSSystemProperties::GetBetaRecordingMode() != recordingMode) {
+        RSSystemProperties::SetBetaRecordingMode(recordingMode);
+    }
 }
 
 bool RSProfiler::IsBetaRecordSavingTriggered()
