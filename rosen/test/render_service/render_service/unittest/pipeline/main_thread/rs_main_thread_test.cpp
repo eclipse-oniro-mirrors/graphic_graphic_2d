@@ -5377,8 +5377,6 @@ HWTEST_F(RSMainThreadTest, ProcessHgmFrameRate, TestSize.Level2)
     uint64_t timestamp = 0;
     FrameRateLinkerId id = 0;
     mainThread->hgmContext_.rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>(id);
-    auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-    frameRateMgr->isAdaptive_ = SupportASStatus::SUPPORT_AS;
     mainThread->ProcessHgmFrameRate(timestamp);
 
     auto vsyncGenerator = CreateVSyncGenerator();
