@@ -180,7 +180,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, NotifySurfaceCaptureRemoteTest001, 
     MessageParcel reply;
     MessageOption option;
 
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
     NodeId id = surfaceNode_->GetId();
     // Test0 Abnormal condition, isClientPixelMap = true, but no clientPixelMap
     RSSurfaceCaptureConfig captureConfig;
@@ -303,18 +303,18 @@ void RSClientToRenderConnectionStubTest::CreateComposerAdapterWithScreenInfo(uin
 HWTEST_F(RSClientToRenderConnectionStubTest, TestRSClientToRenderConnectionStub001, TestSize.Level1)
 {
     EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_SURFACE_BUFFER_CALLBACK)),
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_SURFACE_BUFFER_CALLBACK)),
         ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK)),
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK)),
         ERR_INVALID_DATA);
     if (RSUniRenderJudgement::IsUniRender()) {
         EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
-                      RSIRenderServiceConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER)),
+                      RSIClientToServiceConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER)),
             ERR_INVALID_DATA);
     }
     EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
-        RSIRenderServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK)), ERR_NULL_OBJECT);
+        RSIClientToServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK)), ERR_NULL_OBJECT);
 }
 
 /**
@@ -326,15 +326,15 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TestRSClientToRenderConnectionStub0
 HWTEST_F(RSClientToRenderConnectionStubTest, TestRSClientToRenderConnectionStub002, TestSize.Level1)
 {
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT)), ERR_INVALID_STATE);
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT)), ERR_INVALID_STATE);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WINDOW_CONTAINER)), ERR_INVALID_DATA);
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_WINDOW_CONTAINER)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_FOCUS_APP_INFO)), ERR_INVALID_DATA);
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_FOCUS_APP_INFO)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE)), ERR_NULL_OBJECT);
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE)), ERR_NULL_OBJECT);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::TAKE_UI_CAPTURE_IN_RANGE)), ERR_NULL_OBJECT);
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::TAKE_UI_CAPTURE_IN_RANGE)), ERR_NULL_OBJECT);
 }
 
 /**
@@ -350,7 +350,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetLayerTopForHWCTest, TestSize.Lev
         MessageParcel reply;
         MessageOption option;
         uint32_t code =
-            static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER);
+            static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER);
         data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
         data.WriteUint64(0);
         data.WriteBool(true);
@@ -372,7 +372,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, ClearUifirstCacheTest, TestSize.Lev
     MessageParcel reply;
     MessageOption option;
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CLEAR_UIFIRST_CACHE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CLEAR_UIFIRST_CACHE);
     data.WriteUint64(0);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(res, ERR_INVALID_STATE);
@@ -392,7 +392,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, DropFrameByPid001, TestSize.Level2)
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DROP_FRAME_BY_PID);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::DROP_FRAME_BY_PID);
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data.WriteInt32Vector(pidList);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
@@ -416,7 +416,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetBrightnessInfoTest, TestSize.Lev
         MessageParcel reply;
         MessageOption option;
         data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-        auto interfaceCode = RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
+        auto interfaceCode = RSIClientToServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
         auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
         EXPECT_EQ(res, ERR_INVALID_DATA);
     }
@@ -428,7 +428,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetBrightnessInfoTest, TestSize.Lev
         MessageOption option;
         data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
         data.WriteUint64(hdiOutput_->GetScreenId());
-        auto interfaceCode = RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
+        auto interfaceCode = RSIClientToServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
         auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
         EXPECT_EQ(res, ERR_NONE);
     }
@@ -440,7 +440,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetBrightnessInfoTest, TestSize.Lev
         MessageOption option;
         data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
         data.WriteUint64(INVALID_SCREEN_ID);
-        auto interfaceCode = RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
+        auto interfaceCode = RSIClientToServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
         auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
         EXPECT_EQ(res, ERR_NONE);
     }
@@ -500,7 +500,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetScreenHDRStatus001, TestSize.Lev
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data.WriteUint64(0);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
@@ -518,7 +518,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetScreenHDRStatus002, TestSize.Lev
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data.WriteUint64(~0);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
@@ -536,7 +536,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetScreenHDRStatus003, TestSize.Lev
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data.WriteBool(false);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
@@ -559,7 +559,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureWithAllWindowsTes
     MessageParcel reply;
     MessageOption option;
     uint32_t code = static_cast<uint32_t>(
-        RSIRenderServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS);
+        RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS);
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data.WriteUint64(displayNodeId);
     data.WriteBool(checkDrmAndSurfaceLock);
@@ -675,7 +675,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureWithAllWindowsTes
     MessageParcel reply;
     MessageOption option;
     uint32_t code = static_cast<uint32_t>(
-        RSIRenderServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS);
+        RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS);
     data1.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data1.WriteBool(false);
     int res = connectionStub_->OnRemoteRequest(code, data1, reply, option);
@@ -729,7 +729,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, FreezeScreenTest001, TestSize.Level
     MessageParcel data1;
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::FREEZE_SCREEN);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::FREEZE_SCREEN);
     data1.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     data1.WriteBool(false);
     int res = connectionStub_->OnRemoteRequest(code, data1, reply, option);
@@ -900,7 +900,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TestRSClientToRenderConnectionStub0
     MessageParcel reply;
     MessageOption option;
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
     data.WriteUint64(123);
     data.WriteUint64(456);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
@@ -926,7 +926,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TestRSClientToRenderConnectionStub0
     MessageParcel reply;
     MessageOption option;
     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_TRANSACTION_DATA_CALLBACK);
     data.WriteUint64(123);
     data.WriteUint64(456);
     sptr<RSTransactionDataCallbackStubMock> callback = new RSTransactionDataCallbackStubMock();
@@ -946,7 +946,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, RegisterCanvasCallbackTest, TestSiz
 {
     MessageParcel reply;
     MessageOption option;
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_CANVAS_CALLBACK);
 
     // Scenario 1: Cannot read enableReadRemoteObject - should fail with ERR_INVALID_DATA
     MessageParcel data1;

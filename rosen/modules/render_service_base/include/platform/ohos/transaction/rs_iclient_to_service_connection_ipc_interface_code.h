@@ -24,7 +24,7 @@ namespace Rosen {
 //Each command HAVE TO have UNIQUE ID in ALL HISTORY
 //If a command is not used and you want to delete it,
 //just COMMENT it - and never use this value anymore
-enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
+enum class RSIClientToServiceConnectionInterfaceCode : CodeUnderlyingType {
     COMMIT_TRANSACTION = 0x000000,
     GET_UNI_RENDER_ENABLED = 0x000001,
     CREATE_NODE = 0x000002,

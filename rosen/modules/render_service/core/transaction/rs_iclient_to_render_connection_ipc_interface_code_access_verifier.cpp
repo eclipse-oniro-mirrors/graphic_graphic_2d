@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,28 +13,28 @@
  * limitations under the License.
  */
 
-#include "platform/ohos/transaction/rs_irender_service_connection_ipc_interface_code_access_verifier.h"
+#include "platform/ohos/transaction/rs_iclient_to_render_connection_ipc_interface_code_access_verifier.h"
 
 namespace OHOS {
 namespace Rosen {
 
-std::vector<std::pair<RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType, PermissionType>>
-    RSIRenderServiceConnectionInterfaceCodeAccessVerifier::permissionRSIRenderServiceConnectionInterfaceMappings_ {
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::TAKE_SURFACE_CAPTURE,
+std::vector<std::pair<RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType, PermissionType>>
+    RSIClientToRenderConnectionInterfaceCodeAccessVerifier::permissionRSIRenderServiceConnectionInterfaceMappings_ {
+        { RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType::TAKE_SURFACE_CAPTURE,
             PermissionType::CAPTURE_SCREEN },
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::SET_REFRESH_RATE_MODE,
+        { RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType::SET_REFRESH_RATE_MODE,
             PermissionType::UPDATE_CONFIGURATION },
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::GET_MEMORY_GRAPHICS,
+        { RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType::GET_MEMORY_GRAPHICS,
             PermissionType::GET_RUNNING_INFO },
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::SHOW_WATERMARK,
+        { RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType::SHOW_WATERMARK,
             PermissionType::UPDATE_CONFIGURATION },
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::CREATE_VIRTUAL_SCREEN,
+        { RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType::CREATE_VIRTUAL_SCREEN,
             PermissionType::CAPTURE_SCREEN },
-        { RSIRenderServiceConnectionInterfaceCodeAccessVerifier::CodeEnumType::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS,
+        { RSIClientToRenderConnectionInterfaceCodeAccessVerifier::CodeEnumType::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS,
             PermissionType::CAPTURE_SCREEN_ALL }
 };
 
-RSIRenderServiceConnectionInterfaceCodeAccessVerifier::RSIRenderServiceConnectionInterfaceCodeAccessVerifier()
+RSIClientToRenderConnectionInterfaceCodeAccessVerifier::RSIClientToRenderConnectionInterfaceCodeAccessVerifier()
 {
     CheckCodeUnderlyingTypeStandardized<CodeEnumType>(codeEnumTypeName_);
 #ifdef ENABLE_IPC_SECURITY
@@ -42,7 +42,7 @@ RSIRenderServiceConnectionInterfaceCodeAccessVerifier::RSIRenderServiceConnectio
 #endif
 }
 
-bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificationPassed(CodeUnderlyingType code)
+bool RSIClientToRenderConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificationPassed(CodeUnderlyingType code)
 {
     bool hasPermission = true;
     switch (code) {
@@ -650,7 +650,7 @@ bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerificat
 }
 
 #ifdef ENABLE_IPC_SECURITY
-void RSIRenderServiceConnectionInterfaceCodeAccessVerifier::AddRSIRenderServiceConnectionInterfaceCodePermission()
+void RSIClientToRenderConnectionInterfaceCodeAccessVerifier::AddRSIRenderServiceConnectionInterfaceCodePermission()
 {
     for (auto& mapping : permissionRSIRenderServiceConnectionInterfaceMappings_) {
         CodeEnumType interfaceName = mapping.first;
@@ -664,7 +664,7 @@ void RSIRenderServiceConnectionInterfaceCodeAccessVerifier::AddRSIRenderServiceC
     }
 }
 
-bool RSIRenderServiceConnectionInterfaceCodeAccessVerifier::IsAccessTimesVerificationPassed(
+bool RSIClientToRenderConnectionInterfaceCodeAccessVerifier::IsAccessTimesVerificationPassed(
     CodeUnderlyingType code, uint32_t times) const
 {
     auto interfaceName = static_cast<CodeEnumType>(code);
