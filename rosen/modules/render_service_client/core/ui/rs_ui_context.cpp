@@ -185,7 +185,7 @@ int32_t RSUIContext::GetUiPiplineNum()
     std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
     return uiPipelineNum_;
 }
- 
+
 void RSUIContext::DetachFromUI()
 {
     std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
@@ -197,7 +197,7 @@ void RSUIContext::DetachFromUI()
     uiPipelineNum_--;
     ROSEN_LOGI("RSUIContext::DetachFromUI. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_, uiPiplineNum_);
 }
- 
+
 void RSUIContext::AttachFromUI()
 {
     std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
