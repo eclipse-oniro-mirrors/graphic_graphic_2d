@@ -74,22 +74,33 @@ RSMainThread* g_mainThread = nullptr;
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
 sptr<RSClientToServiceConnection> g_toServiceConnection = nullptr;
+auto screenManagerPtr_ = OHOS::Rosen::RSScreenManager::GetInstance();
 std::string g_originTag = "";
 
 /* Call once in the Fuzzer Initialize function */
 int Initialize()
 {
     g_mainThread = RSMainThread::Instance();
-    g_mainThread->runner_ = AppExecFwk::EventRunner::Create(true);
-    g_mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(g_mainThread->runner_);
+    g_mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(AppExecFwk::EventRunner::Create(true));
     g_mainThread->mainLoop_ = []() {};
     g_token = new IRemoteStub<RSIConnectionToken>();
     auto generator = impl::VSyncGenerator::GetInstance();
     auto appVSyncController = new VSyncController(generator, 0);
     DVSyncFeatureParam dvsyncParam;
     auto appVSyncDistributor = new VSyncDistributor(appVSyncController, "app", dvsyncParam);
-    g_toServiceConnection = new RSClientToServiceConnection(getpid(), nullptr, nullptr,
-        RSScreenManager::GetInstance(), g_token->AsObject(), appVSyncDistributor);
+
+    RSRenderService renderService_;
+    renderService_.Init();
+    
+    auto renderServiceAgent_ = sptr<RSRenderServiceAgent>::MakeSptr(renderService_);
+    sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent_ =
+        sptr<RSRenderProcessManagerAgent>::MakeSptr(renderService_.renderProcessManager_);
+
+    sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(screenManagerPtr_);
+
+    g_toServiceConnection =
+        new RSClientToServiceConnection(g_pid, wptr<RSRenderService>(&renderService_), renderServiceAgent_,
+            renderProcessManagerAgent_, mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor);
     g_toServiceConnectionStub = g_toServiceConnection;
 #ifdef RS_ENABLE_VK
     RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");

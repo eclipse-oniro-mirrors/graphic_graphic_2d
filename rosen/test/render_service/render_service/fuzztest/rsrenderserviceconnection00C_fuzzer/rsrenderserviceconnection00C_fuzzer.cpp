@@ -121,12 +121,12 @@ void DoExecuteSynchronousTask()
     MessageOption option;
 
     option.SetFlags(MessageOption::TF_SYNC);
-    dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    dataParcel.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderProperty<bool>>();
     NodeId targetId = static_cast<NodeId>(g_pid) << 32;
     auto task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(targetId, property);
     task->Marshalling(dataParcel);
-    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 void DoNotifyTouchEvent()
@@ -179,22 +179,37 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     OHOS::Rosen::g_pid = getpid();
     OHOS::Rosen::screenManagerPtr_ = OHOS::Rosen::RSScreenManager::GetInstance();
     OHOS::Rosen::mainThread_ = OHOS::Rosen::RSMainThread::Instance();
-    OHOS::Rosen::mainThread_->runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
     OHOS::Rosen::mainThread_->handler_ =
-        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::mainThread_->runner_);
+        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));
     OHOS::sptr<OHOS::Rosen::RSIConnectionToken> token_ = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+    OHOS::Rosen::mainThread_->mainLoop_ = []() {};
 
     OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
     auto generator = OHOS::Rosen::CreateVSyncGenerator();
     auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
     OHOS::sptr<OHOS::Rosen::VSyncDistributor> appVSyncDistributor_ =
         new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
-    OHOS::Rosen::toServiceConnectionStub_ =
-        new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid, nullptr, OHOS::Rosen::mainThread_,
-            OHOS::Rosen::screenManagerPtr_, token_->AsObject(), appVSyncDistributor_);
+
+    auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(false));
+    auto renderPipeline_ = OHOS::Rosen::RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
+    OHOS::sptr<OHOS::Rosen::RSRenderPipelineAgent> renderPipelineAgent_ =
+        OHOS::sptr<OHOS::Rosen::RSRenderPipelineAgent>::MakeSptr(renderPipeline_);
+
+    OHOS::Rosen::RSRenderService renderService_;
+    renderService_.Init();
+
+    auto renderServiceAgent_ = OHOS::sptr<OHOS::Rosen::RSRenderServiceAgent>::MakeSptr(renderService_);
+    OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent> renderProcessManagerAgent_ =
+        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(renderService_.renderProcessManager_);
+
+    OHOS::sptr<OHOS::Rosen::RSScreenManagerAgent> screenManagerAgent_ =
+        new OHOS::Rosen::RSScreenManagerAgent(OHOS::Rosen::screenManagerPtr_);
+
+    OHOS::Rosen::toServiceConnectionStub_ = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid,
+        OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
+        mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
     OHOS::Rosen::toRenderConnectionStub_ =
-        new OHOS::Rosen::RSClientToRenderConnection(OHOS::Rosen::g_pid, nullptr, OHOS::Rosen::mainThread_,
-            OHOS::Rosen::screenManagerPtr_, token_->AsObject(), appVSyncDistributor_);
+        new OHOS::Rosen::RSClientToRenderConnection(g_pid, nullptr, renderPipelineAgent_, token_->AsObject());
     return 0;
 }
 

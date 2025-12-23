@@ -310,16 +310,27 @@ void DoSetForceRefresh(FuzzedDataProvider& fdp)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Rosen::g_mainThread = OHOS::Rosen::RSMainThread::Instance();
-    OHOS::Rosen::g_mainThread->runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
     OHOS::Rosen::g_mainThread->handler_ =
-        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::g_mainThread->runner_);
+        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));
     OHOS::Rosen::g_token = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
     auto generator = OHOS::Rosen::impl::VSyncGenerator::GetInstance();
     auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
     OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
     auto appVSyncDistributor = new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
-    OHOS::Rosen::g_toServiceConnection = new OHOS::Rosen::RSClientToServiceConnection(getpid(), nullptr, nullptr,
-        OHOS::Rosen::RSScreenManager::GetInstance(), OHOS::Rosen::g_token->AsObject(), appVSyncDistributor);
+
+    OHOS::Rosen::RSRenderService renderService_;
+    renderService_.Init();
+
+    auto renderServiceAgent_ = OHOS::sptr<OHOS::Rosen::RSRenderServiceAgent>::MakeSptr(renderService_);
+    OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent> renderProcessManagerAgent_ =
+        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(renderService_.renderProcessManager_);
+
+    OHOS::sptr<OHOS::Rosen::RSScreenManagerAgent> screenManagerAgent_ =
+        new OHOS::Rosen::RSScreenManagerAgent(OHOS::Rosen::screenManagerPtr_);
+
+    OHOS::Rosen::g_toServiceConnection = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid,
+        OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
+        mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor);
     OHOS::Rosen::g_toServiceConnectionStub = OHOS::Rosen::g_toServiceConnection;
 #ifdef RS_ENABLE_VK
     OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");

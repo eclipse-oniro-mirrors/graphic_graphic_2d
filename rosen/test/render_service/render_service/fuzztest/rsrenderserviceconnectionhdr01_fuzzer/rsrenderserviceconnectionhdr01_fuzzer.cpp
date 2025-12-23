@@ -56,6 +56,7 @@ const uint8_t DO_SET_BRIGHTNESS_INFO_CHANGE_CALLBACK = 11;
 const uint8_t DO_GET_BRIGHTNESS_INFO = 12;
 const uint8_t TARGET_SIZE = 13;
 } // namespace
+auto g_pid = getpid();
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
 std::string g_originTag = "";
@@ -264,8 +265,10 @@ void DoSetForceRefresh(FuzzedDataProvider& fdp)
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Rosen::g_token = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
-    OHOS::Rosen::g_toServiceConnectionStub = new OHOS::Rosen::RSClientToServiceConnection(getpid(), nullptr, nullptr,
-        OHOS::Rosen::RSScreenManager::GetInstance(), OHOS::Rosen::g_token->AsObject(), nullptr);
+    OHOS::sptr<OHOS::Rosen::RSScreenManagerAgent> screenManagerAgent_ =
+        new OHOS::Rosen::RSScreenManagerAgent(OHOS::Rosen::RSScreenManager::GetInstance());
+    OHOS::Rosen::g_toServiceConnectionStub = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid, nullptr,
+        nullptr, nullptr, nullptr, screenManagerAgent_, OHOS::Rosen::g_token->AsObject(), nullptr);
 #ifdef RS_ENABLE_VK
     OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
 #endif

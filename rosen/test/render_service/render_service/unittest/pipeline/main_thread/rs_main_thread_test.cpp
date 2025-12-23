@@ -3900,8 +3900,9 @@ HWTEST_F(RSMainThreadTest, CreateVirtualScreen, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        0, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
+    sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
+    auto rsRenderServiceConnection = new RSClientToServiceConnection(getpid(), nullptr, nullptr,
+        nullptr, mainThread, screenManagerAgent_, token->AsObject(), nullptr);
 
     std::string name("name");
     uint32_t width = 1;
@@ -3932,8 +3933,9 @@ HWTEST_F(RSMainThreadTest, SetVirtualScreenBlackList, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        0, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
+    sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
+    auto rsRenderServiceConnection = new RSClientToServiceConnection(getpid(), nullptr, nullptr,
+        nullptr, mainThread, screenManagerAgent_, token->AsObject(), nullptr);
 
     ScreenId id = 100;
     std::vector<uint64_t> blackList = {};
@@ -3955,8 +3957,9 @@ HWTEST_F(RSMainThreadTest, AddVirtualScreenBlackList, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        0, nullptr, mainThread, CreateOrGetScreenManager(), token->AsObject(), nullptr);
+    sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
+    auto rsRenderServiceConnection = new RSClientToServiceConnection(getpid(), nullptr, nullptr,
+        nullptr, mainThread, screenManagerAgent_, token->AsObject(), nullptr);
 
     ScreenId id = 100;
     std::vector<uint64_t> blackList = {};
@@ -6601,8 +6604,11 @@ HWTEST_F(RSMainThreadTest, SetForceRsDVsync001, TestSize.Level1)
 HWTEST_F(RSMainThreadTest, CreateNodeAndSurfaceTest001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
-    sptr<RSClientToServiceConnection> connection = new RSClientToServiceConnection(
-        0, nullptr, mainThread, nullptr, nullptr, nullptr);
+    auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(false));
+    std::shared_ptr<RSRenderPipeline> renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr);
+    sptr<RSRenderPipelineAgent> renderPipelineAgent_ = new RSRenderPipelineAgent(renderPipeline_);
+    sptr<RSClientToRenderConnection> connection = new RSClientToRenderConnection(
+        0, mainThread, renderPipelineAgent_, nullptr);
     RSSurfaceRenderNodeConfig config;
     config.id = 1;
     config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;

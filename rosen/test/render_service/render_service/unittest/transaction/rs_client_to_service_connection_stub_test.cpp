@@ -87,13 +87,14 @@ private:
     int OnRemoteRequestTest(uint32_t code);
     static sptr<RSIConnectionToken> token_;
     static sptr<RSClientToServiceConnectionStub> connectionStub_;
+    static sptr<RSRenderServiceAgent> renderServiceAgent_;
+    static sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent_;
+    static RSRenderService renderService_;
+    static sptr<RSScreenManagerAgent> screenManagerAgent_;
+    static sptr<VSyncDistributor> appVSyncDistributor_;
 };
 
 uint32_t RSClientToServiceConnectionStubTest::screenId_ = 0;
-sptr<RSIConnectionToken> RSClientToServiceConnectionStubTest::token_ = new IRemoteStub<RSIConnectionToken>();
-sptr<RSClientToServiceConnectionStub> RSClientToServiceConnectionStubTest::connectionStub_ =
-    new RSClientToServiceConnection(
-        0, nullptr, RSMainThread::Instance(), CreateOrGetScreenManager(), token_->AsObject(), nullptr);
 std::shared_ptr<RSSurfaceRenderNode> RSClientToServiceConnectionStubTest::surfaceNode_ =
     std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(10003, std::make_shared<RSContext>(), true),
     RSRenderNodeGC::NodeDestructor);
@@ -112,8 +113,26 @@ void RSClientToServiceConnectionStubTest::SetUpTestCase()
     EXPECT_CALL(*hdiDeviceMock_, RegHwcDeadCallback(_, _)).WillRepeatedly(testing::Return(false));
     EXPECT_CALL(*hdiDeviceMock_, RegRefreshCallback(_, _)).WillRepeatedly(testing::Return(0));
     mainThread_ = new RSMainThread();
-    mainThread_->runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
-    mainThread_->handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(mainThread_->runner_);
+    mainThread_->handler_ =
+        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));
+
+    token_ = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+
+    OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
+    auto generator = OHOS::Rosen::CreateVSyncGenerator();
+    auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
+    appVSyncDistributor_ = new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
+
+    renderService_.Init();
+    
+    renderServiceAgent_ = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
+    renderProcessManagerAgent_ = sptr<RSRenderProcessManagerAgent>::MakeSptr(renderService_.renderProcessManager_);
+
+    screenManagerAgent_ = new RSScreenManagerAgent(screenManager_);
+
+    connectionStub_ =
+        new RSClientToServiceConnection(0, renderService_, renderServiceAgent_,
+            renderProcessManagerAgent_, mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
 }
 
 void RSClientToServiceConnectionStubTest::TearDownTestCase()
@@ -136,12 +155,12 @@ void RSClientToServiceConnectionStubTest::SetUp()
     if (!mainThread) {
         return;
     }
-    mainThread->runner_ = AppExecFwk::EventRunner::Create("RSClientToServiceConnectionStubTest");
-    if (!mainThread->runner_) {
+    runner_ = AppExecFwk::EventRunner::Create("RSClientToServiceConnectionStubTest");
+    if (!runner_) {
         return;
     }
-    mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread->runner_);
-    mainThread->runner_->Run();
+    mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
+    runner_->Run();
 }
 void RSClientToServiceConnectionStubTest::TearDown() {}
 int RSClientToServiceConnectionStubTest::OnRemoteRequestTest(uint32_t code)
@@ -1555,8 +1574,9 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenGamutMapTest004, TestSize
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, SetBrightnessInfoChangeCallbackTest, TestSize.Level2)
 {
-    sptr<RSClientToServiceConnectionStub> connectionStub = new RSClientToServiceConnection(
-        0, nullptr, mainThread_, CreateOrGetScreenManager(), token_->AsObject(), nullptr);
+    sptr<RSClientToServiceConnectionStub> connectionStub =
+        new RSClientToServiceConnection(0, renderService_, renderServiceAgent_, renderProcessManagerAgent_, mainThread_,
+            screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
     ASSERT_NE(connectionStub, nullptr);
 
     // case 1: no data
@@ -2057,108 +2077,5 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkStub001, Test
     data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data2.WriteString(name);
     res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
-}
-
-/**
- * @tc.name: SetSystemAnimatedScenesTest001
- * @tc.desc: Test SetSystemAnimatedScenes when ReadBool and ReadUint32 fail
- * @tc.type: FUNC
- * @tc.require: issue20726
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest001, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    uint32_t code =
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(ret, ERR_INVALID_DATA);
-}
- 
-/**
- * @tc.name: SetSystemAnimatedScenesTest002
- * @tc.desc: Test SetSystemAnimatedScenes when data is ReadBool fail
- * @tc.type: FUNC
- * @tc.require: issue20726
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest002, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    uint32_t code =
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data.WriteUint32(0);
-    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(ret, ERR_INVALID_DATA);
-}
- 
-/**
- * @tc.name: SetSystemAnimatedScenesTest003
- * @tc.desc: Test SetSystemAnimatedScenes when ReadUint32 fail
- * @tc.type: FUNC
- * @tc.require: issue20726
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest003, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    uint32_t code =
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data.WriteBool(true);
-    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(ret, ERR_INVALID_DATA);
-}
- 
-/**
- * @tc.name: SetSystemAnimatedScenesTest004
- * @tc.desc: Test SetSystemAnimatedScenes when mainThread_ isn't nullptr
- * @tc.type: FUNC
- * @tc.require: issue20726
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest004, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    uint32_t code =
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data.WriteUint32(0);
-    data.WriteBool(true);
-    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(ret, ERR_NONE);
-}
- 
-/**
- * @tc.name: SetSystemAnimatedScenesTest005
- * @tc.desc: Test SetSystemAnimatedScenes when mainThread_ is nullptr
- * @tc.type: FUNC
- * @tc.require: issue20726
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSystemAnimatedScenesTest005, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    uint32_t code =
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data.WriteUint32(0);
-    data.WriteBool(true);
-    sptr<RSClientToServiceConnection> clientToServiceConnection =
-        iface_cast<RSClientToServiceConnection>(connectionStub_);
-    ASSERT_NE(clientToServiceConnection, nullptr);
-    auto mainThread = clientToServiceConnection->mainThread_;
-    clientToServiceConnection->mainThread_ = nullptr;
-    int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(ret, ERR_NONE);
- 
-    clientToServiceConnection->mainThread_ = mainThread;
 }
 } // namespace OHOS::Rosen
