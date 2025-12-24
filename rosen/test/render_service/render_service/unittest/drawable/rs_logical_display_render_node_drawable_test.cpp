@@ -1608,9 +1608,9 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest003, Tes
     ASSERT_NE(displayDrawable_, nullptr);
 
     auto params = std::make_unique<RSLogicalDisplayRenderParams>(0);
-    mirroredScreenDrawable_->cacheImgForCapture_ = std::make_shared<Drawing::Image>();
+    mirroredScreenDrawable_->cachedImageByCapture_ = std::make_shared<Drawing::Image>();
     displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-    EXPECT_NE(mirroredScreenDrawable_->GetCacheImageByCapture(), nullptr);
+    EXPECT_NE(mirroredScreenDrawable_->GetCacheImgForCapture(), nullptr);
 
     // when rosen.cacheimage.mirror.enabled is 0
     system::SetParameter("rosen.cacheimage.mirror.enabled", "0");
@@ -2158,7 +2158,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest006, TestSi
     ASSERT_NE(displayDrawable_, nullptr);
     ASSERT_NE(mirroredScreenDrawable_, nullptr);
 
-    mirroredScreenDrawable_->cacheImageByCapture_ = std::make_shared<Drawing::Image>();
+    mirroredScreenDrawable_->cachedImageByCapture_ = std::make_shared<Drawing::Image>();
     auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
     virtualProcesser->canvas_ = drawingFilterCanvas_;
