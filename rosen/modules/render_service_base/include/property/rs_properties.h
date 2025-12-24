@@ -781,6 +781,8 @@ public:
     const std::optional<float>& GetHueRotate() const;
     void SetColorBlend(const std::optional<Color>& colorBlend);
     const std::optional<Color>& GetColorBlend() const;
+    bool GetColorAdaptive() const;
+    void SetAdaptive(bool value);
 
     const std::shared_ptr<Drawing::ColorFilter>& GetColorFilter() const
     {
@@ -913,6 +915,10 @@ struct CommonEffectParams {
     float waterRippleProgress_ = 0.0f;
     std::optional<RSWaterRipplePara> waterRippleParams_ = std::nullopt;
     bool isSpherizeValid_ = false;
+    /**
+     * @brief If true, would adapt foreground to contrast background color.
+     */
+    bool colorAdaptive_ = false;
     float spherizeDegree_ = 0.f;
     bool bgBlurDisableSystemAdaptation = true;
     bool fgBlurDisableSystemAdaptation = true;
@@ -1013,6 +1019,7 @@ struct CommonEffectParams {
     void GenerateForegroundMaterialBlurFilter();
     void GenerateBackgroundMaterialFuzedBlurFilter();
     void GenerateCompositingMaterialFuzedBlurFilter();
+    void GenerateColorAdaptiveFilter();
     std::shared_ptr<Drawing::ColorFilter> GetMaterialColorFilter(float sat, float brightness);
     void GenerateAIBarFilter();
     void GenerateAlwaysSnapshotFilter();
