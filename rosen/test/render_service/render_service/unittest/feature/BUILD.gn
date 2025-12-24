@@ -172,7 +172,6 @@ ohos_unittest("RSSurfaceCaptureTaskTest") {
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
     "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
-    
   ]
   include_dirs =
       [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
