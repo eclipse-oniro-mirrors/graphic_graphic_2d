@@ -698,6 +698,11 @@ group("test") {
   deps = [
     "composer/composer_service/layer_backend/test:test",
     "composer/composer_service/pipeline/test:test",
+    "composer/composer_service/connection/test:test",
+    "composer/composer_service/transaction/test:test",
+    "composer/composer_service/transaction/command/test:test",
+    "composer/composer_service/render_layer/test:test",
+    "composer/composer_client/connection/test:test"
   ]
 }
 
