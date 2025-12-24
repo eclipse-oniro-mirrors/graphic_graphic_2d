@@ -1066,6 +1066,8 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSMa
     success &= Marshalling(parcel, val->borderWidth_);
     success &= Marshalling(parcel, val->offsetX_);
     success &= Marshalling(parcel, val->offsetY_);
+    success &= Marshalling(parcel, val->zoomOffsetX_);
+    success &= Marshalling(parcel, val->zoomOffsetY_);
 
     success &= Marshalling(parcel, val->shadowOffsetX_);
     success &= Marshalling(parcel, val->shadowOffsetY_);
@@ -1089,6 +1091,8 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSMagnif
     float borderWidth = 0.f;
     float offsetX = 0.f;
     float offsetY = 0.f;
+    float zoomOffsetX = 0.f;
+    float zoomOffsetY = 0.f;
     float shadowOffsetX = 0.f;
     float shadowOffsetY = 0.f;
     float shadowSize = 0.f;
@@ -1115,6 +1119,10 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSMagnif
     if (success) { val->offsetX_ = offsetX; }
     success &= Unmarshalling(parcel, offsetY);
     if (success) { val->offsetY_ = offsetY; }
+    success &= Unmarshalling(parcel, zoomOffsetX);
+    if (success) { val->zoomOffsetX_ = zoomOffsetX; }
+    success &= Unmarshalling(parcel, zoomOffsetY);
+    if (success) { val->zoomOffsetY_ = zoomOffsetY; }
 
     success &= Unmarshalling(parcel, shadowOffsetX);
     if (success) { val->shadowOffsetX_ = shadowOffsetX; }
