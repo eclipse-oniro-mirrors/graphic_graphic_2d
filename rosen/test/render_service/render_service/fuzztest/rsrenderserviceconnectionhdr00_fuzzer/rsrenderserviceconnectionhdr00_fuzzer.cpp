@@ -60,7 +60,7 @@ const uint8_t TARGET_SIZE = 13;
 } // namespace
 auto g_pid = getpid();
 RSMainThread* g_mainThread = nullptr;
-auto screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
+sptr<OHOS::Rosen::RSScreenManager> screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
 sptr<RSClientToServiceConnection> g_toServiceConnection = nullptr;
@@ -342,7 +342,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
         OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
         OHOS::Rosen::g_mainThread, screenManagerAgent_, OHOS::Rosen::g_token->AsObject(), appVSyncDistributor);
 
-    OHOS::Rosen::toRenderConnectionStub_ =
+    OHOS::Rosen::g_toRenderConnectionStub_ =
         new OHOS::Rosen::RSClientToRenderConnection(OHOS::Rosen::g_pid, nullptr, renderPipelineAgent_, OHOS::Rosen::g_token->AsObject());
     OHOS::Rosen::g_toServiceConnectionStub = OHOS::Rosen::g_toServiceConnection;
 
