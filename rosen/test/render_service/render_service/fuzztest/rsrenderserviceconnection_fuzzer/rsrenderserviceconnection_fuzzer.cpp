@@ -195,7 +195,8 @@ bool DoCreateNodeAndSurface()
     bool success;
     rsToRenderConn_->CreateNode(config, success);
     sptr<Surface> surface = nullptr;
-    rsToRenderConn_->CreateNodeAndSurface(config, surface);
+    bool unobscured = false;
+    rsToRenderConn_->CreateNodeAndSurface(config, surface, unobscured);
     return true;
 }
 

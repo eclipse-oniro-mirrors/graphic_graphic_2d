@@ -188,7 +188,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 
     OHOS::Rosen::toServiceConnectionStub_ = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid,
         OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
-        mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
+        OHOS::Rosen::mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
     return 0;
 }
 

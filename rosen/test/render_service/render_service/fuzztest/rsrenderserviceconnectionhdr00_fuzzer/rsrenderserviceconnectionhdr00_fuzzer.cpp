@@ -56,7 +56,9 @@ const uint8_t DO_SET_BRIGHTNESS_INFO_CHANGE_CALLBACK = 11;
 const uint8_t DO_GET_BRIGHTNESS_INFO = 12;
 const uint8_t TARGET_SIZE = 13;
 } // namespace
+auto g_pid = getpid();
 RSMainThread* g_mainThread = nullptr;
+auto screenManagerPtr_ = RSScreenManager::GetInstance();
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
 sptr<RSClientToServiceConnection> g_toServiceConnection = nullptr;
@@ -330,7 +332,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 
     OHOS::Rosen::g_toServiceConnection = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid,
         OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
-        mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor);
+        OHOS::Rosen::g_mainThread, screenManagerAgent_, OHOS::Rosen::g_token->AsObject(), appVSyncDistributor);
     OHOS::Rosen::g_toServiceConnectionStub = OHOS::Rosen::g_toServiceConnection;
 #ifdef RS_ENABLE_VK
     OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");

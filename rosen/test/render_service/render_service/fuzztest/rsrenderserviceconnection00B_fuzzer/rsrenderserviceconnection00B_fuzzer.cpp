@@ -39,7 +39,7 @@ namespace OHOS {
 namespace Rosen {
 auto g_pid = getpid();
 auto screenManagerPtr_ = RSScreenManager::GetInstance();
-auto mainThread_ = RSMainThread::Instance();
+RSMainThread* mainThread_ = RSMainThread::Instance();
 
 sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
 
@@ -357,7 +357,6 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     OHOS::Rosen::mainThread_->handler_ =
         std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));
     OHOS::sptr<OHOS::Rosen::RSIConnectionToken> token_ = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
-    OHOS::Rosen::mainThread_->mainLoop_ = []() {};
 
     OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
     auto generator = OHOS::Rosen::CreateVSyncGenerator();
@@ -377,7 +376,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 
     OHOS::Rosen::toServiceConnectionStub_ = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid,
         OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
-        mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
+        OHOS::Rosen::mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
     return 0;
 }
 

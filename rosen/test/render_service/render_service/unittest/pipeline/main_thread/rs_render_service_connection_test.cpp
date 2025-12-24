@@ -54,8 +54,8 @@ void RSRenderServiceConnectionTest::SetUpTestCase()
 {
     RSTestUtil::InitRenderNodeGC();
     mainThread_ = new RSMainThread();
-    mainThread_->runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
-    mainThread_->handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(mainThread_->runner_);
+    mainThread_->handler_ =
+        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));
 }
 void RSRenderServiceConnectionTest::TearDownTestCase() {}
 void RSRenderServiceConnectionTest::SetUp() {}
@@ -184,9 +184,11 @@ HWTEST_F(RSRenderServiceConnectionTest, GetBrightnessInfoTest, TestSize.Level1)
 
     // case 1: mainThread null
     {
-        sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
-        sptr<RSClientToServiceConnection> connection = new RSClientToServiceConnection(
-            0, nullptr, nullptr, nullptr, nullptr, screenManagerAgent_, token->AsObject(), nullptr);
+        auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(false));
+        std::shared_ptr<RSRenderPipeline> renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
+        sptr<RSRenderPipelineAgent> renderPipelineAgent_ = new RSRenderPipelineAgent(renderPipeline_);
+        sptr<RSClientToRenderConnection> connection =
+            new RSClientToRenderConnection(0, nullptr, renderPipelineAgent_, token->AsObject());
         BrightnessInfo brightnessInfo;
         ASSERT_EQ(connection->GetBrightnessInfo(0, brightnessInfo), SUCCESS);
     }
@@ -196,9 +198,10 @@ HWTEST_F(RSRenderServiceConnectionTest, GetBrightnessInfoTest, TestSize.Level1)
         RSMainThread* mainThread = new RSMainThread();
         mainThread->handler_ =
             std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));
-        sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
-        auto connection = new RSClientToServiceConnection(
-            0, nullptr, nullptr, nullptr, mainThread, screenManagerAgent_, token->AsObject(), nullptr);
+        auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(false));
+        std::shared_ptr<RSRenderPipeline> renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
+        sptr<RSRenderPipelineAgent> renderPipelineAgent_ = new RSRenderPipelineAgent(renderPipeline_);
+        auto connection = new RSClientToRenderConnection(g_pid, mainThread, renderPipelineAgent_, token->AsObject());
         BrightnessInfo brightnessInfo;
         ASSERT_EQ(connection->GetBrightnessInfo(0, brightnessInfo), SUCCESS);
         ASSERT_EQ(connection->GetBrightnessInfo(INVALID_SCREEN_ID, brightnessInfo), SUCCESS);
@@ -443,10 +446,10 @@ HWTEST_F(RSRenderServiceConnectionTest, CreateNode, TestSize.Level1)
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
 <<<<<<< HEAD
     auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(false));
-    std::shared_ptr<RSRenderPipeline> renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr);
+    std::shared_ptr<RSRenderPipeline> renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
     sptr<RSRenderPipelineAgent> renderPipelineAgent_ = new RSRenderPipelineAgent(renderPipeline_);
     auto rsRenderServiceConnection =
-        new RSClientToRenderConnection(g_pid, nullptr, renderPipelineAgent_, token_->AsObject());
+        new RSClientToRenderConnection(0, nullptr, renderPipelineAgent_, token->AsObject());
 
 =======
     auto rsRenderServiceConnection = new RSClientToServiceConnection(

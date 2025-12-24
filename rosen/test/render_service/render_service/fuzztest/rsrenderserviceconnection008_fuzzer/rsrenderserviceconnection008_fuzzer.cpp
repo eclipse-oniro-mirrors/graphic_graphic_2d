@@ -413,9 +413,9 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 
     OHOS::Rosen::toServiceConnectionStub_ = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid,
         OHOS::wptr<OHOS::Rosen::RSRenderService>(&renderService_), renderServiceAgent_, renderProcessManagerAgent_,
-        mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
+        OHOS::Rosen::mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor_);
     OHOS::Rosen::toRenderConnectionStub_ =
-        new OHOS::Rosen::RSClientToRenderConnection(g_pid, nullptr, renderPipelineAgent_, token_->AsObject());
+        new OHOS::Rosen::RSClientToRenderConnection(OHOS::Rosen::g_pid, nullptr, renderPipelineAgent_, token_->AsObject());
 #ifdef RS_ENABLE_VK
     OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
 #endif

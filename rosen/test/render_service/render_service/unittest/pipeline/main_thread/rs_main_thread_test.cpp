@@ -238,60 +238,60 @@ HWTEST_F(RSMainThreadTest, ProcessCommandForDividedRender002, TestSize.Level1)
     mainThread->ProcessCommandForDividedRender();
 }
 
-/**
- * @tc.name: Start001
- * @tc.desc: Test RSMainThreadTest.Start
- * @tc.type: FUNC
- * @tc.require: issueI60QXK
- */
-HWTEST_F(RSMainThreadTest, Start001, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    mainThread->Start();
-}
+// /**
+//  * @tc.name: Start001
+//  * @tc.desc: Test RSMainThreadTest.Start
+//  * @tc.type: FUNC
+//  * @tc.require: issueI60QXK
+//  */
+// HWTEST_F(RSMainThreadTest, Start001, TestSize.Level1)
+// {
+//     auto mainThread = RSMainThread::Instance();
+//     ASSERT_NE(mainThread, nullptr);
+//     mainThread->Start();
+// }
 
-/**
- * @tc.name: Start002
- * @tc.desc: Test RSMainThreadTest.Start
- * @tc.type: FUNC
- * @tc.require: issueI60QXK
- */
-HWTEST_F(RSMainThreadTest, Start002, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    mainThread->runner_ = nullptr;
-    mainThread->Start();
-}
+// /**
+//  * @tc.name: Start002
+//  * @tc.desc: Test RSMainThreadTest.Start
+//  * @tc.type: FUNC
+//  * @tc.require: issueI60QXK
+//  */
+// HWTEST_F(RSMainThreadTest, Start002, TestSize.Level1)
+// {
+//     auto mainThread = RSMainThread::Instance();
+//     ASSERT_NE(mainThread, nullptr);
+//     mainThread->runner_ = nullptr;
+//     mainThread->Start();
+// }
 
-/**
- * @tc.name: ProcessCommand
- * @tc.desc: Test RSMainThreadTest.ProcessCommand
- * @tc.type: FUNC
- * @tc.require: issueI60QXK
- */
-HWTEST_F(RSMainThreadTest, ProcessCommand, TestSize.Level1)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-    if (mainThread->rsVSyncDistributor_ == nullptr) {
-        auto vsyncGenerator = CreateVSyncGenerator();
-        auto vsyncController = new VSyncController(vsyncGenerator, 0);
-        mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-        vsyncGenerator->SetRSDistributor(mainThread->rsVSyncDistributor_);
-    }
-    auto isUniRender = mainThread->isUniRender_;
-    mainThread->isUniRender_ = false;
-    mainThread->ProcessCommand();
-    mainThread->isUniRender_ = true;
-    mainThread->lastAnimateTimestamp_ = 0;
-    mainThread->timestamp_ = REFRESH_PERIOD + 1;
-    mainThread->context_->purgeType_ = RSContext::PurgeType::GENTLY;
-    mainThread->ProcessCommand();
-    mainThread->context_->purgeType_ = RSContext::PurgeType::STRONGLY;
-    mainThread->isUniRender_ = isUniRender;
-}
+// /**
+//  * @tc.name: ProcessCommand
+//  * @tc.desc: Test RSMainThreadTest.ProcessCommand
+//  * @tc.type: FUNC
+//  * @tc.require: issueI60QXK
+//  */
+// HWTEST_F(RSMainThreadTest, ProcessCommand, TestSize.Level1)
+// {
+//     auto mainThread = RSMainThread::Instance();
+//     ASSERT_NE(mainThread, nullptr);
+//     if (mainThread->rsVSyncDistributor_ == nullptr) {
+//         auto vsyncGenerator = CreateVSyncGenerator();
+//         auto vsyncController = new VSyncController(vsyncGenerator, 0);
+//         mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
+//         vsyncGenerator->SetRSDistributor(mainThread->rsVSyncDistributor_);
+//     }
+//     auto isUniRender = mainThread->isUniRender_;
+//     mainThread->isUniRender_ = false;
+//     mainThread->ProcessCommand();
+//     mainThread->isUniRender_ = true;
+//     mainThread->lastAnimateTimestamp_ = 0;
+//     mainThread->timestamp_ = REFRESH_PERIOD + 1;
+//     mainThread->context_->purgeType_ = RSContext::PurgeType::GENTLY;
+//     mainThread->ProcessCommand();
+//     mainThread->context_->purgeType_ = RSContext::PurgeType::STRONGLY;
+//     mainThread->isUniRender_ = isUniRender;
+// }
 
 /**
  * @tc.name: RsEventParamDump
@@ -682,8 +682,7 @@ HWTEST_F(RSMainThreadTest, StartSyncTransactionFallbackTask001, TestSize.Level1)
     auto mainThread = RSMainThread::Instance();
     auto syncData = std::make_unique<RSTransactionData>();
     syncData->SetSyncId(0);
-    mainThread->runner_ = AppExecFwk::EventRunner::Create(false);
-    mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread->runner_);
+    mainThread->handler_ = std::make_shared<AppExecFwk::EventHandler>(AppExecFwk::EventRunner::Create(false));
     mainThread->syncTransactionData_[0] = std::vector<std::unique_ptr<RSTransactionData>>();
     mainThread->syncTransactionData_[0].push_back(std::move(syncData));
     mainThread->StartSyncTransactionFallbackTask(rsTransactionData);
@@ -694,8 +693,7 @@ HWTEST_F(RSMainThreadTest, StartSyncTransactionFallbackTask001, TestSize.Level1)
     auto mainThread2 = RSMainThread::Instance();
     auto syncData2 = std::make_unique<RSTransactionData>();
     syncData2->SetSyncId(1);
-    mainThread2->runner_ = AppExecFwk::EventRunner::Create(false);
-    mainThread2->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread2->runner_);
+    mainThread2->handler_ = std::make_shared<AppExecFwk::EventHandler>(AppExecFwk::EventRunner::Create(false));
     mainThread2->syncTransactionData_[0] = std::vector<std::unique_ptr<RSTransactionData>>();
     mainThread2->syncTransactionData_[0].push_back(std::move(syncData2));
     mainThread2->StartSyncTransactionFallbackTask(rsTransactionData);

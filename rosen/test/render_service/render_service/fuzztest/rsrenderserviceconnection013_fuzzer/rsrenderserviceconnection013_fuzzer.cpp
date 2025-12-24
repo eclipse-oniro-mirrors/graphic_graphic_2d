@@ -70,6 +70,7 @@ constexpr uint8_t DO_GET_ROG_SCREEN_RESOLUTION = 23;
 const uint8_t TARGET_SIZE = 24;
 } // namespace
 
+auto g_pid = getpid();
 RSMainThread* g_mainThread = nullptr;
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
@@ -100,7 +101,7 @@ int Initialize()
 
     g_toServiceConnection =
         new RSClientToServiceConnection(g_pid, wptr<RSRenderService>(&renderService_), renderServiceAgent_,
-            renderProcessManagerAgent_, mainThread_, screenManagerAgent_, token_->AsObject(), appVSyncDistributor);
+            renderProcessManagerAgent_, g_mainThread, screenManagerAgent_, g_token->AsObject(), appVSyncDistributor);
     g_toServiceConnectionStub = g_toServiceConnection;
 #ifdef RS_ENABLE_VK
     RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
