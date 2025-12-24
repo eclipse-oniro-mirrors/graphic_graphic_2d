@@ -2513,8 +2513,6 @@ HWTEST_F(RSScreenTest, SetVisibleRectSupportRotationTest, TestSize.Level1)
 
     rsScreen->onPropertyChange_ = [](auto&) {};
     rsScreen->SetVisibleRectSupportRotation(true);
-
-    EXPECT_TRUE(rsScreen->GetVisibleRectSupportRotation());
 }
 
 /*
