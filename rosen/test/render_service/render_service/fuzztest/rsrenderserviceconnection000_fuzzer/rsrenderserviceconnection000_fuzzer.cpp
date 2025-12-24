@@ -171,7 +171,7 @@ void CreateVirtualScreenStubbing(ScreenId screenId)
 void DoCommitTransaction()
 {
     uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::COMMIT_TRANSACTION);
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::COMMIT_TRANSACTION);
 
     MessageOption option;
     MessageParcel dataParcel;
@@ -196,7 +196,7 @@ void DoGetUniRenderEnabled()
 
 void DoCreateNode()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_NODE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_NODE);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -209,7 +209,7 @@ void DoCreateNode()
 
 void DoCreateNodeAndSurface()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_NODE_AND_SURFACE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_NODE_AND_SURFACE);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -261,7 +261,7 @@ void DoSetFocusAppInfo()
     if (!dataP.WriteUint64(focusNodeId)) {
         return;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_FOCUS_APP_INFO);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_FOCUS_APP_INFO);
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -404,7 +404,7 @@ void DoSetScreenBacklight()
 
 void DoTakeSurfaceCapture()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -462,7 +462,7 @@ void DoTakeSurfaceCapture()
 
 void DoSetWindowFreezeImmediately()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_WINDOW_FREEZE_IMMEDIATELY);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_WINDOW_FREEZE_IMMEDIATELY);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -517,7 +517,7 @@ void DoSetWindowFreezeImmediately()
 
 void DoSetHwcNodeBounds()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_POINTER_POSITION);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_POINTER_POSITION);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -538,7 +538,7 @@ void DoSetHwcNodeBounds()
 
 void DoGetPixelMapByProcessId()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -551,7 +551,7 @@ void DoGetPixelMapByProcessId()
 void DoRegisterApplicationAgent()
 {
     uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_APPLICATION_AGENT);
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_APPLICATION_AGENT);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -568,7 +568,7 @@ void DoRegisterApplicationAgent()
 void DoRegisterBufferAvailableListener()
 {
     uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER);
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER);
 
     MessageOption option;
     MessageParcel dataParcel;
@@ -601,7 +601,7 @@ void DoRegisterBufferClearListener()
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     dataP.WriteUint64(nodeId);
     dataP.WriteRemoteObject(remoteObject);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER);
 
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
@@ -697,7 +697,7 @@ void DoSetSystemAnimatedScenes()
         return;
     }
     uint32_t code = static_cast<uint32_t>(
-        RSIClientToServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
+        RSIClientToRenderConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
     toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -804,7 +804,7 @@ void DoDropFrameByPid()
     if (!dataP.WriteInt32Vector(pidList)) {
         return;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::DROP_FRAME_BY_PID);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::DROP_FRAME_BY_PID);
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -864,7 +864,7 @@ void DoRegisterUIExtensionCallback()
 
 void DoSetAncoForceDoDirect()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -913,7 +913,7 @@ void DoRegisterSurfaceBufferCallback()
     dataP.WriteInt32(pid);
     dataP.WriteUint64(uid);
     dataP.WriteRemoteObject(remoteObject);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_SURFACE_BUFFER_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_SURFACE_BUFFER_CALLBACK);
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -929,7 +929,7 @@ void DoUnregisterSurfaceBufferCallback()
     auto uid = GetData<uint64_t>();
     dataP.WriteInt32(pid);
     dataP.WriteUint64(uid);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_SURFACE_BUFFER_CALLBACK);
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -1003,7 +1003,7 @@ void DoSetHidePrivacyContent()
     option.SetFlags(MessageOption::TF_SYNC);
     dataP.WriteUint64(nodeId);
     dataP.WriteBool(needHidePrivacyContent);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_HIDE_PRIVACY_CONTENT);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_HIDE_PRIVACY_CONTENT);
     toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
@@ -1031,7 +1031,7 @@ void DoForceRefreshOneFrameWithNextVSync()
 void DoSetWindowContainer()
 {
     uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_WINDOW_CONTAINER);
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_WINDOW_CONTAINER);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -1102,7 +1102,7 @@ void DoNotifyPageName()
 void DoTakeSelfSurfaceCapture()
 {
     uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::TAKE_SELF_SURFACE_CAPTURE);
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SELF_SURFACE_CAPTURE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -1164,7 +1164,7 @@ void DoSetColorFollow()
 
 void DoClearUifirstCache()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CLEAR_UIFIRST_CACHE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_UIFIRST_CACHE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -1176,7 +1176,7 @@ void DoClearUifirstCache()
 
 void DoCreateNode02()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_DISPLAY_NODE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_DISPLAY_NODE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -1198,7 +1198,7 @@ void DoCreateNode02()
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
     OHOS::Rosen::g_pid = getpid();
-    OHOS::Rosen::screenManagerPtr_ = OHOS::Rosen::RSScreenManager::GetInstance();
+    OHOS::Rosen::screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
     OHOS::Rosen::mainThread_ = OHOS::Rosen::RSMainThread::Instance();
     OHOS::Rosen::mainThread_->handler_ =
         std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::AppExecFwk::EventRunner::Create(true));

@@ -58,7 +58,7 @@ const uint8_t TARGET_SIZE = 13;
 } // namespace
 auto g_pid = getpid();
 RSMainThread* g_mainThread = nullptr;
-auto screenManagerPtr_ = RSScreenManager::GetInstance();
+auto screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
 sptr<RSClientToServiceConnection> g_toServiceConnection = nullptr;
@@ -275,7 +275,7 @@ void DoSetBrightnessInfoChangeCallback(FuzzedDataProvider& fdp)
 /* Fuzzer test GetBrightnessInfo */
 void DoGetBrightnessInfo(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BRIGHTNESS_INFO);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;

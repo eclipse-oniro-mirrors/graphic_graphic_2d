@@ -3899,14 +3899,9 @@ HWTEST_F(RSMainThreadTest, CreateVirtualScreen, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-<<<<<<< HEAD
     sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());
     auto rsRenderServiceConnection = new RSClientToServiceConnection(getpid(), nullptr, nullptr,
         nullptr, mainThread, screenManagerAgent_, token->AsObject(), nullptr);
-=======
-    auto rsRenderServiceConnection = new RSClientToServiceConnection(
-        0, nullptr, mainThread, screenManager_, token->AsObject(), nullptr);
->>>>>>> upstream/rsParallel_1201
 
     std::string name("name");
     uint32_t width = 1;

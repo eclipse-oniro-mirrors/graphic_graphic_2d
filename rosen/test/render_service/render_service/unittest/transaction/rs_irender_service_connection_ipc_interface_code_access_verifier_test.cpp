@@ -84,7 +84,7 @@ HWTEST_F(RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest, CheckNati
 {
     auto verifier = std::make_unique<RSIClientToServiceConnectionInterfaceCodeAccessVerifier>();
     CodeUnderlyingType interfaceName =
-        static_cast<CodeUnderlyingType>(RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
+        static_cast<CodeUnderlyingType>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
     auto permissions = verifier->GetPermissions(interfaceName);
     auto tokenID = verifier->GetTokenID();
     for (auto& permission : permissions) {
@@ -103,7 +103,7 @@ HWTEST_F(RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest, CheckHapP
 {
     auto verifier = std::make_unique<RSIClientToServiceConnectionInterfaceCodeAccessVerifier>();
     CodeUnderlyingType interfaceName =
-        static_cast<CodeUnderlyingType>(RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
+        static_cast<CodeUnderlyingType>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE);
     auto permissions = verifier->GetPermissions(interfaceName);
     auto tokenID = verifier->GetTokenID();
     for (auto& permission : permissions) {
@@ -272,7 +272,7 @@ HWTEST_F(RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest, TaskSurfa
 {
     auto verifier = std::make_unique<RSIClientToServiceConnectionInterfaceCodeAccessVerifier>();
     CodeUnderlyingType code = static_cast<CodeUnderlyingType>(
-        RSIClientToServiceConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS);
+        RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS);
     auto hasPermission = verifier->IsInterfaceCodeAccessible(code);
     ASSERT_EQ(hasPermission, false);
 }
@@ -287,7 +287,7 @@ HWTEST_F(RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest, FreezeScr
     testing::ext::TestSize.Level1)
 {
     auto verifier = std::make_unique<RSIClientToServiceConnectionInterfaceCodeAccessVerifier>();
-    CodeUnderlyingType code = static_cast<CodeUnderlyingType>(RSIClientToServiceConnectionInterfaceCode::FREEZE_SCREEN);
+    CodeUnderlyingType code = static_cast<CodeUnderlyingType>(RSIClientToRenderConnectionInterfaceCode::FREEZE_SCREEN);
     auto hasPermission = verifier->IsInterfaceCodeAccessible(code);
     ASSERT_EQ(hasPermission, true);
 }

@@ -75,7 +75,7 @@ RSMainThread* g_mainThread = nullptr;
 sptr<RSIConnectionToken> g_token = nullptr;
 sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
 sptr<RSClientToServiceConnection> g_toServiceConnection = nullptr;
-auto screenManagerPtr_ = OHOS::Rosen::RSScreenManager::GetInstance();
+auto screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
 std::string g_originTag = "";
 
 /* Call once in the Fuzzer Initialize function */
