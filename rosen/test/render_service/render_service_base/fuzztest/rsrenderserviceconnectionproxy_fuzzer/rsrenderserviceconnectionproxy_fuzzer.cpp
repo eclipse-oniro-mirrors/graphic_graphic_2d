@@ -188,7 +188,8 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToServiceConnectionProxy.GetUniRenderEnabled(getUniRenderEnable);
     rsClientToRenderConnectionProxy.CreateNode(config, createNodeSuccess);
     sptr<Surface> sface = nullptr;
-    rsClientToRenderConnectionProxy.CreateNodeAndSurface(config, sface);
+    bool unobscure = false;
+    rsClientToRenderConnectionProxy.CreateNodeAndSurface(config, sface, unobscure);
     sptr<IVSyncConnection> conn = nullptr;
     VSyncConnParam vsyncConnParam = {id1, windowNodeId, false};
     bool enable = GetData<bool>();
@@ -297,7 +298,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToServiceConnectionProxy.SetVirtualScreenUsingStatus(true);
     rsClientToServiceConnectionProxy.SetVirtualScreenUsingStatus(false);
     rsClientToServiceConnectionProxy.SetCurtainScreenUsingStatus(true);
-    rsClientToServiceConnectionProxy.FillParcelWithTransactionData(transactionData, parcel);
+    rsClientToRenderConnectionProxy.FillParcelWithTransactionData(transactionData, parcel);
     rsClientToServiceConnectionProxy.ReportDataBaseRs(messageParcel, reply, option, info);
     rsClientToServiceConnectionProxy.ReportGameStateDataRs(messageParcel, reply, option, gameStateDataInfo);
     rsClientToServiceConnectionProxy.SetFreeMultiWindowStatus(true);
