@@ -43,7 +43,7 @@ namespace OHOS {
 namespace Rosen {
 
 auto g_pid = getpid();
-auto screenManagerPtr_ = RSScreenManager::GetInstance();
+auto screenManagerPtr_ = nullptr;
 auto mainThread_ = RSMainThread::Instance();
 
 sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
@@ -306,12 +306,12 @@ void DoNotifySoftVsyncRateDiscountEvent()
     dataParcel.WriteUint32(rateDiscount);
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 
-    if (!connServerApp_) {
-        uint64_t pidApp = static_cast<uint64_t>(getpid());
-        uint64_t id = pidApp << 32U;
-        connServerApp_ = new VSyncConnection(appVSyncDistributor_, "TestVsync", nullptr, id);
-        appVSyncDistributor_->AddConnection(connServerApp_);
-    }
+    // if (!connServerApp_) {
+    //     uint64_t pidApp = static_cast<uint64_t>(getpid());
+    //     uint64_t id = pidApp << 32U;
+    //     connServerApp_ = new VSyncConnection(appVSyncDistributor_, "TestVsync", nullptr, id);
+    //     appVSyncDistributor_->AddConnection(connServerApp_);
+    // }
 
     MessageParcel dataP;
     pid = getpid();

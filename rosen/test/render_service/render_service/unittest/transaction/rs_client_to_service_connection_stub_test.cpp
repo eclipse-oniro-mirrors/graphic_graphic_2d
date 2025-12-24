@@ -206,26 +206,6 @@ void RSClientToServiceConnectionStubTest::CreateComposerAdapterWithScreenInfo(ui
 }
 
 /**
- * @tc.name: TestRSRenderServiceConnectionStub001
- * @tc.desc: Test if data has no content.
- * @tc.type: FUNC
- * @tc.require: issueI60KUK
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub001, TestSize.Level1)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    int res;
-    uint32_t code;
-
-    code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::COMMIT_TRANSACTION);
-    res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(res, ERR_INVALID_DATA);
-}
-
-/**
  * @tc.name: TestRSRenderServiceConnectionStub002
  * @tc.desc: Test screen related transaction, with non empty data.
  * @tc.type: FUNC
@@ -338,8 +318,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
 HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub005, TestSize.Level1)
 {
     EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_GLOBAL_DARK_COLOR_MODE)), ERR_INVALID_DATA);
-    EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NEED_REGISTER_TYPEFACE)), ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_REFRESH_RATE)),
@@ -347,15 +325,11 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
     EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_WATERMARK)), ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_HIDE_PRIVACY_CONTENT)), ERR_INVALID_DATA);
-    EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_LIGHT_FACTOR_STATUS)), ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VMA_CACHE_STATUS)), ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_STATUS)), ERR_INVALID_DATA);
-    EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_DISPLAY_NODE)), ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_LAYER_TOP)), ERR_INVALID_STATE);
     EXPECT_EQ(OnRemoteRequestTest(
@@ -396,12 +370,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
         ERR_INVALID_DATA);
     EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
         RSIClientToServiceConnectionInterfaceCode::REGISTER_UIEXTENSION_CALLBACK)), ERR_INVALID_DATA);
-    EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_APPLICATION_AGENT)), ERR_NULL_OBJECT);
-    EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
-        RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER)), ERR_INVALID_DATA);
-    EXPECT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER)), ERR_INVALID_DATA);
 }
 
 /**
@@ -414,10 +382,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
 {
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_UNI_RENDER_ENABLED)), ERR_NONE);
-    ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_NODE)), ERR_INVALID_DATA);
-    ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CREATE_NODE_AND_SURFACE)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
         RSIClientToServiceConnectionInterfaceCode::MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME)), ERR_NONE);
     ASSERT_EQ(OnRemoteRequestTest(
@@ -427,13 +391,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_APP_WINDOW_NUM)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES)), ERR_INVALID_DATA);
-    ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK)), ERR_INVALID_STATE);
-    ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_TOUCH_EVENT)), ERR_INVALID_DATA);
-    ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_HARDWARE_ENABLED)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
         RSIClientToServiceConnectionInterfaceCode::SET_ROTATION_CACHE_ENABLED)), IPC_STUB_INVALID_DATA_ERR);
 #ifdef TP_FEATURE_ENABLE
@@ -596,8 +554,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
         ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_EVENT)), ERR_INVALID_DATA);
-    ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID)), ERR_NONE);
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT)),
         ERR_INVALID_DATA);
@@ -1946,135 +1902,5 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenStatusTest004, Tes
     data.WriteUint32(static_cast<uint32_t>(VirtualScreenStatus::VIRTUAL_SCREEN_INVALID_STATUS));
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(res, ERR_OK);
-}
-
-/**
- * @tc.name: SetSurfaceWatermarkSub001
- * @tc.desc: Test SetSurfaceWatermarkSub001
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetSurfaceWatermarkSub001, TestSize.Level1)
-{
-    ASSERT_NE(connectionStub_, nullptr);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    std::string name = "watermark";
-    int width = 10;
-    int height = 10;
-    Media::InitializationOptions opts;
-    opts.size.width = width;
-    opts.size.height = height;
-    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
-    std::vector<NodeId> nodeList;
-    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SURFACE_WATERMARK);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data0;
-    data0.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data0.WriteInt32(2);
-    res = connectionStub_->OnRemoteRequest(code, data0, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data20;
-    data20.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data20.WriteInt32(2);
-    data20.WriteString(name);
-    res = connectionStub_->OnRemoteRequest(code, data20, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data2;
-    data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data2.WriteInt32(2);
-    data2.WriteString(name);
-    data2.WriteBool(false);
-    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data3;
-    data3.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data3.WriteInt32(2);
-    data3.WriteString(name);
-    data3.WriteBool(true);
-    data3.WriteParcelable(pixelmap.get());
-    res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data4;
-    data4.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data4.WriteInt32(2);
-    data4.WriteString(name);
-    data4.WriteBool(true);
-    data4.WriteParcelable(pixelmap.get());
-    data4.WriteUInt64Vector(nodeList);
-    res = connectionStub_->OnRemoteRequest(code, data4, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data5;
-    data5.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data5.WriteInt32(2);
-    data5.WriteString(name);
-    data5.WriteBool(true);
-    data5.WriteParcelable(pixelmap.get());
-    data5.WriteUInt64Vector(nodeList);
-    data5.WriteUint8(static_cast<uint8_t>(0));
-    res = connectionStub_->OnRemoteRequest(code, data5, reply, option);
-}
-
-/**
- * @tc.name: ClearSurfaceWatermarkForNodesStub001
- * @tc.desc: Test ClearSurfaceWatermarkForNodesStub001
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkForNodesStub001, TestSize.Level1)
-{
-    ASSERT_NE(connectionStub_, nullptr);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    std::string name = "watermark";
-    std::vector<NodeId> nodeList;
-    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK_FOR_NODES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data2;
-    data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data2.WriteString(name);
-    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
-
-    MessageParcel data3;
-    data3.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data3.WriteString(name);
-    data3.WriteUInt64Vector(nodeList);
-    res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
-}
-/**
- * @tc.name: ClearSurfaceWatermarkStub001
- * @tc.desc: Test ClearSurfaceWatermarkStub001
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, ClearSurfaceWatermarkStub001, TestSize.Level1)
-{
-    ASSERT_NE(connectionStub_, nullptr);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    std::string name = "watermark";
-    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK_FOR_NODES);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(res, ERR_INVALID_DATA);
-
-    MessageParcel data2;
-    data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data2.WriteString(name);
-    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
 }
 } // namespace OHOS::Rosen
