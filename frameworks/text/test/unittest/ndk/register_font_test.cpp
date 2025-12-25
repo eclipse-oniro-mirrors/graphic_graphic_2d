@@ -31,6 +31,7 @@ protected:
     const char* fontFamily_ = "Roboto";
     const char* existFontPath_ = "/system/fonts/Roboto-Regular.ttf";
     const char* notExistFontPath_ = "/system/fonts/Roboto-Regular1.ttf";
+    const char* cjkFontPath_ = "/system/fonts/NotoSansCJK-Regular.ttc";
 };
 
 /*
@@ -190,6 +191,22 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest009, TestSize.Level0)
     LoadBufferFromFile(existFontPath_, buffer);
     EXPECT_TRUE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
     EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), 0));
+    for (size_t i = 0; i < buffer.size() / 2; i++) {
+        buffer[i] = 0;
+    }
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
+}
+
+/*
+ * @tc.name: NdkRegisterFontTest010
+ * @tc.desc: test for is font supported by buffer ttc file.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest010, TestSize.Level0)
+{
+    std::vector<char> buffer;
+    LoadBufferFromFile(cjkFontPath_, buffer);
+    EXPECT_TRUE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
     for (size_t i = 0; i < buffer.size() / 2; i++) {
         buffer[i] = 0;
     }
