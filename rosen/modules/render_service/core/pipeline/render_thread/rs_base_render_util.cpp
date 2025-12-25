@@ -869,12 +869,12 @@ bool RSBaseRenderUtil::IsNeedClient(RSRenderNode& node, const ComposeInfo& info)
     return false;
 }
 
-BufferRequestConfig RSBaseRenderUtil::GetFrameBufferRequestConfig(const ScreenInfo& screenInfo,
+BufferRequestConfig RSBaseRenderUtil::GetFrameBufferRequestConfig(const ComposerScreenInfo& composerScreenInfo,
     bool isProtected, GraphicColorGamut colorGamut, GraphicPixelFormat pixelFormat)
 {
     BufferRequestConfig config {};
-    auto width = screenInfo.isSamplingOn ? screenInfo.phyWidth : screenInfo.width;
-    auto height = screenInfo.isSamplingOn ? screenInfo.phyHeight : screenInfo.height;
+    auto width = composerScreenInfo.isSamplingOn ? composerScreenInfo.phyWidth : composerScreenInfo.width;
+    auto height = composerScreenInfo.isSamplingOn ? composerScreenInfo.phyHeight : composerScreenInfo.height;
     config.width = static_cast<int32_t>(width);
     config.height = static_cast<int32_t>(height);
     config.strideAlignment = 0x8; // default stride is 8 Bytes.

@@ -143,7 +143,7 @@ void RSRenderPipeline::PostMainThreadTask(RSTaskMessage::RSTask task, const std:
 
 void RSRenderPipeline::OnScreenConnected(const sptr<RSScreenProperty>& rsScreenProperty,
         const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
-        const sptr<RSIComposerToRenderConnection>& composerToRenderConn,
+        const sptr<IRSComposerToRenderConnection>& composerToRenderConn,
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent)
 {
     RS_LOGI("RSRenderPipeline %{public}s, screen id: %{public}" PRIu64, __func__,
@@ -164,7 +164,7 @@ void RSRenderPipeline::OnScreenConnected(const sptr<RSScreenProperty>& rsScreenP
     }
     std::shared_ptr<RSRenderComposerClient> composerClient = nullptr;
     if (!rsScreenProperty->IsVirtual()) {
-        composerClient = RSRenderComposerClient::Create(false, renderToComposerConn, composerToRenderConn,
+        composerClient = RSRenderComposerClient::Create(renderToComposerConn, composerToRenderConn,
             rsVsyncManagerAgent);
     }
     uniRenderThread_->OnScreenConnected(rsScreenProperty->GetScreenId(), composerClient);

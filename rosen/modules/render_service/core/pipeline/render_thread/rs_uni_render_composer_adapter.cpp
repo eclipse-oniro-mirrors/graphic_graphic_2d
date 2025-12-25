@@ -82,7 +82,7 @@ void RSUniRenderComposerAdapter::CommitLayers()
 {
     if (composerClient_ != nullptr) {
         ComposerInfo composerInfo;
-        composerInfo.screenInfo = screenInfo_;
+        RSRenderComposerClient::ConvertScreenInfo(screenInfo_, composerInfo.composerScreenInfo);
         composerClient_->CommitLayers(composerInfo);
         RSRealtimeRefreshRateManager::Instance().CountRealtimeFrame(screenInfo_.id);
     }
