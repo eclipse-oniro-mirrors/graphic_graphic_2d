@@ -674,7 +674,7 @@ void RSUifirstManager::ShouldAutoCleanCache(NodeId id, DrawableV2::RsSubThreadCa
         return;
     }
     subThreadCache.AddCacheReuseCount();
-    if (subThreadCache.GetCacheReuseCount() >= clearCacheThreshold_) {
+    if (subThreadCache.GetCacheReuseCount() >= static_cast<uint32_t>(clearCacheThreshold_)) {
         AddMarkedClearCacheNode(id);
     }
 }
