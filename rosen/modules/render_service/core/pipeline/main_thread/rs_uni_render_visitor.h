@@ -295,9 +295,9 @@ private:
         if (specialLayerMgr.Find(IS_GENERAL_SPECIAL) || isSkipDrawInVirtualScreen_) {
             return false; // surface is special layer
         }
-        // if (!allWhiteList_.empty()) {
-        //     return false; // white list is not empty, or surface is in black list
-        // }
+        if (!allWhiteList_.empty()) {
+            return false; // white list is not empty
+        }
         if (!specialLayerMgr.FindScreenHasType(SpecialLayerType::IS_BLACK_LIST).empty()) {
             return false; // surface is in black list
         }
@@ -386,7 +386,8 @@ private:
     // record DRM nodes
     std::vector<std::weak_ptr<RSSurfaceRenderNode>> drmNodes_;
     int16_t occlusionSurfaceOrder_ = DEFAULT_OCCLUSION_SURFACE_ORDER;
-
+    static std::unordered_set<NodeId> allBlackList_; // The collection of blacklist for all screens
+    static std::unordered_set<NodeId> allWhiteList_; // The collection of whitelist for all screens
 
     Occlusion::Region accumulatedOcclusionRegion_;
     Occlusion::Region accumulatedOcclusionRegionBehindWindow_; // Accumulate transparent area
