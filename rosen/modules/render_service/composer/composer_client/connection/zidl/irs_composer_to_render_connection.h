@@ -33,12 +33,12 @@ struct ReleaseLayerBuffersInfo {
     int64_t lastSwapBufferTime = 0; /* 每帧回执时长 */
 };
 
-class RSIComposerToRenderConnection : public IRemoteBroker {
+class IRSComposerToRenderConnection : public IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.ComposerToRenderConnection");
 
-    RSIComposerToRenderConnection() = default;
-    virtual ~RSIComposerToRenderConnection() noexcept = default;
+    IRSComposerToRenderConnection() = default;
+    virtual ~IRSComposerToRenderConnection() noexcept = default;
 
     virtual int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &releaseLayerInfo) = 0;
     virtual int32_t NotifyLppLayerToRender(uint64_t vsyncId, const std::set<uint64_t> &lppNodeIds) = 0;

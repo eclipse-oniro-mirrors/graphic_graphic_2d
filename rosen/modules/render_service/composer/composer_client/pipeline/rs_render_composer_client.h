@@ -31,14 +31,14 @@ namespace OHOS {
 namespace Rosen {
 class RSRenderComposerClient {
 public:
-    explicit RSRenderComposerClient(bool isMultiProcess,
+    explicit RSRenderComposerClient(
         const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     ~RSRenderComposerClient() = default;
 
-    static std::shared_ptr<RSRenderComposerClient> Create(bool isMultiProcess,
+    static std::shared_ptr<RSRenderComposerClient> Create(
         const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
-        const sptr<RSIComposerToRenderConnection>& composerToRenderConn,
+        const sptr<IRSComposerToRenderConnection>& composerToRenderConn,
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     std::shared_ptr<RSLayer> GetRSLayer(RSLayerId rsLayerId);
     void CommitLayers(ComposerInfo& composerInfo);
@@ -47,10 +47,6 @@ public:
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
     bool RegistOnBufferReleaseFunc(OnBufferReleaseFunc onBufferReleaseFunc);
     std::shared_ptr<RSComposerContext> GetComposerContext();
-    inline bool IsMultiProcess() const
-    {
-        return isMultiProcess_;
-    }
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
     void ClearFrameBuffers();
     uint32_t GetUnExecuteTaskNum();
@@ -69,7 +65,6 @@ private:
     void SubUnExecuteTaskNum();
     std::mutex clientMutex_;
     std::shared_ptr<RSComposerContext> rsComposerContext_;
-    bool isMultiProcess_;
     sptr<IRSRenderToComposerConnection> renderToComposerConn_;
     std::condition_variable composerThreadTaskCond_;
     std::atomic<uint32_t> unExecuteTaskNum_ = 0;

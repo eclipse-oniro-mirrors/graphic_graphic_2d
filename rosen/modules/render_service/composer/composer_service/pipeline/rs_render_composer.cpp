@@ -1124,7 +1124,7 @@ void RSRenderComposer::ContextRegisterPostTask()
 #endif
 }
 
-void RSRenderComposer::SetComposerToRenderConnection(const sptr<RSIComposerToRenderConnection>& composerToRenderConn)
+void RSRenderComposer::SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
 {
     composerToRenderConnection_ = composerToRenderConn;
 }

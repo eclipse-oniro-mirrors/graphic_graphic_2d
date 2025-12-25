@@ -28,7 +28,6 @@
 namespace OHOS::Rosen {
 class RSComposerContext;
 #define RSLayerId uint64_t
-
 struct ComposerInfo {
     ScreenInfo screenInfo;
     PipelineParam pipelineParam;

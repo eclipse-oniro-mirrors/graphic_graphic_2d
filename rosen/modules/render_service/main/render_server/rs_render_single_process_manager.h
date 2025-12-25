@@ -41,7 +41,7 @@ public:
 
 private:
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
-    sptr<RSIComposerToRenderConnection> composerToRenderConnection_ = nullptr;
+    sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;
     sptr<RSIConnectToRenderProcess> connectToRenderConnection_ = nullptr;
 };

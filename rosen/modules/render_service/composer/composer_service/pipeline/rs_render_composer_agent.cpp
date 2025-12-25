@@ -27,7 +27,7 @@ RSRenderComposerAgent::RSRenderComposerAgent(const std::shared_ptr<RSRenderCompo
     : rsRenderComposer_(rsRenderComposer)
 {}
 
-void RSRenderComposerAgent::SetComposerToRenderConnection(const sptr<RSIComposerToRenderConnection>& composerToRenderConn)
+void RSRenderComposerAgent::SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
 {
     if (rsRenderComposer_ == nullptr) {
         RS_LOGE("rsRenderComposer is nullptr");

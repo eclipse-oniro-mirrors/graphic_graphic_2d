@@ -198,7 +198,7 @@ void RSRenderToComposerConnectionProxy::SetScreenBacklight(uint32_t level)
 }
 
 void RSRenderToComposerConnectionProxy::SetComposerToRenderConnection(
-    const sptr<RSIComposerToRenderConnection>& composerToRenderConn)
+    const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
 {
     MessageOption option;
     MessageParcel reply;

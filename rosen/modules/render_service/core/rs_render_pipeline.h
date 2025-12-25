@@ -94,7 +94,7 @@ public:
 
     void OnScreenConnected(const sptr<RSScreenProperty>& rsScreenProperty,
         const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
-        const sptr<RSIComposerToRenderConnection>& composerToRenderConn,
+        const sptr<IRSComposerToRenderConnection>& composerToRenderConn,
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void OnScreenDisconnected(ScreenId screenId);
     void OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty);
