@@ -122,7 +122,6 @@ HWTEST_F(RSLayerContextTest, LayerFuncTest, Function | SmallTest | Level2)
 
     context->rsLayerTransactionHandler_ = std::make_shared<RSLayerTransactionHandler>();
     EXPECT_TRUE(context->CommitLayers(composerInfo));
-    context->ClearAllRSLayers();
     EXPECT_EQ(client->GetUnExecuteTaskNum(), 0u);
 }
 } // namespace Rosen
