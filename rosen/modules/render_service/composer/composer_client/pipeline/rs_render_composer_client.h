@@ -25,6 +25,7 @@
 #include <vector>
 #include "irs_render_to_composer_connection.h"
 #include "rs_composer_context.h"
+#include "screen_manager/rs_screen_info.h"
 #include "vsync_manager_agent.h"
 
 namespace OHOS {
@@ -57,6 +58,7 @@ public:
     void DumpCurrentFrameLayers();
     void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds);
     void SetScreenBacklight(uint32_t level);
+    static void ConvertScreenInfo(const ScreenInfo& screenInfo, ComposerScreenInfo& composerScreenInfo);
 
 private:
     bool WaitComposerThreadTaskExecute(std::unique_lock<std::mutex>& lock);

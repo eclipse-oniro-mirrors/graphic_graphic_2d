@@ -160,7 +160,7 @@ private:
     int exceptionCnt_ = 0;
     ExceptionCheck exceptionCheck_;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_;
-    ScreenInfo screenInfo_;
+    ComposerScreenInfo composerScreenInfo_;
     PipelineParam pipelineParam_;
     sptr<RSVsyncManagerAgent> rsVsyncManagerAgent_ = nullptr;
     bool isDisconnected_ = false;

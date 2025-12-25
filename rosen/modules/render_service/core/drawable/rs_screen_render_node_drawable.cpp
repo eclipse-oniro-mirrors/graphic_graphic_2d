@@ -197,8 +197,10 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
         RS_LOGE("RSScreenRenderNodeDrawable::RequestFrame No RSSurface found");
         return nullptr;
     }
+    ComposerScreenInfo composerScreenInfo;
+    RSRenderComposerClient::ConvertScreenInfo(params.GetScreenProperty().GetScreenInfo(), composerScreenInfo);
     auto bufferConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(
-        params.GetScreenProperty().GetScreenInfo(), false, params.GetNewColorSpace(), params.GetNewPixelFormat());
+        composerScreenInfo, false, params.GetNewColorSpace(), params.GetNewPixelFormat());
     RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d, lastPixelFormat: %{public}d",
         params.GetNewColorSpace(), params.GetNewPixelFormat(), GetLastPixelFormat());
 

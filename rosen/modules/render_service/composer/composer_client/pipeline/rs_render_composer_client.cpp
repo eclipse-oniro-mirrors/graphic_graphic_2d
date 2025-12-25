@@ -186,5 +186,22 @@ void RSRenderComposerClient::DumpCurrentFrameLayers()
     std::lock_guard<std::mutex> lock(clientMutex_);
     rsComposerContext_->DumpCurrentFrameLayers();
 }
+
+void RSRenderComposerClient::ConvertScreenInfo(const ScreenInfo& screenInfo, ComposerScreenInfo& composerScreenInfo)
+{
+    composerScreenInfo.id = screenInfo.id;
+    composerScreenInfo.width = screenInfo.width;
+    composerScreenInfo.height = screenInfo.height;
+    composerScreenInfo.phyWidth = screenInfo.phyWidth;
+    composerScreenInfo.phyHeight = screenInfo.phyHeight;
+    composerScreenInfo.isSamplingOn = screenInfo.isSamplingOn;
+    composerScreenInfo.samplingTranslateX = screenInfo.samplingTranslateX;
+    composerScreenInfo.samplingTranslateY = screenInfo.samplingTranslateY;
+    composerScreenInfo.samplingScale = screenInfo.samplingScale;
+    composerScreenInfo.activeRect = screenInfo.activeRect;
+    composerScreenInfo.maskRect = screenInfo.maskRect;
+    composerScreenInfo.reviseRect = screenInfo.reviseRect;
+}
+
 } // namespace Rosen
 } // namespace OHOS
