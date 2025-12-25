@@ -70,7 +70,7 @@ void HWCParam::SetSolidLayerInMultiWindowEnable(bool isEnable)
     isSolidLayerInMultiWindowEnable_ = isEnable;
 }
 
-void HWCParam::IsDisableHwcInScaleScene()
+bool HWCParam::IsDisableHwcInScaleScene()
 {
     return isDisableHwcInScaleScene_;
 }
