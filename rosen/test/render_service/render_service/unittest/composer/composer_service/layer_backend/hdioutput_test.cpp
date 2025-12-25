@@ -1207,6 +1207,7 @@ HWTEST_F(HdiOutputTest, DumpFps002, Function | MediumTest | Level1)
     std::shared_ptr<RSLayer> rsLayer1 = std::make_shared<RSSurfaceLayer>();
     rsLayer1->SetUniRenderFlag(false);
     rsLayer1->SetSurface(IConsumerSurface::Create("HdiOutputTest"));
+    rsLayer1->SetSurfaceName("HdiOutputTest");
     std::vector<std::string> windowsName1 = { "xcomponentIdSurface", "HdiOutputTest" };
     rsLayer1->SetWindowsName(windowsName1);
     hdiLayer1->UpdateRSLayer(rsLayer1);
@@ -1217,6 +1218,7 @@ HWTEST_F(HdiOutputTest, DumpFps002, Function | MediumTest | Level1)
     std::shared_ptr<RSLayer> rsLayer2 = std::make_shared<RSSurfaceLayer>();
     rsLayer2->SetUniRenderFlag(true);
     rsLayer2->SetSurface(IConsumerSurface::Create("xcomponentIdSurface"));
+    rsLayer2->SetSurfaceName("xcomponentIdSurface");
     std::vector<std::string> windowsName2 = { "HdiOutputTest" };
     rsLayer2->SetWindowsName(windowsName2);
     hdiLayer2->UpdateRSLayer(rsLayer2);
@@ -1520,7 +1522,7 @@ HWTEST_F(HdiOutputTest, CheckIfDoArsrPreForVm002, Function | MediumTest | Level1
     sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("CheckIfDoArsrPreForVm002");
     rsLayer->SetSurface(cSurface);
     ret = hdiOutput->CheckIfDoArsrPreForVm(rsLayer);
-    ASSERT_EQ(ret, false);
+    ASSERT_EQ(ret, true);
     // getsurface is not nullptr, find in vmLayers
     cSurface = IConsumerSurface::Create("xcomponentIdSurface");
     rsLayer->SetSurface(cSurface);

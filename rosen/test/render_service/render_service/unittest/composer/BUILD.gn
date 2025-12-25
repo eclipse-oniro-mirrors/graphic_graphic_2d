@@ -17,7 +17,9 @@ group("unittest") {
   testonly = true
   deps = [
     "composer_client/pipeline:unittest",
+    "composer_client/layer:unittest",
     "composer_service/layer_backend:unittest",
     "composer_service/pipeline:unittest",
+    "composer_service/transaction:unittest",
   ]
 }
