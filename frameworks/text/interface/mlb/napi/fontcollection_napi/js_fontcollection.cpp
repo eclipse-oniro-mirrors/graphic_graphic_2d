@@ -539,5 +539,4 @@ NapiTextResult JsFontCollection::OnUnloadFont(napi_env env, napi_callback_info i
 
     return NapiTextResult::Success(NapiGetUndefined(env));
 }
-
 } // namespace OHOS::Rosen
