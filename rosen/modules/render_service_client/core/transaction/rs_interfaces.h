@@ -676,6 +676,7 @@ public:
      */
     std::string GetRefreshInfo(pid_t pid);
     std::string GetRefreshInfoToSP(NodeId id);
+    std::string GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId);
 
 #ifndef ROSEN_ARKUI_X
     /**

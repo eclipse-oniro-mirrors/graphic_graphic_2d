@@ -668,6 +668,17 @@ HWTEST_F(RSServiceClientTest, GetRefreshInfoToSP001, TestSize.Level1)
     EXPECT_EQ(rsClient->GetRefreshInfoToSP(-1), "");
 }
 
+/**
+ * @tc.name: GetRefreshInfoByPidAndUniqueId Test
+ * @tc.desc: GetRefreshInfoByPidAndUniqueId Test
+ * @tc.type:FUNC
+ * @tc.require: issuesI9K7SJ
+ */
+HWTEST_F(RSServiceClientTest, GetRefreshInfoByPidAndUniqueId001, TestSize.Level1)
+{
+    EXPECT_EQ(rsClient->GetRefreshInfoByPidAndUniqueId(-1, 0L), "");
+}
+
 /*
  * @tc.name: SetPhysicalScreenResolution Test
  * @tc.desc: SetPhysicalScreenResolution Test

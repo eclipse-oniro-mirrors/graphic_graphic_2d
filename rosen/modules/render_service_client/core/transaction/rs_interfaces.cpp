@@ -417,6 +417,11 @@ std::string RSInterfaces::GetRefreshInfoToSP(NodeId id)
     return renderServiceClient_->GetRefreshInfoToSP(id);
 }
 
+std::string RSInterfaces::GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId)
+{
+    return renderServiceClient_->GetRefreshInfoByPidAndUniqueId(pid, uniqueId);
+}
+
 bool RSInterfaces::TakeSurfaceCaptureForUI(std::shared_ptr<RSNode> node,
     std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY,
     bool isSync, const Drawing::Rect& specifiedAreaRect)

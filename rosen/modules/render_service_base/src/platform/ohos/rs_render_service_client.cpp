@@ -755,6 +755,18 @@ std::string RSRenderServiceClient::GetRefreshInfoToSP(NodeId id)
     return enable;
 }
 
+std::string RSRenderServiceClient::GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId)
+{
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        ROSEN_LOGW("RSRenderServiceClient clientToService == nullptr!");
+        return "";
+    }
+    std::string enable;
+    clientToService->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, enable);
+    return enable;
+}
+
 void RSRenderServiceClient::SetShowRefreshRateEnabled(bool enabled, int32_t type)
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
