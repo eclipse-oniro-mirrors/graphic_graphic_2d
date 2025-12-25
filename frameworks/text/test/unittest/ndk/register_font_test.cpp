@@ -172,7 +172,7 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest007, TestSize.Level0)
  */
 HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest008, TestSize.Level0)
 {
-    OH_Drawing_IsFontSupportedFromPath(nullptr);
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromPath(nullptr));
     EXPECT_FALSE(OH_Drawing_IsFontSupportedFromPath(notExistFontPath_));
     EXPECT_TRUE(OH_Drawing_IsFontSupportedFromPath(existFontPath_));
 }
