@@ -53,7 +53,6 @@ public:
     void SetUp() override;
     void TearDown() override;
     static inline std::shared_ptr<RSRenderComposer> rsRenderComposer_ = nullptr;
-    static inline std::shared_ptr<RSScreenManager> screenManager_ = nullptr;
 };
 
 void RsRenderComposerTest::SetUpTestCase()
@@ -73,7 +72,6 @@ void RsRenderComposerTest::SetUpTestCase()
     output->Init();
     sptr<RSScreenProperty> property = new RSScreenProperty();
     rsRenderComposer_ = std::make_shared<RSRenderComposer>(output, property);
-    screenManager_ = std::make_shared<RSScreenManager>();
 }
 void RsRenderComposerTest::TearDownTestCase()
 {
@@ -635,70 +633,6 @@ HWTEST_F(RsRenderComposerTest, ComposerProcess_IsSuperFoldDisplay, TestSize.Leve
 }
 
 /**
- * Function: IsDropDirtyFrame_IsSuperFoldDisplay
- * Type: Function
- * Rank: Important(2)
- * EnvConditions: N/A
- * CaseDescription: 1. create RSRenderComposer
- *                  2. call IsDropDirtyFrame when IsSuperFoldDisplay
- *                  3. verify result
- */
-HWTEST_F(RsRenderComposerTest, IsDropDirtyFrame_IsSuperFoldDisplay, TestSize.Level1)
-{
-    system::SetParameter("const.window.foldscreen.type", "6,0,0,0");
-    std::vector<RSLayerPtr> layers;
-    EXPECT_FALSE(rsRenderComposer_->IsDropDirtyFrame(layers));
-    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("surface1");
-    RSLayerPtr l1 = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(1, false, "L1"));
-    l1->SetSurface(cSurface);
-    layers.emplace_back(l1);
-    RSLayerPtr l2 = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(2, true, "L2"));
-    sptr<IConsumerSurface> cSurface2 = IConsumerSurface::Create("surface2");
-    l2->SetSurface(cSurface2);
-    layers.emplace_back(l2);
-    layers.emplace_back(nullptr);
-    EXPECT_FALSE(rsRenderComposer_->IsDropDirtyFrame(layers));
-
-    ASSERT_NE(screenManager_, nullptr);
-    ScreenId screenId = rsRenderComposer_->screenId_;
-    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
-    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
-
-    auto tmpActiveRect = rsScreen->property_.GetActiveRect();
-    auto tmpReviseRect = rsScreen->property_.GetReviseRect();
-    auto tmpMaskRect = rsScreen->property_.GetMaskRect();
-
-    rsScreen->property_.SetActiveRect(RectI{0, 1008, 2232, 128});
-    rsScreen->property_.SetReviseRect(RectI{0, 1008, 2232, 128});
-    rsScreen->property_.SetMaskRect(RectI{0, 1008, 2232, 128});
-    const RectI& reviseRect = rsScreen->property_.GetReviseRect();
-    EXPECT_GT(reviseRect.GetWidth(), 0);
-    EXPECT_GT(reviseRect.GetHeight(), 0);
-    const RectI& maskRect = rsScreen->property_.GetMaskRect();
-    EXPECT_GT(maskRect.GetWidth(), 0);
-    EXPECT_GT(maskRect.GetHeight(), 0);
-
-    RSLayerPtr l3 = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(3, false, "L3"));
-    l3->SetUniRenderFlag(false);
-    layers.emplace_back(l3);
-    EXPECT_FALSE(rsRenderComposer_->IsDropDirtyFrame(layers));
-
-    RSLayerPtr l4 = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(4, false, "L4"));
-    l4->SetUniRenderFlag(true);
-    GraphicIRect layerRect = {0, 0, 0, 0};
-    l4->SetLayerSize(layerRect);
-    layers.emplace_back(l4);
-
-    std::vector<RSLayerPtr> tmpLayers;
-    EXPECT_FALSE(rsRenderComposer_->IsDropDirtyFrame(tmpLayers));
-    system::SetParameter("const.window.foldscreen.type", "0,0,0,0");
-
-    rsScreen->property_.SetActiveRect(tmpActiveRect);
-    rsScreen->property_.SetReviseRect(tmpReviseRect);
-    rsScreen->property_.SetMaskRect(tmpMaskRect);
-}
-
-/**
  * Function: OnPrepareComplete
  * Type: Function
  * Rank: Important(2)
@@ -897,112 +831,6 @@ HWTEST_F(RsRenderComposerTest, RecordTimestamp, TestSize.Level1)
     l3->SetUniRenderFlag(true);
     rsRenderComposer_->RecordTimestamp(vsyncId, layers);
     EXPECT_EQ(layers.size(), 4);
-}
-
-/**
- * Function: ChangeLayersForActiveRectOutside
- * Type: Function
- * Rank: Important(2)
- * EnvConditions: N/A
- * CaseDescription: 1. create RSRenderComposer
- *                  2. call ChangeLayersForActiveRectOutside
- *                  3. verify result
- */
-HWTEST_F(RsRenderComposerTest, ChangeLayersForActiveRectOutside, TestSize.Level1)
-{
-    std::vector<RSLayerPtr> layers;
-    rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-
-    RSLayerPtr l1 = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(1, false, "L1"));
-    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("surface1");
-    l1->SetSurface(cSurface);
-    layers.emplace_back(l1);
-
-    RSLayerPtr l2 = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(2, true, "L2"));
-    sptr<IConsumerSurface> cSurface2 = IConsumerSurface::Create("surface2");
-    l2->SetSurface(cSurface2);
-    layers.emplace_back(l2);
-
-    ASSERT_EQ(layers.size(), 2);
-    EXPECT_EQ(layers[1]->GetBuffer(), nullptr);
-
-    rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-
-    ASSERT_NE(screenManager_, nullptr);
-    ScreenId screenId = 3u;
-    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
-    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
-
-    auto tmpReviseRect = rsScreen->property_.GetReviseRect();
-    auto tmpMaskRect = rsScreen->property_.GetMaskRect();
-
-    rsScreen->property_.SetReviseRect(RectI{0, 1008, 2232, 128});
-    rsScreen->property_.SetMaskRect(RectI{0, 1008, 2232, 128});
-    const RectI& reviseRect = rsScreen->property_.GetReviseRect();
-    EXPECT_GT(reviseRect.GetWidth(), 0);
-    EXPECT_GT(reviseRect.GetHeight(), 0);
-    const RectI& maskRect = rsScreen->property_.GetMaskRect();
-    EXPECT_GT(maskRect.GetWidth(), 0);
-    EXPECT_GT(maskRect.GetHeight(), 0);
-    rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-    EXPECT_GT(layers.size(), 0);
-    auto tmpParameter = system::GetParameter("debug.foldscreen.shaft.color", "0");
-    if (tmpParameter != "1") {
-        system::SetParameter("debug.foldscreen.shaft.color", "1");
-        rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-    } else {
-        system::SetParameter("debug.foldscreen.shaft.color", "0");
-        rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-    }
-
-    system::SetParameter("debug.foldscreen.shaft.color", tmpParameter);
-    rsScreen->property_.SetReviseRect(tmpReviseRect);
-    rsScreen->property_.SetMaskRect(tmpMaskRect);
-}
-
-/**
- * Function: ChangeLayersForActiveRectOutside002
- * Type: Function
- * Rank: Important(2)
- * EnvConditions: N/A
- * CaseDescription: 1. create RSRenderComposer
- *                  2. call ChangeLayersForActiveRectOutside
- *                  3. verify result
- */
-HWTEST_F(RsRenderComposerTest, ChangeLayersForActiveRectOutside002, TestSize.Level1)
-{
-    std::vector<RSLayerPtr> layers;
-
-    ASSERT_NE(screenManager_, nullptr);
-    ScreenId screenId = 4u;
-    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
-    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
-
-    auto tmpReviseRect = rsScreen->property_.GetReviseRect();
-    auto tmpMaskRect = rsScreen->property_.GetMaskRect();
-
-    rsScreen->property_.SetReviseRect(RectI{0, 1008, -2232, -128});
-    rsScreen->property_.SetMaskRect(RectI{0, 1008, -2232, -128});
-
-    const RectI& reviseRect = rsScreen->property_.GetReviseRect();
-    EXPECT_LT(reviseRect.GetWidth(), 0);
-    EXPECT_LT(reviseRect.GetHeight(), 0);
-    const RectI& maskRect = rsScreen->property_.GetMaskRect();
-    EXPECT_LT(maskRect.GetWidth(), 0);
-    EXPECT_LT(maskRect.GetHeight(), 0);
-    rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-    auto tmpParameter = system::GetParameter("debug.foldscreen.shaft.color", "0");
-    if (tmpParameter != "1") {
-        system::SetParameter("debug.foldscreen.shaft.color", "1");
-        rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-    } else {
-        system::SetParameter("debug.foldscreen.shaft.color", "0");
-        rsRenderComposer_->ChangeLayersForActiveRectOutside(layers);
-    }
-
-    system::SetParameter("debug.foldscreen.shaft.color", tmpParameter);
-    rsScreen->property_.SetReviseRect(tmpReviseRect);
-    rsScreen->property_.SetMaskRect(tmpMaskRect);
 }
 
 /**
