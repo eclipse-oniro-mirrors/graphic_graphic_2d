@@ -102,12 +102,12 @@ HWTEST_F(RSRootNodeCommandTest, TestRSRootNodeCommand004, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreateTest
+ * @tc.name: CreateTest001
  * @tc.desc: Verify function Create
  * @tc.type:FUNC
  * @tc.require: issueI9P2KH
  */
-HWTEST_F(RSRootNodeCommandTest, CreateTest, TestSize.Level1)
+HWTEST_F(RSRootNodeCommandTest, CreateTest001, TestSize.Level1)
 {
     RSContext context;
     NodeId id = static_cast<NodeId>(1);
