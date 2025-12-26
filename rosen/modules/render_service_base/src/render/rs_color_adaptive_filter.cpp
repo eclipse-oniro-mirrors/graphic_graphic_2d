@@ -27,7 +27,7 @@ void RSColorAdaptiveFilter::DrawImageRect(Drawing::Canvas& canvas, const std::sh
                 half4 c = img.eval(p);
                 half eps = 0.001;
 
-                if (c.a > eps && abs(c.r - c.g) < eps &&
+                if (c.a > 0.1 && abs(c.r - c.g) < eps &&
                     abs(c.r - c.b) < eps) {
                     return half4(color, color, color, c.a);
                 }
