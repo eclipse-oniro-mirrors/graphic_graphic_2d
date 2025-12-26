@@ -38,7 +38,7 @@ void RSColorAdaptiveFilter::DrawImageRect(Drawing::Canvas& canvas, const std::sh
     std::shared_ptr<Drawing::RuntimeShaderBuilder> effectBuilder =
         std::make_shared<Drawing::RuntimeShaderBuilder>(effect);
     effectBuilder->SetChild("img", Drawing::ShaderEffect::CreateImageShader(*image, Drawing::TileMode::CLAMP,
-                                       Drawing::TileMode::CLAMP, Drawing::SamplingOptions {}, Drawing::Matrix {}));
+                                        Drawing::TileMode::CLAMP, Drawing::SamplingOptions {}, Drawing::Matrix {}));
     effectBuilder->SetUniform("color", grayScale_);
     Drawing::Brush brush;
     brush.SetShaderEffect(effectBuilder->MakeShader(nullptr, false));
