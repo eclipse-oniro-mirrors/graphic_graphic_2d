@@ -178,5 +178,49 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GetOrCreateChildSDFShape
     childShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);
     return childShape;
 }
+
+void RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged(const std::shared_ptr<RSRenderNode> node)
+{
+    if (!node->GetRenderProperties().GetUseUnion()) {
+        return;
+    }
+    auto unionNode = FindClosestUnionAncestor(node);
+    if (!unionNode) {
+        ROSEN_LOGD("RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged: invalid unionNode");
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged node[%llu], unionNode[%llu], "
+        "isOnTheTree[%d]", node->GetId(), unionNode->GetId(), node->IsOnTheTree());
+    node->IsOnTheTree() ? unionNode->AddUnionChild(node->GetId()) : unionNode->RemoveUnionChild(node->GetId());
+}
+
+void RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers(const std::shared_ptr<RSRenderNode> node)
+{
+    if (!node->IsOnTheTree()) {
+        return;
+    }
+    auto unionNode = FindClosestUnionAncestor(node);
+    if (!unionNode) {
+        ROSEN_LOGD("RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers: invalid unionNode");
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers node[%llu], unionNode[%llu], "
+        "useUnion[%d]", node->GetId(), unionNode->GetId(), node->GetRenderProperties().GetUseUnion());
+    node->GetRenderProperties().GetUseUnion() ?
+        unionNode->AddUnionChild(node->GetId()) : unionNode->RemoveUnionChild(node->GetId());
+}
+
+std::shared_ptr<RSUnionRenderNode> RSUnionRenderNode::FindClosestUnionAncestor(
+    const std::shared_ptr<RSRenderNode> node)
+{
+    std::shared_ptr<RSRenderNode> curNode = node;
+    while (auto parent = curNode->GetParent().lock()) {
+        if (parent->IsInstanceOf<RSUnionRenderNode>()) {
+            return std::static_pointer_cast<RSUnionRenderNode>(parent);
+        }
+        curNode = parent;
+    }
+    return nullptr;
+}
 } // namespace Rosen
 } // namespace OHOS

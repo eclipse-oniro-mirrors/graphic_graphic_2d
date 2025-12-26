@@ -1047,8 +1047,6 @@ public:
     virtual void AfterTreeStatueChanged() {}
 
     RectI GetFilterDrawableSnapshotRegion() const;
-    void ProcessUnionInfoOnTreeStateChanged();
-    void ProcessUnionInfoAfterApplyModifiers();
 protected:
     void ResetDirtyStatus();
 
@@ -1383,7 +1381,6 @@ private:
     void InitRenderDrawableAndDrawableVec();
     RSDrawable::Vec& GetDrawableVec(const char*) const;
     void ResetFilterInfo();
-    std::shared_ptr<RSRenderNode> FindClosestUnionAncestor() const;
     friend class DrawFuncOpItem;
     friend class RSContext;
     friend class RSMainThread;

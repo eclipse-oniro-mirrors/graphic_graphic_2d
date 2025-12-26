@@ -3252,125 +3252,57 @@ HWTEST_F(RSRenderNodeTest2, UpdateFilterCacheWithBackgroundAndAlphaDirtyTest, Te
 }
 
 /**
- * @tc.name: FindClosestUnionAncestor001
- * @tc.desc: parent == nullptr
+ * @tc.name: ApplyModifiersProcessUnionInfoAfterApplyModifiers001
+ * @tc.desc: test ApplyModifiersProcessUnionInfoAfterApplyModifiers001
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderNodeTest2, FindClosestUnionAncestor001, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest2, ApplyModifiersProcessUnionInfoAfterApplyModifiers001, TestSize.Level1)
 {
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    drawCmdList->SetWidth(1024);
+    drawCmdList->SetHeight(1090);
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    auto modifier1 = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
+    modifier1->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
+    EXPECT_NE(modifier1, nullptr);
+    node->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS), true);
+    RSRootRenderNode::ModifierNGContainer modifiers { modifier1 };
+    node->modifiersNG_.emplace(ModifierNG::RSModifierType::CONTENT_STYLE, modifiers);
+    node->isFullChildrenListValid_ = true;
+    node->AddDirtyType(ModifierNG::RSModifierType::BOUNDS);
 
-    ASSERT_EQ(node->FindClosestUnionAncestor(), nullptr);
-}
-
-/**
- * @tc.name: FindClosestUnionAncestor002
- * @tc.desc: find until unionNode
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderNodeTest2, FindClosestUnionAncestor002, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(1);
-    std::shared_ptr<RSUnionRenderNode> unionNode = std::make_shared<RSUnionRenderNode>(1);
-    node->parent_ = parent;
-    parent->parent_ = unionNode;
-
-    ASSERT_NE(node->FindClosestUnionAncestor(), nullptr);
-}
-
-/**
- * @tc.name: ProcessUnionInfoOnTreeStateChanged001
- * @tc.desc: GetUseUnion == false
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderNodeTest2, ProcessUnionInfoOnTreeStateChanged001, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-    node->renderProperties_.useUnion_ = false;
-
-    node->ProcessUnionInfoOnTreeStateChanged();
+    node->ApplyModifiers();
     ASSERT_FALSE(node->renderProperties_.useUnion_);
 }
 
 /**
- * @tc.name: ProcessUnionInfoOnTreeStateChanged002
- * @tc.desc: cannot find unionNode
+ * @tc.name: ApplyModifiersProcessUnionInfoAfterApplyModifiers002
+ * @tc.desc: test ApplyModifiersProcessUnionInfoAfterApplyModifiers001
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderNodeTest2, ProcessUnionInfoOnTreeStateChanged002, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest2, ApplyModifiersProcessUnionInfoAfterApplyModifiers002, TestSize.Level1)
 {
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-    node->renderProperties_.useUnion_ = true;
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSRenderNode>(0, rsContext);
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    drawCmdList->SetWidth(1024);
+    drawCmdList->SetHeight(1090);
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    auto modifier1 = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
+    modifier1->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
+    EXPECT_NE(modifier1, nullptr);
+    node->dirtyTypesNG_.set(static_cast<size_t>(ModifierNG::RSModifierType::USE_EFFECT), true);
+    RSRootRenderNode::ModifierNGContainer modifiers { modifier1 };
+    node->modifiersNG_.emplace(ModifierNG::RSModifierType::CONTENT_STYLE, modifiers);
+    node->isFullChildrenListValid_ = true;
+    node->AddDirtyType(ModifierNG::RSModifierType::USE_EFFECT);
 
-    node->ProcessUnionInfoOnTreeStateChanged();
-    ASSERT_TRUE(node->renderProperties_.useUnion_);
-}
-
-/**
- * @tc.name: ProcessUnionInfoOnTreeStateChanged003
- * @tc.desc: can find unionNode
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderNodeTest2, ProcessUnionInfoOnTreeStateChanged003, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(1);
-    std::shared_ptr<RSUnionRenderNode> unionNode = std::make_shared<RSUnionRenderNode>(2);
-    node->parent_ = parent;
-    parent->parent_ = unionNode;
-    node->renderProperties_.useUnion_ = true;
-    node->isOnTheTree_ = true;
-
-    node->ProcessUnionInfoOnTreeStateChanged();
-    ASSERT_FALSE(unionNode->unionChildren_.empty());
-}
-
-/**
- * @tc.name: ProcessUnionInfoAfterApplyModifiers001
- * @tc.desc: dirtyTypesNG_ has no BOUNDS type
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderNodeTest2, ProcessUnionInfoAfterApplyModifiers001, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-
-    node->ProcessUnionInfoAfterApplyModifiers();
-    ASSERT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS)));
-}
-
-/**
- * @tc.name: ProcessUnionInfoAfterApplyModifiers002
- * @tc.desc: dirtyTypesNG_ has no BOUNDS type
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderNodeTest2, ProcessUnionInfoAfterApplyModifiers002, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-    node->AddDirtyType(ModifierNG::RSModifierType::BOUNDS);
-
-    node->ProcessUnionInfoAfterApplyModifiers();
-    ASSERT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS)));
-}
-
-/**
- * @tc.name: ProcessUnionInfoAfterApplyModifiers003
- * @tc.desc: dirtyTypesNG_ has no BOUNDS type
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderNodeTest2, ProcessUnionInfoAfterApplyModifiers003, TestSize.Level1)
-{
-    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(0);
-    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(1);
-    std::shared_ptr<RSUnionRenderNode> unionNode = std::make_shared<RSUnionRenderNode>(2);
-    node->parent_ = parent;
-    parent->parent_ = unionNode;
-    node->AddDirtyType(ModifierNG::RSModifierType::BOUNDS);
-    node->renderProperties_.useUnion_ = true;
-    node->isOnTheTree_ = true;
-
-    node->ProcessUnionInfoAfterApplyModifiers();
-    ASSERT_FALSE(unionNode->unionChildren_.empty());
+    node->ApplyModifiers();
+    ASSERT_FALSE(node->renderProperties_.useUnion_);
 }
 } // namespace Rosen
 } // namespace OHOS

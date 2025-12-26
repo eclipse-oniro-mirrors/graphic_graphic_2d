@@ -45,6 +45,9 @@ public:
     void ResetUnionChildren();
     void ProcessSDFShape();
 
+    static void ProcessUnionInfoOnTreeStateChanged(const std::shared_ptr<RSRenderNode> node);
+    static void ProcessUnionInfoAfterApplyModifiers(const std::shared_ptr<RSRenderNode> node);
+
 private:
     explicit RSUnionRenderNode(NodeId id, const std::weak_ptr<RSContext>& context = {},
         bool isTextureExportNode = false);
@@ -113,6 +116,8 @@ private:
     std::shared_ptr<RSNGRenderShapeBase> CreateChildToContainerSDFTransformShape(
         std::shared_ptr<RSRenderNode>& child, std::shared_ptr<RSNGRenderShapeBase>& childShape);
     std::shared_ptr<RSNGRenderShapeBase> GetOrCreateChildSDFShape(std::shared_ptr<RSRenderNode>& child);
+
+    static std::shared_ptr<RSUnionRenderNode> FindClosestUnionAncestor(const std::shared_ptr<RSRenderNode> node);
 
     std::unordered_set<NodeId> unionChildren_;
     

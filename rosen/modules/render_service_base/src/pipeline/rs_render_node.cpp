@@ -3157,7 +3157,9 @@ CM_INLINE void RSRenderNode::ApplyModifiers()
     if (dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::USE_EFFECT))) {
         ProcessBehindWindowAfterApplyModifiers();
     }
-    ProcessUnionInfoAfterApplyModifiers();
+    if (dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS))) {
+        RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers(shared_from_this());
+    }
 
     RS_LOGI_IF(DEBUG_NODE,
         "RSRenderNode::apply modifiers RenderProperties's sandBox's hasValue is %{public}d"
@@ -3767,7 +3769,7 @@ void RSRenderNode::OnTreeStateChanged()
     if (useEffect && useEffectType == UseEffectType::BEHIND_WINDOW) {
         ProcessBehindWindowOnTreeStateChanged();
     }
-    ProcessUnionInfoOnTreeStateChanged();
+    RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged(shared_from_this());
 }
 
 bool RSRenderNode::HasDisappearingTransition(bool recursive) const
@@ -5295,49 +5297,6 @@ void RSRenderNode::ResetFilterInfo()
 {
     // reset filterRegionInfo_ and will regenerate in postPrepare if need
     filterRegionInfo_ = nullptr;
-}
-
-void RSRenderNode::ProcessUnionInfoOnTreeStateChanged()
-{
-    if (!GetRenderProperties().GetUseUnion()) {
-        return;
-    }
-    auto unionNode = std::static_pointer_cast<RSUnionRenderNode>(FindClosestUnionAncestor());
-    if (!unionNode) {
-        ROSEN_LOGD("RSRenderNode::ProcessUnionInfoOnTreeStateChanged: invalid unionNode");
-        return;
-    }
-    RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode::ProcessUnionInfoOnTreeStateChanged node[%llu], unionNode[%llu], "
-        "isOnTheTree[%d]", GetId(), unionNode->GetId(), isOnTheTree_);
-    isOnTheTree_ ? unionNode->AddUnionChild(GetId()) : unionNode->RemoveUnionChild(GetId());
-}
-
-void RSRenderNode::ProcessUnionInfoAfterApplyModifiers()
-{
-    if (!dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS))) {
-        return;
-    }
-    auto unionNode = std::static_pointer_cast<RSUnionRenderNode>(FindClosestUnionAncestor());
-    if (!unionNode) {
-        ROSEN_LOGD("RSRenderNode::ProcessUnionInfoAfterApplyModifiers: invalid unionNode");
-        return;
-    }
-    RS_OPTIONAL_TRACE_NAME_FMT("RSRenderNode::ProcessUnionInfoAfterApplyModifiers node[%llu], unionNode[%llu], "
-        "UseUnion[%d]", GetId(), unionNode->GetId(), GetRenderProperties().GetUseUnion());
-    (GetRenderProperties().GetUseUnion() && isOnTheTree_) ?
-        unionNode->AddUnionChild(GetId()) : unionNode->RemoveUnionChild(GetId());
-}
-
-std::shared_ptr<RSRenderNode> RSRenderNode::FindClosestUnionAncestor() const
-{
-    auto curNode = shared_from_this();
-    while (auto parent = curNode->GetParent().lock()) {
-        if (parent->IsInstanceOf<RSUnionRenderNode>()) {
-            return parent;
-        }
-        curNode = parent;
-    }
-    return nullptr;
 }
 } // namespace Rosen
 } // namespace OHOS
