@@ -44,8 +44,8 @@ void RSConnectToRenderProcessProxyTest::SetUpTestCase()
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
     renderService.Init();
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    sptr<IRemoteBroker> impl = nullptr;
-    rsConn_ = sptr<RSConnectToRenderProcess>::MakeSptr(impl);
+    sptr<IRemoteObject> impl = nullptr;
+    rsConn_ = sptr<RSConnectToRenderProcessProxy>::MakeSptr(impl);
 }
 void RSConnectToRenderProcessProxyTest::TearDownTestCase() {}
 void RSConnectToRenderProcessProxyTest::SetUp() {}
@@ -61,6 +61,6 @@ HWTEST_F(RSConnectToRenderProcessProxyTest, CreateRenderConnectionTest, TestSize
 {
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
     rsConn_->CreateRenderConnection(token);
-    ASSERT_TRUE(rsconn_);
+    ASSERT_TRUE(rsConn_);
 }
 } // namespace OHOS::Rosen
