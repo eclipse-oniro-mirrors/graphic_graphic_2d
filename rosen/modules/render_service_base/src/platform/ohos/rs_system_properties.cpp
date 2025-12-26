@@ -240,6 +240,12 @@ bool RSSystemProperties::GetAnimationTraceEnabled()
     return isAnimationTraceDebugEnabled || isOpenTestModeTraceDebug;
 }
 
+bool RSSystemProperties::GetTestModeEnabled()
+{
+    bool isOpenTestModeTraceDebug = system::GetParameter("sys.graphic.openTestModeTrace", "0") != "0";
+    return isAnimationTraceDebugEnabled || isOpenTestModeTraceDebug;
+}
+
 bool RSSystemProperties::GetAnimationDelayOptimizeEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.animationdelay.optimize.enabled", "1");
