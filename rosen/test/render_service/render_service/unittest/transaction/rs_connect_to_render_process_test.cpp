@@ -29,7 +29,7 @@ using namespace testing::ext;
 namespace OHOS::Rosen {
 namespace {
 RSRenderService renderService;
-static inline sptr<RSConnectionToRenderProcessStub> connectionStub_ = nullptr;
+static inline sptr<RSConnectToRenderProcessStub> connectionStub_ = nullptr;
 }
 class RSConnectToRenderProcessTest : public testing::Test {
 public:
@@ -47,11 +47,8 @@ void RSConnectToRenderProcessTest::SetUpTestCase()
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
     renderService.Init();
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    pid_t remotePid = 1;
-    sptr<RSRenderProcess> renderProcess = sptr<RSRenderProcess>::MakeSptr();
     sptr<RSRenderPipelineAgent> renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
-    connectionStub_ = sptr<RSConnectionToRenderProcess>::MakeSptr(
-        remotePid, renderProcess, renderService.mainThread_, renderPipelineAgent);
+    connectionStub_ = sptr<RSConnectionToRenderProcess>::MakeSptr(renderService.mainThread_, renderPipelineAgent);
 }
 void RSConnectToRenderProcessTest::TearDownTestCase() {}
 void RSConnectToRenderProcessTest::SetUp() {}
@@ -67,7 +64,7 @@ HWTEST_F(RSConnectToRenderProcessTest, CreateRenderConnectionTest, TestSize.Leve
 {
     sptr<RSIConnectionToken> token = nullptr;
     sptr<RSIConnectionToken> token1 = new IRemoteStub<RSIConnectionToken>();
-    ASSERT_FALSE(connectionStub_->CreateRenderConntion(token));
-    ASSERT_TRUE(connectionStub_->CreateRenderConntion(token1));
+    ASSERT_FALSE(connectionStub_->CreateRenderConnection(token));
+    ASSERT_TRUE(connectionStub_->CreateRenderConnection(token1));
 }
 } // namespace OHOS::Rosen
