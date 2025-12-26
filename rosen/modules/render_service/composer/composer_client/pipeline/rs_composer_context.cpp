@@ -140,7 +140,8 @@ void RSComposerContext::ReleaseLayerBuffers(uint64_t screenId,
     {
         std::unique_lock<std::mutex> lock(rsLayerMutex_);
         rsLayers = rsLayers_;
-        for (const auto& [id, _, _] : releaseBufferFenceVec) {
+        lastCommitLayersId_.clear();
+        for (const auto& [id, _1, _2] : releaseBufferFenceVec) {
             lastCommitLayersId_.push_back(id);
         }
     }
