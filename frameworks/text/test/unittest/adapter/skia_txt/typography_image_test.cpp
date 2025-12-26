@@ -34,6 +34,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
+const double TEST_FONT_SIZE = 30;
+const Drawing::Color TEST_FONT_COLOR = Drawing::Color::ColorQuadSetARGB(255, 200, 255, 221);
 const float IMAGE_PADDING = 10;
 const std::string IMAGE_INPUT_PNG_PATH_TEST = "/data/local/tmp/image/";
 const std::string OPTION_FORMAT_TEST = "image/png";
@@ -59,8 +61,8 @@ void OH_Drawing_TypographyImageTest::SetUp()
         OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle, fontCollection);
     ASSERT_NE(typographyCreate_, nullptr);
-    textStyle_.fontSize = 30;
-    textStyle_.color = Drawing::Color::ColorQuadSetARGB(255, 200, 255, 221);
+    textStyle_.fontSize = TEST_FONT_SIZE;
+    textStyle_.color = TEST_FONT_COLOR;
     textStyle_.fontWeight = FontWeight::W900;
     textStyle_.fontWidth = FontWidth::ULTRA_CONDENSED;
     textStyle_.fontStyle = FontStyle::ITALIC;
@@ -172,7 +174,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(3, 8, options, true);
     ASSERT_NE(pixelMap, nullptr);
     EXPECT_EQ(pixelMap->GetWidth(), 510);

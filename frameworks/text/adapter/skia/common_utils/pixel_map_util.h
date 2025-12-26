@@ -24,10 +24,11 @@
 namespace OHOS {
 namespace Rosen {
 namespace SPText {
-
-std::shared_ptr<OHOS::Media::PixelMap> CreatePixelMap(
-    const ImageOptions& options, const std::vector<skia::textlayout::PathInfo>& pathInfos);
-
+class TextPixelMapUtil {
+public:
+    static std::shared_ptr<OHOS::Media::PixelMap> CreatePixelMap(
+        const ImageOptions& options, const std::vector<skia::textlayout::PathInfo>& pathInfos);
+};
 } // namespace SPText
 } // namespace Rosen
 } // namespace OHOS

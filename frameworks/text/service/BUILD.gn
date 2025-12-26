@@ -77,7 +77,7 @@ ohos_source_set("rosen_text_skia") {
     "skia:skia_canvaskit",
   ]
 
-  deps = [    
+  deps = [
     "$rosen_text_root/adapter/skia:skia_libtxt_$platform",
     "texgine:libtexgine_source",
   ]

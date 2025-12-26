@@ -19,15 +19,12 @@
 
 namespace OHOS::Rosen::SPText {
 
-std::shared_ptr<OHOS::Media::PixelMap> CreatePixelMap(
-    const ImageOptions& options, const std::vector<skia::textlayout::PathInfo>& pathInfos)
+static std::unique_ptr<OHOS::Media::PixelMap> CreateRawPixelMap(const ImageOptions& options)
 {
     if (options.width < 0 || options.height < 0) {
         TEXT_LOGE("Invalid image options size invalid, %{public}d %{public}d", options.width, options.height);
         return nullptr;
     }
-    
-    // Create a PixelMap from the RSPath
     int32_t width = options.width;
     int32_t height = options.height;
 
@@ -42,11 +39,14 @@ std::shared_ptr<OHOS::Media::PixelMap> CreatePixelMap(
         TEXT_LOGE("Failed to create PixelMap");
         return nullptr;
     }
-    uint8_t* pixel = const_cast<uint8_t*>(pixelMap->GetPixels());
-    if (pixel == nullptr) {
-        TEXT_LOGE("Failed to get PixelMap pixels");
-        return nullptr;
-    }    
+    return pixelMap;
+}
+
+static void RenderPaths(uint8_t* pixel, const ImageOptions& options,
+    const std::vector<skia::textlayout::PathInfo>& pathInfos)
+{
+    int32_t width = options.width;
+    int32_t height = options.height;
 
     Drawing::Bitmap bitmap;
     Drawing::BitmapFormat format{Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
@@ -77,7 +77,24 @@ std::shared_ptr<OHOS::Media::PixelMap> CreatePixelMap(
         prefX = pathInfo.point.GetX();
         prefY = pathInfo.point.GetY();
     }
-    
+}
+
+std::shared_ptr<OHOS::Media::PixelMap> TextPixelMapUtil::CreatePixelMap(
+    const ImageOptions& options, const std::vector<skia::textlayout::PathInfo>& pathInfos)
+{
+    std::unique_ptr<OHOS::Media::PixelMap> pixelMap = CreateRawPixelMap(options);
+    if (pixelMap == nullptr) {
+        return nullptr;
+    }
+
+    uint8_t* pixel = const_cast<uint8_t*>(pixelMap->GetPixels());
+    if (pixel == nullptr) {
+        TEXT_LOGE("Failed to get PixelMap pixels");
+        return nullptr;
+    }
+
+    RenderPaths(pixel, options, pathInfos);
+
     return std::move(pixelMap);
 }
 }

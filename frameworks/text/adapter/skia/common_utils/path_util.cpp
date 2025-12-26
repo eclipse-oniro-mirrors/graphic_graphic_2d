@@ -26,12 +26,11 @@ constexpr int MIN_POINTS_FOR_CLOSED_PATH = 3;
 /**
  * Determine the orientation of the triplet (p1, p2, p3).
  * Attention: the y-axis order is reversed.
- * @return COUNTER_CLOCKWISE if counter-clockwise, CLOCKWISE if clockwise, COLLINEAR if collinear.
  */
-Orientation ComputeOrientation(const Drawing::Point& p1, const Drawing::Point& p2, const Drawing::Point& p3)
+Orientation TextPathUtil::ComputeOrientation(
+    const Drawing::Point& p1, const Drawing::Point& p2, const Drawing::Point& p3)
 {
     float val = (p2.GetX() - p1.GetX()) * (p2.GetY() - p3.GetY()) - (p1.GetY() - p2.GetY()) * (p3.GetX() - p2.GetX());
-    
     if (val > EPSILON) {
         return Orientation::COUNTER_CLOCKWISE;
     } else if (val < -EPSILON) {
@@ -41,21 +40,9 @@ Orientation ComputeOrientation(const Drawing::Point& p1, const Drawing::Point& p
     }
 }
 
-/**
- * Check if the path is oriented clockwise.
- * @return if true: clockwise, else false: counter-clockwise.
- */
-bool IsPathClockwise(const Drawing::Path& path)
+size_t TextPathUtil::FindMinPointIndex(const Drawing::Path& path)
 {
     int pointsCount = path.CountPoints();
-    if (pointsCount < MIN_POINTS_FOR_CLOSED_PATH || !path.IsClosed(false)) {
-        // Not enough points or not closed
-        return false;
-    }
-
-    /**
-     * Find the index of the minimum point in the path （Y is the smallest, X is the smallest inside）.
-     */
     size_t index = 0;
     Drawing::Point minPoint{FLT_MAX, FLT_MAX};
     for (size_t i = 0; i < static_cast<size_t>(pointsCount - 1); i++) {
@@ -70,17 +57,27 @@ bool IsPathClockwise(const Drawing::Path& path)
             }
         }
     }
+    return index;
+}
+
+bool TextPathUtil::IsPathClockwise(const Drawing::Path& path)
+{
+    int pointsCount = path.CountPoints();
+    if (pointsCount < MIN_POINTS_FOR_CLOSED_PATH || !path.IsClosed(false)) {
+        // Not enough points or not closed
+        return false;
+    }
+
+    size_t index = FindMinPointIndex(path);
+
     Drawing::Point prePoint = path.GetPoint(index > 0 ? index - 1 : (pointsCount - 2)); // - 2 means the last point
     Drawing::Point nextPoint =
         path.GetPoint(index < (pointsCount - 2) ? index + 1 : 0);  // - 2 means the last point
-    Orientation orientation = ComputeOrientation(prePoint, minPoint, nextPoint);
+    Orientation orientation = ComputeOrientation(prePoint, path.GetPoint(index), nextPoint);
     return orientation == Orientation::CLOCKWISE;
 }
 
-/**
- * Extract the outer path from a set of paths.
- */
-void ExtractOuterPath(const std::vector<Drawing::Path>& allPaths, Drawing::Path& outerPath)
+void TextPathUtil::ExtractOuterPath(const std::vector<Drawing::Path>& allPaths, Drawing::Path& outerPath)
 {
     if (allPaths.empty()) {
         return;

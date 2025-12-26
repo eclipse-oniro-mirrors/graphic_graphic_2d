@@ -16,18 +16,6 @@
 #ifndef TEST_TYPOGRAPHY_FUZZER_H
 #define TEST_TYPOGRAPHY_FUZZER_H
 
-#include <climits>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-
-#include "font_collection.h"
-#include "paragraph_builder.h"
-#include "paragraph_style.h"
-#include "typography.h"
-
-#include "utils/string_util.h"
-
 #define FUZZ_PROJECT_NAME "typography_fuzzer"
 
 #endif // TEST_TYPOGRAPHY_FUZZER_H

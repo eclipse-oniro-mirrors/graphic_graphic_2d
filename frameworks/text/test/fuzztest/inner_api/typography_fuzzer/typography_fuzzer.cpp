@@ -15,8 +15,17 @@
 
 #include "typography_fuzzer.h"
 
+#include <climits>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include "font_collection.h"
+#include "paragraph_builder.h"
+#include "paragraph_style.h"
+#include "typography.h"
+#include "utils/string_util.h"
 namespace OHOS {
 namespace Rosen {
 void TypographyFuzzTest(const uint8_t* data, size_t size)

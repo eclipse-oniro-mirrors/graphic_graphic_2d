@@ -27,7 +27,18 @@ enum class Orientation {
     COLLINEAR
 };
 
-bool IsPathClockwise(const Drawing::Path& path);
-void ExtractOuterPath(const std::vector<Drawing::Path>& allPaths, Drawing::Path& outerPath);
+class TextPathUtil {
+public:
+    static Orientation ComputeOrientation(const Drawing::Point& p1, const Drawing::Point& p2, const Drawing::Point& p3);
+    // Find the index of the minimum point (lowest Y, then lowest X)
+    static size_t FindMinPointIndex(const Drawing::Path& path);
+    static bool IsPathClockwise(const Drawing::Path& path);
+    /**
+     * Extract the outer path from a set of paths.
+     * @param allPaths The input paths to extract the outer path from.
+     * @param outerPath The extracted outer path.
+     */
+    static void ExtractOuterPath(const std::vector<Drawing::Path>& allPaths, Drawing::Path& outerPath);
+};
 } // namespace OHOS::Rosen::SPText
 #endif // SPTEXT_PATH_UTIL_H
