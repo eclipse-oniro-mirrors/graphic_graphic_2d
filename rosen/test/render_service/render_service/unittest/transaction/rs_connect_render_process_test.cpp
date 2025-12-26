@@ -26,7 +26,7 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class RSConnectRenderProcessTest : public testing::Test {
+class RSConnectToRenderProcessTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -35,7 +35,7 @@ public:
     static inline sptr<RSConnectionToRenderProcessStub> connectionStub_ = nullptr;
 };
 
-void RSConnectRenderProcessTest::SetUpTestCase()
+void RSConnectToRenderProcessTest::SetUpTestCase()
 {
     auto runner = AppExecFwk::EventRunner::Create(true);
     auto handler = std::make_shared<AppExecFwk::EventHandler>(runner);
@@ -46,9 +46,9 @@ void RSConnectRenderProcessTest::SetUpTestCase()
     sptr<RSRenderPipelineAgent> renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
     connectionStub_ = sptr<RSConnectionToRenderProcess>::MakeSptr(remotePid, renderProcess, mainThread, renderPipelineAgent);
 }
-void RSConnectRenderProcessTest::TearDownTestCase() {}
-void RSConnectRenderProcessTest::SetUp() {}
-void RSConnectRenderProcessTest::TearDown() {}
+void RSConnectToRenderProcessTest::TearDownTestCase() {}
+void RSConnectToRenderProcessTest::SetUp() {}
+void RSConnectToRenderProcessTest::TearDown() {}
 
 /**
  * @tc.name: CreateRenderConnectionTest
@@ -56,7 +56,7 @@ void RSConnectRenderProcessTest::TearDown() {}
  * @tc.type: FUNC
  * @tc.require: issue#IAS6LQ
  */
-HWTEST_F(RSConnectRenderProcessTest, CreateRenderConnectionTest, TestSize.Level1)
+HWTEST_F(RSConnectToRenderProcessTest, CreateRenderConnectionTest, TestSize.Level1)
 {
     sptr<RSIConnectionToken> token = nullptr;
     sptr<RSIConnectionToken> token1 = new IRemoteStub<RSIConnectionToken>();
