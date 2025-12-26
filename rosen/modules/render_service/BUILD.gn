@@ -693,12 +693,6 @@ ohos_executable("render_service") {
   subsystem_name = "graphic"
 }
 
-group("test") {
-  testonly = true
-
-  deps = [ "//foundation/graphic/graphic_2d/rosen/test/render_service:test" ]
-}
-
 ## Build render_process.bin
 ohos_executable("render_process") {
   install_enable = true

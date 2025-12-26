@@ -977,7 +977,6 @@ HWTEST_F(RsRenderComposerTest, ComputeTargetColorGamut001, TestSize.Level1)
     sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(surfaceRenderNode, nullptr);
     cSurface->RegisterConsumerListener(listener);
     rsSurfaceRenderNode->InitRenderParams();
-    std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(rsSurfaceRenderNode);
 
     const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
     auto producer = surfaceConsumer->GetProducer();

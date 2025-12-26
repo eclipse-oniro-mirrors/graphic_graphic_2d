@@ -14,7 +14,18 @@
 import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
-module_out_path = "graphic_2d/graphic_2d/rosen/modules/composer/composer_service/layer_backend"
+module_out_path = "graphic_2d/graphic_2d/render_service/composer/composer_service/layer_backend"
+
+group("unittest") {
+  testonly = true
+  deps = [
+    ":hdibackend_unit_test",
+    ":hdilayer_unit_test",
+    ":hdioutput_unit_test",
+  ]
+}
+
+###############################################################################
 
 # Common settings for layer_backend unittest targets
 lb_include_dirs = [
@@ -92,20 +103,6 @@ if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
 if (use_memmgr_plugin || use_memmgr) {
   lb_ext_common += [ "memmgr:memmgrclient" ]
   lb_ext_unittest += [ "memmgr:memmgrclient" ]
-}
-
-group("test") {
-  testonly = true
-  deps = [ ":unittest" ]
-}
-
-group("unittest") {
-  testonly = true
-  deps = [
-    ":hdibackend_unit_test",
-    ":hdilayer_unit_test",
-    ":hdioutput_unit_test",
-  ]
 }
 
 # Common impl library (merged from test_common/BUILD.gn)
