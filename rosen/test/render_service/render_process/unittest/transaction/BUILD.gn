@@ -130,6 +130,7 @@ ohos_unittest("RSServiceToRenderConnectionStubTest") {
         "ipc:ipc_core",
         "samgr:samgr_proxy",
         "skia:skia_canvaskit",
+        "safwk:system_ability_fwk",
     ]
 
     if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
@@ -206,6 +207,7 @@ ohos_unittest("RSServiceToRenderConnectionTest") {
         "memmgr:memmgrclient",
         "samgr:samgr_proxy",
         "skia:skia_canvaskit",
+        "safwk:system_ability_fwk",
     ]
 
     if (defined(global_parts_info) &&
