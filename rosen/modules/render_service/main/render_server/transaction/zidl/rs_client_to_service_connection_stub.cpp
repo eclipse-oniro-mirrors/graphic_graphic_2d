@@ -1260,7 +1260,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             if (!IsValidCallingPid(pid, callingPid)) {
-                RS_LOGW("GET_REFRESH_INFO_BY_PID_AND_UNIQUEID invalid pid[%{public}d]", callingPid);
+                RS_LOGW("GET_REFRESH_INFO_BY_PID_AND_UNIQUEID invalid callingPid[%{public}d]", callingPid);
                 ret = ERR_INVALID_DATA;
                 break;
             }
