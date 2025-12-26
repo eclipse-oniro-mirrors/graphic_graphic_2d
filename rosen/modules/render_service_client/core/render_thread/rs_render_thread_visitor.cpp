@@ -39,6 +39,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
+#include "render_context/new_render_context/render_context_gl.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
@@ -430,6 +431,25 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
             RSRenderThread::Instance().TrimMemory();
         });
     });
+
+#ifdef ROSEN_IOS
+    if (rc == nullptr) {
+        return;
+    }
+    
+    auto renderContextGL = std::static_pointer_cast<RenderContextGL>(rc);
+    if (renderContextGL == nullptr) {
+        return;
+    }
+    auto cleanupTask = [renderContextGL]() {
+        RSRenderThread::Instance().PostSyncTask([renderContextGL]() {
+            //release egl source
+            renderContextGL->DestroySharedSource();
+        });
+    };
+
+    renderContextGL->SetCleanUpHelper(cleanupTask);
+#endif
 #endif
 
 #ifdef RS_ENABLE_VK
