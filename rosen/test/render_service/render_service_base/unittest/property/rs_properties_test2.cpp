@@ -893,20 +893,20 @@ HWTEST_F(PropertiesTest, SetAdaptiveTest, TestSize.Level1)
     EXPECT_TRUE(properties.GetColorAdaptive());
     EXPECT_TRUE(properties.isDrawn_);
     EXPECT_TRUE(properties.filterNeedUpdate_);
-    EXPECT_TRUE(properties.contentDirty_);
+    EXPECT_TRUE(properties.isDirty_);
 
     properties.UpdateForegroundFilter();
     EXPECT_TRUE(properties.GetForegroundFilterCache());
 
     properties.isDrawn_ = false;
     properties.filterNeedUpdate_ = false;
-    properties.contentDirty_ = false;
+    properties.isDirty_ = false;
 
     properties.SetAdaptive(false);
     EXPECT_FALSE(properties.GetColorAdaptive());
     EXPECT_TRUE(properties.isDrawn_);
     EXPECT_TRUE(properties.filterNeedUpdate_);
-    EXPECT_TRUE(properties.contentDirty_);
+    EXPECT_TRUE(properties.isDirty_);
 }
 
 /**
