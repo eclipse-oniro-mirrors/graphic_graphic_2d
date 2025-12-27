@@ -60,6 +60,7 @@ HgmErrCode HgmMultiAppStrategy::HandlePkgsEvent(const std::vector<std::string>& 
         HGM_LOGI("pkg update:%{public}s", param.c_str());
         auto [pkgName, pid, appType] = AnalyzePkgParam(param);
 
+        // save sceneBoard real pid used to notify the sceneBoard of changes in speed and frame rate policies
         if (pkgName == SCB_PKG_NAME) {
             sceneBoardPid_ = pid;
             pid = DEFAULT_PID;
