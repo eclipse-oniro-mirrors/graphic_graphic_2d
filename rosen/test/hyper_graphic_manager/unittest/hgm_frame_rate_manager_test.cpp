@@ -680,7 +680,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest005, Function | SmallT
     sptr<HgmConfigCallbackManager> hccMgr = HgmConfigCallbackManager::GetInstance();
     std::unique_ptr<XMLParser> parser = std::make_unique<XMLParser>();
     if (parser->LoadConfiguration(xmlConfig) == EXEC_SUCCESS) {
-        sptr<CustomHgmCallback> cb = new CustomHgmCallback();
+        sptr<CustomHgmCallback> cb = sptr<CustomHgmCallback>::MakeSptr();
         hccMgr->RegisterHgmConfigChangeCallback(0, cb);
         hccMgr->SyncHgmConfigChangeCallback(pid);
         std::unordered_map<pid_t, std::pair<int32_t, std::string>> foregroundPidAppMap;
