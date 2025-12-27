@@ -28,6 +28,7 @@ namespace OHOS::Rosen {
 int32_t DRAWING_CACHE_DURATION_TIMEOUT_THRESHOLD = 1000;
 int32_t REPORT_INTERVAL = 120000000;
 int32_t INTERVAL_THRESHOLD = 1000000;
+int32_t SLEEP_TIME = 50000 // 50ms
 
 class RSPerfmonitorReporterTest : public testing::Test {
 public:
@@ -40,8 +41,9 @@ public:
 void RSPerfmonitorReporterTest::SetUpTestCase() {}
 void RSPerfmonitorReporterTest::TearDownTestCase() {}
 void RSPerfmonitorReporterTest::SetUp() {}
-void RSPerfmonitorReporterTest::TearDown() {
-    usleep(50000);
+void RSPerfmonitorReporterTest::TearDown()
+{
+    usleep(SLEEP_TIME);
 }
 
 /**
@@ -57,7 +59,7 @@ HWTEST_F(RSPerfmonitorReporterTest, SetFocusAppInfoTest, TestSize.Level1)
     perfMonitor.SetFocusAppInfo(bundleName.c_str());
     perfMonitor.ReportAtRsFrameEnd();
     EXPECT_EQ(perfMonitor.currentBundleName_, bundleName);
-    usleep(50000);
+    usleep(SLEEP_TIME);
 }
 
 /**
