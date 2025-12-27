@@ -173,6 +173,7 @@ public:
     static bool GetDrawOpTraceEnabled();
     static bool GetDrawOpLimitEnabled();
     static bool GetAnimationTraceEnabled();
+    static bool GetTestModeEnabled();
     static bool GetAnimationDelayOptimizeEnabled();
     static bool GetRSClientMultiInstanceEnabled();
     static bool GetRenderNodePurgeEnabled();
