@@ -43,7 +43,20 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
+
+bool Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    return true;
+}
 } // namespace
+
 class SurfaceCaptureFuture : public SurfaceCaptureCallback {
     public:
         SurfaceCaptureFuture() = default;
@@ -79,10 +92,6 @@ public:
 
 bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     float darkBuffer = GetData<float>();
     float brightBuffer = GetData<float>();
@@ -118,10 +127,6 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 bool SubmitCanvasPreAllocatedBufferFuzzTest(const uint8_t* data, size_t size)
 {
-    if (data == nullptr) {
-        return false;
-    }
-
     auto& rsRenderInterfaces = RSRenderInterface::GetInstance();
     sptr<RSICanvasSurfaceBufferCallback> callback = new TestRSCanvasSurfaceBufferCallback();
     rsRenderInterfaces.RegisterCanvasCallback(callback);
@@ -138,9 +143,9 @@ bool SubmitCanvasPreAllocatedBufferFuzzTest(const uint8_t* data, size_t size)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
+    if (!OHOS::Rosen::Init(data, size)) {
+        return -1;
+    }
 
     OHOS::Rosen::RSPhysicalScreenFuzzTest(data, size);
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
