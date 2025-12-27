@@ -116,7 +116,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(0, 11, options, false);
     ASSERT_NE(pixelMap, nullptr);
     CreateImg(pixelMap, "text_test_path_");
@@ -135,7 +135,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(0, 11, options, true);
     ASSERT_NE(pixelMap, nullptr);
     CreateImg(pixelMap, "text_test_filled_path_");
@@ -192,7 +192,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     typography_ = typographyCreate_->CreateTypography();
     ASSERT_NE(typography_, nullptr);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(3, 8, options, false);
     ASSERT_NE(pixelMap, nullptr);
 }
@@ -210,7 +210,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(-100, -1, options, false);
     ASSERT_NE(pixelMap, nullptr);
 }
@@ -228,7 +228,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(7, 1, options, false);
     ASSERT_EQ(pixelMap, nullptr);
 }
@@ -246,7 +246,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(2, 15, options, false);
     ASSERT_NE(pixelMap, nullptr);
 }
@@ -264,7 +264,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(0, SIZE_MAX, options, false);
     ASSERT_NE(pixelMap, nullptr);
 }
