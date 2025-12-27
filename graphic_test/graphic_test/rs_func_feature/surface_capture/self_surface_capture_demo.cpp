@@ -810,4 +810,1666 @@ GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF
     RegisterNode(testNodeBackGround);
     RegisterNode(surfaceNode);
 }
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_19
+ * @tc.desc: test self surface capture function of node of background green color node 3
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_19)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = -1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_20
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_20)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = -1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_21
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_21)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = 0;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_22
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_22)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = 1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_23
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_23)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = 2;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_24
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_24)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = 3;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_25
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_25)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // Green()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = 100;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_26
+ * @tc.desc: test self surface capture function of node of background green color node 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_26)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x6d0000ff); // Blue()
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    int colorMode = 100;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurColorMode(colorMode);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_27
+ * @tc.desc: test self surface capture function of node of blur and mask color
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_27)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xff000000); // Black()
+    int radius = 10;
+    float saturation = 0.2;
+    float brightness = 0.2;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_28
+ * @tc.desc: test self surface capture function of node of blur and mask color 2
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_28)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xffffffff); // WHITE
+    int radius = 20;
+    float saturation = 0.4;
+    float brightness = 0.4;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_29
+ * @tc.desc: test self surface capture function of node of blur and mask color 3
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_29)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x2dff0000); // RED
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_30
+ * @tc.desc: test self surface capture function of node of blur and mask color 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_30)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // GREEN
+    int radius = 40;
+    float saturation = 0.8;
+    float brightness = 0.8;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_31
+ * @tc.desc: test self surface capture function of node of blur and mask color 5
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_31)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x6d0000ff); // BLUE
+    int radius = 50;
+    float saturation = 1.0;
+    float brightness = 1.0;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_32
+ * @tc.desc: test self surface capture function of node of blur and mask color 5
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_32)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x8d00ffff); // Cyan
+    int radius = 60;
+    float saturation = 1.2;
+    float brightness = 1.2;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_33
+ * @tc.desc: test self surface capture function of node of blur and mask color 5
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_33)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xad444444); // Cyan
+    int radius = 70;
+    float saturation = 1.4;
+    float brightness = 1.4;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_34
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_34)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xff000000); // BLACK
+    int radius = 10;
+    float saturation = 0.2;
+    float brightness = 0.2;
+    float alpha = 0.1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_35
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 2
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_35)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xffffffff); // WHITE
+    int radius = 20;
+    float saturation = 0.4;
+    float brightness = 0.4;
+    float alpha = 0.2;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_36
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 3
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_36)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x2dff0000); // RED
+    int radius = 30;
+    float saturation = 0.6;
+    float brightness = 0.6;
+    float alpha = 0.3;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_37
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_37)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x4d00ff00); // GREEN
+    int radius = 40;
+    float saturation = 0.8;
+    float brightness = 0.8;
+    float alpha = 0.4;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_38
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 5
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_38)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x6d0000ff); // BLUE
+    int radius = 50;
+    float saturation = 1.0;
+    float brightness = 1.0;
+    float alpha = 0.5;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_39
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 6
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_39)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0x8d00ffff); // WHITE
+    int radius = 60;
+    float saturation = 1.2;
+    float brightness = 1.2;
+    float alpha = 0.6;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_40
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 7
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_40)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xad444444); // WHITE
+    int radius = 70;
+    float saturation = 1.4;
+    float brightness = 1.4;
+    float alpha = 0.7;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_41
+ * @tc.desc: test self surface capture function of node of blur mask color and alpha 8
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_41)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    Color color = Color(0xcdff00ff); // WHITE
+    int radius = 80;
+    float saturation = 1.6;
+    float brightness = 1.6;
+    float alpha = 0.8;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    testNodeBackGround->SetBackgroundBlurSaturation(saturation);
+    testNodeBackGround->SetBackgroundBlurBrightness(brightness);
+    testNodeBackGround->SetBackgroundBlurMaskColor(color);
+    testNodeBackGround->SetAlpha(alpha);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_42
+ * @tc.desc: test self surface capture function of node of blackground blur radius
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_42)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = -1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_43
+ * @tc.desc: test self surface capture function of node of blackground blur radius 2
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_43)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 0;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_44
+ * @tc.desc: test self surface capture function of node of blackground blur radius 3
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_44)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 10;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_45
+ * @tc.desc: test self surface capture function of node of blackground blur radius 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_45)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 20;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_46
+ * @tc.desc: test self surface capture function of node of blackground blur radius 5
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_46)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 30;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_47
+ * @tc.desc: test self surface capture function of node of blackground blur radius 6
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_47)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 50;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadius(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_48
+ * @tc.desc: test self surface capture function of node of blackground blur radius X
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_48)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = -1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(radius);
+    testNodeBackGround->SetBackgroundBlurRadiusY(50);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_49
+ * @tc.desc: test self surface capture function of node of blackground blur radius X 2
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_49)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 0;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(radius);
+    testNodeBackGround->SetBackgroundBlurRadiusY(50);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_50
+ * @tc.desc: test self surface capture function of node of blackground blur radius X 3
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_50)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 10;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(radius);
+    testNodeBackGround->SetBackgroundBlurRadiusY(50);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_51
+ * @tc.desc: test self surface capture function of node of blackground blur radius X 4
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_51)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 20;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(radius);
+    testNodeBackGround->SetBackgroundBlurRadiusY(50);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_52
+ * @tc.desc: test self surface capture function of node of blackground blur radius Y
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_52)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = -1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(50);
+    testNodeBackGround->SetBackgroundBlurRadiusY(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_53
+ * @tc.desc: test self surface capture function of node of blackground blur radius Y 2
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_53)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 0;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(50);
+    testNodeBackGround->SetBackgroundBlurRadiusY(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_54
+ * @tc.desc: test self surface capture function of node of blackground blur radius Y 2
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_54)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 1;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(50);
+    testNodeBackGround->SetBackgroundBlurRadiusY(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_55
+ * @tc.desc: test self surface capture function of node of blackground blur radius Y 3
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_55)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 10;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(50);
+    testNodeBackGround->SetBackgroundBlurRadiusY(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
+
+/*
+ * @tc.name: GRAPHIC_TEST_SELF_SURFACE_CAPTURE_56
+ * @tc.desc: test self surface capture with privacy but not draw white using self capture
+ * @tc.type: FUNC
+ */
+GRAPHIC_N_TEST(RSSelfSurfaceCaptureTest, CONTENT_DISPLAY_TEST, GRAPHIC_TEST_SELF_SURFACE_CAPTURE_56)
+{
+    auto surfaceNode = CreateTestSurfaceNode();
+    GetRootNode()->SetTestSurface(surfaceNode);
+    surfaceNode->SetSecurityLayer(true);
+    auto sizeX = SCREEN_WIDTH - 10;
+    auto sizeY = SCREEN_HEIGHT - 10;
+    int x = 0;
+    int y = 0;
+    auto canvasNode = RSCanvasNode::Create();
+    canvasNode->SetBounds({ x, y, sizeX, sizeY });
+    canvasNode->SetFrame({ x, y, sizeX, sizeY });
+    canvasNode->SetBackgroundColor(SK_ColorWHITE);
+    float radius = 10;
+    auto testNodeBackGround =
+        SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX, sizeY });
+    testNodeBackGround->SetBorderStyle(0, 0, 0, 0);
+    testNodeBackGround->SetBorderWidth(5, 5, 5, 5);
+    testNodeBackGround->SetBorderColor(Vector4<Color>(RgbPalette::Red()));
+    testNodeBackGround->SetBackgroundBlurRadiusX(50);
+    testNodeBackGround->SetBackgroundBlurRadiusY(radius);
+    surfaceNode->AddChild(canvasNode, -1);
+    canvasNode->AddChild(testNodeBackGround);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+
+    auto callback = std::make_shared<CustomizedSurfaceCapture>();
+    RSInterfaces::GetInstance().TakeSelfSurfaceCapture(surfaceNode, callback);
+    CheckSurfaceCaptureCallback(callback);
+    // created node should be registered to preserve ref_count
+    RegisterNode(canvasNode);
+    RegisterNode(testNodeBackGround);
+    RegisterNode(surfaceNode);
+}
 }
