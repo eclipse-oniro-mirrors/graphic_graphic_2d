@@ -15,16 +15,14 @@
 
 #include "hgm_info_parcel.h"
 
-#include "platform/common/rs_log.h"
-
-#undef LOG_TAG
-#define LOG_TAG "HgmInfoParcel"
+#include "hgm_log.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr uint32_t MAX_DATA_SIZE = 512;
 }
+
 bool HgmServiceToProcessInfo::Marshalling(Parcel& data) const
 {
     MessageParcel* message = static_cast<MessageParcel*>(&data);
@@ -126,7 +124,9 @@ HgmProcessToServiceInfo* HgmProcessToServiceInfo::Unmarshalling(Parcel& data)
 {
     auto result = new HgmProcessToServiceInfo();
     MessageParcel* message = static_cast<MessageParcel*>(&data);
-    result->isGameNodeOnTree = message->ReadBool();
+    if (!message->ReadBool(result->isGameNodeOnTree)) {
+        return nullptr;
+    }
     if (!result->UnmarshallingFrameRateLinker(message)) {
         return nullptr;
     }
@@ -145,7 +145,7 @@ HgmProcessToServiceInfo* HgmProcessToServiceInfo::Unmarshalling(Parcel& data)
 bool HgmProcessToServiceInfo::MarshallingFrameRateLinker(MessageParcel* message) const
 {
     if (auto size = frameRateLinkerDestroyIds.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling frameRateLinkerDestroyIds Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling frameRateLinkerDestroyIds Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -160,7 +160,7 @@ bool HgmProcessToServiceInfo::MarshallingFrameRateLinker(MessageParcel* message)
         }
     }
     if (auto size = frameRateLinkerUpdateInfoMap.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling frameRateLinkerUpdateInfoMap Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling frameRateLinkerUpdateInfoMap Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -189,7 +189,7 @@ bool HgmProcessToServiceInfo::MarshallingFrameRateLinker(MessageParcel* message)
 bool HgmProcessToServiceInfo::MarshallingSurfaceData(MessageParcel* message) const
 {
     if (auto size = surfaceData.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling surfaceData Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling surfaceData Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -205,7 +205,7 @@ bool HgmProcessToServiceInfo::MarshallingSurfaceData(MessageParcel* message) con
     }
 
     if (auto size = uiFrameworkDirtyNodeNameMap.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling uiFrameworkDirtyNodeNameMap Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling uiFrameworkDirtyNodeNameMap Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -282,7 +282,7 @@ bool HgmProcessToServiceInfo::UnmarshallingFrameRateLinker(MessageParcel* messag
         return false;
     }
     if (static_cast<uint32_t>(destroySize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling frameRateLinkerDestroyIds Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling frameRateLinkerDestroyIds Failed, size:%{public}d",
             destroySize);
         return false;
     }
@@ -300,7 +300,7 @@ bool HgmProcessToServiceInfo::UnmarshallingFrameRateLinker(MessageParcel* messag
         return false;
     }
     if (static_cast<uint32_t>(updateInfoSize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling frameRateLinkerUpdateInfoMap Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling frameRateLinkerUpdateInfoMap Failed, size:%{public}d",
             updateInfoSize);
         return false;
     }
@@ -344,7 +344,7 @@ bool HgmProcessToServiceInfo::UnmarshallingSurfaceData(MessageParcel* message)
         return false;
     }
     if (static_cast<uint32_t>(surfaceDataSize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling surfaceData Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling surfaceData Failed, size:%{public}d",
             surfaceDataSize);
         return false;
     }
@@ -362,7 +362,7 @@ bool HgmProcessToServiceInfo::UnmarshallingSurfaceData(MessageParcel* message)
         return false;
     }
     if (static_cast<uint32_t>(uiFrameworkDirtyNodeNameMapSize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling uIFrameworkDirtyNodeNameMap Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling uIFrameworkDirtyNodeNameMap Failed, size:%{public}d",
             uiFrameworkDirtyNodeNameMapSize);
         return false;
     }
