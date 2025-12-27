@@ -342,7 +342,6 @@ bool GetPoint3FromPoint3dObj(ani_env* env, ani_object obj, Drawing::Point3& poin
     ani_method point3dGetX = AniGlobalMethod::GetInstance().point3dGetX;
     ani_method point3dGetY = AniGlobalMethod::GetInstance().point3dGetY;
     ani_method point3dGetZ = AniGlobalMethod::GetInstance().point3dGetZ;
-
     if (point3dGetX == nullptr || point3dGetY == nullptr || point3dGetZ == nullptr) {
         ROSEN_LOGE("GetPoint3FromPoint3dObj failed by cls method is null");
         return ANI_ERROR;
@@ -446,6 +445,42 @@ bool SetPointToAniPointArrayWithIndex(ani_env* env, Drawing::Point& point, ani_a
     ani_status ret = env->Array_Set(pointArray, static_cast<ani_size>(index), pointObj);
     if (ret != ANI_OK) {
         ROSEN_LOGE("AniPathIterator::Next Array_Set Faild. ret: %{public}d", ret);
+        return false;
+    }
+    return true;
+}
+
+bool DrawingPointConvertToAniPoint(ani_env* env, ani_object obj, const Drawing::Point& point)
+{
+    ani_method pointSetX = AniGlobalMethod::GetInstance().pointSetX;
+    ani_method pointSetY = AniGlobalMethod::GetInstance().pointSetY;
+    if (pointSetX == nullptr || pointSetY == nullptr) {
+        ROSEN_LOGE("DrawingPointConvertToAniPoint failed by method is null");
+        return false;
+    }
+    if (env->Object_CallMethod_Void(obj, pointSetX, point.GetX()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, pointSetY, point.GetY()) != ANI_OK) {
+        ROSEN_LOGE("DrawingPointConvertToAniPoint failed by Object_SetProperty_Double");
+        return false;
+    }
+    return true;
+}
+
+bool DrawingRectConvertToAniRect(ani_env* env, ani_object obj, const Drawing::Rect& rect)
+{
+    ani_method rectSetLeft = AniGlobalMethod::GetInstance().rectSetLeft;
+    ani_method rectSetTop = AniGlobalMethod::GetInstance().rectSetTop;
+    ani_method rectSetRight = AniGlobalMethod::GetInstance().rectSetRight;
+    ani_method rectSetBottom = AniGlobalMethod::GetInstance().rectSetBottom;
+    if (rectSetLeft == nullptr || rectSetTop == nullptr || rectSetRight == nullptr || rectSetBottom == nullptr) {
+        ROSEN_LOGE("DrawingRectConvertToAniRect failed by method is null");
+        return false;
+    }
+    if (env->Object_CallMethod_Void(obj, rectSetLeft, rect.GetLeft()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetTop, rect.GetTop()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetRight, rect.GetRight()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetBottom, rect.GetBottom()) != ANI_OK) {
+        ROSEN_LOGE("DrawingRectConvertToAniRect failed by Object_SetProperty_Double");
         return false;
     }
     return true;

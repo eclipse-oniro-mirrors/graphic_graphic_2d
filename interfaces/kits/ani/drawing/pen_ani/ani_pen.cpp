@@ -119,7 +119,7 @@ void AniPen::ConstructorWithPen(ani_env* env, ani_object obj, ani_object aniPenO
     std::shared_ptr<Pen> pen = other == nullptr ? std::make_shared<Pen>() : std::make_shared<Pen>(*other);
     AniPen* newAniPen = new AniPen(pen);
     if (ANI_OK != env->Object_SetField_Long(
-    obj, AniGlobalField::GetInstance().penNativeObj, reinterpret_cast<ani_long>(newAniPen))) {
+        obj, AniGlobalField::GetInstance().penNativeObj, reinterpret_cast<ani_long>(newAniPen))) {
         ROSEN_LOGE("AniPen::Constructor failed create aniPen");
         delete newAniPen;
         return;
@@ -488,11 +488,11 @@ ani_enum_item AniPen::GetJoinStyle(ani_env* env, ani_object obj)
         return value;
     }
     Pen::JoinStyle joinStyle = aniPen->GetPen()->GetJoinStyle();
-    if (!CreateAniEnumByEnumIndex(env,
-            AniGlobalEnum::GetInstance().joinStyle, static_cast<ani_size>(joinStyle), value)) {
-            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
-                "Find enum for JoinStyle failed.");
-            return value;
+    if (!CreateAniEnumByEnumIndex(
+        env, AniGlobalEnum::GetInstance().joinStyle, static_cast<ani_size>(joinStyle), value)) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "Find enum for JoinStyle failed.");
+        return value;
     }
     return value;
 }
@@ -646,7 +646,7 @@ ani_object AniPen::PenTransferStatic(ani_env* env, [[maybe_unused]]ani_object ob
 
     auto aniPen = new AniPen(jsPen->GetPen());
     if (ANI_OK != env->Object_SetField_Long(
-    output, AniGlobalField::GetInstance().penNativeObj, reinterpret_cast<ani_long>(aniPen))) {
+        output, AniGlobalField::GetInstance().penNativeObj, reinterpret_cast<ani_long>(aniPen))) {
         ROSEN_LOGE("AniPen::PenTransferStatic failed create aniPen");
         delete aniPen;
         return CreateAniUndefined(env);

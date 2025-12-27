@@ -119,7 +119,8 @@ ani_object CreateAniNull(ani_env* env);
 
 bool CreateAniEnumByEnumIndex(ani_env* env, const ani_enum enumType, ani_size index, ani_enum_item& enumItem);
 
-bool CreateAniEnumByEnumName(ani_env* env, const ani_enum enumType, const std::string itemName, ani_enum_item& enumItem);
+bool CreateAniEnumByEnumName(
+    ani_env* env, const ani_enum enumType, const std::string itemName, ani_enum_item& enumItem);
 
 template<typename T>
 ani_object CreateAniObjectStatic(
@@ -191,41 +192,9 @@ inline bool CheckInt32OutOfRange(ani_int val, int32_t lowerBound, int32_t upperB
     return val < lowerBound || val > upperBound;
 }
 
-inline bool DrawingPointConvertToAniPoint(ani_env* env, ani_object obj, const Drawing::Point& point)
-{
-    ani_method pointSetX = AniGlobalMethod::GetInstance().pointSetX;
-    ani_method pointSetY = AniGlobalMethod::GetInstance().pointSetY;
-    if (pointSetX == nullptr || pointSetY == nullptr) {
-        ROSEN_LOGE("DrawingPointConvertToAniPoint failed by method is null");
-        return false;
-    }
-    if (env->Object_CallMethod_Void(obj, pointSetX, point.GetX()) != ANI_OK ||
-        env->Object_CallMethod_Void(obj, pointSetY, point.GetY()) != ANI_OK) {
-        ROSEN_LOGE("DrawingPointConvertToAniPoint failed by Object_SetProperty_Double");
-        return false;
-    }
-    return true;
-}
+bool DrawingPointConvertToAniPoint(ani_env* env, ani_object obj, const Drawing::Point& point);
 
-inline bool DrawingRectConvertToAniRect(ani_env* env, ani_object obj, const Drawing::Rect& rect)
-{
-    ani_method rectSetLeft = AniGlobalMethod::GetInstance().rectSetLeft;
-    ani_method rectSetTop = AniGlobalMethod::GetInstance().rectSetTop;
-    ani_method rectSetRight = AniGlobalMethod::GetInstance().rectSetRight;
-    ani_method rectSetBottom = AniGlobalMethod::GetInstance().rectSetBottom;
-    if (rectSetLeft == nullptr || rectSetTop == nullptr || rectSetRight == nullptr || rectSetBottom == nullptr) {
-        ROSEN_LOGE("DrawingRectConvertToAniRect failed by method is null");
-        return false;
-    }
-    if (env->Object_CallMethod_Void(obj, rectSetLeft, rect.GetLeft()) != ANI_OK ||
-        env->Object_CallMethod_Void(obj, rectSetTop, rect.GetTop()) != ANI_OK ||
-        env->Object_CallMethod_Void(obj, rectSetRight, rect.GetRight()) != ANI_OK ||
-        env->Object_CallMethod_Void(obj, rectSetBottom, rect.GetBottom()) != ANI_OK) {
-        ROSEN_LOGE("DrawingRectConvertToAniRect failed by Object_SetProperty_Double");
-        return false;
-    }
-    return true;
-}
+bool DrawingRectConvertToAniRect(ani_env* env, ani_object obj, const Drawing::Rect& rect);
 
 std::shared_ptr<Font> GetThemeFont(std::shared_ptr<Font> font);
 

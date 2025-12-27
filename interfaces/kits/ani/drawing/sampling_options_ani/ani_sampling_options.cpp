@@ -63,10 +63,10 @@ void AniSamplingOptions::Constructor(ani_env* env, ani_object obj)
     std::shared_ptr<SamplingOptions> samplingOptions = std::make_shared<SamplingOptions>();
     AniSamplingOptions* aniSamplingOptions = new AniSamplingOptions(samplingOptions);
     if (ANI_OK != env->Object_SetField_Long(obj, AniGlobalField::GetInstance().samplingOptionsNativeObj,
-            reinterpret_cast<ani_long>(aniSamplingOptions))) {
-            ROSEN_LOGE("AniSamplingOptions::Constructor failed create aniSamplingOptions");
-            delete aniSamplingOptions;
-            return;
+        reinterpret_cast<ani_long>(aniSamplingOptions))) {
+        ROSEN_LOGE("AniSamplingOptions::Constructor failed create aniSamplingOptions");
+        delete aniSamplingOptions;
+        return;
     }
 }
 
@@ -82,10 +82,10 @@ void AniSamplingOptions::ConstructorWithFilterMode(ani_env* env, ani_object obj,
     AniSamplingOptions* aniSamplingOptions = new AniSamplingOptions(samplingOptions);
 
     if (ANI_OK != env->Object_SetField_Long(obj, AniGlobalField::GetInstance().samplingOptionsNativeObj,
-            reinterpret_cast<ani_long>(aniSamplingOptions))) {
-            ROSEN_LOGE("AniSamplingOptions::Constructor failed create aniSamplingOptions");
-            delete aniSamplingOptions;
-            return;
+        reinterpret_cast<ani_long>(aniSamplingOptions))) {
+        ROSEN_LOGE("AniSamplingOptions::Constructor failed create aniSamplingOptions");
+        delete aniSamplingOptions;
+        return;
     }
 }
 
@@ -110,10 +110,10 @@ ani_object AniSamplingOptions::SamplingOptionsTransferStatic(
 
     auto aniSamplingOptions = new AniSamplingOptions(jsSamplingOptions->GetSamplingOptions());
     if (ANI_OK != env->Object_SetField_Long(output, AniGlobalField::GetInstance().samplingOptionsNativeObj,
-            reinterpret_cast<ani_long>(aniSamplingOptions))) {
-            ROSEN_LOGE("AniSamplingOptions::SamplingOptionsTransferStatic failed create aniSamplingOptions");
-            delete aniSamplingOptions;
-            return CreateAniUndefined(env);
+        reinterpret_cast<ani_long>(aniSamplingOptions))) {
+        ROSEN_LOGE("AniSamplingOptions::SamplingOptionsTransferStatic failed create aniSamplingOptions");
+        delete aniSamplingOptions;
+        return CreateAniUndefined(env);
     }
     return output;
 }

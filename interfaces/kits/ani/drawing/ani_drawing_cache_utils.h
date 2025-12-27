@@ -86,7 +86,6 @@ public:
     ani_class point3dInterface;
     ani_class runBufferInterface;
 
-
 private:
     AniGlobalClass() = default;
     ~AniGlobalClass() = default;
