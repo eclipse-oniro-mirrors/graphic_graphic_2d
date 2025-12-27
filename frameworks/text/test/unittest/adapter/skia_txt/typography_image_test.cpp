@@ -154,7 +154,7 @@ HWTEST_F(OH_Drawing_TypographyImageTest, TypographyGetTextPathImageByIndexTest00
     double maxWidth = 500;
     typography_->Layout(maxWidth);
     ImageOptions options{typography_->GetMaxWidth() + IMAGE_PADDING, typography_->GetHeight() + IMAGE_PADDING,
-        IMAGE_PADDING ,IMAGE_PADDING};
+        IMAGE_PADDING, IMAGE_PADDING};
     std::shared_ptr<OHOS::Media::PixelMap> pixelMap = typography_->GetTextPathImageByIndex(3, 8, options, false);
     ASSERT_NE(pixelMap, nullptr);
     EXPECT_EQ(pixelMap->GetWidth(), 510);
