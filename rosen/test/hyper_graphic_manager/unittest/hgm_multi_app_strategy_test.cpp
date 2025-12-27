@@ -258,7 +258,7 @@ HWTEST_F(HgmMultiAppStrategyTest, SingleAppTouch003, Function | SmallTest | Leve
     PART("CaseDescription") {
         std::string unConfigPkgName = "com.pkg.other";
         std::string sceneBoard = "com.ohos.sceneboard";
-        const pid_t resPid = 110;
+        constexpr pid_t resPid = 110;
         auto& pkgParam = pkgParams_[0]; // first pkg
         std::vector<std::string> voteParam = { pkgParam.pkgName + ":" + std::to_string(pkgParam.pid), };
         std::vector<std::string> sceneBoardParam = { sceneBoard + ":" + strategyName0, };
