@@ -2629,56 +2629,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode00
 
 /*
  * @tc.name: CheckSkipAndUpdateForegroundSurfaceRenderNode005
- * @tc.desc: Test RSUniRenderVisitorTest.CheckSkipAndUpdateForegroundSurfaceRenderNode while met skip but
- * curScreenNode_ is nullptr, and child has visible filter but curDirtyManager is nullptr
- * @tc.type: FUNC
- * @tc.require: issue20827
- */
-HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode005, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetStableSkipReached(true);
-    surfaceNode->childHasVisibleFilter_ = true;
-    surfaceNode->dirtyManager_ = nullptr;
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->curScreenNode_ = nullptr;
-
-    auto isQuickSkip = rsUniRenderVisitor->CheckSkipAndUpdateForegroundSurfaceRenderNode(*surfaceNode);
-    ASSERT_TRUE(isQuickSkip);
-}
-
-/*
- * @tc.name: CheckSkipAndUpdateForegroundSurfaceRenderNode006
- * @tc.desc: Test RSUniRenderVisitorTest.CheckSkipAndUpdateForegroundSurfaceRenderNode while met skip, and child has
- * visible filter
- * @tc.type: FUNC
- * @tc.require: issue20827
- */
-HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode006, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetStableSkipReached(true);
-    surfaceNode->childHasVisibleFilter_ = true;
-    surfaceNode->dirtyManager_ = std::make_shared<RSDirtyRegionManager>();
-
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    auto rsContext = std::make_shared<RSContext>();
-    rsUniRenderVisitor->curScreenNode_ = std::make_shared<RSScreenRenderNode>(1, 0, rsContext);
-
-    auto isQuickSkip = rsUniRenderVisitor->CheckSkipAndUpdateForegroundSurfaceRenderNode(*surfaceNode);
-    ASSERT_TRUE(isQuickSkip);
-}
-
-/*
- * @tc.name: CheckSkipAndUpdateForegroundSurfaceRenderNode007
  * @tc.desc: Test RSUniRenderVisitorTest.CheckSkipAndUpdateForegroundSurfaceRenderNode while parent tree is dirty
  * @tc.type: FUNC
  * @tc.require: issue20827
  */
-HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode007, TestSize.Level2)
+HWTEST_F(RSUniRenderVisitorTest, CheckSkipAndUpdateForegroundSurfaceRenderNode005, TestSize.Level2)
 {
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceNode, nullptr);
@@ -2779,7 +2734,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode004, TestSize.Le
 
 /*
  * @tc.name: CheckQuickSkipSurfaceRenderNode005
- * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while check foreground surface
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while check foreground surface node
  * @tc.type: FUNC
  * @tc.require: issue20827
  */
@@ -2791,8 +2746,11 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode005, TestSize.Le
     const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
 
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    surfaceNode->SetStableSkipReached(true);
     auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_FALSE(isQuickSkip);
+
+    surfaceNode->SetStableSkipReached(true);
+    isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
     ASSERT_TRUE(isQuickSkip);
 }
 
@@ -2867,6 +2825,55 @@ HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode009, TestSize.Le
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
     ASSERT_FALSE(isQuickSkip);
+}
+
+/*
+ * @tc.name: CheckQuickSkipSurfaceRenderNode0010
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while foreground skip but
+ * curScreenNode_ is nullptr, and child has visible filter but curDirtyManager is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode0010, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
+    surfaceNode->SetStableSkipReached(true);
+    surfaceNode->childHasVisibleFilter_ = true;
+    surfaceNode->dirtyManager_ = nullptr;
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    rsUniRenderVisitor->curScreenNode_ = nullptr;
+
+    auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(isQuickSkip);
+}
+
+/*
+ * @tc.name: CheckQuickSkipSurfaceRenderNode0011
+ * @tc.desc: Test RSUniRenderVisitorTest.CheckQuickSkipSurfaceRenderNode while foreground skip, and child has
+ * visible filter
+ * @tc.type: FUNC
+ * @tc.require: issue20827
+ */
+HWTEST_F(RSUniRenderVisitorTest, CheckQuickSkipSurfaceRenderNode0011, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    const_cast<SurfaceWindowType&>(surfaceNode->surfaceWindowType_) = SurfaceWindowType::SYSTEM_SCB_WINDOW;
+    surfaceNode->SetStableSkipReached(true);
+    surfaceNode->childHasVisibleFilter_ = true;
+    surfaceNode->dirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    auto rsContext = std::make_shared<RSContext>();
+    rsUniRenderVisitor->curScreenNode_ = std::make_shared<RSScreenRenderNode>(1, 0, rsContext);
+
+    auto isQuickSkip = rsUniRenderVisitor->CheckQuickSkipSurfaceRenderNode(*surfaceNode);
+    ASSERT_TRUE(isQuickSkip);
 }
 
 /*
@@ -6887,125 +6894,6 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareUnionRenderNode002, TestSize.Level1
     node->InitRenderParams();
     rsUniRenderVisitor->QuickPrepareUnionRenderNode(*node);
     ASSERT_NE(rsUniRenderVisitor->curSurfaceDirtyManager_, nullptr);
-}
-
-/**
- * @tc.name: CollectUnionInfo001
- * @tc.desc: Test CollectUnionInfo
- * @tc.type: FUNC
- * @tc.require: issueIAG8BF
- */
-HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo001, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId id = 1;
-    auto rsContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, rsContext->weak_from_this());
-    NodeId id1 = 2;
-    auto node = std::make_shared<RSCanvasRenderNode>(id1, rsContext->weak_from_this());
-    node->oldDirtyInSurface_ = RectI(0, 0, 10, 10);
-    rsUniRenderVisitor->curUnionNode_ = unionNode;
-
-    node->renderProperties_.useUnion_ = true;
-    node->shouldPaint_ = true;
-    rsUniRenderVisitor->CollectUnionInfo(*node);
-    ASSERT_FALSE(unionNode->visibleUnionChildren_.empty());
-}
-
-/**
- * @tc.name: CollectUnionInfo002
- * @tc.desc: Test CollectUnionInfo
- * @tc.type: FUNC
- * @tc.require: issueIAG8BF
- */
-HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo002, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId id = 1;
-    auto rsContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, rsContext->weak_from_this());
-    NodeId id1 = 2;
-    auto node = std::make_shared<RSCanvasRenderNode>(id1, rsContext->weak_from_this());
-    node->oldDirtyInSurface_ = RectI(0, 0, 10, 10);
-    rsUniRenderVisitor->curUnionNode_ = unionNode;
-
-    node->renderProperties_.useUnion_ = false;
-    node->shouldPaint_ = true;
-    rsUniRenderVisitor->CollectUnionInfo(*node);
-    ASSERT_TRUE(unionNode->visibleUnionChildren_.empty());
-}
-
-/**
- * @tc.name: CollectUnionInfo003
- * @tc.desc: Test CollectUnionInfo
- * @tc.type: FUNC
- * @tc.require: issueIAG8BF
- */
-HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo003, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId id = 1;
-    auto rsContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, rsContext->weak_from_this());
-    NodeId id1 = 2;
-    auto node = std::make_shared<RSCanvasRenderNode>(id1, rsContext->weak_from_this());
-    node->oldDirtyInSurface_ = RectI(0, 0, 10, 10);
-    rsUniRenderVisitor->curUnionNode_ = unionNode;
-
-    node->renderProperties_.useUnion_ = true;
-    node->shouldPaint_ = false;
-    rsUniRenderVisitor->CollectUnionInfo(*node);
-    ASSERT_TRUE(unionNode->visibleUnionChildren_.empty());
-}
-
-/**
- * @tc.name: CollectUnionInfo004
- * @tc.desc: Test CollectUnionInfo
- * @tc.type: FUNC
- * @tc.require: issueIAG8BF
- */
-HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo004, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId id = 1;
-    auto rsContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, rsContext->weak_from_this());
-    NodeId id1 = 2;
-    auto node = std::make_shared<RSCanvasRenderNode>(id1, rsContext->weak_from_this());
-    node->oldDirtyInSurface_ = RectI(0, 0, 10, 10);
-    rsUniRenderVisitor->curUnionNode_ = unionNode;
-
-    node->renderProperties_.useUnion_ = false;
-    node->shouldPaint_ = false;
-    rsUniRenderVisitor->CollectUnionInfo(*node);
-    ASSERT_TRUE(unionNode->visibleUnionChildren_.empty());
-}
-
-/**
- * @tc.name: CollectUnionInfo005
- * @tc.desc: Test CollectUnionInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSUniRenderVisitorTest, CollectUnionInfo005, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    NodeId id = 1;
-    auto rsContext = std::make_shared<RSContext>();
-    auto unionNode = std::make_shared<RSUnionRenderNode>(id, rsContext->weak_from_this());
-    NodeId id1 = 2;
-    auto node = std::make_shared<RSCanvasRenderNode>(id1, rsContext->weak_from_this());
-    node->oldDirtyInSurface_ = RectI(0, 0, 10, 10);
-    rsUniRenderVisitor->curUnionNode_ = nullptr;
-
-    node->renderProperties_.useUnion_ = true;
-    node->shouldPaint_ = true;
-    rsUniRenderVisitor->CollectUnionInfo(*node);
-    ASSERT_TRUE(unionNode->visibleUnionChildren_.empty());
 }
 
 /**

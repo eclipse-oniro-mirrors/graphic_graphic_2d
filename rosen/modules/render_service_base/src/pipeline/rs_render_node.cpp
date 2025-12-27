@@ -52,6 +52,7 @@
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_union_render_node.h"
 #include "pipeline/sk_resource_manager.h"
 #include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "platform/common/rs_log.h"
@@ -1080,6 +1081,7 @@ void RSRenderNode::DumpTree(int32_t depth, std::string& out) const
         }
         out += ", AbsRotation: " + std::to_string(surfaceNode->GetAbsRotation());
 #endif
+        out += ", persistId [" + std::to_string(surfaceNode->GetLeashPersistentId()) + "]";
     }
     if (sharedTransitionParam_) {
         out += sharedTransitionParam_->Dump();
@@ -3160,6 +3162,9 @@ CM_INLINE void RSRenderNode::ApplyModifiers()
     if (dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::USE_EFFECT))) {
         ProcessBehindWindowAfterApplyModifiers();
     }
+    if (dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::BOUNDS))) {
+        RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers(shared_from_this());
+    }
 
     RS_LOGI_IF(DEBUG_NODE,
         "RSRenderNode::apply modifiers RenderProperties's sandBox's hasValue is %{public}d"
@@ -3769,6 +3774,7 @@ void RSRenderNode::OnTreeStateChanged()
     if (useEffect && useEffectType == UseEffectType::BEHIND_WINDOW) {
         ProcessBehindWindowOnTreeStateChanged();
     }
+    RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged(shared_from_this());
 }
 
 bool RSRenderNode::HasDisappearingTransition(bool recursive) const

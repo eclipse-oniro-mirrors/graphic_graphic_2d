@@ -61,6 +61,12 @@ HWTEST_F(EffectImageFilterUnittest, FilterTest001, TestSize.Level1)
     filter = EffectImageFilter::Grayscale();
     EXPECT_TRUE(filter != nullptr);
 
+    filter = EffectImageFilter::CreateSDF(64, true);
+    EXPECT_TRUE(filter != nullptr);
+
+    filter = EffectImageFilter::CreateSDF(0, false);
+    EXPECT_TRUE(filter != nullptr);
+
     filter = EffectImageFilter::Invert();
     EXPECT_TRUE(filter != nullptr);
 
@@ -100,6 +106,23 @@ HWTEST_F(EffectImageFilterUnittest, ApplyTest001, TestSize.Level1)
 
     image = std::make_shared<EffectImageChain>();
     EXPECT_TRUE(image != nullptr);
+}
+
+/**
+ * @tc.name: ApplyTest002
+ * @tc.desc: apply sdf creation
+ */
+HWTEST_F(EffectImageFilterUnittest, ApplyTest002, TestSize.Level1)
+{
+    auto filter = EffectImageFilter::CreateSDF(64, true);
+    EXPECT_TRUE(filter != nullptr);
+    auto ret = filter->Apply(nullptr);
+    EXPECT_TRUE(ret != DrawingError::ERR_OK);
+
+    auto image = std::make_shared<EffectImageChain>();
+    EXPECT_TRUE(image != nullptr);
+    ret = filter->Apply(image);
+    EXPECT_TRUE(ret != DrawingError::ERR_OK); // image not prepared
 }
 
 /**

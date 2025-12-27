@@ -82,6 +82,11 @@ bool RSSystemProperties::GetAnimationTraceEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetTestModeEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetAnimationDelayOptimizeEnabled()
 {
     return false;

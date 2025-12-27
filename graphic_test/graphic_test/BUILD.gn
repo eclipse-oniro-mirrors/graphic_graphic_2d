@@ -79,6 +79,7 @@ rs_effect_feature_sources = [
   "rs_effect_feature/effect_distort_chroma_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_effect_test.cpp",
   "rs_effect_feature/ng_effect_test/ng_substracted_rect_test.cpp",
+  "rs_effect_feature/ng_filter_test/ng_filter_magnifier_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_sdf_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_test_utils.cpp",
@@ -101,6 +102,7 @@ rs_func_feature_sources = [
   "rs_func_feature/special_layer/skip_layer_test.cpp",
   "rs_func_feature/special_layer/snapshot_skip_layer_test.cpp",
   "rs_func_feature/surface_capture/surface_capture_demo.cpp",
+  "rs_func_feature/surface_capture/self_surface_capture_demo.cpp",
   "rs_func_feature/accessibility/curtain_screen_test.cpp",
 ]
 rs_perform_feature_sources = [
