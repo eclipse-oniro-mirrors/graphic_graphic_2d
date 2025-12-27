@@ -40,7 +40,9 @@ public:
 void RSPerfmonitorReporterTest::SetUpTestCase() {}
 void RSPerfmonitorReporterTest::TearDownTestCase() {}
 void RSPerfmonitorReporterTest::SetUp() {}
-void RSPerfmonitorReporterTest::TearDown() {}
+void RSPerfmonitorReporterTest::TearDown() {
+    usleep(50000);
+}
 
 /**
  * @tc.name: SetFocusAppInfoTest
@@ -55,6 +57,7 @@ HWTEST_F(RSPerfmonitorReporterTest, SetFocusAppInfoTest, TestSize.Level1)
     perfMonitor.SetFocusAppInfo(bundleName.c_str());
     perfMonitor.ReportAtRsFrameEnd();
     EXPECT_EQ(perfMonitor.currentBundleName_, bundleName);
+    usleep(50000);
 }
 
 /**
