@@ -34,7 +34,7 @@ public:
     // Hgm
     sptr<HgmServiceToProcessInfo> NotifyRpHgmFrameRate(uint64_t timestamp, uint64_t vsyncId,
         const sptr<HgmProcessToServiceInfo>& processToServiceInfo) override;
-    
+
     // Screen Manager
     void NotifyScreenSwitchFinished(ScreenId screenId) override;
 

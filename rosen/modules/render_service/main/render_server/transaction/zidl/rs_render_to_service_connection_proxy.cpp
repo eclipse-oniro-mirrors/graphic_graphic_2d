@@ -41,7 +41,7 @@ void RSRenderToServiceConnectionProxy::ReplyDumpResultToService(std::string& dum
         return;
     }
     if (!RSDumpManager::GetInstance().WriteAshmemDataToParcel(data, dumpStringLength, dumpData)) {
-        ROSEN_LOGE("dmulti_process %{public}s: WriteDumpData failed."), __func__;
+        ROSEN_LOGE("dmulti_process %{public}s: WriteDumpData failed.", __func__);
         return;
     }
     uint32_t code = static_cast<uint32_t>(RSIRenderToServiceConnectionInterfaceCode::REPLY_DUMP_RESULT_TO_SERVICE);
