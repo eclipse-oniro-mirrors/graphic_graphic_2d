@@ -139,18 +139,6 @@ void HgmConfigCallbackManager::RegisterXComponentExpectedFrameRateCallback(pid_t
     }
 }
 
-void HgmConfigCallbackManager::SyncHgmExtraPendingCallback(
-    std::unordered_map<pid_t, sptr<RSIHgmConfigChangeCallback>>& callbacks, pid_t extraSyncPid)
-{
-    if (extraSyncPid > DEFAULT_PID) {
-        if (auto iter = pendingAnimDynamicCfgCallbacks_.find(extraSyncPid);
-            iter != pendingAnimDynamicCfgCallbacks_.end()) {
-            callbacks.insert_or_assign(extraSyncPid, std::move(iter->second));
-            pendingAnimDynamicCfgCallbacks_.erase(iter);
-        }
-    }
-}
-
 void HgmConfigCallbackManager::SyncHgmConfigChangeCallback(pid_t extraSyncPid)
 {
     pendingAnimDynamicCfgCallbacks_ = animDynamicCfgCallbacks_;
@@ -175,7 +163,14 @@ void HgmConfigCallbackManager::SyncHgmConfigChangeCallback(
             pendingAnimDynamicCfgCallbacks_.erase(iter);
         }
     }
-    SyncHgmExtraPendingCallback(callbacks, extraSyncPid);
+
+    if (extraSyncPid > DEFAULT_PID) {
+        if (auto iter = pendingAnimDynamicCfgCallbacks_.find(extraSyncPid);
+            iter != pendingAnimDynamicCfgCallbacks_.end()) {
+            callbacks.insert_or_assign(extraSyncPid, std::move(iter->second));
+            pendingAnimDynamicCfgCallbacks_.erase(iter);
+        }
+    }
 
     if (callbacks.empty()) {
         return;
