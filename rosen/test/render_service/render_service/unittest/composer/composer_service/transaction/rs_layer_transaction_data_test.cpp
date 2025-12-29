@@ -40,16 +40,13 @@ HWTEST_F(RSLayerTransactionDataTest, Marshalling_Unmarshalling_BasicPaths, TestS
     data.SetTimestamp(1u);
     data.SetSendingPid(2);
     data.SetIndex(3u);
-    ScreenInfo si {};
-    si.id = 10u;
-    si.width = 1920;
-    si.height = 1080;
-    data.SetScreenInfo(si);
-    data.SetIsScreenInfoChanged(true);
-    PipelineParam pp {};
-    pp.vsyncId = 5u;
-    pp.SurfaceFpsOpNum = 0;
-    data.SetPipelineParam(pp);
+    ComposerInfo composerInfo {};
+    composerInfo.composerScreenInfo.id = 10u;
+    composerInfo.composerScreenInfo.width = 1920;
+    composerInfo.composerScreenInfo.height = 1080;
+    composerInfo.pipelineParam.vsyncId = 5u;
+    composerInfo.pipelineParam.SurfaceFpsOpNum = 0;
+    data.SetComposerInfo(composerInfo);
 
     std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
     ASSERT_TRUE(data.Marshalling(parcel));

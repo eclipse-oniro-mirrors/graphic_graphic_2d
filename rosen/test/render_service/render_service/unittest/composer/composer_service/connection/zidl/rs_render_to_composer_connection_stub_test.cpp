@@ -33,7 +33,7 @@ public:
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId) override {}
     void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds) override {}
     void SetScreenBacklight(uint32_t level) override {}
-    void SetComposerToRenderConnection(const sptr<RSIComposerToRenderConnection>& composerToRenderConn) override {}
+    void SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn) override {}
 
     bool committed_ {false};
 };

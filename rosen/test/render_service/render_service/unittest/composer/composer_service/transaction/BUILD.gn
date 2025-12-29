@@ -22,6 +22,7 @@ group("unittest") {
   deps = [
     ":RSLayerTransactionTest",
     ":RSTransactionUnittest",
+    "command:unittest",
   ]
 }
 

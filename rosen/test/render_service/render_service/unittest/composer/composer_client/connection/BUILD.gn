@@ -15,6 +15,17 @@ import("//build/test.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 module_output_path = "graphic_2d/graphic_2d/render_service/composer/composer_client/connection"
+
+group("unittest") {
+  testonly = true
+  deps = [
+    ":RSComposerToRenderConnectionTest",
+    "zidl:unittest",
+  ]
+}
+
+###############################################################################
+
 _common_deps = [
   "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
   "$graphic_2d_root/rosen/modules/render_service:librender_service",
@@ -92,12 +103,5 @@ config("connection_common_test_config") {
     "-g3",
     "-Dprivate=public",
     "-Dprotected=public",
-  ]
-}
-
-group("test") {
-  testonly = true
-  deps = [
-    ":RSComposerToRenderConnectionTest",
   ]
 }

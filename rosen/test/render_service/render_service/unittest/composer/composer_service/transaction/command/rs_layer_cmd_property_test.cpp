@@ -1,43 +1,59 @@
 /*
- * Test Scope: Cover RSLayerPropertyBase operator overloads on nullptr.
- * Purpose: Ensure operations on nullptr do not crash and return defaults.
+ * Test Scope: Align with RSLayerCmdProperty API (Set/Get/Clone/RSRenderLayerProperty bridge)
  */
 
 #include <gtest/gtest.h>
 #include "rs_layer_cmd_property.h"
 
+using namespace OHOS;
 using namespace OHOS::Rosen;
 using namespace testing;
 using namespace testing::ext;
 class RSLayerCmdPropertyTest : public Test {};
 
 /*
- * Test: Operators_OnNullptr_NoCrash
- * Purpose: Verify operator overloads on nullptr return safe defaults.
- * Steps: Apply +=, -=, *=, +, -, *; compare == and != with nullptr.
- * Expected: Returns null or false; no crash.
+ * Test: SetGet_And_Clone_Basic
+ * Purpose: Validate Set/Get and Clone keep the same value and are independent.
  */
-HWTEST(RSLayerCmdPropertyTest, Operators_OnNullptr_NoCrash, TestSize.Level1)
+HWTEST(RSLayerCmdPropertyTest, SetGet_And_Clone_Basic, TestSize.Level1)
 {
-    std::shared_ptr<RSLayerPropertyBase> a;
-    std::shared_ptr<const RSLayerPropertyBase> b;
+    RSLayerCmdProperty<int> prop(10);
+    EXPECT_EQ(prop.Get(), 10);
+    prop.Set(20);
+    EXPECT_EQ(prop.Get(), 20);
 
-    auto r1 = a += b;
-    auto r2 = a -= b;
-    auto r3 = a *= 1.0f;
-    auto r4 = std::shared_ptr<const RSLayerPropertyBase>(nullptr) + b;
-    auto r5 = std::shared_ptr<const RSLayerPropertyBase>(nullptr) - b;
-    auto r6 = std::shared_ptr<const RSLayerPropertyBase>(nullptr) * 1.0f;
+    auto cloned = std::static_pointer_cast<RSLayerCmdProperty<int>>(prop.Clone());
+    ASSERT_NE(cloned, nullptr);
+    EXPECT_EQ(cloned->Get(), 20);
 
-    EXPECT_EQ(r1, nullptr);
-    EXPECT_EQ(r2, nullptr);
-    EXPECT_EQ(r3, nullptr);
-    EXPECT_EQ(r4, nullptr);
-    EXPECT_EQ(r5, nullptr);
-    EXPECT_EQ(r6, nullptr);
+    prop.Set(30);
+    EXPECT_EQ(prop.Get(), 30);
+    // clone should not change with original
+    EXPECT_EQ(cloned->Get(), 20);
+}
 
-    bool eq = (std::shared_ptr<const RSLayerPropertyBase>(nullptr) == b);
-    bool ne = (std::shared_ptr<const RSLayerPropertyBase>(nullptr) != b);
-    EXPECT_FALSE(eq);
-    EXPECT_FALSE(ne);
+/*
+ * Test: Bridge_To_RSRenderLayerProperty_Marshalling
+ * Purpose: Verify GetRSRenderLayerProperty() returns a marshallable property with same value.
+ */
+HWTEST(RSLayerCmdPropertyTest, Bridge_To_RSRenderLayerProperty_Marshalling, TestSize.Level1)
+{
+    GraphicIRect rect {1, 2, 3, 4};
+    RSLayerCmdProperty<GraphicIRect> prop(rect);
+    auto rsRenderPropBase = prop.GetRSRenderLayerProperty();
+    ASSERT_NE(rsRenderPropBase, nullptr);
+
+    auto rsRenderProp = std::static_pointer_cast<RSRenderLayerCmdProperty<GraphicIRect>>(rsRenderPropBase);
+    ASSERT_NE(rsRenderProp, nullptr);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(rsRenderProp->OnMarshalling(parcel, rsRenderProp->Get()));
+
+    std::shared_ptr<RSRenderLayerCmdProperty<GraphicIRect>> out;
+    ASSERT_TRUE(rsRenderProp->OnUnmarshalling(parcel, out));
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->Get().x, 1);
+    EXPECT_EQ(out->Get().y, 2);
+    EXPECT_EQ(out->Get().w, 3);
+    EXPECT_EQ(out->Get().h, 4);
 }

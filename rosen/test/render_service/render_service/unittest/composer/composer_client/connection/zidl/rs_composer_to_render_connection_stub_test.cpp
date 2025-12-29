@@ -50,7 +50,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_InvalidToken_Branch, TestSiz
     MessageOption opt;
     data.WriteInterfaceToken(u"wrong.descriptor");
     int ret = stub.OnRemoteRequest(
-        RSIComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
+        IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
         data, reply, opt);
     EXPECT_NE(ret, COMPOSITOR_ERROR_OK);
 }
@@ -77,7 +77,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, OnRemoteRequest_ReleaseLayerBuffe
     MessageParcel reply;
     MessageOption opt;
 
-    data.WriteInterfaceToken(RSIComposerToRenderConnection::GetDescriptor());
+    data.WriteInterfaceToken(IRSComposerToRenderConnection::GetDescriptor());
     data.WriteUint64(1u); // screenId
     data.WriteUint32(1u); // timestampVec size
     data.WriteUint64(10u); // layerId
@@ -92,7 +92,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, OnRemoteRequest_ReleaseLayerBuffe
     data.WriteInt64(987654321LL); // lastSwapBufferTime
 
     int ret = stub.OnRemoteRequest(
-        RSIComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
+        IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
         data, reply, opt);
     EXPECT_EQ(ret, COMPOSITOR_ERROR_OK);
 }
@@ -117,7 +117,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, OnRemoteRequest_ReleaseLayerBuffe
     MessageParcel reply;
     MessageOption opt;
 
-    data.WriteInterfaceToken(RSIComposerToRenderConnection::GetDescriptor());
+    data.WriteInterfaceToken(IRSComposerToRenderConnection::GetDescriptor());
     data.WriteUint64(1u); // screenId
     data.WriteUint32(0u); // timestampVec size
     data.WriteUint32(1u); // releaseBufferFenceVec size
@@ -128,7 +128,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, OnRemoteRequest_ReleaseLayerBuffe
     fence->WriteToMessageParcel(data);
     data.WriteInt64(0); // lastSwapBufferTime
 
-    int ret = stub.OnRemoteRequest(RSIComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS, data, reply, opt);
+    int ret = stub.OnRemoteRequest(IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS, data, reply, opt);
     EXPECT_EQ(ret, ERR_INVALID_DATA);
 }
 
@@ -153,13 +153,13 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, OnRemoteRequest_NotifyLppLayerToR
     MessageParcel reply;
     MessageOption opt;
 
-    data.WriteInterfaceToken(RSIComposerToRenderConnection::GetDescriptor());
+    data.WriteInterfaceToken(IRSComposerToRenderConnection::GetDescriptor());
     data.WriteUint64(100u); // vsyncId
     data.WriteInt32(2); // size
     data.WriteUint64(1u);
     data.WriteUint64(2u);
     int ret = stub.OnRemoteRequest(
-        RSIComposerToRenderConnection::NOTIFY_LPP_LAYER_TO_RENDER,
+        IRSComposerToRenderConnection::NOTIFY_LPP_LAYER_TO_RENDER,
         data, reply, opt);
     EXPECT_EQ(ret, COMPOSITOR_ERROR_OK);
 }

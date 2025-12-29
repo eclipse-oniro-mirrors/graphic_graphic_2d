@@ -31,8 +31,6 @@ namespace OHOS::Rosen{
 HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_BasicType_Success, TestSize.Level1)
 {
     RSRenderLayerCmdProperty<int> prop(123);
-    prop.SetPropertyId(42);
-    prop.SetCmdType(RSLayerCmdType::ZORDER);
 
     MessageParcel parcel;
     ASSERT_TRUE(prop.OnMarshalling(parcel, prop.Get()));
@@ -41,8 +39,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_BasicType_Success, TestSi
     ASSERT_TRUE(prop.OnUnmarshalling(parcel, out));
     ASSERT_NE(out, nullptr);
     EXPECT_EQ(out->Get(), 123);
-    EXPECT_EQ(out->GetPropertyId(), static_cast<RSLayerPropertyId>(42));
-    EXPECT_EQ(out->GetCmdType(), RSLayerCmdType::ZORDER);
 }
 
 /**
@@ -58,8 +54,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_String_And_Vector_Success
 {
     // string
     RSRenderLayerCmdProperty<std::string> propStr("hello");
-    propStr.SetPropertyId(1);
-    propStr.SetCmdType(RSLayerCmdType::ZORDER);
     MessageParcel p1;
     ASSERT_TRUE(propStr.OnMarshalling(p1, propStr.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<std::string>> outStr;
@@ -69,8 +63,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_String_And_Vector_Success
 
     // vector<int>
     RSRenderLayerCmdProperty<std::vector<int>> propVec({1, 2, 3});
-    propVec.SetPropertyId(2);
-    propVec.SetCmdType(RSLayerCmdType::ZORDER);
     MessageParcel p2;
     ASSERT_TRUE(propVec.OnMarshalling(p2, propVec.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<std::vector<int>>> outVec;
@@ -95,8 +87,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Enum_And_Struct_Success, 
 {
     // enum
     RSRenderLayerCmdProperty<GraphicLayerType> propEnum(GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
-    propEnum.SetPropertyId(3);
-    propEnum.SetCmdType(RSLayerCmdType::ZORDER);
     MessageParcel p1;
     ASSERT_TRUE(propEnum.OnMarshalling(p1, propEnum.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<GraphicLayerType>> outEnum;
@@ -107,8 +97,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Enum_And_Struct_Success, 
     // struct
     GraphicIRect rect {10, 20, 30, 40};
     RSRenderLayerCmdProperty<GraphicIRect> propStruct(rect);
-    propStruct.SetPropertyId(4);
-    propStruct.SetCmdType(RSLayerCmdType::ZORDER);
     MessageParcel p2;
     ASSERT_TRUE(propStruct.OnMarshalling(p2, propStruct.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<GraphicIRect>> outStruct;
@@ -133,8 +121,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
 {
     // PixelMap
     RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>> propPm(nullptr);
-    propPm.SetPropertyId(5);
-    propPm.SetCmdType(RSLayerCmdType::PIXEL_MAP);
     MessageParcel p1;
     ASSERT_TRUE(propPm.OnMarshalling(p1, propPm.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>> outPm;
@@ -144,8 +130,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
 
     // SurfaceBuffer
     RSRenderLayerCmdProperty<sptr<SurfaceBuffer>> propSb(nullptr);
-    propSb.SetPropertyId(6);
-    propSb.SetCmdType(RSLayerCmdType::BUFFER);
     MessageParcel p2;
     ASSERT_TRUE(propSb.OnMarshalling(p2, propSb.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<sptr<SurfaceBuffer>>> outSb;
@@ -155,8 +139,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
 
     // SyncFence
     RSRenderLayerCmdProperty<sptr<SyncFence>> propFence(nullptr);
-    propFence.SetPropertyId(7);
-    propFence.SetCmdType(RSLayerCmdType::ACQUIRE_FENCE);
     MessageParcel p3;
     ASSERT_TRUE(propFence.OnMarshalling(p3, propFence.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<sptr<SyncFence>>> outFence;
@@ -166,8 +148,6 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
 
     // SurfaceTunnelHandle
     RSRenderLayerCmdProperty<sptr<SurfaceTunnelHandle>> propTh(nullptr);
-    propTh.SetPropertyId(8);
-    propTh.SetCmdType(RSLayerCmdType::TUNNEL_HANDLE);
     MessageParcel p4;
     ASSERT_TRUE(propTh.OnMarshalling(p4, propTh.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<sptr<SurfaceTunnelHandle>>> outTh;
@@ -185,14 +165,7 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
  *                  2. call OnMarshalling
  *                  3. expect OnMarshalling returns false
  */
-HWTEST(RenderLayerCmdPropertyTest, Marshall_WithInvalidCmdType_Fail, TestSize.Level1)
-{
-    RSRenderLayerCmdProperty<int> prop(1);
-    prop.SetPropertyId(9);
-    // 未设置 cmdType，保持 INVALID
-    MessageParcel parcel;
-    EXPECT_FALSE(prop.OnMarshalling(parcel, prop.Get()));
-}
+// 取消基于 cmdType 的失败用例：当前实现仅针对值进行编解码，无 cmdType/PropertyId 概念。
 
 /**
  * Function: Unmarshall_WithInsufficientData_Fail
@@ -205,19 +178,18 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_WithInvalidCmdType_Fail, TestSize.Le
  */
 HWTEST(RenderLayerCmdPropertyTest, Unmarshall_WithInsufficientData_Fail, TestSize.Level1)
 {
-    // 仅写入 type
+    // 对于基本类型，空包直接失败
     MessageParcel p1;
-    ASSERT_TRUE(p1.WriteUint16(static_cast<uint16_t>(RSLayerCmdType::ZORDER)));
     RSRenderLayerCmdProperty<int> prop(0);
     std::shared_ptr<RSRenderLayerCmdProperty<int>> out1;
     EXPECT_FALSE(prop.OnUnmarshalling(p1, out1));
 
-    // 写入 type 与 id，但缺少 value
+    // 对于 vector，写入 size 但缺失元素内容，解包失败
     MessageParcel p2;
-    ASSERT_TRUE(p2.WriteUint16(static_cast<uint16_t>(RSLayerCmdType::ZORDER)));
-    ASSERT_TRUE(p2.WriteUint64(100));
-    std::shared_ptr<RSRenderLayerCmdProperty<int>> out2;
-    EXPECT_FALSE(prop.OnUnmarshalling(p2, out2));
+    ASSERT_TRUE(p2.WriteUint32(1)); // size = 1，但不写入任何元素
+    RSRenderLayerCmdProperty<std::vector<int>> propVec(std::vector<int>{});
+    std::shared_ptr<RSRenderLayerCmdProperty<std::vector<int>>> out2;
+    EXPECT_FALSE(propVec.OnUnmarshalling(p2, out2));
 }
 
 /**
@@ -234,8 +206,6 @@ HWTEST(RenderLayerCmdPropertyTest, Unmarshall_Vector_WithOversize_Fail, TestSize
     using VecInt = std::vector<int>;
     RSRenderLayerCmdProperty<VecInt> prop(VecInt{});
     MessageParcel parcel;
-    ASSERT_TRUE(parcel.WriteUint16(static_cast<uint16_t>(RSLayerCmdType::ZORDER)));
-    ASSERT_TRUE(parcel.WriteUint64(77));
     ASSERT_TRUE(parcel.WriteUint32(10001));
 
     std::shared_ptr<RSRenderLayerCmdProperty<VecInt>> out;
