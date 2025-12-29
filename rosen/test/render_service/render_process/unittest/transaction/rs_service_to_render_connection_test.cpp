@@ -48,12 +48,12 @@ void RSServiceToRenderConnectionTest::SetUpTestCase()
     auto runner = AppExecFwk::EventRunner::Create(true);
     auto handler = std::make_shared<AppExecFwk::EventHandler>(runner);
     auto renderPipeline = RSRenderPipeline::Create(handler, nullptr, nullptr);
+
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
     renderService.Init();
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    auto rsRenderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
     sptr<RSRenderPipelineAgent> renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
-    rsConn_ = sptr<RSServiceToRenderConnection>::MakeSptr(rsRenderServiceAgent, renderPipelineAgent);
+    rsConn_ = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
 }
 void RSServiceToRenderConnectionTest::TearDownTestCase() {}
 void RSServiceToRenderConnectionTest::SetUp() {}
