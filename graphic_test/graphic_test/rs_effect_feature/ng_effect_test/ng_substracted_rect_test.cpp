@@ -19,7 +19,6 @@
 #include "ui_effect/property/include/rs_ui_mask_base.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 #include "ui/rs_effect_node.h"
-#include "../ng_filter_test/ng_sdf_test_utils.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -29,7 +28,6 @@ namespace {
 using MaskCreator = std::function<std::shared_ptr<RSNGMaskBase>()>;
 using MaskConvertor = std::function<std::shared_ptr<RSNGMaskBase>(std::shared_ptr<MaskPara>)>;
 const std::string g_foregroundImagePath = "/data/local/tmp/fg_test.jpg";
-const std::string g_backgroundImagePath = "/data/local/tmp/bg_test.jpg";
 
 static std::unordered_map<RSNGEffectType, MaskCreator> creatorMask = {
     {RSNGEffectType::NOISY_FRAME_GRADIENT_MASK,
@@ -158,7 +156,7 @@ constexpr uint32_t NUM_13 = 13;
 constexpr uint32_t NUM_14 = 14;
 }
 
-class NGEffectTest : public RSGraphicTest {
+class NGSubstractedRectTest : public RSGraphicTest {
 public:
     // called before each tests
     void BeforeEach() override
@@ -235,7 +233,7 @@ void SetNoisyFrameGradientMaskParams(const std::shared_ptr<RSNGNoisyFrameGradien
 }
 
 // Test Foreground Noisy Frame Gradient Mask and Color Gradient Effect
-GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_Substracted_Rect_NG_Mask_Noisy_Frame_Gradient_Foreground_Test)
+GRAPHIC_TEST(NGSubstractedRectTest, EFFECT_TEST, Set_Substracted_Rect_NG_Mask_Noisy_Frame_Gradient_Foreground_Test)
 {
     const int columnCount = 2;
     const int rowCount = static_cast<int>(TestDataGroupParamsType::COUNT);
@@ -249,7 +247,7 @@ GRAPHIC_TEST(NGEffectTest, EFFECT_TEST, Set_Substracted_Rect_NG_Mask_Noisy_Frame
 
         // Create Color Gradient Effect
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
-        SetColorGradientEffectParams(colorGradient, i);
+        SetColorGradientEffectParams(colorGradient, 0);
         colorGradient->Setter<ColorGradientEffectMaskTag>(
             std::static_pointer_cast<RSNGMaskBase>(noisyFrameGradientMask));
 
