@@ -186,7 +186,7 @@ bool SkiaSurface::Bind(const FrameBuffer& frameBuffer)
     framebufferInfo.fFormat = frameBuffer.Format;
 #ifdef USE_M133_SKIA
     GrBackendRenderTarget backendRenderTarget = GrBackendRenderTargets::MakeGL(
-        frameBuffer.width, frameBuffer.height, FB_SAMPLE_COUNT, STENCIL_BITS, framebufferInfo);
+        frameBuffer.width, frameBuffer.height, FB_SAMPLE_COUNT, 0, framebufferInfo);
 #else
     GrBackendRenderTarget backendRenderTarget(
         frameBuffer.width, frameBuffer.height, FB_SAMPLE_COUNT, STENCIL_BITS, framebufferInfo);
