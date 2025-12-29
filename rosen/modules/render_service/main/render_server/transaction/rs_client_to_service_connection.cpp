@@ -1463,6 +1463,7 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
 #ifdef RS_ENABLE_GPU
         RSRenderComposerManager::GetInstance().PostSyncTask(id, [=]() {
             screenManager_->SetScreenPowerStatus(id, status);
+            RSRenderComposerManager::GetInstance().HandlePowerStatus(id, status);
         });
         screenManager_->WaitScreenPowerStatusTask();
         mainThread_->SetDiscardJankFrames(true);
