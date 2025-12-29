@@ -496,7 +496,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         RSUifirstManager::Instance().PrepareCurrentFrameEvent();
 #endif
         hgmRPContext_->NotifyRpHgmFrameRate(vsyncId_, context_,
-            rpVsyncRateReduceManager_.GetVrateMap(), pipelineParam_);
+            rpVsyncRateReduceManager_.GetVrateMap(), rpVsyncRateReduceManager_.CheckNeedNotify(), pipelineParam_);
         RS_PROFILER_ON_RENDER_BEGIN();
         // cpu boost feature start
         ffrt_cpu_boost_start(CPUBOOST_START_POINT);
@@ -2288,7 +2288,7 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by buffer not updated");
         }
         if (isHardwareEnabledBufferUpdated_) {
-            needTraverseNodeTree = !DoDirectComposition(rootNode, !directComposeHelper_.isLastFrameDirectComposition_);
+            needTraverseNodeTree = !DoDirectComposition(rootNode);
         } else if (forceUpdateUniRenderFlag_) {
             RS_TRACE_NAME("RSMainThread::UniRender ForceUpdateUniRender");
         } else if (!pendingUiCaptureTasks_.empty()) {
@@ -2444,7 +2444,7 @@ bool CheckReduceIntervalForAIBarNodesIfNeeded(const RSRenderNode::WeakPtrSet& no
 }
 } // namespace
 
-bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode, bool waitForRT)
+bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNode)
 {
     auto children = rootNode->GetChildrenList();
     if (children.empty()) {
@@ -2459,6 +2459,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             break;
         }
     }
+
     if (!screenNode || screenNode->GetCompositeType() != CompositeType::UNI_RENDER_COMPOSITE) {
         RS_LOGE("DoDirectComposition screenNode state error");
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by screenNode state error");
@@ -2468,9 +2469,9 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         RS_TRACE_NAME("DoDirectComposition skip, screen frozen");
         return true;
     }
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    const auto& screenProperty = screenNode->GetScreenProperty();
-    if (screenProperty.GetState() != ScreenState::HDI_OUTPUT_ENABLE) {
+
+    const auto& screenInfo = screenNode->GetScreenInfo();
+    if (screenInfo.state != ScreenState::HDI_OUTPUT_ENABLE) {
         RS_LOGE("DoDirectComposition: ScreenState error!");
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by screenState error");
         return false;
@@ -2485,7 +2486,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     }
 
 #ifdef RS_ENABLE_GPU
-    auto client = RSUniRenderThread::Instance().GetRSRenderComposerClient(screenProperty.GetScreenId());
+    auto client = RSUniRenderThread::Instance().GetRSRenderComposerClient(screenId);
     auto processor = RSProcessorFactory::CreateProcessor(screenNode->GetCompositeType(), client);
     auto renderEngine = GetRenderEngine();
     if (processor == nullptr || renderEngine == nullptr) {
@@ -2494,7 +2495,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         return false;
     }
 
-    if (!processor->Init(*screenNode, screenProperty.GetOffsetX(), screenProperty.GetOffsetY(), renderEngine)) {
+    if (!processor->Init(*screenNode, screenInfo.offsetX, screenInfo.offsetY, renderEngine)) {
         RS_LOGE("DoDirectComposition: processor init failed!");
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by processor init failed");
         return false;
@@ -2509,7 +2510,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         auto surfaceHandler = nullptr;
 #endif
 #ifdef RS_ENABLE_GPU
-        ScreenInfo screenInfo = screenProperty.GetScreenInfo();
+        ScreenInfo screenInfo = screenNode->GetScreenInfo();
         if (RSAncoManager::Instance()->AncoOptimizeScreenNode(surfaceHandler, hardwareEnabledNodes_,
             ScreenRotation::ROTATION_0, screenInfo.GetRotatedPhyWidth(), screenInfo.GetRotatedPhyHeight())) {
             RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by ancoOptimizeScreenNode");
@@ -2519,8 +2520,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     }
 
 #ifdef RS_ENABLE_GPU
-    RSUniRenderThread::Instance().PostSyncTask([this, processor, screenNode,
-            client, pipelineParam = pipelineParam_, &screenProperty]() mutable {
+    RSUniRenderThread::Instance().PostSyncTask([this, processor, screenNode]() mutable {
         RS_TRACE_NAME("DoDirectComposition PostProcess");
         auto screenId = screenNode->GetScreenId();
         for (auto& surfaceNode : hardwareEnabledNodes_) {
@@ -2564,10 +2564,10 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             screenNode->GetForceCloseHdr() ? HdrStatus::NO_HDR : screenNode->GetDisplayHdrStatus());
         RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
         auto rcdInfo = std::make_unique<RcdInfo>();
-        DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenProperty.GetScreenInfo());
+        DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenNode->GetScreenInfo());
         processor->ProcessScreenSurface(*screenNode);
-        if (client) {
-            client->UpdatePipelineParam(pipelineParam);
+        if (auto client = RSUniRenderThread::Instance().GetRSRenderComposerClient(screenId)) {
+            client->UpdatePipelineParam(pipelineParam_);
         } else {
             RS_LOGE("client->UpdatePipelineParam failed!");
         }
@@ -2628,6 +2628,7 @@ void RSMainThread::Render()
     }
     if (isUniRender_) {
 #ifdef RS_ENABLE_GPU
+        pipelineParam_.frameTimestamp = timestamp_;
         renderThreadParams_->SetTimestamp(pipelineParam_.frameTimestamp);
         renderThreadParams_->SetActualTimestamp(pipelineParam_.actualTimestamp);
         renderThreadParams_->SetVsyncId(pipelineParam_.vsyncId);
@@ -2643,7 +2644,6 @@ void RSMainThread::Render()
 #ifdef RS_ENABLE_TV_PQ_METADATA
         RSTvMetadataManager::Instance().SetUniRenderThreadParam(renderThreadParams_);
 #endif
-        pipelineParam_.frameTimestamp = timestamp_;
         // If use DoDirectComposition, we do not sync renderThreadParams,
         pipelineParam_.isForceRefresh = isForceRefresh_;
         isForceRefresh_ = false;

@@ -171,7 +171,8 @@ ohos_shared_library("librender_service") {
     "core/pipeline/rs_unmarshal_task_manager.cpp",
     "core/pipeline/slr_scale/rs_slr_scale.cpp",
     "core/system/rs_system_parameters.cpp",
-    "core/transaction/rs_irender_service_connection_ipc_interface_code_access_verifier.cpp",
+    "core/transaction/rs_iclient_to_service_connection_ipc_interface_code_access_verifier.cpp",
+    "core/transaction/rs_iclient_to_render_connection_ipc_interface_code_access_verifier.cpp",
     "core/transaction/rs_irender_service_ipc_interface_code_access_verifier.cpp",
     "core/transaction/rs_client_to_render_connection.cpp",
     "core/transaction/rs_connect_to_render_process.cpp",
@@ -691,21 +692,6 @@ ohos_executable("render_service") {
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
-
-group("test") {
-  testonly = true
-
-  deps = [
-    "composer/composer_service/layer_backend/test:test",
-    "composer/composer_service/pipeline/test:test",
-    "composer/composer_service/connection/test:test",
-    "composer/composer_service/transaction/test:test",
-    "composer/composer_service/transaction/command/test:test",
-    "composer/composer_service/render_layer/test:test",
-    "composer/composer_client/connection/test:test"
-  ]
-}
-
 
 ## Build render_process.bin
 ohos_executable("render_process") {
