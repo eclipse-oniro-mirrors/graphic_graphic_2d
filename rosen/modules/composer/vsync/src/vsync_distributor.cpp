@@ -1389,11 +1389,11 @@ VsyncError VSyncDistributor::SetQosVSyncRateByPidPublic(uint32_t pid, uint32_t r
     if (connectionsMap_.find(pid) == connectionsMap_.end()) {
         return VSYNC_ERROR_OK;
     }
-    auto& iter = pidWindowIdMap_.find(pid);
+    const auto& iter = pidWindowIdMap_.find(pid);
     if (iter == pidWindowIdMap_.end()) {
         return VSYNC_ERROR_OK;
     }
-    auto tmpVec = iter->second;
+    const auto& tmpVec = iter->second;
     for (const auto& windowId : tmpVec) {
         VsyncError ret = SetQosVSyncRateLocked(windowId, rate, isSystemAnimateScene);
         if (ret != VSYNC_ERROR_OK) {
