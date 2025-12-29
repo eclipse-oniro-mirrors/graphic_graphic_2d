@@ -933,14 +933,6 @@ int32_t RSClientToServiceConnection::SetRogScreenResolution(ScreenId id, uint32_
     return screenManagerAgent_->SetRogScreenResolution(id, width, height);
 }
 
-int32_t RSClientToServiceConnection::GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height)
-{
-    if (!screenManagerAgent_) {
-        return StatusCode::SCREEN_NOT_FOUND;
-    }
-    return screenManagerAgent_->GetRogScreenResolution(id, width, height);
-}
-
 ErrCode RSClientToServiceConnection::MarkPowerOffNeedProcessOneFrame()
 {
     if (!screenManagerAgent_) {
@@ -1675,11 +1667,6 @@ ErrCode RSClientToServiceConnection::NotifyLightFactorStatus(int32_t lightFactor
 
 void RSClientToServiceConnection::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
 {
-    if (!renderServiceAgent_ || !renderProcessManagerAgent_ || !screenManagerAgent_) {
-        RS_LOGE("%{public}s renderServiceAgent_ or renderProcessManagerAgent_ "
-            "or screenManagerAgent_ is nullptr", __func__);
-        return;
-    }
     auto activeScreenId = HgmCore::Instance().GetActiveScreenId();
     auto serviceToRenderConn = renderProcessManagerAgent_->GetServiceToRenderConn(activeScreenId);
     if (serviceToRenderConn) {

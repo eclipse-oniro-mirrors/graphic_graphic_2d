@@ -125,7 +125,7 @@ void RSClientToServiceConnectionStubTest::SetUpTestCase()
     screenManagerAgent_ = new RSScreenManagerAgent(screenManager_);
 
     connectionStub_ =
-        new RSClientToServiceConnection(0, wptr<RSRenderService>(&renderService_), renderServiceAgent_,
+        new RSClientToServiceConnection(0, renderServiceAgent_,
             renderProcessManagerAgent_, mainThread_, screenManagerAgent_, token_->AsObject(), nullptr);
 }
 
@@ -1414,32 +1414,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetRogScreenResolutionTest001, Tes
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     // Authorization failed
     ASSERT_EQ(res, ERR_INVALID_STATE);
-}
-
-/**
- * @tc.name: GetRogScreenResolutionTest001
- * @tc.desc: Test GetRogScreenResolution
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSClientToServiceConnectionStubTest, GetRogScreenResolutionTest001, TestSize.Level1)
-{
-    constexpr uint64_t SCREEN_ID = 0;
-    int32_t status{0};
-    uint32_t width{0};
-    uint32_t height{0};
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_ROG_SCREEN_RESOLUTION);
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option(MessageOption::TF_SYNC);
-    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    data.WriteUint64(SCREEN_ID);
-
-    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(res, ERR_OK);
-    ASSERT_EQ(reply.ReadInt32(status), static_cast<bool>(true));
-    ASSERT_EQ(reply.ReadUint32(width), static_cast<bool>(true));
-    ASSERT_EQ(reply.ReadUint32(height), static_cast<bool>(true));
 }
 
 /**
