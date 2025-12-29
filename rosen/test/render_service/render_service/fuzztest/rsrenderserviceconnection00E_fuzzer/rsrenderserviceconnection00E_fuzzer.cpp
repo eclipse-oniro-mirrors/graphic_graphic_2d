@@ -144,6 +144,7 @@ void DoRegisterSharedTypeface()
     option.SetFlags(MessageOption::TF_SYNC);
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     Drawing::SharedTypeface sharedTypeface;
+    // id is pid(int32_t) | unique id(random uint32_t)
     sharedTypeface.id_ = (static_cast<NodeId>(g_pid) << 32) | GetData<uint32_t>();
     sharedTypeface.size_ = GetData<uint32_t>();
     sharedTypeface.fd_ = GetData<int32_t>();
