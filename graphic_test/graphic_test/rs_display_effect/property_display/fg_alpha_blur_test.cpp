@@ -177,7 +177,7 @@ GRAPHIC_TEST(ForegroundTest04, CONTENT_DISPLAY_TEST, Foreground_Alpha_Filter_Tes
     int y = (0 / columnCount) * sizeY;
     auto testNodeForeground =
         SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX - 10, sizeY - 10 });
-    testNode->SetAlpha(-1.0f); // == SetAlpha(0.0f)
+    testNodeForeground->SetAlpha(0.5f);
     testNodeForeground->SetFilter(nullptr);
     GetRootNode()->AddChild(testNodeForeground);
     RegisterNode(testNodeForeground);
@@ -190,7 +190,7 @@ GRAPHIC_TEST(ForegroundTest04, CONTENT_DISPLAY_TEST, Foreground_Alpha_Filter_Tes
     MaterialParam materialParam = { 50, 0.8, 0.8, Color(0x2dff0000), false };
     std::shared_ptr<RSMaterialFilter> matFilter =
         std::make_shared<RSMaterialFilter>(materialParam, BLUR_COLOR_MODE::PRE_DEFINED);
-    testNode->SetAlpha(0.5f);
+    testNodeForeground2->SetAlpha(0.5f);
     testNodeForeground2->SetFilter(matFilter);
     GetRootNode()->AddChild(testNodeForeground2);
     RegisterNode(testNodeForeground2);
@@ -201,7 +201,7 @@ GRAPHIC_TEST(ForegroundTest04, CONTENT_DISPLAY_TEST, Foreground_Alpha_Filter_Tes
     auto testNodeForeground3 =
         SetUpNodeBgImage("/data/local/tmp/Images/backGroundImage.jpg", { x, y, sizeX - 10, sizeY - 10 });
     std::shared_ptr<RSBlurFilter> blurFilter = std::make_shared<RSBlurFilter>(30, 30, false);
-    testNode->SetAlpha(0.5f);
+    testNodeForeground3->SetAlpha(0.5f);
     testNodeForeground3->SetFilter(blurFilter);
     GetRootNode()->AddChild(testNodeForeground3);
     RegisterNode(testNodeForeground3);
@@ -214,7 +214,7 @@ GRAPHIC_TEST(ForegroundTest04, CONTENT_DISPLAY_TEST, Foreground_Alpha_Filter_Tes
     MaterialParam materialParam2 = { -50, -0.5, -0.5, Color(0x9fff0000), false };
     std::shared_ptr<RSMaterialFilter> matFilter2 =
         std::make_shared<RSMaterialFilter>(materialParam2, BLUR_COLOR_MODE::PRE_DEFINED);
-    testNode->SetAlpha(2.0f); // == SetAlpha(1.0f)
+    testNodeForeground4->SetAlpha(0.5f);
     testNodeForeground4->SetFilter(matFilter2);
     GetRootNode()->AddChild(testNodeForeground4);
     RegisterNode(testNodeForeground4);
