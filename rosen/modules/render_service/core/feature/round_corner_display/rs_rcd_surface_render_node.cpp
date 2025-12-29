@@ -216,6 +216,10 @@ bool RSRcdSurfaceRenderNode::SetHardwareResourceToBuffer()
         RS_LOGE("RSRcdSurfaceRenderNode:: copy hardware resource to buffer failed");
         return false;
     }
+    if (!SetRCDMetaData()) {
+        RS_LOGE("[%s] set hardware resource to buffer metadata failed", __func__);
+        return false;
+    }
     return true;
 }
 
@@ -255,10 +259,6 @@ bool RSRcdSurfaceRenderNode::FillHardwareResource(HardwareLayerInfo &cldLayerInf
     errno_t ret = memcpy_s(reinterpret_cast<void*>(img + offsetCldInfo), sizeof(cldInfo_), &cldInfo_, sizeof(cldInfo_));
     if (ret != EOK) {
         RS_LOGE("[%s] memcpy_s failed", __func__);
-        return false;
-    }
-    if (!SetRCDMetaData()) {
-        RS_LOGE("[%s] set hardware resource to buffer metadata failed", __func__);
         return false;
     }
     std::ifstream addBufferFile(cldLayerInfo.pathBin, std::ifstream::binary | std::ifstream::in);
