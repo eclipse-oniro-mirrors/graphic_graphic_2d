@@ -1056,18 +1056,6 @@ bool RSUniRenderVisitor::CheckSkipAndUpdateForegroundSurfaceRenderNode(RSSurface
         }
         return false;
     }
-    // Record the surfaceNode object for later use in RSScreenRenderParams::OnSync to collect its drawable.
-    // This ensures the drawable can updates the latest drawRegion, thus correctly skip drawing.
-    if (curScreenNode_) {
-        curScreenNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
-    }
-    if (node.ChildHasVisibleFilter()) {
-        if (const auto& curDirtyManager = node.GetDirtyManager()) {
-            curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
-            UpdateFilterRegionInSkippedSurfaceNode(node, *curDirtyManager);
-            curSurfaceNode_ = nullptr;
-        }
-    }
     return true;
 }
 
@@ -1107,11 +1095,28 @@ bool RSUniRenderVisitor::CheckQuickSkipSurfaceRenderNode(RSSurfaceRenderNode& no
         node.SetStableSkipReached(false);
         return false;
     }
+    bool isQuickSkip = false;
     if (isBgWindowTraversalStarted_) {
-        return CheckSkipBackgroundSurfaceRenderNode(node);
+        isQuickSkip = CheckSkipBackgroundSurfaceRenderNode(node);
     } else {
-        return CheckSkipAndUpdateForegroundSurfaceRenderNode(node);
+        isQuickSkip = CheckSkipAndUpdateForegroundSurfaceRenderNode(node);
     }
+    if (isQuickSkip) {
+        // Record the surfaceNode object for later use in RSScreenRenderParams::OnSync to collect its drawable.
+        // This ensures the drawable can updates the latest drawRegion, thus correctly skip drawing.
+        if (curScreenNode_) {
+            curScreenNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
+        }
+        if (node.ChildHasVisibleFilter()) {
+            if (const auto& curDirtyManager = node.GetDirtyManager()) {
+                curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
+                UpdateFilterRegionInSkippedSurfaceNode(node, *curDirtyManager);
+                curSurfaceNode_ = nullptr;
+            }
+        }
+        CollectOcclusionInfoForWMS(node);
+    }
+    return isQuickSkip;
 }
 
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
@@ -1128,7 +1133,6 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
             node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
             static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(), node.IsFirstLevelCrossNode(),
             isBgWindowTraversalStarted_, node.ChildHasVisibleFilter());
-        CollectOcclusionInfoForWMS(node);
         RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
         return;
     }
@@ -2244,7 +2248,12 @@ CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNo
     // 3. Update HwcNode Info for appNode
     UpdateHwcNodeInfoForAppNode(node);
     if (node.IsHardwareEnabledTopSurface()) {
-        hwcVisitor_->UpdateTopSurfaceSrcRect(node, geoPtr->GetAbsMatrix(), geoPtr->GetAbsRect());
+        auto matrix = geoPtr->GetAbsMatrix();
+        RectF bounds = {0, 0, property.GetBoundsWidth(), property.GetBoundsHeight()};
+        int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(matrix);
+        // hardCursor cannot be rotated, so when calculating srcRect，the matrix cannot have rotation
+        matrix.PreConcat(RSUniRenderUtil::GetMatrixByDegree(-degree, bounds));
+        hwcVisitor_->UpdateTopSurfaceSrcRect(node, matrix, geoPtr->GetAbsRect());
         RSPointerWindowManager::CheckHardCursorValid(node);
     }
     // 4. Update color gamut for appNode
@@ -3153,10 +3162,10 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
         nodeParent->UpdateVisibleEffectChild(node);
         nodeParent->SetChildHasVisibleEffect(!nodeParent->GetVisibleEffectChild().empty());
     }
-    if (auto& illuminated = node.GetRenderProperties().GetIlluminated();
-        (node.ShouldPaint() && (illuminated && illuminated->IsIlluminatedValid())) ||
-        RSPointLightManager::Instance()->GetChildHasVisibleIlluminated(node.shared_from_this())) {
-        RSPointLightManager::Instance()->SetChildHasVisibleIlluminated(nodeParent, true);
+    auto instance = RSPointLightManager::Instance();
+    if (node.ShouldPaint() && (instance->HasVisibleIlluminated(node.shared_from_this()) ||
+        instance->GetChildHasVisibleIlluminated(node.shared_from_this()))) {
+        instance->SetChildHasVisibleIlluminated(nodeParent, true);
     }
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);
@@ -3177,13 +3186,6 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     }
     if (childHasProtectedNodeSet_.count(node.GetId())) {
         childHasProtectedNodeSet_.insert(nodeParent->GetId());
-    }
-}
-
-void RSUniRenderVisitor::CollectUnionInfo(RSRenderNode& node)
-{
-    if (curUnionNode_ && node.GetRenderProperties().GetUseUnion() && node.ShouldPaint()) {
-        curUnionNode_->UpdateVisibleUnionChildren(node);
     }
 }
 
@@ -3251,7 +3253,6 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
         node.SetGlobalAlpha(curAlpha_);
     }
     CollectEffectInfo(node);
-    CollectUnionInfo(node);
     node.NodePostPrepare(curSurfaceNode_, prepareClipRect_);
 
     if (isDrawingCacheEnabled_) {
