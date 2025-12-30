@@ -224,10 +224,8 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
     auto renderFrame =
         renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface), bufferConfig, false, isHebc);
     if (!renderFrame) {
-        RS_LOGE("yt release RSScreenRenderNodeDrawable::RequestFrame renderEngine requestFrame is null");
         return nullptr;
     }
-    RS_LOGE("yt release RSScreenRenderNodeDrawable::RequestFrame renderEngine requestFrame ok");
 
     return renderFrame;
 }
@@ -652,7 +650,6 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     std::shared_ptr<RSRenderComposerClient> composerClient = RSUniRenderThread::Instance().GetRSRenderComposerClient(paramScreenId);
-    RS_LOGE("yt GetRSRenderComposerClient[%{public}d]", composerClient != nullptr);
     auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType(), composerClient);
     if (!processor) {
         SetDrawSkipType(DrawSkipType::CREATE_PROCESSOR_FAIL);
