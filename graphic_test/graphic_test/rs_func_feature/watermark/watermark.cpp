@@ -1130,7 +1130,7 @@ GRAPHIC_N_TEST(WatermarktTest, CONTENT_DISPLAY_TEST, App_Surface_Watermark_Test3
             {surfaceNode->GetId()},
             SurfaceWatermarkType::SYSTEM_WATER_MARK);
     }
-    RSInterfaces::GetInstance().SetSurfaceWatermark(getpid(), name, pixelMap2,
+    RSInterfaces::GetInstance().SetSurfaceWatermark(getpid(), watermarkName_, pixelMap2,
         {surfaceNode->GetId()},
         SurfaceWatermarkType::SYSTEM_WATER_MARK);
     usleep(SLEEP_TIME_FOR_PROXY);
@@ -1296,7 +1296,7 @@ GRAPHIC_N_TEST(WatermarktTest, CONTENT_DISPLAY_TEST, App_Surface_Watermark_Test3
     usleep(SLEEP_TIME_FOR_PROXY);
     auto pixelMap = DecodePixelMap("/data/local/tmp/Images/AllWhite.jpg");
 
-    RSInterfaces::GetInstance().SetSurfaceWatermark(getpid(), watermarkName_, pixelMap1, {},
+    RSInterfaces::GetInstance().SetSurfaceWatermark(getpid(), watermarkName_, pixelMap, {},
         SurfaceWatermarkType::CUSTOM_WATER_MARK);
     usleep(SLEEP_TIME_FOR_PROXY);
 };
