@@ -21,7 +21,6 @@
 
 #include "hgm_log.h"
 #include "hgm_task_handle_thread.h"
-#include "rs_trace.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 
 namespace OHOS::Rosen {
