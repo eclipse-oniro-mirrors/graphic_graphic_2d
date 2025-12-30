@@ -42,7 +42,7 @@ void OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
 {
 }
 
-void OnHwcDead(ScreenId id) override;
+void OnHwcDead(ScreenId id)
 {
 }
 
