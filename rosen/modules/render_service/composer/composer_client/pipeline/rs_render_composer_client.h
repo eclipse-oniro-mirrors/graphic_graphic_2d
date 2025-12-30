@@ -72,7 +72,7 @@ private:
     std::condition_variable composerThreadTaskCond_;
     std::atomic<uint32_t> unExecuteTaskNum_ = 0;
     std::atomic<int> acquiredBufferCount_ = 0;
-    std::atomic<bool> isPreAllocProtectedFrameBuffer_ = false;
+    bool isPreAllocProtectedFrameBuffer_ = false;
     PipelineParam pipelineParam_;
     sptr<RSVsyncManagerAgent> rsVsyncManagerAgent_ = nullptr;
 };
