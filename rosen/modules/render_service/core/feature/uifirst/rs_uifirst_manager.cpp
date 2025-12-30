@@ -591,8 +591,9 @@ void RSUifirstManager::SyncHDRDisplayParam(std::shared_ptr<DrawableV2::RSSurface
     bool changeColorSpace = rsSubThreadCache.GetTargetColorGamut() != colorGamut;
     if (isHdrOn || isScRGBEnable || changeColorSpace) {
         // When ScRGB or Adaptive P3 is enabled, some operations may cause the window color gamut to change.
-        // In this case, the uifirst cache needs to be cleared.
-        if ((isScRGBEnable || ColorGamutParam::IsAdaptiveColorGamutEnabled()) && changeColorSpace) {
+        // If the buffer format is not FP16, the uifirst cache needs to be cleared when colorspace changed.
+        bool isNeedFP16 = screenParams->GetHDRPresent() || isScRGBEnable;
+        if (!isNeedFP16 && ColorGamutParam::IsAdaptiveColorGamutEnabled() && changeColorSpace) {
             HILOG_COMM_INFO("UIFirstHDR SyncDisplayParam: ColorSpace change, ClearCacheSurface,"
                 "nodeID: [%{public}" PRIu64"]", id);
             RS_TRACE_NAME_FMT("UIFirstHDR SyncHDRDisplayParam: ColorSpace change, ClearCacheSurface,"
@@ -674,7 +675,7 @@ void RSUifirstManager::ShouldAutoCleanCache(NodeId id, DrawableV2::RsSubThreadCa
         return;
     }
     subThreadCache.AddCacheReuseCount();
-    if (subThreadCache.GetCacheReuseCount() >= clearCacheThreshold_) {
+    if (subThreadCache.GetCacheReuseCount() >= static_cast<uint32_t>(clearCacheThreshold_)) {
         AddMarkedClearCacheNode(id);
     }
 }
@@ -2125,7 +2126,7 @@ void RSUifirstManager::UifirstStateChange(RSSurfaceRenderNode& node, MultiThread
 
             auto tempNodeToClear = pendingNodeBehindWindow_.find(node.GetId());
             if (tempNodeToClear != pendingNodeBehindWindow_.end()) {
-                RS_OPTIONAL_TRACE_NAME_FMT("clear node in pendingNodeBehindWindow %{public}s id:%{public}" PRIu64,
+                RS_OPTIONAL_TRACE_NAME_FMT("clear node in pendingNodeBehindWindow %s id:%" PRIu64,
                     node.GetName().c_str(), node.GetId());
                 pendingNodeBehindWindow_.erase(tempNodeToClear);
             }
