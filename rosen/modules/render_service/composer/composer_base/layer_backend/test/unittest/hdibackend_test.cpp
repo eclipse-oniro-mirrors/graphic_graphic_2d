@@ -35,6 +35,7 @@ void HdiBackendTest::SetUpTestCase()
 {
     hdiBackend_ = HdiBackend::GetInstance();
     hdiDeviceMock_ = Mock::HdiDeviceMock::GetInstance();
+    (void)hdiBackend_->SetHdiBackendDevice(hdiDeviceMock_);
 }
 
 void HdiBackendTest::TearDownTestCase() {}
@@ -81,6 +82,7 @@ HWTEST_F(HdiBackendTest, RegScreenHotplug001, Function | MediumTest| Level3)
 */
 HWTEST_F(HdiBackendTest, RegScreenHotplug002, Function | MediumTest| Level3)
 {
+    HdiBackendTest::hdiBackend_->device_ = HdiBackendTest::hdiDeviceMock_;
     auto func = [](OutputPtr &output, bool connected, void* data) -> void {
         (void)output;
         (void)connected;
@@ -115,6 +117,7 @@ HWTEST_F(HdiBackendTest, RegScreenRefresh001, Function | MediumTest| Level3)
 */
 HWTEST_F(HdiBackendTest, RegScreenRefresh002, Function | MediumTest| Level3)
 {
+    HdiBackendTest::hdiBackend_->device_ = HdiBackendTest::hdiDeviceMock_;
     EXPECT_CALL(*hdiDeviceMock_, RegRefreshCallback(_, _)).WillRepeatedly(testing::Return(0));
     auto func = [](uint32_t devId, void* data) -> void {
         (void)devId;
