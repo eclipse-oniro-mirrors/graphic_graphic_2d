@@ -269,10 +269,7 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         size:%{public}zu, %{public}s", currentRate, pipelineParam.frameTimestamp, pipelineParam.vsyncId, layers.size(),
         GetSurfaceNameInLayersForTrace(layers).c_str());
 
-    // todo : yangxiaopeng
-    // bool isScreenPoweringOff = RSSystemProperties::IsFoldDeviceOfOldDss() && screenInfo_.IsScreenPowerOff();
     bool shouldDropFrame = IsDropDirtyFrame(layers);
-    // if (!(shouldDropFrame || isScreenPoweringOff)) {
     if (!shouldDropFrame) {
         hgmHardwareUtils_->SwitchRefreshRate(hdiOutput_);
     }
@@ -868,6 +865,7 @@ void RSRenderComposer::RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::v
 void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<std::shared_ptr<RSLayer>>& layers)
 {
     RS_TRACE_NAME_FMT("RSRenderComposer::Redraw screenId : %" PRIu64, screenId_);
+    std::unique_lock<std::mutex> lock(preAllocMutex_, std::try_to_lock);
     if (surface == nullptr || uniRenderEngine_ == nullptr) {
         RS_LOGE("Redraw: surface or uniRenderEngine is null.");
         return;
@@ -1306,12 +1304,12 @@ void RSRenderComposer::SurfaceDump(std::string& dumpString)
     hdiOutput_->Dump(dumpString);
 }
 
-void RSRenderComposer::GetRefreshInfoToSP(std::string& dumpString, NodeId& nodeId)
+void RSRenderComposer::GetRefreshInfoToSP(std::string& dumpString, NodeId nodeId)
 {
     RSSurfaceFpsManager::GetInstance().Dump(dumpString, nodeId);
 }
 
-void RSRenderComposer::FpsDump(std::string& dumpString, std::string& layerName)
+void RSRenderComposer::FpsDump(std::string& dumpString, const std::string& layerName)
 {
     if (hdiOutput_ == nullptr) {
         RS_LOGW("%{public}s: hdiOutput_ is nullptr.", __func__);

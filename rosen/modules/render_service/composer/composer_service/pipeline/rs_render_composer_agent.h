@@ -16,6 +16,8 @@
 #ifndef RENDER_SERVICE_COMPOSER_SERVICE_PIPELINE_RS_RENDER_COMPOSER_AGENT_H
 #define RENDER_SERVICE_COMPOSER_SERVICE_PIPELINE_RS_RENDER_COMPOSER_AGENT_H
 
+#include "ffrt.h"
+#include "ffrt_inner.h"
 #include "rs_render_composer.h"
 #include "rs_layer_transaction_data.h"
 #include "sync_fence.h"
@@ -38,12 +40,13 @@ public:
     void SetScreenBacklight(uint32_t level);
     void OnScreenVBlankIdleCallback(ScreenId screenId, uint64_t timestamp);
     void SurfaceDump(std::string& dumpString);
-    void GetRefreshInfoToSP(std::string& dumpString, NodeId& nodeId);
-    void FpsDump(std::string& dumpString, std::string& layerName);
+    void GetRefreshInfoToSP(std::string& dumpString, NodeId nodeId);
+    void FpsDump(std::string& dumpString, const std::string& layerName);
     void ClearFpsDump(std::string& dumpString, std::string& layerName);
     void HitchsDump(std::string& dumpString, std::string& layerArg);
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
+    void PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer> buffer);
 
 private:
     std::shared_ptr<RSRenderComposer> rsRenderComposer_;

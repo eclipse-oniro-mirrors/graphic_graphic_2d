@@ -77,7 +77,7 @@ public:
     static std::shared_ptr<RSScreenRenderNode> GetAndInitScreenRenderNode();
     static void ChangeHardwareEnabledNodesBufferData(
         std::vector<std::shared_ptr<RSSurfaceRenderNode>>& hardwareEnabledNodes);
-    sptr<RSScreenManager> screenManager_ = sptr<RSScreenManager>::MakeSptr();
+    static sptr<RSScreenManager> screenManager_ = sptr<RSScreenManager>::MakeSptr();
 
 private:
     static inline BufferRequestConfig requestConfig = {
@@ -2794,7 +2794,7 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes005, TestSize.Level1)
 
     auto surfaceConsumer1 = rsSurfaceRenderNode1->GetRSSurfaceHandler()->GetConsumer();
     ASSERT_NE(surfaceConsumer1, nullptr);
-    sptr<IBufferConsumerListener> listener1 = new RSRenderServiceListener(rsSurfaceRenderNode1);
+    sptr<IBufferConsumerListener> listener1 = new RSRenderServiceListener(rsSurfaceRenderNode1, nullptr);
     EXPECT_EQ(surfaceConsumer1->RegisterConsumerListener(listener1), SURFACE_ERROR_OK);
     auto producer1 = surfaceConsumer1->GetProducer();
     ASSERT_NE(producer1, nullptr);
@@ -2805,7 +2805,7 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes005, TestSize.Level1)
 
     auto surfaceConsumer2 = rsSurfaceRenderNode2->GetRSSurfaceHandler()->GetConsumer();
     ASSERT_NE(surfaceConsumer2, nullptr);
-    sptr<IBufferConsumerListener> listener2 = new RSRenderServiceListener(rsSurfaceRenderNode2);
+    sptr<IBufferConsumerListener> listener2 = new RSRenderServiceListener(rsSurfaceRenderNode2, nullptr);
     EXPECT_EQ(surfaceConsumer2->RegisterConsumerListener(listener2), SURFACE_ERROR_OK);
     auto producer2 = surfaceConsumer2->GetProducer();
     ASSERT_NE(producer2, nullptr);
@@ -6593,7 +6593,7 @@ HWTEST_F(RSMainThreadTest, CreateNodeAndSurfaceTest001, TestSize.Level1)
     std::shared_ptr<RSRenderPipeline> renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
     sptr<RSRenderPipelineAgent> renderPipelineAgent_ = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline_);
     sptr<RSClientToRenderConnection> connection = new RSClientToRenderConnection(
-        0, mainThread, renderPipelineAgent_, nullptr);
+        0, renderPipelineAgent_, nullptr);
     RSSurfaceRenderNodeConfig config;
     config.id = 1;
     config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;

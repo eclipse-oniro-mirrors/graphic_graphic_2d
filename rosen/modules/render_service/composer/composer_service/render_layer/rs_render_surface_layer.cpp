@@ -63,11 +63,6 @@ void RSRenderSurfaceLayer::SetRSLayerId(RSLayerId rsLayerId)
     rsLayerId_ = rsLayerId;
 }
 
-std::shared_ptr<RSComposerContext> RSRenderSurfaceLayer::GetComposerContext() const
-{
-    return rsComposerContext_.lock();
-}
-
 void RSRenderSurfaceLayer::SetAlpha(const GraphicLayerAlpha& alpha)
 {
     layerAlpha_ = alpha;
@@ -103,7 +98,7 @@ void RSRenderSurfaceLayer::SetTransform(GraphicTransformType type)
     transformType_ = type;
 }
 
-GraphicTransformType RSRenderSurfaceLayer::GetTransformType() const
+GraphicTransformType RSRenderSurfaceLayer::GetTransform() const
 {
     return transformType_;
 }
@@ -258,7 +253,7 @@ const GraphicHDRMetaDataSet& RSRenderSurfaceLayer::GetMetaDataSet() const
     return metaDataSet_;
 }
 
-void RSRenderSurfaceLayer::SetMatrix(GraphicMatrix matrix)
+void RSRenderSurfaceLayer::SetMatrix(const GraphicMatrix& matrix)
 {
     matrix_ = matrix;
 }
@@ -333,7 +328,7 @@ void RSRenderSurfaceLayer::SetIsSupportedPresentTimestamp(bool isSupported)
     IsSupportedPresentTimestamp_ = isSupported;
 }
 
-bool RSRenderSurfaceLayer::IsSupportedPresentTimestamp() const
+bool RSRenderSurfaceLayer::GetIsSupportedPresentTimestamp() const
 {
     return IsSupportedPresentTimestamp_;
 }
@@ -453,7 +448,7 @@ void RSRenderSurfaceLayer::SetIsMaskLayer(bool isMaskLayer)
     isMaskLayer_ = isMaskLayer;
 }
 
-bool RSRenderSurfaceLayer::IsMaskLayer() const
+bool RSRenderSurfaceLayer::GetIsMaskLayer() const
 {
     return isMaskLayer_;
 }
@@ -468,7 +463,7 @@ inline uint64_t RSRenderSurfaceLayer::GetNodeId() const
     return nodeId_;
 }
 
-void RSRenderSurfaceLayer::SetAncoFlags(const uint32_t ancoFlags)
+void RSRenderSurfaceLayer::SetAncoFlags(uint32_t ancoFlags)
 {
     ancoFlags_ = ancoFlags;
 }
@@ -633,7 +628,7 @@ void RSRenderSurfaceLayer::CopyLayerInfo(const std::shared_ptr<RSLayer>& rsLayer
     matrix_ = rsLayer->GetMatrix();
     gravity_ = rsLayer->GetGravity();
     layerAlpha_ = rsLayer->GetAlpha();
-    transformType_ = rsLayer->GetTransformType();
+    transformType_ = rsLayer->GetTransform();
     compositionType_ = rsLayer->GetCompositionType();
     blendType_ = rsLayer->GetBlendType();
     colorTransformMatrix_ = rsLayer->GetColorTransform();
@@ -682,9 +677,9 @@ void RSRenderSurfaceLayer::UpdateRSLayerCmd(const std::shared_ptr<RSRenderLayerC
     if (it != cmdHandlers_.end()) {
         it->second(rsRenderLayer, property);
     } else {
-        ROSEN_LOGE("RSRenderSurfaceLayer::UpdateRSLayerCmd type err");
+        ROSEN_LOGE("RSRenderSurfaceLayer::UpdateRSLayerCmd type err:%{public}d", static_cast<int32_t>(type));
     }
-    ROSEN_LOGD("RSRenderSurfaceLayer::UpdateRSLayerCmd type:%{}d", static_cast<int32_t>(type));
+    ROSEN_LOGD("RSRenderSurfaceLayer::UpdateRSLayerCmd type:%{public}d", static_cast<int32_t>(type));
 }
 } // namespace Rosen
 } // namespace OHOS

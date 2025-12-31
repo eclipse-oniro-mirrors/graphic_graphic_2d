@@ -29,6 +29,8 @@
 #include <system_ability_definition.h>
 #include <unistd.h>
 
+#include "parameters.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "rs_render_service.h"
 #include "transaction/rs_service_to_render_connection.h"
 #include "transaction/zidl/rs_service_to_render_connection_stub.h"
@@ -38,24 +40,29 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+namespace {
+RSRenderService renderService;
+sptr<RSServiceToRenderConnectionStub> g_connectionStub = nullptr;
+}
+
 class RSServiceToRenderConnectionStubTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-    static inline sptr<RSServiceToRenderConnectionStub> connectionStub_ = nullptr;
 };
 
 void RSServiceToRenderConnectionStubTest::SetUpTestCase()
 {
     auto runner = AppExecFwk::EventRunner::Create(false);
     auto handler = std::make_shared<AppExecFwk::EventHandler>(runner);
-    auto renderPipeline = RSRenderPipeline::Create(handler, nullptr, nullptr);
-    RSRenderService renderService;
-    auto rsRenderServceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
+    auto renderPipeline = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
+    OHOS::system::SetParameter("bootevent.samgr.ready", "false");
+    renderService.Init();
+    RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline);
-    connectionStub_ = sptr<RSServiceToRenderConnection>::MakeSptr(rsRenderServceAgent, renderPipelineAgent);
+    g_connectionStub = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
 }
 void RSServiceToRenderConnectionStubTest::TearDownTestCase() {}
 void RSServiceToRenderConnectionStubTest::SetUp() {}
@@ -80,8 +87,8 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, TestRSServiceToRenderConnectionStu
         RSIServiceToRenderConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE);
     uint64_t screenId = 1;
     data.WriteUint64(screenId);
-    connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_TRUE(connectionStub_);
+    g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    ASSERT_TRUE(g_connectionStub);
 }
 
 /**
@@ -105,8 +112,8 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, TestRSServiceToRenderConnectionStu
     int32_t type = 1;
     data.WriteBool(enabled);
     data.WriteInt32(type);
-    connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_TRUE(connectionStub_);
+    g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    ASSERT_TRUE(g_connectionStub);
 }
 
 /**
@@ -126,7 +133,7 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, TestRSServiceToRenderConnectionStu
     option.SetFlags(MessageOption::TF_ASYNC);
     uint32_t code = static_cast<uint32_t>(
         RSIServiceToRenderConnectionInterfaceCode::GET_SHOW_REFRESH_RATE_ENABLED);
-    connectionStub_->OnRemoteRequest(code, data, reply, option);
-    ASSERT_TRUE(connectionStub_);
+    g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    ASSERT_TRUE(g_connectionStub);
 }
 } // namespace OHOS::Rosen

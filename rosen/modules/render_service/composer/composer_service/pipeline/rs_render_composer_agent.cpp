@@ -245,7 +245,7 @@ void RSRenderComposerAgent::SurfaceDump(std::string& dumpString)
     ).wait();
 }
 
-void RSRenderComposerAgent::GetRefreshInfoToSP(std::string& dumpString, NodeId& nodeId)
+void RSRenderComposerAgent::GetRefreshInfoToSP(std::string& dumpString, NodeId nodeId)
 {
     if (rsRenderComposer_ == nullptr) {
         return;
@@ -262,7 +262,7 @@ void RSRenderComposerAgent::GetRefreshInfoToSP(std::string& dumpString, NodeId& 
     ).wait();
 }
 
-void RSRenderComposerAgent::FpsDump(std::string& dumpString, std::string& layerName)
+void RSRenderComposerAgent::FpsDump(std::string& dumpString, const std::string& layerName)
 {
     if (rsRenderComposer_ == nullptr) {
         return;
@@ -345,6 +345,25 @@ void RSRenderComposerAgent::ClearRefreshRateCounts(std::string& dumpString)
             renderComposerAgent->rsRenderComposer_->ClearRefreshRateCounts(dumpString);
         }
     ).wait();
+}
+
+void RSRenderComposerAgent::PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer> buffer)
+{
+    if (rsRenderComposer_ == nullptr) {
+        return;
+    }
+    std::weak_ptr<RSRenderComposerAgent> weakThis = shared_from_this();
+    if (buffer != nullptr) {
+        std::shared_ptr<RSRenderComposerAgent> renderComposerAgent = weakThis.lock();
+        if (renderComposerAgent == nullptr || renderComposerAgent->rsRenderComposer_ == nullptr) {
+            return;
+        }
+        auto composer = renderComposerAgent->rsRenderComposer_;
+        RS_TRACE_NAME_FMT("PreAllocateProtectedBuffer");
+        ffrt::submit([composer, buffer]() {
+            composer->PreAllocateProtectedBuffer(buffer);
+        });
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

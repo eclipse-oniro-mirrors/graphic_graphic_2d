@@ -81,7 +81,9 @@ void RSComposerContext::DumpLayersInfo(std::string &dumpString)
     std::unique_lock<std::mutex> lock(rsLayerMutex_);
     for (auto iter = rsLayers_.begin(); iter != rsLayers_.end(); iter++) {
         auto rsLayer = iter->second.lock();
-        if (rsLayer == nullptr) {
+        if (rsLayer == nullptr ||
+            std::find(lastCommitLayersId_.begin(), lastCommitLayersId_.end(),
+                rsLayer->GetNodeId()) == lastCommitLayersId_.end()) {
             continue;
         }
         const std::string& name = rsLayer->GetSurfaceName();
@@ -134,12 +136,21 @@ void RSComposerContext::ReleaseLayerBuffers(uint64_t screenId,
     std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
     std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec)
 {
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    {
+        std::unique_lock<std::mutex> lock(rsLayerMutex_);
+        rsLayers = rsLayers_;
+        lastCommitLayersId_.clear();
+        for (const auto& [id, _1, _2] : releaseBufferFenceVec) {
+            lastCommitLayersId_.push_back(id);
+        }
+    }
     auto layerPresentTimestamp = [](const std::shared_ptr<RSLayer>& layer, const sptr<IConsumerSurface>& cSurface) -> void {
         if (cSurface == nullptr) {
             RS_LOGE("layerPresentTimestamp cSurface is nullptr");
             return;
         }
-        if (!layer->IsSupportedPresentTimestamp()) {
+        if (!layer->GetIsSupportedPresentTimestamp()) {
             return;
         }
         const auto& buffer = layer->GetBuffer();
@@ -153,11 +164,11 @@ void RSComposerContext::ReleaseLayerBuffers(uint64_t screenId,
     };
     RS_LOGI("RSComposerContext::ReleaseLayerBuffers screenId: %{public}" PRIu64, screenId);
     for (const auto& [id, isGraphicPresentTimestamp, graphicPresentTimestamp] : timestampVec) {
-        if (rsLayers_.count(id) == 0) {
+        if (rsLayers.count(id) == 0) {
             RS_LOGE("RSComposerContext::ReleaseLayerBuffers has no id: %{public}" PRIu64 " layer", id);
             continue;
         }
-        auto layer = rsLayers_[id].lock();
+        auto layer = rsLayers[id].lock();
         if (layer == nullptr) {
             RS_LOGE("RSComposerContext::ReleaseLayerBuffers layer is nullptr");
             continue;
@@ -167,10 +178,10 @@ void RSComposerContext::ReleaseLayerBuffers(uint64_t screenId,
         layerPresentTimestamp(layer, layer->GetSurface());
     }
 
-    if (onBufferReleaseFunc_) {
-        onBufferReleaseFunc_(rsLayers_, releaseBufferFenceVec);
+    if (onReleaseLayerBuffersCB_) {
+        onReleaseLayerBuffersCB_(rsLayers, releaseBufferFenceVec);
     } else {
-        RS_LOGE("RSBufferManager onBufferReleaseFunc_ is nullptr");
+        RS_LOGE("RSBufferManager onReleaseLayerBuffersCB_ is nullptr");
     }
 }
 
@@ -192,6 +203,16 @@ void RSComposerContext::CleanLayerBufferBySurfaceId(uint64_t surfaceId)
         return;
     }
     rsComposerConnection_->CleanLayerBufferBySurfaceId(surfaceId);
+}
+
+void RSComposerContext::PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer> buffer)
+{
+    std::unique_lock<std::recursive_mutex> lock(rsLayerTransMutex_);
+    if (rsComposerConnection_ == nullptr) {
+        RS_LOGE("RSComposerContext::PreAllocProtectedFrameBuffers rsComposerConnection_ is nullptr");
+        return;
+    }
+    rsComposerConnection_->PreAllocProtectedFrameBuffers(buffer);
 }
 } // namespace Rosen
 } // namespace OHOS

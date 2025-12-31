@@ -271,15 +271,10 @@ public:
         bufferManager_.AddPendingReleaseBuffer(consumer, buffer, fence);
     }
 
-    void ReleaseLayerBuffers(std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers,
+    void OnReleaseLayerBuffers(std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec)
     {
-        bufferManager_.ReleaseLayerBuffers(rsLayers, releaseBufferFenceVec);
-    }
-
-    void OnDrawStart()
-    {
-        bufferManager_.OnDrawStart();
+        bufferManager_.OnReleaseLayerBuffers(rsLayers, releaseBufferFenceVec);
     }
 
     void OnDrawBuffer(sptr<IConsumerSurface> consumer, sptr<SurfaceBuffer> buffer,
@@ -287,20 +282,45 @@ public:
     {
         bufferManager_.OnDrawBuffer(consumer, buffer, bufferOwnerCount);
     }
-    void OnDrawEnd(sptr<SyncFence> canvasAcquireFence)
+
+    void ReleaseBufferById(uint64_t seqNum)
     {
-        bufferManager_.OnDrawEnd(canvasAcquireFence);
+        bufferManager_.ReleaseBufferById(seqNum);
     }
 
-    void BufferReleaseCallBack(uint64_t seqNum)
+    struct BufferManagerGuard {
+        BufferManagerGuard() {
+            RSUniRenderThread::Instance().bufferManager_.OnDrawStart();
+        }
+
+        ~BufferManagerGuard() {
+            RSUniRenderThread::Instance().bufferManager_.OnDrawEnd(fence_);
+        }
+
+        void SetAcquireFence(sptr<SyncFence> fence) {
+            if (!fence || !fence->IsValid()) {
+                fence_ = SyncFence::InvalidFence();
+            } else {
+                fence_ = fence;
+            }
+        }
+
+        sptr<SyncFence> fence_ = SyncFence::InvalidFence();
+    };
+
+    void AddScreenHasProtectedLayerSet(ScreenId screenId)
     {
-        bufferManager_.BufferReleaseCallBack(seqNum);
+        hasProtectedLayerScreenIdSet_.emplace(screenId);
     }
 
-    static void OnComposedBufferCallBack(std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers,
-        std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec)
+    const std::set<ScreenId>& GetScreenHasProtectedLayerSet()
     {
-        Instance().ReleaseLayerBuffers(rsLayers, releaseBufferFenceVec);
+        return hasProtectedLayerScreenIdSet_;
+    }
+
+    void ClearScreenHasProtectedLayerSet()
+    {
+        hasProtectedLayerScreenIdSet_.clear();
     }
 
 private:
@@ -370,6 +390,7 @@ private:
     std::unordered_set<NodeType> typeBlackList_ = {};
     std::unordered_set<NodeId> whiteList_ = {};
     Drawing::RectI visibleRect_;
+    std::set<ScreenId> hasProtectedLayerScreenIdSet_;
 
     std::mutex vmaCacheCountMutex_;
 

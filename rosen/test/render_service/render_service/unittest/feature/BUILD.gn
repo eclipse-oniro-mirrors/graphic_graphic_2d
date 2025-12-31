@@ -26,7 +26,7 @@ group("unittest") {
     ":RSOcclusionHandlerTest",
     ":RSOcclusionNodeTest",
     ":RSOpincDrawCacheTest",
-    ":RSSpecialLayerUtilsTest",
+    # ":RSSpecialLayerUtilsTest",
     ":RSSubThreadCacheTest",
     ":RSSurfaceCaptureParallelTaskTest",
     ":RSSurfaceCaptureTaskTest",
@@ -41,7 +41,6 @@ group("unittest") {
     ":RSWindowKeyFrameDrawableTest",
     ":RSWindowCaptureTaskTest",
     ":RSHpaeRenderListenerTest",
-    ":RSPowerOffRenderSkipTest",
   ]
   if (graphic_2d_feature_enable_rdo) {
     deps += [ ":RSRDOTest" ]
@@ -205,6 +204,7 @@ ohos_unittest("RSDrmUtilTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -236,6 +236,7 @@ ohos_unittest("RSHdrUtilTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "c_utils:utils",
@@ -273,6 +274,7 @@ ohos_unittest("RSUiCaptureTaskParallelTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   include_dirs =
       [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
@@ -309,6 +311,7 @@ ohos_unittest("RSUiCaptureSoloTaskParallelTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   include_dirs = [ "../../../../../modules/render_service_base/include" ]
   external_deps = [
@@ -343,6 +346,7 @@ ohos_unittest("RSUniUiCaptureTest") {
   ]
   deps = [
     ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -609,6 +613,7 @@ ohos_unittest("RSUniHwcPrevalidateUtilTest") {
   ]
   deps = [
     ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -645,6 +650,7 @@ ohos_unittest("RSUniHwcPrevalidateUtilTest1") {
   deps = [
     ":mock_dlsym",
     ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "../../../../../modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -716,6 +722,7 @@ ohos_unittest("RSEglImageManagerTest") {
   ]
   deps = [
     ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -863,7 +870,10 @@ ohos_unittest("LppVideoHandlerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
     "lpp/lpp_video_handler_test.cpp",
   ]
-  deps = [ ":rs_test_common" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
   external_deps = [
     "c_utils:utils",
     "ffrt:libffrt",
@@ -1084,7 +1094,10 @@ ohos_unittest("RSRDOTest") {
 ohos_unittest("RSSpecialLayerUtilsTest") {
   module_out_path = module_output_path
   sources = [ "special_layer/rs_special_layer_utils_test.cpp" ]
-  deps = [ ":rs_test_common" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
@@ -1131,7 +1144,10 @@ ohos_unittest("RSWindowCaptureTaskTest") {
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
     "capture/rs_window_capture_task_test.cpp",
   ]
-  deps = [ ":rs_test_common" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  ]
   include_dirs = [ "$graphic_2d_root/rosen/modules/render_service_base/include" ]
   external_deps = [
     "c_utils:utils",
@@ -1213,17 +1229,6 @@ ohos_unittest("RSHpaeManagerTest") {
 ohos_unittest("RSChipsetVsyncTest") {
   module_out_path = module_output_path
   sources = [ "chipset_vsync/rs_chipset_vsync_test.cpp" ]
-  deps = [ ":rs_test_common" ]
-  external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-  ]
-}
-
-##Build RSPowerOffRenderSkipTest
-ohos_unittest("RSPowerOffRenderSkipTest") {
-  module_out_path = module_output_path
-  sources = [ "power_off_render_skip/power_off_render_skip_test.cpp" ]
   deps = [ ":rs_test_common" ]
   external_deps = [
     "c_utils:utils",

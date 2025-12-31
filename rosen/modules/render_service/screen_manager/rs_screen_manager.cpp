@@ -78,11 +78,11 @@ void RSScreenManager::UnRegisterAgentListener(const sptr<RSIScreenManagerAgentLi
     callbackMgr_->RemoveAgentListener(listener);
 }
 
-bool RSScreenManager::Init_V2(const std::shared_ptr<AppExecFwk::EventHandler>& mainHandler) noexcept
+bool RSScreenManager::Init(const std::shared_ptr<AppExecFwk::EventHandler>& mainHandler) noexcept
 {
-    composer_ = HdiBackend::GetInstance();
-    mainHandler_ = mainHandler;
-    preprocessor_ = std::make_unique<RSScreenPreprocessor>(wptr<RSScreenManager>(this), callbackMgr_, mainHandler_);
+    isFoldScreenFlag_ = system::GetParameter("const.window.foldscreen.type", "") != "";
+    preprocessor_ = std::make_unique<RSScreenPreprocessor>(
+        wptr<RSScreenManager>(this), callbackMgr_, mainHandler, isFoldScreenFlag_);
     if (!preprocessor_->Init()) {
         return false;
     }
@@ -174,58 +174,23 @@ ScreenId RSScreenManager::GetActiveScreenId()
 }
 #endif
 
-void RSScreenManager::OnRefreshEvent(ScreenId id)
-{
-    if (callbackMgr_) {
-        callbackMgr_->NotifyScreenRefresh(id);
-    }
-}
-
-void RSScreenManager::OnHwcDeadEvent()
+void RSScreenManager::OnHwcDeadEvent(std::map<ScreenId, std::shared_ptr<RSScreen>>& retScreens)
 {
     RS_TRACE_FUNC();
     RS_LOGW("%{public}s.", __func__);
     // Only clean the physical screen when hwc dead
-    std::map<ScreenId, std::shared_ptr<OHOS::Rosen::RSScreen>> screens;
     {
         std::lock_guard<std::mutex> lock(screenMapMutex_);
         for (auto it = screens_.begin(); it != screens_.end();) {
             if (it->second && !it->second->IsVirtual()) {
                 auto node = screens_.extract(it++);
-                screens.insert(std::move(node));
+                retScreens.insert(std::move(node));
             } else {
                 ++it;
             }
         }
     }
     defaultScreenId_ = INVALID_SCREEN_ID;
-#ifdef RS_ENABLE_GPU
-// The `NotifyHwcDead` method synchronously calls the composition cleanup-related resources.
-// It may take a long time due to task accumulation, which can result in holding the screenMapMutex lock for too long.
-// That is why it is necessary to handle this notification independently.
-    for (const auto& [id, _] : screens) {
-        if (callbackMgr_) {
-            callbackMgr_->NotifyHwcDead(id);
-        }
-    }
-#endif
-}
-
-void RSScreenManager::OnHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData)
-{
-    if (callbackMgr_) {
-        callbackMgr_->NotifyHwcEvent(deviceId, eventId, eventData);
-    }
-}
-
-void RSScreenManager::OnScreenVBlankIdleEvent(uint32_t devId, uint64_t ns)
-{
-    ScreenId id = ToScreenId(devId);
-#ifdef RS_ENABLE_GPU
-    if (callbackMgr_) {
-        callbackMgr_->NotifyVBlankIdle(id, ns);
-    }
-#endif
 }
 
 void RSScreenManager::ProcessPendingConnections()
@@ -272,6 +237,10 @@ bool RSScreenManager::CheckFoldScreenIdBuiltIn(ScreenId id)
 void RSScreenManager::ProcessScreenConnected(ScreenId id)
 {
     auto screen = std::make_shared<RSScreen>(id);
+    {
+        std::lock_guard<std::mutex> lock(blackListMutex_);
+        screen->SetGlobalBlackList(globalBlackList_);
+    }
     screen->SetOnPropertyChangedCallback(
         std::bind(&RSScreenManager::OnScreenPropertyChanged, this, std::placeholders::_1));
     screen->SetOnBacklightChangedCallback(
@@ -306,7 +275,6 @@ void RSScreenManager::ProcessScreenConnected(ScreenId id)
     std::lock_guard<std::mutex> connectLock(hotPlugAndConnectMutex_);
     pendingConnectedIds_.emplace_back(id);
     mipiCheckInFirstHotPlugEvent_ = true;
-    screen->SetGlobalBlackList(globalBlackList_);
 }
 
 void RSScreenManager::ProcessScreenDisConnected(ScreenId id)
@@ -631,6 +599,10 @@ ScreenId RSScreenManager::CreateVirtualScreen(
     configs.whiteList = std::unordered_set<NodeId>(whiteList.begin(), whiteList.end());
 
     auto screen = std::make_shared<RSScreen>(configs);
+    {
+        std::lock_guard<std::mutex> lock(blackListMutex_);
+        screen->SetGlobalBlackList(globalBlackList_);
+    }
     screen->SetOnPropertyChangedCallback(std::bind(&RSScreenManager::OnScreenPropertyChanged, this,
         std::placeholders::_1));
     {
@@ -638,10 +610,7 @@ ScreenId RSScreenManager::CreateVirtualScreen(
         screens_[newId] = screen;
     }
     ++currentVirtualScreenNum_;
-    if (callbackMgr_) {
-        callbackMgr_->NotifyVirtualScreenPresenceChanged(newId, true, associatedScreenId, screen->GetProperty());
-    }
-    screen->SetGlobalBlackList(globalBlackList_);
+    preprocessor_->NotifyVirtualScreenConnected(newId, associatedScreenId, screen->GetProperty());
     RS_LOGI("%{public}s: create virtual screen(id %{public}" PRIu64 "), width %{public}u, height %{public}u."
         "associatedScreenId %{public}" PRIu64,
         __func__, newId, width, height, associatedScreenId);
@@ -652,6 +621,7 @@ int32_t RSScreenManager::SetVirtualScreenBlackList(ScreenId id, const std::vecto
 {
     std::unordered_set<NodeId> screenBlackList(blackList.begin(), blackList.end());
     if (id == INVALID_SCREEN_ID) {
+        std::lock_guard<std::mutex> lock(blackListMutex_);
         RS_LOGI("%{public}s: set global blacklists for id %{public}" PRIu64, __func__, id);
         globalBlackList_ = std::move(screenBlackList);
         for (const auto&[_, screen] : screens_) {
@@ -697,6 +667,7 @@ static inline bool IsBlackListExceeded(const std::vector<uint64_t>& blackList,
 int32_t RSScreenManager::AddVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
 {
     if (id == INVALID_SCREEN_ID) {
+        std::lock_guard<std::mutex> lock(blackListMutex_);
         if (IsBlackListExceeded(blackList, globalBlackList_)) {
             RS_LOGW("%{public}s: global blacklist is over max size!", __func__);
             return INVALID_ARGUMENTS;
@@ -732,6 +703,7 @@ int32_t RSScreenManager::RemoveVirtualScreenBlackList(ScreenId id, const std::ve
 {
     if (id == INVALID_SCREEN_ID) {
         RS_LOGI("%{public}s: remove global screen blacklists", __func__);
+        std::lock_guard<std::mutex> lock(blackListMutex_);
         for (const auto& nodeId : blackList) {
             globalBlackList_.erase(nodeId);
         }
@@ -913,9 +885,7 @@ void RSScreenManager::RemoveVirtualScreen(ScreenId id)
         std::lock_guard<std::mutex> lock(virtualScreenIdMutex_);
         freeVirtualScreenIds_.push(id);
     }
-    if (callbackMgr_) {
-        callbackMgr_->NotifyVirtualScreenPresenceChanged(id, false);
-    }
+    preprocessor_->NotifyVirtualScreenDisconnected(id);
 
     // when virtual screen doesn't exist no more, render control can be recovered.
     {
@@ -986,18 +956,8 @@ int32_t RSScreenManager::SetRogScreenResolution(ScreenId id, uint32_t width, uin
         return SCREEN_NOT_FOUND;
     }
     RS_LOGI("%{public}s: set rog screen resolution success", __func__);
-    screen->SetRogResolution(width, height);
+    screen->SetResolution(width, height);
     return SUCCESS;
-}
-
-int32_t RSScreenManager::GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height)
-{
-    auto screen = GetScreen(id);
-    if (screen == nullptr) {
-        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
-        return SCREEN_NOT_FOUND;
-    }
-    return screen->GetRogResolution(width, height);
 }
 
 void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
@@ -1008,10 +968,7 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
         return;
     }
 
-    isScreenPoweringOn_ =
-        (status == ScreenPowerStatus::POWER_STATUS_ON || status == ScreenPowerStatus::POWER_STATUS_ON_ADVANCED);
     auto ret = screen->SetPowerStatus(static_cast<uint32_t>(status));
-    isScreenPoweringOn_ = false;
     if (ret != static_cast<int32_t>(StatusCode::SUCCESS)) {
         RS_LOGE("[UL_POWER] %{public}s: Failed to set power status of id %{public}" PRIu64, __func__, id);
         return;
@@ -1028,11 +985,6 @@ void RSScreenManager::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status
     RSColorTemperature::Get().UpdateScreenStatus(id, status);
     std::lock_guard<std::shared_mutex> lock(powerStatusMutex_);
     screenPowerStatus_[id] = status;
-}
-
-bool RSScreenManager::IsScreenPoweringOn() const
-{
-    return isScreenPoweringOn_;
 }
 
 bool RSScreenManager::SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation)
@@ -1077,7 +1029,7 @@ void RSScreenManager::GetDefaultScreenActiveMode(RSScreenModeInfo& screenModeInf
 }
 
 /* only used for mock tests */
-void RSScreenManager::MockHdiScreenConnected(std::shared_ptr<OHOS::Rosen::RSScreen> rsScreen)
+void RSScreenManager::MockHdiScreenConnected(std::shared_ptr<RSScreen> rsScreen)
 {
     if (rsScreen == nullptr) {
         return;
@@ -1247,7 +1199,7 @@ int32_t RSScreenManager::SetScreenConstraint(ScreenId id, uint64_t timestamp, Sc
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    RS_TRACE_NAME_FMT("SetScreenConstraint frameId:%lu timestamp:%lu type:%d", frameId_, timestamp, type);
+    RS_TRACE_NAME_FMT("SetScreenConstraint frameId:%lu timestamp:%lu type:%d", frameId_.load(), timestamp, type);
     return screen->SetScreenConstraint(frameId_, timestamp, type);
 }
 
@@ -1558,16 +1510,6 @@ VirtualScreenStatus RSScreenManager::GetVirtualScreenStatus(ScreenId id) const
     return screen->GetVirtualScreenStatus();
 }
 
-void RSScreenManager::SetScreenHasProtectedLayer(ScreenId id, bool hasProtectedLayer)
-{
-    auto screen = GetScreen(id);
-    if (screen == nullptr) {
-        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
-        return;
-    }
-    screen->SetHasProtectedLayer(hasProtectedLayer);
-}
-
 void RSScreenManager::SetScreenSwitchStatus(ScreenId id, bool status)
 {
     auto screen = GetScreen(id);
@@ -1628,7 +1570,7 @@ void RSScreenManager::NotifySwitchingCallback(bool status) const
     screenSwitchingNotifyCallback_->OnScreenSwitchingNotify(status);
 }
 
-std::shared_ptr<OHOS::Rosen::RSScreen> RSScreenManager::GetScreen(ScreenId id) const
+std::shared_ptr<RSScreen> RSScreenManager::GetScreen(ScreenId id) const
 {
     std::lock_guard<std::mutex> lock(screenMapMutex_);
     auto iter = screens_.find(id);
@@ -1666,11 +1608,6 @@ sptr<RSScreenProperty> RSScreenManager::QueryScreenProperty(ScreenId id) const
 void RSScreenManager::OnScreenPropertyChanged(const sptr<RSScreenProperty>& property)
 {
     if (property == nullptr) {
-        return;
-    }
-    auto screen = GetScreen(property->id_);
-    if (screen == nullptr) {
-        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, property->id_);
         return;
     }
     callbackMgr_->NotifyScreenPropertyUpdated(property->id_, property);
