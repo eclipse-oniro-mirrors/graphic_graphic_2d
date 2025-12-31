@@ -2114,7 +2114,6 @@ private:
 
     // [Attention] The variable only used for unlocking screen for PC currently
     bool isCloneNode_ = false;
-    bool isRelated_;
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
     bool isClonedNodeOnTheTree_ = false;
     bool clonedSourceNodeNeedOffscreen_ = true;

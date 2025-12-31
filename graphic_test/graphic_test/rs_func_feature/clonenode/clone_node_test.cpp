@@ -221,7 +221,7 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_ONE2N_TEST)
     int gap = 100;
     std::string cloneSurfaceNodeName = "cloneSurfaceNode";
     std::string containerSurfaceNodeName = "containerSurfaceNode";
-    auto clonedSurfaceNode = CreateClonedNodeWithImageCanvas({0, (width + gap) * i, width, height}, 0xFF000000);
+    auto clonedSurfaceNode = CreateClonedNodeWithImageCanvas({0, 0, width, height}, 0xFF000000);
     if (!clonedSurfaceNode) {
         LOGE("Create CreateClonedNodeWithImageCanvas failed");
         return;
@@ -239,8 +239,7 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_ONE2N_TEST)
         RegisterNode(containerSurfaceNode);
         GetRootNode()->AddChild(containerSurfaceNode);
 
-        auto cloneSurfaceNode = CreateSurfaceNode({0, 0, width, height + (height + gap) * i},
-            cloneSurfaceNodeName);
+        auto cloneSurfaceNode = CreateSurfaceNode({0, 0, width, height}, cloneSurfaceNodeName);
         if (!cloneSurfaceNode) {
             LOGE("Create cloneSurfaceNode failed");
             return;
@@ -278,7 +277,7 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2N_TEST
             }
             RegisterNode(clonedSurfaceNode);
             GetRootNode()->AddChild(clonedSurfaceNode);
-            for (int j = 0; j < 3; j ++) {
+            for (int j = 0; j < 3; j++) {
                 auto containerSurfaceNode = CreateSurfaceNode(
                     {width + gap + rowGap * y, (height + gap) * j + lineGap * i, width, height},
                     containerSurfaceNodeName);
@@ -297,7 +296,7 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2N_TEST
                 cloneSurfaceNode->SetScale(0.5 * (j + 1));
                 cloneSurfaceNode->SetClonedNodeInfo(clonedSurfaceNode->GetId(), false, true);
                 RegisterNode(cloneSurfaceNode);
-                containerSurfaceNode->AddChild(cloneSurfaceNode, 0);   
+                containerSurfaceNode->AddChild(cloneSurfaceNode, 0);
             }
         }
     }
@@ -327,9 +326,9 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2N_TEST
                 LOGE("Create CreateClonedNodeWithImageCanvas failed");
                 return;
             }
-            for (int j = 0; j < 3; j ++) {
+            for (int j = 0; j < 3; j++) {
                 auto containerSurfaceNode = CreateSurfaceNode(
-                    {width + gap + rowGap * y, (height + gap) * i + lineGap * i, width, height},
+                    {width + gap + rowGap * y, (height + gap) * j + lineGap * i, width, height},
                     containerSurfaceNodeName);
                 if (!containerSurfaceNode) {
                     LOGE("Create containerSurfaceNode failed");
@@ -339,7 +338,7 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2N_TEST
                 GetRootNode()->AddChild(containerSurfaceNode);
 
                 
-                auto cloneSurfaceNode = CreateSurfaceNode({0, 0, width, height}, containerSurfaceNodeName);
+                auto cloneSurfaceNode = CreateSurfaceNode({0, 0, width, height}, cloneSurfaceNodeName);
                 if (!cloneSurfaceNode) {
                     LOGE("Create cloneSurfaceNode failed");
                     return;
@@ -347,7 +346,7 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2N_TEST
                 cloneSurfaceNode->SetAlpha(0.2 * (j + 1));
                 cloneSurfaceNode->SetClonedNodeInfo(clonedSurfaceNode->GetId(), false, true);
                 RegisterNode(cloneSurfaceNode);
-                containerSurfaceNode->AddChild(cloneSurfaceNode, 0);   
+                containerSurfaceNode->AddChild(cloneSurfaceNode, 0);
             }
             RegisterNode(clonedSurfaceNode);
             GetRootNode()->AddChild(clonedSurfaceNode);

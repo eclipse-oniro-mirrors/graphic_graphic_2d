@@ -1433,7 +1433,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckDrawAndCacheWindowContentTest, Te
 
     surfaceParams->isRelatedSourceNode_ = true;
     ASSERT_TRUE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
-    
+
     surfaceParams->isRelatedSourceNode_ = false;
     ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
 

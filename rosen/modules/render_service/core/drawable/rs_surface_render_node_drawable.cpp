@@ -1415,9 +1415,9 @@ bool RSSurfaceRenderNodeDrawable::DrawCloneNode(RSPaintFilterCanvas& canvas,
 
 bool RSSurfaceRenderNodeDrawable::DrawRelatedNode(RSPaintFilterCanvas& canvas,
     RSRenderThreadParams& uniParam, RSSurfaceRenderParams& surfaceParams,
-    std::shared_ptr<RSSurfaceRenderNodeDrawable> clonedNodeRenderDrawable,bool isCapture)
+    std::shared_ptr<RSSurfaceRenderNodeDrawable> clonedNodeRenderDrawable, bool isCapture)
 {
-    RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::DrawRelatedNode Draw cloneNode %s", name_.c_str());
+    RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::DrawRelatedNode Draw relatedNode %s", name_.c_str());
     auto clonedNodeSurfaceParams =
         static_cast<RSSurfaceRenderParams*>(clonedNodeRenderDrawable->GetRenderParams().get());
     if (!clonedNodeSurfaceParams) {
@@ -1441,6 +1441,7 @@ bool RSSurfaceRenderNodeDrawable::DrawRelatedNode(RSPaintFilterCanvas& canvas,
     // draw
     isCapture ? clonedNodeRenderDrawable->OnCapture(canvas) : clonedNodeRenderDrawable->OnDraw(canvas);
     // restore cloneNodeSurfaceParams origin params
+    uniParam.SetOpDropped(originIsOpDropped);
     clonedNodeSurfaceParams->SetOccludedByFilterCache(originIsOccludedByFilterCache);
     clonedNodeSurfaceParams->SetMatrix(originMatrix);
     clonedNodeSurfaceParams->SetShouldPaint(originShouldPaint);
