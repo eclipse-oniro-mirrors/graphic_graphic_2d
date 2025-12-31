@@ -4113,9 +4113,9 @@ HWTEST_F(RSRenderNodeTest, UpdateShadowRectTest001, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest, DumpSubClassNodeTest005, TestSize.Level1)
 {
     std::string outTest = "";
-    auto renderNode = std::make_shared<RSRenderNode>(0);
+    auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
     renderNode->isCloneNode_ = true;
-    renderNode->DumpSubClassNodeTest(outTest);
+    renderNode->DumpSubClassNode(outTest);
     ASSERT_TRUE(outTest.find("isCloneNode") != std::string::npos);
     ASSERT_TRUE(outTest.find("isRelated") != std::string::npos);
     ASSERT_TRUE(outTest.find("sourceNodeId") != std::string::npos);

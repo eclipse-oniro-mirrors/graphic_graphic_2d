@@ -2139,14 +2139,14 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CheckAndClearRelatedSourceNodeCacheTest
     ASSERT_NE(screenDrawable_, nullptr);
     auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
     ASSERT_NE(params, nullptr);
-    screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params)
+    screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params);
 
     NodeId id = 1;
-    ASSERT_EQ(params->GetCloneNodeMap.size(), 0);
+    ASSERT_EQ(params->GetCloneNodeMap().size(), 0);
     params->cloneNodeMap_[id];
     params->cloneNodeMap_[id + 1];
-    screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params)
-    ASSERT_NE(params->GetCloneNodeMap.size(), 0)
+    screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params);
+    ASSERT_NE(params->GetCloneNodeMap().size(), 0);
 
     auto surfaceRenderNode = RSTestUtil::CreateSurfaceNode();
     ASSERT_NE(surfaceRenderNode, nullptr);
@@ -2156,9 +2156,9 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, CheckAndClearRelatedSourceNodeCacheTest
     DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr surfaceNodeRenderDrawableSharedPtr(surfaceRenderNodeDrawable);
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr surfaceNodeRenderDrawableWeakPtr(surfaceNodeRenderDrawableSharedPtr);
     surfaceRenderNodeDrawable->relatedSourceNodeCache_ = std::make_shared<Drawing::Image>();
-    params->clonedNodeMap_[id] = surfaceNodeRenderDrawableWeakPtr;
+    params->cloneNodeMap_[id] = surfaceNodeRenderDrawableWeakPtr;
     ASSERT_NE(surfaceRenderNodeDrawable->relatedSourceNodeCache_, nullptr);
-    screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params)
+    screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params);
     ASSERT_EQ(surfaceRenderNodeDrawable->relatedSourceNodeCache_, nullptr);
 }
 } // namespace OHOS::Rosen

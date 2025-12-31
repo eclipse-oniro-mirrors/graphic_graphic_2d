@@ -1643,12 +1643,11 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateInfoForClonedNode, TestSize.Level1)
     ASSERT_NE(rsUniRenderVisitor, nullptr);
 
     auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(1);
-    surfaceRenderNode->SetSourceScreenRenderNodeId(2);
     auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
     rsUniRenderVisitor->cloneNodeMap_[surfaceRenderNode->GetId() + 1];
     nodeMap.renderNodeMap_.clear();
     nodeMap.RegisterRenderNode(surfaceRenderNode);
-    auto surfaceParams = static_cast<RSSurfaceRenderParam*>(surfaceRenderNode->stagingRenderParams_.get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceRenderNode->stagingRenderParams_.get());
     rsUniRenderVisitor->UpdateInfoForClonedNode(*surfaceRenderNode);
     ASSERT_FALSE(surfaceParams->GetNeedCacheSurface());
     rsUniRenderVisitor->cloneNodeMap_[surfaceRenderNode->GetId()];

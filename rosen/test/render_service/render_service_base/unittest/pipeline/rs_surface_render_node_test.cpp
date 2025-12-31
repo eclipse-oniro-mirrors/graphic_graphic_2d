@@ -631,13 +631,13 @@ HWTEST_F(RSSurfaceRenderNodeTest, SetClonedNodeInfo, TestSize.Level1)
     auto surfaceRenderNode2 = std::make_shared<RSSurfaceRenderNode>(id, context);
     context->nodeMap.RegisterRenderNode(std::static_pointer_cast<RSBaseRenderNode>(surfaceRenderNode2));
     surfaceRenderNode->SetClonedNodeInfo(id + 1, true, false);
-    bool result = surfaceRenderNode->clonedSourceNodeId_ == id + 1;
+    result = surfaceRenderNode->clonedSourceNodeId_ == id + 1;
     ASSERT_TRUE(result);
 
     surfaceRenderNode->clonedSourceNodeId_ = INVALID_NODEID;
     surfaceRenderNode->SetParent(surfaceRenderNode2);
     surfaceRenderNode->SetClonedNodeInfo(id + 1, true, false);
-    bool result = surfaceRenderNode->clonedSourceNodeId_ == id + 1;
+    result = surfaceRenderNode->clonedSourceNodeId_ == id + 1;
     ASSERT_FALSE(result);
 }
 

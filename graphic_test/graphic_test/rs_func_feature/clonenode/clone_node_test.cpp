@@ -41,7 +41,7 @@ private:
         }
         clonedSurfaceNode->SetBounds(bounds);
         clonedSurfaceNode->SetFrame(bounds);
-        clonedSurfaceNode->SetBackgroundColor(bounds);
+        clonedSurfaceNode->SetBackgroundColor(colorValue);
 
         auto canvasNode = RSCanvasNode::Create();
         canvasNode->SetClipToBounds(true);
@@ -51,7 +51,7 @@ private:
         clonedSurfaceNode->AddChild(canvasNode, 0);
         auto drawing = canvasNode->BeginRecording(bounds[2], bounds[3]);
         auto rosenImage = std::make_shared<Rosen::RSImage>();
-        rosenImage->SetImageFit(static_cast<int>ImageFit::SCALE_DOWN);
+        rosenImage->SetImageFit(static_cast<int>(ImageFit::SCALE_DOWN));
         auto imageInfo = rosenImage->GetAdaptiveImageInfoWithCustomizedFrameRect(frameRect);
         drawing->DrawPixelMapWithParm(smpixelmap, imageInfo, sampling);
         canvasNode->FinishRecording();
@@ -202,52 +202,6 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2ONE_TE
         RegisterNode(containerSurfaceNode);
         GetRootNode()->AddChild(containerSurfaceNode);
 
-        
-        auto cloneSurfaceNode = CreatSurfaceNode({0, 0, width, height + (height + gap) * i},
-            containerSurfaceNodeName);
-        if (!cloneSurfaceNode) {
-            LOGE("Create cloneSurfaceNode failed");
-            return;
-        }
-        cloneSurfaceNode->SetClonedNodeInfo(clonedSurfaceNode->GetId(), true, true);
-        RegisterNode(cloneSurfaceNode);
-        containerSurfaceNode->AddChild(cloneSurfaceNode, 0);
-    }
-}
-
-GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_MULTIPLE_ONE2ONE_TEST)
-{
-    int width = 500;
-    int height = 500;
-    int gap = 100;
-    std::vector<uint32_t> backgroundColor =
-        {0xFF000000,
-        0xFFFF0000,
-        0xFFFFFF00,
-        0xFFFFFFFF};
-    std::string cloneSurfaceNodeName = "cloneSurfaceNode";
-    std::string containerSurfaceNodeName = "containerSurfaceNode";
-
-    for (int i = 0; i < 3; i++) {
-        auto clonedSurfaceNode = CreateCloneNodeWithImageCanvas({0, (width + gap) * i, width, height},
-            backgroundColor[i]);
-        if (!clonedSurfaceNode) {
-            LOGE("Create CreateCloneNodeWithImageCanvas failed");
-            return;
-        }
-        RegisterNode(clonedSurfaceNode);
-        GetRootNode()->AddChild(clonedSurfaceNode);
-        
-        auto containerSurfaceNode = CreatSurfaceNode({0, (width + gap) * i, width, height},
-            containerSurfaceNodeName);
-        if (!containerSurfaceNode) {
-            LOGE("Create containerSurfaceNode failed");
-            return;
-        }
-        RegisterNode(containerSurfaceNode);
-        GetRootNode()->AddChild(containerSurfaceNode);
-
-        
         auto cloneSurfaceNode = CreatSurfaceNode({0, 0, width, height + (height + gap) * i},
             containerSurfaceNodeName);
         if (!cloneSurfaceNode) {
@@ -362,4 +316,5 @@ GRAPHIC_TEST(CloneNodeTest, CONTENT_DISPLAY_TEST, CLONE_NODE_ONE2N_TEST2)
             }
         }
     }
+}
 }
