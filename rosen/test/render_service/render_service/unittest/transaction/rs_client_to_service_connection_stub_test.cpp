@@ -1079,6 +1079,77 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(res, ERR_INVALID_STATE);
 }
+/**
+ * @tc.name: TestRSClientToServiceConnectionStub031
+ * @tc.desc: Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStub031, TestSize.Level1)
+{
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        uint32_t code =
+            static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        ASSERT_EQ(res, ERR_INVALID_STATE);
+    }
+ 
+    {
+        EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
+                      RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID)),
+            ERR_INVALID_DATA);
+    }
+ 
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteInt32(1000);
+        uint32_t code =
+            static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        ASSERT_EQ(res, ERR_INVALID_DATA);
+    }
+    
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteInt32(1000);
+        data.WriteUint64(0);
+        uint32_t code =
+            static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        ASSERT_EQ(res, ERR_OK);
+    }
+    
+    {
+        pid_t newPid = 1002;
+        NodeId nodeId = (static_cast<uint64_t>(newPid) << 32) | 0x00001031;
+        auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+        RSSurfaceRenderNodeConfig config = {
+            .id = nodeId, .name = "xcompentsurface", .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE
+        };
+        auto node = std::make_shared<RSSurfaceRenderNode>(config);
+        nodeMap.surfaceNodeMap_[nodeId] = node;
+ 
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteInt32(newPid);
+        data.WriteUint64(0);
+        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        nodeMap.surfaceNodeMap_.erase(nodeId);
+        ASSERT_EQ(res, ERR_OK);
+    }
+}
 
 /**
  * @tc.name: NotifyWindowExpectedByWindowIDTest001
