@@ -469,7 +469,7 @@ HWTEST_F(RSCanvasRenderNodeTest, SetColorGamut001, TestSize.Level1)
     std::weak_ptr<RSContext> context;
     RSCanvasRenderNode rsCanvasRenderNode(nodeId, context);
     rsCanvasRenderNode.SetColorGamut(ColorManager::ColorSpaceName::DISPLAY_P3); // 3 is DISPLAY_P3
-    EXPECT_EQ(rsCanvasRenderNode.GetColorGamut(), ColorManager::ColorSpaceName::DISPLAY_P3); // 3 is DISPLAY_P3
+    EXPECT_EQ(rsCanvasRenderNode.colorGamut_, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3); // 3 is DISPLAY_P3
 }
 
 /**
