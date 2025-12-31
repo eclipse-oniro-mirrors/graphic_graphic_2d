@@ -556,8 +556,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
  */
 HWTEST_F(RSSurfaceRenderParamsTest, IsRelated, TestSize.Level2)
 {
-    RSSurfaceRenderParams params(1189);
-    auto result =  params.IsRelated();
+    RSSurfaceRenderParams params(118);
+    auto result = params.IsRelated();
     EXPECT_FALSE(result);
 }
 
@@ -568,8 +568,8 @@ HWTEST_F(RSSurfaceRenderParamsTest, IsRelated, TestSize.Level2)
  */
 HWTEST_F(RSSurfaceRenderParamsTest, IsRelatedSourceNode, TestSize.Level2)
 {
-    RSSurfaceRenderParams params(1189);
-    auto result =  params.IsRelatedSourceNode();
+    RSSurfaceRenderParams params(118);
+    auto result = params.IsRelatedSourceNode();
     EXPECT_FALSE(result);
 }
 } // namespace OHOS::Rosen

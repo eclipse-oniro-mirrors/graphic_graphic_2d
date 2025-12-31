@@ -2918,7 +2918,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, CheckCloneCircleTest, TestSize.Level1)
     EXPECT_TRUE(node1->CheckCloneCircle(node1, node1));
 
     auto node2 = std::make_shared<RSSurfaceRenderNode>(nodeId + 1, context);
-    EXPECT_TRUE(node1->CheckCloneCircle(node1, node2));
+    EXPECT_FALSE(node1->CheckCloneCircle(node1, node2));
 
     auto node3 = std::make_shared<RSSurfaceRenderNode>(nodeId + 2, context);
     node1->SetParent(node3);
@@ -2930,7 +2930,7 @@ HWTEST_F(RSSurfaceRenderNodeTest, CheckCloneCircleTest, TestSize.Level1)
     context->nodeMap.RegisterRenderNode(std::static_pointer_cast<RSBaseRenderNode>(node4));
     EXPECT_FALSE(node1->CheckCloneCircle(node1, node2));
 
-    node2->clonedSourceNodeId_ = nodeId + 2;
+    node4->clonedSourceNodeId_ = nodeId + 2;
     EXPECT_TRUE(node1->CheckCloneCircle(node1, node2));
 }
 

@@ -1166,13 +1166,13 @@ void RSSurfaceRenderNode::SetClonedNodeInfo(NodeId id, bool needOffscreen, bool 
         RS_LOGE("RSSurfaceRenderNode::SetClonedNodeInfo clone circle");
         return;
     }
-    clonedSurfaceNode->clonedSourceNodeNeedOffscreen_ = needOffscreen;
+    clonedSurfaceNode->clonedSourceNodeNeedOffscreen_ = !isRelated && needOffscreen;
     isCloneNode_ = (id != INVALID_NODEID);
     clonedSurfaceNode->SetRelatedSourceNode(isRelated);
     SetRelated(isCloneNode_ && isRelated);
     clonedSourceNodeId_ = id;
     RS_LOGD("RSSurfaceRenderNode::SetClonedNodeInfo clonedNode[%{public}" PRIu64 "] needOffscreen: %{public}d"
-        "isRelated: %{public}d", id, needOffscreen, isRelated_);
+        "isRelated: %{public}d", id, needOffscreen, isRelated);
 }
 
 bool RSSurfaceRenderNode::CheckCloneCircle(std::shared_ptr<RSSurfaceRenderNode> currentNode,
@@ -1191,9 +1191,9 @@ bool RSSurfaceRenderNode::CheckCloneCircle(std::shared_ptr<RSSurfaceRenderNode> 
         }
     }
     auto context = GetContext().lock();
-    auto nextCloneNode = context->GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(clonedNode->clonedSourceNodeId_);
-    if (nextCloneNode) {
-        isCircle = CheckCloneCircle(currentNode, nextCloneNode);
+    auto nextClonedNode = context->GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(clonedNode->clonedSourceNodeId_);
+    if (nextClonedNode) {
+        isCircle = CheckCloneCircle(currentNode, nextClonedNode);
     }
     return isCircle;
 }

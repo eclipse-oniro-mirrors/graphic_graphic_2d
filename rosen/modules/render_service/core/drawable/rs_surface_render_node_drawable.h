@@ -164,7 +164,7 @@ private:
     // Draw cloneNode isRelated
     bool DrawRelatedNode(RSPaintFilterCanvas& canvas, RSRenderThreadParams& uniParam,
         RSSurfaceRenderParams& surfaceParams, std::shared_ptr<RSSurfaceRenderNodeDrawable> clonedNodeRenderDrawable,
-        bool isCapture);
+        bool isCapture = false);
     // Draw cloneNode source isRelated
     bool DrawRelatedSourceNode(RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams);
     void ApplyCrossScreenOffset(RSPaintFilterCanvas& canvas, const RSSurfaceRenderParams& surfaceParams);

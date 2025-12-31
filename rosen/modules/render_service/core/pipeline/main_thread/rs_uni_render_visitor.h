@@ -480,6 +480,7 @@ private:
     bool zoomStateChange_ = false;
 
     uint32_t layerNum_ = 0;
+    
     // first: cloneSource id; second: cloneSource drawable
     std::map<NodeId, DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> cloneNodeMap_;
 

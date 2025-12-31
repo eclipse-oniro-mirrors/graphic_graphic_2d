@@ -1371,7 +1371,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawCloneNode001, TestSize.Level1)
 
 /**
  * @tc.name: DrawRelatedNode
- * @tc.desc: Test DrawRelatedNode while node is clone
+ * @tc.desc: Test DrawRelatedNode001 while node is clone
  * @tc.type: FUNC
  * @tc.require: issueIBKU7U
  */
@@ -1405,7 +1405,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawRelatedNode001, TestSize.Level1)
     clonedRenderNodeDrawable->relatedSourceNodeCache_ = std::make_shared<Drawing::Image>();
     result = surfaceDrawable->DrawRelatedNode(canvas, uniParams, *surfaceParams, clonedRenderNodeDrawable, false);
     ASSERT_TRUE(result);
-    
+
     clonedRenderNodeDrawable->renderParams_ = nullptr;
     result = surfaceDrawable->DrawRelatedNode(canvas, uniParams, *surfaceParams, clonedRenderNodeDrawable, true);
     ASSERT_FALSE(result);
@@ -1476,7 +1476,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnGeneralProcessAndCache, TestSize.Lev
 
     surfaceDrawable_->needCacheRelatedSourceNode_ = true;
     surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, false);
-    ASSERT_TRUE(surfaceDrawable_->GetRsSubThreadCache().GetRSDrawWindowCache().HasCache());
+    ASSERT_TRUE(surfaceDrawable_->HasRelatedSourceNodeCache());
 }
 
 /**
@@ -2152,8 +2152,8 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw007, TestSize.Level1)
     drawable_->renderParams_->contentEmpty_ = false;
     canvas_->canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
 
-    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    ASSERT_NE(uniParam, nullptr);
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParams, nullptr);
 
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
     ASSERT_NE(surfaceParams, nullptr);
@@ -2167,9 +2167,9 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw007, TestSize.Level1)
     ASSERT_TRUE(surfaceParams->ClonedSourceNode());
     surfaceParams->isRelatedSourceNode_ = true;
     ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
-    
+
     Drawing::Bitmap bmp;
-    Drawing::BitmapFormat format {Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     int32_t width = 100;
     int32_t height = 30;
     bmp.Build(width, height, format);
@@ -2181,14 +2181,14 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw007, TestSize.Level1)
 
 /**
  * @tc.name: CaptureSurface012
- * @tc.desc: Test CaptureSurface when DrawRelatedSourceNode is true or false
+ * @tc.desc: test CaptureSurface when DrawRelatedSourceNode is true or false
  * @tc.type: FUNC
  * @tc.require: issue19858
  */
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface012, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
     ASSERT_NE(surfaceParams, nullptr);
     auto rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
     RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
@@ -2197,15 +2197,15 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface012, TestSize.Level1)
     ASSERT_TRUE(surfaceParams->ClonedSourceNode());
     surfaceParams->isRelatedSourceNode_ = true;
     ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
-    
+
     Drawing::Bitmap bmp;
-    Drawing::BitmapFormat format {Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     int32_t width = 100;
     int32_t height = 30;
     bmp.Build(width, height, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
     surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
-    ASSERT_TRUE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_TRUE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 }
 
@@ -2218,50 +2218,50 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface012, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawRelatedSourceNodeTest, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
     ASSERT_NE(surfaceParams, nullptr);
 
     surfaceParams->SetIsCloned(false);
     ASSERT_FALSE(surfaceParams->ClonedSourceNode());
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     surfaceParams->SetIsCloned(true);
     ASSERT_TRUE(surfaceParams->ClonedSourceNode());
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     surfaceParams->isRelatedSourceNode_ = true;
     ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     int32_t width = 100;
     int32_t height = 50;
     Drawing::Bitmap bmp;
-    Drawing::BitmapFormat format {Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     bmp.Build(0, 0, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
     surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
     surfaceParams->isRelatedSourceNode_ = false;
     ASSERT_FALSE(surfaceParams->IsRelatedSourceNode());
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     surfaceParams->isRelatedSourceNode_ = true;
     ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     bmp.Build(0, height, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
     surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     bmp.Build(width, 0, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
     surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
-    ASSERT_FALSE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 
     bmp.Build(width, height, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
     surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
-    ASSERT_TRUE(DrawRelatedSourceNode(*canvas_, *surfaceParams));
+    ASSERT_TRUE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *surfaceParams));
 }
 
 /**
@@ -2276,16 +2276,16 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, SetRelatedSourceNodeCacheTest, TestSiz
     int32_t width = 100;
     int32_t height = 50;
     Drawing::Bitmap bmp;
-    Drawing::BitmapFormat format {Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     bmp.Build(width, height, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
-    auto iamge = bmp.MakeImage();
+    auto image = bmp.MakeImage();
 
     surfaceDrawable_->relatedSourceNodeCache_ = nullptr;
     surfaceDrawable_->SetRelatedSourceNodeCache(nullptr);
     ASSERT_EQ(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
 
-    surfaceDrawable_->SetRelatedSourceNodeCache(iamge);
+    surfaceDrawable_->SetRelatedSourceNodeCache(image);
     ASSERT_NE(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
 }
 
@@ -2301,7 +2301,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, ClearRelatedSourceCacheTest, TestSize.
     int32_t width = 100;
     int32_t height = 50;
     Drawing::Bitmap bmp;
-    Drawing::BitmapFormat format {Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL};
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     bmp.Build(width, height, format);
     bmp.ClearWithColor(Drawing::Color::COLOR_RED);
     surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();

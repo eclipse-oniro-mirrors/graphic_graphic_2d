@@ -638,7 +638,7 @@ public:
         isRelatedSourceNode_ = value;
     }
 
-    bool IsRelatedSourceNode()
+    bool IsRelatedSourceNode() const
     {
         return isRelatedSourceNode_;
     }

@@ -2134,10 +2134,10 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, UpdateSurfaceDrawRegionTest, TestSize.L
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
-HWTEST_F(RSScreenRenderNodeDrawableTest, CheckAndClearRelatedSourceNodeCacheTest, TestSize.Level1)
+HWTEST_F(RSScreenRenderNodeDrawableTest, CheckAndClearRelatedSourceNodeCacheTest, TestSize.Level2)
 {
     ASSERT_NE(screenDrawable_, nullptr);
-    auto params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    RSScreenRenderParams* params = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
     ASSERT_NE(params, nullptr);
     screenDrawable_->CheckAndClearRelatedSourceNodeCache(*params);
 

@@ -4116,9 +4116,9 @@ HWTEST_F(RSRenderNodeTest, DumpSubClassNodeTest005, TestSize.Level1)
     auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
     renderNode->isCloneNode_ = true;
     renderNode->DumpSubClassNode(outTest);
-    ASSERT_TRUE(outTest.find("isCloneNode") != std::string::npos);
-    ASSERT_TRUE(outTest.find("isRelated") != std::string::npos);
-    ASSERT_TRUE(outTest.find("sourceNodeId") != std::string::npos);
+    ASSERT_TRUE(outTest.find("isCloneNode") != string::npos);
+    ASSERT_TRUE(outTest.find("isRelated") != string::npos);
+    ASSERT_TRUE(outTest.find("sourceNodeId") != string::npos);
 }
 } // namespace Rosen
 } // namespace OHOS

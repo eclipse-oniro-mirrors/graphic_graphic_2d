@@ -52,7 +52,7 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     paint.SetAntiAlias(true);
     canvas.AttachBrush(paint);
     auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
-    canvas.DrawImage(*image_, 0, 0, samplingOptions);
+    canvas.DrawImage(*cacheImage, 0, 0, samplingOptions);
     canvas.DetachBrush();
 }
 
