@@ -306,7 +306,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToServiceConnectionProxy.RegisterFrameRateLinkerExpectedFpsUpdateCallback(pid1,
         rsIFrameRateLinkerExpectedFpsUpdateCallback);
     rsFrameRateLinkerExpectedFpsUpdateCallbackProxy.OnFrameRateLinkerExpectedFpsUpdate(pid, XCOMPONENT_ID, expectedFps);
-    rsClientToServiceConnectionProxy.GetRefreshInfoByPidAndUniqueId(pid, uniqueId);
+    rsClientToServiceConnectionProxy.GetRefreshInfoByPidAndUniqueId(pid, uniqueId, getRefreshInfoEnable);
     return true;
 }
 
