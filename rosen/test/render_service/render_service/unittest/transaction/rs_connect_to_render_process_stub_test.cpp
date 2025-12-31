@@ -67,7 +67,7 @@ HWTEST_F(RSConnectToRenderProcessStubTest, TestRSConnectionToRenderProcessStub00
     }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(
-        RSIConnectToRenderProcessInterfaceCode::FORK_CONNECTION);
+        RSIConnectToRenderProcessInterfaceCode::CREATE_CONNECTION);
     sptr<RSIConnectionToken> token1 = new IRemoteStub<RSIConnectionToken>();
     g_connectionStub->OnRemoteRequest(code, data, reply, option);
     ASSERT_TRUE(g_connectionStub);
