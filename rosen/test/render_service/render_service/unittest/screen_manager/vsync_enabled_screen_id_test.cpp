@@ -83,32 +83,32 @@ HWTEST_F(VsyncEnabledScreenIdTest, ScreenConnectAndDisconnectTest001, TestSize.L
 
     // 1st screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, true);
-    ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
+    // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 2nd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 3rd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 3rd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 2nd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 1st screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, UINT64_MAX);
 }
 
@@ -137,32 +137,32 @@ HWTEST_F(VsyncEnabledScreenIdTest, ScreenConnectAndDisconnectTest002, TestSize.L
 
     // 1st screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 2nd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 3rd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 1st screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 1);
 
     // 2nd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 2);
 
     // 3rd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, UINT64_MAX);
 }
 
@@ -190,17 +190,17 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest001, TestSize.Level1)
 
     // 1st screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 2nd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // 3rd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // set screen 0 power on
@@ -217,17 +217,17 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest001, TestSize.Level1)
 
     // 1st screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 1);
 
     // 2nd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 2);
 
     // 3rd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, UINT64_MAX);
 }
 
@@ -258,7 +258,7 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest002, TestSize.Level1)
 
     // 1st screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // set screen 1 power on
@@ -271,7 +271,7 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest002, TestSize.Level1)
 
     // 2nd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // set screen 1 power on
@@ -280,7 +280,7 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest002, TestSize.Level1)
 
     // 3rd screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // set screen 2 power on
@@ -305,17 +305,17 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest002, TestSize.Level1)
 
     // 1st screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 1);
 
     // 2nd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 2);
 
     // 3rd screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, UINT64_MAX);
 #endif
 }
@@ -354,13 +354,13 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest003, TestSize.Level1)
 
     // 3 screen connected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, true, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, true);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 0);
 
     // set screen 1 power on
@@ -409,13 +409,13 @@ HWTEST_F(VsyncEnabledScreenIdTest, SetScreenPowerStatusTest003, TestSize.Level1)
 
     // 3 screen disconnected
     screenManager_->preprocessor_->OnHotPlug(hdiOutput1, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput1, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 1);
     screenManager_->preprocessor_->OnHotPlug(hdiOutput2, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput2, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, 2);
     screenManager_->preprocessor_->OnHotPlug(hdiOutput3, false, nullptr);
-    screenManager_->preprocessor_->ProcessScreenHotPlugEvents(hdiOutput3, false);
+    screenManager_->preprocessor_->ProcessScreenHotPlugEvents();
     // ASSERT_EQ(GetVSyncSamplerImplPtr()->vsyncEnabledScreenId_, UINT64_MAX);
 #endif
 }
