@@ -141,6 +141,7 @@ rs_func_feature_sources = [
   "rs_func_feature/register_buffer_available_callback/register_buffer_available_callback_test.cpp",
 ]
 rs_perform_feature_sources = [
+  "rs_perform_feature/dirty_region/boundary_test.cpp",
   "rs_perform_feature/dirty_region/filter_test.cpp",
   "rs_perform_feature/dirty_region/merge_dirty_rect_test.cpp",
   "rs_perform_feature/dirty_region/merge_dirty_history_test.cpp",
