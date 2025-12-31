@@ -978,6 +978,9 @@ std::shared_ptr<Drawing::Image> RSRenderNodeDrawable::GetImageAlias(
     if (canvas == nullptr) {
         return nullptr;
     }
+    if (canvas->GetGPUContext() == nullptr) {
+        return nullptr;
+    }
     const auto& backendTexture = surface->GetBackendTexture();
     if (!backendTexture.IsValid()) {
         return nullptr;

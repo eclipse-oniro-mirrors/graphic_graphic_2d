@@ -818,6 +818,24 @@ HWTEST_F(RSRenderNodeDrawableTest, GetImageAliasTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetImageAlias
+ * @tc.desc: Test GetImageAlias when GPUContext is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issueIB1KMY
+ */
+HWTEST_F(RSRenderNodeDrawableTest, GetImageAliasTest003, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(
+        DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
+    ASSERT_NE(surface, nullptr);
+    ASSERT_NE(surface->GetCanvas(), nullptr);
+    ASSERT_EQ(surface->GetCanvas()->GetGPUContext(), nullptr);
+    auto image = drawable->GetImageAlias(surface);
+    EXPECT_EQ(image, nullptr);
+}
+
+/**
  * @tc.name: SkipDrawByWhiteList001
  * @tc.desc: Test If SkipDrawByWhiteList while node's child is in whitelist
  * @tc.type: FUNC
