@@ -31,7 +31,7 @@
 
 namespace OHOS::Rosen {
 namespace {
-constexpr int32_t TWO = 2;
+constexpr int32_t TRACE_LEVEL_TWO = 2;
 constexpr int64_t TASK_DELAY_TIME = 16;                 // 16ms
 constexpr float COLOR_PICKER_ANIMATE_DURATION = 350.0f; // 350ms
 
@@ -132,7 +132,7 @@ void RSColorPickerManager::HandleColorUpdate(
     Drawing::ColorQuad newColor, uint64_t nodeId, ColorPickStrategyType strategy)
 {
     {
-        RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TWO,
+        RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
             "RSColorPickerManager::extracted background color = %x, prevColor = %x, nodeId = %lu", newColor, prevColor_,
             nodeId);
         std::lock_guard<std::mutex> lock(colorMtx_);
