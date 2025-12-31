@@ -49,7 +49,6 @@ void HgmContext::InitHgmTaskHandleThread(
     const sptr<VSyncController>& rsVSyncController, const sptr<VSyncController>& appVSyncController,
     const sptr<VSyncGenerator>& vsyncGenerator)
 {
-    // todo idleTimerExpired参数无使用
     auto forceUpdateTask = [this](bool idleTimerExpired, bool forceUpdate) {
         renderServiceHandler_->PostTask([this, idleTimerExpired, forceUpdate] {
             RS_TRACE_NAME_FMT("HgmForceUpdateTask forceUpdateFlag: %d", forceUpdate);
@@ -123,7 +122,6 @@ void HgmContext::HandleHgmProcessInfo(const sptr<HgmProcessToServiceInfo>& info)
         appVSyncDistributor_);
 
     rsCurrRange_ = info->rsCurrRange;
-    // todo surfaceData 传入frameRateManager处理
     for (const auto& [surfaceName, nodePid] : info->surfaceData) {
         frameRateManager_->UpdateSurfaceTime(surfaceName, nodePid, UIFWKType::FROM_SURFACE);
     }
