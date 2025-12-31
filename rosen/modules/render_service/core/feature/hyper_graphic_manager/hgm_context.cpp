@@ -181,7 +181,7 @@ void HgmContext::ProcessHgmFrameRate(
         rsCurrRange.type_ = RS_ANIMATION_FRAME_RATE_TYPE;
         HgmEnergyConsumptionPolicy::Instance().GetAnimationIdleFps(rsCurrRange);
         rsFrameRateLinker_->SetExpectedRange(rsCurrRange);
-        RS_TRACE_NAME_FMT("%s: rsCurrRange = (%d, %d, %d)", __func__,
+        RS_TRACE_NAME_FMT("%s: rsCurrRange=(%d, %d, %d)", __func__,
             rsCurrRange.min_, rsCurrRange.max_, rsCurrRange.preferred_);
     }
     rsCurrRange_.IsValid() ?
