@@ -381,7 +381,8 @@ void DoSetLayerTopForHWC()
 
 void DoGetRefreshInfoByPidAndUniqueId()
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+    uint32_t code = static_cast<uint32_t>(
+        RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
