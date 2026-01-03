@@ -50,8 +50,7 @@ const uint8_t DO_GET_CURRENT_REFRESH_RATE_MODE = 13;
 const uint8_t DO_GET_SCREEN_SUPPORTED_REFRESH_RATES = 14;
 const uint8_t DO_GET_SHOW_REFRESH_RATE_ENABLED = 15;
 const uint8_t DO_GET_REFRESH_INFO = 16;
-const uint8_t DO_GET_REFRESH_INFO_BY_PID_AND_UNIQUEID = 17;
-const uint8_t TARGET_SIZE = 18;
+const uint8_t TARGET_SIZE = 17;
 
 sptr<RSIClientToServiceConnection> CONN = nullptr;
 const uint8_t* DATA = nullptr;
@@ -321,6 +320,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (!OHOS::Rosen::Init(data, size)) {
         return -1;
     }
+    OHOS::Rosen::DoGetRefreshInfoByPidAndUniqueId();
     uint8_t tarPos = OHOS::Rosen::GetData<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
         case OHOS::Rosen::DO_CREATE_VIRTUAL_SCREEN:
@@ -373,9 +373,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_GET_REFRESH_INFO:
             OHOS::Rosen::DoGetRefreshInfo();
-            break;
-        case OHOS::Rosen::DO_GET_REFRESH_INFO_BY_PID_AND_UNIQUEID:
-            OHOS::Rosen::DoGetRefreshInfoByPidAndUniqueId();
             break;
         default:
             return -1;
