@@ -1686,14 +1686,14 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTes
     auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
     {
         EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
-        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId);
-        EXPECT_EQ(ret, "");
+        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, "");
+        EXPECT_EQ(ret, StatusCode::ERR_OK);
     }
 
     {
         EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
-        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId);
-        EXPECT_EQ(ret, "");
+        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, "");
+        EXPECT_EQ(ret, StatusCode::ERR_INVALID_VALUE);
     }
 }
 } // namespace Rosen
