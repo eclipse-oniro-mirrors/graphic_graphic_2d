@@ -388,7 +388,7 @@ HWTEST_F(RSRenderNodeMapTest, FilterNodeByPid003, TestSize.Level1)
  * @tc.name: GetSelfDrawSurfaceNameByPidAndUniqueId001
  * @tc.desc: test results of GetSelfDrawSurfaceNameByPidAndUniqueId
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require: issueIAI1VN
  */
 HWTEST_F(RSRenderNodeMapTest, GetSelfDrawSurfaceNameByPidAndUniqueId001, TestSize.Level1)
 {
@@ -403,13 +403,82 @@ HWTEST_F(RSRenderNodeMapTest, GetSelfDrawSurfaceNameByPidAndUniqueId001, TestSiz
         pid_t newPid = 1000;
         NodeId nodeId = (static_cast<uint64_t>(newPid) << 32) | 0x00001031;
         RSSurfaceRenderNodeConfig config = {
+            .id = nodeId, .name = "surfaceRosenWeb", .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE
+        };
+        auto node = std::make_shared<RSSurfaceRenderNode>(config);
+        node->isOnTheTree_ = true;
+        uint64_t uniqueId = 0;
+#ifndef ROSEN_CROSS_PLATFORM
+        node->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(nodeId);
+        sptr<IConsumerSurface> consumer = IConsumerSurface::Create("xcompentsurface");
+        node->surfaceHandler_->SetConsumer(consumer);
+#endif
+        rsRenderNodeMap.renderNodeMap_[newPid][nodeId] = node;
+        EXPECT_EQ(rsRenderNodeMap.GetSelfDrawSurfaceNameByPidAndUniqueId(newPid, uniqueId), "");
+        rsRenderNodeMap.renderNodeMap_.clear();
+    }
+ 
+    {
+        rsRenderNodeMap.renderNodeMap_.clear();
+        pid_t newPid = 1000;
+        NodeId nodeId = (static_cast<uint64_t>(newPid) << 32) | 0x00001031;
+        RSSurfaceRenderNodeConfig config = {
             .id = nodeId, .name = "xcompentsurface", .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE
         };
         auto node = std::make_shared<RSSurfaceRenderNode>(config);
         node->isOnTheTree_ = true;
         uint64_t uniqueId = 0;
 #ifndef ROSEN_CROSS_PLATFORM
-        node->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(id);
+        node->surfaceHandler_ = nullptr;
+#endif
+        rsRenderNodeMap.renderNodeMap_[newPid][nodeId] = node;
+        EXPECT_EQ(rsRenderNodeMap.GetSelfDrawSurfaceNameByPidAndUniqueId(newPid, uniqueId), "");
+        rsRenderNodeMap.renderNodeMap_.clear();
+    }
+}
+ 
+/**
+ * @tc.name: GetSelfDrawSurfaceNameByPidAndUniqueId002
+ * @tc.desc: test results of GetSelfDrawSurfaceNameByPidAndUniqueId
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSRenderNodeMapTest, GetSelfDrawSurfaceNameByPidAndUniqueId002, TestSize.Level1)
+{
+    RSRenderNodeMap rsRenderNodeMap;
+    {
+        rsRenderNodeMap.renderNodeMap_.clear();
+        pid_t newPid = 1000;
+        NodeId nodeId = (static_cast<uint64_t>(newPid) << 32) | 0x00001031;
+        RSSurfaceRenderNodeConfig config = {
+            .id = nodeId, .name = "xcompentsurface", .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE
+        };
+        auto node = std::make_shared<RSSurfaceRenderNode>(config);
+        node->isOnTheTree_ = true;
+        uint64_t uniqueId = 0;
+#ifndef ROSEN_CROSS_PLATFORM
+        node->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(nodeId);
+        sptr<IConsumerSurface> consumer = IConsumerSurface::Create("xcompentsurface");
+        node->surfaceHandler_->SetConsumer(consumer);
+        uniqueId = consumer->GetUniqueId();
+#endif
+        rsRenderNodeMap.renderNodeMap_[newPid][nodeId] = node;
+        EXPECT_EQ(rsRenderNodeMap.GetSelfDrawSurfaceNameByPidAndUniqueId(newPid, uniqueId), "xcompentsurface");
+        rsRenderNodeMap.renderNodeMap_.clear();
+    }
+ 
+    {
+        rsRenderNodeMap.renderNodeMap_.clear();
+        pid_t newPid = 1000;
+        NodeId nodeId = (static_cast<uint64_t>(newPid) << 32) | 0x00001031;
+        RSSurfaceRenderNodeConfig config = {
+            .id = nodeId, .name = "xcompentsurface", .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE
+        };
+        auto node = std::make_shared<RSSurfaceRenderNode>(config);
+        node->isOnTheTree_ = true;
+        uint64_t uniqueId = 0;
+#ifndef ROSEN_CROSS_PLATFORM
+        node->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(nodeId);
         sptr<IConsumerSurface> consumer = IConsumerSurface::Create("xcompentsurface");
         node->surfaceHandler_->SetConsumer(consumer);
 #endif
