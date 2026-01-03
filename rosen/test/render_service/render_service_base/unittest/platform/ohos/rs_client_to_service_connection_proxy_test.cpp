@@ -1684,16 +1684,18 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTes
     uint64_t uniqueId = 0;
     sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
     auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    std::string result = "";
     {
         EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
-        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, "");
-        EXPECT_EQ(ret, StatusCode::ERR_OK);
+        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        EXPECT_EQ(result, "");
     }
 
     {
+        result = "";
         EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
-        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, "");
-        EXPECT_EQ(ret, StatusCode::ERR_INVALID_VALUE);
+        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        EXPECT_EQ(result, "");
     }
 }
 } // namespace Rosen
