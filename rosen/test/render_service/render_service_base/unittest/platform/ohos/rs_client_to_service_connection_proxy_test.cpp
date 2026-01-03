@@ -1687,14 +1687,14 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTes
     std::string result = "";
     {
         EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
-        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
         EXPECT_EQ(result, "");
     }
 
     {
         result = "";
         EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
-        auto ret = mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
         EXPECT_EQ(result, "");
     }
 }
