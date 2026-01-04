@@ -473,8 +473,7 @@ void HgmEnergyConsumptionPolicy::VoterVideoFrameRate(const std::unordered_map<st
         .maxRefreshRate = refreshRate,
     };
     HgmTaskHandleThread::Instance().PostTask([eventInfo = std::move(eventInfo), pid]() {
-        auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-        if (frameRateMgr != nullptr) {
+        if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr()) {
             frameRateMgr->HandleRefreshRateEvent(pid, eventInfo);
         }
     });
