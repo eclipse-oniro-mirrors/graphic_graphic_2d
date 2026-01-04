@@ -258,6 +258,7 @@ ErrCode RSRenderPipelineAgent::RegisterBufferAvailableListener(
 
 ErrCode RSRenderPipelineAgent::SetGlobalDarkColorMode(bool isDark)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (rsRenderPipeline_ == nullptr) {
         return ERR_INVALID_VALUE;
     }
@@ -271,6 +272,7 @@ ErrCode RSRenderPipelineAgent::SetGlobalDarkColorMode(bool isDark)
 ErrCode RSRenderPipelineAgent::SetSystemAnimatedScenes(
     SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (rsRenderPipeline_ == nullptr) {
         success = false;
         return ERR_INVALID_VALUE;
@@ -317,7 +319,10 @@ ErrCode RSRenderPipelineAgent::SetHidePrivacyContent(NodeId id, bool needHidePri
 
 bool RSRenderPipelineAgent::GetHighContrastTextState()
 {
-    return rsRenderPipeline_ != nullptr && RSBaseRenderEngine::IsHighContrastEnabled();
+    if (rsRenderPipeline_ == nullptr) {
+        return false;
+    }
+    return RSBaseRenderEngine::IsHighContrastEnabled();
 }
 
 ErrCode RSRenderPipelineAgent::SetFocusAppInfo(const FocusAppInfo& info, int32_t& repCode)
@@ -732,6 +737,7 @@ ErrCode RSRenderPipelineAgent::DropFrameByPid(const std::vector<int32_t> pidList
 
 ErrCode RSRenderPipelineAgent::SetAncoForceDoDirect(bool direct, bool& res)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (rsRenderPipeline_ == nullptr) {
         res = false;
         return ERR_INVALID_VALUE;
