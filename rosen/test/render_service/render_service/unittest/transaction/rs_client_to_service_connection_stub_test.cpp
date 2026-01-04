@@ -1094,7 +1094,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
         MessageOption option;
         uint32_t code =
             static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
-        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
         ASSERT_EQ(res, ERR_INVALID_STATE);
     }
 
@@ -1112,7 +1112,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
         data.WriteInt32(1000);
         uint32_t code =
             static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
-        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
         ASSERT_EQ(res, ERR_INVALID_DATA);
     }
     
@@ -1125,7 +1125,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
         data.WriteUint64(0);
         uint32_t code =
             static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
-        int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+        int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
         ASSERT_EQ(res, ERR_OK);
     }
 }
@@ -1155,7 +1155,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
     data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data.WriteInt32(newPid);
     data.WriteUint64(0);
-    int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     nodeMap.surfaceNodeMap_.erase(nodeId);
     ASSERT_EQ(res, ERR_OK);
 }
@@ -1185,7 +1185,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
     data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data.WriteInt32(newPid);
     data.WriteUint64(1000);
-    int res = toServiceConnectionStub_->OnRemoteRequest(code, data, reply, option);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     nodeMap.surfaceNodeMap_.erase(nodeId);
     ASSERT_EQ(res, ERR_OK);
 }
@@ -1208,7 +1208,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
     ASSERT_NE(clientToServiceConnection, nullptr);
     auto mainThread = clientToServiceConnection->mainThread_;
     clientToServiceConnection->mainThread_ = nullptr;
-    int res = clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0);
+    std::string result = "";
+    int res = clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0, result);
     ASSERT_EQ(res, ERR_INVALID_VALUE);
 
     auto& nodeMap = mainThread->GetContext().GetMutableNodeMap();
@@ -1223,11 +1224,13 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSClientToServiceConnectionStu
     if (!RSUniRenderJudgement::IsUniRender()) {
         auto screenMgr = clientToServiceConnection->screenManager_;
         clientToServiceConnection->screenManager_ = nullptr;
-        res = clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0);
+        result = "";
+        res = clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0, result);
         ASSERT_EQ(res, ERR_OK);
 
         clientToServiceConnection->screenManager_ = screenMgr;
-        res = clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0);
+        result = "";
+        res = clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0, result);
         ASSERT_EQ(res, ERR_OK);
     }
     RSUniRenderJudgement::uniRenderEnabledType_ = originRenderType;
