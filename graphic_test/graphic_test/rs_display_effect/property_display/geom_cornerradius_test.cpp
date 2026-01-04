@@ -289,8 +289,8 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 {
     const int nodePosX = 50;
     const int nodePosY = 50;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 500;
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 500;
     const int nodeSize = 400;
 
     auto backgroundTestNode = RSCanvasNode:: Create();
@@ -300,7 +300,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
 
-    const std:: vector cornerRadius = {
+    const std::vector<Vector4f> cornerRadius = {
     Vector4f{100.0f, 100.0f, 100.0f, 100.0f},
     Vector4f{101.0f, 102.0f, 103.0f, 104.0f},
     Vector4f{100.1f, 100.2f, 100.3f, 100.4f},
@@ -318,7 +318,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-            { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
             radiusTestNode->SetCornerRadius(cornerRadius[i]);
             radiusTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
             radiusTestNode->SetBackgroundBlurRadius(100.0f);
@@ -328,31 +328,31 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 }
 
 
-GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_001)
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_002)
 {
     const int nodePosX = 50;
     const int nodePosY = 50;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 500;
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 500;
     const int nodeSize = 400;
-
-    auto backgroundTestNode = RSCanvasNode:: Create();
+ 
+    auto backgroundTestNode = RSCanvasNode::Create();
     backgroundTestNode->SetBackgroundColor(0xff000000);
-    backgroundTestNode->SetBounds({0, 0, 1200, 2000});
-    backgroundTestNode->SetFrame({0, 0, 1200, 2000});
+    backgroundTestNode->SetBounds({ 0, 0, 1200, 2000 });
+    backgroundTestNode->SetFrame({ 0, 0, 1200, 2000 });
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
-
-    const std:: vector cornerRadius = {
-    Vector4f{100.0f, 50.0f, 100.0f, 50.0f},
-    Vector4f{100.0f, 75.0f, 50.0f, 25.0f},
-    Vector4f{250.0f, 200.0f, 150.0f, 100.0f},
-    Vector4f{100.6f, 150.0f, 200.0f, 250.0f}
+ 
+    const std::vector<Vector4f> cornerRadius = {
+        Vector4f{ 100.0f, 50.0f, 100.0f, 50.0f },
+        Vector4f{ 100.0f, 75.0f, 50.0f, 25.0f },
+        Vector4f{ 250.0f, 200.0f, 150.0f, 100.0f },
+        Vector4f{ 100.0f, 150.0f, 200.0f, 250.0f }
     };
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-        { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
         radiusTestNode->SetCornerRadius(cornerRadius[i]);
         radiusTestNode->SetBackgroundBlurRadius(100.0f);
         GetRootNode()->AddChild(radiusTestNode);
@@ -361,7 +361,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-            { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
             radiusTestNode->SetCornerRadius(cornerRadius[i]);
             radiusTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
             radiusTestNode->SetBackgroundBlurRadius(100.0f);
@@ -371,12 +371,12 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 }
 
 
-GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_003)
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_003)
 {
     const int nodePosX = 100;
     const int nodePosY = 100;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 500;
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 500;
     const int nodeSize = 400;
 
     auto backgroundTestNode = RSCanvasNode:: Create();
@@ -386,7 +386,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
 
-    const std:: vector cornerRadius = {
+    const std::vector<Vector4f> cornerRadius = {
     Vector4f{100.0f, 100.0f, 100.0f, 100.0f},
     Vector4f{100.0f, 50.0f, 100.0f, 50.0f},
     Vector4f{100.0f, 75.0f, 50.0f, 25.0f}
@@ -394,7 +394,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-        { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
         radiusTestNode->SetCornerRadius(cornerRadius[i]);
         radiusTestNode->SetBackgroundBlurRadius(100.0f);
         radiusTestNode->SetRotation(45.0f);
@@ -404,7 +404,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-            { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
             radiusTestNode->SetCornerRadius(cornerRadius[i]);
             radiusTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
             radiusTestNode->SetBackgroundBlurRadius(100.0f);
@@ -414,12 +414,12 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
     }
 }
 
-GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_004)
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_004)
 {
     const int nodePosX = 50;
     const int nodePosY = 50;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 500;
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 500;
     const float nodeSize = 400.7f;
 
     auto backgroundTestNode = RSCanvasNode:: Create();
@@ -429,7 +429,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
 
-    const std:: vector cornerRadius = {
+    const std::vector<Vector4f> cornerRadius = {
     Vector4f{100.0f, 100.0f, 100.0f, 100.0f},
     Vector4f{101.0f, 102.0f, 103.0f, 104.0f},
     Vector4f{100.1f, 100.2f, 100.3f, 100.4f},
@@ -438,7 +438,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-        { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
         radiusTestNode->SetCornerRadius(cornerRadius[i]);
         radiusTestNode->SetBackgroundBlurRadius(100.0f);
         GetRootNode()->AddChild(radiusTestNode);
@@ -447,7 +447,7 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
 
     for (int i = 0; i < cornerRadius. size(); i++) {
         auto radiusTestNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-            { nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize });
+            { nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
             radiusTestNode->SetCornerRadius(cornerRadius[i]);
             radiusTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
             radiusTestNode->SetBackgroundBlurRadius(100.0f);
@@ -456,26 +456,26 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
     }
 }
 
-GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_005)
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_005)
 {
     const int nodePosX = 50;
     const int nodePosY = 50;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 450;
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 450;
     const std:: vector<float> nodeSize = {400.0f, 400.3f, 400.4f, 400.5f};
 
     auto backgroundTestNode = RSCanvasNode:: Create();
-    backgroundTestNode->SetBackgroundColor(0xff000000);
+    backgroundTestNode->SetBackgroundColor(0xffffff00);
     backgroundTestNode->SetBounds({0, 0, 1200, 2000});
     backgroundTestNode->SetFrame({0, 0, 1200, 2000});
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
 
-    for (int i = 0; i < cornerRadius. size(); i++) {
+    for (int i = 0; i < nodeSize.size(); i++) {
         auto parentTestNode = RSCanvasNode:: Create();
         RegisterNode(parentTestNode);
         GetRootNode()->AddChild(parentTestNode);
-        parentTestNode->SetBounds({nodePosX, nodePosY + node0ffsetY *i, nodeSize[i], nodeSize[i]});
+        parentTestNode->SetBounds({ nodePosX, nodePosY + nodeOffsetY * i, nodeSize[i], nodeSize[i] });
         parentTestNode->SetBackgroundColor(0xff000000);
         parentTestNode->SetCornerRadius(50);
         parentTestNode->SetClipToBounds(true);
@@ -491,60 +491,60 @@ GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType
         auto parentTestNode = RSCanvasNode:: Create();
         RegisterNode(parentTestNode);
         GetRootNode()->AddChild(parentTestNode);
-        parentTestNode->SetBounds({nodePosX + node0ffsetX, nodePosY + nodeOffsetY * i, nodeSize[i], nodeSize[i] });
+        parentTestNode->SetBounds({ nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize[i], nodeSize[i] });
         parentTestNode->SetBackgroundColor(0xff000000);
         parentTestNode->SetCornerRadius(50);
         parentTestNode->SetClipToBounds(true);
-        narentTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
+        parentTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
 
         auto childTestNode = RSCanvasNode::Create();
         parentTestNode->RSNode::AddChild(childTestNode);
         RegisterNode(childTestNode);
-        childTestNode->SetBounds({0,0,nodeSize[i],nodeSize[i] })
+        childTestNode->SetBounds({ 0, 0, nodeSize[i], nodeSize[i] });
         childTestNode->SetBackgroundColor(0xffffffff);
         }
 }
 
-GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_006)
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_006)
 {
     const int nodePosX = 50;
     const int nodePosY = 50;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 500;
-    const std:: vector<float> nodeSize = {400.0f, 400.3f, 400.4f, 400.5f};
-
-    auto backgroundTestNode = RSCanvasNode:: Create();
-    backgroundTestNode->SetBackgroundColor(0xff000000);
-    backgroundTestNode->SetBounds({0, 0, 1200, 2000});
-    backgroundTestNode->SetFrame({0, 0, 1200, 2000});
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 500;
+    const std::vector<float> nodeSize = { 400.0f, 400.3f, 400.4f, 400.5f };
+ 
+    auto backgroundTestNode = RSCanvasNode::Create();
+    backgroundTestNode->SetBackgroundColor(0xffffff00);
+    backgroundTestNode->SetBounds({ 0, 0, 1200, 2000 });
+    backgroundTestNode->SetFrame({ 0, 0, 1200, 2000 });
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
-
-    for (int i = 0; i < cornerRadius. size(); i++) {
-        auto parentTestNode = RSCanvasNode:: Create();
+ 
+    for (int i = 0; i < nodeSize.size(); i++) {
+        auto parentTestNode = RSCanvasNode::Create();
         RegisterNode(parentTestNode);
         GetRootNode()->AddChild(parentTestNode);
-        parentTestNode->SetBounds({nodePosX, nodePosY + node0ffsetY *i, nodeSize[i], nodeSize[i]});
+        parentTestNode->SetBounds({ nodePosX, nodePosY + nodeOffsetY * i, nodeSize[i], nodeSize[i] });
         parentTestNode->SetBackgroundColor(0xff000000);
         parentTestNode->SetCornerRadius(50);
         parentTestNode->SetClipToBounds(true);
-
-        auto childTestNode = SetUpNodeBgImage("/data/local/tmp/Images/AllWhite.jpg", {0, 0, nodeSize[i], nodeSize[i] });
+ 
+        auto childTestNode = SetUpNodeBgImage("/data/local/tmp/Images/AllWhite.jpg", { 0, 0, nodeSize[i], nodeSize[i] });
         parentTestNode->RSNode::AddChild(childTestNode);
         RegisterNode(childTestNode);
     }
-
-    for (int i = 0; i < nodeSize. size(); i++) {
-        auto parentTestNode = RSCanvasNode:: Create();
+ 
+    for (int i = 0; i < nodeSize.size(); i++) {
+        auto parentTestNode = RSCanvasNode::Create();
         RegisterNode(parentTestNode);
         GetRootNode()->AddChild(parentTestNode);
-        parentTestNode->SetBounds({nodePosX + node0ffsetX, nodePosY + nodeOffsetY * i, nodeSize[i], nodeSize[i] });
+        parentTestNode->SetBounds({ nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize[i], nodeSize[i] });
         parentTestNode->SetBackgroundColor(0xff000000);
         parentTestNode->SetCornerRadius(50);
         parentTestNode->SetClipToBounds(true);
-        narentTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
-
-        auto childTestNode = SetUpNodeBgImage("/ data/ local/ tmp/ Images/A11White, jpg", {0, 0, nodeSize[i], nodeSize[i] });
+        parentTestNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
+ 
+        auto childTestNode = SetUpNodeBgImage("/data/local/tmp/Images/AllWhite.jpg", { 0, 0, nodeSize[i], nodeSize[i] });
         parentTestNode->RSNode::AddChild(childTestNode);
         RegisterNode(childTestNode);
     }
