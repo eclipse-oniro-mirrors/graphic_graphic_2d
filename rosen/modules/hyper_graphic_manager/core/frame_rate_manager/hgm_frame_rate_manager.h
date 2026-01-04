@@ -148,6 +148,7 @@ public:
 
     // only called by RSMainThread
     void UpdateSurfaceTime(const std::string& surfaceName, pid_t pid, UIFWKType uiFwkType);
+    void UpdateSurfaceTime(const std::vector<std::tuple<std::string, pid_t>>& surfaceData)
 
     void SetSchedulerPreferredFps(uint32_t schedulePreferredFps);
     void SetIsNeedUpdateAppOffset(bool isNeedUpdateAppOffset) { isNeedUpdateAppOffset_ = isNeedUpdateAppOffset; }
