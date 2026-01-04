@@ -306,8 +306,8 @@ void HgmFrameRateManager::UpdateSurfaceTime(const std::vector<std::tuple<std::st
     for (const auto& [surfaceName, nodePid] : surfaceData) {
         HgmEnergyConsumptionPolicy::Instance().StatisticsVideoCallBufferCount(nodePid, surfaceName);
         if (voterTouchEffective_) {
-            surfaceData_.emplace_back(std::tuple<std::string, pid_t, UIFWKType>(
-                { surfaceName, nodePid, UIFWKType::FROM_SURFACE }));
+            surfaceData_.emplace_back(
+                std::tuple<std::string, pid_t, UIFWKType>({ surfaceName, nodePid, UIFWKType::FROM_SURFACE }));
         }
     }
 }
