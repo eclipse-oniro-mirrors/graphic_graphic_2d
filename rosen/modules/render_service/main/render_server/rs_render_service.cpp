@@ -104,9 +104,9 @@ bool RSRenderService::Init()
         mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
     }
 #ifdef RS_ENABLE_VK
-if (Drawing::SystemProperties::IsUseVulkan()) {
-    RsVulkanContext::SetRecyclable(false);
-}
+    if (Drawing::SystemProperties::IsUseVulkan()) {
+        RsVulkanContext::SetRecyclable(false);
+    }
 #endif
     RSMainThread::Instance();
     RSUniRenderJudgement::InitUniRenderConfig();
