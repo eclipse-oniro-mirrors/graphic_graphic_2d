@@ -285,7 +285,7 @@ GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_Test_012)
     }
 }
 
-GRAPHIC TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_001)
+GRAPHIC_TEST(GeometryTest, CONTENT_DISPLAY_TEST, Geometry_CornerRadius_ApplyType_Test_001)
 {
     const int nodePosX = 50;
     const int nodePosY = 50;
