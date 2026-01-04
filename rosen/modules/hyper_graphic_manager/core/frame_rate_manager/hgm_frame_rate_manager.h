@@ -147,7 +147,6 @@ public:
     HgmIdleDetector& GetIdleDetector() { return idleDetector_; }
 
     // only called by RSMainThread
-    void UpdateSurfaceTime(const std::string& surfaceName, pid_t pid, UIFWKType uiFwkType);
     void UpdateSurfaceTime(const std::vector<std::tuple<std::string, pid_t>>& surfaceData);
 
     void SetSchedulerPreferredFps(uint32_t schedulePreferredFps);
@@ -202,6 +201,8 @@ private:
     void HandleScreenFrameRate(std::string curScreenName);
     void UpdateScreenFrameRate();
     void RegisterUpTimeoutAndDownEvent();
+
+    void UpdateSurfaceTime(const std::string& surfaceName, pid_t pid, UIFWKType uiFwkType);
 
     void GetSupportedRefreshRates(const std::shared_ptr<PolicyConfigData>& configData,
         const std::string& modeKey, std::vector<uint32_t>& targetVec, bool handleAmbientEffect);
