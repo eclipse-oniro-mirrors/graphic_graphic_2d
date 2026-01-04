@@ -421,25 +421,25 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_mask_Test_1
 }
 
 // shadow mask strategy
-GRAPHIC TEST(AppearanceTest, CONTENT DISPLAY TEST, Appearance Shadow Mask Strategy Test)
+GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_Mask_Strategy_Test)
 {
     const int nodePosX = 100;
     const int nodePosY = 100;
-    const int node0ffsetX = 550;
-    const int node0ffsetY = 500;
+    const int nodeOffsetX = 550;
+    const int nodeOffsetY = 500;
     const int nodeSize = 400;
 
-    const std:: vector shadowMaskStrategy = {
-    SHADOW MASK STRATEGY::MASK NONE,
-    SHADOW MASK STRATEGY::MASK BLUR,
-    SHADOW MASK STRATEGY::MASK COLOR BLUR
+    const std::vector<SHADOW_MASK_STRATEGY> shadowMaskStrategy = {
+        SHADOW_MASK_STRATEGY::MASK_NONE,
+        SHADOW_MASK_STRATEGY::MASK_BLUR,
+        SHADOW_MASK_STRATEGY::MASK_COLOR_BLUR
     };  
 
     for (int i = 0; i < shadowMaskStrategy. size(); i++) {
         auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg",
             {nodePosX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize});
         maskTestNode->SetShadowMaskStrategy(shadowMaskStrategy[i]);
-        maskTestNode->SetShadowRadius(ONE HUNDRED_);
+        maskTestNode->SetShadowRadius(ONE_HUNDRED_);
         maskTestNode->SetShadowAlpha(0.5);
         GetRootNode()->AddChild(maskTestNode);
         RegisterNode(maskTestNode);
@@ -447,16 +447,16 @@ GRAPHIC TEST(AppearanceTest, CONTENT DISPLAY TEST, Appearance Shadow Mask Strate
 
     for (int i = 0; i < shadowMaskStrategy. size(); i++) {
         auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg",
-            {nodePosX + node0ffsetX, nodePosY + node0ffsetY * i, nodeSize, nodeSize});
-        for (int i = 0; i SetShadowColor(0xffff0000);
+            { nodePosX + nodeOffsetX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
+        maskTestNode->SetShadowColor(0xffff0000);
         maskTestNode->SetShadowMaskStrategy(shadowMaskStrategy[i]);
-        maskTestNode->SetShadowRadius(ONE HUNDRED );
+        maskTestNode->SetShadowRadius(ONE_HUNDRED_);
         GetRootNode()->AddChild(maskTestNode);
         RegisterNode(maskTestNode);
     }
 }
 
-GRAPHIC TEST(AppearanceTest, CONTENT DISPLAY TEST, Appearance Shadow UseShadowBatching Test)
+GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_UseShadowBatching_Test)
 {
     auto backgroundTestNode = RSCanvasNode:: Create();
     backgroundTestNode->SetBackgroundColor(0xffffffff);
@@ -473,7 +473,7 @@ GRAPHIC TEST(AppearanceTest, CONTENT DISPLAY TEST, Appearance Shadow UseShadowBa
     const std:: vector<uint32_t> backgroundColor = {0xffffe4c4, 0xffffffff, 0xfff56c6c, 0xff67c23a};
     const std:: vector<float> shadowRadius = {90.0f, 90.0f, 150.0f, 110.0f};
     const std:: vector<uint32_t> shadowColor = {0xff00ff00, 0xffff0000, 0xffffff00, 0xff0000ff};
-    const std:: vector<uint32 t> cornerRadius = {0.0f, 0.0f, 50.0f, 50.0f};
+    const std::vector<uint32_t> cornerRadius = { 0.0f, 0.0f, 50.0f, 50.0f };
 
     auto parentTestNode1 = RSCanvasNode:: Create();
     RegisterNode(parentTestNode1);
@@ -499,8 +499,8 @@ GRAPHIC TEST(AppearanceTest, CONTENT DISPLAY TEST, Appearance Shadow UseShadowBa
         auto childTestNode = RSCanvasNode:: Create();
         parentTestNode2->RSNode::AddChild(childTestNode);
         RegisterNode(childTestNode);
-        childTestNode->SetBounds(nodeBound[i])
-        childTestNode->SetBackgroundColor(backrandColor[i]);
+        childTestNode->SetBounds(nodeBound[i]);
+        childTestNode->SetBackgroundColor(backgroundColor[i]);
         childTestNode->SetShadowRadius(shadowRadius[i]);
         childTestNode->SetShadowColor(shadowColor[i]);
         childTestNode->SetCornerRadius(cornerRadius[i]);
