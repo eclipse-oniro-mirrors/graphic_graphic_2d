@@ -232,7 +232,6 @@ void PrintHiperfSurfaceLog(const std::string& counterContext, uint64_t counter)
 
 void RSRenderComposer::ComposerPrepare(uint32_t& currentRate, int64_t& delayTime, const PipelineParam& pipelineParam)
 {
-    pipelineParam_ = pipelineParam;
     hgmHardwareUtils_->TransactRefreshRateParam(currentRate, pipelineParam.pendingScreenRefreshRate,
         pipelineParam.frameTimestamp, pipelineParam.pendingConstraintRelativeTime);
 #ifdef RES_SCHED_ENABLE
@@ -1236,22 +1235,24 @@ void RSRenderComposer::UpdateTransactionData(std::shared_ptr<RSLayerTransactionD
         hdiOutput_->SetActiveRectSwitchStatus(true, graphicIRect);
     }
     composerScreenInfo_ = transactionData->GetComposerScreenInfo();
-    UpdateForSurfaceFps(pipelineParam_);
+    UpdateForSurfaceFps(transactionData->GetPipelineParam());
 }
 
-void RSRenderComposer::UpdateForSurfaceFps(PipelineParam& pipelineParam) {
+void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam) {
     for (size_t i = 0; i < pipelineParam.GetSurfaceFpsOpNum(); i++) {
         if (pipelineParam.SurfaceFpsOpList[i].surfaceFpsOpType ==
-            static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_UPDATE)) {
+            static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_ADD)) {
+            RS_LOGD("update for surfaceFps add op id: %{public}" PRIu64 ", name: %{public}s",
+                pipelineParam.SurfaceFpsOpList[i].surfaceNodeId, pipelineParam.SurfaceFpsOpList[i].surfaceName.c_str());
             RSSurfaceFpsManager::GetInstance().RegisterSurfaceFps(pipelineParam.SurfaceFpsOpList[i].surfaceNodeId,
                 pipelineParam.SurfaceFpsOpList[i].surfaceName.c_str());
         } else if (pipelineParam.SurfaceFpsOpList[i].surfaceFpsOpType ==
             static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_REMOVE)) {
+            RS_LOGD("update for surfaceFps remove op id: %{public}" PRIu64 ", name: %{public}s",
+                pipelineParam.SurfaceFpsOpList[i].surfaceNodeId, pipelineParam.SurfaceFpsOpList[i].surfaceName.c_str());
             RSSurfaceFpsManager::GetInstance().UnregisterSurfaceFps(pipelineParam.SurfaceFpsOpList[i].surfaceNodeId);
         }
     }
-
-    pipelineParam.ResetSurfaceFpsOp();
 }
 
 void RSRenderComposer::AddSolidColorLayer(std::vector<std::shared_ptr<RSLayer>>& layers)
