@@ -202,7 +202,7 @@ private:
     void UpdateScreenFrameRate();
     void RegisterUpTimeoutAndDownEvent();
 
-    void UpdateSurfaceTimeInner(const std::string& surfaceName, pid_t pid, UIFWKType uiFwkType);
+    void UpdateSurfaceTime(const std::string& surfaceName, pid_t pid, UIFWKType uiFwkType);
 
     void GetSupportedRefreshRates(const std::shared_ptr<PolicyConfigData>& configData,
         const std::string& modeKey, std::vector<uint32_t>& targetVec, bool handleAmbientEffect);
