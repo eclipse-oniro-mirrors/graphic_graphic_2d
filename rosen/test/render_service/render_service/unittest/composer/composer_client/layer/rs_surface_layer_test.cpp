@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,253 +13,105 @@
  * limitations under the License.
  */
 
+#include <cstdint>
 #include <gtest/gtest.h>
+#include <hilog/log.h>
+#include <iservice_registry.h>
 #include <memory>
-#include "rs_surface_layer.h"
-#include "rs_composer_context.h"
-#include "surface_type.h"
+#include <sys/mman.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-using namespace testing;
+#include "connection/rs_render_to_composer_connection.h"
+#include "feature/hyper_graphic_manager/hgm_context.h"
+#include "layer_backend/hdi_output.h"
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
+#include "pipeline/rs_render_composer_agent.h"
+#include "pipeline/rs_render_composer_client.h"
+#include "pipeline/rs_render_composer_manager.h"
+
+#include "screen_manager/rs_screen_property.h"
+
+#include "layer/rs_surface_layer.h"
+
 using namespace testing::ext;
 
-namespace OHOS::Rosen {
-class RSLayerContextProbe : public RSComposerContext {
+namespace OHOS {
+namespace Rosen {
+class RSSurfaceLayerTest : public testing::Test {
 public:
-    using RSComposerContext::GetRSLayerTransaction;
-    using RSComposerContext::AddRSLayer;
-    using RSComposerContext::RemoveRSLayer;
-    using RSComposerContext::GetRSLayer;
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    void SetUp() override;
+    void TearDown() override;
+
+    static inline uint32_t screenId = 0;
+    static inline std::shared_ptr<RSRenderComposerClient> client;
+    static inline std::shared_ptr<RSSurfaceLayer> layer;
+    static inline std::shared_ptr<RSRenderComposerManager> sMgr;
 };
 
-class RSSurfaceLayerTest : public Test {};
+void RSSurfaceLayerTest::SetUpTestCase()
+{
+#ifdef RS_ENABLE_VK
+    RsVulkanContext::SetRecyclable(false);
+#endif
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    sMgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+    auto output = std::make_shared<HdiOutput>(screenId);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    sMgr->OnScreenConnected(output, property);
+    auto conn = sMgr->GetRSComposerConnection(screenId);
+    sptr<IRSRenderToComposerConnection> ifaceConn = conn;
+    client = RSRenderComposerClient::Create(ifaceConn, nullptr, nullptr);
+}
+
+void RSSurfaceLayerTest::TearDownTestCase()
+{
+    for(auto [screenId, agent]: sMgr->rsRenderComposerAgentMap_) {
+        agent->rsRenderComposer_->uniRenderEngine_ = nullptr;
+    }
+}
+
+void RSSurfaceLayerTest::SetUp() {}
+void RSSurfaceLayerTest::TearDown() {}
 
 /**
- * Function: SurfaceLayer_Create_NullContext
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. pass null context to Create
- *                  2. expect nullptr returned
+ * @tc.name: CreateLayerTest
+ * @tc.desc: Test RSSurfaceLayer::Create
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Create_NullContext, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, CreateLayerTest, Function | SmallTest | Level2)
 {
-    std::shared_ptr<RSComposerContext> ctx;
-    auto layer = RSSurfaceLayer::Create(ctx, 1u);
-    EXPECT_EQ(layer, nullptr);
+    auto layer1 = std::make_shared<RSSurfaceLayer>();
+    EXPECT_NE(layer1, nullptr);
+
+    auto layer2 = std::make_shared<RSSurfaceLayer>();
+    EXPECT_NE(layer2, nullptr);
 }
 
 /**
- * Function: SurfaceLayer_Regions_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set visible and dirty regions
- *                  2. expect transaction handler becomes non-empty
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Regions_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 106u);
-    ASSERT_NE(layer, nullptr);
+    layer = std::make_shared<RSSurfaceLayer>();
+    EXPECT_NE(layer, nullptr);
 
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    std::vector<GraphicIRect> vrs {{0,0,10,10}};
-    std::vector<GraphicIRect> drs {{1,1,8,8}};
-    layer->SetVisibleRegions(vrs);
-    layer->SetDirtyRegions(drs);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_BlendAndCrop_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set blend type and crop rect
- *                  2. expect transaction handler becomes non-empty
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_BlendAndCrop_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 107u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
-    GraphicIRect crop {2,2,6,6};
-    layer->SetCropRect(crop);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_SizeAndColor_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set layer/bound size
- *                  2. set layer/background colors
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_SizeAndColor_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 108u);
-    ASSERT_NE(layer, nullptr);
-
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    GraphicIRect lr {0,0,100,100};
-    GraphicIRect br {0,0,120,120};
-    layer->SetLayerSize(lr);
-    layer->SetBoundSize(br);
-    GraphicLayerColor lc {255,0,0,255};
-    GraphicLayerColor bc {0,0,255,255};
-    layer->SetLayerColor(lc);
-    layer->SetBackgroundColor(bc);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_ColorTransformAndSpace_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set color transform matrix and data space
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_ColorTransformAndSpace_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 109u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    std::vector<float> mat {1,0,0, 0,1,0, 0,0,1};
-    layer->SetColorTransform(mat);
-    layer->SetColorDataSpace(GraphicColorDataSpace::GRAPHIC_BT709_SRGB_FULL);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_MetaData_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set meta data and meta data set
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_MetaData_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 110u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-        std::vector<GraphicHDRMetaData> md = {
-            { GraphicHDRMetadataKey::GRAPHIC_MATAKEY_RED_PRIMARY_X, 1 }
-        };
-        GraphicHDRMetaDataSet mds {
-            GraphicHDRMetadataKey::GRAPHIC_MATAKEY_RED_PRIMARY_X,
-            std::vector<uint8_t>{1, 2, 3}
-        };
-    layer->SetMetaData(md);
-    layer->SetMetaDataSet(mds);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_FlagsAndIds_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set various flags and ids
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_FlagsAndIds_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 111u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    layer->SetPreMulti(true);
-    layer->SetGravity(1);
-    layer->SetUniRenderFlag(true);
-    layer->SetTunnelHandleChange(true);
-    layer->SetTunnelLayerId(999u);
-    layer->SetTunnelLayerProperty(123u);
-    layer->SetSdrNit(600.0f);
-    layer->SetDisplayNit(650.0f);
-    layer->SetBrightnessRatio(0.8f);
-    std::vector<float> lin {1,0,0, 0,1,0, 0,0,1};
-    layer->SetLayerLinearMatrix(lin);
-    layer->SetLayerSourceTuning(2);
-    std::vector<std::string> names {"winA","winB"};
-    layer->SetWindowsName(names);
-    layer->SetRotationFixed(true);
-    layer->SetLayerArsr(false);
-    layer->SetLayerCopybit(true);
-    layer->SetNeedBilinearInterpolation(true);
-    layer->SetIsMaskLayer(true);
-    layer->SetNodeId(777u);
-    layer->SetAncoFlags(static_cast<uint32_t>(AncoFlags::FORCE_REFRESH));
-    layer->SetSurfaceUniqueId(888u);
-    sptr<SurfaceBuffer> pre = SurfaceBuffer::Create();
-    layer->SetPreBuffer(pre);
-    layer->SetCycleBuffersNum(3u);
-    layer->SetSurfaceName(std::string("sfc-name"));
-    layer->SetUseDeviceOffline(true);
-    layer->SetIgnoreAlpha(true);
-    GraphicIRect anco {0,0,5,5};
-    layer->SetAncoSrcRect(anco);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-/**
- * Function: SurfaceLayer_Create_NewAndExisting
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. create new layer and add to context
- *                  2. create again to reuse existing layer
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Create_NewAndExisting, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer1 = RSSurfaceLayer::Create(ctx, 100u);
-    ASSERT_NE(layer1, nullptr);
-    EXPECT_EQ(layer1->GetRSLayerId(), 100u);
-
-    auto layer2 = RSSurfaceLayer::Create(ctx, 100u);
-    ASSERT_NE(layer2, nullptr);
-    EXPECT_EQ(layer2.get(), layer1.get());
-    EXPECT_EQ(layer2->GetRSLayerId(), 100u);
-}
-
-/**
- * Function: SurfaceLayer_Setters_NoChange_NoParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. call setters with same values
- *                  2. expect transaction handler stays empty
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Setters_NoChange_NoParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 101u);
-    ASSERT_NE(layer, nullptr);
-
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    GraphicLayerAlpha alpha {0};
+    GraphicLayerAlpha alpha;
+    alpha.enPixelAlpha = false;
     layer->SetAlpha(alpha);
-    // setting same again should not add parcel
-    layer->SetAlpha(alpha);
+    EXPECT_EQ(layer->GetAlpha().enPixelAlpha, false);
 
-    layer->SetZorder(0);
-    layer->SetZorder(0);
+    layer->SetZorder(100);
+    EXPECT_EQ(layer->GetZorder(), 100);
 
     GraphicLayerType type = GRAPHIC_LAYER_TYPE_GRAPHIC;
     layer->SetType(type);
@@ -273,136 +125,102 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Setters_NoChange_NoParcel, TestSize.Le
     layer->SetCompositionType(type3);
     EXPECT_EQ(layer->GetCompositionType(), type3);
 
-    GraphicLayerAlpha alpha2 {1};
-    layer->SetAlpha(alpha2);
-    EXPECT_FALSE(handler->IsEmpty());
+    std::vector<GraphicIRect> visibleRegions;
+    layer->SetVisibleRegions(visibleRegions);
+    EXPECT_EQ(layer->GetVisibleRegions(), visibleRegions);
+
+    std::vector<GraphicIRect> dirtyRegions;
+    layer->SetDirtyRegions(dirtyRegions);
+    EXPECT_EQ(layer->GetDirtyRegions(), dirtyRegions);
+
+    GraphicBlendType type4 = GRAPHIC_BLEND_NONE;
+    layer->SetBlendType(type4);
+    EXPECT_EQ(layer->GetBlendType(), type4);
+
+    GraphicIRect crop;
+    layer->SetCropRect(crop);
+    EXPECT_EQ(layer->GetCropRect(), crop);
+
+    layer->SetPreMulti(false);
+    EXPECT_EQ(layer->IsPreMulti(), false);
 }
 
 /**
- * Function: SurfaceLayer_BufferAndFence_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set buffer and acquire fence
- *                  2. expect transaction handler becomes non-empty
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_BufferAndFence_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest2, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 103u);
-    ASSERT_NE(layer, nullptr);
+    GraphicIRect layerRect;
+    layer->SetLayerSize(layerRect);
+    EXPECT_EQ(layer->GetLayerSize(), layerRect);
 
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    GraphicIRect boundRect;
+    layer->SetBoundSize(boundRect);
+    EXPECT_EQ(layer->GetBoundSize(), boundRect);
 
-    sptr<SurfaceBuffer> sb = SurfaceBuffer::Create();
-    sptr<SyncFence> fence = sptr<SyncFence>::MakeSptr(-1);
-    layer->SetBuffer(sb, fence);
-    EXPECT_FALSE(handler->IsEmpty());
+    GraphicLayerColor layerColor;
+    layerColor.r = 100;
+    layer->SetLayerColor(layerColor);
+    EXPECT_EQ(layer->GetLayerColor().r, 100);
+
+    GraphicLayerColor backgroundColor;
+    backgroundColor.r = 10;
+    layer->SetBackgroundColor(backgroundColor);
+    EXPECT_EQ(layer->GetBackgroundColor().r, 10);
+
+    std::vector<float> drmCornerRadiusInfo;
+    layer->SetCornerRadiusInfoForDRM(drmCornerRadiusInfo);
+    EXPECT_EQ(layer->GetCornerRadiusInfoForDRM(), drmCornerRadiusInfo);
+
+    std::vector<float> matrix;
+    layer->SetColorTransform(matrix);
+    EXPECT_EQ(layer->GetColorTransform(), matrix);
+
+    GraphicColorDataSpace colorSpace = GRAPHIC_COLOR_DATA_SPACE_UNKNOWN;
+    layer->SetColorDataSpace(colorSpace);
+    EXPECT_EQ(layer->GetColorDataSpace(), colorSpace);
+
+    std::vector<GraphicHDRMetaData> metaData;
+    GraphicHDRMetaData a;
+    a.key = GRAPHIC_MATAKEY_RED_PRIMARY_Y;
+    a.value = 100;
+    metaData.push_back(a);
+    layer->SetMetaData(metaData);
+    EXPECT_EQ(layer->GetMetaData()[0].key, GRAPHIC_MATAKEY_RED_PRIMARY_Y);
+
+    GraphicHDRMetaDataSet metaDataSet;
+    metaDataSet.key = GRAPHIC_MATAKEY_BLUE_PRIMARY_X;
+    layer->SetMetaDataSet(metaDataSet);
+    EXPECT_EQ(layer->GetMetaDataSet().key, GRAPHIC_MATAKEY_BLUE_PRIMARY_X);
+
+    GraphicMatrix matrix2;
+    matrix2.scaleX = 2;
+    layer->SetMatrix(matrix2);
+    EXPECT_EQ(layer->GetMatrix().scaleX, 2);
 }
 
 /**
- * Function: SurfaceLayer_Timestamps_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set supported flag and present timestamp
- *                  2. expect transaction handler becomes non-empty
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Timestamps_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest3, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 104u);
-    ASSERT_NE(layer, nullptr);
+    int32_t gravity = 0;
+    layer->SetGravity(gravity);
+    EXPECT_EQ(layer->GetGravity(), gravity);
 
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    layer->SetUniRenderFlag(false);
+    EXPECT_EQ(layer->GetUniRenderFlag(), false);
 
-    layer->SetIsSupportedPresentTimestamp(true);
-    GraphicPresentTimestamp ts { GRAPHIC_DISPLAY_PTS_TIMESTAMP, 123456 };
-    layer->SetPresentTimestamp(ts);
-    EXPECT_FALSE(handler->IsEmpty());
-}
+    layer->SetTunnelHandleChange(false);
+    EXPECT_EQ(layer->GetTunnelHandleChange(), false);
 
-/**
- * Function: SurfaceLayer_Destructor_AddsDestroyParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. create layer and let it go out of scope
- *                  2. expect context removes layer and transaction has parcel
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Destructor_AddsDestroyParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    {
-        auto layer = RSSurfaceLayer::Create(ctx, 105u);
-        ASSERT_NE(layer, nullptr);
-        EXPECT_NE(ctx->GetRSLayer(105u), nullptr);
-    }
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(ctx->GetRSLayer(105u) == nullptr);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_TypeTransformComposition_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set type/transform/composition
- *                  2. expect transaction handler becomes non-empty
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_TypeTransformComposition_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 112u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    layer->SetType(GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
-    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_90);
-    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_CornerRadius_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set DRM corner radius info
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_CornerRadius_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 113u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    std::vector<float> drm {4.0f, 4.0f, 4.0f, 4.0f};
-    layer->SetCornerRadiusInfoForDRM(drm);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_TunnelHandle_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set tunnel handle
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_TunnelHandle_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 114u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    sptr<SurfaceTunnelHandle> handle = new SurfaceTunnelHandle();
+    sptr<SurfaceTunnelHandle> handle = sptr<SurfaceTunnelHandle>::MakeSptr();
     layer->SetTunnelHandle(handle);
     EXPECT_EQ(layer->GetTunnelHandle(), handle);
 
@@ -439,20 +257,13 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_TunnelHandle_AddsParcel, TestSize.Leve
 }
 
 /**
- * Function: SurfaceLayer_Zorder_Change_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. change zorder
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Zorder_Change_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest4, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 116u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
     std::vector<std::string> windowsName;
     windowsName.push_back("window");
     layer->SetWindowsName(windowsName);
@@ -473,107 +284,147 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Zorder_Change_AddsParcel, TestSize.Lev
     layer->SetIsMaskLayer(false);
     EXPECT_EQ(layer->GetIsMaskLayer(), false);
 
-    layer->SetZorder(5);
-    EXPECT_FALSE(handler->IsEmpty());
+    layer->SetNodeId(100);
+    EXPECT_EQ(layer->GetNodeId(), 100);
+
+    layer->SetAncoFlags(0);
+    EXPECT_EQ(layer->GetAncoFlags(), 0);
+
+    EXPECT_EQ(layer->IsAncoNative(), false);
+
+    LayerMask mask {};
+    layer->SetLayerMaskInfo(mask);
+    EXPECT_EQ(layer->GetLayerMaskInfo(), mask);
+
+    sptr<IConsumerSurface> surface;
+    layer->SetSurface(surface);
+    EXPECT_EQ(layer->GetSurface(), surface);
+
+    sptr<SurfaceBuffer> sbuffer;
+    sptr<SyncFence> acquireFence;
+    layer->SetBuffer(sbuffer, acquireFence);
+    layer->SetBuffer(sbuffer);
+    EXPECT_EQ(layer->GetBuffer(), sbuffer);
+    EXPECT_EQ(layer->acquireFence_, acquireFence);
+
+    sptr<SurfaceBuffer> pbuffer;
+    layer->SetPreBuffer(pbuffer);
+    EXPECT_EQ(layer->GetPreBuffer(), pbuffer);
 }
 
 /**
- * Function: SurfaceLayer_Matrix_Change_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. change matrix
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Matrix_Change_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest5, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 117u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    sptr<SyncFence> acquireFence2;
+    layer->SetAcquireFence(acquireFence2);
+    EXPECT_EQ(layer->GetAcquireFence(), acquireFence2);
 
-    GraphicMatrix m2 {1,0,0, 0,0.5f,0, 0,0,1};
-    layer->SetMatrix(m2);
-    EXPECT_FALSE(handler->IsEmpty());
+    layer->SetCycleBuffersNum(100);
+    EXPECT_EQ(layer->GetCycleBuffersNum(), 100);
+
+    layer->SetUseDeviceOffline(false);
+    EXPECT_EQ(layer->GetUseDeviceOffline(), false);
+
+    layer->SetIgnoreAlpha(false);
+    EXPECT_EQ(layer->GetIgnoreAlpha(), false);
+
+    auto layer1 = std::make_shared<RSSurfaceLayer>();
+    layer1->CopyLayerInfo(layer);
+
+    layer->cSurface_ = nullptr;
+    layer->DumpCurrentFrameLayer();
+    layer->cSurface_ = IConsumerSurface::Create("test consumer");
+    layer->DumpCurrentFrameLayer();
+    EXPECT_NE(layer, nullptr);
 }
 
 /**
- * Function: SurfaceLayer_AcquireFence_Change_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. change acquire fence
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_AcquireFence_Change_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest6, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 118u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    std::string result = "";
+    layer->transformType_ = GRAPHIC_ROTATE_NONE;
+    layer->compositionType_ = GRAPHIC_COMPOSITION_CLIENT;
+    layer->blendType_ = GRAPHIC_BLEND_NONE;
+    layer->cSurface_ = IConsumerSurface::Create("test consumer");
+    layer->Dump(result);
+    EXPECT_NE(result, "");
 
-    sptr<SyncFence> fence = sptr<SyncFence>::MakeSptr(-1);
-    layer->SetAcquireFence(fence);
-    EXPECT_FALSE(handler->IsEmpty());
+    result = "";
+    layer->transformType_ = static_cast<GraphicTransformType>(13);
+    layer->compositionType_ = GRAPHIC_COMPOSITION_CLIENT;
+    layer->blendType_ = GRAPHIC_BLEND_NONE;
+    layer->cSurface_ = nullptr;
+    layer->Dump(result);
+    EXPECT_NE(result, "");
+
+    result = "";
+    layer->transformType_ = GRAPHIC_ROTATE_NONE;
+    layer->compositionType_ = static_cast<GraphicCompositionType>(13);
+    layer->blendType_ = GRAPHIC_BLEND_NONE;
+    layer->Dump(result);
+    EXPECT_NE(result, "");
+
+    result = "";
+    layer->transformType_ = static_cast<GraphicTransformType>(13);
+    layer->compositionType_ = static_cast<GraphicCompositionType>(13);
+    layer->blendType_ = GRAPHIC_BLEND_NONE;
+    layer->Dump(result);
+    EXPECT_NE(result, "");
+
+    result = "";
+    layer->transformType_ = GRAPHIC_ROTATE_NONE;
+    layer->compositionType_ = static_cast<GraphicCompositionType>(13);
+    layer->blendType_ = static_cast<GraphicBlendType>(20);
+    layer->Dump(result);
+    EXPECT_NE(result, "");
 }
 
 /**
- * Function: SurfaceLayer_SolidColor_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set solid color layer property (always delivered)
+ * @tc.name: LayerPropertiesChangeTest
+ * @tc.desc: Test Change RSLayer Properties
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_SolidColor_AddsParcel, TestSize.Level1)
+HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest7, Function | SmallTest | Level2)
 {
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 119u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    std::string result = "";
+    layer->transformType_ = GRAPHIC_ROTATE_NONE;
+    layer->compositionType_ = GRAPHIC_COMPOSITION_CLIENT;
+    layer->blendType_ = GRAPHIC_BLEND_NONE;
+    layer->cSurface_ = IConsumerSurface::Create("test consumer");
+    layer->Dump(result);
+    EXPECT_NE(result, "");
 
-        GraphicSolidColorLayerProperty prop {};
-        prop.compositionType = GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE;
-        prop.zOrder = 3;
-    layer->SetSolidColorLayerProperty(prop);
-    EXPECT_FALSE(handler->IsEmpty());
+    result = "";
+    layer->transformType_ = static_cast<GraphicTransformType>(13);
+    layer->compositionType_ = static_cast<GraphicCompositionType>(13);
+    layer->blendType_ = static_cast<GraphicBlendType>(20);
+    layer->Dump(result);
+    EXPECT_NE(result, "");
+
+    result = "";
+    layer->transformType_ = GRAPHIC_ROTATE_NONE;
+    layer->compositionType_ = GRAPHIC_COMPOSITION_CLIENT;
+    layer->blendType_ = static_cast<GraphicBlendType>(20);
+    layer->Dump(result);
+    EXPECT_NE(result, "");
+
+    result = "";
+    layer->transformType_ = static_cast<GraphicTransformType>(13);
+    layer->compositionType_ = GRAPHIC_COMPOSITION_CLIENT;
+    layer->blendType_ = static_cast<GraphicBlendType>(20);
+    layer->Dump(result);
+    EXPECT_NE(result, "");
 }
-
-/**
- * Function: SurfaceLayer_IsNeedComposition_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set isNeedComposition (always delivered)
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_IsNeedComposition_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 120u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    layer->SetIsNeedComposition(true);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-
-/**
- * Function: SurfaceLayer_LayerMaskInfo_AddsParcel
- * Type: Function
- * Rank: Important(2)
- * CaseDescription: 1. set layer mask info
- */
-HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_LayerMaskInfo_AddsParcel, TestSize.Level1)
-{
-    auto ctx = std::make_shared<RSLayerContextProbe>();
-    auto layer = RSSurfaceLayer::Create(ctx, 121u);
-    ASSERT_NE(layer, nullptr);
-    auto handler = ctx->GetRSLayerTransaction();
-    ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
-
-    layer->SetLayerMaskInfo(LayerMask::LAYER_MASK_NORMAL);
-    EXPECT_FALSE(handler->IsEmpty());
-}
-} // namespace OHOS::Rosen
+} // namespace Rosen
+} // namespace OHOS
