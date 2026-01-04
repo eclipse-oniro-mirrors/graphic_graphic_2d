@@ -21,7 +21,7 @@
 #include "message_parcel.h"
 #include "sync_fence.h"
 #include "surface_type.h"
-#include "interfaces/inner_api/common/graphic_common_c.h"
+#include "graphic_common_c.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -247,7 +247,12 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_BadTo
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_DefaultBranch, TestSize.Level1)
 {
-    RSComposerToRenderConnectionStub stub;
+    class LocalStub : public RSComposerToRenderConnectionStub {
+    public:
+        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
+        int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t>&) override { return 0; }
+    };
+    LocalStub stub;
     MessageParcel data;
     MessageParcel reply;
     MessageOption opt;

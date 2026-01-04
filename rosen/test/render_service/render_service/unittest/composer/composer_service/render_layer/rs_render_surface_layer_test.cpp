@@ -56,7 +56,7 @@ HWTEST(RSRenderSurfaceLayerTest, Basic_Getter_Setter_Work, TestSize.Level1)
     EXPECT_EQ(layer->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
 
     layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
-    EXPECT_EQ(layer->GetTransformType(), GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    EXPECT_EQ(layer->GetTransform(), GraphicTransformType::GRAPHIC_ROTATE_NONE);
 
     GraphicIRect r {1, 2, 3, 4};
     layer->SetCropRect(r);

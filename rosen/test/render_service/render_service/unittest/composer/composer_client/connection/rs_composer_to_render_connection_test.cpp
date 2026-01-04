@@ -20,7 +20,7 @@
 #include "frame_report.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "composer/composer_client/pipeline/rs_render_composer_client.h"
-#include "interfaces/inner_api/common/graphic_common_c.h"
+#include "graphic_common_c.h"
 
 using namespace testing;
 using namespace testing::ext;

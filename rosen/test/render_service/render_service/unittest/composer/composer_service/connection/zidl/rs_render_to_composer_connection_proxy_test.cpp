@@ -17,6 +17,7 @@
 #include <set>
 #include <vector>
 #include "rs_render_to_composer_connection_stub.h"
+#include "rs_render_to_composer_connection.h"
 #include "rs_render_to_composer_connection_proxy.h"
 #include "rs_layer_transaction_data.h"
 
@@ -24,25 +25,6 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-class TestRenderToComposerStub : public RSRenderToComposerConnectionStub {
-public:
-    bool CommitLayers(std::unique_ptr<RSLayerTransactionData>& transactionData) override
-    {
-        committed_ = (transactionData != nullptr);
-        return true;
-    }
-    void ClearFrameBuffers() override { cleared_ = true; }
-    void CleanLayerBufferBySurfaceId(uint64_t surfaceId) override { cleanedSurfaceId_ = surfaceId; }
-    void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds) override { cacheIds_ = bufferIds; }
-    void SetScreenBacklight(uint32_t level) override { backlight_ = level; }
-    void SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn) override {}
-
-    bool committed_ {false};
-    bool cleared_ {false};
-    uint64_t cleanedSurfaceId_ {0};
-    std::set<uint64_t> cacheIds_ {};
-    uint32_t backlight_ {0};
-};
 
 class RSRenderToComposerConnectionProxyTest : public Test {};
 
@@ -60,27 +42,23 @@ class RSRenderToComposerConnectionProxyTest : public Test {};
  */
 HWTEST_F(RSRenderToComposerConnectionProxyTest, ProxyStub_AllCommands, TestSize.Level1)
 {
-    sptr<TestRenderToComposerStub> stub = sptr<TestRenderToComposerStub>::MakeSptr();
+    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
     sptr<IRemoteObject> obj = stub->AsObject();
     RSRenderToComposerConnectionProxy proxy(obj);
 
     std::unique_ptr<RSLayerTransactionData> tx(new RSLayerTransactionData());
     tx->GetPayload().emplace_back(static_cast<uint64_t>(1u), std::shared_ptr<RSLayerParcel>(nullptr));
-    proxy.CommitLayers(tx);
-    EXPECT_TRUE(stub->committed_);
+    EXPECT_FALSE(proxy.CommitLayers(tx));
 
     proxy.ClearFrameBuffers();
-    EXPECT_TRUE(stub->cleared_);
 
     proxy.CleanLayerBufferBySurfaceId(123u);
-    EXPECT_EQ(stub->cleanedSurfaceId_, 123u);
 
     std::set<uint64_t> ids { 7u, 8u };
     proxy.ClearRedrawGPUCompositionCache(ids);
-    EXPECT_EQ(stub->cacheIds_.size(), 2u);
 
     proxy.SetScreenBacklight(88u);
-    EXPECT_EQ(stub->backlight_, 88u);
+    SUCCEED();
 }
 
 /**

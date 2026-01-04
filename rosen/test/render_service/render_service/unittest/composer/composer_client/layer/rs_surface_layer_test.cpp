@@ -138,7 +138,7 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_ColorTransformAndSpace_AddsParcel, Tes
 
     std::vector<float> mat {1,0,0, 0,1,0, 0,0,1};
     layer->SetColorTransform(mat);
-    layer->SetColorDataSpace(GraphicColorDataSpace::GRAPHIC_COLOR_DATA_SPACE_SRGB);
+    layer->SetColorDataSpace(GraphicColorDataSpace::GRAPHIC_BT709_SRGB_FULL);
     EXPECT_FALSE(handler->IsEmpty());
 }
 
@@ -157,8 +157,13 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_MetaData_AddsParcel, TestSize.Level1)
     ASSERT_NE(handler, nullptr);
     EXPECT_TRUE(handler->IsEmpty());
 
-    std::vector<GraphicHDRMetaData> md {{0,0}};
-    GraphicHDRMetaDataSet mds {0,0,0,0};
+        std::vector<GraphicHDRMetaData> md = {
+            { GraphicHDRMetadataKey::GRAPHIC_MATAKEY_RED_PRIMARY_X, 1 }
+        };
+        GraphicHDRMetaDataSet mds {
+            GraphicHDRMetadataKey::GRAPHIC_MATAKEY_RED_PRIMARY_X,
+            std::vector<uint8_t>{1, 2, 3}
+        };
     layer->SetMetaData(md);
     layer->SetMetaDataSet(mds);
     EXPECT_FALSE(handler->IsEmpty());
@@ -268,8 +273,8 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Setters_NoChange_NoParcel, TestSize.Le
     layer->SetCompositionType(type3);
     EXPECT_EQ(layer->GetCompositionType(), type3);
 
-    GraphicLayerAlpha alpha {1};
-    layer->SetAlpha(alpha);
+    GraphicLayerAlpha alpha2 {1};
+    layer->SetAlpha(alpha2);
     EXPECT_FALSE(handler->IsEmpty());
 }
 
@@ -441,6 +446,13 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_TunnelHandle_AddsParcel, TestSize.Leve
  */
 HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_Zorder_Change_AddsParcel, TestSize.Level1)
 {
+    auto ctx = std::make_shared<RSLayerContextProbe>();
+    auto layer = RSSurfaceLayer::Create(ctx, 116u);
+    ASSERT_NE(layer, nullptr);
+    auto handler = ctx->GetRSLayerTransaction();
+    ASSERT_NE(handler, nullptr);
+    EXPECT_TRUE(handler->IsEmpty());
+
     std::vector<std::string> windowsName;
     windowsName.push_back("window");
     layer->SetWindowsName(windowsName);
@@ -520,7 +532,9 @@ HWTEST_F(RSSurfaceLayerTest, SurfaceLayer_SolidColor_AddsParcel, TestSize.Level1
     ASSERT_NE(handler, nullptr);
     EXPECT_TRUE(handler->IsEmpty());
 
-    GraphicSolidColorLayerProperty prop { .compositionType = 1, .zOrder = 3 };
+        GraphicSolidColorLayerProperty prop {};
+        prop.compositionType = GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE;
+        prop.zOrder = 3;
     layer->SetSolidColorLayerProperty(prop);
     EXPECT_FALSE(handler->IsEmpty());
 }

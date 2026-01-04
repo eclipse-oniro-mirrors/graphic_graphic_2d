@@ -86,9 +86,9 @@ HWTEST_F(RSSurfaceRCDLayerTest, RCDLayer_SetPixelMap_AddsParcel, TestSize.Level1
 
     // Construct a minimal PixelMap instance
     std::shared_ptr<Media::PixelMap> pm(new Media::PixelMap());
-    dynamic_cast<RSSurfaceRCDLayer*>(layer.get())->SetPixelMap(pm);
+    static_cast<RSSurfaceRCDLayer*>(layer.get())->SetPixelMap(pm);
     EXPECT_FALSE(handler->IsEmpty());
-    EXPECT_EQ(dynamic_cast<RSSurfaceRCDLayer*>(layer.get())->GetPixelMap().get(), pm.get());
+    EXPECT_EQ(static_cast<RSSurfaceRCDLayer*>(layer.get())->GetPixelMap().get(), pm.get());
 }
 
 /**
@@ -122,8 +122,8 @@ HWTEST_F(RSSurfaceRCDLayerTest, RCDLayer_SetPixelMap_Null_AddsParcel, TestSize.L
     EXPECT_TRUE(handler->IsEmpty());
 
     std::shared_ptr<Media::PixelMap> pm;
-    dynamic_cast<RSSurfaceRCDLayer*>(layer.get())->SetPixelMap(pm);
+    static_cast<RSSurfaceRCDLayer*>(layer.get())->SetPixelMap(pm);
     EXPECT_FALSE(handler->IsEmpty());
-    EXPECT_EQ(dynamic_cast<RSSurfaceRCDLayer*>(layer.get())->GetPixelMap(), pm);
+    EXPECT_EQ(static_cast<RSSurfaceRCDLayer*>(layer.get())->GetPixelMap(), pm);
 }
 } // namespace OHOS::Rosen
