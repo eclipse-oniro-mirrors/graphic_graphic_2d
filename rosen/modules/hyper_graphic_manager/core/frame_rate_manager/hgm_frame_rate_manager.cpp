@@ -312,7 +312,7 @@ void HgmFrameRateManager::UpdateSurfaceTime(const std::string& surfaceName, pid_
 
 void HgmFrameRateManager::UpdateSurfaceTime(const std::vector<std::tuple<std::string, pid_t>>& surfaceData)
 {
-    for (const auto& [surfaceName, nodePid] : info->surfaceData) {
+    for (const auto& [surfaceName, nodePid] : surfaceData) {
         UpdateSurfaceTime(surfaceName, nodePid, UIFWKType::FROM_SURFACE);
     }
 }
@@ -424,7 +424,7 @@ void HgmFrameRateManager::UniProcessDataForLtpo(uint64_t timestamp,
     UpdateSoftVSync(true);
 }
 
-void HgmFrameRateManager::SetForceUpdateCallback(std::function<void(bool, bool)> forceUpdateCallback)
+void HgmFrameRateManager::SetForceUpdateCallback(std::function<void(bool)> forceUpdateCallback)
 {
     forceUpdateCallback_ = std::move(forceUpdateCallback);
 }
