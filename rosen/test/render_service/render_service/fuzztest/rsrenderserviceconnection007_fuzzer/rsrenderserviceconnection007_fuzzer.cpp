@@ -204,11 +204,11 @@ void DoSetGlobalDarkColorMode()
     sleep(1);
 }
 
-class CustomTestScreenSwitchingNotifyCallback : public RSScreenSwitchingNotifyCallbackStub
-{
+class CustomTestScreenSwitchingNotifyCallback : public RSScreenSwitchingNotifyCallbackStub {
 public:
-    explicit CustomTestScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback &callback) : cb_(callback) {}
-    ~CustomTestScreenSwitchingNotifyCallback() override {};
+    explicit CustomTestScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback &callback) : cb_(callback)
+    {}
+    ~CustomTestScreenSwitchingNotifyCallback() override{};
 
     void OnScreenSwitchingNotify(bool status) override
     {
@@ -220,6 +220,7 @@ public:
 private:
     ScreenSwitchingNotifyCallback cb_;
 };
+
 
 void DoSetScreenSwitchingNotifyCallback()
 {

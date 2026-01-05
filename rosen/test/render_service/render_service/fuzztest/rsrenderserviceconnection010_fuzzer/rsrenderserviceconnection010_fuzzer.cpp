@@ -52,7 +52,7 @@ sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = new RSClientToS
 namespace {
 const uint8_t DO_GET_DISPLAY_IDENTIFICATION_DATA = 0;
 const uint8_t DO_SET_OVERLAY_DISPLAY_MODE = 1;
-const uint8_t DO_GET_bEHIND_WINDOW_FILTER_ENABLED = 2;
+const uint8_t DO_GET_EHIND_WINDOW_FILTER_ENABLED = 2;
 const uint8_t DO_NOTIFY_XCOMPONENT_EXPECTED_FRAME_RATE = 3;
 const uint8_t DO_SET_OPTIMIZE_CANVAS_DRITY_PIDLIST = 4;
 const uint8_t DO_SET_GPU_CRCDIRTY_ENABLE_PIDLIST = 5;
@@ -268,7 +268,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SET_OVERLAY_DISPLAY_MODE:
             OHOS::Rosen::DoSetOverlayDisplayMode();
             break;
-        case OHOS::Rosen::DO_GET_bEHIND_WINDOW_FILTER_ENABLED:
+        case OHOS::Rosen::DO_GET_EHIND_WINDOW_FILTER_ENABLED:
             OHOS::Rosen::DoGetBehindWindowFilterEnabled();
             break;
         case OHOS::Rosen::DO_NOTIFY_XCOMPONENT_EXPECTED_FRAME_RATE:

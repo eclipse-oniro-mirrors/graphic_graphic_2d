@@ -121,10 +121,6 @@ bool Init(const uint8_t* data, size_t size)
 }
 } // namespace
 
-
-
-
-
 void DoSetFocusAppInfo()
 {
     int32_t pid = GetData<int32_t>();
