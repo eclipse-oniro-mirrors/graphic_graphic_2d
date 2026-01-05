@@ -196,7 +196,7 @@ void RSClientToRenderConnection::RSApplicationRenderThreadDeathRecipient::OnRemo
     }
 
     auto rsConn = conn_.promote();
-    if (rsConn == nullptr || renderPipelineAgent_ == nullptr)) {
+    if (rsConn == nullptr || rsConn->renderPipelineAgent_ == nullptr) {
         RS_LOGW("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: "
             "RSClientToServiceConnection was dead, do nothing.");
         return;
@@ -204,7 +204,7 @@ void RSClientToRenderConnection::RSApplicationRenderThreadDeathRecipient::OnRemo
 
     RS_LOGD("RSApplicationRenderThreadDeathRecipient::OnRemoteDied: Unregister.");
     auto app = iface_cast<IApplicationAgent>(tokenSptr);
-    renderPipelineAgent_->UnRegisterApplicationAgent(app);
+    rsConn->renderPipelineAgent_->UnRegisterApplicationAgent(app);
 }
 
 ErrCode RSClientToRenderConnection::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
@@ -577,7 +577,7 @@ void RSClientToRenderConnection::ClearSurfaceWatermark(pid_t pid, const std::str
 std::string RSClientToRenderConnection::GetBundleName(pid_t pid)
 {
     if (!renderPipelineAgent_) {
-        return;
+        return {};
     }
     return renderPipelineAgent_->GetBundleName(pid);
 }

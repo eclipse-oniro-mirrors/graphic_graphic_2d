@@ -53,6 +53,7 @@
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/main_thread/rs_render_service_listener.h"
 #include "pipeline/rs_pointer_window_manager.h"
+#include "rs_profiler.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -63,8 +64,8 @@
 #include "system/rs_system_parameters.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "transaction/rs_transaction_data_callback_manager.h"
-
-
+#include "pipeline/rs_render_node_gc.h"
+#include "app_mgr_client.h"
 #undef LOG_TAG
 #define LOG_TAG "RSRenderPipelineAgent"
 
@@ -134,47 +135,35 @@ void RSRenderPipelineAgent::CleanRenderNodes(pid_t remotePid) noexcept
     RSRenderNodeGC::Instance().ReleaseFromTree(AppExecFwk::EventQueue::Priority::HIGH);
 }
 
-void RSRenderPipelineAgent::CleanFrameRateLinkers() noexcept
-{
-    if (rsRenderPipeline_ == nullptr || rsRenderPipeline_->GetMainThread() == nullptr) {
-        RS_LOGW("RSRenderPipelineAgent::CleanFrameRateLinkers:
-            rsRenderPipeline_ or mainThread_ is null!");
-    }
-    auto& context = rsRenderPipeline_->GetMainThread()->GetContext();
-    auto& frameRateLinkerMap = context.GetMutableFrameRateLinkerMap();
-    frameRateLinkerMap.FilterFrameRateLinkerByPid(remotePid_);
-}
-
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-void RSRenderPipelineAgent::CleanCanvasCallbacksAndPendingBuffer() noexcept
+void RSRenderPipelineAgent::CleanCanvasCallbacksAndPendingBuffer(pid_t remotePid) noexcept
 {
     auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
-    bufferCache.RegisterCanvasCallback(remotePid_, nullptr);
-    bufferCache.ClearPendingBufferByPid(remotePid_);
+    bufferCache.RegisterCanvasCallback(remotePid, nullptr);
+    bufferCache.ClearPendingBufferByPid(remotePid);
 }
 #endif
 
 void RSRenderPipelineAgent::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
 {
     if (rsRenderPipeline_ == nullptr) {
-        RS_LOGW("RSRenderPipelineAgent::UnRegisterApplicationAgent rsRenderPipeline_ or  is null!");
-        return ERR_INVALID_VALUE;
+        // RS_LOGE("RSRenderPipelineAgent::UnRegisterApplicationAgent rsRenderPipeline_ or  is null!");
+        return;
     }
-    auto captureTask = [mainThread = rsRenderPipeline_->GetMainThread()]() -> void {
+
+    rsRenderPipeline_->ScheduleMainThreadTask([mainThread = rsRenderPipeline_->GetMainThread(), app]() {
         if (mainThread == nullptr) {
-            RS_LOGW("RSRenderPipelineAgent::UnRegisterApplicationAgent::
-                rsRenderPipeline_ or  is null!");
+            // RS_LOGE("RSRenderPipelineAgent::UnRegisterApplicationAgent mainThread or is null!");
             return;
         }
         mainThread->UnRegisterApplicationAgent(app);
-    };
-    rsRenderPipeline_->ScheduleMainThreadTask(captureTask).wait();
+    }).wait();
 }
 
 ErrCode RSRenderPipelineAgent::ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task)
 {
     if (task == nullptr || rsRenderPipeline_ == nullptr) {
-        RS_LOGW("ExecuteSynchronousTask, task or RenderPipeline is null!");
+        // RS_LOGE("ExecuteSynchronousTask, task or RenderPipeline is null!");
         return ERR_INVALID_VALUE;
     }
     // After a synchronous task times out, it will no longer be executed.
@@ -1647,21 +1636,23 @@ ErrCode RSRenderPipelineAgent::RepaintEverything()
 void RSRenderPipelineAgent::CleanAll(pid_t pid)
 {
     if (rsRenderPipeline_ == nullptr) {
-        return ERR_INVALID_VALUE;
+        return;
     }
     RS_LOGD("CleanAll() start.");
     RS_TRACE_NAME("RSRenderPipelineAgent::CleanAll begin, remotePid: " + std::to_string(pid));
     RsCommandVerifyHelper::GetInstance().RemoveCntWithPid(pid);
     rsRenderPipeline_->ScheduleMainThreadTask(
-        [weakThis = wprt<RSRenderPipelineAgent>(this), pid] () -> void {
+        [weakThis = wptr<RSRenderPipelineAgent>(this), pid] () -> void {
             sptr<RSRenderPipelineAgent> agent = weakThis.promote();
             if (agent == nullptr || agent->rsRenderPipeline_ == nullptr) {
                 RS_LOGW("rsRenderPipelineAgent or rsRenderPipeline_ is nullptr!");
                 return;
             }
-            CleanRenderNodes(pid);
-            CleanFrameRateLinkers();
-            CleanBrightnessInfoChangeCallbacks(pid);
+            weakThis->CleanRenderNodes(pid);
+            weakThis->CleanBrightnessInfoChangeCallbacks(pid);
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+            weakThis->CleanCanvasCallbacksAndPendingBuffer();
+#endif
         }).wait();
     rsRenderPipeline_->ScheduleMainThreadTask(
         [mainThread = rsRenderPipeline_->GetMainThread(), pid]() {
@@ -1705,7 +1696,7 @@ void RSRenderPipelineAgent::CleanAll(pid_t pid)
         std::lock_guard<std::mutex> lock(pidToBundleMutex_);
         pidToBundleName_.clear();
     }
-    return ERR_OK;
+    return;
 }
 
 ErrCode RSRenderPipelineAgent::SetColorFollow(const std::string& nodeIdStr, bool isColorFollow)

@@ -191,14 +191,13 @@ public:
     ErrCode ForceRefreshOneFrameWithNextVSync();
     ErrCode SetAppWindowNum(uint32_t num);
     std::string GetBundleName(pid_t pid);
-    void UnRegisterApplicationAgent(sptr<IApplicationAgent> app):
+    void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
 private:
     std::shared_ptr<RSRenderPipeline>& rsRenderPipeline_;
     void CleanRenderNodes(pid_t remotePid) noexcept;
-    void CleanFrameRateLinkers();
-    void CleanBrightnessInfoChangeCallbacks() noexcept;
+    void CleanBrightnessInfoChangeCallbacks(pid_t remotePid) noexcept;
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    void CleanCanvasCallbacksAndPendingBuffer() noexcept;
+    void CleanCanvasCallbacksAndPendingBuffer(pid_t remotePid) noexcept;
 #endif
     std::unordered_map<pid_t, std::string> pidToBundleName_;
     mutable std::mutex pidToBundleMutex_;
