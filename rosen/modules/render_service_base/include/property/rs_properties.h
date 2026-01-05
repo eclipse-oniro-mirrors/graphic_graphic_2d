@@ -1111,6 +1111,7 @@ private:
 
     std::optional<RectI> lastRect_;
 
+    std::bitset<3> hasReportedServerXXFilterCascade_ = 0b000;
     // OnApplyModifiers hooks
     void CheckEmptyBounds();
     void GenerateColorFilter();
