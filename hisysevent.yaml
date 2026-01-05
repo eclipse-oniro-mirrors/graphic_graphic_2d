@@ -266,7 +266,7 @@ RS_SERVER_XXFILTER_CASCADE:
   CP_BLUR_COUNT: {type: UINT16, desc: CP_BLUR count}
   MOTIONBLUR_COUNT: {type: UINT16, desc: MOTIONBLUR count}
   FG_BLUR_COUNT: {type: UINT16, desc: FG_BLUR count}
-  SPERIZE_COUNT: {type: UINT16, desc: SPERIZE count}
+  SPHERIZE_COUNT: {type: UINT16, desc: SPHERIZE count}
   FLY_COUNT: {type: UINT16, desc: FLY count}
   ATTRACTION_COUNT: {type: UINT16, desc: ATTRACTION count}
   SHADOW_COUNT: {type: UINT16, desc: SHADOW count}

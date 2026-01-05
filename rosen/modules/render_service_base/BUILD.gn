@@ -625,6 +625,7 @@ ohos_source_set("render_service_base_src") {
       "lz4:liblz4_shared",
       "init:libbegetutil",
       "ffrt:libffrt",
+      "ability_runtime:app_manager",
     ]
   }
 
@@ -855,12 +856,7 @@ ohos_shared_library("librender_service_base") {
   ]
 
   if (rosen_is_ohos) {
-    external_deps += [ 
-      "hisysevent:libhisysevent",
-      "bundle_framework:appexecfwk_base",
-      "bundle_framework:appexecfwk_core",
-      "samgr:samgr_proxy",
-      ]
+    external_deps += [ "hisysevent:libhisysevent" ]
     public_external_deps += [
       "c_utils:utils",
       "graphic_surface:sync_fence",

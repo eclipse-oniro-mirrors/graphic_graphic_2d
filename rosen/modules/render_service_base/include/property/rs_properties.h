@@ -1111,7 +1111,12 @@ private:
 
     std::optional<RectI> lastRect_;
 
+    //Hisysevent params and funcs for GenerateBack/ForegroundFilter and UpdateForegroundFilter
     std::bitset<3> hasReportedServerXXFilterCascade_ = 0b000;
+    void StatBackgroundFilter();
+    void StatCompositingFilter();
+    void StatForegroundFilter();
+    
     // OnApplyModifiers hooks
     void CheckEmptyBounds();
     void GenerateColorFilter();
