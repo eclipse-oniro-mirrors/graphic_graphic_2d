@@ -57,6 +57,10 @@ size_t OH_Drawing_LineTypographyGetLineBreak(OH_Drawing_LineTypography *lineTypo
 OH_Drawing_TextLine* OH_Drawing_LineTypographyCreateLine(OH_Drawing_LineTypography *lineTypograph,
                                                          size_t startIndex, size_t count)
 {
+    if (lineTypograph == nullptr) {
+        TEXT_LOGE("Null lineTypograph");
+        return nullptr;
+    }
     LineTypography* innerlineTypography = reinterpret_cast<LineTypography*>(lineTypograph);
     size_t limitSize = innerlineTypography->GetUnicodeSize();
     if (startIndex >= limitSize || count + startIndex > limitSize) {
