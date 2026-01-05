@@ -437,7 +437,7 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_Mask_Strate
 
     for (int i = 0; i < shadowMaskStrategy.size(); i++) {
         auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg",
-            {nodePosX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize});
+            { nodePosX, nodePosY + nodeOffsetY * i, nodeSize, nodeSize });
         maskTestNode->SetShadowMaskStrategy(shadowMaskStrategy[i]);
         maskTestNode->SetShadowRadius(ONE_HUNDRED_);
         maskTestNode->SetShadowAlpha(0.5);
@@ -470,9 +470,9 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_UseShadowBa
     {50, 200, 600, 80},
     {200, 350, 300, 250},
     {200, 500, 300, 250}};
-    const std::vector<uint32_t> backgroundColor = {0xffffe4c4, 0xffffffff, 0xfff56c6c, 0xff67c23a};
-    const std::vector<float> shadowRadius = {90.0f, 90.0f, 150.0f, 110.0f};
-    const std::vector<uint32_t> shadowColor = {0xff00ff00, 0xffff0000, 0xffffff00, 0xff0000ff};
+    const std::vector<uint32_t> backgroundColor = { 0xffffe4c4, 0xffffffff, 0xfff56c6c, 0xff67c23a };
+    const std::vector<float> shadowRadius = { 90.0f, 90.0f, 150.0f, 110.0f };
+    const std::vector<uint32_t> shadowColor = { 0xff00ff00, 0xffff0000, 0xffffff00, 0xff0000ff };
     const std::vector<uint32_t> cornerRadius = { 0.0f, 0.0f, 50.0f, 50.0f };
 
     auto parentTestNode1 = RSCanvasNode::Create();
