@@ -42,7 +42,7 @@ constexpr int64_t DEFAULT_RS_ANIMATION_TOUCH_UP_TIME = 1000;
 constexpr int32_t UNKNOWN_IDLE_FPS = -1;
 constexpr int64_t DESCISION_VIDEO_CALL_TIME = 500;
 }
-
+//
 HgmEnergyConsumptionPolicy::HgmEnergyConsumptionPolicy()
 {
     RsCommonHook::Instance().RegisterStartNewAnimationListener([this](const std::string& componentName) {
