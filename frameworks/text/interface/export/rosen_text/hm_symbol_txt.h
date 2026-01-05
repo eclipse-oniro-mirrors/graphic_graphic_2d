@@ -150,6 +150,7 @@ private:
     int repeatCount_ { 1 };
     bool animationStart_ { false };
     std::map<std::string, int> visualMap_;
+    mutable std::shared_mutex visualMapMutex_;
     Drawing::DrawingCommonSubType commonSubType_ = Drawing::DrawingCommonSubType::DOWN;
     SymbolType symbolType_{SymbolType::SYSTEM};
     SymbolBitmapType relayoutChangeBitmap_;

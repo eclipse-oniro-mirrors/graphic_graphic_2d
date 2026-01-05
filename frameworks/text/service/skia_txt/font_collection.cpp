@@ -73,12 +73,12 @@ FontCollection::~FontCollection()
 void FontCollection::EnableGlobalFontMgr()
 {
     fontCollection_->SetGlobalFontManager(FontCollection::Create()->GetFontMgr());
-    enableGlobalFontMgr_ = true;
+    enableGlobalFontMgr_.store(true);
 }
 
 bool FontCollection::IsLocalFontCollection()
 {
-    return enableGlobalFontMgr_;
+    return enableGlobalFontMgr_.load();
 }
 
 void FontCollection::DisableFallback()
@@ -101,7 +101,7 @@ bool FontCollection::CheckLocalFontCollectionSize(uint64_t size)
     if (!IsLocalFontCollection()) {
         return true;
     }
-    if (localRegisteredSizeCount_ + size <= FontCollectionMgr::GetInstance().GetLocalFontCollectionMaxSize()) {
+    if (localRegisteredSizeCount_.load() + size <= FontCollectionMgr::GetInstance().GetLocalFontCollectionMaxSize()) {
         return true;
     }
     return false;
@@ -113,9 +113,9 @@ void FontCollection::ChangeLocalFontCollectionSize(LocalActionType type, uint64_
         return;
     }
     if (type == LocalActionType::ADD) {
-        localRegisteredSizeCount_ += size;
+        localRegisteredSizeCount_.fetch_add(size);
     } else {
-        localRegisteredSizeCount_ -= size;
+        localRegisteredSizeCount_.fetch_sub(size);
     }
 }
 
@@ -125,6 +125,7 @@ RegisterError FontCollection::RegisterTypeface(TypefaceWithAlias& ta)
         return RegisterError::INVALID_INPUT;
     }
 
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     if (typefaceSet_.count(ta)) {
         TEXT_LOGI_LIMIT3_MIN(
             "Find same typeface, family name: %{public}s, hash: %{public}u", ta.GetAlias().c_str(), ta.GetHash());

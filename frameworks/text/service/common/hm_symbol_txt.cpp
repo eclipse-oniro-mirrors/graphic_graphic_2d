@@ -189,6 +189,7 @@ bool HMSymbolTxt::GetAnimationStart() const
 
 void HMSymbolTxt::SetVisualMode(const VisualMode visual)
 {
+    std::unique_lock<std::shared_mutex> writeLock(visualMapMutex_);
     visualMap_.clear();
     if (visual == VisualMode::VISUAL_SMALL) {
         visualMap_["ss01"] = 1;
@@ -201,6 +202,7 @@ void HMSymbolTxt::SetVisualMode(const VisualMode visual)
 
 std::map<std::string, int> HMSymbolTxt::GetVisualMap() const
 {
+    std::shared_lock<std::shared_mutex> readLock(visualMapMutex_);
     return visualMap_;
 }
 
