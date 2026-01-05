@@ -62,7 +62,7 @@ RSHpaeFfrtPatternManager& RSHpaeFfrtPatternManager::Instance()
     return instance;
 }
 
-RSHpaeFfrtPatternManager::RSHpaeFfrtPatternManager()
+void RSHpaeFfrtPatternManager::OpenDevice()
 {
     if (!MHCDlOpen()) {
         HPAE_LOGE("MHCDlOpen() failed!");
