@@ -330,6 +330,18 @@ HWTEST_F(NdkLineTypographyTest, CreateLineTest010, TestSize.Level0)
 }
 
 /*
+ * @tc.name: CreateLineTest011
+ * @tc.desc: testing for the OH_Drawing_LineTypographyCreateLine with nullptr input
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkLineTypographyTest, CreateLineTest011, TestSize.Level0)
+{
+    auto line = OH_Drawing_LineTypographyCreateLine(nullptr, 0, 1);
+    EXPECT_EQ(line, nullptr);
+    OH_Drawing_DestroyLineTypography(lineTypography);
+}
+
+/*
  * @tc.name: LineTypographyTest011
  * @tc.desc: complex scenes test for the LineTypography
  * @tc.type: FUNC
