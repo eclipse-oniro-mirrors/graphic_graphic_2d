@@ -55,7 +55,7 @@ ohos_unittest("RSRenderServiceAgentTest") {
     "//foundation/graphic/graphic_2d/rosen/modules/render_service/composer/composer_base/transaction",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service/composer/composer_client/pipeline",
     "//foundation/graphic/graphic_2d/rosen/modules/render_service/composer/composer_base/connection",
-        "//foundation/graphic/graphic_2d/rosen/modules/render_service/composer/composer_client/layer",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service/composer/composer_client/layer",
   ]
 
   deps = [
