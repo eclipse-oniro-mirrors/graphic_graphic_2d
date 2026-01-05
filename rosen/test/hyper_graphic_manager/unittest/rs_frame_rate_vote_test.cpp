@@ -19,7 +19,7 @@
 #include "rs_frame_rate_vote.h"
 #include "hgm_test_base.h"
 #include "surface_buffer_impl.h"
-
+//
 using namespace testing;
 using namespace testing::ext;
 
