@@ -166,28 +166,28 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_Offset_Test
         switch (i) {
             case 0: {
                 testNodeOffset->SetShadowOffsetX(-100);
-                testNodeOffset->SetShadowOffsetY(-100);                
+                testNodeOffset->SetShadowOffsetY(-100);
                 break;
             }
             case 1: {
                 testNodeOffset->SetShadowOffsetX(100);
-                testNodeOffset->SetShadowOffsetY(0);                
+                testNodeOffset->SetShadowOffsetY(0);
                 break;
             }
             case 2: {
                 testNodeOffset->SetShadowOffsetX(0);
-                testNodeOffset->SetShadowOffsetY(100); 
+                testNodeOffset->SetShadowOffsetY(100);
                 break;
             }
             case 3: {
                 testNodeOffset->SetShadowOffsetX(100);
-                testNodeOffset->SetShadowOffsetY(100); 
+                testNodeOffset->SetShadowOffsetY(100);
                 break;
             }
             case 4: {
                 testNodeOffset->SetTranslate(0, nodeOffset, 0);
                 testNodeOffset->SetShadowOffsetX(nodeSize);
-                testNodeOffset->SetShadowOffsetY(nodeSize); 
+                testNodeOffset->SetShadowOffsetY(nodeSize);
                 break;
             }
             default:
@@ -465,7 +465,7 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Shadow_UseShadowBa
     GetRootNode()->AddChild(backgroundTestNode);
     RegisterNode(backgroundTestNode);
 
-    const std:: vector<Vector4f> nodeBound = {
+    const std::vector<Vector4f> nodeBound = {
     {50, 50, 600, 80},
     {50, 200, 600, 80},
     {200, 350, 300, 250},
