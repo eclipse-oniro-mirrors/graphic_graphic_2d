@@ -76,9 +76,10 @@ void RSSingleRenderProcessManager::OnScreenDisconnected(ScreenId id)
     renderService_.renderPipeline_->OnScreenDisconnected(id);
 }
 
-void RSSingleRenderProcessManager::OnScreenPropertyChanged(ScreenId id, const sptr<RSScreenProperty>& property)
+void RSSingleRenderProcessManager::OnScreenPropertyChanged(
+    ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
 {
-    renderService_.renderPipeline_->OnScreenPropertyChanged(property);
+    renderService_.renderPipeline_->OnScreenPropertyChanged(id, type, property);
 }
  
 void RSSingleRenderProcessManager::OnScreenRefresh(ScreenId id)

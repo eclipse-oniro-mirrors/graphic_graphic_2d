@@ -231,7 +231,7 @@ void RSRenderService::RenderProcessManagerInit()
     auto screenManagerListener = sptr<ScreenManagerListener>::MakeSptr(*this);
     screenManager_->RegisterCoreListener(screenManagerListener);
     if (screenManager_->Init(handler_)) {
-        RS_LOGE("ScreenManager initV2 Success");
+        RS_LOGI("ScreenManager init Success");
     }
 }
 
@@ -410,16 +410,17 @@ void RSRenderService::ScreenManagerListener::OnScreenDisconnected(ScreenId id)
     renderService_.renderProcessManager_->OnScreenDisconnected(id);
 }
 
-void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(ScreenId id,
-    const sptr<RSScreenProperty>& property)
+void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(
+    ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
 {
     RS_LOGD("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
-    if (!property->IsVirtual()) {
-        auto status = property->GetScreenPowerStatus();
+    if (type == ScreenPropertyType::POWER_STATUS) {
+        auto prop = static_cast<ScreenProperty<uint32_t>*>(property.GetRefPtr());
+        auto status = static_cast<ScreenPowerStatus>(prop->Get());
         renderService_.vsyncSampler_->ProcessVSyncScreenIdWhilePowerStatusChanged(id, status,
             renderService_.handler_, renderService_.screenManager_->GetIsFoldScreenFlag());
     }
-    renderService_.renderProcessManager_->OnScreenPropertyChanged(id, property);
+    renderService_.renderProcessManager_->OnScreenPropertyChanged(id, type, property);
 }
 
 void RSRenderService::ScreenManagerListener::OnScreenRefresh(ScreenId id)
