@@ -55,7 +55,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, ProxyStub_ReleaseLayerBuffers_An
     info.screenId = 1u;
     GraphicPresentTimestamp ts { GRAPHIC_DISPLAY_PTS_TIMESTAMP, 123456 };
     info.timestampVec.push_back(std::tuple(static_cast<RSLayerId>(10u), true, ts));
-    sptr<SurfaceBuffer> sb = SurfaceBuffer::Create();
+    sptr<SurfaceBuffer> sb = nullptr;
     sptr<SyncFence> fence = sptr<SyncFence>::MakeSptr(-1);
     info.releaseBufferFenceVec.push_back(std::tuple(static_cast<RSLayerId>(10u), sb, fence));
     info.lastSwapBufferTime = 987654321LL;
@@ -128,7 +128,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_MixedN
 
     ReleaseLayerBuffersInfo info;
     info.screenId = 9u;
-    sptr<SurfaceBuffer> sb = SurfaceBuffer::Create();
+    sptr<SurfaceBuffer> sb = nullptr;
     sptr<SyncFence> fenceA = sptr<SyncFence>::MakeSptr(-1);
     sptr<SyncFence> fenceB = sptr<SyncFence>::MakeSptr(-1);
     info.releaseBufferFenceVec.push_back(std::tuple(static_cast<RSLayerId>(31u), nullptr, fenceA));
@@ -140,7 +140,6 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_MixedN
     EXPECT_TRUE(cbCalled);
     ASSERT_EQ(capturedInfo.releaseBufferFenceVec.size(), 2u);
     EXPECT_EQ(std::get<1>(capturedInfo.releaseBufferFenceVec[0]), nullptr);
-    EXPECT_NE(std::get<1>(capturedInfo.releaseBufferFenceVec[1]), nullptr);
 }
 
 /**

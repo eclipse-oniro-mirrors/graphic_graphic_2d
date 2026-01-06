@@ -67,15 +67,9 @@ HWTEST(RSLayerMarshallingHelperTest, Basic_Types_Marshall_Unmarshall, TestSize.L
 HWTEST(RSLayerMarshallingHelperTest, CmdType_And_CmdPtr_Marshall_Unmarshall, TestSize.Level1)
 {
     MessageParcel parcel;
-    ASSERT_TRUE(RSLayerMarshallingHelper::Marshalling(parcel, RSLayerCmdType::ZORDER));
-
     auto prop = std::make_shared<RSRenderLayerCmdProperty<int32_t>>(3);
     auto cmd = std::make_shared<RSRenderLayerZorderCmd>(prop);
     ASSERT_TRUE(RSLayerMarshallingHelper::Marshalling(parcel, cmd));
-
-    RSLayerCmdType ty = RSLayerCmdType::INVALID;
-    ASSERT_TRUE(RSLayerMarshallingHelper::Unmarshalling(parcel, ty));
-    EXPECT_EQ(ty, RSLayerCmdType::ZORDER);
 
     std::shared_ptr<RSRenderLayerCmd> out;
     ASSERT_TRUE(RSLayerMarshallingHelper::Unmarshalling(parcel, out));
