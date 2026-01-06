@@ -393,7 +393,7 @@ void DoGetRefreshInfoByPidAndUniqueId()
     dataParcel.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     dataParcel.WriteInt32(pid);
     dataParcel.WriteUint64(uniqueId);
-    toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 } // namespace Rosen
 } // namespace OHOS
