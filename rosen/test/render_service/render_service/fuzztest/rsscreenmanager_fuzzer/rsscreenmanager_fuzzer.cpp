@@ -21,7 +21,9 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <unistd.h>
-
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
 #include "securec.h"
 
 #include "screen_manager/rs_screen_manager.h"

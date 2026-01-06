@@ -1168,7 +1168,7 @@ HWTEST_F(HdiOutputTest, ReleaseSurfaceBuffer002, Function | MediumTest | Level1)
     HdiOutputTest::hdiOutput_->layerIdMap_[3] = hdiLayer3;
     HdiOutputTest::hdiOutput_->layersId_.push_back(3);
     HdiOutputTest::hdiOutput_->fences_.push_back(fence);
-    
+
     HdiOutputTest::hdiOutput_->layerIdMap_[4] = hdiLayer4;
     HdiOutputTest::hdiOutput_->layersId_.push_back(4);
     HdiOutputTest::hdiOutput_->fences_.push_back(fence);
@@ -1211,7 +1211,7 @@ HWTEST_F(HdiOutputTest, ReleaseSurfaceBuffer003, Function | MediumTest | Level1)
     ASSERT_NE(rsLayer3, nullptr);
     hdiLayer3->UpdateRSLayer(rsLayer3);
     rsLayer3->SetSurface(IConsumerSurface::Create("xcomponentIdSurface"));
-    // has rslayer and surface , UniRenderFlag is true, prebuffer is not nullptr
+    // has rslayer and surface, UniRenderFlag is true, prebuffer is not nullptr
     std::shared_ptr<HdiLayer> hdiLayer4 = HdiLayer::CreateHdiLayer(4);
     ASSERT_NE(hdiLayer4, nullptr);
     std::shared_ptr<RSLayer> rsLayer4 = std::make_shared<RSSurfaceLayer>();
@@ -2046,6 +2046,7 @@ HWTEST_F(HdiOutputTest, CreateLayerLocked004, Function | MediumTest | Level1)
     HdiOutputTest::hdiOutput_->vmArsrWhiteList_ = vmArsrWhiteList;
     HdiOutputTest::hdiOutput_->device_ = preDevice;
 }
+
 /*
  * Function: UpdateLayerCompType001
  * Type: Function
@@ -2219,6 +2220,7 @@ HWTEST_F(HdiOutputTest, SetAncoSrcRect, Function | MediumTest | Level3)
     EXPECT_EQ(srcRect.w, srcRectRet.w);
     EXPECT_EQ(srcRect.h, srcRectRet.h);
 }
+
 /*
  * Function: UpdateInfosAfterCommit
  * Type: Function
