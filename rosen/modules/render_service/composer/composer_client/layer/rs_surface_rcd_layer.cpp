@@ -59,10 +59,8 @@ void RSSurfaceRCDLayer::SetRSLayerCmd(const T& value)
 
 void RSSurfaceRCDLayer::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap)
 {
-    if (pixelMap_ != nullptr) {
-        pixelMap_ = pixelMap;
-        SetRSLayerCmd<RSRenderLayerPixelMapCmd>(pixelMap);
-    }
+    pixelMap_ = pixelMap;
+    SetRSLayerCmd<RSRenderLayerPixelMapCmd>(pixelMap);
 }
 
 std::shared_ptr<Media::PixelMap> RSSurfaceRCDLayer::GetPixelMap() const
