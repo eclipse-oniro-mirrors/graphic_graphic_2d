@@ -1346,10 +1346,10 @@ HWTEST_F(RSImageTest, DrawImageRepeatOffScreenTest, TestSize.Level1)
 HWTEST_F(RSImageTest, CalcRepeatBoundsTest002, TestSize.Level1)
 {
     auto rsImage = std::make_shared<RSImage>();
-    RectF srcRf(1.f, 1.f, 0.f, 0.f);
+    RectF srcRf(10, 10, 0, 0);
     rsImage->dstRect_ = srcRf;
     rsImage->frameRect_ = {0, 0, 100, 100};
-    rsImage->imageRepeat_ = ImageRepeat::REPEAT;+
+    rsImage->imageRepeat_ = ImageRepeat::REPEAT;
     int minX = 0;
     int maxX = 0;
     int minY = 0;
@@ -1385,12 +1385,16 @@ HWTEST_F(RSImageTest, CalcRepeatBoundsTest002, TestSize.Level1)
     EXPECT_EQ(minY, -1);
     EXPECT_EQ(maxY, 1);
 
+    minX = 0;
+    maxX = 0;
+    minY = 0;
+    maxY = 0;
     rsImage->srcRect_.left_ = -10;
     rsImage->srcRect_.top_ = -10;
     rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
     EXPECT_EQ(minX, 0);
-    EXPECT_EQ(maxX, 0);
+    EXPECT_EQ(maxX, 2);
     EXPECT_EQ(minY, 0);
-    EXPECT_EQ(maxY, 0);
+    EXPECT_EQ(maxY, 2);
 }
 } // namespace OHOS::Rosen
