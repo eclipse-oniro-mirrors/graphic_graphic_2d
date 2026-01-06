@@ -57,7 +57,7 @@ HWTEST_F(RSRenderServiceAgentTest, PostTaskImmediate001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderServiceAgentTest, PostTaskImmediate001, TestSize.Level1)
+HWTEST_F(RSRenderServiceAgentTest, PostTaskImmediate002, TestSize.Level1)
 {
     auto renderService = sptr<RSRenderService>::MakeSptr();
     renderService->runner_ = AppExecFwk::EventRunner::Create(false);
@@ -121,7 +121,7 @@ HWTEST_F(RSRenderServiceAgentTest, PostSyncTaskImmediate001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderServiceAgentTest, PostSyncTaskImmediate001, TestSize.Level1)
+HWTEST_F(RSRenderServiceAgentTest, PostSyncTaskImmediate002, TestSize.Level1)
 {
     auto renderService = sptr<RSRenderService>::MakeSptr();
     renderService->runner_ = AppExecFwk::EventRunner::Create(false);
