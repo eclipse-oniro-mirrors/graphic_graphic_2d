@@ -150,13 +150,12 @@ private:
     int repeatCount_ { 1 };
     bool animationStart_ { false };
     std::map<std::string, int> visualMap_;
-    mutable std::shared_mutex visualMapMutex_;
     Drawing::DrawingCommonSubType commonSubType_ = Drawing::DrawingCommonSubType::DOWN;
     SymbolType symbolType_{SymbolType::SYSTEM};
     SymbolBitmapType relayoutChangeBitmap_;
     std::optional<SymbolShadow> symbolShadow_;
     bool isFirstActive_ = false;
-    mutable std::shared_mutex gradientsMutex_;
+    mutable std::shared_mutex mutex_;
     void CloneSelf(const HMSymbolTxt& other);
 };
 }
