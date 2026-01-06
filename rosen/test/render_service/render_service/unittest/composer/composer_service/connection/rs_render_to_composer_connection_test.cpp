@@ -87,4 +87,36 @@ HWTEST_F(RSRenderToComposerConnectionTest, Methods_Call_WithNullAgentPtr, TestSi
     conn.SetScreenBacklight(20u);
     SUCCEED();
 }
+
+/**
+ * Function: Connection_SetComposerToRenderConnection_NullAgent
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create connection with nullptr agent
+ *                  2. call SetComposerToRenderConnection to hit illegal-param branch
+ */
+HWTEST_F(RSRenderToComposerConnectionTest, Connection_SetComposerToRenderConnection_NullAgent, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderComposerAgent> agent = nullptr;
+    RSRenderToComposerConnection conn("conn", 3u, agent);
+    sptr<RSComposerToRenderConnection> ctr = sptr<RSComposerToRenderConnection>::MakeSptr();
+    conn.SetComposerToRenderConnection(ctr);
+    SUCCEED();
+}
+
+/**
+ * Function: Connection_PreAllocProtectedFrameBuffers_NullAgent
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create connection with nullptr agent
+ *                  2. call PreAllocProtectedFrameBuffers to hit illegal-param branch
+ */
+HWTEST_F(RSRenderToComposerConnectionTest, Connection_PreAllocProtectedFrameBuffers_NullAgent, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderComposerAgent> agent = nullptr;
+    RSRenderToComposerConnection conn("conn", 4u, agent);
+    sptr<SurfaceBuffer> sb = SurfaceBuffer::Create();
+    conn.PreAllocProtectedFrameBuffers(sb);
+    SUCCEED();
+}
 } // namespace OHOS::Rosen

@@ -22,6 +22,8 @@
 #include "rs_render_composer.h"
 #include "rs_render_composer_agent.h"
 #include "rs_layer_transaction_handler.h"
+#include "rs_surface_layer_parcel.h"
+#include "rs_render_layer_cmd.h"
 #include "rs_surface_layer.h"
 
 using namespace testing;
@@ -112,17 +114,12 @@ HWTEST_F(RSLayerTransactionTest, AddLayerTest, Level1)
     ASSERT_NE(handler_, nullptr);
     ASSERT_NE(handler_->rsLayerTransactionData_, nullptr);
     ASSERT_TRUE(handler_->rsLayerTransactionData_->IsEmpty());
-    // Create a minimal fake RSLayerParcel for testing
-    class FakeLayerParcel : public RSLayerParcel {
-    public:
-        uint16_t GetRSLayerParcelType() const override { return 0; }
-        RSLayerId GetRSLayerId() const override { return 0; }
-        bool Marshalling(OHOS::MessageParcel& /*parcel*/) const override { return true; }
-        void ApplyRSLayerCmd(std::shared_ptr<RSRenderComposerContext> /*context*/) override {}
-    };
-    auto parcel = std::make_shared<FakeLayerParcel>();
-    std::shared_ptr<RSLayerParcel> baseParcel = std::static_pointer_cast<RSLayerParcel>(parcel);
-    handler_->AddRSLayerParcel(baseParcel, 0);
+    // Use real RSUpdateRSLayerCmd with a simple Zorder command
+    RSLayerId id = static_cast<RSLayerId>(1u);
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<int32_t>>(5);
+    auto zCmd = std::make_shared<RSRenderLayerZorderCmd>(prop);
+    std::shared_ptr<RSLayerParcel> baseParcel = std::make_shared<RSUpdateRSLayerCmd>(id, zCmd);
+    handler_->AddRSLayerParcel(baseParcel, id);
     ASSERT_EQ(handler_->rsLayerTransactionData_->GetCommandCount(), 1u);
 }
 

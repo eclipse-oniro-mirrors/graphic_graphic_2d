@@ -157,15 +157,47 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
 }
 
 /**
- * Function: Marshall_WithInvalidCmdType_Fail
+ * Function: Marshall_Unmarshall_PixelMap_NonNull_Success
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
- * CaseDescription: 1. do not set cmdType (keep INVALID)
- *                  2. call OnMarshalling
- *                  3. expect OnMarshalling returns false
+ * CaseDescription: 1. create a small PixelMap
+ *                  2. marshal/unmarshal property
+ *                  3. verify returned PixelMap is non-null
  */
-// 取消基于 cmdType 的失败用例：当前实现仅针对值进行编解码，无 cmdType/PropertyId 概念。
+HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_PixelMap_NonNull_Success, TestSize.Level1)
+{
+    Media::InitializationOptions opts;
+    opts.size.width = 1;
+    opts.size.height = 1;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    auto pm = Media::PixelMap::Create(opts);
+    ASSERT_NE(pm, nullptr);
+
+    RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>> prop(pm);
+    MessageParcel parcel;
+    ASSERT_TRUE(prop.OnMarshalling(parcel, prop.Get()));
+    std::shared_ptr<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>> out;
+    ASSERT_TRUE(prop.OnUnmarshalling(parcel, out));
+    ASSERT_NE(out, nullptr);
+    ASSERT_NE(out->Get(), nullptr);
+}
+
+/**
+ * Function: Marshall_Vector_WithOversize_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. build vector size > MAX_VECTOR_SIZE (10000)
+ *                  2. expect OnMarshalling returns false
+ */
+HWTEST(RenderLayerCmdPropertyTest, Marshall_Vector_WithOversize_Fail, TestSize.Level1)
+{
+    std::vector<int> big(10001, 1);
+    RSRenderLayerCmdProperty<std::vector<int>> prop(big);
+    MessageParcel parcel;
+    EXPECT_FALSE(prop.OnMarshalling(parcel, prop.Get()));
+}
 
 /**
  * Function: Unmarshall_WithInsufficientData_Fail
@@ -178,15 +210,15 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_Nullptr_SpecialTypes_Succ
  */
 HWTEST(RenderLayerCmdPropertyTest, Unmarshall_WithInsufficientData_Fail, TestSize.Level1)
 {
-    // 对于基本类型，空包直接失败
+    // For basic types, an empty package fails directly
     MessageParcel p1;
     RSRenderLayerCmdProperty<int> prop(0);
     std::shared_ptr<RSRenderLayerCmdProperty<int>> out1;
     EXPECT_FALSE(prop.OnUnmarshalling(p1, out1));
 
-    // 对于 vector，写入 size 但缺失元素内容，解包失败
+    // For vector, writing size but missing element content results in unmarshalling failure
     MessageParcel p2;
-    ASSERT_TRUE(p2.WriteUint32(1)); // size = 1，但不写入任何元素
+    ASSERT_TRUE(p2.WriteUint32(1)); // size = 1, but no elements written
     RSRenderLayerCmdProperty<std::vector<int>> propVec(std::vector<int>{});
     std::shared_ptr<RSRenderLayerCmdProperty<std::vector<int>>> out2;
     EXPECT_FALSE(propVec.OnUnmarshalling(p2, out2));
@@ -213,3 +245,105 @@ HWTEST(RenderLayerCmdPropertyTest, Unmarshall_Vector_WithOversize_Fail, TestSize
 }
 
 } // namespace
+
+/**
+ * Function: Unmarshall_String_WithInsufficientData_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. attempt to read string from empty parcel
+ *                  2. expect OnUnmarshalling returns false
+ */
+HWTEST(RenderLayerCmdPropertyTest, Unmarshall_String_WithInsufficientData_Fail, TestSize.Level1)
+{
+    MessageParcel parcel; // empty
+    RSRenderLayerCmdProperty<std::string> propStr("");
+    std::shared_ptr<RSRenderLayerCmdProperty<std::string>> out;
+    EXPECT_FALSE(propStr.OnUnmarshalling(parcel, out));
+}
+
+/**
+ * Function: Unmarshall_Enum_WithInsufficientData_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. attempt to read enum from empty parcel
+ *                  2. expect OnUnmarshalling returns false
+ */
+HWTEST(RenderLayerCmdPropertyTest, Unmarshall_Enum_WithInsufficientData_Fail, TestSize.Level1)
+{
+    MessageParcel parcel; // empty
+    RSRenderLayerCmdProperty<GraphicBlendType> propEnum(GraphicBlendType::GRAPHIC_BLEND_TYPE_NONE);
+    std::shared_ptr<RSRenderLayerCmdProperty<GraphicBlendType>> out;
+    EXPECT_FALSE(propEnum.OnUnmarshalling(parcel, out));
+}
+
+/**
+ * Function: Unmarshall_SurfaceBuffer_MissingProperties_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. parcel writes hasValue=true but omits properties
+ *                  2. expect OnUnmarshalling returns false
+ */
+HWTEST(RenderLayerCmdPropertyTest, Unmarshall_SurfaceBuffer_MissingProperties_Fail, TestSize.Level1)
+{
+    MessageParcel parcel;
+    ASSERT_TRUE(parcel.WriteBool(true)); // hasValue=true
+    RSRenderLayerCmdProperty<sptr<SurfaceBuffer>> prop(nullptr);
+    std::shared_ptr<RSRenderLayerCmdProperty<sptr<SurfaceBuffer>>> out;
+    EXPECT_FALSE(prop.OnUnmarshalling(parcel, out));
+}
+
+/**
+ * Function: Unmarshall_SyncFence_MissingData_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. parcel writes hasValue=true but omits fence data
+ *                  2. expect OnUnmarshalling returns false
+ */
+HWTEST(RenderLayerCmdPropertyTest, Unmarshall_SyncFence_MissingData_Fail, TestSize.Level1)
+{
+    MessageParcel parcel;
+    ASSERT_TRUE(parcel.WriteBool(true)); // hasValue=true
+    RSRenderLayerCmdProperty<sptr<SyncFence>> prop(nullptr);
+    std::shared_ptr<RSRenderLayerCmdProperty<sptr<SyncFence>>> out;
+    EXPECT_FALSE(prop.OnUnmarshalling(parcel, out));
+}
+
+/**
+ * Function: Unmarshall_SurfaceTunnelHandle_MissingData_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. parcel writes hasValue=true but omits handle data
+ *                  2. expect OnUnmarshalling returns false
+ */
+HWTEST(RenderLayerCmdPropertyTest, Unmarshall_SurfaceTunnelHandle_MissingData_Fail, TestSize.Level1)
+{
+    MessageParcel parcel;
+    ASSERT_TRUE(parcel.WriteBool(true)); // hasValue=true
+    RSRenderLayerCmdProperty<sptr<SurfaceTunnelHandle>> prop(nullptr);
+    std::shared_ptr<RSRenderLayerCmdProperty<sptr<SurfaceTunnelHandle>>> out;
+    EXPECT_FALSE(prop.OnUnmarshalling(parcel, out));
+}
+
+/**
+ * Function: Unmarshall_PixelMap_FlagTrue_NoParcelable_SuccessWithNull
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. parcel writes hasValue=true but no Parcelable content
+ *                  2. expect OnUnmarshalling returns true with value=nullptr
+ */
+HWTEST(RenderLayerCmdPropertyTest, Unmarshall_PixelMap_FlagTrue_NoParcelable_SuccessWithNull, TestSize.Level1)
+{
+    MessageParcel parcel;
+    ASSERT_TRUE(parcel.WriteBool(true)); // hasValue=true
+    RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>> prop(nullptr);
+    std::shared_ptr<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>> out;
+    ASSERT_TRUE(prop.OnUnmarshalling(parcel, out));
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->Get(), nullptr);
+}

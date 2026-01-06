@@ -82,4 +82,47 @@ HWTEST(RSLayerMarshallingHelperTest, CmdType_And_CmdPtr_Marshall_Unmarshall, Tes
     ASSERT_NE(out, nullptr);
     EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::ZORDER);
 }
+
+/**
+ * Function: CmdType_Unmarshall_Fail_NoData
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. call Unmarshalling for RSLayerCmdType on empty parcel
+ *                  2. expect Unmarshalling returns false
+ */
+HWTEST(RSLayerMarshallingHelperTest, CmdType_Unmarshall_Fail_NoData, TestSize.Level1)
+{
+    MessageParcel empty;
+    RSLayerCmdType ty = RSLayerCmdType::INVALID;
+    EXPECT_FALSE(RSLayerMarshallingHelper::Unmarshalling(empty, ty));
+}
+
+/**
+ * Function: CmdPtr_Unmarshall_Fail_Invalid
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. call Unmarshalling for command ptr on empty parcel
+ *                  2. expect Unmarshalling returns false and pointer remains null
+ */
+HWTEST(RSLayerMarshallingHelperTest, CmdPtr_Unmarshall_Fail_Invalid, TestSize.Level1)
+{
+    MessageParcel empty;
+    std::shared_ptr<RSRenderLayerCmd> out;
+    EXPECT_FALSE(RSLayerMarshallingHelper::Unmarshalling(empty, out));
+    EXPECT_EQ(out, nullptr);
+}
+
+/**
+ * Function: CmdPtr_Marshall_Fail_NullPtr
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. call Marshalling for command ptr with nullptr
+ *                  2. expect Marshalling returns false
+ */
+HWTEST(RSLayerMarshallingHelperTest, CmdPtr_Marshall_Fail_NullPtr, TestSize.Level1)
+{
+    MessageParcel parcel;
+    std::shared_ptr<RSRenderLayerCmd> nullCmd;
+    EXPECT_FALSE(RSLayerMarshallingHelper::Marshalling(parcel, nullCmd));
+}
 } // namespace OHOS::Rosen

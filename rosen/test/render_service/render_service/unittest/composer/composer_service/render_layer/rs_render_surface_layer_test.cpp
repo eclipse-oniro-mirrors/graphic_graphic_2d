@@ -42,6 +42,97 @@ HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_Zorder_Applied, TestSize.Level
 }
 
 /**
+ * Function: UpdateRSLayerCmd_PreMulti_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create layer and PreMulti command
+ *                  2. call UpdateRSLayerCmd
+ *                  3. expect IsPreMulti equals set value
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_PreMulti_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<bool>>(true);
+    auto cmd = std::make_shared<RSRenderLayerPreMultiCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_TRUE(layer->IsPreMulti());
+}
+
+/**
+ * Function: UpdateRSLayerCmd_IsMaskLayer_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create layer and IsMaskLayer command
+ *                  2. call UpdateRSLayerCmd
+ *                  3. expect GetIsMaskLayer equals set value
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_IsMaskLayer_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<bool>>(true);
+    auto cmd = std::make_shared<RSRenderLayerIsMaskLayerCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_TRUE(layer->GetIsMaskLayer());
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Gravity_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create layer and Gravity command
+ *                  2. call UpdateRSLayerCmd
+ *                  3. expect GetGravity equals set value
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_Gravity_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<int32_t>>(3);
+    auto cmd = std::make_shared<RSRenderLayerGravityCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_EQ(layer->GetGravity(), 3);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_ColorDataSpace_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create layer and ColorDataSpace command
+ *                  2. call UpdateRSLayerCmd
+ *                  3. expect GetColorDataSpace equals set value
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_ColorDataSpace_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicColorDataSpace>>(GraphicColorDataSpace::GRAPHIC_COLOR_DATA_SPACE_SRGB);
+    auto cmd = std::make_shared<RSRenderLayerColorDataSpaceCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_EQ(layer->GetColorDataSpace(), GraphicColorDataSpace::GRAPHIC_COLOR_DATA_SPACE_SRGB);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_PixelMap_Unhandled_NoCrash
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create layer and PixelMap command (not handled by RSRenderSurfaceLayer)
+ *                  2. call UpdateRSLayerCmd
+ *                  3. expect no crash
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_PixelMap_Unhandled_NoCrash, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    std::shared_ptr<Media::PixelMap> pm = nullptr;
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>>(pm);
+    auto cmd = std::make_shared<RSRenderLayerPixelMapCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    SUCCEED();
+}
+
+/**
  * Function: Basic_Getter_Setter_Work
  * Type: Function
  * Rank: Important(2)

@@ -82,4 +82,39 @@ HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_SendRequest_RemoteNull_Err
     proxy.SetScreenBacklight(1u);
     SUCCEED();
 }
+
+/**
+ * Function: Proxy_SetComposerToRenderConnection_Valid
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create stub/proxy pair
+ *                  2. set a valid composer-to-render remote on proxy
+ *                  3. ensure no crash and path executed
+ */
+HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_SetComposerToRenderConnection_Valid, TestSize.Level1)
+{
+    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
+    RSRenderToComposerConnectionProxy proxy(stub->AsObject());
+    sptr<RSComposerToRenderConnection> ctr = sptr<RSComposerToRenderConnection>::MakeSptr();
+    proxy.SetComposerToRenderConnection(ctr);
+    SUCCEED();
+}
+
+/**
+ * Function: Proxy_PreAllocProtectedFrameBuffers_WriteFail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create proxy and SurfaceBuffer without properties
+ *                  2. call PreAllocProtectedFrameBuffers to hit write fail path
+ */
+HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_PreAllocProtectedFrameBuffers_WriteFail, TestSize.Level1)
+{
+    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
+    RSRenderToComposerConnectionProxy proxy(stub->AsObject());
+    sptr<SurfaceBuffer> sb = SurfaceBuffer::Create();
+    proxy.PreAllocProtectedFrameBuffers(sb);
+    SUCCEED();
+}
 } // namespace OHOS::Rosen

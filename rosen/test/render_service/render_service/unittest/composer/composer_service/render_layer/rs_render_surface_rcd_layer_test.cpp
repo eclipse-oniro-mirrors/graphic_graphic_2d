@@ -54,3 +54,29 @@ HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_PixelMap_Null_NoCrash, Test
     layer->UpdateRSLayerCmd(cmd);
     SUCCEED();
 }
+
+/**
+ * Function: UpdateRSLayerCmd_PixelMap_NonNull_SetsProperty
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. build PixelMap command with non-null PixelMap
+ *                  2. update RSRenderSurfaceRCDLayer
+ *                  3. verify GetPixelMap returns the same pointer
+ */
+HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_PixelMap_NonNull_SetsProperty, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    // Create a tiny PixelMap
+    Media::InitializationOptions opts;
+    opts.size.width = 1;
+    opts.size.height = 1;
+    opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+    auto pm = Media::PixelMap::Create(opts);
+    ASSERT_NE(pm, nullptr);
+
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>>(pm);
+    auto cmd = std::make_shared<RSRenderLayerPixelMapCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_EQ(layer->GetPixelMap().get(), pm.get());
+}

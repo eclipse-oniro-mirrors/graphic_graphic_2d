@@ -63,3 +63,135 @@ HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_PixelMap_Null_Success, TestSize
     ASSERT_NE(out, nullptr);
     EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::PIXEL_MAP);
 }
+
+/**
+ * Function: Unmarshall_Fail_EmptyParcel
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. attempt to unmarshal from empty parcel
+ *                  2. expect returned command is nullptr
+ */
+HWTEST(RSRenderLayerCmdTest, Unmarshall_Fail_EmptyParcel, TestSize.Level1)
+{
+    MessageParcel empty;
+    auto out = RSRenderLayerCmd::Unmarshalling(empty);
+    EXPECT_EQ(out, nullptr);
+}
+
+/**
+ * Function: Unmarshall_Fail_UnknownType
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. write unknown command type id into parcel
+ *                  2. expect returned command is nullptr
+ */
+HWTEST(RSRenderLayerCmdTest, Unmarshall_Fail_UnknownType, TestSize.Level1)
+{
+    MessageParcel parcel;
+    parcel.WriteUint16(static_cast<uint16_t>(9999));
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    EXPECT_EQ(out, nullptr);
+}
+
+/**
+ * Function: Marshall_Unmarshall_Enum_BlendType_Success
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. build BlendType command and marshal
+ *                  2. unmarshal back and verify type/value
+ */
+HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_Enum_BlendType_Success, TestSize.Level1)
+{
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicBlendType>>(GraphicBlendType::GRAPHIC_BLEND_TYPE_SRC_OVER);
+    auto cmd = std::make_shared<RSRenderLayerBlendTypeCmd>(prop);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(cmd->Marshalling(parcel));
+
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::BLEND_TYPE);
+    auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<GraphicBlendType>>(out->GetRSRenderLayerProperty());
+    ASSERT_NE(outProp, nullptr);
+    EXPECT_EQ(outProp->Get(), GraphicBlendType::GRAPHIC_BLEND_TYPE_SRC_OVER);
+}
+
+/**
+ * Function: Marshall_Unmarshall_Struct_Rect_Success
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. build LayerSize command with GraphicIRect
+ *                  2. unmarshal and verify values
+ */
+HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_Struct_Rect_Success, TestSize.Level1)
+{
+    GraphicIRect rect {1, 2, 3, 4};
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicIRect>>(rect);
+    auto cmd = std::make_shared<RSRenderLayerLayerSizeCmd>(prop);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(cmd->Marshalling(parcel));
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::LAYER_SIZE);
+    auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<GraphicIRect>>(out->GetRSRenderLayerProperty());
+    ASSERT_NE(outProp, nullptr);
+    EXPECT_EQ(outProp->Get().x, 1);
+    EXPECT_EQ(outProp->Get().y, 2);
+    EXPECT_EQ(outProp->Get().w, 3);
+    EXPECT_EQ(outProp->Get().h, 4);
+}
+
+/**
+ * Function: Marshall_Unmarshall_Vector_Float_Success
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. build ColorTransform command with float vector
+ *                  2. unmarshal and verify contents
+ */
+HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_Vector_Float_Success, TestSize.Level1)
+{
+    std::vector<float> mat {1.0f, 0.5f, 0.0f};
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<std::vector<float>>>(mat);
+    auto cmd = std::make_shared<RSRenderLayerColorTransformCmd>(prop);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(cmd->Marshalling(parcel));
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::COLOR_TRANSFORM);
+    auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<std::vector<float>>>(out->GetRSRenderLayerProperty());
+    ASSERT_NE(outProp, nullptr);
+    ASSERT_EQ(outProp->Get().size(), 3u);
+    EXPECT_FLOAT_EQ(outProp->Get()[0], 1.0f);
+    EXPECT_FLOAT_EQ(outProp->Get()[1], 0.5f);
+    EXPECT_FLOAT_EQ(outProp->Get()[2], 0.0f);
+}
+
+/**
+ * Function: Marshall_Unmarshall_String_Success
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. build SurfaceName command with string
+ *                  2. unmarshal and verify value
+ */
+HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_String_Success, TestSize.Level1)
+{
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<std::string>>(std::string("surface-abc"));
+    auto cmd = std::make_shared<RSRenderLayerSurfaceNameCmd>(prop);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(cmd->Marshalling(parcel));
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::SURFACE_NAME);
+    auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<std::string>>(out->GetRSRenderLayerProperty());
+    ASSERT_NE(outProp, nullptr);
+    EXPECT_EQ(outProp->Get(), std::string("surface-abc"));
+}
