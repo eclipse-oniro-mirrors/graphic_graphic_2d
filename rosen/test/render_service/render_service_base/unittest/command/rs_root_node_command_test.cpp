@@ -128,7 +128,7 @@ HWTEST_F(RSRootNodeCommandTest, CreateTest002, TestSize.Level1)
     RootNodeCommandHelper::Create(context, id);
     EXPECT_FALSE(context.GetMutableNodeMap().UnRegisterUnTreeNode(id));
 }
- 
+
 /**
  * @tc.name: CreateTest003
  * @tc.desc: Verify function Create
@@ -143,7 +143,7 @@ HWTEST_F(RSRootNodeCommandTest, CreateTest003, TestSize.Level1)
     RootNodeCommandHelper::Create(context, id);
     EXPECT_FALSE(context.GetMutableNodeMap().UnRegisterUnTreeNode(id));
 }
- 
+
 /**
  * @tc.name: AttachToUniSurfaceNodeTest001
  * @tc.desc: Verify function AttachToUniSurfaceNode
@@ -160,7 +160,7 @@ HWTEST_F(RSRootNodeCommandTest, AttachToUniSurfaceNodeTest001, TestSize.Level1)
     RootNodeCommandHelper::AttachToUniSurfaceNode(context, childId, parentId);
     EXPECT_TRUE(context.GetMutableNodeMap().UnRegisterUnTreeNode(childId));
 }
- 
+
 /**
  * @tc.name: AttachToUniSurfaceNodeTest002
  * @tc.desc: Verify function AttachToUniSurfaceNode
@@ -179,7 +179,7 @@ HWTEST_F(RSRootNodeCommandTest, AttachToUniSurfaceNodeTest002, TestSize.Level1)
     RootNodeCommandHelper::AttachToUniSurfaceNode(context, childId, parentId);
     EXPECT_FALSE(context.GetMutableNodeMap().UnRegisterUnTreeNode(childId));
 }
- 
+
 /**
  * @tc.name: AttachToUniSurfaceNodeTest003
  * @tc.desc: Verify function AttachToUniSurfaceNode
