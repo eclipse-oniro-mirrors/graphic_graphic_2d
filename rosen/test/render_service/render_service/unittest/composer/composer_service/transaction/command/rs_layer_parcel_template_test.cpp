@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#define UnmarshallingFunc RSLayerParcelFactory_UnmarshallingFunc
 #include "rs_surface_layer_parcel.h"
+#undef UnmarshallingFunc
 #include "rs_render_layer_cmd.h"
 #include "rs_render_composer_context.h"
 

@@ -15,9 +15,10 @@
 
 #include <gtest/gtest.h>
 #include "rs_layer_transaction_handler.h"
+#define UnmarshallingFunc RSLayerParcelFactory_UnmarshallingFunc
 #include "rs_surface_layer_parcel.h"
+#undef UnmarshallingFunc
 #include "rs_render_layer_cmd.h"
-#include "rs_render_to_composer_connection.h"
 #include "rs_render_to_composer_connection_proxy.h"
 
 using namespace testing;
@@ -96,9 +97,8 @@ HWTEST(RSLayerTransactionHandlerTest, Commit_WithNonEmpty_WithoutConnection_Fail
  */
 HWTEST(RSLayerTransactionHandlerTest, Commit_WithProxyToStub_FailsAndKeepsData, TestSize.Level1)
 {
-    // Create service stub with null agent so CommitLayers returns false
-    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
-    sptr<RSRenderToComposerConnectionProxy> proxy = new RSRenderToComposerConnectionProxy(stub->AsObject());
+    // Use a real Proxy but with nullptr remote to trigger failure path
+    sptr<RSRenderToComposerConnectionProxy> proxy = new RSRenderToComposerConnectionProxy(nullptr);
 
     RSLayerTransactionHandler handler;
     handler.SetRSComposerConnectionProxy(proxy);

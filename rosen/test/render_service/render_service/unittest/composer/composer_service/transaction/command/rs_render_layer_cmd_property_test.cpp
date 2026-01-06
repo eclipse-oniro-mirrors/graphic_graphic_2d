@@ -171,10 +171,11 @@ HWTEST(RenderLayerCmdPropertyTest, Marshall_Unmarshall_PixelMap_NonNull_Success,
     opts.size.width = 1;
     opts.size.height = 1;
     opts.pixelFormat = Media::PixelFormat::RGBA_8888;
-    auto pm = Media::PixelMap::Create(opts);
-    ASSERT_NE(pm, nullptr);
+    auto upm = Media::PixelMap::Create(opts);
+    ASSERT_NE(upm, nullptr);
+    std::shared_ptr<Media::PixelMap> spm(upm.release());
 
-    RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>> prop(pm);
+    RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>> prop(spm);
     MessageParcel parcel;
     ASSERT_TRUE(prop.OnMarshalling(parcel, prop.Get()));
     std::shared_ptr<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>> out;
@@ -244,8 +245,6 @@ HWTEST(RenderLayerCmdPropertyTest, Unmarshall_Vector_WithOversize_Fail, TestSize
     EXPECT_FALSE(prop.OnUnmarshalling(parcel, out));
 }
 
-} // namespace
-
 /**
  * Function: Unmarshall_String_WithInsufficientData_Fail
  * Type: Function
@@ -273,7 +272,7 @@ HWTEST(RenderLayerCmdPropertyTest, Unmarshall_String_WithInsufficientData_Fail, 
 HWTEST(RenderLayerCmdPropertyTest, Unmarshall_Enum_WithInsufficientData_Fail, TestSize.Level1)
 {
     MessageParcel parcel; // empty
-    RSRenderLayerCmdProperty<GraphicBlendType> propEnum(GraphicBlendType::GRAPHIC_BLEND_TYPE_NONE);
+    RSRenderLayerCmdProperty<GraphicBlendType> propEnum(GraphicBlendType::GRAPHIC_BLEND_NONE);
     std::shared_ptr<RSRenderLayerCmdProperty<GraphicBlendType>> out;
     EXPECT_FALSE(propEnum.OnUnmarshalling(parcel, out));
 }
@@ -347,3 +346,4 @@ HWTEST(RenderLayerCmdPropertyTest, Unmarshall_PixelMap_FlagTrue_NoParcelable_Suc
     ASSERT_NE(out, nullptr);
     EXPECT_EQ(out->Get(), nullptr);
 }
+} // namespace

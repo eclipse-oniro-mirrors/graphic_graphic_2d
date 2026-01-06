@@ -105,7 +105,7 @@ HWTEST(RSRenderLayerCmdTest, Unmarshall_Fail_UnknownType, TestSize.Level1)
  */
 HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_Enum_BlendType_Success, TestSize.Level1)
 {
-    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicBlendType>>(GraphicBlendType::GRAPHIC_BLEND_TYPE_SRC_OVER);
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicBlendType>>(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
     auto cmd = std::make_shared<RSRenderLayerBlendTypeCmd>(prop);
 
     MessageParcel parcel;
@@ -116,7 +116,7 @@ HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_Enum_BlendType_Success, TestSiz
     EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::BLEND_TYPE);
     auto outProp = std::static_pointer_cast<RSRenderLayerCmdProperty<GraphicBlendType>>(out->GetRSRenderLayerProperty());
     ASSERT_NE(outProp, nullptr);
-    EXPECT_EQ(outProp->Get(), GraphicBlendType::GRAPHIC_BLEND_TYPE_SRC_OVER);
+    EXPECT_EQ(outProp->Get(), GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
 }
 
 /**

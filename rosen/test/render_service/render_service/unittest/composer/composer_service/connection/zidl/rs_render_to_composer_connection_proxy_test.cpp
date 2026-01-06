@@ -19,7 +19,9 @@
 #include "rs_render_to_composer_connection_stub.h"
 #include "rs_render_to_composer_connection.h"
 #include "rs_render_to_composer_connection_proxy.h"
+#include "rs_composer_to_render_connection.h"
 #include "rs_layer_transaction_data.h"
+#include "rs_composer_to_render_connection.h"
 
 using namespace testing;
 using namespace testing::ext;

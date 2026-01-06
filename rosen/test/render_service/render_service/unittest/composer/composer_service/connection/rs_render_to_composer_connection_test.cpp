@@ -16,8 +16,11 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <set>
+
+#ifdef ENABLE_SERVER_CONN_UT
 #include "rs_render_to_composer_connection.h"
 #include "rs_render_composer_agent.h"
+#include "rs_composer_to_render_connection.h"
 #include "rs_layer_transaction_data.h"
 
 using namespace testing;
@@ -120,3 +123,4 @@ HWTEST_F(RSRenderToComposerConnectionTest, Connection_PreAllocProtectedFrameBuff
     SUCCEED();
 }
 } // namespace OHOS::Rosen
+#endif // ENABLE_SERVER_CONN_UT 

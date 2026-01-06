@@ -107,10 +107,11 @@ HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_Gravity_Applied, TestSize.Leve
 HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_ColorDataSpace_Applied, TestSize.Level1)
 {
     auto layer = std::make_shared<RSRenderSurfaceLayer>();
-    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicColorDataSpace>>(GraphicColorDataSpace::GRAPHIC_COLOR_DATA_SPACE_SRGB);
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicColorDataSpace>>(
+        GraphicColorDataSpace::GRAPHIC_GAMUT_DISPLAY_P3);
     auto cmd = std::make_shared<RSRenderLayerColorDataSpaceCmd>(prop);
     layer->UpdateRSLayerCmd(cmd);
-    EXPECT_EQ(layer->GetColorDataSpace(), GraphicColorDataSpace::GRAPHIC_COLOR_DATA_SPACE_SRGB);
+    EXPECT_EQ(layer->GetColorDataSpace(), GraphicColorDataSpace::GRAPHIC_GAMUT_DISPLAY_P3);
 }
 
 /**
@@ -155,4 +156,131 @@ HWTEST(RSRenderSurfaceLayerTest, Basic_Getter_Setter_Work, TestSize.Level1)
     EXPECT_EQ(layer->GetCropRect().y, 2);
     EXPECT_EQ(layer->GetCropRect().w, 3);
     EXPECT_EQ(layer->GetCropRect().h, 4);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Alpha_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply Alpha command and verify value
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_Alpha_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    GraphicLayerAlpha alpha {
+        .enGlobalAlpha = true,
+        .enPixelAlpha = true,
+        .alpha0 = 0,
+        .alpha1 = 255,
+        .gAlpha = 128,
+    };
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicLayerAlpha>>(alpha);
+    auto cmd = std::make_shared<RSRenderLayerAlphaCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_EQ(layer->GetAlpha().gAlpha, 128);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Type_And_Transform_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply Type and Transform commands and verify
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_Type_And_Transform_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    auto propType = std::make_shared<RSRenderLayerCmdProperty<GraphicLayerType>>(GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
+    auto cmdType = std::make_shared<RSRenderLayerTypeCmd>(propType);
+    layer->UpdateRSLayerCmd(cmdType);
+    EXPECT_EQ(layer->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
+
+    auto propTr = std::make_shared<RSRenderLayerCmdProperty<GraphicTransformType>>(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    auto cmdTr = std::make_shared<RSRenderLayerTransformCmd>(propTr);
+    layer->UpdateRSLayerCmd(cmdTr);
+    EXPECT_EQ(layer->GetTransform(), GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_LayerColor_And_Matrix_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply LayerColor and Matrix commands and verify
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_LayerColor_And_Matrix_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    GraphicLayerColor c { .r = 10, .g = 20, .b = 30, .a = 40 };
+    auto propC = std::make_shared<RSRenderLayerCmdProperty<GraphicLayerColor>>(c);
+    auto cmdC = std::make_shared<RSRenderLayerLayerColorCmd>(propC);
+    layer->UpdateRSLayerCmd(cmdC);
+    EXPECT_EQ(layer->GetLayerColor().r, 10);
+
+    GraphicMatrix m {1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f};
+    auto propM = std::make_shared<RSRenderLayerCmdProperty<GraphicMatrix>>(m);
+    auto cmdM = std::make_shared<RSRenderLayerMatrixCmd>(propM);
+    layer->UpdateRSLayerCmd(cmdM);
+    EXPECT_EQ(layer->GetMatrix().scaleX, 1);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Visible_And_Dirty_Regions_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply VisibleRegions and DirtyRegions commands and verify sizes
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_Visible_And_Dirty_Regions_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    std::vector<GraphicIRect> vis { GraphicIRect{0,0,10,10} };
+    auto propV = std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(vis);
+    auto cmdV = std::make_shared<RSRenderLayerVisibleRegionsCmd>(propV);
+    layer->UpdateRSLayerCmd(cmdV);
+    ASSERT_EQ(layer->GetVisibleRegions().size(), 1u);
+
+    std::vector<GraphicIRect> dirty { GraphicIRect{1,1,5,5}, GraphicIRect{2,2,3,3} };
+    auto propD = std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(dirty);
+    auto cmdD = std::make_shared<RSRenderLayerDirtyRegionsCmd>(propD);
+    layer->UpdateRSLayerCmd(cmdD);
+    ASSERT_EQ(layer->GetDirtyRegions().size(), 2u);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_PresentTimestamp_And_SupportFlag_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply PresentTimestamp and IsSupportedPresentTimestamp commands and verify
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_PresentTimestamp_And_SupportFlag_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    GraphicPresentTimestamp ts { GRAPHIC_DISPLAY_PTS_TIMESTAMP, 12345678 };
+    auto propTs = std::make_shared<RSRenderLayerCmdProperty<GraphicPresentTimestamp>>(ts);
+    auto cmdTs = std::make_shared<RSRenderLayerPresentTimestampCmd>(propTs);
+    layer->UpdateRSLayerCmd(cmdTs);
+    EXPECT_EQ(layer->GetPresentTimestamp().time, 12345678);
+
+    auto propSupp = std::make_shared<RSRenderLayerCmdProperty<bool>>(true);
+    auto cmdSupp = std::make_shared<RSRenderLayerIsSupportedPresentTimestampCmd>(propSupp);
+    layer->UpdateRSLayerCmd(cmdSupp);
+    EXPECT_TRUE(layer->GetIsSupportedPresentTimestamp());
+}
+
+/**
+ * Function: UpdateRSLayerCmd_TunnelHandleChange_And_NodeId_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply TunnelHandleChange and NodeId commands and verify
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_TunnelHandleChange_And_NodeId_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    auto propChg = std::make_shared<RSRenderLayerCmdProperty<bool>>(true);
+    auto cmdChg = std::make_shared<RSRenderLayerTunnelHandleChangeCmd>(propChg);
+    layer->UpdateRSLayerCmd(cmdChg);
+    EXPECT_TRUE(layer->GetTunnelHandleChange());
+
+    auto propNode = std::make_shared<RSRenderLayerCmdProperty<uint64_t>>(777u);
+    auto cmdNode = std::make_shared<RSRenderLayerNodeIdCmd>(propNode);
+    layer->UpdateRSLayerCmd(cmdNode);
+    EXPECT_EQ(layer->GetNodeId(), 777u);
 }

@@ -72,11 +72,85 @@ HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_PixelMap_NonNull_SetsProper
     opts.size.width = 1;
     opts.size.height = 1;
     opts.pixelFormat = Media::PixelFormat::RGBA_8888;
-    auto pm = Media::PixelMap::Create(opts);
-    ASSERT_NE(pm, nullptr);
+    auto upm = Media::PixelMap::Create(opts);
+    ASSERT_NE(upm, nullptr);
+    std::shared_ptr<Media::PixelMap> spm(upm.release());
 
-    auto prop = std::make_shared<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>>(pm);
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<std::shared_ptr<Media::PixelMap>>>(spm);
     auto cmd = std::make_shared<RSRenderLayerPixelMapCmd>(prop);
     layer->UpdateRSLayerCmd(cmd);
-    EXPECT_EQ(layer->GetPixelMap().get(), pm.get());
+    EXPECT_EQ(layer->GetPixelMap().get(), spm.get());
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Alpha_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: apply Alpha command and verify on RCD layer
+ */
+HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_Alpha_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    GraphicLayerAlpha alpha {
+        .enGlobalAlpha = true,
+        .enPixelAlpha = true,
+        .alpha0 = 0,
+        .alpha1 = 255,
+        .gAlpha = 200,
+    };
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<GraphicLayerAlpha>>(alpha);
+    auto cmd = std::make_shared<RSRenderLayerAlphaCmd>(prop);
+    layer->UpdateRSLayerCmd(cmd);
+    EXPECT_EQ(layer->GetAlpha().gAlpha, 200);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Type_Transform_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: apply Type and Transform commands and verify
+ */
+HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_Type_Transform_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    auto propType = std::make_shared<RSRenderLayerCmdProperty<GraphicLayerType>>(GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
+    auto cmdType = std::make_shared<RSRenderLayerTypeCmd>(propType);
+    layer->UpdateRSLayerCmd(cmdType);
+    EXPECT_EQ(layer->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
+
+    auto propTr = std::make_shared<RSRenderLayerCmdProperty<GraphicTransformType>>(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    auto cmdTr = std::make_shared<RSRenderLayerTransformCmd>(propTr);
+    layer->UpdateRSLayerCmd(cmdTr);
+    EXPECT_EQ(layer->GetTransform(), GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/**
+ * Function: UpdateRSLayerCmd_Regions_And_Timestamp_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: apply VisibleRegions, DirtyRegions and PresentTimestamp commands
+ */
+HWTEST(RSRenderSurfaceRCDLayerTest, UpdateRSLayerCmd_Regions_And_Timestamp_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    std::vector<GraphicIRect> vis { GraphicIRect{0,0,5,5} };
+    auto propV = std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(vis);
+    auto cmdV = std::make_shared<RSRenderLayerVisibleRegionsCmd>(propV);
+    layer->UpdateRSLayerCmd(cmdV);
+    ASSERT_EQ(layer->GetVisibleRegions().size(), 1u);
+
+    std::vector<GraphicIRect> dirty { GraphicIRect{1,1,2,2} };
+    auto propD = std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(dirty);
+    auto cmdD = std::make_shared<RSRenderLayerDirtyRegionsCmd>(propD);
+    layer->UpdateRSLayerCmd(cmdD);
+    ASSERT_EQ(layer->GetDirtyRegions().size(), 1u);
+
+    GraphicPresentTimestamp ts { GRAPHIC_DISPLAY_PTS_TIMESTAMP, 999 };
+    auto propTs = std::make_shared<RSRenderLayerCmdProperty<GraphicPresentTimestamp>>(ts);
+    auto cmdTs = std::make_shared<RSRenderLayerPresentTimestampCmd>(propTs);
+    layer->UpdateRSLayerCmd(cmdTs);
+    EXPECT_EQ(layer->GetPresentTimestamp().time, 999);
 }

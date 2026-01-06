@@ -59,6 +59,9 @@ ohos_unittest("RSLayerTransactionTest") {
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
     "$graphic_2d_root/rosen/modules/render_service",
     "$graphic_2d_root/rosen/modules/render_service/core",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature/hyper_graphic_manager",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature/lpp/render_server",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
   ]
@@ -126,6 +129,18 @@ ohos_unittest("RSTransactionUnittest") {
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/pipeline",
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/layer_backend",
     "$graphic_2d_root/rosen/modules/composer/hdi_backend/include",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/config",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/soft_vsync_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/frame_rate_vote",
+    "$graphic_2d_root/rosen/modules/render_service/core",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature/hyper_graphic_manager",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature/lpp/render_server",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
   ]
@@ -142,6 +157,8 @@ ohos_unittest("RSTransactionUnittest") {
     "graphic_surface:surface",
     "hilog:libhilog",
     "ipc:ipc_core",
+    "samgr:samgr_proxy",
+    "safwk:system_ability_fwk",
   ]
   subsystem_name = "graphic"
   part_name = "graphic_2d"

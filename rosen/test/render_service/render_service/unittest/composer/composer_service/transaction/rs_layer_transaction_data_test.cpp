@@ -19,7 +19,9 @@
 #include "message_parcel.h"
 #include "rs_layer_transaction_data.h"
 #include "rs_layer_parcel.h"
+#define UnmarshallingFunc RSLayerParcelFactory_UnmarshallingFunc
 #include "rs_surface_layer_parcel.h"
+#undef UnmarshallingFunc
 #include "rs_render_layer_cmd.h"
 
 using namespace testing;
