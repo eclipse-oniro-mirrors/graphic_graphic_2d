@@ -678,6 +678,20 @@ HWTEST_F(RSServiceClientTest, GetRefreshInfoByPidAndUniqueId001, TestSize.Level1
 {
     EXPECT_EQ(rsClient->GetRefreshInfoByPidAndUniqueId(-1, 0L), "");
 }
+ 
+/**
+ * @tc.name: GetRefreshInfoByPidAndUniqueId002
+ * @tc.desc: GetRefreshInfoByPidAndUniqueId002
+ * @tc.type:FUNC
+ * @tc.require: issuesI9K7SJ
+ */
+HWTEST_F(RSServiceClientTest, GetRefreshInfoByPidAndUniqueId002, TestSize.Level1)
+{
+    RSRenderServiceConnectHub::Destroy();
+    auto ret = rsRenderServiceClient->GetRefreshInfoByPidAndUniqueId(-1, 0L);
+    EXPECT_EQ(ret, "");
+    RSRenderServiceConnectHub::Init();
+}
 
 /*
  * @tc.name: SetPhysicalScreenResolution Test
