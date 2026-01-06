@@ -22,6 +22,7 @@
 #include "rs_composer_to_render_connection.h"
 #include "rs_layer_transaction_data.h"
 #include "rs_composer_to_render_connection.h"
+#include "rs_render_composer_agent.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -44,7 +45,8 @@ class RSRenderToComposerConnectionProxyTest : public Test {};
  */
 HWTEST_F(RSRenderToComposerConnectionProxyTest, ProxyStub_AllCommands, TestSize.Level1)
 {
-    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
+    auto agent = std::make_shared<RSRenderComposerAgent>(nullptr);
+    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, agent);
     sptr<IRemoteObject> obj = stub->AsObject();
     RSRenderToComposerConnectionProxy proxy(obj);
 
@@ -96,7 +98,8 @@ HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_SendRequest_RemoteNull_Err
  */
 HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_SetComposerToRenderConnection_Valid, TestSize.Level1)
 {
-    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
+    auto agent = std::make_shared<RSRenderComposerAgent>(nullptr);
+    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, agent);
     RSRenderToComposerConnectionProxy proxy(stub->AsObject());
     sptr<RSComposerToRenderConnection> ctr = sptr<RSComposerToRenderConnection>::MakeSptr();
     proxy.SetComposerToRenderConnection(ctr);
@@ -113,7 +116,8 @@ HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_SetComposerToRenderConnect
  */
 HWTEST_F(RSRenderToComposerConnectionProxyTest, Proxy_PreAllocProtectedFrameBuffers_WriteFail, TestSize.Level1)
 {
-    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, nullptr);
+    auto agent = std::make_shared<RSRenderComposerAgent>(nullptr);
+    sptr<RSRenderToComposerConnection> stub = sptr<RSRenderToComposerConnection>::MakeSptr("ut", 0u, agent);
     RSRenderToComposerConnectionProxy proxy(stub->AsObject());
     sptr<SurfaceBuffer> sb = SurfaceBuffer::Create();
     proxy.PreAllocProtectedFrameBuffers(sb);

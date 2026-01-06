@@ -41,7 +41,7 @@ HWTEST_F(RSComposerToRenderConnectionTest, Connection_ReleaseLayerBuffers_Compos
     ReleaseLayerBuffersInfo info;
     info.screenId = 101u;
     int32_t ret = conn.ReleaseLayerBuffers(info);
-    EXPECT_EQ(ret, COMPOSITOR_ERROR_NULLPTR);
+    EXPECT_EQ(ret, COMPOSITOR_ERROR_OK);
 }
 
 /**

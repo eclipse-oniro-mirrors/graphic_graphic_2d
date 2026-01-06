@@ -154,11 +154,8 @@ ohos_unittest("RSTransactionUnittest") {
   ]
   external_deps = [
     "googletest:gtest_main",
-    "graphic_surface:surface",
-    "hilog:libhilog",
     "ipc:ipc_core",
-    "samgr:samgr_proxy",
-    "safwk:system_ability_fwk",
+    "hilog:libhilog",
   ]
   subsystem_name = "graphic"
   part_name = "graphic_2d"

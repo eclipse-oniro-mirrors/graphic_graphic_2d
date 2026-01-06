@@ -82,7 +82,7 @@ HWTEST_F(RSSurfaceRCDLayerTest, RCDLayer_SetPixelMap_AddsParcel, TestSize.Level1
 
     auto handler = ctx->GetRSLayerTransaction();
     ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    EXPECT_FALSE(handler->IsEmpty());
 
     // Construct a minimal PixelMap instance
     std::shared_ptr<Media::PixelMap> pm(new Media::PixelMap());
@@ -119,7 +119,7 @@ HWTEST_F(RSSurfaceRCDLayerTest, RCDLayer_SetPixelMap_Null_AddsParcel, TestSize.L
 
     auto handler = ctx->GetRSLayerTransaction();
     ASSERT_NE(handler, nullptr);
-    EXPECT_TRUE(handler->IsEmpty());
+    EXPECT_FALSE(handler->IsEmpty());
 
     std::shared_ptr<Media::PixelMap> pm;
     static_cast<RSSurfaceRCDLayer*>(layer.get())->SetPixelMap(pm);

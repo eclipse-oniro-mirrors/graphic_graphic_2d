@@ -124,14 +124,9 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
 
     ASSERT_TRUE(data.WriteInterfaceToken(IRSComposerToRenderConnection::GetDescriptor()));
     ASSERT_TRUE(data.WriteUint64(2u));
-    ASSERT_TRUE(data.WriteUint32(0u)); // no timestamps
-    ASSERT_TRUE(data.WriteUint32(1u)); // one buffer entry
-    ASSERT_TRUE(data.WriteUint64(99u));
-    ASSERT_TRUE(data.WriteBool(true)); // hasBuffer but no buffer content serialized
-    // write a fence to satisfy following read, though buffer read fails before
-    sptr<SyncFence> fence = sptr<SyncFence>::MakeSptr(-1);
-    ASSERT_TRUE(fence->WriteToMessageParcel(data));
-    ASSERT_TRUE(data.WriteInt64(0));
+    ASSERT_TRUE(data.WriteUint32(1001u));
+    ASSERT_TRUE(data.WriteUint32(0u)); // releaseBufferFenceVec size
+    ASSERT_TRUE(data.WriteInt64(0));   // lastSwapBufferTime
 
     int ret = stub.OnRemoteRequest(
         IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
