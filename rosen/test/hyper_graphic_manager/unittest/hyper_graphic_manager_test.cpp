@@ -671,6 +671,81 @@ HWTEST_F(HyperGraphicManagerTest, GetLtpoEnabled, Function | SmallTest | Level0)
 }
 
 /**
+ * @tc.name: SetPerformanceConfigTest001
+ * @tc.desc: Test SetPerformanceConfigTest001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HyperGraphicManagerTest, SetPerformanceConfigTest001, Function | SmallTest | Level0)
+{
+    int64_t customizedOffset = 500;
+    int64_t invalidOffset = 16000001;
+    auto& instance = HgmCore::Instance();
+    auto curScrnStrategyId = instance.hgmFrameRateMgr_->GetCurScreenStrategyId();
+    if ((instance.mPolicyConfigData_->screenConfigs_.count(curScrnStrategyId) == 0 ||
+            instance.mPolicyConfigData_->screenConfigs_[curScrnStrategyId].count(
+                std::to_string(instance.customFrameRateMode_)) == 0)) {
+        return;
+    }
+
+    // backup
+    bool orgIsVsyncOffsetCustomized = instance.isVsyncOffsetCustomized_.load();
+    int64_t orgRsPhaseOffset = instance.rsPhaseOffset_.load();
+    int64_t orgAppPhaseOffset = instance.appPhaseOffset_.load();
+
+    // set value not equal to target value, ensure that SetPerformanceConfig works
+    instance.isVsyncOffsetCustomized_.store(false);
+    instance.rsPhaseOffset_.store(customizedOffset + 1);
+    instance.appPhaseOffset_.store(customizedOffset + 1);
+
+    EXPECT_NE(instance.mPolicyConfigData_, nullptr);
+    EXPECT_NE(instance.hgmFrameRateMgr_, nullptr);
+
+    auto& curScreenSetting =
+        instance.mPolicyConfigData_->screenConfigs_[curScrnStrategyId][std::to_string(instance.customFrameRateMode_)];
+    auto it = curScreenSetting.performanceConfig.find("rsPhaseOffset");
+    std::string orgRsPhaseOffsetStr = "";
+    if (it != curScreenSetting.performanceConfig.end()) {
+        orgRsPhaseOffsetStr = it->second;
+    }
+    std::string orgAppPhaseOffsetStr = "";
+    it = curScreenSetting.performanceConfig.find("appPhaseOffset");
+    if (it != curScreenSetting.performanceConfig.end()) {
+        orgAppPhaseOffsetStr = it->second;
+    }
+    curScreenSetting.performanceConfig["rsPhaseOffset"] = std::to_string(customizedOffset);
+    curScreenSetting.performanceConfig["appPhaseOffset"] = std::to_string(customizedOffset);
+    instance.SetPerformanceConfig(curScreenSetting);
+    EXPECT_TRUE(instance.isVsyncOffsetCustomized_.load());
+    int64_t offset = 0;
+    EXPECT_EQ(instance.GetRsPhaseOffset(), customizedOffset);
+    EXPECT_EQ(instance.GetAppPhaseOffset(), customizedOffset);
+
+    curScreenSetting.performanceConfig.erase("rsPhaseOffset");
+    curScreenSetting.performanceConfig.erase("appPhaseOffset");
+    curScreenSetting.performanceConfig["rsPhaseOffset"] = std::to_string(invalidOffset);
+    curScreenSetting.performanceConfig["appPhaseOffset"] = std::to_string(invalidOffset);
+    instance.SetPerformanceConfig(curScreenSetting);
+    EXPECT_TRUE(instance.isVsyncOffsetCustomized_.load());
+    EXPECT_EQ(instance.GetRsPhaseOffset(), 0);
+    EXPECT_EQ(instance.GetAppPhaseOffset(), 0);
+
+    // recover
+    instance.isVsyncOffsetCustomized_.store(orgIsVsyncOffsetCustomized);
+    instance.rsPhaseOffset_.store(orgRsPhaseOffset);
+    instance.appPhaseOffset_.store(orgAppPhaseOffset);
+    curScreenSetting.performanceConfig.erase("rsPhaseOffset");
+    curScreenSetting.performanceConfig.erase("appPhaseOffset");
+    if (!orgRsPhaseOffsetStr.empty()) {
+        curScreenSetting.performanceConfig["rsPhaseOffset"] = orgRsPhaseOffsetStr;
+    }
+    if (!orgAppPhaseOffsetStr.empty()) {
+        curScreenSetting.performanceConfig["appPhaseOffset"] = orgAppPhaseOffsetStr;
+    }
+    instance.SetPerformanceConfig(curScreenSetting);
+}
+
+/**
  * @tc.name: NotifyScreenPowerStatus
  * @tc.desc: Test NotifyScreenPowerStatus
  * @tc.type: FUNC
