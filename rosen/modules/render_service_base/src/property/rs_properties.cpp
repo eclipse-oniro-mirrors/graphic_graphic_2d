@@ -1292,7 +1292,7 @@ void RSProperties::SetColorPickerInterval(int interval)
     if (!colorPicker_) {
         colorPicker_ = std::make_shared<ColorPickerParam>();
     }
-    colorPicker_->interval = interval;
+    colorPicker_->interval = static_cast<uint64_t>(interval);
     SetDirty();
 }
 
