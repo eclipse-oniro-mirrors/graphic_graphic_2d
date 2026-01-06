@@ -930,11 +930,11 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateColorSpaceTest, TestSize.Level1)
     node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, node->GetColorSpace());
 
-    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020);
-    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, node->GetColorSpace());
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020, node->GetColorSpace());
 
     node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
-    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, node->GetColorSpace());
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020, node->GetColorSpace());
 }
 
 /**

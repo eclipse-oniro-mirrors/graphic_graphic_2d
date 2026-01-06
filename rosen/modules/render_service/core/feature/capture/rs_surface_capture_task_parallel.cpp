@@ -465,8 +465,8 @@ std::unique_ptr<Media::PixelMap> RSSurfaceCaptureTaskParallel::CreatePixelMapByS
         " origin pixelmap size: [%{public}u, %{public}u],"
         " scale: [%{public}f, %{public}f],"
         " useDma: [%{public}d], useCurWindow: [%{public}d],"
-        " isOnTheTree: [%{public}d], isVisible: [%{public}d],"
-        " backGroundColor: [%{public}d], isF16Capture: [%{public}d]",
+        " isOnTheTree: [%{public}d], isVisible: [%{public}d], isF16Capture: [%{public}d],"
+        " backGroundColor: [%{public}d]",
         node->GetId(), pixmapWidth, pixmapHeight, captureConfig_.scaleX, captureConfig_.scaleY,
         captureConfig_.useDma, captureConfig_.useCurWindow, node->IsOnTheTree(),
         !surfaceNode_->GetVisibleRegion().IsEmpty(), captureConfig_.backGroundColor, isF16Capture);
