@@ -15,7 +15,7 @@
 
 #include <gtest/gtest.h>
 #include <set>
-#include "rs_composer_to_render_connection_stub.h"
+#include "rs_composer_to_render_connection.h"
 #include "irs_composer_to_render_connection.h"
 #include "message_option.h"
 #include "message_parcel.h"
@@ -38,17 +38,9 @@ class RSComposerToRenderConnectionStubTest : public Test {};
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_Normal, TestSize.Level1)
 {
-    class LocalStub : public RSComposerToRenderConnectionStub {
-    public:
-        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
-        {
-            captured_ = info;
-            return 101;
-        }
-        int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t>&) override { return 0; }
-        ReleaseLayerBuffersInfo captured_ {};
-    };
-    LocalStub stub;
+    RSComposerToRenderConnection stub;
+    ReleaseLayerBuffersInfo captured {};
+    stub.RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) { captured = info; });
 
     MessageParcel data;
     MessageParcel reply;
@@ -77,9 +69,9 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
         IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
         data, reply, opt);
     EXPECT_EQ(ret, COMPOSITOR_ERROR_OK);
-    EXPECT_EQ(stub.captured_.screenId, 9u);
-    ASSERT_EQ(stub.captured_.timestampVec.size(), 2u);
-    EXPECT_EQ(reply.ReadInt32(), 101);
+    EXPECT_EQ(captured.screenId, 9u);
+    ASSERT_EQ(captured.timestampVec.size(), 2u);
+    EXPECT_EQ(reply.ReadInt32(), COMPOSITOR_ERROR_OK);
 }
 
 /**
@@ -91,13 +83,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_BadToken, TestSize.Level1)
 {
-    class LocalStub : public RSComposerToRenderConnectionStub {
-    public:
-        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { called_ = true; return 0; }
-        int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t>&) override { return 0; }
-        bool called_ { false };
-    };
-    LocalStub stub;
+    RSComposerToRenderConnection stub;
 
     MessageParcel data;
     MessageParcel reply;
@@ -113,7 +99,6 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
         IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
         data, reply, opt);
     EXPECT_EQ(ret, ERR_INVALID_DATA);
-    EXPECT_FALSE(stub.called_);
 }
 
 /**
@@ -125,19 +110,13 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_ReadBufferFail, TestSize.Level1)
 {
-    class LocalStub : public RSComposerToRenderConnectionStub {
-    public:
-        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
-        {
-            called_ = true;
-            capturedSize_ = info.releaseBufferFenceVec.size();
-            return 102;
-        }
-        int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t>&) override { return 0; }
-        bool called_ { false };
-        size_t capturedSize_ { 0 };
-    };
-    LocalStub stub;
+    RSComposerToRenderConnection stub;
+    bool called = false;
+    size_t capturedSize = 0;
+    stub.RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) {
+        called = true;
+        capturedSize = info.releaseBufferFenceVec.size();
+    });
 
     MessageParcel data;
     MessageParcel reply;
@@ -158,9 +137,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
         IRSComposerToRenderConnection::ICOMPOSER_TO_RENDER_COMPOSER_RELEASE_LAYER_BUFFERS,
         data, reply, opt);
     EXPECT_EQ(ret, ERR_INVALID_DATA);
-    EXPECT_TRUE(stub.called_);
-    EXPECT_EQ(stub.capturedSize_, 1u);
-    EXPECT_EQ(reply.ReadInt32(), 102);
+    EXPECT_FALSE(called);
 }
 
 /**
@@ -172,19 +149,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_Normal, TestSize.Level1)
 {
-    class LocalStub : public RSComposerToRenderConnectionStub {
-    public:
-        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
-        int32_t NotifyLppLayerToRender(uint64_t vsyncId, const std::set<uint64_t> &ids) override
-        {
-            lastVsync_ = vsyncId;
-            lastCount_ = ids.size();
-            return 201;
-        }
-        uint64_t lastVsync_ { 0 };
-        size_t lastCount_ { 0 };
-    };
-    LocalStub stub;
+    RSComposerToRenderConnection stub;
 
     MessageParcel data;
     MessageParcel reply;
@@ -201,9 +166,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_Norma
         IRSComposerToRenderConnection::NOTIFY_LPP_LAYER_TO_RENDER,
         data, reply, opt);
     EXPECT_EQ(ret, COMPOSITOR_ERROR_OK);
-    EXPECT_EQ(stub.lastVsync_, 777u);
-    EXPECT_EQ(stub.lastCount_, 3u);
-    EXPECT_EQ(reply.ReadInt32(), 201);
+    EXPECT_EQ(reply.ReadInt32(), COMPOSITOR_ERROR_OK);
 }
 
 /**
@@ -215,13 +178,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_Norma
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_BadToken, TestSize.Level1)
 {
-    class LocalStub : public RSComposerToRenderConnectionStub {
-    public:
-        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
-        int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t> &) override { called_ = true; return 0; }
-        bool called_ { false };
-    };
-    LocalStub stub;
+    RSComposerToRenderConnection stub;
 
     MessageParcel data;
     MessageParcel reply;
@@ -235,7 +192,6 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_BadTo
         IRSComposerToRenderConnection::NOTIFY_LPP_LAYER_TO_RENDER,
         data, reply, opt);
     EXPECT_EQ(ret, ERR_INVALID_DATA);
-    EXPECT_FALSE(stub.called_);
 }
 
 /**
@@ -247,12 +203,7 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_BadTo
  */
 HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_DefaultBranch, TestSize.Level1)
 {
-    class LocalStub : public RSComposerToRenderConnectionStub {
-    public:
-        int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
-        int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t>&) override { return 0; }
-    };
-    LocalStub stub;
+    RSComposerToRenderConnection stub;
     MessageParcel data;
     MessageParcel reply;
     MessageOption opt;

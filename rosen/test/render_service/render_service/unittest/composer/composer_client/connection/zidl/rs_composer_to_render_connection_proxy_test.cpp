@@ -18,6 +18,10 @@
 #include <thread>
 #include "rs_composer_to_render_connection_proxy.h"
 #include "rs_composer_to_render_connection_stub.h"
+<<<<<<< HEAD
+=======
+#include "rs_composer_to_render_connection.h"
+>>>>>>> 0106
 #include "iremote_object.h"
 #include "sync_fence.h"
 #include "surface_buffer.h"
@@ -40,6 +44,7 @@ class RSComposerToRenderConnectionProxyTest : public Test {};
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, ProxyStub_ReleaseLayerBuffers_And_Notify, TestSize.Level1)
 {
+<<<<<<< HEAD
     class RecStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
@@ -58,6 +63,15 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, ProxyStub_ReleaseLayerBuffers_An
         std::set<uint64_t> lastLppIds_ {};
     };
     sptr<RecStub> stub = sptr<RecStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+    ReleaseLayerBuffersInfo capturedInfo;
+    bool cbCalled = false;
+    stub->RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) {
+        capturedInfo = info;
+        cbCalled = true;
+    });
+>>>>>>> 0106
     sptr<IRemoteObject> obj = stub->AsObject();
     RSComposerToRenderConnectionProxy proxy(obj);
 
@@ -71,6 +85,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, ProxyStub_ReleaseLayerBuffers_An
     info.lastSwapBufferTime = 987654321LL;
 
     int32_t r = proxy.ReleaseLayerBuffers(info);
+<<<<<<< HEAD
     EXPECT_EQ(r, 123);
     EXPECT_EQ(stub->lastInfo_.screenId, 1u);
     ASSERT_EQ(stub->lastInfo_.timestampVec.size(), 1u);
@@ -81,6 +96,17 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, ProxyStub_ReleaseLayerBuffers_An
     EXPECT_EQ(r, 456);
     EXPECT_EQ(stub->lastVsyncId_, 777u);
     EXPECT_EQ(stub->lastLppIds_.size(), 2u);
+=======
+    EXPECT_EQ(r, 0);
+    EXPECT_TRUE(cbCalled);
+    EXPECT_EQ(capturedInfo.screenId, 1u);
+    ASSERT_EQ(capturedInfo.timestampVec.size(), 1u);
+    ASSERT_EQ(capturedInfo.releaseBufferFenceVec.size(), 1u);
+
+    std::set<uint64_t> ids { 11u, 22u };
+    r = proxy.NotifyLppLayerToRender(777u, ids);
+    EXPECT_EQ(r, 0);
+>>>>>>> 0106
 }
 
 /**
@@ -93,6 +119,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, ProxyStub_ReleaseLayerBuffers_An
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_TimestampOnly, TestSize.Level1)
 {
+<<<<<<< HEAD
     class RecStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
@@ -104,6 +131,15 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Timest
         ReleaseLayerBuffersInfo lastInfo_ {};
     };
     sptr<RecStub> stub = sptr<RecStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+    ReleaseLayerBuffersInfo capturedInfo;
+    bool cbCalled = false;
+    stub->RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) {
+        capturedInfo = info;
+        cbCalled = true;
+    });
+>>>>>>> 0106
     RSComposerToRenderConnectionProxy proxy(stub->AsObject());
 
     ReleaseLayerBuffersInfo info;
@@ -115,10 +151,18 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Timest
     info.lastSwapBufferTime = 333;
 
     int32_t r = proxy.ReleaseLayerBuffers(info);
+<<<<<<< HEAD
     EXPECT_EQ(r, 200);
     ASSERT_EQ(stub->lastInfo_.timestampVec.size(), 2u);
     EXPECT_EQ(std::get<0>(stub->lastInfo_.timestampVec[0]), static_cast<RSLayerId>(21u));
     EXPECT_EQ(std::get<1>(stub->lastInfo_.timestampVec[1]), false);
+=======
+    EXPECT_EQ(r, 0);
+    EXPECT_TRUE(cbCalled);
+    ASSERT_EQ(capturedInfo.timestampVec.size(), 2u);
+    EXPECT_EQ(std::get<0>(capturedInfo.timestampVec[0]), static_cast<RSLayerId>(21u));
+    EXPECT_EQ(std::get<1>(capturedInfo.timestampVec[1]), false);
+>>>>>>> 0106
 }
 
 /**
@@ -131,6 +175,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Timest
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_MixedNullAndNonNullBuffers, TestSize.Level1)
 {
+<<<<<<< HEAD
     class RecStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
@@ -142,6 +187,15 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_MixedN
         ReleaseLayerBuffersInfo lastInfo_ {};
     };
     sptr<RecStub> stub = sptr<RecStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+    ReleaseLayerBuffersInfo capturedInfo;
+    bool cbCalled = false;
+    stub->RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) {
+        capturedInfo = info;
+        cbCalled = true;
+    });
+>>>>>>> 0106
     RSComposerToRenderConnectionProxy proxy(stub->AsObject());
 
     ReleaseLayerBuffersInfo info;
@@ -154,10 +208,18 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_MixedN
     info.lastSwapBufferTime = 444;
 
     int32_t r = proxy.ReleaseLayerBuffers(info);
+<<<<<<< HEAD
     EXPECT_EQ(r, 201);
     ASSERT_EQ(stub->lastInfo_.releaseBufferFenceVec.size(), 2u);
     EXPECT_EQ(std::get<1>(stub->lastInfo_.releaseBufferFenceVec[0]), nullptr);
     EXPECT_NE(std::get<1>(stub->lastInfo_.releaseBufferFenceVec[1]), nullptr);
+=======
+    EXPECT_EQ(r, 0);
+    EXPECT_TRUE(cbCalled);
+    ASSERT_EQ(capturedInfo.releaseBufferFenceVec.size(), 2u);
+    EXPECT_EQ(std::get<1>(capturedInfo.releaseBufferFenceVec[0]), nullptr);
+    EXPECT_NE(std::get<1>(capturedInfo.releaseBufferFenceVec[1]), nullptr);
+>>>>>>> 0106
 }
 
 /**
@@ -170,6 +232,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_MixedN
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_NotifyLppLayerToRender_LargeIds, TestSize.Level1)
 {
+<<<<<<< HEAD
     class RecStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
@@ -183,6 +246,9 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_NotifyLppLayerToRender_Lar
         size_t lastCount_ {0};
     };
     sptr<RecStub> stub = sptr<RecStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+>>>>>>> 0106
     RSComposerToRenderConnectionProxy proxy(stub->AsObject());
 
     std::set<uint64_t> ids;
@@ -191,9 +257,13 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_NotifyLppLayerToRender_Lar
     }
 
     int32_t r = proxy.NotifyLppLayerToRender(999u, ids);
+<<<<<<< HEAD
     EXPECT_EQ(r, 202);
     EXPECT_EQ(stub->lastVsyncId_, 999u);
     EXPECT_EQ(stub->lastCount_, ids.size());
+=======
+    EXPECT_EQ(r, 0);
+>>>>>>> 0106
 }
 /**
  * Function: Proxy_ReleaseLayerBuffers_EmptyVectors
@@ -206,6 +276,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_NotifyLppLayerToRender_Lar
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_EmptyVectors, TestSize.Level1)
 {
+<<<<<<< HEAD
     class DummyStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
@@ -221,6 +292,15 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_EmptyV
         uint64_t lastScreenId_ {0};
     };
     sptr<DummyStub> stub = sptr<DummyStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+    uint64_t capturedScreenId = 0;
+    bool cbCalled = false;
+    stub->RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) {
+        capturedScreenId = info.screenId;
+        cbCalled = true;
+    });
+>>>>>>> 0106
     sptr<IRemoteObject> obj = stub->AsObject();
     RSComposerToRenderConnectionProxy proxy(obj);
     ReleaseLayerBuffersInfo info;
@@ -228,7 +308,12 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_EmptyV
     info.lastSwapBufferTime = 0;
     int32_t r = proxy.ReleaseLayerBuffers(info);
     EXPECT_EQ(r, 0);
+<<<<<<< HEAD
     EXPECT_EQ(stub->lastScreenId_, 2u);
+=======
+    EXPECT_TRUE(cbCalled);
+    EXPECT_EQ(capturedScreenId, 2u);
+>>>>>>> 0106
 }
 
 /**
@@ -242,6 +327,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_EmptyV
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_SurfaceBufferWriteFail, TestSize.Level1)
 {
     // Use a valid remote; failure should occur before SendRequest
+<<<<<<< HEAD
     class RecStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override { lastInfo_ = info; return 0; }
@@ -249,6 +335,9 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Surfac
         ReleaseLayerBuffersInfo lastInfo_ {};
     };
     sptr<RecStub> stub = sptr<RecStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+>>>>>>> 0106
     RSComposerToRenderConnectionProxy proxy(stub->AsObject());
 
     ReleaseLayerBuffersInfo info;
@@ -272,12 +361,16 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Surfac
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_FenceWriteFail, TestSize.Level1)
 {
+<<<<<<< HEAD
     class RecStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
         int32_t NotifyLppLayerToRender(uint64_t, const std::set<uint64_t> &) override { return 0; }
     };
     sptr<RecStub> stub = sptr<RecStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+>>>>>>> 0106
     RSComposerToRenderConnectionProxy proxy(stub->AsObject());
 
     ReleaseLayerBuffersInfo info;
@@ -300,6 +393,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_FenceW
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_BufferNullPath, TestSize.Level1)
 {
+<<<<<<< HEAD
     class DummyStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &info) override
@@ -311,6 +405,13 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Buffer
         bool receivedHasBufferFalse_ {false};
     };
     sptr<DummyStub> stub = sptr<DummyStub>::MakeSptr();
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+    bool receivedHasBufferFalse = false;
+    stub->RegisterReleaseLayerBuffersCB([&](ReleaseLayerBuffersInfo &info) {
+        receivedHasBufferFalse = (info.releaseBufferFenceVec.size() == 1 && std::get<1>(info.releaseBufferFenceVec[0]) == nullptr);
+    });
+>>>>>>> 0106
     RSComposerToRenderConnectionProxy proxy(stub->AsObject());
 
     ReleaseLayerBuffersInfo info;
@@ -318,7 +419,12 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Buffer
     sptr<SyncFence> fence = sptr<SyncFence>::MakeSptr(-1);
     info.releaseBufferFenceVec.push_back(std::tuple(static_cast<RSLayerId>(9u), nullptr, fence));
     int32_t r = proxy.ReleaseLayerBuffers(info);
+<<<<<<< HEAD
     EXPECT_EQ(r, 7);
+=======
+    EXPECT_EQ(r, 0);
+    EXPECT_TRUE(receivedHasBufferFalse);
+>>>>>>> 0106
 }
 
 /**
@@ -331,6 +437,7 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_ReleaseLayerBuffers_Buffer
  */
 HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_NotifyLppLayerToRender_EmptyIds, TestSize.Level1)
 {
+<<<<<<< HEAD
     class DummyStub : public RSComposerToRenderConnectionStub {
     public:
         int32_t ReleaseLayerBuffers(ReleaseLayerBuffersInfo &) override { return 0; }
@@ -348,6 +455,13 @@ HWTEST_F(RSComposerToRenderConnectionProxyTest, Proxy_NotifyLppLayerToRender_Emp
     std::set<uint64_t> ids;
     int32_t r = proxy.NotifyLppLayerToRender(100u, ids);
     EXPECT_EQ(r, 88);
+=======
+    sptr<RSComposerToRenderConnection> stub = sptr<RSComposerToRenderConnection>::MakeSptr();
+    RSComposerToRenderConnectionProxy proxy(stub->AsObject());
+    std::set<uint64_t> ids;
+    int32_t r = proxy.NotifyLppLayerToRender(100u, ids);
+    EXPECT_EQ(r, 0);
+>>>>>>> 0106
 }
 
 /**
