@@ -688,7 +688,7 @@ HWTEST_F(RSServiceClientTest, GetRefreshInfoByPidAndUniqueId001, TestSize.Level1
 HWTEST_F(RSServiceClientTest, GetRefreshInfoByPidAndUniqueId002, TestSize.Level1)
 {
     RSRenderServiceConnectHub::Destroy();
-    auto ret = rsRenderServiceClient->GetRefreshInfoByPidAndUniqueId(-1, 0L);
+    auto ret = rsClient->GetRefreshInfoByPidAndUniqueId(-1, 0L);
     EXPECT_EQ(ret, "");
     RSRenderServiceConnectHub::Init();
 }
