@@ -52,6 +52,8 @@ public:
     static void SetGpuMemoryLimit(Drawing::GPUContext* gpuContext);
     static void MemoryOverCheck(Drawing::GPUContext* gpuContext);
     static bool MemoryOverflow(pid_t pid, size_t overflowMemory, bool isGpu);
+    static bool GpuMemoryOverReport(pid_t pid, size_t overflowMemory,
+        std::unordered_map<std::string, std::pair<size_t, size_t>> typeInfo, std::unordered_map<pid_t, size_t> pidInfo);
     static void CheckIsClearApp();
     static void VmaDefragment(Drawing::GPUContext* gpuContext);
     static void SetGpuCacheSuppressWindowSwitch(Drawing::GPUContext* gpuContext, bool enabled);
@@ -80,8 +82,9 @@ private:
     static void DumpMemorySnapshot(DfxString& log);
     static void FillMemorySnapshot();
     static void MemoryOverReport(const pid_t pid, const MemorySnapshotInfo& info, const std::string& reportName,
+        const std::string& hidumperReport, const std::string& filePath);
+    static void WriteInfoToFile(const std::string& filePath, std::string& gpuMemInfo,
         const std::string& hidumperReport);
-    static void WriteInfoToFile(std::string& filePath, std::string& gpuMemInfo, const std::string& hidumperReport);
     static void TotalMemoryOverReport(const std::unordered_map<pid_t, MemorySnapshotInfo>& infoMap);
     static void ErasePidInfo(const std::set<pid_t>& exitedPidSet);
 

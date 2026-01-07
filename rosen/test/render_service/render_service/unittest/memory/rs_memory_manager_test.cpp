@@ -904,6 +904,8 @@ HWTEST_F(RSMemoryManagerTest, SetGpuMemoryLimit001, testing::ext::TestSize.Level
     Drawing::GPUContext* gpuContext = new Drawing::GPUContext;
     MemoryManager::SetGpuMemoryLimit(gpuContext);
     EXPECT_TRUE(logMsg.find("MemoryManager::SetGpuMemoryLimit gpuContext is nullptr") != std::string::npos);
+    MemoryManager::gpuMemoryControl_ = 2000 * 1024 * 1024;
+    MemoryManager::SetGpuMemoryLimit(gpuContext);
 }
 
 /**
@@ -1004,8 +1006,8 @@ HWTEST_F(RSMemoryManagerTest, MemoryOverReport, testing::ext::TestSize.Level1)
     auto& instance = MemorySnapshot::Instance();
     instance.GetMemorySnapshotInfoByPid(pid, info);
     std::string hidumperReport = "report";
-    MemoryManager::MemoryOverReport(pid, info, "RENDER_MEMORY_OVER_ERROR", hidumperReport);
     std::string filePath = "/data/service/el0/render_service/renderservice_mem.txt";
+    MemoryManager::MemoryOverReport(pid, info, "RENDER_MEMORY_OVER_ERROR", hidumperReport, filePath);
     ASSERT_TRUE(std::ifstream(filePath).good());
 }
 
@@ -1061,5 +1063,22 @@ HWTEST_F(RSMemoryManagerTest, DumGpuNodeMemoryTest001, testing::ext::TestSize.Le
     DfxString log;
     MemoryManager::DumpGpuNodeMemory(log);
     ASSERT_TRUE(log.GetString().find("GPU") != std::string::npos);
+}
+
+/**
+ * @tc.name: GpuMemoryOverReportTest
+ * @tc.desc: GpuMemoryOverReport
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryManagerTest, GpuMemoryOverReportTest, testing::ext::TestSize.Level1)
+{
+    std::unordered_map<std::string, std::pair<size_t, size_t>> typeInfo;
+    typeInfo["IMAGE_GPU"] = std::make_pair(10000, 1);
+    std::unordered_map<pid_t, size_t> pidInfo;
+    pidInfo[1] = 10000;
+    MemoryManager::GpuMemoryOverReport(1, 10000, typeInfo, pidInfo);
+    std::string filePath = "/data/service/el0/render_service/renderservice_killProcessByPid.txt";
+    ASSERT_TRUE(std::ifstream(filePath).good());
 }
 } // namespace OHOS::Rosen
