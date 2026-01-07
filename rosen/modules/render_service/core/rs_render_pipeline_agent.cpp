@@ -1487,7 +1487,7 @@ void RSRenderPipelineAgent::DoDump(std::unordered_set<std::u16string>& argSets, 
         return;
     }
     std::string dumpString;
-    rsRenderPipeline_->rpDumpManager_->CmdExec(argSets, dumpString);
+    rsRenderPipeline_->rpDumpManager_->CmdExec(argSets, dumpString, callback);
 }
 
 void RSRenderPipelineAgent::NotifyHwcEventToRender(
