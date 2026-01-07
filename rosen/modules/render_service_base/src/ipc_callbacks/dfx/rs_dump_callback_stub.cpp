@@ -36,7 +36,7 @@ int RSDumpCallbackStub::OnRemoteRequest(uint32_t code, MessageParcel& data, Mess
             }
             char *dataPtr = RSDumpManager::ReadAshmemDataFromParcel(data, size);
             std::string dumpString = dataPtr != nullptr ? 
-                std::string(static_cast<sonst char*>(dataPtr), size) : "";
+                std::string(static_cast<const char*>(dataPtr), size) : "";
             OnDumpResult(dumpString);
             break;
         }
