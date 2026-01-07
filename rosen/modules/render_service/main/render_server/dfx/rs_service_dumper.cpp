@@ -206,7 +206,7 @@ void RSServiceDumper::RegisterFpsFuncs(std::shared_ptr<RSServiceDumpManager> rsD
         { RSDumpID::HITCHS, hitchsFunc },
     };
 
-    rsDumpManager.Register(handers);
+    rsDumpManager->Register(handers);
 }
 
 void RSServiceDumper::RegisterGpuFuncs(std::shared_ptr<RSServiceDumpManager> rsDumpManager)
