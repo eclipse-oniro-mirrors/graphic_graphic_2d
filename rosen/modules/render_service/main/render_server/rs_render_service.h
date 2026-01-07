@@ -110,7 +110,6 @@ private:
     sptr<RSRenderProcessManager> renderProcessManager_ = nullptr;
     std::shared_ptr<RSRenderComposerManager> rsRenderComposerManager_ = nullptr;
     std::shared_ptr<HgmContext> hgmContext_ = nullptr;
-    std::shared_ptr<RSServiceDumper> rsDumper_ = nullptr;
 
     sptr<VSyncGenerator> vsyncGenerator_ = nullptr;
     sptr<VSyncSampler> vsyncSampler_ = nullptr;

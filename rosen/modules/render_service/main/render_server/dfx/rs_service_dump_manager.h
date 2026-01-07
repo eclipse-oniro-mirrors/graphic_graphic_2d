@@ -96,8 +96,8 @@ public:
         rsDumpManger_->CollectDump(dumpString);
     };
 
-    private
+private:
     RSServiceDumpManager* rsDumpManger_;
-}
+};
 }
 #endif // RENDER_SERVICE_DFX_RS_DUMP_SERVICE_MANAGER_H

@@ -24,7 +24,7 @@ namespace OHOS {
 namespace Rosen {
 class RSDumpCallbackProxy : IRemoteProxy<RSIDumpCallback> {
 public:
-    explicit RSDumpCallbackProxy(const sptr<IRemoteObject>& impl)
+    explicit RSDumpCallbackProxy(const sptr<IRemoteObject>& impl);
     virtual ~RSDumpCallbackProxy() noexcept = default;
 
     void OnDumpResult(std::string& dumpResult) override;

@@ -846,6 +846,7 @@ void RSServiceToRenderConnectionProxy::DoDump(std::unordered_set<std::u16string>
     }
     if (!data.WriteRemoteObject(callback->AsObject())) {
         RS_LOGE("RSServiceToRenderConnectionProxy::DoDump: WriteRemoteObject failed");
+        return;
     }
     uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::DFX_DUMP);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
