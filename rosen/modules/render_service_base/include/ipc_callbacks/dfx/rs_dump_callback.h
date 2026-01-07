@@ -22,7 +22,7 @@ namespace OHOS {
 namespace Rosen {
 class RSIDumpCallback : public IRemoteBroker {
 public:
-    DECLARE_INTERFACE_DESCRIPTOR(U"ohos.rosen.DumpCallback");
+    DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.DumpCallback");
     RSIDumpCallback() = default;
     virtual ~RSIDumpCallback() noexcept = default;
     virtual void OnDumpResult(std::string& dumpResult) = 0;
