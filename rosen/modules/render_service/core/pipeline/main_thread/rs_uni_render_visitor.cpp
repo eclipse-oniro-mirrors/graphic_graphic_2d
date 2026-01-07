@@ -2467,8 +2467,8 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(
         if ((isHardwareHdrDisabled || isDisableHwcForHdrSurface || !drmNodes_.empty() || hasFingerprint_) &&
             !hasProtectedLayer) {
             RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64
-                " disabled by Having UniRenderHdrSurface/DRM node",
-                node->GetName().c_str(), node->GetId());
+                " disabled by Having UniRenderHdrSurface/DRM node, hasUniRenderHdrSurface:%d hasDrmNodes:%d",
+                node->GetName().c_str(), node->GetId(), isDisableHwcForHdrSurface, !drmNodes_.empty());
             hwcVisitor_->PrintHiperfLog(node, "uniRender HDR");
             hwcNodePtr->SetHardwareForcedDisabledState(true);
             // DRM will force HDR to use unirender
