@@ -38,7 +38,6 @@ public:
 
 GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Scale_Twist_Test)
 {
-    
     auto gasifyTwistPtr = CreateFilter(RSNGEffectType::GASIFY_SCALE_TWIST);
     auto gasifyTwistFilter = std::static_pointer_cast<RSNGGasifyScaleTwistFilter>(gasifyTwistPtr);
     gasifyTwistFilter->Setter<GasifyScaleTwistProgressTag>(0.2f);
@@ -62,7 +61,6 @@ GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Sca
 
 GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Scale_Twist_Progress_Test)
 {
-    
     auto gasifyTwistPtr = CreateFilter(RSNGEffectType::GASIFY_SCALE_TWIST);
     auto gasifyTwistFilter = std::static_pointer_cast<RSNGGasifyScaleTwistFilter>(gasifyTwistPtr);
     gasifyTwistFilter->Setter<GasifyScaleTwistProgressTag>(0.2f);
@@ -87,7 +85,6 @@ GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Sca
 
 GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Scale_Twist_Source_Test)
 {
-    
     auto gasifyTwistPtr = CreateFilter(RSNGEffectType::GASIFY_SCALE_TWIST);
     auto gasifyTwistFilter = std::static_pointer_cast<RSNGGasifyScaleTwistFilter>(gasifyTwistPtr);
     gasifyTwistFilter->Setter<GasifyScaleTwistProgressTag>(0.2f);
@@ -115,7 +112,6 @@ GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Sca
 
 GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Scale_Twist_Scale_Test)
 {
-    
     auto gasifyTwistPtr = CreateFilter(RSNGEffectType::GASIFY_SCALE_TWIST);
     auto gasifyTwistFilter = std::static_pointer_cast<RSNGGasifyScaleTwistFilter>(gasifyTwistPtr);
     gasifyTwistFilter->Setter<GasifyScaleTwistProgressTag>(0.2f);
@@ -140,7 +136,6 @@ GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Sca
 
 GRAPHIC_TEST(NGFilterGasifyScaleTwistTest, EFFECT_TEST, Set_NG_Filter_Gasify_Scale_Twist_Mask_Test)
 {
-    
     auto gasifyTwistPtr = CreateFilter(RSNGEffectType::GASIFY_SCALE_TWIST);
     auto gasifyTwistFilter = std::static_pointer_cast<RSNGGasifyScaleTwistFilter>(gasifyTwistPtr);
     gasifyTwistFilter->Setter<GasifyScaleTwistProgressTag>(0.2f);
