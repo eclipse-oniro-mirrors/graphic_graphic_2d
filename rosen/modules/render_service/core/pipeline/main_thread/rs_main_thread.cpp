@@ -1850,7 +1850,7 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
         "isFoldScreenSwitching:%d doWindowAnimate_:%d hasColorFilter:%d overlayDisplayEnable:%d isMultiDisplay:%d"
         "hasProtectedLayer:%d isExpandScreenOrWiredProjectionCase:%d enableHwcForMirrorMode:%d",
         isHardwareForcedDisabled_, isFoldScreenSwitching, doWindowAnimate_.load(), hasColorFilter,
-        CheckOverlayDisplayEnable(), isMultiDisplay, hasProtectedLayer_, isExpandScreenOrWiredProjectionCase, 
+        CheckOverlayDisplayEnable(), isMultiDisplay, hasProtectedLayer_, isExpandScreenOrWiredProjectionCase,
         enableHwcForMirrorMode);
  
     if (isMultiDisplay && !isHardwareForcedDisabled_) {
