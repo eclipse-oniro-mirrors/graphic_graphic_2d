@@ -61,7 +61,8 @@ private:
         void OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
                            const sptr<RSScreenProperty>& property) override;
         void OnHwcDead(ScreenId id) override;
-        void OnScreenPropertyChanged(ScreenId id, const sptr<RSScreenProperty>& property) override;
+        void OnScreenPropertyChanged(
+            ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property) override;
         void OnScreenRefresh(ScreenId id) override;
         void OnVBlankIdle(ScreenId id, uint64_t ns) override;
         void OnVirtualScreenConnected(ScreenId id,

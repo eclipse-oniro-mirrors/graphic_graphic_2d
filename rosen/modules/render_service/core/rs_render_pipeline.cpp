@@ -184,15 +184,15 @@ void RSRenderPipeline::OnScreenDisconnected(ScreenId screenId)
     uniRenderThread_->OnScreenDisconnected(screenId);
 }
 
-void RSRenderPipeline::OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty)
+void RSRenderPipeline::OnScreenPropertyChanged(
+    ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
 {
     if (!mainThread_) {
         RS_LOGE("%{public}s mainThread_ is nullptr, return", __func__);
         return;
     }
-    mainThread_->OnScreenPropertyChanged(rsScreenProperty);
-    RS_LOGD("RSRenderPipeline %{public}s, screen id: %{public}" PRIu64, __func__,
-        rsScreenProperty ? rsScreenProperty->GetScreenId() : INVALID_SCREEN_ID);
+    mainThread_->OnScreenPropertyChanged(id, type, property);
+    RS_LOGD("RSRenderPipeline %{public}s, screen id: %{public}" PRIu64, __func__, id);
 }
 
 void RSRenderPipeline::OnScreenRefresh(ScreenId screenId)

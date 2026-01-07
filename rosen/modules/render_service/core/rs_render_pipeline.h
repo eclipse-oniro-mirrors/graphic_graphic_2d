@@ -34,6 +34,7 @@
 #include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
 #include "rs_render_composer_client.h"
 #include "vsync_receiver.h"
+#include "screen_manager/rs_screen_property.h"
 #include "screen_manager/screen_types.h"
 #include "memory/rs_memory_manager.h"
 
@@ -64,7 +65,6 @@ class RSIRenderToServiceConnection;
 class RSMainThread;
 class RSUniRenderThread;
 class RSBufferThread;
-class RSScreenProperty;
 class RSHwcContext;
 class RSRenderPipeline final : public RefBase {
 public:
@@ -103,7 +103,7 @@ public:
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent,
         const std::shared_ptr<HdiOutput>& output);
     void OnScreenDisconnected(ScreenId screenId);
-    void OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty);
+    void OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     void OnScreenRefresh(ScreenId screenId);
 
 private:
