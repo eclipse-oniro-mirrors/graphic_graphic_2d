@@ -54,9 +54,9 @@
 #include "render/rs_path.h"
 
 #ifdef HETERO_HDR_ENABLE
-#include "rs_hetero_hdr_util.h"
 #include "rs_hdr_pattern_manager.h"
 #include "rs_hdr_vulkan_task.h"
+#include "rs_hetero_hdr_util.h"
 #endif
 
 #ifdef RS_ENABLE_VK

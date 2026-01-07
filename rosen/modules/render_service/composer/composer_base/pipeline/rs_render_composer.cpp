@@ -39,7 +39,6 @@
 #include "common/rs_exception_check.h"
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
-
 #include "feature/hdr/rs_hdr_util.h"
 #include "feature/lpp/lpp_video_handler.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
