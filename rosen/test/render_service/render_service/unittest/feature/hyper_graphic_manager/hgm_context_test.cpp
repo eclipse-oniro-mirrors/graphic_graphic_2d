@@ -66,4 +66,3 @@ HWTEST_F(HgmContextTest, HandleHgmProcessInfoTest, TestSize.Level1)
     EXPECT_EQ(frameRateManager.isGameNodeOnTree, true)
 }
 } // namespace OHOS::Rosen
-
