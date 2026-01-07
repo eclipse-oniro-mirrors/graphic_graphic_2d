@@ -1361,24 +1361,24 @@ HWTEST_F(RSImageTest, CalcRepeatBoundsTest002, TestSize.Level1)
     EXPECT_EQ(minY, 0);
     EXPECT_EQ(maxY, 0);
 
-    rsImage->srcRect_.width_ = 0;
-    rsImage->srcRect_.height_ = 50;
+    rsImage->dstRect_.width_ = 0;
+    rsImage->dstRect_.height_ = 50;
     rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
     EXPECT_EQ(minX, 0);
     EXPECT_EQ(maxX, 0);
     EXPECT_EQ(minY, 0);
     EXPECT_EQ(maxY, 0);
 
-    rsImage->srcRect_.width_ = 50;
-    rsImage->srcRect_.height_ = 0;
+    rsImage->dstRect_.width_ = 50;
+    rsImage->dstRect_.height_ = 0;
     rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
     EXPECT_EQ(minX, 0);
     EXPECT_EQ(maxX, 0);
     EXPECT_EQ(minY, 0);
     EXPECT_EQ(maxY, 0);
 
-    rsImage->srcRect_.width_ = 50;
-    rsImage->srcRect_.height_ = 50;
+    rsImage->dstRect_.width_ = 50;
+    rsImage->dstRect_.height_ = 50;
     rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
     EXPECT_EQ(minX, -1);
     EXPECT_EQ(maxX, 1);
@@ -1389,8 +1389,8 @@ HWTEST_F(RSImageTest, CalcRepeatBoundsTest002, TestSize.Level1)
     maxX = 0;
     minY = 0;
     maxY = 0;
-    rsImage->srcRect_.left_ = -10;
-    rsImage->srcRect_.top_ = -10;
+    rsImage->dstRect_.left_ = -10;
+    rsImage->dstRect_.top_ = -10;
     rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
     EXPECT_EQ(minX, 0);
     EXPECT_EQ(maxX, 2);
