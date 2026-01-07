@@ -506,7 +506,7 @@ void RSPiplineDumper::DumpMem(std::unordered_set<std::u16string>& argSets, std::
 void RSPiplineDumper::ScheduleTask(std::function<void()> task) const
 {
     if (mainHandler_) {
-        mainHandler_->PostSynTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+        mainHandler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
         return;
     }
     RS_LOGE("RSPiplineDumper::ScheduleTask mainHandler_ is null");
