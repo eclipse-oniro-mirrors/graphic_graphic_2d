@@ -81,7 +81,7 @@ private:
     int32_t completionCount_;
     int32_t processCount_;
     std::vector<std::string> dumpDataList_;
-    sptr<RSRenderProcessManager> rsDumpCallbackDirector_ = nullptr;
+    sptr<RSDumpCallbackDirector> rsDumpCallbackDirector_ = nullptr;
     bool IsDumpCompleted();
 };
 
