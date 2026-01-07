@@ -267,7 +267,7 @@ void RSRenderPipeline::InitUniRenderThread()
 void RSRenderPipeline::InitDumper(const std::shared_ptr<AppExecFwk::EventHandler>& handler)
 {
     rpDumpManager_ = std::make_shared<RSPiplineDumpManager>();
-    rsDumper_ = std::make_shared<RSPiplineDumper>(handler);
+    rpDumper_ = std::make_shared<RSPiplineDumper>(handler);
     rpDumper_->RpDumpInit(rpDumpManager_);
 }
 
