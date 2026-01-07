@@ -64,7 +64,6 @@ private:
 class RSIRenderToServiceConnection;
 class RSMainThread;
 class RSUniRenderThread;
-class RSBufferThread;
 class RSHwcContext;
 class RSRenderPipeline final : public RefBase {
 public:
@@ -124,7 +123,6 @@ private:
 
     RSMainThread* mainThread_ = nullptr;
     RSUniRenderThread* uniRenderThread_ = nullptr;
-    RSBufferThread* uniBufferThread_ = nullptr;
 
     std::shared_ptr<ImageEnhanceManager> imageEnhanceManager_ = nullptr;
 
