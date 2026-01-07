@@ -447,7 +447,7 @@ std::vector<LineMetrics> Typography::GetLineMetrics()
 
 bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
 {
-    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     if (paragraph_ == nullptr) {
         return false;
     }
