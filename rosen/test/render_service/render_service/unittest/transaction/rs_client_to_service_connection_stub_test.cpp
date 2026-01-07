@@ -2025,10 +2025,23 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetScreenPowerStatusTest002, TestS
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, SetRogScreenResolutionTest001, TestSize.Level1)
 {
+    constexpr uint32_t FOUNDATION_UID = 5523;
+
+    // To run this unittest with foundation permissions
+    // create a invoker with specified foundation Uid_
+    BinderInvoker *invoker = new BinderInvoker();
+    invoker->status_ = IRemoteInvoker::ACTIVE_INVOKER;
+    invoker->callerUid_ = FOUNDATION_UID;
+    IPCThreadSkeleton *current = IPCThreadSkeleton::GetCurrent();
+    current->invokers_[IRemoteObject::IF_PROT_DEFAULT] = invoker;
+    ASSERT_EQ(OHOS::IPCSkeleton::GetCallingUid(), FOUNDATION_UID);
+
     constexpr uint64_t SCREEN_ID = 0;
     uint32_t width{1920};
     uint32_t height{1080};
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ROG_SCREEN_RESOLUTION);
+
+    // case 1: entire pipeline
     MessageParcel data;
     MessageParcel reply;
     MessageOption option(MessageOption::TF_SYNC);
@@ -2037,8 +2050,30 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetRogScreenResolutionTest001, Tes
     data.WriteUint32(width);
     data.WriteUint32(height);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
-    // Authorization failed
-    ASSERT_EQ(res, ERR_INVALID_STATE);
+    ASSERT_EQ(res, ERR_OK);
+
+    // case 2: Read parcel failed
+    MessageParcel data2;
+    MessageParcel reply2;
+    data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data2.WriteUint64(SCREEN_ID);
+    int res = connectionStub_->OnRemoteRequest(code, data2, reply2, option);
+    ASSERT_EQ(res, ERR_OK);
+
+    // case 3: Write parcel failed
+    MessageParcel data3;
+    MessageParcel reply3;
+    data3.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data3.WriteUint64(SCREEN_ID);
+    data3.WriteUint32(width);
+    data3.WriteUint32(height);
+    reply3.writeable_ = false;
+    int res = connectionStub_->OnRemoteRequest(code, data3, reply3, option);
+    ASSERT_EQ(res, ERR_INVALID_REPLY);
+
+    // remove the invoker
+    current->invokers_[IRemoteObject::IF_PROT_DEFAULT] = nullptr;
+    delete invoker;
 }
 
 /**
