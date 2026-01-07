@@ -36,6 +36,7 @@
 
 #include "dfx/rs_pipline_dumper.h"
 #include "ge_mesa_blur_shader_filter.h"
+#include "ge_render.h"
 #include "graphic_feature_param_manager.h"
 
 #include "parameter.h"
@@ -45,7 +46,6 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include <platform/common/rs_log.h>
 #include "platform/common/rs_system_properties.h"
-#include "render/rs_render_kawase_blur_filter.h"
 #include "rs_profiler.h"
 #include "rs_trace.h"
 #include "screen_manager/rs_screen_property.h"
@@ -242,7 +242,7 @@ void RSRenderPipeline::FilterCCMInit()
     RSFilterCacheManager::isCCMEffectMergeEnable_ = FilterParam::IsEffectMergeEnable();
     RSProperties::SetFilterCacheEnabledByCCM(RSFilterCacheManager::isCCMFilterCacheEnable_);
     RSProperties::SetBlurAdaptiveAdjustEnabledByCCM(FilterParam::IsBlurAdaptiveAdjust());
-    RSKawaseBlurShaderFilter::SetMesablurAllEnabledByCCM(FilterParam::IsMesablurAllEnable());
+    GraphicsEffectEngine::GERender::SetMesablurAllEnabledByCCM(FilterParam::IsMesablurAllEnable());
     GEMESABlurShaderFilter::SetMesaModeByCCM(FilterParam::GetSimplifiedMesaMode());
 }
 
