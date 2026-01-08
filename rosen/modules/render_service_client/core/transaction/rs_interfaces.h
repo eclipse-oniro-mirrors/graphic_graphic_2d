@@ -263,6 +263,11 @@ public:
      * @param watermark Watermark pixelmap.
      * @param nodeIdList Node id list
      * @param watermarkType custom or system watermark.
+     * if the maximum image size exceeds 512Kb, the time to draw the watermark will increase. In such cases, consider
+     * using DMA mode for pixelMap
+     * SetSurfaceWatermark has a maximum of 1000 images.
+     * if SurfaceWatermarkType is SYSTEM_WATER_MARK, the nodeList is ineffective. Therefore, SetWatermarkEnabled needs
+     * to be set.
      * @return set watermark success return 0, else return errorCode.
      */
     uint32_t SetSurfaceWatermark(pid_t pid, const std::string &name,
