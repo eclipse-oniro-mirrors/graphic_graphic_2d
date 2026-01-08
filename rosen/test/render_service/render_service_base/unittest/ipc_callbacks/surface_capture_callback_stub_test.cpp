@@ -313,7 +313,7 @@ HWTEST_F(RSSurfaceCaptureCallbackStubTest, ReadSurfaceCaptureConfig, TestSize.Le
 }
 
 /**
- * @tc.name: ReadSurfaceCaptureConfigCaptuteTypeTest
+ * @tc.name: ReadSurfaceCaptureConfigCaptureTypeTest
  * @tc.desc: Verify the ReadSurfaceCaptureConfig CaptureType limit
  * @tc.type:FUNC
  * @tc.require: issue21455
