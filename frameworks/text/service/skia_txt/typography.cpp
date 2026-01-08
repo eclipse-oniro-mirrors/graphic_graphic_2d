@@ -395,7 +395,7 @@ bool Typography::GetLineInfo(int lineNumber, bool oneLine, bool includeWhitespac
     return true;
 }
 
-std::vector<LineMetrics> Typography::OnGetLineMetrics()
+std::vector<LineMetrics> Typography::GetAllLineMetrics()
 {
     if (lineMetrics_) {
         return lineMetrics_.value();
@@ -442,7 +442,7 @@ std::vector<LineMetrics> Typography::OnGetLineMetrics()
 std::vector<LineMetrics> Typography::GetLineMetrics()
 {
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
-    return OnGetLineMetrics();
+    return GetAllLineMetrics();
 }
 
 bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
@@ -455,7 +455,7 @@ bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
         return false;
     }
 
-    std::vector<LineMetrics> vecLineMetrics = OnGetLineMetrics();
+    std::vector<LineMetrics> vecLineMetrics = GetAllLineMetrics();
 
     if (vecLineMetrics.empty()) {
         return false;

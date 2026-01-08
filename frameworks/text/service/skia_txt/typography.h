@@ -102,7 +102,7 @@ private:
     bool textEffectAssociation_{false};
     mutable std::shared_mutex mutex_;
 
-    std::vector<LineMetrics> OnGetLineMetrics();
+    std::vector<LineMetrics> GetAllLineMetrics();
 };
 } // namespace AdapterTxt
 } // namespace Rosen
