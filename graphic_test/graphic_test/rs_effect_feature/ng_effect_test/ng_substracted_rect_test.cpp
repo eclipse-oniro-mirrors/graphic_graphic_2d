@@ -42,19 +42,53 @@ std::shared_ptr<RSNGMaskBase> CreateMask(RSNGEffectType type)
     return it != creatorMask.end() ? it->second() : nullptr;
 }
 
-constexpr int COLOR_GRADIENMT_EFFECT_PARAMS_COUNT = 15;
-std::vector<std::array<std::variant<Vector2f, float, Vector4f>, COLOR_GRADIENMT_EFFECT_PARAMS_COUNT>>
-    colorGradientEffectParams = {
+struct ColorGradientEffectParams {
+    Vector4f color0;
+    Vector4f color1;
+    Vector4f color2;
+    Vector4f color3;
+    Vector2f position0;
+    Vector2f position1;
+    Vector2f position2;
+    Vector2f position3;
+    float strength0;
+    float strength1;
+    float strength2;
+    float strength3;
+    float colorNumber;
+    float blend;
+    float blendK;
+}
+
+struct NoisyFrameGradientMaskParams {
+    Vector4f gradientBezierControlPoints;
+    float cornerRadius;
+    Vector2f innerFrameWidth;
+    Vector2f middleFrameWidth;
+    Vector2f outsideFrameWidth;
+    Vector2f rrectWH;
+    Vector2f rrectPos;
+    float slope;
+    float progress;
+}
+
+std::vector<ColorGradientEffectParams> colorGradientEffectParams = {
     {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        Vector4f{1.0f, 0.0f, 1.0f, 1.0f},
-        Vector4f{1.0f, 0.0f, 1.0f, 1.0f},
-        Vector2f{0.0f, 1.0f},
-        Vector2f{1.0f, 0.0f},
-        Vector2f{0.0f, 0.0f},
-        Vector2f{1.0f, 1.0f},
-        5.4f, 5.4f, 5.4f, 5.4f, 4.0f, 6.0f, 20.0f
+        .color0 = {0.0f, 0.0f, 1.0f, 1.0f},
+        .color1 = {0.0f, 0.0f, 1.0f, 1.0f},
+        .color2 = {1.0f, 0.0f, 1.0f, 1.0f},
+        .color3 = {1.0f, 0.0f, 1.0f, 1.0f},
+        .position0 = {0.0f, 1.0f},
+        .position1 = {1.0f, 0.0f},
+        .position2 = {0.0f, 0.0f},
+        .position3 = {1.0f, 1.0f},
+        .strength0 = 5.4f,
+        .strength1 = 5.4f,
+        .strength2 = 5.4f,
+        .strength3 = 5.4f,
+        .colorNumber = 4.0f,
+        .blend = 6.0f,
+        .blendK = 20.0f
     }
 };
 
@@ -129,6 +163,85 @@ std::vector<std::array<std::variant<Vector2f, float, Vector4f>, NOISY_FRAME_GRAD
     }
 };
 
+std::vector<NoisyFrameGradientMaskParams> noisyFrameGradientMaskParams = {
+    // test large corner radius
+    {
+        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .cornerRadius = 1.0f,
+        .innerFrameWidth = {0.0f, 0.01f},
+        .middleFrameWidth = {0.0f, 0.01f},
+        .outsideFrameWidth = {0.0f, 0.01f},
+        .rrectWH = {0.5f, 0.5f},
+        .rrectPos = {0.0f, 0.0f},
+        .slope = 0.0f,
+        .progress = 0.0f
+    },
+    // test width bigger than height
+    {
+        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .cornerRadius = 0.1f,
+        .innerFrameWidth = {0.0f, 0.01f},
+        .middleFrameWidth = {0.0f, 0.01f},
+        .outsideFrameWidth = {0.0f, 0.01f},
+        .rrectWH = {1.0f, 0.3f},
+        .rrectPos = {0.0f, 0.0f},
+        .slope = 0.0f,
+        .progress = 0.0f
+    },
+    
+    // test height bigger than width
+    {
+        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .cornerRadius = 0.1f,
+        .innerFrameWidth = {0.0f, 0.01f},
+        .middleFrameWidth = {0.0f, 0.01f},
+        .outsideFrameWidth = {0.0f, 0.01f},
+        .rrectWH = {0.3f, 1.0f},
+        .rrectPos = {0.0f, 0.0f},
+        .slope = 0.0f,
+        .progress = 0.0f
+    },
+    
+    // test large frame width
+    {
+        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .cornerRadius = 0.01f,
+        .innerFrameWidth = {0.0f, 1.0f},
+        .middleFrameWidth = {0.0f, 1.0f},
+        .outsideFrameWidth = {0.0f, 1.0f},
+        .rrectWH = {0.5f, 0.5f},
+        .rrectPos = {0.0f, 0.0f},
+        .slope = 0.0f,
+        .progress = 0.0f
+    },
+    
+    // test rect not included in canvas
+    {
+        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .cornerRadius = 0.1f,
+        .innerFrameWidth = {0.0f, 0.1f},
+        .middleFrameWidth = {0.0f, 0.1f},
+        .outsideFrameWidth = {0.0f, 0.1f},
+        .rrectWH = {1.0f, 1.0f},
+        .rrectPos = {1.1f, 1.0f},
+        .slope = 0.0f,
+        .progress = 0.0f
+    },
+    
+    // test no corner radius
+    {
+        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .cornerRadius = 0.0f,
+        .innerFrameWidth = {0.0f, 0.1f},
+        .middleFrameWidth = {0.0f, 0.1f},
+        .outsideFrameWidth = {0.0f, 0.1f},
+        .rrectWH = {1.0f, 1.0f},
+        .rrectPos = {0.0f, 0.0f},
+        .slope = 0.0f,
+        .progress = 0.0f
+    }
+}
+
 enum class TestDataGroupParamsType {
     INVALID_DATA_MIN,
     VALID_DATA1,
@@ -174,62 +287,50 @@ void SetColorGradientEffectParams(const std::shared_ptr<RSNGColorGradientEffect>
     if (!colorGradient) {
         return;
     }
-    colorGradient->Setter<ColorGradientEffectColor0Tag>(
-        std::get<Vector4f>(colorGradientEffectParams[index][NUM_0]));
-    colorGradient->Setter<ColorGradientEffectColor1Tag>(
-        std::get<Vector4f>(colorGradientEffectParams[index][NUM_1]));
-    colorGradient->Setter<ColorGradientEffectColor2Tag>(
-        std::get<Vector4f>(colorGradientEffectParams[index][NUM_2]));
-    colorGradient->Setter<ColorGradientEffectColor3Tag>(
-        std::get<Vector4f>(colorGradientEffectParams[index][NUM_3]));
-    colorGradient->Setter<ColorGradientEffectPosition0Tag>(
-        std::get<Vector2f>(colorGradientEffectParams[index][NUM_4]));
-    colorGradient->Setter<ColorGradientEffectPosition1Tag>(
-        std::get<Vector2f>(colorGradientEffectParams[index][NUM_5]));
-    colorGradient->Setter<ColorGradientEffectPosition2Tag>(
-        std::get<Vector2f>(colorGradientEffectParams[index][NUM_6]));
-    colorGradient->Setter<ColorGradientEffectPosition3Tag>(
-        std::get<Vector2f>(colorGradientEffectParams[index][NUM_7]));
-    colorGradient->Setter<ColorGradientEffectStrength0Tag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_8]));
-    colorGradient->Setter<ColorGradientEffectStrength1Tag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_9]));
-    colorGradient->Setter<ColorGradientEffectStrength2Tag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_10]));
-    colorGradient->Setter<ColorGradientEffectStrength3Tag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_11]));
-    colorGradient->Setter<ColorGradientEffectColorNumberTag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_12]));
-    colorGradient->Setter<ColorGradientEffectBlendTag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_13]));
-    colorGradient->Setter<ColorGradientEffectBlendKTag>(
-        std::get<float>(colorGradientEffectParams[index][NUM_14]));
+    const auto& params = colorGradientEffectParams[index];
+    colorGradient->Setter<ColorGradientEffectColor0Tag>(params.color0);
+    colorGradient->Setter<ColorGradientEffectColor1Tag>(params.color1);
+    colorGradient->Setter<ColorGradientEffectColor2Tag>(params.color2);
+    colorGradient->Setter<ColorGradientEffectColor3Tag>(params.color3);
+    colorGradient->Setter<ColorGradientEffectPosition0Tag>(params.position0);
+    colorGradient->Setter<ColorGradientEffectPosition1Tag>(params.position1);
+    colorGradient->Setter<ColorGradientEffectPosition2Tag>(params.position2);
+    colorGradient->Setter<ColorGradientEffectPosition3Tag>(params.position3);
+    colorGradient->Setter<ColorGradientEffectStrength0Tag>(params.strength0);
+    colorGradient->Setter<ColorGradientEffectStrength1Tag>(params.strength1);
+    colorGradient->Setter<ColorGradientEffectStrength2Tag>(params.strength2);
+    colorGradient->Setter<ColorGradientEffectStrength3Tag>(params.strength3);
+    colorGradient->Setter<ColorGradientEffectColorNumberTag>(params.colorNumber);
+    colorGradient->Setter<ColorGradientEffectBlendTag>(params.blend);
+    colorGradient->Setter<ColorGradientEffectBlendKTag>(params.blendK);
 }
 
 
-void SetNoisyFrameGradientMaskParams(const std::shared_ptr<RSNGNoisyFrameGradientMask>& mask, int index)
+void SetNoisyFrameGradientMaskParams(const std::shared_ptr<RSNGNoisyFrameGradientMask>& mask, int index, float height)
 {
     if (!mask) {
         return;
     }
-    mask->Setter<NoisyFrameGradientMaskGradientBezierControlPointsTag>(
-        std::get<Vector4f>(noisyFrameGradientMaskParams[index][NUM_0]));
-    mask->Setter<NoisyFrameGradientMaskCornerRadiusTag>(
-        std::get<float>(noisyFrameGradientMaskParams[index][NUM_1]));
-    mask->Setter<NoisyFrameGradientMaskInnerFrameWidthTag>(
-        std::get<Vector2f>(noisyFrameGradientMaskParams[index][NUM_2]));
-    mask->Setter<NoisyFrameGradientMaskMiddleFrameWidthTag>(
-        std::get<Vector2f>(noisyFrameGradientMaskParams[index][NUM_3]));
-    mask->Setter<NoisyFrameGradientMaskOutsideFrameWidthTag>(
-        std::get<Vector2f>(noisyFrameGradientMaskParams[index][NUM_4]));
-    mask->Setter<NoisyFrameGradientMaskRRectWHTag>(
-        std::get<Vector2f>(noisyFrameGradientMaskParams[index][NUM_5]));
-    mask->Setter<NoisyFrameGradientMaskRRectPosTag>(
-        std::get<Vector2f>(noisyFrameGradientMaskParams[index][NUM_6]));
-    mask->Setter<NoisyFrameGradientMaskSlopeTag>(
-        std::get<float>(noisyFrameGradientMaskParams[index][NUM_7]));
-    mask->Setter<NoisyFrameGradientMaskProgressTag>(
-        std::get<float>(noisyFrameGradientMaskParams[index][NUM_8]));
+    const auto params = noisyFrameGradientMaskParams[index];
+    
+    mask->Setter<NoisyFrameGradientMaskGradientBezierControlPointsTag>(params.gradientBezierControlPoints);
+    mask->Setter<NoisyFrameGradientMaskCornerRadiusTag>(params.cornerRadius * height / 2.0f);
+    Vector2f adjustedInnerFramerWidth = params.innerFrameWidth;
+    adjustedInnerFramerWidth.x_ *= height / 2.0f;
+    adjustedInnerFramerWidth.y_ *= height / 2.0f;
+    mask->Setter<NoisyFrameGradientMaskInnerFrameWidthTag>(adjustedInnerFramerWidth);
+    Vector2f adjustedMiddleFrameWidth = params.middleFrameWidth;
+    adjustedMiddleFrameWidth.x_ *= height / 2.0f;
+    adjustedMiddleFrameWidth.y_ *= height / 2.0f;
+    mask->Setter<NoisyFrameGradientMaskMiddleFrameWidthTag>(adjustedMiddleFrameWidth);
+    Vector2f adjustedOutsideFramerWidth = params.outsideFrameWidth;
+    adjustedOutsideFramerWidth.x_ *= height / 2.0f;
+    adjustedOutsideFramerWidth.y_ *= height / 2.0f;
+    mask->Setter<NoisyFrameGradientMaskOutsideFrameWidthTag>(adjustedOutsideFramerWidth);
+    mask->Setter<NoisyFrameGradientMaskRRectWHTag>(params.rrectWH);
+    mask->Setter<NoisyFrameGradientMaskRRectPosTag>(params.rrectPos);
+    mask->Setter<NoisyFrameGradientMaskSlopeTag>(params.slope);
+    mask->Setter<NoisyFrameGradientMaskProgressTag>(params.progress);
 }
 
 // Test Foreground Noisy Frame Gradient Mask and Color Gradient Effect
@@ -243,7 +344,7 @@ GRAPHIC_TEST(NGSubstractedRectTest, EFFECT_TEST, Set_Substracted_Rect_NG_Mask_No
         // Create Noisy Frame Gradient Mask
         auto mask = CreateMask(RSNGEffectType::NOISY_FRAME_GRADIENT_MASK);
         auto noisyFrameGradientMask = std::static_pointer_cast<RSNGNoisyFrameGradientMask>(mask);
-        SetNoisyFrameGradientMaskParams(noisyFrameGradientMask, i);
+        SetNoisyFrameGradientMaskParams(noisyFrameGradientMask, i, sizeY);
 
         // Create Color Gradient Effect
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
