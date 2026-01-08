@@ -621,20 +621,20 @@ bool RSRenderNodeDrawable::IsDrawingExcludedSubTreeForCache()
     return RSRenderGroupCacheDrawable::IsDrawingExcludedSubTreeForCache();
 }
 
-void RSRenderNodeDrawable::SetCanceledByParenRenderGroup(bool value)
+void RSRenderNodeDrawable::SetCanceledByParentRenderGroup(bool value)
 {
     if (!renderGroupCache_) {
         renderGroupCache_ = std::make_unique<RSRenderGroupCacheDrawable>();
     }
-    renderGroupCache_->SetCanceledByParenRenderGroup(value);
+    renderGroupCache_->SetCanceledByParentRenderGroup(value);
 }
 
-bool RSRenderNodeDrawable::IsCanceledByParenRenderGroup()
+bool RSRenderNodeDrawable::IsCanceledByParentRenderGroup()
 {
     if (!renderGroupCache_) {
         return false;
     }
-    return renderGroupCache_->IsCanceledByParenRenderGroup();
+    return renderGroupCache_->IsCanceledByParentRenderGroup();
 }
 
 void RSRenderNodeDrawable::UpdateCacheInfoForDfx(Drawing::Canvas& canvas, const Drawing::Rect& rect, NodeId id)

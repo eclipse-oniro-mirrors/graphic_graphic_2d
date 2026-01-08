@@ -40,7 +40,7 @@ bool RSRenderGroupCacheDrawable::IsDrawingExcludedSubTreeForCache()
     return drawExcludedSubTreeForCache_;
 }
 
-void RSRenderGroupCacheDrawable::SetCanceledByParenRenderGroup(bool value)
+void RSRenderGroupCacheDrawable::SetCanceledByParentRenderGroup(bool value)
 {
     isCanceledByParentRenderGroup_ = value;
 }

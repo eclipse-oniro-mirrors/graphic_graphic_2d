@@ -37,8 +37,8 @@ public:
     static void SetDrawExcludedSubTreeForCache(bool value);
     static bool IsDrawingExcludedSubTreeForCache();
 
-    void SetCanceledByParenRenderGroup(bool value);
-    bool IsCanceledByParenRenderGroup() const
+    void SetCanceledByParentRenderGroup(bool value);
+    bool IsCanceledByParentRenderGroup() const
     {
         return isCanceledByParentRenderGroup_;
     }
