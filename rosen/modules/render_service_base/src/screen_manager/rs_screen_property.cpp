@@ -296,6 +296,7 @@ ScreenInfo RSScreenProperty::GetScreenInfo() const
     info.maskRect = maskRect_;
     info.reviseRect = reviseRect_;
     info.powerStatus = powerStatus_;
+    info.activeRefreshRate = refreshRate_;
     return info;
 }
 
@@ -506,7 +507,7 @@ bool RSScreenProperty::Marshalling(Parcel& data) const
         return false;
     }
     if (!data.WriteUint32(static_cast<uint32_t>(connectionType_))) {
-        ROSEN_LOGE("WriteScreenProperty: WriteUint32 connectionType_ err.");
+        ROSEN_LOGE("WriteScreenProperty: WriteUint32 connectionType err.");
         return false;
     }
     if (!data.WriteBool(isHardCursorSupport_)) {

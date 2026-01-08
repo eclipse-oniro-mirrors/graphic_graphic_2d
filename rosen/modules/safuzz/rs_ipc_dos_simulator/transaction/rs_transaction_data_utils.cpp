@@ -89,6 +89,7 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyDrawCmdListNG),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyVectorFloat),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyVectorVector2f),
+    DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyVectorVector4f),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyPixelMap),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyShadowBlenderPara),
     DECLARE_ADD_RANDOM(RSNodeCommand, RSUpdatePropertyShort),
@@ -125,6 +126,7 @@ const std::unordered_map<std::string, std::function<bool(std::unique_ptr<RSTrans
     DECLARE_ADD_RANDOM(RSCanvasNodeCommand, RSCanvasNodeUpdateRecording),
     DECLARE_ADD_RANDOM(RSCanvasNodeCommand, RSCanvasNodeClearRecording),
     DECLARE_ADD_RANDOM(RSCanvasNodeCommand, RSCanvasNodeSetHDRPresent),
+    DECLARE_ADD_RANDOM(RSCanvasNodeCommand, RSCanvasNodeSetColorGamut),
 
     /********** RSSurfaceNodeCommand **********/
     DECLARE_ADD_RANDOM(RSSurfaceNodeCommand, RSSurfaceNodeCreate),

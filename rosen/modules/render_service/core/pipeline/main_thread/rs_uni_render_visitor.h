@@ -242,6 +242,8 @@ private:
     void UpdateHwcNodeDirtyRegionForApp(std::shared_ptr<RSSurfaceRenderNode>& appNode,
         std::shared_ptr<RSSurfaceRenderNode>& hwcNode);
 
+    void SubSurfaceOpaqueRegionFromAccumulatedDirtyRegion(
+        const RSSurfaceRenderNode& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const;
     void AccumulateSurfaceDirtyRegion(
         std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const;
     void CheckMergeDisplayDirtyByCrossDisplayWindow(RSSurfaceRenderNode& surfaceNode) const;
@@ -305,11 +307,11 @@ private:
     void UpdateRotationStatusForEffectNode(RSEffectRenderNode& node);
     void UpdateFilterRegionInSkippedSurfaceNode(const RSRenderNode& rootNode, RSDirtyRegionManager& dirtyManager);
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
+    void CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(const RSRenderNode& node,
+        RSDirtyRegionManager& dirtyManager);
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
-
-    void CollectUnionInfo(RSRenderNode& node);
 
     void UpdateVirtualDisplayInfo(RSLogicalDisplayRenderNode& node);
     void UpdateVirtualDisplaySecurityExemption(

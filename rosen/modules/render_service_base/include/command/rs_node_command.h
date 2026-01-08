@@ -68,6 +68,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_VELOCITY_FIELD_PTR = 0x0129,
     UPDATE_MODIFIER_DRAW_CMD_LIST = 0x012A,
     UPDATE_MODIFIER_NG_SHAPE_BASE_PTR = 0x012B,
+    UPDATE_MODIFIER_VECTOR_VECTOR4F = 0x012C,
 
     SET_FREEZE = 0x0200,
     SET_DRAW_REGION = 0x0201,
@@ -76,6 +77,7 @@ enum RSNodeCommandType : uint16_t {
     SET_UIFIRST_SWITCH = 0x0204,
     SET_ENABLE_HDR_EFFECT = 0x0205,
     SET_NEED_USE_CMDLIST_DRAW_REGION = 0x0206,
+    SET_HDR_UI_BRIGHTNESS = 0x0207,
 
     REGISTER_GEOMETRY_TRANSITION = 0x0300,
     UNREGISTER_GEOMETRY_TRANSITION = 0x0301,
@@ -149,6 +151,7 @@ public:
     static void SetOutOfParent(RSContext& context, NodeId nodeId, OutOfParentType outOfParent);
     static void SetTakeSurfaceForUIFlag(RSContext& context, NodeId nodeId);
     static void SetNeedUseCmdlistDrawRegion(RSContext &context, NodeId nodeId, bool needUseCmdlistDrawRegion);
+    static void SetHDRUIBrightness(RSContext& context, NodeId nodeId, float brightness);
 
     static void RegisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId,
         const bool isInSameWindow);
@@ -305,6 +308,10 @@ ADD_COMMAND(RSUpdatePropertyVectorVector2f,
         RSNodeCommandHelper::UpdateProperty<std::vector<Vector2f>>,
         NodeId, std::vector<Vector2f>, PropertyId, PropertyUpdateType))
 // =============================================================================
+ADD_COMMAND(RSUpdatePropertyVectorVector4f,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_VECTOR_VECTOR4F,
+        RSNodeCommandHelper::UpdateProperty<std::vector<Vector4f>>,
+        NodeId, std::vector<Vector4f>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyPixelMap,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_PIXEL_MAP,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<Media::PixelMap>>, NodeId,
@@ -368,6 +375,10 @@ ADD_COMMAND(RSSetTakeSurfaceForUIFlag,
 ADD_COMMAND(RSSetNeedUseCmdlistDrawRegion,
     ARG(PERMISSION_APP, RS_NODE, SET_NEED_USE_CMDLIST_DRAW_REGION,
         RSNodeCommandHelper::SetNeedUseCmdlistDrawRegion, NodeId, bool))
+
+ADD_COMMAND(RSSetHDRUIBrightness,
+    ARG(PERMISSION_APP, RS_NODE, SET_HDR_UI_BRIGHTNESS,
+        RSNodeCommandHelper::SetHDRUIBrightness, NodeId, float))
 
 ADD_COMMAND(RSRegisterGeometryTransitionNodePair,
     ARG(PERMISSION_APP, RS_NODE, REGISTER_GEOMETRY_TRANSITION,

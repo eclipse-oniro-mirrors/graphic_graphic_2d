@@ -222,12 +222,12 @@ void RSRenderComposer::DumpVkImageInfo(std::string& dumpString)
     });
 }
 
-uint32_t RSRenderComposer::GetUnExecuteTaskNum()
+uint32_t RSRenderComposer::GetUnExecuteTaskNum() const
 {
     return unExecuteTaskNum_.load();
 }
 
-int32_t RSRenderComposer::GetAccumulatedBufferCount()
+int32_t RSRenderComposer::GetAccumulatedBufferCount() const
 {
     return std::max(acquiredBufferCount_.load() - 1, 0);
 }
@@ -290,7 +290,7 @@ void RSRenderComposer::ComposerPrepare(RefreshRateParam& param, uint32_t& curren
 #endif
     {
         ++acquiredBufferCount_;
-        RS_TRACE_NAME_FMT("screenId : %" PRIu64 "Inc Acq BufferCount %d", screenId_, acquiredBufferCount_.load());
+        RS_TRACE_NAME_FMT("Inc Acq BufferCount %d screenId: %" PRIu64 "", acquiredBufferCount_.load(), screenId_);
     }
     unExecuteTaskNum_++;
     RSMainThread::Instance()->SetHardwareTaskNum(unExecuteTaskNum_.load());
@@ -365,7 +365,7 @@ void RSRenderComposer::ProcessComposerFrame(RefreshRateParam param, uint32_t cur
     }
     {
         --acquiredBufferCount_;
-        RS_TRACE_NAME_FMT("Dec Acq BufferCount %d screenId : %" PRIu64, acquiredBufferCount_.load(), screenId_);
+        RS_TRACE_NAME_FMT("Dec Acq BufferCount %d screenId: %" PRIu64, acquiredBufferCount_.load(), screenId_);
     }
 
     unExecuteTaskNum_--;
@@ -379,7 +379,7 @@ void RSRenderComposer::ProcessComposerFrame(RefreshRateParam param, uint32_t cur
     RSMainThread::Instance()->SetTaskEndWithTime(SystemTime() - lastActualTime_);
     lastActualTime_ = param.actualTimestamp;
     int64_t endTime = GetCurTimeCount();
-    uint64_t frameTime = endTime - startTime;
+    uint64_t frameTime = static_cast<uint64_t>(endTime - startTime);
     uint32_t missedFrames = frameTime / REFRESH_PERIOD;
     uint16_t frameRate = currentRate;
     if (missedFrames >= HARD_JANK_TWO_TIME &&
@@ -422,7 +422,7 @@ int64_t RSRenderComposer::UpdateDelayTime(RefreshRateParam param, uint32_t curre
             "update delayTime: %{public}" PRId64 ", currCommitTime: %{public}" PRId64 ", " \
             "lastCommitTime: %{public}" PRId64, param.vsyncId, delayTime_, currCommitTime, lastCommitTime_);
         RS_TRACE_NAME_FMT("update delayTime: %" PRId64 ", currCommitTime: %" PRId64 ", lastCommitTime: %" PRId64 \
-            "screenId : %" PRIu64, delayTime_, currCommitTime, lastCommitTime_, screenId_);
+            "screenId: %" PRIu64, delayTime_, currCommitTime, lastCommitTime_, screenId_);
     }
     if (delayTime_ < 0 || delayTime_ >= MAX_DELAY_TIME) {
         delayTime_ = 0;
@@ -480,7 +480,7 @@ void RSRenderComposer::RecordTimestamp(uint64_t vsyncId,
     const std::shared_ptr<HdiOutput> output,
     const std::vector<std::shared_ptr<RSLayer>>& layers)
 {
-    for (auto& layer : layers) {
+    for (const auto& layer : layers) {
         if (layer == nullptr) {
             continue;
         }
@@ -684,7 +684,7 @@ void RSRenderComposer::CalculateDelayTime(HgmCore& hgmCore, const RefreshRatePar
         "expectCommitTime: %" PRId64 ", currTime: %" PRId64 ", diffTime: %" PRId64 ", delayTime_: %" PRId64 ", " \
         "frameOffset: %" PRId64 ", dvsyncOffset: %" PRIu64 ", vsyncOffset: %" PRId64 ", idealPeriod: %" PRId64 ", " \
         "period: %" PRId64 ", idealPipelineOffset: %" PRId64 ", fastComposeTimeStampDiff: %" PRIu64 \
-        "screenId : %" PRIu64, pipelineOffset, param.actualTimestamp, expectCommitTime, currTime, diffTime, delayTime_,
+        "screenId: %" PRIu64, pipelineOffset, param.actualTimestamp, expectCommitTime, currTime, diffTime, delayTime_,
         frameOffset, dvsyncOffset, vsyncOffset, idealPeriod, period,
         idealPipelineOffset, param.fastComposeTimeStampDiff, screenId_);
     RS_LOGD_IF(DEBUG_PIPELINE, "CalculateDelayTime period:%{public}" PRId64 " delayTime_:%{public}" PRId64 "", period,
@@ -797,6 +797,12 @@ GraphicPixelFormat RSRenderComposer::ComputeTargetPixelFormat(const sptr<Surface
     }
 #endif
     return pixelFormat;
+}
+
+void RSRenderComposer::HandlePowerStatus(ScreenPowerStatus status)
+{
+    RS_TRACE_NAME_FMT("%s: screenId: %" PRIu64 " PowerStatus: %d", __func__, screenId_, status);
+    hgmHardwareUtils_.ResetRetryCount(status);
 }
 
 void RSRenderComposer::OnScreenVBlankIdleCallback(uint64_t timestamp)
@@ -1298,7 +1304,7 @@ void RSRenderComposer::UpdateTransactionData(std::shared_ptr<RSLayerTransactionD
 bool RSRenderComposer::WaitComposerTaskExecute()
 {
 #ifdef RS_ENABLE_GPU
-    RS_TRACE_NAME_FMT("RSRenderComposer::WaitComposerTaskExecute task num: %d screenId : %" PRIu64,
+    RS_TRACE_NAME_FMT("RSRenderComposer::WaitComposerTaskExecute task num: %d screenId:%" PRIu64,
         GetUnExecuteTaskNum(), screenId_);
     std::unique_lock<std::mutex> lock(composerTaskMutex_);
     return composerTaskCond_.wait_until(lock, std::chrono::system_clock::now() +
@@ -1311,7 +1317,7 @@ bool RSRenderComposer::WaitComposerTaskExecute()
 
 void RSRenderComposer::NotifyComposerCanExecuteTask()
 {
-    RS_TRACE_NAME_FMT("RSRenderComposer::NotifyHardwareThreadCanExecuteTask screenId : %" PRIu64, screenId_);
+    RS_TRACE_NAME_FMT("RSRenderComposer::NotifyHardwareThreadCanExecuteTask screenId:%" PRIu64, screenId_);
     std::lock_guard<std::mutex> lock(composerTaskMutex_);
     composerTaskCond_.notify_one();
 }

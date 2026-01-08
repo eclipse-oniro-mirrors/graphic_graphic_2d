@@ -82,7 +82,11 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateCanvasDrawingRenderNodeDra
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     std::string info;
     drawable->DumpSubDrawableTree(info);
-    ASSERT_EQ(info, ", dmaAllocationCount:0, dmaFallbackCount:0");
+    if (RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()) {
+        ASSERT_EQ(info, ", dmaAllocationCount:0, dmaFallbackCount:0");
+    } else {
+        ASSERT_EQ(info, "");
+    }
 #endif
 }
 
@@ -911,6 +915,36 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw004, TestSize.Level2)
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
+
+/**
+ * @tc.name: OnDraw005
+ * @tc.desc: Test OnDraw while opincBlockNodeSkip is false or true
+ * @tc.type: FUNC
+ * @tc.require: issue20602
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw005, TestSize.Level2)
+{
+    auto drawable = RSCanvasDrawingRenderNodeDrawableTest::CreateDrawable();
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(0);
+    drawable->renderParams_->shouldPaint_ = true;
+    OHOS::Rosen::RectT<float> localDrawRect(0.0f, 0.0f, 100.0f, 100.0f);
+    drawable->renderParams_->localDrawRect_ = localDrawRect;
+
+    RSUniRenderThread::Instance().Sync(nullptr);
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    Drawing::Region region;
+    canvas.PushDirtyRegion(region);
+    RSOpincDrawCache::SetOpincBlockNodeSkip(false);
+    drawable->OnDraw(canvas);
+    EXPECT_NE(drawable->GetDrawSkipType(), DrawSkipType::OCCLUSION_SKIP);
+
+    RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    drawable->OnDraw(canvas);
+
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
 #endif
 
 #if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
@@ -989,7 +1023,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     ASSERT_NE(buffer, nullptr);
     RSCanvasDmaBufferCache::GetInstance().AddPendingBuffer(1, buffer, 1);
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
-    ASSERT_EQ(ret, true);
+    ASSERT_EQ(ret, RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled());
     drawable->backendTexture_ = {};
     ret = drawable->ReleaseSurfaceVk(100, 100);
     ASSERT_EQ(ret, true);

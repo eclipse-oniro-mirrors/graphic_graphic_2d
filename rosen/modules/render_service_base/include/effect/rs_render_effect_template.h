@@ -72,6 +72,7 @@ public:
             case RSNGEffectType::DOUBLE_RIPPLE_MASK: return "DoubleRippleMask";
             case RSNGEffectType::PIXEL_MAP_MASK: return "PixelMapMask";
             case RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT: return "ContourDiagonalFlowLight";
+            case RSNGEffectType::DOT_MATRIX_SHADER: return "DotMatrixShader";
             case RSNGEffectType::WAVY_RIPPLE_LIGHT: return "WavyRippleLight";
             case RSNGEffectType::AURORA_NOISE: return "AuroraNoise";
             case RSNGEffectType::PARTICLE_CIRCULAR_HALO: return "ParticleCircularHalo";
@@ -108,6 +109,8 @@ public:
             case RSNGEffectType::DISTORT_CHROMA : return "DistortChroma";
             case RSNGEffectType::DUPOLI_NOISE_MASK : return "DupoliNoiseMask";
             case RSNGEffectType::NOISY_FRAME_GRADIENT_MASK: return "NoisyFrameGradientMask";
+            case RSNGEffectType::MAGNIFIER: return "Magnifier";
+            case RSNGEffectType::SDF_EDGE_LIGHT: return "SDFEdgeLight";
             default: return "UNKNOWN";
         }
     }
@@ -117,6 +120,9 @@ public:
         std::shared_ptr<Drawing::GEVisualEffect> geShader);
 
 private:
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, int value);
+
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, float value);
 
@@ -142,6 +148,9 @@ private:
         const std::string& desc, const std::vector<Vector2f>& value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, const std::vector<Vector4f>& value);
+
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, std::shared_ptr<Media::PixelMap> value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
@@ -154,7 +163,12 @@ private:
         const std::string& desc, const Matrix3f& value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, const RSColor& value);
+
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, std::shared_ptr<Drawing::Image> value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, int value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, float value);
 
@@ -172,6 +186,8 @@ private:
 
     static void CalculatePropTagHashImpl(uint32_t& hash, const std::vector<Vector2f>& value);
 
+    static void CalculatePropTagHashImpl(uint32_t& hash, const std::vector<Vector4f>& value);
+
     static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<Media::PixelMap> value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, const std::vector<float>& value);
@@ -181,6 +197,8 @@ private:
     static void CalculatePropTagHashImpl(uint32_t& hash, const Matrix3f& value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<Drawing::Image> value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, const RSColor& value);
 
 #ifdef USE_M133_SKIA
     static constexpr auto hashFunc_ = SkChecksum::Hash32;

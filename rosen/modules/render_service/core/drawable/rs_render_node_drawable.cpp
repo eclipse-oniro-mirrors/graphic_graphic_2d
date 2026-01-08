@@ -902,6 +902,7 @@ void RSRenderNodeDrawable::DrawCachedImage(RSPaintFilterCanvas& canvas, const Ve
         RS_TRACE_NAME_FMT("RSRenderNodeDrawable::DrawCachedImage image width: %d, height: %d, %s, nodeID = %llu",
             cacheImage->GetWidth(), cacheImage->GetHeight(), rsFilter->GetDescription().c_str(), nodeId_);
         auto foregroundFilter = std::static_pointer_cast<RSDrawingFilterOriginal>(rsFilter);
+        foregroundFilter->UpdateColor(canvas.GetColorPicked(ColorPlaceholder::FOREGROUND));
         foregroundFilter->DrawImageRect(canvas, cacheImage, Drawing::Rect(0, 0, cacheImage->GetWidth(),
         cacheImage->GetHeight()), Drawing::Rect(0, 0, cacheImage->GetWidth(), cacheImage->GetHeight()));
      } else {
@@ -993,6 +994,9 @@ std::shared_ptr<Drawing::Image> RSRenderNodeDrawable::GetImageAlias(
     if (canvas == nullptr) {
         return nullptr;
     }
+    if (canvas->GetGPUContext() == nullptr) {
+        return nullptr;
+    }
     const auto& backendTexture = surface->GetBackendTexture();
     if (!backendTexture.IsValid()) {
         return nullptr;
@@ -1016,7 +1020,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
 
-    bool isHdrOn = params.ChildHasVisibleHDRContent() || params.GetHDRStatus() != HdrStatus::NO_HDR;
+    bool isHdrOn = params.SelfOrChildHasHDR();
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(curCanvas->GetTargetColorGamut()) &&
         RSUifirstManager::Instance().GetUiFirstSwitch();
     bool isNeedFP16 = isHdrOn || isScRGBEnable;
@@ -1190,7 +1194,7 @@ std::string RSRenderNodeDrawable::GetNodeDebugInfo()
     AppendFormat(ret, "%" PRIu64 ", rootF:%d record:%d rootS:%d opCan:%d isRD:%d, GetOpDropped:%d,"
         "isOpincDropNodeExt:%d", params->GetId(), params->OpincGetRootFlag(),
         opincDrawCache_.GetRecordState(), opincDrawCache_.GetRootNodeStrategyType(), opincDrawCache_.IsOpCanCache(),
-        opincDrawCache_.GetDrawAreaEnableState(), GetOpDropped(), isOpincDropNodeExt_);
+        opincDrawCache_.GetDrawAreaEnableState(), GetOpDropped(), RSOpincDrawCache::GetOpincBlockNodeSkip());
     auto& info = opincDrawCache_.GetOpListHandle().GetOpInfo();
     AppendFormat(ret, " opNum:%d opPercent:%d", info.num, info.percent);
     auto bounds = params->GetBounds();
@@ -1203,9 +1207,9 @@ std::string RSRenderNodeDrawable::GetNodeDebugInfo()
 
 void RSRenderNodeDrawable::ClearOpincState()
 {
-    // Init opincRootTotalCount_ when the new thread init
-    opincRootTotalCount_ = 0;
-    isOpincDropNodeExt_ = true;
+    // Init opincRootNodeCount_ when the new thread init
+    RSOpincDrawCache::ClearOpincRootNodeCount();
+    RSOpincDrawCache::SetOpincBlockNodeSkip(true);
 }
 
 } // namespace OHOS::Rosen::DrawableV2

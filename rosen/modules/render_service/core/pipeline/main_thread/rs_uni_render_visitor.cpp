@@ -65,9 +65,11 @@
 #include "render/rs_effect_luminance_manager.h"
 #include "system/rs_system_parameters.h"
 #include "hgm_core.h"
+#ifndef ROSEN_CROSS_PLATFORM
 #include "metadata_helper.h"
 #include <v1_0/buffer_handle_meta_key_type.h>
 #include <v1_0/cm_color_space.h>
+#endif
 
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
@@ -378,16 +380,19 @@ void RSUniRenderVisitor::CheckPixelFormat(RSSurfaceRenderNode& node)
         RS_LOGD("CheckPixelFormat HdrImageEnabled false");
         return;
     }
-    if (curScreenNode_->GetForceCloseHdr()) {
-        RS_LOGD("CheckPixelFormat curScreenNode_ forceclosehdr.");
-        return;
-    }
-    if (node.GetHDRPresent()) {
-        RS_LOGD("CheckPixelFormat HDRService SetHDRPresent true, surfaceNode: %{public}" PRIu64 "",
+    if (node.GetHDRImagePresent()) {
+        RS_LOGD("CheckPixelFormat HDRService GetHDRImagePresent true, surfaceNode: %{public}" PRIu64 "",
             node.GetId());
         curScreenNode_->SetHasUniRenderHdrSurface(true);
         curScreenNode_->CollectHdrStatus(HdrStatus::HDR_PHOTO);
-        RSHdrUtil::SetHDRParam(*curScreenNode_, node, true);
+        RSHdrUtil::SetHDRParam(*curScreenNode_, node, false);
+    }
+    if (node.GetHDRUIPresent()) {
+        RS_LOGD("CheckPixelFormat HDRService GetHDRUIPresent true, surfaceNode: %{public}" PRIu64 "",
+            node.GetId());
+        curScreenNode_->SetHasUniRenderHdrSurface(true);
+        curScreenNode_->CollectHdrStatus(HdrStatus::HDR_UICOMPONENT);
+        RSHdrUtil::SetHDRParam(*curScreenNode_, node, false);
     }
 }
 
@@ -1060,18 +1065,6 @@ bool RSUniRenderVisitor::CheckSkipAndUpdateForegroundSurfaceRenderNode(RSSurface
         }
         return false;
     }
-    // Record the surfaceNode object for later use in RSScreenRenderParams::OnSync to collect its drawable.
-    // This ensures the drawable can updates the latest drawRegion, thus correctly skip drawing.
-    if (curScreenNode_) {
-        curScreenNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
-    }
-    if (node.ChildHasVisibleFilter()) {
-        if (const auto& curDirtyManager = node.GetDirtyManager()) {
-            curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
-            UpdateFilterRegionInSkippedSurfaceNode(node, *curDirtyManager);
-            curSurfaceNode_ = nullptr;
-        }
-    }
     return true;
 }
 
@@ -1085,7 +1078,8 @@ bool RSUniRenderVisitor::CheckSkipBackgroundSurfaceRenderNode(RSSurfaceRenderNod
     }
     const auto& screenInfo = curScreenNode_->GetScreenInfo();
     const auto& rect = accumulatedOcclusionRegion_.GetRegionRects()[0];
-    auto isFullScreenOcclusion = (rect.GetWidth() * rect.GetHeight()) == (screenInfo.width * screenInfo.height);
+    auto isFullScreenOcclusion = static_cast<uint64_t>(rect.GetWidth() * rect.GetHeight()) ==
+                                 static_cast<uint64_t>(screenInfo.width * screenInfo.height);
     if (isFullScreenOcclusion) {
         return true;
     }
@@ -1110,11 +1104,28 @@ bool RSUniRenderVisitor::CheckQuickSkipSurfaceRenderNode(RSSurfaceRenderNode& no
         node.SetStableSkipReached(false);
         return false;
     }
+    bool isQuickSkip = false;
     if (isBgWindowTraversalStarted_) {
-        return CheckSkipBackgroundSurfaceRenderNode(node);
+        isQuickSkip = CheckSkipBackgroundSurfaceRenderNode(node);
     } else {
-        return CheckSkipAndUpdateForegroundSurfaceRenderNode(node);
+        isQuickSkip = CheckSkipAndUpdateForegroundSurfaceRenderNode(node);
     }
+    if (isQuickSkip) {
+        // Record the surfaceNode object for later use in RSScreenRenderParams::OnSync to collect its drawable.
+        // This ensures the drawable can updates the latest drawRegion, thus correctly skip drawing.
+        if (curScreenNode_) {
+            curScreenNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
+        }
+        if (node.ChildHasVisibleFilter()) {
+            if (const auto& curDirtyManager = node.GetDirtyManager()) {
+                curSurfaceNode_ = node.ReinterpretCastTo<RSSurfaceRenderNode>();
+                UpdateFilterRegionInSkippedSurfaceNode(node, *curDirtyManager);
+                curSurfaceNode_ = nullptr;
+            }
+        }
+        CollectOcclusionInfoForWMS(node);
+    }
+    return isQuickSkip;
 }
 
 void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
@@ -1135,6 +1146,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
             node.GetName().c_str(), node.GetId(), ExtractPid(node.GetId()),
             static_cast<uint>(node.GetSurfaceNodeType()), node.IsSubTreeDirty(), node.IsFirstLevelCrossNode(),
             isBgWindowTraversalStarted_, node.ChildHasVisibleFilter());
+        RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
         return;
     }
 #endif
@@ -1666,6 +1678,7 @@ CM_INLINE void RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion(RSSurface
     hasSkipLayer_ = hasSkipLayer_ || node.GetSpecialLayerMgr().Find(SpecialLayerType::SKIP);
     bool isParticipateInOcclusion = IsParticipateInOcclusion(node);
     CollectTopOcclusionSurfacesInfo(node, isParticipateInOcclusion);
+    node.SetIsParticipateInOcclusion(isParticipateInOcclusion);
     if (isParticipateInOcclusion) {
         RS_TRACE_NAME_FMT("Occlusion: surface node[%s] participate in occlusion with opaque region: [%s]",
             node.GetName().c_str(), node.GetOpaqueRegion().GetRegionInfo().c_str());
@@ -2173,6 +2186,7 @@ bool RSUniRenderVisitor::InitScreenInfo(RSScreenRenderNode& node)
     node.SetHasChildCrossNode(false);
     node.SetIsFirstVisitCrossNodeDisplay(false);
     node.SetHasUniRenderHdrSurface(false);
+    node.ResetVideoHeadroomInfo();
     node.SetIsLuminanceStatusChange(false);
     node.SetPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888);
     node.SetExistHWCNode(false);
@@ -2322,7 +2336,12 @@ CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNo
     // 3. Update HwcNode Info for appNode
     UpdateHwcNodeInfoForAppNode(node);
     if (node.IsHardwareEnabledTopSurface()) {
-        hwcVisitor_->UpdateTopSurfaceSrcRect(node, geoPtr->GetAbsMatrix(), geoPtr->GetAbsRect());
+        auto matrix = geoPtr->GetAbsMatrix();
+        RectF bounds = {0, 0, property.GetBoundsWidth(), property.GetBoundsHeight()};
+        int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(matrix);
+        // hardCursor cannot be rotated, so when calculating srcRect，the matrix cannot have rotation
+        matrix.PreConcat(RSUniRenderUtil::GetMatrixByDegree(-degree, bounds));
+        hwcVisitor_->UpdateTopSurfaceSrcRect(node, matrix, geoPtr->GetAbsRect());
         RSPointerWindowManager::CheckHardCursorValid(node);
     }
     // 4. Update color gamut for appNode
@@ -2641,6 +2660,7 @@ void RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty()
                 RS_LOGE("RSUniRenderVisitor::UpdateSurfaceDirtyAndGlobalDirty surfaceNode is nullptr");
                 return;
             }
+            SubSurfaceOpaqueRegionFromAccumulatedDirtyRegion(*surfaceNode, accumulatedDirtyRegion);
             accumulatedDirtyRegion.OrSelf(
                 curScreenNode_->GetDisappearedSurfaceRegionBelowCurrent(surfaceNode->GetId()));
             auto dirtyManager = surfaceNode->GetDirtyManager();
@@ -3137,6 +3157,16 @@ void RSUniRenderVisitor::CheckMergeDisplayDirtyByTransparentRegions(RSSurfaceRen
     }
 }
 
+void RSUniRenderVisitor::SubSurfaceOpaqueRegionFromAccumulatedDirtyRegion(
+    const RSSurfaceRenderNode& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const
+{
+    if (surfaceNode.IsFirstLevelCrossNode() || !surfaceNode.IsMainWindowType() ||
+        !surfaceNode.GetIsParticipateInOcclusion()) {
+        return;
+    }
+    accumulatedDirtyRegion.SubSelf(surfaceNode.GetOpaqueRegion());
+}
+
 void RSUniRenderVisitor::AccumulateSurfaceDirtyRegion(
     std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, Occlusion::Region& accumulatedDirtyRegion) const
 {
@@ -3150,9 +3180,7 @@ void RSUniRenderVisitor::AccumulateSurfaceDirtyRegion(
             surfaceNode->GetCrossNodeSkipDisplayConversionMatrix(curScreenNode_->GetId()));
     }
     auto surfaceDirtyRegion = Occlusion::Region{ Occlusion::Rect{ surfaceDirtyRect } };
-    auto surfaceVisibleDirtyRegion = surfaceNode->IsMainWindowType() ?
-        surfaceDirtyRegion.And(surfaceNode->GetVisibleRegion()) : surfaceDirtyRegion;
-    accumulatedDirtyRegion.OrSelf(surfaceVisibleDirtyRegion);
+    accumulatedDirtyRegion.OrSelf(surfaceDirtyRegion);
 }
 
 void RSUniRenderVisitor::UpdateDisplayDirtyAndExtendVisibleRegion()
@@ -3231,10 +3259,10 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
         nodeParent->UpdateVisibleEffectChild(node);
         nodeParent->SetChildHasVisibleEffect(!nodeParent->GetVisibleEffectChild().empty());
     }
-    if (auto& illuminated = node.GetRenderProperties().GetIlluminated();
-        (node.ShouldPaint() && (illuminated && illuminated->IsIlluminatedValid())) ||
-        RSPointLightManager::Instance()->GetChildHasVisibleIlluminated(node.shared_from_this())) {
-        RSPointLightManager::Instance()->SetChildHasVisibleIlluminated(nodeParent, true);
+    auto instance = RSPointLightManager::Instance();
+    if (node.ShouldPaint() && (instance->HasVisibleIlluminated(node.shared_from_this()) ||
+        instance->GetChildHasVisibleIlluminated(node.shared_from_this()))) {
+        instance->SetChildHasVisibleIlluminated(nodeParent, true);
     }
     if (node.GetSharedTransitionParam() || node.ChildHasSharedTransition()) {
         nodeParent->SetChildHasSharedTransition(true);
@@ -3255,13 +3283,6 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     }
     if (childHasProtectedNodeSet_.count(node.GetId())) {
         childHasProtectedNodeSet_.insert(nodeParent->GetId());
-    }
-}
-
-void RSUniRenderVisitor::CollectUnionInfo(RSRenderNode& node)
-{
-    if (curUnionNode_ && node.GetRenderProperties().GetUseUnion() && node.ShouldPaint()) {
-        curUnionNode_->UpdateVisibleUnionChildren(node);
     }
 }
 
@@ -3300,7 +3321,7 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
             CheckFilterNodeInSkippedSubTreeNeedClearCache(node, *curDirtyManager);
             UpdateSubSurfaceNodeRectInSkippedSubTree(node);
         } else {
-            CheckFilterNodeInSkippedSubTreeNeedClearCache(node, *curDirtyManager);
+            CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(node, *curDirtyManager);
             DisableOccludedHwcNodeInSkippedSubTree(node);
         }
     }
@@ -3329,7 +3350,6 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
         node.SetGlobalAlpha(curAlpha_);
     }
     CollectEffectInfo(node);
-    CollectUnionInfo(node);
     node.NodePostPrepare(curSurfaceNode_, prepareClipRect_);
 
     UpdateDrawingCacheInfoAfterChildren(node);
@@ -3409,6 +3429,7 @@ void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
         RS_OPTIONAL_TRACE_NAME_FMT("UpdateFilterRegionInSkippedSurfaceNode node[%" PRIu64 "]", filterNode->GetId());
         RectI filterRect;
         filterNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
+        filterNode->FilterRectMergeDirtyRectInSkippedSubtree(dirtyManager, filterRect);
         CollectFilterInfoAndUpdateDirty(*filterNode, dirtyManager, filterRect, filterRect);
     }
 }
@@ -3450,6 +3471,7 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
         }
         RectI filterRect;
         filterNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
+        filterNode->FilterRectMergeDirtyRectInSkippedSubtree(dirtyManager, filterRect);
         hwcVisitor_->UpdateHwcNodeEnableByFilterRect(curSurfaceNode_, *filterNode);
         CollectFilterInfoAndUpdateDirty(*filterNode, dirtyManager, filterRect, filterRect);
     }
@@ -3461,6 +3483,35 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
             continue;
         }
         effectNode->UpdateChildHasVisibleEffectWithoutEmptyRect();
+    }
+}
+
+void RSUniRenderVisitor::CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(
+    const RSRenderNode& rootNode, RSDirtyRegionManager& dirtyManager)
+{
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    // calculate visibleEffectChild oldDirtyInSurface for effectNode
+    for (auto& child : rootNode.GetVisibleEffectChild()) {
+        auto& visibleEffectNode = nodeMap.GetRenderNode<RSRenderNode>(child);
+        if (visibleEffectNode == nullptr) {
+            continue;
+        }
+        RectI filterRect;
+        visibleEffectNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
+    }
+
+    for (auto& child : rootNode.GetVisibleFilterChild()) {
+        auto& filterNode = nodeMap.GetRenderNode<RSRenderNode>(child);
+        auto effectNode = RSRenderNode::ReinterpretCast<RSEffectRenderNode>(filterNode);
+        if (effectNode == nullptr) {
+            continue;
+        }
+        effectNode->UpdateChildHasVisibleEffectWithoutEmptyRect();
+        effectNode->MarkClearFilterCacheIfEffectChildrenChanged();
+        RectI filterRect;
+        effectNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect, prepareClipRect_);
+        effectNode->FilterRectMergeDirtyRectInSkippedSubtree(dirtyManager, filterRect);
+        CollectFilterInfoAndUpdateDirty(*effectNode, dirtyManager, filterRect, filterRect);
     }
 }
 

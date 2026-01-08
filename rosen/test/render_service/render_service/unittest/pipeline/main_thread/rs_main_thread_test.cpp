@@ -3622,7 +3622,7 @@ HWTEST_F(RSMainThreadTest, SetVirtualScreenBlackList, TestSize.Level1)
 
     ScreenId id = 100;
     std::vector<uint64_t> blackList = {};
-    EXPECT_EQ(rsRenderServiceConnection->SetVirtualScreenBlackList(id, blackList), StatusCode::BLACKLIST_IS_EMPTY);
+    EXPECT_EQ(rsRenderServiceConnection->SetVirtualScreenBlackList(id, blackList), SCREEN_NOT_FOUND);
 
     for (auto nodeId = 0; nodeId <= MAX_SPECIAL_LAYER_NUM + 1; nodeId++) {
         blackList.push_back(nodeId);
@@ -5179,6 +5179,9 @@ HWTEST_F(RSMainThreadTest, DumpGpuMem001, TestSize.Level2)
     std::unordered_set<std::u16string> argSets;
     std::string dumpString;
     std::string type = "gpu";
+    auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
+    ASSERT_NE(renderNode, nullptr);
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(renderNode);
     mainThread->DumpGpuMem(argSets, dumpString, type);
     ASSERT_TRUE(dumpString.find("GPU") != std::string::npos);
 }
@@ -5197,6 +5200,9 @@ HWTEST_F(RSMainThreadTest, DumpGpuMem002, TestSize.Level2)
     std::unordered_set<std::u16string> argSets;
     std::string dumpString;
     std::string type = "";
+    auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
+    ASSERT_NE(renderNode, nullptr);
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(renderNode);
     mainThread->DumpGpuMem(argSets, dumpString, type);
     ASSERT_TRUE(dumpString.find("GPU") != std::string::npos);
 }

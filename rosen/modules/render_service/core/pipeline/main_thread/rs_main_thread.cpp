@@ -1553,7 +1553,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             auto parentNode = surfaceNode->GetParent().lock();
             auto comsumeResult = RSBaseRenderUtil::ConsumeAndUpdateBuffer(
                 *surfaceHandler, timestamp_, IsNeedDropFrameByPid(surfaceHandler->GetNodeId()),
-                parentNode ? parentNode->GetId() : 0);
+                parentNode ? parentNode->GetId() : 0, surfaceNode->IsAncestorScreenFrozen());
             if (surfaceHandler->GetSourceType() ==
                 static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO)) {
                 LppVideoHandler::Instance().ConsumeAndUpdateLppBuffer(vsyncId_, surfaceNode);
@@ -2448,14 +2448,20 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
     RSUniRenderThread::Instance().PostSyncTask([this, processor, screenNode, screenInfo]() mutable {
         RS_TRACE_NAME("DoDirectComposition PostProcess");
         auto screenId = screenNode->GetScreenId();
+        screenNode->ResetVideoHeadroomInfo();
+        auto& rsLuminance = RSLuminanceControl::Get();
         for (auto& surfaceNode : hardwareEnabledNodes_) {
             if (surfaceNode == nullptr) {
                 RS_LOGE("DoDirectComposition: surfaceNode is null!");
                 continue;
             }
             SetHasSurfaceLockLayer(surfaceNode->GetFixRotationByUser());
-            RSHdrUtil::UpdateSurfaceNodeNit(*surfaceNode, screenId);
-            screenNode->CollectHdrStatus(surfaceNode->GetVideoHdrStatus());
+            HdrStatus status = surfaceNode->GetVideoHdrStatus();
+            if (float scaler; RSHdrUtil::UpdateSurfaceNodeNit(*surfaceNode, screenId, scaler)) {
+                uint32_t level = rsLuminance.ConvertScalerFromFloatToLevel(scaler);
+                screenNode->UpdateHeadroomMapIncrease(status, level);
+            }
+            screenNode->CollectHdrStatus(status);
             auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
             if (!surfaceNode->IsHardwareForcedDisabled()) {
                 auto params = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
@@ -2479,7 +2485,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 params->SetBufferSynced(true);
             }
         }
-        RSLuminanceControl::Get().SetHdrStatus(screenId,
+        rsLuminance.SetHdrStatus(screenId,
             screenNode->GetForceCloseHdr() ? HdrStatus::NO_HDR : screenNode->GetDisplayHdrStatus());
         RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
         auto rcdInfo = std::make_unique<RcdInfo>();
@@ -3655,7 +3661,7 @@ void RSMainThread::SetAnimationOcclusionInfo(const std::string& sceneId, bool is
     if (!DirtyRegionParam::IsAnimationOcclusionEnable() || !RSSystemProperties::GetAnimationOcclusionEnabled()) {
         return;
     }
-    uint64_t curTime = static_cast<uint64_t>(
+    int64_t curTime = static_cast<int64_t>(
         std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
     auto id = RSUifirstFrameRateControl::Instance().GetSceneId(sceneId);
@@ -4140,14 +4146,19 @@ void RSMainThread::DumpGpuMem(std::unordered_set<std::u16string>& argSets,
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     DfxString log;
+    std::vector<std::pair<NodeId, std::string>> nodeTags;
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    nodeMap.TraverseSurfaceNodes([&nodeTags](const std::shared_ptr<RSSurfaceRenderNode> node) {
+        nodeTags.push_back({node->GetId(), ""});
+    });
     auto status = type.empty() || type == MEM_GPU_TYPE;
     if (status) {
-        RSUniRenderThread::Instance().DumpGpuMem(log);
+        RSUniRenderThread::Instance().DumpGpuMem(log, nodeTags);
     }
     if (status && RSSystemProperties::GetGpuApiType() != GpuApiType::DDGR) {
         auto subThreadManager = RSSubThreadManager::Instance();
         if (subThreadManager) {
-            subThreadManager->DumpGpuMem(log);
+            subThreadManager->DumpGpuMem(log, nodeTags);
         }
     }
     MemoryManager::DumpGpuNodeMemory(log);
@@ -4367,9 +4378,7 @@ bool RSMainThread::CheckAdaptiveCompose()
         return false;
     }
     bool onlyGameNodeOnTree = frameRateMgr->IsGameNodeOnTree();
-    bool isNeedAdaptiveCompose = onlyGameNodeOnTree &&
-        context_->GetAnimatingNodeList().empty() &&
-        context_->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM;
+    bool isNeedAdaptiveCompose = onlyGameNodeOnTree && hgmContext_.GetIsAdaptiveVsyncComposeReady();
     // in game adaptive sync mode and ignore animation scenario and mult-window scenario
     // selfdrawing node request next vsync as UrgentSelfdrawing
     return isNeedAdaptiveCompose;

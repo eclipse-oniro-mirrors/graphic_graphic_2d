@@ -65,7 +65,7 @@ public:
     static bool PickColorSyn(Drawing::Canvas* canvas, Drawing::Path& drPath, Drawing::Matrix& matrix,
         RSColor& colorPicked, const int& colorStrategy);
     static bool PickColor(std::shared_ptr<Drawing::GPUContext> context, std::shared_ptr<Drawing::Image> image,
-        Drawing::ColorQuad& colorPicked, ColorPickStrategyType strategy, bool prevDark);
+        Drawing::ColorQuad& colorPicked);
     static std::shared_ptr<Drawing::Image> GpuScaleImage(std::shared_ptr<Drawing::GPUContext> context,
         std::shared_ptr<Drawing::Image> image);
     static void GetDarkColor(RSColor& color);
@@ -130,7 +130,7 @@ public:
         const Drawing::Matrix& totalMatrix, const Drawing::Rect& relativeRect, RoundingStrategyType roundingStrategy);
     RSB_EXPORT static std::tuple<Drawing::RectI, Drawing::RectI> GetAbsRectByStrategyForImage(
         const Drawing::Surface* surface, const Drawing::Matrix& totalMatrix, const Drawing::Rect& relativeRect);
-    static bool ApplySDFShapeToFrostedGlassFilter(const RSProperties& properties,
+    static void ApplySDFShapeToFilter(const RSProperties& properties,
         const std::shared_ptr<RSDrawingFilter>& drawingFilter, NodeId nodeId);
 
 private:
