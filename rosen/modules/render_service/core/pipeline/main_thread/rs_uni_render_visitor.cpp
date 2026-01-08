@@ -37,7 +37,6 @@
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
-
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "memory/rs_tag_tracker.h"

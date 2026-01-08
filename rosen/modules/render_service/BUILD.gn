@@ -437,7 +437,6 @@ ohos_shared_library("librender_service") {
       && defined(graphic_2d_hetero_hdr_configs)) {
     include_dirs += graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_include
     sources += graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_sources
-
   }
 
   if (graphic_2d_feature_overlay_display_enable) {

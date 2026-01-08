@@ -19,6 +19,7 @@
 #include <parameters.h>
 
 #include "rs_trace.h"
+
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"

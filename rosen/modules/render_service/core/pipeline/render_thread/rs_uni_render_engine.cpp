@@ -15,7 +15,6 @@
 
 #include "common/rs_singleton.h"
 #include "display_engine/rs_luminance_control.h"
-
 #include "feature/hdr/rs_hdr_util.h"
 #include "info_collection/rs_layer_compose_collection.h"
 #include "rs_uni_render_engine.h"
