@@ -155,12 +155,12 @@ HWTEST_F(RSSLRScaleTest, ProcessOffscreenImage1, TestSize.Level1)
 }
 
 /**
- * @tc.name: ProcessCacheImageTest
+ * @tc.name: ProcessOffscreenImage2
  * @tc.desc: test ProcessOffscreenImage func when open DDGR SLR
  * @tc.type: FUNC
  * @tc.require: issueI6QM6E
  */
-HWTEST_F(RSSLRScaleTest, PProcessOffscreenImage2, TestSize.Level1)
+HWTEST_F(RSSLRScaleTest, ProcessOffscreenImage2, TestSize.Level1)
 {
     std::string enable = system::GetParameter("rosen.DDGRSLR.enabled", "0");
     system::SetParameter("rosen.DDGRSLR.enabled", "1");
