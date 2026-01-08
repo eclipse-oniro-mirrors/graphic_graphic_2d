@@ -192,6 +192,11 @@ public:
     ErrCode SetAppWindowNum(uint32_t num);
     std::string GetBundleName(pid_t pid);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
+
+    void AddTransactionDataPidInfo(pid_t remotePid);
+    void AddConnection(sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection);
+    sptr<RSIClientToRenderConnection> FindClientToRenderConnection(const sptr<IRemoteObject>& token);
+
 private:
     std::shared_ptr<RSRenderPipeline>& rsRenderPipeline_;
     void CleanRenderNodes(pid_t remotePid) noexcept;
