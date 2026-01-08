@@ -1116,7 +1116,7 @@ void RSUniRenderUtil::OptimizedFlushAndSubmit(std::shared_ptr<Drawing::Surface>&
         DestroySemaphoreInfo* destroyInfo =
             new DestroySemaphoreInfo(vkContext.vkDestroySemaphore, vkContext.GetDevice(), semaphore);
 
-        std::vector<GrBackendSemaphore> semaphoreVec = { backendSemaphore};
+        std::vector<GrBackendSemaphore> semaphoreVec = { backendSemaphore };
 #ifdef HETERO_HDR_ENABLE
         std::vector<uint64_t> frameIdVec = RSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
         RSHDRVulkanTask::PrepareHDRSemaphoreVector(semaphoreVec, surface, frameIdVec);
