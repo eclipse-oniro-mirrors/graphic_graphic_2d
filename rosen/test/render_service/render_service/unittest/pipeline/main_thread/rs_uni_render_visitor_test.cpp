@@ -4060,9 +4060,12 @@ HWTEST_F(RSUniRenderVisitorTest, SetRenderGroupSubTreeDirtyIfNeedTest, TestSize.
     rsUniRenderVisitor->isDrawingCacheEnabled_ = true;
 
     auto node1 = std::make_shared<RSRenderNode>(1);
+    node1->InitRenderParams();
     auto node2 = std::make_shared<RSRenderNode>(2);
+    node2->InitRenderParams();
     node2->SetDirty();
     auto cacheRoot = std::make_shared<RSCanvasRenderNode>(10);
+    cacheRoot->InitRenderParams();
     cacheRoot->SetDrawingCacheType(RSDrawingCacheType::FORCED_CACHE);
 
     // renderGroupCacheRoots_ is empty
@@ -4112,18 +4115,19 @@ HWTEST_F(RSUniRenderVisitorTest, IsCurrentSubTreeForcePrepareTest001, TestSize.L
     rsUniRenderVisitor->isDrawingCacheEnabled_ = true;
     bool& forcePrepare = rsUniRenderVisitor->isCurSubTreeForcePrepare_;
 
-    RSCanvasRenderNode canvasNode(1);
-    node1->SetRenderGroupExcludedStateChanged(true);
+    auto node = std::make_shared<RSRenderNode>(1);
+    node->InitRenderParams();
+    node->SetRenderGroupExcludedStateChanged(true);
     {
         RSSubTreePrepareController controller(
-            forcePrepare, rsUniRenderVisitor->IsCurrentSubTreeForcePrepare(canvasNode));
+            forcePrepare, rsUniRenderVisitor->IsCurrentSubTreeForcePrepare(*node));
         EXPECT_TRUE(forcePrepare);
     }
     EXPECT_FALSE(forcePrepare);
-    EXPECT_FALSE(canvasNode.IsRenderGroupExcludedStateChanged());
+    EXPECT_FALSE(node->IsRenderGroupExcludedStateChanged());
     {
         RSSubTreePrepareController controller(
-            forcePrepare, rsUniRenderVisitor->IsCurrentSubTreeForcePrepare(canvasNode));
+            forcePrepare, rsUniRenderVisitor->IsCurrentSubTreeForcePrepare(*node));
         EXPECT_FALSE(forcePrepare);
     }
 }
@@ -4930,6 +4934,7 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareDisplayRenderNode002, TestSize.Leve
     ASSERT_NE(rsContext, nullptr);
     ScreenId id = 1;
     auto rsDisplayRenderNode = std::make_shared<RSScreenRenderNode>(11, id, rsContext->weak_from_this());
+    rsDisplayRenderNode->InitRenderParams();
     ASSERT_NE(rsDisplayRenderNode, nullptr);
     rsDisplayRenderNode->dirtyManager_ = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(rsDisplayRenderNode->dirtyManager_, nullptr);
@@ -5332,6 +5337,7 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareCanvasRenderNode001, TestSize.Level
     ASSERT_NE(rsContext, nullptr);
     auto rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(1, rsContext->weak_from_this());
     ASSERT_NE(rsCanvasRenderNode, nullptr);
+    rsCanvasRenderNode->InitRenderParams();
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     rsUniRenderVisitor->QuickPrepareCanvasRenderNode(*rsCanvasRenderNode);
@@ -5508,6 +5514,7 @@ HWTEST_F(RSUniRenderVisitorTest, QuickPrepareWindowKeyFrameRenderNode, TestSize.
     NodeId nodeId = 1;
     NodeId surfaceNodeId = 2;
     auto keyframeNode = std::make_shared<RSWindowKeyFrameRenderNode>(nodeId);
+    keyframeNode->InitRenderParams();
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(keyframeNode, nullptr);
     ASSERT_NE(rsUniRenderVisitor, nullptr);

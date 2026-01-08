@@ -120,6 +120,8 @@ public:
     bool IsDrawingBlurForCache();
     void SetDrawExcludedSubTreeForCache(bool value);
     bool IsDrawingExcludedSubTreeForCache();
+    void SetCanceledByParenRenderGroup(bool value);
+    bool IsCanceledByParenRenderGroup();
 
 protected:
     explicit RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);

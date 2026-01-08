@@ -2622,10 +2622,8 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoAfterChildrenTest008, TestSize.
     nodeTest->UpdateDrawingCacheInfoAfterChildren();
     EXPECT_TRUE(nodeTest->GetDrawingCacheChanged());
     EXPECT_FALSE(nodeTest->IsRenderGroupSubTreeDirty());
-
-
-
 }
+
 /**
  * @tc.name: UpdateDrawingCacheInfoBeforeChildrenTest001
  * @tc.desc: CheckDrawingCacheType and UpdateDrawingCacheInfoBeforeChildren test

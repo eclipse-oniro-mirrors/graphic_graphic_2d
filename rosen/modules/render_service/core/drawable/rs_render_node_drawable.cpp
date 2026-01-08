@@ -250,7 +250,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
 
     // in case of with filter
     auto curCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
-    if (needUpdateCache) {
+    if (needUpdateCache && !isOffScreenWithClipHole_) {
         // 1. update cache without filer/shadow/effect & clip hole
         auto canvasType = curCanvas->GetCacheType();
         // set canvas type as OFFSCREEN to not draw filter/shadow/filter
@@ -372,6 +372,18 @@ CM_INLINE void RSRenderNodeDrawable::CheckCacheTypeAndDraw(
         "RSRenderNodeDrawable::CheckCacheTAD hasFilter:%{public}d drawingCacheType:%{public}d",
         hasFilter, params.GetDrawingCacheType());
     auto originalCacheType = GetCacheType();
+    // for nested render group with filter, cancel the inner group
+    if (isOffScreenWithClipHole_ && hasFilter && GetCacheType() != DrawableCacheType::NONE) {
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckCacheTypeAndDraw id:%llu disable inner group drawable cache", nodeId_);
+        SetCacheType(DrawableCacheType::NONE);
+        SetCanceledByParentRenderGroup(true);
+    }
+    // resume the inner render group after outer render group is canceled
+    if (IsCanceledByParentRenderGroup() && !isOffScreenWithClipHole_) {
+        RS_OPTIONAL_TRACE_NAME_FMT("CheckCacheTypeAndDraw id:%llu resume inner group drawable cache", nodeId_);
+        SetCacheType(DrawableCacheType::CONTENT);
+        SetCanceledByParentRenderGroup(false);
+    }
     // can not draw cache because skipCacheLayer in capture process, such as security layers...
     if (GetCacheType() != DrawableCacheType::NONE && hasSkipCacheLayer_ && isInCapture) {
         SetCacheType(DrawableCacheType::NONE);
@@ -607,6 +619,22 @@ void RSRenderNodeDrawable::SetDrawExcludedSubTreeForCache(bool value)
 bool RSRenderNodeDrawable::IsDrawingExcludedSubTreeForCache()
 {
     return RSRenderGroupCacheDrawable::IsDrawingExcludedSubTreeForCache();
+}
+
+void RSRenderNodeDrawable::SetCanceledByParenRenderGroup(bool value)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCacheDrawable>();
+    }
+    renderGroupCache_->SetCanceledByParenRenderGroup(value);
+}
+
+bool RSRenderNodeDrawable::IsCanceledByParenRenderGroup()
+{
+    if (!renderGroupCache_) {
+        return false;
+    }
+    return renderGroupCache_->IsCanceledByParenRenderGroup();
 }
 
 void RSRenderNodeDrawable::UpdateCacheInfoForDfx(Drawing::Canvas& canvas, const Drawing::Rect& rect, NodeId id)

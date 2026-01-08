@@ -34,9 +34,15 @@ void RSRenderGroupCacheDrawable::SetDrawExcludedSubTreeForCache(bool value)
 {
     drawExcludedSubTreeForCache_ = value;
 }
+
 bool RSRenderGroupCacheDrawable::IsDrawingExcludedSubTreeForCache()
 {
     return drawExcludedSubTreeForCache_;
+}
+
+void RSRenderGroupCacheDrawable::SetCanceledByParenRenderGroup(bool value)
+{
+    isCanceledByParentRenderGroup_ = value;
 }
 
 void RSRenderGroupCacheDrawable::SetLastFrameCacheRootHasExcludedChild(bool hasFilter)
