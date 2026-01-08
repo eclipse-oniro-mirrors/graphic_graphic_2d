@@ -24,7 +24,7 @@ using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
-    constexpr NodeId DEFAULT_ID = 0xFFFF;
+constexpr NodeId DEFAULT_ID = 0xFFFF;
 }
 
 namespace OHOS::Rosen {

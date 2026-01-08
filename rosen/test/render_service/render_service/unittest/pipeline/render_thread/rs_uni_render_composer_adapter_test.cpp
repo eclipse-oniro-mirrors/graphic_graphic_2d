@@ -100,6 +100,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, InitTest, TestSize.Level1)
     EXPECT_NE(composerAdapter_->composerClient_, nullptr);
     EXPECT_NE(composerAdapter_->output_, nullptr);
 }
+
 /**
  * @tc.name: SrcRectRotateTransform001
  * @tc.desc: Test RSUniRenderComposerAdapterTest.SrcRectRotateTransform
@@ -342,7 +343,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, CreateLayer001, TestSize.Level2)
     composerAdapter_->Init(info, offsetX, offsetY);
     layer = composerAdapter_->CreateLayer(*rsScreenNode);
     ASSERT_NE(layer, nullptr);
-    
+
     composerAdapter_->composerClient_ = nullptr;
     layer = composerAdapter_->CreateLayer(*screenDrawable);
     ASSERT_EQ(layer, nullptr);

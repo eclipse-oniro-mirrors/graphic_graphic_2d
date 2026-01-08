@@ -114,7 +114,7 @@ void RSUniRenderEngine::DrawLayers(RSPaintFilterCanvas& canvas, const std::vecto
             }
             continue;
         } else if (RSRcdManager::GetInstance().CheckLayerIsRCD(layerSurface->GetName())) {
-            continue;
+            continue; // current flow skip rcd layer wich not have resource to canvas draw
         }
         Drawing::AutoCanvasRestore acr(canvas, true);
         DrawLayerPreProcess(canvas, layer, screenInfo);
