@@ -579,7 +579,7 @@ public:
     bool GetFgBlurDisableSystemAdaptation() const;
 
     bool IsBackgroundMaterialFilterValid() const;
-    bool IsForegroundMaterialFilterVaild() const;
+    bool IsForegroundMaterialFilterValid() const;
     bool IsBackgroundLightBlurFilterValid() const;
     bool IsForegroundLightBlurFilterValid() const;
 

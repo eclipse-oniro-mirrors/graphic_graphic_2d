@@ -3051,7 +3051,7 @@ bool RSProperties::IsBackgroundMaterialFilterValid() const
     return IsBackgroundBlurRadiusValid() || IsBackgroundBlurBrightnessValid() || IsBackgroundBlurSaturationValid();
 }
 
-bool RSProperties::IsForegroundMaterialFilterVaild() const
+bool RSProperties::IsForegroundMaterialFilterValid() const
 {
     return IsForegroundBlurRadiusValid();
 }
@@ -3619,7 +3619,8 @@ void ReportServerXXFilterCascade(ServerXXFilterCascadeParams params)
     }
 }
 
-void ReportServerXXFilterCascadeCheck(ServerXXFilterCascadeParams params, const std::shared_ptr<RSRenderNode>& renderNode = nullptr)
+void ReportServerXXFilterCascadeCheck(
+    ServerXXFilterCascadeParams params, const std::shared_ptr<RSRenderNode>& renderNode = nullptr)
 {
     const int kMaxEventsPerHour = 5;
     const int64_t kHourMs = 60LL * 60LL * 1000LL; // 1 hour
@@ -3629,28 +3630,29 @@ void ReportServerXXFilterCascadeCheck(ServerXXFilterCascadeParams params, const 
     // If caller provides a render node, perform bundle name lookup on background thread
     if (renderNode != nullptr) {
         // Rate limit: at most 5 reports per hour and 20 reports per 24 hours
-        static std::mutex s_rateMutex;
-        static int s_eventCountHour = 0;
-        static int64_t s_windowStartMsHour = 0;
-        static int s_eventCountDay = 0;
-        static int64_t s_windowStartMsDay = 0;
+        static std::mutex sRateMutex;
+        static int sEventCountHour = 0;
+        static int64_t sWindowStartMsHour = 0;
+        static int sEventCountDay = 0;
+        static int64_t sWindowStartMsDay = 0;
 
-        std::lock_guard<std::mutex> lock(s_rateMutex);
-        int64_t nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-        if (s_windowStartMsHour == 0 || nowMs - s_windowStartMsHour >= kHourMs) {
-            s_windowStartMsHour = nowMs;
-            s_eventCountHour = 0;
+        std::lock_guard<std::mutex> lock(sRateMutex);
+        int64_t nowMs =
+            std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+                .count();
+        if (sWindowStartMsHour == 0 || nowMs - sWindowStartMsHour >= kHourMs) {
+            sWindowStartMsHour = nowMs;
+            sEventCountHour = 0;
         }
-        if (s_windowStartMsDay == 0 || nowMs - s_windowStartMsDay >= kDayMs) {
-            s_windowStartMsDay = nowMs;
-            s_eventCountDay = 0;
+        if (sWindowStartMsDay == 0 || nowMs - sWindowStartMsDay >= kDayMs) {
+            sWindowStartMsDay = nowMs;
+            sEventCountDay = 0;
         }
-        if (s_eventCountHour >= kMaxEventsPerHour || s_eventCountDay >= kMaxEventsPerDay) {
+        if (sEventCountHour >= kMaxEventsPerHour || sEventCountDay >= kMaxEventsPerDay) {
             return;
         }
-        ++s_eventCountHour;
-        ++s_eventCountDay;
+        ++sEventCountHour;
+        ++sEventCountDay;
 #ifdef ROSEN_OHOS
         RSBackgroundThread::Instance().PostTask([params, renderNode]() mutable {
             auto nodeId = renderNode->GetId();
@@ -3700,6 +3702,7 @@ void RSProperties::StatBackgroundFilter()
         params.waterRippleCount + params.bgNGFilterCount + params.alwaysSnapshotCount > 1) {
         auto renderNode = backref_.lock();
         if (renderNode != nullptr) {
+            hasReportedServerXXFilterCascade_[0] = true;
             ReportServerXXFilterCascadeCheck(params, renderNode);
         }
     }
@@ -3712,7 +3715,7 @@ void RSProperties::StatCompositingFilter()
     if (GetLinearGradientBlurPara()) {
         params.linearGradientBlurCount++;
     }
-    if (IsForegroundMaterialFilterVaild()) {
+    if (IsForegroundMaterialFilterValid()) {
         params.cpMaterialBlurCount++;
     }
     if (IsForegroundBlurRadiusXValid() && IsForegroundBlurRadiusYValid()) {
@@ -3721,6 +3724,7 @@ void RSProperties::StatCompositingFilter()
     if (params.linearGradientBlurCount + params.cpMaterialBlurCount + params.cpBlurCount > 1) {
         auto renderNode = backref_.lock();
         if (renderNode != nullptr) {
+            hasReportedServerXXFilterCascade_[1] = true;
             ReportServerXXFilterCascadeCheck(params, renderNode);
         }
     }
@@ -3766,6 +3770,7 @@ void RSProperties::StatForegroundFilter()
         params.hdrUIBrightnessCount + params.fgNGFilterCount + params.colorAdaptiveCount > 1) {
         auto renderNode = backref_.lock();
         if (renderNode != nullptr) {
+            hasReportedServerXXFilterCascade_[2] = true;
             ReportServerXXFilterCascadeCheck(params, renderNode);
         }
     }
@@ -3775,7 +3780,6 @@ void RSProperties::GenerateBackgroundFilter()
 {
     if (!hasReportedServerXXFilterCascade_[0]) {
         StatBackgroundFilter();
-        hasReportedServerXXFilterCascade_[0] = true;
     }
     if (GetAiInvert().has_value() || GetSystemBarEffect()) {
         GenerateAIBarFilter();
@@ -3810,11 +3814,10 @@ void RSProperties::GenerateForegroundFilter()
     IfLinearGradientBlurInvalid();
     if (!hasReportedServerXXFilterCascade_[1]) {
         StatCompositingFilter();
-        hasReportedServerXXFilterCascade_[1] = true;
     }
     if (GetLinearGradientBlurPara()) {
         GenerateLinearGradientBlurFilter();
-    } else if (IsForegroundMaterialFilterVaild()) {
+    } else if (IsForegroundMaterialFilterValid()) {
         GenerateForegroundMaterialBlurFilter();
     } else if (IsForegroundBlurRadiusXValid() && IsForegroundBlurRadiusYValid()) {
         GenerateForegroundBlurFilter();
@@ -5190,7 +5193,6 @@ void RSProperties::UpdateForegroundFilter()
     GetEffect().foregroundFilterCache_.reset();
     if (!hasReportedServerXXFilterCascade_[2]) {
         StatForegroundFilter();
-        hasReportedServerXXFilterCascade_[2] = true;
     }
     auto motionBlurPara = GetMotionBlurPara();
     if (motionBlurPara && ROSEN_GNE(motionBlurPara->radius, 0.0)) {

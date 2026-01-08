@@ -2004,7 +2004,7 @@ struct SetUIXXFilterCascadeParams {
     uint16_t hdrBrightnessRatioCount = 0;
 };
 
-FilterCascadeBundleInfo GetBundleInfo() 
+FilterCascadeBundleInfo GetBundleInfo()
 {
     FilterCascadeBundleInfo filterCascadeBundleInfo;
 #ifdef ENABLE_IPC_SECURITY
@@ -2038,6 +2038,27 @@ FilterCascadeBundleInfo GetBundleInfo()
 
 void ReportSetUIXXFilterCascade(SetUIXXFilterCascadeParams& params)
 {
+    const int kMaxEventsPerHour = 5;
+    const int64_t kHourMs = 60LL * 60LL * 1000LL; // 1 hour
+
+    // Rate limit: at most 5 reports per hour
+    static std::mutex sRateMutex;
+    static int sEventCountHour = 0;
+    static int64_t sWindowStartMsHour = 0;
+
+    std::lock_guard<std::mutex> lock(sRateMutex);
+    int64_t nowMs =
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+            .count();
+    if (sWindowStartMsHour == 0 || nowMs - sWindowStartMsHour >= kHourMs) {
+        sWindowStartMsHour = nowMs;
+        sEventCountHour = 0;
+    }
+    if (sEventCountHour >= kMaxEventsPerHour) {
+        return;
+    }
+    ++sEventCountHour;
+
     // check app info (bundleName, versionName, versionCode etc)
     static FilterCascadeBundleInfo bundleInfo = GetBundleInfo();
     params.bundleInfo = bundleInfo;
