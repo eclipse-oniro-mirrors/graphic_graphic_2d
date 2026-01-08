@@ -58,7 +58,7 @@ struct ColorGradientEffectParams {
     float colorNumber;
     float blend;
     float blendK;
-}
+};
 
 struct NoisyFrameGradientMaskParams {
     Vector4f gradientBezierControlPoints;
@@ -70,7 +70,7 @@ struct NoisyFrameGradientMaskParams {
     Vector2f rrectPos;
     float slope;
     float progress;
-}
+};
 
 std::vector<ColorGradientEffectParams> colorGradientEffectParams = {
     {
@@ -92,181 +92,84 @@ std::vector<ColorGradientEffectParams> colorGradientEffectParams = {
     }
 };
 
-constexpr int NOISY_FRAME_GRADIENT_MASK_PARAMS_COUNT = 9;
-std::vector<std::array<std::variant<Vector2f, float, Vector4f>, NOISY_FRAME_GRADIENT_MASK_PARAMS_COUNT>>
-    noisyFrameGradientMaskParams = {
-    // test large corner radius
-    {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        1.0f,
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.5f, 0.5f},
-        Vector2f{0.0f, 0.0f},
-        0.0f, 0.0f
-    },
-    // test width bigger than height
-    {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        0.1f,
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.0f, 0.01f},
-        Vector2f{1.0f, 0.3f},
-        Vector2f{0.0f, 0.0f},
-        0.0f, 0.0f
-    },
-    // test height bigger than width
-    {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        0.1f,
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.0f, 0.01f},
-        Vector2f{0.3f, 1.0f},
-        Vector2f{0.0f, 0.0f},
-        0.0f, 0.0f
-    },
-    // test large frame width
-    {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        0.01f,
-        Vector2f{0.0f, 1.0f},
-        Vector2f{0.0f, 1.0f},
-        Vector2f{0.0f, 1.0f},
-        Vector2f{0.5f, 0.5f},
-        Vector2f{0.0f, 0.0f},
-        0.0f, 0.0f
-    },
-    // test rect not included in canvas
-    {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        0.1f,
-        Vector2f{0.0f, 0.1f},
-        Vector2f{0.0f, 0.1f},
-        Vector2f{0.0f, 0.1f},
-        Vector2f{1.0f, 1.0f},
-        Vector2f{1.1f, 1.0f},
-        0.0f, 0.0f
-    },
-    // test no corner radius
-    {
-        Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
-        0.0f,
-        Vector2f{0.0f, 0.1f},
-        Vector2f{0.0f, 0.1f},
-        Vector2f{0.0f, 0.1f},
-        Vector2f{1.0f, 1.0f},
-        Vector2f{0.0f, 0.0f},
-        0.0f, 0.0f
-    }
-};
-
 std::vector<NoisyFrameGradientMaskParams> noisyFrameGradientMaskParams = {
     // test large corner radius
     {
-        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .gradientBezierControlPoints = Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
         .cornerRadius = 1.0f,
-        .innerFrameWidth = {0.0f, 0.01f},
-        .middleFrameWidth = {0.0f, 0.01f},
-        .outsideFrameWidth = {0.0f, 0.01f},
-        .rrectWH = {0.5f, 0.5f},
-        .rrectPos = {0.0f, 0.0f},
+        .innerFrameWidth = Vector2f{0.0f, 0.01f},
+        .middleFrameWidth = Vector2f{0.0f, 0.01f},
+        .outsideFrameWidth = Vector2f{0.0f, 0.01f},
+        .rrectWH = Vector2f{0.5f, 0.5f},
+        .rrectPos = Vector2f{0.0f, 0.0f},
         .slope = 0.0f,
         .progress = 0.0f
     },
     // test width bigger than height
     {
-        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .gradientBezierControlPoints = Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
         .cornerRadius = 0.1f,
-        .innerFrameWidth = {0.0f, 0.01f},
-        .middleFrameWidth = {0.0f, 0.01f},
-        .outsideFrameWidth = {0.0f, 0.01f},
-        .rrectWH = {1.0f, 0.3f},
-        .rrectPos = {0.0f, 0.0f},
+        .innerFrameWidth = Vector2f{0.0f, 0.01f},
+        .middleFrameWidth = Vector2f{0.0f, 0.01f},
+        .outsideFrameWidth = Vector2f{0.0f, 0.01f},
+        .rrectWH = Vector2f{1.0f, 0.3f},
+        .rrectPos = Vector2f{0.0f, 0.0f},
         .slope = 0.0f,
         .progress = 0.0f
     },
     
     // test height bigger than width
     {
-        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .gradientBezierControlPoints = Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
         .cornerRadius = 0.1f,
-        .innerFrameWidth = {0.0f, 0.01f},
-        .middleFrameWidth = {0.0f, 0.01f},
-        .outsideFrameWidth = {0.0f, 0.01f},
-        .rrectWH = {0.3f, 1.0f},
-        .rrectPos = {0.0f, 0.0f},
+        .innerFrameWidth = Vector2f{0.0f, 0.01f},
+        .middleFrameWidth = Vector2f{0.0f, 0.01f},
+        .outsideFrameWidth = Vector2f{0.0f, 0.01f},
+        .rrectWH = Vector2f{0.3f, 1.0f},
+        .rrectPos = Vector2f{0.0f, 0.0f},
         .slope = 0.0f,
         .progress = 0.0f
     },
     
     // test large frame width
     {
-        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .gradientBezierControlPoints = Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
         .cornerRadius = 0.01f,
-        .innerFrameWidth = {0.0f, 1.0f},
-        .middleFrameWidth = {0.0f, 1.0f},
-        .outsideFrameWidth = {0.0f, 1.0f},
-        .rrectWH = {0.5f, 0.5f},
-        .rrectPos = {0.0f, 0.0f},
+        .innerFrameWidth = Vector2f{0.0f, 1.0f},
+        .middleFrameWidth = Vector2f{0.0f, 1.0f},
+        .outsideFrameWidth = Vector2f{0.0f, 1.0f},
+        .rrectWH = Vector2f{0.5f, 0.5f},
+        .rrectPos = Vector2f{0.0f, 0.0f},
         .slope = 0.0f,
         .progress = 0.0f
     },
     
     // test rect not included in canvas
     {
-        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .gradientBezierControlPoints = Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
         .cornerRadius = 0.1f,
-        .innerFrameWidth = {0.0f, 0.1f},
-        .middleFrameWidth = {0.0f, 0.1f},
-        .outsideFrameWidth = {0.0f, 0.1f},
-        .rrectWH = {1.0f, 1.0f},
-        .rrectPos = {1.1f, 1.0f},
+        .innerFrameWidth = Vector2f{0.0f, 0.1f},
+        .middleFrameWidth = Vector2f{0.0f, 0.1f},
+        .outsideFrameWidth = Vector2f{0.0f, 0.1f},
+        .rrectWH = Vector2f{1.0f, 1.0f},
+        .rrectPos = Vector2f{1.1f, 1.0f},
         .slope = 0.0f,
         .progress = 0.0f
     },
     
     // test no corner radius
     {
-        .gradientBezierControlPoints = {0.0f, 0.0f, 1.0f, 1.0f},
+        .gradientBezierControlPoints = Vector4f{0.0f, 0.0f, 1.0f, 1.0f},
         .cornerRadius = 0.0f,
-        .innerFrameWidth = {0.0f, 0.1f},
-        .middleFrameWidth = {0.0f, 0.1f},
-        .outsideFrameWidth = {0.0f, 0.1f},
-        .rrectWH = {1.0f, 1.0f},
-        .rrectPos = {0.0f, 0.0f},
+        .innerFrameWidth = Vector2f{0.0f, 0.1f},
+        .middleFrameWidth = Vector2f{0.0f, 0.1f},
+        .outsideFrameWidth = Vector2f{0.0f, 0.1f},
+        .rrectWH = Vector2f{1.0f, 1.0f},
+        .rrectPos = Vector2f{0.0f, 0.0f},
         .slope = 0.0f,
         .progress = 0.0f
     }
 }
-
-enum class TestDataGroupParamsType {
-    INVALID_DATA_MIN,
-    VALID_DATA1,
-    VALID_DATA2,
-    VALID_DATA3,
-    INVALID_AND_VALID_DATA,
-    INVALID_DATA_MAX,
-    COUNT
-};
-
-constexpr uint32_t NUM_0 = 0;
-constexpr uint32_t NUM_1 = 1;
-constexpr uint32_t NUM_2 = 2;
-constexpr uint32_t NUM_3 = 3;
-constexpr uint32_t NUM_4 = 4;
-constexpr uint32_t NUM_5 = 5;
-constexpr uint32_t NUM_6 = 6;
-constexpr uint32_t NUM_7 = 7;
-constexpr uint32_t NUM_8 = 8;
-constexpr uint32_t NUM_9 = 9;
-constexpr uint32_t NUM_10 = 10;
-constexpr uint32_t NUM_11 = 11;
-constexpr uint32_t NUM_12 = 12;
-constexpr uint32_t NUM_13 = 13;
-constexpr uint32_t NUM_14 = 14;
 }
 
 class NGSubstractedRectTest : public RSGraphicTest {
@@ -337,7 +240,7 @@ void SetNoisyFrameGradientMaskParams(const std::shared_ptr<RSNGNoisyFrameGradien
 GRAPHIC_TEST(NGSubstractedRectTest, EFFECT_TEST, Set_Substracted_Rect_NG_Mask_Noisy_Frame_Gradient_Foreground_Test)
 {
     const int columnCount = 2;
-    const int rowCount = static_cast<int>(TestDataGroupParamsType::COUNT);
+    const int rowCount = 6;
     auto sizeX = screenWidth / columnCount;
     auto sizeY = screenHeight * columnCount / rowCount;
     for (int i = 0; i < rowCount; i++) {
