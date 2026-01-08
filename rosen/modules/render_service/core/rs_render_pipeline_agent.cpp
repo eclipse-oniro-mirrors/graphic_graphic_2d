@@ -1972,31 +1972,6 @@ void RSRenderPipelineAgent::ClearSurfaceWatermark(pid_t pid,
     rsRenderPipeline_->PostMainThreadTask(task);
 }
 
-void RSRenderPipelineAgent::AddTransactionDataPidInfo(pid_t remotePid)
-{
-    if (rsRenderPipeline_ == nullptr) {
-        return;
-    }
-    rsRenderPipeline_->mainThread_->AddTransactionDataPidInfo(remotePid);
-}
-
-void RSRenderPipelineAgent::AddConnection(sptr<IRemoteObject>& token,
-    sptr<RSIClientToRenderConnection> connectToRenderConnection)
-{
-    if (rsRenderPipeline_ == nullptr) {
-        return;
-    }
-    rsRenderPipeline_->mainThread_->AddConnection(token, connectToRenderConnection);
-}
-
-sptr<RSIClientToRenderConnection> RSRenderPipelineAgent::FindClientToRenderConnection(const sptr<IRemoteObject>& token)
-{
-    if (rsRenderPipeline_ == nullptr) {
-        return nullptr;
-    }
-    return rsRenderPipeline_->mainThread_->FindClientToRenderConnection(token);
-}
-
 std::string RSRenderPipelineAgent::GetBundleName(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(pidToBundleMutex_);
@@ -2020,6 +1995,31 @@ std::string RSRenderPipelineAgent::GetBundleName(pid_t pid)
 
     pidToBundleName_.emplace(pid, bundleName);
     return bundleName;
+}
+
+void RSRenderPipelineAgent::AddTransactionDataPidInfo(pid_t remotePid)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return;
+    }
+    rsRenderPipeline_->mainThread_->AddTransactionDataPidInfo(remotePid);
+}
+
+void RSRenderPipelineAgent::AddConnection(sptr<IRemoteObject>& token,
+    sptr<RSIClientToRenderConnection> connectToRenderConnection)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return;
+    }
+    rsRenderPipeline_->mainThread_->AddConnection(token, connectToRenderConnection);
+}
+
+sptr<RSIClientToRenderConnection> RSRenderPipelineAgent::FindClientToRenderConnection(const sptr<IRemoteObject>& token)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return nullptr;
+    }
+    return rsRenderPipeline_->mainThread_->FindClientToRenderConnection(token);
 }
 } // namespace Rosen
 } // namespace OHOS
