@@ -184,6 +184,7 @@ public:
     static DirtyAlignType GetDirtyAlignEnabled();
     static PartialRenderType GetPartialRenderEnabled();
     static PartialRenderType GetUniPartialRenderEnabled();
+    static bool GetRCDForceRedrawEnable();
     static bool GetRenderNodeLazyLoadEnabled();
     static StencilPixelOcclusionCullingType GetStencilPixelOcclusionCullingEnabled();
     static float GetClipRectThreshold();
@@ -294,7 +295,6 @@ public:
     static bool GetASTCEnabled();
     static bool GetCachedBlurPartialRenderEnabled();
     static bool GetImageGpuResourceCacheEnable(int width, int height);
-    static bool GetDrmEnabled();
     static bool GetSurfaceNodeWatermarkEnabled();
     static bool IsPhoneType();
     static bool IsSuperFoldDisplay();

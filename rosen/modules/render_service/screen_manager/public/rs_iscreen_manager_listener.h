@@ -33,7 +33,8 @@ public:
     virtual void OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
         const sptr<RSScreenProperty>& property) = 0;
     virtual void OnHwcDead(ScreenId id) = 0;
-    virtual void OnScreenPropertyChanged(ScreenId id, const sptr<RSScreenProperty>& property) = 0;
+    virtual void OnScreenPropertyChanged(
+        ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property) = 0;
     virtual void OnScreenRefresh(ScreenId id) = 0;
     virtual void OnVBlankIdle(ScreenId id, uint64_t ns) = 0;
     virtual void OnVirtualScreenConnected(ScreenId id, ScreenId associatedScreenId,
@@ -42,6 +43,7 @@ public:
     virtual void OnHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData) = 0;
     virtual void OnActiveScreenIdChanged(ScreenId activeScreenId) = 0;
     virtual void OnScreenBacklightChanged(ScreenId id, uint32_t level) = 0;
+    virtual void OnGlobalBlacklistChanged(const std::unordered_set<NodeId>& globalBlackList) = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

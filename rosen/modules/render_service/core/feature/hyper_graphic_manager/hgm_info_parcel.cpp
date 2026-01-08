@@ -15,16 +15,16 @@
 
 #include "hgm_info_parcel.h"
 
-#include "platform/common/rs_log.h"
-
-#undef LOG_TAG
-#define LOG_TAG "HgmInfoParcel"
+#include "hgm_log.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr uint32_t MAX_DATA_SIZE = 512;
+constexpr uint32_t MAX_EVENT_SIZE = 10;
+constexpr uint32_t MAX_EVENT_DATA_SIZE = 20;
 }
+
 bool HgmServiceToProcessInfo::Marshalling(Parcel& data) const
 {
     MessageParcel* message = static_cast<MessageParcel*>(&data);
@@ -64,7 +64,7 @@ bool HgmServiceToProcessInfo::Marshalling(Parcel& data) const
 
 HgmServiceToProcessInfo* HgmServiceToProcessInfo::Unmarshalling(Parcel& data)
 {
-    auto result = new HgmServiceToProcessInfo();
+    auto result = std::make_unique<HgmServiceToProcessInfo>();
     MessageParcel* message = static_cast<MessageParcel*>(&data);
     if (!message->ReadUint32(result->pendingScreenRefreshRate) ||
         !message->ReadUint64(result->pendingConstraintRelativeTime)) {
@@ -98,7 +98,7 @@ HgmServiceToProcessInfo* HgmServiceToProcessInfo::Unmarshalling(Parcel& data)
     if (!message->ReadBool(result->isPowerIdle)) {
         return nullptr;
     }
-    return result;
+    return result.release();
 }
 
 bool HgmProcessToServiceInfo::Marshalling(Parcel& data) const
@@ -124,9 +124,11 @@ bool HgmProcessToServiceInfo::Marshalling(Parcel& data) const
 
 HgmProcessToServiceInfo* HgmProcessToServiceInfo::Unmarshalling(Parcel& data)
 {
-    auto result = new HgmProcessToServiceInfo();
+    auto result = std::make_unique<HgmProcessToServiceInfo>();
     MessageParcel* message = static_cast<MessageParcel*>(&data);
-    result->isGameNodeOnTree = message->ReadBool();
+    if (!message->ReadBool(result->isGameNodeOnTree)) {
+        return nullptr;
+    }
     if (!result->UnmarshallingFrameRateLinker(message)) {
         return nullptr;
     }
@@ -139,13 +141,13 @@ HgmProcessToServiceInfo* HgmProcessToServiceInfo::Unmarshalling(Parcel& data)
     if (!result->UnmarshallingVRateData(message)) {
         return nullptr;
     }
-    return result;
+    return result.release();
 }
 
 bool HgmProcessToServiceInfo::MarshallingFrameRateLinker(MessageParcel* message) const
 {
     if (auto size = frameRateLinkerDestroyIds.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling frameRateLinkerDestroyIds Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling frameRateLinkerDestroyIds Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -160,7 +162,7 @@ bool HgmProcessToServiceInfo::MarshallingFrameRateLinker(MessageParcel* message)
         }
     }
     if (auto size = frameRateLinkerUpdateInfoMap.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling frameRateLinkerUpdateInfoMap Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling frameRateLinkerUpdateInfoMap Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -189,7 +191,7 @@ bool HgmProcessToServiceInfo::MarshallingFrameRateLinker(MessageParcel* message)
 bool HgmProcessToServiceInfo::MarshallingSurfaceData(MessageParcel* message) const
 {
     if (auto size = surfaceData.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling surfaceData Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling surfaceData Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -205,7 +207,7 @@ bool HgmProcessToServiceInfo::MarshallingSurfaceData(MessageParcel* message) con
     }
 
     if (auto size = uiFrameworkDirtyNodeNameMap.size(); size > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling uiFrameworkDirtyNodeNameMap Failed size:%{public}zu", size);
+        HGM_LOGE("Marshalling uiFrameworkDirtyNodeNameMap Failed size:%{public}zu", size);
         if (!message->WriteInt32(0)) {
             return false;
         }
@@ -225,6 +227,13 @@ bool HgmProcessToServiceInfo::MarshallingSurfaceData(MessageParcel* message) con
 bool HgmProcessToServiceInfo::MarshallingEnergyData(MessageParcel* message) const
 {
     uint32_t eventSize = static_cast<uint32_t>(energyCommonData.size());
+    if (eventSize > MAX_EVENT_SIZE) {
+        HGM_LOGE("Marshalling Failed size:%{public}" PRIu32, eventSize);
+        if (!message->WriteInt32(0)) {
+            return false;
+        }
+        return true;
+    }
     if (!message->WriteUint32(eventSize)) {
         return false;
     }
@@ -234,6 +243,10 @@ bool HgmProcessToServiceInfo::MarshallingEnergyData(MessageParcel* message) cons
             return false;
         }
         uint32_t dataSize = static_cast<uint32_t>(eventData.second.size());
+        if (dataSize > MAX_EVENT_DATA_SIZE) {
+            HGM_LOGE("Marshalling eventData Failed, dataSize:%{public}" PRIu32, dataSize);
+            return false;
+        }
         if (!message->WriteUint32(dataSize)) {
             return false;
         }
@@ -252,7 +265,7 @@ bool HgmProcessToServiceInfo::MarshallingEnergyData(MessageParcel* message) cons
 bool HgmProcessToServiceInfo::MarshallingVRateData(MessageParcel* message) const
 {
     if (vRateMap.size() > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Marshalling VRateData Failed size:%{public}zu", vRateMap.size());
+        HGM_LOGE("Marshalling VRateData Failed size:%{public}zu", vRateMap.size());
         if (!message->WriteBool(false)) {
             return false;
         }
@@ -282,7 +295,7 @@ bool HgmProcessToServiceInfo::UnmarshallingFrameRateLinker(MessageParcel* messag
         return false;
     }
     if (static_cast<uint32_t>(destroySize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling frameRateLinkerDestroyIds Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling frameRateLinkerDestroyIds Failed, size:%{public}d",
             destroySize);
         return false;
     }
@@ -300,7 +313,7 @@ bool HgmProcessToServiceInfo::UnmarshallingFrameRateLinker(MessageParcel* messag
         return false;
     }
     if (static_cast<uint32_t>(updateInfoSize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling frameRateLinkerUpdateInfoMap Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling frameRateLinkerUpdateInfoMap Failed, size:%{public}d",
             updateInfoSize);
         return false;
     }
@@ -344,7 +357,7 @@ bool HgmProcessToServiceInfo::UnmarshallingSurfaceData(MessageParcel* message)
         return false;
     }
     if (static_cast<uint32_t>(surfaceDataSize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling surfaceData Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling surfaceData Failed, size:%{public}d",
             surfaceDataSize);
         return false;
     }
@@ -362,7 +375,7 @@ bool HgmProcessToServiceInfo::UnmarshallingSurfaceData(MessageParcel* message)
         return false;
     }
     if (static_cast<uint32_t>(uiFrameworkDirtyNodeNameMapSize) > MAX_DATA_SIZE) {
-        RS_LOGE("HgmProcessToServiceInfo Unmarshalling uIFrameworkDirtyNodeNameMap Failed, size:%{public}d",
+        HGM_LOGE("Unmarshalling uIFrameworkDirtyNodeNameMap Failed, size:%{public}d",
             uiFrameworkDirtyNodeNameMapSize);
         return false;
     }
@@ -383,10 +396,18 @@ bool HgmProcessToServiceInfo::UnmarshallingEnergyData(MessageParcel* message)
     if (!message->ReadUint32(eventSize)) {
         return false;
     }
+    if (eventSize > MAX_EVENT_SIZE) {
+        HGM_LOGE("Unmarshalling Failed, size:%{public}" PRIu32, eventSize);
+        return false;
+    }
     for (uint32_t i = 0; i < eventSize; i++) {
         int32_t eventCode;
         uint32_t dataSize;
         if (!message->ReadInt32(eventCode) || !message->ReadUint32(dataSize)) {
+            return false;
+        }
+        if (dataSize > MAX_EVENT_DATA_SIZE) {
+            HGM_LOGE("Unmarshalling eventData Failed, dataSize:%{public}" PRIu32, dataSize);
             return false;
         }
         std::unordered_map<std::string, std::string> energyData;
@@ -396,10 +417,10 @@ bool HgmProcessToServiceInfo::UnmarshallingEnergyData(MessageParcel* message)
             if (!message->ReadString(key) || !message->ReadString(value)) {
                 return false;
             }
-            energyData.emplace(key, value);
+            energyData.emplace(std::move(key), std::move(value));
         }
         EnergyEvent event = static_cast<EnergyEvent>(eventCode);
-        energyCommonData.emplace(event, energyData);
+        energyCommonData.emplace(event, std::move(energyData));
     }
     return true;
 }

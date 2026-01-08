@@ -568,7 +568,7 @@ public:
     
     // hpae offline
     bool GetDeviceOfflineEnable() const { return deviceOfflineEnable_; }
-    void SetDeviceOfflineEnable(bool enabled) { deviceOfflineEnable_ = false; }
+    void SetDeviceOfflineEnable(bool enabled) { deviceOfflineEnable_ = enabled; }
 
     bool GetCopybitTag() const
     {
@@ -657,10 +657,7 @@ public:
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
     void SetIsOutOfScreen(bool isOutOfScreen);
-    void UpdateScreenSpecialLayerInfoByOnTreeStateChange();
-    void UpdateScreenSpecialLayerInfoByTypeChange(ScreenId screenId, uint32_t type, bool isSpecialLayer);
     void SetScreenSpecialLayerStatus(ScreenId screenId, uint32_t type, bool isSpecialLayer);
-    void ClearScreenSpecialLayerRecord(ScreenId screenId);
     void UpdateVirtualScreenWhiteListInfo();
 
     // get whether it is a security/skip layer itself
@@ -2138,7 +2135,7 @@ private:
     friend class RSRenderNode;
     friend class RSRenderService;
     friend class RSHdrUtil;
-    friend class RSProcessDumper;
+    friend class RSPiplineDumper;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

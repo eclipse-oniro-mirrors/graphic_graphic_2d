@@ -79,9 +79,9 @@ ErrCode RSServiceToRenderConnection::AvcodecVideoStop(const std::vector<uint64_t
     return renderPipelineAgent_->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
 }
 
-void RSServiceToRenderConnection::DoDump(std::unordered_set<std::u16string>& argSets)
+void RSServiceToRenderConnection::DoDump(std::unordered_set<std::u16string>& argSets, sptr<RSIDumpCallback> callback)
 {
-    renderPipelineAgent_->DoDump(argSets);
+    renderPipelineAgent_->DoDump(argSets, callback);
 }
 
 void RSServiceToRenderConnection::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
@@ -162,12 +162,6 @@ void RSServiceToRenderConnection::HgmForceUpdateTask(bool flag, const std::strin
 void RSServiceToRenderConnection::HandleHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData)
 {
     renderPipelineAgent_->NotifyHwcEventToRender(deviceId, eventId, eventData);
-}
-
-ErrCode RSServiceToRenderConnection::CleanResources(pid_t pid)
-{
-    RS_TRACE_NAME_FMT("RSServiceToRenderConnection::CleanResources pid is %d", pid);
-    return renderPipelineAgent_->CleanResources(pid);
 }
 
 ErrCode RSServiceToRenderConnection::RepaintEverything()
@@ -323,6 +317,15 @@ void RSServiceToRenderConnection::SetCurtainScreenUsingStatus(bool isCurtainScre
 void RSServiceToRenderConnection::OnScreenBacklightChanged(ScreenId screenId, uint32_t level)
 {
     renderPipelineAgent_->OnScreenBacklightChanged(screenId, level);
+}
+
+void RSServiceToRenderConnection::OnGlobalBlacklistChanged(const std::unordered_set<NodeId>& globalBlackList)
+{
+    if (renderPipelineAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderPipelineAgent_ is nullptr", __func__);
+        return;
+    }
+    renderPipelineAgent_->OnGlobalBlacklistChanged(globalBlackList);
 }
 } // namespace Rosen
 } // namespace OHOS

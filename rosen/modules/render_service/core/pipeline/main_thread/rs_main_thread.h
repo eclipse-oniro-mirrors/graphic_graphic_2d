@@ -101,7 +101,7 @@ public:
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void OnScreenConnected(const sptr<RSScreenProperty>& property);
     void OnScreenDisconnected(ScreenId screenId);
-    void OnScreenPropertyChanged(const sptr<RSScreenProperty>& rsScreenProperty);
+    void OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     bool IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void UpdateFocusNodeId(NodeId focusNodeId);
     void UpdateNeedDrawFocusChange(NodeId id);
@@ -503,11 +503,9 @@ private:
     void ProcessCommand();
     void CreateScreenNode(const sptr<RSScreenProperty>& property);
     void DestroyScreenNode(ScreenId screenId);
-    void HandleScreenPropertyChange(const sptr<RSScreenProperty>& property);
-    void HandleScreenPropertyRefreshOneFrame(const RSScreenProperty& lastProperty,
-                                             const sptr<RSScreenProperty>& property);
-    void HandlePowerStatusChanged(const RSScreenProperty& lastProperty, const sptr<RSScreenProperty>& property);
-    void UpdateScreenProperty(const sptr<RSScreenProperty>& property);
+    void HandleScreenPropertyRefreshOneFrame(ScreenPropertyType type);
+    void HandlePowerStatusChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
+    void UpdateScreenProperty(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     void UpdateSubSurfaceCnt();
     void HandleGameNode();
     void Animate(uint64_t timestamp);
@@ -563,11 +561,6 @@ private:
 
     bool IsResidentProcess(pid_t pid) const;
     uint32_t GetForceCommitReason() const;
-
-    void ClearScreenSpecialLayerRecord(ScreenId screenId);
-    void UpdateScreenSpecialLayer(const RSScreenProperty& newProperty, const RSScreenProperty& oldProperty = {});
-    void SetScreenSpecialLayerStatus(
-        ScreenId screenId, std::unordered_map<SpecialLayerType, std::unordered_set<NodeId>>& screenSpecialLayerInfos);
 
     // used for informing hgm the bundle name of SurfaceRenderNodes
     void InformHgmNodeInfo();

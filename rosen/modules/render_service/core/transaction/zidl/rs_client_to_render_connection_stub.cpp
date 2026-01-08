@@ -177,6 +177,11 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callin
         parcelCopied->InjectOffsets(old.GetObjectOffsets(), objectNum);
         CopyFileDescriptor(old, *parcelCopied);
     }
+    auto token = parcelCopied->ReadInterfaceToken();
+    if (token != RSIClientToRenderConnection::GetDescriptor()) {
+        RS_LOGE("RSClientToRenderConnectionStub::CopyParcelIfNeed parcel token Read failed");
+        return nullptr;
+    }
     int32_t data{0};
     if (!parcelCopied->ReadInt32(data)) {
         RS_LOGE("RSClientToRenderConnectionStub::CopyParcelIfNeed parcel data Read failed");
@@ -224,19 +229,6 @@ bool CheckCreateNodeAndSurface(pid_t pid, RSSurfaceNodeType nodeType, SurfaceWin
     }
 
     return true;
-}
-
-std::string GetBundleName(pid_t pid)
-{
-    std::string bundleName;
-    static const auto appMgrClient = std::make_shared<AppExecFwk::AppMgrClient>();
-    if (appMgrClient == nullptr) {
-        RS_LOGE("GetBundleName get appMgrClient fail");
-        return bundleName;
-    }
-    int32_t uid = 0;
-    appMgrClient->GetBundleNameByPid(pid, bundleName, uid);
-    return bundleName;
 }
 
 bool IsValidCallingPid(pid_t pid, pid_t callingPid)

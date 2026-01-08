@@ -42,7 +42,6 @@ public:
         pid_t remotePid,
         sptr<RSRenderServiceAgent> renderServiceAgent,
         sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent,
-        RSMainThread* mainThread,
         sptr<RSScreenManagerAgent> screenManagerAgent,
         sptr<IRemoteObject> token,
         sptr<VSyncDistributor> distributor);
@@ -62,11 +61,7 @@ public:
 
 private:
     void CleanVirtualScreens() noexcept;
-    void CleanRenderNodes() noexcept;
-    void CleanBrightnessInfoChangeCallbacks();
-#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    void CleanCanvasCallbacksAndPendingBuffer() noexcept;
-#endif
+
     void CleanAll(bool toDelete = false) noexcept;
 
     // IPC RSIRenderServiceConnection Interfaces
@@ -128,17 +123,6 @@ private:
 
     void RemoveVirtualScreen(ScreenId id) override;
 
-#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
-    int32_t SetPointerColorInversionConfig(float darkBuffer, float brightBuffer,
-        int64_t interval, int32_t rangeSize) override;
- 
-    int32_t SetPointerColorInversionEnabled(bool enable) override;
- 
-    int32_t RegisterPointerLuminanceChangeCallback(sptr<RSIPointerLuminanceChangeCallback> callback) override;
- 
-    int32_t UnRegisterPointerLuminanceChangeCallback() override;
-#endif
-
     int32_t SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback) override;
 
     int32_t SetScreenSwitchingNotifyCallback(sptr<RSIScreenSwitchingNotifyCallback> callback) override;
@@ -184,8 +168,6 @@ private:
     void DisablePowerOffRenderControl(ScreenId id) override;
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
-
-    void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
 
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) override;
 
@@ -393,18 +375,12 @@ private:
         uint32_t firstFileIndex, std::vector<HrpServiceFileInfo>& outFiles) override;
     bool ProfilerIsSecureScreen() override;
 
-    std::string GetBundleName(pid_t pid) override;
-
     pid_t remotePid_;
     sptr<RSRenderServiceAgent> renderServiceAgent_;
     sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent_ = nullptr;
-    RSMainThread* mainThread_ = nullptr;
     std::shared_ptr<HgmContext> hgmContext_ = nullptr;
     sptr<RSScreenManagerAgent> screenManagerAgent_;
     sptr<IRemoteObject> token_;
-
-    std::unordered_map<pid_t, std::string> pidToBundleName_;
-    mutable std::mutex pidToBundleMutex_;
 
     class RSConnectionDeathRecipient : public IRemoteObject::DeathRecipient {
     public:

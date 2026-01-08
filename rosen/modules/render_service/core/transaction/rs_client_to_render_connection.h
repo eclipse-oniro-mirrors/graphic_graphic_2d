@@ -27,7 +27,7 @@
 #include "screen_manager/rs_screen_manager.h"
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
 #include "vsync_distributor.h"
-#include "rs_render_pipeline_agent.h"
+#include "core/rs_render_pipeline_agent.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -52,7 +52,6 @@ public:
     }
 
 private:
-    void CleanRenderNodes() noexcept;
     void CleanAll(bool toDelete = false) noexcept;
 
     // IPC RSIRenderServiceConnection Interfaces
@@ -162,6 +161,8 @@ private:
     ErrCode ForceRefreshOneFrameWithNextVSync() override;
 
     ErrCode SetAppWindowNum(uint32_t num) override;
+
+    std::string GetBundleName(pid_t pid) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

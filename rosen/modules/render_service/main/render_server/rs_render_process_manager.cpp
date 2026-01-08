@@ -15,9 +15,6 @@
 
 #include "rs_render_process_manager.h"
 
-#include "hgm_core.h"
-#include "rs_render_composer_manager.h"
-#include "rs_render_pipeline.h"
 #include "rs_render_service.h"
 #include "transaction/rs_service_to_render_connection.h"
 
@@ -40,6 +37,15 @@ void RSRenderProcessManager::OnActiveScreenIdChanged(ScreenId activeScreenId)
 {
 }
 
+void RSRenderProcessManager::OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
+    const sptr<RSScreenProperty>& property)
+{
+}
+
+void RSRenderProcessManager::OnHwcDead(ScreenId id)
+{
+}
+
 void RSRenderProcessManager::OnHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData)
 {
     auto serviceToRenderConns = GetServiceToRenderConns();
@@ -57,6 +63,17 @@ void RSRenderProcessManager::OnScreenBacklightChanged(ScreenId id, uint32_t leve
         return;
     }
     conn->OnScreenBacklightChanged(id, level);
+}
+
+void RSRenderProcessManager::OnGlobalBlacklistChanged(const std::unordered_set<NodeId>& globalBlackList)
+{
+    auto serviceToRenderConns = GetServiceToRenderConns();
+    for (const auto& conn : serviceToRenderConns) {
+        if (conn == nullptr) {
+            continue;
+        }
+        conn->OnGlobalBlacklistChanged(globalBlackList);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

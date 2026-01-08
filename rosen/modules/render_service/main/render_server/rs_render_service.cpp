@@ -24,25 +24,24 @@
 #include <system_ability_definition.h>
 #include <unistd.h>
 
+#include "dfx/rs_service_dump_manager.h"
 #include "feature/param_manager/rs_param_manager.h"
-#include "feature/uifirst/rs_sub_thread_manager.h"
+#include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "hgm_core.h"
 #include "parameter.h"
 #include "render_process/transaction/rs_service_to_render_connection.h"
 #include "rs_profiler.h"
-#include "vsync_generator.h"
 
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "transaction/rs_client_to_render_connection.h"
 
-#include "dfx/rs_service_dump_manager.h"
-#include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "rs_render_composer_manager.h"
 
 #include "rs_render_process_manager_agent.h"
 #include "transaction/rs_client_to_service_connection.h"
+#include "vsync_generator.h"
 #include "xcollie/watchdog.h"
 
 #ifdef RS_ENABLE_RDO
@@ -168,8 +167,8 @@ void RSRenderService::FeatureComponentInit()
 
     // dump init
     rsDumper_ = std::make_shared<RSServiceDumper>(handler_, screenManager_, rsRenderComposerManager_);
-    rsDumper_->RsDumpInit();
-
+    rsDumpManager_ = std::make_shared<RSServiceDumpManager>();
+    rsDumper_->RsDumpInit(rsDumpManager_);
     // rdo init
 #ifdef RS_ENABLE_RDO
     EnableRSCodeCache();
@@ -232,7 +231,7 @@ void RSRenderService::RenderProcessManagerInit()
     auto screenManagerListener = sptr<ScreenManagerListener>::MakeSptr(*this);
     screenManager_->RegisterCoreListener(screenManagerListener);
     if (screenManager_->Init(handler_)) {
-        RS_LOGE("ScreenManager initV2 Success");
+        RS_LOGI("ScreenManager init Success");
     }
 }
 
@@ -287,9 +286,22 @@ void RSRenderService::Run()
     }
 }
 
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderService::GetConnection(
+    const sptr<RSIConnectionToken>& token)
+{
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto tokenObj = token->AsObject();
+    auto iter = connections_.find(tokenObj);
+    if (iter == connections_.end()) {
+        RS_LOGE("GetConnection: connections_ cannot find token");
+        return {nullptr, nullptr};
+    }
+    return iter->second;
+}
+
 std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderService::CreateConnection(const sptr<RSIConnectionToken>& token)
 {
-    if (!mainThread_ || !token) {
+    if (!token) {
         RS_LOGE("CreateConnection failed, mainThread or token is nullptr");
         return std::make_pair(nullptr, nullptr);
     }
@@ -302,7 +314,7 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
     sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent =
         sptr<RSRenderProcessManagerAgent>::MakeSptr(renderProcessManager_);
     sptr<RSIClientToServiceConnection> newConn(new RSClientToServiceConnection(remotePid, renderServiceAgent,
-        renderProcessManagerAgent, mainThread_, screenManagerAgent, tokenObj, appVSyncDistributor_));
+        renderProcessManagerAgent, screenManagerAgent, tokenObj, appVSyncDistributor_));
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline_);
     sptr<RSIClientToRenderConnection> newRenderConn(
         new RSClientToRenderConnection(remotePid, renderPipelineAgent, tokenObj));
@@ -315,7 +327,7 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
     }
     connections_[tokenObj] = { newConn, newRenderConn };
     lock.unlock();
-    // TODO: 这个AddTransactionDataPidInfo需要移到renderPipeline里面去
+    // TODO: 这个AddTransactionDataPidInfo需要移到renderPipeline里面去 transaction
     mainThread_->AddTransactionDataPidInfo(remotePid);
     return std::make_pair(newConn, newRenderConn);
 }
@@ -342,7 +354,7 @@ bool RSRenderService::RemoveConnection(const sptr<RSIConnectionToken>& token)
 int RSRenderService::Dump(int fd, const std::vector<std::u16string>& args)
 {
     std::string dumpString;
-    RSServiceDumpManager::GetInstance().DoDump(args, dumpString, renderProcessManager_->GetServiceToRenderConns());
+    rsDumpManager_->DoDump(args, dumpString, renderProcessManager_);
 
     if (dumpString.size() == 0) {
         return OHOS::INVALID_OPERATION;
@@ -398,27 +410,17 @@ void RSRenderService::ScreenManagerListener::OnScreenDisconnected(ScreenId id)
     renderService_.renderProcessManager_->OnScreenDisconnected(id);
 }
 
-void RSRenderService::ScreenManagerListener::OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
-                                                           const sptr<RSScreenProperty>& property)
-{
-    renderService_.renderProcessManager_->OnHwcRestored(id, output, property);
-}
-
-void RSRenderService::ScreenManagerListener::OnHwcDead(ScreenId id)
-{
-    renderService_.renderProcessManager_->OnHwcDead(id);
-}
-
-void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(ScreenId id,
-    const sptr<RSScreenProperty>& property)
+void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(
+    ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
 {
     RS_LOGD("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
-    if (!property->IsVirtual()) {
-        auto status = property->GetScreenPowerStatus();
+    if (type == ScreenPropertyType::POWER_STATUS) {
+        auto prop = static_cast<ScreenProperty<uint32_t>*>(property.GetRefPtr());
+        auto status = static_cast<ScreenPowerStatus>(prop->Get());
         renderService_.vsyncSampler_->ProcessVSyncScreenIdWhilePowerStatusChanged(id, status,
             renderService_.handler_, renderService_.screenManager_->GetIsFoldScreenFlag());
     }
-    renderService_.renderProcessManager_->OnScreenPropertyChanged(id, property);
+    renderService_.renderProcessManager_->OnScreenPropertyChanged(id, type, property);
 }
 
 void RSRenderService::ScreenManagerListener::OnScreenRefresh(ScreenId id)
@@ -450,6 +452,19 @@ void RSRenderService::ScreenManagerListener::OnHwcEvent(uint32_t deviceId, uint3
     renderService_.renderProcessManager_->OnHwcEvent(deviceId, eventId, eventData);
 }
 
+void RSRenderService::ScreenManagerListener::OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
+    const sptr<RSScreenProperty>& property)
+{
+    RS_LOGI("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
+    renderService_.rsRenderComposerManager_->OnHwcRestored(output, property);
+}
+
+void RSRenderService::ScreenManagerListener::OnHwcDead(ScreenId id)
+{
+    RS_LOGI("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
+    renderService_.rsRenderComposerManager_->OnHwcDead(id);
+}
+
 void RSRenderService::ScreenManagerListener::OnActiveScreenIdChanged(ScreenId activeScreenId)
 {
     HgmCore::Instance().SetActiveScreenId(activeScreenId);
@@ -458,6 +473,11 @@ void RSRenderService::ScreenManagerListener::OnActiveScreenIdChanged(ScreenId ac
 void RSRenderService::ScreenManagerListener::OnScreenBacklightChanged(ScreenId id, uint32_t level)
 {
     renderService_.renderProcessManager_->OnScreenBacklightChanged(id, level);
+}
+
+void RSRenderService::ScreenManagerListener::OnGlobalBlacklistChanged(const std::unordered_set<NodeId>& globalBlackList)
+{
+    renderService_.renderProcessManager_->OnGlobalBlacklistChanged(globalBlackList);
 }
 } // namespace Rosen
 } // namespace OHOS

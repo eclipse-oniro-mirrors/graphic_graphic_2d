@@ -44,31 +44,34 @@ void HgmRPContextTest::TearDown() {}
  */
 HWTEST_F(HgmRPContextTest, TestSetServiceToProcessInfo, TestSize.Level1)
 {
-    HgmRPContext hgmRPContext;
+    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    HgmRPContext hgmRPContext(renderToServiceConnection);
     uint32_t refreshRate = 0;
     uint64_t relativeTime = 0;
-    hgmRPContext.SetServiceToProcessInfo(nullptr, &refreshRate, &relativeTime);
-    EXPECT_EQ(hgmRPContext.isAdaptive_, false);
+    hgmRPContext.SetServiceToProcessInfo(nullptr, refreshRate, relativeTime);
+    EXPECT_EQ(refreshRate, 0);
 
     sptr<HgmServiceToProcessInfo> serviceToProcessInfo = sptr<HgmServiceToProcessInfo>::MakeSptr();
-    serviceToProcessInfo->SetHgmRefreshRateInfo(60, 1);
-    serviceToProcessInfo->SetAdaptiveVsyncInfo(false, true, "gameNodeName");
-    serviceToProcessInfo->SetRPHgmConfigData(false, true, true, 1, nullptr);
-    serviceToProcessInfo->SetPowerIdle(true);
-    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, &refreshRate, &relativeTime);
+    serviceToProcessInfo->pendingScreenRefreshRate = 60;
+    serviceToProcessInfo->pendingConstraintRelativeTime = 1;
+    serviceToProcessInfo->ltpoEnabled = true;
+    serviceToProcessInfo->isDelayMode = true;
+    serviceToProcessInfo->pipelineOffsetPulseNum = 1;
+    serviceToProcessInfo->isAdaptive = true;
+    serviceToProcessInfo->gameNodeName = "gameNodeName";
+    serviceToProcessInfo->isPowerIdle = true;
+    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, refreshRate, relativeTime);
     EXPECT_EQ(refreshRate, 60);
     EXPECT_EQ(hgmRPContext.isAdaptive_, false);
-
-    serviceToProcessInfo->SetAdaptiveVsyncInfo(true, true, "gameNodeName");
-    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, &refreshRate, &relativeTime);
-
-    serviceToProcessInfo->SetRPHgmConfigData(true, true, true, 1, std::make_shared<RPHgmConfigData>());
-    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, &refreshRate, &relativeTime);
-    EXPECT_EQ(hgmRPContext.ltpoEnabled_, true);
-
-    serviceToProcessInfo->SetRPHgmConfigData(true, false, true, 1, nullptr);
-    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, &refreshRate, &relativeTime);
     EXPECT_EQ(hgmRPContext.ltpoEnabled_, false);
-    
+    EXPECT_EQ(hgmRPContext.hgmRPEnergy_->isTouchIdle_, true);
+
+    serviceToProcessInfo->hgmDataChangeTypes.set(HgmDataChangeType::ADAPTIVE_VSYNC);
+    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, refreshRate, relativeTime);
+    EXPECT_EQ(hgmRPContext.isAdaptive_, true);
+
+    serviceToProcessInfo->hgmDataChangeTypes.set(HgmDataChangeType::HGM_CONFIG_DATA);
+    hgmRPContext.SetServiceToProcessInfo(serviceToProcessInfo, refreshRate, relativeTime);
+    EXPECT_EQ(hgmRPContext.ltpoEnabled_, true);
 }
 } // namespace OHOS::Rosen

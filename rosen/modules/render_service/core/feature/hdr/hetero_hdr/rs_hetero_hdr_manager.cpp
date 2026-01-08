@@ -21,7 +21,6 @@
 #include "feature/hdr/hetero_hdr/rs_hetero_hdr_hpae.h"
 #include "feature/hdr/hetero_hdr/rs_hetero_hdr_util.h"
 #include "feature/hdr/rs_hdr_util.h"
-#include "feature/power_off_render_skip/rs_power_off_render_skip_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "hetero_hdr/rs_hdr_pattern_manager.h"
 #include "metadata_helper.h"
@@ -402,14 +401,20 @@ bool RSHeteroHDRManager::PrepareAndSubmitHDRTask(std::shared_ptr<DrawableV2::RSS
             this->buildHdrTaskStatus_ =
                 BuildHDRTask(surfaceParams, MDCSrcRect, &taskId, &(this->taskPtr_), this->curHandleStatus_);
             this->taskId_.store(taskId);
+            if (surfaceParams && surfaceParams->GetBufferOwnerCount()) {
+                surfaceParams->GetBufferOwnerCount()->AddRef();
+            }
         },
         &taskPtr_,
-        [this, curFrameId] {
+        [surfaceParams, this, curFrameId] {
             RS_TRACE_NAME("[hdrHetero]:RSHeteroHDRManager PrepareAndSubmitHDRTask afterFunc finished");
             RSHeteroHDRHpae::GetInstance().DestroyHpaeHDRTask(this->taskId_.load());
             RSHDRPatternManager::Instance().MHCGraphQueryTaskError(curFrameId, MHC_PATTERN_TASK_HDR_HPAE);
             this->taskPtr_ = nullptr;
             destroyedFlag_.store(true);
+            if (surfaceParams && surfaceParams->GetBufferOwnerCount()) {
+                surfaceParams->GetBufferOwnerCount()->DecRef();
+            }
         });
     return submitRet;
 }
@@ -551,11 +556,6 @@ bool RSHeteroHDRManager::IsHDRSurfaceNodeSkipped(
         RS_TRACE_NAME("[hdrHetero]:RSHeteroHDRManager IsHDRSurfaceNodeSkipped FilterCache Skip");
         return true;
     }
-    auto screenParams = GetScreenParamsByDrawable(surfaceDrawable);
-    auto screenId = screenParams ? screenParams->GetScreenId() : INVALID_SCREEN_ID;
-    if (RSPowerOffRenderSkipManager::Instance().GetScreenRenderSkipStatus(screenId)) {	
-        return true;	
-    }
     if (!surfaceDrawable->ShouldPaint()) {
         return true;
     }
@@ -564,7 +564,9 @@ bool RSHeteroHDRManager::IsHDRSurfaceNodeSkipped(
         RS_LOGE("[hdrHetero]:RSHeteroHDRManager IsHDRSurfaceNodeSkipped uniParam is nullptr");
         return true;
     }
-
+    if (uniParam->GetPowerOffRenderController().GetAllScreenRenderSkipped()) {	
+        return true;
+    }
     auto enableType = surfaceParams->GetUifirstNodeEnableParam();
     auto cacheStatus = surfaceDrawable->GetRsSubThreadCache().GetCacheSurfaceProcessedStatus();
     bool noSkip = (!RSUniRenderThread::GetCaptureParam().isSnapshot_ && enableType == MultiThreadCacheType::NONE &&
@@ -613,7 +615,10 @@ bool RSHeteroHDRManager::UpdateHDRHeteroParams(RSPaintFilterCanvas& canvas,
             RS_LOGE("[hdrHetero]:RSHeteroHDRManager UpdateHDRHeteroParams ConsumeAndUpdateBuffer or GetBuffer failed");
             return false;
         }
-        rsHeteroHDRBufferLayer_.ReleaseBuffer();
+        auto hdrPreBufferCount = hdrSurfaceHandler->GetPreBufferOwnerCount();
+        if (hdrPreBufferCount && hdrSurfaceHandler->IsCurrentFrameBufferConsumed()) {
+            hdrPreBufferCount->DecRef();
+        }
         RSHDRPatternManager::Instance().SetThreadId(canvas);
 
         ProcessParamsUpdate(canvas, surfaceDrawable, drawableParams);

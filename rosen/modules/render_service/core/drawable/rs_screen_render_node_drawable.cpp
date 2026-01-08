@@ -37,7 +37,6 @@
 #endif
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/drm/rs_drm_util.h"
-#include "feature/power_off_render_skip/rs_power_off_render_skip_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/round_corner_display/rs_message_bus.h"
@@ -225,10 +224,8 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
     auto renderFrame =
         renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface), bufferConfig, false, isHebc);
     if (!renderFrame) {
-        RS_LOGE("yt release RSScreenRenderNodeDrawable::RequestFrame renderEngine requestFrame is null");
         return nullptr;
     }
-    RS_LOGE("yt release RSScreenRenderNodeDrawable::RequestFrame renderEngine requestFrame ok");
 
     return renderFrame;
 }
@@ -570,7 +567,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     // if screen power off, skip on draw, needs to draw one more frame.
-    isRenderSkipIfScreenOff_ = RSPowerOffRenderSkipManager::Instance().GetScreenRenderSkipStatus(params->GetScreenId());
+    isRenderSkipIfScreenOff_ = uniParam->GetPowerOffRenderController().GetScreenRenderSkipped(params->GetScreenId());
     if (isRenderSkipIfScreenOff_) {
         SetDrawSkipType(DrawSkipType::RENDER_SKIP_IF_SCREEN_OFF);
         return;
@@ -653,7 +650,6 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     std::shared_ptr<RSRenderComposerClient> composerClient = RSUniRenderThread::Instance().GetRSRenderComposerClient(paramScreenId);
-    RS_LOGE("yt GetRSRenderComposerClient[%{public}d]", composerClient != nullptr);
     auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType(), composerClient);
     if (!processor) {
         SetDrawSkipType(DrawSkipType::CREATE_PROCESSOR_FAIL);
@@ -678,6 +674,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("composerClient->UpdatePipelineParam failed!");
     }
 
+    RSUniRenderThread::BufferManagerGuard bufferGuard;
     RSUniRenderThread::Instance().SetEnableVisibleRect(false);
     auto mirroredDrawable = params->GetMirrorSourceDrawable().lock();
     auto mirroredRenderParams =
@@ -722,6 +719,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 processor->ProcessScreenSurfaceForRenderThread(*this);
                 RSPointerWindowManager::Instance().HardCursorCreateLayer(processor, GetId());
                 processor->PostProcess();
+                bufferGuard.SetAcquireFence(expandRenderFrame_->GetAcquireFence());
                 expandRenderFrame_ = nullptr;
                 return;
             }
@@ -793,6 +791,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
         DrawCurtainScreen();
         processor->PostProcess();
+        auto virtualProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
+        if (virtualProcessor) {
+            bufferGuard.SetAcquireFence(virtualProcessor->GetFrameAcquireFence());
+        }
         SetDrawSkipType(DrawSkipType::MIRROR_DRAWABLE_SKIP);
         return;
     }
@@ -845,12 +847,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         isHdrOn, params->GetNewPixelFormat(), params->GetNewColorSpace(), isHebc);
 #endif
     RSUniRenderThread::Instance().WaitUntilScreenNodeBufferReleased(*this);
-    RS_TRACE_NAME_FMT("yzy RequestFrame");
     auto renderFrame = RequestFrame(*params, processor);
     if (!renderFrame) {
         SetDrawSkipType(DrawSkipType::REQUEST_FRAME_FAIL);
-        RS_TRACE_NAME_FMT("yzy RequestFrame fail");
-        RS_LOGE("yzy RSScreenRenderNodeDrawable::OnDraw failed to request frame");
+        RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to request frame");
         return;
     }
 
@@ -876,7 +876,6 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     auto drSurface = renderFrame->GetFrame()->GetSurface();
     if (!drSurface) {
         SetDrawSkipType(DrawSkipType::SURFACE_NULL);
-        RS_TRACE_NAME_FMT("yzy GetSurface fail");
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw DrawingSurface is null");
         return;
     }
@@ -884,7 +883,6 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drSurface.get());
     if (!curCanvas_) {
         SetDrawSkipType(DrawSkipType::CANVAS_NULL);
-        RS_TRACE_NAME_FMT("yzy CANVAS_NULL fail");
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to create canvas");
         return;
     }
@@ -903,8 +901,6 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 #endif
     UpdateSurfaceDrawRegion(curCanvas_, params);
-
-    RSUniRenderThread::Instance().OnDrawStart();
 
     // canvas draw
     {
@@ -985,12 +981,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
 
     renderFrame->Flush();
-    sptr<SyncFence> acquireFence = renderFrame->GetAcquireFence();
-
-    if (!acquireFence || !acquireFence->IsValid()) {
-        acquireFence = SyncFence::InvalidFence();
-    }
-    RSUniRenderThread::Instance().OnDrawEnd(acquireFence);
+    bufferGuard.SetAcquireFence(renderFrame->GetAcquireFence());
     RS_TRACE_END();
 
 #ifdef SUBTREE_PARALLEL_ENABLE

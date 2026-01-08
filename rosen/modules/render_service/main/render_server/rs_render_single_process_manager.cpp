@@ -15,7 +15,8 @@
 
 #include "rs_render_single_process_manager.h"
 
-#include "dfx/rs_process_dump_manager.h"
+#include "dfx/rs_service_dump_manager.h"
+#include "dfx/rs_pipline_dump_manager.h"
 #include "render_process/transaction/rs_service_to_render_connection.h"
 #include "render_server/transaction/rs_render_to_service_connection.h"
 #include "rs_composer_to_render_connection.h"
@@ -62,8 +63,7 @@ sptr<IRemoteObject> RSSingleRenderProcessManager::OnScreenConnected(ScreenId scr
 {
     auto composerConn = renderService_.rsRenderComposerManager_->GetRSComposerConnection(property->GetScreenId());
     renderService_.renderPipeline_->OnScreenConnected(property, composerConn, composerToRenderConnection_,
-        renderService_.rsVsyncManagerAgent_);
-    RSProcessDumpManager::GetInstance().SetRenderToServiceConnection(renderToServiceConnection_);
+        renderService_.rsVsyncManagerAgent_, output);
     return connectToRenderConnection_->AsObject();
 }
 
@@ -72,22 +72,10 @@ void RSSingleRenderProcessManager::OnScreenDisconnected(ScreenId id)
     renderService_.renderPipeline_->OnScreenDisconnected(id);
 }
 
-void RSSingleRenderProcessManager::OnHwcRestored(ScreenId id, const std::shared_ptr<HdiOutput>& output,
-    const sptr<RSScreenProperty>& property)
+void RSSingleRenderProcessManager::OnScreenPropertyChanged(
+    ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
 {
-    RS_LOGI("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
-    renderService_.rsRenderComposerManager_->OnHwcRestored(output, property);
-}
-
-void RSSingleRenderProcessManager::OnHwcDead(ScreenId id)
-{
-    RS_LOGI("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
-    renderService_.rsRenderComposerManager_->OnHwcDead(id);
-}
-
-void RSSingleRenderProcessManager::OnScreenPropertyChanged(ScreenId id, const sptr<RSScreenProperty>& property)
-{
-    renderService_.renderPipeline_->OnScreenPropertyChanged(property);
+    renderService_.renderPipeline_->OnScreenPropertyChanged(id, type, property);
 }
  
 void RSSingleRenderProcessManager::OnScreenRefresh(ScreenId id)
@@ -98,7 +86,7 @@ void RSSingleRenderProcessManager::OnScreenRefresh(ScreenId id)
 void RSSingleRenderProcessManager::OnVirtualScreenConnected(ScreenId id, ScreenId associatedScreenId,
     const sptr<RSScreenProperty>& property)
 {
-    renderService_.renderPipeline_->OnScreenConnected(property, nullptr, nullptr, nullptr);
+    renderService_.renderPipeline_->OnScreenConnected(property, nullptr, nullptr, nullptr, nullptr);
 }
 
 void RSSingleRenderProcessManager::OnVirtualScreenDisconnected(ScreenId id)

@@ -21,6 +21,7 @@
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/drm/rs_drm_util.h"
 #include "feature/hdr/rs_hdr_util.h"
+#include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "params/rs_logical_display_render_params.h"
 #include "params/rs_screen_render_params.h"
@@ -173,7 +174,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
         uniParam->SetSecurityDisplay(params->IsSecurityDisplay());
         const auto& screenProperty = screenParams->GetScreenProperty();
-        currentBlackList_ = screenProperty.GetMergeBlackList();
+        currentBlackList_ = RSSpecialLayerUtils::GetMergeBlackList(screenProperty);
         RSUniRenderThread::Instance().SetBlackList(currentBlackList_);
         if (mirroredRenderParams) {
             curVisibleRect_ = RSUniRenderThread::Instance().GetVisibleRect();
@@ -906,7 +907,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorScreen(
     uniParam->SetScreenInfo(screenParams->GetScreenInfo());
     // When mirrorSource is paused, mirrorScreen needs to redraw to avoid using an expired cacheImage
     bool mirroredScreenIsPause =
-        mirroredScreenParams->GetScreenProperty().GetVirtualScreenStatus() == VIRTUAL_SCREEN_PAUSE;
+        mirroredScreenParams->GetScreenProperty().GetVirtualScreenStatus() == VIRTUAL_SCREEN_PAUSE ||
+        mirroredScreenDrawable->IsRenderSkipIfScreenOff();
     // if specialLayer is visible and no CacheImg
     if ((mirroredParams->IsSecurityDisplay() != params.IsSecurityDisplay() && specialLayerType == HAS_SPECIAL_LAYER)
         || !cacheImage || params.GetVirtualScreenMuteStatus() || mirroredScreenIsPause ||

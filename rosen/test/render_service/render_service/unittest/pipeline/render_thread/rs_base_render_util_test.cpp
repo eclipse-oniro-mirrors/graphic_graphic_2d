@@ -141,7 +141,7 @@ HWTEST_F(RSBaseRenderUtilTest, IsBufferValid_001, TestSize.Level2)
  */
 HWTEST_F(RSBaseRenderUtilTest, GetFrameBufferRequestConfig_001, TestSize.Level2)
 {
-    ScreenInfo screenInfo;
+    ComposerScreenInfo screenInfo;
     screenInfo.width = 480;
     GraphicColorGamut colorGamut = GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_1010102;
@@ -540,7 +540,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetScreenIdFromSurfaceRenderParamsTest, TestSize.
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->stagingRenderParams_.get());
     auto screenProperty = RSBaseRenderUtil::GetScreenPropertyFromSurfaceRenderParams(surfaceParams);
-    EXPECT_EQ(screenProperty.has_value(), true)
+    EXPECT_EQ(screenProperty.has_value(), true);
 }
 
 /*

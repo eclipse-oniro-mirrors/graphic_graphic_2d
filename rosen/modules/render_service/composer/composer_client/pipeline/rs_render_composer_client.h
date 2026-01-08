@@ -23,6 +23,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include "hdi_output.h"
 #include "irs_render_to_composer_connection.h"
 #include "rs_composer_context.h"
 #include "screen_manager/rs_screen_info.h"
@@ -46,7 +47,7 @@ public:
     void ReleaseLayerBuffers(uint64_t screenId,
         std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
-    bool RegistOnBufferReleaseFunc(OnBufferReleaseFunc onBufferReleaseFunc);
+    void RegistOnReleaseLayerBuffersCB(OnReleaseLayerBuffersCB cb);
     std::shared_ptr<RSComposerContext> GetComposerContext();
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
     void ClearFrameBuffers();
@@ -59,6 +60,9 @@ public:
     void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds);
     void SetScreenBacklight(uint32_t level);
     static void ConvertScreenInfo(const ScreenInfo& screenInfo, ComposerScreenInfo& composerScreenInfo);
+    void PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer);
+    std::shared_ptr<HdiOutput> GetOutput() const;
+    void SetOutput(const std::shared_ptr<HdiOutput>& output);
 
 private:
     bool WaitComposerThreadTaskExecute(std::unique_lock<std::mutex>& lock);
@@ -71,8 +75,10 @@ private:
     std::condition_variable composerThreadTaskCond_;
     std::atomic<uint32_t> unExecuteTaskNum_ = 0;
     std::atomic<int> acquiredBufferCount_ = 0;
+    bool isPreAllocProtectedFrameBuffer_ = false;
     PipelineParam pipelineParam_;
     sptr<RSVsyncManagerAgent> rsVsyncManagerAgent_ = nullptr;
+    std::shared_ptr<HdiOutput> output_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

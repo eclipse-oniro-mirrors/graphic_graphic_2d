@@ -21,8 +21,8 @@
 #include "hdi_display_type.h"
 #include "iconsumer_surface.h"
 #include "rs_layer.h"
-#include "rs_layer_cmd.h"
 #include "rs_render_composer_client.h"
+#include "rs_render_layer_cmd.h"
 #include "rs_render_layer_cmd_property.h"
 #include "surface.h"
 #include "sync_fence.h"
@@ -42,8 +42,6 @@ public:
 
     RSLayerId GetRSLayerId() const override;
     void SetRSLayerId(RSLayerId rsLayerId) override;
-    std::shared_ptr<RSComposerContext> GetComposerContext() const override;
-    void SetComposerContext(std::shared_ptr<RSComposerContext> rsComposerContext) override;
     void UpdateRSLayerCmd(const std::shared_ptr<RSRenderLayerCmd>& command) override {}
 
     void SetAlpha(const GraphicLayerAlpha& alpha) override;
@@ -53,7 +51,7 @@ public:
     void SetType(const GraphicLayerType layerType) override;
     GraphicLayerType GetType() const override;
     void SetTransform(GraphicTransformType type) override;
-    GraphicTransformType GetTransformType() const override;
+    GraphicTransformType GetTransform() const override;
     void SetCompositionType(GraphicCompositionType type) override;
     GraphicCompositionType GetCompositionType() const override;
     void SetVisibleRegions(const std::vector<GraphicIRect>& visibleRegions) override;
@@ -84,7 +82,7 @@ public:
     const std::vector<GraphicHDRMetaData>& GetMetaData() const override;
     void SetMetaDataSet(const GraphicHDRMetaDataSet& metaDataSet) override;
     const GraphicHDRMetaDataSet& GetMetaDataSet() const override;
-    void SetMatrix(GraphicMatrix matrix) override;
+    void SetMatrix(const GraphicMatrix& matrix) override;
     const GraphicMatrix& GetMatrix() const override;
     void SetGravity(int32_t gravity) override;
     int32_t GetGravity() const override;
@@ -99,7 +97,7 @@ public:
     void SetTunnelLayerProperty(uint32_t tunnelLayerProperty) override;
     uint32_t GetTunnelLayerProperty() const override;
     void SetIsSupportedPresentTimestamp(bool isSupported) override;
-    bool IsSupportedPresentTimestamp() const override;
+    bool GetIsSupportedPresentTimestamp() const override;
     void SetPresentTimestamp(const GraphicPresentTimestamp& timestamp) override;
     const GraphicPresentTimestamp& GetPresentTimestamp() const override;
     void SetSdrNit(float sdrNit) override;
@@ -123,10 +121,10 @@ public:
     void SetNeedBilinearInterpolation(bool need) override;
     bool GetNeedBilinearInterpolation() const override;
     void SetIsMaskLayer(bool isMaskLayer) override;
-    bool IsMaskLayer() const override;
+    bool GetIsMaskLayer() const override;
     void SetNodeId(uint64_t nodeId) override;
     uint64_t GetNodeId() const override;
-    void SetAncoFlags(const uint32_t ancoFlags) override;
+    void SetAncoFlags(uint32_t ancoFlags) override;
     uint32_t GetAncoFlags() const override;
     bool IsAncoNative() const override;
     void SetLayerMaskInfo(LayerMask mask) override;
@@ -169,15 +167,10 @@ protected:
     bool AddRSLayerParcel(std::shared_ptr<RSLayerParcel>& layerParcel, RSLayerId layerId);
 
 private:
-    template<typename RSLayerCmdName, typename T>
+    template<typename RSRenderLayerCmdName, typename T>
     void SetRSLayerCmd(const T& value);
-
-    virtual void AddRSLayerCmd(const std::shared_ptr<RSLayerCmd> layerCmd);
-
     // rs layer pipeline info
     std::weak_ptr<RSComposerContext> rsComposerContext_;
-    std::map<RSLayerPropertyId, std::shared_ptr<RSLayerCmd>> commands_;
-    std::map<RSLayerCmdType, std::shared_ptr<RSLayerCmd>> rsLayerCmds_;
     RSLayerId rsLayerId_;
     bool isNeedComposition_ = false;
 

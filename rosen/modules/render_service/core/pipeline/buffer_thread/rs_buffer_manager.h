@@ -16,6 +16,7 @@
 #ifndef RENDER_SERVICE_BUFFER_THREAD_RS_BUFFER_MANAGER_H
 #define RENDER_SERVICE_BUFFER_THREAD_RS_BUFFER_MANAGER_H
 
+#include <list>
 #include <set>
 
 #ifndef ROSEN_CROSS_PLATFORM
@@ -24,7 +25,6 @@
 #include "sync_fence.h"
 #endif
 
-#include "rs_buffer_thread.h"
 #include "rs_layer.h"
 #include "pipeline/rs_surface_handler.h"
 
@@ -54,7 +54,7 @@ private:
     sptr<SyncFence> fence_ = SyncFence::InvalidFence();
 };
 
-// run in uniRenderThread and post tasks to RSBufferThread
+// run in uniRenderThread
 class RSBufferManager {
 public:
     RSBufferManager() = default;
@@ -83,9 +83,12 @@ public:
         }
     }
 
-    void ReleaseLayerBuffers(std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers,
+    void OnReleaseLayerBuffers(std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
-    void BufferReleaseCallBack(uint64_t seqNum);
+    void ReleaseUniOnDrawBuffers(std::shared_ptr<RSSurfaceHandler::BufferOwnerCount>& uniBufferCount,
+        sptr<SyncFence>& uniFence, std::set<uint32_t>& decedSet,
+        std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers);
+    void ReleaseBufferById(uint64_t seqNum);
 
 private:
     struct PendingReleaseBufferInfo {

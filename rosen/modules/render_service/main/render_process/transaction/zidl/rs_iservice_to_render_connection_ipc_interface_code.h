@@ -22,9 +22,6 @@ namespace OHOS {
 namespace Rosen {
 
 enum class RSIServiceToRenderConnectionInterfaceCode : CodeUnderlyingType {
-    NOTIFY_SCREEN_CONNECT_INFO_TO_RENDER = 1,
-    NOTIFY_SCREEN_DISCONNECT_INFO_TO_RENDER = 2,
-    NOTIFY_SCREEN_PROPERTY_CHANGED_INFO_TO_RENDER = 3,
     DFX_DUMP = 4,
     NOTIFY_PACKAGE_EVENT = 5,
     GET_MEMORY_GRAPHIC = 6,
@@ -83,6 +80,7 @@ enum class RSIServiceToRenderConnectionInterfaceCode : CodeUnderlyingType {
     SET_DISCARD_JANK_FRAME = 0x00F009,
     CLEAN_RESOURCE = 0X00F010,
     SET_BACKLIGHT_LEVEL = 0x00F011,
+    ON_GLOBAL_BLACKLIST_CHANGED = 0x00F012,
 };
 
 } // namespace Rosen

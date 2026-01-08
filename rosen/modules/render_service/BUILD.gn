@@ -145,7 +145,6 @@ ohos_shared_library("librender_service") {
     "core/feature/occlusion_culling/rs_occlusion_node.cpp",
     "core/feature/opinc/rs_opinc_draw_cache.cpp",
     "core/feature/param_manager/rs_param_manager.cpp",
-    "core/feature/power_off_render_skip/rs_power_off_render_skip_manager.cpp",
     "core/feature/special_layer/rs_special_layer_utils.cpp",
     "core/feature/vrate/rp_vsync_rate_reduce_manager.cpp",
     "core/feature/watermark/rs_surface_watermark.cpp",
@@ -176,7 +175,7 @@ ohos_shared_library("librender_service") {
     "core/transaction/rs_irender_service_ipc_interface_code_access_verifier.cpp",
     "core/transaction/rs_client_to_render_connection.cpp",
     "core/transaction/rs_connect_to_render_process.cpp",
-    "core/transaction/rs_render_pipeline_agent.cpp",
+    "core/rs_render_pipeline_agent.cpp",
     "core/transaction/rs_render_service_security_utils.cpp",
     "core/transaction/rs_unmarshal_thread.cpp",
     "core/transaction/zidl/rs_client_to_render_connection_stub.cpp",
@@ -196,6 +195,7 @@ ohos_shared_library("librender_service") {
     "main/render_server/transaction/zidl/rs_render_to_service_connection_proxy.cpp",
     "main/render_server/transaction/zidl/rs_render_to_service_connection_stub.cpp",
     "screen_manager/callback/rs_screen_callback_manager.cpp",
+    "screen_manager/product_feature/fold/rs_foldable_screen_manager.cpp",
     "screen_manager/public/rs_screen_manager_agent.cpp",
     "screen_manager/rs_screen.cpp",
     "screen_manager/rs_screen_manager.cpp",
@@ -273,10 +273,10 @@ ohos_shared_library("librender_service") {
   sources += [
     "core/drawable/dfx/rs_refresh_rate_dfx.cpp", 
     "core/drawable/dfx/rs_skp_capture_dfx.cpp",
+    "core/dfx/rs_pipline_dump_manager.cpp",
+    "core/dfx/rs_pipline_dumper.cpp",
     "main/render_server/dfx/rs_service_dump_manager.cpp",
     "main/render_server/dfx/rs_service_dumper.cpp",
-    "main/render_process/dfx/rs_process_dump_manager.cpp",
-    "main/render_process/dfx/rs_process_dumper.cpp",
   ]
 
   #blurPredict
@@ -322,7 +322,6 @@ ohos_shared_library("librender_service") {
       "core/feature/uifirst/rs_uifirst_manager.cpp",
       "core/memory/rs_canvas_dma_buffer_cache.cpp",
       "core/memory/rs_memory_manager.cpp",
-      "core/pipeline/buffer_thread/rs_buffer_thread.cpp",
       "core/pipeline/buffer_thread/rs_buffer_manager.cpp",
       "core/pipeline/main_thread/rs_uni_render_listener.cpp",
       "core/pipeline/main_thread/rs_uni_render_visitor.cpp",
@@ -664,6 +663,7 @@ ohos_executable("render_service") {
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/connection",
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/connection/zidl",
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service_base/src",
   ]
 
   deps = [
@@ -692,16 +692,6 @@ ohos_executable("render_service") {
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
-
-group("test") {
-  testonly = true
-
-  deps = [
-    "composer/composer_service/layer_backend/test:test",
-    "composer/composer_service/pipeline/test:test",
-  ]
-}
-
 
 ## Build render_process.bin
 ohos_executable("render_process") {

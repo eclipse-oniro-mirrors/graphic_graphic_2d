@@ -35,9 +35,9 @@ std::shared_ptr<RSLayer> RSSurfaceRCDLayer::Create(const std::shared_ptr<RSCompo
         return nullptr;
     }
     std::shared_ptr<RSLayer> layer = context->GetRSLayer(rsLayerId);
-    if (layer != nullptr) {
-        RS_TRACE_NAME_FMT("RSSurfaceRCDLayer::Create use exist layer, id: %" PRIu64 ", name: %s",
-            rsLayerId, layer->GetSurfaceName().c_str());
+    if (layer != nullptr && layer->IsScreenRCDLayer()) {
+        RS_TRACE_NAME_FMT("RSSurfaceRCDLayer::Create use exist layer, id: %" PRIu64 ", name: %s, isRCD: %d",
+            rsLayerId, layer->GetSurfaceName().c_str(), static_cast<int>(layer->IsScreenRCDLayer()));
         RS_LOGD("RSSurfaceRCDLayer::Create get cache layer by layer id: %{public}" PRIu64, rsLayerId);
         layer->SetRSLayerId(rsLayerId);
         return layer;
@@ -47,27 +47,20 @@ std::shared_ptr<RSLayer> RSSurfaceRCDLayer::Create(const std::shared_ptr<RSCompo
     return layer;
 }
 
-void RSSurfaceRCDLayer::AddRSLayerCmd(const std::shared_ptr<RSLayerCmd> layerCmd)
+template<typename RSRenderLayerCmdName, typename T>
+void RSSurfaceRCDLayer::SetRSLayerCmd(const T& value)
 {
-    if (layerCmd->GetRSLayerCmdType() == RSLayerCmdType::LAYER_CMD) {
-        return;
-    }
+    auto renderProperty = std::make_shared<RSRenderLayerCmdProperty<T>>(value);
+    auto renderLayerCmd = std::make_shared<RSRenderLayerCmdName>(renderProperty);
     std::shared_ptr<RSLayerParcel> layerParcel =
-        std::make_shared<RSUpdateRSRCDLayerCmd>(GetRSLayerId(), layerCmd->CreateRenderLayerCmd());
+        std::make_shared<RSUpdateRSRCDLayerCmd>(GetRSLayerId(), renderLayerCmd);
     AddRSLayerParcel(layerParcel, GetRSLayerId());
 }
 
 void RSSurfaceRCDLayer::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap)
 {
     pixelMap_ = pixelMap;
-    SetRSLayerCmd<RSLayerPixelMapCmd>(pixelMap);
-}
-
-template<typename RSLayerCmdName, typename T>
-void RSSurfaceRCDLayer::SetRSLayerCmd(const T& value)
-{
-    auto rsLayerCmd = std::make_shared<RSLayerCmdName>(value);
-    AddRSLayerCmd(rsLayerCmd);
+    SetRSLayerCmd<RSRenderLayerPixelMapCmd>(pixelMap);
 }
 
 std::shared_ptr<Media::PixelMap> RSSurfaceRCDLayer::GetPixelMap() const

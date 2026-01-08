@@ -26,11 +26,11 @@ constexpr uint32_t WAIT_FOR_COMPOSER_THREAD_TASK_TIMEOUT = 3000;
 RSRenderComposerClient::RSRenderComposerClient(
     const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
     const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent)
-    : rsVsyncManagerAgent_(rsVsyncManagerAgent)
 {
     rsComposerContext_ = std::make_shared<RSComposerContext>();
     rsComposerContext_->SetRenderComposerClientConnection(renderToComposerConn);
     renderToComposerConn_ = renderToComposerConn;
+    rsVsyncManagerAgent_ = rsVsyncManagerAgent;
 }
 
 std::shared_ptr<RSRenderComposerClient> RSRenderComposerClient::Create(
@@ -43,6 +43,16 @@ std::shared_ptr<RSRenderComposerClient> RSRenderComposerClient::Create(
         renderToComposerConn->SetComposerToRenderConnection(composerToRenderConn);
     }
     return std::make_shared<RSRenderComposerClient>(renderToComposerConn, rsVsyncManagerAgent);
+}
+
+void RSRenderComposerClient::SetOutput(const std::shared_ptr<HdiOutput>& output)
+{
+    output_ = output;
+}
+
+std::shared_ptr<HdiOutput> RSRenderComposerClient::GetOutput() const
+{
+    return output_;
 }
 
 std::shared_ptr<RSLayer> RSRenderComposerClient::GetRSLayer(RSLayerId rsLayerId)
@@ -81,10 +91,10 @@ void RSRenderComposerClient::UpdatePipelineParam(const PipelineParam& pipelinePa
     pipelineParam_ = pipelineParam;
 }
 
-bool RSRenderComposerClient::RegistOnBufferReleaseFunc(OnBufferReleaseFunc onBufferReleaseFunc)
+void RSRenderComposerClient::RegistOnReleaseLayerBuffersCB(OnReleaseLayerBuffersCB cb)
 {
     std::unique_lock<std::mutex> lock(clientMutex_);
-    return rsComposerContext_->RegistOnBufferReleaseFunc(onBufferReleaseFunc);
+    rsComposerContext_->RegistOnReleaseLayerBuffersCB(cb);
 }
 
 void RSRenderComposerClient::ReleaseLayerBuffers(uint64_t screenId,
@@ -115,6 +125,7 @@ void RSRenderComposerClient::ClearFrameBuffers()
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
     rsComposerContext_->ClearFrameBuffers();
+    isPreAllocProtectedFrameBuffer_ = false;
 }
 
 int RSRenderComposerClient::GetAccumulatedBufferCount()
@@ -203,5 +214,14 @@ void RSRenderComposerClient::ConvertScreenInfo(const ScreenInfo& screenInfo, Com
     composerScreenInfo.reviseRect = screenInfo.reviseRect;
 }
 
+void RSRenderComposerClient::PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer)
+{
+    std::lock_guard<std::mutex> lock(clientMutex_);
+    if (isPreAllocProtectedFrameBuffer_) {
+        return;
+    }
+    rsComposerContext_->PreAllocProtectedFrameBuffers(buffer);
+    isPreAllocProtectedFrameBuffer_ = true;
+}
 } // namespace Rosen
 } // namespace OHOS

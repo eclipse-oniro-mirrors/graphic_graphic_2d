@@ -17,7 +17,8 @@
 #define RENDER_SERVICE_MAIN_RENDER_PROCESS_TRANSACTION_RS_SERVICE_TO_RENDER_CONNECTION_H
 
 #include "render_server/rs_render_service_agent.h"
-#include "rs_render_pipeline_agent.h"
+#include "core/rs_render_pipeline_agent.h"
+
 #include "zidl/rs_service_to_render_connection_stub.h"
 
 namespace OHOS {
@@ -35,6 +36,7 @@ public:
     int32_t NotifyScreenRefresh(ScreenId screenId) override;
     void HandleHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData) override;
     void OnScreenBacklightChanged(ScreenId screenId, uint32_t level) override;
+    void OnGlobalBlacklistChanged(const std::unordered_set<NodeId>& globalBlackList) override;
     
     // Partial Render
     int32_t RegisterOcclusionChangeCallback(pid_t pid, sptr<RSIOcclusionChangeCallback> callback) override;
@@ -59,7 +61,7 @@ public:
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
 
     // Dfx
-    void DoDump(std::unordered_set<std::u16string>& argSets) override;
+    void DoDump(std::unordered_set<std::u16string>& argSets, sptr<RSIDumpCallback> callback) override;
     int32_t GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB) override;
     ErrCode GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize) override;
     ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode) override;
@@ -114,7 +116,6 @@ public:
     // Others
     ErrCode SetColorFollow(const std::string& nodeIdStr, bool isColorFollow) override;
     ErrCode RepaintEverything() override;
-    ErrCode CleanResources(pid_t pid) override;
     ErrCode SetLayerTop(const std::string& nodeIdStr, bool isTop) override;
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect& srcRect,
         std::shared_ptr<Media::PixelMap>& pixelMap) override;

@@ -142,12 +142,12 @@ void RSUniRenderProcessor::CreateLayer(/*const ??? todo */ RSSurfaceRenderNode& 
         RS_LOGE("CreateLayer failed to get layer info.");
         return;
     }
-    node.SetRSLayer(layer);
+    node.SetRSLayer(screenInfo_.id, layer);
     layer->SetSdrNit(params.GetSdrNit());
     layer->SetDisplayNit(params.GetDisplayNit());
     layer->SetBrightnessRatio(params.GetBrightnessRatio());
     layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
-    auto bufferOwnerCount = params.GetBufferOwnerCount();
+    auto bufferOwnerCount = offlineResult ? offlineResult->bufferOwnerCount : params.GetBufferOwnerCount();
     if (bufferOwnerCount) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::CreateLayer seqNum %u layerID %" PRIu64,
             uint32_t(bufferOwnerCount->seqNum_), layer->GetRSLayerId());
@@ -167,7 +167,7 @@ void RSUniRenderProcessor::CreateLayer(/*const ??? todo */ RSSurfaceRenderNode& 
         layerRect.x, layerRect.y, layerRect.w, layerRect.h,
         cropRect.x, cropRect.y, cropRect.w, cropRect.h,
         dirtyRect.x, dirtyRect.y, dirtyRect.w, dirtyRect.h, buffer->GetSurfaceBufferWidth(),
-        buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layerInfo.layerType, layer->GetTransformType());
+        buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layerInfo.layerType, layer->GetTransform());
     RS_LOGD_IF(DEBUG_PIPELINE,
         "CreateLayer name:%{public}s ScreenId:%{public}" PRIu64 " zorder:%{public}d layerRect:[%{public}d, %{public}d, "
         "%{public}d, %{public}d] cropRect:[%{public}d, %{public}d, %{public}d, %{public}d] "
@@ -177,7 +177,7 @@ void RSUniRenderProcessor::CreateLayer(/*const ??? todo */ RSSurfaceRenderNode& 
         layerRect.x, layerRect.y, layerRect.w, layerRect.h,
         cropRect.x, cropRect.y, cropRect.w, cropRect.h,
         dirtyRect.x, dirtyRect.y, dirtyRect.w, dirtyRect.h, buffer->GetSurfaceBufferWidth(),
-        buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layer->GetTransformType());
+        buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layer->GetTransform());
     layers_.emplace_back(layer);
     params.SetLayerCreated(true);
 }
@@ -201,19 +201,19 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     auto acquireFence = offlineResult ? offlineResult->acquireFence : params.GetAcquireFence();
     auto consumer = offlineResult ? offlineResult->consumer : surfaceDrawable.GetConsumerOnDraw();
     RSLayerPtr layer = GetLayerInfo(static_cast<RSSurfaceRenderParams&>(params), buffer, preBuffer,
-        surfaceDrawable.GetConsumerOnDraw(), params.GetAcquireFence());
+        consumer, acquireFence, offlineResult);
     if (layer == nullptr) {
         RS_LOGE("CreateLayerForRenderThread failed to get layer info.");
         return;
     }
-    surfaceDrawable.SetRSLayer(layer);
+    surfaceDrawable.SetRSLayer(screenInfo_.id, layer);
     layer->SetNodeId(surfaceDrawable.GetId());  // node id only for dfx
     auto& renderParams = static_cast<RSSurfaceRenderParams&>(params);
     layer->SetSdrNit(renderParams.GetSdrNit());
     layer->SetDisplayNit(renderParams.GetDisplayNit());
     layer->SetBrightnessRatio(renderParams.GetBrightnessRatio());
     layer->SetLayerLinearMatrix(renderParams.GetLayerLinearMatrix());
-    auto bufferOwnerCount = renderParams.GetBufferOwnerCount();
+    auto bufferOwnerCount = offlineResult ? offlineResult->bufferOwnerCount : renderParams.GetBufferOwnerCount();
     if (bufferOwnerCount) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager CreateLayerForRenderThread seqNum %u ",
             uint32_t(bufferOwnerCount->seqNum_));
@@ -523,7 +523,7 @@ void RSUniRenderProcessor::ProcessScreenSurface(RSScreenRenderNode& node)
     }
     uniLayer_ = layer;
     layers_.emplace_back(layer);
-    node.SetRSLayer(layer);
+    node.SetRSLayer(screenInfo_.id, layer);
     auto drawable = node.GetRenderDrawable();
     if (!drawable) {
         return;
