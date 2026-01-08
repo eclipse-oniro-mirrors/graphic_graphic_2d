@@ -507,6 +507,10 @@ void SkiaGPUContext::InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64
     }
     grContext_->initGpuMemoryLimit(callback, size);
 }
+
+void SkiaGPUContext::InitGpuMemoryReportLimit(MemoryOverReportCallback callback, size_t intervalLimit, size_t size)
+{}
+
 #ifdef RS_ENABLE_VK
 void SkiaGPUContext::StoreVkPipelineCacheData()
 {

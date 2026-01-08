@@ -341,6 +341,14 @@ public:
      */
     void InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size);
 
+    /**
+     * @brief                   Init gpu memory limit.
+     * @param callback          Memory over report calllback.
+     * @param intervalLimit     Report time interval limit.
+     * @param size              Memory size limit.
+     */
+    void InitGpuMemoryReportLimit(MemoryOverReportCallback callback, size_t intervalLimit, size_t size);
+
 #ifdef RS_ENABLE_VK
     /**
      * @brief                   Store vulkan pipeline cache

@@ -245,6 +245,11 @@ void GPUContext::InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t s
     impl_->InitGpuMemoryLimit(callback, size);
 }
 
+void GPUContext::InitGpuMemoryReportLimit(MemoryOverReportCallback callback, size_t intervalLimit, size_t size)
+{
+    impl_->InitGpuMemoryReportLimit(callback, intervalLimit, size);
+}
+
 void GPUContext::ResetContext()
 {
     impl_->ResetContext();
