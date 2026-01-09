@@ -47,7 +47,7 @@
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #include "memory/rs_canvas_dma_buffer_cache.h"
 #endif
-#include "main/render_process/dfx/rs_process_dump_manager.h"
+#include "core/dfx/rs_pipline_dump_manager.h"
 #include "monitor/self_drawing_node_monitor.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
@@ -302,6 +302,7 @@ ErrCode RSRenderPipelineAgent::RegisterBufferAvailableListener(
 
 ErrCode RSRenderPipelineAgent::SetGlobalDarkColorMode(bool isDark)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (rsRenderPipeline_ == nullptr) {
         return ERR_INVALID_VALUE;
     }
@@ -315,6 +316,7 @@ ErrCode RSRenderPipelineAgent::SetGlobalDarkColorMode(bool isDark)
 ErrCode RSRenderPipelineAgent::SetSystemAnimatedScenes(
     SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation, bool& success)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (rsRenderPipeline_ == nullptr) {
         success = false;
         return ERR_INVALID_VALUE;
@@ -361,7 +363,10 @@ ErrCode RSRenderPipelineAgent::SetHidePrivacyContent(NodeId id, bool needHidePri
 
 bool RSRenderPipelineAgent::GetHighContrastTextState()
 {
-    return rsRenderPipeline_ != nullptr && RSBaseRenderEngine::IsHighContrastEnabled();
+    if (rsRenderPipeline_ == nullptr) {
+        return false;
+    }
+    return RSBaseRenderEngine::IsHighContrastEnabled();
 }
 
 ErrCode RSRenderPipelineAgent::SetFocusAppInfo(const FocusAppInfo& info, int32_t& repCode)
@@ -776,6 +781,7 @@ ErrCode RSRenderPipelineAgent::DropFrameByPid(const std::vector<int32_t> pidList
 
 ErrCode RSRenderPipelineAgent::SetAncoForceDoDirect(bool direct, bool& res)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (rsRenderPipeline_ == nullptr) {
         res = false;
         return ERR_INVALID_VALUE;
@@ -1475,13 +1481,14 @@ int32_t RSRenderPipelineAgent::NotifyScreenRefresh(ScreenId screenId)
     return 0;
 }
 
-void RSRenderPipelineAgent::DoDump(std::unordered_set<std::u16string>& argSets)
+void RSRenderPipelineAgent::DoDump(std::unordered_set<std::u16string>& argSets, sptr<RSIDumpCallback> callback)
 {
-    if (rsRenderPipeline_ == nullptr) {
+    if (rsRenderPipeline_ == nullptr || rsRenderPipeline_->rpDumpManager_ == nullptr) {
+        RS_LOGE("RSRenderPiplineAgent::DoDump: RenderPipeline or DumpManager is null");
         return;
     }
     std::string dumpString;
-    RSProcessDumpManager::GetInstance().CmdExec(argSets, dumpString);
+    rsRenderPipeline_->rpDumpManager_->CmdExec(argSets, dumpString, callback);
 }
 
 void RSRenderPipelineAgent::NotifyHwcEventToRender(
@@ -1949,6 +1956,29 @@ std::string RSRenderPipelineAgent::GetBundleName(pid_t pid)
     return bundleName;
 }
 
+void RSRenderPipelineAgent::AddTransactionDataPidInfo(pid_t remotePid)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return;
+    }
+    rsRenderPipeline_->mainThread_->AddTransactionDataPidInfo(remotePid);
+}
 
+void RSRenderPipelineAgent::AddConnection(sptr<IRemoteObject>& token,
+    sptr<RSIClientToRenderConnection> connectToRenderConnection)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return;
+    }
+    rsRenderPipeline_->mainThread_->AddConnection(token, connectToRenderConnection);
+}
+
+sptr<RSIClientToRenderConnection> RSRenderPipelineAgent::FindClientToRenderConnection(const sptr<IRemoteObject>& token)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return nullptr;
+    }
+    return rsRenderPipeline_->mainThread_->FindClientToRenderConnection(token);
+}
 } // namespace Rosen
 } // namespace OHOS

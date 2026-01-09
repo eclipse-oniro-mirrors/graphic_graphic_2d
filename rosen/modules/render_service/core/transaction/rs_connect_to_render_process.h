@@ -25,13 +25,15 @@ namespace OHOS {
 namespace Rosen {
 class RSConnectToRenderProcess : public RSConnectToRenderProcessStub {
 public:
-    RSConnectToRenderProcess(sptr<RSRenderPipelineAgent> renderPipelineAgent);
-    RSConnectToRenderProcess() = default;
+    explicit RSConnectToRenderProcess(sptr<RSRenderPipelineAgent> renderPipelineAgent)
+        : renderPipelineAgent_(renderPipelineAgent) {}
+    RSConnectToRenderProcess() noexcept = default;
     virtual ~RSConnectToRenderProcess() noexcept = default;
+
 private:
     sptr<RSIClientToRenderConnection> CreateRenderConnection(const sptr<RSIConnectionToken>& token) override;
-    
-    sptr<RSRenderPipelineAgent> renderPipelineAgent_;
+
+    const sptr<RSRenderPipelineAgent> renderPipelineAgent_;
 };
 } // namespace Rosen
 } // namespace OHOS
