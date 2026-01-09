@@ -180,7 +180,7 @@ struct ColorGradientEffectParams {
     float colorNumber;
     float blend;
     float blendK;
-}
+};
 
 struct NoisyFrameGradientMaskParams {
     Vector4f gradientBezierControlPoints;
@@ -192,7 +192,7 @@ struct NoisyFrameGradientMaskParams {
     Vector2f rrectPos;
     float slope;
     float progress;
-}
+};
 
 std::vector<ColorGradientEffectParams> colorGradientEffectParams = {
     {
