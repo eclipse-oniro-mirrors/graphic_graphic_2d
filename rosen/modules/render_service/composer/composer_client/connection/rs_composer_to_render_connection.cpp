@@ -54,7 +54,6 @@ int32_t RSComposerToRenderConnection::NotifyLppLayerToRender(
     return COMPOSITOR_ERROR_OK;
 }
 
-
 void RSComposerToRenderConnection::RegisterJudgeLppLayerCB(JudgeLppLayerCB callback)
 {
     judgeLppLayerCB_ = std::move(callback);

@@ -30,7 +30,7 @@ namespace Rosen {
 namespace {
 constexpr size_t RELEASE_LAYER_MAX_SIZE = 1000; // upper bound of parcel capacity
 constexpr int32_t MAX_LPP_LAYER_SIZE = 5;
-};
+}
 int32_t RSComposerToRenderConnectionStub::OnRemoteRequest(
     uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
 {

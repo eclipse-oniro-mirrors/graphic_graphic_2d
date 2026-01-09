@@ -32,7 +32,7 @@ void LppVideoHandler::ConsumeAndUpdateLppBuffer(
     }
     std::shared_ptr<RSSurfaceHandler> surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler();
     const auto& consumer = surfaceHandler->GetConsumer();
-    hasLppVideo_.store(true);
+    hasLppVideo_ = true;
     std::lock_guard<std::mutex> lock(mutex_);
     bool needRemoveTopNode = lppConsumerMap_.find(vsyncId) == lppConsumerMap_.end() &&
                              lppConsumerMap_.size() >= LPP_SURFACE_NODE_MAX_SIZE;
@@ -123,7 +123,7 @@ void LppVideoHandler::SetHasVirtualMirrorDisplay(bool hasVirtualMirrorDisplay) c
     hasVirtualMirrorDisplay_.store(hasVirtualMirrorDisplay);
 }
 
-void LppVideoHandler::JudgeLppLayer(uint64_t vsyncId, std::unordered_set<uint64_t> lppLayerIds)
+void LppVideoHandler::JudgeLppLayer(uint64_t vsyncId, const std::unordered_set<uint64_t>& lppLayerIds)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     RS_TRACE_NAME_FMT("JudgeLppLayer vsyncId: %ld", vsyncId);
@@ -164,6 +164,6 @@ void LppVideoHandler::JudgeLppLayer(uint64_t vsyncId, std::unordered_set<uint64_
 
 bool LppVideoHandler::HasLppVideo()
 {
-    return hasLppVideo_.exchange(false);
+    return std::exchange(hasLppVideo_, false);
 }
 } // namespace OHOS::Rosen

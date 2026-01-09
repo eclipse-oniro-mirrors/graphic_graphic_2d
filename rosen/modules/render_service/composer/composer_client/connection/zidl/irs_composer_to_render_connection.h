@@ -23,6 +23,7 @@
 #include "screen_manager/screen_types.h"
 #include <surface_buffer.h>
 #include <sync_fence.h>
+
 #include <unordered_set>
 
 namespace OHOS {
