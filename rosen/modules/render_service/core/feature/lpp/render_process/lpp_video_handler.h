@@ -44,7 +44,7 @@ public:
     void ConsumeAndUpdateLppBuffer(uint64_t vsyncId, const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode);
     // >>
     // << call from hareware thread
-    void JudgeLppLayer(uint64_t vsyncId, std::set<uint64_t> lppLayerIds);
+    void JudgeLppLayer(uint64_t vsyncId, std::unordered_set<uint64_t> lppLayerIds);
     // >>
     bool HasLppVideo();
 };

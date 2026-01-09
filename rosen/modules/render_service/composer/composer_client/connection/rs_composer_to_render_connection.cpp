@@ -44,14 +44,16 @@ void RSComposerToRenderConnection::RegisterReleaseLayerBuffersCB(ReleaseLayerBuf
     releaseLayerBuffersCB_ = callback;
 }
 
-int32_t RSComposerToRenderConnection::NotifyLppLayerToRender(uint64_t vsyncId, const std::set<uint64_t>& lppNodeIds)
+int32_t RSComposerToRenderConnection::NotifyLppLayerToRender(
+    uint64_t vsyncId, const std::unordered_set<uint64_t>& lppNodeIds)
 {
-    RS_LOGD("RSComposerToRenderConnection NotifyLppLayerToRender");
+    RS_LOGD("%s", __func__);
     if (judgeLppLayerCB_ != nullptr) {
         judgeLppLayerCB_(vsyncId, lppNodeIds);
     }
     return COMPOSITOR_ERROR_OK;
 }
+
 
 void RSComposerToRenderConnection::RegisterJudgeLppLayerCB(JudgeLppLayerCB callback)
 {
