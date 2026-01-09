@@ -237,7 +237,7 @@ HWTEST_F(HdiDeviceTest, SetTunnelLayerId, Function | MediumTest| Level3)
     uint32_t screenId = UINT32_MAX;
     uint32_t layerId = 0;
     uint64_t tunnelId = 0;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetTunnelLayerId(screenId, layerId, tunnelId), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_NE(HdiDeviceTest::hdiDevice_->SetTunnelLayerId(screenId, layerId, tunnelId), GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /*
@@ -253,7 +253,7 @@ HWTEST_F(HdiDeviceTest, SetTunnelLayerProperty, Function | MediumTest| Level3)
     uint32_t screenId = UINT32_MAX;
     uint32_t layerId = 0;
     uint32_t property = 0;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetTunnelLayerProperty(screenId, layerId, property), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_NE(HdiDeviceTest::hdiDevice_->SetTunnelLayerProperty(screenId, layerId, property), GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /*

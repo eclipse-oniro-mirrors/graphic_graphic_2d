@@ -851,13 +851,7 @@ int32_t HdiLayer::SetPerFrameParameters()
             CheckRet(ret, "SetLayerSourceTuning");
         }
     }
-
-    if (rsLayer_->GetTunnelLayerId() && rsLayer_->GetTunnelLayerProperty()) {
-        ret = SetTunnelLayerId();
-        CheckRet(ret, "SetTunnelLayerId");
-        ret = SetTunnelLayerProperty();
-        CheckRet(ret, "SetTunnelLayerProperty");
-    }
+    SetTunnelLayerParameters();
     return ret;
 }
 
@@ -873,6 +867,24 @@ int32_t HdiLayer::SetPerFrameParameterSdrNit()
     *reinterpret_cast<float*>(valueBlob.data()) = rsLayer_->GetSdrNit();
     return device_->SetLayerPerFrameParameterSmq(
         screenId_, layerId_, GENERIC_METADATA_KEY_SDR_NIT, valueBlob);
+}
+
+int32_t HdiLayer::SetTunnelLayerParameters()
+{
+    if (layerInfo_->GetTunnelLayerId() && layerInfo_->GetTunnelLayerProperty()) {
+        int32_t tunnelLayerIdRet = SetTunnelLayerId();
+        if (tunnelLayerIdRet != GRAPHIC_DISPLAY_SUCCESS) {
+            CheckRet(tunnelLayerIdRet, "SetTunnelLayerId");
+            return tunnelLayerIdRet;
+        }
+        int32_t tunnelLayerPropertyRet = SetTunnelLayerProperty();
+        if (tunnelLayerPropertyRet != GRAPHIC_DISPLAY_SUCCESS) {
+            CheckRet(tunnelLayerPropertyRet, "SetTunnelLayerProperty");
+            return tunnelLayerPropertyRet;
+        }
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+    return GRAPHIC_DISPLAY_FAILURE;
 }
 
 int32_t HdiLayer::SetPerFrameParameterDisplayNit()
