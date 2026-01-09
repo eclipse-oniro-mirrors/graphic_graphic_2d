@@ -50,20 +50,19 @@ namespace {
 constexpr std::chrono::milliseconds HPAE_OFFLINE_TIMEOUT{100};
 }
 
-RSUniRenderProcessor::RSUniRenderProcessor(std::shared_ptr<RSRenderComposerClient> composerClient)
-    : uniComposerAdapter_(std::make_unique<RSUniRenderComposerAdapter>()),
-    composerClient_(std::move(composerClient))
+RSUniRenderProcessor::RSUniRenderProcessor(ScreenId screenId)
+    : uniComposerAdapter_(std::make_unique<RSUniRenderComposerAdapter>())
 {
+    composerClient_ = RSUniRenderThread::Instance().GetRSRenderComposerClient(screenId);
 }
 
 RSUniRenderProcessor::~RSUniRenderProcessor() noexcept
 {
 }
 
-bool RSUniRenderProcessor::Init(RSScreenRenderNode& node, int32_t offsetX, int32_t offsetY,
-                                std::shared_ptr<RSBaseRenderEngine> renderEngine)
+bool RSUniRenderProcessor::Init(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
-    if (!RSProcessor::Init(node, offsetX, offsetY, renderEngine)) {
+    if (!RSProcessor::Init(node, renderEngine)) {
         return false;
     }
     // In uni render mode, we can handle screen rotation in the rendering process,
@@ -71,7 +70,7 @@ bool RSUniRenderProcessor::Init(RSScreenRenderNode& node, int32_t offsetX, int32
     // just pass the buffer to composer straightly.
     screenInfo_.rotation = ScreenRotation::ROTATION_0;
 
-    return uniComposerAdapter_->Init(screenInfo_, offsetX_, offsetY_, composerClient_);
+    return uniComposerAdapter_->Init(screenInfo_, composerClient_);
 }
 
 bool RSUniRenderProcessor::InitForRenderThread(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable,
@@ -85,7 +84,7 @@ bool RSUniRenderProcessor::InitForRenderThread(DrawableV2::RSScreenRenderNodeDra
     // just pass the buffer to composer straightly.
     screenInfo_.rotation = ScreenRotation::ROTATION_0;
 
-    return uniComposerAdapter_->Init(screenInfo_, offsetX_, offsetY_, composerClient_);
+    return uniComposerAdapter_->Init(screenInfo_, composerClient_);
 }
 
 bool RSUniRenderProcessor::UpdateMirrorInfo(DrawableV2::RSLogicalDisplayRenderNodeDrawable& displayDrawable)
@@ -149,7 +148,7 @@ void RSUniRenderProcessor::CreateLayer(/*const ??? todo */ RSSurfaceRenderNode& 
     layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
     auto bufferOwnerCount = offlineResult ? offlineResult->bufferOwnerCount : params.GetBufferOwnerCount();
     if (bufferOwnerCount) {
-        RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::CreateLayer seqNum %u layerID %" PRIu64,
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderProcessor::CreateLayer SetBufferOwnerCount seqNum %u layerId %" PRIu64,
             uint32_t(bufferOwnerCount->seqNum_), layer->GetRSLayerId());
         layer->SetBufferOwnerCount(bufferOwnerCount);
     }
@@ -215,8 +214,8 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     layer->SetLayerLinearMatrix(renderParams.GetLayerLinearMatrix());
     auto bufferOwnerCount = offlineResult ? offlineResult->bufferOwnerCount : renderParams.GetBufferOwnerCount();
     if (bufferOwnerCount) {
-        RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager CreateLayerForRenderThread seqNum %u ",
-            uint32_t(bufferOwnerCount->seqNum_));
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderProcessor::CreateLayerForRenderThread SetBufferOwnerCount seqNum %u "
+            "layerId %" PRIu64, uint32_t(bufferOwnerCount->seqNum_), layer->GetRSLayerId());
         layer->SetBufferOwnerCount(bufferOwnerCount);
     }
     RS_OPTIONAL_TRACE_NAME_FMT(
@@ -305,6 +304,10 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     sptr<SurfaceBuffer>& preBuffer, const sptr<IConsumerSurface>& consumer, const sptr<SyncFence>& acquireFence,
     const std::shared_ptr<ProcessOfflineResult>& offlineResult)
 {
+    if (composerClient_ == nullptr) {
+        RS_LOGE("RSUniRenderProcessor::GetLayerInfo client is nullptr");
+        return nullptr;
+    }
     RSLayerPtr layer = RSSurfaceLayer::Create(composerClient_->GetComposerContext(), params.GetId());
     if (layer == nullptr) {
         RS_LOGE("RSUniRenderProcessor::GetLayerInfo failed to create layer");

@@ -172,8 +172,6 @@ public:
 
     void ClearUifirstCache(NodeId id);
 
-    void SetScreenFrameGravity(ScreenId id, int32_t gravity);
-
     void ForceRefreshOneFrameWithNextVSync();
 
     void SetAppWindowNum(uint32_t num);

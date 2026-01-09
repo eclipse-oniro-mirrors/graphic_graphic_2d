@@ -47,7 +47,7 @@ public:
     void ReleaseLayerBuffers(uint64_t screenId,
         std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
         std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
-    void RegistOnReleaseLayerBuffersCB(OnReleaseLayerBuffersCB cb);
+    void RegisterOnReleaseLayerBuffersCB(OnReleaseLayerBuffersCB cb);
     std::shared_ptr<RSComposerContext> GetComposerContext();
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
     void ClearFrameBuffers();
@@ -69,7 +69,7 @@ private:
     void NotifyComposerThreadCanExecuteTask();
     void IncUnExecuteTaskNum();
     void SubUnExecuteTaskNum();
-    std::mutex clientMutex_;
+    std::mutex clientMutex_; /* Locking is only necessary if not running on uni render thread */
     std::shared_ptr<RSComposerContext> rsComposerContext_;
     sptr<IRSRenderToComposerConnection> renderToComposerConn_;
     std::condition_variable composerThreadTaskCond_;

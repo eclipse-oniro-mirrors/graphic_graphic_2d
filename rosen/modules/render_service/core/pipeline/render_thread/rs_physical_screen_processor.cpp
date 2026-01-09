@@ -14,29 +14,32 @@
  */
 
 #include "rs_physical_screen_processor.h"
-
-#include "rs_trace.h"
-#include "string_utils.h"
-
 #include "platform/common/rs_log.h"
+#include "rs_trace.h"
+#include "rs_uni_render_thread.h"
+#include "string_utils.h"
 
 namespace OHOS {
 namespace Rosen {
-RSPhysicalScreenProcessor::RSPhysicalScreenProcessor(const std::shared_ptr<RSRenderComposerClient>& composerClient)
-    : composerAdapter_(std::make_unique<RSComposerAdapter>()), composerClient_(composerClient)
+RSPhysicalScreenProcessor::RSPhysicalScreenProcessor(ScreenId screenId)
+    : composerAdapter_(std::make_unique<RSComposerAdapter>())
 {
+    composerClient_ = RSUniRenderThread::Instance().GetRSRenderComposerClient(screenId);
 }
 
 RSPhysicalScreenProcessor::~RSPhysicalScreenProcessor() noexcept
 {
 }
 
-bool RSPhysicalScreenProcessor::Init(RSScreenRenderNode& node, int32_t offsetX, int32_t offsetY,
-                                     std::shared_ptr<RSBaseRenderEngine> renderEngine)
+bool RSPhysicalScreenProcessor::Init(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine)
 {
+    if (composerClient_ == nullptr) {
+        RS_LOGE("RSPhysicalScreenProcessor::Init client nullptr");
+        return false;
+    }
 #ifdef RS_ENABLE_GPU
     // planning: adapt isRenderThread
-    if (!RSProcessor::Init(node, offsetX, offsetY, renderEngine)) {
+    if (!RSProcessor::Init(node, renderEngine)) {
         return false;
     }
 #endif

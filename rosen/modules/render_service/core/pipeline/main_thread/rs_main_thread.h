@@ -377,8 +377,8 @@ public:
 
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
 
-    bool IsFoldScreenSwitching(const std::shared_ptr<RSBaseRenderNode>& rootNode);
-    static bool GetMultiDisplay(const std::shared_ptr<RSBaseRenderNode>& rootNode);
+    bool IsFoldScreenSwitching() const;
+    bool IsMultiDisplay() const;
 
     bool GetMultiDisplayChange() const
     {
@@ -459,8 +459,6 @@ public:
 
     void SetHasSurfaceLockLayer(bool hasSurfaceLockLayer);
     bool HasDRMOrSurfaceLockLayer() const;
-
-    bool IsReadyForSyncTask() const;
 
     // used for ScaleImageAsync
     void MarkScaledImageDirty(uint64_t nodeId);
@@ -716,7 +714,6 @@ private:
     ScreenId screenNodeScreenId_ = 0;
     std::atomic<uint64_t> focusNodeId_ = 0;
     std::atomic<uint64_t> frameCount_ = 0;
-    std::atomic<bool> isRunning_ = false;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     std::shared_ptr<RSContext> context_;
     std::shared_ptr<VSyncReceiver> receiver_ = nullptr;

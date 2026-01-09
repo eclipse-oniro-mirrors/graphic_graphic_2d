@@ -60,14 +60,11 @@ std::string RectVectorToString(const std::vector<GraphicIRect>& dirtyRects)
 }
 }
 
-bool RSUniRenderComposerAdapter::Init(const ScreenInfo& screenInfo, int32_t offsetX, int32_t offsetY,
+bool RSUniRenderComposerAdapter::Init(const ScreenInfo& screenInfo,
     const std::shared_ptr<RSRenderComposerClient>& composerClient)
 {
-    RS_LOGI_IF(DEBUG_COMPOSER, "RSUniRenderComposerAdapter::initialize id:%{public}" PRIu64
-        " offsetX:%{public}d offsetY:%{public}d", screenInfo.id, offsetX, offsetY);
+    RS_LOGI_IF(DEBUG_COMPOSER, "RSUniRenderComposerAdapter::initialize id:%{public}" PRIu64, screenInfo.id);
 
-    offsetX_ = offsetX;
-    offsetY_ = offsetY;
     screenInfo_ = screenInfo;
     composerClient_ = composerClient;
     return true;
@@ -215,10 +212,11 @@ ComposeInfo RSUniRenderComposerAdapter::BuildComposeInfo(RSRcdSurfaceRenderNode&
     info.displayNit = DEFAULT_BRIGHTNESS;
     info.brightnessRatio = NO_RATIO;
     info.bufferOwnerCount = node.GetBufferOwnerCount();
-    if (info.bufferOwnerCount) {
-        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderComposerAdapter::BuildComposeInfo RSRcdSurfaceRenderNode AddRef "
-            "seqNum %u", uint32_t(info.bufferOwnerCount->seqNum_));
-        info.bufferOwnerCount->AddRef();
+    auto preBufferOwnerCount = node.GetPreBufferOwnerCount();
+    if (node.IsCurrentFrameBufferConsumed() && preBufferOwnerCount) {
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderComposerAdapter::BuildComposeInfo RSRcdSurfaceRenderNode DecRef preBuf "
+            "seqNum %u", uint32_t(preBufferOwnerCount->seqNum_));
+        preBufferOwnerCount->DecRef();
     }
     RS_LOGD_IF(DEBUG_COMPOSER,
         "RSUniRenderComposerAdapter::BuildCInfo id:%{public}" PRIu64
@@ -1199,6 +1197,8 @@ RSLayerPtr RSUniRenderComposerAdapter::CreateLayer(RSRcdSurfaceRenderNode& node)
     if (layer != nullptr) {
         auto rcdLayer = std::static_pointer_cast<RSSurfaceRCDLayer>(layer);
         rcdLayer->SetPixelMap(node.GetPixelMap());
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderComposerAdapter::CreateLayer rcd layerId %" PRIu64,
+            layer->GetRSLayerId());
         SetComposeInfoToLayer(layer, info, node.GetConsumer());
         auto drawable = node.GetRenderDrawable();
         if (drawable) {

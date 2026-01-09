@@ -304,8 +304,7 @@ void RSRenderServiceVisitor::CreateCanvas(int32_t width, int32_t height, bool is
 
 bool RSRenderServiceVisitor::CreateProcessor(RSScreenRenderNode& node)
 {
-    std::shared_ptr<RSRenderComposerClient> composerClient = RSUniRenderThread::Instance().GetRSRenderComposerClient(node.GetScreenId());
-    processor_ = RSProcessorFactory::CreateProcessor(node.GetCompositeType(), composerClient);
+    processor_ = RSProcessorFactory::CreateProcessor(node.GetCompositeType(), node.GetScreenId());
     if (processor_ == nullptr) {
         RS_LOGE("CreateProcessor: processor_ is null!");
         return false;
@@ -318,8 +317,7 @@ bool RSRenderServiceVisitor::CreateProcessor(RSScreenRenderNode& node)
         processorRenderEngine_ = mainThread->GetRenderEngine();
     }
 
-    const auto& screenProperty = node.GetScreenProperty();
-    if (!processor_->Init(node, screenProperty.GetOffsetX(), screenProperty.GetOffsetY(), processorRenderEngine_)) {
+    if (!processor_->Init(node, processorRenderEngine_)) {
         RS_LOGE("ProcessDisplayRenderNode: processor init failed!");
         return false;
     }
