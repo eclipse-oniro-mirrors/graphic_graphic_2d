@@ -61,7 +61,6 @@ ohos_unittest("rosen_text_adapt_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "image_framework:image_native",
-    "icu:static_icuuc",
   ]
 
   if (graphic_2d_feature_upgrade_skia) {
