@@ -60,7 +60,6 @@ void RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(
     if (!effect || effect->GetType() != RSNGEffectType::FROSTED_GLASS || canvas == nullptr) {
         return;
     }
-    auto glass = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(effect);
     auto color = static_cast<RSPaintFilterCanvas*>(canvas)->GetColorPicked(ColorPlaceholder::SURFACE_CONTRAST);
     // assuming r, g, b are interpolated the same way
     constexpr float COLOR_MAX = 255.0f;
