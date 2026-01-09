@@ -75,7 +75,7 @@ HWTEST_F(RSRenderServiceAgentTest, PostTaskImmediate001, TestSize.Level1)
 
 /**
  * @tc.name: PostSyncTaskImmediate001
- * @tc.desc: PostTaskImmediate Test
+ * @tc.desc: PostSyncTaskImmediate Test
  * @tc.type: FUNC
  * @tc.require:
  */
