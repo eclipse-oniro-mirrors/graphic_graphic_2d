@@ -318,6 +318,8 @@ sptr<RSIClientToRenderConnection> RSRenderPipeline::FindClientToRenderConnection
         return clientToRenderConnection;
     }
     return nullptr;
+}
+
 void RSRenderPipeline::RegisterJudgeLppLayerCB(const sptr<IRSComposerToRenderConnection>& composerToRenderConn)
 {
     composerToRenderConn->RegisterJudgeLppLayerCB(

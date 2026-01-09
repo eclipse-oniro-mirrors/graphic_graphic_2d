@@ -92,26 +92,6 @@ bool RSRenderPipelineAgent::RemoveConnection(const sptr<RSIConnectionToken>& tok
     return rsRenderPipeline_->RemoveConnection(token);
 }
 
-void RSRenderPipelineAgent::AddConnection(
-    sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection)
-{
-    rsRenderPipeline_->AddConnection(token, connectToRenderConnection);
-}
-
-sptr<RSIClientToRenderConnection> RSRenderPipelineAgent::FindClientToRenderConnection(const sptr<IRemoteObject>& token)
-{
-    return rsRenderPipeline_->FindClientToRenderConnection(token);
-}
-
-void RSRenderPipelineAgent::AddTransactionDataPidInfo(pid_t remotePid)
-{
-    if (rsRenderPipeline_ == nullptr) {
-        RS_LOGW("AddTransactionDataPidInfo rsRenderPipeline_ is nullptr");
-        return;
-    }
-    rsRenderPipeline_->AddTransactionDataPidInfo(remotePid);
-}
-
 ErrCode RSRenderPipelineAgent::CommitTransaction(pid_t callingPid, bool isTokenTypeValid,
     bool isNonSystemAppCalling, std::unique_ptr<RSTransactionData>& transactionData)
 {
@@ -1961,7 +1941,7 @@ void RSRenderPipelineAgent::AddTransactionDataPidInfo(pid_t remotePid)
     if (rsRenderPipeline_ == nullptr) {
         return;
     }
-    rsRenderPipeline_->mainThread_->AddTransactionDataPidInfo(remotePid);
+    rsRenderPipeline_->AddTransactionDataPidInfo(remotePid);
 }
 
 void RSRenderPipelineAgent::AddConnection(sptr<IRemoteObject>& token,
@@ -1970,7 +1950,7 @@ void RSRenderPipelineAgent::AddConnection(sptr<IRemoteObject>& token,
     if (rsRenderPipeline_ == nullptr) {
         return;
     }
-    rsRenderPipeline_->mainThread_->AddConnection(token, connectToRenderConnection);
+    rsRenderPipeline_->AddConnection(token, connectToRenderConnection);
 }
 
 sptr<RSIClientToRenderConnection> RSRenderPipelineAgent::FindClientToRenderConnection(const sptr<IRemoteObject>& token)
@@ -1978,7 +1958,7 @@ sptr<RSIClientToRenderConnection> RSRenderPipelineAgent::FindClientToRenderConne
     if (rsRenderPipeline_ == nullptr) {
         return nullptr;
     }
-    return rsRenderPipeline_->mainThread_->FindClientToRenderConnection(token);
+    return rsRenderPipeline_->FindClientToRenderConnection(token);
 }
 } // namespace Rosen
 } // namespace OHOS
