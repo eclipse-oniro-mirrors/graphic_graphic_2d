@@ -64,5 +64,19 @@ HWTEST_F(NodeMemReleaseParamTest, CanvasDrawingNodeDMAMemEnabledTest, Function |
     ASSERT_EQ(NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled(), false);
 }
 
+/**
+ * @tc.name: RsRenderNodeGCMemReleaseEnabledTest
+ * @tc.desc: Verify the SetRsRenderNodeGCMemReleaseEnabled IsRsRenderNodeGCMemReleaseEnabled function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(NodeMemReleaseParamTest, RsRenderNodeGCMemReleaseEnabledTest, Function | SmallTest | Level1)
+{
+    NodeMemReleaseParam::SetRsRenderNodeGCMemReleaseEnabled(true);
+    ASSERT_EQ(NodeMemReleaseParam::IsRsRenderNodeGCMemReleaseEnabled(), true);
+    NodeMemReleaseParam::SetRsRenderNodeGCMemReleaseEnabled(false);
+    ASSERT_EQ(NodeMemReleaseParam::IsRsRenderNodeGCMemReleaseEnabled(), false);
+}
+
 } // namespace Rosen
 } // namespace OHOS
