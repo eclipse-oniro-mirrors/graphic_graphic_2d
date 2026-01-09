@@ -244,7 +244,7 @@ void RSDrmUtil::PreAllocProtectedFrameBuffers(const std::shared_ptr<RSSurfaceRen
 {
     if (auto screenNode = std::static_pointer_cast<RSScreenRenderNode>(surfaceNode->GetAncestorScreenNode().lock())) {
         if (auto client = RSUniRenderThread::Instance().GetRSRenderComposerClient(screenNode->GetScreenId())) {
-            RS_TRACE_NAME_FMT("PreAllocProtectedFrameBuffers screenId:%" PRIu64 "", screenNode->GetScreenId());
+            RS_TRACE_NAME_FMT("PreAllocProtectedFrameBuffers screenId:%" PRIu64, screenNode->GetScreenId());
             client->PreAllocProtectedFrameBuffers(buffer);
         }
     }
