@@ -56,8 +56,13 @@ int32_t NodeMemReleaseParamParse::ParseNodeMemReleaseInternal(xmlNode& node)
             NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(isEnabled);
             RS_LOGI("NodeMemReleaseParamParse parse CanvasDrawingNodeDMAMemEnabled %{public}d",
                     NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled());
+        } else if (name == "RsRenderNodeGCMemReleaseEnabled") {
+            NodeMemReleaseParam::SetRsRenderNodeGCMemReleaseEnabled(isEnabled);
+            RS_LOGI("NodeMemReleaseParamParse parse RsRenderNodeGCMemReleaseEnabled %{public}d",
+                    NodeMemReleaseParam::IsRsRenderNodeGCMemReleaseEnabled());
         } else {
             RS_LOGI("NodeMemReleaseParamParse parse %{public}s is not support!", name.c_str());
+            return PARSE_ERROR;
         }
     } else {
         RS_LOGI("NodeMemReleaseParamParse fail! The xmlParamType is not support");
