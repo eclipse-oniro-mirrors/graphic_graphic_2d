@@ -67,7 +67,7 @@ HWTEST_F(RSRenderServiceAgentTest, PostTaskImmediate001, TestSize.Level1)
 {
     auto renderService = sptr<RSRenderService>::MakeSptr();
     renderService->runner_ = AppExecFwk::EventRunner::Create(false);
-    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(renderService->runner);
+    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(renderService->runner_);
     sptr<RSRenderServiceAgent> renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(*renderService);
     RSTaskMessage::RSTask task = []() -> void { return; };
     renderServiceAgent->PostTaskImmediate(task);
@@ -83,7 +83,7 @@ HWTEST_F(RSRenderServiceAgentTest, PostSyncTaskImmediate001, TestSize.Level1)
 {
     auto renderService = sptr<RSRenderService>::MakeSptr();
     renderService->runner_ = AppExecFwk::EventRunner::Create(false);
-    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(renderService->runner);
+    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(renderService->runner_);
     sptr<RSRenderServiceAgent> renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(*renderService);
     RSTaskMessage::RSTask task = []() -> void { return; };
     renderServiceAgent->PostSyncTaskImmediate(task);
