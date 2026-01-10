@@ -31,6 +31,9 @@ using namespace OHOS::Rosen::SPText;
 
 namespace txt {
 namespace skt = skia::textlayout;
+namespace {
+constexpr static float FLOAT_DATA_EPSILON = 1e-6f;
+}
 class ParagraphPathTest : public testing::Test {
 public:
     void SetUp() override;
@@ -187,9 +190,9 @@ HWTEST_F(ParagraphPathTest, ParagraphPathTestgetTextPathByClusterRange003, TestS
     skt::SkRange<skt::TextIndex> range{0, 20};
     std::vector<skt::PathInfo> pathInfos = skParagraph->getTextPathByClusterRange(range);
     EXPECT_EQ(pathInfos.size(), 20);
-    EXPECT_FLOAT_EQ(pathInfos[0].point.GetX(), 19.8901367);
-    EXPECT_FLOAT_EQ(pathInfos[2].point.GetX(), 29.7901917);
-    EXPECT_FLOAT_EQ(pathInfos[3].point.GetX(), 39.2252502);
-    EXPECT_FLOAT_EQ(pathInfos[10].point.GetX(), 81.3005371);
+    EXPECT_NEAR(pathInfos[0].point.GetX(), 19.8901367, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(pathInfos[2].point.GetX(), 29.7901917, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(pathInfos[3].point.GetX(), 39.2252502, FLOAT_DATA_EPSILON);
+    EXPECT_NEAR(pathInfos[10].point.GetX(), 81.3005371, FLOAT_DATA_EPSILON);
 }
 } // namespace txt
