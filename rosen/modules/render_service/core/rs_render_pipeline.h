@@ -93,10 +93,6 @@ public:
         return std::move(taskFuture);
     }
 
-    RSMainThread* GetMainThread()
-    {
-        return mainThread_;
-    }
 
     void OnScreenConnected(const sptr<RSScreenProperty>& rsScreenProperty,
         const sptr<IRSRenderToComposerConnection>& renderToComposerConn,
@@ -123,13 +119,24 @@ private:
         const sptr<RSVsyncManagerAgent>& rsVsyncManagerAgent);
     void InitUniRenderThread();
     void InitDumper(const std::shared_ptr<AppExecFwk::EventHandler>& handler);
-
+    bool RemoveConnection(const sptr<RSIConnectionToken>& token);
+    void AddConnection(sptr<IRemoteObject>& token, sptr<RSIClientToRenderConnection> connectToRenderConnection);
+    sptr<RSIClientToRenderConnection> FindClientToRenderConnection(const sptr<IRemoteObject>& token);
+    void AddTransactionDataPidInfo(pid_t remotePid);
+    RSMainThread* GetMainThread()
+    {
+        return mainThread_;
+    }
+    RSUniRenderThread* GetUniRenderThread()
+    {
+        return uniRenderThread_;
+    }
     // LPP
     void RegisterJudgeLppLayerCB(const sptr<IRSComposerToRenderConnection>& composerToRenderConn);
-
     RSMainThread* mainThread_ = nullptr;
     RSUniRenderThread* uniRenderThread_ = nullptr;
-
+    std::map<sptr<IRemoteObject>, sptr<RSIClientToRenderConnection>> renderConnections_ = {};
+    mutable std::mutex renderConnectionMutex_;
     std::shared_ptr<ImageEnhanceManager> imageEnhanceManager_ = nullptr;
     std::shared_ptr<RSPiplineDumper> rpDumper_ = nullptr;
     std::shared_ptr<RSPiplineDumpManager> rpDumpManager_ = nullptr;
