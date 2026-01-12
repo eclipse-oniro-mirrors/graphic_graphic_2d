@@ -152,9 +152,11 @@ std::shared_ptr<RSNGShaderBase> ConvertColorGradientEffectPara(std::shared_ptr<V
     Vector4f color4 = colorGradientEffectPara->GetDefaultColor4f();
     Vector2f pos2 = colorGradientEffectPara->GetDefaultPoint();
     float strth = colorGradientEffectPara->GetDefaultStrength();
+    float brightness = colorGradientEffectPara->GetDefaultBrightness();
 
     colorGradientEffect->Setter<ColorGradientEffectBlendTag>(blend);
     colorGradientEffect->Setter<ColorGradientEffectBlendKTag>(blendK);
+    colorGradientEffect->Setter<ColorGradientEffectBrightnessTag>(brightness - 1.0f);
 
     ColorGradientEffectColorTags colorTag{};
     std::apply([&colorGradientEffect, &colors, color4] (auto&&... args) {
