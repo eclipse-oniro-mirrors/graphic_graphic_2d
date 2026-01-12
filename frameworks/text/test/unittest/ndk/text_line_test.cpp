@@ -1336,7 +1336,7 @@ HWTEST_F(NdkTextLineTest, NdkTextLineTest039, TestSize.Level0)
 
 /*
  * @tc.name: NdkTextLineExtraTest001
- * @tc.desc: test for the textLine CreateTruncatedLine.
+ * @tc.desc: test for the textLine CreateTruncatedLine: valid input ELLIPSIS_MODAL_MULTILINE_HEAD.
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest001, TestSize.Level0)
@@ -1371,7 +1371,7 @@ HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest001, TestSize.Level0)
 
 /*
  * @tc.name: NdkTextLineExtraTest002
- * @tc.desc: test for the textLine CreateTruncatedLine.
+ * @tc.desc: test for the textLine CreateTruncatedLine: valid input ELLIPSIS_MODAL_MULTILINE_MIDDLE.
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest002, TestSize.Level0)
@@ -1391,7 +1391,7 @@ HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest002, TestSize.Level0)
         EXPECT_TRUE(textLine != nullptr);
 
         OH_Drawing_TextLine *truncatedLine = OH_Drawing_TextLineCreateTruncatedLine(textLine, DEFOUT_DOUBLE_MAX_WIDTH3,
-            ELLIPSIS_MODAL_HEAD, "测试");
+            ELLIPSIS_MODAL_MULTILINE_HEAD, "测试");
         EXPECT_TRUE(truncatedLine != nullptr);
         // Paint position x and y.
         constexpr std::pair<double, double> position = {30, 300};
@@ -1409,7 +1409,7 @@ HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest002, TestSize.Level0)
 
 /*
  * @tc.name: NdkTextLineExtraTest003
- * @tc.desc: test for the textLine CreateTruncatedLine.
+ * @tc.desc: test for the textLine CreateTruncatedLine: invalid input parameters.
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest003, TestSize.Level0)
@@ -1427,10 +1427,12 @@ HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest003, TestSize.Level0)
         ELLIPSIS_MODAL_MULTILINE_HEAD, "1");
     EXPECT_TRUE(truncatedLine == nullptr);
     constexpr size_t specialEllipsisMode = 5;
-    truncatedLine = OH_Drawing_TextLineCreateTruncatedLine(textLine, DEFOUT_DOUBLE_MAX_WIDTH2, specialEllipsisMode, "1");
+    truncatedLine = OH_Drawing_TextLineCreateTruncatedLine(textLine, DEFOUT_DOUBLE_MAX_WIDTH2,
+        specialEllipsisMode, "1");
     EXPECT_TRUE(truncatedLine == nullptr);
 
-    truncatedLine = OH_Drawing_TextLineCreateTruncatedLine(textLine, DEFOUT_DOUBLE_MAX_WIDTH2, ELLIPSIS_MODAL_TAIL, nullptr);
+    truncatedLine = OH_Drawing_TextLineCreateTruncatedLine(textLine, DEFOUT_DOUBLE_MAX_WIDTH2,
+        ELLIPSIS_MODAL_MULTILINE_HEAD, nullptr);
     EXPECT_TRUE(truncatedLine == nullptr);
 
     OH_Drawing_DestroyTextLines(textLines);
