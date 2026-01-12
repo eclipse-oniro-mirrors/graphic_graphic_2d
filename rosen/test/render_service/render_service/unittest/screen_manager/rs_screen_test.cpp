@@ -777,7 +777,7 @@ HWTEST_F(RSScreenTest, SetScreenActiveRect001, testing::ext::TestSize.Level1)
     auto rsScreen = std::make_shared<RSScreen>(0);
     ASSERT_NE(nullptr, rsScreen);
 
-    GraphicIRect activeRect {
+    Rect activeRect {
         .x = 0,
         .y = 0,
         .w = 0,
@@ -2018,7 +2018,7 @@ HWTEST_F(RSScreenTest, SetScreenActiveRect, testing::ext::TestSize.Level1)
     auto rsScreen = std::make_unique<RSScreen>(0);
     EXPECT_NE(nullptr, rsScreen);
 
-    GraphicIRect actRect = {1, 2, 3, 4};
+    Rect actRect = {1, 2, 3, 4};
 
     rsScreen->property_.SetIsVirtual(true);
     auto res = rsScreen->SetScreenActiveRect(actRect);

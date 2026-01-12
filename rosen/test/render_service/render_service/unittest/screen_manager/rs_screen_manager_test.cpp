@@ -797,7 +797,7 @@ HWTEST_F(RSScreenManagerTest, SetScreenActiveRect001, testing::ext::TestSize.Lev
     auto rsScreen = std::make_shared<RSScreen>(cfgVirtual);
     screenManager_->MockHdiScreenConnected(rsScreen);
 
-    GraphicIRect activeRect {        .x = 0,
+    Rect activeRect {        .x = 0,
         .y = 0,
         .w = 0,
         .h = 0,
@@ -3301,7 +3301,7 @@ HWTEST_F(RSScreenManagerTest, SetScreenActiveRect002, TestSize.Level1)
     screenManager_->screens_.clear();
     screenManager_->screens_.insert(std::make_pair(100, nullptr));
     ScreenId screenId = 100;
-    GraphicIRect rect = {1, 2, 3, 4};
+    Rect rect = {1, 2, 3, 4};
     auto res = screenManager_->SetScreenActiveRect(screenId, rect);
     EXPECT_EQ(StatusCode::SCREEN_NOT_FOUND, res);
 
