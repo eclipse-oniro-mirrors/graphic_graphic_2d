@@ -21,6 +21,7 @@
 #include "animation/rs_animation_trace_utils.h"
 #include "animation/rs_render_animation.h"
 #include "command/rs_animation_command.h"
+#include "common/rs_optional_trace.h"
 #include "command/rs_message_processor.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "platform/common/rs_log.h"
