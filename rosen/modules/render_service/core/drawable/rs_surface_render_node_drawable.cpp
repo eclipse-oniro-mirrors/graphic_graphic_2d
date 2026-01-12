@@ -102,17 +102,12 @@ RSRenderNodeDrawable::Ptr RSSurfaceRenderNodeDrawable::OnGenerate(std::shared_pt
 }
 
 bool RSSurfaceRenderNodeDrawable::CheckDrawAndCacheWindowContent(RSSurfaceRenderParams& surfaceParams,
-    RSRenderThreadParams& uniParams)
+    RSRenderThreadParams& uniParams) const
 {
     if (RSUniRenderThread::GetCaptureParam().isMirror_) {
         return false;
     }
     if (!surfaceParams.GetNeedCacheSurface()) {
-        // relatedSourceNode need create cache
-        if (surfaceParams.IsRelatedSourceNode()) {
-            SetNeedCacheRelatedSourceNode(true);
-            return true;
-        }
         return false;
     }
 
@@ -388,11 +383,13 @@ bool RSSurfaceRenderNodeDrawable::PrepareOffscreenRender()
     int offscreenWidth = curCanvas_->GetSurface()->Width();
     int offscreenHeight = curCanvas_->GetSurface()->Height();
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    bool isMirrorProjection = false;
     if (uniParam && uniParam->IsMirrorScreen() &&
         uniParam->GetCompositeType() == CompositeType::UNI_RENDER_COMPOSITE) {
         auto screenInfo = uniParam->GetScreenInfo();
         offscreenWidth = static_cast<int>(screenInfo.width);
         offscreenHeight = static_cast<int>(screenInfo.height);
+        isMirrorProjection = true;
     }
     if (offscreenWidth <= 0 || offscreenHeight <= 0) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareOffscreenRender, offscreenWidth or offscreenHeight is invalid");
@@ -402,11 +399,21 @@ bool RSSurfaceRenderNodeDrawable::PrepareOffscreenRender()
     int maxRenderSize = GetMaxRenderSizeForRotationOffscreen(offscreenWidth, offscreenHeight);
     // create offscreen surface and canvas
     if (offscreenSurface_ == nullptr || maxRenderSize_ != maxRenderSize) {
-        RS_LOGD("PrepareOffscreenRender create offscreen surface offscreenSurface_,\
-            new [%{public}d, %{public}d %{public}d]", offscreenWidth, offscreenHeight, maxRenderSize);
-        RS_TRACE_NAME_FMT("PrepareOffscreenRender surface size: [%d, %d]", maxRenderSize, maxRenderSize);
+        auto& renderParam = GetRenderParams();
+        bool isNeedFP16 = isMirrorProjection && renderParam && renderParam->SelfOrChildHasHDR();
         maxRenderSize_ = maxRenderSize;
-        offscreenSurface_ = curCanvas_->GetSurface()->MakeSurface(maxRenderSize_, maxRenderSize_);
+        RS_LOGD("PrepareOffscreenRender create offscreen surface offscreenSurface_,\
+            new [%{public}d, %{public}d %{public}d], isNeedFP16:%{public}d",
+            offscreenWidth, offscreenHeight, maxRenderSize, isNeedFP16);
+        RS_TRACE_NAME_FMT("PrepareOffscreenRender surface size: [%d, %d], isNeedFP16:%{public}d",
+            maxRenderSize, maxRenderSize, isNeedFP16);
+        if (isNeedFP16) {
+            Drawing::ImageInfo info = { maxRenderSize_, maxRenderSize_, Drawing::ColorType::COLORTYPE_RGBA_F16,
+                Drawing::ALPHATYPE_PREMUL, Drawing::ColorSpace::CreateSRGB() };
+            offscreenSurface_ = curCanvas_->GetSurface()->MakeSurface(info);
+        } else {
+            offscreenSurface_ = curCanvas_->GetSurface()->MakeSurface(maxRenderSize_, maxRenderSize_);
+        }
     }
     if (offscreenSurface_ == nullptr) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::PrepareOffscreenRender, offscreenSurface is nullptr");
@@ -735,16 +742,14 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     
     bool specialLayerInSecDisplay = uniParam->IsSecurityDisplay() && (specialLayerManager.Find(HAS_GENERAL_SPECIAL) ||
         specialLayerManager.FindWithScreen(curDisplayScreenId_, SpecialLayerType::HAS_BLACK_LIST));
+    bool wiredMirrorProjectionInHDR = surfaceParams->SelfOrChildHasHDR() &&
+        uniParam->IsMirrorScreen() && uniParam->GetCompositeType() == CompositeType::UNI_RENDER_COMPOSITE;
     // Attention : Don't change the order of conditions. If securitydisplay has special layers, don't enable uifirst.
-    if (!specialLayerInSecDisplay &&
+    if (!specialLayerInSecDisplay && !wiredMirrorProjectionInHDR &&
         subThreadCache_.DealWithUIFirstCache(this, *rscanvas, *surfaceParams, *uniParam)) {
         if (GetDrawSkipType() == DrawSkipType::NONE) {
             SetDrawSkipType(DrawSkipType::UI_FIRST_CACHE_SKIP);
         }
-        return;
-    }
-
-    if (DrawRelatedSourceNode(*rscanvas, *surfaceParams)) {
         return;
     }
 
@@ -1237,11 +1242,6 @@ void RSSurfaceRenderNodeDrawable::CaptureSurface(RSPaintFilterCanvas& canvas, RS
             return;
         }
     }
-    
-    if (DrawRelatedSourceNode(canvas, surfaceParams)) {
-        return;
-    }
-
     if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(surfaceParams, false)) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnCapture CheckMatchAndWaitNotify failed");
         return;
@@ -1389,9 +1389,6 @@ bool RSSurfaceRenderNodeDrawable::DrawCloneNode(RSPaintFilterCanvas& canvas,
         clonedNodeRenderDrawable->subThreadCache_.GetRSDrawWindowCache().ClearCache();
         return false;
     }
-    if (surfaceParams.IsRelated()) {
-        return DrawRelatedNode(canvas, uniParam, surfaceParams, clonedNodeRenderDrawable, isCapture);
-    }
     RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::DrawCloneNode Draw cloneNode %s", name_.c_str());
     bool isOpDropped = uniParam.IsOpDropped();
     uniParam.SetOpDropped(false);
@@ -1411,74 +1408,6 @@ bool RSSurfaceRenderNodeDrawable::DrawCloneNode(RSPaintFilterCanvas& canvas,
     clonedNodeSurfaceParams->SetOccludedByFilterCache(isOccludedByFilterCache);
     clonedNodeRenderDrawable->subThreadCache_.GetRSDrawWindowCache().ClearCache();
     return true;
-}
-
-bool RSSurfaceRenderNodeDrawable::DrawRelatedNode(RSPaintFilterCanvas& canvas,
-    RSRenderThreadParams& uniParam, RSSurfaceRenderParams& surfaceParams,
-    std::shared_ptr<RSSurfaceRenderNodeDrawable> clonedNodeRenderDrawable, bool isCapture)
-{
-    RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::DrawRelatedNode Draw relatedNode %s", name_.c_str());
-    auto clonedNodeSurfaceParams =
-        static_cast<RSSurfaceRenderParams*>(clonedNodeRenderDrawable->GetRenderParams().get());
-    if (!clonedNodeSurfaceParams) {
-        SetDrawSkipType(DrawSkipType::RENDER_PARAMS_NULL);
-        return false;
-    }
-    // save clonedNodeSurfaceParams origin params
-    bool originIsOpDropped = uniParam.IsOpDropped();
-    bool originIsOccludedByFilterCache = clonedNodeSurfaceParams->GetOccludedByFilterCache();
-    auto originMatrix = clonedNodeSurfaceParams->GetMatrix();
-    bool originShouldPaint = clonedNodeSurfaceParams->GetShouldPaint();
-    bool originSkipDraw = clonedNodeSurfaceParams->GetSkipDraw();
-    // change some params in cloneNodeSurfaceParams like cloneNodeParams
-    uniParam.SetOpDropped(false);
-    clonedNodeSurfaceParams->SetOccludedByFilterCache(surfaceParams.GetOccludedByFilterCache());
-    clonedNodeSurfaceParams->SetMatrix(surfaceParams.GetMatrix());
-    clonedNodeSurfaceParams->SetShouldPaint(ShouldPaint());
-    clonedNodeSurfaceParams->SetSkipDraw(surfaceParams.GetSkipDraw());
-    // draw
-    RSAutoCanvasRestore acr(&canvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
-    canvas.MultiplyAlpha(surfaceParams.GetAlpha());
-    isCapture ? clonedNodeRenderDrawable->OnCapture(canvas) : clonedNodeRenderDrawable->OnDraw(canvas);
-    // restore cloneNodeSurfaceParams origin params
-    uniParam.SetOpDropped(originIsOpDropped);
-    clonedNodeSurfaceParams->SetOccludedByFilterCache(originIsOccludedByFilterCache);
-    clonedNodeSurfaceParams->SetMatrix(originMatrix);
-    clonedNodeSurfaceParams->SetShouldPaint(originShouldPaint);
-    clonedNodeSurfaceParams->SetSkipDraw(originSkipDraw);
-    return true;
-}
-
-bool RSSurfaceRenderNodeDrawable::DrawRelatedSourceNode(RSPaintFilterCanvas& canvas,
-    RSSurfaceRenderParams& surfaceParams)
-{
-    if (!surfaceParams.ClonedSourceNode()) {
-        return false;
-    }
-
-    if (!surfaceParams.IsRelatedSourceNode() || relatedSourceNodeCache_ == nullptr) {
-        return false;
-    }
-
-    if (ROSEN_EQ(relatedSourceNodeCache_->GetWidth(), 0) || ROSEN_EQ(relatedSourceNodeCache_->GetHeight(), 0)) {
-        RS_LOGE("RSSurfaceRenderNodeDrawable::DrawRelatedSourceNode buffer size is zero");
-        return false;
-    }
-    RS_TRACE_NAME_FMT("DrawRelatedSourceNode node[%lld] %s", GetId(), GetName().c_str());
-    RSDrawWindowCache::DrawCache(this, canvas, surfaceParams, relatedSourceNodeCache_);
-    return true;
-}
-
-void RSSurfaceRenderNodeDrawable::SetRelatedSourceNodeCache(std::shared_ptr<Drawing::Image> image)
-{
-    relatedSourceNodeCache_ = image;
-    needCacheRelatedSourceNode_ = false;
-}
-
-void RSSurfaceRenderNodeDrawable::ClearRelatedSourceCache()
-{
-    RS_TRACE_NAME_FMT("ClearRelatedSourceCache node[%lld] %s", GetId(), GetName().c_str());
-    relatedSourceNodeCache_ = nullptr;
 }
 
 void RSSurfaceRenderNodeDrawable::ClipHoleForSelfDrawingNode(RSPaintFilterCanvas& canvas,

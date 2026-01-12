@@ -116,6 +116,7 @@ public:
     int32_t ClearClientBuffer(uint32_t screenId) override;
     void Destroy() override;
     int32_t RegHwcEventCallback(const RSHwcEventCallback& callback, void *data) override;
+    int32_t GetDisplayClientTargetProperty(uint32_t screenId, int32_t& pixelFormat, int32_t& dataspace) override;
 
 private:
     HdiDeviceImpl(const HdiDeviceImpl& rhs) = delete;

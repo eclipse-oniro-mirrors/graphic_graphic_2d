@@ -153,7 +153,6 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::OnDraw params is nullptr!");
         return;
     }
-    SetScreenRotationForPointLight(*params);
     RSAutoCanvasRestore acr(curCanvas_, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
     if (!screenManager) {
@@ -181,7 +180,8 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             return;
         }
         uniParam->SetSecurityDisplay(params->IsSecurityDisplay());
-        currentBlackList_ = screenManager->GetVirtualScreenBlackList(paramScreenId);
+        const auto& screenProperty = screenParams->GetScreenProperty();
+        currentBlackList_ = screenProperty.GetBlackList();
         RSUniRenderThread::Instance().SetBlackList(currentBlackList_);
         if (mirroredRenderParams) {
             curVisibleRect_ = RSUniRenderThread::Instance().GetVisibleRect();
@@ -194,7 +194,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 uniParam->SetSecurityDisplay(false);
                 return;
             }
-            currentTypeBlackList_ = screenManager->GetVirtualScreenTypeBlackList(paramScreenId);
+            currentTypeBlackList_ = screenProperty.GetTypeBlackList();
             RSUniRenderThread::Instance().SetTypeBlackList(currentTypeBlackList_);
             RSUniRenderThread::Instance().SetWhiteList(screenInfo.whiteList);
             curSecExemption_ = params->GetSecurityExemption();
@@ -1608,23 +1608,6 @@ void RSLogicalDisplayRenderNodeDrawable::MirrorRedrawDFX(bool mirrorRedraw, Scre
         RS_LOGI("RSLogicalDisplayRenderNodeDrawable::%{public}s mirror screenId: %{public}" PRIu64
             " drawing path changed, mirrorRedraw_: %{public}d", __func__, screenId, mirrorRedraw);
     }
-}
-
-void RSLogicalDisplayRenderNodeDrawable::SetScreenRotationForPointLight(RSLogicalDisplayRenderParams& params)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    auto [mirroredDrawable, mirroredParams, _, __] = GetMirrorSourceParams(params);
-    ScreenId screenId = params.GetScreenId();
-    ScreenRotation screenRotation = params.GetScreenRotation();
-    if (mirroredParams) {
-        screenId = mirroredParams->GetScreenId();
-        screenRotation = mirroredParams->GetScreenRotation();
-    }
-    auto screenCorrection = screenManager->GetScreenCorrection(screenId);
-    screenRotation = static_cast<ScreenRotation>(
-        (static_cast<int>(screenRotation) + SCREEN_ROTATION_NUM - static_cast<int>(screenCorrection)) %
-        SCREEN_ROTATION_NUM);
-    RSPointLightManager::Instance()->SetScreenRotation(screenRotation);
 }
 
 RSLogicalDisplayRenderNodeDrawable::AncestorParams RSLogicalDisplayRenderNodeDrawable::GetScreenParams(

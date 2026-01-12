@@ -183,8 +183,7 @@ void HgmFrameRateManager::RegisterCoreCallbacksAndInitController(sptr<VSyncContr
             appController->SetPhaseOffset(0);
             CreateVSyncGenerator()->SetVSyncMode(VSYNC_MODE_LTPO);
         } else {
-            auto& hgmCore = HgmCore::Instance();
-            if (RSUniRenderJudgement::IsUniRender()) {
+            if (auto& hgmCore = HgmCore::Instance(); RSUniRenderJudgement::IsUniRender()) {
                 int64_t offset = hgmCore.IsDelayMode() ?
                     UNI_RENDER_VSYNC_OFFSET_DELAY_MODE : UNI_RENDER_VSYNC_OFFSET;
                 rsController->SetPhaseOffset(hgmCore.GetRsPhaseOffset(offset));
@@ -831,7 +830,6 @@ void HgmFrameRateManager::HandleTouchTask(pid_t pid, int32_t touchStatus, int32_
         if (touchCnt != LAST_TOUCH_CNT) {
             return;
         }
-        auto voteRecord = frameVoter_.GetVoteRecord();
         if (frameVoter_.GetVoterGamesEffective()) {
             HGM_LOGD("[touch manager] keep down in games");
             return;
@@ -1180,7 +1178,7 @@ void HgmFrameRateManager::HandleMultiSelfOwnedScreenEvent(pid_t pid, EventInfo e
 
 void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
 {
-    auto voteRecord = frameVoter_.GetVoteRecord();
+    const auto& voteRecord = frameVoter_.GetVoteRecord();
     if (auto iter = voteRecord.find(voter);
         voter != "" && (iter == voteRecord.end() || !iter->second.second) && !voterTouchEffective_) {
         return;
@@ -1284,7 +1282,7 @@ bool HgmFrameRateManager::CheckAncoVoterStatus() const
         !isAmbientEffect_ || ancoLowBrightVec_.empty()) {
         return false;
     }
-    auto voteRecord = frameVoter_.GetVoteRecord();
+    const auto& voteRecord = frameVoter_.GetVoteRecord();
     auto iter = voteRecord.find("VOTER_ANCO");
     if (iter == voteRecord.end() || iter->second.first.empty() || !iter->second.second) {
         return false;
@@ -1506,15 +1504,15 @@ void HgmFrameRateManager::CheckNeedUpdateAppOffset(uint32_t refreshRate, uint32_
         !controller_->CheckNeedUpdateAppOffsetRefreshRate(controllerRate)) {
         return;
     }
-    if (touchManager_.GetState() == TouchState::IDLE_STATE) {
-        isNeedUpdateAppOffset_ = true;
-        return;
-    }
     if (isLowPowerSlide_ && refreshRate == OLED_60_HZ) {
         isNeedUpdateAppOffset_ = true;
         return;
     }
-    auto voteRecord = frameVoter_.GetVoteRecord();
+    if (touchManager_.GetState() == TouchState::IDLE_STATE) {
+        isNeedUpdateAppOffset_ = true;
+        return;
+    }
+    const auto& voteRecord = frameVoter_.GetVoteRecord();
     if (auto iter = voteRecord.find("VOTER_THERMAL");
         iter != voteRecord.end() && !iter->second.first.empty() &&
         iter->second.first.back().max > 0 && iter->second.first.back().max <= OLED_60_HZ) {

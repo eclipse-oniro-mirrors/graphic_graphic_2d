@@ -37,7 +37,6 @@
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
-#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "memory/rs_tag_tracker.h"
@@ -84,6 +83,10 @@
 
 #ifdef RS_PROFILER_ENABLED
 #include "rs_profiler_capture_recorder.h"
+#endif
+
+#ifdef HETERO_HDR_ENABLE
+#include "rs_hetero_hdr_manager.h"
 #endif
 
 // blur predict
@@ -500,7 +503,7 @@ void RSUniRenderVisitor::DealWithSpecialLayer(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::UpdateBlackListRecord(RSSurfaceRenderNode& node)
 {
-    bool hasVirtualDisplay = screenState_ == ScreenState::SOFTWARE_OUTPUT_ENABLE;
+    bool hasVirtualDisplay = screenState_ == ScreenState::PRODUCER_SURFACE_ENABLE;
     if ((!hasVirtualDisplay && !hasMirrorDisplay_) || !screenManager_) {
         return;
     }
@@ -833,7 +836,6 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node)
     curScreenNode_->UpdatePartialRenderParams();
     curScreenNode_->SetFingerprint(hasFingerprint_);
     curScreenNode_->UpdateScreenRenderParams();
-    curScreenNode_->SetCloneNodeMap(cloneNodeMap_);
     UpdateColorSpaceAfterHwcCalc(node);
     RSHdrUtil::UpdatePixelFormatAfterHwcCalc(node);
 
@@ -1295,7 +1297,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     }
     isInFocusSurface_ = isInFocusSurface;
 #endif
-    UpdateInfoForClonedNode(node);
+    node.UpdateInfoForClonedNode(clonedSourceNodeId_);
     node.GetOpincCache().OpincSetInAppStateEnd(unchangeMarkInApp_);
     ResetCurSurfaceInfoAsUpperSurfaceParent(node);
     curCornerRadius_ = curCornerRadius;
@@ -1458,22 +1460,11 @@ bool RSUniRenderVisitor::PrepareForCloneNode(RSSurfaceRenderNode& node)
         return false;
     }
     node.SetIsClonedNodeOnTheTree(clonedNode->IsOnTheTree());
-    cloneNodeMap_[node.GetClonedNodeId()] = clonedNodeRenderDrawable;
+    clonedSourceNodeId_ = node.GetClonedNodeId();
     node.SetClonedNodeRenderDrawable(clonedNodeRenderDrawable);
     node.UpdateRenderParams();
     node.AddToPendingSyncList();
-    UpdateInfoForClonedNode(*clonedNode);
     return true;
-}
-
-void RSUniRenderVisitor::UpdateInfoForClonedNode(RSSurfaceRenderNode& node)
-{
-    NodeId sourceId = node.GetId();
-    if (auto it = cloneNodeMap_.find(sourceId); it != cloneNodeMap_.end()) {
-        node.UpdateInfoForClonedNode(true);
-        return;
-    }
-    node.UpdateInfoForClonedNode(false);
 }
 
 void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)
@@ -1755,20 +1746,6 @@ void RSUniRenderVisitor::CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node)
 
 void RSUniRenderVisitor::SurfaceOcclusionCallbackToWMS()
 {
-    if (RSSystemParameters::GetOcclusionCallBackToWMSDebugType()) {
-        allDstCurVisVec_.clear();
-        const auto& curAllSurfaces = curScreenNode_->GetAllMainAndLeashSurfaces();
-        for (const auto& surfacePtr : curAllSurfaces) {
-            if (surfacePtr == nullptr) {
-                continue;
-            }
-            const auto& surfaceNode = static_cast<RSSurfaceRenderNode&>(*surfacePtr);
-            if (surfaceNode.IsMainWindowType()) {
-                allDstCurVisVec_.emplace_back(std::make_pair(surfacePtr->GetId(),
-                    WINDOW_LAYER_INFO_TYPE::ALL_VISIBLE));
-            }
-        }
-    }
     if (allDstCurVisVec_ != allLastVisVec_) {
         RSMainThread::Instance()->SurfaceOcclusionChangeCallback(allDstCurVisVec_);
         HILOG_COMM_INFO("OcclusionInfo %{public}s", VisibleDataToString(allDstCurVisVec_).c_str());
@@ -2082,7 +2059,7 @@ void RSUniRenderVisitor::UpdateCompositeType(RSScreenRenderNode& node)
     // 5. check compositeType
     auto mirrorNode = node.GetMirrorSource().lock();
     switch (node.GetScreenInfo().state) {
-        case ScreenState::SOFTWARE_OUTPUT_ENABLE:
+        case ScreenState::PRODUCER_SURFACE_ENABLE:
             node.SetCompositeType(mirrorNode ?
                 CompositeType::UNI_RENDER_MIRROR_COMPOSITE :
                 CompositeType::UNI_RENDER_EXPAND_COMPOSITE);
@@ -2415,7 +2392,9 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
             continue;
         }
         if (it.second == RequestCompositionType::OFFLINE_DEVICE &&
+#ifdef HETERO_HDR_ENABLE
             !RSHeteroHDRManager::Instance().HasHdrHeteroNode() &&
+#endif
             RSHpaeOfflineProcessor::GetOfflineProcessor().IsRSHpaeOfflineProcessorReady()) {
             node->SetDeviceOfflineEnable(true);
             continue;

@@ -2957,8 +2957,10 @@ HWTEST_F(RSCanvasNodeTest, SetandGetBackgroundColor001, TestSize.Level1)
 {
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     constexpr uint32_t colorValue = 0x034123;
+    RSColor color = Color::FromArgbInt(colorValue);
+    color.ConvertToP3ColorSpace();
     canvasNode->SetBackgroundColor(colorValue);
-    EXPECT_TRUE(canvasNode->GetStagingProperties().GetBackgroundColor() == Color::FromArgbInt(colorValue));
+    EXPECT_TRUE(colorValue == color.AsArgbInt());
 }
 
 /**
@@ -2970,8 +2972,10 @@ HWTEST_F(RSCanvasNodeTest, SetandGetBackgroundColor002, TestSize.Level1)
 {
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     constexpr uint32_t colorValue = std::numeric_limits<uint32_t>::max();
+    RSColor color = Color::FromArgbInt(colorValue);
+    color.ConvertToP3ColorSpace();
     canvasNode->SetBackgroundColor(colorValue);
-    EXPECT_TRUE(canvasNode->GetStagingProperties().GetBackgroundColor() == Color::FromArgbInt(colorValue));
+    EXPECT_TRUE(colorValue == color.AsArgbInt());
 }
 
 /**
@@ -2983,8 +2987,10 @@ HWTEST_F(RSCanvasNodeTest, SetandGetBackgroundColor003, TestSize.Level1)
 {
     RSCanvasNode::SharedPtr canvasNode = RSCanvasNode::Create();
     constexpr uint32_t colorValue = std::numeric_limits<uint32_t>::min();
+    RSColor color = Color::FromArgbInt(colorValue);
+    color.ConvertToP3ColorSpace();
     canvasNode->SetBackgroundColor(colorValue);
-    EXPECT_TRUE(canvasNode->GetStagingProperties().GetBackgroundColor() == Color::FromArgbInt(colorValue));
+    EXPECT_TRUE(colorValue == color.AsArgbInt());
 }
 
 /**

@@ -1536,7 +1536,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateBlackListRecord003, TestSize.Level2)
     
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->screenState_ = ScreenState::SOFTWARE_OUTPUT_ENABLE;
+    rsUniRenderVisitor->screenState_ = ScreenState::PRODUCER_SURFACE_ENABLE;
     rsUniRenderVisitor->screenManager_ = nullptr;
     rsUniRenderVisitor->hasMirrorDisplay_ = false;
     rsUniRenderVisitor->UpdateBlackListRecord(*node);
@@ -1557,7 +1557,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateBlackListRecord004, TestSize.Level2)
     
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->screenState_ = ScreenState::SOFTWARE_OUTPUT_ENABLE;
+    rsUniRenderVisitor->screenState_ = ScreenState::PRODUCER_SURFACE_ENABLE;
     rsUniRenderVisitor->screenManager_ = screenManager;
     rsUniRenderVisitor->hasMirrorDisplay_ = false;
     rsUniRenderVisitor->UpdateBlackListRecord(*node);
@@ -1578,7 +1578,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateBlackListRecord005, TestSize.Level2)
     
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    rsUniRenderVisitor->screenState_ = ScreenState::SOFTWARE_OUTPUT_ENABLE;
+    rsUniRenderVisitor->screenState_ = ScreenState::PRODUCER_SURFACE_ENABLE;
     rsUniRenderVisitor->screenManager_ = screenManager;
     rsUniRenderVisitor->hasMirrorDisplay_ = true;
     rsUniRenderVisitor->UpdateBlackListRecord(*node);
@@ -1626,33 +1626,9 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForCloneNode001, TestSize.Level1)
     surfaceRenderNodeCloned->renderDrawable_ = clonedNodeRenderDrawableSharedPtr;
 
     surfaceRenderNode.isCloneNode_ = true;
-    surfaceRenderNode.SetClonedNodeInfo(surfaceRenderNodeCloned->GetId(), true, false);
+    surfaceRenderNode.SetClonedNodeInfo(surfaceRenderNodeCloned->GetId(), true);
     auto result = rsUniRenderVisitor->PrepareForCloneNode(surfaceRenderNode);
-    ASSERT_FALSE(result);
-}
-
-/**
- * @tc.name: UpdateInfoForClonedNode
- * @tc.desc: Test UpdateInfoForClonedNode
- * @tc.type: FUNC
- * @tc.require: issueIBKU7U
- */
-HWTEST_F(RSUniRenderVisitorTest, UpdateInfoForClonedNode, TestSize.Level1)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-
-    auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(1);
-    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
-    rsUniRenderVisitor->cloneNodeMap_[surfaceRenderNode->GetId() + 1];
-    nodeMap.renderNodeMap_.clear();
-    nodeMap.RegisterRenderNode(surfaceRenderNode);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceRenderNode->stagingRenderParams_.get());
-    rsUniRenderVisitor->UpdateInfoForClonedNode(*surfaceRenderNode);
-    ASSERT_FALSE(surfaceParams->GetNeedCacheSurface());
-    rsUniRenderVisitor->cloneNodeMap_[surfaceRenderNode->GetId()];
-    rsUniRenderVisitor->UpdateInfoForClonedNode(*surfaceRenderNode);
-    ASSERT_TRUE(surfaceParams->GetNeedCacheSurface());
+    ASSERT_TRUE(result);
 }
 
 /**

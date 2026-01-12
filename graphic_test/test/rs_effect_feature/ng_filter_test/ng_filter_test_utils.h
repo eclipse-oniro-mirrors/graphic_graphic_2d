@@ -24,7 +24,13 @@ namespace OHOS::Rosen {
 std::shared_ptr<RSNGMaskBase> CreateMask(RSNGEffectType type);
 std::shared_ptr<RSNGFilterBase> CreateFilter(RSNGEffectType type);
 
+const std::string APPEARANCE_TEST_JPG_PATH = "/data/local/tmp/appearance_test.jpg";
+const std::string BG_PATH = "/data/local/tmp/Images/backGroundImage.jpg";
 const std::string FG_TEST_JPG_PATH = "/data/local/tmp/fg_test.jpg";
+const std::string MASK_RGB_PATH = "/data/local/tmp/Images/maskRGB.png";
+const std::string MASK_SHADOW_PATH = "/data/local/tmp/Images/maskShadow.png";
+const int SCREEN_WIDTH = 1200;
+const int SCREEN_HEIGHT = 2000;
 
 // Default values
 const Vector2f DEFAULT_BLUR_PARAMS = Vector2f(20.0f, 3.0f);
@@ -52,6 +58,7 @@ const Vector2f DEFAULT_ED_LIGHT_RATES = Vector2f(0.0f, 0.0f);
 const Vector3f DEFAULT_ED_LIGHT_KBS = Vector3f(0.6027f, 0.627451f, 2.0f);
 const Vector3f DEFAULT_ED_LIGHT_POS = Vector3f(1.0f, 1.7f, 1.5f);
 const Vector3f DEFAULT_ED_LIGHT_NEG = Vector3f(3.2f, 2.0f, 1.0f);
+const Vector4f DEFAULT_MATERIAL_COLOR = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 const bool DEFAULT_BASE_VIBRANCY_ENABLED = true;
 const float DEFAULT_SAMPLING_SCALE = 1.0f;
  
@@ -316,6 +323,16 @@ const std::vector<bool> baseVibrancyEnabledParams = {true, false};
 // 27. samplingScale
 const std::vector<float> samplingScaleParams = {-1.0f, 0.0f, 0.1f, 0.2f, 0.5f, 10.0f};
 
+// 28. materialColor: [0.0, 1.0]
+const std::vector<Vector4f> materialColorParams = {
+    Vector4f{0.0f, 0.0f, 0.0f, 0.5f},
+    Vector4f{1.0f, 0.0f, 0.0f, 0.5f},
+    Vector4f{0.0f, 1.0f, 0.0f, 0.5f},
+    Vector4f{0.0f, 0.0f, 1.0f, 0.5f},
+    Vector4f{0.3f, 0.3f, 0.3f, 0.5f},
+    Vector4f{1.0f, 1.0f, 1.0f, 0.5f}
+};
+
 constexpr int DOUBLE_RIPPLE_MASK_PARAMS_COUNT = 7;
 const std::vector<std::array<float, DOUBLE_RIPPLE_MASK_PARAMS_COUNT>> doubleRippleMaskParams = {
     {-20.0f, -20.0f, -20.0f, -20.0f, -1.0f, -1.0f, -1.0f},
@@ -409,14 +426,6 @@ const std::vector<std::array<Vector2f, GRID_WARP_ANGLE_PARAMS_COUNT>> gridWarpAn
     }
 };
 
-const std::vector<Vector2f> blurparamsParamsForMaterialFilter = {
-    Vector2f{48.0f, 4.0f},
-    Vector2f{-48.0f, 4.0f},
-    Vector2f{std::numeric_limits<float>::max(), 4.0f},
-    Vector2f{std::numeric_limits<float>::min(), 4.0f},
-    Vector2f{std::numeric_limits<float>::infinity(), 4.0f}
-};
-
 enum class TestDataGroupParamsType {
     INVALID_DATA_MIN,
     VALID_DATA1,
@@ -426,5 +435,7 @@ enum class TestDataGroupParamsType {
     INVALID_DATA_MAX,
     COUNT
 };
+
+const std::vector<float> gasifyProgressVec = {-1.f, 0.01f, 0.2f, 1.5f};
 }  // namespace OHOS::Rosen
 #endif // NG_FILTER_TEST_UTILS_H

@@ -168,8 +168,9 @@
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "feature_cfg/feature_param/feature_param.h"
 
-// HDRHeterogeneous
-#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
+#ifdef HETERO_HDR_ENABLE
+#include "rs_hetero_hdr_manager.h"
+#endif
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
@@ -1511,7 +1512,9 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
         dividedRenderbufferTimestamps_.clear();
     }
     RSDrmUtil::ClearDrmNodes();
+#ifdef HETERO_HDR_ENABLE
     RSHeteroHDRManager::Instance().ClearPendingPostNodes();
+#endif
     const auto& nodeMap = GetContext().GetNodeMap();
     isHdrSwitchChanged_ = RSLuminanceControl::Get().IsHdrPictureOn() != prevHdrSwitchStatus_;
     isColorTemperatureOn_ = RSColorTemperature::Get().IsColorTemperatureOn();
@@ -1646,7 +1649,9 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             if (isColorTemperatureOn_ && surfaceNode->GetVideoHdrStatus() == HdrStatus::NO_HDR) {
                 surfaceNode->SetSdrHasMetadata(RSHdrUtil::CheckIsSurfaceWithMetadata(*surfaceNode));
             }
+#ifdef HETERO_HDR_ENABLE
             RSHeteroHDRManager::Instance().UpdateHDRNodes(*surfaceNode, surfaceHandler->IsCurrentFrameBufferConsumed());
+#endif
         };
     }
     nodeMap.TraverseSurfaceNodes(consumeAndUpdateNode_);
@@ -1964,6 +1969,7 @@ void RSMainThread::WaitUntilUnmarshallingTaskFinished()
     }
     RS_OPTIONAL_TRACE_BEGIN("RSMainThread::WaitUntilUnmarshallingTaskFinished");
     std::unique_lock<std::mutex> lock(unmarshalMutex_);
+    RSUnmarshalThread::Instance().WaitUntilParallelTasksFinished();
     if (unmarshalFinishedCount_ > 0) {
         waitForDVSyncFrame_.store(false);
     } else {

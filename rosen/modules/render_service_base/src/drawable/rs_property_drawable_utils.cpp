@@ -209,14 +209,9 @@ bool RSPropertyDrawableUtils::PickColor(std::shared_ptr<Drawing::GPUContext> con
         RS_LOGE("RSPropertyDrawableUtils::PickColor ReadPixel Failed");
         return false;
     }
-    uint32_t errorCode = 0;
-    std::shared_ptr<RSColorPicker> colorPicker = RSColorPicker::CreateColorPicker(dst, errorCode);
-    if (colorPicker == nullptr || errorCode != 0) {
-        RS_LOGE("RSPropertyDrawableUtils::PickColor CreateColorPicker failed");
-        return false;
-    }
-    if (colorPicker->GetAverageColor(colorPicked) != 0) {
-        RS_LOGE("RSPropertyDrawableUtils::PickColor PickColor failed");
+    // Use direct average calculation to avoid quantization artifacts
+    if (RSColorPicker::GetAverageColorDirect(dst, colorPicked) != 0) {
+        RS_LOGE("RSPropertyDrawableUtils::PickColor GetAverageColorDirect failed");
         return false;
     }
     return true;
@@ -1221,7 +1216,7 @@ void RSPropertyDrawableUtils::DrawUseEffect(RSPaintFilterCanvas* canvas, UseEffe
     auto cachedImageSrcRect = Drawing::Rect(0, 0, effectData->cachedImage_->GetWidth(),
         effectData->cachedImage_->GetHeight());
     canvas->DrawImageRect(*effectData->cachedImage_, cachedImageSrcRect, effectData->cachedRect_,
-        Drawing::SamplingOptions(), Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+        Drawing::SamplingOptions(Drawing::FilterMode::LINEAR), Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     RS_OPTIONAL_TRACE_NAME_FMT("RSPropertyDrawableUtils::DrawUseEffect cachedRect_:%s, DeviceClipBounds:%s, "
         "IdentityMatrix: %d", effectData->cachedRect_.ToString().c_str(),
         canvas->GetDeviceClipBounds().ToString().c_str(), effectData->cachedMatrix_.IsIdentity());

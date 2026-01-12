@@ -102,9 +102,9 @@ bool RSRenderService::Init()
         mallopt(M_DELAYED_FREE, M_DELAYED_FREE_ENABLE);
     }
 #ifdef RS_ENABLE_VK
-if (Drawing::SystemProperties::IsUseVulkan()) {
-    RsVulkanContext::SetRecyclable(false);
-}
+    if (Drawing::SystemProperties::IsUseVulkan()) {
+        RsVulkanContext::SetRecyclable(false);
+    }
 #endif
     RSMainThread::Instance();
     RSUniRenderJudgement::InitUniRenderConfig();
@@ -134,8 +134,7 @@ if (Drawing::SystemProperties::IsUseVulkan()) {
 
     // The offset needs to be set
     int64_t offset = 0;
-    auto& hgmCore = HgmCore::Instance();
-    if (!hgmCore.GetLtpoEnabled()) {
+    if (auto& hgmCore = HgmCore::Instance(); !hgmCore.GetLtpoEnabled()) {
         if (RSUniRenderJudgement::GetUniRenderEnabledType() == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
             offset = hgmCore.IsDelayMode() ? UNI_RENDER_VSYNC_OFFSET_DELAY_MODE : UNI_RENDER_VSYNC_OFFSET;
         }

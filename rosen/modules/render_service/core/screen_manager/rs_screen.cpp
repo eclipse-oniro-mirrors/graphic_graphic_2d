@@ -113,7 +113,7 @@ RSScreen::RSScreen(const VirtualScreenConfigs &configs)
     property_.SetScreenType(RSScreenType::VIRTUAL_TYPE_SCREEN);
     property_.SetWhiteList(configs.whiteList);
     if (property_.GetProducerSurface()) {
-        property_.SetState(ScreenState::SOFTWARE_OUTPUT_ENABLE);
+        property_.SetState(ScreenState::PRODUCER_SURFACE_ENABLE);
     } else {
         property_.SetState(ScreenState::DISABLED);
     }
@@ -220,7 +220,7 @@ void RSScreen::PhysicalScreenInit() noexcept
     }
     property_.SetSupportedColorGamuts(supportedPhysicalColorGamuts_);
     backlightLevel_ = GetScreenBacklight();
-    // Enable when an external screen is connected and the vsync rate doesn't match the active refresh rate.
+
     if (id != 0 && MultiScreenParam::IsSkipFrameByActiveRefreshRate()) {
         property_.SetSkipFrameStrategy(SKIP_FRAME_BY_ACTIVE_REFRESH_RATE);
     }
@@ -395,7 +395,7 @@ uint32_t RSScreen::SetActiveMode(uint32_t modeId)
         }
     }
     int32_t hdiErr = hdiScreen_->SetScreenMode(static_cast<uint32_t>(selectModeId));
-    constexpr int32_t hdfErrNotSupport = -2;
+    constexpr int32_t hdfErrNotSupport = -5;
     auto ret = StatusCode::SUCCESS;
     if (hdiErr < 0) {
         HILOG_COMM_ERROR("SetActiveMode: Hdi SetScreenMode fails.");
@@ -544,9 +544,6 @@ int32_t RSScreen::SetResolution(uint32_t width, uint32_t height)
 {
     HILOG_COMM_INFO("SetResolution screenId:%{public}" PRIu64 " width: %{public}u height: %{public}u",
                     property_.GetId(), width, height);
-    if (width == property_.GetWidth() && height == property_.GetHeight()) {
-        return StatusCode::SUCCESS;
-    }
     if (IsVirtual()) {
         property_.SetWidth(width);
         property_.SetHeight(height);
@@ -704,8 +701,7 @@ int32_t RSScreen::SetDualScreenState(DualScreenStatus status)
         return StatusCode::HDI_ERROR;
     }
     uint64_t value = static_cast<uint64_t>(status);
-    auto id = property_.GetId();
-    RS_TRACE_NAME_FMT("Screen_%llu SetDualScreenState %llu", id, value);
+    RS_TRACE_NAME_FMT("Screen_%llu SetDualScreenState %llu", property_.GetId(), value);
     int32_t ret = hdiScreen_->SetDisplayProperty(value);
     if (ret < 0) {
         RS_LOGE("%{public}s: failed to set DualScreenStatus. ret: %{public}d", __func__, ret);
@@ -728,7 +724,7 @@ void RSScreen::SetProducerSurface(sptr<Surface> producerSurface)
 {
     property_.SetProducerSurface(producerSurface);
     if (producerSurface) {
-        property_.SetState(ScreenState::SOFTWARE_OUTPUT_ENABLE);
+        property_.SetState(ScreenState::PRODUCER_SURFACE_ENABLE);
     } else {
         property_.SetState(ScreenState::DISABLED);
     }

@@ -1366,11 +1366,6 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
         out += ", colorSpace: " + std::to_string(surfaceNode->GetColorSpace());
         out += ", uifirstColorGamut: " + std::to_string(surfaceNode->GetFirstLevelNodeColorGamut());
         out += ", isSurfaceBufferOpaque: " + std::to_string(surfaceNode->GetSurfaceBufferOpaque());
-        if (surfaceNode->IsCloneNode()) {
-            out += ", isCloneNode: " + std::to_string(surfaceNode->IsCloneNode());
-            out += ", isRelated: " + std::to_string(surfaceNode->IsRelated());
-            out += ", sourceNodeId: " + std::to_string(surfaceNode->GetClonedNodeId());
-        }
     } else if (GetType() == RSRenderNodeType::ROOT_NODE) {
         auto rootNode = static_cast<const RSRootRenderNode*>(this);
         out += ", Visible: " + std::to_string(rootNode->GetRenderProperties().GetVisible());
@@ -3191,7 +3186,6 @@ CM_INLINE void RSRenderNode::ApplyModifiers()
         // clean node, skip apply
         return;
     }
-    AccumulateLastDirtyTypes();
     RecordCurDirtyTypes();
     // Reset and re-apply all modifiers
     ResetAndApplyModifiers();
@@ -3237,6 +3231,8 @@ CM_INLINE void RSRenderNode::ApplyModifiers()
 
     UpdateFilterCacheWithBackgroundDirty();
 
+    // Clear node some resource
+    ClearResource();
     // update state
     dirtyTypesNG_.reset();
     AddToPendingSyncList();
@@ -4559,7 +4555,6 @@ void RSRenderNode::ValidateLightResources()
 {
     auto& properties = GetMutableRenderProperties();
     if (properties.GetLightSource() && properties.GetLightSource()->IsLightSourceValid()) {
-        properties.CalculateAbsLightPosition();
         RSPointLightManager::Instance()->AddDirtyLightSource(weak_from_this());
     }
     if (properties.GetIlluminated() && properties.GetIlluminated()->IsIlluminatedValid()) {

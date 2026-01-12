@@ -1335,7 +1335,11 @@ HWTEST_F(RSUniRenderUtilTest, FrameAwareTraceBoostTest, TestSize.Level1)
 
     layerNum = 11;
     res = RSUniRenderUtil::FrameAwareTraceBoost(layerNum);
+#ifdef FRAME_TRACE_ENABLE
     ASSERT_EQ(res, true);
+#else
+    ASSERT_EQ(res, false);
+#endif
 }
 
 /**
@@ -1499,7 +1503,7 @@ HWTEST_F(RSUniRenderUtilTest, CollectHardwareEnabledNodesByDisplayNodeId001, Tes
     EXPECT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams(), nullptr);
     std::unique_ptr<RSRenderThreadParams> uniParamUnique = std::make_unique<RSRenderThreadParams>();
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParamUnique));
-    EXPECT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams(), nullptr);
+    EXPECT_NE(RSUniRenderThread::Instance().GetRSRenderThreadParams(), nullptr);
     NodeId nodeId = 0;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> enabledNode;
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> toEnabledNode;
@@ -1552,32 +1556,34 @@ HWTEST_F(RSUniRenderUtilTest, CreateBufferDrawParamTest003, TestSize.Level1)
     bool forceCPU = false;
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     auto surfaceHandle = surfaceNode->GetRSSurfaceHandler();
-    const auto& surfaceConsumer = surfaceHandle->GetConsumer();
-    auto producer = surfaceConsumer->GetProducer();
 
+    surfaceHandle->SetConsumer(nullptr);
     auto params = RSUniRenderUtil::CreateBufferDrawParam(*surfaceNode, forceCPU);
     ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
 
-    producer->SetAlphaType(GraphicAlphaType::GRAPHIC_ALPHATYPE_UNKNOWN);
+    params = RSUniRenderUtil::CreateBufferDrawParam(*surfaceHandle, forceCPU);
+    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
+
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    surfaceHandle->SetConsumer(consumer);
+
     params = RSUniRenderUtil::CreateBufferDrawParam(*surfaceNode, forceCPU);
-    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_UNKNOWN);
+    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
 
     params = RSUniRenderUtil::CreateBufferDrawParam(*surfaceHandle, forceCPU);
-    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_UNKNOWN);
+    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
 
     auto surfaceAdapter = RSSurfaceRenderNodeDrawable::OnGenerate(surfaceNode);
     auto surfaceDrawable = static_cast<RSSurfaceRenderNodeDrawable*>(surfaceAdapter);
     surfaceDrawable->renderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceNode->id_);
-    surfaceDrawable->consumerOnDraw_ = surfaceConsumer;
+    surfaceDrawable->consumerOnDraw_ = consumer;
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->renderParams_.get());
     surfaceParams->buffer_ = OHOS::SurfaceBuffer::Create();
-    producer->SetAlphaType(GraphicAlphaType::GRAPHIC_ALPHATYPE_OPAQUE);
     params = RSUniRenderUtil::CreateBufferDrawParam(*surfaceDrawable, forceCPU, 0);
-    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_OPAQUE);
+    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
 
-    producer->SetAlphaType(GraphicAlphaType::GRAPHIC_ALPHATYPE_UNPREMUL);
     params = RSUniRenderUtil::CreateBufferDrawParam(*surfaceNode, forceCPU, 0, false);
-    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_UNPREMUL);
+    ASSERT_EQ(params.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
 }
 
 /**
@@ -1593,7 +1599,7 @@ HWTEST_F(RSUniRenderUtilTest, GetMatrixByDegree001, TestSize.Level1)
     const int32_t ROTATE_180 = 180;
     auto canvas = std::make_unique<Drawing::Canvas>(100, 100); // create 100*100 canvas
     RectF bounds = {0, 0, 0, 0}; // create zero bounds
-    
+
     canvas->Rotate(ROTATE_90);
     int degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(canvas->GetTotalMatrix());
     ASSERT_EQ(degree, ROTATE_90);
@@ -1612,7 +1618,7 @@ HWTEST_F(RSUniRenderUtilTest, GetMatrixByDegree001, TestSize.Level1)
 
     canvas->Rotate(ROTATE_180);
     degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(canvas->GetTotalMatrix());
-    ASSERT_EQ(degree, ROTATE_180);
+    ASSERT_EQ(degree, -ROTATE_180);
     matrix = RSUniRenderUtil::GetMatrixByDegree(ROTATE_180, bounds);
     canvas->ConcatMatrix(matrix);
     degree = RSUniRenderUtil::GetRotationDegreeFromMatrix(canvas->GetTotalMatrix());

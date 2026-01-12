@@ -81,6 +81,7 @@ protected:
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
     int32_t GetThreadTid() const;
+    void HandlePowerStatus(ScreenPowerStatus status);
     void OnScreenVBlankIdleCallback(uint64_t timestamp);
     GSError ClearFrameBuffers(bool isNeedResetContext = true);
     void ClearRedrawGPUCompositionCache(const std::set<uint64_t>& bufferIds);
@@ -106,6 +107,9 @@ private:
     static GraphicPixelFormat ComputeTargetPixelFormat(const std::vector<std::shared_ptr<RSLayer>>& layers);
     static bool ConvertColorGamutToSpaceType(const GraphicColorGamut& colorGamut,
         HDI::Display::Graphic::Common::V1_0::CM_ColorSpaceType& colorSpaceType);
+    bool GetDisplayClientTargetProperty(GraphicPixelFormat &pixelFormat,
+        GraphicColorGamut &colorGamut, const std::vector<std::shared_ptr<RSLayer>>& layers);
+
 #endif
     std::shared_ptr<RSSurfaceOhos> CreateFrameBufferSurfaceOhos(const sptr<Surface>& surface);
     void RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::vector<std::shared_ptr<RSLayer>>& layers);

@@ -394,7 +394,7 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
 void RSScreenRenderNodeDrawable::PostClearMemoryTask() const
 {
     auto& unirenderThread = RSUniRenderThread::Instance();
-    if (unirenderThread.IsDefaultClearMemroyFinished()) {
+    if (unirenderThread.IsDefaultClearMemoryFinished()) {
         unirenderThread.DefaultClearMemoryCache(); //default clean with no rendering in 5s
         unirenderThread.SetDefaultClearMemoryFinished(false);
     }
@@ -473,7 +473,8 @@ void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
         return;
     }
     bool isScreenOccluded = false;
-    RectI screenRect = {0, 0, screenInfo.width, screenInfo.height};
+    RectI screenRect = (screenInfo.activeRect.IsEmpty() ?
+        RectI(0, 0, screenInfo.width, screenInfo.height) : screenInfo.activeRect);
     // top-down traversal all mainsurface
     // if upper surface reuse filter cache which fully cover whole screen
     // mark lower layers for process skip
@@ -965,7 +966,6 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
     RenderOverDraw();
-    CheckAndClearRelatedSourceNodeCache(*params);
     RSMainThread::Instance()->SetDirtyFlag(false);
 
     if (Drawing::PerformanceCaculate::GetDrawingFlushPrint()) {
@@ -1233,18 +1233,4 @@ bool RSScreenRenderNodeDrawable::CheckScreenFreezeSkip(RSScreenRenderParams& par
     return false;
 }
 
-void RSScreenRenderNodeDrawable::CheckAndClearRelatedSourceNodeCache(RSScreenRenderParams& params)
-{
-    auto cloneNodeMap = params.GetCloneNodeMap();
-    for (auto &iter : cloneNodeMap) {
-        auto surfaceDrawable =
-            std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(iter.second.lock());
-        if (!surfaceDrawable) {
-            RS_LOGE("RSScreenRenderNodeDrawable::CheckAndClearRelatedSourceNodeCache"
-                " surfaceDrawable is nullptr");
-            continue;
-        }
-        surfaceDrawable->ClearRelatedSourceCache();
-    }
-}
 } // namespace OHOS::Rosen::DrawableV2

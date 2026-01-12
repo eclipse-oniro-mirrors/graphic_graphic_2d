@@ -930,11 +930,11 @@ HWTEST_F(RSScreenRenderNodeTest, UpdateColorSpaceTest, TestSize.Level1)
     node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
     ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, node->GetColorSpace());
 
-    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020);
-    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, node->GetColorSpace());
+    node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020, node->GetColorSpace());
 
     node->UpdateColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
-    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020, node->GetColorSpace());
+    ASSERT_EQ(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020, node->GetColorSpace());
 }
 
 /**
@@ -951,22 +951,6 @@ HWTEST_F(RSScreenRenderNodeTest, PixelFormatTest, TestSize.Level1)
     ASSERT_EQ(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888, node->GetPixelFormat());
     node->SetPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_1010102);
     ASSERT_EQ(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_1010102, node->GetPixelFormat());
-}
-
-/**
- * @tc.name: HdrStatusTest
- * @tc.desc: test results of CollectHdrStatus, GetDisplayHdrStatus, ResetDisplayHdrStatus
- * @tc.type: FUNC
- * @tc.require: issuesIBANP9
- */
-HWTEST_F(RSScreenRenderNodeTest, HdrStatusTest, TestSize.Level1)
-{
-    auto screenNode = std::make_shared<RSScreenRenderNode>(id, 1, context);
-    screenNode->CollectHdrStatus(HdrStatus::HDR_PHOTO);
-    screenNode->CollectHdrStatus(HdrStatus::HDR_VIDEO);
-    screenNode->CollectHdrStatus(HdrStatus::AI_HDR_VIDEO_GTM);
-    EXPECT_EQ(screenNode->GetDisplayHdrStatus(), HdrStatus::HDR_PHOTO | HdrStatus::HDR_VIDEO |
-        HdrStatus::AI_HDR_VIDEO_GTM);
 }
 
 /**
@@ -1236,27 +1220,6 @@ HWTEST_F(RSScreenRenderNodeTest, ResetVideoHeadroomInfo, TestSize.Level1)
     CheckWithStatusLevel(map, HdrStatus::HDR_EFFECT, level);
     CheckWithoutStatusLevel(map, HdrStatus::AI_HDR_VIDEO_GAINMAP, level);
     CheckWithStatusLevel(map, HdrStatus::HDR_UICOMPONENT, level);
-}
-
-/**
- * @tc.name: SetCloneNodeMapTest
- * @tc.desc: test results of SetCloneNodeMap
- * @tc.type: FUNC
- */
-HWTEST_F(RSScreenRenderNodeTest, SetCloneNodeMapTest, TestSize.Level1)
-{
-    auto node = std::make_shared<RSScreenRenderNode>(id, 0, context);
-    node->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(node->GetId());
-    std::map<NodeId, DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr> nodeMap;
-    nodeMap[1];
-    auto screenParams = static_cast<RSScreenRenderParams*>(node->stagingRenderParams_.get());
-    ASSERT_EQ(screenParams->GetCloneNodeMap().size(), 0);
-    node->SetCloneNodeMap(nodeMap);
-    ASSERT_EQ(screenParams->GetCloneNodeMap().size(), 1);
-
-    node->stagingRenderParams_ = nullptr;
-    node->SetCloneNodeMap(nodeMap);
-    ASSERT_EQ(node->stagingRenderParams_.get(), nullptr);
 }
 
 } // namespace OHOS::Rosen

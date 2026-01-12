@@ -343,7 +343,7 @@ private:
     mutable std::mutex blackListMutex_;
     std::unordered_set<uint64_t> castScreenBlackList_ = {};
     // a blacklist node may exist in multiple virtual screens
-    std::unordered_map<uint64_t, std::unordered_set<ScreenId>> blackListInVirtualScreen_ = {};
+    std::unordered_map<uint64_t, std::unordered_set<ScreenId>> blackListInVirtualScreen_;
 
     uint64_t frameId_ = 0; // only used by SetScreenConstraint, called in hardware thread per frame
 
