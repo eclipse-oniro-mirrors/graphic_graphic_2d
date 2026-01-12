@@ -485,7 +485,7 @@ bool RSImageBase::Marshalling(Parcel& parcel) const
                    RSMarshallingHelper::Marshalling(parcel, dstRect_) &&
                    parcel.WriteBool(pixelMap_ == nullptr) &&
                    RSMarshallingHelper::Marshalling(parcel, versionId) &&
-                   RSMarshallingHelper::Marshalling(parcel, image_) &&
+                   pixelMap_ == nullptr ? RSMarshallingHelper::Marshalling(parcel, image_) :
                    RSMarshallingHelper::Marshalling(parcel, pixelMap_);
     if (!success) {
         RS_LOGE("RSImageBase::Marshalling parcel fail");

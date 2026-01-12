@@ -1337,4 +1337,26 @@ HWTEST_F(RSImageTest, DrawImageRepeatOffScreenTest, TestSize.Level1)
     rsImage->frameRect_ = RectF(0, 0, 100, 100);
     rsImage->DrawImageRepeatOffScreen(sampling, canvas, minX, maxX, minY, maxY);
 }
+
+/**
+ * @tc.name: RSImage Marshalling
+ * @tc.desc: RSImage Marshalling test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSImageTest, MarshallingTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<Media::PixelMap> pixelMap;
+    int width = 200;
+    int height = 300;
+    pixelMap = CreatePixelMap(width, height);
+    
+    rsImage->SetPixelMap(nullptr);
+    MessageParcel parcel1;
+    EXPECT_EQ(rsImage->Marshalling(parcel1), true);
+
+    rsImage->SetPixelMap(pixelMap);
+    MessageParcel parcel2;
+    EXPECT_EQ(rsImage->Marshalling(parcel2), true);
+}
 } // namespace OHOS::Rosen
