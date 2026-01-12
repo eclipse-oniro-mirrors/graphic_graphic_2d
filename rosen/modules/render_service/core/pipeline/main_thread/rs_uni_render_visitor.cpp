@@ -2233,7 +2233,7 @@ CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNo
     }
     UpdateSurfaceRenderNodeScale(node);
     UpdateSurfaceRenderNodeRotate(node);
-    if (node.IsLeashWindow()) {
+    if (node.IsLeashOrMainWindow()) {
         curScreenNode_->UpdateSurfaceNodePos(node.GetId(), node.GetOldDirtyInSurface());
         curScreenNode_->AddSurfaceNodePosByDescZOrder(node.GetId(), node.GetOldDirtyInSurface());
     }
