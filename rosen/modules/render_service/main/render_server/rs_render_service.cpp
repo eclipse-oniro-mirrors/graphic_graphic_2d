@@ -134,8 +134,7 @@ bool RSRenderService::Init()
 
     // The offset needs to be set
     int64_t offset = 0;
-    auto& hgmCore = HgmCore::Instance();
-    if (!hgmCore.GetLtpoEnabled()) {
+    if (auto& hgmCore = HgmCore::Instance(); !hgmCore.GetLtpoEnabled()) {
         if (RSUniRenderJudgement::GetUniRenderEnabledType() == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
             offset = hgmCore.IsDelayMode() ? UNI_RENDER_VSYNC_OFFSET_DELAY_MODE : UNI_RENDER_VSYNC_OFFSET;
         }
