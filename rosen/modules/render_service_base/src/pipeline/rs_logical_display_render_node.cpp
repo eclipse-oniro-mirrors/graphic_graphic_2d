@@ -404,12 +404,12 @@ void RSLogicalDisplayRenderNode::UpdateFixedSize()
     }
 }
 
-uint32_t RSLogicalDisplayRenderNode::GetFixedWidth() const
+float RSLogicalDisplayRenderNode::GetFixedWidth() const
 {
     return fixedWidth_;
 }
 
-uint32_t RSLogicalDisplayRenderNode::GetFixedHeight() const
+float RSLogicalDisplayRenderNode::GetFixedHeight() const
 {
     return fixedHeight_;
 }
