@@ -43,9 +43,9 @@ OH_Drawing_PathEffect* OH_Drawing_CreateComposePathEffect(OH_Drawing_PathEffect*
     if (!pathEffect1->value || !pathEffect2->value) {
         return nullptr;
     }
-    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;	 
-    if (pathEffectHandle == nullptr) { 
-        return nullptr; 
+    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;
+    if (pathEffectHandle == nullptr) {
+        return nullptr;
     }
     pathEffectHandle->value = PathEffect::CreateComposePathEffect(*pathEffect1->value, *pathEffect2->value);
     if (pathEffectHandle->value == nullptr) {
@@ -60,9 +60,9 @@ OH_Drawing_PathEffect* OH_Drawing_CreateCornerPathEffect(float radius)
     if (radius <= 0) {
         return nullptr;
     }
-    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;	 
-    if (pathEffectHandle == nullptr) { 
-        return nullptr; 
+    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;
+    if (pathEffectHandle == nullptr) {
+        return nullptr;
     }
     pathEffectHandle->value = PathEffect::CreateCornerPathEffect(radius);
     if (pathEffectHandle->value == nullptr) {
@@ -78,9 +78,9 @@ OH_Drawing_PathEffect* OH_Drawing_CreateDashPathEffect(float* intervals, int cou
         g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         return nullptr;
     }
-    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;	 
-    if (pathEffectHandle == nullptr) { 
-        return nullptr; 
+    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;
+    if (pathEffectHandle == nullptr) {
+        return nullptr;
     }
     pathEffectHandle->value = PathEffect::CreateDashPathEffect(intervals, count, phase);
     if (pathEffectHandle->value == nullptr) {
@@ -92,9 +92,9 @@ OH_Drawing_PathEffect* OH_Drawing_CreateDashPathEffect(float* intervals, int cou
 
 OH_Drawing_PathEffect* OH_Drawing_CreateDiscretePathEffect(float segLength, float deviation)
 {
-    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;	 
-    if (pathEffectHandle == nullptr) { 
-        return nullptr; 
+    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;
+    if (pathEffectHandle == nullptr) {
+        return nullptr;
     }
     pathEffectHandle->value = PathEffect::CreateDiscretePathEffect(segLength, deviation);
     if (pathEffectHandle->value == nullptr) {
@@ -110,9 +110,9 @@ OH_Drawing_PathEffect* OH_Drawing_CreatePathDashEffect(const OH_Drawing_Path* pa
     if (path == nullptr || advance <= 0) {
         return nullptr;
     }
-    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;	 
-    if (pathEffectHandle == nullptr) { 
-        return nullptr; 
+    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;
+    if (pathEffectHandle == nullptr) {
+        return nullptr;
     }
     pathEffectHandle->value = PathEffect::CreatePathDashEffect(CastToPath(*path), advance,
         phase, static_cast<PathDashStyle>(type));
@@ -136,9 +136,9 @@ OH_Drawing_PathEffect* OH_Drawing_CreateSumPathEffect(OH_Drawing_PathEffect* fir
     if (!pathEffectHandleFirst->value || !pathEffectHandleSecond->value) {
         return nullptr;
     }
-    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;	 
-    if (pathEffectHandle == nullptr) { 
-        return nullptr; 
+    NativeHandle<PathEffect>* pathEffectHandle = new(std::nothrow) NativeHandle<PathEffect>;
+    if (pathEffectHandle == nullptr) {
+        return nullptr;
     }
     pathEffectHandle->value = PathEffect::CreateSumPathEffect(*pathEffectHandleFirst->value,
         *pathEffectHandleSecond->value);
