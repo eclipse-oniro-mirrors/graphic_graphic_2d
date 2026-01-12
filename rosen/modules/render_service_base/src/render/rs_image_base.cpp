@@ -450,11 +450,7 @@ bool RSImageBase::UnmarshallingDrawingImageAndPixelMap(Parcel& parcel, uint64_t 
             RS_LOGE("RSImageBase::Unmarshalling UnmarshalAndCacheSkImage fail");
             return false;
         }
-        RSMarshallingHelper::SkipPixelMap(parcel);
     } else {
-        if (!RSMarshallingHelper::SkipImage(parcel)) {
-            return false;
-        }
         pixelMap = RSImageCache::Instance().GetPixelMapCache(uniqueId);
         RS_TRACE_NAME_FMT("RSImageBase::Unmarshalling pixelMap uniqueId:%lu, size:[%d %d], cached:%d",
             uniqueId, pixelMap ? pixelMap->GetWidth() : 0, pixelMap ? pixelMap->GetHeight() : 0, pixelMap != nullptr);

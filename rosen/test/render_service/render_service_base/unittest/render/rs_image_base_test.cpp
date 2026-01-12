@@ -1396,7 +1396,7 @@ HWTEST_F(RSImageBaseTest, MarshallingTest, TestSize.Level1)
 {
     auto imageBase = std::make_shared<RSImageBase>();
     imageBase->SetPixelMap(nullptr);
-    MessageParcel parcel1;
+    Parcel parcel1;
     EXPECT_EQ(imageBase->Marshalling(parcel1), true);
 }
 } // namespace OHOS::Rosen
