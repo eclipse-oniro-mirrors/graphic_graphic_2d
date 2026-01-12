@@ -110,7 +110,7 @@ HWTEST_F(RSServiceToRenderConnectionTest, GetShowRefreshRateEnabledTest, TestSiz
 HWTEST_F(RSServiceToRenderConnectionTest, NotifyPackageEventTest, TestSize.Level1)
 {
     uint32_t listSize1 = 0;
-    std::vector<std::string> package1 = {};
+    std::vector<std::string> package1;
     uint32_t listSize2 = 2;
     std::vector<std::string> package2 = {"package1", "package2"};
     g_rsConn->NotifyPackageEvent(listSize1, package1);
