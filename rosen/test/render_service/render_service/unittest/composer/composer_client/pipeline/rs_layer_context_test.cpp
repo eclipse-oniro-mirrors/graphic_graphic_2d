@@ -87,7 +87,7 @@ HWTEST_F(RSLayerContextTest, InitContextTest, Function | SmallTest | Level2)
     auto handle = context->GetRSLayerTransaction();
     EXPECT_NE(handle, nullptr);
     context->rsLayerTransactionHandler_ = std::make_shared<RSLayerTransactionHandler>();
-    sptr<IRSRenderToComposerConnection> connnection = sptr<RSRenderToComposerConnection>::MakeSptr("test", 0, nullptr);
+    sptr<IRSRenderToComposerConnection> connection = sptr<RSRenderToComposerConnection>::MakeSptr("test", 0, nullptr);
     context->rsLayerTransactionHandler_->SetRSComposerConnectionProxy(connection);
     EXPECT_NE(context->rsLayerTransactionHandler_->rsComposerConnection_, nullptr);
 }
