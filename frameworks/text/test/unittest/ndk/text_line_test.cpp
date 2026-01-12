@@ -1336,7 +1336,7 @@ HWTEST_F(NdkTextLineTest, NdkTextLineTest039, TestSize.Level0)
 
 /*
  * @tc.name: NdkTextLineExtraTest001
- * @tc.desc: test for the textLine CreateTruncatedLine: valid input ELLIPSIS_MODAL_MULTILINE_HEAD.
+ * @tc.desc: test for the textLine CreateTruncatedLine: MULTILINE_HEAD and MULTILINE_MIDDLE.
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest001, TestSize.Level0)
@@ -1371,7 +1371,7 @@ HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest001, TestSize.Level0)
 
 /*
  * @tc.name: NdkTextLineExtraTest002
- * @tc.desc: test for the textLine CreateTruncatedLine: valid input ELLIPSIS_MODAL_MULTILINE_MIDDLE.
+ * @tc.desc: test for the textLine CreateTruncatedLine: valid input MULTILINE_HEAD.
  * @tc.type: FUNC
  */
 HWTEST_F(NdkTextLineTest, NdkTextLineExtraTest002, TestSize.Level0)
