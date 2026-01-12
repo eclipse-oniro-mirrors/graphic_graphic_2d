@@ -59,6 +59,7 @@ void RSModifierManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& a
         return;
     }
     animations_.emplace(key, animation);
+    RS_OPTIONAL_TRACE_NAME_FMT("AddAnimation set hasFirstFrameAnimation");
     hasFirstFrameAnimation_ = true;
 
     std::shared_ptr<RSRenderDisplaySync> displaySync = std::make_shared<RSRenderDisplaySync>(animation);
