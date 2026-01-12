@@ -113,7 +113,7 @@ public:
         isNodeOffTreeMemReleaseEnabled_ = isEnable;
     }
 
-    bool IsNodeOffTreeMemReleaseEnabled()
+    bool IsNodeOffTreeMemReleaseEnabled() const
     {
         return isNodeOffTreeMemReleaseEnabled_;
     }
