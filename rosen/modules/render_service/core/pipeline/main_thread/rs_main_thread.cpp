@@ -1846,8 +1846,8 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
             (isHardwareForcedDisabled_ || doWindowAnimate_ || isFoldScreenSwitching ||
  	         (isMultiDisplay && (isExpandScreenOrWiredProjectionCase || !enableHwcForMirrorMode)) || hasColorFilter)) ||
             CheckOverlayDisplayEnable();
-    RS_OPTIONAL_TRACE_FMT("hwc debug: CheckIfHardwareForcedDisabled hasProtectedLayer:%d isHardwareForcedDisabled_:%d"
-        " doWindowAnimate_:%d isFoldScreenSwitching:%d isMultiDisplay:%d isExpandScreenOrWiredProjectionCase:%d"
+    RS_OPTIONAL_TRACE_FMT("hwc debug: CheckIfHardwareForcedDisabled hasProtectedLayer:%d isHardwareForcedDisabled:%d"
+        " doWindowAnimate:%d isFoldScreenSwitching:%d isMultiDisplay:%d isExpandScreenOrWiredProjectionCase:%d"
         " enableHwcForMirrorMode:%d hasColorFilter:%d overlayDisplayEnable:%d",
         hasProtectedLayer_, isHardwareForcedDisabled_, doWindowAnimate_.load(), isFoldScreenSwitching, isMultiDisplay,
         isExpandScreenOrWiredProjectionCase, enableHwcForMirrorMode, hasColorFilter, CheckOverlayDisplayEnable());
