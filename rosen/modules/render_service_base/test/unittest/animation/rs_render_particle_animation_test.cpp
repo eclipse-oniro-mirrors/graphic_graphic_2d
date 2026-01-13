@@ -152,7 +152,7 @@ HWTEST_F(RSRenderParticleAnimationTest, Animate002, TestSize.Level1)
     renderParticleAnimation->OnAttach();
     ASSERT_TRUE(renderParticleAnimation != nullptr);
     GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest Animate002 end";
-}   
+}
 
 /**
  * @tc.name: UpdateEmitter001
