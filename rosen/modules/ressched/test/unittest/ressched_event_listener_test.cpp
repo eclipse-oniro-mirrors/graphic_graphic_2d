@@ -394,6 +394,10 @@ HWTEST_F(ResschedEventListenerTest, ReportFrameRateToRSS_WithValidQueue, Functio
     
     ResschedEventListener::GetInstance()->ReportFrameRateToRSS(mapPayload);
     sleep(1);
+
+    ResschedEventListener::GetInstance()->ffrtHighPriorityQueue_ = nullptr;
+    ResschedEventListener::GetInstance()->ReportFrameRateToRSS(mapPayload);
+    sleep(1);
 }
 
 /*
