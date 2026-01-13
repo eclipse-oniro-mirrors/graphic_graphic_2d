@@ -146,22 +146,23 @@ void RSServiceDumper::RegisterRSGfxFuncs(std::shared_ptr<RSServiceDumpManager> r
     rsDumpManager->Register(handers);
 }
 
-void RSServiceDumper::DumpAllScreenPowerStatus(std::string &dumpString)
+void RSServiceDumper::DumpAllScreenPowerStatus(std::string& dumpString)
 {
     std::vector<ScreenId> allScreen = screenManager_->GetAllScreenIds();
     bool powerStatus = false;
-    for (auto iter : allScreen) {
-        powerStatus = (screenManager_->GetScreenPowerStatus(iter) == ScreenPowerStatus::POWER_STATUS_SUSPEND ||
-            screenManager_->GetScreenPowerStatus(iter) == ScreenPowerStatus::POWER_STATUS_OFF);
-        dumpString += "Screen ID: " + std::to_string(iter) + " is power off: " + std::to_string(powerStatus) + "\n";
+    dumpString += "\n-- ScreenPowerStatus --\n";
+    for (auto screenId : allScreen) {
+        powerStatus = (screenManager_->GetScreenPowerStatus(screenId) == ScreenPowerStatus::POWER_STATUS_SUSPEND ||
+                       screenManager_->GetScreenPowerStatus(screenId) == ScreenPowerStatus::POWER_STATUS_OFF);
+        dumpString += "ScreenId: " + std::to_string(screenId) + "; IsPowerOff: " + std::to_string(powerStatus) + "\n";
     }
 }
 
 void RSServiceDumper::RegisterMemFuncs(std::shared_ptr<RSServiceDumpManager> rsDumpManager)
 {
     // surface info
-    RSDumpFunc surfaceInfoFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
-                                        std::string &dumpString) -> void {
+    RSDumpFunc surfaceInfoFunc = [this](const std::u16string& cmd, std::unordered_set<std::u16string>& argSets,
+                                        std::string& dumpString) -> void {
         ScheduleTask([this, &dumpString]() {
             rsRenderComposerManager_->SurfaceDump(dumpString);
             DumpAllScreenPowerStatus(dumpString);
@@ -169,8 +170,8 @@ void RSServiceDumper::RegisterMemFuncs(std::shared_ptr<RSServiceDumpManager> rsD
     };
 
     // surface mem
-    RSDumpFunc surfaceMemFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
-                                       std::string &dumpString) -> void {
+    RSDumpFunc surfaceMemFunc = [this](const std::u16string& cmd, std::unordered_set<std::u16string>& argSets,
+                                       std::string& dumpString) -> void {
         ScheduleTask([this, &dumpString]() { DumpAllNodesMemSize(dumpString); });
     };
 
