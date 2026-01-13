@@ -16,8 +16,6 @@
 #include "text/font_metadata.h"
 
 #include <vector>
-
-#include "font_harfbuzz.h"
 #include "utils/log.h"
 
 namespace OHOS {
