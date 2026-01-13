@@ -140,6 +140,7 @@ ohos_unittest("RSSurfaceCaptureParallelTaskTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "eventhandler:libeventhandler",
     "hisysevent:libhisysevent",
     "samgr:samgr_proxy",
   ]
