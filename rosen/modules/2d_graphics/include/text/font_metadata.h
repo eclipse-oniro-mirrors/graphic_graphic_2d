@@ -26,6 +26,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+static constexpr int BUF_SIZE = 1024;
 enum class OtNameId : uint8_t {
     FONT_FAMILY,
     FONT_SUBFAMILY,
@@ -89,24 +90,9 @@ public:
     static std::unordered_map<std::string, FontIdentification> GenerateFontIdentification(
         const std::shared_ptr<Typeface>& typeface, const std::vector<std::string>& languages);
 
-    static std::string GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface, OtNameId nameId) {
-        unsigned int count = 0;
-        hb_face_t hbFace = CreateHbFace(*typeface);
-        const hb_ot_name_entry_t* entries = hb_ot_name_list_name(&hbFace, &count);
-        for(unsigned int i = 0; i < count; i++) {
-            if(entries[i].name_id == nameId) {
-                return ExtractString(&hbFace, entries[i]);
-            }
-        }
-        return "";
-    }
+    static std::string GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface, OtNameId nameId);
 
-    static std::string ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry) {
-        char buffer[BUF_SIZE];
-        unsigned int size = BUF_SIZE;
-        unsigned int len = hb_ot_name_get_utf8(face, entry.name, entry.language, &size, buffer);
-        return (len > 0) ? std::string(buffer) : "";
-    }
+    static std::string ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry);
 };
 } // Drawing
 } // Rosen

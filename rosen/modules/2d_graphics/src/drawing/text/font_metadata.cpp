@@ -131,6 +131,27 @@ std::unordered_map<std::string, FontIdentification> FontMetaDataCollector::Gener
     }
     return map;
 }
+
+std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface, Drawing::OtNameId nameId)
+{
+    unsigned int count = 0;
+    HBFace hbFace = CreateHbFace(*typeface);
+    const hb_ot_name_entry_t* entries = hb_ot_name_list_name(hbFace.get(), &count);
+    for(unsigned int i = 0; i < count; i++) {
+        hb_ot_name_id_t nameIdValue = static_cast<hb_ot_name_id_t>(nameId);
+        if(entries[i].name_id == nameIdValue) {
+            return ExtractString(hbFace.get(), entries[i]);
+        }
+    }
+    return "";
+}
+
+std::string FontMetaDataCollector::ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry) {
+    char buffer[BUF_SIZE];
+    unsigned int size = BUF_SIZE;
+    unsigned int len = hb_ot_name_get_utf8(face, entry.name_id, entry.language, &size, buffer);
+    return (len > 0) ? std::string(buffer) : "";
+}
 } // Drawing
 } // Rosen
 } // OHOS
