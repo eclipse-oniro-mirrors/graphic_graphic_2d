@@ -1129,9 +1129,9 @@ ErrCode RSRenderPipelineAgent::CreateNodeAndSurface(const RSSurfaceRenderNodeCon
 #ifdef RS_ENABLE_GPU
     auto surfaceHandler = node->GetRSSurfaceHandler();
     std::weak_ptr<RSSurfaceHandler> handlerWeak = surfaceHandler;
-    surfaceHandler->RegisterDeleteBufferListener([handlerWeak](uint32_t bufferId) {
+    surfaceHandler->RegisterDeleteBufferListener([handlerWeak](uint64_t bufferId) {
         if (auto handler = handlerWeak.lock()) {
-            handler->AddGPUCacheToCleanupSet(static_cast<uint64_t>(bufferId));
+            handler->AddGPUCacheToCleanupSet(bufferId);
         }
     });
 #endif

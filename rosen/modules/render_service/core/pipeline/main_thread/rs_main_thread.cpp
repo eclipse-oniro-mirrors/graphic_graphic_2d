@@ -663,18 +663,34 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
             }
 
             // Set GPUCacheManager callback to RSSubThreadManager (dependency injection)
+            std::weak_ptr<RSBaseRenderEngine> renderEngineWeak = renderEngine;
             RSSubThreadManager::Instance()->SetGetGPUCacheManagerFunc(
-                [renderEngine]() -> std::shared_ptr<GPUCacheManager> {
-                    return renderEngine->GetGPUCacheManager();
+                [renderEngineWeak]() -> std::shared_ptr<GPUCacheManager> {
+                    auto engine = renderEngineWeak.lock();
+                    return engine ? engine->GetGPUCacheManager() : nullptr;
                 }
             );
 
             // Set global GPU cache cleanup callback for RSSurfaceHandler (dependency injection)
             RSSurfaceHandler::SetGPUCacheCleanupCallback(
-                [renderEngine](const std::set<uint64_t>& bufferIds) {
-                    auto cacheManager = renderEngine->GetGPUCacheManager();
+                [renderEngineWeak](const std::set<uint64_t>& bufferIds) {
+                    auto engine = renderEngineWeak.lock();
+                    if (!engine) {
+                        return;
+                    }
+                    auto cacheManager = engine->GetGPUCacheManager();
                     if (cacheManager) {
                         cacheManager->ScheduleBufferCleanup(bufferIds);
+                    }
+                }
+            );
+
+            // Register buffer-delete listener to IConsumerSurface when it is bound to RSSurfaceHandler.
+            RSSurfaceHandler::SetConsumerDeleteBufferListenerCallback(
+                [renderEngineWeak](const sptr<IConsumerSurface>& consumer) {
+                    auto engine = renderEngineWeak.lock();
+                    if (engine) {
+                        engine->RegisterDeleteBufferListener(consumer);
                     }
                 }
             );

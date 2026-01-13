@@ -15,6 +15,8 @@
 
 #include "gtest/gtest.h"
 
+#include <inttypes.h>
+
 #include "platform/common/rs_log.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_surface_handler.h"
@@ -64,9 +66,9 @@ void RSSurfaceHandlerTest::SetUp()
 }
 void RSSurfaceHandlerTest::TearDown() {}
 
-static inline void BufferDeleteCbFunc(int32_t seqNum)
+static inline void BufferDeleteCbFunc(uint64_t bufferId)
 {
-    ROSEN_LOGI("%{public}s:%{public}d seqNum=%{public}d", __func__, __LINE__, seqNum);
+    ROSEN_LOGI("%{public}s:%{public}d bufferId=%{public}" PRIu64, __func__, __LINE__, bufferId);
 };
 
 RSSurfaceHandler::SurfaceBufferEntry RSSurfaceHandlerTest::RequestAndFlushBuffer()
