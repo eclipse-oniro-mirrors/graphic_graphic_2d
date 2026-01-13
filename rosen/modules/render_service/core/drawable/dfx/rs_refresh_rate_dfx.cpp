@@ -95,6 +95,7 @@ bool RSRefreshRateDfx::RefreshRateRotationProcess(RSPaintFilterCanvas& canvas,
         rotation = static_cast<ScreenRotation>((static_cast<int>(rotation) + SCREEN_ROTATION_NUM
             - static_cast<int>(screenCorrection)) % SCREEN_ROTATION_NUM);
     }
+
     // 2: if ret is odd, width and height should be swapped
     if ((static_cast<int32_t>(rotation) - static_cast<int32_t>(params->GetNodeRotation())) % 2) {
         std::swap(translateWidth, translateHeight);
