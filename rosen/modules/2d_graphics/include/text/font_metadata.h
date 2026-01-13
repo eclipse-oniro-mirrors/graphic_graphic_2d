@@ -22,7 +22,6 @@
 #include <hb-ot.h>
 
 #include "typeface.h"
-#include "font_harfbuzz.h"
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
@@ -90,7 +89,7 @@ public:
     static std::unordered_map<std::string, FontIdentification> GenerateFontIdentification(
         const std::shared_ptr<Typeface>& typeface, const std::vector<std::string>& languages);
 
-    static std::string GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface, OtNameId nameId);
+    static std::string GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface, Drawing::OtNameId nameId);
 
     static std::string ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry);
 };

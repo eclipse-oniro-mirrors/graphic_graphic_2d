@@ -137,9 +137,9 @@ std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr
     unsigned int count = 0;
     HBFace hbFace = CreateHbFace(*typeface);
     const hb_ot_name_entry_t* entries = hb_ot_name_list_name(hbFace.get(), &count);
-    for(unsigned int i = 0; i < count; i++) {
+    for (unsigned int i = 0; i < count; i++) {
         hb_ot_name_id_t nameIdValue = static_cast<hb_ot_name_id_t>(nameId);
-        if(entries[i].name_id == nameIdValue) {
+        if (entries[i].name_id == nameIdValue) {
             return ExtractString(hbFace.get(), entries[i]);
         }
     }
