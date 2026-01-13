@@ -122,7 +122,7 @@ public:
 
     void SetScreenSwitchStatus(ScreenId id, bool status);
 
-    uint32_t SetScreenActiveRect(ScreenId id, const GraphicIRect& activeRect);
+    uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect);
     int32_t SetScreenLinearMatrix(ScreenId id, const std::vector<float>& matrix);
 
     // virtual screen

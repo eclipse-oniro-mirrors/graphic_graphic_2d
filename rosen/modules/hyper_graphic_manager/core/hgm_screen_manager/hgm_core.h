@@ -94,7 +94,7 @@ public:
     int32_t SetRefreshRateMode(int32_t refreshRateMode);
 
     void NotifyScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
-    void NotifyScreenRectFrameRateChange(ScreenId id, const GraphicIRect& activeRect);
+    void NotifyScreenRectFrameRateChange(ScreenId id, const Rect& activeRect);
 
     // screen interface
     int32_t AddScreen(ScreenId id, int32_t defaultMode, ScreenSize& screenSize, bool& isSelfOwnedScreen, 

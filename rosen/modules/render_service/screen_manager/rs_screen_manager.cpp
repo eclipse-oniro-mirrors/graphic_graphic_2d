@@ -787,7 +787,7 @@ uint32_t RSScreenManager::SetScreenActiveMode(ScreenId id, uint32_t modeId)
     return screen->SetActiveMode(modeId);
 }
 
-uint32_t RSScreenManager::SetScreenActiveRect(ScreenId id, const GraphicIRect& activeRect)
+uint32_t RSScreenManager::SetScreenActiveRect(ScreenId id, const Rect& activeRect)
 {
     auto screen = GetScreen(id);
     if (screen == nullptr) {

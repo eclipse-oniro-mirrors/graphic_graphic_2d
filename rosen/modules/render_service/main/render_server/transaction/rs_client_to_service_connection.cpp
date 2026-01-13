@@ -1280,27 +1280,9 @@ ErrCode RSClientToServiceConnection::SetScreenActiveRect(ScreenId id, const Rect
         repCode = StatusCode::SCREEN_NOT_FOUND;
         return ERR_INVALID_VALUE;
     }
-    GraphicIRect dstActiveRect {
-        .x = activeRect.x,
-        .y = activeRect.y,
-        .w = activeRect.w,
-        .h = activeRect.h,
-    };
-    if (!renderServiceAgent_) {
-        repCode = StatusCode::INVALID_ARGUMENTS;
-        return ERR_INVALID_VALUE;
-    }
-    auto task = [weakScreenManager = wptr<RSScreenManager>(screenManagerAgent_), id, dstActiveRect]() -> void {
-        sptr<RSScreenManager> screenManager = weakScreenManager.promote();
-        if (!screenManager) {
-            return;
-        }
-        screenManager->SetScreenActiveRect(id, dstActiveRect);
-    };
-    renderServiceAgent_->ScheduleTask(std::move(task)).wait();
-
-    HgmTaskHandleThread::Instance().PostTask([id, dstActiveRect]() {
-        HgmCore::Instance().NotifyScreenRectFrameRateChange(id, dstActiveRect);
+    screenManagerAgent_->SetScreenActiveRect(id, activeRect);
+    HgmTaskHandleThread::Instance().PostTask([id, activeRect]() {
+        HgmCore::Instance().NotifyScreenRectFrameRateChange(id, activeRect);
     });
     repCode = StatusCode::SUCCESS;
     return ERR_OK;

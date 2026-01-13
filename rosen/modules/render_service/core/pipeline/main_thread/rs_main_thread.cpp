@@ -5422,7 +5422,6 @@ void RSMainThread::UpdateScreenProperty(
         RS_LOGE("%{public}s, property is nullptr.", __func__);
         return;
     }
-    RS_LOGI("%{public}s, screen id: %{public}" PRIu64 ", type: %{public}u", __func__, id, static_cast<uint32_t>(type));
 
     auto updateProperty = [id, type, property](const std::shared_ptr<RSScreenRenderNode>& node) {
         if (node && node->GetScreenId() == id) {
