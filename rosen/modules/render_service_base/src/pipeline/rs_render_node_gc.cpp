@@ -474,6 +474,7 @@ void RSRenderNodeGC::ReleaseNodeMemNotOnTree()
         }
         auto& nodeMap = mapIt->second;
         auto nodeIt = nodeMap.begin();
+        RS_TRACE_NAME_FMT("ReleaseNodeMemNotOnTree, pid: %" PRIu32 ", nodeMap size=%" PRIu32, *pidIt, nodeMap.size());
         while (nodeIt != nodeMap.end()) {
             auto node = nodeIt->second.lock();
             if (node == nullptr || node->GetType() != RSRenderNodeType::CANVAS_NODE) {

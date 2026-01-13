@@ -4981,16 +4981,16 @@ void RSRenderNode::RemoveModifier(ModifierNG::RSModifierType type, ModifierId id
 {
     const auto& modifiersIt = modifiersNG_.find(type);
     if (modifiersIt == modifiersNG_.end()) {
-        RS_LOGE_LIMIT(__func__, __line__, "RSRenderNode::RemoveModifier modifierNG_ not find, ModifierId %{public}"
-            PRIu64 ", ModifierType %{public}hu", id, type);
+        RS_LOGE_LIMIT(__func__, __line__, "RSRenderNode::RemoveModifier modifierNG_ not find, nodeId %{public}"
+            PRIu64 ", ModifierId %{public}" PRIu64 ", ModifierType %{public}hu", GetId(), id, type);
         return;
     }
     auto& slot = modifiersIt->second;
     auto it =
         std::find_if(slot.begin(), slot.end(), [id](const auto& modifier) -> bool { return modifier->GetId() == id; });
     if (it == slot.end()) {
-        RS_LOGE_LIMIT(__func__, __line__, "RSRenderNode::RemoveModifier slot not find, ModifierId %{public}"
-            PRIu64 ", ModifierType %{public}hu", id, type);
+        RS_LOGE_LIMIT(__func__, __line__, "RSRenderNode::RemoveModifier slot not find, nodeId %{public}"
+            PRIu64 ", ModifierId %{public}" PRIu64 ", ModifierType %{public}hu", GetId(), id, type);
         return;
     }
     auto modifier = *it;

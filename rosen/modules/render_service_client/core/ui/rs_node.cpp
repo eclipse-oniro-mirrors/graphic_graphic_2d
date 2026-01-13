@@ -4268,8 +4268,13 @@ void RSNode::RemoveModifier(const std::shared_ptr<ModifierNG::RSModifier> modifi
     {
         std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-        if (modifier == nullptr || !modifiersNG_.count(modifier->GetId())) {
-            RS_LOGE("RSNode::RemoveModifier: null modifier or modifier not exist.");
+        if (modifier == nullptr) {
+            RS_LOGE("RSNode::RemoveModifier: null modifier, nodeId=%{public}" PRIu64, id_);
+            return;
+        }
+        if (!modifiersNG_.count(modifier->GetId())) {
+            RS_LOGE("RSNode::RemoveModifier: modifier not exist, nodeId[%{public}" PRIu64 "],"
+                "modifiers num:[%{public}zu]", id_, modifiersNG_.size());
             return;
         }
         modifiersNG_.erase(modifier->GetId());
