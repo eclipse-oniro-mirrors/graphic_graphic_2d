@@ -85,7 +85,7 @@ HWTEST(RSProfilerPixelMapTest, PlaybackParcel, TestSize.Level1)
 
     std::vector<uint32_t> colors(HUNDRED);
     for (int i = 0; i < colors.size(); ++i) {
-       colors[i] = 4 * i;
+        colors[i] = 4 * i;
     }
 
     Media::InitializationOptions options;
