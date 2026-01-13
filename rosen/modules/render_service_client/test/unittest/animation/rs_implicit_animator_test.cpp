@@ -355,7 +355,6 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest002, TestSize.Level1)
     implicitAnimator->ProcessEmptyAnimations(finishCallbackTest);
 }
 
-
 /**
  * @tc.name: ProcessAnimationFinishCallbackGuaranteeTaskTest001
  * @tc.desc: Verify the ProcessAnimationFinishCallbackGuaranteeTaskTest001
