@@ -1048,5 +1048,30 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     ret = drawable2->ReleaseSurfaceVk(100, 100);
     ASSERT_EQ(ret, true);
 }
+
+/**
+ * @tc.name: ReleaseDmaSurfaceBufferTest
+ * @tc.desc: Test If ReleaseDmaSurfaceBuffer Can Run
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ReleaseDmaSurfaceBufferTest, TestSize.Level1)
+{
+    auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    bufferCache.AddPendingBuffer(1, buffer, 1);
+    auto& nodeBufferMap = bufferCache.pendingBufferMap_[1].second;
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
+    drawable->ReleaseDmaSurfaceBuffer(true);
+    ASSERT_EQ(drawable->renderParams_, nullptr);
+    ASSERT_EQ(nodeBufferMap.empty(), false);
+    drawable->renderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(1);
+    drawable->renderParams_->SetCanvasDrawingResetSurfaceIndex(1);
+    drawable->ReleaseDmaSurfaceBuffer(true);
+    ASSERT_NE(drawable->renderParams_, nullptr);
+    ASSERT_EQ(nodeBufferMap.empty(), false);
+    drawable->ReleaseDmaSurfaceBuffer(false);
+    ASSERT_EQ(nodeBufferMap.empty(), RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled());
+}
 #endif
 }

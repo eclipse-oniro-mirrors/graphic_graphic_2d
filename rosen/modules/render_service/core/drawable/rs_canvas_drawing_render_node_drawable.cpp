@@ -782,6 +782,10 @@ bool RSCanvasDrawingRenderNodeDrawable::ReleaseSurfaceVK(int width, int height)
                 width, height);
             return false;
         }
+    } else {
+#ifdef ROSEN_OHOS
+        ReleaseDmaSurfaceBuffer(false);
+#endif
     }
     return true;
 }
@@ -844,6 +848,18 @@ bool RSCanvasDrawingRenderNodeDrawable::CreateDmaBackendTexture(pid_t pid, int w
     }
     return dmaTextureCreated;
 }
+
+void RSCanvasDrawingRenderNodeDrawable::ReleaseDmaSurfaceBuffer(bool notifyOnly)
+{
+    const auto& params = GetRenderParams();
+    if ((PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) && params != nullptr) {
+        auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
+        bufferCache.NotifyCanvasSurfaceBufferChanged(nodeId_, nullptr, params->GetCanvasDrawingResetSurfaceIndex());
+        if (!notifyOnly) {
+            bufferCache.RemovePendingBuffer(nodeId_, params->GetCanvasDrawingResetSurfaceIndex());
+        }
+    }
+}
 #endif // ROSEN_OHOS
 #endif // RS_ENABLE_VK
 
@@ -866,6 +882,9 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK(int width, int height,
         RS_LOGE("RSCanvasDrawingRenderNodeDrawable::ResetSurface: gpuContext is nullptr");
         isGpuSurface_ = false;
         surface_ = Drawing::Surface::MakeRaster(info);
+#ifdef ROSEN_OHOS
+        ReleaseDmaSurfaceBuffer(false);
+#endif
     } else {
         if (!ReleaseSurfaceVK(width, height)) {
             return false;
@@ -883,12 +902,7 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceForVK(int width, int height,
         REAL_ALLOC_CONFIG_SET_STATUS(false);
         if (!surface_) {
 #ifdef ROSEN_OHOS
-            if ((PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) && params != nullptr) {
-                auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
-                bufferCache.NotifyCanvasSurfaceBufferChanged(
-                    nodeId_, nullptr, params->GetCanvasDrawingResetSurfaceIndex());
-                bufferCache.RemovePendingBuffer(nodeId_, params->GetCanvasDrawingResetSurfaceIndex());
-            }
+            ReleaseDmaSurfaceBuffer(true);
 #endif
             isGpuSurface_ = false;
             surface_ = Drawing::Surface::MakeRaster(info);
@@ -1023,12 +1037,7 @@ bool RSCanvasDrawingRenderNodeDrawable::GpuContextResetVK(
     REAL_ALLOC_CONFIG_SET_STATUS(false);
     if (!surface_) {
 #ifdef ROSEN_OHOS
-        const auto& params = GetRenderParams();
-        if ((PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) && params != nullptr) {
-            auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
-            bufferCache.NotifyCanvasSurfaceBufferChanged(nodeId_, nullptr, params->GetCanvasDrawingResetSurfaceIndex());
-            bufferCache.RemovePendingBuffer(nodeId_, params->GetCanvasDrawingResetSurfaceIndex());
-        }
+        ReleaseDmaSurfaceBuffer(true);
 #endif
         isGpuSurface_ = false;
         surface_ = Drawing::Surface::MakeRaster(info);
@@ -1069,6 +1078,9 @@ bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceforPlayback(int width, int h
     if (gpuContext == nullptr) {
         isGpuSurface_ = false;
         surface_ = Drawing::Surface::MakeRaster(info);
+#ifdef ROSEN_OHOS
+        ReleaseDmaSurfaceBuffer(false);
+#endif
     } else {
         if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
