@@ -249,6 +249,21 @@ HWTEST_F(FontMetaDataTest, GenerateFontIdentificationValid, TestSize.Level1)
     EXPECT_EQ(idInfoEmpty.fullName, "HarmonyOS Sans SC");
     EXPECT_EQ(idInfoEmpty.postScriptName, "HarmonyOS_Sans_SC");
 }
+
+/**
+ * @tc.name: GetFirstAvailableString01
+ * @tc.desc: Test GetFirstAvailableString
+ * @tc.type: FUNC
+ * @tc.require: SR20250918053090
+ */
+HWTEST_F(FontMetaDataTest, GetFirstAvailableString01, TestSize.Level1)
+{
+    auto typeface = Typeface::MakeDefault();
+    ASSERT_TRUE(typeface);
+    Drawing::OtNameId id = OtNameId::FONT_FAMILY;
+    std::string name = FontMetaDataCollector::GetFirstAvailableString(typeface, id);
+    ASSERT_TRUE(!outStr.empty());
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
