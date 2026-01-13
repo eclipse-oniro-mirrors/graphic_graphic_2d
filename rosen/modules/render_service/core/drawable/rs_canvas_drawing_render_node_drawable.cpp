@@ -1060,8 +1060,7 @@ bool RSCanvasDrawingRenderNodeDrawable::GpuContextResetVK(
 
 bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceforPlayback(int width, int height)
 {
-    Drawing::ImageInfo info =
-        Drawing::ImageInfo { width, height, Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    auto info = Drawing::ImageInfo { width, height, Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
     RS_LOGI("RSCanvasDrawingRenderNodeDrawable::ResetSurfaceforPlayback NodeId[%{public}" PRIu64 "]", GetId());
     std::shared_ptr<Drawing::GPUContext> gpuContext;
     if (canvas_ != nullptr) {
