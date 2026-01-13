@@ -457,16 +457,17 @@ napi_value FilterNapi::GetPixelMapAsyncCommon(napi_env env, napi_callback_info i
     }
     return result;
 }
-
+ 
 napi_value FilterNapi::GetPixelMapAsync(napi_env env, napi_callback_info info)
 {
     return GetPixelMapAsyncCommon(env, info, false);
 }
-
+ 
 napi_value FilterNapi::GetPixelMapAsyncHighPriority(napi_env env, napi_callback_info info)
 {
     return GetPixelMapAsyncCommon(env, info, true);
 }
+ 
 
 napi_value FilterNapi::Blur(napi_env env, napi_callback_info info)
 {
