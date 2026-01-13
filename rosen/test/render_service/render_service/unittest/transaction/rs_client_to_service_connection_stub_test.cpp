@@ -2061,7 +2061,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetRogScreenResolutionTest001, Tes
     data2.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     data2.WriteUint64(SCREEN_ID);
     res = connectionStub_->OnRemoteRequest(code, data2, reply2, option);
-    ASSERT_EQ(res, ERR_OK);
+    ASSERT_EQ(res, ERR_INVALID_DATA);
 
     // case 3: Write parcel failed
     MessageParcel data3;
