@@ -1033,6 +1033,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     canvas.SetRecordingState(false);
     ret = drawable->ResetSurfaceForVK(10000, 10000, canvas);
     ASSERT_EQ(ret, true);
+    drawable->ResetSurface();
+    ASSERT_EQ(drawable->surface_, nullptr);
     auto node2 = std::make_shared<RSCanvasDrawingRenderNode>(2);
     auto drawable2 = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node2));
     drawable2->renderParams_ = nullptr;
@@ -1047,6 +1049,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     drawable2->backendTexture_ = {};
     ret = drawable2->ReleaseSurfaceVk(100, 100);
     ASSERT_EQ(ret, true);
+    drawable2->ResetSurface();
+    ASSERT_EQ(drawable2->surface_, nullptr);
 }
 #endif
 }
