@@ -83,19 +83,20 @@ bool RSRcdSurfaceRenderNode::CreateSurface(sptr<IBufferConsumerListener> listene
         surfaceName = "RCDBottomSurfaceNode" + std::to_string(renerTargetId_);
         type = RoundCornerDisplayManager::RCDLayerType::BOTTOM;
     }
-    consumer_ = IConsumerSurface::Create(surfaceName.c_str());
+    auto consumer = IConsumerSurface::Create(surfaceName.c_str());
+    SetConsumer(consumer);
     RSSingleton<RoundCornerDisplayManager>::GetInstance().AddLayer(surfaceName, renerTargetId_, type);
-    if (consumer_ == nullptr) {
+    if (consumer == nullptr) {
         RS_LOGE("RSRcdSurfaceRenderNode::CreateSurface get consumer surface fail");
         return false;
     }
-    SurfaceError ret = consumer_->RegisterConsumerListener(listener);
+    SurfaceError ret = consumer->RegisterConsumerListener(listener);
     if (ret != SURFACE_ERROR_OK) {
         RS_LOGE("RSRcdSurfaceRenderNode::CreateSurface RegisterConsumerListener fail");
         return false;
     }
     consumerListener_ = listener;
-    auto producer = consumer_->GetProducer();
+    auto producer = consumer->GetProducer();
     sptr<Surface> surface = Surface::CreateSurfaceAsProducer(producer);
     auto client = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
     surface_ = client->CreateRSSurface(surface);

@@ -34,7 +34,7 @@
 
 namespace OHOS {
 namespace Rosen {
-using OnDeleteBufferFunc = std::function<void(uint32_t)>;
+using OnDeleteBufferFunc = std::function<void(uint64_t)>;
 using OnReleaseBufferFunc = std::function<void(uint64_t)>;
 
 /**
@@ -44,6 +44,16 @@ using OnReleaseBufferFunc = std::function<void(uint64_t)>;
  * does not need to directly depend on GPUCacheManager.
  */
 using GPUCacheCleanupCallback = std::function<void(const std::set<uint64_t>&)>;
+
+#ifndef ROSEN_CROSS_PLATFORM
+/**
+ * @brief Consumer-surface buffer delete listener registrar type.
+ *
+ * Used to register a buffer-delete listener to IConsumerSurface, so that RSSurfaceHandler does not
+ * need to depend on RSBaseRenderEngine or GPUCacheManager directly.
+ */
+using ConsumerDeleteBufferListenerCallback = std::function<void(const sptr<IConsumerSurface>&)>;
+#endif
 
 class RSB_EXPORT RSSurfaceHandler {
 public:
@@ -201,6 +211,8 @@ public:
     {
         return consumer_;
     }
+
+    void EnsureConsumerDeleteBufferListenerRegistered();
 
     void SetHoldBuffer(std::shared_ptr<SurfaceBufferEntry> buffer)
     {
@@ -370,6 +382,14 @@ public:
         s_gpuCacheCleanupCallback = std::move(callback);
     }
 
+#ifndef ROSEN_CROSS_PLATFORM
+    static void SetConsumerDeleteBufferListenerCallback(ConsumerDeleteBufferListenerCallback callback)
+    {
+        std::lock_guard<std::mutex> lock(s_consumerDeleteBufferListenerCallbackMutex_);
+        s_consumerDeleteBufferListenerCallback = std::move(callback);
+    }
+#endif
+
     void AddGPUCacheToCleanupSet(uint64_t bufferId)
     {
         std::lock_guard<std::mutex> lock(gpuCacheCleanupMutex_);
@@ -505,6 +525,15 @@ private:
     // GPU cache cleanup callback (shared across all RSSurfaceHandler instances).
     static GPUCacheCleanupCallback s_gpuCacheCleanupCallback;
     static std::mutex s_gpuCacheCleanupCallbackMutex_;
+
+#ifndef ROSEN_CROSS_PLATFORM
+    // Consumer-surface buffer delete listener registrar (shared across all RSSurfaceHandler instances).
+    static ConsumerDeleteBufferListenerCallback s_consumerDeleteBufferListenerCallback;
+    static std::mutex s_consumerDeleteBufferListenerCallbackMutex_;
+#endif
+
+    // The IConsumerSurface::GetUniqueId() that has already been registered for delete-buffer notifications.
+    uint64_t registeredConsumerDeleteListenerSurfaceId_ = 0;
 };
 }
 }

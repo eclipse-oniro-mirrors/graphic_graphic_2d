@@ -102,7 +102,6 @@ public:
     {
         return consumerOnDraw_;
     }
-    void RegisterDeleteBufferListenerOnSync(sptr<IConsumerSurface> consumer) override;
 #endif
 
     bool IsHardwareEnabledTopSurface() const;
@@ -197,7 +196,6 @@ private:
 
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IConsumerSurface> consumerOnDraw_ = nullptr;
-    uint64_t registeredDeleteBufferListenerSurfaceId_ = 0;
 #endif
 
     // dirty manager

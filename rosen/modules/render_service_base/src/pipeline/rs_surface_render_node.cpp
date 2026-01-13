@@ -2414,7 +2414,6 @@ void RSSurfaceRenderNode::OnSync()
         surfaceParams->SetNeedSync(true);
     }
 #ifndef ROSEN_CROSS_PLATFORM
-    renderDrawable_->RegisterDeleteBufferListenerOnSync(GetRSSurfaceHandler()->GetConsumer());
 #endif
     RSRenderNode::OnSync();
 #endif

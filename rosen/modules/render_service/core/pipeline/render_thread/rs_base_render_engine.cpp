@@ -872,9 +872,7 @@ void RSBaseRenderEngine::RegisterDeleteBufferListener(RSSurfaceHandler& handler)
     if (RSSystemProperties::IsUseVulkan()) {
         // Use GPUCacheManager instance method to create callback
         auto regUnMapVkImageFunc = gpuCacheManager_->CreateBufferDeleteCallback();
-        handler.RegisterDeleteBufferListener([regUnMapVkImageFunc](uint32_t bufferId) {
-            regUnMapVkImageFunc(static_cast<uint64_t>(bufferId));
-        });
+        handler.RegisterDeleteBufferListener(regUnMapVkImageFunc);
         return;
     }
 #endif // #ifdef RS_ENABLE_VK
@@ -882,9 +880,7 @@ void RSBaseRenderEngine::RegisterDeleteBufferListener(RSSurfaceHandler& handler)
 #if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
     // Use GPUCacheManager instance method to create callback
     auto regUnMapEglImageFunc = gpuCacheManager_->CreateBufferDeleteCallback();
-    handler.RegisterDeleteBufferListener([regUnMapEglImageFunc](uint32_t bufferId) {
-        regUnMapEglImageFunc(static_cast<uint64_t>(bufferId));
-    });
+    handler.RegisterDeleteBufferListener(regUnMapEglImageFunc);
 #endif // #ifdef RS_ENABLE_EGLIMAGE
 }
 
