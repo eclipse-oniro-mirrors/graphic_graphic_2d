@@ -23,6 +23,7 @@
 #include "pipeline/render_thread/rs_uni_render_util.h"
 
 namespace OHOS::Rosen {
+
 void RSRefreshRateDfx::OnDraw(RSPaintFilterCanvas& canvas)
 {
     RS_TRACE_FUNC();
