@@ -653,8 +653,9 @@ private:
     uint32_t appWindowNum_ = 0;
     pid_t desktopPidForRotationScene_ = 0;
     int32_t subscribeFailCount_ = 0;
-    SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS;
-    bool isRegularAnimation_ = false;
+    SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS; // guard by systemAndRegularMutex_
+    bool isRegularAnimation_ = false; // guard by systemAndRegularMutex_
+    mutable std::mutex systemAndRegularMutex_;
     uint32_t leashWindowCount_ = 0;
     pid_t exitedPid_ = -1;
     RsParallelType rsParallelType_;

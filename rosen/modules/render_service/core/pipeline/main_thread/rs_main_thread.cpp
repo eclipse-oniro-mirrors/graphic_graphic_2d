@@ -425,7 +425,8 @@ RSMainThread* RSMainThread::Instance()
     return &instance;
 }
 
-RSMainThread::RSMainThread() : rsParallelType_(RSSystemParameters::GetRsParallelType())
+RSMainThread::RSMainThread() : systemAnimatedScenesEnabled_(RSSystemParameters::GetSystemAnimatedScenesEnabled()),
+    rsParallelType_(RSSystemParameters::GetRsParallelType())
 {
     context_ = std::make_shared<RSContext>();
     context_->Initialize();
@@ -2287,7 +2288,6 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         isAccessibilityConfigChanged_ = false;
         isCurtainScreenUsingStatusChanged_ = false;
         RSPointLightManager::Instance()->PrepareLight();
-        systemAnimatedScenesEnabled_ = RSSystemParameters::GetSystemAnimatedScenesEnabled();
         lastWatermarkFlag_ = watermarkFlag_;
         isOverDrawEnabledOfLastFrame_ = isOverDrawEnabledOfCurFrame_;
         isDrawingCacheDfxEnabledOfLastFrame_ = isDrawingCacheDfxEnabledOfCurFrame_;
@@ -4540,8 +4540,11 @@ bool RSMainThread::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedSc
         RS_LOGD("SetSystemAnimatedScenes Out of range.");
         return false;
     }
-    systemAnimatedScenes_ = systemAnimatedScenes;
-    isRegularAnimation_ = isRegularAnimation;
+    {
+        std::lock_guard<std::mutex> lock(systemAndRegularMutex_);
+        systemAnimatedScenes_ = systemAnimatedScenes;
+        isRegularAnimation_ = isRegularAnimation;
+    }
     if (!systemAnimatedScenesEnabled_) {
         return true;
     }
@@ -4584,13 +4587,17 @@ bool RSMainThread::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedSc
 }
 bool RSMainThread::GetIsRegularAnimation() const
 {
-    return (isRegularAnimation_ &&
-        systemAnimatedScenes_ < SystemAnimatedScenes::OTHERS &&
-        RSSystemParameters::GetAnimationOcclusionEnabled()) || IsPCThreeFingerScenesListScene();
+    bool ret = false;
+    {
+        std::lock_guard<std::mutex> lock(systemAndRegularMutex_);
+        ret = isRegularAnimation_ && systemAnimatedScenes_ < SystemAnimatedScenes::OTHERS;
+    }
+    return (ret && RSSystemParameters::GetAnimationOcclusionEnabled()) || IsPCThreeFingerScenesListScene();
 }
 
 SystemAnimatedScenes RSMainThread::GetSystemAnimatedScenes()
 {
+    std::lock_guard<std::mutex> lock(systemAndRegularMutex_);
     return systemAnimatedScenes_;
 }
 

@@ -489,11 +489,6 @@ void RSUniRenderThread::ReleaseSurfaceOpItemBuffer()
     }
 }
 
-sptr<SyncFence> RSUniRenderThread::GetAcquireFence()
-{
-    return acquireFence_;
-}
-
 void RSUniRenderThread::ReleaseSelfDrawingNodeBuffer()
 {
     std::map<ScreenId, std::vector<std::function<void()>>> releaseTasksWithScreenId;

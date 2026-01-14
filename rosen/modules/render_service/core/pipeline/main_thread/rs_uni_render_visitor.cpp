@@ -1046,8 +1046,8 @@ bool RSUniRenderVisitor::CheckIfSkipDrawInVirtualScreen(RSSurfaceRenderNode& nod
     if (node.GetSpecialLayerMgr().Find(SpecialLayerType::SKIP) ||
         allBlackList_.find(node.GetId()) != allBlackList_.end() ||
         allBlackList_.find(node.GetLeashPersistentId()) != allBlackList_.end()) {
-        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::CheckIfSkipDrawInVirtualScreen:[%{public}s] "
-            "nodeid:[%{public}" PRIu64 "], set isSkipDrawInVirtualScreen_ true", node.GetName().c_str(), node.GetId());
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::CheckIfSkipDrawInVirtualScreen:[%s] "
+            "nodeid:[%" PRIu64 "], set isSkipDrawInVirtualScreen_ true", node.GetName().c_str(), node.GetId());
         return true;
     }
     return false;
