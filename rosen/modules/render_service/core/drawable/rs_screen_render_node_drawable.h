@@ -45,14 +45,6 @@ public:
         return cacheImgForMultiScreenView_;
     }
 
-    void SetCacheImgForCapture(std::shared_ptr<Drawing::Image> cacheImgForCapture)
-    {
-        if (cacheImgForMultiScreenView_ == cacheImgForCapture) {
-            return;
-        }
-        cacheImgForMultiScreenView_ = cacheImgForCapture;
-    }
-
     const std::shared_ptr<RSSurfaceHandler> GetRSSurfaceHandlerOnDraw() const
     {
         return surfaceHandler_;
@@ -110,7 +102,7 @@ public:
     {
         return virtualSurfaceUniqueId_ != pSurfaceUniqueId ? nullptr : virtualSurface_;
     }
-    bool SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo);
+    bool SkipFrame(uint32_t refreshRate, const RSScreenProperty& screenProperty);
     bool IsRenderSkipIfScreenOff() const
     {
         return isRenderSkipIfScreenOff_;
