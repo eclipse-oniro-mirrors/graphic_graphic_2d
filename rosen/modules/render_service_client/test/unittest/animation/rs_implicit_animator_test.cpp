@@ -325,6 +325,33 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ProcessEmptyAnimationTest002
+ * @tc.desc: Verify with UIContext
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest002, TestSize.Level1)
+{
+    auto rsUIContext = std::make_shared<RSUIContext>();
+    auto implicitAnimator = std::make_shared<RSImplicitAnimator>();
+    implicitAnimator->SetRSUIContext(rsUIContext);
+
+    RSAnimationTimingProtocol timingProtocol;
+    timingProtocol.duration_ = -1;
+    timingProtocol.repeatCount_ = 0;
+    auto timingCurve = RSAnimationTimingCurve::LINEAR;
+    std::shared_ptr<AnimationFinishCallback> finishCallback = nullptr;
+    std::shared_ptr<AnimationRepeatCallback> repeatCallback = nullptr;
+
+    auto globalParam = std::make_tuple(timingProtocol, timingCurve, finishCallback, repeatCallback);
+    implicitAnimator->globalImplicitParams_.push(globalParam);
+    auto finishCallbackTest = std::make_shared<AnimationFinishCallback>(
+        nullptr, FinishCallbackType::TIME_INSENSITIVE);
+
+    EXPECT_TRUE(finishCallbackTest.use_count() == 1);
+    implicitAnimator->ProcessEmptyAnimations(finishCallbackTest);
+}
+
+/**
  * @tc.name: ProcessAnimationFinishCallbackGuaranteeTaskTest001
  * @tc.desc: Verify the ProcessAnimationFinishCallbackGuaranteeTaskTest001
  * @tc.type:FUNC
