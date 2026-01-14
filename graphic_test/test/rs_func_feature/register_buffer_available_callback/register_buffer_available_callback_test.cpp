@@ -96,7 +96,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -135,7 +135,7 @@ auto surfaceNode = CreateTestSurfaceNode();
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -176,7 +176,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -218,7 +218,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -260,7 +260,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -319,7 +319,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -372,7 +372,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -410,7 +410,7 @@ GRAPHIC_TEST(
         // created node should be registered to preserve ref_count
         RegisterNode(canvasNode);
     }
-    RegiserNode(rootNode);
+    RegisterNode(rootNode);
 }
 
 /*
@@ -430,7 +430,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -439,7 +439,7 @@ GRAPHIC_TEST(
     GetRootNode()->AddChild(rootNode);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
-    if (execute)) {
+    if (execute) {
         auto canvasNode = RSCanvasNode::Create();
         canvasNode->SetBounds({ 0, 0, 900, 900 });
         canvasNode->SetFrame({ 0, 0, 900, 900 });
@@ -472,7 +472,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -530,7 +530,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -574,7 +574,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -623,7 +623,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -672,7 +672,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -745,7 +745,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -797,7 +797,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -849,7 +849,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -906,7 +906,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -963,7 +963,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1020,7 +1020,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1079,7 +1079,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1135,7 +1135,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1192,7 +1192,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1249,7 +1249,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1306,7 +1306,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1363,7 +1363,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1420,7 +1420,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1478,7 +1478,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1536,7 +1536,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1594,7 +1594,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1652,7 +1652,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1704,7 +1704,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1756,7 +1756,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1808,7 +1808,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1860,7 +1860,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1913,7 +1913,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -1966,7 +1966,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2019,7 +2019,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2072,7 +2072,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2125,7 +2125,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2178,7 +2178,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2231,7 +2231,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2283,7 +2283,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2335,7 +2335,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2387,7 +2387,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2439,7 +2439,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2491,7 +2491,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2543,7 +2543,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2595,7 +2595,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2647,7 +2647,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2699,7 +2699,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2751,7 +2751,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2803,7 +2803,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2855,7 +2855,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2907,7 +2907,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
@@ -2959,7 +2959,7 @@ GRAPHIC_TEST(
     bool execute = false;
     auto cb = [&execute]() {
         execute = true;
-        std::cout<< "callback!" << endl;
+        std::cout<< "callback!" << std::endl;
     };
     surfaceNode->SetBufferAvailableCallback(cb);
     rootNode->SetBounds(0, 0, 1000, 1000);
