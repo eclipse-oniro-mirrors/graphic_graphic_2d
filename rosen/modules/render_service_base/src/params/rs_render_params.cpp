@@ -280,6 +280,9 @@ bool RSRenderParams::IsRenderGroupSubTreeDirty() const
 
 void RSRenderParams::SetChildHasTranslateOnSqueeze(bool val)
 {
+    if (ChildHasTranslateOnSqueeze() == val) {
+        return;
+    }
     if (!renderGroupCache_) {
         renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
     }

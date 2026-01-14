@@ -605,6 +605,8 @@ HWTEST_F(RSRenderParamsTest, SetChildHasTranslateOnSqueezeTest, TestSize.Level1)
     RSRenderParams params(id);
     auto renderParams = static_cast<RSRenderParams*>(target.get());
 
+    renderParams->SetChildHasTranslateOnSqueeze(false);
+
     EXPECT_FALSE(renderParams->ChildHasTranslateOnSqueeze());
     ASSERT_EQ(renderParams->renderGroupCache_, nullptr);
 
