@@ -39,6 +39,7 @@ public:
     EffectVulkanContext &operator=(const EffectVulkanContext&&) = delete;
 
     std::shared_ptr<Drawing::GPUContext> CreateDrawingContext();
+    
 private:
     explicit EffectVulkanContext(std::string cacheDir = "");
     ~EffectVulkanContext() = default;
