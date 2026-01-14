@@ -854,9 +854,12 @@ void RSCanvasDrawingRenderNodeDrawable::ReleaseDmaSurfaceBuffer(bool notifyOnly)
     const auto& params = GetRenderParams();
     if ((PRE_ALLOCATE_DMA_ENABLED || RENDER_DMA_ENABLED) && params != nullptr) {
         auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
-        bufferCache.NotifyCanvasSurfaceBufferChanged(nodeId_, nullptr, params->GetCanvasDrawingResetSurfaceIndex());
+        auto resetSurfaceIndex = params->GetCanvasDrawingResetSurfaceIndex();
+        // Notify client to release DMA buffer
+        bufferCache.NotifyCanvasSurfaceBufferChanged(nodeId_, nullptr, resetSurfaceIndex);
         if (!notifyOnly) {
-            bufferCache.RemovePendingBuffer(nodeId_, params->GetCanvasDrawingResetSurfaceIndex());
+            // Release DMA buffer from RS
+            bufferCache.RemovePendingBuffer(nodeId_, resetSurfaceIndex);
         }
     }
 }

@@ -23,6 +23,7 @@
 
 namespace OHOS {
 namespace Rosen {
+using BufferMap = std::map<uint32_t, sptr<SurfaceBuffer>>;
 class RSCanvasDmaBufferCache : public std::enable_shared_from_this<RSCanvasDmaBufferCache> {
 public:
     RSCanvasDmaBufferCache() = default;
@@ -50,8 +51,6 @@ public:
     void ClearPendingBufferByPid(pid_t pid);
 
 private:
-    using BufferMap = std::map<uint32_t, sptr<SurfaceBuffer>>;
-
     void RemovePendingBuffer(BufferMap& nodeBufferMap, uint32_t resetSurfaceIndex, NodeId nodeId);
 
     std::unordered_map<pid_t, sptr<RSICanvasSurfaceBufferCallback>> canvasSurfaceBufferCallbackMap_;
