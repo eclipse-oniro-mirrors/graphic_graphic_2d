@@ -1683,6 +1683,7 @@ int32_t RSScreenManager::SetDualScreenState(ScreenId id, DualScreenStatus status
         RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
         return StatusCode::SCREEN_NOT_FOUND;
     }
+    RSLuminanceControl::Get().SetDualScreenHdrUniManagementStatus(id, status);
     return screen->SetDualScreenState(status);
 }
 

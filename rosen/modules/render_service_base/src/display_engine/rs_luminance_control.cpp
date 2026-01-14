@@ -258,5 +258,12 @@ double RSLuminanceControl::GetConfigScalerLock(ScreenId screenId, HdrStatus type
     return (rSLuminanceControlInterface_ != nullptr) ?
         rSLuminanceControlInterface_->GetConfigScalerLock(screenId, type) : 1.0; // 1.0 means no headroom
 }
+
+void RSLuminanceControl::SetDualScreenHdrUniManagementStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
+{
+    if (rSLuminanceControlInterface_ != nullptr) {
+        rSLuminanceControlInterface_->SetDualScreenHdrUniManagementStatus(screenId, dualScreenStatus);
+    }
+}
 } // namespace Rosen
 } // namespace OHOS
