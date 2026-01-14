@@ -4067,6 +4067,17 @@ HWTEST_F(RSUniRenderVisitorTest, CollectEffectInfo010, TestSize.Level2)
     parent->InitRenderParams();
     parent->AddChild(node);
 
+    auto cacheRoot = std::make_shared<RSCanvasRenderNode>(10);
+    cacheRoot->InitRenderParams();
+    cacheRoot->SetDrawingCacheType(RSDrawingCacheType::FORCED_CACHE);
+    // renderGroupCacheRoots_ is empty
+    node->GetMutableRenderProperties().SetTranslate({0.0f, 0.0f});
+    rsUniRenderVisitor->CollectEffectInfo(*node);
+    EXPECT_FALSE(parent->stagingRenderParams_->ChildHasTranslateOnSqueeze());
+    
+    // renderGroupCacheRoots_ is not empty
+    rsUniRenderVisitor->AddRenderGroupCacheRoot(*cacheRoot);
+
     node->GetMutableRenderProperties().SetTranslate({0.0f, 0.0f});
     rsUniRenderVisitor->CollectEffectInfo(*node);
     EXPECT_FALSE(parent->stagingRenderParams_->ChildHasTranslateOnSqueeze());

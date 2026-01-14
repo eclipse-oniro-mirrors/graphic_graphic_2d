@@ -3264,9 +3264,10 @@ void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
     if (node.HasChildExcludedFromNodeGroup() || node.IsExcludedFromNodeGroup()) {
         nodeParent->SetHasChildExcludedFromNodeGroup(true);
     }
-    if (!ROSEN_EQ(node.GetRenderProperties().GetTranslateX(), 0.0f) ||
-        !ROSEN_EQ(node.GetRenderProperties().GetTranslateY(), 0.0f)) {
-        nodeParent->SetChildHasTranslateOnSqueeze(true);
+    if (!renderGroupCacheRoots_.empty()) {
+        bool flag = !ROSEN_EQ(node.GetRenderProperties().GetTranslateX(), 0.0f) ||
+                    !ROSEN_EQ(node.GetRenderProperties().GetTranslateY(), 0.0f);
+        nodeParent->SetChildHasTranslateOnSqueeze(flag);
     }
     node.UpdateNodeColorSpace();
     nodeParent->SetNodeColorSpace(node.GetNodeColorSpace());
