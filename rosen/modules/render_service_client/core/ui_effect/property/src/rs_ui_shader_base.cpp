@@ -156,6 +156,7 @@ std::shared_ptr<RSNGShaderBase> ConvertColorGradientEffectPara(std::shared_ptr<V
 
     colorGradientEffect->Setter<ColorGradientEffectBlendTag>(blend);
     colorGradientEffect->Setter<ColorGradientEffectBlendKTag>(blendK);
+    // Convert brightness from [0,2] range to [-1,1] range for normalizing the input
     colorGradientEffect->Setter<ColorGradientEffectBrightnessTag>(brightness - 1.0f);
 
     ColorGradientEffectColorTags colorTag{};
