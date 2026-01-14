@@ -22,6 +22,7 @@
 #include "animation/rs_render_animation.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_message_processor.h"
+#include "common/rs_optional_trace.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "platform/common/rs_log.h"
 
@@ -59,10 +60,8 @@ void RSModifierManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& a
         return;
     }
     animations_.emplace(key, animation);
-    std::ostringstream oss;
-    oss << "AddAnimation set hasFirstFrameAnimation id:" << animation->id_ << "targetId:" << animation->targetId_
-        << "targetName:" << animation->targetName_;
-    RSAnimationTraceUtils::GetInstance().AddAnimationNameTrace(oss.str());
+    RS_OPTIONAL_TRACE_NAME_FMT("AddAnimation set hasFirstFrameAnimation id:%" PUBU64
+        " targetId:%" PUBU64 " targetName:%s", animation->id_, animation->targetId_, animation->targetName_.c_str());
     hasFirstFrameAnimation_ = true;
 
     std::shared_ptr<RSRenderDisplaySync> displaySync = std::make_shared<RSRenderDisplaySync>(animation);
