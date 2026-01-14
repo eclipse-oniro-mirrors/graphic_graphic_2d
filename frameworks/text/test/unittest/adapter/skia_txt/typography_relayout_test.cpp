@@ -1294,7 +1294,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest031, TestSize.Le
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0032, TestSize.Level0)
 {
-    double maxWidth = 50;
+    constexpr double maxWidth = 50;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::TAIL;
     typographyStyle.maxLines = 1;
@@ -1331,7 +1331,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0032, TestSize.L
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0033, TestSize.Level0)
 {
-    double maxWidth = 50;
+    constexpr double maxWidth = 50;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::MIDDLE;
     typographyStyle.maxLines = 1;
@@ -1368,7 +1368,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0033, TestSize.L
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0034, TestSize.Level0)
 {
-    double maxWidth = 100;
+    constexpr double maxWidth = 100;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::TAIL;
     typographyStyle.breakStrategy = BreakStrategy::BALANCED;
@@ -1406,7 +1406,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0034, TestSize.L
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0035, TestSize.Level0)
 {
-    double maxWidth = 100;
+    constexpr double maxWidth = 100;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::MIDDLE;
     typographyStyle.breakStrategy = BreakStrategy::BALANCED;
@@ -1444,7 +1444,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0035, TestSize.L
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0036, TestSize.Level0)
 {
-    double maxWidth = 50;
+    constexpr double maxWidth = 50;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::HEAD;
     typographyStyle.maxLines = 1;
@@ -1479,7 +1479,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0036, TestSize.L
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0037, TestSize.Level0)
 {
-    double maxWidth = 100;
+    constexpr double maxWidth = 100;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::HEAD;
     typographyStyle.ellipsis = u"...";
@@ -1516,7 +1516,7 @@ HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0037, TestSize.L
  */
 HWTEST_F(TypographyRelayoutTest, OHDrawingTypographyRelayoutTest0038, TestSize.Level0)
 {
-    double maxWidth = 100;
+    constexpr double maxWidth = 100;
     OHOS::Rosen::TypographyStyle typographyStyle;
     typographyStyle.ellipsisModal = EllipsisModal::MIDDLE;
     typographyStyle.ellipsis = u"...";
