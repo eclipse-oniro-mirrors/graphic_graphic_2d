@@ -95,7 +95,6 @@ void HdiLayerTest::SetUpTestCase()
 
 void HdiLayerTest::TearDownTestCase() {}
 
-namespace {
 class MockSurfaceBuffer : public SurfaceBufferImpl {
 public:
     MOCK_CONST_METHOD0(GetBufferHandle, BufferHandle*());
@@ -745,17 +744,15 @@ HWTEST_F(HdiLayerTest, ClearBufferCache002, Function | MediumTest| Level1)
     hdiLayer_->rsLayer_ = nullptr;
     hdiLayer_->ClearBufferCache();
 }
-} // namespace
-} // namespace Rosen
-} // namespace OHOS
+
 
 /**
  * Function: SetTransformMode_NoChangeOrButt
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. GRAPHIC_ROTATE_BUTT 或与 prev 相同时跳过设置
- *                  2. check ret
+ * CaseDescription: 1. Skip setting when transform is GRAPHIC_ROTATE_BUTT or equals prev
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetTransformMode_NoChangeOrButt, Function | MediumTest| Level1)
 {
@@ -777,8 +774,8 @@ HWTEST_F(HdiLayerTest, SetTransformMode_NoChangeOrButt, Function | MediumTest| L
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. Zorder/PreMulti 与 prev 相同时跳过设置
- *                  2. check ret
+ * CaseDescription: 1. Skip setting when Zorder/PreMulti equals prev
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetLayerZorder_And_PreMulti_NoChange, Function | MediumTest| Level1)
 {
@@ -801,14 +798,14 @@ HWTEST_F(HdiLayerTest, SetLayerZorder_And_PreMulti_NoChange, Function | MediumTe
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. 设置色彩空间，返回成功
- *                  2. check ret
+ * CaseDescription: 1. Set color data space, expect success
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetLayerColorDataSpace_Set, Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
     hdiLayer_->rsLayer_ = std::make_shared<RSSurfaceLayer>();
-    hdiLayer_->rsLayer_->SetColorDataSpace(GraphicColorDataSpace::GRAPHIC_BT601_NARROW);
+    hdiLayer_->rsLayer_->SetColorDataSpace(GraphicColorDataSpace::GRAPHIC_GAMUT_DISPLAY_P3);
     ASSERT_EQ(hdiLayer_->SetLayerColorDataSpace(), GRAPHIC_DISPLAY_SUCCESS);
 }
 
@@ -817,8 +814,8 @@ HWTEST_F(HdiLayerTest, SetLayerColorDataSpace_Set, Function | MediumTest| Level1
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. metaData 与 prev 不同时走设置路径
- *                  2. check ret
+ * CaseDescription: 1. When metaData differs from prev, take setting path
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetLayerMetaData_Different, Function | MediumTest| Level1)
 {
@@ -840,7 +837,7 @@ HWTEST_F(HdiLayerTest, SetLayerMetaData_Different, Function | MediumTest| Level1
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. 命中已有 sequence 返回 true
+ * CaseDescription: 1. Return true when sequence is found
  *                  2. check index/deletingList
  */
 HWTEST_F(HdiLayerTest, CheckAndUpdateLayerBufferCache_Found, Function | MediumTest| Level1)
@@ -858,13 +855,14 @@ HWTEST_F(HdiLayerTest, CheckAndUpdateLayerBufferCache_Found, Function | MediumTe
     ASSERT_TRUE(deletingList.empty());
 }
 
+
 /**
  * Function: SetLayerPresentTimestamp_Unsupported
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. 不支持时间戳类型时直接返回成功
- *                  2. check ret
+ * CaseDescription: 1. Return success when timestamp type is unsupported
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetLayerPresentTimestamp_Unsupported, Function | MediumTest| Level1)
 {
@@ -879,8 +877,8 @@ HWTEST_F(HdiLayerTest, SetLayerPresentTimestamp_Unsupported, Function | MediumTe
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. 仅线性矩阵键，当前矩阵尺寸非法导致错误码为最终返回
- *                  2. check ret
+ * CaseDescription: 1. Only linear matrix key; invalid matrix size leads to final error code
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetPerFrameParameters_LinearMatrixParamErr_Last, Function | MediumTest| Level1)
 {
@@ -888,7 +886,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_LinearMatrixParamErr_Last, Function
     paramKey_.clear();
     paramKey_.push_back("LayerLinearMatrix");
     auto curRSLayer = std::make_shared<RSSurfaceLayer>();
-    // 非法尺寸，触发 GRAPHIC_DISPLAY_PARAM_ERR
+    // Invalid size, triggers GRAPHIC_DISPLAY_PARAM_ERR
     curRSLayer->SetLayerLinearMatrix({1.0f, 2.0f});
     hdiLayer_->rsLayer_ = curRSLayer;
     auto ret = hdiLayer_->SetPerFrameParameters();
@@ -900,8 +898,8 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_LinearMatrixParamErr_Last, Function
  * Type: Function
  * Rank: Important(1)
  * EnvConditions: N/A
- * CaseDescription: 1. 设置所有键且顺序保证最终返回成功
- *                  2. check ret
+ * CaseDescription: 1. Set all keys in order; final return is success
+ *                  2. check return value
  */
 HWTEST_F(HdiLayerTest, SetPerFrameParameters_AllKeys_Success, Function | MediumTest| Level1)
 {
@@ -929,3 +927,5 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_AllKeys_Success, Function | MediumT
     auto ret = hdiLayer_->SetPerFrameParameters();
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
+} // namespace Rosen
+} // namespace OHOS
