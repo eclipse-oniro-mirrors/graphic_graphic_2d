@@ -855,9 +855,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     auto propertyUnit_ { RSPropertyUnit::UNKNOWN };
     property->SetPropertyUnit(propertyUnit_);
     auto base = std::make_shared<RSRenderProperty<bool>>();
-    base->SetModifierType(RSModifierType::BOUNDS);
-    auto type = base->GetModifierType();
-    EXPECT_TRUE(type == RSModifierType::BOUNDS);
     property->SetValueFromRender(base);
     property->SetUpdateCallback(nullptr);
     RSAnimationTimingProtocol timingProtocol;
@@ -867,6 +864,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     property->AnimateWithInitialVelocity(timingProtocol, timingCurve, targetValue);
 
     std::shared_ptr<RSNode> node = RSCanvasNode::Create();
+    EXPECT_TRUE(node != nullptr);
     node->SetShadowMask(true);
     node->IsImplicitAnimationOpen();
     node->GetChildByIndex(1);
