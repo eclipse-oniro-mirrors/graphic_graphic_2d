@@ -483,7 +483,7 @@ napi_value JsFontDescriptor::IsFontSupported(napi_env env, napi_callback_info in
     if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok || argc != ARGC_ONE ||
         argv[0] == nullptr) {
         TEXT_LOGE("Failed to get argument, argc %{public}zu", argc);
-        return NapiThrowError(env, MLB::ERROR_INVALID_PARAM, "Invalid argument");
+        return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid argument");
     }
     std::string fontPath;
 
@@ -505,6 +505,6 @@ napi_value JsFontDescriptor::IsFontSupported(napi_env env, napi_callback_info in
         return CreateJsValue(env, ok);
     }
 
-    return CreateJsValue(env, false);
+    return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid argument");
 }
 }
