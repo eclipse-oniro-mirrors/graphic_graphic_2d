@@ -610,14 +610,13 @@ HWTEST_F(RSRenderParamsTest, SetChildHasTranslateOnSqueezeTest, TestSize.Level1)
     EXPECT_FALSE(renderParams->ChildHasTranslateOnSqueeze());
     ASSERT_EQ(renderParams->renderGroupCache_, nullptr);
 
-    renderParams->SetChildHasTranslateOnSqueeze(false);
-    ASSERT_NE(renderParams->renderGroupCache_, nullptr);
-    EXPECT_FALSE(renderParams->ChildHasTranslateOnSqueeze());
-    EXPECT_FALSE(renderParams->needSync_);
-
     renderParams->SetChildHasTranslateOnSqueeze(true);
+    ASSERT_NE(renderParams->renderGroupCache_, nullptr);
     EXPECT_TRUE(renderParams->ChildHasTranslateOnSqueeze());
     EXPECT_TRUE(renderParams->needSync_);
+
+    renderParams->SetChildHasTranslateOnSqueeze(false);
+    EXPECT_FALSE(renderParams->ChildHasTranslateOnSqueeze());
 }
 
 /**
