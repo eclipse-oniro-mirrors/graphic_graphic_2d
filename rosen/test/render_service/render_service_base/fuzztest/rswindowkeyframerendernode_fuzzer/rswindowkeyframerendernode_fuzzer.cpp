@@ -74,11 +74,11 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     keyframeNode->SetLinkedNodeId(nodeId);
     keyframeNode->GetLinkedNodeId();
     keyframeNode->CollectLinkedNodeInfo();
- 
+
     keyframeNode->GetLinkedNodeCount();
     keyframeNode->ClearLinkedNodeInfo();
     keyframeNode->ResetLinkedWindowKeyFrameInfo(*keyframeNode);
- 
+
     RSSurfaceRenderNode surfaceNode{nodeId};
     auto rsContext = std::make_shared<RSContext>();
     NodeId appNodeId = GetData<NodeId>();
