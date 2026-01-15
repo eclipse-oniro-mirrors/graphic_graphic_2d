@@ -197,7 +197,7 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
         return nullptr;
     }
     ComposerScreenInfo composerScreenInfo;
-    RSRenderComposerClient::ConvertScreenInfo(params.GetScreenProperty().GetScreenInfo(), composerScreenInfo);
+    RSComposerClient::ConvertScreenInfo(params.GetScreenProperty().GetScreenInfo(), composerScreenInfo);
     auto bufferConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(
         composerScreenInfo, false, params.GetNewColorSpace(), params.GetNewPixelFormat());
     RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d, lastPixelFormat: %{public}d",
@@ -659,9 +659,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     uniParam->SetRSProcessor(processor);
 
     if (!screenProperty.IsVirtual()) {
-        std::shared_ptr<RSRenderComposerClient> composerClient = RSUniRenderThread::Instance().GetRSRenderComposerClient(paramScreenId);
-        if (composerClient) {
-            PipelineParam param = composerClient->GetPipelineParam();
+        if (auto composerClientManager = RSUniRenderThread::Instance().GetComposerClientManager()) {
+            PipelineParam param = composerClientManager->GetPipelineParam(paramScreenId);
             param.frameTimestamp = RSUniRenderThread::Instance().GetCurrentTimestamp();
             param.actualTimestamp = RSUniRenderThread::Instance().GetActualTimestamp();
             param.fastComposeTimeStampDiff = RSUniRenderThread::Instance().GetFastComposeTimeStampDiff();
@@ -671,9 +670,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             param.isForceRefresh = RSUniRenderThread::Instance().GetForceRefreshFlag();
             param.hasGameScene = RSUniRenderThread::Instance().GetHasGameScene();
             param.hasLppVideo = RSUniRenderThread::Instance().GetHasLppVideo();
-            composerClient->UpdatePipelineParam(param);
-        } else {
-            RS_LOGE("composerClient->UpdatePipelineParam failed!");
+            composerClientManager->UpdatePipelineParam(paramScreenId, param);
         }
     }
 
