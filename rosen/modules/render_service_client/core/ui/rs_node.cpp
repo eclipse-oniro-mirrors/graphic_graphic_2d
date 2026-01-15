@@ -16,6 +16,8 @@
 #include "ui/rs_node.h"
 
 #include <algorithm>
+#include <array>
+#include <numeric>
 #include <vector>
 #include <memory>
 #include <sstream>
@@ -1990,18 +1992,30 @@ struct FilterCascadeBundleInfo {
     int32_t versionCode = 0;
 };
 
+enum class SetUIXXFilterCascadeType : size_t {
+    BG_BLUR = 0,
+    WATER_RIPPLE,
+    CP_BLUR,
+    PIXEL_STRETCH,
+    RADIUS_GRADIENT_BLUR,
+    FG_BLUR,
+    FLY_OUT,
+    DISTORT,
+    HDR_BRIGHTNESS_RATIO,
+    MAX_TYPE
+};
+
+enum class SetUIFilterFunctionType : uint16_t {
+    BACKGROUND_FILTER = 0,
+    COMPOSITING_FILTER,
+    FOREGROUND_FILTER,
+    MAX_TYPE
+};
+
 struct SetUIXXFilterCascadeParams {
     struct FilterCascadeBundleInfo bundleInfo;
-    uint16_t functionType = 0; // 0: SetUIbackgroundFilter, 1: SetUICompositingFilter, 2:SetUIForegroundFilter
-    uint16_t bgBlurCount = 0;
-    uint16_t waterRippleCount = 0;
-    uint16_t cpBlurCount = 0;
-    uint16_t pixelStretchCount = 0;
-    uint16_t radiusGradientBlurCount = 0;
-    uint16_t fgBlurCount = 0;
-    uint16_t flyOutCount = 0;
-    uint16_t distortCount = 0;
-    uint16_t hdrBrightnessRatioCount = 0;
+    SetUIFilterFunctionType functionType = SetUIFilterFunctionType::BACKGROUND_FILTER;
+    std::array<uint16_t, static_cast<size_t>(SetUIXXFilterCascadeType::MAX_TYPE)> paramCounts = { 0 };
 };
 
 FilterCascadeBundleInfo GetBundleInfo()
@@ -2064,39 +2078,49 @@ void ReportSetUIXXFilterCascade(SetUIXXFilterCascadeParams& params)
     params.bundleInfo = bundleInfo;
     switch (params.functionType) {
         // background filter
-        case 0: {
+        case SetUIFilterFunctionType::BACKGROUND_FILTER: {
             RS_TRACE_NAME("ReportSetUIXXFilterCascade BackgroundFilter HiSysEventWrite");
 #ifdef ROSEN_OHOS
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_SETUIXXFILTER_CASCADE",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "BUNDLE_NAME", params.bundleInfo.bundleName,
                 "VERSION_NAME", params.bundleInfo.versionName, "VERSION_CODE", params.bundleInfo.versionCode,
-                "FUNCTION_TYPE", params.functionType, "BG_BLUR_COUNT", params.bgBlurCount, "WATER_RIPPLE_COUNT",
-                params.waterRippleCount);
+                "FUNCTION_TYPE", static_cast<uint16_t>(params.functionType),
+                "BG_BLUR_COUNT", params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::BG_BLUR)],
+                "WATER_RIPPLE_COUNT", params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::WATER_RIPPLE)]);
 #endif
             break;
         }
         // compositing filter
-        case 1: {
+        case SetUIFilterFunctionType::COMPOSITING_FILTER: {
             RS_TRACE_NAME("ReportSetUIXXFilterCascade CompositingFilter HiSysEventWrite");
 #ifdef ROSEN_OHOS
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_SETUIXXFILTER_CASCADE",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "BUNDLE_NAME", params.bundleInfo.bundleName,
                 "VERSION_NAME", params.bundleInfo.versionName, "VERSION_CODE", params.bundleInfo.versionCode,
-                "FUNCTION_TYPE", params.functionType, "CP_BLUR_COUNT", params.cpBlurCount, "PIXEL_STRETCH_COUNT",
-                params.pixelStretchCount, "RADIUS_GRADIENT_BLUR_COUNT", params.radiusGradientBlurCount);
+                "FUNCTION_TYPE", static_cast<uint16_t>(params.functionType),
+                "CP_BLUR_COUNT", params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::CP_BLUR)],
+                "PIXEL_STRETCH_COUNT", params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::PIXEL_STRETCH)],
+                "RADIUS_GRADIENT_BLUR_COUNT",
+                params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::RADIUS_GRADIENT_BLUR)]);
 #endif
             break;
         }
         // foreground filter
-        case 2: {
+        case SetUIFilterFunctionType::FOREGROUND_FILTER: {
             RS_TRACE_NAME("ReportSetUIXXFilterCascade ForegroundFilter HiSysEventWrite");
 #ifdef ROSEN_OHOS
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_SETUIXXFILTER_CASCADE",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "BUNDLE_NAME", params.bundleInfo.bundleName,
                 "VERSION_NAME", params.bundleInfo.versionName, "VERSION_CODE", params.bundleInfo.versionCode,
-                "FUNCTION_TYPE", params.functionType, "FG_BLUR_COUNT", params.fgBlurCount, "FLY_OUT_COUNT",
-                params.flyOutCount, "DISTORT_COUNT", params.distortCount, "HDR_BRIGHTNESS_RATIO_COUNT",
-                params.hdrBrightnessRatioCount);
+                "FUNCTION_TYPE", static_cast<uint16_t>(params.functionType),
+                "FG_BLUR_COUNT",
+                params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::FG_BLUR)],
+                "FLY_OUT_COUNT",
+                params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::FLY_OUT)],
+                "DISTORT_COUNT",
+                params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::DISTORT)],
+                "HDR_BRIGHTNESS_RATIO_COUNT",
+                params.paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::HDR_BRIGHTNESS_RATIO)]);
 #endif
             break;
         }
@@ -2111,8 +2135,7 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
         ROSEN_LOGE("Failed to set backgroundFilter, backgroundFilter is null!");
         return;
     }
-    uint16_t bgBlurCount = 0;
-    uint16_t waterRippleCount = 0;
+    std::array<uint16_t, static_cast<size_t>(SetUIXXFilterCascadeType::MAX_TYPE)> paramCounts = { 0 };
     std::shared_ptr<RSNGFilterBase> headFilter = nullptr;
     auto filterParas = backgroundFilter->GetAllPara();
     for (auto it = filterParas.begin(); it != filterParas.end(); ++it) {
@@ -2130,7 +2153,7 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
         }
         switch (filterPara->GetParaType()) {
             case FilterPara::BLUR : {
-                bgBlurCount++;
+                paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::BG_BLUR)]++;
                 auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
                 auto blurRadius = filterBlurPara->GetRadius();
                 SetBackgroundBlurRadiusX(blurRadius);
@@ -2138,7 +2161,7 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
                 break;
             }
             case FilterPara::WATER_RIPPLE : {
-                waterRippleCount++;
+                paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::WATER_RIPPLE)]++;
                 auto waterRipplePara = std::static_pointer_cast<WaterRipplePara>(filterPara);
                 auto waveCount = waterRipplePara->GetWaveCount();
                 auto rippleCenterX = waterRipplePara->GetRippleCenterX();
@@ -2153,12 +2176,12 @@ void RSNode::SetUIBackgroundFilter(const OHOS::Rosen::Filter* backgroundFilter)
                 break;
         }
     }
-    if (bgBlurCount + waterRippleCount > 1 && !hasReportedSetUIXXFilterCascade_[0]) {
-        hasReportedSetUIXXFilterCascade_[0] = true;
+    if (std::accumulate(paramCounts.begin(), paramCounts.end(), 0) > 1 &&
+        !hasReportedSetUIXXFilterCascade_[static_cast<size_t>(SetUIFilterFunctionType::BACKGROUND_FILTER)]) {
+        hasReportedSetUIXXFilterCascade_[static_cast<size_t>(SetUIFilterFunctionType::BACKGROUND_FILTER)] = true;
         SetUIXXFilterCascadeParams params;
-        params.functionType = 0; // background filter
-        params.bgBlurCount = bgBlurCount;
-        params.waterRippleCount = waterRippleCount;
+        params.functionType = SetUIFilterFunctionType::BACKGROUND_FILTER;
+        params.paramCounts = paramCounts;
         ReportSetUIXXFilterCascade(params);
     }
     SetBackgroundNGFilter(headFilter);
@@ -2170,27 +2193,25 @@ void RSNode::SetUICompositingFilter(const OHOS::Rosen::Filter* compositingFilter
         ROSEN_LOGE("Failed to set compositingFilter, compositingFilter is null!");
         return;
     }
-    uint16_t cpBlurCount = 0;
-    uint16_t pixelStretchCount = 0;
-    uint16_t radiusGradientBlurCount = 0;
+    std::array<uint16_t, static_cast<size_t>(SetUIXXFilterCascadeType::MAX_TYPE)> paramCounts = { 0 };
     // To do: generate composed filter here. Now we just set compositing blur in v1.0.
     auto filterParas = compositingFilter->GetAllPara();
     for (const auto& filterPara : filterParas) {
         if (filterPara->GetParaType() == FilterPara::BLUR) {
-            cpBlurCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::CP_BLUR)]++;
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
             auto blurRadius = filterBlurPara->GetRadius();
             SetForegroundBlurRadiusX(blurRadius);
             SetForegroundBlurRadiusY(blurRadius);
         }
         if (filterPara->GetParaType() == FilterPara::PIXEL_STRETCH) {
-            pixelStretchCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::PIXEL_STRETCH)]++;
             auto pixelStretchPara = std::static_pointer_cast<PixelStretchPara>(filterPara);
             auto stretchPercent = pixelStretchPara->GetStretchPercent();
             SetPixelStretchPercent(stretchPercent, pixelStretchPara->GetTileMode());
         }
         if (filterPara->GetParaType() == FilterPara::RADIUS_GRADIENT_BLUR) {
-            radiusGradientBlurCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::RADIUS_GRADIENT_BLUR)]++;
             auto radiusGradientBlurPara = std::static_pointer_cast<RadiusGradientBlurPara>(filterPara);
             auto rsLinearGradientBlurPara = std::make_shared<RSLinearGradientBlurPara>(
                 radiusGradientBlurPara->GetBlurRadius(),
@@ -2200,13 +2221,12 @@ void RSNode::SetUICompositingFilter(const OHOS::Rosen::Filter* compositingFilter
             SetLinearGradientBlurPara(rsLinearGradientBlurPara);
         }
     }
-    if (cpBlurCount + pixelStretchCount + radiusGradientBlurCount > 1 && !hasReportedSetUIXXFilterCascade_[1]) {
-        hasReportedSetUIXXFilterCascade_[1] = true;
+    if (std::accumulate(paramCounts.begin(), paramCounts.end(), 0) > 1 &&
+        !hasReportedSetUIXXFilterCascade_[static_cast<size_t>(SetUIFilterFunctionType::COMPOSITING_FILTER)]) {
+        hasReportedSetUIXXFilterCascade_[static_cast<size_t>(SetUIFilterFunctionType::COMPOSITING_FILTER)] = true;
         SetUIXXFilterCascadeParams params;
-        params.functionType = 1; // compositing filter
-        params.cpBlurCount = cpBlurCount;
-        params.pixelStretchCount = pixelStretchCount;
-        params.radiusGradientBlurCount = radiusGradientBlurCount;
+        params.functionType = SetUIFilterFunctionType::COMPOSITING_FILTER;
+        params.paramCounts = paramCounts;
         ReportSetUIXXFilterCascade(params);
     }
 }
@@ -2217,10 +2237,7 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
         ROSEN_LOGE("Failed to set foregroundFilter, foregroundFilter is null!");
         return;
     }
-    uint16_t fgBlurCount = 0;
-    uint16_t flyOutCount = 0;
-    uint16_t distortCount = 0;
-    uint16_t hdrBrightnessRatioCount = 0;
+    std::array<uint16_t, static_cast<size_t>(SetUIXXFilterCascadeType::MAX_TYPE)> paramCounts = { 0 };
     // To do: generate composed filter here. Now we just set foreground blur in v1.0.
     std::shared_ptr<RSNGFilterBase> headFilter = nullptr;
     auto& filterParas = foregroundFilter->GetAllPara();
@@ -2237,13 +2254,13 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             continue;
         }
         if (filterPara->GetParaType() == FilterPara::BLUR) {
-            fgBlurCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::FG_BLUR)]++;
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
             auto blurRadius = filterBlurPara->GetRadius();
             SetForegroundEffectRadius(blurRadius);
         }
         if (filterPara->GetParaType() == FilterPara::FLY_OUT) {
-            flyOutCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::FLY_OUT)]++;
             auto flyOutPara = std::static_pointer_cast<FlyOutPara>(filterPara);
             auto flyMode = flyOutPara->GetFlyMode();
             auto degree = flyOutPara->GetDegree();
@@ -2251,27 +2268,24 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             SetFlyOutParams(rs_fly_out_param, degree);
         }
         if (filterPara->GetParaType() == FilterPara::DISTORT) {
-            distortCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::DISTORT)]++;
             auto distortPara = std::static_pointer_cast<DistortPara>(filterPara);
             auto distortionK = distortPara->GetDistortionK();
             SetDistortionK(distortionK);
         }
         if (filterPara->GetParaType() == FilterPara::HDR_BRIGHTNESS_RATIO) {
-            hdrBrightnessRatioCount++;
+            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::HDR_BRIGHTNESS_RATIO)]++;
             auto hdrBrightnessRatioPara = std::static_pointer_cast<HDRBrightnessRatioPara>(filterPara);
             auto brightnessRatio = hdrBrightnessRatioPara->GetBrightnessRatio();
             SetHDRUIBrightness(brightnessRatio);
         }
     }
-    if (fgBlurCount + flyOutCount + distortCount + hdrBrightnessRatioCount > 1 &&
-        !hasReportedSetUIXXFilterCascade_[2]) {
-        hasReportedSetUIXXFilterCascade_[2] = true;
+    if (std::accumulate(paramCounts.begin(), paramCounts.end(), 0) > 1 &&
+        !hasReportedSetUIXXFilterCascade_[static_cast<size_t>(SetUIFilterFunctionType::FOREGROUND_FILTER)]) {
+        hasReportedSetUIXXFilterCascade_[static_cast<size_t>(SetUIFilterFunctionType::FOREGROUND_FILTER)] = true;
         SetUIXXFilterCascadeParams params;
-        params.functionType = 2; // foreground filter
-        params.fgBlurCount = fgBlurCount;
-        params.flyOutCount = flyOutCount;
-        params.distortCount = distortCount;
-        params.hdrBrightnessRatioCount = hdrBrightnessRatioCount;
+        params.functionType = SetUIFilterFunctionType::FOREGROUND_FILTER;
+        params.paramCounts = paramCounts;
         ReportSetUIXXFilterCascade(params);
     }
     SetForegroundNGFilter(headFilter);

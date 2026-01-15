@@ -16,8 +16,12 @@
 #include "property/rs_properties.h"
 
 #include <algorithm>
+#include <array>
+#include <chrono>
 #include <math.h>
 #include <memory>
+#include <mutex>
+#include <numeric>
 #include <optional>
 #include <securec.h>
 
@@ -26,14 +30,15 @@
 #include "animation/rs_particle_ripple_field.h"
 #include "animation/rs_particle_velocity_field.h"
 #include "animation/rs_render_particle_animation.h"
+#include "common/rs_background_thread.h"
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_vector4.h"
 #include "draw/color.h"
 #include "drawable/rs_property_drawable_utils.h"
 #include "effect/rs_render_filter_base.h"
-#include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_mask_base.h"
+#include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "effect/runtime_blender_builder.h"
 #include "pipeline/rs_canvas_render_node.h"
@@ -76,12 +81,9 @@
 #include "src/core/SkOpts.h"
 #endif
 
-#include <chrono>
-#include <mutex>
-#include "common/rs_background_thread.h"
 #ifdef ROSEN_OHOS
-#include "hisysevent.h"
 #include "app_mgr_client.h"
+#include "hisysevent.h"
 #endif
 
 namespace OHOS {
@@ -3544,73 +3546,102 @@ struct FilterCascadeBundleInfo {
     int32_t versionCode = 0;
 };
 
+enum class ServerXXFilterCascadeType : size_t {
+    AIBAR = 0,
+    MAGNIFIER,
+    BG_MATERIALBLUR,
+    BG_BLUR,
+    WATERRIPPLE,
+    BG_NGFILTER,
+    ALWAYSSNAPSHOT,
+    LINEARGRADIENTBLUR,
+    CP_MATERIALBLUR,
+    CP_BLUR,
+    MOTIONBLUR,
+    FG_BLUR,
+    SPHERIZE,
+    FLY,
+    ATTRACTION,
+    SHADOW,
+    DISTORTIONK,
+    HDRUIBRIGHTNESS,
+    FG_NGFILTER,
+    COLORADAPTIVE,
+    MAX_TYPE
+};
+
+enum class ServerFilterFunctionType : uint16_t {
+    BACKGROUND_FILTER = 0,
+    COMPOSITING_FILTER,
+    FOREGROUND_FILTER,
+    MAX_TYPE
+};
+
 struct ServerXXFilterCascadeParams {
     struct FilterCascadeBundleInfo bundleInfo;
-    uint16_t functionType = 0; // 0: GeneratebackgroundFilter, 1: GenerateForegroundFilter, 2:UpdateForegroundFilter
-    uint16_t aiBARCount = 0;
-    uint16_t magnifierCount = 0;
-    uint16_t bgMaterialBlurCount = 0;
-    uint16_t bgBlurCount = 0;
-    uint16_t waterRippleCount = 0;
-    uint16_t bgNGFilterCount = 0;
-    uint16_t alwaysSnapshotCount = 0;
-    uint16_t linearGradientBlurCount = 0;
-    uint16_t cpMaterialBlurCount = 0;
-    uint16_t cpBlurCount = 0;
-    uint16_t motionBlurCount = 0;
-    uint16_t fgBlurCount = 0;
-    uint16_t spherizeCount = 0;
-    uint16_t flyCount = 0;
-    uint16_t attractionCount = 0;
-    uint16_t shadowCount = 0;
-    uint16_t distortionKCount = 0;
-    uint16_t hdrUIBrightnessCount = 0;
-    uint16_t fgNGFilterCount = 0;
-    uint16_t colorAdaptiveCount = 0;
+    ServerFilterFunctionType functionType = ServerFilterFunctionType::BACKGROUND_FILTER;
+    std::array<uint16_t, static_cast<size_t>(ServerXXFilterCascadeType::MAX_TYPE)> paramCounts = { 0 };
 };
 
 void ReportServerXXFilterCascade(ServerXXFilterCascadeParams params)
 {
     switch (params.functionType) {
         // background filter
-        case 0: {
+        case ServerFilterFunctionType::BACKGROUND_FILTER: {
             RS_TRACE_NAME("ReportServerXXFilterCascade BackgroundFilter HiSysEventWrite");
 #ifdef ROSEN_OHOS
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_SERVER_XXFILTER_CASCADE",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "BUNDLE_NAME", params.bundleInfo.bundleName,
                 "VERSION_NAME", params.bundleInfo.versionName, "VERSION_CODE", params.bundleInfo.versionCode,
-                "FUNCTION_TYPE", params.functionType, "AIBAR_COUNT", params.aiBARCount, "MAGNIFIER_COUNT",
-                params.magnifierCount, "BG_MATERIALBLUR_COUNT", params.bgMaterialBlurCount, "BG_BLUR_COUNT",
-                params.bgBlurCount, "WATERRIPPLE_COUNT", params.waterRippleCount, "BG_NGFILTER_COUNT",
-                params.bgNGFilterCount, "ALWAYSSNAPSHOT_COUNT", params.alwaysSnapshotCount);
+                "FUNCTION_TYPE", static_cast<uint16_t>(params.functionType),
+                "AIBAR_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::AIBAR)],
+                "MAGNIFIER_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::MAGNIFIER)],
+                "BG_MATERIALBLUR_COUNT",
+                params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_MATERIALBLUR)],
+                "BG_BLUR_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_BLUR)],
+                "WATERRIPPLE_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::WATERRIPPLE)],
+                "BG_NGFILTER_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_NGFILTER)],
+                "ALWAYSSNAPSHOT_COUNT",
+                params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::ALWAYSSNAPSHOT)]);
 #endif
             break;
         }
         // compositing filter
-        case 1: {
+        case ServerFilterFunctionType::COMPOSITING_FILTER: {
             RS_TRACE_NAME("ReportServerXXFilterCascade CompositingFilter HiSysEventWrite");
 #ifdef ROSEN_OHOS
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_SERVER_XXFILTER_CASCADE",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "BUNDLE_NAME", params.bundleInfo.bundleName,
                 "VERSION_NAME", params.bundleInfo.versionName, "VERSION_CODE", params.bundleInfo.versionCode,
-                "FUNCTION_TYPE", params.functionType, "LINEARGRADIENTBLUR_COUNT", params.linearGradientBlurCount,
-                "CP_MATERIALBLUR_COUNT", params.cpMaterialBlurCount, "CP_BLUR_COUNT", params.cpBlurCount);
+                "FUNCTION_TYPE", static_cast<uint16_t>(params.functionType),
+                "LINEARGRADIENTBLUR_COUNT",
+                params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::LINEARGRADIENTBLUR)],
+                "CP_MATERIALBLUR_COUNT",
+                params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::CP_MATERIALBLUR)],
+                "CP_BLUR_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::CP_BLUR)]);
 #endif
             break;
         }
         // foreground filter
-        case 2: {
+        case ServerFilterFunctionType::FOREGROUND_FILTER: {
             RS_TRACE_NAME("ReportServerXXFilterCascade ForegroundFilter HiSysEventWrite");
 #ifdef ROSEN_OHOS
             HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::GRAPHIC, "RS_SERVER_XXFILTER_CASCADE",
                 OHOS::HiviewDFX::HiSysEvent::EventType::STATISTIC, "BUNDLE_NAME", params.bundleInfo.bundleName,
                 "VERSION_NAME", params.bundleInfo.versionName, "VERSION_CODE", params.bundleInfo.versionCode,
-                "FUNCTION_TYPE", params.functionType, "MOTIONBLUR_COUNT", params.motionBlurCount, "FG_BLUR_COUNT",
-                params.fgBlurCount, "SPHERIZE_COUNT", params.spherizeCount, "FLY_COUNT", params.flyCount,
-                "ATTRACTION_COUNT", params.attractionCount, "SHADOW_COUNT", params.shadowCount,
-                "DISTORTIONK_COUNT", params.distortionKCount, "HDRUIBRIGHTNESS_COUNT",
-                params.hdrUIBrightnessCount, "FG_NGFILTER_COUNT", params.fgNGFilterCount, "COLORADAPTIVE_COUNT",
-                params.colorAdaptiveCount);
+                "FUNCTION_TYPE", static_cast<uint16_t>(params.functionType),
+                "MOTIONBLUR_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::MOTIONBLUR)],
+                "FG_BLUR_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::FG_BLUR)],
+                "SPHERIZE_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::SPHERIZE)],
+                "FLY_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::FLY)],
+                "ATTRACTION_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::ATTRACTION)],
+                "SHADOW_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::SHADOW)],
+                "DISTORTIONK_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::DISTORTIONK)],
+                "HDRUIBRIGHTNESS_COUNT",
+                params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::HDRUIBRIGHTNESS)],
+                "FG_NGFILTER_COUNT", params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::FG_NGFILTER)],
+                "COLORADAPTIVE_COUNT",
+                params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::COLORADAPTIVE)]);
 #endif
             break;
         }
@@ -3676,33 +3707,32 @@ void ReportServerXXFilterCascadeCheck(
 void RSProperties::StatBackgroundFilter()
 {
     ServerXXFilterCascadeParams params;
-    params.functionType = 0; // BackgroundFilter
+    params.functionType = ServerFilterFunctionType::BACKGROUND_FILTER;
     if (GetAiInvert().has_value() || GetSystemBarEffect()) {
-        params.aiBARCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::AIBAR)]++;
     }
     if (GetMagnifierPara() && ROSEN_GNE(GetMagnifierPara()->factor_, 0.f)) {
-        params.magnifierCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::MAGNIFIER)]++;
     }
     if (IsBackgroundMaterialFilterValid()) {
-        params.bgMaterialBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_MATERIALBLUR)]++;
     }
     if (IsBackgroundBlurRadiusXValid() && IsBackgroundBlurRadiusYValid()) {
-        params.bgBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_BLUR)]++;
     }
     if (IsWaterRippleValid()) {
-        params.waterRippleCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::WATERRIPPLE)]++;
     }
     if (GetBackgroundNGFilter()) {
-        params.bgNGFilterCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_NGFILTER)]++;
     }
     if (GetAlwaysSnapshot()) {
-        params.alwaysSnapshotCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::ALWAYSSNAPSHOT)]++;
     }
-    if (params.aiBARCount + params.magnifierCount + params.bgMaterialBlurCount + params.bgBlurCount +
-        params.waterRippleCount + params.bgNGFilterCount + params.alwaysSnapshotCount > 1) {
+    if (std::accumulate(params.paramCounts.begin(), params.paramCounts.end(), 0) > 1) {
         auto renderNode = backref_.lock();
         if (renderNode != nullptr) {
-            hasReportedServerXXFilterCascade_[0] = true;
+            hasReportedServerXXFilterCascade_[static_cast<size_t>(ServerFilterFunctionType::BACKGROUND_FILTER)] = true;
             ReportServerXXFilterCascadeCheck(params, renderNode);
         }
     }
@@ -3711,20 +3741,20 @@ void RSProperties::StatBackgroundFilter()
 void RSProperties::StatCompositingFilter()
 {
     ServerXXFilterCascadeParams params;
-    params.functionType = 1; // CompositingFilter
+    params.functionType = ServerFilterFunctionType::COMPOSITING_FILTER;
     if (GetLinearGradientBlurPara()) {
-        params.linearGradientBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::LINEARGRADIENTBLUR)]++;
     }
     if (IsForegroundMaterialFilterValid()) {
-        params.cpMaterialBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::CP_MATERIALBLUR)]++;
     }
     if (IsForegroundBlurRadiusXValid() && IsForegroundBlurRadiusYValid()) {
-        params.cpBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::CP_BLUR)]++;
     }
-    if (params.linearGradientBlurCount + params.cpMaterialBlurCount + params.cpBlurCount > 1) {
+    if (std::accumulate(params.paramCounts.begin(), params.paramCounts.end(), 0) > 1) {
         auto renderNode = backref_.lock();
         if (renderNode != nullptr) {
-            hasReportedServerXXFilterCascade_[1] = true;
+            hasReportedServerXXFilterCascade_[static_cast<size_t>(ServerFilterFunctionType::COMPOSITING_FILTER)] = true;
             ReportServerXXFilterCascadeCheck(params, renderNode);
         }
     }
@@ -3733,44 +3763,42 @@ void RSProperties::StatCompositingFilter()
 void RSProperties::StatForegroundFilter()
 {
     ServerXXFilterCascadeParams params;
-    params.functionType = 2; // ForegroundFilter
+    params.functionType = ServerFilterFunctionType::FOREGROUND_FILTER;
     auto motionBlurPara = RSProperties::GetMotionBlurPara();
     if (motionBlurPara && ROSEN_GNE(motionBlurPara->radius, 0.0)) {
-        params.motionBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::MOTIONBLUR)]++;
     }
     if (IsForegroundEffectRadiusValid()) {
-        params.fgBlurCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::FG_BLUR)]++;
     }
     if (IsSpherizeValid()) {
-        params.spherizeCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::SPHERIZE)]++;
     }
     if (IsFlyOutValid()) {
-        params.flyCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::FLY)]++;
     }
     if (IsAttractionValid()) {
-        params.attractionCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::ATTRACTION)]++;
     }
     if (IsShadowMaskValid()) {
-        params.shadowCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::SHADOW)]++;
     }
     if (IsDistortionKValid()) {
-        params.distortionKCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::DISTORTIONK)]++;
     }
     if (IsHDRUIBrightnessValid()) {
-        params.hdrUIBrightnessCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::HDRUIBRIGHTNESS)]++;
     }
     if (GetForegroundNGFilter()) {
-        params.fgNGFilterCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::FG_NGFILTER)]++;
     }
     if (GetColorAdaptive()) {
-        params.colorAdaptiveCount++;
+        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::COLORADAPTIVE)]++;
     }
-    if (params.motionBlurCount + params.fgBlurCount + params.spherizeCount + params.flyCount +
-        params.attractionCount + params.shadowCount + params.distortionKCount +
-        params.hdrUIBrightnessCount + params.fgNGFilterCount + params.colorAdaptiveCount > 1) {
+    if (std::accumulate(params.paramCounts.begin(), params.paramCounts.end(), 0) > 1) {
         auto renderNode = backref_.lock();
         if (renderNode != nullptr) {
-            hasReportedServerXXFilterCascade_[2] = true;
+            hasReportedServerXXFilterCascade_[static_cast<size_t>(ServerFilterFunctionType::FOREGROUND_FILTER)] = true;
             ReportServerXXFilterCascadeCheck(params, renderNode);
         }
     }
@@ -3778,7 +3806,7 @@ void RSProperties::StatForegroundFilter()
 
 void RSProperties::GenerateBackgroundFilter()
 {
-    if (!hasReportedServerXXFilterCascade_[0]) {
+    if (!hasReportedServerXXFilterCascade_[static_cast<size_t>(ServerFilterFunctionType::BACKGROUND_FILTER)]) {
         StatBackgroundFilter();
     }
     if (GetAiInvert().has_value() || GetSystemBarEffect()) {
@@ -3812,7 +3840,7 @@ void RSProperties::GenerateBackgroundFilter()
 void RSProperties::GenerateForegroundFilter()
 {
     IfLinearGradientBlurInvalid();
-    if (!hasReportedServerXXFilterCascade_[1]) {
+    if (!hasReportedServerXXFilterCascade_[static_cast<size_t>(ServerFilterFunctionType::COMPOSITING_FILTER)]) {
         StatCompositingFilter();
     }
     if (GetLinearGradientBlurPara()) {
@@ -5191,7 +5219,7 @@ void RSProperties::UpdateForegroundFilter()
 {
     GetEffect().foregroundFilter_.reset();
     GetEffect().foregroundFilterCache_.reset();
-    if (!hasReportedServerXXFilterCascade_[2]) {
+    if (!hasReportedServerXXFilterCascade_[static_cast<size_t>(ServerFilterFunctionType::FOREGROUND_FILTER)]) {
         StatForegroundFilter();
     }
     auto motionBlurPara = GetMotionBlurPara();
