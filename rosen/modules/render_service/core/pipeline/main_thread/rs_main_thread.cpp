@@ -1362,6 +1362,7 @@ void RSMainThread::ProcessCommandForUniRender()
         });
     }
 #endif
+    ProcessNeedAttachedNodes();
 }
 
 void RSMainThread::ProcessCommandForDividedRender()
@@ -2331,6 +2332,20 @@ bool RSMainThread::IfStatusBarDirtyOnly()
         }
     }
     return true;
+}
+
+void RSMainThread::ProcessNeedAttachedNodes()
+{
+    auto &mutablenodeMap = context_->GetMutableNodeMap();
+    auto needAttachedNodes = mutablenodeMap.GetNeedAttachedNode();
+    if (needAttachedNodes.empty()) {
+        return;
+    }
+    for (auto it = needAttachedNodes.begin(); it != needAttachedNodes.end();) {
+        auto needAttachNode = *it;
+        needAttachNode->AfterTreeStateChanged();
+        it = needAttachedNodes.erase(it);
+    }
 }
 
 namespace {
