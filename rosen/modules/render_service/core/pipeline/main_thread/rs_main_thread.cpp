@@ -296,13 +296,13 @@ void PerfRequest(int32_t perfRequestCode, bool onOffTag)
 
 #ifdef RS_ENABLE_GPU
 void DoScreenRcdTask(NodeId id, std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo,
-    const ScreenInfo& screenInfo)
+    const RSScreenProperty& screenProperty)
 {
     if (rcdInfo == nullptr || processor == nullptr) {
         RS_LOGD("DoScreenRcdTask has nullptr processor or rcdInfo");
         return;
     }
-    if (!RoundCornerDisplayManager::CheckRcdRenderEnable(screenInfo)) {
+    if (!RoundCornerDisplayManager::CheckRcdRenderEnable(screenProperty)) {
         RS_LOGD("DoScreenRcdTask is not at HDI_OUPUT mode");
         return;
     }
@@ -2482,8 +2482,8 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
         return true;
     }
 
-    const auto& screenInfo = screenNode->GetScreenInfo();
-    if (screenInfo.state != ScreenState::HDI_OUTPUT_ENABLE) {
+    const auto& screenProperty = screenNode->GetScreenProperty();
+    if (screenProperty.GetState() != ScreenState::HDI_OUTPUT_ENABLE) {
         RS_LOGE("DoDirectComposition: ScreenState error!");
         RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by screenState error");
         return false;
@@ -2522,7 +2522,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 #endif
 #ifdef RS_ENABLE_GPU
         if (RSAncoManager::Instance()->AncoOptimizeScreenNode(surfaceHandler, hardwareEnabledNodes_,
-            ScreenRotation::ROTATION_0, screenInfo.GetRotatedPhyWidth(), screenInfo.GetRotatedPhyHeight())) {
+            ScreenRotation::ROTATION_0, screenProperty.GetPhyWidth(), screenProperty.GetPhyHeight())) {
             RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by ancoOptimizeScreenNode");
             return false;
         }
@@ -2574,7 +2574,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
             screenNode->GetForceCloseHdr() ? HdrStatus::NO_HDR : screenNode->GetDisplayHdrStatus());
         RSPointerWindowManager::Instance().HardCursorCreateLayerForDirect(processor);
         auto rcdInfo = std::make_unique<RcdInfo>();
-        DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenNode->GetScreenInfo());
+        DoScreenRcdTask(screenNode->GetId(), processor, rcdInfo, screenNode->GetScreenProperty());
         processor->ProcessScreenSurface(*screenNode);
         composerClientManager_->UpdatePipelineParam(screenId, pipelineParam_);
         processor->PostProcess();
@@ -4212,15 +4212,15 @@ void RSMainThread::DumpMem(std::unordered_set<std::u16string>& argSets, std::str
             if (auto node = child.lock()) {
                 auto screenNode = node->ReinterpretCastTo<RSScreenRenderNode>();
                 if (screenNode) {
-                    auto screenInfo = screenNode->GetScreenInfo();
-                    dumpString.append("ScreenResolution: " +
-                        std::to_string(screenInfo.phyWidth) + "x" + std::to_string(screenInfo.phyHeight) + "\n");
+                    const auto& screenProperty = screenNode->GetScreenProperty();
+                    dumpString.append("ScreenResolution: " + std::to_string(screenProperty.GetPhyWidth()) + "x" +
+                        std::to_string(screenProperty.GetPhyHeight()) + "\n");
                     break;
                 }
             }
         }
-    } 
-   
+    }
+
     dumpString.append(log.GetString());
     if (!isLite) {
         RSUniRenderThread::Instance().DumpVkImageInfo(dumpString);
@@ -4807,8 +4807,9 @@ void RSMainThread::ShowWatermark(const std::shared_ptr<Media::PixelMap> &waterma
     nodeMap.TraverseScreenNodes(
         [&maxScreenWidth, &maxScreenHeight](const std::shared_ptr<RSScreenRenderNode>& screenNode) {
             if (screenNode) {
-                maxScreenWidth = std::max(maxScreenWidth, static_cast<int32_t>(screenNode->GetScreenInfo().width));
-                maxScreenHeight = std::max(maxScreenHeight, static_cast<int32_t>(screenNode->GetScreenInfo().height));
+                const auto& screenProperty = screenNode->GetScreenProperty();
+                maxScreenWidth = std::max(maxScreenWidth, static_cast<int32_t>(screenProperty.GetWidth()));
+                maxScreenHeight = std::max(maxScreenHeight, static_cast<int32_t>(screenProperty.GetHeight()));
             }
         });
     if (maxScreenWidth == 0 || maxScreenHeight == 0) {
