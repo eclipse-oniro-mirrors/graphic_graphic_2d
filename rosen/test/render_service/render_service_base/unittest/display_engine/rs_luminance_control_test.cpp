@@ -60,7 +60,7 @@ public:
     MOCK_METHOD(void, SetCurDisplayHdrBrightnessScaler, (ScreenId screenId,
         HdrToBrightnessScalerMap& curDisplayHdrBrightnessScaler), (override));
     MOCK_METHOD(bool, IsHardwareHdrDisabled, (bool checkBrightnessRatio, ScreenId screenId), (override));
-    MOCK_METHOD(double, GetConfigScalerLock, (ScreenId screenId, HdrStatus type), (override, const));
+    MOCK_METHOD(double, GetConfigScaler, (ScreenId screenId, HdrStatus type), (override, const));
     MOCK_METHOD(void, SetDualScreenHdrUniManagementStatus,
         (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
 
@@ -418,6 +418,6 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl019, TestSize.Level1)
     auto mockRSLuminanceControl = MockRSLuminanceControl::GetInstance();
     luminCtrl.rSLuminanceControlInterface_ = mockRSLuminanceControl.get();
     ASSERT_NE(luminCtrl.rSLuminanceControlInterface_, nullptr);
-    ASSERT_EQ(luminCtrl.GetConfigScalerLock(0, HDR_EFFECT), 0.0);
+    ASSERT_EQ(luminCtrl.GetConfigScaler(0, HDR_EFFECT), 0.0);
 }
 } // namespace OHOS::Rosen
