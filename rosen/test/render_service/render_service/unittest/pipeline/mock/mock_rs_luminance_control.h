@@ -54,8 +54,7 @@ public:
     MOCK_METHOD(bool, IsBrightnessInfoChanged, (ScreenId screenId), (override));
     MOCK_METHOD(void, HandleGamutSpecialRender, (std::vector<ScreenColorGamut>& modes), (override));
     MOCK_METHOD(double, GetConfigScaler, (ScreenId screenId, HdrStatus type), (override, const));
-    MOCK_METHOD(void, SetDualScreenHdrUniManagementStatus,
-        (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
+    MOCK_METHOD(void, SetDualScreenStatus, (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
 
     bool IsHardwareHdrDisabled(bool checkBrightnessRatio, ScreenId screenId) override;
     bool SetHdrStatus(ScreenId screenId, HdrStatus curDisplayHdrStatus) override;

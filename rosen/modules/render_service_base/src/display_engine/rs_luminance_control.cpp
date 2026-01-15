@@ -259,10 +259,10 @@ double RSLuminanceControl::GetConfigScaler(ScreenId screenId, HdrStatus type) co
         rSLuminanceControlInterface_->GetConfigScalerLock(screenId, type) : 1.0; // 1.0 means no headroom
 }
 
-void RSLuminanceControl::SetDualScreenHdrUniManagementStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
+void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
 {
     if (rSLuminanceControlInterface_ != nullptr) {
-        rSLuminanceControlInterface_->SetDualScreenHdrUniManagementStatus(screenId, dualScreenStatus);
+        rSLuminanceControlInterface_->SetDualScreenStatus(screenId, dualScreenStatus);
     }
 }
 } // namespace Rosen

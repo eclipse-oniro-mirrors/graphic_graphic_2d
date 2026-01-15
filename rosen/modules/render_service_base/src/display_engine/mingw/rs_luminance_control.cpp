@@ -156,7 +156,7 @@ double RSLuminanceControl::GetConfigScaler(ScreenId screenId, HdrStatus type) co
     return 1.0; // 1.0 means no headroom
 }
 
-void RSLuminanceControl::SetDualScreenHdrUniManagementStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
+void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
 {
     return;
 }

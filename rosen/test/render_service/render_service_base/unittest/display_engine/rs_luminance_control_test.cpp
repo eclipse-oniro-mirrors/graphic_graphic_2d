@@ -61,8 +61,7 @@ public:
         HdrToBrightnessScalerMap& curDisplayHdrBrightnessScaler), (override));
     MOCK_METHOD(bool, IsHardwareHdrDisabled, (bool checkBrightnessRatio, ScreenId screenId), (override));
     MOCK_METHOD(double, GetConfigScaler, (ScreenId screenId, HdrStatus type), (override, const));
-    MOCK_METHOD(void, SetDualScreenHdrUniManagementStatus,
-        (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
+    MOCK_METHOD(void, SetDualScreenStatus, (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
 
     float CalScaler(const float& maxContentLightLevel,
         const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus) override;
@@ -114,7 +113,7 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl001, TestSize.Level1)
     luminCtrl.GetBrightnessInfo(screenId);
     luminCtrl.HandleGamutSpecialRender(mode);
     luminCtrl.SetCurDisplayHdrBrightnessScaler(screenId, displayHdrBrightnessScaler);
-    luminCtrl.SetDualScreenHdrUniManagementStatus(screenId, dualScreenStatus);
+    luminCtrl.SetDualScreenStatus(screenId, dualScreenStatus);
     
     auto mockRSLuminanceControl = MockRSLuminanceControl::GetInstance();
     luminCtrl.rSLuminanceControlInterface_ = mockRSLuminanceControl.get();
@@ -131,7 +130,7 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl001, TestSize.Level1)
     luminCtrl.GetBrightnessInfo(screenId);
     luminCtrl.HandleGamutSpecialRender(mode);
     luminCtrl.SetCurDisplayHdrBrightnessScaler(screenId, displayHdrBrightnessScaler);
-    luminCtrl.SetDualScreenHdrUniManagementStatus(screenId, dualScreenStatus);
+    luminCtrl.SetDualScreenStatus(screenId, dualScreenStatus);
     
     ASSERT_NE((&luminCtrl), nullptr);
 }
