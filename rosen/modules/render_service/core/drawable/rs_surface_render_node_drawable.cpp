@@ -522,7 +522,7 @@ bool RSSurfaceRenderNodeDrawable::DrawCacheImageForMultiScreenView(RSPaintFilter
         std::static_pointer_cast<RSScreenRenderNodeDrawable>(
             surfaceParams.GetSourceDisplayRenderNodeDrawable().lock());
     if (sourceScreenNodeDrawable) {
-        auto cacheImg = sourceScreenNodeDrawable->GetCacheImgForCapture();
+        auto cacheImg = sourceScreenNodeDrawable->GetCacheImgForMultiScreenView();
         if (cacheImg) {
             RS_TRACE_NAME_FMT("DrawCacheImageForMultiScreenView with cache id:%llu rect:%s",
                 surfaceParams.GetId(), surfaceParams.GetRRect().rect_.ToString().c_str());

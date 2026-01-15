@@ -1156,8 +1156,9 @@ ScreenId RSScreenManager::CreateVirtualScreen(
     NotifyScreenNodeChange(newId, true);
     RSSpecialLayerUtils::DumpScreenSpecialLayer(
         __func__, SpecialLayerType::IS_WHITE_LIST, newId, screen->GetWhiteList());
-    RS_LOGI("%{public}s: create virtual screen(id %{public}" PRIu64 "), width %{public}u, height %{public}u.",
-        __func__, newId, width, height);
+    RS_LOGI("%{public}s: create virtual screen, name %{public}s, screenId %{public}" PRIu64 ", width %{public}u, "
+        "height %{public}u, hasSurface %{public}d, associatedScreenId %{public}" PRIu64 ", flags %{public}d",
+        __func__, name.c_str(), newId, width, height, surface != nullptr, associatedScreenId, flags);
     return newId;
 }
 
