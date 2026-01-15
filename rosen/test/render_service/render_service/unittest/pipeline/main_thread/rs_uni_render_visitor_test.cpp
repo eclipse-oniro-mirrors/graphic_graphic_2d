@@ -2206,38 +2206,6 @@ HWTEST_F(RSUniRenderVisitorTest, CheckIfRoundCornerIntersectDRM, TestSize.Level2
 }
 
 /*
- * @tc.name: PrepareForUIFirstNode001
- * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is not leash window and hardware enabled
- * @tc.type: FUNC
- * @tc.require: issuesI8MQCS
- */
-HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode001, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONE);
-    surfaceNode->SetHardwareForcedDisabledState(false);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->PrepareForUIFirstNode(*surfaceNode);
-}
-
-/*
- * @tc.name: PrepareForUIFirstNode002
- * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is leash window and hardware disabled
- * @tc.type: FUNC
- * @tc.require: issuesI8MQCS
- */
-HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode002, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::LEASH_WINDOW);
-    surfaceNode->SetHardwareForcedDisabledState(true);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->PrepareForUIFirstNode(*surfaceNode);
-}
-
-/*
  * @tc.name: QuickPrepareSurfaceRenderNode001
  * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node has security layer
  * @tc.type: FUNC
@@ -4971,31 +4939,6 @@ HWTEST_F(RSUniRenderVisitorTest, CheckFilterCacheNeedForceClearOrSave001, TestSi
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(1.0f, 1.0f);
     node->renderProperties_.GetEffect().backgroundFilter_ = filter;
     rsUniRenderVisitor->CheckFilterCacheNeedForceClearOrSave(*node);
-}
-
-/**
- * @tc.name: PrepareForUIFirstNode001
- * @tc.desc: Test PrepareForUIFirstNode with multi-rsSurfaceRenderNode
- * @tc.type: FUNC
- * @tc.require: issueIASE3Z
- */
-HWTEST_F(RSUniRenderVisitorTest, PrepareForUIFirstNode001, TestSize.Level2)
-{
-    RSSurfaceRenderNodeConfig config;
-    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
-    ASSERT_NE(rsSurfaceRenderNode, nullptr);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto rsContext = std::make_shared<RSContext>();
-    ASSERT_NE(rsContext, nullptr);
-    ScreenId id = 1;
-    auto rsDisplayRenderNode = std::make_shared<RSScreenRenderNode>(11, id, rsContext->weak_from_this());
-    rsUniRenderVisitor->curScreenNode_ = rsDisplayRenderNode;
-    rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
-
-    rsSurfaceRenderNode->lastFrameUifirstFlag_ = MultiThreadCacheType::LEASH_WINDOW;
-    rsSurfaceRenderNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
-    rsUniRenderVisitor->PrepareForUIFirstNode(*rsSurfaceRenderNode);
 }
 
 /**
