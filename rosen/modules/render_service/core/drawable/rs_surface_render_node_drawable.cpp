@@ -405,7 +405,7 @@ bool RSSurfaceRenderNodeDrawable::PrepareOffscreenRender()
         RS_LOGD("PrepareOffscreenRender create offscreen surface offscreenSurface_,\
             new [%{public}d, %{public}d %{public}d], isNeedFP16:%{public}d",
             offscreenWidth, offscreenHeight, maxRenderSize, isNeedFP16);
-        RS_TRACE_NAME_FMT("PrepareOffscreenRender surface size: [%d, %d], isNeedFP16:%{public}d",
+        RS_TRACE_NAME_FMT("PrepareOffscreenRender surface size: [%d, %d], isNeedFP16:%d",
             maxRenderSize, maxRenderSize, isNeedFP16);
         if (isNeedFP16) {
             Drawing::ImageInfo info = { maxRenderSize_, maxRenderSize_, Drawing::ColorType::COLORTYPE_RGBA_F16,
