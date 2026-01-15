@@ -745,7 +745,6 @@ HWTEST_F(HdiLayerTest, ClearBufferCache002, Function | MediumTest| Level1)
     hdiLayer_->ClearBufferCache();
 }
 
-
 /**
  * Function: SetTransformMode_NoChangeOrButt
  * Type: Function
