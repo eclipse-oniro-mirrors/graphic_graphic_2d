@@ -158,7 +158,7 @@ double RSLuminanceControl::GetConfigScaler(ScreenId screenId, HdrStatus type) co
 
 void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
 {
-    return;
+    // Set dual screen coordination status
 }
 } // namespace Rosen
 } // namespace OHOS
