@@ -61,8 +61,8 @@ sptr<RSIClientToRenderConnection> RSConnectToRenderProcessProxy::CreateRenderCon
     return newConn;
 }
 
-int32_t RSConnectToRenderProcessProxy::SendRequest(
-    uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option)
+int32_t RSConnectToRenderProcessProxy::SendRequest(uint32_t code, MessageParcel& data,
+    MessageParcel& reply, MessageOption& option)
 {
     if (!Remote()) {
         return static_cast<int32_t>(RSInterfaceErrorCode::NULLPTR_ERROR);

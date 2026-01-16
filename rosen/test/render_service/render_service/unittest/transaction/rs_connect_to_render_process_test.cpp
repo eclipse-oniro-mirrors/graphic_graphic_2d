@@ -28,7 +28,7 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 namespace {
-sptr<RSConnectToRenderProcessStub> g_connection = nullptr;
+sptr<RSConnectToRenderProcess> g_connection = nullptr;
 }
 
 class RSConnectToRenderProcessTest : public testing::Test {
