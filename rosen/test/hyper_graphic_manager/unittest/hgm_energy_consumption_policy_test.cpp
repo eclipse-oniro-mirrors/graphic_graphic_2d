@@ -570,6 +570,7 @@ HWTEST_F(HgmEnergyConsumptionPolicyTest, GetVideoCallFrameRateTest, TestSize.Lev
  */
 HWTEST_F(HgmEnergyConsumptionPolicyTest, SetCurrentPkgNameTest, TestSize.Level0)
 {
+    /
     std::vector<std::string> pkgNames;
     HgmEnergyConsumptionPolicy::Instance().SetCurrentPkgName(pkgNames);
     ASSERT_EQ(HgmEnergyConsumptionPolicy::Instance().videoCallLayerName_, "");
