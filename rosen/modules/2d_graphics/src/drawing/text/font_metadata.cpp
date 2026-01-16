@@ -136,7 +136,7 @@ std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr
 {
     const hb_ot_name_id_t hbNameId = OtNameIdMapper::ToHarfBuzzNameId(nameId);
     if (hbNameId == HB_OT_NAME_ID_INVALID) {
-        return;
+        return "";
     }
     unsigned int count = 0;
     HBFace hbFace = FontHarfbuzz::CreateHbFace(*typeface);
