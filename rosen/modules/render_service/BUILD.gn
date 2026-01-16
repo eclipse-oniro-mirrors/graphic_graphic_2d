@@ -263,7 +263,7 @@ ohos_shared_library("librender_service") {
 
   #dfx
   sources += [
-    "core/drawable/dfx/rs_refresh_rate_dfx.cpp", 
+    "core/drawable/dfx/rs_refresh_rate_dfx.cpp",
     "core/drawable/dfx/rs_skp_capture_dfx.cpp",
   ]
 
@@ -522,7 +522,7 @@ ohos_shared_library("librender_service") {
     "ability_runtime:app_manager",
     "cJSON:cjson",
     "c_utils:utils",
-    "drivers_interface_display:libdisplay_commontype_proxy_2.2",
+    "drivers_interface_display:libdisplay_commontype_proxy_2.3",
     "eventhandler:libeventhandler",
     "ffrt:libffrt",
     "graphic_surface:surface",
