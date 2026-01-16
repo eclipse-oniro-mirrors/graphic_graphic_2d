@@ -5521,7 +5521,8 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode003, TestSize.Level2
      auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
      ASSERT_NE(surfaceNode, nullptr);
      surfaceNode->needCollectHwcNode_ = true;
-     surfaceNode->visibleRegion_.Reset();
+     Occlusion::Region region({0, 0, 100, 100});
+     surfaceNode->SetVisibleRegion(region);
      auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
      ASSERT_NE(rsUniRenderVisitor, nullptr);
      InitTestSurfaceNodeAndScreenInfo(surfaceNode, rsUniRenderVisitor);
