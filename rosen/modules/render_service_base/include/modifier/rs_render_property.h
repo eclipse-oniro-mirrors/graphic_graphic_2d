@@ -353,6 +353,12 @@ protected:
     static constexpr RSPropertyType type_ = RSRenderPropertyTypeTraits<T>::type;
     std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)> updateUIPropertyFunc_;
 
+    const std::shared_ptr<RSRenderPropertyBase> Clone() const override
+    {
+        return std::make_shared<RSRenderProperty<T>>(
+            RSRenderProperty<T>::stagingValue_, RSRenderProperty<T>::id_);
+    }
+
     void OnAttach(RSRenderNode& node, std::weak_ptr<ModifierNG::RSRenderModifier> modifier) override {}
     void OnDetach() override {}
 
@@ -572,6 +578,9 @@ template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::Set(
     const std::shared_ptr<RSNGRenderFilterBase>& value, PropertyUpdateType type);
 template<>
+const std::shared_ptr<RSRenderPropertyBase>
+    RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::Clone() const;
+template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnAttach(RSRenderNode& node,
     std::weak_ptr<ModifierNG::RSRenderModifier> modifier);
 template<>
@@ -579,6 +588,9 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::OnDetach();
 template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::Set(
     const std::shared_ptr<RSNGRenderShaderBase>& value, PropertyUpdateType type);
+template<>
+const std::shared_ptr<RSRenderPropertyBase>
+    RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>::Clone() const;
 template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>::OnAttach(RSRenderNode& node,
     std::weak_ptr<ModifierNG::RSRenderModifier> modifier);
@@ -588,6 +600,9 @@ template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>::Set(
     const std::shared_ptr<RSNGRenderMaskBase>& value, PropertyUpdateType type);
 template<>
+const std::shared_ptr<RSRenderPropertyBase>
+    RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>::Clone() const;
+template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::OnAttach(RSRenderNode& node,
     std::weak_ptr<ModifierNG::RSRenderModifier> modifier);
 template<>
@@ -595,6 +610,9 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::OnDetach();
 template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
     const std::shared_ptr<RSNGRenderShapeBase>& value, PropertyUpdateType type);
+template<>
+const std::shared_ptr<RSRenderPropertyBase>
+    RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Clone() const;
 
 #if defined(_WIN32)
 #define PROPERTY_EXPORT
