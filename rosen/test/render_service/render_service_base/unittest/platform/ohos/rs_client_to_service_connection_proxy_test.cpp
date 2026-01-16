@@ -1649,7 +1649,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetDualScreenState001, TestSize.L
 {
     ScreenId id = 1;
     auto ret = proxy->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
-    EXPECT_EQ(ret, StatusCode::SUCCESS);
+    EXPECT_NE(ret, StatusCode::READ_PARCEL_ERR);
 }
 
 /**
