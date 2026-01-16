@@ -2161,7 +2161,6 @@ private:
     std::unordered_map<PropertyId, uint32_t> animatingPropertyNum_;
     std::shared_ptr<RSMotionPathOption> motionPathOption_;
     std::shared_ptr<const RSTransitionEffect> transitionEffect_;
-
     struct CommandInfo {
         CommandInfo()
             : command_(nullptr), isRenderServiceCommand_(false),
@@ -2189,6 +2188,8 @@ private:
 
     bool isOnTheTree_ = false;
     bool isOnTheTreeInit_ = false;
+
+    std::bitset<3> hasReportedSetUIXXFilterCascade_ = 0b000;
 
     friend class RSUIDirector;
     friend class RSTransition;

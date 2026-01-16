@@ -857,7 +857,7 @@ HWTEST_F(PropertiesTest, GenerateForegroundFilterTest, TestSize.Level1)
 
     properties.GetEffect().foregroundBlurRadius_ = 2.f;
     properties.GenerateForegroundFilter();
-    EXPECT_TRUE(properties.IsForegroundMaterialFilterVaild());
+    EXPECT_TRUE(properties.IsForegroundMaterialFilterValid());
 
     std::vector<std::pair<float, float>> fractionStops;
     GradientDirection direction;
