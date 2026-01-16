@@ -425,6 +425,8 @@ HWTEST_F(RSPointerWindowManagerTest, HardCursorCreateLayer001, TestSize.Level1)
 
     auto& rsPointerWindowManager = RSPointerWindowManager::Instance();
     ASSERT_NE(rsPointerWindowManager.GetHardCursorDrawable(screenId), nullptr);
+    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
+    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
     auto processor = RSProcessorFactory::CreateProcessor(CompositeType::HARDWARE_COMPOSITE, 0);
     rsPointerWindowManager.HardCursorCreateLayer(processor, screenId);
 }
