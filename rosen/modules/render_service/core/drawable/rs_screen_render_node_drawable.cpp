@@ -525,6 +525,8 @@ void RSScreenRenderNodeDrawable::SetAccumulateDirtyInSkipFrame(bool accumulateDi
 
 void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+    // Clear cacheImgForCapture of each frame at first, only assign it when necessary
+    cacheImgForCapture_ = nullptr;
     RSSpecialLayerManager::ClearWhiteListRootIds();
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
     SetDrawSkipType(DrawSkipType::NONE);
@@ -773,11 +775,13 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             params->ResetVirtualExpandAccumulatedParams();
             auto targetSurfaceRenderNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
                 params->GetTargetSurfaceRenderNodeDrawable().lock());
+            // Clear cacheImgForMultiScreenView here, do not put it earlier
+            cacheImgForMultiScreenView_ = nullptr;
+            // Sometimes may require setting cacheImg, such as MultiScreenView and SingleAppCast
             if ((targetSurfaceRenderNodeDrawable || params->HasMirrorScreen()) && curCanvas_->GetSurface()) {
-                RS_TRACE_NAME("DrawExpandScreen cacheImgForMultiScreenView");
-                cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
-            } else {
-                cacheImgForMultiScreenView_ = nullptr;
+                RS_TRACE_NAME("DrawExpandScreen cacheImg for capture and multiscreenview");
+                cacheImgForCapture_ = curCanvas_->GetSurface()->GetImageSnapshot();
+                cacheImgForMultiScreenView_ = cacheImgForCapture_;
             }
             // Restore the initial state of the canvas to avoid state accumulation
             curCanvas_->RestoreToCount(0);
@@ -960,9 +964,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
         if (RSSystemProperties::GetDrawMirrorCacheImageEnabled() && params->HasMirrorScreen() &&
             curCanvas_->GetSurface() != nullptr) {
-            cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
-        } else {
-            cacheImgForMultiScreenView_ = nullptr;
+            cacheImgForCapture_ = curCanvas_->GetSurface()->GetImageSnapshot();
         }
     }
     RenderOverDraw();
