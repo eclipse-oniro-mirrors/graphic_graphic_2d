@@ -307,7 +307,7 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             if (!nativeWindowBuffer_) {
-                sptr<SurfaceBuffer> sfBuffer(reinterpret_cast<SurfaceBuffer *>(pixelMap->GetFd()));
+                sptr<SurfaceBuffer> sfBuffer(reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()));
                 nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&sfBuffer);
             }
             OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer_);
@@ -347,15 +347,15 @@ bool RSExtendImageObject::GetRsImageCache(Drawing::Canvas& canvas, const std::sh
     std::shared_ptr<Drawing::Image> imageCache = nullptr;
     pid_t threadId = gettid();
 #ifdef SUBTREE_PARALLEL_ENABLE
-    // Adapt to the subtree feature to ensure the correct thread ID(TID) is set.
+    // Adapt to the subtree feature to ensure the correct thread ID (TID) is set.
     RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
     if (!pixelMap->IsEditable()) {
         imageCache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(
             rsImage_->GetUniqueId(), threadId);
     }
-    bool needMakeFromTexture = !imageCache || (imageCache && pixelmap->IsHdr() &&
-        !colorSpace->Equals(imageCache->GetImageInfo().GetColorSpace()))
+    bool needMakeFromTexture = !imageCache || (imageCache && pixelMap->IsHdr() &&
+        !colorSpace->Equals(imageCache->GetImageInfo().GetColorSpace()));
     if (!needMakeFromTexture) {
         this->image_ = imageCache;
     } else {
@@ -390,11 +390,7 @@ bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canv
             return false;
         }
     }
-    EGLint attrs[] = {
-        EGL_IMAGE_PRESERVED,
-        EGL_TRUE,
-        EGL_NONE,
-    };
+    EGLint attrs[] = { EGL_IMAGE_PRESERVED, EGL_TRUE, EGL_NONE };
 
     auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (eglImage_ == EGL_NO_IMAGE_KHR) {
@@ -849,7 +845,7 @@ void DrawPixelMapWithParmOpItem::DumpItems(std::string& out) const
 /* DrawHybridPixelMapOpItem */
 UNMARSHALLING_REGISTER(DrawHybridPixelMapOpItem, DrawOpItem::HYBRID_RENDER_PIXELMAP_OPITEM,
     DrawHybridPixelMapOpItem::Unmarshalling, sizeof(DrawHybridPixelMapOpItem::ConstructorHandle));
- 
+
 DrawHybridPixelMapOpItem::DrawHybridPixelMapOpItem(
     const DrawCmdList& cmdList, DrawHybridPixelMapOpItem::ConstructorHandle* handle)
     : DrawWithPaintOpItem(cmdList, handle->paintHandle, HYBRID_RENDER_PIXELMAP_OPITEM), sampling_(handle->sampling),
@@ -868,7 +864,7 @@ DrawHybridPixelMapOpItem::DrawHybridPixelMapOpItem(const std::shared_ptr<Media::
 {
     objectHandle_ = std::make_shared<RSExtendImageObject>(pixelMap, rsImageInfo);
 }
- 
+
 void DrawHybridPixelMapOpItem::Marshalling(DrawCmdList& cmdList)
 {
     PaintHandle paintHandle;
@@ -878,13 +874,13 @@ void DrawHybridPixelMapOpItem::Marshalling(DrawCmdList& cmdList)
         std::make_shared<SurfaceBufferEntry>(nullptr, fence_));
     cmdList.AddOp<ConstructorHandle>(objectHandle, sampling_, paintHandle, entryId, isRenderForeground_);
 }
- 
+
 std::shared_ptr<DrawOpItem> DrawHybridPixelMapOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
 {
     return std::make_shared<DrawHybridPixelMapOpItem>(
         cmdList, static_cast<DrawHybridPixelMapOpItem::ConstructorHandle*>(handle));
 }
- 
+
 void DrawHybridPixelMapOpItem::SetNodeId(NodeId id)
 {
     if (objectHandle_ == nullptr) {
@@ -893,7 +889,7 @@ void DrawHybridPixelMapOpItem::SetNodeId(NodeId id)
     }
     objectHandle_->SetNodeId(id);
 }
- 
+
 void DrawHybridPixelMapOpItem::Playback(Canvas* canvas, const Rect* rect)
 {
     if (objectHandle_ == nullptr) {
@@ -923,7 +919,7 @@ void DrawHybridPixelMapOpItem::Playback(Canvas* canvas, const Rect* rect)
     }
     objectHandle_->Playback(*paintCanvas, *rect, sampling_, false);
 }
- 
+
 void DrawHybridPixelMapOpItem::DumpItems(std::string& out) const
 {
     out += " sampling";
