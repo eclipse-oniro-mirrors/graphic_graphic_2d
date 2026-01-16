@@ -132,10 +132,11 @@ std::unordered_map<std::string, FontIdentification> FontMetaDataCollector::Gener
     return map;
 }
 
-std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface, Drawing::OtNameId nameId)
+std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr<Typeface>& typeface,
+    Drawing::OtNameId nameId)
 {
     const hb_ot_name_id_t hbNameId = OtNameIdMapper::ToHarfBuzzNameId(nameId);
-    if (hbNameId == HB_OT_NAME_ID_INVALID) {
+    if (hbNameId == HB_OT_NAME_ID_INVALID || typeface == nullptr) {
         return "";
     }
     unsigned int count = 0;
