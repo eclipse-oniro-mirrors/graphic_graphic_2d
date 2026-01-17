@@ -449,6 +449,8 @@ public:
     bool GetEffectIntersectWithDRM() const;
     void SetDarkColorMode(bool isDark);
     bool GetDarkColorMode() const;
+    void SetFilterClipBounds(const Drawing::RectI& rect);
+    const Drawing::RectI GetFilterClipBounds() const;
 
     struct CacheBehindWindowData {
         CacheBehindWindowData() = default;
@@ -502,6 +504,9 @@ protected:
         std::shared_ptr<Drawing::Blender> blender_;
         bool hasOffscreenLayer_;
         std::map<ColorPlaceholder, Drawing::ColorQuad> pickedColorMap_;
+        // use as the clip bounds of the filter with a custom snapshot/drawing rect
+        // the value is the clip bounds of the surface render node
+        Drawing::RectI filterClipBounds_;
     };
 
     bool OnFilter() const override;
