@@ -781,9 +781,7 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
         return;
     }
 
-    HGM_LOGD("%{public}s(%{public}d) [%{public}u %{public}u] %{public}d %{public}s", eventName.c_str(), pid,
-        eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
-    RS_TRACE_NAME_FMT("%s: %s(%d) [%u %u] %d %s", __func__, eventName.c_str(), pid,
+    HGM_LOGI("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
         eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
     if (eventName == "VOTER_SCENE") {
         HandleSceneEvent(pid, eventInfo);
@@ -1193,7 +1191,7 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
         }
     } else {
         lastVoteInfo_ = resultVoteInfo;
-        HGM_LOGI("Strategy:%{public}s Screen:%{public}d Mode:%{public}d -- %{public}s", curScreenStrategyId_.c_str(),
+        HGM_LOGI("%{public}s %{public}d %{public}d %{public}s", curScreenStrategyId_.c_str(),
             static_cast<int>(curScreenId_.load()), curRefreshRateMode_, resultVoteInfo.ToSimpleString().c_str());
     }
 
