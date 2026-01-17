@@ -19,8 +19,8 @@
 #include "hdi_output.h"
 #include "hgm_core.h"
 #include "pipeline/mock/mock_hdi_device.h"
-#include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen.h"
+#include "screen_manager/rs_screen_manager.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -105,31 +105,31 @@ HWTEST_F(HgmHardwareUtilsTest, UpdateRetrySetRateStatusTest, TestSize.Level1)
     ASSERT_NE(hgmHardwareUtils, nullptr);
 
     hgmHardwareUtils->setRateRetryMap_.clear();
-    hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SET_RATE_ERROR);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_.size(), 0);
+    auto [rateRetryMapIter, success] = hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SET_RATE_ERROR);
+    EXPECT_TRUE(hgmHardwareUtils->setRateRetryMap_.empty());
     hgmHardwareUtils->setRateRetryMap_.try_emplace(SCREEN_ID, std::make_pair(false, 0));
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].first, false);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].second, 0);
+    EXPECT_EQ(rateRetryMapIter.first, false);
+    EXPECT_EQ(rateRetryMapIter.second, 0);
 
     hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SUCCESS);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].first, false);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].second, 0);
+    EXPECT_EQ(rateRetryMapIter.first, false);
+    EXPECT_EQ(rateRetryMapIter.second, 0);
 
     hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SET_RATE_ERROR);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].first, true);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].second, 1);
+    EXPECT_EQ(rateRetryMapIter.first, true);
+    EXPECT_EQ(rateRetryMapIter.second, 1);
     for (int i = 1; i < MAX_SETRATE_RETRY_COUNT; ++i) {
         hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SET_RATE_ERROR);
-        EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].first, true);
-        EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].second, i + 1);
+        EXPECT_EQ(rateRetryMapIter.first, true);
+        EXPECT_EQ(rateRetryMapIter.second, i + 1);
     }
     hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SET_RATE_ERROR);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].first, false);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].second, MAX_SETRATE_RETRY_COUNT);
+    EXPECT_EQ(rateRetryMapIter.first, false);
+    EXPECT_EQ(rateRetryMapIter.second, MAX_SETRATE_RETRY_COUNT);
 
     hgmHardwareUtils->UpdateRetrySetRateStatus(SCREEN_ID, 1, StatusCode::SUCCESS);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].first, false);
-    EXPECT_EQ(hgmHardwareUtils->setRateRetryMap_[SCREEN_ID].second, 0);
+    EXPECT_EQ(rateRetryMapIter.first, false);
+    EXPECT_EQ(rateRetryMapIter.second, 0);
 }
 
 /**
@@ -278,11 +278,12 @@ HWTEST_F(HgmHardwareUtilsTest, AddRefreshRateCountTest, TestSize.Level1)
     ASSERT_NE(frameRateMgr, nullptr);
 
     hgmHardwareUtils->refreshRateCounts_.clear();
+    uint32_t currentRefreshRate = hgmCore.GetScreenCurrentRefreshRate(SCREEN_ID);
     hgmHardwareUtils->AddRefreshRateCount(SCREEN_ID);
-    EXPECT_EQ(hgmHardwareUtils->refreshRateCounts_.size(), 1);
+    EXPECT_EQ(hgmHardwareUtils->refreshRateCounts_[currentRefreshRate], 1);
     hgmCore.hgmFrameRateMgr_ = nullptr;
     hgmHardwareUtils->AddRefreshRateCount(SCREEN_ID);
-    EXPECT_EQ(hgmHardwareUtils->refreshRateCounts_.size(), 1);
+    EXPECT_EQ(hgmHardwareUtils->refreshRateCounts_[currentRefreshRate], 2);
 
     hgmCore.hgmFrameRateMgr_ = frameRateMgr;
 }
@@ -323,9 +324,9 @@ HWTEST_F(HgmHardwareUtilsTest, ClearRefreshRateCountsTest, TestSize.Level1)
     hgmHardwareUtils->ClearRefreshRateCounts(dumpString);
     EXPECT_EQ(dumpString, "");
     hgmHardwareUtils->AddRefreshRateCount(SCREEN_ID);
-    EXPECT_EQ(hgmHardwareUtils->refreshRateCounts_.size(), 1);
+    EXPECT_FALSE(hgmHardwareUtils->refreshRateCounts_.empty());
     hgmHardwareUtils->ClearRefreshRateCounts(dumpString);
-    EXPECT_EQ(hgmHardwareUtils->refreshRateCounts_.size(), 0);
+    EXPECT_TRUE(hgmHardwareUtils->refreshRateCounts_.empty());
     EXPECT_NE(dumpString, "");
 }
 } // namespace OHOS::Rosen

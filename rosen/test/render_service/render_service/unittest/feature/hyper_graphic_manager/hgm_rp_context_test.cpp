@@ -21,8 +21,8 @@
 #include "hgm_frame_rate_manager.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "render_server/rs_render_service.h"
 #include "render_server/rs_render_process_manager_agent.h"
+#include "render_server/rs_render_service.h"
 #include "render_server/rs_render_service_agent.h"
 #include "screen_manager/public/rs_screen_manager_agent.h"
 #include "screen_manager/rs_screen_manager.h"
@@ -110,10 +110,10 @@ HWTEST_F(HgmRPContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
     FrameRateLinkerUpdateInfo updateInfo = { { 0, 120, 60 }, 120 };
     rsContext->GetMutableFrameRateLinkerUpdateInfoMap().insert_or_assign(2, updateInfo);
     hgmRPContext.NotifyRpHgmFrameRate(100, rsContext, vRateMap, true, pipelineParam);
+    EXPECT_TRUE(hgmRPContext.surfaceData_.empty());
+    EXPECT_EQ(rsContext->GetFrameRateLinkerDestroyIds().empty());
+    EXPECT_EQ(rsContext->GetFrameRateLinkerUpdateInfoMap().empty());
     EXPECT_EQ(hgmRPContext.rsCurrRange_.preferred_, 0);
-    EXPECT_EQ(hgmRPContext.surfaceData_.size(), 0);
-    EXPECT_EQ(rsContext->GetFrameRateLinkerDestroyIds().size(), 0);
-    EXPECT_EQ(rsContext->GetFrameRateLinkerUpdateInfoMap().size(), 0);
     EXPECT_EQ(hgmRPContext.ltpoEnabled_, true);
     EXPECT_EQ(hgmRPContext.isDelayMode_, true);
     EXPECT_EQ(hgmRPContext.pipelineOffsetPulseNum_, 1);
