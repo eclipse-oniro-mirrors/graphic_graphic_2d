@@ -111,8 +111,8 @@ HWTEST_F(HgmRPContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
     rsContext->GetMutableFrameRateLinkerUpdateInfoMap().insert_or_assign(2, updateInfo);
     hgmRPContext.NotifyRpHgmFrameRate(100, rsContext, vRateMap, true, pipelineParam);
     EXPECT_TRUE(hgmRPContext.surfaceData_.empty());
-    EXPECT_EQ(rsContext->GetFrameRateLinkerDestroyIds().empty());
-    EXPECT_EQ(rsContext->GetFrameRateLinkerUpdateInfoMap().empty());
+    EXPECT_TRUE(rsContext->GetFrameRateLinkerDestroyIds().empty());
+    EXPECT_TRUE(rsContext->GetFrameRateLinkerUpdateInfoMap().empty());
     EXPECT_EQ(hgmRPContext.rsCurrRange_.preferred_, 0);
     EXPECT_EQ(hgmRPContext.ltpoEnabled_, true);
     EXPECT_EQ(hgmRPContext.isDelayMode_, true);
