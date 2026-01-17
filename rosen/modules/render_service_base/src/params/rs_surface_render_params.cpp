@@ -695,6 +695,7 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isSurfaceBufferOpaque_ = isSurfaceBufferOpaque_;
     targetSurfaceParams->uiFirstVisibleFilterRect_ = uiFirstVisibleFilterRect_;
     targetSurfaceParams->appRotationCorrection_ = appRotationCorrection_;
+    targetSurfaceParams->rotationCorrectionDegree_ = rotationCorrectionDegree_;
     RSRenderParams::OnSync(target);
 }
 
