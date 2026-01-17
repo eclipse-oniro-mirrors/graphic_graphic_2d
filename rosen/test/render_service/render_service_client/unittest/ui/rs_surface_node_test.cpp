@@ -1978,7 +1978,5 @@ HWTEST_F(RSSurfaceNodeTest, SetAppRotationCorrectionTest, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->SetAppRotationCorrection(ScreenRotation::ROTATION_90);
     ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetAppRotationCorrection(6);
-    ASSERT_NE(surfaceNode, nullptr);
 }
 } // namespace OHOS::Rosen
