@@ -299,10 +299,15 @@ void VSyncGenerator::WaitForTimeout(int64_t occurTimestamp, int64_t nextTimeStam
 void VSyncGenerator::WaitForTimeoutConNotifyLocked()
 {
     int64_t curTime = SystemTime();
-    if (curTime <= 0 || nextTimeStamp_ <= 0) {
-        return;
+    int64_t remainingTime = 0;
+    {
+        std::unique_lock<std::mutex> lck(waitForTimeoutMtx_);
+        if (curTime <= 0 || nextTimeStamp_ <= 0) {
+            return;
+        }
+        int64_t remainingTime = nextTimeStamp_ - curTime;
     }
-    int64_t remainingTime = nextTimeStamp_ - curTime;
+    
     if (remainingTime > REMAINING_TIME_THRESHOLD) {
         waitForTimeoutCon_.notify_all();
     }
@@ -311,10 +316,14 @@ void VSyncGenerator::WaitForTimeoutConNotifyLocked()
 void VSyncGenerator::WaitForTimeoutConNotifyLockedForListener()
 {
     int64_t curTime = SystemTime();
-    if (curTime <= 0 || nextTimeStamp_ <= 0) {
-        return;
+    int64_t remainingTime = 0;
+    {
+        std::unique_lock<std::mutex> lck(waitForTimeoutMtx_);
+        if (curTime <= 0 || nextTimeStamp_ <= 0) {
+            return;
+        }
+        int64_t remainingTime = nextTimeStamp_ - curTime;
     }
-    int64_t remainingTime = nextTimeStamp_ - curTime;
     if (remainingTime > REMAINING_TIME_THRESHOLD_FOR_LISTENER) {
         waitForTimeoutCon_.notify_all();
     }
