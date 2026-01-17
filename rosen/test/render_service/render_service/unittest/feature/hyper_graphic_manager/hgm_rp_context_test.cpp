@@ -16,10 +16,17 @@
 #include "gtest/gtest.h"
 
 #include "feature/hyper_graphic_manager/hgm_rp_context.h"
+#include "feature/hyper_graphic_manager/rp_hgm_xml_parser.h"
+#include "hgm_core.h"
 #include "hgm_frame_rate_manager.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "feature/hyper_graphic_manager/rp_hgm_xml_parser.h"
+#include "render_server/rs_render_service.h"
+#include "render_server/rs_render_process_manager_agent.h"
+#include "render_server/rs_render_service_agent.h"
+#include "screen_manager/public/rs_screen_manager_agent.h"
+#include "screen_manager/rs_screen_manager.h"
+#include "transaction/rs_render_to_service_connection.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -70,7 +77,26 @@ HWTEST_F(HgmRPContextTest, InitHgmConfigTest, TestSize.Level1)
  */
 HWTEST_F(HgmRPContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
 {
-    sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
+    RSRenderService renderService;
+    auto& hgmCore = HgmCore::Instance();
+    auto mgr = hgmCore.GetFrameRateMgr();
+    auto rsDistributor = sptr<VSyncDistributor>::MakeSptr(nullptr, "rs");
+    auto appDistributor = sptr<VSyncDistributor>::MakeSptr(nullptr, "app");
+    renderService.hgmContext_ = std::make_shared<HgmContext>(nullptr, mgr, nullptr, appDistributor, rsDistributor);
+    auto renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
+    auto renderProcessManagerAgent = sptr<RSRenderProcessManagerAgent>::MakeSptr(renderService.renderProcessManager_);
+    auto screenManagerAgent = sptr<RSScreenManagerAgent>::MakeSptr(renderService.screenManager_);
+    auto renderToServiceConnection =
+        sptr<RSRenderToServiceConnection>::MakeSptr(renderServiceAgent, renderProcessManagerAgent, screenManagerAgent);
+    renderService.hgmContext_->hgmDataChangeTypes_.set(HgmDataChangeType::HGM_CONFIG_DATA);
+    renderService.hgmContext_->ltpoEnabled_ = true;
+    renderService.hgmContext_->isDelayMode_ = true;
+    renderService.hgmContext_->pipelineOffsetPulseNum_ = 1;
+    renderService.hgmContext_->isAdaptive_ = true;
+    renderService.hgmContext_->gameNodeName_ = "gameNodeName";
+    hgmCore.SetPendingScreenRefreshRate(60);
+    hgmCore.SetPendingConstraintRelativeTime(2);
+
     HgmRPContext hgmRPContext(renderToServiceConnection);
     auto rsContext = std::make_shared<RSContext>();
     PipelineParam pipelineParam;
@@ -80,13 +106,19 @@ HWTEST_F(HgmRPContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
     rsContext->GetMutableFrameRateLinkerDestroyIds().insert(1);
     FrameRateLinkerUpdateInfo updateInfo = { { 0, 120, 60 }, 120 };
     rsContext->GetMutableFrameRateLinkerUpdateInfoMap().insert_or_assign(2, updateInfo);
-    // hgmRPContext.NotifyRpHgmFrameRate(1, rsContext, vRateMap, true, pipelineParam);
-    // EXPECT_EQ(hgmRPContext.rsCurrRange_.preferred_, 0);
-    // EXPECT_EQ(hgmRPContext.surfaceData_.size(), 0);
-    // EXPECT_EQ(rsContext->GetFrameRateLinkerDestroyIds().size(), 0);
-    // EXPECT_EQ(rsContext->GetFrameRateLinkerUpdateInfoMap().size(), 0);
-    // EXPECT_EQ(hgmRPContext.isAdaptive_, true);
-    // EXPECT_EQ(hgmRPContext.ltpoEnabled_, true);
+    hgmRPContext.NotifyRpHgmFrameRate(100, rsContext, vRateMap, true, pipelineParam);
+    EXPECT_EQ(hgmRPContext.rsCurrRange_.preferred_, 0);
+    EXPECT_EQ(hgmRPContext.surfaceData_.size(), 0);
+    EXPECT_EQ(rsContext->GetFrameRateLinkerDestroyIds().size(), 0);
+    EXPECT_EQ(rsContext->GetFrameRateLinkerUpdateInfoMap().size(), 0);
+    EXPECT_EQ(hgmRPContext.ltpoEnabled_, true);
+    EXPECT_EQ(hgmRPContext.isDelayMode_, true);
+    EXPECT_EQ(hgmRPContext.pipelineOffsetPulseNum_, 1);
+    EXPECT_EQ(hgmRPContext.isAdaptive_, false);
+    EXPECT_EQ(pipelineParam.pendingScreenRefreshRate, 60);
+    EXPECT_EQ(pipelineParam.pendingConstraintRelativeTime, 2);
+    EXPECT_EQ(renderService.hgmContext_.currVsyncId_, 100);
+    EXPECT_EQ(renderService.hgmContext_.rsCurrRange_.preferred_, 60);
 }
 
 /**
@@ -143,12 +175,12 @@ HWTEST_F(HgmRPContextTest, HandleGameNodeTest, Function | SmallTest | Level1)
 }
 
 /**
- * @tc.name: HandleGameNodeTest2
+ * @tc.name: HandleGameNodeTest002
  * @tc.desc: test HgmRPContext.HandleGameNode
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmRPContextTest, HandleGameNodeTest2, Function | SmallTest | Level1)
+HWTEST_F(HgmRPContextTest, HandleGameNodeTest002, Function | SmallTest | Level1)
 {
     sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
     HgmRPContext hgmRPContext(renderToServiceConnection);
