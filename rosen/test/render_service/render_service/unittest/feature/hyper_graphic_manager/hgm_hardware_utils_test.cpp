@@ -56,7 +56,7 @@ void HgmHardwareUtilsTest::TearDown() {}
 
 /**
  * @tc.name: ExecuteSwitchRefreshRateTest
- * @tc.desc: Test HgmHardwareUtils.ExecuteSwitchRefreshRate
+ * @tc.desc: test HgmHardwareUtils.ExecuteSwitchRefreshRate
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -95,7 +95,7 @@ HWTEST_F(HgmHardwareUtilsTest, ExecuteSwitchRefreshRateTest, TestSize.Level1)
 
 /**
  * @tc.name: UpdateRetrySetRateStatusTest
- * @tc.desc: Test HgmHardwareUtils.UpdateRetrySetRateStatus
+ * @tc.desc: test HgmHardwareUtils.UpdateRetrySetRateStatus
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -135,7 +135,7 @@ HWTEST_F(HgmHardwareUtilsTest, UpdateRetrySetRateStatusTest, TestSize.Level1)
 
 /**
  * @tc.name: PerformSetActiveModeTest
- * @tc.desc: Test HgmHardwareUtils.PerformSetActiveMode
+ * @tc.desc: test HgmHardwareUtils.PerformSetActiveMode
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -193,7 +193,7 @@ HWTEST_F(HgmHardwareUtilsTest, PerformSetActiveModeTest, TestSize.Level1)
 
 /**
  * @tc.name: TransactRefreshRateParamTest
- * @tc.desc: Test HgmHardwareUtils.TransactRefreshRateParam
+ * @tc.desc: test HgmHardwareUtils.TransactRefreshRateParam
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -211,7 +211,7 @@ HWTEST_F(HgmHardwareUtilsTest, TransactRefreshRateParamTest, TestSize.Level1)
 
 /**
  * @tc.name: SwitchRefreshRateTest
- * @tc.desc: Test HgmHardwareUtils.SwitchRefreshRate
+ * @tc.desc: test HgmHardwareUtils.SwitchRefreshRate
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -266,9 +266,9 @@ HWTEST_F(HgmHardwareUtilsTest, SwitchRefreshRateTest, TestSize.Level1)
 
 /**
  * @tc.name: AddRefreshRateCountTest
- * @tc.desc: Test HgmHardwareUtils.AddRefreshRateCount
+ * @tc.desc: test HgmHardwareUtils.AddRefreshRateCount
  * @tc.type: FUNC
- * @tc.require: issueI8K4HE
+ * @tc.require:
  */
 HWTEST_F(HgmHardwareUtilsTest, AddRefreshRateCountTest, TestSize.Level1)
 {
@@ -291,7 +291,7 @@ HWTEST_F(HgmHardwareUtilsTest, AddRefreshRateCountTest, TestSize.Level1)
 
 /*
  * @tc.name: RefreshRateCountsTest
- * @tc.desc: Test HgmHardwareUtils.RefreshRateCounts
+ * @tc.desc: test HgmHardwareUtils.RefreshRateCounts
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -311,9 +311,9 @@ HWTEST_F(HgmHardwareUtilsTest, RefreshRateCountsTest, TestSize.Level1)
 
 /*
  * @tc.name: ClearRefreshRateCountsTest
- * @tc.desc: Test HgmHardwareUtils.ClearRefreshRateCounts
+ * @tc.desc: test HgmHardwareUtils.ClearRefreshRateCounts
  * @tc.type: FUNC
- * @tc.require: issuesIBYE2H
+ * @tc.require:
  */
 HWTEST_F(HgmHardwareUtilsTest, ClearRefreshRateCountsTest, TestSize.Level1)
 {

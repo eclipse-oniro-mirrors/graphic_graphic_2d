@@ -220,12 +220,12 @@ HWTEST_F(HgmRPContextTest, HandleGameNodeTest002, Function | SmallTest | Level1)
 }
 
 /**
- * @tc.name: TestSetServiceToProcessInfo
+ * @tc.name: SetServiceToProcessInfoTest
  * @tc.desc: test HgmRPContext.SetServiceToProcessInfo
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmRPContextTest, TestSetServiceToProcessInfo, TestSize.Level1)
+HWTEST_F(HgmRPContextTest, SetServiceToProcessInfoTest, TestSize.Level1)
 {
     sptr<RSIRenderToServiceConnection> renderToServiceConnection = nullptr;
     HgmRPContext hgmRPContext(renderToServiceConnection);
