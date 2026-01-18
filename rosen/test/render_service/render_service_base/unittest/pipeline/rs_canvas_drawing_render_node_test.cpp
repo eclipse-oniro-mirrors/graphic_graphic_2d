@@ -329,11 +329,24 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetPixelmapSurfaceImgValidTest, TestSize
 HWTEST_F(RSCanvasDrawingRenderNodeTest, AddDirtyTypeTest, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(100, 100);
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(100, 100, RSDrawCmdList::UnmarshalMode::DEFERRED);
     node->outOfLimitCmdList_.emplace_back(drawCmdList);
     EXPECT_FALSE(node->outOfLimitCmdList_.empty());
     node->AddDirtyType(ModifierNG::RSModifierType::CONTENT_STYLE);
     EXPECT_TRUE(node->outOfLimitCmdList_.empty());
+
+    Drawing::Brush brush;
+    drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
+    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
+    property->GetRef() = drawCmdList;
+    auto modifier1 = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
+    ASSERT_NE(modifier1, nullptr);
+    modifier1->properties_[ModifierNG::RSPropertyType::CONTENT_STYLE] = property;
+    auto indexProperty = std::make_shared<RSRenderProperty<int16_t>>(2, 0);
+    modifier1->properties_[ModifierNG::RSPropertyType::CUSTOM_INDEX] = indexProperty;
+    EXPECT_TRUE(!modifier1->GetPropertyDrawCmdList()->IsEmpty());
+    node->AddModifier(modifier1);
+    node->AddDirtyType(ModifierNG::RSModifierType::CONTENT_STYLE);
 }
 
 /**

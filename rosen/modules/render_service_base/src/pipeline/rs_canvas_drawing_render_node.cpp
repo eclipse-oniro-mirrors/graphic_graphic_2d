@@ -574,11 +574,10 @@ void RSCanvasDrawingRenderNode::GetDrawOpItemInfo(const Drawing::DrawCmdListPtr&
         if (index >= opItemDumpSize) {
             break;
         }
-        const auto& item = *itemIt;
-        if (item == nullptr) {
+        if (*itemIt == nullptr) {
             continue;
         }
-        opInfo.drawOpTypes.emplace_back(item->GetType());
+        opInfo.drawOpTypes.emplace_back((*itemIt)->GetType());
         ++index;
     }
 }
@@ -643,7 +642,9 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
             continue;
         }
         auto opItemSize = drawCmdList->GetOpItemSize();
-        GetDrawOpItemInfo(drawCmdList, opItemSize);
+        if (!drawCmdList->IsEmpty()) {
+            GetDrawOpItemInfo(drawCmdList, opItemSize);
+        }
 
         if (opCount > OP_COUNT_LIMIT_PER_FRAME) {
             outOfLimitCmdList_.emplace_back(drawCmdList);
