@@ -59,6 +59,7 @@ using BoundsChangedCallback = std::function<void (const Rosen::Vector4f&)>;
 using ExportTypeChangedCallback = std::function<void(bool)>;
 using DrawNodeChangeCallback = std::function<void(std::shared_ptr<RSNode> rsNode, bool isPositionZ)>;
 using PropertyNodeChangeCallback = std::function<void()>;
+using ColorPickerCallback = std::function<void(uint32_t)>;
 class RSAnimation;
 class RSCommand;
 class RSImplicitAnimParam;
@@ -1119,6 +1120,24 @@ public:
      */
     void SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrategyType strategy, uint64_t interval);
 
+    /**
+     * @brief Registers a periodic task that extracts background color when the node is drawn and notifies
+     * the client via callback.
+     *
+     * @param interval Cooldown interval between two color picking tasks in ms.
+     * @param callback Only called when the background color changes.
+     * @param notifyThreshold Threshold for color change notification (0-255).
+     * @return true if registration is successful.
+     */
+    bool RegisterColorPickerCallback(uint64_t interval, ColorPickerCallback callback, uint32_t notifyThreshold);
+
+    /**
+     * @brief Unregisters the color picking task.
+     *
+     * @return true if unregistration is successful.
+     */
+    bool UnregisterColorPickerCallback();
+
     // UIEffect
     /**
      * @brief Sets the background filter for the UI.
@@ -2079,6 +2098,7 @@ private:
 
     void NotifyPageNodeChanged() const;
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
+    bool FireColorPickerCallback(uint32_t color);
     bool HasPropertyAnimation(const PropertyId& id);
     std::vector<AnimationId> GetAnimationByPropertyId(const PropertyId& id);
     bool FallbackAnimationsToContext();
@@ -2188,6 +2208,7 @@ private:
 
     bool isOnTheTree_ = false;
     bool isOnTheTreeInit_ = false;
+    ColorPickerCallback colorPickerCallback_;
 
     std::bitset<3> hasReportedSetUIXXFilterCascade_ = 0b000;
 

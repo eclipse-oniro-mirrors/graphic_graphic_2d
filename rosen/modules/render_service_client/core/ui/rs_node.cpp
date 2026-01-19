@@ -1975,6 +1975,27 @@ void RSNode::SetOutlineRadius(const Vector4f& radius)
     SetPropertyNG<ModifierNG::RSOutlineModifier, &ModifierNG::RSOutlineModifier::SetOutlineRadius>(radius);
 }
 
+bool RSNode::RegisterColorPickerCallback(uint64_t interval, ColorPickerCallback callback, uint32_t notifyThreshold)
+{
+    if (!callback) {
+        return false;
+    }
+    SetColorPickerParams(ColorPlaceholder::NONE, ColorPickStrategyType::CLIENT_CALLBACK, interval);
+    // Set notify threshold via modifier
+    SetPropertyNG<ModifierNG::RSColorPickerModifier,
+        &ModifierNG::RSColorPickerModifier::SetColorPickerNotifyThreshold>(notifyThreshold);
+    // Store callback locally
+    colorPickerCallback_ = std::move(callback);
+    return true;
+}
+
+bool RSNode::UnregisterColorPickerCallback()
+{
+    SetColorPickerParams(ColorPlaceholder::NONE, ColorPickStrategyType::NONE, 0);
+    colorPickerCallback_ = nullptr;
+    return true;
+}
+
 void RSNode::SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrategyType strategy, uint64_t interval)
 {
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
@@ -3115,6 +3136,16 @@ bool RSNode::AnimationCallback(AnimationId animationId, AnimationCallbackEvent e
     }
     ROSEN_LOGE("Failed to callback animation event[%{public}d], event is null!", static_cast<int>(event));
     return false;
+}
+
+bool RSNode::FireColorPickerCallback(uint32_t color)
+{
+    if (!colorPickerCallback_) {
+        ROSEN_LOGD("ColorPickerCallback: No callback registered for node[%{public}" PRIu64 "]", id_);
+        return false;
+    }
+    colorPickerCallback_(color);
+    return true;
 }
 
 void RSNode::SetPaintOrder(bool drawContentLast)

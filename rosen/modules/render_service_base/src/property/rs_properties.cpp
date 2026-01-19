@@ -1293,7 +1293,17 @@ void RSProperties::SetColorPickerInterval(int interval)
     if (!colorPicker_) {
         colorPicker_ = std::make_shared<ColorPickerParam>();
     }
-    colorPicker_->interval = static_cast<uint64_t>(interval);
+    static constexpr uint64_t MIN_INTERVAL = 180; // unit: ms
+    colorPicker_->interval = std::max(static_cast<uint64_t>(interval), MIN_INTERVAL);
+    SetDirty();
+}
+
+void RSProperties::SetColorPickerNotifyThreshold(int threshold)
+{
+    if (!colorPicker_) {
+        colorPicker_ = std::make_shared<ColorPickerParam>();
+    }
+    colorPicker_->notifyThreshold = std::clamp(static_cast<uint32_t>(threshold), 0u, RGBA_MAX);
     SetDirty();
 }
 
