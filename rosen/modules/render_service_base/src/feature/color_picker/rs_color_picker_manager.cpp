@@ -42,8 +42,8 @@ inline uint64_t NowMs()
 }
 } // namespace
 
-Drawing::ColorQuad RSColorPickerManager::GetColorPicked(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect,
-    uint64_t nodeId, ColorPickStrategyType strategy, uint64_t interval)
+std::optional<Drawing::ColorQuad> RSColorPickerManager::GetColorPicked(
+    RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId, const ColorPickerParam& params)
 {
     uint64_t currTime = NowMs();
     const auto [prevColor, curColor] = GetColor();
@@ -57,8 +57,9 @@ Drawing::ColorQuad RSColorPickerManager::GetColorPicked(RSPaintFilterCanvas& can
         RSColorPickerThread::Instance().NotifyNodeDirty(nodeId); // continue animation
     }
 
-    if (strategy != ColorPickStrategyType::NONE && currTime >= interval + lastUpdateTime_) { // cooldown check
-        ScheduleColorPick(canvas, rect, nodeId, strategy);
+    if (params.strategy != ColorPickStrategyType::NONE &&
+        currTime >= params.interval + lastUpdateTime_) { // cooldown check
+        ScheduleColorPick(canvas, rect, nodeId, params.strategy);
         lastUpdateTime_ = currTime;
     }
     return res;

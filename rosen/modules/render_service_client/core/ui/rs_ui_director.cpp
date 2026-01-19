@@ -78,6 +78,7 @@ RSUIDirector::~RSUIDirector()
 void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance, std::shared_ptr<RSUIContext> rsUIContext)
 {
     AnimationCommandHelper::SetAnimationCallbackProcessor(AnimationCallbackProcessor);
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(ColorPickerCallbackProcessor);
     std::call_once(g_initDumpNodeTreeProcessorFlag,
         []() { RSNodeCommandHelper::SetDumpNodeTreeProcessor(RSUIDirector::DumpNodeTreeProcessor); });
 
@@ -771,6 +772,18 @@ void RSUIDirector::AnimationCallbackProcessor(NodeId nodeId, AnimationId animId,
         ROSEN_LOGE("RSUIDirector::AnimationCallbackProcessor, could not find animation %{public}" PRIu64 " on"
             " fallback node.", animId);
     }
+}
+
+void RSUIDirector::ColorPickerCallbackProcessor(NodeId nodeId, uint64_t token, uint32_t color)
+{
+    auto rsUICtx = RSUIContextManager::Instance().GetRSUIContext(token);
+    // Try to find the node in the node map
+    if (auto nodePtr =
+            rsUICtx ? rsUICtx->GetNodeMap().GetNode<RSNode>(nodeId) : RSNodeMap::Instance().GetNode<RSNode>(nodeId)) {
+        nodePtr->FireColorPickerCallback(color);
+        return;
+    }
+    ROSEN_LOGE("RSUIDirector::ColorPickerCallbackProcessor, could not find node %{public}" PRIu64, nodeId);
 }
 
 void RSUIDirector::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint64_t token, uint32_t taskId)

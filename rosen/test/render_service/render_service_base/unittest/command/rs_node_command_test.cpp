@@ -452,4 +452,89 @@ HWTEST_F(RSNodeCommandTest, MarkRepaintBoundary002, TestSize.Level1)
     nodeId = 1;
     RSNodeCommandHelper::MarkRepaintBoundary(context, nodeId, false);
 }
+
+/**
+ * @tc.name: ColorPickerCallbackTest001
+ * @tc.desc: Test ColorPickerCallback with null processor (no-op branch)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, ColorPickerCallbackTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    pid_t pid = 0;
+    uint64_t token = 100;
+    uint32_t color = 0xFF0000FF;
+
+    // Ensure processor is null
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(nullptr);
+
+    // Should not crash, just no-op
+    RSNodeCommandHelper::ColorPickerCallback(context, nodeId, pid, token, color);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: ColorPickerCallbackTest002
+ * @tc.desc: Test ColorPickerCallback with valid processor
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, ColorPickerCallbackTest002, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    pid_t pid = 0;
+    uint64_t token = 100;
+    uint32_t color = 0xFF0000FF;
+
+    // Use static variables to capture test state
+    static bool callbackInvoked = false;
+    static NodeId receivedNodeId = 0;
+    static uint32_t receivedColor = 0;
+
+    // Reset state
+    callbackInvoked = false;
+    receivedNodeId = 0;
+    receivedColor = 0;
+
+    // Define a static function pointer
+    auto processor = [](NodeId nid, uint64_t token, uint32_t c) {
+        callbackInvoked = true;
+        receivedNodeId = nid;
+        receivedColor = c;
+    };
+
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(processor);
+    RSNodeCommandHelper::ColorPickerCallback(context, nodeId, pid, token, color);
+
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_EQ(receivedNodeId, nodeId);
+    EXPECT_EQ(receivedColor, color);
+
+    // Cleanup
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(nullptr);
+}
+
+/**
+ * @tc.name: SetColorPickerCallbackProcessorTest
+ * @tc.desc: Test SetColorPickerCallbackProcessor sets processor correctly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetColorPickerCallbackProcessorTest, TestSize.Level1)
+{
+    static bool called = false;
+    called = false;
+
+    auto processor = [](NodeId, uint64_t, uint32_t) { called = true; };
+
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(processor);
+
+    RSContext context;
+    RSNodeCommandHelper::ColorPickerCallback(context, 1, 0, 0, 0);
+
+    EXPECT_TRUE(called);
+
+    // Cleanup
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(nullptr);
+}
 } // namespace OHOS::Rosen
