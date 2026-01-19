@@ -783,7 +783,7 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
     if (eventName == "VOTER_TOUCH") {
         HGM_LOGD("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
             eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
-    else {
+    } else {
         HGM_LOGI("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
             eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
     }
