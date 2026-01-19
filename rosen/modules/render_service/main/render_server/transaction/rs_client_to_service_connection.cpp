@@ -1764,12 +1764,14 @@ ErrCode RSClientToServiceConnection::GetHdrOnDuration(int64_t& hdrOnDuration)
         RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
+    ErrCode ret = ERR_OK;
     for (auto conn : serviceToRenderConns) {
         int64_t hdrOnDurationTemp = 0;
-        conn->GetHdrOnDuration(hdrOnDurationTemp);
+        ErrCode tmpRet = conn->GetHdrOnDuration(hdrOnDurationTemp);
         hdrOnDuration += hdrOnDurationTemp;
+        ret = (ret != ERR_OK) ? ret : tmpRet;
     }
-    return ERR_OK;
+    return ret;
 }
 
 ErrCode RSClientToServiceConnection::SetVmaCacheStatus(bool flag)
@@ -1874,10 +1876,13 @@ ErrCode RSClientToServiceConnection::SetOptimizeCanvasDirtyPidList(const std::ve
         RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
+
+    Errcode ret = ERR_OK;
     for (auto conn : serviceToRenderConns) {
-        conn->SetOptimizeCanvasDirtyPidList(pidList);
+        ErrCode tmpRet = conn->SetOptimizeCanvasDirtyPidList(pidList);
+        ret = (ret != ERR_OK) ? ret : tmpRet;
     }
-    return ERR_OK;
+    return ret;
 }
 
 int32_t RSClientToServiceConnection::RegisterUIExtensionCallback(uint64_t userId,
