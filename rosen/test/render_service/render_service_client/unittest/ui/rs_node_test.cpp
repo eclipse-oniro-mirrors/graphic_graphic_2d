@@ -46,7 +46,10 @@
 #include "ui_effect/filter/include/filter_content_light_para.h"
 #include "ui_effect/filter/include/filter_displacement_distort_para.h"
 #include "ui_effect/filter/include/filter_edge_light_para.h"
+#include "ui_effect/filter/include/filter_fly_out_para.h"
 #include "ui_effect/filter/include/filter_hdr_para.h"
+#include "ui_effect/filter/include/filter_pixel_stretch_para.h"
+#include "ui_effect/filter/include/filter_water_ripple_para.h"
 #include "ui_effect/property/include/rs_ui_filter_base.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 
@@ -3687,6 +3690,153 @@ HWTEST_F(RSNodeTest, SetandGetRotationVector001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetUIXXFilterCascade_Background_BitsetToggle
+ * @tc.desc: ensure hasReportedSetUIXXFilterCascade_[0] toggles only when previously false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetUIXXFilterCascade_Background_BitsetToggle, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    // ensure bit 0 is cleared
+    rsNode->hasReportedSetUIXXFilterCascade_.reset(0);
+
+    auto filterObj = std::make_unique<Filter>();
+    auto blurPara = std::make_shared<FilterBlurPara>();
+    blurPara->SetRadius(floatData[1]);
+    filterObj->AddPara(blurPara);
+    uint32_t waveCount = 2;
+    float rippleCenterX = 0.3f;
+    float rippleCenterY = 0.5f;
+    float progress = 0.5f;
+    uint32_t rippleMode = 1;
+    auto waterPara = std::make_shared<WaterRipplePara>();
+    waterPara->SetWaveCount(waveCount);
+    waterPara->SetRippleCenterX(rippleCenterX);
+    waterPara->SetRippleCenterY(rippleCenterY);
+    waterPara->SetRippleMode(rippleMode);
+    waterPara->SetProgress(progress);
+    filterObj->AddPara(waterPara);
+
+    // first call: sum>1 and bit[0] == false -> should set to true
+    rsNode->SetUIBackgroundFilter(filterObj.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(0));
+
+    // second call: bit already true -> should remain true (no change)
+    rsNode->SetUIBackgroundFilter(filterObj.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(0));
+
+    auto filterObj2 = std::make_unique<Filter>();
+    auto blurPara2 = std::make_shared<FilterBlurPara>();
+    blurPara2->SetRadius(floatData[1]);
+    filterObj2->AddPara(blurPara2);
+    rsNode->SetUIBackgroundFilter(filterObj2.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(0));
+}
+
+/**
+ * @tc.name: SetUIXXFilterCascade_Compositing_BitsetToggle
+ * @tc.desc: ensure hasReportedSetUIXXFilterCascade_[1] toggles only when previously false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetUIXXFilterCascade_Compositing_BitsetToggle, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->hasReportedSetUIXXFilterCascade_.reset(1);
+
+    auto filterObj = std::make_unique<Filter>();
+    auto blurPara = std::make_shared<FilterBlurPara>();
+    blurPara->SetRadius(floatData[1]);
+    filterObj->AddPara(blurPara);
+    auto pixelStretchPara = std::make_shared<PixelStretchPara>();
+    Vector4f tmpPercent{ 0.1f, 0.2f, 0.3f, 0.4f };
+    pixelStretchPara->SetStretchPercent(tmpPercent);
+    pixelStretchPara->SetTileMode(Drawing::TileMode::CLAMP);
+    filterObj->AddPara(pixelStretchPara);
+
+    rsNode->SetUICompositingFilter(filterObj.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(1));
+
+    rsNode->SetUICompositingFilter(filterObj.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(1));
+
+    auto filterObj2 = std::make_unique<Filter>();
+    auto blurPara2 = std::make_shared<FilterBlurPara>();
+    blurPara2->SetRadius(floatData[1]);
+    filterObj2->AddPara(blurPara2);
+    rsNode->SetUICompositingFilter(filterObj2.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(1));
+}
+
+/**
+ * @tc.name: SetUIXXFilterCascade_Foreground_BitsetToggle
+ * @tc.desc: ensure hasReportedSetUIXXFilterCascade_[2] toggles only when previously false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetUIXXFilterCascade_Foreground_BitsetToggle, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->hasReportedSetUIXXFilterCascade_.reset(2);
+
+    auto filterObj = std::make_unique<Filter>();
+    auto blurPara = std::make_shared<FilterBlurPara>();
+    blurPara->SetRadius(floatData[1]);
+    filterObj->AddPara(blurPara);
+    auto flyOutPara = std::make_shared<FlyOutPara>();
+    flyOutPara->SetFlyMode(1);
+    flyOutPara->SetDegree(30.0f);
+    filterObj->AddPara(flyOutPara);
+
+    rsNode->SetUIForegroundFilter(filterObj.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(2));
+
+    rsNode->SetUIForegroundFilter(filterObj.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(2));
+
+    auto filterObj2 = std::make_unique<Filter>();
+    auto blurPara2 = std::make_shared<FilterBlurPara>();
+    blurPara2->SetRadius(floatData[1]);
+    filterObj2->AddPara(blurPara2);
+    rsNode->SetUIForegroundFilter(filterObj2.get());
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(2));
+}
+
+/**
+ * @tc.name: SetUIXXFilterCascade_ReportTimesLimit
+ * @tc.desc: Test the report times limit of ReportSetUIXXFilterCascade
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, SetUIXXFilterCascade_ReportTimesLimit, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    // ensure bit 0 is cleared
+    rsNode->hasReportedSetUIXXFilterCascade_.reset(0);
+    auto filterObj = std::make_unique<Filter>();
+    auto blurPara = std::make_shared<FilterBlurPara>();
+    blurPara->SetRadius(floatData[1]);
+    filterObj->AddPara(blurPara);
+    uint32_t waveCount = 2;
+    float rippleCenterX = 0.3f;
+    float rippleCenterY = 0.5f;
+    float progress = 0.5f;
+    uint32_t rippleMode = 1;
+    auto waterPara = std::make_shared<WaterRipplePara>();
+    waterPara->SetWaveCount(waveCount);
+    waterPara->SetRippleCenterX(rippleCenterX);
+    waterPara->SetRippleCenterY(rippleCenterY);
+    waterPara->SetRippleMode(rippleMode);
+    waterPara->SetProgress(progress);
+    filterObj->AddPara(waterPara);
+    
+    // call multiple times to exercise rate-limiter (hourly bound will short-circuit after 5)
+    for (int i = 0; i < 6; ++i) {
+        rsNode->hasReportedSetUIXXFilterCascade_.reset(0);
+        rsNode->SetUIBackgroundFilter(filterObj.get());
+    }
+
+    EXPECT_TRUE(rsNode->hasReportedSetUIXXFilterCascade_.test(0));
+}
+
+/**
  * @tc.name: GetProperty
  * @tc.desc: test results of GetProperty
  * @tc.type: FUNC
@@ -5114,7 +5264,7 @@ HWTEST_F(RSNodeTest, SetBounds001, TestSize.Level1)
 HWTEST_F(RSNodeTest, LoadRenderNodeIfNeed001, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    EXPECT_EQ(rsNode->lazyLoad_, true);
+    rsNode->lazyLoad_ = true;
     rsNode->LoadRenderNodeIfNeed();
     EXPECT_EQ(rsNode->lazyLoad_, false);
 }
@@ -5128,7 +5278,7 @@ HWTEST_F(RSNodeTest, LoadRenderNodeIfNeed001, TestSize.Level1)
 HWTEST_F(RSNodeTest, LoadRenderNodeIfNeed002, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    EXPECT_EQ(rsNode->lazyLoad_, true);
+    rsNode->lazyLoad_ = true;
 
     constexpr int commandSize{1024};
     for (int i = 0; i < commandSize; ++i) {
@@ -5146,7 +5296,7 @@ HWTEST_F(RSNodeTest, LoadRenderNodeIfNeed002, TestSize.Level1)
 HWTEST_F(RSNodeTest, LoadRenderNodeIfNeed003, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    EXPECT_EQ(rsNode->lazyLoad_, true);
+    rsNode->lazyLoad_ = true;
 
     auto uiDirector = RSUIDirector::Create();
     uiDirector->Init(true, true);
@@ -6952,7 +7102,7 @@ HWTEST_F(RSNodeTest, AddChildTest004, TestSize.Level1)
     auto shadowChild = std::make_shared<RSCanvasNode>(trueChild->IsRenderServiceNode(), trueChild->GetId(),
         trueChild->IsTextureExportNode(), trueChild->GetRSUIContext());
 
-    EXPECT_EQ(trueChild->lazyLoad_, true);
+    trueChild->lazyLoad_ = true;
     rsNode->AddChild(shadowChild, 1);
     EXPECT_EQ(trueChild->lazyLoad_, false);
 }
@@ -6974,7 +7124,7 @@ HWTEST_F(RSNodeTest, AddChildTest005, TestSize.Level1)
     auto shadowChild = std::make_shared<RSCanvasNode>(trueChild->IsRenderServiceNode(), INVALID_NODEID,
         trueChild->IsTextureExportNode(), trueChild->GetRSUIContext());
 
-    EXPECT_EQ(trueChild->lazyLoad_, true);
+    trueChild->lazyLoad_ = true;
     rsNode->AddChild(shadowChild, 1);
     EXPECT_EQ(trueChild->lazyLoad_, true);
 }

@@ -620,6 +620,7 @@ ohos_source_set("render_service_base_src") {
       "lz4:liblz4_shared",
       "init:libbegetutil",
       "ffrt:libffrt",
+      "ability_runtime:app_manager",
     ]
   }
 

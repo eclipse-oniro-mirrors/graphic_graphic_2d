@@ -179,8 +179,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             return;
         }
         uniParam->SetSecurityDisplay(params->IsSecurityDisplay());
-        const auto& screenProperty = screenParams->GetScreenProperty();
-        currentBlackList_ = screenProperty.GetBlackList();
+        currentBlackList_ = screenManager->GetVirtualScreenBlackList(paramScreenId);
         RSUniRenderThread::Instance().SetBlackList(currentBlackList_);
         if (mirroredRenderParams) {
             curVisibleRect_ = RSUniRenderThread::Instance().GetVisibleRect();
@@ -193,7 +192,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 uniParam->SetSecurityDisplay(false);
                 return;
             }
-            currentTypeBlackList_ = screenProperty.GetTypeBlackList();
+            currentTypeBlackList_ = screenManager->GetVirtualScreenTypeBlackList(paramScreenId);
             RSUniRenderThread::Instance().SetTypeBlackList(currentTypeBlackList_);
             RSUniRenderThread::Instance().SetWhiteList(screenInfo.whiteList);
             curSecExemption_ = params->GetSecurityExemption();
@@ -1575,7 +1574,9 @@ std::shared_ptr<Drawing::ShaderEffect> RSLogicalDisplayRenderNodeDrawable::MakeB
         }
     )");
     if (brightnessAdjustmentShaderEffect_ == nullptr) {
-        brightnessAdjustmentShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(shaderString);
+        Drawing::RuntimeEffectOptions runtimeEffectOptions;
+        runtimeEffectOptions.useHighpLocalCoords = true;
+        brightnessAdjustmentShaderEffect_ = Drawing::RuntimeEffect::CreateForShader(shaderString, runtimeEffectOptions);
         if (brightnessAdjustmentShaderEffect_ == nullptr) {
             ROSEN_LOGE("RSLogicalDisplayRenderNodeDrawable::MakeBrightnessAdjustmentShaderBuilder effect is null");
             return nullptr;

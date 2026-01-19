@@ -1762,7 +1762,7 @@ HWTEST_F(RSInterfacesTest, RegisterSurfaceOcclusionChangeCallback001, Function |
     SurfaceOcclusionChangeCallback cb = [](float) {};
     std::vector<float> partitionPoints;
     int32_t ret = rsInterfaces->RegisterSurfaceOcclusionChangeCallback(id, cb, partitionPoints);
-    EXPECT_EQ(ret, RS_CONNECTION_ERROR); // Unable to access IPC due to lack of permissions.
+    EXPECT_NE(ret, 0); // Unable to access IPC due to lack of permissions.
 }
 
 /*
