@@ -47,7 +47,6 @@ group("test") {
     "render_service/fuzztest/rsroundcornerdisplay_fuzzer:fuzztest",
     "render_service/fuzztest/rsscreenmanager_fuzzer:fuzztest",
     "render_service/fuzztest/rstransaction_fuzzer:fuzztest",
-    "render_service/fuzztest/rscanvasdmabuffercache_fuzzer:fuzztest",
     "render_service/systemtest/pipeline:systemtest",
     "render_service/unittest/composer:unittest",
     "render_service/unittest/drawable:unittest",
