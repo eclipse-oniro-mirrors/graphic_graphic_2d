@@ -149,7 +149,7 @@ bool TestMoveModifier(const uint8_t* data, size_t size)
     }
 
     auto rsModifierManager = RSModifierManagerMap::Instance()->GetModifierManager();
-    auto dstRsModifierManager = std::make_shared<RSModifierManager>();;
+    auto dstRsModifierManager = std::make_shared<RSModifierManager>();
     NodeId id = GetData<NodeId>();
     rsModifierManager->MoveModifier(dstRsModifierManager, id);
     return true;
