@@ -64,7 +64,7 @@ struct FontDescriptorsListContext : public FontPathResourceContext {
 
 struct FontUnicodeSetListContext : public FontPathResourceContext {
     int32_t index{0};
-    std::vector<uint32_t> unicodeSetOutput;
+    std::vector<uint32_t> output;
 };
 
 bool ProcessFontPath(sptr<FontDescriptorsListContext> context, std::string& path)
@@ -334,6 +334,13 @@ napi_value JsFontDescriptor::GetFontDescriptorsFromPath(napi_env env, napi_callb
     return NapiAsyncWork::Enqueue(env, context, "GetFontDescriptorsFromPath", executor, complete).result;
 }
 
+bool CheckPathTypeIsValid(napi_env env, napi_value* argv, size_t argvPathNum)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, argv[argvPathNum], &valueType);
+    return valueType == napi_object || valueType == napi_string;
+}
+
 napi_value JsFontDescriptor::GetFontUnicodeSet(napi_env env, napi_callback_info info)
 {
     sptr<FontUnicodeSetListContext> context = sptr<FontUnicodeSetListContext>::MakeSptr();
@@ -342,11 +349,15 @@ napi_value JsFontDescriptor::GetFontUnicodeSet(napi_env env, napi_callback_info 
         TEXT_ERROR_CHECK(argv != nullptr, return, "Argv is nullptr");
         TEXT_ERROR_CHECK(context->status == napi_ok, return, "Status error, status=%{public}d",
             static_cast<int>(context->status));
-        TEXT_ERROR_CHECK(argc == ARGC_TWO, return, "Argc is invalid %{public}zu", argc);
+        NAPI_CHECK_ARGS(context, argc == ARGC_TWO, napi_invalid_arg, TextErrorCode::ERROR_INVALID_PARAM, return,
+            "Argc is invalid %{public}zu", argc);
+        NAPI_CHECK_ARGS(context, CheckPathTypeIsValid(env, argv, ARGC_ZERO), napi_invalid_arg,
+            TextErrorCode::ERROR_INVALID_PARAM, return, "Fail to convert path", argc);
         if (!ParseContextFilePath(env, argv, context, ARGC_ZERO)) {
             TEXT_ERROR_CHECK(ParseResourceType(env, argv[ARGC_ZERO], context->info), return, "Parse resource error");
         }
-        ConvertFromJsValue(env, argv[ARGC_ONE], context->index);
+        NAPI_CHECK_ARGS(context, ConvertFromJsValue(env, argv[ARGC_ONE], context->index), napi_invalid_arg,
+            TextErrorCode::ERROR_INVALID_PARAM, return, "Fail to convert index");
     };
 
     context->GetCbInfo(env, info, inputParser);
@@ -355,16 +366,15 @@ napi_value JsFontDescriptor::GetFontUnicodeSet(napi_env env, napi_callback_info 
         TEXT_ERROR_CHECK(context != nullptr, return, "Failed to executor, Context is null");
         if (!context->filePath.empty()) {
             TEXT_ERROR_CHECK(SplitAbsolutePath(context->filePath), return, "Failed to split absolute font path");
-            context->unicodeSetOutput = TextEngine::FontParser::GetFontTypefaceUnicode(
-                context->filePath, context->index);
+            context->output = TextEngine::FontParser::GetFontTypefaceUnicode(context->filePath, context->index);
         } else {
             auto pathCB = [context](std::string& path) -> bool {
                 TEXT_ERROR_CHECK(SplitAbsolutePath(path), return false, "Failed to split absolute font path");
-                context->unicodeSetOutput = TextEngine::FontParser::GetFontTypefaceUnicode(path, context->index);
+                context->output = TextEngine::FontParser::GetFontTypefaceUnicode(path, context->index);
                 return true;
             };
             auto fileCB = [context](const void* data, size_t size) -> bool {
-                context->unicodeSetOutput = TextEngine::FontParser::GetFontTypefaceUnicode(data, size, context->index);
+                context->output = TextEngine::FontParser::GetFontTypefaceUnicode(data, size, context->index);
                 return true;
             };
             TEXT_ERROR_CHECK(ProcessResource(context->info, pathCB, fileCB).success, return,
@@ -375,7 +385,7 @@ napi_value JsFontDescriptor::GetFontUnicodeSet(napi_env env, napi_callback_info 
         napi_value unicodeArray = nullptr;
         TEXT_ERROR_CHECK(napi_create_array(env, &unicodeArray) == napi_ok, return, "Failed to create array");
         uint32_t index = 0;
-        for (const auto& item: context->unicodeSetOutput) {
+        for (const auto& item: context->output) {
             napi_value element = CreateJsValue(env, item);
             napi_set_element(env, unicodeArray, index, element);
             index++;
@@ -412,8 +422,9 @@ napi_value JsFontDescriptor::GetFontCount(napi_env env, napi_callback_info info)
             return true;
         };
         ProcessResource(resourceInfo, pathCB, fileCB);
+        return CreateJsNumber(env, fileCount);
     }
-    return CreateJsNumber(env, fileCount);
+    return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid argument");
 }
 
 napi_value JsFontDescriptor::GetFontDescriptorByFullName(napi_env env, napi_callback_info info)
