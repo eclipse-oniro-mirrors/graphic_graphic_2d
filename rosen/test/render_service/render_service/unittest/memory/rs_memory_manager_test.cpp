@@ -14,6 +14,7 @@
  */
 
 #include <fstream>
+#include <string>
 #include "gtest/gtest.h"
 #include "memory/rs_memory_manager.h"
 
@@ -949,6 +950,22 @@ HWTEST_F(RSMemoryManagerTest, MemoryOverflow002, testing::ext::TestSize.Level1)
 }
 
 /**
+ * @tc.name: MemoryOverflow003
+ * @tc.desc: Test MemoryOverflow
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryManagerTest, MemoryOverflow003, testing::ext::TestSize.Level1)
+{
+    g_logMsg.clear();
+    LOG_SetCallback(MyLogCallback);
+    pid_t pid = 1434;
+    MemoryManager::MemoryOverflow(pid, 1024, false);
+    MemorySnapshot::Instance().AddCpuMemory(pid,2048);
+    EXPECT_TRUE(g_logMsg.find("RSMemoryOverflow pid[1434]") != std::string::npos);
+}
+
+/**
  * @tc.name: DumpExitPidMem001
  * @tc.desc: Verify DumpExitPidMem logs correct trace info
  * @tc.type: FUNC
@@ -992,12 +1009,12 @@ HWTEST_F(RSMemoryManagerTest, InterruptReclaimTaskTest001, testing::ext::TestSiz
 }
 
 /**
- * @tc.name: MemoryOverReport
+ * @tc.name: MemoryOverReport001
  * @tc.desc: Test MemoryOverReport
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMemoryManagerTest, MemoryOverReport, testing::ext::TestSize.Level1)
+HWTEST_F(RSMemoryManagerTest, MemoryOverReport001, testing::ext::TestSize.Level1)
 {
     pid_t pid = 1434;
     MemorySnapshotInfo info;
