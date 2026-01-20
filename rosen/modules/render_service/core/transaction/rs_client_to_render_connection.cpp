@@ -827,6 +827,8 @@ int32_t RSClientToRenderConnection::SetLogicalCameraRotationCorrection(
         auto& nodeMap = connection->mainThread_->GetContext().GetNodeMap();
         nodeMap.TraverseScreenNodes([screenId, logicalCorrection](const std::shared_ptr<RSScreenRenderNode>& node) {
             if (node && node->GetScreenId() == screenId) {
+                RS_LOGD("SetLogicalCameraRotationCorrection nodeId: %{public}" PRIu64 ", logicalCorrection: %{public}u",
+                    node->GetId(), logicalCorrection);
                 node->SetLogicalCameraRotationCorrection(logicalCorrection);
             }
         });

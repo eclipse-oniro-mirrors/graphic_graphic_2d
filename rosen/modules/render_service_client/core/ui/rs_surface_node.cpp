@@ -1095,6 +1095,8 @@ void RSSurfaceNode::SetAppRotationCorrection(ScreenRotation appRotationCorrectio
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetAppRotationCorrection>(GetId(), appRotationCorrection);
     AddCommand(command, true);
+    RS_LOGD("RSSurfaceNode::SetAppRotationCorrection: Node: %{public}" PRIu64 ", appRotationCorrection: %{public}u" ,
+        GetId(), appRotationCorrection);
 }
 } // namespace Rosen
 } // namespace OHOS

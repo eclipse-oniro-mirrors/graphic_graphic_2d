@@ -615,6 +615,8 @@ int32_t RSRenderPipelineClient::SetLogicalCameraRotationCorrection(ScreenId id, 
         ROSEN_LOGE("RSRenderPipelineClient::SetLogicalCameraRotationCorrection renderPipeline is nullptr!");
         return RENDER_SERVICE_NULL;
     }
+    RS_LOGD("RSRenderPipelineClient::SetLogicalCameraRotationCorrection, screenId: %{public}"
+        PRIu64 ", logicalCorrection: %{public}u", id, logicalCorrection);
     return renderPipeline->SetLogicalCameraRotationCorrection(id, logicalCorrection);
 }
 } // namespace Rosen

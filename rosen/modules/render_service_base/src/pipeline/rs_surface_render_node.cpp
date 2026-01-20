@@ -3845,6 +3845,8 @@ void RSSurfaceRenderNode::SetAppRotationCorrection(ScreenRotation appRotationCor
         return;
     }
     surfaceParams->SetAppRotationCorrection(appRotationCorrection);
+    RS_LOGD("RSSurfaceRenderNode::SetAppRotationCorrection: Node: %{public}" PRIu64
+            ", appRotationCorrection: %{public}u", GetId(), appRotationCorrection);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
@@ -3857,6 +3859,8 @@ void RSSurfaceRenderNode::SetRotationCorrectionDegree(int32_t rotationCorrection
         return;
     }
     surfaceParams->SetRotationCorrectionDegree(rotationCorrectionDegree);
+    RS_LOGD("RSSurfaceRenderNode::SetRotationCorrectionDegree: Node: %{public}" PRIu64
+            ", rotationCorrectionDegree: %{public}d", GetId(), rotationCorrectionDegree);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }

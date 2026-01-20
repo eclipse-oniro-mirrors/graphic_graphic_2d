@@ -660,6 +660,8 @@ void RSScreenRenderNode::SetLogicalCameraRotationCorrection(ScreenRotation logic
         return;
     }
     screenParams->SetLogicalCameraRotationCorrection(logicalCorrection);
+    RS_LOGD("RSScreenRenderNode::SetLogicalCameraRotationCorrection: Node: %{public}" PRIu64
+            ", appRotationCorrection: %{public}u", GetId(), logicalCorrection);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }

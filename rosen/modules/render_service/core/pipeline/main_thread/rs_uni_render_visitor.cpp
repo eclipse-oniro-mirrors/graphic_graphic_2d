@@ -1174,7 +1174,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
     }
 
     // collect rotation lock correction degree for surface node
-    GetRotationLockParam(node);
+    RSBaseRenderUtil::GetRotationLockParam(node, curScreenNode_, screenManager_);
 
     // avoid cross node subtree visited twice or more
     DealWithSpecialLayer(node);
@@ -3725,44 +3725,6 @@ void RSUniRenderVisitor::InitializeOcclusionHandler(RSSurfaceRenderNode& node)
         curOcclusionHandler_ = std::make_shared<RSOcclusionHandler>(node.GetId());
         occlusionParams->SetOcclusionHandler(curOcclusionHandler_);
     }
-}
-
-void RSUniRenderVisitor::GetRotationLockParam(RSSurfaceRenderNode& node)
-{
-    if (curScreenNode_ == nullptr || screenManager_ == nullptr) {
-        return;
-    }
-    auto screenRotationCorrection = screenManager_->GetScreenCorrection(curScreenNode_->GetScreenId());
-
-    auto screenNodeParams = static_cast<RSScreenRenderParams*>(curScreenNode_->GetStagingRenderParams().get());
-    if (screenNodeParams == nullptr) {
-        return;
-    }
-    auto logicalRotationCorrection = screenNodeParams->GetLogicalCameraRotationCorrection();
-
-    auto surfaceNodeParams = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
-    if (surfaceNodeParams == nullptr) {
-        return;
-    }
-    auto appRotationCorrection = surfaceNodeParams->GetAppRotationCorrection();
-
-    int32_t totalRotationCorrectionDegree = 0;
-
-    int32_t screenDegree = static_cast<int32_t>(RSBaseRenderUtil::RotateEnumToInt(screenRotationCorrection));
-    int32_t logicalDegree = static_cast<int32_t>(RSBaseRenderUtil::RotateEnumToInt(logicalRotationCorrection));
-    int32_t appDegree = static_cast<int32_t>(RSBaseRenderUtil::RotateEnumToInt(appRotationCorrection));
-
-    if (logicalDegree == 0) {
-        totalRotationCorrectionDegree = screenDegree;
-    } else {
-        totalRotationCorrectionDegree = (screenDegree + logicalDegree + appDegree) % ROUND_ANGLE;
-    }
-
-    RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVisitor::GetRotationLockParam NodeId:%" PRIu64 ", screenCorrectionDegree:%d"
-        ", logicalCorrectionDegree:%d, appCorrectionDegree:%d, totalCorrectionDegree:%d",
-        node.GetId(), screenDegree, logicalDegree, appDegree, totalRotationCorrectionDegree);
-
-    node.SetRotationCorrectionDegree(totalRotationCorrectionDegree);
 }
 
 void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadParams>& renderThreadParams)

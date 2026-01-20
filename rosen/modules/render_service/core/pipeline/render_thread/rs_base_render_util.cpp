@@ -1309,6 +1309,49 @@ Drawing::Matrix RSBaseRenderUtil::GetGravityMatrix(
     return gravityMatrix;
 }
 
+void RSBaseRenderUtil::GetRotationLockParam(RSSurfaceRenderNode& node,
+    std::shared_ptr<RSScreenRenderNode> screenRenderNode, sptr<RSScreenManager> screenManager)
+{
+    if (screenRenderNode == nullptr || screenManager == nullptr) {
+        return;
+    }
+    auto screenRotationCorrection = screenManager->GetScreenCorrection(screenRenderNode->GetScreenId());
+
+    auto screenNodeParams = static_cast<RSScreenRenderParams*>(screenRenderNode->GetStagingRenderParams().get());
+    if (screenNodeParams == nullptr) {
+        return;
+    }
+    auto logicalRotationCorrection = screenNodeParams->GetLogicalCameraRotationCorrection();
+
+    auto surfaceNodeParams = static_cast<RSSurfaceRenderParams*>(node.GetStagingRenderParams().get());
+    if (surfaceNodeParams == nullptr) {
+        return;
+    }
+    auto appRotationCorrection = surfaceNodeParams->GetAppRotationCorrection();
+
+    int32_t totalRotationCorrectionDegree = 0;
+
+    int32_t screenDegree = static_cast<int32_t>(RSBaseRenderUtil::RotateEnumToInt(screenRotationCorrection));
+    int32_t logicalDegree = static_cast<int32_t>(RSBaseRenderUtil::RotateEnumToInt(logicalRotationCorrection));
+    int32_t appDegree = static_cast<int32_t>(RSBaseRenderUtil::RotateEnumToInt(appRotationCorrection));
+
+    if (logicalDegree == 0) {
+        totalRotationCorrectionDegree = screenDegree;
+    } else {
+        totalRotationCorrectionDegree = (screenDegree + logicalDegree + appDegree) % ROUND_ANGLE;
+    }
+
+    RS_LOGD("RSBaseRenderUtil::GetRotationLockParam NodeId:%" PRIu64 ", screenCorrectionDegree:%{public}d"
+        ", logicalCorrectionDegree:%{public}d, appCorrectionDegree:%{public}d, totalCorrectionDegree:%{public}d",
+        node.GetId(), screenDegree, logicalDegree, appDegree, totalRotationCorrectionDegree);
+
+    RS_OPTIONAL_TRACE_NAME_FMT("RSBaseRenderUtil::GetRotationLockParam NodeId:%" PRIu64 ", screenCorrectionDegree:%d"
+        ", logicalCorrectionDegree:%d, appCorrectionDegree:%d, totalCorrectionDegree:%d",
+        node.GetId(), screenDegree, logicalDegree, appDegree, totalRotationCorrectionDegree);
+
+    node.SetRotationCorrectionDegree(totalRotationCorrectionDegree);
+}
+
 int32_t RSBaseRenderUtil::GetScreenRotationOffset(RSSurfaceRenderParams* nodeParams)
 {
     int32_t rotationDegree = 0;
