@@ -26,8 +26,8 @@ ohos_fuzztest("RSScreenPropertyFuzzTest") {
     "$graphic_2d_root/rosen/modules/2d_graphics/include",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
-    "$graphic_2d_root/rosen/modules/render_service_base/src/ipc_callbacks",
-    "$graphic_2d_root/rosen/modules/render_service_base_client",
+    "$graphic_2d_root/rosen/modules/render_service_base/src/ipc_callback",
+    "$graphic_2d_root/rosen/modules/render_service_client",
   ]
 
   deps = [

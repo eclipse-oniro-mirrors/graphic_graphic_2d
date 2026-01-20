@@ -43,7 +43,7 @@ const uint8_t SCREEN_TYPE_SIZE = 4;
 const uint8_t SCREEN_HDR_FORMAT_SIZE = 8;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
-size_t g_pos;
+size_t g_pos = 0;
 } // namespace
 
 template<class T>
@@ -60,17 +60,6 @@ T GetData()
     }
     g_pos += objectSize;
     return object;
-}
-
-bool Init(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
-    }
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-    return true;
 }
 
 void InitRSScreenPropertyAndParcel(RSScreenProperty& screenProperty, Parcel& parcel)
@@ -140,14 +129,12 @@ void InitRSScreenPropertyAndParcel(RSScreenProperty& screenProperty, Parcel& par
     screenProperty.isSupportRotation_ = isSupportRotation;
     std::unordered_set<NodeId> whiteList {GetData<uint64_t>()};
     screenProperty.whiteList_ = whiteList;
-    std::unordered_set<NodeId> screenblackList {GetData<uint64_t>()};
-    screenProperty.blackList_ = screenblackList;
-    std::unordered_set<NodeType> screenTpeBlackList {GetData<uint8_t>()};
-    screenProperty.typeBlackList_ = screenTpeBlackList;
+    std::unordered_set<NodeId> nodeList {GetData<uint64_t>()};
+    screenProperty.blackList_ = nodeList;
+    std::unordered_set<NodeType> screenNodeTypeList {GetData<uint8_t>()};
+    screenProperty.typeBlackList_ = screenNodeTypeList;
     std::vector<NodeId> securityExemptionList {GetData<uint64_t>()};
     screenProperty.securityExemptionList_ = securityExemptionList;
-    std::shared_ptr<Media::PixelMap> securityMask = std::make_shared<Media::PixelMap>();
-    screenProperty.securityMask_ = securityMask;
     bool skipWindow = GetData<bool>();
     screenProperty.skipWindow_ = skipWindow;
     ScreenPowerStatus powerStatus = static_cast<ScreenPowerStatus>(GetData<uint32_t>() % SCREEN_POWER_STATUS_SIZE);
@@ -193,10 +180,9 @@ bool DoUnmarshallingData()
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    // initialize
-    if (!OHOS::Rosen::Init(data, size)) {
-        return 0;
-    }
+    OHOS::Rosen::g_data = data;
+    OHOS::Rosen::g_size = size;
+    OHOS::Rosen::g_pos = 0;
 
     /* Run your code on data */
     using FunctionPtr = bool (*)();
