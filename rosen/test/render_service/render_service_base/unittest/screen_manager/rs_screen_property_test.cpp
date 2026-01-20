@@ -50,4 +50,12 @@ HWTEST_F(RSScreenPropertyTest, Marshalling001, TestSize.Level1)
     auto dstProperty = sptr<RSScreenProperty>(RSScreenProperty::Unmarshalling(parcel));
     ASSERT_NE(dstProperty, nullptr);
 }
+
+/**
+ * @tc.name: Marshalling002
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenPropertyTest, Marshalling002, TestSize.Level1)
 }
