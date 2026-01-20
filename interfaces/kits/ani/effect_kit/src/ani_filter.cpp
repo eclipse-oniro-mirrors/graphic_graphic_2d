@@ -121,9 +121,9 @@ ani_object AniFilter::EllipticalGradientBlur(ani_env *env, ani_object obj, ani_d
         ani_size positionAndDegreeArrayLength = 0;
         env->Array_GetLength(positionAndDegree, &positionAndDegreeArrayLength);
         if (positionAndDegreeArrayLength != 2) {
-            continue; 
+            continue;
         }
-        if (positionAndDegreeArrayLength==2) {
+        if (positionAndDegreeArrayLength == 2) {
             ani_ref positionRef;
             env->Array_Get(positionAndDegree, 0, &positionRef);
             ani_double positionParam;
