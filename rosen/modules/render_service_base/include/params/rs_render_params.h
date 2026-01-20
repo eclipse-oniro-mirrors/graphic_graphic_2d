@@ -86,7 +86,7 @@ struct PipelineParam {
 
     void ResetSurfaceFpsOp() {
         SurfaceFpsOpNum = 0;
-        SurfaceFpsOpList = std::vector<SurfaceFpsOp>();
+        SurfaceFpsOpList.clear();
     }
 
     uint32_t GetSurfaceFpsOpNum() const {
