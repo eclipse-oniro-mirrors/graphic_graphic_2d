@@ -150,7 +150,8 @@ std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr
     return "";
 }
 
-std::string FontMetaDataCollector::ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry) {
+std::string FontMetaDataCollector::ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry)
+{
     char buffer[BUF_SIZE];
     unsigned int size = BUF_SIZE;
     unsigned int len = hb_ot_name_get_utf8(face, entry.name_id, entry.language, &size, buffer);

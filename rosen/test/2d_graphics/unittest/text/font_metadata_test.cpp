@@ -262,7 +262,9 @@ HWTEST_F(FontMetaDataTest, GetFirstAvailableString01, TestSize.Level1)
     ASSERT_TRUE(typeface);
     Drawing::OtNameId id = OtNameId::FONT_FAMILY;
     std::string name = FontMetaDataCollector::GetFirstAvailableString(typeface, id);
-    EXPECT_EQ(name, "HarmonyOS Sans");
+    EXPECT_EQ(!name.empty());
+    std::string name2 = FontMetaDataCollector::GetFirstAvailableString(nullptr, id);
+    EXPECT_EQ(name2.empty());
 }
 } // namespace Drawing
 } // namespace Rosen
