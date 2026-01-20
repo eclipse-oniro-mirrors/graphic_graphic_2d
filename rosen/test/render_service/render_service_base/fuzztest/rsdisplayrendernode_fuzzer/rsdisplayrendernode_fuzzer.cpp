@@ -158,7 +158,7 @@ bool DoUpdateScreenRenderParams(const uint8_t* data)
     RSScreenRenderNode rsScreenRenderNode(id, screenId, context);
     rsScreenRenderNode.stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(id);
     rsScreenRenderNode.UpdateScreenRenderParams();
-    rsScreenRenderNode.SetDisplayGlobalZOrder(GetData<uint64_t>());
+    rsScreenRenderNode.SetDisplayGlobalZOrder(GetData<float>());
     rsScreenRenderNode.SetMainAndLeashSurfaceDirty(GetData<bool>());
     rsScreenRenderNode.SetHDRPresent(GetData<bool>());
     rsScreenRenderNode.GetSortedChildren();
