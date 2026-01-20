@@ -1397,4 +1397,331 @@ HWTEST_F(RSBaseRenderUtilTest, GenerateDrawingBitmapFormatTest, TestSize.Level2)
     ASSERT_EQ(bitmapFormat.colorType, Drawing::ColorType::COLORTYPE_RGBA_1010102);
     ASSERT_EQ(bitmapFormat.alphaType, Drawing::AlphaType::ALPHATYPE_PREMUL);
 }
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_DropFrameLevel_001
+ * @tc.desc: Test ConsumeAndUpdateBuffer with dropFrameLevel = 0 (no drop)
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_001, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer, nullptr);
+    auto producer = surfaceConsumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+
+    // Set queue size to 3
+    psurf->SetQueueSize(3);
+
+    // Produce 2 buffers
+    sptr<SurfaceBuffer> buffer1;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    GSError ret = psurf->RequestBuffer(buffer1, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+    ret = psurf->FlushBuffer(buffer1, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer2;
+    ret = psurf->RequestBuffer(buffer2, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer2, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    // Consume with dropFrameLevel = 0 (should not drop any frames)
+    auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
+    surfaceHandler.SetConsumer(surfaceConsumer);
+    surfaceHandler.SetAvailableBufferCount(2);
+    uint64_t presentWhen = 100;
+    int32_t dropFrameLevel = 0; // No drop
+
+    bool result = RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, 0, dropFrameLevel);
+
+    // Should consume buffer, no frames dropped
+    ASSERT_EQ(true, result);
+
+    // Release buffers
+    surfaceConsumer->ReleaseBuffer(buffer1, SyncFence::INVALID_FENCE);
+    surfaceConsumer->ReleaseBuffer(buffer2, SyncFence::INVALID_FENCE);
+}
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_DropFrameLevel_002
+ * @tc.desc: Test ConsumeAndUpdateBuffer with dropFrameLevel = 1 (keep latest 1 frame)
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_002, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer, nullptr);
+    auto producer = surfaceConsumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+
+    // Set queue size to 3
+    psurf->SetQueueSize(3);
+
+    // Produce 3 buffers
+    sptr<SurfaceBuffer> buffer1;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    GSError ret = psurf->RequestBuffer(buffer1, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+    ret = psurf->FlushBuffer(buffer1, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer2;
+    ret = psurf->RequestBuffer(buffer2, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer2, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer3;
+    ret = psurf->RequestBuffer(buffer3, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer3, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    // Consume with dropFrameLevel = 1 (should drop 2 frames, keep latest 1)
+    auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
+    surfaceHandler.SetConsumer(surfaceConsumer);
+    surfaceHandler.SetAvailableBufferCount(3);
+    uint64_t presentWhen = 100;
+    int32_t dropFrameLevel = 1; // Keep latest 1 frame, drop rest
+
+    bool result = RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, 0, dropFrameLevel);
+
+    // Should successfully consume after dropping frames
+    ASSERT_EQ(true, result);
+
+    // Release remaining buffer
+    surfaceConsumer->ReleaseBuffer(buffer3, SyncFence::INVALID_FENCE);
+}
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_DropFrameLevel_003
+ * @tc.desc: Test ConsumeAndUpdateBuffer with dropFrameLevel >= availableBufferCount (no drop)
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_003, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer, nullptr);
+    auto producer = surfaceConsumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+
+    // Set queue size to 3
+    psurf->SetQueueSize(3);
+
+    // Produce 2 buffers
+    sptr<SurfaceBuffer> buffer1;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    GSError ret = psurf->RequestBuffer(buffer1, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+    ret = psurf->FlushBuffer(buffer1, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer2;
+    ret = psurf->RequestBuffer(buffer2, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer2, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    // Consume with dropFrameLevel = 5 > availableBufferCount (should not drop any frames)
+    auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
+    surfaceHandler.SetConsumer(surfaceConsumer);
+    surfaceHandler.SetAvailableBufferCount(2);
+    uint64_t presentWhen = 100;
+    int32_t dropFrameLevel = 5; // Greater than available count, no drop
+
+    bool result = RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, 0, dropFrameLevel);
+
+    // Should consume buffer without dropping
+    ASSERT_EQ(true, result);
+
+    // Release buffers
+    surfaceConsumer->ReleaseBuffer(buffer1, SyncFence::INVALID_FENCE);
+    surfaceConsumer->ReleaseBuffer(buffer2, SyncFence::INVALID_FENCE);
+}
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_DropFrameLevel_004
+ * @tc.desc: Test ConsumeAndUpdateBuffer with dropFrameLevel = 2 (keep latest 2 frames)
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_004, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer, nullptr);
+    auto producer = surfaceConsumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+
+    // Set queue size to 5
+    psurf->SetQueueSize(5);
+
+    // Produce 4 buffers
+    std::vector<sptr<SurfaceBuffer>> buffers;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+
+    for (int i = 0; i < 4; i++) {
+        sptr<SurfaceBuffer> buffer;
+        GSError ret = psurf->RequestBuffer(buffer, requestFence, requestConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+        ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+        buffers.push_back(buffer);
+    }
+
+    // Consume with dropFrameLevel = 2 (should drop 2 frames, keep latest 2)
+    auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
+    surfaceHandler.SetConsumer(surfaceConsumer);
+    surfaceHandler.SetAvailableBufferCount(4);
+    uint64_t presentWhen = 100;
+    int32_t dropFrameLevel = 2; // Keep latest 2 frames, drop 2
+
+    bool result = RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, 0, dropFrameLevel);
+
+    // Should successfully consume after dropping frames
+    ASSERT_EQ(true, result);
+
+    // Release remaining buffers
+    for (auto& buffer : buffers) {
+        surfaceConsumer->ReleaseBuffer(buffer, SyncFence::INVALID_FENCE);
+    }
+}
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_DropFrameLevel_005
+ * @tc.desc: Test ConsumeAndUpdateBuffer with dropFrameByPidEnable = false (no drop even with dropFrameLevel > 0)
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_005, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer, nullptr);
+    auto producer = surfaceConsumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+
+    // Set queue size to 3
+    psurf->SetQueueSize(3);
+
+    // Produce 3 buffers
+    sptr<SurfaceBuffer> buffer1;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    GSError ret = psurf->RequestBuffer(buffer1, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+    ret = psurf->FlushBuffer(buffer1, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer2;
+    ret = psurf->RequestBuffer(buffer2, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer2, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer3;
+    ret = psurf->RequestBuffer(buffer3, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer3, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    // Consume with dropFrameByPidEnable = false (should not drop even with dropFrameLevel = 1)
+    auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
+    surfaceHandler.SetConsumer(surfaceConsumer);
+    surfaceHandler.SetAvailableBufferCount(3);
+    uint64_t presentWhen = 100;
+    int32_t dropFrameLevel = 1;
+    bool dropFrameByPidEnable = false; // Disable drop by PID
+
+    bool result = RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen,
+                                                           dropFrameByPidEnable, 0, dropFrameLevel);
+
+    // Should consume without dropping frames
+    ASSERT_EQ(true, result);
+
+    // Release buffers
+    surfaceConsumer->ReleaseBuffer(buffer1, SyncFence::INVALID_FENCE);
+    surfaceConsumer->ReleaseBuffer(buffer2, SyncFence::INVALID_FENCE);
+    surfaceConsumer->ReleaseBuffer(buffer3, SyncFence::INVALID_FENCE);
+}
+
+/*
+ * @tc.name: ConsumeAndUpdateBuffer_DropFrameLevel_006
+ * @tc.desc: Test ConsumeAndUpdateBuffer with negative dropFrameLevel (should not drop)
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_006, TestSize.Level2)
+{
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    const auto& surfaceConsumer = rsSurfaceRenderNode->GetRSSurfaceHandler()->GetConsumer();
+    ASSERT_NE(surfaceConsumer, nullptr);
+    auto producer = surfaceConsumer->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+
+    // Set queue size to 3
+    psurf->SetQueueSize(3);
+
+    // Produce 2 buffers
+    sptr<SurfaceBuffer> buffer1;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    GSError ret = psurf->RequestBuffer(buffer1, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+    ret = psurf->FlushBuffer(buffer1, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    sptr<SurfaceBuffer> buffer2;
+    ret = psurf->RequestBuffer(buffer2, requestFence, requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    ret = psurf->FlushBuffer(buffer2, flushFence, flushConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+
+    // Consume with negative dropFrameLevel (should not drop any frames)
+    auto& surfaceHandler = *(rsSurfaceRenderNode->GetRSSurfaceHandler());
+    surfaceHandler.SetConsumer(surfaceConsumer);
+    surfaceHandler.SetAvailableBufferCount(2);
+    uint64_t presentWhen = 100;
+    int32_t dropFrameLevel = -1; // Negative, should not drop
+
+    bool result = RSBaseRenderUtil::ConsumeAndUpdateBuffer(surfaceHandler, presentWhen, true, 0, dropFrameLevel);
+
+    // Should consume buffer without dropping
+    ASSERT_EQ(true, result);
+
+    // Release buffers
+    surfaceConsumer->ReleaseBuffer(buffer1, SyncFence::INVALID_FENCE);
+    surfaceConsumer->ReleaseBuffer(buffer2, SyncFence::INVALID_FENCE);
+}
+
 } // namespace OHOS::Rosen
