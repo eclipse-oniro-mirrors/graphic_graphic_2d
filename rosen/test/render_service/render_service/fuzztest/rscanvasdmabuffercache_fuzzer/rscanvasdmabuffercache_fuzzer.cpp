@@ -14,7 +14,7 @@
  */
 
 #include "rscanvasdmabuffercache_fuzzer.h"
-
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #include <cstddef>
 #include <cstdint>
 
@@ -179,3 +179,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
     return 0;
 }
+#endif
