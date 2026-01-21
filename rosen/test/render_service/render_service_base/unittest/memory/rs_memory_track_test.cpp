@@ -330,12 +330,11 @@ HWTEST_F(RSMemoryTrackTest, GetNodeMemoryOfPid003, testing::ext::TestSize.Level1
 HWTEST_F(RSMemoryTrackTest, GetNodeMemoryOfPid004, testing::ext::TestSize.Level1)
 {
     pid_t testPid = -5;
-    pid_t nonExistendPid = -6;
+    pid_t nonExistentPid = -6;
     size_t registeredSize = 1000;
     MemoryTrack::Instance().RegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
-    size_t result = MemoryTrack::Instance().GetNodeMemoryOfPid(nonExistendPid, MEMORY_TYPE::MEM_RENDER_NODE);
+    size_t result = MemoryTrack::Instance().GetNodeMemoryOfPid(nonExistentPid, MEMORY_TYPE::MEM_RENDER_NODE);
     EXPECT_EQ(result, 0);
-    MemoryTrack::Instance().UnRegisterNodeMem(testPid, registeredSize, MEMORY_TYPE::MEM_RENDER_NODE);
 }
 
 /**
@@ -377,6 +376,7 @@ HWTEST_F(RSMemoryTrackTest, AddNodeRecordTest001, testing::ext::TestSize.Level1)
     MemoryTrack::Instance().AddNodeRecord(id, info);
     MemoryGraphic result = MemoryTrack::Instance().CountRSMemory(ExtractPid(id));
     EXPECT_GT(result.GetCpuMemorySize(), 0);
+    MemoryTrack::Instance().RemoveNodeRecord(id);
 }
 
 /**
@@ -736,7 +736,7 @@ HWTEST_F(RSMemoryTrackTest, FdOverReport, testing::ext::TestSize.Level1)
     pid_t pid = 1234;
     std::string hidumperReport = "report";
     MemoryTrack::Instance().FdOverReport(pid, "RENDER_MEMORY_OVER_WARNING", hidumperReport);
-    std::string filePath = "/data/service/el0/render_service/renderservice_fdem.txt";
+    std::string filePath = "/data/service/el0/render_service/renderservice_fdmem.txt";
     ASSERT_TRUE(std::ifstream(filePath).good());
 }
 
@@ -750,7 +750,7 @@ HWTEST_F(RSMemoryTrackTest, WriteInfoToFile, testing::ext::TestSize.Level1)
 {
     std::string meminfo = "info";
     std::string hidumperReport = "";
-    std::string filePath = "/data/service/el0/render_service/renderservice_fdem.txt";
+    std::string filePath = "/data/service/el0/render_service/renderservice_fdmem.txt";
     MemoryTrack::Instance().WriteInfoToFile(filePath, meminfo, hidumperReport);
     ASSERT_TRUE(std::ifstream(filePath).good());
 }
@@ -934,6 +934,19 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsTest002, testing::ext::TestSi
 }
 
 /**
+ * @tc.name: RemovePidRecordTest001
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryTrackTest, RemovePidRecordTest001, testing::ext::TestSize.Level1)
+{
+   pid_t pidTest = -1;
+   MemoryTrack::Instance().RemovePidRecord(pidTest);
+   EXPECT_EQ(-1, pidTest); //for test
+}
+
+/**
  * @tc.name: RemoveNodeFromMapTest001
  * @tc.desc: test
  * @tc.type: FUNC
@@ -942,7 +955,7 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsTest002, testing::ext::TestSi
 HWTEST_F(RSMemoryTrackTest, RemoveNodeFromMapTest001, testing::ext::TestSize.Level1)
 {
     MemoryInfo info = {.pid = -1, .size = sizeof(10)}; //for test
-    const NodeId id = 1; // fot test
+    const NodeId id = -1; // fot test
     MemoryTrack& test1 = MemoryTrack::Instance();
     test1.AddNodeRecord(id, info);
     pid_t pidTest;
