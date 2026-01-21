@@ -539,6 +539,10 @@ void RSRenderNodeDrawable::CheckRegionAndDrawWithFilter(std::vector<FilterNodeIn
     if (!curDrawingCacheRoot_ || begin == filterInfoVec.end()) {
         return;
     }
+    curDrawingCacheRoot_->SetLastDrawnFilterNodeId(GetId());
+    Drawing::AutoCanvasRestore arc(canvas, true);
+    DrawBackgroundWithOutSaveAll(canvas, params.GetBounds());
+    curDrawingCacheRoot_->ReduceFilterNodeSize();
     if (params.IsExcludedFromNodeGroup()) {
         SetDrawExcludedSubTreeForCache(true);
         RS_TRACE_NAME_FMT("Draw exclueded subtree id:%" PRIu64, GetId());
@@ -546,10 +550,6 @@ void RSRenderNodeDrawable::CheckRegionAndDrawWithFilter(std::vector<FilterNodeIn
         SetDrawExcludedSubTreeForCache(false);
         return;
     }
-    curDrawingCacheRoot_->SetLastDrawnFilterNodeId(GetId());
-    Drawing::AutoCanvasRestore arc(canvas, true);
-    DrawBackgroundWithOutSaveAll(canvas, params.GetBounds());
-    curDrawingCacheRoot_->ReduceFilterNodeSize();
     Drawing::Rect dst;
     auto matrix = begin->matrix_;
     matrix.MapRect(dst, params.GetBounds());

@@ -164,8 +164,7 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckCacheTypeAndDrawTest001, TestSize.Level1
     drawable->CheckCacheTypeAndDraw(canvas, params);
     ASSERT_FALSE(drawable->HasFilterOrEffect(params));
     drawable->drawCmdIndex_.shadowIndex_ = 1;
-    Drawing::RectI rect;
-    params.SetShadowRect(rect);
+    params.SetShadowRect({0, 0, 10, 10});
     drawable->CheckCacheTypeAndDraw(canvas, params);
     ASSERT_TRUE(drawable->HasFilterOrEffect(params));
     RSRenderNodeDrawable::isOffScreenWithClipHole_ = true;

@@ -318,8 +318,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, HasFilterOrEffectTest, TestSize.Level1)
     ret = adapter->HasFilterOrEffect(params);
     EXPECT_TRUE(ret);
 
-    Drawing::RectI rect;
-    params.SetShadowRect(rect);
+    params.SetShadowRect({0, 0, 10, 10});
     adapter->drawCmdIndex_.materialFilterIndex_ = -1;
     adapter->drawCmdIndex_.shadowIndex_ = 1;
     ret = adapter->HasFilterOrEffect(params);
