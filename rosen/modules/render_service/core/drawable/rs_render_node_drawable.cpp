@@ -549,7 +549,6 @@ void RSRenderNodeDrawable::CheckRegionAndDrawWithFilter(std::vector<FilterNodeIn
     curDrawingCacheRoot_->SetLastDrawnFilterNodeId(GetId());
     Drawing::AutoCanvasRestore arc(canvas, true);
     DrawBackgroundWithOutSaveAll(canvas, params.GetBounds());
-    CheckShadowRectAndDrawBackground(canvas, params);
     curDrawingCacheRoot_->ReduceFilterNodeSize();
     Drawing::Rect dst;
     auto matrix = begin->matrix_;
