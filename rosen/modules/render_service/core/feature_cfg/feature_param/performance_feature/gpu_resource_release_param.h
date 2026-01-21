@@ -13,33 +13,27 @@
  * limitations under the License.
  */
 
-#ifndef SOCPERF_PARAM_H
-#define SOCPERF_PARAM_H
+#ifndef GPU_RESOURCE_RELEASE_PARAM_H
+#define GPU_RESOURCE_RELEASE_PARAM_H
 
 #include "feature_param.h"
 
 namespace OHOS::Rosen {
-class SOCPerfParam : public FeatureParam {
+class DeeplyRelGpuResParam : public FeatureParam {
 public:
-    static SOCPerfParam& GetInstance();
-    SOCPerfParam() = default;
-    ~SOCPerfParam() = default;
+    static DeeplyRelGpuResParam& GetInstance();
+    DeeplyRelGpuResParam() = default;
+    ~DeeplyRelGpuResParam() = default;
 
-    bool IsMultilayersSOCPerfEnable() const;
-    bool IsUnlockSOCPerfEnable() const;
-    bool IsBlurSOCPerfEnable() const;
+    bool IsDeeplyRelGpuResEnable() const;
 
 protected:
-    void SetMultilayersSOCPerfEnable(bool isMultilayersSOCPerfEnable);
-    void SetUnlockSOCPerfEnable(bool isUnlockSOCPerfEnable);
-    void SetBlurSOCPerfEnable(bool isBlurSOCPerfEnable);
+    void SetDeeplyRelGpuResEnable(bool isDeeplyRelGpuResEnable);
 
 private:
-    bool isMultilayersSOCPerfEnable_ = false;
-    bool isUnlockSOCPerfEnable_ = true;
-    bool isBlurSOCPerfEnable_ = true;
+    bool isDeeplyRelGpuResEnable_ = true;
 
-    friend class SOCPerfParamParse;
+    friend class DeeplyRelGpuResParamParse;
 };
 } // namespace OHOS::Rosen
-#endif // SOCPERF_PARAM_H
+#endif // GPU_RESOURCE_RELEASE_PARAM_H
