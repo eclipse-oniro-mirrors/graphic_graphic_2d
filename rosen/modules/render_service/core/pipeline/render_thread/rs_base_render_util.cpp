@@ -968,50 +968,6 @@ void RSBaseRenderUtil::MergeBufferDamages(Rect& surfaceDamage, const std::vector
     surfaceDamage = { damage.left_, damage.top_, damage.width_, damage.height_ };
 }
 
-// Drop frames by level: keep latest N frames, drop the rest
-// Returns the number of frames successfully dropped
-int32_t RSBaseRenderUtil::DropFramesByLevel(RSSurfaceHandler& surfaceHandler,
-    const sptr<IConsumerSurface>& consumer, const DropFrameConfig& config)
-{
-    // Check if conditions are met for dropping frames
-    bool acqiureWithPTSEnable =
-        RSUniRenderJudgement::IsUniRender() && RSSystemParameters::GetControlBufferConsumeEnabled();
-    if (!acqiureWithPTSEnable || !config.ShouldDrop()) {
-        return 0;
-    }
-
-    int32_t availableCount = surfaceHandler.GetAvailableBufferCount();
-    int32_t dropCount = availableCount - config.level;
-
-    if (dropCount <= 0) {
-        return 0;  // No frames to drop
-    }
-
-    int32_t droppedCount = 0;
-    while (dropCount > 0) {
-        RS_TRACE_NAME_FMT("DropFrameCount %{public}d", dropCount);
-        IConsumerSurface::AcquireBufferReturnValue returnValue;
-        int32_t ret = consumer->AcquireBuffer(returnValue, CONSUME_DIRECTLY, false);
-        if (ret != SURFACE_ERROR_OK || returnValue.buffer == nullptr) {
-            RS_LOGW("RSBaseRenderUtil::DropFramesByLevel(node: %{public}" PRIu64
-                "): AcquireBuffer failed(ret: %{public}d)", surfaceHandler.GetNodeId(), ret);
-            break;
-        }
-        ret = consumer->ReleaseBuffer(returnValue.buffer, returnValue.fence);
-        if (ret != SURFACE_ERROR_OK) {
-            RS_LOGW("RSBaseRenderUtil::DropFramesByLevel(node: %{public}" PRIu64
-                "): ReleaseBuffer failed(ret: %{public}d)", surfaceHandler.GetNodeId(), ret);
-        }
-        RS_LOGD("RsDebug RSBaseRenderUtil::DropFramesByLevel(node: %{public}" PRIu64
-            "), drop one frame, dropFrameLevel=%{public}d", surfaceHandler.GetNodeId(), config.level);
-        droppedCount++;
-        dropCount--;
-    }
-
-    surfaceHandler.SetAvailableBufferCount(static_cast<int32_t>(consumer->GetAvailableBufferCount()));
-    return droppedCount;
-}
-
 CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen,
     const DropFrameConfig& dropFrameConfig, uint64_t parentNodeId, bool dropFrameByScreenFrozen)
 {
@@ -1027,8 +983,13 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
     bool acqiureWithPTSEnable =
         RSUniRenderJudgement::IsUniRender() && RSSystemParameters::GetControlBufferConsumeEnabled();
 
-    // Drop frames based on dropFrameLevel if enabled
-    DropFramesByLevel(surfaceHandler, consumer, dropFrameConfig);
+    // Set drop frame level, AcquireBuffer will automatically drop old frames
+    // Only apply when acqiureWithPTSEnable is true (same as original DropFramesByLevel logic)
+    if (dropFrameConfig.ShouldDrop() && acqiureWithPTSEnable) {
+        consumer->SetDropFrameLevel(dropFrameConfig.level);
+        RS_LOGD("RsDebug RSBaseRenderUtil::ConsumeAndUpdateBuffer(node: %{public}" PRIu64
+            "), set drop frame level=%{public}d", surfaceHandler.GetNodeId(), dropFrameConfig.level);
+    }
 
     // check presentWhen conversion validation range
     bool presentWhenValid = presentWhen <= static_cast<uint64_t>(INT64_MAX);
@@ -1043,6 +1004,12 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
     if (surfaceHandler.GetHoldBuffer() == nullptr) {
         IConsumerSurface::AcquireBufferReturnValue returnValue;
         int32_t ret = consumer->AcquireBuffer(returnValue, static_cast<int64_t>(acquireTimeStamp), false);
+
+        // Reset drop frame level after acquire to avoid affecting subsequent acquires
+        if (dropFrameConfig.ShouldDrop() && acqiureWithPTSEnable) {
+            consumer->SetDropFrameLevel(0);
+        }
+
         if (returnValue.buffer == nullptr || ret != SURFACE_ERROR_OK) {
             auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
             if (LIKELY(!dropFrameByScreenFrozen) && UNLIKELY(holdReturnValue)) {

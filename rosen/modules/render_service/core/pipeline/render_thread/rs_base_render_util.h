@@ -176,11 +176,6 @@ public:
 
     static GSError DropFrameProcess(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen = 0);
 
-    // Drop frames by level: keep latest N frames, drop the rest
-    // Returns the number of frames successfully dropped
-    static int32_t DropFramesByLevel(RSSurfaceHandler& surfaceHandler,
-        const sptr<IConsumerSurface>& consumer, const DropFrameConfig& config);
-
     static bool ConsumeAndUpdateBuffer(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen = CONSUME_DIRECTLY,
         const DropFrameConfig& dropFrameConfig = DropFrameConfig::NoDrop(),
         uint64_t parentNodeId = 0, bool dropFrameByScreenFrozen = false);

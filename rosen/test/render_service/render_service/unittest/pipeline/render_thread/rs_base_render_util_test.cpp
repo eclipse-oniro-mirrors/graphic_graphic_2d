@@ -18,6 +18,7 @@
 #include "parameters.h"
 #include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/rs_test_util.h"
+#include "pipeline/rs_uni_render_judgement.h"
 #include "surface_buffer_impl.h"
 #include "system/rs_system_parameters.h"
 
@@ -95,6 +96,10 @@ private:
         -0.598, 0.118,  -0.521, 1.0, 0.0,
         0.0,    0.0,    0.0,    1.0, 0.0
     };
+
+    // Save original values for restoration
+    static inline UniRenderEnabledType originalUniRenderType_;
+    static inline std::string originalControlBufferConsume_;
 };
 std::shared_ptr<RSSurfaceRenderNode> node_ = nullptr;
 
@@ -112,8 +117,23 @@ void RSBaseRenderUtilTest::TearDownTestCase()
     node_ = nullptr;
 }
 
-void RSBaseRenderUtilTest::SetUp() {}
-void RSBaseRenderUtilTest::TearDown() {}
+void RSBaseRenderUtilTest::SetUp()
+{
+    // Save original values
+    originalUniRenderType_ = RSUniRenderJudgement::uniRenderEnabledType_;
+    originalControlBufferConsume_ = system::GetParameter("persist.sys.graphic.controlBufferConsume.Enabled", "1");
+
+    // Enable UniRender and ControlBufferConsume for DropFrameLevel tests
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    system::SetParameter("persist.sys.graphic.controlBufferConsume.Enabled", "1");
+}
+
+void RSBaseRenderUtilTest::TearDown()
+{
+    // Restore original values
+    RSUniRenderJudgement::uniRenderEnabledType_ = originalUniRenderType_;
+    system::SetParameter("persist.sys.graphic.controlBufferConsume.Enabled", originalControlBufferConsume_);
+}
 
 void RSBaseRenderUtilTest::CompareMatrix(float mat1[], float mat2[])
 {
