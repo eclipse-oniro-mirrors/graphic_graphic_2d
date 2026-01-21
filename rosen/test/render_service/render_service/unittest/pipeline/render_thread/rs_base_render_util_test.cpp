@@ -1401,7 +1401,7 @@ HWTEST_F(RSBaseRenderUtilTest, GetRotationLockParamTest001, TestSize.Level2)
     screenManager->defaultScreenId_ = screenId;
 
     auto rsContext = std::make_shared<RSContext>();
-    auto node = std::make_shared<RSScreenRenderNode>(5, rsContext);
+    auto node = std::make_shared<RSSurfaceRenderNode>(5, rsContext);
     node->InitRenderParams();
     std::shared_ptr<RSScreenRenderNode> screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
     screenNode->InitRenderParams();
