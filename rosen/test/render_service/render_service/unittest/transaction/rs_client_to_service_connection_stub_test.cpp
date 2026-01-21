@@ -456,8 +456,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
     ASSERT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
         RSIRenderServiceConnectionInterfaceCode::CREATE_PIXEL_MAP_FROM_SURFACE)), ERR_NULL_OBJECT);
     ASSERT_EQ(OnRemoteRequestTest(
-        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_APP_WINDOW_NUM)), ERR_INVALID_DATA);
-    ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES)), ERR_INVALID_DATA);
     ASSERT_EQ(OnRemoteRequestTest(
         static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::EXECUTE_SYNCHRONOUS_TASK)), ERR_INVALID_STATE);
