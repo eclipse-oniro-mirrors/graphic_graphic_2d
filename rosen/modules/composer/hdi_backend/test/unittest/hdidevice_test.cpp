@@ -574,7 +574,7 @@ HWTEST_F(HdiDeviceTest, GetDisplayClientTargetProperty, Function | MediumTest| L
     EXPECT_EQ(hdiDeviceMock_->GetDisplayClientTargetProperty(screenId, pixelFormat, dataspace),
               GRAPHIC_DISPLAY_SUCCESS);
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetDisplayClientTargetProperty(screenId, pixelFormat, dataspace),
-              GRAPHIC_DISPLAY_NOT_SUPPORT);
+              GRAPHIC_DISPLAY_FAILURE);
 }
 } // namespace
 } // namespace Rosen
