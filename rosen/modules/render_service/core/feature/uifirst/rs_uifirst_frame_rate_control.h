@@ -23,7 +23,6 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "variable_frame_rate/rs_variable_frame_rate.h"
 #include "transaction/rs_render_service_client.h"
-#include <mutex>
 
 namespace OHOS::Rosen {
 class RSUifirstFrameRateControl {
