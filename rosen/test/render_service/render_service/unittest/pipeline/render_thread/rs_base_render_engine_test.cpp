@@ -403,7 +403,6 @@ HWTEST_F(RSBaseRenderEngineUnitTest, GetCanvasColorSpace002, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
-
 HWTEST_F(RSBaseRenderEngineUnitTest, CancelCurrentFrame, TestSize.Level1)
 {
     auto csurf = IConsumerSurface::Create();
@@ -669,11 +668,11 @@ HWTEST_F(RSBaseRenderEngineUnitTest, NeedBilinearInterpolation, TestSize.Level1)
 #ifdef USE_VIDEO_PROCESSING_ENGINE
 /**
  * @tc.name: ColorSpaceConvertorTest001
- * @tc.desc: Test ColorSpaceConvertorTest:
+ * @tc.desc: Test ColorSpaceConvertor
  * @tc.type: FUNC
  * @tc.require:issueIC1RNF
  */
-HWTEST_F(RSBaseRenderEngineTest, ColorSpaceConvertorTest, TestSize.Level1)
+HWTEST_F(RSBaseRenderEngineUnitTest, ColorSpaceConvertorTest001, TestSize.Level1)
 {
     auto renderEngine = std::make_shared<RSRenderEngine>();
     renderEngine->Init();
@@ -681,7 +680,7 @@ HWTEST_F(RSBaseRenderEngineTest, ColorSpaceConvertorTest, TestSize.Level1)
     BufferDrawParam params;
     params.isHdrRedraw = false;
     params.isTmoNitsFixed = false;
-    parmas.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    params.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
     Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter parameter;
     ASSERT_TRUE(renderEngine->SetColorSpaceConverterDisplayParameter(params, parameter));
 
@@ -689,7 +688,7 @@ HWTEST_F(RSBaseRenderEngineTest, ColorSpaceConvertorTest, TestSize.Level1)
     ASSERT_TRUE(inputShader);
 
     RSPaintFilterCanvas::HDRProperties hdrProperties = {
-        .isHDREnabledVirtualScreen = false;
+        .isHDREnabledVirtualScreen = false
     };
     renderEngine->ColorSpaceConvertor(inputShader, params, parameter, hdrProperties);
     hdrProperties.isHDREnabledVirtualScreen = true;
