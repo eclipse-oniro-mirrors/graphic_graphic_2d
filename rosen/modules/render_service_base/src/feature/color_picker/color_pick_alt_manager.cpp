@@ -18,16 +18,11 @@
 #include <chrono>
 #include <cstdint>
 
-#include "feature/color_picker/rs_color_picker_thread.h"
-#include "feature/color_picker/rs_hetero_color_picker.h"
-
 #include "common/rs_optional_trace.h"
-#include "drawable/rs_property_drawable_utils.h"
-#include "platform/common/rs_log.h"
+#include "feature/color_picker/rs_hetero_color_picker.h"
 
 namespace OHOS::Rosen {
 namespace {
-constexpr int64_t TASK_DELAY_TIME = 16; // 16ms
 constexpr int TRACE_LEVEL_TWO = 2;
 
 inline uint64_t NowMs()
@@ -93,25 +88,18 @@ void ColorPickAltManager::ScheduleColorPick(RSPaintFilterCanvas& canvas, const D
     }
 
     auto weakThis = weak_from_this();
-    RSColorPickerThread::Instance().PostTask(
-        [snapshot, nodeId, weakThis]() {
-            auto manager = weakThis.lock();
-            if (IsNull(manager.get(), "ColorPickAltManager manager not valid, return")) {
-                return;
-            }
-#if defined(RS_ENABLE_UNI_RENDER)
-            auto gpuCtx = RSColorPickerThread::Instance().GetShareGPUContext();
-#else
-            auto gpuCtx = nullptr;
-#endif
-            Drawing::ColorQuad colorPicked;
-            if (RSPropertyDrawableUtils::PickColor(gpuCtx, snapshot, colorPicked)) {
-                manager->HandleColorUpdate(colorPicked, nodeId);
-            } else {
-                RS_LOGE("ColorPickAltManager: PickColor failed");
-            }
-        },
-        TASK_DELAY_TIME);
+    auto imageInfo = drawingSurface->GetImageInfo();
+    auto colorSpace = imageInfo.GetColorSpace();
+    Drawing::BitmapFormat bitmapFormat = { imageInfo.GetColorType(), imageInfo.GetAlphaType() };
+    Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+    auto backendTexture = snapshot->GetBackendTexture(false, &origin);
+    ColorPickerInfo* colorPickerInfo = new ColorPickerInfo(colorSpace, bitmapFormat, backendTexture, nodeId, weakThis);
+
+    Drawing::FlushInfo drawingFlushInfo;
+    drawingFlushInfo.backendSurfaceAccess = true;
+    drawingFlushInfo.finishedProc = [](void* context) { ColorPickerInfo::PickColor(context); };
+    drawingFlushInfo.finishedContext = colorPickerInfo;
+    drawingSurface->Flush(&drawingFlushInfo);
 }
 
 void ColorPickAltManager::HandleColorUpdate(Drawing::ColorQuad newColor, NodeId nodeId)
