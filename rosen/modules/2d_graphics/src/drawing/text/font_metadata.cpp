@@ -151,7 +151,6 @@ std::string FontMetaDataCollector::GetFirstAvailableString(const std::shared_ptr
             return ExtractString(hbFace.get(), entries[i]);
         }
     }
-    return "";
 }
 
 std::string FontMetaDataCollector::ExtractString(hb_face_t* face, const hb_ot_name_entry_t& entry)
