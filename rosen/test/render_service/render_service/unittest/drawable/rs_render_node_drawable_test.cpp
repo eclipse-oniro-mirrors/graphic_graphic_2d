@@ -792,10 +792,12 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckRegionAndDrawWithFilter, TestSize.Level1
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
     Drawing::Canvas canvas;
     RSRenderParams params(RSRenderNodeDrawableTest::id);
-    Drawing::RectI rect;
+    Drawing::RectI rect(0, 0, 100, 100);
     Drawing::Matrix matrix;
     const std::vector<RSRenderNodeDrawableAdapter::FilterNodeInfo> filterInfoVec = {
-        RSRenderNodeDrawableAdapter::FilterNodeInfo(0, matrix, { rect })
+        RSRenderNodeDrawableAdapter::FilterNodeInfo(0, matrix, { rect }),
+        RSRenderNodeDrawableAdapter::FilterNodeInfo(1, matrix, { rect }),
+        RSRenderNodeDrawableAdapter::FilterNodeInfo(2, matrix, { rect })
     };
     drawable->filterInfoVec_ = filterInfoVec;
     auto begin = std::find_if(filterInfoVec.begin(), filterInfoVec.end(),
@@ -807,14 +809,15 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckRegionAndDrawWithFilter, TestSize.Level1
     auto rootRenderNode = std::make_shared<RSRenderNode>(id);
     auto rootDrawable = RSRenderNodeDrawable::OnGenerate(rootRenderNode);
     drawable->curDrawingCacheRoot_ = rootDrawable;
+    params.ExcludedFromNodeGroup(true);
     drawable->CheckRegionAndDrawWithFilter(begin, filterInfoVec, canvas, params);
     ASSERT_FALSE(drawable->filterInfoVec_.empty());
 
+    params.ExcludedFromNodeGroup(false);
+    drawable->CheckRegionAndDrawWithFilter(begin, filterInfoVec, canvas, params);
     drawable->filterInfoVec_.clear();
     ASSERT_TRUE(drawable->filterInfoVec_.empty());
     ASSERT_NE(drawable->GetRenderParams(), nullptr);
-    drawable->GetRenderParams()->ExcludedFromNodeGroup(true);
-    drawable->CheckRegionAndDrawWithFilter(begin, filterInfoVec, canvas, params);
 }
 
 /**

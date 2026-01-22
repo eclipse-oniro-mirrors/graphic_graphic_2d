@@ -414,6 +414,7 @@ CM_INLINE void RSRenderNodeDrawable::CheckCacheTypeAndDraw(
             return;
         } else if (HasFilterOrEffect(params) && params.GetForegroundFilterCache() == nullptr) {
             // clip hole for filter/shadow
+            Drawing::AutoCanvasRestore arc(canvas, true);
             SkipDrawBackGroundAndClipHoleForBlur(canvas, params);
             DrawContent(canvas, params.GetFrameRect());
             DrawChildren(canvas, params.GetBounds());
@@ -540,8 +541,6 @@ void RSRenderNodeDrawable::CheckRegionAndDrawWithFilter(std::vector<FilterNodeIn
         return;
     }
     curDrawingCacheRoot_->SetLastDrawnFilterNodeId(GetId());
-    Drawing::AutoCanvasRestore arc(canvas, true);
-    DrawBackgroundWithOutSaveAll(canvas, params.GetBounds());
     curDrawingCacheRoot_->ReduceFilterNodeSize();
     if (params.IsExcludedFromNodeGroup()) {
         SetDrawExcludedSubTreeForCache(true);
@@ -550,6 +549,8 @@ void RSRenderNodeDrawable::CheckRegionAndDrawWithFilter(std::vector<FilterNodeIn
         SetDrawExcludedSubTreeForCache(false);
         return;
     }
+    Drawing::AutoCanvasRestore arc(canvas, true);
+    DrawBackgroundWithOutSaveAll(canvas, params.GetBounds());
     Drawing::Rect dst;
     auto matrix = begin->matrix_;
     matrix.MapRect(dst, params.GetBounds());

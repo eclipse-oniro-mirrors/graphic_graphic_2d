@@ -570,6 +570,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, SkipDrawBackGroundAndClipHoleForBlurTest
     EXPECT_TRUE(adapter->drawCmdList_.empty());
     std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
     adapter->drawCmdList_.emplace_back(rsDrawable);
+    adapter->SkipDrawBackGroundAndClipHoleForBlur(canvas, params);
     EXPECT_FALSE(adapter->drawCmdList_.empty());
 }
 
