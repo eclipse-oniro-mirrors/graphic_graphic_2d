@@ -1964,6 +1964,7 @@ uint32_t RSPaintFilterCanvasBase::SaveClipRRect(std::shared_ptr<ClipRRectData> d
             return;
         }
         canvas.Save();
+        canvas.ResetClip();
         canvas.ClipRoundRect(clipRRectData->rRect_, Drawing::ClipOp::DIFFERENCE, true);
         canvas.ResetMatrix();
         for (auto& corner : clipRRectData->data_) {
