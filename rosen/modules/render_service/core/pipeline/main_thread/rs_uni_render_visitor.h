@@ -282,7 +282,6 @@ private:
     void UpdateSpecialLayersRecord(RSSurfaceRenderNode& node);
     void UpdateBlackListRecord(RSSurfaceRenderNode& node);
     void DealWithSpecialLayer(RSSurfaceRenderNode& node);
-  
     void SendRcdMessage(RSScreenRenderNode& node);
 
     bool ForcePrepareSubTree()
