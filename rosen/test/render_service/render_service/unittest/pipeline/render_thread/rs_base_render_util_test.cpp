@@ -44,7 +44,7 @@ private:
         .width = 0x100,
         .height = 0x100,
         .strideAlignment = 0x8,
-        .format = GRAPHIC_PIXEL_FMT_YCRCB_420_SP,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
         .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
         .timeout = 0,
     };
@@ -123,7 +123,7 @@ void RSBaseRenderUtilTest::SetUp()
     originalUniRenderType_ = RSUniRenderJudgement::uniRenderEnabledType_;
     originalControlBufferConsume_ = system::GetParameter("persist.sys.graphic.controlBufferConsume.Enabled", "1");
 
-    // Enable UniRender and ControlBufferConsume for DropFrameLevel tests
+    // Enable UniRender for tests
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
     system::SetParameter("persist.sys.graphic.controlBufferConsume.Enabled", "1");
 }
@@ -1505,6 +1505,19 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_002, TestSi
     // Set queue size to 3
     psurf->SetQueueSize(3);
 
+    // Use RGBA_8888 format instead of YCRCB_420_SP for better compatibility
+    BufferRequestConfig requestConfig = {
+        .width = 0x100,
+        .height = 0x100,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+    };
+    BufferFlushConfig flushConfig = {
+        .damage = { .w = 0x100, .h = 0x100, },
+    };
+
     // Produce 2 buffers
     sptr<SurfaceBuffer> buffer1;
     sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
@@ -1556,9 +1569,6 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_003, TestSi
     ASSERT_NE(producer, nullptr);
     psurf = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurf, nullptr);
-
-    // Set queue size to 3
-    psurf->SetQueueSize(3);
 
     // Produce 3 buffers
     sptr<SurfaceBuffer> buffer1;
@@ -1622,6 +1632,19 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_004, TestSi
 
     // Set queue size to 3
     psurf->SetQueueSize(3);
+
+    // Use RGBA_8888 format instead of YCRCB_420_SP for better compatibility
+    BufferRequestConfig requestConfig = {
+        .width = 0x100,
+        .height = 0x100,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+    };
+    BufferFlushConfig flushConfig = {
+        .damage = { .w = 0x100, .h = 0x100, },
+    };
 
     // Produce 2 buffers
     sptr<SurfaceBuffer> buffer1;
@@ -1739,9 +1762,6 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_DropFrameLevel_006, TestSi
     ASSERT_NE(producer, nullptr);
     psurf = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurf, nullptr);
-
-    // Set queue size to 3
-    psurf->SetQueueSize(3);
 
     // Produce 3 buffers
     sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;

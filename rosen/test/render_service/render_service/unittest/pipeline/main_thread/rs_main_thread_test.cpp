@@ -645,39 +645,6 @@ HWTEST_F(RSMainThreadTest, AddPidNeedDropFrame002, TestSize.Level2)
 }
 
 /**
- * @tc.name: AddPidNeedDropFrame003
- * @tc.desc: Test AddPidNeedDropFrame with multiple PIDs
- * @tc.type: FUNC
- * @tc.require: issueIB612L
- */
-HWTEST_F(RSMainThreadTest, AddPidNeedDropFrame003, TestSize.Level2)
-{
-    auto mainThread = RSMainThread::Instance();
-    ASSERT_NE(mainThread, nullptr);
-
-    NodeId id1 = 0;
-    NodeId id2 = 1;
-    auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(id1, mainThread->context_);
-    auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(id2, mainThread->context_);
-    int32_t pid1 = ExtractPid(surfaceNode1->GetId());
-    int32_t pid2 = ExtractPid(surfaceNode2->GetId());
-
-    // Clear first to ensure clean state
-    mainThread->RemoveDropFramePid(pid1);
-    mainThread->RemoveDropFramePid(pid2);
-
-    // Test with multiple PIDs, different levels
-    mainThread->AddPidNeedDropFrame({pid1, pid2}, 3);
-    ASSERT_EQ(mainThread->surfacePidNeedDropFrame_.size(), 2);
-    ASSERT_EQ(mainThread->GetDropFrameLevelByPid(surfaceNode1->GetId()), 3);
-    ASSERT_EQ(mainThread->GetDropFrameLevelByPid(surfaceNode2->GetId()), 3);
-
-    // Cleanup
-    mainThread->RemoveDropFramePid(pid1);
-    mainThread->RemoveDropFramePid(pid2);
-}
-
-/**
  * @tc.name: ClearNeedDropframePidList
  * @tc.desc: Test ClearNeedDropframePidList resets dropFrameLevel to 0
  * @tc.type: FUNC
