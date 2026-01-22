@@ -88,7 +88,6 @@ bool RSUifirstFrameRateControl::JudgeMultiSubSurface(const RSSurfaceRenderNode& 
 
 bool RSUifirstFrameRateControl::GetUifirstFrameDropInternal(int frameInterval)
 {
-    std::lock_guard<std::mutex> lock(incrementCallCount_);
     callCount_++;
     if (callCount_ % (frameInterval + 1) == 0) {
         callCount_ = 0;
