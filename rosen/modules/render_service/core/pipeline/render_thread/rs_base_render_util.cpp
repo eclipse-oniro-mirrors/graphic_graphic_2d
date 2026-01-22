@@ -982,9 +982,6 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
 
     bool acqiureWithPTSEnable =
         RSUniRenderJudgement::IsUniRender() && RSSystemParameters::GetControlBufferConsumeEnabled();
-
-    // Set drop frame level, AcquireBuffer will automatically drop old frames
-    // Only apply when acqiureWithPTSEnable is true (same as original DropFramesByLevel logic)
     if (dropFrameConfig.ShouldDrop() && acqiureWithPTSEnable) {
         consumer->SetDropFrameLevel(dropFrameConfig.level);
         RS_LOGD("RsDebug RSBaseRenderUtil::ConsumeAndUpdateBuffer(node: %{public}" PRIu64
