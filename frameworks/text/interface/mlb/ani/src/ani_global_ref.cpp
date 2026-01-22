@@ -132,6 +132,8 @@ constexpr CacheKey LINEMETRICS_KEY{ANI_CLASS_LINEMETRICS, "<ctor>", "iiddddddidC
 constexpr CacheKey TEXT_STYLE_COLOR_KEY{ANI_INTERFACE_TEXT_STYLE, "<get>color", ANI_WRAP_RETURN_C(ANI_INTERFACE_COLOR)};
 constexpr CacheKey TEXT_STYLE_FONT_WEIGHT_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontWeight", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_WEIGHT)};
+constexpr CacheKey TEXT_STYLE_FONT_WIDTH_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>fontWidth", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_WIDTH)};
 constexpr CacheKey TEXT_STYLE_FONT_STYLE_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontStyle", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_STYLE)};
 constexpr CacheKey TEXT_STYLE_BASELINE_KEY{
@@ -206,7 +208,8 @@ constexpr CacheKey RECT_STYLE_LEFT_BOTTOM_RADIUS_KEY{ANI_INTERFACE_RECT_STYLE, "
 constexpr std::string_view TEXT_STYLE_SIGN =
     "C{" ANI_INTERFACE_DECORATION "}C{" ANI_INTERFACE_COLOR "}E{" ANI_ENUM_FONT_WEIGHT "}E{" ANI_ENUM_FONT_STYLE
     "}E{" ANI_ENUM_TEXT_BASELINE "}C{" ANI_ARRAY "}ddddzzC{" ANI_STRING "}E{" ANI_ENUM_ELLIPSIS_MODE "}C{" ANI_STRING
-    "}dC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_INTERFACE_RECT_STYLE "}E{" ANI_ENUM_TEXT_BADGE_TYPE "}:";
+    "}dC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_INTERFACE_RECT_STYLE "}E{" ANI_ENUM_TEXT_BADGE_TYPE
+    "}ddE{" ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE "}E{" ANI_ENUM_FONT_WIDTH "}:";
 constexpr CacheKey TEXT_STYLE_KEY{ANI_CLASS_TEXT_STYLE, "<ctor>", TEXT_STYLE_SIGN};
 
 constexpr std::string_view TEXT_SHADOW_SIGN = "C{" ANI_INTERFACE_COLOR "}C{" ANI_INTERFACE_POINT "}d:";
@@ -298,6 +301,7 @@ void AniGlobalClass::Init(ani_env* env)
 void AniGlobalEnum::Init(ani_env* env)
 {
     fontWeight = AniFindEnum(env, ANI_ENUM_FONT_WEIGHT);
+    fontWidth = AniFindEnum(env, ANI_ENUM_FONT_WIDTH);
     affinity = AniFindEnum(env, ANI_ENUM_AFFINITY);
     textDirection = AniFindEnum(env, ANI_ENUM_TEXT_DIRECTION);
     fontStyle = AniFindEnum(env, ANI_ENUM_FONT_STYLE);
@@ -306,6 +310,7 @@ void AniGlobalEnum::Init(ani_env* env)
     textDecorationType = AniFindEnum(env, ANI_ENUM_TEXT_DECORATION_TYPE);
     textDecorationStyle = AniFindEnum(env, ANI_ENUM_TEXT_DECORATION_STYLE);
     textBadgeType = AniFindEnum(env, ANI_ENUM_TEXT_BADGE_TYPE);
+    lineHeightStyle = AniFindEnum(env, ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE);
 }
 
 void AniGlobalMethod::Init(ani_env* env)
@@ -456,6 +461,7 @@ void AniGlobalMethod::InitTextStyleMethod(ani_env* env)
     textStyleCtor = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_KEY);
     textStyleColor = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_COLOR_KEY);
     textStyleFontWeight = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_WEIGHT_KEY);
+    textStyleFontWidth = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_WIDTH_KEY);
     textStyleFontStyle = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_STYLE_KEY);
     textStyleBaseline = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_BASELINE_KEY);
     textStyleFontFamilies =
