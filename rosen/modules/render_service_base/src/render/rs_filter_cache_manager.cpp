@@ -890,7 +890,7 @@ std::tuple<Drawing::RectI, Drawing::RectI> RSFilterCacheManager::ValidateParams(
     Drawing::RectI src;
     Drawing::RectI dst;
     auto deviceRect = Drawing::RectI(0, 0, canvas.GetImageInfo().GetWidth(), canvas.GetImageInfo().GetHeight());
-    if (!srcRect.has_value()) {
+    if (!srcRect.has_value()) {//TO BE AMEND
         src = canvas.GetRoundInDeviceClipBounds();
     } else {
         src = srcRect.value();
