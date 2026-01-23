@@ -167,9 +167,9 @@ HWTEST_F(RSRenderSingleProcessManagerTest, OnScreenConnectedTest, TestSize.Level
     renderService_.renderProcessManager_->OnScreenRefresh(screenId_);
     auto output = std::make_shared<HdiOutput>(screenId_);
     output->Init();
-    sptr<ScreenProperty> property = sptr<ScreenProperty>::MakeSptr();
+    sptr<RSScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
     renderService_.renderProcessManager_->OnScreenConnected(screenId_, output, property);
-    sptr<ScreenPropertyBase> propertyBase = sptr<RSScreenProperty<bool>>::MakeSptr();
+    sptr<ScreenPropertyBase> propertyBase = sptr<ScreenProperty<bool>>::MakeSptr();
     renderService_.renderProcessManager_->OnScreenPropertyChanged(
         screenId_, ScreenPropertyType::IS_VIRTUAL, propertyBase);
     ASSERT_TRUE(renderService_.renderProcessManager_);

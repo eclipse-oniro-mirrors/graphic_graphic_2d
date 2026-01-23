@@ -190,7 +190,7 @@ HWTEST_F(RSRenderProcessManagerTest, OnHwcRestoredTest, TestSize.Level1)
 {
     auto output = std::make_shared<HdiOutput>(screenId_);
     output->Init();
-    sptr<ScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
+    sptr<RSScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
     renderService_.renderProcessManager_->OnHwcRestored(screenId_, output, property);
     ASSERT_TRUE(renderService_.renderProcessManager_);
 }
