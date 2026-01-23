@@ -54,10 +54,9 @@ RSUniHwcPrevalidateUtil::RSUniHwcPrevalidateUtil()
         return;
     }
     PreValidateInitFunc initFunc = reinterpret_cast<PreValidateInitFunc>(dlsym(preValidateHandle_, "InitPrevalidate"));
-    if (!((initFunc != nullptr) && (initFunc() == 0))) {
-        RS_LOGW("[%{public}s]:prevalidate init failed", __func__);
+    if ((initFunc == nullptr) || (initFunc() != 0)) {
+        RS_LOGW("[%{public}s]: prevalidate init failed", __func__);
         dlclose(preValidateHandle_);
-        initFunc = nullptr;
         return;
     }
     preValidateFunc_ = reinterpret_cast<PreValidateFunc>(dlsym(preValidateHandle_, "RequestLayerStrategy"));
