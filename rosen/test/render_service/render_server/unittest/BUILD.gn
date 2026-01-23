@@ -336,7 +336,7 @@ ohos_unittest("RSRenderSingleProcessManagerTest") {
 ###############################################################################
 ohos_unittest("RSRenderProcessManagerTest") {
     module_out_path = module_output_path
-    sources = [ "rs_render_single_process_manager_test.cpp" ]
+    sources = [ "rs_render_process_manager_test.cpp" ]
 
     cflags = [
       "-Dprivate=public",

@@ -190,7 +190,7 @@ HWTEST_F(RSRenderProcessManagerTest, OnHwcRestoredTest, TestSize.Level1)
 {
     auto output = std::make_shared<HdiOutput>(screenId_);
     output->Init();
-    sptr<ScreenProperty> property = sptr<ScreenProperty>::MakeSptr();
+    sptr<ScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
     renderService_.renderProcessManager_->OnHwcRestored(screenId_, output, property);
     ASSERT_TRUE(renderService_.renderProcessManager_);
 }
@@ -208,7 +208,7 @@ HWTEST_F(RSRenderProcessManagerTest, OnHwcDeadTest, TestSize.Level1)
 }
 
 /**
- * @tc.name:OnHwcEventTest
+ * @tc.name: OnHwcEventTest
  * @tc.desc: Test
  * @tc.type: FUNC
  * @tc.require: issueIBRN69
@@ -223,7 +223,7 @@ HWTEST_F(RSRenderProcessManagerTest, OnHwcEventTest, TestSize.Level1)
 }
 
 /**
- * @tc.name:OnScreenBacklightChangedTest
+ * @tc.name: OnScreenBacklightChangedTest
  * @tc.desc: Test
  * @tc.type: FUNC
  * @tc.require: issueIBRN69
@@ -234,8 +234,6 @@ HWTEST_F(RSRenderProcessManagerTest, OnScreenBacklightChangedTest, TestSize.Leve
     renderService_.renderProcessManager_->OnScreenBacklightChanged(screenId_, level);
     ASSERT_TRUE(renderService_.renderProcessManager_);
 }
-
-
 
 /**
  * @tc.name: OnGlobalBlacklistChangedTest

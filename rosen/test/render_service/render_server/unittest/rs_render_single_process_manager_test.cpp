@@ -169,7 +169,7 @@ HWTEST_F(RSRenderSingleProcessManagerTest, OnScreenConnectedTest, TestSize.Level
     output->Init();
     sptr<ScreenProperty> property = sptr<ScreenProperty>::MakeSptr();
     renderService_.renderProcessManager_->OnScreenConnected(screenId_, output, property);
-    sptr<ScreenPropertyBase> propertyBase = sptr<ScreenProperty<bool>>::MakeSptr();
+    sptr<ScreenPropertyBase> propertyBase = sptr<RSScreenProperty<bool>>::MakeSptr();
     renderService_.renderProcessManager_->OnScreenPropertyChanged(
         screenId_, ScreenPropertyType::IS_VIRTUAL, propertyBase);
     ASSERT_TRUE(renderService_.renderProcessManager_);
@@ -189,7 +189,7 @@ HWTEST_F(RSRenderSingleProcessManagerTest, OnVirtualScreenConnectedTest, TestSiz
     renderService_.renderProcessManager_->GetConnectToRenderConnection(screenId_);
     sptr<RSScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
     property->Set<ScreenPropertyType::IS_VIRTUAL>(true);
-    renderService_.renderProcessManager_->OnVirtualScreenConnected(screenId_, INVALID_SCREEN_ID , property);
+    renderService_.renderProcessManager_->OnVirtualScreenConnected(screenId_, INVALID_SCREEN_ID, property);
     ASSERT_TRUE(renderService_.renderProcessManager_);
 }
 } // namespace OHOS::Rosen
