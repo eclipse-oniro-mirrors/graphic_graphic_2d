@@ -120,10 +120,6 @@ RectConstraint RSServiceToRenderConnectionProxyTest::CreateCustomRectConstraint(
     return constraint;
 }
 
-// ============================================================================
-// GetTotalAppMemSize Tests
-// ============================================================================
-
 /**
  * @tc.name: GetTotalAppMemSizeTest001
  * @tc.desc: Test GetTotalAppMemSize with basic functionality
@@ -197,10 +193,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, GetTotalAppMemSizeTest004, TestSi
     EXPECT_GE(gpuMemSize2, 0.0f);
 }
 
-// ============================================================================
-// GetMemoryGraphics Tests
-// ============================================================================
-
 /**
  * @tc.name: GetMemoryGraphicsTest001
  * @tc.desc: Test GetMemoryGraphics with empty vector
@@ -253,11 +245,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, GetMemoryGraphicsTest003, TestSiz
     ErrCode ret = proxy->GetMemoryGraphics(memoryGraphics);
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
-
-
-// ============================================================================
-// GetMemoryGraphic Tests
-// ============================================================================
 
 /**
  * @tc.name: GetMemoryGraphicTest001
@@ -346,10 +333,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, GetMemoryGraphicTest005, TestSize
         EXPECT_GE(memoryGraphic.GetTotalMemorySize(), 0.0f);
     }
 }
-
-// ============================================================================
-// GetPixelMapByProcessId Tests
-// ============================================================================
 
 /**
  * @tc.name: GetPixelMapByProcessIdTest001
@@ -442,10 +425,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, GetPixelMapByProcessIdTest005, Te
     }
 }
 
-// ============================================================================
-// ShowWatermark Tests
-// ============================================================================
-
 /**
  * @tc.name: ShowWatermarkTest001
  * @tc.desc: Test ShowWatermark with nullptr PixelMap (should return early)
@@ -528,10 +507,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, ShowWatermarkTest005, TestSize.Le
     }
 }
 
-// ============================================================================
-// GetSurfaceRootNodeId Tests
-// ============================================================================
-
 /**
  * @tc.name: GetSurfaceRootNodeIdTest001
  * @tc.desc: Test GetSurfaceRootNodeId with nodeId = 0
@@ -609,10 +584,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, GetSurfaceRootNodeIdTest005, Test
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
 
-// ============================================================================
-// SetWatermark Tests
-// ============================================================================
-
 /**
  * @tc.name: SetWatermarkTest001
  * @tc.desc: Test SetWatermark with nullptr PixelMap
@@ -665,10 +636,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetWatermarkTest003, TestSize.Lev
     ErrCode ret = proxy->SetWatermark(callingPid, name, watermark, success);
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
-
-// ============================================================================
-// RegisterSelfDrawingNodeRectChangeCallback Tests
-// ============================================================================
 
 /**
  * @tc.name: RegisterSelfDrawingNodeRectChangeCallbackTest001
@@ -740,10 +707,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, RegisterSelfDrawingNodeRectChange
     EXPECT_EQ(ret, RS_CONNECTION_ERROR);
 }
 
-// ============================================================================
-// UnRegisterSelfDrawingNodeRectChangeCallback Tests
-// ============================================================================
-
 /**
  * @tc.name: UnRegisterSelfDrawingNodeRectChangeCallbackTest001
  * @tc.desc: Test UnRegisterSelfDrawingNodeRectChangeCallback with pid = 0
@@ -785,10 +748,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, UnRegisterSelfDrawingNodeRectChan
     int32_t ret = proxy->UnRegisterSelfDrawingNodeRectChangeCallback(remotePid);
     EXPECT_EQ(ret, RS_CONNECTION_ERROR);
 }
-
-// ============================================================================
-// Combined Scenario Tests
-// ============================================================================
 
 /**
  * @tc.name: CombinedWatermarkOperationsTest001
@@ -865,10 +824,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, CombinedCallbackOperationsTest001
     EXPECT_EQ(ret1, RS_CONNECTION_ERROR);
     EXPECT_EQ(ret2, RS_CONNECTION_ERROR);
 }
-
-// ============================================================================
-// Existing Tests (Preserved)
-// ============================================================================
 
 /**
  * @tc.name: GetShowRefreshRateEnabledTest
