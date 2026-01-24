@@ -51,7 +51,9 @@ const uint8_t DO_REPORT_RS_SCENE_JANK_END = 5;
 const uint8_t DO_REPORT_EVENT_GAMESTATE = 6;
 const uint8_t DO_AVCODEC_VIDEO_START = 7;
 const uint8_t DO_AVCODEC_VIDEO_STOP = 8;
-const uint8_t TARGET_SIZE = 9;
+const uint8_t DO_AVCODEC_VIDEO_GET = 9;
+const uint8_t DO_AVCODEC_VIDEO_GET_RECENT = 10;
+const uint8_t TARGET_SIZE = 11;
 
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
@@ -327,6 +329,28 @@ void DoAvcodecVideoStop()
     dataParcel.WriteUint32(fps);
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
+
+void DoAvcodecVideoGet()
+{
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET);
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    uint64_t uniqueId = GetData<uint64_t>();
+    dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    dataParcel.WriteUint32(uniqueId);
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+}
+ 
+void DoAvcodecVideoGetRecent()
+{
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET_RECENT);
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -387,6 +411,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_AVCODEC_VIDEO_STOP:
             OHOS::Rosen::DoAvcodecVideoStop();
+            break;
+        case OHOS::Rosen::DO_AVCODEC_VIDEO_GET:
+            OHOS::Rosen::DoAvcodecVideoGet();
+            break;
+        case OHOS::Rosen::DO_AVCODEC_VIDEO_GET_RECENT:
+            OHOS::Rosen::DoAvcodecVideoGetRecent();
             break;
         default:
             return -1;
