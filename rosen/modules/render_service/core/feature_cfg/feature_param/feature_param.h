@@ -40,6 +40,7 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "CaptureConfig",
     "SurfaceCaptureConfig",
     "UICaptureConfig",
+    "DeeplyReleaseGpuResourceConfig",
     "VRateConfig",
     "AccessibilityConfig",
     "RotateOffScreenConfig",
@@ -49,6 +50,7 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "SmartCacheConfig",
     "GpuCacheConfig",
     "NodeMemReleaseConfig",
+    "VMABlockConfig",
 };
 
 enum FeatureModule {
@@ -68,6 +70,7 @@ enum FeatureModule {
     CAPTURE_BASE,
     SURFACE_CAPTURE,
     UI_CAPTURE,
+    DEEPLY_REL_GPU_RES,
     VRATE,
     ACCESSIBILITY,
     ROTATEOFFSCREEN,
@@ -77,6 +80,7 @@ enum FeatureModule {
     SMART_CACHE,
     GPU_CACHE,
     NODE_MEM_RELEASE,
+    VMA_BLOCK,
     // Do not change it.
     ENUM_LENGTH,
 };

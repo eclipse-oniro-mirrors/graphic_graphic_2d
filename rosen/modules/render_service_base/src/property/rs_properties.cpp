@@ -52,7 +52,6 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_def.h"
 #include "render/rs_attraction_effect_filter.h"
-#include "render/rs_border_light_shader.h"
 #include "render/rs_color_adaptive_filter.h"
 #include "render/rs_colorful_shadow_filter.h"
 #include "render/rs_distortion_shader_filter.h"
@@ -1293,7 +1292,17 @@ void RSProperties::SetColorPickerInterval(int interval)
     if (!colorPicker_) {
         colorPicker_ = std::make_shared<ColorPickerParam>();
     }
-    colorPicker_->interval = static_cast<uint64_t>(interval);
+    static constexpr uint64_t MIN_INTERVAL = 180; // unit: ms
+    colorPicker_->interval = std::max(static_cast<uint64_t>(interval), MIN_INTERVAL);
+    SetDirty();
+}
+
+void RSProperties::SetColorPickerNotifyThreshold(int threshold)
+{
+    if (!colorPicker_) {
+        colorPicker_ = std::make_shared<ColorPickerParam>();
+    }
+    colorPicker_->notifyThreshold = std::clamp(static_cast<uint32_t>(threshold), 0u, RGBA_MAX);
     SetDirty();
 }
 
@@ -5237,7 +5246,7 @@ void RSProperties::UpdateBackgroundShader()
     if (bgShader) {
         const auto &param = GetComplexShaderParam();
         if (param.has_value()) {
-            const auto & paramValue = param.value();
+            const auto &paramValue = param.value();
             bgShader->MakeDrawingShader(GetBoundsRect(), paramValue);
         }
         bgShader->MakeDrawingShader(GetBoundsRect(), GetBackgroundShaderProgress());
@@ -5413,6 +5422,14 @@ std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetForegroundShader() const
         return effect_->fgRenderShader_;
     }
     return nullptr;
+}
+
+void RSProperties::InternalSetSDFShape(const std::shared_ptr<RSNGRenderShapeBase>& shape)
+{
+    if (ROSEN_EQ(renderSDFShape_, shape)) {
+        return;
+    }
+    renderSDFShape_ = shape;
 }
 
 void RSProperties::SetSDFShape(const std::shared_ptr<RSNGRenderShapeBase>& shape)

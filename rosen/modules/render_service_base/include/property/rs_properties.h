@@ -394,6 +394,7 @@ public:
     std::shared_ptr<RSNGRenderShaderBase> GetBackgroundNGShader() const;
     void SetForegroundShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader);
     std::shared_ptr<RSNGRenderShaderBase> GetForegroundShader() const;
+    void InternalSetSDFShape(const std::shared_ptr<RSNGRenderShapeBase>& shape);
     void SetSDFShape(const std::shared_ptr<RSNGRenderShapeBase>& shape);
     std::shared_ptr<RSNGRenderShapeBase> GetSDFShape() const;
     void SetMaterialNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
@@ -403,6 +404,7 @@ public:
     void SetColorPickerPlaceholder(int placeholder);
     void SetColorPickerStrategy(int strategy);
     void SetColorPickerInterval(int interval);
+    void SetColorPickerNotifyThreshold(int threshold);
     std::shared_ptr<ColorPickerParam> GetColorPicker() const;
 
     void SetFgBrightnessRates(const Vector4f& rates);
