@@ -59,6 +59,18 @@ void RSServiceToRenderConnectionProxyTest::SetUp() {}
 void RSServiceToRenderConnectionProxyTest::TearDown() {}
 
 /**
+ * @tc.name: HgmForceUpdateTaskTest
+ * @tc.desc: Test HgmForceUpdateTask
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, HgmForceUpdateTaskTest, TestSize.Level1)
+{
+    proxy->HgmForceUpdateTask(true, "test");
+    ASSERT_TRUE(proxy);
+}
+
+/**
  * @tc.name: GetShowRefreshRateEnabledTest
  * @tc.desc: Test
  * @tc.type: FUNC
