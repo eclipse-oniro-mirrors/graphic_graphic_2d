@@ -27,7 +27,7 @@
 #include "memory/rs_memory_graphic.h"
 #include "feature/capture/rs_ui_capture.h"
 #include "common/rs_self_draw_rect_change_callback_constraint.h"
-#include "render_service_base\src\ipc_callbacks\rs_self_drawing_node_rect_change_callback_stub.h"
+#include "render_service_base/src/ipc_callbacks/rs_self_drawing_node_rect_change_callback_stub.h"
 using namespace testing;
 using namespace testing::ext;
 
@@ -36,7 +36,7 @@ namespace {
 // Mock Callback Class for SelfDrawingNodeRectChangeCallback
 class MockRSSelfDrawingNodeRectChangeCallback : public RSSelfDrawingNodeRectChangeCallbackStub {
 public:
-    MockRSSelfDrawingNodeRectChangeCallback() () {};
+    MockRSSelfDrawingNodeRectChangeCallback() {};
     virtual ~MockRSSelfDrawingNodeRectChangeCallback() noexcept = default;
 
     void OnSelfDrawingNodeRectChange(std::shared_ptr<RSSelfDrawingNodeRectData> data) override {}
