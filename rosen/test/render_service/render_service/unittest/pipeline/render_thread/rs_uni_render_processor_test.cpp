@@ -77,6 +77,7 @@ void RSUniRenderProcessorTest::SetUpTestCase()
 #ifdef RS_ENABLE_VK
     RsVulkanContext::SetRecyclable(false);
 #endif
+    RSUniRenderThread::Instance().composerClientManager_ = std::make_shared<RSComposerClientManager>();
     RSTestUtil::InitRenderNodeGC();
     auto output = std::make_shared<HdiOutput>(screenId_);
     std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
@@ -113,6 +114,8 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessorInit001, TestSize.Level1)
     ScreenId screenId = 0;
     std::weak_ptr<RSContext> context = {};
     if (RSUniRenderJudgement::IsUniRender()) {
+        std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
+        RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
         auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_COMPOSITE, screenId);
         RSScreenRenderNode node(nodeId, screenId, context);
         EXPECT_EQ(processor->Init(node, nullptr), false);
@@ -131,6 +134,8 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessSurface001, TestSize.Level1)
     ScreenId screenId = 0;
     std::weak_ptr<RSContext> context = {};
     if (RSUniRenderJudgement::IsUniRender()) {
+        std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
+        RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
         auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_COMPOSITE, screenId);
         ASSERT_NE(processor, nullptr);
         RSScreenRenderNode node(nodeId, screenId, context);

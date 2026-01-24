@@ -52,7 +52,7 @@ namespace Rosen {
 namespace {
 const std::string DUMP_CACHESURFACE_DIR = "/data/cachesurface";
 const std::string DUMP_CANVASDRAWING_DIR = "/data/canvasdrawing";
-const std::string DISPLAYNODE = "DisplayNode";
+const std::string SCREENNODE = "ScreenNode";
 constexpr uint32_t API14 = 14;
 constexpr uint32_t API18 = 18;
 constexpr uint32_t INVALID_API_COMPATIBLE_VERSION = 0;
@@ -1010,6 +1010,8 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
         surfaceBuffer->buffer = returnValue.buffer;
         surfaceBuffer->acquireFence = returnValue.fence;
         surfaceBuffer->timestamp = returnValue.timestamp;
+        RS_OPTIONAL_TRACE_NAME_FMT("RSBaseRenderUtil::ConsumeAndUpdateBuffer bufferId %" PRIu64,
+            surfaceBuffer->buffer ? surfaceBuffer->buffer->GetBufferId() : 0);
         surfaceBuffer->RegisterReleaseBufferListener([](uint64_t bufferId){
             RSUniRenderThread::Instance().ReleaseBufferById(bufferId);
         });
@@ -1056,7 +1058,7 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
     }
     RSJankStats::GetInstance().AvcodecVideoCollect(consumer->GetUniqueId(), surfaceBuffer->buffer->GetSeqNum());
     surfaceHandler.ConsumeAndUpdateBuffer(*surfaceBuffer);
-    if (consumer->GetName() != DISPLAYNODE) {
+    if (consumer->GetName() != SCREENNODE) {
         DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(surfaceHandler.GetNodeId(),
             consumer->GetSurfaceSourceType(), surfaceBuffer->buffer);
     }

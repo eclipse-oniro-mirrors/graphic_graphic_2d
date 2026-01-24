@@ -20,20 +20,22 @@
 #include "rs_surface_layer_parcel.h"
 #include "surface_type.h"
 
+#undef LOG_TAG
+#define LOG_TAG "RSSurfaceLayer"
 namespace OHOS {
 namespace Rosen {
 std::shared_ptr<RSLayer> RSSurfaceLayer::Create(const std::shared_ptr<RSComposerContext>& context,
     RSLayerId rsLayerId)
 {
     if (context == nullptr) {
-        RS_LOGE("RSSurfaceLayer::Create context is nullptr");
+        RS_LOGE("%{public}s context is nullptr", __func__);
         return nullptr;
     }
     std::shared_ptr<RSLayer> layer = context->GetRSLayer(rsLayerId);
     if (layer != nullptr) {
         RS_TRACE_NAME_FMT("RSSurfaceLayer::Create use exist layer, id: %" PRIu64 ", name: %s",
             rsLayerId, layer->GetSurfaceName().c_str());
-        RS_LOGD("RSSurfaceLayer::Create get cache layer by layer id: %{public}" PRIu64, rsLayerId);
+        RS_LOGD("%{publiic}s get cache layer by layer id: %{public}" PRIu64, __func__, rsLayerId);
         layer->SetRSLayerId(rsLayerId);
         return layer;
     }
@@ -65,9 +67,9 @@ RSSurfaceLayer::~RSSurfaceLayer()
 
     bool success = AddRSLayerParcel(layerParcel, rsLayerId_);
     if (!success) {
-        ROSEN_LOGE("RSSurfaceLayer::~RSSurfaceLayer failed to send destroy command, layerId: %{public}" PRIu64, GetRSLayerId());
+        ROSEN_LOGE("%{public}s failed to send destroy command, layerId: %{public}" PRIu64, __func__, GetRSLayerId());
     } else {
-        ROSEN_LOGI("RSSurfaceLayer::~RSSurfaceLayer destroy command sent successfully, layerId: %{public}" PRIu64, GetRSLayerId());
+        ROSEN_LOGI("%{public}s destroy command sent successfully, layerId: %{public}" PRIu64, __func__, GetRSLayerId());
     }
     auto context = rsComposerContext_.lock();
     if (context) {
@@ -939,20 +941,22 @@ void RSSurfaceLayer::DumpCurrentFrameLayer() const
     }
 }
 
-void RSSurfaceLayer::SetBufferOwnerCount(std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount)
+void RSSurfaceLayer::SetBufferOwnerCount(std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount,
+    bool needUpdate)
 {
     if (bufferOwnerCount == nullptr) {
         return;
     }
-
-    std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceLayer::SetBufferOwnerCount bufferId %" PRIu64 " layerId %" PRIu64,
-        uint32_t(bufferOwnerCount->bufferId_), rsLayerId_);
+        bufferOwnerCount->bufferId_, rsLayerId_);
+    std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);
     if (bufferOwnerCounts_.find(bufferOwnerCount->bufferId_) == bufferOwnerCounts_.end()) {
         bufferOwnerCount->AddRef();
     }
     bufferOwnerCounts_[bufferOwnerCount->bufferId_] = bufferOwnerCount;
-    bufferOwnerCount_ = bufferOwnerCount;
+    if (needUpdate) {
+        bufferOwnerCount_ = bufferOwnerCount;
+    }
 }
 
 std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::PopBufferOwnerCountById(uint64_t bufferId)

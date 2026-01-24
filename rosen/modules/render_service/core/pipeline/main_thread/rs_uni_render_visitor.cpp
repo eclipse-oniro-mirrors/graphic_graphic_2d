@@ -35,6 +35,7 @@
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/opinc/rs_opinc_cache.h"
 #include "feature/opinc/rs_opinc_manager.h"
+#include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
@@ -52,7 +53,6 @@
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_pointer_window_manager.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -476,7 +476,7 @@ void RSUniRenderVisitor::ResetCurSurfaceInfoAsUpperSurfaceParent(RSSurfaceRender
     // record current frame mainwindow or leashwindow node
     if (node.IsMainWindowType() || node.IsLeashWindow()) {
         curMainAndLeashWindowNodesIds_.push(node.GetId());
-        RSMainThread::Instance()->GetRPVsyncRateReduceManager().PushWindowNodeId(node.GetId());
+        RSMainThread::Instance()->GetRSVsyncRateReduceManager().PushWindowNodeId(node.GetId());
         curScreenNode_->RecordMainAndLeashSurfaces(node.shared_from_this());
     }
     // only reset for instance node
@@ -560,7 +560,7 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
     if (curScreenNode_ == nullptr) {
         return;
     }
-    bool ret = CheckScreenPowerChange() ||
+    bool ret = curScreenNode_->GetAndResetScreenDirtyFlag() ||
         CheckCurtainScreenUsingStatusChange() ||
         curScreenDirtyManager_->GetEnabledChanged() ||
         IsWatermarkFlagChanged() ||
@@ -571,8 +571,6 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
         IsFirstFrameOfDrawingCacheDfxSwitch() ||
         IsAccessibilityConfigChanged() ||
         curScreenNode_->HasMirroredScreenChanged() ||
-        curScreenNode_->IsVirtualSurfaceChanged() ||
-        curScreenNode_->IsVirtualScreenStatusChanged() ||
         curScreenNode_->IsScreenResolutionChanged();
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -588,15 +586,6 @@ void RSUniRenderVisitor::ResetDisplayDirtyRegion()
 bool RSUniRenderVisitor::IsAccessibilityConfigChanged() const
 {
     return RSMainThread::Instance()->IsAccessibilityConfigChanged();
-}
-
-bool RSUniRenderVisitor::CheckScreenPowerChange() const
-{
-    if (!RSMainThread::Instance()->GetScreenPowerOnChanged()) {
-        return false;
-    }
-    RS_LOGD("CheckScreenPowerChange changed");
-    return true;
 }
 
 bool RSUniRenderVisitor::CheckCurtainScreenUsingStatusChange() const
@@ -1635,7 +1624,7 @@ CM_INLINE void RSUniRenderVisitor::CalculateOpaqueAndTransparentRegion(RSSurface
     needRecalculateOcclusion_ = needRecalculateOcclusion_ || node.CheckIfOcclusionChanged();
     node.SetOcclusionInSpecificScenes(false);
     CollectOcclusionInfoForWMS(node);
-    mainThread->GetRPVsyncRateReduceManager().CollectSurfaceVsyncInfo(
+    mainThread->GetRSVsyncRateReduceManager().CollectSurfaceVsyncInfo(
         curScreenNode_->GetScreenInfo(), node);
 }
 
@@ -1906,6 +1895,8 @@ bool RSUniRenderVisitor::NeedPrepareChindrenInReverseOrder(RSRenderNode& node) c
 
 void RSUniRenderVisitor::QuickPrepareChildren(RSRenderNode& node)
 {
+    // clear whitelist info
+    node.SetScreensWithSubTreeWhitelist({});
     if (UNLIKELY(node.HasRemovedChild())) {
         MergeRemovedChildDirtyRegion(node, true);
     }
@@ -2028,7 +2019,6 @@ bool RSUniRenderVisitor::InitScreenInfo(RSScreenRenderNode& node)
     node.SetPixelFormat(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888);
     node.SetExistHWCNode(false);
     CheckLuminanceStatusChange(curScreenNode_->GetScreenId());
-    node.CheckVirtualScreenStatusChanged();
 
     // 2 init screenManager info
     const auto& screenProperty = curScreenNode_->GetScreenProperty();
@@ -3325,7 +3315,7 @@ void RSUniRenderVisitor::UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRender
             }
             CollectOcclusionInfoForWMS(*subSurfaceNodePtr);
             subSurfaceNodePtr->UpdateRenderParams();
-            auto& rateReduceManager = RSMainThread::Instance()->GetRPVsyncRateReduceManager();
+            auto& rateReduceManager = RSMainThread::Instance()->GetRSVsyncRateReduceManager();
             rateReduceManager.PushWindowNodeId(subSurfaceNodePtr->GetId());
             rateReduceManager.CollectSurfaceVsyncInfo(curScreenNode_->GetScreenInfo(), *subSurfaceNodePtr);
         }
