@@ -119,10 +119,8 @@ void GPUCacheManager::SetComposerClientManager(const std::shared_ptr<RSComposerC
 std::function<void(uint64_t)> GPUCacheManager::CreateBufferDeleteCallback()
 {
     // Capture weak_ptr to avoid circular reference
-    std::weak_ptr<GPUCacheManager> weakSelf = shared_from_this();
-    return [weakSelf](uint64_t bufferId) {
-        auto manager = weakSelf.lock();
-        if (manager) {
+    return [weakSelf = weak_from_this()](uint64_t bufferId) {
+        if (auto manager = weakSelf.lock()) {
             manager->ScheduleBufferCleanup(bufferId);
         }
     };
@@ -131,10 +129,8 @@ std::function<void(uint64_t)> GPUCacheManager::CreateBufferDeleteCallback()
 std::function<void(int32_t)> GPUCacheManager::CreateBufferDeleteCallback32()
 {
     // Capture weak_ptr to avoid circular reference
-    std::weak_ptr<GPUCacheManager> weakSelf = shared_from_this();
-    return [weakSelf](int32_t bufferId) {
-        auto manager = weakSelf.lock();
-        if (manager) {
+    return [weakSelf = weak_from_this()](int32_t bufferId) {
+        if (auto manager = weakSelf.lock()) {
             manager->ScheduleBufferCleanup(static_cast<uint64_t>(bufferId));
         }
     };
@@ -186,13 +182,11 @@ void GPUCacheManager::CleanupPendingBuffers()
     RS_LOGD("GPUCacheManager::CleanupPendingBuffers: cleaning %{public}zu buffers", bufferIds.size());
 
     std::unordered_set<uint64_t> bufferIdSet(bufferIds.begin(), bufferIds.end());
-
     // Cleanup RenderEngine cache
     renderEngine_.ClearCacheSet(bufferIdSet);
 
     // Cleanup Composer Client cache via RSComposerClientManager
-    auto composerClientManager = composerClientManager_.lock();
-    if (composerClientManager) {
+    if (auto composerClientManager = composerClientManager_.lock()) {
         composerClientManager->ClearRedrawGPUCompositionCache(bufferIdSet);
     }
 }

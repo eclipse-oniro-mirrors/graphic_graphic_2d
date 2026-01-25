@@ -353,7 +353,7 @@ void RSEglImageManager::UnMapImageFromSurfaceBuffer(uint64_t seqNum)
         imageCacheSeqs_.erase(iter);
     }
     auto resourceHolder = std::make_shared<std::unique_ptr<EglImageResource>>(std::move(resource));
-    auto func = [resourceHolder, seqNum]() mutable {
+    auto func = [resourceHolder = std::move(resourceHolder), seqNum]() mutable {
         resourceHolder->reset();
         RS_OPTIONAL_TRACE_NAME_FMT("UnmapEglImage seqNum: %" PRIu64 "", seqNum);
         RS_LOGD("RSEglImageManager::UnMapEglImageFromSurfaceBuffer: %{public}" PRIu64 "", seqNum);

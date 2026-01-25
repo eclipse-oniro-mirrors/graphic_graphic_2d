@@ -1119,10 +1119,8 @@ ErrCode RSRenderPipelineAgent::CreateNodeAndSurface(const RSSurfaceRenderNodeCon
     node->GetRSSurfaceHandler()->SetConsumer(surface);
 #ifdef RS_ENABLE_GPU
     // Use GPUCacheManager to register buffer delete callback (avoids circular reference)
-    auto renderEngine = rsRenderPipeline_->GetUniRenderThread()->GetRenderEngine();
-    if (renderEngine) {
-        auto gpuCacheManager = renderEngine->GetGPUCacheManager();
-        if (gpuCacheManager) {
+    if (auto renderEngine = rsRenderPipeline_->GetUniRenderThread()->GetRenderEngine()) {
+        if (auto gpuCacheManager = renderEngine->GetGPUCacheManager()) {
             node->GetRSSurfaceHandler()->RegisterDeleteBufferListener(
                 gpuCacheManager->CreateBufferDeleteCallback());
         }

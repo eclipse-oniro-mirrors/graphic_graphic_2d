@@ -984,7 +984,6 @@ void RSMainThread::InitGPUCacheManager()
     }
 
     auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
-
     // Set GPU cache manager to RenderEngine
     renderEngine->SetGPUCacheManager(gpuCacheManager);
 
@@ -1007,8 +1006,7 @@ void RSMainThread::InitGPUCacheManager()
     // Set global GPU cache cleanup callback for RSSurfaceHandler (dependency injection)
     RSSurfaceHandler::SetGPUCacheCleanupCallback(
         [renderEnginePtr](const std::set<uint64_t>& bufferIds) {
-            auto cacheManager = renderEnginePtr->GetGPUCacheManager();
-            if (cacheManager) {
+            if (auto cacheManager = renderEnginePtr->GetGPUCacheManager()) {
                 cacheManager->ScheduleBufferCleanup(bufferIds);
             }
         }

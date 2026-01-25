@@ -299,7 +299,7 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
     auto gpuGuard = std::make_shared<GPUGuard>(getGPUCacheManagerCallback_());
 
     subThread->PostTask([subThread, nodeDrawable, tid, submittedFrameCount,
-                            uniParam = new RSRenderThreadParams(*rtUniParam), gpuGuard]() mutable {
+        uniParam = new RSRenderThreadParams(*rtUniParam), gpuGuard]() mutable {
         if (UNLIKELY(!uniParam)) {
             RS_LOGE("ScheduleRenderNodeDrawable subThread param is nullptr");
             return;

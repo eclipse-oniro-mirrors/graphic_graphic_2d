@@ -300,7 +300,7 @@ void RSVkImageManager::UnMapImageFromSurfaceBuffer(uint64_t seqNum)
     }
     auto func = [resource = std::move(resource), seqNum]() mutable {
         if (ENABLE_VKIMAGE_DFX) {
-            RS_TRACE_NAME_FMT("RSVkImageManagerDfx: unmap image, bufferId=%" PRIu64 "", seqNum);
+            RS_TRACE_NAME_FMT("RSVkImageManagerDfx: unmap image, bufferId=%" PRIu64, seqNum);
         }
         // VkImageResource will be released on this thread.
         resource.reset();

@@ -20,6 +20,7 @@
 
 #include <functional>
 #include <memory>
+
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "rs_base_render_util.h"

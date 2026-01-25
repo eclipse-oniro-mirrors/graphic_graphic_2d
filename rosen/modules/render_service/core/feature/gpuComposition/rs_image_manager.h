@@ -38,8 +38,7 @@ public:
     virtual ~RSImageManager() = default;
 
     virtual void UnMapImageFromSurfaceBuffer(uint64_t seqNum) = 0;
-    virtual void UnMapImagesFromSurfaceBuffer(const std::unordered_set<uint64_t>& bufferIds)
-    {
+    virtual void UnMapImagesFromSurfaceBuffer(const std::unordered_set<uint64_t>& bufferIds) {
         for (auto bufferId : bufferIds) {
             UnMapImageFromSurfaceBuffer(bufferId);
         }

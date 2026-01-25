@@ -69,7 +69,7 @@ void RSSurfaceHandlerTest::TearDown() {}
 static inline void BufferDeleteCbFunc(uint64_t bufferId)
 {
     ROSEN_LOGI("%{public}s:%{public}d bufferId=%{public}" PRIu64, __func__, __LINE__, bufferId);
-};
+}
 
 RSSurfaceHandler::SurfaceBufferEntry RSSurfaceHandlerTest::RequestAndFlushBuffer()
 {
