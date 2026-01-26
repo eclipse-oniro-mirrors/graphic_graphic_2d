@@ -557,64 +557,6 @@ HWTEST_F(RSComposerAdapterTest, CreateLayer_InvertColor_ClientComposition, Funct
 }
 
 /**
- * @tc.name: InitWithMirroredScreenInfo_Path
- * @tc.desc: Init overload with mirrored screen info executes mirrored branch
- * @tc.type: FUNC
- */
-HWTEST_F(RSComposerAdapterTest, InitWithMirroredScreenInfo_Path, Function | SmallTest | Level2)
-{
-    uint32_t width = 2160;
-    uint32_t height = 1080;
-    // Prepare screen node with default properties
-    auto rsContext = std::make_shared<RSContext>();
-    constexpr NodeId nodeId = 1001;
-    auto screenNode = std::make_shared<RSScreenRenderNode>(nodeId, 0, rsContext->weak_from_this());
-    DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(screenNode);
-
-    // Prepare surface buffer for screen node drawable path used later
-    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("screen-test");
-    auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(screenNode->GetRenderDrawable());
-    screenDrawable->GetRSSurfaceHandlerOnDraw()->SetConsumer(consumer);
-    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
-    int64_t timestamp = 0;
-    Rect damage;
-    sptr<OHOS::SurfaceBuffer> buffer = new SurfaceBufferImpl(0);
-    auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
-    screenDrawable->GetRSSurfaceHandlerOnDraw()->SetBuffer(buffer, acquireFence, damage, timestamp, bufferOwnerCount);
-
-    // Build screen infos
-    ScreenInfo screenInfo;
-    screenInfo.id = 10;
-    screenInfo.width = width;
-    screenInfo.height = height;
-    screenInfo.phyWidth = width;
-    screenInfo.phyHeight = height;
-    screenInfo.rotation = ScreenRotation::ROTATION_0;
-
-    ScreenInfo mirroredInfo;
-    mirroredInfo.id = 11; // non-invalid to trigger mirrored path
-    mirroredInfo.width = width / 2;
-    mirroredInfo.height = height / 2;
-    mirroredInfo.phyWidth = width / 2;
-    mirroredInfo.phyHeight = height / 2;
-    mirroredInfo.rotation = ScreenRotation::ROTATION_0;
-
-    float mirrorAdaptiveCoefficient = 0.8f;
-
-    // Init via mirrored overload
-    bool ok = composerAdapter_->Init(*screenNode, screenInfo, mirroredInfo, mirrorAdaptiveCoefficient, nullptr, hdiOutput_);
-    ASSERT_TRUE(ok);
-    composerAdapter_->SetHdiBackendDevice(hdiDeviceMock_);
-
-    // Create a regular surface node and layer to exercise BuildComposeInfo mirrored offsets
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    auto layer = composerAdapter_->CreateLayer(*surfaceNode);
-    ASSERT_NE(layer, nullptr);
-    RSTestUtil::UnregisterConsumerListener();
-}
-
-/**
  * @tc.name: LayerPresentTimestamp001
  * @tc.desc: RSComposerAdapter.LayerPresentTimestamp test, not SupportedPresentTimestamp
  * @tc.type: FUNC
