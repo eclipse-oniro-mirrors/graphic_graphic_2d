@@ -423,10 +423,10 @@ ohos_unittest("RSProcessorFactoryTest") {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
   defines = []
-  defines += gpu_defines 
+  defines += gpu_defines
   defines += [ "private=public", "protected=public" ]
-  if (defined(use_rosen_drawing) && use_rosen_drawing) { 
-    defines += [ "USE_ROSEN_DRAWING" ] 
+  if (defined(use_rosen_drawing) && use_rosen_drawing) {
+    defines += [ "USE_ROSEN_DRAWING" ]
   }
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
     include_dirs = []
