@@ -102,7 +102,6 @@ public:
     {
         return consumerOnDraw_;
     }
-    void RegisterDeleteBufferListenerOnSync(sptr<IConsumerSurface> consumer) override;
 #endif
 
     bool IsHardwareEnabledTopSurface() const;

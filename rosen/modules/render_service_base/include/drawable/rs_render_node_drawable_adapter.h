@@ -193,10 +193,6 @@ public:
     void ResetClearSurfaceFunc();
     void TryClearSurfaceOnSync();
 
-#ifndef ROSEN_CROSS_PLATFORM
-    virtual void RegisterDeleteBufferListenerOnSync(sptr<IConsumerSurface> consumer) {}
-#endif
-
     virtual bool IsNeedDraw() const
     {
         return false;

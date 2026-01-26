@@ -51,6 +51,9 @@
 #include "pipeline/main_thread/rs_uni_render_listener.h"
 #include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
+#ifdef RS_ENABLE_GPU
+#include "feature/gpuComposition/rs_gpu_cache_manager.h"
+#endif
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -136,6 +139,15 @@ void DoScreenRcdTask(NodeId id, std::shared_ptr<RSProcessor>& processor, std::un
         RS_LOGD("DoScreenRcdTask is not at HDI_OUPUT mode");
         return;
     }
+
+    // Check if UniRenderThread is ready for RCD rendering
+    bool isRcdTaskDelayed = !RSUniRenderThread::Instance().IsMainLooping();
+    if (isRcdTaskDelayed) {
+        RS_LOGW("DoScreenRcdTask: UniRenderThread not ready, skip RCD rendering for screen %{public}llu",
+            static_cast<unsigned long long>(id));
+        return;
+    }
+
     if (RSSingleton<RoundCornerDisplayManager>::GetInstance().GetRcdEnable()) {
         RSSingleton<RoundCornerDisplayManager>::GetInstance().RunHardwareTask(id,
             [id, &processor, &rcdInfo](void) {
@@ -1111,6 +1123,14 @@ bool RSScreenRenderNodeDrawable::CreateSurface(sptr<IBufferConsumerListener> lis
     RS_LOGI("RSScreenRenderNodeDrawable::CreateSurface end");
     surfaceCreated_ = true;
     surfaceHandler_->SetConsumer(consumer);
+#ifdef RS_ENABLE_GPU
+    // Use GPUCacheManager to register buffer delete callback (avoids circular reference)
+    if (auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine()) {
+        if (auto gpuCacheManager = renderEngine->GetGPUCacheManager()) {
+            surfaceHandler_->RegisterDeleteBufferListener(gpuCacheManager->CreateBufferDeleteCallback());
+        }
+    }
+#endif
     return true;
 }
 #endif

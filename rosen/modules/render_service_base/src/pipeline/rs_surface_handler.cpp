@@ -21,13 +21,45 @@
 
 namespace OHOS {
 namespace Rosen {
+
+GPUCacheCleanupCallback RSSurfaceHandler::s_gpuCacheCleanupCallback = nullptr;
+std::mutex RSSurfaceHandler::s_gpuCacheCleanupCallbackMutex_;
+
+#ifndef ROSEN_CROSS_PLATFORM
+ConsumerDeleteBufferListenerCallback RSSurfaceHandler::s_consumerDeleteBufferListenerCallback = nullptr;
+std::mutex RSSurfaceHandler::s_consumerDeleteBufferListenerCallbackMutex_;
+#endif
+
 RSSurfaceHandler::~RSSurfaceHandler() noexcept
 {
+#ifdef RS_ENABLE_GPU
+    // Ensure buffers currently held by this handler are included in cleanup.
+#ifndef ROSEN_CROSS_PLATFORM
+    std::set<uint64_t> bufferIds;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (buffer_.buffer != nullptr) {
+            bufferIds.insert(buffer_.buffer->GetBufferId());
+        }
+        if (preBuffer_.buffer != nullptr) {
+            bufferIds.insert(preBuffer_.buffer->GetBufferId());
+        }
+        if (holdBuffer_ && holdBuffer_->buffer != nullptr) {
+            bufferIds.insert(holdBuffer_->buffer->GetBufferId());
+        }
+    }
+    AddGPUCacheToCleanupSet(bufferIds);
+#endif
+
+    // Flush any pending GPU cache cleanup on destruction.
+    FlushGPUCacheCleanup();
+#endif
 }
 #ifndef ROSEN_CROSS_PLATFORM
 void RSSurfaceHandler::SetConsumer(sptr<IConsumerSurface> consumer)
 {
     consumer_ = consumer;
+    EnsureConsumerDeleteBufferListenerRegistered();
 }
 #endif
 
@@ -52,8 +84,41 @@ float RSSurfaceHandler::GetGlobalZOrder() const
 }
 
 #ifndef ROSEN_CROSS_PLATFORM
+void RSSurfaceHandler::EnsureConsumerDeleteBufferListenerRegistered()
+{
+    ConsumerDeleteBufferListenerCallback callback;
+    {
+        std::lock_guard<std::mutex> lock(s_consumerDeleteBufferListenerCallbackMutex_);
+        callback = s_consumerDeleteBufferListenerCallback;
+    }
+    if (!callback) {
+        return;
+    }
+
+    auto consumer = consumer_;
+    if (consumer == nullptr) {
+        return;
+    }
+
+    const uint64_t surfaceId = consumer->GetUniqueId();
+    if (surfaceId == 0) {
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (registeredConsumerDeleteListenerSurfaceId_ == surfaceId) {
+            return;
+        }
+        registeredConsumerDeleteListenerSurfaceId_ = surfaceId;
+    }
+
+    callback(consumer);
+}
+
 void RSSurfaceHandler::ConsumeAndUpdateBuffer(SurfaceBufferEntry buffer)
 {
+    EnsureConsumerDeleteBufferListenerRegistered();
     ConsumeAndUpdateBufferInner(buffer);
 }
 

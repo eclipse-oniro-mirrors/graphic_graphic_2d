@@ -62,6 +62,7 @@
 #include "feature/power_off_render_skip/rs_power_off_render_controller.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
+#include "feature/gpuComposition/rs_gpu_cache_manager.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
@@ -92,6 +93,7 @@
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_root_render_node.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
+#include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_unmarshal_task_manager.h"
@@ -515,7 +517,6 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         OnUniRenderDraw();
         UIExtensionNodesTraverseAndCallback();
         if (!isUniRender_) {
-            RSMainThread::GPUCompositonCacheGuard guard;
             ReleaseAllNodesBuffer();
         }
         SendCommands();
@@ -642,6 +643,11 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         renderEngine_ = std::make_shared<RSRenderEngine>();
         renderEngine_->Init();
     }
+
+#ifdef RS_ENABLE_GPU
+    InitGPUCacheManager();
+#endif
+
     RSOpincManager::Instance().SetOPIncSwitch(OPIncParam::IsOPIncEnable());
     RSUifirstManager::Instance().ReadUIFirstCcmParam();
     auto PostTaskProxy = [](RSTaskMessage::RSTask task, const std::string& name, int64_t delayTime,
@@ -962,6 +968,52 @@ void RSMainThread::UpdateGpuContextCacheSize()
     gpuContext->SetPurgeableResourceLimit(purgeableMaxCount);
 #endif
 }
+
+#ifdef RS_ENABLE_GPU
+void RSMainThread::InitGPUCacheManager()
+{
+    auto renderEngine = GetRenderEngine();
+    if (!renderEngine) {
+        return;
+    }
+
+    auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
+    // Set GPU cache manager to RenderEngine
+    renderEngine->SetGPUCacheManager(gpuCacheManager);
+
+    // Set Composer Client manager (UniRender mode only)
+    if (isUniRender_) {
+        gpuCacheManager->SetComposerClientManager(
+            RSUniRenderThread::Instance().GetComposerClientManager()
+        );
+    }
+
+    // Set GPUCacheManager callback to RSSubThreadManager (dependency injection)
+    // renderEngine is global and won't be destroyed, so raw pointer is safe
+    RSBaseRenderEngine* renderEnginePtr = renderEngine.get();
+    RSSubThreadManager::Instance()->SetGetGPUCacheManagerFunc(
+        [renderEnginePtr]() -> std::shared_ptr<GPUCacheManager> {
+            return renderEnginePtr->GetGPUCacheManager();
+        }
+    );
+
+    // Set global GPU cache cleanup callback for RSSurfaceHandler (dependency injection)
+    RSSurfaceHandler::SetGPUCacheCleanupCallback(
+        [renderEnginePtr](const std::set<uint64_t>& bufferIds) {
+            if (auto cacheManager = renderEnginePtr->GetGPUCacheManager()) {
+                cacheManager->ScheduleBufferCleanup(bufferIds);
+            }
+        }
+    );
+
+    // Register buffer-delete listener to IConsumerSurface when it is bound to RSSurfaceHandler
+    RSSurfaceHandler::SetConsumerDeleteBufferListenerCallback(
+        [renderEnginePtr](const sptr<IConsumerSurface>& consumer) {
+            renderEnginePtr->RegisterDeleteBufferListener(consumer);
+        }
+    );
+}
+#endif
 
 void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
 {
@@ -2213,35 +2265,6 @@ void RSMainThread::ProcessUiCaptureTasks()
         captureTask();
     }
 #endif
-}
-
-void RSMainThread::StartGPUDraw()
-{
-    gpuDrawCount_.fetch_add(1, std::memory_order_relaxed);
-}
-
-void RSMainThread::EndGPUDraw()
-{
-    if (gpuDrawCount_.fetch_sub(1, std::memory_order_relaxed) == 1) {
-        // gpuDrawCount_ is now 0
-        ClearUnmappedCache();
-    }
-}
-
-void RSMainThread::ClearUnmappedCache()
-{
-    std::unordered_set<uint64_t> bufferIds;
-    {
-        std::lock_guard<std::mutex> lock(unmappedCacheSetMutex_);
-        bufferIds.swap(unmappedCacheSet_);
-    }
-    if (!bufferIds.empty()) {
-        auto engine = GetRenderEngine();
-        if (engine) {
-            engine->ClearCacheSet(bufferIds);
-        }
-        composerClientManager_->ClearRedrawGPUCompositionCache(bufferIds);
-    }
 }
 
 void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)

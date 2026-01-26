@@ -1601,17 +1601,6 @@ std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNodeDrawable::GetSyncDirtyM
     return syncDirtyManager_;
 }
 
-#ifndef ROSEN_CROSS_PLATFORM
-void RSSurfaceRenderNodeDrawable::RegisterDeleteBufferListenerOnSync(sptr<IConsumerSurface> consumer)
-{
-    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
-    if (!renderEngine || !consumerOnDraw_) {
-        return;
-    }
-    renderEngine->RegisterDeleteBufferListener(consumerOnDraw_);
-}
-#endif
-
 void  RSSurfaceRenderNodeDrawable::SetCulledNodesToCanvas(RSPaintFilterCanvas* canvas,
     const RSSurfaceRenderParams* surfaceParams)
 {

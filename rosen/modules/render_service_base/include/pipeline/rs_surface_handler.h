@@ -16,7 +16,9 @@
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_SURFACE_HANDLER_H
 
 #include <atomic>
+#include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 
@@ -33,8 +35,27 @@
 
 namespace OHOS {
 namespace Rosen {
-using OnDeleteBufferFunc = std::function<void(uint32_t)>;
+using OnDeleteBufferFunc = std::function<void(uint64_t)>;
 using OnReleaseBufferFunc = std::function<void(uint64_t)>;
+
+/**
+ * @brief GPU cache cleanup callback type.
+ *
+ * Used to register a GPU cache cleanup callback in RSSurfaceHandler, so that RSSurfaceHandler
+ * does not need to directly depend on GPUCacheManager.
+ */
+using GPUCacheCleanupCallback = std::function<void(const std::set<uint64_t>&)>;
+
+#ifndef ROSEN_CROSS_PLATFORM
+/**
+ * @brief Consumer-surface buffer delete listener registrar type.
+ *
+ * Used to register a buffer-delete listener to IConsumerSurface, so that RSSurfaceHandler does not
+ * need to depend on RSBaseRenderEngine or GPUCacheManager directly.
+ */
+using ConsumerDeleteBufferListenerCallback = std::function<void(const sptr<IConsumerSurface>&)>;
+#endif
+
 class RSB_EXPORT RSSurfaceHandler {
 public:
     // indicates which node this handler belongs to.
@@ -133,8 +154,8 @@ public:
             if (bufferDeleteCb_ != nullptr) {
                 if (buffer) {
                     buffer->SetBufferDeletedFlag(BufferDeletedFlag::DELETED_FROM_RS);
+                    bufferDeleteCb_(buffer->GetBufferId());
                 }
-                bufferDeleteCb_(seqNum);
             }
         }
 
@@ -206,6 +227,8 @@ public:
         return consumer_;
     }
 
+    void EnsureConsumerDeleteBufferListenerRegistered();
+
     void SetHoldBuffer(std::shared_ptr<SurfaceBufferEntry> buffer)
     {
         holdBuffer_ = buffer;
@@ -229,7 +252,10 @@ public:
         buffer_.buffer = buffer;
         buffer_.bufferOwnerCount_ = bufferOwnerCount;
         if (buffer != nullptr) {
-            buffer_.seqNum = buffer->GetBufferId();
+            buffer_.seqNum = buffer->GetSeqNum();
+            if (buffer_.bufferOwnerCount_) {
+                buffer_.bufferOwnerCount_->bufferId_ = buffer_.seqNum;
+            }
         }
         buffer_.acquireFence = acquireFence;
         buffer_.damageRect = damage;
@@ -368,6 +394,62 @@ public:
         preBuffer_.Reset();
     }
 
+    static void SetGPUCacheCleanupCallback(GPUCacheCleanupCallback callback)
+    {
+        std::lock_guard<std::mutex> lock(s_gpuCacheCleanupCallbackMutex_);
+        s_gpuCacheCleanupCallback = std::move(callback);
+    }
+
+#ifndef ROSEN_CROSS_PLATFORM
+    static void SetConsumerDeleteBufferListenerCallback(ConsumerDeleteBufferListenerCallback callback)
+    {
+        std::lock_guard<std::mutex> lock(s_consumerDeleteBufferListenerCallbackMutex_);
+        s_consumerDeleteBufferListenerCallback = std::move(callback);
+    }
+#endif
+
+    void AddGPUCacheToCleanupSet(uint64_t bufferId)
+    {
+        std::lock_guard<std::mutex> lock(gpuCacheCleanupMutex_);
+        gpuCacheCleanupSet_.insert(bufferId);
+    }
+
+    void AddGPUCacheToCleanupSet(const std::set<uint64_t>& bufferIds)
+    {
+        if (bufferIds.empty()) {
+            return;
+        }
+        std::lock_guard<std::mutex> lock(gpuCacheCleanupMutex_);
+        gpuCacheCleanupSet_.insert(bufferIds.begin(), bufferIds.end());
+    }
+
+    void FlushGPUCacheCleanup()
+    {
+        std::set<uint64_t> bufferIds;
+        {
+            std::lock_guard<std::mutex> lock(gpuCacheCleanupMutex_);
+            if (gpuCacheCleanupSet_.empty()) {
+                return;
+            }
+            bufferIds.swap(gpuCacheCleanupSet_);
+        }
+
+        GPUCacheCleanupCallback callback;
+        {
+            std::lock_guard<std::mutex> lock(s_gpuCacheCleanupCallbackMutex_);
+            callback = s_gpuCacheCleanupCallback;
+        }
+        if (callback) {
+            callback(bufferIds);
+        }
+    }
+
+    void EnqueueAndFlushGPUCacheCleanup(const std::set<uint64_t>& bufferIds)
+    {
+        AddGPUCacheToCleanupSet(bufferIds);
+        FlushGPUCacheCleanup();
+    }
+
     void ResetBufferAvailableCount()
     {
         bufferAvailableCount_ = 0;
@@ -427,6 +509,7 @@ public:
             preBuffer_.RegisterDeleteBufferListener(bufferDeleteCb);
         }
     }
+
     void ConsumeAndUpdateBuffer(SurfaceBufferEntry buffer);
 #endif
 
@@ -453,6 +536,23 @@ private:
     bool bufferTransformTypeChanged_ = false;
     uint32_t sourceType_ = 0;
     std::shared_ptr<SurfaceBufferEntry> holdBuffer_ = nullptr;
+
+    // GPU cache cleanup set (owned per RSSurfaceHandler instance).
+    std::set<uint64_t> gpuCacheCleanupSet_;
+    mutable std::mutex gpuCacheCleanupMutex_;
+
+    // GPU cache cleanup callback (shared across all RSSurfaceHandler instances).
+    static GPUCacheCleanupCallback s_gpuCacheCleanupCallback;
+    static std::mutex s_gpuCacheCleanupCallbackMutex_;
+
+#ifndef ROSEN_CROSS_PLATFORM
+    // Consumer-surface buffer delete listener registrar (shared across all RSSurfaceHandler instances).
+    static ConsumerDeleteBufferListenerCallback s_consumerDeleteBufferListenerCallback;
+    static std::mutex s_consumerDeleteBufferListenerCallbackMutex_;
+#endif
+
+    // The IConsumerSurface::GetUniqueId() that has already been registered for delete-buffer notifications.
+    uint64_t registeredConsumerDeleteListenerSurfaceId_ = 0;
 };
 }
 }

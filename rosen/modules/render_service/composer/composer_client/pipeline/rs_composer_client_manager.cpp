@@ -55,7 +55,7 @@ std::shared_ptr<RSComposerClient> RSComposerClientManager::GetComposerClient(Scr
     }
 }
 
-void RSComposerClientManager::ClearRedrawGPUCompositionCache(std::unordered_set<uint64_t>& bufferIds)
+void RSComposerClientManager::ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds)
 {
     std::unordered_map<ScreenId, std::shared_ptr<RSComposerClient>> clientMap;
     {
