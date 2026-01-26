@@ -422,11 +422,15 @@ ohos_unittest("RSProcessorFactoryTest") {
   defines = []
   defines += gpu_defines
   # Expose protected/private members for tests via build config
-  defines += [ "private=public", "protected=public" ]
   if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
   defines = []
+  defines += gpu_defines 
+  defines += [ "private=public", "protected=public" ]
+  if (defined(use_rosen_drawing) && use_rosen_drawing) { 
+    defines += [ "USE_ROSEN_DRAWING" ] 
+  }
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
     include_dirs = []
     defines += [ "USE_VIDEO_PROCESSING_ENGINE" ]
