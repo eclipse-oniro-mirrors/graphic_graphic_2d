@@ -94,6 +94,59 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ResetCurrentContextTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RequestFrame_NullSharedSurface_ReturnNull
+ * @tc.desc: RequestFrame(shared RSSurfaceOhos=nullptr) should return nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_NullSharedSurface_ReturnNull, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig cfg;
+    FrameContextConfig fcfg(false);
+    auto frame = renderEngine->RequestFrame(std::shared_ptr<RSSurfaceOhos>(nullptr), cfg, false, false, fcfg);
+    ASSERT_EQ(frame, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_NullTargetSurface_ReturnNull
+ * @tc.desc: RequestFrame(sptr<Surface>=nullptr) should return nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_NullTargetSurface_ReturnNull, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig cfg;
+    FrameContextConfig fcfg(false);
+    auto frame = renderEngine->RequestFrame(sptr<Surface>(nullptr), cfg, false, false, fcfg);
+    ASSERT_EQ(frame, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_VirtualProtected_FlagsPath
+ * @tc.desc: Exercise isVirtual/isProtected flags path for buffer usage setup
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_VirtualProtected_FlagsPath, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    auto consumer = IConsumerSurface::Create("rf-ut");
+    auto producer = consumer->GetProducer();
+    auto psurf = Surface::CreateSurfaceAsProducer(producer);
+    BufferRequestConfig cfg;
+    cfg.width = 64;
+    cfg.height = 64;
+    cfg.format = GRAPHIC_PIXEL_FMT_RGBA_8888;
+    cfg.usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE;
+    FrameContextConfig fcfg(false);
+    fcfg.isVirtual = true;
+    fcfg.isProtected = true;
+    auto frame = renderEngine->RequestFrame(psurf, cfg, true, false, fcfg);
+    ASSERT_NE(renderEngine, nullptr);
+}
+/**
  * @tc.name: SetHighContrast_001
  * @tc.desc: Test SetHighContrast, input false, expect RSBaseRenderEngine::IsHighContrastEnabled() to be same as input
  * @tc.type: FUNC

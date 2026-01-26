@@ -212,6 +212,20 @@ HWTEST_F(RSComposerAdapterTest, CreateLayersTest001, Function | SmallTest | Leve
 }
 
 /**
+ * @tc.name: Init_ReturnFalse_WhenOutputNull
+ * @tc.desc: RSComposerAdapter::Init should return false when output is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerAdapterTest, Init_ReturnFalse_WhenOutputNull, Function | SmallTest | Level2)
+{
+    ScreenInfo info;
+    float coeff = 1.0f;
+    RSComposerAdapter adapter;
+    auto ok = adapter.Init(info, coeff, nullptr, nullptr);
+    ASSERT_FALSE(ok);
+}
+
+/**
  * @tc.name: CreateLayersTest002
  * @tc.desc: CreateLayers when surfaceNode is out of screen region
  * @tc.type: FUNC

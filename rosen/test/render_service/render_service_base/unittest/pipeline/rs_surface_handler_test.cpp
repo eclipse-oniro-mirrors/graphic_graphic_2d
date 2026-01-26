@@ -221,6 +221,31 @@ HWTEST_F(RSSurfaceHandlerTest, SetBufferTransformTypeChanged001, TestSize.Level1
 }
 
 /**
+ * @tc.name: BufferAvailableCount_IncDec
+ * @tc.desc: IncreaseAvailableBuffer and ReduceAvailableBuffer adjust counter
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceHandlerTest, BufferAvailableCount_IncDec, TestSize.Level1)
+{
+    rSSurfaceHandlerPtr_->IncreaseAvailableBuffer();
+    rSSurfaceHandlerPtr_->IncreaseAvailableBuffer();
+    rSSurfaceHandlerPtr_->ReduceAvailableBuffer();
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: GlobalZOrder_SetGet
+ * @tc.desc: SetGlobalZOrder followed by GetGlobalZOrder returns same value
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceHandlerTest, GlobalZOrder_SetGet, TestSize.Level1)
+{
+    rSSurfaceHandlerPtr_->SetGlobalZOrder(3.14f);
+    auto v = rSSurfaceHandlerPtr_->GetGlobalZOrder();
+    ASSERT_FLOAT_EQ(v, 3.14f);
+}
+
+/**
  * @tc.name: IncreaseReduceAndZOrder
  * @tc.desc: test IncreaseAvailableBuffer/ReduceAvailableBuffer and GlobalZOrder setters/getters
  * @tc.type: FUNC

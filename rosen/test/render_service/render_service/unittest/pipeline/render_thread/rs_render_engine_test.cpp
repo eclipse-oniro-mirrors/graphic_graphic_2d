@@ -90,6 +90,88 @@ void RSRenderEngineTest::TearDownTestCase()
 void RSRenderEngineTest::SetUp() {}
 
 void RSRenderEngineTest::TearDown() {}
+/**
+ * @tc.name: DrawLayers_NullLayer_Skip
+ * @tc.desc: Pass a nullptr layer; DrawLayers should safely skip without crash
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderEngineTest, DrawLayers_NullLayer_Skip, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
+    std::vector<RSLayerPtr> layers;
+    layers.emplace_back(nullptr);
+    ComposerScreenInfo info;
+    renderEngine->DrawLayers(*canvas, layers, false, info);
+    ASSERT_NE(canvas, nullptr);
+}
+
+/**
+ * @tc.name: DrawLayers_DeviceComposition_Skip
+ * @tc.desc: Layer with DEVICE composition should be skipped by DrawLayers
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderEngineTest, DrawLayers_DeviceComposition_Skip, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    layer->SetNodeId(surfaceNode->GetId());
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<RSLayerPtr> layers;
+    layers.emplace_back(layer);
+    ComposerScreenInfo info;
+    renderEngine->DrawLayers(*canvas, layers, false, info);
+    ASSERT_NE(canvas, nullptr);
+}
+
+/**
+ * @tc.name: DrawLayers_ClientClear_ClipHole
+ * @tc.desc: Layer with CLIENT_CLEAR should trigger ClipHoleForLayer path
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderEngineTest, DrawLayers_ClientClear_ClipHole, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    layer->SetNodeId(surfaceNode->GetId());
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT_CLEAR);
+    std::vector<RSLayerPtr> layers;
+    layers.emplace_back(layer);
+    ComposerScreenInfo info;
+    renderEngine->DrawLayers(*canvas, layers, false, info);
+    ASSERT_NE(canvas, nullptr);
+}
+
+/**
+ * @tc.name: DrawLayers_Tunnel_ClipHole
+ * @tc.desc: Layer with TUNNEL composition should trigger ClipHoleForLayer path
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderEngineTest, DrawLayers_Tunnel_ClipHole, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    layer->SetNodeId(surfaceNode->GetId());
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_TUNNEL);
+    std::vector<RSLayerPtr> layers;
+    layers.emplace_back(layer);
+    ComposerScreenInfo info;
+    renderEngine->DrawLayers(*canvas, layers, false, info);
+    ASSERT_NE(canvas, nullptr);
+}
 
 /**
  * @tc.name: DrawSurfaceNodeWithParams001

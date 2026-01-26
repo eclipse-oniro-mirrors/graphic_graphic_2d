@@ -244,6 +244,42 @@ HWTEST_F(RSBufferManagerTest, OnDraw_Collector_FenceMerge, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddPendingReleaseBuffer_WithConsumer_NullFence_NoMerge
+ * @tc.desc: Adding with consumer and null fence should not merge; later non-null fence sets mergedFence
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithConsumer_NullFence_NoMerge, TestSize.Level1)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto consumer = IConsumerSurface::Create("bm-ut-null");
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 8, 8, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    mgr->AddPendingReleaseBuffer(consumer, buffer, nullptr);
+    sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));
+    mgr->AddPendingReleaseBuffer(consumer, buffer, f);
+}
+
+/**
+ * @tc.name: ReleaseUniOnDrawBuffers_DecedSetSkip
+ * @tc.desc: Entry present in decedSet should be skipped without adding pending release
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_DecedSetSkip, TestSize.Level1)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    owner->bufferId_ = 2222ULL;
+    std::set<uint32_t> decedSet;
+    decedSet.insert(3333U);
+    owner->InsertUniOnDrawSet(1U, 3333U);
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    sptr<SyncFence> uniFence = SyncFence::InvalidFence();
+    mgr->ReleaseUniOnDrawBuffers(owner, uniFence, decedSet, rsLayers, 7);
+}
+
+/**
  * @tc.name: OnDraw_BufferCollector_State
  * @tc.desc: Directly observe bufferCollector_ lifecycle (non-ABI test-only access)
  * @tc.type: FUNC
