@@ -281,7 +281,7 @@ HWTEST_F(EglBlobTest, EglBlobInit005, Level1)
     std::copy(magicBytes.begin(), magicBytes.end(), longBuffer.begin());
     std::fill(longBuffer.begin() + 8, longBuffer.end(), 0xAA);
     uint32_t computerCrc = ret->CrcGen(longBuffer.data() + CACHE_HEAD, longBuffer.size() - CACHE_HEAD);
-    std::copy(reinterpret_cast<uint_8*>(&computerCrc), reinterpret_cast<uint_8*>(&computerCrc) + 4,
+    std::copy(reinterpret_cast<uint8_t*>(&computerCrc), reinterpret_cast<uint8_t*>(&computerCrc) + 4,
         longBuffer.begin() + 4);
     bool result = ret->ValidFile(longBuffer.data(), longBuffer.size());
     EXPECT_TRUE(result);
