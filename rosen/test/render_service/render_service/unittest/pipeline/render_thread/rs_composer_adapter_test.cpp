@@ -510,8 +510,12 @@ HWTEST_F(RSComposerAdapterTest, CommitLayers_DumpEnabled, Function | SmallTest |
     CreateComposerAdapterWithScreenInfo(2160, 1080, ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN,
         ScreenRotation::ROTATION_0);
     composerAdapter_->SetHdiBackendDevice(hdiDeviceMock_);
+    composerAdapter_->output_ = HdiOutput::CreateHdiOutput(screenId_);
+    composerAdapter_->output_->Init();
 
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    surfaceNode->SetSrcRect(RectI(0, 80, 2560, 1600));
+    surfaceNode->SetDstRect(RectI(0, 80, 2560, 1600));
     ASSERT_NE(surfaceNode, nullptr);
     auto layer = composerAdapter_->CreateLayer(*surfaceNode);
     ASSERT_NE(layer, nullptr);
@@ -538,7 +542,12 @@ HWTEST_F(RSComposerAdapterTest, CreateLayer_InvertColor_ClientComposition, Funct
     composerAdapter_->SetHdiBackendDevice(hdiDeviceMock_);
     composerAdapter_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
 
+    composerAdapter_->output_ = HdiOutput::CreateHdiOutput(screenId_);
+    composerAdapter_->output_->Init();
+
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    surfaceNode->SetSrcRect(RectI(0, 80, 2560, 1600));
+    surfaceNode->SetDstRect(RectI(0, 80, 2560, 1600));
     ASSERT_NE(surfaceNode, nullptr);
     auto layer = composerAdapter_->CreateLayer(*surfaceNode);
     ASSERT_NE(layer, nullptr);
