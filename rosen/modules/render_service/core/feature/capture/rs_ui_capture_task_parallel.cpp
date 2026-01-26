@@ -675,7 +675,8 @@ std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
         DmaMem dmaMem;
-        if (isHdrCapture &&
+        if ((captureConfig.useDma || isHdrCapture) && GetFeatureParamValue("UICaptureConfig",
+            &UICaptureParam::IsUseDMAProcessEnabled).value_or(false) &&
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             RS_TRACE_NAME_FMT("RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask "
