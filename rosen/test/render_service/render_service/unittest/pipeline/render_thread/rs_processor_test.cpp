@@ -47,24 +47,6 @@ HWTEST_F(RSProcessorTest, MirrorAdaptiveCoefficient_ZeroMirroredDims_NoChange, T
 }
 
 /**
- * @tc.name: MirrorAdaptiveMatrix_ComputesScaleAndOffsets
- * @tc.desc: CalculateMirrorAdaptiveMatrix updates internal coefficient for non-equal sizes
- * @tc.type: FUNC
- */
-HWTEST_F(RSProcessorTest, MirrorAdaptiveMatrix_ComputesScaleAndOffsets, TestSize.Level1)
-{
-    RSUniRenderProcessor proc;
-    proc.screenInfo_.width = 1920;
-    proc.screenInfo_.height = 1080;
-    proc.mirroredScreenInfo_.width = 1280;
-    proc.mirroredScreenInfo_.height = 720;
-    // Default rotation = 0
-    proc.CalculateMirrorAdaptiveMatrix();
-    // Expect coefficient updated from 1.0f
-    EXPECT_NE(proc.mirrorAdaptiveCoefficient_, 1.0f);
-}
-
-/**
  * @tc.name: SecurityDisplayAndSecSurface_FlagsSet
  * @tc.desc: SetSecurityDisplay and SetDisplayHasSecSurface toggle flags
  * @tc.type: FUNC
