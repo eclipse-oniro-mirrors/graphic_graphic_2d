@@ -880,7 +880,13 @@ HWTEST_F(RSBaseRenderEngineUnitTest, SetUiTimeStamp_NullArgs, TestSize.Level1)
  */
 HWTEST_F(RSBaseRenderEngineUnitTest, SetUiTimeStamp_Normal, TestSize.Level1)
 {
+    RSSurfaceRenderNodeConfig nodeConfig;
+    nodeConfig.id = 1;
+    nodeConfig.name = "surface";
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeConfig);
     auto csurf = IConsumerSurface::Create();
+    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(std::weak_ptr<RSSurfaceRenderNode>(rsSurfaceRenderNode), nullptr);
+    csurf->RegisterConsumerListener(listener);
     auto producer = csurf->GetProducer();
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     auto rasterSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
@@ -902,5 +908,6 @@ HWTEST_F(RSBaseRenderEngineUnitTest, SetUiTimeStamp_Normal, TestSize.Level1)
     ASSERT_NE(extra, nullptr);
     extra->ExtraGet("timeStamp", ts);
     EXPECT_GT(ts, 0);
+    csurf->UnregisterConsumerListener();
 }
 }
