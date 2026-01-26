@@ -19,7 +19,6 @@
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_surface_render_node.h"
-#include "surface_buffer.h"
 
 using namespace testing;
 using namespace testing::ext;
