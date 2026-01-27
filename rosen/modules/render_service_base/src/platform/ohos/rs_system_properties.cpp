@@ -1805,7 +1805,7 @@ bool RSSystemProperties::GetScaleImageAsyncEnabled()
 
 bool RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()
 {
-    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", false);
+    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", true);
 }
 
 bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()

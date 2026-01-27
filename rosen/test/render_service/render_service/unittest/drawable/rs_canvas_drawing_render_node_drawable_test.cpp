@@ -83,7 +83,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateCanvasDrawingRenderNodeDra
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     std::string info;
     drawable->DumpSubDrawableTree(info);
-    if (RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()) {
+    if (NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled() && RSUniRenderJudgement::IsUniRender() &&
+        RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()) {
         ASSERT_EQ(info, ", dmaAllocationCount:0, dmaFallbackCount:0");
     } else {
         ASSERT_EQ(info, "");
@@ -1030,7 +1031,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest001, 
     ASSERT_NE(buffer, nullptr);
     RSCanvasDmaBufferCache::GetInstance().AddPendingBuffer(1, buffer, 1);
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
-    ASSERT_EQ(ret, RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled());
+    ASSERT_EQ(ret, RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled() &&
+        NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled());
     drawable->backendTexture_ = {};
     ret = drawable->ReleaseSurfaceVk(100, 100);
     ASSERT_EQ(ret, true);
@@ -1092,7 +1094,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ReleaseDmaSurfaceBufferTest, Tes
     ASSERT_NE(drawable->renderParams_, nullptr);
     ASSERT_EQ(nodeBufferMap.empty(), false);
     drawable->ReleaseDmaSurfaceBuffer(false);
-    ASSERT_EQ(nodeBufferMap.empty(), RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled());
+    ASSERT_EQ(nodeBufferMap.empty(), RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled() &&
+        NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled());
 }
 #endif
 }
