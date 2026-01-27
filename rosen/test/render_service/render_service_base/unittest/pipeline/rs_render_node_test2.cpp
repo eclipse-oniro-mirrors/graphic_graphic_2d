@@ -3535,7 +3535,15 @@ HWTEST_F(RSRenderNodeTest2, GetFilterDrawableSnapshotRegion001, TestSize.Level1)
 HWTEST_F(RSRenderNodeTest2, UpdateDrawableEnableEDR, TestSize.Level1)
 {
     auto node = std::make_shared<RSRenderNode>(2);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(0);
     node->UpdateDrawableEnableEDR();
+    EXPECT_FALSE(node->enableHdrEffect_);
+    auto filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    filterDrawable->enableEDREffect_ = true;
+    node->GetDrawableVec(__func__)[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_FILTER)] =
+        filterDrawable;
+    node->UpdateDrawableEnableEDR();
+    EXPECT_TRUE(node->enableHdrEffect_);
 }
 
 /**

@@ -360,6 +360,8 @@ void RSBeginBlenderDrawable::PostUpdate(const RSRenderNode& node)
 {
     enableEDREffect_ = node.GetRenderProperties().GetFgBrightnessEnableEDR();
     if (enableEDREffect_) {
+        RS_OPTIONAL_TRACE_NAME_FMT(
+            "RSBeginBlenderDrawable:PostUpdate node[%" PRIu64 "] has edr brightness", node.GetId());
         screenNodeId_ = node.GetScreenNodeId();
     }
 }
