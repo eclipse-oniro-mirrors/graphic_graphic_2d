@@ -891,8 +891,8 @@ std::tuple<Drawing::RectI, Drawing::RectI> RSFilterCacheManager::ValidateParams(
     Drawing::RectI dst;
     Drawing::RectI deviceRect;
     auto surface = canvas.GetSurface();
-    deviceRect = surface != nullptr ? Drawing::RectI(0, 0, surface->Width(), surface->Height()) :
-        Drawing::RectI(0, 0, canvas.GetImageInfo().GetWidth(), canvas.GetImageInfo().GetHeight());
+    Drawing::RectI deviceRect = surface != nullptr ? Drawing::RectI(0, 0, surface->Width(), surface->Height()) :
+ 	         Drawing::RectI(0, 0, canvas.GetImageInfo().GetWidth(), canvas.GetImageInfo().GetHeight());
     if (!srcRect.has_value()) {
         src = canvas.GetRoundInDeviceClipBounds();
     } else {
