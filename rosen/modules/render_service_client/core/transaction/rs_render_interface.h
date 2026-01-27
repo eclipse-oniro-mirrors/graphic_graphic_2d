@@ -169,7 +169,7 @@ public:
      * @param isFreeze Indicates freeze or unfreeze the specified display node.
      * @return return true if freeze or unfreeze success, else return false.
      */
-    bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze);
+    bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze, bool needSync = false);
 
     /**
      * @brief Get snapshot of surfaceNode, and show the snapshot instead of surfaceNode.
