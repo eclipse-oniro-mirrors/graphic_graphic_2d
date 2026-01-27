@@ -284,7 +284,7 @@ int32_t RSInterfaces::SetScreenSwitchingNotifyCallback(const ScreenSwitchingNoti
 
 int32_t RSInterfaces::SetBrightnessInfoChangeCallback(const BrightnessInfoChangeCallback& callback)
 {
-    ROSEN_LOGI("RSInterfaces::%{public}s", __func__);
+    ROSEN_LOGD("RSInterfaces::%{public}s", __func__);
     return renderServiceClient_->SetBrightnessInfoChangeCallback(callback);
 }
 
