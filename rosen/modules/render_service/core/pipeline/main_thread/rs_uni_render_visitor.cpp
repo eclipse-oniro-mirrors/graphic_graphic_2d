@@ -2841,8 +2841,8 @@ void RSUniRenderVisitor::UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurface
         Occlusion::Rect dstRect(hwcNodePtr->GetDstRect());
         RS_TRACE_NAME_FMT("newRegionRect is %s, dstRect is %s, surfaceNode id %" PRIu64 " surfaceName %s"
             "hwcNode id %" PRIu64 " hwcNode name %s", newRegionRect.GetRectInfo().c_str(),
-            dstRect.GetRectInfo().c_str(), surfaceNode->GeId(), surfaceNode->GetName().c_str(),
-            hwcNodePtr->GeId(), hwcNodePtr->GetName().c_str());
+            dstRect.GetRectInfo().c_str(), surfaceNode->GetId(), surfaceNode->GetName().c_str(),
+            hwcNodePtr->GetId(), hwcNodePtr->GetName().c_str());
         if (newRegionRect.IsIntersect(dstRect)) {
             hwcNodePtr->HwcSurfaceRecorder().SetLastFrameHasVisibleRegion(true); // visible Region
             hasVisibleHwcNodes = true;
