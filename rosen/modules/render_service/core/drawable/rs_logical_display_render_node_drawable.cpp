@@ -455,8 +455,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas
     }
     RS_TRACE_FUNC();
     auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
-    if (drawRegion.IsVaild()) {
-        canvas.DrawImageRect(*image, srcRect, dstRect, Drawing::SamplingOptions(),
+    if (drawRegion.IsValid()) {
+        canvas.DrawImageRect(*image, srcRect, drawRegion, Drawing::SamplingOptions(),
             Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
     }
 
@@ -1102,7 +1102,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
     curCanvas_->AttachBrush(brush);
     curCanvas_->DrawImageRect(*image, srcRect, dstRect, samplingOptions,
         Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
-    DrawWatermarkIfNeed(*image, dstRect);
+    DrawWatermarkIfNeed(*curCanvas_, dstRect);
     curCanvas_->DetachBrush();
 
     RS_LOGI("DisplayDrawable::DrawSecurityMask");
