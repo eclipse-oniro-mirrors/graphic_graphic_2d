@@ -98,7 +98,7 @@
         if (effect_) { \
             (effect_->expr); \
         } \
-    } while(0)
+    } while (0)
 
 namespace OHOS {
 namespace Rosen {

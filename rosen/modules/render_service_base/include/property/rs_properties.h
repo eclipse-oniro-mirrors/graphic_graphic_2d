@@ -1022,10 +1022,8 @@ private:
     /**
      * Use this only when you need to ensure CommonEffectParams exists for modification.
      * Creates the object with memory allocation if it doesn't exist.
-     *
      * For conditional modifications within this class, prefer USING WITH_EFFECT macro
      * or GetXXXMember func to avoid unnecessary memory allocation.
-     *
      * Examples:
      * ✅ GetEffect().requiredMember = value;        // Must exist, value is meaningful
      * ❌ GetEffect().optionalMem = nullptr;         // May create unnecessarily
