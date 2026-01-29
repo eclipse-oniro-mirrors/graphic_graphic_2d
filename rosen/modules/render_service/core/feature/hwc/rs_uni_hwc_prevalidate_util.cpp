@@ -37,9 +37,23 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr size_t MATRIX_SIZE = 9;
+constexpr float IDENTITY_MATRIX_DIAGONAL_SUM = 3.0f;
+constexpr float IDENTITY_MATRIX_DIAGONAL_SUM_INIT = 0.0f;
+constexpr float IDENTITY_MATRIX_DIAGONAL_ELEMENT = 1.0f;
+constexpr int MATRIX3_DIAGONAL_INDEX0 = 0;
+constexpr int MATRIX3_DIAGONAL_INDEX1 = 4;
+constexpr int MATRIX3_DIAGONAL_INDEX2 = 8;
 constexpr uint32_t ROTATION_360 = 360;
 constexpr uint64_t USAGE_HARDWARE_CURSOR = 1ULL << 61;
 constexpr uint64_t USAGE_UNI_LAYER = 1ULL << 60;
+}
+static bool IsIdentityMatrix3(std::vectot<int8_t>& matrix)
+{
+    return ROSEN_EQ(matrix[MATRIX3_DIAGONAL_INDEX0], IDENTITY_MATRIX_DIAGONAL_ELEMENT) &&
+        ROSEN_EQ(matrix[MATRIX3_DIAGONAL_INDEX1], IDENTITY_MATRIX_DIAGONAL_ELEMENT) &&
+        ROSEN_EQ(matrix[MATRIX3_DIAGONAL_INDEX2], IDENTITY_MATRIX_DIAGONAL_ELEMENT) &&
+        ROSEN_EQ(std::accumulate(matrix.begin(), matrix.end(), IDENTITY_MATRIX_DIAGONAL_SUM_INIT),
+            IDENTITY_MATRIX_DIAGONAL_SUM)
 }
 
 RSUniHwcPrevalidateUtil& RSUniHwcPrevalidateUtil::GetInstance()
@@ -175,9 +189,7 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node->GetStagingRenderParams().get());
     stagingSurfaceParams->SetOfflineOriginBufferSynced(true);
     const auto& layerLinearMatrix = stagingSurfaceParams->GetLayerLinearMatrix();
-    if (layerLinearMatrix.size() == MATRIX_SIZE && ROSEN_EQ(layerLinearMatrix[0], 1.0) &&
-        ROSEN_EQ(layerLinearMatrix[4], 1.0) && ROSEN_EQ(layerLinearMatrix[8], 1.0) &&
-        ROSEN_EQ(std::accumulate(layerLinearMatrix.begin(), layerLinearMatrix.end(), 0.0), 3.0)) {
+    if (layerLinearMatrix.size() == MATRIX_SIZE && IsIdentityMatrix3(layerLinearMatrix)) {
         std::vectot<int8_t> valueBlob(MATRIX_SIZE * sizeof(float));
         if (memcpy_s(valueBlob.data(), valueBlob.size(), layerLinearMatrix.data(),
             MATRIX_SIZE * sizeof(float)) == EOK) {
