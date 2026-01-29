@@ -621,32 +621,6 @@ HWTEST_F(RSImageDetailEnhancerThreadTest, RegisterCallbackTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetEnabledTest
- * @tc.desc: GetEnabledTest
- * @tc.type: FUNC
- * @tc.require: issueIBZ6NM
- */
-HWTEST_F(RSImageDetailEnhancerThreadTest, GetEnabledTest, TestSize.Level1)
-{
-    RSImageDetailEnhancerThread& rsImageDetailEnhancerThread = RSImageDetailEnhancerThread::Instance();
-    rsImageDetailEnhancerThread.isParamValidate_ = true;
-    auto type = system::GetParameter("rosen.isEnabledScaleImageAsync.enabled", "0");
-    bool result = rsImageDetailEnhancerThread.GetEnabled();
-    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "1");
-    result = rsImageDetailEnhancerThread.GetEnabled();
-    system::SetParameter("resourceschedule.memmgr.min.memmory.watermark", "false");
-    rsImageDetailEnhancerThread.isParamValidate_ = true;
-    result = rsImageDetailEnhancerThread.GetEnabled();
-    EXPECT_TRUE(result);
-    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "0");
-    result = rsImageDetailEnhancerThread.GetEnabled();
-    system::SetParameter("resourceschedule.memmgr.min.memmory.watermark", "false");
-    result = rsImageDetailEnhancerThread.GetEnabled();
-    EXPECT_FALSE(result);
-    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", type);
-}
-
-/**
  * @tc.name: GetSharpnessTest
  * @tc.desc: GetSharpnessTest
  * @tc.type: FUNC
@@ -677,6 +651,33 @@ HWTEST_F(RSImageDetailEnhancerThreadTest, GetSharpnessTest, TestSize.Level1)
 }
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+
+/**
+ * @tc.name: GetEnabledTest
+ * @tc.desc: GetEnabledTest
+ * @tc.type: FUNC
+ * @tc.require: issueIBZ6NM
+ */
+HWTEST_F(RSImageDetailEnhancerThreadTest, GetEnabledTest, TestSize.Level1)
+{
+    RSImageDetailEnhancerThread& rsImageDetailEnhancerThread = RSImageDetailEnhancerThread::Instance();
+    rsImageDetailEnhancerThread.isParamValidate_ = true;
+    auto type = system::GetParameter("rosen.isEnabledScaleImageAsync.enabled", "0");
+    bool result = rsImageDetailEnhancerThread.GetEnabled();
+    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "1");
+    result = rsImageDetailEnhancerThread.GetEnabled();
+    system::SetParameter("resourceschedule.memmgr.min.memmory.watermark", "false");
+    rsImageDetailEnhancerThread.isParamValidate_ = true;
+    result = rsImageDetailEnhancerThread.GetEnabled();
+    EXPECT_TRUE(result);
+    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "0");
+    result = rsImageDetailEnhancerThread.GetEnabled();
+    system::SetParameter("resourceschedule.memmgr.min.memmory.watermark", "false");
+    result = rsImageDetailEnhancerThread.GetEnabled();
+    EXPECT_FALSE(result);
+    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", type);
+}
+
 /**
  * @tc.name: IsTypeSupportTest
  * @tc.desc: IsTypeSupportTest

@@ -395,6 +395,8 @@ public:
     std::shared_ptr<RSNGRenderShapeBase> GetSDFShape() const;
     void SetMaterialNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
     std::shared_ptr<RSNGRenderFilterBase> GetMaterialNGFilter() const;
+    void SetCompositingNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter);
+    std::shared_ptr<RSNGRenderFilterBase> GetCompositingNGFilter() const;
 
     // setter and getter of color picker related properties
     void SetColorPickerPlaceholder(int placeholder);
@@ -969,6 +971,7 @@ private:
         std::shared_ptr<RSNGRenderFilterBase> bgNGRenderFilter_ = nullptr;
         std::shared_ptr<RSNGRenderFilterBase> fgNGRenderFilter_ = nullptr;
         std::shared_ptr<RSNGRenderFilterBase> mtNGRenderFilter_ = nullptr;
+        std::shared_ptr<RSNGRenderFilterBase> cgNGRenderFilter_ = nullptr;
         std::shared_ptr<RSNGRenderShaderBase> bgNGRenderShader_ = nullptr;
         std::shared_ptr<RSNGRenderShaderBase> fgRenderShader_ = nullptr;
         std::shared_ptr<RSFilter> materialFilter_ = nullptr;

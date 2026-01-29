@@ -143,6 +143,14 @@ private:
 
     // setted in render thread, used and resetted in main thread
     std::atomic<bool> needDraw_ = false;
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    inline static bool renderDmaEnabled_ =
+        RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled();
+
+    inline static bool preAllocateDmaEnabled_ =
+        RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled();
+#endif
 };
 
 } // namespace OHOS::Rosen::DrawableV2

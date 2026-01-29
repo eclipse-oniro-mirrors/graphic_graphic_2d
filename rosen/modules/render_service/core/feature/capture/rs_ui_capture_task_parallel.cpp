@@ -411,9 +411,12 @@ bool RSUiCaptureTaskParallel::Run(sptr<RSISurfaceCaptureCallback> callback, cons
         nodeDrawable_->OnCapture(canvas);
     }
     RS_LOGI("RSUiCaptureTaskParallel::Run: NodeId: [%{public}" PRIu64 "], "
-        "the number of total processedNodes: [%{public}d]; ExistCapturePixelMapOP: %{public}s",
+        "the number of total processedNodes: [%{public}d]; ExistCapturePixelMapOP: %{public}s"
+        "; colorspace[%{public}u, %{public}d], dynamicRange[%{public}u, %{public}d], finalIsHdr[%{public}d]",
         nodeId_, DrawableV2::RSRenderNodeDrawable::GetSnapshotProcessedNodeCount(),
-        canvas.GetExistCapturePixelMapFlag() ? "true" : "false");
+        canvas.GetExistCapturePixelMapFlag() ? "true" : "false",
+        captureConfig_.colorSpace.first, captureConfig_.colorSpace.second,
+        captureConfig_.dynamicRangeMode.first, captureConfig_.dynamicRangeMode.second, isHdrCapture_);
     DrawableV2::RSRenderNodeDrawable::ClearSnapshotProcessedNodeCount();
     RSUniRenderThread::ResetCaptureParam();
 #ifdef RS_PROFILER_ENABLED
@@ -676,6 +679,8 @@ std::function<void()> RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask(
             &UICaptureParam::IsUseDMAProcessEnabled).value_or(false) &&
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
+            RS_TRACE_NAME_FMT("RSUiCaptureTaskParallel::CreateSurfaceSyncCopyTask "
+                "useDma for HDR. NodeId: [%" PRIu64 "]", id);
             sptr<SurfaceBuffer> surfaceBuffer = dmaMem.DmaMemAlloc(info, pixelmap);
             surface = dmaMem.GetSurfaceFromSurfaceBuffer(surfaceBuffer, grContext);
             if (surface == nullptr) {

@@ -1773,7 +1773,7 @@ bool RSSystemProperties::GetBootCompleted()
 
 bool RSSystemProperties::GetMemoryWatermarkEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("resourceschedule.memmgr.min.memory.watermark", "false");
+    static CachedHandle g_Handle = CachedParameterCreate("resourceschedule.memmgr.min.memmory.watermark", "false");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     if (enable == nullptr || strcmp(enable, "true") == 0) {
@@ -1805,7 +1805,7 @@ bool RSSystemProperties::GetScaleImageAsyncEnabled()
 
 bool RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()
 {
-    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", false);
+    return system::GetBoolParameter("persist.sys.graphic.canvas_drawing_node_pre_allocate_dma", true);
 }
 
 bool RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled()

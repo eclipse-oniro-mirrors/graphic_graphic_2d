@@ -284,7 +284,7 @@ int32_t RSInterfaces::SetScreenSwitchingNotifyCallback(const ScreenSwitchingNoti
 
 int32_t RSInterfaces::SetBrightnessInfoChangeCallback(const BrightnessInfoChangeCallback& callback)
 {
-    ROSEN_LOGI("RSInterfaces::%{public}s", __func__);
+    ROSEN_LOGD("RSInterfaces::%{public}s", __func__);
     return renderServiceClient_->SetBrightnessInfoChangeCallback(callback);
 }
 
@@ -1031,9 +1031,9 @@ void RSInterfaces::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
     renderServiceClient_->SetCurtainScreenUsingStatus(isCurtainScreenOn);
 }
 
-void RSInterfaces::DropFrameByPid(const std::vector<int32_t> pidList)
+void RSInterfaces::DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel)
 {
-    RSRenderInterface::GetInstance().DropFrameByPid(pidList);
+    RSRenderInterface::GetInstance().DropFrameByPid(pidList, dropFrameLevel);
 }
 
 int32_t RSInterfaces::RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured)
@@ -1175,6 +1175,16 @@ void RSInterfaces::AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
     const std::vector<std::string>& surfaceNameList, uint32_t fps)
 {
     renderServiceClient_->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
+}
+
+bool RSInterfaces::AvcodecVideoGet(uint64_t uniqueId)
+{
+    return renderServiceClient_->AvcodecVideoGet(uniqueId);
+}
+ 
+bool RSInterfaces::AvcodecVideoGetRecent()
+{
+    return renderServiceClient_->AvcodecVideoGetRecent();
 }
 
 int32_t RSInterfaces::SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection)

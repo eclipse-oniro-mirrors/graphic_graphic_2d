@@ -677,6 +677,60 @@ HWTEST_F(RSPropertiesTest, IsPixelStretchPercentValid004, TestSize.Level1)
 }
 
 /**
+ * @tc.name: PixelStretchTest001
+ * @tc.desc: test results of OnApplyModifiers pixelStretch has value
+ * @tc.type:FUNC
+ * @tc.require: issue21869
+ */
+HWTEST_F(RSPropertiesTest, PixelStretchTest001, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.geoDirty_ = true;
+    properties.SetPixelStretch(Vector4f(10.0, 10.0, 10.0, 10.0));
+
+    properties.OnApplyModifiers();
+
+    EXPECT_TRUE(properties.needFilter_);
+}
+
+/**
+ * @tc.name: PixelStretchTest002
+ * @tc.desc: test results of OnApplyModifiers pixelStretchPercent has value
+ * @tc.type:FUNC
+ * @tc.require: issue21869
+ */
+HWTEST_F(RSPropertiesTest, PixelStretchTest002, TestSize.Level1)
+{
+    RSProperties properties;
+    Vector4f bounds = { 1.0, 1.0, 1.0, 1.0 };
+    properties.SetBounds(bounds);
+    Vector4f pixelStretchPercent(0.1f, 0.2f, 0.3f, 0.4f);
+    properties.SetPixelStretchPercent(pixelStretchPercent);
+
+    properties.OnApplyModifiers();
+
+    EXPECT_TRUE(properties.needFilter_);
+}
+
+/**
+ * @tc.name: PixelStretchTest003
+ * @tc.desc: test results of OnApplyModifiers pixelStretch and percent are invalid
+ * @tc.type:FUNC
+ * @tc.require: issue21869
+ */
+HWTEST_F(RSPropertiesTest, PixelStretchTest003, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.geoDirty_ = true;
+    properties.GetEffect().useEffect_ = true;
+
+    properties.OnApplyModifiers();
+
+    // false: ensure filterNeedUpdate is false even if geoDirty is true after check pixelStretch update
+    EXPECT_FALSE(properties.needFilter_);
+}
+
+/**
  * @tc.name: SetBounds001
  * @tc.desc: test results of SetBounds
  * @tc.type:FUNC
@@ -3781,5 +3835,21 @@ HWTEST_F(RSPropertiesTest, ReportServerXXFilterCascadeCheck_DailyAttempt, TestSi
     EXPECT_TRUE(props.hasReportedServerXXFilterCascade_.test(0));
 }
 
+/**
+ * @tc.name: SetAndGetCompositingNGFilter
+ * @tc.desc: test results of SetCompositingNGFilter, GetCompositingNGFilter
+ * @tc.type: FUNC
+ * @tc.require: issueIAP7XJ
+ */
+HWTEST_F(RSPropertiesTest, SetAndGetCompositingNGFilter, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetCompositingNGFilter(), nullptr); // for coverage nullptr
+    auto blurFilter = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
+    properties.SetCompositingNGFilter(blurFilter);
+    properties.SetCompositingNGFilter(blurFilter);  // for coverage
+    auto testFilter = properties.GetCompositingNGFilter();
+    EXPECT_EQ(blurFilter, testFilter);
+}
 } // namespace Rosen
 } // namespace OHOS

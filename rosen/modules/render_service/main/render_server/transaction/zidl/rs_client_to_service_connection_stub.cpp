@@ -209,6 +209,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::UNREGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_START),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_STOP),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET),
+    static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET_RECENT),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_GPU_CRC_DIRTY_ENABLED_PIDLIST),
     static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OPTIMIZE_CANVAS_DIRTY_ENABLED_PIDLIST),
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
@@ -2928,7 +2930,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
             const uint32_t MAX_LIST_SIZE = 50;
             if (listSize > MAX_LIST_SIZE) {
-                ret = ERR_INVALID_STATE;
+                ret = ERR_INVALID_DATA;
                 break;
             }
 
@@ -2946,7 +2948,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 newConfig.push_back(make_pair(key, value));
             }
             if (errFlag) {
-                ret = ERR_INVALID_STATE;
+                ret = ERR_INVALID_DATA;
                 break;
             }
             NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
@@ -3720,6 +3722,28 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             int32_t result = AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
             if (!reply.WriteInt32(result)) {
                 RS_LOGE("RSClientToServiceConnectionStub::AVCODEC_VIDEO_STOP Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET): {
+            uint64_t uniqueId{0};
+            if (!data.ReadUint64(uniqueId)) {
+                RS_LOGE("RSClientToServiceConnectionStub::AVCODEC_VIDEO_GET : read data err!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t result = AvcodecVideoGet(uniqueId);
+            if (!reply.WriteInt32(result)) {
+                RS_LOGE("RSClientToServiceConnectionStub::AVCODEC_VIDEO_GET Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET_RECENT): {
+            int32_t result = AvcodecVideoGetRecent();
+            if (!reply.WriteInt32(result)) {
+                RS_LOGE("RSClientToServiceConnectionStub::AVCODEC_VIDEO_GET_RECENT Write status failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;

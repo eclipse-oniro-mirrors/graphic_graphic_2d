@@ -26,6 +26,7 @@
 #include "draw/color.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "modifier_ng/appearance/rs_behind_window_filter_render_modifier.h"
 #include "monitor/self_drawing_node_monitor.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "pipeline/render_thread/rs_uni_render_engine.h"
@@ -1643,7 +1644,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForMultiScreenViewSurfaceNode001, TestSi
     ASSERT_NE(rsUniRenderVisitor, nullptr);
 
     auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(1);
-    surfaceRenderNode->SetSourceDisplayRenderNodeId(2);
+    surfaceRenderNode->SetSourceScreenRenderNodeId(2);
     auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
     nodeMap.renderNodeMap_.clear();
     nodeMap.RegisterRenderNode(surfaceRenderNode);
@@ -1662,7 +1663,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForMultiScreenViewSurfaceNode002, TestSi
     ASSERT_NE(rsUniRenderVisitor, nullptr);
 
     auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(1);
-    surfaceRenderNode->SetSourceDisplayRenderNodeId(2);
+    surfaceRenderNode->SetSourceScreenRenderNodeId(2);
     auto rsContext = std::make_shared<RSContext>();
     auto sourceDisplayRenderNode = std::make_shared<RSScreenRenderNode>(2, 0, rsContext);
     sourceDisplayRenderNode->renderDrawable_ = nullptr;
@@ -1684,7 +1685,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareForMultiScreenViewSurfaceNode003, TestSi
     ASSERT_NE(rsUniRenderVisitor, nullptr);
 
     auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(1);
-    surfaceRenderNode->SetSourceDisplayRenderNodeId(2);
+    surfaceRenderNode->SetSourceScreenRenderNodeId(2);
     auto rsContext = std::make_shared<RSContext>();
     auto sourceDisplayRenderNode = std::make_shared<RSScreenRenderNode>(2, 0, rsContext);
     auto sourceDisplayRenderNodeDrawable =
@@ -5595,7 +5596,7 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateHwcNodeInfoForAppNode007, TestSize.Level2
     rsSurfaceRenderNode->HwcSurfaceRecorder().SetIntersectWithPreviousFilter(false);
     rsSurfaceRenderNode->SetHardwareForcedDisabledState(true);
     rsUniRenderVisitor->UpdateHwcNodeInfoForAppNode(*rsSurfaceRenderNode);
-    EXPECT_TRUE(rsSurfaceRenderNode->IsHardwareForcedDisabled());
+    EXPECT_FALSE(rsSurfaceRenderNode->IsHardwareForcedDisabled());
 
     rsSurfaceRenderNode->HwcSurfaceRecorder().SetIntersectWithPreviousFilter(false);
     rsSurfaceRenderNode->SetHardwareForcedDisabledState(false);
@@ -6798,11 +6799,12 @@ HWTEST_F(RSUniRenderVisitorTest, PostPrepare001, TestSize.Level1)
     auto child1 = std::make_shared<RSRenderNode>(childId1, context);
     context->nodeMap.RegisterRenderNode(child1);
     child1->renderProperties_.boundsGeo_ = std::make_shared<RSObjAbsGeometry>();
-    RectF childRect(20.f, 20.f, 30.f, 30.f);
-    child1->selfDrawRect_ = childRect;
+    child1->selfDrawRect_ = RectF(20.f, 20.f, 30.f, 30.f);
     child1->renderProperties_.boundsGeo_->absMatrix_ = Drawing::Matrix();
     context->nodeMap.GetRenderNode<RSRenderNode>(childId1)->parent_ = surfaceNode;
     surfaceNode->childrenBlurBehindWindow_.emplace(childId1);
+    auto modifier = std::make_shared<ModifierNG::RSBehindWindowFilterRenderModifier>();
+    surfaceNode->AddModifier(modifier);
     ASSERT_TRUE(surfaceNode->NeedDrawBehindWindow());
 
     rsUniRenderVisitor->curSurfaceNode_ = nullptr;

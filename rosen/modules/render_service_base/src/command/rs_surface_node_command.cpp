@@ -384,14 +384,14 @@ void SurfaceNodeCommandHelper::SetHardwareEnableHint(RSContext& context, NodeId 
     }
 }
 
-void SurfaceNodeCommandHelper::SetSourceVirtualDisplayId(RSContext& context, NodeId nodeId, ScreenId screenId)
+void SurfaceNodeCommandHelper::SetSourceVirtualScreenId(RSContext& context, NodeId nodeId, ScreenId screenId)
 {
     if (auto surfaceRenderNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         const auto& nodeMap = context.GetNodeMap();
         nodeMap.TraverseScreenNodes(
             [surfaceRenderNode, screenId](const std::shared_ptr<RSScreenRenderNode>& screenRenderNode) {
                 if (screenRenderNode != nullptr && screenRenderNode->GetScreenId() == screenId) {
-                    surfaceRenderNode->SetSourceDisplayRenderNodeId(screenRenderNode->GetId());
+                    surfaceRenderNode->SetSourceScreenRenderNodeId(screenRenderNode->GetId());
                 }
             }
         );

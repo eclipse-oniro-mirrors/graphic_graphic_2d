@@ -2471,6 +2471,23 @@ std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetForegroundNGFilter() cons
     return nullptr;
 }
 
+void RSProperties::SetCompositingNGFilter(const std::shared_ptr<RSNGRenderFilterBase>& renderFilter)
+{
+    GetEffect().cgNGRenderFilter_ = renderFilter;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetCompositingNGFilter() const
+{
+    if (effect_) {
+        return effect_->cgNGRenderFilter_;
+    }
+    return nullptr;
+}
+
 void RSProperties::SetHDRUIBrightness(float hdrUIBrightness)
 {
     if (auto node = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(backref_.lock())) {
@@ -5106,6 +5123,10 @@ void RSProperties::OnApplyModifiers()
         // planning: temporary fix to calculate relative matrix in OnApplyModifiers, later RSRenderNode::Update will
         // overwrite it.
         boundsGeo_->UpdateByMatrixFromSelf();
+
+        if (GetPixelStretch().has_value() || GetPixelStretchPercent().has_value()) {
+            pixelStretchNeedUpdate_ = true;
+        }
     }
     if (colorFilterNeedUpdate_) {
         GenerateColorFilter();
@@ -5117,10 +5138,9 @@ void RSProperties::OnApplyModifiers()
             filterNeedUpdate_ = true;
         }
     }
-    if (pixelStretchNeedUpdate_ || geoDirty_) {
-        filterNeedUpdate_ |= ((pixelStretchNeedUpdate_ || GetPixelStretch().has_value() ||
-            GetPixelStretchPercent().has_value()));
+    if (pixelStretchNeedUpdate_) {
         CalculatePixelStretch();
+        filterNeedUpdate_ = true;
     }
 
     if (bgShaderNeedUpdate_) {
