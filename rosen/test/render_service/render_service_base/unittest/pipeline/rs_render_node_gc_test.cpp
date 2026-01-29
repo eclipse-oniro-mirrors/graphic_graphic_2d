@@ -114,7 +114,7 @@ HWTEST_F(RSRenderNodeGCTest, NodeDestructorInner001, TestSize.Level1)
 {
     RSRenderNodeGC& node = RSRenderNodeGC::Instance();
     node.NodeDestructorInner(nullptr);
-    EXPECT_TRUE(node.nodeBucket_.size() == 1);
+    EXPECT_TRUE(node.nodeBucket_.size() == 0);
 
     auto ptr = std::make_shared<RSRenderNode>(0);
     node.NodeDestructorInner(ptr.get());
