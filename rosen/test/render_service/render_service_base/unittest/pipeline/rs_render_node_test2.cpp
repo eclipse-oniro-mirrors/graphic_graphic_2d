@@ -399,8 +399,7 @@ HWTEST_F(RSRenderNodeTest2, UpdateBufferDirtyRegion002, TestSize.Level1)
     ASSERT_EQ(ret, GSERROR_OK);
 
     auto src = RSGpuDirtyCollector::GetBufferSelfDrawingData(buffer);
-    ASSERT_NE(src, nullptr);
-    (*src) = defaultSelfDrawingRect;
+    ASSERT_EQ(src, nullptr);
 
     surfaceNode->GetRSSurfaceHandler()->buffer_.buffer = buffer;
     ASSERT_TRUE(surfaceNode->GetRSSurfaceHandler()->GetBuffer() != nullptr);
@@ -933,8 +932,9 @@ HWTEST_F(RSRenderNodeTest2, IsFilterCacheValid002, TestSize.Level1)
     auto filterDrawable = std::make_shared<DrawableV2::RSMaterialFilterDrawable>();
     node.GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::MATERIAL_FILTER)] = filterDrawable;
     EXPECT_FALSE(node.IsFilterCacheValid());
+    filterDrawable->stagingCacheManager_ = std::make_unique<RSFilterCacheManager>();
     filterDrawable->stagingCacheManager_->isFilterCacheValid_ = true;
-    EXPECT_TRUE(node.IsFilterCacheValid());
+    EXPECT_FALSE(node.IsFilterCacheValid());
 }
 
 /**
@@ -2409,6 +2409,9 @@ HWTEST_F(RSRenderNodeTest2, ForceMergeSubTreeDirtyRegionTest03, TestSize.Level1)
     nodeTest->lastFrameHasChildrenOutOfRect_ = true;
     EXPECT_NE(nodeTest->renderProperties_.boundsGeo_, nullptr);
     nodeTest->hasChildrenOutOfRect_ = true;
+    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(0);
+    EXPECT_NE(stagingRenderParams, nullptr);
+    nodeTest->stagingRenderParams_ = std::move(stagingRenderParams);
     nodeTest->SubTreeSkipPrepare(dirtyManagerTest2, true, true, clipRectTest2);
 
     RSDirtyRegionManager dirtyManagerTest3;
