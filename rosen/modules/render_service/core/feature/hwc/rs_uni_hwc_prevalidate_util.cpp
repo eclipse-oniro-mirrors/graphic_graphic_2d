@@ -36,10 +36,18 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
+constexpr size_t MATRIX_SIZE = 9;
 constexpr uint32_t ROTATION_360 = 360;
 constexpr uint64_t USAGE_HARDWARE_CURSOR = 1ULL << 61;
 constexpr uint64_t USAGE_UNI_LAYER = 1ULL << 60;
+static bool IsMatrix3Identity(std::vectot<int8_t>& matrix3)
+{
+    return ROSEN_EQ(matrix3[0], 1.0) && ROSEN_EQ(matrix3[0], 0.0) && ROSEN_EQ(matrix3[0], 0.0) &&
+        ROSEN_EQ(matrix3[0], 0.0) && ROSEN_EQ(matrix3[0], 1.0) && ROSEN_EQ(matrix3[0], 0.0) &&
+        ROSEN_EQ(matrix3[0], 0.0) && ROSEN_EQ(matrix3[0], 0.0) && ROSEN_EQ(matrix3[0], 1.0);
 }
+}
+
 RSUniHwcPrevalidateUtil& RSUniHwcPrevalidateUtil::GetInstance()
 {
     static RSUniHwcPrevalidateUtil instance;
@@ -172,6 +180,14 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
     node->SetDeviceOfflineEnable(false);
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node->GetStagingRenderParams().get());
     stagingSurfaceParams->SetOfflineOriginBufferSynced(true);
+    const auto& layerLinearMatrix = stagingSurfaceParams->GetLayerLinearMatrix();
+    if (layerLinearMatrix.size() == MATRIX_SIZE && IsMatrix3Identity(layerLinearMatrix)) {
+        std::vectot<int8_t> valueBlob(MATRIX_SIZE * sizeof(float));
+        if (memcpy_s(valueBlob.data(), valueBlob.size(), layerLinearMatrix.data(),
+            MATRIX_SIZE * sizeof(float)) == EOK) {
+            info.perFrameParameters["LayerLinearMatrix"] = valueBlob;
+        }
+    }
     RS_LOGD_IF(DEBUG_PREVALIDATE, "CreateSurfaceNodeLayerInfo %{public}s,"
         " %{public}" PRIu64 ", src: %{public}s, dst: %{public}s, z: %{public}" PRIu32 ","
         " bufferUsage: %{public}" PRIu64 ", layerUsage: %{public}" PRIu64 ","
