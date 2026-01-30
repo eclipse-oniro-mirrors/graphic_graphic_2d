@@ -94,5 +94,27 @@ bool Filter::SetColorMatrix(const Drawing::ColorMatrix& matrix)
     AddNextFilter(applyColorMatrix);
     return true;
 }
+
+bool Filter::WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params)
+{
+    auto glass = EffectImageFilter::WaterGlass(params);
+    if (!glass) {
+        return false;
+    }
+    AddNextFilter(glass);
+
+    return true;
+}
+
+bool Filter::ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& params)
+{
+    auto glass = EffectImageFilter::ReededGlass(params);
+    if (!glass) {
+        return false;
+    }
+    AddNextFilter(glass);
+
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

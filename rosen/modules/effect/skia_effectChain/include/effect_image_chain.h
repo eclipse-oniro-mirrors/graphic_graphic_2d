@@ -24,6 +24,7 @@
 #include "include/effect/image_filter.h"
 #include "pixel_map.h"
 #include "render_context/render_context.h"
+#include "ge_shader_filter_params.h"
 
 namespace OHOS::Rosen {
 enum class DrawingError {
@@ -76,7 +77,8 @@ public:
     DrawingError ApplyEllipticalGradientBlur(float blurRadius, float centerX, float centerY,
         float maskRadiusX, float maskRadiusY, const std::vector<float> &positions, const std::vector<float> &degrees);
     DrawingError ApplySDFCreation(int spreadFactor, bool generateDerivs);
-
+    DrawingError ApplyWaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& waterGlassDate);
+    DrawingError ApplyReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& reededGlassDate);
     DrawingError Draw();
 
     std::shared_ptr<Media::PixelMap> GetPixelMap();

@@ -32,6 +32,10 @@ public:
     static std::shared_ptr<EffectImageFilter> EllipticalGradientBlur(float blurRadius, float center_x, float center_y,
         float mask_radius_x, float mask_radius_y, const std::vector<float> &positions,
         const std::vector<float> &degrees);
+    static std::shared_ptr<EffectImageFilter> WaterGlass(
+        const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params);
+    static std::shared_ptr<EffectImageFilter> ReededGlass(
+        const std::shared_ptr<Drawing::GEReededGlassDataParams>& params);
 
     virtual DrawingError Apply(const std::shared_ptr<EffectImageChain>& image) = 0;
 };
@@ -92,6 +96,32 @@ public:
 private:
     int spreadFactor_;
     bool generateDerivs_;
+};
+
+class EffectImageWaterGlassFilter : public EffectImageFilter {
+public:
+    EffectImageWaterGlassFilter(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& waterGlassData)
+        : waterGlassData_(waterGlassData)
+    {}
+    ~EffectImageWaterGlassFilter() override = default;
+
+    DrawingError Apply(const std::shared_ptr<EffectImageChain>& image) override;
+
+private:
+    std::shared_ptr<Drawing::GEWaterGlassDataParams> waterGlassData_;
+};
+
+class EffectImageReededGlassFilter : public EffectImageFilter {
+public:
+    EffectImageReededGlassFilter(const std::shared_ptr<Drawing::GEReededGlassDataParams>& reededGlassData)
+        : reededGlassData_(reededGlassData)
+    {}
+    ~EffectImageReededGlassFilter() override = default;
+
+    DrawingError Apply(const std::shared_ptr<EffectImageChain>& image) override;
+
+private:
+    std::shared_ptr<Drawing::GEReededGlassDataParams> reededGlassData_;
 };
 
 class EffectImageRender {

@@ -148,6 +148,35 @@ EffectErrorCode OH_Filter_SetColorMatrix(OH_Filter* filter, OH_Filter_ColorMatri
  */
 EffectErrorCode OH_Filter_GetEffectPixelMap(OH_Filter* filter, OH_PixelmapNative** pixelmap);
 
+/**
+ * @brief Add a flowing lens effect to EffectKit and provide corresponding NDK interfaces for
+ *        application-side calls. Implement a filter effect similar to water ripples, surpporting
+ *        adjustable parameters such as flow velocity and thickness.
+ *
+ * @param filter The OH_Filter pointer will be operated.
+ * @param waterGlassParams The {@link OH_Filter_WaterGlassDataParams} pointer to
+ *        create a custom effect.
+ * @return Returns {@link EffectErrorCode}.
+ * @since 24
+ * @version 1.0
+ */
+EffectErrorCode OH_Filter_WaterGlass(OH_Filter* filter, OH_Filter_WaterGlassDataParams* waterGlassParams);
+
+/**
+ * @brief Add a reeded glass filter effect to EffectKit,along with corresponding NDK interfaces
+ *        for application-side calls. Implement a reeded glass refraction effect, supporting
+ *        adjustable parameters such as grid count, refraction strength, dispersion strength,
+ *        parallel beam intensity, point light source position, and intensity.
+ *
+ * @param filter The OH_Filter pointer will be operated.
+ * @param reededGlassParams The {@link OH_Filter_ReededGlassDataParams} pointer
+ *        to create a custom effect.
+ * @return Returns {@link EffectErrorCode}.
+ * @since 24
+ * @version 1.0
+ */
+EffectErrorCode OH_Filter_ReededGlass(OH_Filter* filter, OH_Filter_ReededGlassDataParams* reededGlassParams);
+
 #ifdef __cplusplus
 }
 #endif
