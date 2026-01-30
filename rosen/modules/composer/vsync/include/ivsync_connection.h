@@ -28,7 +28,6 @@ public:
         const std::string& fromWhom, int64_t lastVSyncTS, const int64_t& requestVsyncTime = 0) = 0;
 
     virtual VsyncError GetReceiveFd(int32_t &fd) = 0;
-
     virtual void CloseReceiveFd() {};
     // We assume that the vsync frequency is FREQ:
     // if rate <= 0, we just return error
