@@ -48,7 +48,7 @@ void RSUniHwcEventManager::Init()
 void RSUniHwcEventManager::OnHwcEvent(
     uint32_t devId, uint32_t eventId, const std::vector<int32_t>& eventData, void* data)
 {
-    RS_LOGI("RSUniHwcEventManager::OnHwcEvent: devcieId is %{public}u, eventId is %{public}u", devId, eventId);
+    RS_LOGI("RSUniHwcEventManager::OnHwcEvent: deviceId is %{public}u, eventId is %{public}u", devId, eventId);
     switch (eventId) {
         case HwcEvent::HWCEVENT_TUI_ENTER: {
             RSMainThread::Instance()->PostTask([]() {
