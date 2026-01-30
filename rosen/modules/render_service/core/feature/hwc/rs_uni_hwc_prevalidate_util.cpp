@@ -37,9 +37,9 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr size_t MATRIX_SIZE = 9;
-constexpr int8_t IDENTITY_MATRIX_DIAGONAL_SUM = 3;
-constexpr int8_t IDENTITY_MATRIX_DIAGONAL_SUM_INIT = 0;
-constexpr int8_t IDENTITY_MATRIX_DIAGONAL_ELEMENT = 1;
+constexpr float IDENTITY_MATRIX_DIAGONAL_SUM = 3;
+constexpr float IDENTITY_MATRIX_DIAGONAL_SUM_INIT = 0;
+constexpr float IDENTITY_MATRIX_DIAGONAL_ELEMENT = 1;
 constexpr int MATRIX3_DIAGONAL_INDEX0 = 0;
 constexpr int MATRIX3_DIAGONAL_INDEX1 = 4;
 constexpr int MATRIX3_DIAGONAL_INDEX2 = 8;
@@ -181,7 +181,7 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
     stagingSurfaceParams->SetOfflineOriginBufferSynced(true);
     const auto& layerLinearMatrix = stagingSurfaceParams->GetLayerLinearMatrix();
     if (layerLinearMatrix.size() == MATRIX_SIZE && IsIdentityMatrix3(layerLinearMatrix)) {
-        std::vectot<int8_t> valueBlob(MATRIX_SIZE * sizeof(float));
+        std::vector<int8_t> valueBlob(MATRIX_SIZE * sizeof(float));
         if (memcpy_s(valueBlob.data(), valueBlob.size(), layerLinearMatrix.data(),
             MATRIX_SIZE * sizeof(float)) == EOK) {
             info.perFrameParameters["LayerLinearMatrix"] = valueBlob;
@@ -197,13 +197,13 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
     return true;
 }
 
-bool RSUniHwcPrevalidateUtil::IsIdentityMatrix3(std::vector<int8_t>& matrix)
+bool RSUniHwcPrevalidateUtil::IsIdentityMatrix3(std::vector<float>& matrix)
 {
     return ROSEN_EQ(matrix[MATRIX3_DIAGONAL_INDEX0], IDENTITY_MATRIX_DIAGONAL_ELEMENT) &&
         ROSEN_EQ(matrix[MATRIX3_DIAGONAL_INDEX1], IDENTITY_MATRIX_DIAGONAL_ELEMENT) &&
         ROSEN_EQ(matrix[MATRIX3_DIAGONAL_INDEX2], IDENTITY_MATRIX_DIAGONAL_ELEMENT) &&
         ROSEN_EQ(std::accumulate(matrix.begin(), matrix.end(), IDENTITY_MATRIX_DIAGONAL_SUM_INIT),
-            IDENTITY_MATRIX_DIAGONAL_SUM)
+            IDENTITY_MATRIX_DIAGONAL_SUM);
 }
 
 bool RSUniHwcPrevalidateUtil::IsYUVBufferFormat(RSSurfaceRenderNode::SharedPtr node) const
