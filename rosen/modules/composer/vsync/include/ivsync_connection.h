@@ -29,6 +29,7 @@ public:
 
     virtual VsyncError GetReceiveFd(int32_t &fd) = 0;
 
+    virtual void CloseReceiveFd() {};
     // We assume that the vsync frequency is FREQ:
     // if rate <= 0, we just return error
     // if rate > 0, we will continue to send Vsync signals at a frequency of FREQ / rate
