@@ -93,7 +93,6 @@ private:
     static void EmplaceSurfaceNodeLayer(
         std::vector<RequestLayerInfo>& prevalidLayers, RSSurfaceRenderNode::SharedPtr node,
         uint32_t curFps, uint32_t& zOrder, const ScreenInfo& screenInfo);
-    static bool IsIdentityMatrix3(std::vector<int8_t>& matrix);
 
     void *preValidateHandle_ = nullptr;
     PreValidateFunc preValidateFunc_ = nullptr;
