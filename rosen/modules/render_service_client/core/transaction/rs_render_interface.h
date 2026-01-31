@@ -30,6 +30,7 @@ class RSC_EXPORT RSRenderInterface {
 public:
     RSRenderInterface();
     ~RSRenderInterface() noexcept;
+
     static RSRenderInterface &GetInstance();
     /**
      * @brief Get snapshot of surfaceNode.
@@ -129,7 +130,7 @@ public:
      * @return return a vector of pair, the first element is the NodeId, the second element is the pixelmap.
      */
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> TakeSurfaceCaptureSoloNodeList(
-        std::shared_ptr<RSNode> node);
+    std::shared_ptr<RSNode> node);
 
     /**
      * @brief Take snapshot of displayNode.
@@ -177,7 +178,7 @@ public:
         float scaleX, float scaleY);
 
     /**
-     * @brief Set selfdrawing node to toplayer force use DSS.
+     * @brief Set selfdrawing node to topLayer force use DSS.
      * @param nodeId surfaceNode id.
      * @param isTop is function switch.
      * @param zOrder is zOrder of topLayer.
@@ -192,7 +193,8 @@ public:
      * @param callback It is triggered when buffer state changes.
      * @return bool Returns true if successfully send to RS, otherwise false.
      */
-    bool RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid, std::shared_ptr<SurfaceBufferCallback> callback);
+    bool RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
+        std::shared_ptr<SurfaceBufferCallback> callback);
 
     /**
      * @brief UnRegister the DrawSurfaceBuffer op callback that holds the buffer state.
@@ -254,7 +256,7 @@ public:
     void ClearUifirstCache(NodeId id);
 
     /**
-     * @brief Set frame gravity of screen node
+     * @brief Set frame gravity of screen node.
      * @param id Screen id.
      * @param gravity The gravity value of the screen node.
      */
@@ -269,15 +271,14 @@ public:
     bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze);
     /**
      * @brief Simplify the original interfaces set boundaries for cursor movement and reduce the workload.
-     * @param rsNodeId Indicate id of node.
+     * @param rsNodeId Indicates id of node.
      * @param positionX Indicates x coordinate position.
      * @param positionY Indicates y coordinate position.
      * @param positionZ Indicates z coordinate position.
      * @param positionW Indicates w coordinate position.
      * @return return true if set success, else return false
      */
-    bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
-        float positionZ, float positionW);
+    bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY, float positionZ, float positionW);
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     /**

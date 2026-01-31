@@ -27,9 +27,7 @@
 #include "pipeline/rs_render_thread.h"
 #include "rs_client_to_render_connection_proxy.h"
 #include "rs_client_to_service_connection_proxy.h"
-
 #include "rs_render_service_proxy.h"
-
 #include "pipeline/rs_render_thread.h"
 #include "platform/common/rs_log.h"
 
@@ -73,6 +71,7 @@ RSRenderServiceConnectHub::~RSRenderServiceConnectHub() noexcept
     if (renderService_->AsObject() && deathRecipient_) {
         renderService_->AsObject()->RemoveDeathRecipient(deathRecipient_);
     }
+
     if (token_ == nullptr) {
         ROSEN_LOGI("token_ is deleted");
         return;
@@ -88,7 +87,7 @@ RSRenderServiceConnectHub::~RSRenderServiceConnectHub() noexcept
 }
 
 std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
-RSRenderServiceConnectHub::GetRenderService()
+    RSRenderServiceConnectHub::GetRenderService()
 {
     auto connHub = RSRenderServiceConnectHub::GetInstance();
     return connHub == nullptr ? std::make_pair(nullptr, nullptr) : connHub->GetRenderServiceConnection();
@@ -105,7 +104,7 @@ sptr<RSIClientToRenderConnection> RSRenderServiceConnectHub::GetClientToRenderCo
 }
 
 std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
-RSRenderServiceConnectHub::GetRenderServiceConnection()
+    RSRenderServiceConnectHub::GetRenderServiceConnection()
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (conn_ != nullptr && renderConn_ != nullptr && renderService_ != nullptr) {
