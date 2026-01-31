@@ -28,7 +28,6 @@ public:
     static std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> GetRenderService();
     static sptr<RSIClientToServiceConnection> GetClientToServiceConnection();
     static sptr<RSIClientToRenderConnection> GetClientToRenderConnection();
-
     static void SetOnConnectCallback(OnConnectCallback cb)
     {
         onConnectCallback_ = cb;
