@@ -390,7 +390,6 @@ void RSUniRenderVisitor::HandleWiredExtendedScreenColorGamut(RSScreenRenderNode&
         node.SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
         return;
     }
-    HandleMainScreenColorGamut(node);
 
     std::vector<ScreenColorGamut> mode{};
     int32_t ret = screenManager_->GetScreenSupportedColorGamuts(node.GetScreenId(), mode);
