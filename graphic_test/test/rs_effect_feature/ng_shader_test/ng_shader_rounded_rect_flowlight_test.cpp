@@ -47,6 +47,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGRoundedRectFlowlight>& roundedRectFlow)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -87,7 +90,8 @@ GRAPHIC_TEST(NGShaderRoundedRectFlowlightTest, EFFECT_TEST, Set_Rounded_Rect_Flo
     }
 }
 
-GRAPHIC_TEST(NGShaderRoundedRectFlowlightTest, EFFECT_TEST, Set_Rounded_Rect_Flowlight_Brightness_Progress_Combination_Test)
+GRAPHIC_TEST(NGShaderRoundedRectFlowlightTest, EFFECT_TEST,
+    Set_Rounded_Rect_Flowlight_Brightness_Progress_Combination_Test)
 {
     const size_t columnCount = 4;
     const size_t rowCount = 1;
@@ -103,8 +107,9 @@ GRAPHIC_TEST(NGShaderRoundedRectFlowlightTest, EFFECT_TEST, Set_Rounded_Rect_Flo
 
 
 /*
-
-} // namespace OHOS::Rosen
+ * Test rounded rect flowlight with extreme and invalid values
+ * Tests malicious inputs: negative values, extremely large values
+ */
 GRAPHIC_TEST(NGShaderRoundedRectFlowlightTest, EFFECT_TEST, Set_Rounded_Rect_Flowlight_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -116,3 +121,5 @@ GRAPHIC_TEST(NGShaderRoundedRectFlowlightTest, EFFECT_TEST, Set_Rounded_Rect_Flo
         SetUpTestNode(i, columnCount, rowCount, roundedRectFlow);
     }
 }
+
+} // namespace OHOS::Rosen

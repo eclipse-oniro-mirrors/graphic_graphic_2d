@@ -33,7 +33,7 @@ const std::vector<float> brightnessValues = {0.0f, 0.5f, 1.0f, 2.0f};
 const std::vector<float> blendValues = {0.0f, 0.5f, 1.0f};
 
 // Color number values
-const std::vector<int> colorNumberValues = {2, 4, 6, 8};
+const std::vector<float> colorNumberValues = {2.0f, 4.0f, 6.0f, 8.0f};
 }
 
 class NGShaderColorGradientEffectTest : public RSGraphicTest {
@@ -47,6 +47,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGColorGradientEffect>& colorGradient)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -67,7 +70,7 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
     for (size_t i = 0; i < brightnessValues.size(); i++) {
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
         colorGradient->Setter<ColorGradientEffectBrightnessTag>(brightnessValues[i]);
-        colorGradient->Setter<ColorGradientEffectColorNumberTag>(4);
+        colorGradient->Setter<ColorGradientEffectColorNumberTag>(4.0f);
         colorGradient->Setter<ColorGradientEffectColor0Tag>(Vector4f{1.0f, 0.0f, 0.0f, 1.0f});
         colorGradient->Setter<ColorGradientEffectColor1Tag>(Vector4f{0.0f, 1.0f, 0.0f, 1.0f});
         colorGradient->Setter<ColorGradientEffectColor2Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
@@ -86,7 +89,7 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
         colorGradient->Setter<ColorGradientEffectBrightnessTag>(brightnessValues[i]);
         colorGradient->Setter<ColorGradientEffectBlendTag>(blendValues[i]);
-        colorGradient->Setter<ColorGradientEffectColorNumberTag>(4);
+        colorGradient->Setter<ColorGradientEffectColorNumberTag>(4.0f);
         colorGradient->Setter<ColorGradientEffectColor0Tag>(Vector4f{1.0f, 0.0f, 0.0f, 1.0f});
         colorGradient->Setter<ColorGradientEffectColor1Tag>(Vector4f{0.0f, 1.0f, 0.0f, 1.0f});
         colorGradient->Setter<ColorGradientEffectColor2Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
@@ -96,10 +99,6 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
     }
 }
 
-
-/*
-
-} // namespace OHOS::Rosen
 GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Effect_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -108,7 +107,9 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
     for (size_t i = 0; i < extremeValues.size(); i++) {
         auto colorGradient = std::make_shared<RSNGColorGradientEffect>();
         colorGradient->Setter<ColorGradientEffectBrightnessTag>(extremeValues[i]);
-        colorGradient->Setter<ColorGradientEffectColorNumberTag>(4);
+        colorGradient->Setter<ColorGradientEffectColorNumberTag>(4.0f);
         SetUpTestNode(i, columnCount, rowCount, colorGradient);
     }
 }
+
+} // namespace OHOS::Rosen

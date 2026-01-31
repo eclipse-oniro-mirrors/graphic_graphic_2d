@@ -30,10 +30,10 @@ const int SCREEN_HEIGHT = 2000;
 const std::vector<float> progressValues = {0.0f, 0.3f, 0.5f, 1.0f};
 
 // Position values
-const std::vector<Vector4f> positions = {
-    Vector4f{0.0f, 0.0f, 0.0f, 0.0f},
-    Vector4f{0.5f, 0.5f, 0.5f, 0.5f},
-    Vector4f{1.0f, 1.0f, 1.0f, 1.0f}
+const std::vector<Vector2f> positions = {
+    Vector2f{0.0f, 0.0f},
+    Vector2f{0.5f, 0.5f},
+    Vector2f{1.0f, 1.0f}
 };
 
 // Radius values
@@ -55,6 +55,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGLightCave>& lightCave)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -75,7 +78,7 @@ GRAPHIC_TEST(NGShaderLightCaveTest, EFFECT_TEST, Set_Light_Cave_Progress_Boundar
     for (size_t i = 0; i < progressValues.size(); i++) {
         auto lightCave = std::make_shared<RSNGLightCave>();
         lightCave->Setter<LightCaveProgressTag>(progressValues[i]);
-        lightCave->Setter<LightCavePositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        lightCave->Setter<LightCavePositionTag>(Vector2f{0.5f, 0.5f});
 
         SetUpTestNode(i, columnCount, rowCount, lightCave);
     }
@@ -96,10 +99,10 @@ GRAPHIC_TEST(NGShaderLightCaveTest, EFFECT_TEST, Set_Light_Cave_Position_Radius_
     }
 }
 
-
 /*
-
-} // namespace OHOS::Rosen
+ * Test light cave with extreme and invalid values
+ * Tests malicious inputs: negative values, extremely large values
+ */
 GRAPHIC_TEST(NGShaderLightCaveTest, EFFECT_TEST, Set_Light_Cave_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -108,7 +111,9 @@ GRAPHIC_TEST(NGShaderLightCaveTest, EFFECT_TEST, Set_Light_Cave_Extreme_Values_T
     for (size_t i = 0; i < extremeValues.size(); i++) {
         auto lightCave = std::make_shared<RSNGLightCave>();
         lightCave->Setter<LightCaveProgressTag>(extremeValues[i]);
-        lightCave->Setter<LightCavePositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        lightCave->Setter<LightCavePositionTag>(Vector2f{0.5f, 0.5f});
         SetUpTestNode(i, columnCount, rowCount, lightCave);
     }
 }
+
+} // namespace OHOS::Rosen

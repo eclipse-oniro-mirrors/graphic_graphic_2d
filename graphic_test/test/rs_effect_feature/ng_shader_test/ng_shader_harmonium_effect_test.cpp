@@ -40,7 +40,7 @@ public:
 
     std::shared_ptr<RSEffectNode> SetUpEffectNode()
     {
-        auto backgroundTestNode = SetUpNodeBgImage(g_backgroundImagePath, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
+        auto backgroundTestNode = SetUpNodeBgImage(BACKGROUND_IMAGE_PATH, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
         auto effectNode = RSEffectNode::Create();
         effectNode->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
         effectNode->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
@@ -97,14 +97,14 @@ void SetDistortProgress(std::shared_ptr<RSNGHarmoniumEffect>& harmoniumEffect, f
 {
     harmoniumEffect->Setter<HarmoniumEffectDistortProgressTag>(distortProgress);
     harmoniumEffect->Setter<HarmoniumEffectDistortFactorTag>(1.f);
-    SetImageMask(harmoniumEffect, g_distorImagePath);
+    SetImageMask(harmoniumEffect, DISTOR_IMAGE_PATH);
 }
 
 void SetDistortFactor(std::shared_ptr<RSNGHarmoniumEffect>& harmoniumEffect, float distortFactor)
 {
     harmoniumEffect->Setter<HarmoniumEffectDistortProgressTag>(0.75f);
     harmoniumEffect->Setter<HarmoniumEffectDistortFactorTag>(distortFactor);
-    SetImageMask(harmoniumEffect, g_distorImagePath);
+    SetImageMask(harmoniumEffect, DISTOR_IMAGE_PATH);
 }
 
 GRAPHIC_TEST(NGShaderHarmoniumEffectTest, EFFECT_TEST, Set_NG_Shader_Harmonium_Effect_Test)

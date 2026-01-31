@@ -61,6 +61,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGEdgeLightFilter>& edgeLightFilter)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -121,7 +124,8 @@ GRAPHIC_TEST(NGFilterEdgeLightTest, EFFECT_TEST, Set_Edge_Light_Intensity_Test)
 
     for (size_t i = 0; i < edgeLightIntensities.size(); i++) {
         auto edgeLightFilter = std::make_shared<RSNGEdgeLightFilter>();
-        edgeLightFilter->Setter<EdgeLightColorTag>(Vector4f{edgeLightIntensities[i], edgeLightIntensities[i], edgeLightIntensities[i], 1.0f});
+        Vector4f intensityColor{edgeLightIntensities[i], edgeLightIntensities[i], edgeLightIntensities[i], 1.0f};
+        edgeLightFilter->Setter<EdgeLightColorTag>(intensityColor);
 
         SetUpTestNode(i, columnCount, rowCount, edgeLightFilter);
     }

@@ -51,6 +51,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGParticleCircularHalo>& particleHalo)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -93,10 +96,6 @@ GRAPHIC_TEST(NGShaderParticleCircularHaloTest, EFFECT_TEST, Set_Particle_Circula
     }
 }
 
-
-/*
-
-} // namespace OHOS::Rosen
 GRAPHIC_TEST(NGShaderParticleCircularHaloTest, EFFECT_TEST, Set_Particle_Circular_Halo_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -109,3 +108,5 @@ GRAPHIC_TEST(NGShaderParticleCircularHaloTest, EFFECT_TEST, Set_Particle_Circula
         SetUpTestNode(i, columnCount, rowCount, particleHalo);
     }
 }
+
+} // namespace OHOS::Rosen

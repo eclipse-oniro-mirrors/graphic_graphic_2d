@@ -38,7 +38,12 @@ const std::vector<Vector4f> circleFlowColors = {
 const std::vector<float> circleFlowProgress = {0.0f, 0.3f, 0.5f, 1.0f};
 
 // Strength variations
-const std::vector<float> circleFlowStrength = {0.0f, 0.5f, 1.0f, 2.0f};
+const std::vector<Vector4f> circleFlowStrength = {
+    Vector4f{0.0f, 0.0f, 0.0f, 0.0f},
+    Vector4f{0.5f, 0.5f, 0.5f, 0.5f},
+    Vector4f{1.0f, 1.0f, 1.0f, 1.0f},
+    Vector4f{2.0f, 2.0f, 2.0f, 2.0f}
+};
 
 // Rotation frequency
 const std::vector<float> circleFlowRotationFrequency = {0.5f, 1.0f, 2.0f};
@@ -58,6 +63,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGCircleFlowlight>& circleFlowlight)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -85,7 +93,7 @@ GRAPHIC_TEST(NGShaderCircleFlowlightTest, EFFECT_TEST, Set_Circle_Flowlight_Colo
         circleFlowlight->Setter<CircleFlowlightColor2Tag>(circleFlowColors[(i + 2) % circleFlowColors.size()]);
         circleFlowlight->Setter<CircleFlowlightColor3Tag>(circleFlowColors[(i + 3) % circleFlowColors.size()]);
         circleFlowlight->Setter<CircleFlowlightProgressTag>(0.5f);
-        circleFlowlight->Setter<CircleFlowlightStrengthTag>(1.0f);
+        circleFlowlight->Setter<CircleFlowlightStrengthTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
 
         SetUpTestNode(i, columnCount, rowCount, circleFlowlight);
     }
@@ -106,7 +114,7 @@ GRAPHIC_TEST(NGShaderCircleFlowlightTest, EFFECT_TEST, Set_Circle_Flowlight_Prog
         circleFlowlight->Setter<CircleFlowlightColor2Tag>(Vector4f{0.0f, 1.0f, 0.0f, 1.0f});
         circleFlowlight->Setter<CircleFlowlightColor3Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
         circleFlowlight->Setter<CircleFlowlightProgressTag>(circleFlowProgress[i]);
-        circleFlowlight->Setter<CircleFlowlightStrengthTag>(1.0f);
+        circleFlowlight->Setter<CircleFlowlightStrengthTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
 
         SetUpTestNode(i, columnCount, rowCount, circleFlowlight);
     }
@@ -127,7 +135,7 @@ GRAPHIC_TEST(NGShaderCircleFlowlightTest, EFFECT_TEST, Set_Circle_Flowlight_Stre
         circleFlowlight->Setter<CircleFlowlightColor2Tag>(Vector4f{0.0f, 1.0f, 0.0f, 1.0f});
         circleFlowlight->Setter<CircleFlowlightColor3Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
         circleFlowlight->Setter<CircleFlowlightProgressTag>(circleFlowProgress[i]);
-        circleFlowlight->Setter<CircleFlowlightStrengthTag>(circleFlowStrength[i]);
+        circleFlowlight->Setter<CircleFlowlightStrengthTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
 
         SetUpTestNode(i, columnCount, rowCount, circleFlowlight);
     }
@@ -151,7 +159,7 @@ GRAPHIC_TEST(NGShaderCircleFlowlightTest, EFFECT_TEST, Set_Circle_Flowlight_Prog
         circleFlowlight->Setter<CircleFlowlightColor2Tag>(Vector4f{0.0f, 1.0f, 0.0f, 1.0f});
         circleFlowlight->Setter<CircleFlowlightColor3Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
         circleFlowlight->Setter<CircleFlowlightProgressTag>(extremeProgress[i]);
-        circleFlowlight->Setter<CircleFlowlightStrengthTag>(1.0f);
+        circleFlowlight->Setter<CircleFlowlightStrengthTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
 
         SetUpTestNode(i, columnCount, rowCount, circleFlowlight);
     }

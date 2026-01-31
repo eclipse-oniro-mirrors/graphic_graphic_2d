@@ -29,8 +29,13 @@ const int SCREEN_HEIGHT = 2000;
 // Progress values
 const std::vector<float> progressValues = {0.0f, 0.3f, 0.5f, 1.0f};
 
-// Distort factor values
-const std::vector<float> distortFactors = {0.0f, 0.5f, 1.0f, 2.0f};
+// Distort factor values (Vector2f for X and Y components)
+const std::vector<Vector2f> distortFactors = {
+    Vector2f{0.0f, 0.0f},
+    Vector2f{0.5f, 0.5f},
+    Vector2f{1.0f, 1.0f},
+    Vector2f{2.0f, 2.0f}
+};
 
 // Brightness values
 const std::vector<float> brightnessValues = {0.0f, 0.5f, 1.0f, 2.0f};
@@ -47,6 +52,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGDistortChroma>& distortChroma)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -100,10 +108,6 @@ GRAPHIC_TEST(NGShaderDistortChromaTest, EFFECT_TEST, Set_Distort_Chroma_Brightne
     }
 }
 
-
-/*
-
-} // namespace OHOS::Rosen
 GRAPHIC_TEST(NGShaderDistortChromaTest, EFFECT_TEST, Set_Distort_Chroma_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -115,3 +119,5 @@ GRAPHIC_TEST(NGShaderDistortChromaTest, EFFECT_TEST, Set_Distort_Chroma_Extreme_
         SetUpTestNode(i, columnCount, rowCount, distortChroma);
     }
 }
+
+} // namespace OHOS::Rosen

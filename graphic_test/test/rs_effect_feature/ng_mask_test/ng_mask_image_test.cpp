@@ -38,7 +38,7 @@ GRAPHIC_TEST(NGMaskImageTest, EFFECT_TEST, Set_NG_Mask_Image_Test)
     auto sizeX = SCREEN_WIDTH;
     auto sizeY = SCREEN_HEIGHT;
 
-    auto parentNode = SetUpNodeBgImage(g_backgroundImagePath, { 0, 0, sizeX - 10, sizeY - 10 });
+    auto parentNode = SetUpNodeBgImage(BACKGROUND_IMAGE_PATH, { 0, 0, sizeX - 10, sizeY - 10 });
     parentNode->SetFrame({ 0, 0, sizeX - 10, sizeY - 10 });
     parentNode->SetBorderStyle(0, 0, 0, 0);
     parentNode->SetBorderWidth(5, 5, 5, 5);
@@ -64,12 +64,12 @@ GRAPHIC_TEST(NGMaskImageTest, EFFECT_TEST, Set_NG_Mask_Image_Test)
     RegisterNode(childNode);
 
     std::shared_ptr<Media::PixelMap> pixelMap =
-        DecodePixelMap(g_distorImagePath, Media::AllocatorType::SHARE_MEM_ALLOC);
+        DecodePixelMap(DISTOR_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
     std::shared_ptr<RSNGImageMask> pixelMapMask = std::make_shared<RSNGImageMask>();
     pixelMapMask->Setter<ImageMaskImageTag>(pixelMap);
 
     std::shared_ptr<Media::PixelMap> pixelMapClock =
-        DecodePixelMap(g_clockImagePath, Media::AllocatorType::SHARE_MEM_ALLOC);
+        DecodePixelMap(CLOCK_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
     std::shared_ptr<RSNGImageMask> pixelMapMaskClock = std::make_shared<RSNGImageMask>();
     pixelMapMaskClock->Setter<ImageMaskImageTag>(pixelMapClock);
 

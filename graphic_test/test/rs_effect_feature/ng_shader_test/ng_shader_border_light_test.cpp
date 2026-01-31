@@ -26,11 +26,11 @@ const std::string TEST_IMAGE_PATH = "/data/local/tmp/Images/backGroundImage.jpg"
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
 
-// Position variations (Vector4f: x, y, z, w)
-const std::vector<Vector4f> borderLightPositions = {
-    Vector4f{0.0f, 0.0f, 0.0f, 0.0f},       // Origin
-    Vector4f{0.5f, 0.5f, 0.5f, 0.5f},       // Center
-    Vector4f{1.0f, 1.0f, 1.0f, 1.0f}        // Max
+// Position variations (Vector3f: x, y, z)
+const std::vector<Vector3f> borderLightPositions = {
+    Vector3f{0.0f, 0.0f, 0.0f},       // Origin
+    Vector3f{0.5f, 0.5f, 0.5f},       // Center
+    Vector3f{1.0f, 1.0f, 1.0f}        // Max
 };
 
 // Color variations (RGBA)
@@ -48,16 +48,21 @@ const std::vector<float> borderLightIntensities = {0.0f, 0.5f, 1.0f, 1.5f};
 const std::vector<float> borderLightWidths = {0.0f, 10.0f, 50.0f, 100.0f};
 
 // Rotation angle variations
-const std::vector<float> borderLightRotationAngles = {0.0f, 45.0f, 90.0f, 180.0f};
+const std::vector<Vector3f> borderLightRotationAngles = {
+    Vector3f{0.0f, 0.0f, 0.0f},
+    Vector3f{45.0f, 45.0f, 45.0f},
+    Vector3f{90.0f, 90.0f, 90.0f},
+    Vector3f{180.0f, 180.0f, 180.0f}
+};
 
 // Corner radius variations
 const std::vector<float> borderLightCornerRadii = {0.0f, 10.0f, 25.0f, 50.0f};
 
 // Parameter combinations for interaction testing
-const std::vector<std::tuple<Vector4f, Vector4f, float, float>> borderLightColorIntensityWidthCombinations = {
-    {Vector4f{1.0f, 0.0f, 0.0f, 1.0f}, Vector4f{0.5f, 0.5f, 0.5f, 0.5f}, 0.5f, 10.0f},   // Red, low intensity, thin
-    {Vector4f{0.0f, 1.0f, 0.0f, 1.0f}, Vector4f{0.5f, 0.5f, 0.5f, 0.5f}, 1.0f, 50.0f},   // Green, normal intensity, medium
-    {Vector4f{0.0f, 0.0f, 1.0f, 1.0f}, Vector4f{0.5f, 0.5f, 0.5f, 0.5f}, 1.5f, 100.0f}   // Blue, high intensity, thick
+const std::vector<std::tuple<Vector4f, Vector3f, float, float>> borderLightColorIntensityWidthCombinations = {
+    {Vector4f{1.0f, 0.0f, 0.0f, 1.0f}, Vector3f{0.5f, 0.5f, 0.5f}, 0.5f, 10.0f},   // Red, low intensity, thin
+    {Vector4f{0.0f, 1.0f, 0.0f, 1.0f}, Vector3f{0.5f, 0.5f, 0.5f}, 1.0f, 50.0f},   // Green, normal intensity, medium
+    {Vector4f{0.0f, 0.0f, 1.0f, 1.0f}, Vector3f{0.5f, 0.5f, 0.5f}, 1.5f, 100.0f}   // Blue, high intensity, thick
 };
 
 // Extreme and invalid values for robustness testing
@@ -87,6 +92,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGBorderLight>& borderLight)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -111,7 +119,7 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Color_Test)
     for (size_t i = 0; i < borderLightColors.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(borderLightColors[i]);
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(1.0f);
         borderLight->Setter<BorderLightWidthTag>(50.0f);
 
@@ -131,7 +139,7 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Intensity_Bo
     for (size_t i = 0; i < borderLightIntensities.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(borderLightIntensities[i]);
         borderLight->Setter<BorderLightWidthTag>(50.0f);
 
@@ -151,7 +159,7 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Width_Bounda
     for (size_t i = 0; i < borderLightWidths.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(1.0f);
         borderLight->Setter<BorderLightWidthTag>(borderLightWidths[i]);
 
@@ -171,7 +179,7 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Rotation_Ang
     for (size_t i = 0; i < borderLightRotationAngles.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(1.0f);
         borderLight->Setter<BorderLightWidthTag>(50.0f);
         borderLight->Setter<BorderLightRotationAngleTag>(borderLightRotationAngles[i]);
@@ -192,7 +200,7 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Corner_Radiu
     for (size_t i = 0; i < borderLightCornerRadii.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(1.0f);
         borderLight->Setter<BorderLightWidthTag>(50.0f);
         borderLight->Setter<BorderLightCornerRadiusTag>(borderLightCornerRadii[i]);
@@ -221,8 +229,6 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Color_Intens
     }
 }
 
-} // namespace OHOS::Rosen
-
 /*
  * Test border light with extreme and invalid intensity values
  * Tests malicious inputs: negative values, extremely large values
@@ -236,7 +242,7 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Intensity_Ex
     for (size_t i = 0; i < borderLightExtremeIntensities.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(borderLightExtremeIntensities[i]);
         borderLight->Setter<BorderLightWidthTag>(50.0f);
 
@@ -257,11 +263,13 @@ GRAPHIC_TEST(NGShaderBorderLightTest, EFFECT_TEST, Set_Border_Light_Width_Extrem
     for (size_t i = 0; i < borderLightExtremeWidths.size(); i++) {
         auto borderLight = std::make_shared<RSNGBorderLight>();
         borderLight->Setter<BorderLightColorTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
-        borderLight->Setter<BorderLightPositionTag>(Vector4f{0.5f, 0.5f, 0.5f, 0.5f});
+        borderLight->Setter<BorderLightPositionTag>(Vector3f{0.5f, 0.5f, 0.5f});
         borderLight->Setter<BorderLightIntensityTag>(1.0f);
         borderLight->Setter<BorderLightWidthTag>(borderLightExtremeWidths[i]);
 
         SetUpTestNode(i, columnCount, rowCount, borderLight);
     }
 }
+
+} // namespace OHOS::Rosen
 

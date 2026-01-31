@@ -47,6 +47,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGDotMatrixShader>& dotMatrixShader)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -113,10 +116,10 @@ GRAPHIC_TEST(NGShaderDotMatrixTest, EFFECT_TEST, Set_Dot_Matrix_Progress_Boundar
     }
 }
 
-
 /*
-
-} // namespace OHOS::Rosen
+ * Test dot matrix with extreme and invalid values
+ * Tests malicious inputs: negative values, extremely large values
+ */
 GRAPHIC_TEST(NGShaderDotMatrixTest, EFFECT_TEST, Set_Dot_Matrix_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -130,3 +133,5 @@ GRAPHIC_TEST(NGShaderDotMatrixTest, EFFECT_TEST, Set_Dot_Matrix_Extreme_Values_T
         SetUpTestNode(i, columnCount, rowCount, dotMatrixShader);
     }
 }
+
+} // namespace OHOS::Rosen

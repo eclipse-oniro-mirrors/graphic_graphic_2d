@@ -54,6 +54,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGFrostedGlassBlurFilter>& frostedGlassBlurFilter)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -121,7 +124,8 @@ GRAPHIC_TEST(NGFilterFrostedGlassBlurTest, EFFECT_TEST, Set_Frosted_Glass_Blur_I
  * Test frosted glass blur with radius and intensity combinations
  * Tests interaction between radius and intensity parameters
  */
-GRAPHIC_TEST(NGFilterFrostedGlassBlurTest, EFFECT_TEST, Set_Frosted_Glass_Blur_Radius_Intensity_Combination_Test)
+GRAPHIC_TEST(NGFilterFrostedGlassBlurTest, EFFECT_TEST,
+    Set_Frosted_Glass_Blur_Radius_Intensity_Combination_Test)
 {
     const size_t columnCount = 3;
     const size_t rowCount = 1;
@@ -129,7 +133,8 @@ GRAPHIC_TEST(NGFilterFrostedGlassBlurTest, EFFECT_TEST, Set_Frosted_Glass_Blur_R
     for (size_t i = 0; i < frostedGlassRadiusIntensityCombinations.size(); i++) {
         auto frostedGlassBlurFilter = std::make_shared<RSNGFrostedGlassBlurFilter>();
         frostedGlassBlurFilter->Setter<FrostedGlassBlurRadiusTag>(frostedGlassRadiusIntensityCombinations[i].first);
-        frostedGlassBlurFilter->Setter<FrostedGlassBlurRadiusScaleKTag>(frostedGlassRadiusIntensityCombinations[i].second);
+        frostedGlassBlurFilter->Setter<FrostedGlassBlurRadiusScaleKTag>(
+            frostedGlassRadiusIntensityCombinations[i].second);
 
         SetUpTestNode(i, columnCount, rowCount, frostedGlassBlurFilter);
     }

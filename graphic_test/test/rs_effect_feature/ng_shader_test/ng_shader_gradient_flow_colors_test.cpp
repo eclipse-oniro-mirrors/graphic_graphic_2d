@@ -50,6 +50,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGGradientFlowColors>& gradientFlow)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -97,10 +100,6 @@ GRAPHIC_TEST(NGShaderGradientFlowColorsTest, EFFECT_TEST, Set_Gradient_Flow_Colo
     }
 }
 
-
-/*
-
-} // namespace OHOS::Rosen
 GRAPHIC_TEST(NGShaderGradientFlowColorsTest, EFFECT_TEST, Set_Gradient_Flow_Colors_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -116,3 +115,5 @@ GRAPHIC_TEST(NGShaderGradientFlowColorsTest, EFFECT_TEST, Set_Gradient_Flow_Colo
         SetUpTestNode(i, columnCount, rowCount, gradientFlow);
     }
 }
+
+} // namespace OHOS::Rosen

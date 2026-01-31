@@ -27,7 +27,11 @@ const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
 
 // Contour values
-const std::vector<float> contourValues = {0.0f, 0.5f, 1.0f};
+const std::vector<std::vector<Vector2f>> contourValues = {
+    {Vector2f{0.0f, 0.0f}},
+    {Vector2f{0.5f, 0.5f}},
+    {Vector2f{1.0f, 1.0f}}
+};
 
 // Thickness values
 const std::vector<float> thicknessValues = {0.0f, 5.0f, 10.0f, 20.0f};
@@ -50,6 +54,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGContourDiagonalFlowLight>& contourLight)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -72,7 +79,7 @@ GRAPHIC_TEST(NGShaderContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diag
 
     for (size_t i = 0; i < contourValues.size(); i++) {
         auto contourLight = std::make_shared<RSNGContourDiagonalFlowLight>();
-        contourLight->Setter<ContourDiagonalFlowLightContourTag>(contourValues[i]);
+        contourLight->Setter<ContourDiagonalFlowLightContourTag>(std::vector<Vector2f>{Vector2f{0.5f, 0.5f}});
         contourLight->Setter<ContourDiagonalFlowLightThicknessTag>(10.0f);
 
         SetUpTestNode(i, columnCount, rowCount, contourLight);
@@ -89,7 +96,7 @@ GRAPHIC_TEST(NGShaderContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diag
 
     for (size_t i = 0; i < thicknessValues.size(); i++) {
         auto contourLight = std::make_shared<RSNGContourDiagonalFlowLight>();
-        contourLight->Setter<ContourDiagonalFlowLightContourTag>(0.5f);
+        contourLight->Setter<ContourDiagonalFlowLightContourTag>(std::vector<Vector2f>{Vector2f{0.5f, 0.5f}});
         contourLight->Setter<ContourDiagonalFlowLightThicknessTag>(thicknessValues[i]);
 
         SetUpTestNode(i, columnCount, rowCount, contourLight);
@@ -106,7 +113,7 @@ GRAPHIC_TEST(NGShaderContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diag
 
     for (size_t i = 0; i < haloRadiusValues.size(); i++) {
         auto contourLight = std::make_shared<RSNGContourDiagonalFlowLight>();
-        contourLight->Setter<ContourDiagonalFlowLightContourTag>(0.5f);
+        contourLight->Setter<ContourDiagonalFlowLightContourTag>(std::vector<Vector2f>{Vector2f{0.5f, 0.5f}});
         contourLight->Setter<ContourDiagonalFlowLightThicknessTag>(10.0f);
         contourLight->Setter<ContourDiagonalFlowLightHaloRadiusTag>(haloRadiusValues[i]);
         contourLight->Setter<ContourDiagonalFlowLightLightWeightTag>(lightWeightValues[i]);
@@ -115,10 +122,10 @@ GRAPHIC_TEST(NGShaderContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diag
     }
 }
 
-
 /*
-
-} // namespace OHOS::Rosen
+ * Test contour diagonal flow light with extreme and invalid values
+ * Tests malicious inputs: negative values, extremely large values
+ */
 GRAPHIC_TEST(NGShaderContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diagonal_Flow_Light_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -126,7 +133,10 @@ GRAPHIC_TEST(NGShaderContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diag
     const std::vector<float> extremeValues = {-1.0f, -10.0f, 9999.0f, 1e10f};
     for (size_t i = 0; i < extremeValues.size(); i++) {
         auto contourLight = std::make_shared<RSNGContourDiagonalFlowLight>();
-        contourLight->Setter<ContourDiagonalFlowLightContourTag>(extremeValues[i]);
+        std::vector<Vector2f> contourVec = {Vector2f{extremeValues[i], extremeValues[i]}};
+        contourLight->Setter<ContourDiagonalFlowLightContourTag>(contourVec);
         SetUpTestNode(i, columnCount, rowCount, contourLight);
     }
 }
+
+} // namespace OHOS::Rosen

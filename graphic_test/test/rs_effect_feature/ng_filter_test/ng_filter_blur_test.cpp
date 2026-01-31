@@ -29,8 +29,8 @@ const int SCREEN_HEIGHT = 2000;
 // Test parameters for blur radius
 // Valid range: [0, 100]
 const std::vector<float> blurRadiusBasicParams = {10.0f, 20.0f, 30.0f, 40.0f};
-const float blurRadiusZero = 0.0f;
-const float blurRadiusMax = 100.0f;
+const float BLUR_RADIUS_ZERO = 0.0f;
+const float BLUR_RADIUS_MAX = 100.0f;
 
 // Anisotropic blur parameters (different X and Y radii)
 const std::vector<std::pair<float, float>> anisotropicBlurParams = {
@@ -61,6 +61,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGBlurFilter>& blurFilter)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -98,8 +101,8 @@ GRAPHIC_TEST(NGFilterBlurTest, EFFECT_TEST, Set_Blur_Basic_Radius_Test)
 GRAPHIC_TEST(NGFilterBlurTest, EFFECT_TEST, Set_Blur_Zero_Radius_Test)
 {
     auto blurFilter = std::make_shared<RSNGBlurFilter>();
-    blurFilter->Setter<BlurRadiusXTag>(blurRadiusZero);
-    blurFilter->Setter<BlurRadiusYTag>(blurRadiusZero);
+    blurFilter->Setter<BlurRadiusXTag>(BLUR_RADIUS_ZERO);
+    blurFilter->Setter<BlurRadiusYTag>(BLUR_RADIUS_ZERO);
 
     auto testNode = SetUpNodeBgImage(TEST_IMAGE_PATH, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     testNode->SetBackgroundNGFilter(blurFilter);
@@ -114,8 +117,8 @@ GRAPHIC_TEST(NGFilterBlurTest, EFFECT_TEST, Set_Blur_Zero_Radius_Test)
 GRAPHIC_TEST(NGFilterBlurTest, EFFECT_TEST, Set_Blur_Max_Radius_Test)
 {
     auto blurFilter = std::make_shared<RSNGBlurFilter>();
-    blurFilter->Setter<BlurRadiusXTag>(blurRadiusMax);
-    blurFilter->Setter<BlurRadiusYTag>(blurRadiusMax);
+    blurFilter->Setter<BlurRadiusXTag>(BLUR_RADIUS_MAX);
+    blurFilter->Setter<BlurRadiusYTag>(BLUR_RADIUS_MAX);
 
     auto testNode = SetUpNodeBgImage(TEST_IMAGE_PATH, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     testNode->SetBackgroundNGFilter(blurFilter);

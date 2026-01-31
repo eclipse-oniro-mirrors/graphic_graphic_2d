@@ -80,8 +80,13 @@ private:
         auto harmoniumEffect = std::make_shared<RSNGHarmoniumEffect>();
         harmoniumEffect->Setter<HarmoniumEffectMaskTag>(std::static_pointer_cast<RSNGMaskBase>(radialGradientMask));
         harmoniumEffect->Setter<HarmoniumEffectDistortProgressTag>(1.0f);
-        effectNode->AddChild(harmoniumEffect);
-        RegisterNode(harmoniumEffect);
+
+        auto effectChildNode = RSCanvasNode::Create();
+        effectChildNode->SetBounds({0, 0, sizeX, sizeY});
+        effectChildNode->SetFrame({0, 0, sizeX, sizeY});
+        effectChildNode->SetBackgroundNGShader(harmoniumEffect);
+        effectNode->AddChild(effectChildNode);
+        RegisterNode(effectChildNode);
     }
 };
 
@@ -90,8 +95,6 @@ private:
  */
 GRAPHIC_TEST(NGMaskRadialGradientTest, EFFECT_TEST, Set_Radial_Gradient_Mask_Center_Radius_Test)
 {
-    const size_t columnCount = 3;
-
     for (size_t i = 0; i < radialGradientCenters.size(); i++) {
         auto radialGradientMask = std::make_shared<RSNGRadialGradientMask>();
         radialGradientMask->Setter<RadialGradientMaskCenterTag>(radialGradientCenters[i]);
@@ -109,8 +112,6 @@ GRAPHIC_TEST(NGMaskRadialGradientTest, EFFECT_TEST, Set_Radial_Gradient_Mask_Cen
  */
 GRAPHIC_TEST(NGMaskRadialGradientTest, EFFECT_TEST, Set_Radial_Gradient_Mask_Radius_Extreme_Values_Test)
 {
-    const size_t columnCount = 5;
-
     for (size_t i = 0; i < radialGradientExtremeRadii.size(); i++) {
         auto radialGradientMask = std::make_shared<RSNGRadialGradientMask>();
         radialGradientMask->Setter<RadialGradientMaskCenterTag>(Vector2f{0.5f, 0.5f});

@@ -41,7 +41,7 @@ void SetUseEffectMask(std::shared_ptr<RSNGHarmoniumEffect>& harmoniumEffect, boo
 
 GRAPHIC_TEST(NGMaskUseEffectTest, EFFECT_TEST, Set_NG_Mask_USE_EFFECT_Test)
 {
-    auto backgroundTestNode = SetUpNodeBgImage(g_backgroundImagePath, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
+    auto backgroundTestNode = SetUpNodeBgImage(BACKGROUND_IMAGE_PATH, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     auto effectNode = RSEffectNode::Create();
     effectNode->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     effectNode->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});

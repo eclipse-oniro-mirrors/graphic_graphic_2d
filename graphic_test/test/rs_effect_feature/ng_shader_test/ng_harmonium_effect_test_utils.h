@@ -21,9 +21,9 @@ const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
 const float BLUR_RADIUS = 10.f;
 
-const std::string g_backgroundImagePath = "/data/local/tmp/Images/backGroundImage.jpg";
-const std::string g_distorImagePath = "/data/local/tmp/Images/perlin_worley_noise_3d_64.png";
-const std::string g_clockImagePath = "/data/local/tmp/Images/clockEffect.png";
+const std::string BACKGROUND_IMAGE_PATH = "/data/local/tmp/Images/backGroundImage.jpg";
+const std::string DISTOR_IMAGE_PATH = "/data/local/tmp/Images/perlin_worley_noise_3d_64.png";
+const std::string CLOCK_IMAGE_PATH = "/data/local/tmp/Images/clockEffect.png";
 
 const std::vector<bool> useEffectVec = {true, false, false, true};
 const std::vector<float> refractionVec = {-1.f, 1.f, 10.f, 100.f};

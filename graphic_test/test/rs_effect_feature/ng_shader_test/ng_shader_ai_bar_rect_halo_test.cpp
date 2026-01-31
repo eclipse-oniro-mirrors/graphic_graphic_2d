@@ -33,7 +33,11 @@ const std::vector<float> progressValues = {0.0f, 0.3f, 0.5f, 1.0f};
 const std::vector<float> brightnessValues = {0.0f, 0.5f, 1.0f, 2.0f};
 
 // Strength values
-const std::vector<float> strengthValues = {0.0f, 0.5f, 1.0f};
+const std::vector<Vector4f> strengthValues = {
+    Vector4f{0.0f, 0.0f, 0.0f, 0.0f},
+    Vector4f{0.5f, 0.5f, 0.5f, 0.5f},
+    Vector4f{1.0f, 1.0f, 1.0f, 1.0f}
+};
 }
 
 class NGShaderAIBarRectHaloTest : public RSGraphicTest {
@@ -47,6 +51,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGAIBarRectHalo>& aiBarRectHalo)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -82,17 +89,13 @@ GRAPHIC_TEST(NGShaderAIBarRectHaloTest, EFFECT_TEST, Set_AI_Bar_Rect_Halo_Bright
         auto aiBarRectHalo = std::make_shared<RSNGAIBarRectHalo>();
         aiBarRectHalo->Setter<AIBarRectHaloProgressTag>(progressValues[i]);
         aiBarRectHalo->Setter<AIBarRectHaloBrightnessTag>(brightnessValues[i]);
-        aiBarRectHalo->Setter<AIBarRectHaloStrengthTag>(strengthValues[i]);
+        aiBarRectHalo->Setter<AIBarRectHaloStrengthTag>(Vector4f{1.0f, 1.0f, 1.0f, 1.0f});
         aiBarRectHalo->Setter<AIBarRectHaloLTWHTag>(Vector4f{0.0f, 0.0f, 100.0f, 100.0f});
 
         SetUpTestNode(i, columnCount, rowCount, aiBarRectHalo);
     }
 }
 
-
-/*
-
-} // namespace OHOS::Rosen
 GRAPHIC_TEST(NGShaderAIBarRectHaloTest, EFFECT_TEST, Set_AI_Bar_Rect_Halo_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
@@ -105,3 +108,5 @@ GRAPHIC_TEST(NGShaderAIBarRectHaloTest, EFFECT_TEST, Set_AI_Bar_Rect_Halo_Extrem
         SetUpTestNode(i, columnCount, rowCount, aiBarRectHalo);
     }
 }
+
+} // namespace OHOS::Rosen

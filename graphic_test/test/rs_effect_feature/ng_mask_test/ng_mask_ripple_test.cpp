@@ -27,7 +27,6 @@ namespace {
 const std::string TEST_IMAGE_PATH = "/data/local/tmp/Images/backGroundImage.jpg";
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
-
 // Center position variations
 const std::vector<Vector2f> rippleCenters = {
     Vector2f{0.0f, 0.0f},       // Origin
@@ -98,8 +97,12 @@ private:
         harmoniumEffect->Setter<HarmoniumEffectMaskTag>(std::static_pointer_cast<RSNGMaskBase>(rippleMask));
         harmoniumEffect->Setter<HarmoniumEffectDistortProgressTag>(1.0f);
 
-        effectNode->AddChild(harmoniumEffect);
-        RegisterNode(harmoniumEffect);
+        auto effectChildNode = RSCanvasNode::Create();
+        effectChildNode->SetBounds({0, 0, sizeX, sizeY});
+        effectChildNode->SetFrame({0, 0, sizeX, sizeY});
+        effectChildNode->SetBackgroundNGShader(harmoniumEffect);
+        effectNode->AddChild(effectChildNode);
+        RegisterNode(effectChildNode);
     }
 };
 
@@ -123,8 +126,6 @@ GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Center_Test)
  */
 GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Radius_Boundary_Test)
 {
-    const size_t columnCount = 4;
-
     for (size_t i = 0; i < rippleRadii.size(); i++) {
         auto rippleMask = std::make_shared<RSNGRippleMask>();
         rippleMask->Setter<RippleMaskCenterTag>(Vector2f{0.5f, 0.5f});
@@ -140,8 +141,6 @@ GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Radius_Boundary_Test
  */
 GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Width_Boundary_Test)
 {
-    const size_t columnCount = 4;
-
     for (size_t i = 0; i < rippleWidths.size(); i++) {
         auto rippleMask = std::make_shared<RSNGRippleMask>();
         rippleMask->Setter<RippleMaskCenterTag>(Vector2f{0.5f, 0.5f});
@@ -157,14 +156,12 @@ GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Width_Boundary_Test)
  */
 GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Parameter_Combination_Test)
 {
-    const size_t columnCount = 3;
-
     for (size_t i = 0; i < rippleRadiusWidthOffsetCombinations.size(); i++) {
         auto rippleMask = std::make_shared<RSNGRippleMask>();
         rippleMask->Setter<RippleMaskCenterTag>(Vector2f{0.5f, 0.5f});
         rippleMask->Setter<RippleMaskRadiusTag>(std::get<0>(rippleRadiusWidthOffsetCombinations[i]));
         rippleMask->Setter<RippleMaskWidthTag>(std::get<1>(rippleRadiusWidthOffsetCombinations[i]));
-        rippleMask->Setter<RippleMaskWidthCenterOffsetTag>(std::get<2>(rippleRadiusWidthOffsetCombinations[i]));
+        rippleMask->Setter<RippleMaskOffsetTag>(std::get<2>(rippleRadiusWidthOffsetCombinations[i]));
 
         SetUpTestNode(i, rippleMask);
     }
@@ -176,8 +173,6 @@ GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Parameter_Combinatio
  */
 GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Radius_Extreme_Values_Test)
 {
-    const size_t columnCount = 5;
-
     for (size_t i = 0; i < rippleExtremeRadii.size(); i++) {
         auto rippleMask = std::make_shared<RSNGRippleMask>();
         rippleMask->Setter<RippleMaskCenterTag>(Vector2f{0.5f, 0.5f});
@@ -194,8 +189,6 @@ GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Radius_Extreme_Value
  */
 GRAPHIC_TEST(NGMaskRippleTest, EFFECT_TEST, Set_Ripple_Mask_Width_Extreme_Values_Test)
 {
-    const size_t columnCount = 5;
-
     for (size_t i = 0; i < rippleExtremeWidths.size(); i++) {
         auto rippleMask = std::make_shared<RSNGRippleMask>();
         rippleMask->Setter<RippleMaskCenterTag>(Vector2f{0.5f, 0.5f});

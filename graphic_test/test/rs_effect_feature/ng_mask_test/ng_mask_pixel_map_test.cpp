@@ -75,8 +75,13 @@ private:
         auto harmoniumEffect = std::make_shared<RSNGHarmoniumEffect>();
         harmoniumEffect->Setter<HarmoniumEffectMaskTag>(std::static_pointer_cast<RSNGMaskBase>(pixelMapMask));
         harmoniumEffect->Setter<HarmoniumEffectDistortProgressTag>(1.0f);
-        effectNode->AddChild(harmoniumEffect);
-        RegisterNode(harmoniumEffect);
+
+        auto effectChildNode = RSCanvasNode::Create();
+        effectChildNode->SetBounds({0, 0, sizeX, sizeY});
+        effectChildNode->SetFrame({0, 0, sizeX, sizeY});
+        effectChildNode->SetBackgroundNGShader(harmoniumEffect);
+        effectNode->AddChild(effectChildNode);
+        RegisterNode(effectChildNode);
     }
 };
 
@@ -90,8 +95,8 @@ GRAPHIC_TEST(NGMaskPixelMapTest, EFFECT_TEST, Set_Pixel_Map_Mask_Src_Test)
 
         std::shared_ptr<Media::PixelMap> pixelMap =
             DecodePixelMap(DISTOR_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
-        pixelMapMask->Setter<ImageMaskImageTag>(pixelMap);
-        pixelMapMask->Setter<ImageMaskSrcTag>(pixelMapSrcs[i]);
+        pixelMapMask->Setter<PixelMapMaskImageTag>(pixelMap);
+        pixelMapMask->Setter<PixelMapMaskSrcTag>(pixelMapSrcs[i]);
 
         SetUpTestNode(pixelMapMask);
     }
@@ -103,15 +108,13 @@ GRAPHIC_TEST(NGMaskPixelMapTest, EFFECT_TEST, Set_Pixel_Map_Mask_Src_Test)
  */
 GRAPHIC_TEST(NGMaskPixelMapTest, EFFECT_TEST, Set_Pixel_Map_Mask_Src_Extreme_Values_Test)
 {
-    const size_t columnCount = 4;
-
     for (size_t i = 0; i < pixelMapExtremeSrcs.size(); i++) {
         auto pixelMapMask = std::make_shared<RSNGPixelMapMask>();
 
         std::shared_ptr<Media::PixelMap> pixelMap =
             DecodePixelMap(DISTOR_IMAGE_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
-        pixelMapMask->Setter<ImageMaskImageTag>(pixelMap);
-        pixelMapMask->Setter<ImageMaskSrcTag>(pixelMapExtremeSrcs[i]);
+        pixelMapMask->Setter<PixelMapMaskImageTag>(pixelMap);
+        pixelMapMask->Setter<PixelMapMaskSrcTag>(pixelMapExtremeSrcs[i]);
 
         SetUpTestNode(pixelMapMask);
     }

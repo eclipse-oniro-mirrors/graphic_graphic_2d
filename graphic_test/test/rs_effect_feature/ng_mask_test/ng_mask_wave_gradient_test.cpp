@@ -80,8 +80,13 @@ private:
         auto harmoniumEffect = std::make_shared<RSNGHarmoniumEffect>();
         harmoniumEffect->Setter<HarmoniumEffectMaskTag>(std::static_pointer_cast<RSNGMaskBase>(waveGradientMask));
         harmoniumEffect->Setter<HarmoniumEffectDistortProgressTag>(1.0f);
-        effectNode->AddChild(harmoniumEffect);
-        RegisterNode(harmoniumEffect);
+
+        auto effectChildNode = RSCanvasNode::Create();
+        effectChildNode->SetBounds({0, 0, sizeX, sizeY});
+        effectChildNode->SetFrame({0, 0, sizeX, sizeY});
+        effectChildNode->SetBackgroundNGShader(harmoniumEffect);
+        effectNode->AddChild(effectChildNode);
+        RegisterNode(effectChildNode);
     }
 };
 
@@ -90,8 +95,6 @@ private:
  */
 GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Boundary_Test)
 {
-    const size_t columnCount = 4;
-
     for (size_t i = 0; i < waveBlurRadii.size(); i++) {
         auto waveGradientMask = std::make_shared<RSNGWaveGradientMask>();
         waveGradientMask->Setter<WaveGradientMaskWaveCenterTag>(Vector2f{0.5f, 0.5f});
@@ -109,8 +112,6 @@ GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Boundar
  */
 GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Turbulence_Strength_Test)
 {
-    const size_t columnCount = 5;
-
     for (size_t i = 0; i < waveTurbulenceStrengths.size(); i++) {
         auto waveGradientMask = std::make_shared<RSNGWaveGradientMask>();
         waveGradientMask->Setter<WaveGradientMaskWaveCenterTag>(Vector2f{0.5f, 0.5f});
@@ -129,8 +130,6 @@ GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Turbule
  */
 GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Radius_Extreme_Values_Test)
 {
-    const size_t columnCount = 5;
-
     for (size_t i = 0; i < waveExtremeRadii.size(); i++) {
         auto waveGradientMask = std::make_shared<RSNGWaveGradientMask>();
         waveGradientMask->Setter<WaveGradientMaskWaveCenterTag>(Vector2f{0.5f, 0.5f});
@@ -149,8 +148,6 @@ GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Radius_
  */
 GRAPHIC_TEST(NGMaskWaveGradientTest, EFFECT_TEST, Set_Wave_Gradient_Mask_Turbulence_Extreme_Values_Test)
 {
-    const size_t columnCount = 5;
-
     for (size_t i = 0; i < waveExtremeStrengths.size(); i++) {
         auto waveGradientMask = std::make_shared<RSNGWaveGradientMask>();
         waveGradientMask->Setter<WaveGradientMaskWaveCenterTag>(Vector2f{0.5f, 0.5f});

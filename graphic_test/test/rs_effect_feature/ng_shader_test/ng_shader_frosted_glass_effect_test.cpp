@@ -34,8 +34,12 @@ const std::vector<Vector4f> materialColors = {
     Vector4f{0.2f, 0.2f, 0.2f, 1.0f}   // Dark gray
 };
 
-// Shape values (assuming int or float)
-const std::vector<float> shapeValues = {0.0f, 0.5f, 1.0f};
+// Shape values (need to create proper shape objects)
+const std::vector<std::shared_ptr<RSNGRenderShapeBase>> shapeValues = {
+    nullptr,  // Placeholder - should be actual shape objects
+    nullptr,  // Placeholder - should be actual shape objects
+    nullptr   // Placeholder - should be actual shape objects
+};
 }
 
 class NGShaderFrostedGlassEffectTest : public RSGraphicTest {
@@ -49,6 +53,9 @@ private:
     void SetUpTestNode(const size_t i, const size_t columnCount, const size_t rowCount,
         std::shared_ptr<RSNGFrostedGlassEffect>& frostedGlass)
     {
+        if (columnCount == 0 || rowCount == 0) {
+            return;  // Invalid test configuration
+        }
         const size_t sizeX = SCREEN_WIDTH / columnCount;
         const size_t sizeY = SCREEN_HEIGHT / rowCount;
         const size_t x = (i % columnCount) * sizeX;
@@ -88,19 +95,25 @@ GRAPHIC_TEST(NGShaderFrostedGlassEffectTest, EFFECT_TEST, Set_Frosted_Glass_Effe
     }
 }
 
-
 /*
-
-} // namespace OHOS::Rosen
+ * Test frosted glass effect with extreme material color values
+ * Tests malicious inputs: negative values, extremely large values
+ */
 GRAPHIC_TEST(NGShaderFrostedGlassEffectTest, EFFECT_TEST, Set_Frosted_Glass_Effect_Extreme_Values_Test)
 {
     const size_t columnCount = 4;
     const size_t rowCount = 1;
-    const std::vector<float> extremeValues = {-1.0f, -10.0f, 9999.0f, 1e10f};
-    for (size_t i = 0; i < extremeValues.size(); i++) {
+    const std::vector<Vector4f> extremeColors = {
+        Vector4f{-1.0f, -1.0f, -1.0f, -1.0f},   // All negative
+        Vector4f{10.0f, 10.0f, 10.0f, 10.0f},    // Above max (1.0)
+        Vector4f{9999.0f, 9999.0f, 9999.0f, 1.0f}, // Extremely large
+        Vector4f{0.5f, 1e10f, 0.5f, 0.5f}        // Mixed extreme
+    };
+    for (size_t i = 0; i < extremeColors.size(); i++) {
         auto frostedGlass = std::make_shared<RSNGFrostedGlassEffect>();
-        frostedGlass->Setter<FrostedGlassEffectMaterialColorTag>(Vector4f{0.8f, 0.8f, 0.8f, 1.0f});
-        frostedGlass->Setter<FrostedGlassEffectShapeTag>(extremeValues[i]);
+        frostedGlass->Setter<FrostedGlassEffectMaterialColorTag>(extremeColors[i]);
         SetUpTestNode(i, columnCount, rowCount, frostedGlass);
     }
 }
+
+} // namespace OHOS::Rosen
