@@ -175,7 +175,7 @@ bool RSUniHwcPrevalidateUtil::CreateSurfaceNodeLayerInfo(uint32_t zorder,
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(node->GetStagingRenderParams().get());
     stagingSurfaceParams->SetOfflineOriginBufferSynced(true);
     const auto& layerLinearMatrix = stagingSurfaceParams->GetLayerLinearMatrix();
-    if (layerLinearMatrix.size() == MATRIX_SIZE && layerLinearMatrix != DEFAULT_MATRIX) {
+    if (layerLinearMatrix.size() == MATRIX_SIZE) {
         std::vector<int8_t> valueBlob(MATRIX_SIZE * sizeof(float));
         if (memcpy_s(valueBlob.data(), valueBlob.size(), layerLinearMatrix.data(),
             MATRIX_SIZE * sizeof(float)) == EOK) {
