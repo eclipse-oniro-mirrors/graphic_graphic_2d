@@ -392,7 +392,6 @@ HWTEST_F(PropertiesTest, SetColorPickerNotifyThresholdTest003, TestSize.Level1)
     EXPECT_EQ(properties.GetColorPicker()->notifyThreshold.first, 255);
     EXPECT_EQ(properties.GetColorPicker()->notifyThreshold.second, 255);
 }
-}
 
 /**
  * @tc.name: SetParticlesTest
