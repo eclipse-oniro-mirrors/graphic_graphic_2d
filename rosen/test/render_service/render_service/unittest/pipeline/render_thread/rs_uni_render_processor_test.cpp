@@ -676,11 +676,16 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo006, TestSize.Level1)
 HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayerTest, TestSize.Level1)
 {
     RSLayerPtr layer = std::make_shared<RSSurfaceLayer>();
+    layer->SetZorder(5);
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
     auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->renderParams_.get());
-    params->SetIsHwcEnabledBySolidLayer(false);
+    params->SetIsHwcEnabledBySolidLayer(true);
+    params->SetSolidLayerColor(Color(255, 0, 0, 128));
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = {10, 10, 100, 100};
+    params->SetLayerInfo(layerInfo);
     ASSERT_NE(renderProcessor, nullptr);
     renderProcessor->composerClient_ = nullptr;
     renderProcessor->CreateSolidColorLayer(layer, *params);
@@ -689,13 +694,14 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayerTest, TestSize.Level1)
     RSScreenRenderNode screenNode(nodeId, screenId_);
     auto renderEngine = std::make_shared<RSUniRenderEngine>();
     renderProcessor->Init(screenNode, 0, 0, 0, renderEngine);
+    auto sizeBefore = renderProcessor->layers_.size();
     renderProcessor->CreateSolidColorLayer(layer, *params);
-    ASSERT_NE(renderProcessor->layers_.size(), 0);
+    EXPECT_GT(renderProcessor->layers_.size(), sizeBefore);
 }
 
 /**
  * @tc.name: CreateSolidColorLayer001
- * @tc.desc: Test CreateSolidColorLayer when GetIsHwcEnabledBySolidLayer returns false (layer created)
+ * @tc.desc: Test CreateSolidColorLayer when GetIsHwcEnabledBySolidLayer returns true (layer created)
  * @tc.type:FUNC
  * @tc.require: issuesI9KRF1
  */
@@ -709,8 +715,8 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer001, TestSize.Level1)
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
         auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-        // Set IsHwcEnabledBySolidLayer to false - should create solid color layer
-        params->SetIsHwcEnabledBySolidLayer(false);
+        // Set IsHwcEnabledBySolidLayer to true - should create solid color layer
+        params->SetIsHwcEnabledBySolidLayer(true);
         params->SetSolidLayerColor(Color(255, 0, 0, 128));
         RSLayerInfo layerInfo;
         layerInfo.dstRect = {10, 10, 100, 100};
@@ -724,7 +730,7 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer001, TestSize.Level1)
 
         auto sizeBefore = renderProcessor->layers_.size();
         renderProcessor->CreateSolidColorLayer(layer, *params);
-        // Solid color layer should be created, size should be sizeBefore + 1 = 2
+        // Solid color layer should be created, size should be sizeBefore + 1
         EXPECT_EQ(renderProcessor->layers_.size(), sizeBefore + 1);
     }
 }
@@ -745,8 +751,8 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer002, TestSize.Level1)
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
         auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-        // Set IsHwcEnabledBySolidLayer to false
-        params->SetIsHwcEnabledBySolidLayer(false);
+        // Set IsHwcEnabledBySolidLayer to true (should create layer, but will fail due to null composerClient)
+        params->SetIsHwcEnabledBySolidLayer(true);
         params->SetSolidLayerColor(Color(0, 255, 0, 200));
 
         // Create processor with null composerClient
@@ -776,8 +782,8 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer003, TestSize.Level1)
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
         auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-        // Set IsHwcEnabledBySolidLayer to false and set color
-        params->SetIsHwcEnabledBySolidLayer(false);
+        // Set IsHwcEnabledBySolidLayer to true and set color
+        params->SetIsHwcEnabledBySolidLayer(true);
         params->SetSolidLayerColor(Color(128, 128, 128, 255));
         RSLayerInfo layerInfo;
         layerInfo.dstRect = {10, 10, 100, 100};
@@ -795,10 +801,12 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer003, TestSize.Level1)
         EXPECT_GT(renderProcessor->layers_.size(), sizeBefore);
 
         // Verify the created layer has correct properties
+        // The last layer in layers_ is the newly created solidColorLayer
         auto& lastLayer = renderProcessor->layers_.back();
         EXPECT_EQ(lastLayer->GetCompositionType(), GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR);
         EXPECT_EQ(lastLayer->GetTransformType(), GraphicTransformType::GRAPHIC_ROTATE_NONE);
-        EXPECT_EQ(lastLayer->GetZorder(), 4);  // Should be zorder - 1 = 5 - 1 = 4
+        // The solidColorLayer's zorder should be layer->GetZorder() - 1 = 5 - 1 = 4
+        EXPECT_EQ(lastLayer->GetZorder(), 4);
     }
 }
 
@@ -818,9 +826,12 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer004, TestSize.Level1)
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
         auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-        // Set IsHwcEnabledBySolidLayer to false
-        params->SetIsHwcEnabledBySolidLayer(false);
+        // Set IsHwcEnabledBySolidLayer to true
+        params->SetIsHwcEnabledBySolidLayer(true);
         params->SetSolidLayerColor(Color(255, 255, 0, 100));
+        RSLayerInfo layerInfo;
+        layerInfo.dstRect = {10, 10, 100, 100};
+        params->SetLayerInfo(layerInfo);
 
         ASSERT_NE(renderProcessor, nullptr);
         NodeId nodeId = 1;
@@ -828,9 +839,10 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer004, TestSize.Level1)
         auto renderEngine = std::make_shared<RSUniRenderEngine>();
         renderProcessor->Init(screenNode, 0, 0, 0, renderEngine);
 
+        auto sizeBefore = renderProcessor->layers_.size();
         renderProcessor->CreateSolidColorLayer(layer, *params);
-        // When zorder is 0, layer should still be created but zorder should not be modified
-        EXPECT_GT(renderProcessor->layers_.size(), 0);
+        // When zorder is 0, layer should still be created
+        EXPECT_GT(renderProcessor->layers_.size(), sizeBefore);
     }
 }
 
@@ -850,9 +862,12 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer005, TestSize.Level1)
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
         auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-        // Set IsHwcEnabledBySolidLayer to false
-        params->SetIsHwcEnabledBySolidLayer(false);
+        // Set IsHwcEnabledBySolidLayer to true
+        params->SetIsHwcEnabledBySolidLayer(true);
         params->SetSolidLayerColor(Color(0, 0, 255, 180));
+        RSLayerInfo layerInfo;
+        layerInfo.dstRect = {10, 10, 100, 100};
+        params->SetLayerInfo(layerInfo);
 
         ASSERT_NE(renderProcessor, nullptr);
         NodeId nodeId = 1;
@@ -860,9 +875,10 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer005, TestSize.Level1)
         auto renderEngine = std::make_shared<RSUniRenderEngine>();
         renderProcessor->Init(screenNode, 0, 0, 0, renderEngine);
 
+        auto sizeBefore = renderProcessor->layers_.size();
         renderProcessor->CreateSolidColorLayer(layer, *params);
         // When zorder is negative, layer should still be created
-        EXPECT_GT(renderProcessor->layers_.size(), 0);
+        EXPECT_GT(renderProcessor->layers_.size(), sizeBefore);
     }
 }
 
@@ -904,7 +920,7 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer006, TestSize.Level1)
                 DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
             auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-            params->SetIsHwcEnabledBySolidLayer(false);
+            params->SetIsHwcEnabledBySolidLayer(true);
             Color color(colorCase.argb);
             params->SetSolidLayerColor(color);
             RSLayerInfo layerInfo;
@@ -955,7 +971,7 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer007, TestSize.Level1)
                 DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
             auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
 
-            params->SetIsHwcEnabledBySolidLayer(false);
+            params->SetIsHwcEnabledBySolidLayer(true);
             params->SetSolidLayerColor(Color(100, 150, 200, 255));
             RSLayerInfo layerInfo;
             layerInfo.dstRect = rectCase.dstRect;
