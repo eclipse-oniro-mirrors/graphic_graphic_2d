@@ -43,7 +43,7 @@ bool RegisterMhcUpdate(const std::function<void(Drawing::ColorQuad&)>& updateCol
     RSPaintFilterCanvas& canvas)
 {
     bool registerRes = RSMhcManager::Instance().RegisterFunc(
-            canvas.GetParallelThreadId(), [updateColor, imageSnapshot, backendTexture] {
+        canvas.GetParallelThreadId(), [updateColor, imageSnapshot, backendTexture] {
         Drawing::TextureOrigin origin = Drawing::TextureOrigin::TOP_LEFT;
         Drawing::BitmapFormat info =
             Drawing::BitmapFormat { imageSnapshot->GetColorType(), imageSnapshot->GetAlphaType() };

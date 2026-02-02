@@ -155,7 +155,7 @@ HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidInputParameters, TestSize.Leve
     }
     // invalid surface
     {
-        bool result = 
+        bool result =
             SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
         EXPECT_FALSE(result);
     }
