@@ -257,7 +257,7 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckCacheTypeAndDrawTest003, TestSize.Level1
 
     drawable->SetCanceledByParentRenderGroup(true);
     drawable->isOffScreenWithClipHole_ = false;
-    drawable->SetDrawBlurForCache(true);
+    drawable->SetDrawBlurForCache(false);
     params.drawingCacheType_ = RSDrawingCacheType::FORCED_CACHE;
     drawable->CheckCacheTypeAndDraw(canvas, params);
     EXPECT_EQ(drawable->GetCacheType(), DrawableCacheType::CONTENT);
