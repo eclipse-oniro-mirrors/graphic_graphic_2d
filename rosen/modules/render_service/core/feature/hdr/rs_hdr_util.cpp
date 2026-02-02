@@ -242,7 +242,7 @@ void RSHdrUtil::UpdateSelfDrawingNodeNit(RSScreenRenderNode& node)
         }
         if (!selfDrawingNode->IsOnTheTree()) {
             RS_LOGD("RSHdrUtil::UpdateSelfDrawingNodeNit node(%{public}s) is not on the tree",
-                    selfDrawingNode->GetName().c_str());
+                selfDrawingNode->GetName().c_str());
             continue;
         }
         auto ancestor = selfDrawingNode->GetAncestorScreenNode().lock();
