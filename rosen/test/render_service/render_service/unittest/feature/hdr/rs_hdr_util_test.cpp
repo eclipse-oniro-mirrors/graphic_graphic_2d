@@ -46,7 +46,7 @@ namespace OHOS::Rosen {
 namespace {
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr NodeId NODE_ID = 10;
-constexpr ScreenId SCREEN_ID = 10;
+constexpr ScreenId SCREEN_ID = 1;
 BufferRequestConfig requestConfig = {
     .width = 0x100,
     .height = 0x100,
