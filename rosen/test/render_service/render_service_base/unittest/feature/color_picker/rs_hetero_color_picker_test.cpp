@@ -202,6 +202,7 @@ HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidImage, TestSize.Level1)
 
     EXPECT_FALSE(result);
 }
+
 HWTEST_F(RSHeteroColorPickerTest, GetColor_MakeSurfaceFailed, TestSize.Level1)
 {
 #ifdef MHC_ENABLE
