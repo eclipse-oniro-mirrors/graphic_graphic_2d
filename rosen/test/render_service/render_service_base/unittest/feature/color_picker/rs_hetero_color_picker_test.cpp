@@ -179,7 +179,7 @@ HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidSurface, TestSize.Level1)
     EXPECT_FALSE(result);
 }
 
-HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidInputParameters, TestSize.Level1)
+HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidImage, TestSize.Level1)
 {
 #ifdef MHC_ENABLE
     RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
@@ -196,7 +196,7 @@ HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidInputParameters, TestSize.Leve
     RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(paintFilterCanvas);
     std::shared_ptr<Drawing::Image> image = nullptr;
 
-    bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, 
+    bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas,
         image // invalid image
     );
 
