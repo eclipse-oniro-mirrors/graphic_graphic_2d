@@ -75,14 +75,8 @@ bool RSHeteroColorPicker::GetColor(const std::function<void(Drawing::ColorQuad&)
     RSPaintFilterCanvas& canvas, std::shared_ptr<Drawing::Image>& image)
 {
 #ifdef MHC_ENABLE
-    auto& mhcManager = RSMhcManager::Instance();
-    if (!mhcManager.IsInterfaceTypeBasicRender()) {
-        RS_LOGD("[HeteroColorPicker]:%s is not basic render", __func__);
-        return false;
-    }
-    bool isUniRenderThread = !(canvas.IsSubTreeInParallel() || canvas.GetIsParallelCanvas());
-    if (isUniRenderThread && mhcManager.CheckIfInCaptureProcess().value_or(true)) {
-        RS_LOGD("[HeteroColorPicker]:skip capture process");
+    if (!RSMhcManager::Instance().CanGetColor(canvas)) {
+        RS_LOGD("[HeteroColorPicker]:Mhc does not support get volor");
         return false;
     }
 #endif
@@ -119,7 +113,7 @@ bool RSHeteroColorPicker::GetColor(const std::function<void(Drawing::ColorQuad&)
         RS_LOGE("[HeteroColorPicker]:GetImageSnapshot failed");
         return false;
     }
-    
+
     auto backendTexture = colorSurface->GetBackendTexture();
     if (!backendTexture.IsValid()) {
         RS_LOGE("[HeteroColorPicker]:GetBackendTexture failed");

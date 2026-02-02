@@ -76,75 +76,27 @@ public:
     MOCK_METHOD(int, Height, (), (const, override));
 };
 
-class PaintFilterCanvasBaseTest : public RSPaintFilterCanvasBase {
+class RSPaintFilterCanvasTest : public RSPaintFilterCanvas {
 public:
-    explicit PaintFilterCanvasBaseTest(Drawing::Canvas* canvas) : RSPaintFilterCanvasBase(canvas) {};
+    explicit RSPaintFilterCanvasTest(Drawing::Canvas* canvas) : RSPaintFilterCanvas(canvas) {}
+    using RSPaintFilterCanvas::SetSubTreeParallelState;
+    using RSPaintFilterCanvas::SetIsParallelCanvas;
+
     bool OnFilter() const override
     {
         return true;
-    };
+    }
     bool OnFilterWithBrush(Drawing::Brush& brush) const override
     {
         return true;
-    };
+    }
     Drawing::Brush* GetFilteredBrush() const override
     {
         return nullptr;
-    };
+    }
     MOCK_METHOD(bool, DrawImageEffectHPS,
         (const Drawing::Image& image, const std::vector<std::shared_ptr<Drawing::HpsEffectParameter>>& params),
         (override));
-};
-
-template <typename Derived>
-class MockRSMhcManagerBase : public RSMhcManager {
-public:
-    using RSMhcManager::RSMhcManager;
-#ifdef RS_ENABLE_VK
-    bool IsInterfaceTypeBasicRender() {
-        return static_cast<Derived*>(this)->IsInterfaceTypeBasicRender();
-    }
-#endif // RS_ENABLE_VK
-    std::optional<bool> CheckIfInCaptureProcess() const {
-        return static_cast<Derived*>(this)->CheckIfInCaptureProcess();
-    }
-};
-
-class MockRSMhcManager : public MockRSMhcManagerBase<MockRSMhcManager> {
-public:
-#ifdef RS_ENABLE_VK
-    MOCK_METHOD(bool, IsInterfaceTypeBasicRender, (), ());
-#endif // RS_ENABLE_VK
-    MOCK_METHOD(std::optional<bool>, CheckIfInCaptureProcess, (), (const));
-};
-
-class SingletonMockRSMhcManager {
-public:
-    static MockRSMhcManager& Instance()
-    {
-        static MockRSMhcManager instance;
-        return instance;
-    }
-};
-
-template <typename Derived>
-class MockRSPaintFilterCanvasBase : public RSPaintFilterCanvas {
-public:
-    explicit MockRSPaintFilterCanvasBase(Drawing::Canvas* canvas = nullptr)
-        : RSPaintFilterCanvas(canvas) {}
-
-    Drawing::Surface* GetSurface() const {
-        return static_cast<const Derived*>(this)->GetSurface();
-    }
-};
-
-class MockRSPaintFilterCanvas : public MockRSPaintFilterCanvasBase<MockRSPaintFilterCanvas> {
-public:
-    explicit MockRSPaintFilterCanvas(Drawing::Canvas* canvas = nullptr)
-        : MockRSPaintFilterCanvasBase<MockRSPaintFilterCanvas>(canvas) {}
-
-    MOCK_METHOD(bool, IsSubTreeInParallel, (), (const));
-    MOCK_METHOD(bool, GetIsParallelCanvas, (), (const));
     MOCK_METHOD(Drawing::Surface*, GetSurface, (), (const, override));
 };
 
@@ -161,250 +113,225 @@ void RSHeteroColorPickerTest::TearDownTestCase() {}
 void RSHeteroColorPickerTest::SetUp() {}
 void RSHeteroColorPickerTest::TearDown() {}
 
-HWTEST_F(RSHeteroColorPickerTest, GetColor_NotBasicRender, TestSize.Level1)
+HWTEST_F(RSHeteroColorPickerTest, GetColor_MhcCanNotGetColor, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return true; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(paintFilterCanvas);
     std::shared_ptr<Drawing::Image> image = std::make_shared<Drawing::Image>();
 
     bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor(
-        [](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        [](Drawing::ColorQuad& color) {}, canvas, image);
 
     EXPECT_FALSE(result);
 }
 
-HWTEST_F(RSHeteroColorPickerTest, GetColor_RenderThreadInCaptureProcess, TestSize.Level1)
+HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidInputParameters, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(true));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
-    std::shared_ptr<Drawing::Image> image = std::make_shared<Drawing::Image>();
-
-    bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor(
-        [](Drawing::ColorQuad& color) {}, mockCanvas, image);
-
-    EXPECT_FALSE(result);
-}
-
-HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidUpdateColor, TestSize.Level1)
-{
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(nullptr));
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(paintFilterCanvas);
     auto image = std::make_shared<Drawing::Image>();
-
-    bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor(nullptr, // invalid updateColor
-        mockCanvas, image);
-
-    EXPECT_FALSE(result);
-}
-
-HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidSurface, TestSize.Level1)
-{
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(nullptr));
-    auto image = std::make_shared<Drawing::Image>();
-
-    bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {},
-        mockCanvas, // invalid surface
-        image);
-
-    EXPECT_FALSE(result);
-}
-
-HWTEST_F(RSHeteroColorPickerTest, GetColor_InvalidImage, TestSize.Level1)
-{
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
-    auto surface = std::make_shared<Drawing::Surface>();
-    auto mockImpl = std::make_shared<MockSurfaceImpl>();
-    surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
-    std::shared_ptr<Drawing::Image> image = nullptr;
-
-    bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas,
-        image // invalid image
-    );
-
-    EXPECT_FALSE(result);
+    // invalid updateColor
+    {
+        bool result = SingletonMockRSHeteroColorPicker::Instance().GetColor(nullptr, canvas, image);
+        EXPECT_FALSE(result);
+    }
+    // invalid surface
+    {
+        bool result = 
+            SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
+        EXPECT_FALSE(result);
+    }
+    // invalid image
+    {
+        EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+        RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(paintFilterCanvas);
+        std::shared_ptr<Drawing::Image> nullImage = nullptr;
+        bool result = 
+            SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, nullImage);
+        EXPECT_FALSE(result);
+    }
 }
 
 HWTEST_F(RSHeteroColorPickerTest, GetColor_MakeSurfaceFailed, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(paintFilterCanvas);
     auto image = std::make_shared<Drawing::Image>();
     EXPECT_CALL(*mockImpl, MakeSurface(1, 1)).WillOnce(testing::Return(nullptr));
 
     bool result =
-        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
 
     EXPECT_FALSE(result);
 }
 
 HWTEST_F(RSHeteroColorPickerTest, GetColor_GetCanvasFailed, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(paintFilterCanvas);
     auto image = std::make_shared<Drawing::Image>();
     EXPECT_CALL(*mockImpl, MakeSurface(1, 1)).WillOnce(testing::Return(surface));
     EXPECT_CALL(*mockImpl, GetCanvas()).WillOnce(testing::Return(nullptr));
 
     bool result =
-        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
 
     EXPECT_FALSE(result);
 }
 
 HWTEST_F(RSHeteroColorPickerTest, GetColor_DrawImageEffectHPSFailed, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(false));
+    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvas);
     auto image = std::make_shared<Drawing::Image>();
-    std::shared_ptr<PaintFilterCanvasBaseTest> paintFilterCanvasBase =
-        std::make_shared<PaintFilterCanvasBaseTest>(nullptr);
-    EXPECT_NE(paintFilterCanvasBase, nullptr);
-    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvasBase);
     EXPECT_CALL(*mockImpl, MakeSurface(1, 1)).WillOnce(testing::Return(surface));
     EXPECT_CALL(*mockImpl, GetCanvas()).WillOnce(testing::Return(canvasPtr));
-    EXPECT_CALL(*paintFilterCanvasBase, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(false));
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(canvasPtr);
 
     bool result =
-        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
 
     EXPECT_FALSE(result);
 }
 
 HWTEST_F(RSHeteroColorPickerTest, GetColor_GetImageSnapshotFailed, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(true));
+    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvas);
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(canvasPtr);
     auto image = std::make_shared<Drawing::Image>();
-    std::shared_ptr<PaintFilterCanvasBaseTest> paintFilterCanvasBase =
-        std::make_shared<PaintFilterCanvasBaseTest>(nullptr);
-    EXPECT_NE(paintFilterCanvasBase, nullptr);
-    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvasBase);
     EXPECT_CALL(*mockImpl, MakeSurface(1, 1)).WillOnce(testing::Return(surface));
     EXPECT_CALL(*mockImpl, GetCanvas()).WillOnce(testing::Return(canvasPtr));
-    EXPECT_CALL(*paintFilterCanvasBase, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(true));
     EXPECT_CALL(*mockImpl, GetImageSnapshot()).WillOnce(testing::Return(nullptr));
 
     bool result =
-        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
 
     EXPECT_FALSE(result);
 }
 
 HWTEST_F(RSHeteroColorPickerTest, GetColor_GetBackendTextureFailed, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(true));
+    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvas);
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(canvasPtr);
     auto image = std::make_shared<Drawing::Image>();
-    std::shared_ptr<PaintFilterCanvasBaseTest> paintFilterCanvasBase =
-        std::make_shared<PaintFilterCanvasBaseTest>(nullptr);
-    EXPECT_NE(paintFilterCanvasBase, nullptr);
-    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvasBase);
     auto invalidTexture = Drawing::BackendTexture(false);
     EXPECT_CALL(*mockImpl, MakeSurface(1, 1)).WillOnce(testing::Return(surface));
     EXPECT_CALL(*mockImpl, GetCanvas()).WillOnce(testing::Return(canvasPtr));
-    EXPECT_CALL(*paintFilterCanvasBase, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(true));
     EXPECT_CALL(*mockImpl, GetImageSnapshot()).WillOnce(testing::Return(image));
     EXPECT_CALL(*mockImpl, GetBackendTexture(testing::_)).WillOnce(testing::Return(invalidTexture));
 
     bool result =
-        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
 
     EXPECT_FALSE(result);
 }
 
-HWTEST_F(RSHeteroColorPickerTest, GetColor_RegisterFuncFailed, TestSize.Level1)
+HWTEST_F(RSHeteroColorPickerTest, GetColor, TestSize.Level1)
 {
-    MockRSMhcManager& mockMhcManager = SingletonMockRSMhcManager::Instance();
-    EXPECT_CALL(mockMhcManager, IsInterfaceTypeBasicRender()).WillOnce(Return(true));
-    EXPECT_CALL(mockMhcManager, CheckIfInCaptureProcess()).WillOnce(Return(false));
-    MockRSPaintFilterCanvas mockCanvas;
-    EXPECT_CALL(mockCanvas, IsSubTreeInParallel()).WillOnce(Return(false));
-    EXPECT_CALL(mockCanvas, GetIsParallelCanvas()).WillOnce(Return(false));
+#ifdef MHC_ENABLE
+    RSMhcManager::Instance().RegisterCaptureStatusCallback([]() { return false; });
+#endif
+    std::shared_ptr<RSPaintFilterCanvasTest> paintFilterCanvas =
+        std::make_shared<RSPaintFilterCanvasTest>(nullptr);
+    EXPECT_NE(paintFilterCanvas, nullptr);
+    paintFilterCanvas->SetIsParallelCanvas(false);
+    paintFilterCanvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::DEFAULT_STATE);
     auto surface = std::make_shared<Drawing::Surface>();
     auto mockImpl = std::make_shared<MockSurfaceImpl>();
     surface->impl_ = mockImpl;
-    EXPECT_CALL(mockCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, GetSurface()).WillOnce(Return(surface.get()));
+    EXPECT_CALL(*paintFilterCanvas, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(true));
+    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvas);
+    RSPaintFilterCanvas& canvas = *std::static_pointer_cast<RSPaintFilterCanvas>(canvasPtr);
     auto image = std::make_shared<Drawing::Image>();
-    std::shared_ptr<PaintFilterCanvasBaseTest> paintFilterCanvasBase =
-        std::make_shared<PaintFilterCanvasBaseTest>(nullptr);
-    EXPECT_NE(paintFilterCanvasBase, nullptr);
-    std::shared_ptr<Drawing::Canvas> canvasPtr = std::static_pointer_cast<Drawing::Canvas>(paintFilterCanvasBase);
     auto backendTexture = Drawing::BackendTexture(true);
     EXPECT_CALL(*mockImpl, MakeSurface(1, 1)).WillOnce(testing::Return(surface));
     EXPECT_CALL(*mockImpl, GetCanvas()).WillOnce(testing::Return(canvasPtr));
-    EXPECT_CALL(*paintFilterCanvasBase, DrawImageEffectHPS(_, _)).WillOnce(testing::Return(true));
     EXPECT_CALL(*mockImpl, GetImageSnapshot()).WillOnce(testing::Return(image));
     EXPECT_CALL(*mockImpl, GetBackendTexture(testing::_)).WillOnce(testing::Return(backendTexture));
 
     bool result =
-        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, mockCanvas, image);
+        SingletonMockRSHeteroColorPicker::Instance().GetColor([](Drawing::ColorQuad& color) {}, canvas, image);
 
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 }
 
 } // namespace OHOS::Rosen

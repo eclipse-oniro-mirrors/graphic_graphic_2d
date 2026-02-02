@@ -126,8 +126,7 @@
           "selinux_adapter",
           "runtime_core",
           "hiview",
-          "i18n",
-          "mhc_client"
+          "i18n"
         ],
         "third_party": [
           "skia"
