@@ -58,8 +58,18 @@ private:
     static ani_object GetLineMetricsAt(ani_env* env, ani_object object, ani_int lineNumber);
     static void UpdateColor(ani_env* env, ani_object object, ani_object color);
     static void UpdateDecoration(ani_env* env, ani_object object, ani_object decoration);
+    static ani_object GetCharacterRangeForGlyphRange(ani_env* env, ani_object object,
+        ani_object glyphRange, ani_object encoding);
+    static ani_object GetGlyphRangeForCharacterRange(ani_env* env, ani_object object,
+        ani_object characterRange, ani_object encoding);
+    static ani_object GetCharacterPositionAtCoordinate(ani_env* env, ani_object object,
+        ani_double x, ani_double y, ani_object encoding);
     static ani_object NativeTransferStatic(ani_env* env, ani_class cls, ani_object input);
     static ani_object NativeTransferDynamic(ani_env* env, ani_class cls, ani_long nativeObj);
+
+    // Helper functions for code refactoring
+    static ani_status SetArrayBoundaryElement(ani_env* env, ani_object array, int index,
+        const Rosen::Boundary& range, const char* errorMsg);
 
     std::shared_ptr<OHOS::Rosen::Typography> typography_{nullptr};
 };
