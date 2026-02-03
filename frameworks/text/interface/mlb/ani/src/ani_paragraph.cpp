@@ -53,12 +53,55 @@ const std::string GET_TEXT_LINES_SIGN = ":C{" + std::string(ANI_ARRAY) + "}";
 const std::string GET_ACTUAL_TEXT_RANGE_SIGN = "iz:C{" + std::string(ANI_INTERFACE_RANGE) + "}";
 const std::string UPDATE_COLOR_SIGN = "C{" + std::string(ANI_INTERFACE_COLOR) + "}:";
 const std::string UPDATE_DECORATION_SIGN = "C{" + std::string(ANI_INTERFACE_DECORATION) + "}:";
+const std::string GET_CHARACTER_RANGE_FOR_GLYPH_RANGE_SIGN = "C{" + std::string(ANI_INTERFACE_RANGE) + "}E{"
+    + std::string(ANI_ENUM_TEXT_ENCODING) + "}:C{" + std::string(ANI_ARRAY) + "}";
+const std::string GET_GLYPH_RANGE_FOR_CHARACTER_RANGE_SIGN = "C{" + std::string(ANI_INTERFACE_RANGE) + "}E{"
+    + std::string(ANI_ENUM_TEXT_ENCODING) + "}:C{" + std::string(ANI_ARRAY) + "}";
+const std::string GET_CHARACTER_POSITION_AT_COORDINATE_SIGN = "ddE{" + std::string(ANI_ENUM_TEXT_ENCODING) + "}:C{"
+    + std::string(ANI_INTERFACE_POSITION_WITH_AFFINITY) + "}";
 } // namespace
 
 ani_object ThrowErrorAndReturnUndefined(ani_env* env)
 {
     AniTextUtils::ThrowBusinessError(env, TextErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
     return AniTextUtils::CreateAniUndefined(env);
+}
+
+// Helper function to parse and validate text encoding
+static bool ParseTextEncoding(ani_env* env, ani_object encoding, Drawing::TextEncoding& outEncodeType)
+{
+    ani_int encodingValue = 0;
+    ani_status ret = env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(encoding), &encodingValue);
+    if (ret != ANI_OK) {
+        TEXT_LOGE("Failed to get encoding value, ret: %{public}d", ret);
+        return false;
+    }
+    // Validate encoding value - must match Drawing::TextEncoding enum values
+    if (encodingValue != static_cast<int>(Drawing::TextEncoding::UTF8) &&
+        encodingValue != static_cast<int>(Drawing::TextEncoding::UTF16)) {
+        TEXT_LOGE("Invalid encoding value: %{public}d", encodingValue);
+        return false;
+    }
+    outEncodeType = static_cast<Drawing::TextEncoding>(encodingValue);
+    return true;
+}
+
+// Helper function to set boundary element in array
+ani_status AniParagraph::SetArrayBoundaryElement(ani_env* env, ani_object array, int index,
+    const Boundary& range, const char* errorMsg)
+{
+    ani_object rangeObj = nullptr;
+    ani_status status = AniTextRectConverter::ParseBoundaryToAni(env, range, rangeObj);
+    if (status != ANI_OK) {
+        TEXT_LOGE("Failed to parse %{public}s, status %{public}d", errorMsg, status);
+        return status;
+    }
+    status = env->Object_CallMethod_Void(array, AniGlobalMethod::GetInstance().arraySet, index, rangeObj);
+    if (status != ANI_OK) {
+        TEXT_LOGE("Failed to set %{public}s, status %{public}d", errorMsg, status);
+        return status;
+    }
+    return ANI_OK;
 }
 
 ani_object AniParagraph::SetTypography(ani_env* env, OHOS::Rosen::Typography* typography)
@@ -116,6 +159,12 @@ std::vector<ani_native_function> AniParagraph::InitMethods(ani_env* env)
         ani_native_function{"updateColor", UPDATE_COLOR_SIGN.c_str(), reinterpret_cast<void*>(UpdateColor)},
         ani_native_function{"updateDecoration",
             UPDATE_DECORATION_SIGN.c_str(), reinterpret_cast<void*>(UpdateDecoration)},
+        ani_native_function{"getCharacterRangeForGlyphRange", GET_CHARACTER_RANGE_FOR_GLYPH_RANGE_SIGN.c_str(),
+            reinterpret_cast<void*>(GetCharacterRangeForGlyphRange)},
+        ani_native_function{"getGlyphRangeForCharacterRange", GET_GLYPH_RANGE_FOR_CHARACTER_RANGE_SIGN.c_str(),
+            reinterpret_cast<void*>(GetGlyphRangeForCharacterRange)},
+        ani_native_function{"getCharacterPositionAtCoordinate", GET_CHARACTER_POSITION_AT_COORDINATE_SIGN.c_str(),
+            reinterpret_cast<void*>(GetCharacterPositionAtCoordinate)},
     };
     return methods;
 }
@@ -609,6 +658,118 @@ void AniParagraph::UpdateColor(ani_env* env, ani_object object, ani_object color
     }
     textStyleTemplate.relayoutChangeBitmap.set(static_cast<size_t>(RelayoutTextStyleAttribute::FONT_COLOR));
     aniParagraph->typography_->UpdateAllTextStyles(textStyleTemplate);
+}
+
+ani_object AniParagraph::GetCharacterRangeForGlyphRange(ani_env* env, ani_object object, ani_object glyphRange,
+    ani_object encoding)
+{
+    AniParagraph* aniParagraph =
+        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniGlobalMethod::GetInstance().paragraphGetNative);
+    if (aniParagraph == nullptr || aniParagraph->typography_ == nullptr) {
+        TEXT_LOGE("Paragraph is null");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    RectRange glyphRangeNative;
+    if (AniTextRectConverter::ParseRangeToNative(env, glyphRange, glyphRangeNative) != ANI_OK) {
+        TEXT_LOGE("Failed to parse glyph range");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    // Validate range: start should not be greater than or equal to end
+    if (glyphRangeNative.start >= glyphRangeNative.end) {
+        TEXT_LOGE("Invalid glyph range: start %{public}" PRId64 ", end %{public}" PRId64,
+            glyphRangeNative.start, glyphRangeNative.end);
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    Drawing::TextEncoding encodeType;
+    if (!ParseTextEncoding(env, encoding, encodeType)) {
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    Boundary actualGlyphRange = {0, 0};
+    Boundary charRange = aniParagraph->typography_->GetCharacterRangeForGlyphRange(
+        glyphRangeNative.start, glyphRangeNative.end, &actualGlyphRange,
+        static_cast<Rosen::TextEncoding>(encodeType));
+    ani_object arrayObj = AniTextUtils::CreateAniArray(env, 2);
+    ani_boolean isUndefined;
+    env->Reference_IsUndefined(arrayObj, &isUndefined);
+    if (isUndefined) {
+        TEXT_LOGE("Failed to create arrayObject");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    if (SetArrayBoundaryElement(env, arrayObj, 0, charRange, "char range") != ANI_OK) {
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    if (SetArrayBoundaryElement(env, arrayObj, 1, actualGlyphRange, "actual glyph range") != ANI_OK) {
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    return arrayObj;
+}
+
+ani_object AniParagraph::GetGlyphRangeForCharacterRange(ani_env* env, ani_object object, ani_object characterRange,
+    ani_object encoding)
+{
+    AniParagraph* aniParagraph =
+        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniGlobalMethod::GetInstance().paragraphGetNative);
+    if (aniParagraph == nullptr || aniParagraph->typography_ == nullptr) {
+        TEXT_LOGE("Paragraph is null");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    RectRange charRangeNative;
+    if (AniTextRectConverter::ParseRangeToNative(env, characterRange, charRangeNative) != ANI_OK) {
+        TEXT_LOGE("Failed to parse character range");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    // Validate range: start should not be greater than or equal to end
+    if (charRangeNative.start >= charRangeNative.end) {
+        TEXT_LOGE("Invalid character range: start %{public}" PRId64 ", end %{public}" PRId64,
+            charRangeNative.start, charRangeNative.end);
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    Drawing::TextEncoding encodeType;
+    if (!ParseTextEncoding(env, encoding, encodeType)) {
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    Boundary actualCharRange = {0, 0};
+    Boundary glyphRange = aniParagraph->typography_->GetGlyphRangeForCharacterRange(
+        charRangeNative.start, charRangeNative.end, &actualCharRange,
+        static_cast<Rosen::TextEncoding>(encodeType));
+    ani_object arrayObj = AniTextUtils::CreateAniArray(env, 2);
+    ani_boolean isUndefined;
+    env->Reference_IsUndefined(arrayObj, &isUndefined);
+    if (isUndefined) {
+        TEXT_LOGE("Failed to create arrayObject");
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    if (SetArrayBoundaryElement(env, arrayObj, 0, glyphRange, "glyph range") != ANI_OK) {
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    if (SetArrayBoundaryElement(env, arrayObj, 1, actualCharRange, "actual char range") != ANI_OK) {
+        return AniTextUtils::CreateAniArray(env, 0);
+    }
+    return arrayObj;
+}
+
+ani_object AniParagraph::GetCharacterPositionAtCoordinate(ani_env* env, ani_object object, ani_double x, ani_double y,
+    ani_object encoding)
+{
+    AniParagraph* aniParagraph =
+        AniTextUtils::GetNativeFromObj<AniParagraph>(env, object, AniGlobalMethod::GetInstance().paragraphGetNative);
+    if (aniParagraph == nullptr || aniParagraph->typography_ == nullptr) {
+        TEXT_LOGE("Paragraph is null");
+        return AniTextUtils::CreateAniUndefined(env);
+    }
+    Drawing::TextEncoding encodeType;
+    if (!ParseTextEncoding(env, encoding, encodeType)) {
+        return AniTextUtils::CreateAniUndefined(env);
+    }
+    IndexAndAffinity indexAndAffinity = aniParagraph->typography_->GetCharacterIndexByCoordinate(
+        x, y, static_cast<Rosen::TextEncoding>(encodeType));
+    ani_object indexAndAffinityObj = nullptr;
+    ani_status ret = AniIndexAndAffinityConverter::ParseIndexAndAffinityToAni(
+        env, indexAndAffinity, indexAndAffinityObj);
+    if (ret != ANI_OK) {
+        return AniTextUtils::CreateAniUndefined(env);
+    }
+    return indexAndAffinityObj;
 }
 
 void AniParagraph::UpdateDecoration(ani_env* env, ani_object object, ani_object decoration)
