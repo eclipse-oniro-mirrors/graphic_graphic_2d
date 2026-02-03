@@ -349,7 +349,8 @@ bool DoFreezeScreen()
     std::shared_ptr<RSRenderPipelineClient> renderPipelineClient = std::make_shared<RSRenderPipelineClient>();
     NodeId nodeId = GetData<NodeId>();
     bool isFreeze = GetData<bool>();
-    renderPipelineClient->FreezeScreen(nodeId, isFreeze);
+    bool needSync = GetData<bool>();
+    renderPipelineClient->FreezeScreen(nodeId, isFreeze, needSync);
     return true;
 }
 } // namespace Rosen

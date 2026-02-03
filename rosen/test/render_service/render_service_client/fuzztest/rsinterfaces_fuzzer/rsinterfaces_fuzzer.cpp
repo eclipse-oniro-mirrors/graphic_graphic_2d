@@ -394,10 +394,11 @@ bool DoFreezeScreen(const uint8_t* data, size_t size)
         static_cast<ScreenId>(GetData<uint64_t>()), GetData<bool>(), static_cast<NodeId>(GetData<uint64_t>())};
     auto displayNode = RSDisplayNode::Create(displayConfig);
     bool isFreeze = GetData<bool>();
+    bool needSync = GetData<bool>();
 
     // test
     auto& rsRenderInterfaces = RSRenderInterface::GetInstance();
-    rsRenderInterfaces.FreezeScreen(displayNode, isFreeze);
+    rsRenderInterfaces.FreezeScreen(displayNode, isFreeze, needSync);
     return true;
 }
 
