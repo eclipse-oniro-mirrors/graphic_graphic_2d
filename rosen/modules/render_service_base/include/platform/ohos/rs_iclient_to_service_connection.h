@@ -423,13 +423,17 @@ public:
     virtual ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps) = 0;
 
+    virtual ErrCode AvcodecVideoGet(uint64_t uniqueId) = 0;
+ 
+    virtual ErrCode AvcodecVideoGetRecent() = 0;
+
     virtual bool GetHighContrastTextState() = 0;
 
     virtual ErrCode SetBehindWindowFilterEnabled(bool enabled) = 0;
 
     virtual ErrCode GetBehindWindowFilterEnabled(bool& enabled) = 0;
 
-    virtual int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB) = 0;
+    virtual int32_t GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB) = 0;
 
     virtual RetCodeHrpService ProfilerServiceOpenFile(const HrpServiceDirInfo& dirInfo,
         const std::string& fileName, int32_t flags, int& outFd) = 0;
@@ -441,16 +445,16 @@ public:
 
     virtual ErrCode SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList) = 0;
 
-    virtual ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) = 0;
+    virtual ErrCode SetLayerTop(const std::string& nodeIdStr, bool isTop) = 0;
 
-    virtual ErrCode SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh) = 0;
+    virtual ErrCode SetForceRefresh(const std::string& nodeIdStr, bool isForceRefresh) = 0;
 
-    virtual void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow) = 0;
+    virtual void SetColorFollow(const std::string& nodeIdStr, bool isColorFollow) = 0;
 
-    virtual void RemoveToken() = 0;
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     virtual ErrCode SetOverlayDisplayMode(int32_t mode) = 0;
 #endif
+    virtual void RemoveToken() = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

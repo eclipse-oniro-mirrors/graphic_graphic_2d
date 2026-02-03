@@ -99,8 +99,8 @@ public:
     void Init(const std::shared_ptr<AppExecFwk::EventRunner>& runner,
         const std::shared_ptr<AppExecFwk::EventHandler>& handler);
     void Start();
-    bool IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void UpdateFocusNodeId(NodeId focusNodeId);
+    bool IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void ProcessDataBySingleFrameComposer(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void RecvRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData);
     void RequestNextVSync(
@@ -119,6 +119,7 @@ public:
     void RsEventParamDump(std::string& dumpString);
     void UpdateAnimateNodeFlag();
     void ResetAnimateNodeFlag();
+    void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
     void SetForceRsDVsync(const std::string& sceneId);
 
@@ -267,9 +268,11 @@ public:
     void SubscribeAppState();
     void HandleOnTrim(Memory::SystemMemoryLevel level);
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
-    void AddPidNeedDropFrame(std::vector<int32_t> pid);
+    void AddPidNeedDropFrame(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0);
     void ClearNeedDropframePidList();
+    void RemoveDropFramePid(pid_t pid);
     bool IsNeedDropFrameByPid(NodeId nodeId);
+    int32_t GetDropFrameLevelByPid(NodeId nodeId);
     void SetLuminanceChangingStatus(ScreenId id, bool isLuminanceChanged);
     bool ExchangeLuminanceChangingStatus(ScreenId id);
 
@@ -812,7 +815,7 @@ private:
     RSDrawFrame drawFrame_;
 #endif
     std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr; // sync to render thread
-    std::unordered_set<int32_t> surfacePidNeedDropFrame_;
+    std::unordered_map<int32_t, int32_t> surfacePidNeedDropFrame_;  // pid -> dropFrameLevel
     RSVsyncRateReduceManager rsVsyncRateReduceManager_;
     RSSurfaceWatermarkHelper surfaceWatermarkHelper_;
 
