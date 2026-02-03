@@ -1870,6 +1870,13 @@
     "messageOption": "TF_SYNC"
   },
   {
+    "testCaseDesc": "GET_REFRESH_INFO_BY_PID_AND_UNIQUEID_TEST_001",
+    "interfaceName": "GET_REFRESH_INFO_BY_PID_AND_UNIQUEID",
+    "inputParams": "WriteInt32;WriteUint64",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_SYNC"
+  },
+  {
     "testCaseDesc": "MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME_TEST_001",
     "interfaceName": "MARK_POWER_OFF_NEED_PROCESS_ONE_FRAME",
     "inputParams": "",

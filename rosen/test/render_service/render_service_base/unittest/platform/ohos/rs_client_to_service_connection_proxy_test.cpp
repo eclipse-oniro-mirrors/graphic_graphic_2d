@@ -1692,5 +1692,32 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetDualScreenState002, TestSize.L
     auto ret = mockproxy->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
     EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
 }
+
+/**
+ * @tc.name: GetRefreshInfoByPidAndUniqueIdTest Test
+ * @tc.desc: GetRefreshInfoByPidAndUniqueIdTest Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTest, TestSize.Level1)
+{
+    pid_t pid = 1001;
+    uint64_t uniqueId = 0;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    std::string result = "";
+    {
+        EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+        mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        EXPECT_EQ(result, "");
+    }
+
+    {
+        result = "";
+        EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
+        mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        EXPECT_EQ(result, "");
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

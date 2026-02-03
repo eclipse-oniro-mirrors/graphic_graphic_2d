@@ -301,6 +301,15 @@ bool DoGetRefreshInfo()
     renderServiceClient->GetRefreshInfo(pid);
     return true;
 }
+
+bool DoGetRefreshInfoByPidAndUniqueId()
+{
+    std::shared_ptr<RSRenderServiceClient> renderServiceClient = std::make_shared<RSRenderServiceClient>();
+    pid_t pid = GetData<pid_t>();
+    uint64_t uniqueId = GetData<uint64_t>();
+    renderServiceClient->GetRefreshInfoByPidAndUniqueId(pid, uniqueId);
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS
 
@@ -311,6 +320,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (!OHOS::Rosen::Init(data, size)) {
         return -1;
     }
+    OHOS::Rosen::DoGetRefreshInfoByPidAndUniqueId();
     uint8_t tarPos = OHOS::Rosen::GetData<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
         case OHOS::Rosen::DO_CREATE_VIRTUAL_SCREEN:

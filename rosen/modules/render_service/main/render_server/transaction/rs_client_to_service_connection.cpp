@@ -1320,6 +1320,41 @@ ErrCode RSClientToServiceConnection::GetRefreshInfoToSP(NodeId id, std::string& 
     return ERR_OK;
 }
 
+ErrCode RSClientToServiceConnection::GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId, std::string& enable)
+{
+    if (!mainThread_) {
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+    auto& context = mainThread_->GetContext();
+    auto& nodeMap = context.GetMutableNodeMap();
+    std::string surfaceName = (uniqueId == 0 ? nodeMap.GetSelfDrawSurfaceNameByPid(pid)
+                                             : nodeMap.GetSelfDrawSurfaceNameByPidAndUniqueId(pid, uniqueId));
+    if (surfaceName.empty()) {
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+    std::string dumpString;
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+#ifdef RS_ENABLE_GPU
+        RSRenderComposerManager::GetInstance().FpsDump(dumpString, surfaceName);
+#endif
+    } else {
+        mainThread_
+            ->ScheduleTask([weakThis = wptr<RSClientToServiceConnection>(this), &dumpString, &surfaceName]() {
+                sptr<RSClientToServiceConnection> connection = weakThis.promote();
+                if (connection == nullptr || connection->screenManager_ == nullptr) {
+                    return;
+                }
+                connection->screenManager_->FpsDump(dumpString, surfaceName);
+            })
+            .wait();
+    }
+    enable = dumpString;
+    return ERR_OK;
+}
+
 int32_t RSClientToServiceConnection::GetCurrentRefreshRateMode()
 {
     return HgmTaskHandleThread::Instance().ScheduleTask([] () -> int32_t {
