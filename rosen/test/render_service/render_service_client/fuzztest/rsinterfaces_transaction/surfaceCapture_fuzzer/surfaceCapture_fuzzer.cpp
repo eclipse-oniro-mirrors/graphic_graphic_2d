@@ -30,7 +30,8 @@ const uint8_t DO_TAKE_SURFACE_CAPTURE = 0;
 const uint8_t DO_TAKE_SELF_SURFACE_CAPTURE = 1;
 const uint8_t DO_TAKE_SURFACE_CAPTURE_SOLO = 2;
 const uint8_t DO_TAKE_UI_CAPTURE_IN_RANGE = 3;
-constexpr uint8_t TARGET_SIZE = 4;
+const uint8_t DO_SET_WINDOW_FREEZE_IMMEDIATELY = 4;
+constexpr uint8_t TARGET_SIZE = 5;
 
 class SurfaceCaptureFuture : public SurfaceCaptureCallback {
 public:
@@ -157,6 +158,37 @@ void DoTakeUICaptureInRange(FuzzedDataProvider& fdp)
         callback, scaleX, scaleY, isSync);
 }
 
+void DoSetWindowFreezeImmediately(FuzzedDataProvider& fdp)
+{
+    RSSurfaceNodeConfig surfaceConfig;
+    surfaceConfig.surfaceId = static_cast<NodeId>(fdp.ConsumeIntegral<uint64_t>());
+    auto surfaceNode = RSSurfaceNode::Create(surfaceConfig);
+
+    bool isFreeze = fdp.ConsumeBool();
+    auto callback = std::make_shared<SurfaceCaptureFuture>();
+
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.scaleX = fdp.ConsumeFloatingPoint<float>();
+    captureConfig.scaleY = fdp.ConsumeFloatingPoint<float>();
+    captureConfig.useDma = fdp.ConsumeBool();
+    captureConfig.useCurWindow = fdp.ConsumeBool();
+    captureConfig.captureType = static_cast<SurfaceCaptureType>(fdp.ConsumeIntegral<uint8_t>());
+    captureConfig.isSync = fdp.ConsumeBool();
+
+    uint8_t listSize = fdp.ConsumeIntegral<uint8_t>();
+    for (auto i = 0; i < listSize; i++) {
+        uint64_t nodeId = fdp.ConsumeIntegral<uint64_t>();
+        captureConfig.blackList.push_back(nodeId);
+    }
+
+    captureConfig.mainScreenRect.left_ = fdp.ConsumeFloatingPoint<float>();
+    captureConfig.mainScreenRect.top_ = fdp.ConsumeFloatingPoint<float>();
+    captureConfig.mainScreenRect.right_ = fdp.ConsumeFloatingPoint<float>();
+    captureConfig.mainScreenRect.bottom_ = fdp.ConsumeFloatingPoint<float>();
+
+    g_rsInterfaces->SetWindowFreezeImmediately(surfaceNode, isFreeze, callback, captureConfig);
+}
+
 } // namespace
 
 } // namespace Rosen
@@ -193,6 +225,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_TAKE_UI_CAPTURE_IN_RANGE:
             OHOS::Rosen::DoTakeUICaptureInRange(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_WINDOW_FREEZE_IMMEDIATELY:
+            OHOS::Rosen::DoSetWindowFreezeImmediately(fdp);
             break;
         default:
             return -1;

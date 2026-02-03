@@ -26,62 +26,8 @@ namespace Rosen {
 RSInterfaces* g_rsInterfaces = nullptr;
 
 namespace {
-const uint8_t DO_SET_WINDOW_FREEZE_IMMEDIATELY = 0;
-const uint8_t DO_SET_WINDOW_CONTAINER = 1;
-constexpr uint8_t TARGET_SIZE = 2;
-
-class SurfaceCaptureFuture : public SurfaceCaptureCallback {
-public:
-    SurfaceCaptureFuture() = default;
-    ~SurfaceCaptureFuture() override = default;
-
-    void OnSurfaceCapture(std::shared_ptr<Media::PixelMap> pixelmap) override
-    {
-        pixelMap_ = pixelmap;
-    }
-
-    void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelmap,
-        std::shared_ptr<Media::PixelMap> pixelMapHDR) override
-    {
-        pixelMap_ = pixelmap;
-        pixelMapHDR_ = pixelMapHDR;
-    }
-
-private:
-    std::shared_ptr<Media::PixelMap> pixelMap_ = nullptr;
-    std::shared_ptr<Media::PixelMap> pixelMapHDR_ = nullptr;
-};
-
-void DoSetWindowFreezeImmediately(FuzzedDataProvider& fdp)
-{
-    RSSurfaceNodeConfig surfaceConfig;
-    surfaceConfig.surfaceId = static_cast<NodeId>(fdp.ConsumeIntegral<uint64_t>());
-    auto surfaceNode = RSSurfaceNode::Create(surfaceConfig);
-
-    bool isFreeze = fdp.ConsumeBool();
-    auto callback = std::make_shared<SurfaceCaptureFuture>();
-
-    RSSurfaceCaptureConfig captureConfig;
-    captureConfig.scaleX = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.scaleY = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.useDma = fdp.ConsumeBool();
-    captureConfig.useCurWindow = fdp.ConsumeBool();
-    captureConfig.captureType = static_cast<SurfaceCaptureType>(fdp.ConsumeIntegral<uint8_t>());
-    captureConfig.isSync = fdp.ConsumeBool();
-
-    uint8_t listSize = fdp.ConsumeIntegral<uint8_t>();
-    for (auto i = 0; i < listSize; i++) {
-        uint64_t nodeId = fdp.ConsumeIntegral<uint64_t>();
-        captureConfig.blackList.push_back(nodeId);
-    }
-
-    captureConfig.mainScreenRect.left_ = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.mainScreenRect.top_ = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.mainScreenRect.right_ = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.mainScreenRect.bottom_ = fdp.ConsumeFloatingPoint<float>();
-
-    g_rsInterfaces->SetWindowFreezeImmediately(surfaceNode, isFreeze, callback, captureConfig);
-}
+const uint8_t DO_SET_WINDOW_CONTAINER = 0;
+constexpr uint8_t TARGET_SIZE = 1;
 
 void DoSetWindowContainer(FuzzedDataProvider& fdp)
 {
@@ -115,9 +61,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     /* Run your code on data */
     uint8_t tarPos = fdp.ConsumeIntegral<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
-        case OHOS::Rosen::DO_SET_WINDOW_FREEZE_IMMEDIATELY:
-            OHOS::Rosen::DoSetWindowFreezeImmediately(fdp);
-            break;
         case OHOS::Rosen::DO_SET_WINDOW_CONTAINER:
             OHOS::Rosen::DoSetWindowContainer(fdp);
             break;
