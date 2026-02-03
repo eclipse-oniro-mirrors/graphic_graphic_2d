@@ -3285,14 +3285,24 @@ void RSSurfaceRenderNode::SetIsParentUifirstNodeEnableParam(bool b)
 #endif
 }
 
-void RSSurfaceRenderNode::SetUifirstUseStarting(NodeId id)
+void RSSurfaceRenderNode::SetUifirstStartingWindowId(NodeId id)
 {
 #ifdef RS_ENABLE_GPU
     auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (stagingSurfaceParams) {
-        stagingSurfaceParams->SetUifirstUseStarting(id);
+        stagingSurfaceParams->SetUifirstStartingWindowId(id);
         AddToPendingSyncList();
     }
+#endif
+}
+
+NodeId RSSurfaceRenderNode::GetUifirstStartingWindowId() const
+{
+#ifdef RS_ENABLE_GPU
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    return stagingSurfaceParams ? stagingSurfaceParams->GetUifirstStartingWindowId() : INVALID_NODEID;
+#else
+    return INVALID_NODEID;
 #endif
 }
 
@@ -3537,7 +3547,7 @@ void RSSurfaceRenderNode::SetOldNeedDrawBehindWindow(bool val)
 bool RSSurfaceRenderNode::NeedDrawBehindWindow() const
 {
     return RSSystemProperties::GetBehindWindowFilterEnabled() && !GetRenderProperties().GetBackgroundFilter() &&
-        !childrenBlurBehindWindow_.empty();
+        !childrenBlurBehindWindow_.empty() && GetModifierNG(ModifierNG::RSModifierType::BEHIND_WINDOW_FILTER);
 }
 
 void RSSurfaceRenderNode::AddChildBlurBehindWindow(NodeId id)
@@ -3836,6 +3846,19 @@ bool RSSurfaceRenderNode::IsAncestorScreenFrozen() const
     }
     screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(firstLevelNode->GetAncestorScreenNode().lock());
     return screenNode == nullptr ? false : screenNode->GetForceFreeze();
+}
+
+// only use for window capture when isSyncRender is true
+void RSSurfaceRenderNode::RegisterCaptureCallback(
+    sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& config)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::RegisterCaptureCallback stagingSurfaceParams is null");
+    } else {
+        stagingSurfaceParams->RegisterCaptureCallback(callback, config);
+        AddToPendingSyncList();
+    }
 }
 
 void RSSurfaceRenderNode::SetAppRotationCorrection(ScreenRotation appRotationCorrection)

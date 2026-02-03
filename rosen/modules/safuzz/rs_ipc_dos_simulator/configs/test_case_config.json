@@ -1589,6 +1589,15 @@
     "inputParams": "WriteRSTransactionData",
     "writeInterfaceToken": false,
     "messageOption": "TF_ASYNC",
+    "commandList": "RSMarkNodeColorSpace*100",
+    "commandListRepeat": 1
+  },
+  {
+    "testCaseDesc": "COMMIT_TRANSACTION_TEST_178",
+    "interfaceName": "COMMIT_TRANSACTION",
+    "inputParams": "WriteRSTransactionData",
+    "writeInterfaceToken": false,
+    "messageOption": "TF_ASYNC",
     "commandList": "RSSetTakeSurfaceForUIFlag*100",
     "commandListRepeat": 1
   },
@@ -2711,6 +2720,20 @@
     "testCaseDesc": "AVCODEC_VIDEO_STOP_TEST_001",
     "interfaceName": "AVCODEC_VIDEO_STOP",
     "inputParams": "WriteUInt64Vector;WriteStringVector;WriteUint32",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_SYNC"
+  },
+  {
+    "testCaseDesc": "AVCODEC_VIDEO_GET_TEST_001",
+    "interfaceName": "AVCODEC_VIDEO_GET",
+    "inputParams": "WriteUint64",
+    "writeInterfaceToken": true,
+    "messageOption": "TF_SYNC"
+  },
+  {
+    "testCaseDesc": "AVCODEC_VIDEO_GET_RECENT_TEST_001",
+    "interfaceName": "AVCODEC_VIDEO_GET_RECENT",
+    "inputParams": "",
     "writeInterfaceToken": true,
     "messageOption": "TF_SYNC"
   },

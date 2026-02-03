@@ -398,7 +398,8 @@ bool RSClientToRenderConnectionProxy::WriteSurfaceCaptureConfig(
         !data.WriteUint32(captureConfig.colorSpace.first) ||
         !data.WriteBool(captureConfig.colorSpace.second) ||
         !data.WriteUint32(captureConfig.dynamicRangeMode.first) ||
-        !data.WriteBool(captureConfig.dynamicRangeMode.second)) {
+        !data.WriteBool(captureConfig.dynamicRangeMode.second) ||
+        !data.WriteBool(captureConfig.isSyncRender)) {
         ROSEN_LOGE("WriteSurfaceCaptureConfig: WriteSurfaceCaptureConfig captureConfig err.");
         return false;
     }
@@ -486,7 +487,7 @@ ErrCode RSClientToRenderConnectionProxy::GetScreenHDRStatus(ScreenId id, HdrStat
     return ERR_OK;
 }
 
-ErrCode RSClientToRenderConnectionProxy::DropFrameByPid(const std::vector<int32_t> pidList)
+ErrCode RSClientToRenderConnectionProxy::DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -501,6 +502,10 @@ ErrCode RSClientToRenderConnectionProxy::DropFrameByPid(const std::vector<int32_
         return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteInt32(dropFrameLevel)) {
+        ROSEN_LOGE("DropFrameByPid: WriteInt32 dropFrameLevel err.");
+        return ERR_INVALID_VALUE;
+    }
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::DROP_FRAME_BY_PID);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {

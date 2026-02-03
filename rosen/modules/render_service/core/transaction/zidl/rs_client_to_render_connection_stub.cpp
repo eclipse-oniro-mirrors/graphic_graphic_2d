@@ -791,7 +791,14 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            DropFrameByPid(pidList);
+            int32_t dropFrameLevel = 0;
+            if (!data.ReadInt32(dropFrameLevel)) {
+                RS_LOGE("RSClientToRenderConnectionStub::DROP_FRAME_BY_PID Read "
+                        "dropFrameLevel failed!");
+                ret = ERR_INVALID_REPLY;
+                break;
+            }
+            DropFrameByPid(pidList, dropFrameLevel);
             break;
         }
         case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_ANCO_FORCE_DO_DIRECT) : {
@@ -1066,7 +1073,8 @@ bool RSClientToRenderConnectionStub::ReadSurfaceCaptureConfig(
         !data.ReadUint32(captureConfig.colorSpace.first) ||
         !data.ReadBool(captureConfig.colorSpace.second) ||
         !data.ReadUint32(captureConfig.dynamicRangeMode.first) ||
-        !data.ReadBool(captureConfig.dynamicRangeMode.second)) {
+        !data.ReadBool(captureConfig.dynamicRangeMode.second) ||
+        !data.ReadBool(captureConfig.isSyncRender)) {
         RS_LOGE("RSClientToRenderConnectionStub::ReadSurfaceCaptureConfig Read captureConfig failed!");
         return false;
     }

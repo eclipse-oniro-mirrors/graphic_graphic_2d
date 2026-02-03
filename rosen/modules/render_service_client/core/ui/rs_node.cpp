@@ -1493,14 +1493,13 @@ void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
         return;
     }
 
-    if (!animations_.empty()) {
-        ROSEN_LOGE("When RSNode has animations, the RSUIContext should not be modified! nodeId[%{public}" PRIu64"], "
-            "preUIContext[%{public}" PRIu64 "], rsUIContext[%{public}" PRIu64 "]",
-            id_, preUIContext->GetToken(), rsUIContext->GetToken());
-    }
-
     // if have old rsContext, should remove nodeId from old nodeMap and travel child
     if (preUIContext != nullptr) {
+        if (!animations_.empty()) {
+            ROSEN_LOGE("When RSNode has animations, RSUIContext should not be modified! nodeId[%{public}" PRIu64 "], "
+                       "preUIContext[%{public}" PRIu64 "], rsUIContext[%{public}" PRIu64 "]",
+                        id_, preUIContext->GetToken(), rsUIContext->GetToken());
+        }
         // step1 remove node from old context
         preUIContext->GetMutableNodeMap().UnregisterNode(id_);
         // sync child
@@ -1776,6 +1775,12 @@ void RSNode::SetBackgroundColor(uint32_t colorValue)
 
 void RSNode::SetBackgroundColor(RSColor color)
 {
+    RSColor colorInP3 = color;
+    if (colorInP3.GetColorSpace() == GRAPHIC_COLOR_GAMUT_DISPLAY_P3) {
+        isP3Color_ = true;
+        std::unique_ptr<RSCommand> command = std::make_unique<RSMarkNodeColorSpace>(GetId(), isP3Color_);
+        AddCommand(command, IsRenderServiceNode());
+    }
 #ifndef ROSEN_CROSS_PLATFORM
     color.ConvertToP3ColorSpace();
 #endif
@@ -1980,9 +1985,14 @@ bool RSNode::RegisterColorPickerCallback(uint64_t interval, ColorPickerCallback 
         return false;
     }
     SetColorPickerParams(ColorPlaceholder::NONE, ColorPickStrategyType::CLIENT_CALLBACK, interval);
-    // Set notify threshold via modifier
-    SetPropertyNG<ModifierNG::RSColorPickerModifier,
-        &ModifierNG::RSColorPickerModifier::SetColorPickerNotifyThreshold>(notifyThreshold);
+
+    // deprecated interface, single notifyThreshold replaced by dark/light thresholds
+    constexpr uint32_t DEFAULT_DARK_THRESHOLD = 150;
+    constexpr uint32_t DEFAULT_LIGHT_THRESHOLD = 220;
+    constexpr uint32_t packedThresholds = ((DEFAULT_LIGHT_THRESHOLD & 0xFFFF) << 16) |
+                          (DEFAULT_DARK_THRESHOLD & 0xFFFF);
+    SetPropertyNG<ModifierNG::RSColorPickerModifier, &ModifierNG::RSColorPickerModifier::SetColorPickerNotifyThreshold>(
+        packedThresholds);
     // Store callback locally
     colorPickerCallback_ = std::move(callback);
     return true;
@@ -2004,6 +2014,28 @@ void RSNode::SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrateg
     static constexpr uint64_t MIN_INTERVAL = 180; // unit: ms
     SetPropertyNG<ModifierNG::RSColorPickerModifier,
         &ModifierNG::RSColorPickerModifier::SetColorPickerInterval>(std::max(interval, MIN_INTERVAL));
+}
+
+void RSNode::SetColorPickerOptions(uint64_t interval, std::pair<uint32_t, uint32_t> notifyThreshold,
+    std::optional<Vector4f> rect)
+{
+    SetColorPickerParams(ColorPlaceholder::NONE, ColorPickStrategyType::CLIENT_CALLBACK, interval);
+    // Pack both thresholds into a single uint32_t: lower 16 bits = dark, upper 16 bits = light
+    uint32_t packedThresholds = ((notifyThreshold.second & 0xFFFF) << 16) |
+                                (notifyThreshold.first & 0xFFFF);
+    SetPropertyNG<ModifierNG::RSColorPickerModifier,
+        &ModifierNG::RSColorPickerModifier::SetColorPickerNotifyThreshold>(packedThresholds);
+    (void)rect; // Add support for rect parameter once RSPropertyType::COLOR_PICKER_RECT is available
+}
+
+void RSNode::SetColorPickerCallback(ColorPickerCallback callback)
+{
+    colorPickerCallback_ = std::move(callback);
+}
+
+bool RSNode::HasColorPickerCallback() const
+{
+    return static_cast<bool>(colorPickerCallback_);
 }
 
 struct FilterCascadeBundleInfo {
@@ -2928,6 +2960,13 @@ void RSNode::SetNodeName(const std::string& nodeName)
         nodeName_ = nodeName;
         std::unique_ptr<RSCommand> command = std::make_unique<RSSetNodeName>(GetId(), nodeName_);
         AddCommand(command, IsRenderServiceNode());
+        for (const auto& uiFwkType : RSFrameRatePolicy::GetInstance()->GetAppBufferList()) {
+            if (nodeName.rfind(uiFwkType, 0) == 0) {
+                SetDrawNode();
+                SetDrawNodeType(DrawNodeType::DrawPropertyType);
+                break;
+            }
+        }
     }
 }
 

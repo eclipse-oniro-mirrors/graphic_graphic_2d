@@ -23,6 +23,7 @@
 #include "common/rs_occlusion_region.h"
 #include "common/rs_special_layer_manager.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "ipc_callbacks/surface_capture_callback.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_base_render_node.h"
 #include "platform/common/rs_system_properties.h"
@@ -230,18 +231,18 @@ public:
         needSync_ = true;
     }
 
-    void SetUifirstUseStarting(NodeId id)
+    void SetUifirstStartingWindowId(NodeId id)
     {
-        if (uifirstUseStarting_ == id) {
+        if (uifirstStartingWindowId_ == id) {
             return;
         }
-        uifirstUseStarting_ = id;
+        uifirstStartingWindowId_ = id;
         needSync_ = true;
     }
 
-    NodeId GetUifirstUseStarting() const
+    NodeId GetUifirstStartingWindowId() const
     {
-        return uifirstUseStarting_;
+        return uifirstStartingWindowId_;
     }
 
     void SetUifirstChildrenDirtyRectParam(const RectI& rect)
@@ -770,6 +771,24 @@ public:
         return lastCacheSize_;
     }
 
+    // only use for window capture when isSyncRender is true
+    void RegisterCaptureCallback(sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& config)
+    {
+        captureCallback_ = callback;
+        captureConfig_ = std::make_shared<RSSurfaceCaptureConfig>(config);
+        needSync_ = true;
+    }
+
+    std::shared_ptr<RSSurfaceCaptureConfig> GetCaptureConfig()
+    {
+        return captureConfig_;
+    }
+
+    sptr<RSISurfaceCaptureCallback> GetCaptureCallback()
+    {
+        return captureCallback_;
+    }
+
     void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
     ScreenRotation GetAppRotationCorrection() const;
 
@@ -796,7 +815,7 @@ private:
     bool needBilinearInterpolation_ = false;
     MultiThreadCacheType uiFirstFlag_ = MultiThreadCacheType::NONE;
     bool uiFirstParentFlag_ = false;
-    NodeId uifirstUseStarting_ = INVALID_NODEID;
+    NodeId uifirstStartingWindowId_ = INVALID_NODEID;
     RectI uiFirstVisibleFilterRect_;
     Color backgroundColor_ = RgbPalette::Transparent();
     bool isHwcEnabledBySolidLayer_ = false;
@@ -912,6 +931,10 @@ private:
     bool isBufferFlushed_ = false;
     bool isFrameGravityNewVersionEnabled_ = false;
     bool isSurfaceBufferOpaque_ = false;
+
+    // only used for window capture
+    sptr<RSISurfaceCaptureCallback> captureCallback_;
+    std::shared_ptr<RSSurfaceCaptureConfig> captureConfig_;
 
     ScreenRotation appRotationCorrection_ = ScreenRotation::ROTATION_0;
     int32_t rotationCorrectionDegree_ = 0;
