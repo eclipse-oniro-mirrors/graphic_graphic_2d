@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PIXEL_MAP_FROM_SURFACE_FUZZER_H
-#define PIXEL_MAP_FROM_SURFACE_FUZZER_H
+#ifndef PIXEL_MAP_FROM_SURFACE_ID_FUZZER_H
+#define PIXEL_MAP_FROM_SURFACE_ID_FUZZER_H
 
 namespace OHOS {
 namespace Rosen {
@@ -22,4 +22,4 @@ void DoCreatePixelMapFromSurfaceId();
 } // namespace Rosen
 } // namespace OHOS
 
-#endif // PIXEL_MAP_FROM_SURFACE_FUZZER_H
+#endif // PIXEL_MAP_FROM_SURFACE_ID_FUZZER_H

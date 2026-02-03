@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config:*)",
+      "Bash(GIT_SEQUENCE_EDITOR=\"sed -i '2s/^pick/edit/'\" git rebase:*)",
+      "Bash(GIT_SEQUENCE_EDITOR=\"sed -i '1s/^pick/edit/'\" git rebase:*)"
+    ]
+  }
+}

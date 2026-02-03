@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "pixelmapfromsurface_fuzzer.h"
+#include "pixelmapfromsurfaceid_fuzzer.h"
 
 #include <fuzzer/FuzzedDataProvider.h>
 

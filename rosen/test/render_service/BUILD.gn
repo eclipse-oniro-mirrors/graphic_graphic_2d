@@ -226,7 +226,7 @@ group("test") {
     "render_service_client/fuzztest/rsinterfaces_extern/setVirtualScreenStatus_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/takeSurfaceCaptureAllWindows_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/firstFrameCommit_fuzzer:fuzztest",
-    "render_service_client/fuzztest/rsinterfaces_extern/pixelMapFromSurface_fuzzer:fuzztest",
+    "render_service_client/fuzztest/rsinterfaces_extern/pixelMapFromSurfaceId_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/gameState_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/setHwcNodeBounds_fuzzer:fuzztest",
     "render_service_client/fuzztest/rsinterfaces_extern/createVSyncReceiver_fuzzer:fuzztest",
