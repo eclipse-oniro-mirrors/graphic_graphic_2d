@@ -39,7 +39,7 @@ void DoSetBehindWindowFilterEnabled(FuzzedDataProvider& fdp)
 void DoGetBehindWindowFilterEnabled(FuzzedDataProvider& fdp)
 {
     bool enabled = fdp.ConsumeBool();
-    bool result = g_rsInterfaces->GetBehindWindowFilterEnabled(enabled);
+    g_rsInterfaces->GetBehindWindowFilterEnabled(enabled);
 }
 
 } // namespace
