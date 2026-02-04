@@ -68,7 +68,7 @@ void DoSetSurfaceWatermark(FuzzedDataProvider& fdp)
     opts.useSourceIfMatch = fdp.ConsumeBool();
 
     std::shared_ptr<Media::PixelMap> watermark = Media::PixelMap::Create(opts);
-    auto watermarkType = static_cast<uint8_t>(fdp.ConsumeIntegral<uint8_t>());
+    auto watermarkType = static_cast<SurfaceWatermarkType>(fdp.ConsumeIntegral<uint8_t>());
 
     int32_t pid = fdp.ConsumeIntegral<int32_t>();
     std::vector<NodeId> nodeIdList;
@@ -77,8 +77,7 @@ void DoSetSurfaceWatermark(FuzzedDataProvider& fdp)
         nodeIdList.push_back(fdp.ConsumeIntegral<uint64_t>());
     }
 
-    g_rsInterfaces->SetSurfaceWatermark(pid, name, watermark, nodeIdList,
-        static_cast<SurfaceCaptureType>(watermarkType));
+    g_rsInterfaces->SetSurfaceWatermark(pid, name, watermark, nodeIdList, watermarkType);
 }
 
 void DoShowWatermark(FuzzedDataProvider& fdp)
