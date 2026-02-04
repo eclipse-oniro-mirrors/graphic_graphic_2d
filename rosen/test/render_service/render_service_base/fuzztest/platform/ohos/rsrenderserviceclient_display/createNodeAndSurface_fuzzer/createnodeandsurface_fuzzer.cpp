@@ -35,13 +35,13 @@ constexpr uint32_t STR_LEN = 10;
 void DoCreateNodeAndSurface(FuzzedDataProvider& fdp)
 {
     RSSurfaceRenderNodeConfig config;
+    config.id = fdp.ConsumeIntegral<uint64_t>();
     config.name = fdp.ConsumeRandomLengthString(STR_LEN);
-    config.positionX = fdp.ConsumeFloatingPoint<float>();
-    config.positionY = fdp.ConsumeFloatingPoint<float>();
-    config.width = fdp.ConsumeIntegral<uint32_t>();
-    config.height = fdp.ConsumeIntegral<uint32_t>();
-    config.pixelFormat = fdp.ConsumeIntegral<uint32_t>();
-    config.type = fdp.ConsumeIntegral<uint32_t>();
+    config.nodeType = static_cast<RSSurfaceNodeType>(fdp.ConsumeIntegral<uint32_t>());
+    config.isTextureExportNode = fdp.ConsumeBool();
+    config.isSync = fdp.ConsumeBool();
+    config.surfaceWindowType = static_cast<SurfaceWindowType>(fdp.ConsumeIntegral<uint32_t>());
+    config.bundleName = fdp.ConsumeRandomLengthString(STR_LEN);
 
     bool unobscured = fdp.ConsumeBool();
 
