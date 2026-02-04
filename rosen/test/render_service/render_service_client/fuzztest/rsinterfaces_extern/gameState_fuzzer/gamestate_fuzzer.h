@@ -16,10 +16,4 @@
 #ifndef GAME_STATE_FUZZER_H
 #define GAME_STATE_FUZZER_H
 
-namespace OHOS {
-namespace Rosen {
-void DoReportGameStateData();
-} // namespace Rosen
-} // namespace OHOS
-
 #endif // GAME_STATE_FUZZER_H
