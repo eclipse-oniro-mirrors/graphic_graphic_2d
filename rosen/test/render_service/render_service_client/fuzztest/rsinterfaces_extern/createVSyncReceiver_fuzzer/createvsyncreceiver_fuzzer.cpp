@@ -29,7 +29,7 @@ namespace {
 const uint8_t DO_CREATE_VSYNC_RECEIVER_SIMPLE = 0;
 const uint8_t DO_CREATE_VSYNC_RECEIVER_ADVANCED = 1;
 const uint8_t TARGET_SIZE = 2;
-constexpr uint32_t STR_LEN = 20;
+constexpr uint32_t STR_LEN = 10;
 
 void DoCreateVSyncReceiverSimple(FuzzedDataProvider& fdp)
 {

@@ -29,7 +29,7 @@ RSInterfaces* g_rsInterfaces = nullptr;
 namespace {
 const uint8_t DO_REPORT_GAME_STATE_DATA = 0;
 const uint8_t TARGET_SIZE = 1;
-constexpr uint32_t STR_LEN = 50;
+constexpr uint32_t STR_LEN = 10;
 
 void DoReportGameStateData(FuzzedDataProvider& fdp)
 {

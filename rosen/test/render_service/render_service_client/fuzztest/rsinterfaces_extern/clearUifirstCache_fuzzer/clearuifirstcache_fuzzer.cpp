@@ -28,7 +28,6 @@ RSInterfaces* g_rsInterfaces = nullptr;
 namespace {
 const uint8_t DO_CLEAR_UIFIRST_CACHE = 0;
 const uint8_t TARGET_SIZE = 1;
-constexpr uint32_t STR_LEN = 10;
 
 void DoClearUifirstCache(FuzzedDataProvider& fdp)
 {
