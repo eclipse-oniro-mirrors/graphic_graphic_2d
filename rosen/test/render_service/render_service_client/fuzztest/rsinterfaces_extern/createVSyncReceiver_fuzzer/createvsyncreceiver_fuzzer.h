@@ -16,11 +16,4 @@
 #ifndef CREATE_VSYNC_RECEIVER_FUZZER_H
 #define CREATE_VSYNC_RECEIVER_FUZZER_H
 
-namespace OHOS {
-namespace Rosen {
-void DoCreateVSyncReceiverSimple();
-void DoCreateVSyncReceiverAdvanced();
-} // namespace Rosen
-} // namespace OHOS
-
 #endif // CREATE_VSYNC_RECEIVER_FUZZER_H

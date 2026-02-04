@@ -16,10 +16,4 @@
 #ifndef TAKE_SURFACE_CAPTURE_ALL_WINDOWS_FUZZER_H
 #define TAKE_SURFACE_CAPTURE_ALL_WINDOWS_FUZZER_H
 
-namespace OHOS {
-namespace Rosen {
-void DoTakeSurfaceCaptureWithAllWindows();
-} // namespace Rosen
-} // namespace OHOS
-
 #endif // TAKE_SURFACE_CAPTURE_ALL_WINDOWS_FUZZER_H

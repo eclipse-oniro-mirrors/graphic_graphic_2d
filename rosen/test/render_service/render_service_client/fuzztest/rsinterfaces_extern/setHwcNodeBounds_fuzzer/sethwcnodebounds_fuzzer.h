@@ -16,10 +16,4 @@
 #ifndef SET_HWC_NODE_BOUNDS_FUZZER_H
 #define SET_HWC_NODE_BOUNDS_FUZZER_H
 
-namespace OHOS {
-namespace Rosen {
-void DoSetHwcNodeBounds();
-} // namespace Rosen
-} // namespace OHOS
-
 #endif // SET_HWC_NODE_BOUNDS_FUZZER_H
