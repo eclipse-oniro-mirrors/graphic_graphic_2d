@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,12 +27,6 @@ namespace OHOS::Rosen {
 
 class RSPixelMapDisplayTest : public RSGraphicTest {
 private:
-    // ARGB color bit shift positions
-    static constexpr int ARGB_ALPHA_SHIFT = 24;
-    static constexpr int ARGB_RED_SHIFT = 16;
-    static constexpr int ARGB_GREEN_SHIFT = 8;
-    static constexpr int ARGB_BLUE_SHIFT = 0;
-
     const int screenWidth = 1200;
     const int screenHeight = 2000;
     Drawing::SamplingOptions sampling;
@@ -57,10 +51,6 @@ private:
     std::shared_ptr<Media::PixelMap> CreateTestPixelMapWithFormat(Media::PixelFormat format,
         int32_t width, int32_t height)
     {
-        if (width <= 0 || height <= 0) {
-            return nullptr;
-        }
-
         Media::InitializationOptions opts;
         opts.size.width = width;
         opts.size.height = height;
@@ -75,21 +65,15 @@ private:
             uint8_t g = static_cast<uint8_t>((i / width) * 255 / height);
             uint8_t b = static_cast<uint8_t>(128);
             uint8_t a = 255;
-            colors[i] = (a << ARGB_ALPHA_SHIFT) | (r << ARGB_RED_SHIFT) |
-                        (g << ARGB_GREEN_SHIFT) | (b << ARGB_BLUE_SHIFT);
+            colors[i] = (a << 24) | (r << 16) | (g << 8) | b;
         }
 
-        return std::shared_ptr<Media::PixelMap>(
-            Media::PixelMap::Create(colors.data(), colors.size(), opts).release());
+        return std::shared_ptr<Media::PixelMap>(Media::PixelMap::Create(colors.data(), colors.size(), opts).release());
     }
 
     std::shared_ptr<Media::PixelMap> CreateTestPixelMapWithAlphaType(Media::AlphaType alphaType,
         int32_t width, int32_t height)
     {
-        if (width <= 0 || height <= 0) {
-            return nullptr;
-        }
-
         Media::InitializationOptions opts;
         opts.size.width = width;
         opts.size.height = height;
@@ -103,12 +87,176 @@ private:
             uint8_t g = static_cast<uint8_t>((i % width) * 255 / width);
             uint8_t b = static_cast<uint8_t>((i / width) * 255 / height);
             uint8_t a = 200;
-            colors[i] = (a << ARGB_ALPHA_SHIFT) | (r << ARGB_RED_SHIFT) |
-                        (g << ARGB_GREEN_SHIFT) | (b << ARGB_BLUE_SHIFT);
+            colors[i] = (a << 24) | (r << 16) | (g << 8) | b;
         }
 
-        return std::shared_ptr<Media::PixelMap>(
-            Media::PixelMap::Create(colors.data(), colors.size(), opts).release());
+        return std::shared_ptr<Media::PixelMap>(Media::PixelMap::Create(colors.data(), colors.size(), opts).release());
+    }
+
+    // ASTC format creation helper
+    std::shared_ptr<Media::PixelMap> CreateAstcPixelMap(int32_t width = 256, int32_t height = 256)
+    {
+        
+        auto pixelMap = DecodePixelMap("/data/local/tmp/fg_test.jpg",
+                        Media::AllocatorType::DMA_ALLOC, Media::PixelFormat::ASTC_4x4);
+        return pixelMap;
+    }
+
+    // HDR format creation helper
+    std::shared_ptr<Media::PixelMap> CreateHDRPixelMap(Media::PixelFormat hdrFormat,
+        int32_t width, int32_t height, bool forToSdr = false)
+    {
+        Media::InitializationOptions opts;
+        opts.size.width = width;
+        opts.size.height = height;
+        opts.pixelFormat = hdrFormat;
+        opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
+        opts.editable = true;
+
+        // For ToSDR testing, must use DMA_ALLOC allocator
+        if (forToSdr) {
+            opts.allocatorType = Media::AllocatorType::DMA_ALLOC;
+        }
+
+        if (hdrFormat == Media::PixelFormat::RGBA_1010102) {
+            // RGBA_1010102: 10 bits per channel, stored in 32-bit unsigned integer
+            std::vector<uint32_t> hdrData(width * height);
+            for (int32_t i = 0; i < width * height; i++) {
+                // Create HDR gradient pattern with 10-bit precision (0-1023)
+                uint16_t r = static_cast<uint16_t>((i % width) * 1023 / width);
+                uint16_t g = static_cast<uint16_t>((i / width) * 1023 / height);
+                uint16_t b = 512; // mid-range blue
+                uint16_t a = 1023; // full alpha
+                // Pack into 32-bit: AA|BB|GG|RR (2-10-10-10 format)
+                hdrData[i] = ((a & 0x3FF) << 30) | ((b & 0x3FF) << 20) |
+                             ((g & 0x3FF) << 10) | (r & 0x3FF);
+            }
+            auto pixelMap = Media::PixelMap::Create(hdrData.data(), hdrData.size() * 4, opts);
+            if (pixelMap && forToSdr) {
+#ifdef IMAGE_COLORSPACE_FLAG
+                // Set BT2020 color space for HDR
+                pixelMap->InnerSetColorSpace(OHOS::ColorManager::ColorSpace::BT2020());
+#endif
+            }
+            return std::shared_ptr<Media::PixelMap>(pixelMap.release());
+        } else if (hdrFormat == Media::PixelFormat::YCBCR_P010 ||
+                   hdrFormat == Media::PixelFormat::YCRCB_P010) {
+            // P010 format: semi-planar YUV 4:2:0, 10-bit
+            // Y plane: 16 bits per pixel, UV plane: 16 bits per pixel (interleaved)
+            int32_t yStride = width * 2;
+            int32_t uvStride = width * 2;
+            int32_t ySize = yStride * height;
+            int32_t uvSize = uvStride * height / 2;
+            int32_t totalSize = ySize + uvSize;
+
+            std::vector<uint8_t> yuvData(totalSize);
+
+            // Fill Y plane with gradient (10-bit values in lower 10 bits)
+            for (int32_t y = 0; y < height; y++) {
+                for (int32_t x = 0; x < width; x++) {
+                    int32_t index = y * yStride + x * 2;
+                    uint16_t yValue = static_cast<uint16_t>((y * 1023 / height) & 0x3FF);
+                    yuvData[index] = yValue & 0xFF;
+                    yuvData[index + 1] = (yValue >> 8) & 0x03;
+                }
+            }
+
+            // Fill UV plane with color (U and V as 10-bit values)
+            for (int32_t y = 0; y < height / 2; y++) {
+                for (int32_t x = 0; x < width; x += 2) {
+                    int32_t index = ySize + y * uvStride + x * 2;
+                    uint16_t uValue = 512; // mid-range U
+                    uint16_t vValue = 512; // mid-range V
+                    if (hdrFormat == Media::PixelFormat::YCBCR_P010) {
+                        // YCbCr: UV interleaved
+                        yuvData[index] = uValue & 0xFF;
+                        yuvData[index + 1] = (uValue >> 8) & 0x03;
+                        yuvData[index + 2] = vValue & 0xFF;
+                        yuvData[index + 3] = (vValue >> 8) & 0x03;
+                    } else {
+                        // YCrCb: VU interleaved
+                        yuvData[index] = vValue & 0xFF;
+                        yuvData[index + 1] = (vValue >> 8) & 0x03;
+                        yuvData[index + 2] = uValue & 0xFF;
+                        yuvData[index + 3] = (uValue >> 8) & 0x03;
+                    }
+                }
+            }
+
+            // Create PixelMap with YUV data
+            auto pixelMap = Media::PixelMap::Create(opts);
+            if (pixelMap) {
+                // Copy data to keep it alive
+                std::vector<uint8_t>* yuvDataPtr = new std::vector<uint8_t>(yuvData);
+                pixelMap->SetPixelsAddr(const_cast<uint8_t*>(yuvDataPtr->data()), yuvDataPtr,
+                    totalSize, forToSdr ? Media::AllocatorType::DMA_ALLOC : Media::AllocatorType::HEAP_ALLOC,
+                    [](void* addr, void* context, uint32_t size) {
+                        if (context) {
+                            delete static_cast<std::vector<uint8_t>*>(context);
+                        }
+                    });
+                if (forToSdr) {
+#ifdef IMAGE_COLORSPACE_FLAG
+                    // Set BT2020 color space for HDR
+                    pixelMap->InnerSetColorSpace(OHOS::ColorManager::ColorSpace::BT2020_PQ());
+#endif
+                }
+            }
+            return std::shared_ptr<Media::PixelMap>(pixelMap.release());
+        }
+
+        return nullptr;
+    }
+
+    // ColorSpace creation helper
+    std::shared_ptr<Media::PixelMap> CreateColorSpacePixelMap(Media::ColorSpace colorSpace,
+        int32_t width, int32_t height)
+    {
+        Media::InitializationOptions opts;
+        opts.size.width = width;
+        opts.size.height = height;
+        opts.pixelFormat = Media::PixelFormat::RGBA_8888;
+        opts.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
+        opts.editable = true;
+
+        // Create pixel data with color patterns that show differences in color spaces
+        std::vector<uint32_t> colors(width * height);
+        for (int32_t i = 0; i < width * height; i++) {
+            // Create vivid colors to demonstrate color space differences
+            uint8_t r = static_cast<uint8_t>((i % width) * 255 / width);
+            uint8_t g = static_cast<uint8_t>((i / width) * 255 / height);
+            uint8_t b = static_cast<uint8_t>(((i % width) + (i / width)) * 255 / (width + height));
+            uint8_t a = 255;
+            colors[i] = (a << 24) | (b << 16) | (g << 8) | r; // BGRA format
+        }
+
+        auto pixelMap = Media::PixelMap::Create(colors.data(), colors.size(), opts);
+        if (pixelMap) {
+#ifdef IMAGE_COLORSPACE_FLAG
+            // Set the color space if the feature is enabled
+            OHOS::ColorManager::ColorSpace grColorSpace;
+            switch (colorSpace) {
+                case Media::ColorSpace::SRGB:
+                    grColorSpace = OHOS::ColorManager::ColorSpace::SRGB();
+                    break;
+                case Media::ColorSpace::DISPLAY_P3:
+                    grColorSpace = OHOS::ColorManager::ColorSpace::DisplayP3();
+                    break;
+                case Media::ColorSpace::LINEAR_SRGB:
+                    grColorSpace = OHOS::ColorManager::ColorSpace::LinearSRGB();
+                    break;
+                case Media::ColorSpace::ADOBE_RGB_1998:
+                    grColorSpace = OHOS::ColorManager::ColorSpace::AdobeRGB();
+                    break;
+                default:
+                    grColorSpace = OHOS::ColorManager::ColorSpace::SRGB();
+                    break;
+            }
+            pixelMap->InnerSetColorSpace(grColorSpace);
+#endif
+        }
+
+        return std::shared_ptr<Media::PixelMap>(pixelMap.release());
     }
 
 public:
@@ -120,7 +268,7 @@ public:
 };
 
 // ============================================================================
-// Single Interface Tests (White Box Tests)
+// Single Interface Tests (White Box Tests) - 单接口白盒测试
 // ============================================================================
 
 /*
@@ -154,8 +302,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_SCALE_TEST
         opts.pixelFormat = testPixelMap_->GetPixelFormat();
         opts.alphaType = testPixelMap_->GetAlphaType();
 
-        std::shared_ptr<Media::PixelMap> scaledPixelMap(
-            Media::PixelMap::Create(*testPixelMap_, opts).release());
+        std::shared_ptr<Media::PixelMap> scaledPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
         if (scaledPixelMap) {
             scaledPixelMap->scale(scales[i], scales[i]);
         }
@@ -227,8 +374,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_ROTATE_TES
         opts.pixelFormat = testPixelMap_->GetPixelFormat();
         opts.alphaType = testPixelMap_->GetAlphaType();
 
-        std::shared_ptr<Media::PixelMap> rotatedPixelMap(
-            Media::PixelMap::Create(*testPixelMap_, opts).release());
+        std::shared_ptr<Media::PixelMap> rotatedPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
         if (rotatedPixelMap) {
             rotatedPixelMap->rotate(angles[i]);
         }
@@ -298,8 +444,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_FLIP_TEST)
         opts.pixelFormat = testPixelMap_->GetPixelFormat();
         opts.alphaType = testPixelMap_->GetAlphaType();
 
-        std::shared_ptr<Media::PixelMap> flippedPixelMap(
-            Media::PixelMap::Create(*testPixelMap_, opts).release());
+        std::shared_ptr<Media::PixelMap> flippedPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
         if (flippedPixelMap) {
             flippedPixelMap->flip(flipOptions[i][0], flipOptions[i][1]);
         }
@@ -375,8 +520,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_CROP_TEST)
         opts.pixelFormat = largePixelMap_->GetPixelFormat();
         opts.alphaType = largePixelMap_->GetAlphaType();
 
-        std::shared_ptr<Media::PixelMap> croppedPixelMap(
-            Media::PixelMap::Create(*largePixelMap_, opts).release());
+        std::shared_ptr<Media::PixelMap> croppedPixelMap(Media::PixelMap::Create(*largePixelMap_, opts).release());
         if (croppedPixelMap) {
             croppedPixelMap->crop(cropRects[i]);
         }
@@ -463,8 +607,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_TRANSLATE_
         opts.pixelFormat = testPixelMap_->GetPixelFormat();
         opts.alphaType = testPixelMap_->GetAlphaType();
 
-        std::shared_ptr<Media::PixelMap> translatedPixelMap(
-            Media::PixelMap::Create(*testPixelMap_, opts).release());
+        std::shared_ptr<Media::PixelMap> translatedPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
         if (translatedPixelMap) {
             translatedPixelMap->translate(translations[i][0], translations[i][1]);
         }
@@ -536,8 +679,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_ALPHA_TEST
         opts.pixelFormat = testPixelMap_->GetPixelFormat();
         opts.alphaType = testPixelMap_->GetAlphaType();
 
-        std::shared_ptr<Media::PixelMap> alphaPixelMap(
-            Media::PixelMap::Create(*testPixelMap_, opts).release());
+        std::shared_ptr<Media::PixelMap> alphaPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
         if (alphaPixelMap) {
             alphaPixelMap->SetAlpha(alphas[i]);
         }
@@ -750,7 +892,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_SIZE_TEST)
 }
 
 // ============================================================================
-// Combination Tests (Multiple Interface Combined)
+// Combination Tests (Multiple Interface Combined) - 多接口组合测试
 // ============================================================================
 
 /*
@@ -781,8 +923,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_SCALE_ROTA
             opts.pixelFormat = testPixelMap_->GetPixelFormat();
             opts.alphaType = testPixelMap_->GetAlphaType();
 
-            std::shared_ptr<Media::PixelMap> transformedPixelMap(
-                Media::PixelMap::Create(*testPixelMap_, opts).release());
+            std::shared_ptr<Media::PixelMap> transformedPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
             if (transformedPixelMap) {
                 transformedPixelMap->scale(scales[i], scales[i]);
                 transformedPixelMap->rotate(rotations[j]);
@@ -854,8 +995,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_ROTATE_FLI
             opts.pixelFormat = testPixelMap_->GetPixelFormat();
             opts.alphaType = testPixelMap_->GetAlphaType();
 
-            std::shared_ptr<Media::PixelMap> transformedPixelMap(
-                Media::PixelMap::Create(*testPixelMap_, opts).release());
+            std::shared_ptr<Media::PixelMap> transformedPixelMap(Media::PixelMap::Create(*testPixelMap_, opts).release());
             if (transformedPixelMap) {
                 transformedPixelMap->rotate(rotations[i]);
                 transformedPixelMap->flip(flipOptions[j][0], flipOptions[j][1]);
@@ -928,8 +1068,7 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_SCALE_CROP
             opts.pixelFormat = largePixelMap_->GetPixelFormat();
             opts.alphaType = largePixelMap_->GetAlphaType();
 
-            std::shared_ptr<Media::PixelMap> transformedPixelMap(
-                Media::PixelMap::Create(*largePixelMap_, opts).release());
+            std::shared_ptr<Media::PixelMap> transformedPixelMap(Media::PixelMap::Create(*largePixelMap_, opts).release());
             if (transformedPixelMap) {
                 transformedPixelMap->scale(scales[i], scales[i]);
                 transformedPixelMap->crop(cropRects[j]);
@@ -968,8 +1107,6 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_SCALE_CROP
     }
 }
 
-<<<<<<< HEAD
-=======
 /*
  * @tc.name: RS_PIXELMAP_TRANSLATE_ROTATE_TEST
  * @tc.desc: Test pixelmap with combined translate and rotate
@@ -3603,5 +3740,5 @@ GRAPHIC_TEST(RSPixelMapDisplayTest, CONTENT_DISPLAY_TEST, RS_PIXELMAP_STATIC_YUV
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     RegisterNode(canvasNode);
 }
->>>>>>> fe3fc6ce37 (add native Hdr pixelMap test)
+
 } // namespace OHOS::Rosen
