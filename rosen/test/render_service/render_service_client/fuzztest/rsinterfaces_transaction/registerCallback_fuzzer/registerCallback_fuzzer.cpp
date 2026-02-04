@@ -33,7 +33,12 @@ const uint8_t DO_REGISTER_SURFACE_BUFFER_CALLBACK = 2;           // Surface buff
 const uint8_t DO_UNREGISTER_SURFACE_BUFFER_CALLBACK = 3;         // Surface buffer unregistration (paired with REGISTER)
 const uint8_t DO_REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK = 4;
 const uint8_t TARGET_SIZE = 5;
-constexpr size_t STR_LEN = 10;
+
+class TestSurfaceBufferCallback : public SurfaceBufferCallback {
+public:
+    void OnFinish(const FinishCallbackRet& ret) override { (void)ret; }
+    void OnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) override { (void)ret; }
+};
 
 void DoRegisterTransactionDataCallback(FuzzedDataProvider& fdp)
 {
@@ -59,11 +64,7 @@ void DoRegisterSurfaceBufferCallback(FuzzedDataProvider& fdp)
 {
     int32_t pid = fdp.ConsumeIntegral<int32_t>();
     uint64_t uid = fdp.ConsumeIntegral<uint64_t>();
-    auto callback = [](void* addr, uint32_t size, wptr<Damageable> damageable) {
-        (void)addr;
-        (void)size;
-        (void)damageable;
-    };
+    auto callback = std::make_shared<TestSurfaceBufferCallback>();
     g_rsInterfaces->RegisterSurfaceBufferCallback(pid, uid, callback);
 }
 
@@ -77,10 +78,14 @@ void DoUnregisterSurfaceBufferCallback(FuzzedDataProvider& fdp)
 void DoRegisterSelfDrawingNodeRectChangeCallback(FuzzedDataProvider& fdp)
 {
     RectConstraint constraint;
-    constraint.left_ = fdp.ConsumeIntegral<int32_t>();
-    constraint.top_ = fdp.ConsumeIntegral<int32_t>();
-    constraint.width_ = fdp.ConsumeIntegral<uint32_t>();
-    constraint.height_ = fdp.ConsumeIntegral<uint32_t>();
+    uint8_t pidCount = fdp.ConsumeIntegral<uint8_t>();
+    for (auto i = 0; i < pidCount; i++) {
+        constraint.pids.insert(fdp.ConsumeIntegral<int32_t>());
+    }
+    constraint.range.lowLimit.width = fdp.ConsumeIntegral<int32_t>();
+    constraint.range.lowLimit.height = fdp.ConsumeIntegral<int32_t>();
+    constraint.range.highLimit.width = fdp.ConsumeIntegral<int32_t>();
+    constraint.range.highLimit.height = fdp.ConsumeIntegral<int32_t>();
     SelfDrawingNodeRectChangeCallback callback = [](std::shared_ptr<RSSelfDrawingNodeRectData> data) {
         (void)data;
     };
