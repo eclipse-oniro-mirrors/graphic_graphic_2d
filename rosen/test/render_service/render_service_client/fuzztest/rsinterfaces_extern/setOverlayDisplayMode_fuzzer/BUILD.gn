@@ -49,11 +49,6 @@ ohos_fuzztest("SetOverlayDisplayModeFuzzTest") {
     defines = [ "OHOS_BUILD_ENABLE_MAGICCURSOR" ]
   }
 
-  # Add conditional compilation for overlay display feature
-  if (graphic_2d_feature_overlay_display_enable) {
-    defines += [ "RS_ENABLE_OVERLAY_DISPLAY" ]
-  }
-
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
