@@ -201,6 +201,9 @@ export default namespace text {
     private native nativeGetLineMetricsAt(lineNumber: int): LineMetrics | undefined;
     native updateColor(color: common2D.Color): void;
     native updateDecoration(decoration: Decoration): void;
+    native getCharacterRangeForGlyphRange(glyphRange: Range, encoding: drawing.TextEncoding): Array<Range>;
+    native getGlyphRangeForCharacterRange(characterRange: Range, encoding: drawing.TextEncoding): Array<Range>;
+    native getCharacterPositionAtCoordinate(x: double, y: double, encoding: drawing.TextEncoding): PositionWithAffinity;
 
     private static native nativeTransferStatic(input: ESValue): Object;
     static transferStatic(input: Any): Object {

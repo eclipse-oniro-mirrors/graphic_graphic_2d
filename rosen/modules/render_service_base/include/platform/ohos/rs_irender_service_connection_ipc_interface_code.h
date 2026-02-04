@@ -138,6 +138,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
     REFRESH_RATE_MODE_CHANGE_CALLBACK = 0x00500F,
     GET_REFRESH_INFO_TO_SP = 0x005010,
     SET_SCREEN_SWITCHING_NOTIFY_CALLBACK = 0x005011,
+    GET_REFRESH_INFO_BY_PID_AND_UNIQUEID = 0x005012,
 
     GET_SCREEN_ACTIVE_MODE = 0x006000,
     GET_SCREEN_SUPPORTED_MODES = 0x006001,
@@ -235,7 +236,7 @@ enum class RSIRenderServiceConnectionInterfaceCode : CodeUnderlyingType {
 
     CLEAR_UIFIRST_CACHE = 0X15000,
 
-// Special invocation. Do not change it.
+    // Special invocation. Do not change it.
     NOTIFY_LIGHT_FACTOR_STATUS = 1000,
     NOTIFY_PACKAGE_EVENT = 1001,
     NOTIFY_REFRESH_RATE_EVENT = 1002,

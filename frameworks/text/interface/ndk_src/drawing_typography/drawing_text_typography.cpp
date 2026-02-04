@@ -39,6 +39,7 @@
 #include "utils/log.h"
 #include "utils/object_mgr.h"
 #include "utils/string_util.h"
+#include "utils/text_log.h"
 
 using namespace OHOS::Rosen;
 
@@ -3698,4 +3699,124 @@ void OH_Drawing_DestroyPositionAndAffinity(OH_Drawing_PositionAndAffinity* posit
         return;
     }
     delete ConvertToOriginalText<IndexAndAffinity>(positionAndAffinity);
+}
+
+OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRange(OH_Drawing_Typography* typography,
+    size_t glyphRangeStart, size_t glyphRangeEnd, OH_Drawing_Range **actualGlyphRange,
+    OH_Drawing_TextEncoding textEncodingType)
+{
+    if (typography == nullptr) {
+        TEXT_LOGE("Null typography");
+        return nullptr;
+    }
+    if (glyphRangeStart >= glyphRangeEnd) {
+        TEXT_LOGE("Invalid glyph range, start=%{public}zu, end=%{public}zu", glyphRangeStart, glyphRangeEnd);
+        return nullptr;
+    }
+    if (textEncodingType != TEXT_ENCODING_UTF8 && textEncodingType != TEXT_ENCODING_UTF16) {
+        TEXT_LOGE("Invalid encoding type, encoding=%{public}d", static_cast<int>(textEncodingType));
+        return nullptr;
+    }
+
+    // Use stack memory for temporary variable
+    Boundary tempActualGlyphRange{0, 0};
+    Boundary characterRange = ConvertToOriginalText<Typography>(typography)->GetCharacterRangeForGlyphRange(
+        glyphRangeStart, glyphRangeEnd, &tempActualGlyphRange, static_cast<TextEncoding>(textEncodingType));
+
+    // Only allocate on heap for return values
+    Boundary* resultCharacterRange = new (std::nothrow) Boundary(characterRange.leftIndex, characterRange.rightIndex);
+    if (resultCharacterRange == nullptr) {
+        TEXT_LOGE("Failed to allocate result range");
+        return nullptr;
+    }
+
+    // Only allocate and set output parameter if caller requested it (non-NULL)
+    if (actualGlyphRange != nullptr) {
+        Boundary* outputActualGlyphRange = new (std::nothrow) Boundary(tempActualGlyphRange.leftIndex,
+            tempActualGlyphRange.rightIndex);
+        if (outputActualGlyphRange == nullptr) {
+            TEXT_LOGE("Failed to allocate actual glyph range");
+            delete resultCharacterRange;
+            return nullptr;
+        }
+        *actualGlyphRange = reinterpret_cast<OH_Drawing_Range*>(outputActualGlyphRange);
+    }
+
+    return reinterpret_cast<OH_Drawing_Range*>(resultCharacterRange);
+}
+
+OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinate(OH_Drawing_Typography* typography,
+    double dx, double dy, OH_Drawing_TextEncoding textEncodingType)
+{
+    if (typography == nullptr) {
+        TEXT_LOGE("Null typography");
+        return nullptr;
+    }
+    if (textEncodingType != TEXT_ENCODING_UTF8 && textEncodingType != TEXT_ENCODING_UTF16) {
+        TEXT_LOGE("Invalid encoding, encoding=%{public}d", static_cast<int>(textEncodingType));
+        return nullptr;
+    }
+
+    IndexAndAffinity charPosAndAffinity = ConvertToOriginalText<Typography>(typography)->GetCharacterIndexByCoordinate(
+        dx, dy, static_cast<TextEncoding>(textEncodingType));
+    IndexAndAffinity* charPosAndAffinityResult = new (std::nothrow) IndexAndAffinity(
+        charPosAndAffinity.index, charPosAndAffinity.affinity);
+    if (charPosAndAffinityResult == nullptr) {
+        TEXT_LOGE("Failed to allocate result");
+        return nullptr;
+    }
+    return reinterpret_cast<OH_Drawing_PositionAndAffinity*>(charPosAndAffinityResult);
+}
+
+OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRange(OH_Drawing_Typography* typography,
+    size_t characterRangeStart, size_t characterRangeEnd, OH_Drawing_Range** actualCharacterRange,
+    OH_Drawing_TextEncoding textEncodingType)
+{
+    if (typography == nullptr) {
+        TEXT_LOGE("Null typography");
+        return nullptr;
+    }
+    if (characterRangeStart >= characterRangeEnd) {
+        TEXT_LOGE("Invalid character range, start=%{public}zu, end=%{public}zu",
+            characterRangeStart, characterRangeEnd);
+        return nullptr;
+    }
+    if (textEncodingType != TEXT_ENCODING_UTF8 && textEncodingType != TEXT_ENCODING_UTF16) {
+        TEXT_LOGE("Invalid encoding, encoding=%{public}d", static_cast<int>(textEncodingType));
+        return nullptr;
+    }
+
+    // Use stack memory for temporary variable
+    Boundary tempActualCharacterRange{0, 0};
+    Boundary glyphRange = ConvertToOriginalText<Typography>(typography)->GetGlyphRangeForCharacterRange(
+        characterRangeStart, characterRangeEnd, &tempActualCharacterRange, static_cast<TextEncoding>(textEncodingType));
+
+    // Only allocate on heap for return values
+    Boundary* glyphRangeResult = new (std::nothrow) Boundary(glyphRange.leftIndex, glyphRange.rightIndex);
+    if (glyphRangeResult == nullptr) {
+        TEXT_LOGE("Failed to allocate result range");
+        return nullptr;
+    }
+
+    // Only allocate and set output parameter if caller requested it (non-NULL)
+    if (actualCharacterRange != nullptr) {
+        Boundary* actualCharacterRangeResult = new (std::nothrow) Boundary(
+            tempActualCharacterRange.leftIndex, tempActualCharacterRange.rightIndex);
+        if (actualCharacterRangeResult == nullptr) {
+            TEXT_LOGE("Failed to allocate actual character range");
+            delete glyphRangeResult;
+            return nullptr;
+        }
+        *actualCharacterRange = reinterpret_cast<OH_Drawing_Range*>(actualCharacterRangeResult);
+    }
+    return reinterpret_cast<OH_Drawing_Range*>(glyphRangeResult);
+}
+
+void OH_Drawing_DestroyRange(OH_Drawing_Range* range)
+{
+    if (range == nullptr) {
+        TEXT_LOGE("Null range");
+        return;
+    }
+    delete ConvertToOriginalText<Boundary>(range);
 }

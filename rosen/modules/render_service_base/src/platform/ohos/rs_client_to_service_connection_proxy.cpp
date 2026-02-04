@@ -1715,6 +1715,45 @@ ErrCode RSClientToServiceConnectionProxy::GetRefreshInfoToSP(NodeId id, std::str
     return ERR_OK;
 }
 
+ErrCode RSClientToServiceConnectionProxy::GetRefreshInfoByPidAndUniqueId(
+    pid_t pid, uint64_t uniqueId, std::string& enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("GetRefreshInfoByPidAndUniqueId: WriteInterfaceToken GetDescriptor err.");
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteInt32(pid)) {
+        ROSEN_LOGE("GetRefreshInfoByPidAndUniqueId: WriteInt32 pid err.");
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint64(uniqueId)) {
+        ROSEN_LOGE("GetRefreshInfoByPidAndUniqueId: WriteUint64 uniqueId err.");
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy sendrequest error : %{public}d", err);
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+
+    if (!reply.ReadString(enable)) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetRefreshInfoByPidAndUniqueId Read enable failed");
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
 int32_t RSClientToServiceConnectionProxy::SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height)
 {
     MessageParcel data;
