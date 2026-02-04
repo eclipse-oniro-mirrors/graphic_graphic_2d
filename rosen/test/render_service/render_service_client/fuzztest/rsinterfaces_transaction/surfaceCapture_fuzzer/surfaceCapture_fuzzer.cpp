@@ -113,27 +113,12 @@ void DoTakeSelfSurfaceCapture(FuzzedDataProvider& fdp)
 
 void DoTakeSurfaceCaptureSolo(FuzzedDataProvider& fdp)
 {
-    NodeId nodeId = fdp.ConsumeIntegral<uint64_t>();
-    RSSurfaceCaptureConfig captureConfig;
-    captureConfig.scaleX = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.scaleY = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.useDma = fdp.ConsumeBool();
-    captureConfig.useCurWindow = fdp.ConsumeBool();
-    captureConfig.captureType = static_cast<SurfaceCaptureType>(fdp.ConsumeIntegral<uint8_t>());
-    captureConfig.isSync = fdp.ConsumeBool();
+    RSSurfaceNodeConfig surfaceConfig;
+    surfaceConfig.surfaceId = fdp.ConsumeIntegral<uint64_t>();
+    auto node = RSSurfaceNode::Create(surfaceConfig);
 
-    uint8_t listSize = fdp.ConsumeIntegral<uint8_t>();
-    for (auto i = 0; i < listSize; i++) {
-        uint64_t id = fdp.ConsumeIntegral<uint64_t>();
-        captureConfig.blackList.push_back(id);
-    }
-
-    captureConfig.mainScreenRect.left_ = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.mainScreenRect.top_ = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.mainScreenRect.right_ = fdp.ConsumeFloatingPoint<float>();
-    captureConfig.mainScreenRect.bottom_ = fdp.ConsumeFloatingPoint<float>();
-
-    g_rsInterfaces->TakeSurfaceCaptureSoloNode(nodeId, captureConfig);
+    auto result = g_rsInterfaces->TakeSurfaceCaptureSoloNodeList(node);
+    (void)result;
 }
 
 void DoTakeUICaptureInRange(FuzzedDataProvider& fdp)
