@@ -37,8 +37,8 @@ const uint8_t TARGET_SIZE = 5;
 void DoGetScreenHdrStatus(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
-    HdrStatus status;
-    g_rsInterfaces->GetScreenHdrStatus(id, status);
+    HdrStatus hdrStatus;
+    g_rsInterfaces->GetScreenHDRStatus(id, hdrStatus);
 }
 
 void DoGetScreenHdrCapability(FuzzedDataProvider& fdp)
@@ -58,15 +58,15 @@ void DoGetScreenSupportedHdrFormats(FuzzedDataProvider& fdp)
 void DoGetScreenHdrFormat(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
-    ScreenHDRFormat format;
-    g_rsInterfaces->GetScreenHDRFormat(id, format);
+    ScreenHDRFormat hdrFormat;
+    g_rsInterfaces->GetScreenHDRFormat(id, hdrFormat);
 }
 
 void DoSetScreenHdrFormat(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
-    int32_t formatIdx = fdp.ConsumeIntegral<int32_t>();
-    g_rsInterfaces->SetScreenHDRFormat(id, formatIdx);
+    int32_t modeIdx = fdp.ConsumeIntegral<int32_t>();
+    g_rsInterfaces->SetScreenHDRFormat(id, modeIdx);
 }
 
 } // namespace
