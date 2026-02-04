@@ -1243,7 +1243,6 @@ HWTEST_F(RSRenderNodeDrawableTest, RemoveDrawableFromCacheWithNullDrawableTest00
     }
 }
 
-
 #ifdef SUBTREE_PARALLEL_ENABLE
 /**
  * @tc.name: OnDrawTest
