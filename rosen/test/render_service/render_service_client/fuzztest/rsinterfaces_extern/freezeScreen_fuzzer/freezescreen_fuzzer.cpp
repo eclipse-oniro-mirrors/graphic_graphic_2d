@@ -18,7 +18,6 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include "transaction/rs_interfaces.h"
-#include "pipeline/rs_display_node.h"
 
 namespace OHOS {
 namespace Rosen {
