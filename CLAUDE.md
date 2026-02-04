@@ -203,3 +203,23 @@ The build is controlled by feature flags in `graphic_config.gni`:
 - Interface files: `rs_i*.h` (e.g., `rs_irender_service.h`)
 - Stub files: `*_stub.h`, `*_proxy.h` for IPC
 - NDK headers: `native_*.h` for public C APIs
+
+## Code Style Guidelines
+
+### Formatting Rules (STRICT)
+The following rules **MUST** be followed for all code changes:
+
+1. **Line Length**: No line may exceed **120 characters**
+   - Break long strings, function calls, or statements across multiple lines
+   - Use appropriate indentation for continuation lines (typically 4 spaces)
+
+2. **Function Length**: No function may exceed **50 NBNC (Non-Blank, Non-Comment) lines**
+   - NBNC = lines that are neither blank nor comments
+   - Break large functions into smaller, focused helper functions
+   - This improves readability, testability, and maintainability
+
+3. **Magic Numbers**: No magic numbers other than **0** and **1** may be used directly
+   - Use `constexpr` or `const` variables to give meaning to numeric literals
+   - Exceptions: 0 and 1 are allowed (also -1 for error codes when appropriate)
+   - This improves code readability and makes maintenance easier
+

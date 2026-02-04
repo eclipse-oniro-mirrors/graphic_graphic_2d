@@ -748,8 +748,10 @@ void RSRenderNode::ResetChildRelevantFlags()
 {
     childHasVisibleFilter_ = false;
     childHasVisibleEffect_ = false;
+    childHasVisibleColorPicker_ = false;
     childHasSharedTransition_ = false;
     visibleFilterChild_.clear();
+    visibleColorPickerChild_.clear();
     visibleEffectChild_.clear();
     childrenRect_.Clear();
     hasChildrenOutOfRect_ = false;
@@ -1548,8 +1550,12 @@ bool RSRenderNode::IsSubTreeNeedPrepare(bool filterInGlobal, bool isOccluded)
         RS_OPTIONAL_TRACE_NAME_FMT("IsSubTreeNeedPrepare node[%lu] filterInGlobal_[%d]",
             GetId(), filterInGlobal);
     }
-    // if clean without filter skip subtree
-    return ChildHasVisibleFilter() ? filterInGlobal : false;
+    if (ChildHasVisibleColorPicker()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("IsSubTreeNeedPrepare node[%lu] has ColorPicker child",
+            GetId());
+    }
+    // if clean without filter or ColorPicker, skip subtree
+    return (ChildHasVisibleFilter() || ChildHasVisibleColorPicker()) ? filterInGlobal : false;
 }
 
 void RSRenderNode::PrepareChildrenForApplyModifiers()
@@ -2686,6 +2692,17 @@ bool RSRenderNode::InvokeFilterDrawable(RSDrawableSlot slot,
     return true;
 }
 #endif
+
+std::shared_ptr<DrawableV2::RSColorPickerDrawable> RSRenderNode::GetColorPickerDrawable() const
+{
+    if (auto& drawable = GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::COLOR_PICKER)]) {
+        if (auto colorPickerDrawable = std::static_pointer_cast<DrawableV2::RSColorPickerDrawable>(drawable)) {
+            return colorPickerDrawable;
+        }
+    }
+    return nullptr;
+}
+
 void RSRenderNode::UpdateFilterCacheWithBackgroundDirty()
 {
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
@@ -4048,6 +4065,13 @@ void RSRenderNode::SetChildHasVisibleEffect(bool val)
     stagingRenderParams_->SetChildHasVisibleEffect(val);
 #endif
 }
+void RSRenderNode::SetChildHasVisibleColorPicker(bool val)
+{
+    childHasVisibleColorPicker_ = val;
+#ifdef RS_ENABLE_GPU
+    stagingRenderParams_->SetChildHasVisibleColorPicker(val);
+#endif
+}
 void RSRenderNode::UpdateVisibleFilterChild(RSRenderNode& childNode)
 {
     if (childNode.GetRenderProperties().NeedFilter() || childNode.GetHwcRecorder().IsBlendWithBackground() ||
@@ -4065,6 +4089,15 @@ void RSRenderNode::UpdateVisibleEffectChild(RSRenderNode& childNode)
     }
     auto& childEffectNodes = childNode.GetVisibleEffectChild();
     visibleEffectChild_.insert(childEffectNodes.begin(), childEffectNodes.end());
+}
+void RSRenderNode::UpdateVisibleColorPickerChild(RSRenderNode& childNode)
+{
+    if (childNode.GetColorPickerDrawable()) {
+        visibleColorPickerChild_.emplace_back(childNode.GetId());
+    }
+    auto& childColorPickerNodes = childNode.GetVisibleColorPickerChild();
+    visibleColorPickerChild_.insert(visibleColorPickerChild_.end(),
+        childColorPickerNodes.begin(), childColorPickerNodes.end());
 }
 
 const std::shared_ptr<RSRenderNode> RSRenderNode::GetInstanceRootNode() const

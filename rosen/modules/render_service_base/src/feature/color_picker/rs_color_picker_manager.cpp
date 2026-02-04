@@ -38,30 +38,33 @@ inline uint64_t NowMs()
 }
 } // namespace
 
-std::optional<Drawing::ColorQuad> RSColorPickerManager::GetColorPicked(
-    RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId, const ColorPickerParam& params)
+std::optional<Drawing::ColorQuad> RSColorPickerManager::GetColorPick()
 {
     uint64_t currTime = NowMs();
     const auto [prevColor, curColor] = GetColor();
     const float animFraction = static_cast<float>(currTime - animStartTime_) / COLOR_PICKER_ANIMATE_DURATION;
     const auto res = InterpolateColor(prevColor, curColor, animFraction);
-    RS_TRACE_NAME_FMT(
-        "RSColorPickerManager::GetColorPicked: animFraction = %f, color = %x, prevColor = %x, interpolated color = %x",
-        animFraction, curColor, prevColor, res);
-
-    if (animFraction <= 1.0f) {
-        RSColorPickerThread::Instance().NotifyNodeDirty(nodeId); // continue animation
-    }
-
-    if (params.strategy != ColorPickStrategyType::NONE &&
-        currTime >= params.interval + lastUpdateTime_) { // cooldown check
-        ScheduleColorPick(canvas, rect, nodeId, params.strategy);
-        lastUpdateTime_ = currTime;
-    }
     return res;
 }
 
 void RSColorPickerManager::ScheduleColorPick(
+    RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId, const ColorPickerParam& params)
+{
+    // Continue animation if in progress
+    uint64_t currTime = NowMs();
+    const float animFraction = static_cast<float>(currTime - animStartTime_) / COLOR_PICKER_ANIMATE_DURATION;
+    if (animFraction <= 1.0f) {
+        RSColorPickerThread::Instance().NotifyNodeDirty(nodeId); // continue animation
+    }
+
+    // Schedule new color pick if strategy is not NONE
+    // Cooldown check now done in RSColorPickerDrawable::Prepare()
+    if (params.strategy != ColorPickStrategyType::NONE) {
+        ScheduleColorPickWithStrategy(canvas, rect, nodeId, params.strategy);
+    }
+}
+
+void RSColorPickerManager::ScheduleColorPickWithStrategy(
     RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId, ColorPickStrategyType strategy)
 {
     if (rect == nullptr) {
@@ -155,7 +158,6 @@ void RSColorPickerManager::HandleColorUpdate(
         colorPicked_ = newColor;
         animStartTime_ = now;
     }
-    RS_TRACE_NAME_FMT("RSColorPickerManager::notifyNodeDirty, prevColor = %x, newColor = %x", prevColor_, colorPicked_);
     RSColorPickerThread::Instance().NotifyNodeDirty(nodeId);
 }
 

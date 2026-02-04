@@ -45,23 +45,22 @@ template<typename T>
 }
 } // namespace
 
-std::optional<Drawing::ColorQuad> ColorPickAltManager::GetColorPicked(
+std::optional<Drawing::ColorQuad> ColorPickAltManager::GetColorPick()
+{
+    return std::nullopt;
+}
+
+void ColorPickAltManager::ScheduleColorPick(
     RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId, const ColorPickerParam& params)
 {
     if (params.strategy == ColorPickStrategyType::NONE) {
-        return std::nullopt;
+        return;
     }
-    uint64_t currTime = NowMs();
-    // Respect cooldown interval
-    if (currTime < params.interval + lastUpdateTime_) {
-        return std::nullopt;
-    }
-    lastUpdateTime_ = currTime;
+    // Update thresholds from params
     lightThreshold_.store(params.notifyThreshold.second, std::memory_order_relaxed);
     darkThreshold_.store(params.notifyThreshold.first, std::memory_order_relaxed);
 
     ScheduleColorPick(canvas, rect, nodeId);
-    return std::nullopt;
 }
 
 void ColorPickAltManager::ScheduleColorPick(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId)

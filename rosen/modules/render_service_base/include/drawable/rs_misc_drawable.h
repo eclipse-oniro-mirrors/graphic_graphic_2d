@@ -16,12 +16,14 @@
 #ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_MISC_DRAWABLE_H
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_MISC_DRAWABLE_H
 
+#include <atomic>
 #include <bitset>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <set>
 #include <unordered_set>
+
 #include "feature/color_picker/i_color_picker_manager.h"
 
 #include "drawable/rs_drawable.h"
@@ -72,14 +74,31 @@ public:
     void OnSync() override;
     void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
+    /**
+     * @brief Prepare ColorPicker for execution on main thread
+     * @param vsyncTime Current vsync time in nanoseconds
+     *
+     * Checks cooldown interval and determines if color pick should execute this frame.
+     * Sets needExecute_ flag for render thread to check. Called during Prepare phase.
+     */
+    RSB_EXPORT void Prepare(uint64_t vsyncTime);
+    bool NeedExecute() const
+    {
+        return needExecute_.load(std::memory_order_relaxed);
+    }
+
 private:
     NodeId stagingNodeId_ = INVALID_NODEID;
     NodeId nodeId_ = INVALID_NODEID;
     std::shared_ptr<ColorPickerParam> stagingColorPicker_;
     ColorPickerParam params_;
 
-    bool needSync_ = false;
     std::shared_ptr<IColorPickerManager> colorPickerManager_;
+
+    bool needSync_ = false;
+    std::atomic<bool> needExecute_ { false }; // Set in Prepare (main thread), read in OnDraw (render thread)
+    bool isTaskScheduled_ = false;            // Flag to indicate if a task is already scheduled during cooldown
+    uint64_t lastUpdateTime_ = 0;             // Set in Prepare
 };
 
 // RSCustomModifierDrawable, for drawing custom modifiers

@@ -22,6 +22,7 @@
 
 #include "feature/color_picker/rs_color_picker_thread.h"
 #include "i_color_picker_manager.h"
+
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "platform/common/rs_log.h"
 
@@ -34,12 +35,10 @@ class RSColorPickerManager : public std::enable_shared_from_this<RSColorPickerMa
 public:
     RSColorPickerManager() = default;
     ~RSColorPickerManager() noexcept = default;
-    /**
-     * @brief Return previously picked color and conditionally schedule a new color pick task on the current canvas.
-     * @param strategy Only CONTRAST is currently supported.
-     */
-    std::optional<Drawing::ColorQuad> GetColorPicked(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect,
-        uint64_t nodeId, const ColorPickerParam& params) override;
+
+    std::optional<Drawing::ColorQuad> GetColorPick() override;
+    void ScheduleColorPick(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId,
+        const ColorPickerParam& params) override;
 
 private:
     struct ColorPickerInfo {
@@ -55,7 +54,8 @@ private:
             Drawing::BackendTexture backendTexture, std::shared_ptr<Drawing::Image> image, NodeId nodeId,
             std::weak_ptr<RSColorPickerManager> manager, ColorPickStrategyType strategy)
             : colorSpace_(colorSpace), bitmapFormat_(bitmapFormat), backendTexture_(backendTexture), oldImage_(image),
-              nodeId_(nodeId), manager_(manager), strategy_(strategy) {}
+              nodeId_(nodeId), manager_(manager), strategy_(strategy)
+        {}
 
         static void PickColor(void* context)
         {
@@ -95,7 +95,9 @@ private:
             RSColorPickerThread::Instance().PostTask(task, 0);
         }
     };
-    void ScheduleColorPick(
+
+    // Helper method for scheduling color pick with strategy (extracted from params)
+    void ScheduleColorPickWithStrategy(
         RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId, ColorPickStrategyType strategy);
     void PickColor(const std::shared_ptr<Drawing::Image>& snapshot, uint64_t nodeId, ColorPickStrategyType strategy);
     void HandleColorUpdate(Drawing::ColorQuad newColor, uint64_t nodeId, ColorPickStrategyType strategy);
@@ -117,7 +119,6 @@ private:
     Drawing::ColorQuad prevColor_ = Drawing::Color::COLOR_BLACK;
 
     std::atomic<uint64_t> animStartTime_ = 0;
-    uint64_t lastUpdateTime_ = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

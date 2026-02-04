@@ -19,9 +19,10 @@
 #include <atomic>
 #include <memory>
 
-#include "drawable/rs_property_drawable_utils.h"
 #include "feature/color_picker/rs_color_picker_thread.h"
 #include "i_color_picker_manager.h"
+
+#include "drawable/rs_property_drawable_utils.h"
 #include "platform/common/rs_log.h"
 
 namespace OHOS {
@@ -33,8 +34,11 @@ class ColorPickAltManager : public std::enable_shared_from_this<ColorPickAltMana
 public:
     ColorPickAltManager() = default;
     ~ColorPickAltManager() noexcept = default;
-    std::optional<Drawing::ColorQuad> GetColorPicked(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect,
-        uint64_t nodeId, const ColorPickerParam& params) override;
+
+    // IColorPickerManager interface
+    std::optional<Drawing::ColorQuad> GetColorPick() override;
+    void ScheduleColorPick(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId,
+        const ColorPickerParam& params) override;
 
 private:
     struct ColorPickerInfo {
@@ -95,8 +99,7 @@ private:
         }
     };
 
-    void ScheduleColorPick(
-        RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId);
+    void ScheduleColorPick(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, uint64_t nodeId);
     void HandleColorUpdate(Drawing::ColorQuad newColor, uint64_t nodeId);
 
     std::atomic<uint32_t> pickedLuminance_ = RGBA_MAX + 1; // invalid initial luminance to force first notification

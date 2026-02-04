@@ -314,6 +314,7 @@ private:
     void CheckFilterNodeInSkippedSubTreeNeedClearCache(const RSRenderNode& node, RSDirtyRegionManager& dirtyManager);
     void CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(const RSRenderNode& node,
         RSDirtyRegionManager& dirtyManager);
+    void PrepareColorPickerDrawableInSkippedSubTree(const RSRenderNode& rootNode);
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
@@ -369,6 +370,8 @@ private:
     void UpdateFixedSize(RSLogicalDisplayRenderNode& node);
 
     void DisableOccludedHwcNodeInSkippedSubTree(const RSRenderNode& node) const;
+
+    void PrepareColorPickerDrawable(RSDrawable::Ptr& drawable);
 
     friend class RSUniHwcVisitor;
     std::unique_ptr<RSUniHwcVisitor> hwcVisitor_;
