@@ -15,25 +15,17 @@ This project uses the **GN (Generate Ninja)** build system, which is part of Ope
 Build commands are typically run from the OpenHarmony root directory (not this repository root):
 
 ```bash
-# Build the entire graphic_2d component
-./build.sh --product-name <product> --ccache --build-target graphic_2d
-
-# Build specific modules
-./build.sh --product-name <product> --ccache --build-target librender_service_client
-./build.sh --product-name <product> --ccache --build-target librender_service_base
+hb build graphic_2d -i # full build of graphic_2d
+hb build graphic_2d -i --skip-download --build-target <target> # fast incremental build
 ```
-
-Common product names: `rk3568`, `hispark_taurus_standard`, `phone`, `tablet`
 
 ### Testing
 
 ```bash
 # Build all tests for graphic_2d
-./build.sh --product-name <product> --build-target graphic_common_test
-
-# Build specific test modules
-./build.sh --product-name <product> --build-target //foundation/graphic/graphic_2d/rosen/test/render_service:test
-./build.sh --product-name <product> --build-target //foundation/graphic/graphic_2d/rosen/test/2d_graphics:test
+hb build graphic_2d -t
+# Fast rebuild of specific target
+hb build graphic_2d -t --skip-download --build-target <target>
 ```
 
 ## Architecture

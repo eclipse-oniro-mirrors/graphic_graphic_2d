@@ -3480,7 +3480,8 @@ void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
 
         // Check if this is a ColorPicker node and prepare it
         if (auto colorPickerDrawable = filterNode->GetColorPickerDrawable()) {
-            RS_OPTIONAL_TRACE_NAME_FMT("ColorPicker: Preparing in filter iteration node id:%" PRIu64, filterNode->GetId());
+            RS_OPTIONAL_TRACE_NAME_FMT(
+                "ColorPicker: Preparing in filter iteration node id:%" PRIu64, filterNode->GetId());
             RSDrawable::Ptr drawable = colorPickerDrawable;
             PrepareColorPickerDrawable(drawable);
         }
