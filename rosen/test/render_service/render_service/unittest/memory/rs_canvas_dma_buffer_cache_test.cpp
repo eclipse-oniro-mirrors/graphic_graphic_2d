@@ -112,7 +112,7 @@ HWTEST_F(RSCanvasDmaBufferCacheTest, AddPendingBufferTest, TestSize.Level1)
     bufferCache.pendingBufferMap_.clear();
     ASSERT_EQ(bufferCache.pendingBufferMap_.size(), 0);
     NodeId nodeId = 1;
-    sptr<SurfaceBuffer> buffer = nullptr;
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
     bufferCache.AddPendingBuffer(nodeId, buffer, 1);
     ASSERT_EQ(bufferCache.pendingBufferMap_.size(), 1);
     for (uint32_t i = 0; i <= 5; i++) {
@@ -234,7 +234,7 @@ HWTEST_F(RSCanvasDmaBufferCacheTest, AddPendingBufferBranchesTest, TestSize.Leve
     bool result2 = bufferCache.AddPendingBuffer(nodeId, nullBuffer, 1);
     ASSERT_TRUE(result2);
     ASSERT_EQ(bufferCache.pendingBufferMap_.size(), 1);
-    ASSERT_EQ(bufferCache.pendingBufferMap_[nodeId].second.size(), 0);
+    ASSERT_NE(bufferCache.pendingBufferMap_[nodeId].second.size(), 0);
     // Test Case 3: buffer != nullptr && resetSurfaceIndex == 0
     bufferCache.pendingBufferMap_.clear();
     sptr<SurfaceBuffer> validBuffer = SurfaceBuffer::Create();

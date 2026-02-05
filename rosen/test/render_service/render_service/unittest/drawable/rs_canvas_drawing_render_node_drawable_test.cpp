@@ -1118,6 +1118,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ReleaseDmaSurfaceBufferTest, Tes
 {
     auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    bufferCache.pendingBufferMap_.clear();
     bufferCache.AddPendingBuffer(1, buffer, 1);
     auto& nodeBufferMap = bufferCache.pendingBufferMap_[1].second;
     auto rsContext = std::make_shared<RSContext>();
@@ -1147,6 +1148,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ClearCustomResourceWithDmaBuffer
     NodeId nodeId = 1;
     // Test Case 1: Clear custom resource with pending buffers in cache
     {
+        bufferCache.pendingBufferMap_.clear();
         sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
         bufferCache.AddPendingBuffer(nodeId, buffer, 1);
         ASSERT_GT(bufferCache.pendingBufferMap_[nodeId].second.size(), 0);
@@ -1181,6 +1183,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ClearCustomResourceWithDmaBuffer
     NodeId nodeId = 1;
     // Test Case 3: Clear custom resource with multiple pending buffers
     {
+        bufferCache.pendingBufferMap_.clear();
         sptr<SurfaceBuffer> buffer1 = SurfaceBuffer::Create();
         sptr<SurfaceBuffer> buffer2 = SurfaceBuffer::Create();
         bufferCache.AddPendingBuffer(nodeId, buffer1, 1);
@@ -1204,7 +1207,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ClearCustomResourceWithDmaBuffer
         auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
         drawable->preAllocateDmaEnabled_ = false;
         drawable->ClearCustomResource();
-        ASSERT_GT(bufferCache.pendingBufferMap_[nodeId].second.size(), 0);
+        ASSERT_EQ(bufferCache.pendingBufferMap_[nodeId].second.size(), 0);
     }
 }
 #endif

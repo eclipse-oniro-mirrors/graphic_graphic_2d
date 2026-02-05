@@ -1224,8 +1224,8 @@ HWTEST_F(RSRenderNodeDrawableTest, RemoveDrawableFromCacheWithNullDrawableTest00
     {
         NodeId nodeId = 999;
         RSRenderNodeDrawableAdapter::RemoveDrawableFromCache(nodeId);
-        auto cachedDrawable = RSRenderNodeDrawableAdapter::GetDrawableById(id);
-        ASSERT_NE(cachedDrawable, nullptr);
+        auto cachedDrawable = RSRenderNodeDrawableAdapter::GetDrawableById(nodeId);
+        ASSERT_EQ(cachedDrawable, nullptr);
     }
     // Test Case 4: Multiple removals of the same node
     {
