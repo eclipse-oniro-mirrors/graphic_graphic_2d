@@ -248,12 +248,10 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenPowerStatusTest
 GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenDataTest001)
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
-    sptr<ScreenData> screenData = RSInterfaces::GetInstance().GetScreenData(activeScreenId);
-    EXPECT_NE(screenData, nullptr);
-    if (screenData != nullptr) {
-        LOGI("GetScreenDataTest001 screenId[%{public}" PRIu64 "] width[%{public}d] height[%{public}d]",
-            activeScreenId, screenData->GetWidth(), screenData->GetHeight());
-    }
+    RSScreenData screenData = RSInterfaces::GetInstance().GetScreenData(activeScreenId);
+    RSScreenModeInfo activityModeInfo = screenData.GetActivityModeInfo();
+    LOGI("GetScreenDataTest001 screenId[%{public}" PRIu64 "] width[%{public}d] height[%{public}d]",
+        activeScreenId, activityModeInfo.GetScreenWidth(), activityModeInfo.GetScreenHeight());
 }
 
 /*
@@ -264,7 +262,7 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenDataTest001)
 GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenSupportedModesTest001)
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
-    std::vector<ScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
+    std::vector<RSScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
     EXPECT_GT(supportedModes.size(), 0u);
     LOGI("GetScreenSupportedModesTest001 screenId[%{public}" PRIu64 "] supportedModes.size()[%{public}zu]",
         activeScreenId, supportedModes.size());
@@ -278,13 +276,11 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenSupportedModesT
 GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenActiveModeTest001)
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
-    sptr<ScreenModeInfo> activeMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
-    EXPECT_NE(activeMode, nullptr);
-    if (activeMode != nullptr) {
-        LOGI("GetScreenActiveModeTest001 screenId[%{public}" PRIu64 "] width[%{public}d] "
-             "height[%{public}d] refreshRate[%{public}d]",
-            activeScreenId, activeMode->GetWidth(), activeMode->GetHeight(), activeMode->GetRefreshRate());
-    }
+    RSScreenModeInfo activeMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
+    LOGI("GetScreenActiveModeTest001 screenId[%{public}" PRIu64 "] width[%{public}d] "
+         "height[%{public}d] refreshRate[%{public}d]",
+        activeScreenId, activeMode.GetScreenWidth(), activeMode.GetScreenHeight(),
+        activeMode.GetScreenRefreshRate());
 }
 
 /*
@@ -295,12 +291,9 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenActiveModeTest0
 GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenCapabilityTest001)
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
-    sptr<ScreenCapability> screenCapability = RSInterfaces::GetInstance().GetScreenCapability(activeScreenId);
-    EXPECT_NE(screenCapability, nullptr);
-    if (screenCapability != nullptr) {
-        LOGI("GetScreenCapabilityTest001 screenId[%{public}" PRIu64 "] name[%{public}s]",
-            activeScreenId, screenCapability->GetName().c_str());
-    }
+    RSScreenCapability screenCapability = RSInterfaces::GetInstance().GetScreenCapability(activeScreenId);
+    LOGI("GetScreenCapabilityTest001 screenId[%{public}" PRIu64 "] name[%{public}s]",
+        activeScreenId, screenCapability.GetName().c_str());
 }
 
 /*
@@ -311,10 +304,13 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetScreenCapabilityTest0
 GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, GetRogScreenResolutionTest001)
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
-    sptr<ScreenResolution> resolution = RSInterfaces::GetInstance().GetRogScreenResolution(activeScreenId);
-    if (resolution != nullptr) {
-        LOGI("GetRogScreenResolutionTest001 screenId[%{public}" PRIu64 "] width[%{public}d] height[%{public}d]",
-            activeScreenId, resolution->GetWidth(), resolution->GetHeight());
+    uint32_t width = 0;
+    uint32_t height = 0;
+    int32_t ret = RSInterfaces::GetInstance().GetRogScreenResolution(activeScreenId, width, height);
+    EXPECT_EQ(ret, 0);
+    if (ret == 0) {
+        LOGI("GetRogScreenResolutionTest001 screenId[%{public}" PRIu64 "] width[%{public}u] height[%{public}u]",
+            activeScreenId, width, height);
     }
 }
 
@@ -398,14 +394,14 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetScreenActiveModeTest0
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
 
     // Get supported modes first
-    std::vector<ScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
+    std::vector<RSScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
     if (supportedModes.empty()) {
         LOGW("SetScreenActiveModeTest001 No supported modes available");
         return;
     }
 
     // Set to first supported mode
-    uint32_t modeId = supportedModes[0].GetId();
+    uint32_t modeId = supportedModes[0].GetScreenModeId();
     bool result = RSInterfaces::GetInstance().SetScreenActiveMode(activeScreenId, modeId);
     EXPECT_TRUE(result);
 
@@ -424,14 +420,14 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetScreenActiveModeTest0
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
 
-    std::vector<ScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
+    std::vector<RSScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
     if (supportedModes.size() < 2) {
         LOGW("SetScreenActiveModeTest002 Less than 2 supported modes available");
         return;
     }
 
     // Set to second supported mode
-    uint32_t modeId = supportedModes[1].GetId();
+    uint32_t modeId = supportedModes[1].GetScreenModeId();
     bool result = RSInterfaces::GetInstance().SetScreenActiveMode(activeScreenId, modeId);
     EXPECT_TRUE(result);
 
@@ -451,24 +447,20 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetPhysicalScreenResolut
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
 
     // Get current resolution
-    sptr<ScreenModeInfo> currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
-    if (currentMode == nullptr) {
-        LOGE("SetPhysicalScreenResolutionTest001 Failed to get current mode");
-        return;
-    }
-
-    uint32_t originalWidth = currentMode->GetWidth();
-    uint32_t originalHeight = currentMode->GetHeight();
+    RSScreenModeInfo currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
+    uint32_t originalWidth = currentMode.GetScreenWidth();
+    uint32_t originalHeight = currentMode.GetScreenHeight();
 
     // Get supported modes and find a different resolution
-    std::vector<ScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
+    std::vector<RSScreenModeInfo> supportedModes = RSInterfaces::GetInstance().GetScreenSupportedModes(activeScreenId);
     uint32_t targetWidth = originalWidth;
     uint32_t targetHeight = originalHeight;
 
     for (const auto& mode : supportedModes) {
-        if (mode.GetWidth() != originalWidth || mode.GetHeight() != originalHeight) {
-            targetWidth = mode.GetWidth();
-            targetHeight = mode.GetHeight();
+        if (mode.GetScreenWidth() != static_cast<int32_t>(originalWidth) ||
+            mode.GetScreenHeight() != static_cast<int32_t>(originalHeight)) {
+            targetWidth = mode.GetScreenWidth();
+            targetHeight = mode.GetScreenHeight();
             break;
         }
     }
@@ -501,14 +493,9 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetScreenActiveRectTest0
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
 
     // Get current mode info
-    sptr<ScreenModeInfo> currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
-    if (currentMode == nullptr) {
-        LOGE("SetScreenActiveRectTest001 Failed to get current mode");
-        return;
-    }
-
-    uint32_t screenWidth = currentMode->GetWidth();
-    uint32_t screenHeight = currentMode->GetHeight();
+    RSScreenModeInfo currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
+    uint32_t screenWidth = currentMode.GetScreenWidth();
+    uint32_t screenHeight = currentMode.GetScreenHeight();
 
     // Set active rect to full screen
     uint32_t left = 0;
@@ -533,14 +520,9 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetScreenActiveRectTest0
 {
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
 
-    sptr<ScreenModeInfo> currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
-    if (currentMode == nullptr) {
-        LOGE("SetScreenActiveRectTest002 Failed to get current mode");
-        return;
-    }
-
-    uint32_t screenWidth = currentMode->GetWidth();
-    uint32_t screenHeight = currentMode->GetHeight();
+    RSScreenModeInfo currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
+    uint32_t screenWidth = currentMode.GetScreenWidth();
+    uint32_t screenHeight = currentMode.GetScreenHeight();
 
     // Set active rect to center 80% of screen
     uint32_t left = screenWidth / 10;
@@ -593,8 +575,7 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetScreenOffsetTest002)
     // Reset to zero offset
     RSInterfaces::GetInstance().SetScreenOffset(activeScreenId, 0.0f, 0.0f);
 
-    LOGI("SetScreenOffsetTest002 screenId[%{public}" PRIu64 "] offset[%{public}.1f, %{public}.1f]",
-        activeScreenId, offsetX, offsetY);
+    LOGI("SetScreenOffsetTest002 screenId[%{public}" PRIu64 "] offset[10.0, 10.0]", activeScreenId);
 }
 
 /*
@@ -607,14 +588,9 @@ GRAPHIC_TEST(RSScreenManagerTest, CONTENT_DISPLAY_TEST, SetRogScreenResolutionTe
     ScreenId activeScreenId = RSInterfaces::GetInstance().GetActiveScreenId();
 
     // Get current resolution
-    sptr<ScreenModeInfo> currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
-    if (currentMode == nullptr) {
-        LOGE("SetRogScreenResolutionTest001 Failed to get current mode");
-        return;
-    }
-
-    uint32_t width = currentMode->GetWidth();
-    uint32_t height = currentMode->GetHeight();
+    RSScreenModeInfo currentMode = RSInterfaces::GetInstance().GetScreenActiveMode(activeScreenId);
+    uint32_t width = currentMode.GetScreenWidth();
+    uint32_t height = currentMode.GetScreenHeight();
 
     bool result = RSInterfaces::GetInstance().SetRogScreenResolution(activeScreenId, width, height);
     EXPECT_TRUE(result);
