@@ -64,7 +64,7 @@ void DoSetScreenActiveRect(FuzzedDataProvider& fdp)
     int32_t y = fdp.ConsumeIntegral<int32_t>();
     int32_t w = fdp.ConsumeIntegral<int32_t>();
     int32_t h = fdp.ConsumeIntegral<int32_t>();
-    Rect activeRect(x, y, w, h);
+    Rect activeRect = {x, y, w, h};
     g_rsInterfaces->SetScreenActiveRect(id, activeRect);
 }
 
@@ -129,7 +129,7 @@ void DoSetMirrorScreenVisibleRect(FuzzedDataProvider& fdp)
     int32_t y = fdp.ConsumeIntegral<int32_t>();
     int32_t w = fdp.ConsumeIntegral<int32_t>();
     int32_t h = fdp.ConsumeIntegral<int32_t>();
-    Rect mainScreenRect(x, y, w, h);
+    Rect mainScreenRect = {x, y, w, h};
     bool supportRotation = fdp.ConsumeBool();
     g_rsInterfaces->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
 }

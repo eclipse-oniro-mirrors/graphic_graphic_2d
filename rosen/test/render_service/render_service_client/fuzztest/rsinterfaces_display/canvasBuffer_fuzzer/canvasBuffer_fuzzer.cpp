@@ -90,6 +90,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (g_renderInterface == nullptr) {
         return 0;
     }
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     uint8_t command = fdp.ConsumeIntegral<uint8_t>() % TARGET_SIZE;
     switch (command) {
         case DO_REGISTER_CANVAS_CALLBACK:
@@ -101,6 +102,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         default:
             break;
     }
+#endif
 
     return 0;
 }
