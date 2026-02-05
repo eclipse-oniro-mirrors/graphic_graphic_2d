@@ -232,7 +232,7 @@ void RSColorPickerDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
         paintFilterCanvas->SetColorPicked(params_.placeholder, maybeColor.value());
     }
     bool needExecute = needExecute_.load(std::memory_order_relaxed);
-    RS_OPTIONAL_TRACE_NAME_FMT("ColorPicker: ONdRAW nodeId=%" PRIu64 " rect=[%s], need execute = %d", nodeId_,
+    RS_OPTIONAL_TRACE_NAME_FMT("ColorPicker: onDraw nodeId=%" PRIu64 " rect=[%s], need execute = %d", nodeId_,
         rect ? rect->ToString().c_str() : "null", needExecute);
 
     if (needExecute) {
