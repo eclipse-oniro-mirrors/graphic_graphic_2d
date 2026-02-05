@@ -141,6 +141,7 @@ HWTEST_F(NdkTypographyCharacterIndexTest, TypographyGetCharacterPositionAtCoordi
 HWTEST_F(NdkTypographyCharacterIndexTest, TypographyGetCharacterPositionAtCoordinateInvalidEncodingTest003,
     TestSize.Level0)
 {
+    SetupTypography(DEFAULT_TEXT_UTF8);
     OH_Drawing_PositionAndAffinity* positionAndAffinity = OH_Drawing_TypographyGetCharacterPositionAtCoordinate(
         fTypography, TEST_COORDINATE_X, TEST_COORDINATE_Y, (OH_Drawing_TextEncoding)999);
     EXPECT_EQ(positionAndAffinity, nullptr);
@@ -499,6 +500,38 @@ HWTEST_F(NdkTypographyCharacterIndexTest, TypographyCharacterIndexMultilingualTe
     EXPECT_EQ(OH_Drawing_GetEndFromRange(actualCharacterRange), 5);
     OH_Drawing_DestroyRange(glyphRange);
     OH_Drawing_DestroyRange(actualCharacterRange);
+}
+
+/*
+ * @tc.name: TypographyCharacterIndexNullActualRangeTest001
+ * @tc.desc: Test glyph to character conversion with null actualRange
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyCharacterIndexTest, TypographyCharacterIndexNullActualRangeTest001, TestSize.Level0)
+{
+    SetupTypographyWithEncodedText(ARABIC_TEXT_UTF16);
+    OH_Drawing_Range* characterRange = OH_Drawing_TypographyGetCharacterRangeForGlyphRange(
+        fTypography, 0, 5, nullptr, TEXT_ENCODING_UTF16);
+    ASSERT_NE(characterRange, nullptr);
+    EXPECT_EQ(OH_Drawing_GetStartFromRange(characterRange), 0);
+    EXPECT_EQ(OH_Drawing_GetEndFromRange(characterRange), 6);
+    OH_Drawing_DestroyRange(characterRange);
+}
+
+/*
+ * @tc.name: TypographyCharacterIndexNullActualRangeTest002
+ * @tc.desc: Test character to glyph conversion with null actualRange
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyCharacterIndexTest, TypographyCharacterIndexNullActualRangeTest002, TestSize.Level0)
+{
+    SetupTypographyWithEncodedText(ARABIC_TEXT_UTF16);
+    OH_Drawing_Range* glyphRange = OH_Drawing_TypographyGetGlyphRangeForCharacterRange(
+        fTypography, 3, 5, nullptr, TEXT_ENCODING_UTF16);
+    ASSERT_NE(glyphRange, nullptr);
+    EXPECT_EQ(OH_Drawing_GetStartFromRange(glyphRange), 2);
+    EXPECT_EQ(OH_Drawing_GetEndFromRange(glyphRange), 4);
+    OH_Drawing_DestroyRange(glyphRange);
 }
 
 /*

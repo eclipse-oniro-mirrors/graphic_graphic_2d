@@ -414,13 +414,13 @@ Range<size_t> ParagraphImpl::GetCharacterRangeForGlyphRange(size_t glyphStart, s
         return {0, 0};
     }
 
-    skt::SkRange<size_t> actualTextRange;
+    skt::SkRange<size_t> tempGlyphRange;
     skt::TextRange result = paragraph_->getCharacterRangeForGlyphRange(glyphStart, glyphEnd,
-        &actualTextRange, static_cast<skt::TextEncoding>(encoding));
+        &tempGlyphRange, static_cast<skt::TextEncoding>(encoding));
 
     // Only set actualGlyphRange if caller requested it (non-NULL)
     if (actualGlyphRange != nullptr) {
-        *actualGlyphRange = FromSkRange(actualTextRange);
+        *actualGlyphRange = FromSkRange(tempGlyphRange);
     }
     return FromTextRange(result);
 }
