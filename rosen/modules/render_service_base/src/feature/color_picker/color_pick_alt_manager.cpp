@@ -28,12 +28,6 @@ namespace OHOS::Rosen {
 namespace {
 constexpr int TRACE_LEVEL_TWO = 2;
 
-inline uint64_t NowMs()
-{
-    using namespace std::chrono;
-    return static_cast<uint64_t>(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count());
-}
-
 template<typename T>
 [[nodiscard]] inline bool IsNull(T* p, const char* msg)
 {

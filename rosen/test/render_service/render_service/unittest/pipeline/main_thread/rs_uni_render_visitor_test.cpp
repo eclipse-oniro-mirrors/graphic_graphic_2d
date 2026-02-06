@@ -8393,7 +8393,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareColorPickerDrawable001, TestSize.Level1)
     auto colorPickerDrawable = DrawableV2::RSColorPickerDrawable::OnGenerate(*surfaceNode);
     ASSERT_NE(colorPickerDrawable, nullptr);
 
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode.get();
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
 
     // Clear the map before testing
     rsUniRenderVisitor->hwcVisitor_->colorPickerHwcDisabledSurfaces_.clear();
@@ -8431,7 +8431,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareColorPickerDrawable002, TestSize.Level1)
     auto colorPickerDrawable = DrawableV2::RSColorPickerDrawable::OnGenerate(*surfaceNode);
     ASSERT_NE(colorPickerDrawable, nullptr);
 
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode.get();
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
 
     // Clear the map before testing
     rsUniRenderVisitor->hwcVisitor_->colorPickerHwcDisabledSurfaces_.clear();
@@ -8457,7 +8457,7 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareColorPickerDrawable003, TestSize.Level1)
 
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode.get();
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
 
     // Clear the map before testing
     rsUniRenderVisitor->hwcVisitor_->colorPickerHwcDisabledSurfaces_.clear();
@@ -8509,13 +8509,13 @@ HWTEST_F(RSUniRenderVisitorTest, PrepareColorPickerDrawable004, TestSize.Level1)
     rsUniRenderVisitor->hwcVisitor_->colorPickerHwcDisabledSurfaces_.clear();
 
     // Call PrepareColorPickerDrawable for first node
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode1.get();
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode1;
     RSDrawable::Ptr drawable1 = colorPickerDrawable1;
     rsUniRenderVisitor->PrepareColorPickerDrawable(drawable1);
     EXPECT_EQ(rsUniRenderVisitor->hwcVisitor_->colorPickerHwcDisabledSurfaces_.size(), 1u);
 
     // Call PrepareColorPickerDrawable for second node
-    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode2.get();
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode2;
     RSDrawable::Ptr drawable2 = colorPickerDrawable2;
     rsUniRenderVisitor->PrepareColorPickerDrawable(drawable2);
     EXPECT_EQ(rsUniRenderVisitor->hwcVisitor_->colorPickerHwcDisabledSurfaces_.size(), 2u);

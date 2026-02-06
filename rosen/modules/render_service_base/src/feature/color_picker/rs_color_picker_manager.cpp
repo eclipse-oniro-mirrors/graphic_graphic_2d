@@ -106,11 +106,6 @@ void RSColorPickerManager::PickColor(
     const std::shared_ptr<Drawing::Image>& snapshot, ColorPickStrategyType strategy)
 {
     Drawing::ColorQuad colorPicked;
-    bool prevDark;
-    {
-        std::lock_guard<std::mutex> lock(colorMtx_);
-        prevDark = (colorPicked_ == Drawing::Color::COLOR_BLACK);
-    }
 #if defined(RS_ENABLE_UNI_RENDER)
     auto gpuCtx = RSColorPickerThread::Instance().GetShareGPUContext();
 #else
