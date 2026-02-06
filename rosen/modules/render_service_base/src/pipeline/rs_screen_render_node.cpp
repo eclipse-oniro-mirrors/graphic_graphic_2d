@@ -216,13 +216,6 @@ void RSScreenRenderNode::UpdateRenderParams()
     screenParams->logicalDisplayNodeDrawables_ = std::move(logicalDisplayNodeDrawables_);
     screenParams->SetHasMirroredScreenChanged(hasMirroredScreenChanged_);
     screenParams->isVirtualSurfaceChanged_ = isVirtualSurfaceChanged_;
-    screenParams->roundCornerSurfaceDrawables_.clear();
-    if (rcdSurfaceNodeTop_ && rcdSurfaceNodeTop_->GetRenderDrawable() != nullptr) {
-        screenParams->roundCornerSurfaceDrawables_.push_back(rcdSurfaceNodeTop_->GetRenderDrawable());
-    }
-    if (rcdSurfaceNodeBottom_ && rcdSurfaceNodeBottom_->GetRenderDrawable() != nullptr) {
-        screenParams->roundCornerSurfaceDrawables_.push_back(rcdSurfaceNodeBottom_->GetRenderDrawable());
-    }
     RSRenderNode::UpdateRenderParams();
 #endif
 }
@@ -691,6 +684,21 @@ void RSScreenRenderNode::CheckSurfaceChanged()
 #endif
 }
 // LCOV_EXCL_STOP
+
+void RSScreenRenderNode::SetLogicalCameraRotationCorrection(ScreenRotation logicalCorrection)
+{
+    auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
+    if (screenParams == nullptr) {
+        RS_LOGE("RSScreenRenderNode::SetLogicalCameraRotationCorrection screenParams is null");
+        return;
+    }
+    screenParams->SetLogicalCameraRotationCorrection(logicalCorrection);
+    RS_LOGD("RSScreenRenderNode::SetLogicalCameraRotationCorrection: Node: %{public}" PRIu64
+            ", appRotationCorrection: %{public}u", GetId(), logicalCorrection);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
 
 void RSScreenRenderNode::UpdateHeadroomMapIncrease(HdrStatus status, uint32_t level)
 {

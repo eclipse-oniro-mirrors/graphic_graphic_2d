@@ -201,6 +201,9 @@ export default namespace text {
     private native nativeGetLineMetricsAt(lineNumber: int): LineMetrics | undefined;
     native updateColor(color: common2D.Color): void;
     native updateDecoration(decoration: Decoration): void;
+    native getCharacterRangeForGlyphRange(glyphRange: Range, encoding: drawing.TextEncoding): Array<Range>;
+    native getGlyphRangeForCharacterRange(characterRange: Range, encoding: drawing.TextEncoding): Array<Range>;
+    native getCharacterPositionAtCoordinate(x: double, y: double, encoding: drawing.TextEncoding): PositionWithAffinity;
 
     private static native nativeTransferStatic(input: ESValue): Object;
     static transferStatic(input: Any): Object {
@@ -281,7 +284,7 @@ export default namespace text {
 
   export enum LineHeightStyle {
     FONT_SIZE = 0,
-    FONT_HEIGHT = 1
+    FONT_HEIGHT = 1,
   }
 
   export interface StrutStyle {
@@ -368,6 +371,7 @@ export default namespace text {
     lineHeightMaximum?: double;
     lineHeightMinimum?: double;
     lineHeightStyle?: LineHeightStyle;
+    fontWidth?: FontWidth;
   }
 
   class TextStyleInternal implements TextStyle {
@@ -395,6 +399,7 @@ export default namespace text {
     lineHeightMaximum?: double;
     lineHeightMinimum?: double;
     lineHeightStyle?: LineHeightStyle;
+    fontWidth?: FontWidth;
     constructor(
       decoration: Decoration,
       color: common2D.Color,
@@ -418,7 +423,8 @@ export default namespace text {
       badgeType: TextBadgeType,
       lineHeightMaximum: double,
       lineHeightMinimum: double,
-      lineHeightStyle: LineHeightStyle
+      lineHeightStyle: LineHeightStyle,
+      fontWidth: FontWidth
     ) {
       this.decoration = decoration;
       this.color = color;
@@ -443,6 +449,7 @@ export default namespace text {
       this.lineHeightMaximum = lineHeightMaximum;
       this.lineHeightMinimum = lineHeightMinimum;
       this.lineHeightStyle = lineHeightStyle;
+      this.fontWidth = fontWidth;
     }
   }
 

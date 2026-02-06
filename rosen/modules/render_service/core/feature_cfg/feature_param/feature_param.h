@@ -50,6 +50,9 @@ const std::vector<std::string> FEATURE_CONFIGS = {
     "SmartCacheConfig",
     "GpuCacheConfig",
     "NodeMemReleaseConfig",
+    "VMABlockConfig",
+    "SpirvCacheConfig",
+    "BufferReclaimConfig",
 };
 
 enum FeatureModule {
@@ -79,6 +82,9 @@ enum FeatureModule {
     SMART_CACHE,
     GPU_CACHE,
     NODE_MEM_RELEASE,
+    VMA_BLOCK,
+    SPIRV_CACHE,
+    BUFFER_RECLAIM,
     // Do not change it.
     ENUM_LENGTH,
 };

@@ -875,8 +875,7 @@ void RSUniHwcVisitor::CalcHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRen
     if (!node) {
         return;
     }
-    if (filterZOrder != 0 && node->GetHwcRecorder().GetZOrderForHwcEnableByFilter() != 0 &&
-        node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() &&
+    if (node->GetInstanceRootNodeId() == filterNode.GetInstanceRootNodeId() &&
         RSUniHwcComputeUtil::IsBlendNeedBackground(filterNode) && uniRenderVisitor_.curSurfaceNode_ &&
         uniRenderVisitor_.curSurfaceNode_->GetId() == node->GetInstanceRootNodeId() &&
         RsCommonHook::Instance().GetFilterUnderHwcConfigByApp(node->GetBundleName()) == "1") {
@@ -1322,12 +1321,14 @@ void RSUniHwcVisitor::PrintHiperfLog(const std::shared_ptr<RSSurfaceRenderNode>&
 void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
     const Drawing::Matrix& absMatrix, bool subTreeSkipped)
 {
-    if (!node.IsHardwareForcedDisabled() && node.HwcSurfaceRecorder().IsIntersectWithPreviousFilter()) {
-        node.SetHardwareForcedDisabledState(true);
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by node intersect with previous filter",
-            node.GetName().c_str(), node.GetId());
-        Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
-            HwcDisabledReasons::DISABLED_BY_PREVIOUS_FLITER_RECT, node.GetName());
+    if (node.IsHardwareForcedDisabled() != node.HwcSurfaceRecorder().IsIntersectWithPreviousFilter()) {
+        node.SetHardwareForcedDisabledState(node.HwcSurfaceRecorder().IsIntersectWithPreviousFilter());
+        if (node.HwcSurfaceRecorder().IsIntersectWithPreviousFilter()) {
+            RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by node intersect with previous filter",
+                node.GetName().c_str(), node.GetId());
+            Statistics().UpdateHwcDisabledReasonForDFX(node.GetId(),
+                HwcDisabledReasons::DISABLED_BY_PREVIOUS_FLITER_RECT, node.GetName());
+        }
     }
     node.HwcSurfaceRecorder().SetIntersectWithPreviousFilter(false);
     node.SetInFixedRotation(uniRenderVisitor_.displayNodeRotationChanged_ ||

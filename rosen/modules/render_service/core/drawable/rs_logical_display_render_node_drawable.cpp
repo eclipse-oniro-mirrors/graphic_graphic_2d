@@ -431,7 +431,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawAdditionalContent(RSPaintFilterCanv
     RSRefreshRateDfx(*this).OnDraw(canvas);
 }
 
-void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas)
+void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas,
+    const Drawing::Rect& drawRegion)
 {
     if (!RSUniRenderThread::Instance().GetWatermarkFlag()) {
         return;
@@ -452,6 +453,13 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas
         return;
     }
     RS_TRACE_FUNC();
+    auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
+    if (drawRegion.IsValid()) {
+        canvas.DrawImageRect(*image, srcRect, drawRegion, Drawing::SamplingOptions(),
+            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+        return;
+    }
+
     RSAutoCanvasRestore acr(&canvas);
     Drawing::Matrix invertMatrix;
     if (params->GetMatrix().Invert(invertMatrix)) {
@@ -486,7 +494,6 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWatermarkIfNeed(RSPaintFilterCanvas
         }
     }
 
-    auto srcRect = Drawing::Rect(0, 0, image->GetWidth(), image->GetHeight());
     auto dstRect = Drawing::Rect(0, 0, mainWidth, mainHeight);
     Drawing::Brush rectBrush;
     canvas.AttachBrush(rectBrush);
@@ -942,7 +949,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorScreen(
     bool needRedraw = (mirroredParams->IsSecurityDisplay() != params.IsSecurityDisplay() &&
         specialLayerType == DisplaySpecialLayerState::HAS_SPECIAL_LAYER);
     if (RSUniRenderThread::Instance().IsColorFilterModeOn() || mirroredScreenParams->GetHDRPresent()
-        || !cacheImage || params.GetVirtualScreenMuteStatus() || screenParams->GetHDRPresent() || needRedraw) {
+        || !cacheImage || params.GetVirtualScreenMuteStatus() || mirroredScreenDrawable->IsRenderSkipIfScreenOff()
+        || screenParams->GetHDRPresent() || needRedraw) {
         MirrorRedrawDFX(true, params.GetScreenId());
         virtualProcesser->SetDrawVirtualMirrorCopy(false);
         DrawMirror(params, virtualProcesser, *uniParam);
@@ -1073,7 +1081,6 @@ void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
         return;
     }
 
-    auto watermark = RSUniRenderThread::Instance().GetWatermarkImg();
     auto screenInfo = screenManager->QueryScreenInfo(params->GetScreenId());
     float realImageWidth = static_cast<float>(image->GetWidth());
     float realImageHeight = static_cast<float>(image->GetHeight());
@@ -1091,10 +1098,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawSecurityMask()
     curCanvas_->AttachBrush(brush);
     curCanvas_->DrawImageRect(*image, srcRect, dstRect, samplingOptions,
         Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
-    if (watermark) {
-        curCanvas_->DrawImageRect(*watermark, srcRect, dstRect, Drawing::SamplingOptions(),
-            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
-    }
+    DrawWatermarkIfNeed(*curCanvas_, dstRect);
     curCanvas_->DetachBrush();
 
     RS_LOGI("DisplayDrawable::DrawSecurityMask");

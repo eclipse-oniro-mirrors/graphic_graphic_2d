@@ -31,6 +31,7 @@
 #include "display_engine/rs_luminance_control.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/buffer_clear_callback.h"
+#include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
@@ -228,7 +229,7 @@ public:
         return isHardwareEnableHint_;
     }
 
-    void SetSourceDisplayRenderNodeId(NodeId nodeId)
+    void SetSourceScreenRenderNodeId(NodeId nodeId)
     {
         sourceDisplayRenderNodeId_ = nodeId;
     }
@@ -725,7 +726,8 @@ public:
     {
         return UIFirstIsPurge_;
     }
-    void SetUifirstUseStarting(NodeId id); // only cache app window, first frame not wait
+    void SetUifirstStartingWindowId(NodeId id); // only cache app window, first frame not wait
+    NodeId GetUifirstStartingWindowId() const;
 
     void SetForceUIFirstChanged(bool forceUIFirstChanged);
     bool GetForceUIFirstChanged();
@@ -1428,6 +1430,15 @@ public:
         return uifirstStartTime_;
     }
 
+    void SetUifirstHasContentAppWindow(bool hasAppWindow)
+    {
+        uifirstHasContentAppWindow_ = hasAppWindow;
+    }
+    bool GetUifirstHasContentAppWindow() const
+    {
+        return uifirstHasContentAppWindow_;
+    }
+
     void SetUIFirstVisibleFilterRect(const RectI& rect);
 
     RSBaseRenderNode::WeakPtr GetAncestorScreenNode() const
@@ -1754,8 +1765,14 @@ public:
     bool GetSurfaceBufferOpaque() const;
 
     bool IsAncestorScreenFrozen() const;
+
     void AfterTreeStateChanged();
 
+    // only use for window capture when isSyncRender is true
+    void RegisterCaptureCallback(sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& config);
+
+    void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
+    void SetRotationCorrectionDegree(int32_t rotationCorrectionDegree);
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1976,6 +1993,7 @@ private:
     GamutCollector gamutCollector_;
     // UIFirst
     int64_t uifirstStartTime_ = -1;
+    bool uifirstHasContentAppWindow_ = false;
     size_t lastFrameChildrenCnt_ = 0;
     sptr<RSIBufferAvailableCallback> callbackFromRT_ = nullptr;
     sptr<RSIBufferAvailableCallback> callbackFromUI_ = nullptr;

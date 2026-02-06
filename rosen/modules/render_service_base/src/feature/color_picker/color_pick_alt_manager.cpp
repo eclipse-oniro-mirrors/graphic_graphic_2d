@@ -19,15 +19,13 @@
 #include <cstdint>
 
 #include "feature/color_picker/rs_color_picker_thread.h"
+#include "feature/color_picker/rs_color_picker_utils.h"
 #include "feature/color_picker/rs_hetero_color_picker.h"
 
 #include "common/rs_optional_trace.h"
-#include "drawable/rs_property_drawable_utils.h"
-#include "platform/common/rs_log.h"
 
 namespace OHOS::Rosen {
 namespace {
-constexpr int64_t TASK_DELAY_TIME = 16; // 16ms
 constexpr int TRACE_LEVEL_TWO = 2;
 
 inline uint64_t NowMs()
@@ -36,7 +34,7 @@ inline uint64_t NowMs()
     return static_cast<uint64_t>(duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count());
 }
 
-template <typename T>
+template<typename T>
 [[nodiscard]] inline bool IsNull(T* p, const char* msg)
 {
     if (!p) {
@@ -59,7 +57,8 @@ std::optional<Drawing::ColorQuad> ColorPickAltManager::GetColorPicked(
         return std::nullopt;
     }
     lastUpdateTime_ = currTime;
-    notifyThreshold_ = params.notifyThreshold;
+    lightThreshold_.store(params.notifyThreshold.second, std::memory_order_relaxed);
+    darkThreshold_.store(params.notifyThreshold.first, std::memory_order_relaxed);
 
     ScheduleColorPick(canvas, rect, nodeId);
     return std::nullopt;
@@ -87,66 +86,61 @@ void ColorPickAltManager::ScheduleColorPick(RSPaintFilterCanvas& canvas, const D
     auto ptr = std::static_pointer_cast<ColorPickAltManager>(shared_from_this());
     // accelerated color picker
     if (RSHeteroColorPicker::Instance().GetColor(
-        [ptr, nodeId](Drawing::ColorQuad& newColor) { ptr->HandleColorUpdate(newColor, nodeId); }, drawingSurface,
-            snapshot)) {
+        [ptr, nodeId](Drawing::ColorQuad& newColor) { ptr->HandleColorUpdate(newColor, nodeId); }, canvas, snapshot)) {
         return;
     }
-
+    Drawing::TextureOrigin origin = Drawing::TextureOrigin::BOTTOM_LEFT;
+    auto backendTexture = snapshot->GetBackendTexture(false, &origin);
+    if (!backendTexture.IsValid()) {
+        RS_LOGE("ColorPickAltManager::ScheduleColorPick backendTexture invalid");
+        return;
+    }
     auto weakThis = weak_from_this();
-    RSColorPickerThread::Instance().PostTask(
-        [snapshot, nodeId, weakThis]() {
-            auto manager = weakThis.lock();
-            if (IsNull(manager.get(), "ColorPickAltManager manager not valid, return")) {
-                return;
-            }
-#if defined(RS_ENABLE_UNI_RENDER)
-            auto gpuCtx = RSColorPickerThread::Instance().GetShareGPUContext();
-#else
-            auto gpuCtx = nullptr;
-#endif
-            Drawing::ColorQuad colorPicked;
-            if (RSPropertyDrawableUtils::PickColor(gpuCtx, snapshot, colorPicked)) {
-                manager->HandleColorUpdate(colorPicked, nodeId);
-            } else {
-                RS_LOGE("ColorPickAltManager: PickColor failed");
-            }
-        },
-        TASK_DELAY_TIME);
+    auto imageInfo = drawingSurface->GetImageInfo();
+    auto colorSpace = imageInfo.GetColorSpace();
+    Drawing::BitmapFormat bitmapFormat = { imageInfo.GetColorType(), imageInfo.GetAlphaType() };
+    ColorPickerInfo* colorPickerInfo =
+        new ColorPickerInfo(colorSpace, bitmapFormat, backendTexture, snapshot, nodeId, weakThis);
+
+    Drawing::FlushInfo drawingFlushInfo;
+    drawingFlushInfo.backendSurfaceAccess = true;
+    drawingFlushInfo.finishedProc = [](void* context) { ColorPickerInfo::PickColor(context); };
+    drawingFlushInfo.finishedContext = colorPickerInfo;
+    drawingSurface->Flush(&drawingFlushInfo);
 }
+
+namespace {
+enum class LuminanceZone { DARK, LIGHT, NEUTRAL, UNKNOWN };
+LuminanceZone GetLuminanceZone(uint32_t luminance, uint32_t darkThreshold, uint32_t lightThreshold)
+{
+    if (luminance < darkThreshold) {
+        return LuminanceZone::DARK;
+    } else if (luminance > lightThreshold) {
+        return LuminanceZone::LIGHT;
+    } else if (luminance > RGBA_MAX) {
+        return LuminanceZone::UNKNOWN;
+    } else {
+        return LuminanceZone::NEUTRAL;
+    }
+}
+} // namespace
 
 void ColorPickAltManager::HandleColorUpdate(Drawing::ColorQuad newColor, NodeId nodeId)
 {
-    Drawing::ColorQuad prevColor = pickedColor_.load(std::memory_order_relaxed);
+    const auto newLuminance = static_cast<uint32_t>(std::round(RSColorPickerUtils::CalculateLuminance(newColor)));
+    const uint32_t prevLuminance = pickedLuminance_.exchange(newLuminance, std::memory_order_relaxed);
     RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
-        "RSColorPickerManager::extracted background color = %x, prevColor = %x, nodeId = %lu", newColor, prevColor,
-        nodeId);
+        "ColorPickAltManager::extracted background luminance = %u, prevLuminance = %u, nodeId = %lu", newLuminance,
+        prevLuminance, nodeId);
 
-    const uint32_t threshold = notifyThreshold_.load(std::memory_order_relaxed);
-    // Check if color change exceeds threshold
-    if (notifyThreshold_ > 0) {
-        uint8_t prevR = (prevColor >> 16) & 0xFF;
-        uint8_t prevG = (prevColor >> 8) & 0xFF;
-        uint8_t prevB = prevColor & 0xFF;
-        uint8_t prevA = (prevColor >> 24) & 0xFF;
-
-        uint8_t newR = (newColor >> 16) & 0xFF;
-        uint8_t newG = (newColor >> 8) & 0xFF;
-        uint8_t newB = newColor & 0xFF;
-        uint8_t newA = (newColor >> 24) & 0xFF;
-
-        uint32_t diffR = std::abs(static_cast<int>(newR) - static_cast<int>(prevR));
-        uint32_t diffG = std::abs(static_cast<int>(newG) - static_cast<int>(prevG));
-        uint32_t diffB = std::abs(static_cast<int>(newB) - static_cast<int>(prevB));
-        uint32_t diffA = std::abs(static_cast<int>(newA) - static_cast<int>(prevA));
-        // Only notify if any channel difference exceeds threshold
-        if (diffR <= threshold && diffG <= threshold && diffB <= threshold && diffA <= threshold) {
-            return;
-        }
+    const uint32_t darkThreshold = darkThreshold_.load(std::memory_order_relaxed);
+    const uint32_t lightThreshold = lightThreshold_.load(std::memory_order_relaxed);
+    const auto prevZone = GetLuminanceZone(prevLuminance, darkThreshold, lightThreshold);
+    const auto newZone = GetLuminanceZone(newLuminance, darkThreshold, lightThreshold);
+    if (prevZone == newZone) {
+        return;
     }
-
-    if (pickedColor_.exchange(newColor, std::memory_order_relaxed) != newColor) {
-        RSColorPickerThread::Instance().NotifyClient(nodeId, newColor);
-    }
+    RSColorPickerThread::Instance().NotifyClient(nodeId, std::clamp(static_cast<uint32_t>(newLuminance), 0u, 255u));
 }
 
 } // namespace OHOS::Rosen

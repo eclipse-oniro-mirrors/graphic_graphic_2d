@@ -98,6 +98,15 @@ public:
 
     PositionWithAffinity GetGlyphPositionAtCoordinate(double dx, double dy) override;
 
+    PositionWithAffinity GetCharacterPositionAtCoordinate(double dx, double dy,
+        TextEncoding encoding) const override;
+
+    Range<size_t> GetCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
+        Range<size_t>* actualGlyphRange, TextEncoding encoding) const override;
+
+    Range<size_t> GetGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
+        Range<size_t>* actualCharRange, TextEncoding encoding) const override;
+
     Range<size_t> GetWordBoundary(size_t offset) override;
 
     Range<size_t> GetActualTextRange(int lineNumber, bool includeSpaces) override;

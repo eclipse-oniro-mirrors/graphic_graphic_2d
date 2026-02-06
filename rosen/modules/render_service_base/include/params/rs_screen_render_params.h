@@ -183,11 +183,6 @@ public:
         isAccumulatedSpecialLayerStatusChanged_ = false;
     }
 
-    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetRoundCornerDrawables()
-    {
-        return roundCornerSurfaceDrawables_;
-    }
-
     void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes);
     bool GetNeedForceUpdateHwcNodes() const;
 
@@ -231,6 +226,9 @@ public:
     void SetIsEqualVsyncPeriod(bool isEqualVsyncPeriod) { isEqualVsyncPeriod_ = isEqualVsyncPeriod; }
     bool IsEqualVsyncPeriod() const { return isEqualVsyncPeriod_; }
 
+    void SetLogicalCameraRotationCorrection(ScreenRotation logicalCorrection);
+    ScreenRotation GetLogicalCameraRotationCorrection() const;
+
 private:
 
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> logicalDisplayNodeDrawables_;
@@ -268,8 +266,6 @@ private:
     uint32_t mirrorDstCount_ = 0;
     bool hasMirrorScreen_ = false;
     Drawing::Matrix slrMatrix_;
-    // vector of rcd drawable, should be removed in OH 6.0 rcd refactoring
-    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> roundCornerSurfaceDrawables_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr targetSurfaceRenderNodeDrawable_;
     friend class RSUniRenderVisitor;
     friend class RSScreenRenderNode;
@@ -278,6 +274,7 @@ private:
     Occlusion::Region drawnRegion_;
     bool forceFreeze_ = false;
     bool hasMirroredScreenChanged_ = false;
+    ScreenRotation logicalCameraRotationCorrection_ = ScreenRotation::ROTATION_0;
 };
 } // namespace OHOS::Rosen
 

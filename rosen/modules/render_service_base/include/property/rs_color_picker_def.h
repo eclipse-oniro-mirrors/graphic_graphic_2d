@@ -16,6 +16,9 @@
 #ifndef RENDER_SERVICE_BASE_PROPERTY_RS_COLOR_PICKER_DEF_H
 #define RENDER_SERVICE_BASE_PROPERTY_RS_COLOR_PICKER_DEF_H
 
+#include <cstdint>
+#include <utility>
+
 namespace OHOS {
 namespace Rosen {
 enum class ColorPlaceholder : uint8_t {
@@ -41,7 +44,9 @@ struct ColorPickerParam {
     ColorPlaceholder placeholder = ColorPlaceholder::NONE;
     ColorPickStrategyType strategy = ColorPickStrategyType::NONE;
     uint64_t interval = 0;
-    uint32_t notifyThreshold = 0; // defines the minimum color change threshold to trigger notification (0-255)
+    // {darkThreshold, lightThreshold} (0-255).
+    // Notify when luminance drops below darkThreshold or rises above lightThreshold.
+    std::pair<uint32_t, uint32_t> notifyThreshold = { 150, 220 };
 
     ColorPickerParam() = default;
     ColorPickerParam(ColorPlaceholder ph, ColorPickStrategyType st, uint64_t itv)
@@ -51,7 +56,7 @@ struct ColorPickerParam {
     bool operator==(const ColorPickerParam& other) const
     {
         return placeholder == other.placeholder && strategy == other.strategy && interval == other.interval &&
-            notifyThreshold == other.notifyThreshold;
+               notifyThreshold == other.notifyThreshold;
     }
 };
 } // namespace Rosen

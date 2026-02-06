@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -155,8 +155,6 @@ private:
     void PostPrepare(RSRenderNode& node, bool subTreeSkipped = false);
     void UpdateNodeVisibleRegion(RSSurfaceRenderNode& node);
     void CalculateOpaqueAndTransparentRegion(RSSurfaceRenderNode& node);
-    void CheckResetAccumulatedOcclusionRegion(RSSurfaceRenderNode& node);
-    bool IsParticipateInOcclusion(RSSurfaceRenderNode& node);
 
     void CheckFilterCacheNeedForceClearOrSave(RSRenderNode& node);
     Occlusion::Region GetSurfaceTransparentFilterRegion(const RSSurfaceRenderNode& surfaceNode) const;
@@ -219,7 +217,7 @@ private:
     void UpdatePointWindowDirtyStatus(std::shared_ptr<RSSurfaceRenderNode>& pointWindow);
     void UpdateTopLayersDirtyStatus(const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& topLayers);
     void UpdateCornerRadiusInfoForDRM(std::shared_ptr<RSSurfaceRenderNode> hwcNode, std::vector<RectI>& hwcRects);
-    bool CheckIfRoundCornerIntersectDRM(const float& ratio, std::vector<float>& ratioVector,
+    bool CheckIfRoundCornerIntersectDRM(const float ratio, std::vector<float>& ratioVector,
         const Vector4f& instanceCornerRadius, const RectI& instanceAbsRect, const RectI& hwcAbsRect);
     void UpdateIfHwcNodesHaveVisibleRegion(std::vector<RSBaseRenderNode::SharedPtr>& curMainAndLeashSurfaces);
     void UpdateHwcNodesIfVisibleForApp(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
@@ -270,6 +268,13 @@ private:
     // Reset curSurface info as upper surfaceParent in case surfaceParent has multi children
     void ResetCurSurfaceInfoAsUpperSurfaceParent(RSSurfaceRenderNode& node);
     bool CheckIfSkipDrawInVirtualScreen(RSSurfaceRenderNode& node);
+
+    void HandleVirtualScreenColorGamut(RSScreenRenderNode& node);
+    bool IsWiredMirrorScreen(RSScreenRenderNode& node);
+    void HandleWiredMirrorScreenColorGamut(RSScreenRenderNode& node);
+    bool IsWiredExtendedScreen(RSScreenRenderNode& node);
+    void HandleWiredExtendedScreenColorGamut(RSScreenRenderNode& node);
+    void HandleMainScreenColorGamut(RSScreenRenderNode& node);
 
     void CheckColorSpace(RSSurfaceRenderNode& node);
     void CheckColorSpaceWithSelfDrawingNode(RSSurfaceRenderNode& node);

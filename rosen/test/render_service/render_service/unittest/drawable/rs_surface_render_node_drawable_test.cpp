@@ -702,7 +702,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest002, TestSiz
     surfaceDrawable_->offscreenRotationInfo_->maxRenderSize_ = 100;
     matrix.SetMatrix(0, 0, 0, 0, 0, 0, 0, 0, 1);
     surfaceDrawable_->curCanvas_->SetMatrix(matrix);
-    ASSERT_FALSE(surfaceDrawable_->PrepareOffscreenRender());
+    ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
 
     // case3: offscreenSurface_ = nullptr, maxRenderSize_ = 0
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
@@ -710,7 +710,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest002, TestSiz
     surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = surface->MakeSurface(100, 100);
     matrix.SetMatrix(0, 0, 0, 0, 1, 0, 0, 0, 1);
     surfaceDrawable_->curCanvas_->SetMatrix(matrix);
-    ASSERT_FALSE(surfaceDrawable_->PrepareOffscreenRender());
+    ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
 }
 
 /**
@@ -726,6 +726,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest003, TestSiz
     ASSERT_NE(surface, nullptr);
     RSPaintFilterCanvas paintFilterCanvas(surface.get());
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
     ASSERT_TRUE(surfaceDrawable_->curCanvas_->GetSurface());
@@ -740,6 +741,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest003, TestSiz
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest004, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
     ASSERT_NE(surface, nullptr);
     RSPaintFilterCanvas paintFilterCanvas(surface.get());
@@ -1202,6 +1204,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
     RSUniRenderThread::GetCaptureParam().isSingleSurface_ = false;
     ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    RSUniRenderThread::Instance().SetBlackList({});
 }
 
 /**
@@ -1223,6 +1226,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     RSUniRenderThread::Instance().Sync(std::move(params));
     ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({});
 }
 
 /**
@@ -1826,6 +1830,41 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw006, TestSize.Level1)
 }
 
 /**
+ * @tc.name: OnDraw008
+ * @tc.desc: Test OnDraw when use isSyncRender
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw008, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    ASSERT_NE(surface, nullptr);
+    canvas_ = std::make_shared<RSPaintFilterCanvas>(surface.get());
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+    canvas_->canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
+
+    NodeId id = 10090;
+    auto renderNode = std::make_shared<RSRenderNode>(id);
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas backupCanvas(&canvas);
+    surfaceDrawable_->offscreenRotationInfo_->canvasBackup_ = &backupCanvas;
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    sptr<RSISurfaceCaptureCallback> callback;
+    RSSurfaceCaptureConfig config;
+    config.isSyncRender = true;
+    surfaceParams->RegisterCaptureCallback(callback, config);
+    surfaceDrawable_->OnDraw(*canvas_);
+    surfaceDrawable_->offscreenRotationInfo_ = nullptr;
+    surfaceDrawable_->OnDraw(*canvas_);
+    ASSERT_TRUE(surfaceParams);
+    ASSERT_NE(renderNode, nullptr);
+}
+
+/**
  * @tc.name: CalculateVisibleDirtyRegion002
  * @tc.desc: Test CalculateVisibleDirtyRegion
  * @tc.type: FUNC
@@ -2089,7 +2128,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface011, TestSize.Level2)
     rsRenderThreadParams1->isUIFirstDebugEnable_ = true;
     surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::LEASH_WINDOW);
     surfaceParams->SetGlobalPositionEnabled(true);
-    surfaceParams->SetUifirstUseStarting(0);
+    surfaceParams->SetUifirstStartingWindowId(0);
     surfaceParams->SetWindowInfo(false, true, false);
 
     surfaceParams->matrix_.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -2138,6 +2177,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     AutoSpecialLayerStateRecover whiteListRecover(surfaceParams->leashPersistentId_);
     ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({});
 }
 
 /**

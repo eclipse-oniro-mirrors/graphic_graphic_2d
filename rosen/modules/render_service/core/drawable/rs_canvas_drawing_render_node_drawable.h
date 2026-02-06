@@ -108,6 +108,7 @@ private:
 #endif // RS_ENABLE_VK
     bool ResetSurfaceforPlayback(int width, int height);
     bool GetCurrentContext(std::shared_ptr<Drawing::GPUContext>& grContext);
+    std::shared_ptr<Drawing::GPUContext> GetGpuContext();
     bool IsNeedResetSurface() const;
     void FlushForGL(float width, float height, std::shared_ptr<RSContext> context,
         NodeId nodeId, RSPaintFilterCanvas& rscanvas);
@@ -143,6 +144,14 @@ private:
 
     // setted in render thread, used and resetted in main thread
     std::atomic<bool> needDraw_ = false;
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    inline static bool renderDmaEnabled_ =
+        RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled();
+
+    inline static bool preAllocateDmaEnabled_ =
+        RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled();
+#endif
 };
 
 } // namespace OHOS::Rosen::DrawableV2

@@ -22,6 +22,7 @@ drawing_engine_sources = []
 hardware_manager_sources = []
 open_capability_sources = [
     "open_capability/pixmap/create_pixel_map_from_surface_test.cpp",
+    "open_capability/pixmap/pixelmap_display_test.cpp",
 ]
 rs_display_effect_sources = [
   "rs_display_effect/animation/anim_callback_animation_test.cpp",
@@ -119,11 +120,11 @@ rs_effect_feature_sources = [
   "rs_effect_feature/ng_filter_test/ng_filter_gasify_scale_twist_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_gasify_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_magnifier_test.cpp",
-  "rs_effect_feature/ng_filter_test/ng_filter_sdf_test.cpp",
+  "rs_effect_feature/ng_shape_test/ng_filter_sdf_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_test.cpp",
   "rs_effect_feature/ng_filter_test/ng_filter_test_utils.cpp",
-  "rs_effect_feature/ng_filter_test/ng_sdf_shape_test.cpp",
-  "rs_effect_feature/ng_filter_test/ng_sdf_test_utils.cpp",
+  "rs_effect_feature/ng_shape_test/ng_sdf_shape_test.cpp",
+  "rs_effect_feature/ng_shape_test/ng_sdf_test_utils.cpp",
   "rs_effect_feature/ui_filter_test/ui_filter_test.cpp",
   "rs_effect_feature/ui_filter_test/ui_filter_test_data_manager.cpp",
   "rs_effect_feature/ui_filter_test/ui_filter_test_factory.cpp",
@@ -186,6 +187,7 @@ ohos_unittest("RSGraphicTest") {
 
   include_dirs = [
     "$rosen_text_root/adapter/skia",
+    "rs_effect_feature/ng_shape_test",
   ]
 
   deps = [
