@@ -38,6 +38,7 @@ namespace {
 constexpr uint32_t MAX_TIME_WAITING_FOR_CALLBACK = 200;
 constexpr uint32_t SLEEP_TIME_IN_US = 10000;      // 10 ms
 constexpr uint32_t SLEEP_TIME_FOR_PROXY = 100000; // 100ms
+constexpr size_t MAX_COMPOSITE_SCREENS = 4;
 
 class CustomizedSurfaceCapture : public SurfaceCaptureCallback {
 public:
@@ -229,7 +230,7 @@ static std::shared_ptr<Media::PixelMap> ComposeGrid2x2(const std::vector<std::sh
 
     std::vector<uint8_t> buffer(compositeW * compositeH * bytesPerPixel, 0);
 
-    for (size_t i = 0; i < maps.size() && i < 4; ++i) {
+    for (size_t i = 0; i < maps.size() && i < MAX_COMPOSITE_SCREENS; ++i) {
         auto srcMap = maps[i];
         if (srcMap == nullptr) {
             continue;
@@ -268,18 +269,19 @@ static std::shared_ptr<Media::PixelMap> ComposeGrid2x2(const std::vector<std::sh
     return composite;
 }
 
-static void RunMultipleVirtualScreensTest(const std::string& name, uint32_t width, uint32_t height,
-    const std::vector<SkColor>& colors, RSScreenManagerTest* test)
-{
-    struct ScreenCtx {
-        ScreenId id = INVALID_SCREEN_ID;
-        sptr<Surface> consumer = nullptr;
-        sptr<Surface> producer = nullptr;
-        std::shared_ptr<RSDisplayNode> node = nullptr;
-        std::shared_ptr<CustomizedSurfaceCapture> callback = nullptr;
-    };
+struct ScreenCtx {
+    ScreenId id = INVALID_SCREEN_ID;
+    sptr<Surface> consumer = nullptr;
+    sptr<Surface> producer = nullptr;
+    std::shared_ptr<RSDisplayNode> node = nullptr;
+    std::shared_ptr<CustomizedSurfaceCapture> callback = nullptr;
+};
 
+static std::vector<ScreenCtx> CreateVirtualScreens(const std::string& name, uint32_t width, uint32_t height,
+    const std::vector<SkColor>& colors)
+{
     std::vector<ScreenCtx> screens;
+    screens.reserve(colors.size());
     for (size_t i = 0; i < colors.size(); ++i) {
         auto [consumer, producer] = CreateConsumerAndProducerSurface();
         ASSERT_NE(producer, nullptr);
@@ -302,10 +304,12 @@ static void RunMultipleVirtualScreensTest(const std::string& name, uint32_t widt
         ctx.callback = std::make_shared<CustomizedSurfaceCapture>(false);
         screens.push_back(ctx);
     }
+    return screens;
+}
 
-    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
-    usleep(SLEEP_TIME_FOR_PROXY);
-
+static void CaptureVirtualScreens(const std::string& name, const std::vector<ScreenCtx>& screens,
+    RSScreenManagerTest* test)
+{
     for (auto& ctx : screens) {
         RSInterfaces::GetInstance().TakeSurfaceCapture(ctx.node, ctx.callback);
     }
@@ -314,7 +318,10 @@ static void RunMultipleVirtualScreensTest(const std::string& name, uint32_t widt
             LOGE("%{public}s TakeSurfaceCapture failed", name.c_str());
         }
     }
+}
 
+static void ComposeAndSave(const std::string& name, const std::vector<ScreenCtx>& screens)
+{
     std::vector<std::shared_ptr<Media::PixelMap>> captured;
     captured.reserve(screens.size());
     for (auto& ctx : screens) {
@@ -322,18 +329,31 @@ static void RunMultipleVirtualScreensTest(const std::string& name, uint32_t widt
     }
     auto composite = ComposeGrid2x2(captured);
     if (composite != nullptr && !screens.empty()) {
-        // Save with default filename: {TestCase}_{TestName}.png for pixel comparison
         screens[0].callback->SaveCompositePixelMap(composite, "");
     } else {
         LOGE("%{public}s composite pixelmap create failed", name.c_str());
     }
+}
 
+static void CleanupVirtualScreens(const std::vector<ScreenCtx>& screens)
+{
     for (auto& ctx : screens) {
         RSInterfaces::GetInstance().RemoveVirtualScreen(ctx.id);
     }
     for (auto& ctx : screens) {
         (void)ctx.consumer;
     }
+}
+
+static void RunMultipleVirtualScreensTest(const std::string& name, uint32_t width, uint32_t height,
+    const std::vector<SkColor>& colors, RSScreenManagerTest* test)
+{
+    auto screens = CreateVirtualScreens(name, width, height, colors);
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+    CaptureVirtualScreens(name, screens, test);
+    ComposeAndSave(name, screens);
+    CleanupVirtualScreens(screens);
 }
 } // namespace
 
