@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "drawable/rs_render_node_drawable.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "feature/render_group/rs_render_group_cache_drawable.h"
 #include "params/rs_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "feature_cfg/feature_param/performance_feature/opinc_param.h"
@@ -57,15 +58,15 @@ void RSRenderNodeDrawableTest::TearDown()
     RSRenderNodeDrawable::drawingCacheUpdateTimeMap_.clear();
     RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.clear();
     RSRenderNodeDrawable::isOffScreenWithClipHole_ = false;
-    RSRenderNodeDrawable::SetDrawBlurForCache(false);
-    RSRenderNodeDrawable::SetDrawExcludedSubTreeForCache(false);
+    RSRenderGroupCacheDrawable::SetDrawBlurForCache(false);
+    RSRenderGroupCacheDrawable::SetDrawExcludedSubTreeForCache(false);
 
     // Clear RSUniRenderThread global state
     CaptureParam emptyParam;
     RSUniRenderThread::SetCaptureParam(emptyParam);
     RSUniRenderThread::Instance().SetWhiteList({});
 
-    // Clear OPIncParam global state
+    // Clear OPIncParam global state (protected method, but accessible in tests via -Dprotected=public)
     OPIncParam::SetImageAliasEnable(true);
 }
 
