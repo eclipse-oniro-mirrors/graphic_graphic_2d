@@ -293,14 +293,14 @@ public:
     }
 
     void SetMask(std::shared_ptr<MaskPara> maskPara)
- 	{
- 	    maskPara_ = maskPara;
- 	}
+    {
+        maskPara_ = maskPara;
+    }
 
- 	const std::shared_ptr<MaskPara>& GetMask() const
- 	{
- 	    return maskPara_;
- 	}
+    const std::shared_ptr<MaskPara>& GetMask() const
+    {
+        return maskPara_;
+    }
 
 private:
     Vector2f weightsEmboss_ = Vector2f(0.0f, 0.0f);
