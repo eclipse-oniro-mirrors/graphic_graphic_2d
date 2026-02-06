@@ -3425,10 +3425,7 @@ CM_INLINE void RSUniRenderVisitor::PostPrepare(RSRenderNode& node, bool subTreeS
     node.UpdateRenderParams();
 
     // Prepare ColorPicker drawable for disable decision
-    if (auto colorPickerDrawable = node.GetColorPickerDrawable()) {
-        RSDrawable::Ptr drawable = colorPickerDrawable;
-        PrepareColorPickerDrawable(drawable);
-    }
+    PrepareColorPickerDrawable(node);
 
     // add if node is dirty
     node.AddToPendingSyncList();
@@ -3478,13 +3475,7 @@ void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
             continue;
         }
 
-        // Check if this is a ColorPicker node and prepare it
-        if (auto colorPickerDrawable = filterNode->GetColorPickerDrawable()) {
-            RS_OPTIONAL_TRACE_NAME_FMT(
-                "ColorPicker: Preparing in filter iteration node id:%" PRIu64, filterNode->GetId());
-            RSDrawable::Ptr drawable = colorPickerDrawable;
-            PrepareColorPickerDrawable(drawable);
-        }
+        PrepareColorPickerDrawable(*filterNode);
 
         RS_OPTIONAL_TRACE_NAME_FMT("UpdateFilterRegionInSkippedSurfaceNode node[%" PRIu64 "]", filterNode->GetId());
         RectI filterRect;
@@ -3508,6 +3499,9 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
         if (filterNode == nullptr) {
             continue;
         }
+
+        PrepareColorPickerDrawable(*filterNode);
+
         RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterNodeInSkippedSubTreeNeedClearCache node[%lld]", filterNode->GetId());
         if (auto effectNode = RSRenderNode::ReinterpretCast<RSEffectRenderNode>(filterNode)) {
             UpdateRotationStatusForEffectNode(*effectNode);
@@ -3565,6 +3559,12 @@ void RSUniRenderVisitor::CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(
 
     for (auto& child : rootNode.GetVisibleFilterChild()) {
         auto& filterNode = nodeMap.GetRenderNode<RSRenderNode>(child);
+        if (filterNode == nullptr) {
+            continue;
+        }
+
+        PrepareColorPickerDrawable(*filterNode);
+
         auto effectNode = RSRenderNode::ReinterpretCast<RSEffectRenderNode>(filterNode);
         if (effectNode == nullptr) {
             continue;
@@ -4144,17 +4144,21 @@ bool RSUniRenderVisitor::IsCurrentSubTreeForcePrepare(RSRenderNode& node)
     return false;
 }
 
-void RSUniRenderVisitor::PrepareColorPickerDrawable(RSDrawable::Ptr& drawable)
+void RSUniRenderVisitor::PrepareColorPickerDrawable(const RSRenderNode& node)
 {
-    if (!drawable) {
+    auto colorPickerDrawable = node.GetColorPickerDrawable();
+    if (!colorPickerDrawable) {
         return;
     }
 
-    auto colorPickerDrawable = std::static_pointer_cast<DrawableV2::RSColorPickerDrawable>(drawable);
-    if (colorPickerDrawable) {
+    RS_OPTIONAL_TRACE_NAME_FMT(
+        "ColorPicker: Preparing in filter iteration node id:%" PRIu64, node.GetId());
+
+    auto drawable = std::static_pointer_cast<DrawableV2::RSColorPickerDrawable>(colorPickerDrawable);
+    if (drawable) {
         uint64_t vsyncTime = RSMainThread::Instance()->GetCurrentVsyncTime();
-        colorPickerDrawable->Prepare(vsyncTime);
-        bool needExecute = colorPickerDrawable->NeedExecute();
+        drawable->Prepare(vsyncTime);
+        bool needExecute = drawable->NeedExecute();
         if (needExecute && curSurfaceNode_) {
             // Get the ColorPicker rect from current surface node (in screen coordinates)
             RectI colorPickerRect = curSurfaceNode_->GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
