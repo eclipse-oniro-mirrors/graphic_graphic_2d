@@ -21,33 +21,44 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "screen_manager/rs_screen_property.h"
 
+#include "common/rs_common_def.h"
+#include "pipeline/rs_logical_display_render_node.h"
+#include "pipeline/rs_render_node_map.h"
+
 namespace OHOS {
 namespace Rosen {
+enum class DisplaySpecialLayerState {
+    NO_SPECIAL_LAYER = 0,
+    HAS_SPECIAL_LAYER = 1,
+    CAPTURE_WINDOW = 2,
+};
+
 class RSSpecialLayerUtils {
 public:
+    // Check if virtual screen region intersects with special layer
+    static void CheckSpecialLayerIntersectMirrorDisplay(const RSLogicalDisplayRenderNode& mirrorNode,
+        RSLogicalDisplayRenderNode& sourceNode, bool enableVisibleRect);
+    static DisplaySpecialLayerState GetSpecialLayerStateInVisibleRect(
+        RSLogicalDisplayRenderParams* displayParams, RSScreenRenderParams* screenParams);
+    static DisplaySpecialLayerState GetSpecialLayerStateInSubTree(
+        RSLogicalDisplayRenderParams& displayParams, RSScreenRenderParams* screenParams);
+    static void DumpScreenSpecialLayer(const std::string& funcName,
+        SpecialLayerType type, ScreenId screenId, const std::unordered_set<NodeId>& nodeIds);
     static std::unordered_set<uint64_t> GetAllBlackList(const RSRenderNodeMap& nodeMap);
     static std::unordered_set<uint64_t> GetAllWhiteList(const RSRenderNodeMap& nodeMap);
-
     static std::unordered_set<NodeId> GetMergeBlackList(const RSScreenProperty& screenProperty);
-
-    static void DumpScreenSpecialLayer(const std::string& funcName,
-       SpecialLayerType type, ScreenId screenId, const std::unordered_set<NodeId>& nodeIds);
-
     static void UpdateInfoWithGlobalBlackList(const RSRenderNodeMap& nodeMap);
-
     static void UpdateScreenSpecialLayer(const RSScreenProperty& screenProperty);
-
     static void UpdateScreenSpecialLayer(const RSScreenProperty& screenProperty, ScreenPropertyType type);
-
-    static void NotifyScreenSpecialLayerChange();
-
     static void DealWithSpecialLayer(
         RSSurfaceRenderNode& node, RSLogicalDisplayRenderNode& displayNode, bool needCalcScreenSpecialLayer);
-    
+private:
+    static bool CheckCurrentTypeIntersectVisibleRect(const std::unordered_set<NodeId>& nodeIds,
+        uint32_t currentType, const RectI& visibleRect);
     static void UpdateScreenSpecialLayersRecord(
         RSSurfaceRenderNode& node, RSLogicalDisplayRenderNode& displayNode, bool needCalcScreenSpecialLayer);
-
     static void UpdateSpecialLayersRecord(RSSurfaceRenderNode& node, RSLogicalDisplayRenderNode& displayNode);
+    static void NotifyScreenSpecialLayerChange();
 };
 } // namespace Rosen
 } // namespace OHOS

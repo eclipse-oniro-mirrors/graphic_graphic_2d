@@ -23,13 +23,11 @@
 
 namespace OHOS::Rosen {
 namespace Drawing {
-const char* ANI_CLASS_REGION_NAME = "@ohos.graphics.drawing.drawing.Region";
 
 ani_status AniRegion::AniInit(ani_env *env)
 {
-    ani_class cls = nullptr;
-    ani_status ret = env->FindClass(ANI_CLASS_REGION_NAME, &cls);
-    if (ret != ANI_OK) {
+    ani_class cls = AniGlobalClass::GetInstance().region;
+    if (cls == nullptr) {
         ROSEN_LOGE("[ANI] can't find class: %{public}s", ANI_CLASS_REGION_NAME);
         return ANI_NOT_FOUND;
     }
@@ -49,9 +47,12 @@ ani_status AniRegion::AniInit(ani_env *env)
         ani_native_function { "setPath", "C{@ohos.graphics.drawing.drawing.Path}"
             "C{@ohos.graphics.drawing.drawing.Region}:z", reinterpret_cast<void*>(SetPath) },
         ani_native_function { "isPointContained", "ii:z", reinterpret_cast<void*>(IsPointContained) },
+        ani_native_function { "isRect", ":z", reinterpret_cast<void*>(IsRect) },
+        ani_native_function { "quickContains", "iiii:z", reinterpret_cast<void*>(QuickContains) },
+        ani_native_function { "offset", "ii:", reinterpret_cast<void*>(Offset) },
     };
 
-    ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
+    ani_status ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
     if (ret != ANI_OK) {
         ROSEN_LOGE("[ANI] bind methods fail: %{public}s", ANI_CLASS_REGION_NAME);
         return ANI_NOT_FOUND;
@@ -75,7 +76,8 @@ void AniRegion::Constructor(ani_env* env, ani_object obj)
 {
     std::shared_ptr<Region> region = std::make_shared<Region>();
     AniRegion* aniRegion = new AniRegion(region);
-    if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniRegion))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        obj, AniGlobalField::GetInstance().regionNativeObj, reinterpret_cast<ani_long>(aniRegion))) {
         ROSEN_LOGE("AniRegion::Constructor failed create AniRegion");
         delete aniRegion;
         return;
@@ -84,7 +86,7 @@ void AniRegion::Constructor(ani_env* env, ani_object obj)
 
 void AniRegion::ConstructorWithRegion(ani_env* env, ani_object obj, ani_object aniRegionObj)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, aniRegionObj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, aniRegionObj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr) {
         AniThrowError(env, "Invalid params. "); // message length must be a multiple of 4, for example 16, 20, etc
         return;
@@ -92,7 +94,8 @@ void AniRegion::ConstructorWithRegion(ani_env* env, ani_object obj, ani_object a
     std::shared_ptr<Region> other = aniRegion->GetRegion();
     std::shared_ptr<Region> region = other == nullptr ? std::make_shared<Region>() : std::make_shared<Region>(*other);
     AniRegion* otherAniRegion = new AniRegion(region);
-    if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(otherAniRegion))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        obj, AniGlobalField::GetInstance().regionNativeObj, reinterpret_cast<ani_long>(otherAniRegion))) {
         ROSEN_LOGE("AniRegion::Constructor failed create AniRegion");
         delete otherAniRegion;
         return;
@@ -106,7 +109,8 @@ void AniRegion::ConstructorWithRect(ani_env* env, ani_object obj, ani_int left, 
     AniRegion* aniRegion = new AniRegion(region);
     RectI rect = Drawing::RectI(left, top, right, bottom);
     aniRegion->GetRegion()->SetRect(rect);
-    if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniRegion))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        obj, AniGlobalField::GetInstance().regionNativeObj, reinterpret_cast<ani_long>(aniRegion))) {
         ROSEN_LOGE("AniRegion::Constructor failed create AniRegion");
         delete aniRegion;
         return;
@@ -115,7 +119,7 @@ void AniRegion::ConstructorWithRect(ani_env* env, ani_object obj, ani_int left, 
 
 void AniRegion::SetEmpty(ani_env* env, ani_object obj)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniRegion::SetEmpty invalid params: obj. ");
@@ -128,7 +132,7 @@ void AniRegion::SetEmpty(ani_env* env, ani_object obj)
 ani_boolean AniRegion::QuickReject(ani_env* env, ani_object obj, ani_int left, ani_int top, ani_int right,
     ani_int bottom)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::QuickReject aniRegion is nullptr.");
         return false;
@@ -140,7 +144,7 @@ ani_boolean AniRegion::QuickReject(ani_env* env, ani_object obj, ani_int left, a
 ani_boolean AniRegion::SetRect(ani_env* env, ani_object obj, ani_int left, ani_int top, ani_int right,
     ani_int bottom)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::SetRect aniRegion is nullptr.");
         return false;
@@ -151,13 +155,13 @@ ani_boolean AniRegion::SetRect(ani_env* env, ani_object obj, ani_int left, ani_i
 
 ani_boolean AniRegion::IsRegionContained(ani_env* env, ani_object obj, ani_object aniRegionObj)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniRegion::IsRegionContained aniRegion is nullptr.");
         return false;
     }
-    auto otherAniRegion = GetNativeFromObj<AniRegion>(env, aniRegionObj);
+    auto otherAniRegion = GetNativeFromObj<AniRegion>(env, aniRegionObj, AniGlobalField::GetInstance().regionNativeObj);
     if (otherAniRegion == nullptr || otherAniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniRegion::IsRegionContained other aniRegion is nullptr.");
@@ -169,12 +173,12 @@ ani_boolean AniRegion::IsRegionContained(ani_env* env, ani_object obj, ani_objec
 
 ani_boolean AniRegion::Op(ani_env* env, ani_object obj, ani_object aniRegionObj, ani_enum_item aniRegionOp)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::Op aniRegion is nullptr.");
         return false;
     }
-    auto otherAniRegion = GetNativeFromObj<AniRegion>(env, aniRegionObj);
+    auto otherAniRegion = GetNativeFromObj<AniRegion>(env, aniRegionObj, AniGlobalField::GetInstance().regionNativeObj);
     if (otherAniRegion == nullptr || otherAniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::Op other aniRegion is nullptr.");
         return false;
@@ -197,12 +201,12 @@ ani_boolean AniRegion::Op(ani_env* env, ani_object obj, ani_object aniRegionObj,
 
 ani_boolean AniRegion::SetPath(ani_env* env, ani_object obj, ani_object aniPathObj, ani_enum_item aniClipRegion)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::SetPath aniRegion is nullptr.");
         return false;
     }
-    auto aniPath = GetNativeFromObj<AniPath>(env, aniPathObj);
+    auto aniPath = GetNativeFromObj<AniPath>(env, aniPathObj, AniGlobalField::GetInstance().pathNativeObj);
     if (aniPath == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::SetPath incorrect param0.");
         return false;
@@ -212,7 +216,7 @@ ani_boolean AniRegion::SetPath(ani_env* env, ani_object obj, ani_object aniPathO
         return false;
     }
 
-    auto clip = GetNativeFromObj<AniRegion>(env, aniClipRegion);
+    auto clip = GetNativeFromObj<AniRegion>(env, aniClipRegion, AniGlobalField::GetInstance().regionNativeObj);
     if (clip == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniRegion::SetPath incorrect param1.");
         return false;
@@ -226,13 +230,48 @@ ani_boolean AniRegion::SetPath(ani_env* env, ani_object obj, ani_object aniPathO
 
 ani_boolean AniRegion::IsPointContained(ani_env* env, ani_object obj, ani_int dx, ani_int dy)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniRegion::IsPointContained aniRegion is nullptr.");
         return false;
     }
     return aniRegion->GetRegion()->Contains(dx, dy);
+}
+
+ani_boolean AniRegion::IsRect(ani_env* env, ani_object obj)
+{
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
+    if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRegion::IsRect aniRegion is nullptr.");
+        return false;
+    }
+    return aniRegion->GetRegion()->IsRect();
+}
+
+ani_boolean AniRegion::QuickContains(ani_env* env, ani_object obj, ani_int left, ani_int top, ani_int right,
+    ani_int bottom)
+{
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
+    if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRegion::QuickContains aniRegion is nullptr.");
+        return false;
+    }
+    RectI rectI = Drawing::RectI(left, top, right, bottom);
+    return aniRegion->GetRegion()->QuickContains(rectI);
+}
+
+void AniRegion::Offset(ani_env* env, ani_object obj, ani_int dx, ani_int dy)
+{
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, obj, AniGlobalField::GetInstance().regionNativeObj);
+    if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniRegion::Offset aniRegion is nullptr.");
+        return;
+    }
+    aniRegion->GetRegion()->Translate(dx, dy);
 }
 
 ani_object AniRegion::RegionTransferStatic(
@@ -255,7 +294,8 @@ ani_object AniRegion::RegionTransferStatic(
     }
 
     auto aniRegion = new AniRegion(jsRegion->GetRegionPtr());
-    if (ANI_OK != env->Object_SetFieldByName_Long(output, NATIVE_OBJ, reinterpret_cast<ani_long>(aniRegion))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        output, AniGlobalField::GetInstance().regionNativeObj, reinterpret_cast<ani_long>(aniRegion))) {
         ROSEN_LOGE("AniFont::RegionTransferStatic failed create aniFont");
         delete aniRegion;
         return CreateAniUndefined(env);
@@ -265,7 +305,7 @@ ani_object AniRegion::RegionTransferStatic(
 
 ani_long AniRegion::GetRegionAddr(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input)
 {
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, input);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, input, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ROSEN_LOGE("AniRegion::GetRegionAddr aniRegion is null");
         return 0;

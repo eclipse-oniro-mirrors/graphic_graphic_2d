@@ -34,7 +34,7 @@ group("unittest") {
 _common_deps = [
   "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
   "$graphic_2d_root/rosen/modules/render_service:librender_service",
-  "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
   "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
   "$graphic_2d_root/rosen/modules/composer:libcomposer",
   "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
@@ -44,6 +44,7 @@ _common_deps = [
 _common_external_deps = [
   "c_utils:utils",
   "eventhandler:libeventhandler",
+  "googletest:gmock_main",
   "googletest:gtest_main",
   "graphic_surface:surface",
   "hilog:libhilog",
@@ -103,7 +104,10 @@ rs_render_composer_unittest("RSRenderComposerManagerTest") {
 }
 
 rs_render_composer_unittest("RSRenderComposerTest") {
-  sources = [ "rs_render_composer_test.cpp" ]
+  sources = [
+    "rs_render_composer_test.cpp",
+    "mock_hdi_device.cpp",
+  ]
 }
 
 config("rs_render_composer_common_test_config") {

@@ -31,6 +31,7 @@
 #include "display_engine/rs_luminance_control.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/buffer_clear_callback.h"
+#include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
@@ -229,7 +230,7 @@ public:
         return isHardwareEnableHint_;
     }
 
-    void SetSourceDisplayRenderNodeId(NodeId nodeId)
+    void SetSourceScreenRenderNodeId(NodeId nodeId)
     {
         sourceDisplayRenderNodeId_ = nodeId;
     }
@@ -612,7 +613,7 @@ public:
     void SetHwcChildrenDisabledState();
 
     void SetContextBounds(const Vector4f bounds);
-    virtual bool CheckParticipateInOcclusion();
+    virtual bool CheckParticipateInOcclusion(bool isAnimationOcclusionScenes);
 
     void OnApplyModifiers() override;
 
@@ -656,7 +657,6 @@ public:
     void SetSkipLayer(bool isSkipLayer);
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
-    void SetIsOutOfScreen(bool isOutOfScreen);
     void SetScreenSpecialLayerStatus(ScreenId screenId, uint32_t type, bool isSpecialLayer);
     void UpdateVirtualScreenWhiteListInfo();
 
@@ -753,6 +753,16 @@ public:
     bool GetHDRPresent() const
     {
         return hdrPhotoNum_ > 0 || hdrUIComponentNum_ > 0;
+    }
+
+    bool GetHDRUIPresent() const
+    {
+        return hdrUIComponentNum_ > 0;
+    }
+
+    bool GetHDRImagePresent() const
+    {
+        return hdrPhotoNum_ > 0;
     }
 
     void IncreaseHDRNum(HDRComponentType hdrType);
@@ -867,14 +877,14 @@ public:
         isOcclusionVisibleWithoutFilter_ = visible;
     }
 
-    void SetOcclusionInSpecificScenes(bool isOcclusionInSpecificScenes)
+    void SetIsParticipateInOcclusion(bool isParticipate)
     {
-        isOcclusionInSpecificScenes_ = isOcclusionInSpecificScenes;
+        isParticipateInOcclusion_ = isParticipate;
     }
 
-    bool GetOcclusionInSpecificScenes() const
+    bool GetIsParticipateInOcclusion() const
     {
-        return isOcclusionInSpecificScenes_;
+        return isParticipateInOcclusion_;
     }
 
     const Occlusion::Region& GetVisibleRegion() const
@@ -909,10 +919,6 @@ public:
         return abilityBgAlpha_;
     }
 
-    void setQosCal(bool qosPidCal)
-    {
-        qosPidCal_ = qosPidCal;
-    }
 
     bool IsSurfaceInStartingWindowStage() const;
 
@@ -921,7 +927,6 @@ public:
     void SetVisibleRegionRecursive(
         const Occlusion::Region& region,
         VisibleData& visibleVec,
-        std::map<NodeId, RSVisibleLevel>& pidVisMap,
         bool needSetVisibleRegion = true,
         RSVisibleLevel visibleLevel = RSVisibleLevel::RS_UNKNOW_VISIBLE_LEVEL,
         bool isSystemAnimatedScenes = false);
@@ -957,6 +962,7 @@ public:
 
     void SetColorSpace(GraphicColorGamut colorSpace);
     GraphicColorGamut GetColorSpace() const;
+    void UpdateNodeColorSpace() override;
     // Only call this if the node is first level node.
     GraphicColorGamut GetFirstLevelNodeColorGamut() const;
     void SetFirstLevelNodeColorGamutByResource(bool isOnTree, GraphicColorGamut gamut);
@@ -974,6 +980,16 @@ public:
     }
     GraphicBlendType GetBlendType()
     {
+        if ((GetAncoFlags() & static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE)) ==
+            static_cast<uint32_t>(AncoFlags::ANCO_SFV_NODE) &&
+            surfaceHandler_ && surfaceHandler_->GetConsumer()) {
+            GraphicAlphaType alphaType = GraphicAlphaType::GRAPHIC_ALPHATYPE_UNKNOWN;
+            if (surfaceHandler_->GetConsumer()->GetAlphaType(alphaType) == GSERROR_OK &&
+                alphaType == GraphicAlphaType::GRAPHIC_ALPHATYPE_OPAQUE) {
+                return GRAPHIC_BLEND_NONE;
+            }
+        }
+
         return blendType_;
     }
 #endif
@@ -1309,8 +1325,6 @@ public:
     void UpdateFilterCacheStatusWithVisible(bool visible);
     void UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect, bool isRotationChanged);
     void UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
-    // reset static node's drawing cache status as not changed and get filter rects
-    void ResetDrawingCacheStatusIfNodeStatic(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects);
 
     void SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvailable);
 
@@ -1742,7 +1756,15 @@ public:
     void SetSurfaceBufferOpaque(bool isOpaque);
     bool GetSurfaceBufferOpaque() const;
 
-    void AfterTreeStatueChanged() override;
+    bool IsAncestorScreenFrozen() const;
+
+    void AfterTreeStateChanged();
+
+    // only use for window capture when isSyncRender is true
+    void RegisterCaptureCallback(sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& config);
+
+    void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
+    void SetRotationCorrectionDegree(int32_t rotationCorrectionDegree);
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1806,7 +1828,7 @@ private:
     bool isRefresh_ = false;
     bool isOcclusionVisible_ = true;
     bool isOcclusionVisibleWithoutFilter_ = true;
-    bool isOcclusionInSpecificScenes_ = false;
+    bool isParticipateInOcclusion_ = true;
     bool dstRectChanged_ = false;
     uint8_t abilityBgAlpha_ = 0;
     bool alphaChanged_ = false;
@@ -1958,7 +1980,6 @@ private:
         void DecreaseResourceGamutCount(GraphicColorGamut gamut);
         GraphicColorGamut GetCurGamut() const;
         GraphicColorGamut GetFirstLevelNodeGamut() const;
-        static GraphicColorGamut MapGamutToStandard(GraphicColorGamut gamut);
         static GraphicColorGamut DetermineGamutStandard(int pt2020Num, int p3Num);
     };
     GamutCollector gamutCollector_;

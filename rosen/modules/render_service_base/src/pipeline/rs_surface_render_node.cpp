@@ -64,7 +64,7 @@ namespace Rosen {
 // set the offset value to prevent the situation where the float number
 // with the suffix 0.000x is still rounded up.
 constexpr float RECT_CEIL_DEVIATION = 0.001;
-
+constexpr size_t MAX_FILTER_CACHE_TYPES = 3;
 namespace {
 bool CheckRootNodeReadyToDraw(const std::shared_ptr<RSBaseRenderNode>& child)
 {
@@ -260,6 +260,8 @@ void RSSurfaceRenderNode::UpdateInfoForClonedNode(NodeId nodeId)
         SetHwcChildrenDisabledState();
         RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " children disabled by isCloneNode",
             GetName().c_str(), GetId());
+        HwcDisabledReasonCollection::GetInstance().UpdateHwcDisabledReasonForDFX(GetId(),
+            HwcDisabledReasons::DISABLED_BY_IS_CLONE_NODE, GetName());
     }
     SetIsCloned(isClonedNode);
 }
@@ -435,7 +437,7 @@ void RSSurfaceRenderNode::FindScreenId()
     }
 }
 
-void RSSurfaceRenderNode::AfterTreeStatueChanged()
+void RSSurfaceRenderNode::AfterTreeStateChanged()
 {
     if (!IsOnTheTree() && attachedInfo_.has_value()) {
         if (auto context = GetContext().lock()) {
@@ -457,7 +459,10 @@ void RSSurfaceRenderNode::OnTreeStateChanged()
     NotifyTreeStateChange();
     RSRenderNode::OnTreeStateChanged();
     if (!IsOnTheTree() && attachedInfo_.has_value()) {
-        return;
+        if (auto context = GetContext().lock()) {
+            context->GetMutableNodeMap().RegisterNeedAttachedNode(
+                std::static_pointer_cast<RSSurfaceRenderNode>(shared_from_this()));
+        }
     }
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (!IsOnTheTree()) {
@@ -572,6 +577,7 @@ void RSSurfaceRenderNode::GetAllSubSurfaceNodes(
     for (auto& [id, node] : childSubSurfaceNodes_) {
         auto subSubSurfaceNodePtr = node.lock();
         if (!subSubSurfaceNodePtr) {
+            RS_LOGE("RSSurfaceRenderNode::GetAllSubSurfaceNodes subSubSurfaceNodePtr is null");
             continue;
         }
         if (subSubSurfaceNodePtr->HasSubSurfaceNodes()) {
@@ -1043,15 +1049,6 @@ void RSSurfaceRenderNode::SetProtectedLayer(bool isProtectedLayer)
     UpdateSpecialLayerInfoByTypeChange(SpecialLayerType::PROTECTED, isProtectedLayer);
 }
 
-void RSSurfaceRenderNode::SetIsOutOfScreen(bool isOutOfScreen)
-{
-    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
-    if (stagingSurfaceParams) {
-        stagingSurfaceParams->SetIsOutOfScreen(isOutOfScreen);
-        AddToPendingSyncList();
-    }
-}
-
 bool RSSurfaceRenderNode::GetHasPrivacyContentLayer() const
 {
     return privacyContentLayerIds_.size() != 0;
@@ -1234,7 +1231,7 @@ void RSSurfaceRenderNode::ReduceHDRNum(HDRComponentType hdrType)
 void RSSurfaceRenderNode::IncreaseCanvasGamutNum(GraphicColorGamut gamut)
 {
 #ifndef ROSEN_CROSS_PLATFORM
-    GraphicColorGamut canvasGamut = GamutCollector::MapGamutToStandard(gamut);
+    GraphicColorGamut canvasGamut = RSColorSpaceUtil::MapGamutToStandard(gamut);
     if (canvasGamut == GRAPHIC_COLOR_GAMUT_SRGB) {
         return;
     }
@@ -1257,7 +1254,7 @@ void RSSurfaceRenderNode::IncreaseCanvasGamutNum(GraphicColorGamut gamut)
 void RSSurfaceRenderNode::ReduceCanvasGamutNum(GraphicColorGamut gamut)
 {
 #ifndef ROSEN_CROSS_PLATFORM
-    GraphicColorGamut canvasGamut = GamutCollector::MapGamutToStandard(gamut);
+    GraphicColorGamut canvasGamut = RSColorSpaceUtil::MapGamutToStandard(gamut);
     if (gamut == GRAPHIC_COLOR_GAMUT_SRGB) {
         return;
     }
@@ -1399,7 +1396,7 @@ void RSSurfaceRenderNode::SetHardCursorStatus(bool status)
 
 void RSSurfaceRenderNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
-    GraphicColorGamut newGamut = GamutCollector::MapGamutToStandard(colorSpace);
+    GraphicColorGamut newGamut = RSColorSpaceUtil::MapGamutToStandard(colorSpace);
     if (colorSpace_ == newGamut) {
         return;
     }
@@ -1428,7 +1425,7 @@ GraphicColorGamut RSSurfaceRenderNode::GetColorSpace() const
         bt2020Num = gamutCollector_.bt2020Num_;
         p3Num = gamutCollector_.p3Num_;
     }
-    GraphicColorGamut selfGamut = GamutCollector::MapGamutToStandard(colorSpace_);
+    GraphicColorGamut selfGamut = RSColorSpaceUtil::MapGamutToStandard(colorSpace_);
     GamutCollector::IncreaseInner(selfGamut, bt2020Num, p3Num);
     return GamutCollector::DetermineGamutStandard(bt2020Num, p3Num);
 }
@@ -1481,6 +1478,18 @@ void RSSurfaceRenderNode::UpdateColorSpaceWithMetadata()
     }
     SetColorSpace(RSColorSpaceUtil::PrimariesToGraphicGamut(colorSpaceInfo.primaries));
 #endif
+}
+
+void RSSurfaceRenderNode::UpdateNodeColorSpace()
+{
+    GraphicColorGamut nodeColorSpace = GetNodeColorSpace();
+    if (IsAppWindow()) {
+        nodeColorSpace = RSColorSpaceUtil::SelectBigGamut(colorSpace_, nodeColorSpace);
+    } else if (IsSelfDrawingType()) {
+        UpdateColorSpaceWithMetadata();
+        nodeColorSpace = RSColorSpaceUtil::SelectBigGamut(colorSpace_, nodeColorSpace);
+    }
+    SetNodeColorSpace(nodeColorSpace);
 }
 
 void RSSurfaceRenderNode::UpdateSurfaceDefaultSize(float width, float height)
@@ -1826,7 +1835,7 @@ void RSSurfaceRenderNode::AccumulateOcclusionRegion(Occlusion::Region& accumulat
     SetTreatedAsTransparent(false);
     // when a surfacenode is in animation (i.e. 3d animation), its dstrect cannot be trusted, we treated it as a full
     // transparent layer.
-    if ((GetAnimateState() || IsParentLeashWindowInScale()) && !isOcclusionInSpecificScenes_) {
+    if (GetAnimateState() || IsParentLeashWindowInScale()) {
         SetTreatedAsTransparent(true);
         return;
     }
@@ -1958,7 +1967,6 @@ void RSSurfaceRenderNode::UpdateHardwareDisabledState(bool disabled)
 
 void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& region,
                                                     VisibleData& visibleVec,
-                                                    std::map<NodeId, RSVisibleLevel>& visMapForVsyncRate,
                                                     bool needSetVisibleRegion,
                                                     RSVisibleLevel visibleLevel,
                                                     bool isSystemAnimatedScenes)
@@ -1974,11 +1982,6 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
         visibleVec.emplace_back(std::make_pair(GetId(), GetVisibleLevelForWMS(visibleLevel)));
     }
 
-    // collect visible changed pid
-    if (qosPidCal_ && GetType() == RSRenderNodeType::SURFACE_NODE && !isSystemAnimatedScenes) {
-        visMapForVsyncRate[GetId()] = !IsSCBNode() ? RSVisibleLevel::RS_ALL_VISIBLE : visibleLevel;
-    }
-
     visibleRegionForCallBack_ = region;
     if (needSetVisibleRegion) {
         visibleRegion_ = region;
@@ -1989,7 +1992,7 @@ void RSSurfaceRenderNode::SetVisibleRegionRecursive(const Occlusion::Region& reg
 
     for (auto& child : *GetChildren()) {
         if (auto surfaceChild = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(child)) {
-            surfaceChild->SetVisibleRegionRecursive(region, visibleVec, visMapForVsyncRate, needSetVisibleRegion,
+            surfaceChild->SetVisibleRegionRecursive(region, visibleVec, needSetVisibleRegion,
                 visibleLevel, isSystemAnimatedScenes);
         }
     }
@@ -2158,20 +2161,6 @@ void RSSurfaceRenderNode::UpdateDrawingCacheNodes(const std::shared_ptr<RSRender
     drawingCacheNodes_.emplace(nodePtr->GetId(), nodePtr);
 }
 
-void RSSurfaceRenderNode::ResetDrawingCacheStatusIfNodeStatic(
-    std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects)
-{
-    // traversal drawing cache nodes including app window
-    EraseIf(drawingCacheNodes_, [this, &allRects](const auto& pair) {
-        auto node = pair.second.lock();
-        if (node == nullptr || !node->IsOnTheTree()) {
-            return true;
-        }
-        node->SetDrawingCacheChanged(false);
-        return false;
-    });
-}
-
 void RSSurfaceRenderNode::UpdateFilterCacheStatusWithVisible(bool visible)
 {
     if (visible == prevVisible_) {
@@ -2200,11 +2189,18 @@ void RSSurfaceRenderNode::UpdateFilterCacheStatusIfNodeStatic(const RectI& clipR
                 effectNode->SetRotationChanged(isRotationChanged);
             }
         }
-        if (node->GetRenderProperties().GetBackgroundFilter()) {
-            node->UpdateFilterCacheWithBelowDirty(Occlusion::Rect(dirtyManager_->GetCurrentFrameDirtyRegion()));
-        }
-        if (node->GetRenderProperties().GetFilter()) {
-            node->UpdateFilterCacheWithBelowDirty(Occlusion::Rect(dirtyManager_->GetCurrentFrameDirtyRegion()));
+        using DrawablePair = std::pair<bool, RSDrawableSlot>;
+        std::array<DrawablePair, MAX_FILTER_CACHE_TYPES> filterCacheParas = {
+            DrawablePair{node->GetRenderProperties().GetBackgroundFilter() != nullptr,
+                RSDrawableSlot::BACKGROUND_FILTER},
+            DrawablePair{node->GetRenderProperties().GetMaterialFilter() != nullptr, RSDrawableSlot::MATERIAL_FILTER},
+            DrawablePair{node->GetRenderProperties().GetFilter() != nullptr, RSDrawableSlot::COMPOSITING_FILTER}
+        };
+        for (auto& p : filterCacheParas) {
+            if (p.first) {
+                node->UpdateFilterCacheWithBelowDirty(Occlusion::Rect(dirtyManager_->GetCurrentFrameDirtyRegion()),
+                    p.second);
+            }
         }
         node->UpdateFilterCacheWithSelfDirty();
     }
@@ -2439,18 +2435,21 @@ bool RSSurfaceRenderNode::CheckIfOcclusionChanged() const
         GetDirtyManager()->IsActiveSurfaceRectChanged();
 }
 
-bool RSSurfaceRenderNode::CheckParticipateInOcclusion()
+bool RSSurfaceRenderNode::CheckParticipateInOcclusion(bool isAnimationOcclusionScenes)
 {
     // planning: Need consider others situation
     isParentScaling_ = false;
     auto nodeParent = GetParent().lock();
     if (nodeParent && nodeParent->IsScale()) {
         isParentScaling_ = true;
-        if (GetDstRectChanged() && !isOcclusionInSpecificScenes_) {
+        if (GetDstRectChanged() && !isAnimationOcclusionScenes) {
             return false;
         }
     }
-    if ((IsTransparent() && !NeedDrawBehindWindow()) || GetAnimateState() || IsRotating() || IsSubSurfaceNode()) {
+    // surface can't participate occlusion in transparent, animate, rotating, and sub surface scenes
+    // specific animate can be used for occlusion
+    if ((IsTransparent() && !NeedDrawBehindWindow()) ||
+        (GetAnimateState() && !isAnimationOcclusionScenes) || IsRotating() || IsSubSurfaceNode()) {
         return false;
     }
     return true;
@@ -3529,7 +3528,7 @@ void RSSurfaceRenderNode::SetOldNeedDrawBehindWindow(bool val)
 bool RSSurfaceRenderNode::NeedDrawBehindWindow() const
 {
     return RSSystemProperties::GetBehindWindowFilterEnabled() && !GetRenderProperties().GetBackgroundFilter() &&
-        !childrenBlurBehindWindow_.empty();
+        !childrenBlurBehindWindow_.empty() && GetModifierNG(ModifierNG::RSModifierType::BEHIND_WINDOW_FILTER);
 }
 
 void RSSurfaceRenderNode::AddChildBlurBehindWindow(NodeId id)
@@ -3795,23 +3794,6 @@ GraphicColorGamut RSSurfaceRenderNode::GamutCollector::GetFirstLevelNodeGamut() 
     return finalGamut;
 }
 
-GraphicColorGamut RSSurfaceRenderNode::GamutCollector::MapGamutToStandard(GraphicColorGamut gamut)
-{
-    switch (gamut) {
-        case GRAPHIC_COLOR_GAMUT_ADOBE_RGB:
-        case GRAPHIC_COLOR_GAMUT_DCI_P3:
-        case GRAPHIC_COLOR_GAMUT_DISPLAY_P3:
-            return GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
-        case GRAPHIC_COLOR_GAMUT_BT2020:
-        case GRAPHIC_COLOR_GAMUT_BT2100_PQ:
-        case GRAPHIC_COLOR_GAMUT_BT2100_HLG:
-        case GRAPHIC_COLOR_GAMUT_DISPLAY_BT2020:
-            return GRAPHIC_COLOR_GAMUT_BT2020;
-        default:
-            return GRAPHIC_COLOR_GAMUT_SRGB;
-    }
-}
-
 GraphicColorGamut RSSurfaceRenderNode::GamutCollector::DetermineGamutStandard(int bt2020Num, int p3Num)
 {
     if (bt2020Num > 0) {
@@ -3831,6 +3813,61 @@ void RSSurfaceRenderNode::SetUIFirstVisibleFilterRect(const RectI& rect)
     }
     stagingSurfaceParams->SetUIFirstVisibleFilterRect(rect);
     AddToPendingSyncList();
+}
+
+bool RSSurfaceRenderNode::IsAncestorScreenFrozen() const
+{
+    auto screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(ancestorScreenNode_.lock());
+    if (screenNode != nullptr) {
+        return screenNode->GetForceFreeze();
+    }
+    auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetFirstLevelNode());
+    if (firstLevelNode == nullptr) {
+        return false;
+    }
+    screenNode = RSBaseRenderNode::ReinterpretCast<RSScreenRenderNode>(firstLevelNode->GetAncestorScreenNode().lock());
+    return screenNode == nullptr ? false : screenNode->GetForceFreeze();
+}
+
+// only use for window capture when isSyncRender is true
+void RSSurfaceRenderNode::RegisterCaptureCallback(
+    sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& config)
+{
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (stagingSurfaceParams == nullptr) {
+        RS_LOGE("RSSurfaceRenderNode::RegisterCaptureCallback stagingSurfaceParams is null");
+    } else {
+        stagingSurfaceParams->RegisterCaptureCallback(callback, config);
+        AddToPendingSyncList();
+    }
+}
+
+void RSSurfaceRenderNode::SetAppRotationCorrection(ScreenRotation appRotationCorrection)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetAppRotationCorrection(appRotationCorrection);
+    RS_LOGD("RSSurfaceRenderNode::SetAppRotationCorrection: Node: %{public}" PRIu64
+            ", appRotationCorrection: %{public}u", GetId(), appRotationCorrection);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
+void RSSurfaceRenderNode::SetRotationCorrectionDegree(int32_t rotationCorrectionDegree)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetRotationCorrectionDegree(rotationCorrectionDegree);
+    RS_LOGD("RSSurfaceRenderNode::SetRotationCorrectionDegree: Node: %{public}" PRIu64
+            ", rotationCorrectionDegree: %{public}d", GetId(), rotationCorrectionDegree);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

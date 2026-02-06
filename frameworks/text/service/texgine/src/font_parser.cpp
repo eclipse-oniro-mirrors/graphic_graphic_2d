@@ -23,11 +23,25 @@
 #include <iostream>
 #include <iomanip>
 #include <securec.h>
+#ifdef ENABLE_OHOS_ENHANCE
+#include <sys/mman.h>
+#include <sys/stat.h>
+#endif
+#include <unordered_map>
 #ifdef BUILD_NON_SDK_VER
 #include <iconv.h>
+#ifdef CROSS_PLATFORM
+#include <unicode/ucnv.h>
+#endif
 #endif
 
 #include "font_config.h"
+#ifdef ENABLE_OHOS_ENHANCE
+#include "locale_config.h"
+#endif
+#include "text/font_filetype.h"
+#include "text/font_metadata.h"
+#include "text/font_unicode_query.h"
 #include "utils/text_log.h"
 
 namespace OHOS {
@@ -38,10 +52,59 @@ namespace TextEngine {
 #define SYSTEM_FONT_PATH "/system/fonts/"
 #define SYS_PROD_FONT_PATH "/sys_prod/fonts/"
 
-constexpr uint32_t HB_TAG(uint32_t c1, uint32_t c2, uint32_t c3, uint32_t c4)
-{
-    // 24 means 32-24 bit, 16 means 24-16 bit, 8 means 16-8 bit, 0 means 8-0 bit, 0xFF means only 8 bit
-    return ((c1 & 0xFF) << 24) | ((c2 & 0xFF) << 16) | ((c3 & 0xFF) << 8) | (c4 & 0xFF);
+namespace {
+std::unordered_map<std::string, std::vector<std::string>> g_localeToBcpTable = {
+    {"my", {"my", "my-MM"}},
+    {"zh-Hant", {"zh-Hant", "zh-TW", "zh-HK", "zh-MO", "zh-SG"}},
+    {"pt-PT", {"pt-PT", "pt"}},
+    {"zh-Hans", {"zh-Hans", "zh", "zh-CN"}},
+    {"it", {"it", "it-IT", "it-CH"}},
+    {"fi", {"fi", "fi-FI"}},
+    {"ja", {"ja", "ja-JP"}},
+    {"mk", {"mk", "mk-MK"}},
+    {"el", {"el", "el-GR"}},
+    {"bg", {"bg", "bg-BG"}},
+    {"uk", {"uk", "uk-UA"}},
+    {"sv", {"sv", "sv-SE"}},
+    {"th", {"th", "th-TH"}},
+    {"nb", {"nb", "nb-NO"}},
+    {"da", {"da", "da-DK"}},
+    {"cs", {"cs", "cs-CZ"}},
+    {"fr", {"fr", "fr-FR"}},
+    {"ru", {"ru", "ru-RU", "ru-MD"}},
+    {"et", {"et", "et-EE"}},
+    {"en-Latn-US", {"en-US", "en"}},
+    {"hu", {"hu", "hu-HU"}},
+    {"es", {"es", "es-ES", "es-US"}},
+    {"sk", {"sk", "sk-SK"}},
+    {"pl", {"pl", "pl-PL"}},
+    {"sr-Latn", {"sr-Latn"}},
+    {"sl", {"sl", "sl-SI"}},
+    {"ro", {"ro", "ro-RO"}},
+    {"lv", {"lv", "lv-LV"}},
+    {"lt", {"lt", "lt-LT"}},
+    {"hr", {"hr", "hr-HR", "hr-BA"}},
+    {"be", {"be", "be-BY"}},
+    {"ar", {"ar"}},
+    {"he", {"he", "he-IL"}},
+    {"km", {"km", "km-KH"}},
+    {"tr", {"tr", "tr-TR"}},
+    {"vi", {"vi", "vi-VN"}},
+    {"id", {"id", "id-ID"}},
+    {"ms", {"ms", "ms-MY", "ms-BN"}},
+    {"pt-BR", {"pt-BR", "pt"}},
+    {"hi", {"hi", "hi-IN"}},
+    {"nl", {"nl", "nl-NL", "nl-BE"}},
+    {"de", {"de", "de-DE", "de-CH"}},
+    {"ka", {"ka", "ka-GE"}},
+    {"es-US", {"es-US", "es"}},
+    {"ko", {"ko", "ko-KR"}},
+    {"fil", {"fil", "fil-PH"}},
+    {"fa", {"fa", "fa-IR"}},
+    {"uz-Latn", {"uz-Latn", "uz-Latn-UZ"}},
+    {"bn", {"bn", "bn-BD", "bn-IN"}},
+    {"kk", {"kk", "kk-KZ"}},
+};
 }
 
 FontParser::FontParser()
@@ -57,9 +120,10 @@ FontParser::FontParser()
     fontSet_.insert(fontSet_.end(), prodFonts.begin(), prodFonts.end());
 }
 
-void FontParser::ProcessTable(const CmapTables* cmapTable, FontParser::FontDescriptor& fontDescriptor)
+void FontParser::ProcessTable(const CmapTables* cmapTable, FontParser::FontDescriptor& fontDescriptor, size_t size)
 {
-    for (auto i = 0; i < cmapTable->numTables.Get(); ++i) {
+    auto count = cmapTable->numTables.Get();
+    for (size_t i = 0; i < count && (sizeof(CmapTables) + (i + 1) * sizeof(EncodingRecord)) <= size; ++i) {
         const auto& record = cmapTable->encodingRecords[i];
         FontParser::PlatformId platformId = static_cast<FontParser::PlatformId>(record.platformID.Get());
         FontParser::EncodingIdWin encodingId = static_cast<FontParser::EncodingIdWin>(record.encodingID.Get());
@@ -145,12 +209,12 @@ void FontParser::SetNameString(FontParser::FontDescriptor& fontDescriptor, std::
     }
 }
 
-void FontParser::ProcessTable(const NameTable* nameTable, FontParser::FontDescriptor& fontDescriptor)
+void FontParser::ProcessTable(const NameTable* nameTable, FontParser::FontDescriptor& fontDescriptor, size_t size)
 {
     auto count = nameTable->count.Get();
     auto storageOffset = nameTable->storageOffset.Get();
     const char* stringStorage = reinterpret_cast<const char*>(nameTable) + storageOffset;
-    for (int i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count && (sizeof(NameTable) + (i + 1) * sizeof(NameRecord)) <= size; ++i) {
         if (nameTable->nameRecord[i].stringOffset.Get() == 0 && nameTable->nameRecord[i].length.Get() == 0) {
             continue;
         }
@@ -165,6 +229,10 @@ void FontParser::ProcessTable(const NameTable* nameTable, FontParser::FontDescri
         auto len = nameTable->nameRecord[i].length.Get();
         auto stringOffset = nameTable->nameRecord[i].stringOffset.Get();
         const char* data = stringStorage + stringOffset;
+        if (storageOffset + stringOffset + len > size) {
+            TEXT_LOGE("Invalid name table string offset or length");
+            continue;
+        }
         if (platformId == FontParser::PlatformId::MACINTOSH) {
 #ifdef BUILD_NON_SDK_VER
             std::string nameString = ConvertToString(std::string(data, len), "GB2312", "UTF-8");
@@ -183,7 +251,7 @@ void FontParser::ProcessTable(const NameTable* nameTable, FontParser::FontDescri
     }
 }
 
-void FontParser::ProcessTable(const PostTable* postTable, FontParser::FontDescriptor& fontDescriptor)
+void FontParser::ProcessTable(const PostTable* postTable, FontParser::FontDescriptor& fontDescriptor, size_t /* size */)
 {
     if (postTable->italicAngle.Get() != 0) {
         fontDescriptor.italic = 1; // means support italics
@@ -211,7 +279,7 @@ bool FontParser::ParseOneTable(std::shared_ptr<Drawing::Typeface> typeface, Font
         TEXT_LOGE("Failed to get table, size %{public}zu, ret %{public}zu", size, readSize);
         return false;
     }
-    ProcessTable(reinterpret_cast<T*>(tableData.get()), fontDescriptor);
+    ProcessTable(reinterpret_cast<T*>(tableData.get()), fontDescriptor, size);
     return true;
 }
 
@@ -264,9 +332,76 @@ bool FontParser::SetFontDescriptor(const unsigned int languageId)
 }
 
 #ifdef BUILD_NON_SDK_VER
+#ifdef CROSS_PLATFORM
+bool CalculateUcharLength(const std::string& src, const std::string& srcType,
+    const std::string& targetType, int32_t& ucharLength)
+{
+    ucharLength = 0;
+    bool ret = false;
+    if (targetType.find("UTF-8") != std::string::npos && srcType.find("UTF-16BE") != std::string::npos) {
+        const size_t utf16BytesPerCodeUnit = 2;
+        ret = (src.length() % utf16BytesPerCodeUnit == 0);
+        if (ret) {
+            ucharLength = src.length() / utf16BytesPerCodeUnit;
+        }
+    } else if (targetType.find("UTF-8") != std::string::npos && srcType.find("GB2312") != std::string::npos) {
+        ucharLength = src.length();
+        ret = true;
+    }
+    return ret;
+}
+
+std::string ConvertStringUseIcu(const std::string& src, const std::string& srcType,
+    const std::string& targetType)
+{
+    if (src.empty()) {
+        return src;
+    }
+    
+    int32_t ucharCapacity = 0;
+    if (!CalculateUcharLength(src, srcType, targetType, ucharCapacity)) {
+        return src;
+    }
+
+    UErrorCode status = U_ZERO_ERROR;
+    UConverter* conv = ucnv_open(srcType.c_str(), &status);
+    if (U_FAILURE(status) || !conv) {
+        return src;
+    }
+
+    std::vector<UChar> ucharBuf(ucharCapacity);
+    int32_t ucharCount = ucnv_toUChars(conv, ucharBuf.data(), ucharCapacity, src.data(), src.length(), &status);
+    ucnv_close(conv);
+
+    if (U_FAILURE(status)) {
+        return src;
+    }
+
+    status = U_ZERO_ERROR;
+    conv = ucnv_open(targetType.c_str(), &status);
+    if (U_FAILURE(status) || !conv) {
+        return src;
+    }
+
+    const int32_t maxUtf8BytesPerUchar = 4;
+    int32_t utf8Len = ucharCount * maxUtf8BytesPerUchar;
+    std::vector<char> utf8Buf(utf8Len);
+    int32_t actualUtf8Len = ucnv_fromUChars(conv, utf8Buf.data(), utf8Len, ucharBuf.data(), ucharCount, &status);
+    ucnv_close(conv);
+
+    if (U_FAILURE(status)) {
+        return src;
+    }
+    return std::string(utf8Buf.data(), actualUtf8Len);
+}
+#endif
+
 std::string FontParser::ConvertToString(const std::string& src, const std::string& srcType,
     const std::string& targetType)
 {
+#ifdef CROSS_PLATFORM
+    return ConvertStringUseIcu(src, srcType, targetType);
+#else
     std::string utf8Str;
     iconv_t conv = iconv_open(targetType.c_str(), srcType.c_str());
     if (conv == (iconv_t)-1) {
@@ -284,6 +419,7 @@ std::string FontParser::ConvertToString(const std::string& src, const std::strin
     delete[] outBufStart;
     iconv_close(conv);
     return utf8Str;
+#endif
 }
 #endif
 
@@ -375,6 +511,161 @@ std::vector<std::shared_ptr<FontParser::FontDescriptor>> FontParser::ParserFontD
     return CreateFontDescriptors(typefaces, locale);
 }
 
+std::vector<uint32_t> FontParser::GetFontTypefaceUnicode(const std::string& path, int32_t index)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromFile(path.c_str(), index);
+    return Drawing::FontUnicodeQuery::GenerateUnicodeItem(typeface);
+}
+
+std::vector<uint32_t> FontParser::GetFontTypefaceUnicode(const void* data, size_t length, int32_t index)
+{
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromStream(
+        std::make_unique<Drawing::MemoryStream>(data, length), index);
+    return Drawing::FontUnicodeQuery::GenerateUnicodeItem(typeface);
+}
+
+#ifdef ENABLE_OHOS_ENHANCE
+std::vector<uint8_t> FontParser::GetFontDataFromFd(int fd)
+{
+    struct stat st{};
+    if (fstat(fd, &st) < 0 || st.st_size <= 0) {
+        TEXT_LOGE("Failed to get fd size");
+        return {};
+    }
+
+    void* startAddr = ::mmap(nullptr, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (startAddr == MAP_FAILED) {
+        TEXT_LOGE("Failed to exec mmap");
+        return {};
+    }
+    uint8_t* byteData = static_cast<uint8_t*>(startAddr);
+    std::vector<uint8_t> fontData(byteData, byteData + st.st_size);
+    ::munmap(startAddr, st.st_size);
+    return fontData;
+}
+#endif
+
+std::vector<std::string> FontParser::GetFontFullName(int fd)
+{
+#ifdef ENABLE_OHOS_ENHANCE
+    std::vector<uint8_t> fontData = GetFontDataFromFd(fd);
+#else
+    std::vector<uint8_t> fontData = {};
+#endif
+    int32_t fileCount = 0;
+    Drawing::FontFileType::GetFontFileType(fontData, fileCount);
+    if (fileCount == 0) {
+        TEXT_LOGE("Failed to get font count");
+        return {};
+    }
+    std::vector<std::string> result;
+    for (int32_t index = 0; index < fileCount; index++) {
+        auto stream = std::make_unique<Drawing::MemoryStream>(fontData.data(), fontData.size(), false);
+        std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeFromStream(std::move(stream), index);
+        if (typeface == nullptr) {
+            TEXT_LOGE("Failed to make typeface");
+            return {};
+        }
+        FontDescriptor desc;
+        desc.requestedLid = LANGUAGE_EN;
+        if (!ParseOneTable<NameTable>(typeface, desc)) {
+            TEXT_LOGE("Failed to parse name table");
+            return {};
+        }
+        result.emplace_back(desc.fullName);
+    }
+    return result;
+}
+
+std::vector<std::string> FontParser::GetBcpTagList()
+{
+#ifdef ENABLE_OHOS_ENHANCE
+    std::string systemLanguage = Global::I18n::LocaleConfig::GetSystemLanguage();
+#else
+    std::string systemLanguage = "";
+#endif
+    auto it = g_localeToBcpTable.find(systemLanguage);
+    if (it == g_localeToBcpTable.end()) {
+        return {};
+    }
+    return it->second;
+}
+
+void FontParser::FillFontDescriptorWithFallback(std::shared_ptr<Drawing::Typeface> typeface, FontDescriptor& desc)
+{
+    struct FieldMapping {
+        std::string* targetField;
+        Drawing::OtNameId nameId;
+    };
+
+    const FieldMapping fields[] = {
+        {&desc.localFamilyName, Drawing::OtNameId::FONT_FAMILY},
+        {&desc.localSubFamilyName, Drawing::OtNameId::FONT_SUBFAMILY},
+        {&desc.localFullName, Drawing::OtNameId::FULL_NAME},
+        {&desc.localPostscriptName, Drawing::OtNameId::POSTSCRIPT_NAME},
+        {&desc.version, Drawing::OtNameId::VERSION_STRING},
+        {&desc.manufacture, Drawing::OtNameId::MANUFACTURER},
+        {&desc.copyright, Drawing::OtNameId::COPYRIGHT},
+        {&desc.trademark, Drawing::OtNameId::TRADEMARK},
+        {&desc.license, Drawing::OtNameId::LICENSE},
+    };
+
+    for (const auto& field : fields) {
+        if (field.targetField->empty()) {
+            *field.targetField = Drawing::FontMetaDataCollector::GetFirstAvailableString(typeface, field.nameId);
+        }
+    }
+}
+
+void FontParser::FillFontDescriptorWithLocalInfo(std::shared_ptr<Drawing::Typeface> typeface, FontDescriptor& desc)
+{
+    std::vector<std::string> bcpTagList = GetBcpTagList();
+    bcpTagList.emplace_back("en");
+
+    auto fontIdentificationMap = Drawing::FontMetaDataCollector::GenerateFontIdentification(typeface, bcpTagList);
+    for (const auto& tag : bcpTagList) {
+        auto it = fontIdentificationMap.find(tag);
+        if (it == fontIdentificationMap.end()) {
+            continue;
+        }
+        Drawing::FontIdentification& info = it->second;
+        desc.localFamilyName = desc.localFamilyName.empty() ? info.fontFamily : desc.localFamilyName;
+        desc.localSubFamilyName = desc.localSubFamilyName.empty() ? info.fontSubFamily : desc.localSubFamilyName;
+        desc.localFullName = desc.localFullName.empty() ? info.fullName : desc.localFullName;
+        desc.localPostscriptName = desc.localPostscriptName.empty() ? info.postScriptName : desc.localPostscriptName;
+    }
+
+    auto fontLegalInfoMap = Drawing::FontMetaDataCollector::GenerateFontLegalInfo(typeface, bcpTagList);
+    for (const auto& tag : bcpTagList) {
+        auto it = fontLegalInfoMap.find(tag);
+        if (it == fontLegalInfoMap.end()) {
+            continue;
+        }
+        Drawing::FontLegalInfo& info = it->second;
+        desc.version = desc.version.empty() ? info.version : desc.version;
+        desc.manufacture = desc.manufacture.empty() ? info.manufacturer : desc.manufacture;
+        desc.copyright = desc.copyright.empty() ? info.copyright : desc.copyright;
+        desc.trademark = desc.trademark.empty() ? info.trademark : desc.trademark;
+        desc.license = desc.license.empty() ? info.license : desc.license;
+    }
+
+    FillFontDescriptorWithFallback(typeface, desc);
+}
+
+int32_t FontParser::GetFontCount(const std::string& path)
+{
+    int32_t fileCount = 0;
+    Drawing::FontFileType::GetFontFileType(path, fileCount);
+    return fileCount;
+}
+
+int32_t FontParser::GetFontCount(const std::vector<uint8_t>& data)
+{
+    int32_t fileCount = 0;
+    Drawing::FontFileType::GetFontFileType(data, fileCount);
+    return fileCount;
+}
+
 std::shared_ptr<FontParser::FontDescriptor> FontParser::CreateFontDescriptor(
     const std::shared_ptr<Drawing::Typeface>& typeface, unsigned int languageId)
 {
@@ -384,12 +675,14 @@ std::shared_ptr<FontParser::FontDescriptor> FontParser::CreateFontDescriptor(
     FontDescriptor desc;
     desc.requestedLid = languageId;
     desc.path = typeface->GetFontPath();
+    desc.index = typeface->GetFontIndex();
     auto fontStyle = typeface->GetFontStyle();
     desc.weight = fontStyle.GetWeight();
     desc.width = fontStyle.GetWidth();
     if (!ParseTable(typeface, desc)) {
         return nullptr;
     }
+    FillFontDescriptorWithLocalInfo(typeface, desc);
     return std::make_shared<FontParser::FontDescriptor>(desc);
 }
 
@@ -461,6 +754,11 @@ std::unique_ptr<FontParser::FontDescriptor> FontParser::GetVisibilityFontByName(
     const std::string locale)
 {
     return ParseFontDescriptor(fontName, GetLanguageId(locale));
+}
+
+const std::vector<std::string>& FontParser::GetFontSet() const
+{
+    return fontSet_;
 }
 } // namespace TextEngine
 } // namespace Rosen

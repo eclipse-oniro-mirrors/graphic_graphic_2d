@@ -144,55 +144,6 @@ HWTEST_F(RSImplicitAnimatorTest, EndImplicitPathAnimation001, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSImplicitAnimatorTest EndImplicitPathAnimation001 end";
 }
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: CancelImplicitAnimation001
- * @tc.desc: Verify the CancelImplicitAnimation
- * @tc.type:FUNC
- */
-HWTEST_F(RSImplicitAnimatorTest, CancelImplicitAnimation001, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSImplicitAnimatorTest CancelImplicitAnimation001 start";
-
-    std::shared_ptr<RSCanvasNode> canvasNode = nullptr;
-    std::shared_ptr<RSAnimatableProperty<Vector2f>> property = nullptr;
-
-    auto implicitAnimator = std::make_shared<RSImplicitAnimator>();
-    implicitAnimator->CancelImplicitAnimation(canvasNode, property);
-
-    auto canvasNode1 = RSCanvasNode::Create();
-    std::shared_ptr<RSAnimatableProperty<Vector2f>> property1 = nullptr;
-    implicitAnimator->CancelImplicitAnimation(canvasNode1, property1);
-
-    auto canvasNode2 = RSCanvasNode::Create();
-    auto property2 = std::make_shared<RSAnimatableProperty<Vector2f>>(Vector2f(0.f, 0.f));
-    implicitAnimator->CancelImplicitAnimation(canvasNode2, property2);
-
-    auto property3 = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
-    auto startProperty = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
-    auto endProperty = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_END_BOUNDS);
-    auto modifier3 = std::make_shared<RSBoundsModifier>(property3);
-    auto canvasNode3 = RSCanvasNode::Create();
-    canvasNode3->AddModifier(modifier3);
-
-    auto timingCurve = RSAnimationTimingCurve::DEFAULT;
-    RSAnimationTimingProtocol timingProtocol3;
-    implicitAnimator->OpenImplicitAnimation(timingProtocol3, timingCurve);
-    implicitAnimator->CreateImplicitAnimation(canvasNode3, property3, nullptr, endProperty);
-    implicitAnimator->CreateImplicitAnimation(canvasNode3, property3, startProperty, nullptr);
-    implicitAnimator->CreateImplicitAnimation(canvasNode3, property3, startProperty, endProperty);
-    implicitAnimator->CancelImplicitAnimation(canvasNode3, property3);
-
-    RSAnimationTimingProtocol timingProtocol4(0);
-    implicitAnimator->OpenImplicitAnimation(timingProtocol4, timingCurve);
-    implicitAnimator->CreateImplicitAnimation(canvasNode3, property3, startProperty, endProperty);
-    implicitAnimator->CancelImplicitAnimation(canvasNode3, property3);
-
-    EXPECT_TRUE(implicitAnimator != nullptr);
-    GTEST_LOG_(INFO) << "RSImplicitAnimatorTest CancelImplicitAnimation001 end";
-}
-#endif
-
 /**
  * @tc.name: CreateImplicitAnimationWithInitialVelocity001
  * @tc.desc: Verify the CreateImplicitAnimationWithInitialVelocity
@@ -224,53 +175,6 @@ HWTEST_F(RSImplicitAnimatorTest, CreateImplicitAnimationWithInitialVelocity001, 
     EXPECT_TRUE(implicitAnimator != nullptr);
     GTEST_LOG_(INFO) << "RSImplicitAnimatorTest CreateImplicitAnimationWithInitialVelocity001 end";
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: CreateImplicitAnimationWithInitialVelocity002
- * @tc.desc: Verify the CreateImplicitAnimationWithInitialVelocity
- * @tc.type:FUNC
- */
-HWTEST_F(RSImplicitAnimatorTest, CreateImplicitAnimationWithInitialVelocity002, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSImplicitAnimatorTest CreateImplicitAnimationWithInitialVelocity002 start";
-    RSAnimationTimingProtocol timingProtocol;
-    auto timingCurve = RSAnimationTimingCurve::SPRING;
-    auto implicitAnimator = std::make_shared<RSImplicitAnimator>();
-
-    auto canvasNode = RSCanvasNode::Create();
-    auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
-    auto startProperty = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
-    auto endProperty = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_END_BOUNDS);
-    auto velocity = std::make_shared<RSAnimatableProperty<float>>(1.0f);
-    auto modifier = std::make_shared<RSBoundsModifier>(property);
-    canvasNode->AddModifier(modifier);
-
-    implicitAnimator->OpenImplicitAnimation(RSAnimationTimingProtocol::DEFAULT, timingCurve);
-    implicitAnimator->CreateImplicitAnimationWithInitialVelocity(
-        canvasNode, property, startProperty, endProperty, velocity);
-
-    bool flag = false;
-    std::function<void()> func = [&]() { flag = !flag; };
-    auto finishCallback = std::make_shared<AnimationFinishCallback>(func);
-    auto repeatCallback = std::make_shared<AnimationRepeatCallback>(func);
-
-    implicitAnimator->OpenImplicitAnimation(
-        RSAnimationTimingProtocol::DEFAULT, timingCurve, std::move(finishCallback), nullptr);
-    implicitAnimator->CreateImplicitAnimationWithInitialVelocity(
-        canvasNode, property, startProperty, endProperty, velocity);
-
-    implicitAnimator->OpenImplicitAnimation(
-        RSAnimationTimingProtocol::DEFAULT, timingCurve, std::move(finishCallback), std::move(repeatCallback));
-    implicitAnimator->CreateImplicitAnimationWithInitialVelocity(
-        canvasNode, property, startProperty, endProperty, velocity);
-
-    auto finishCallBack = std::make_shared<AnimationFinishCallback>(nullptr);
-    implicitAnimator->OpenImplicitAnimation(std::move(finishCallBack));
-    EXPECT_TRUE(implicitAnimator != nullptr);
-    GTEST_LOG_(INFO) << "RSImplicitAnimatorTest CreateImplicitAnimationWithInitialVelocity002 end";
-}
-#endif
 
 /**
  * @tc.name: ProcessEmptyAnimationTest001
@@ -326,6 +230,33 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ProcessEmptyAnimationTest002
+ * @tc.desc: Verify with UIContext
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImplicitAnimatorTest, ProcessEmptyAnimationTest002, TestSize.Level1)
+{
+    auto rsUIContext = std::make_shared<RSUIContext>();
+    auto implicitAnimator = std::make_shared<RSImplicitAnimator>();
+    implicitAnimator->SetRSUIContext(rsUIContext);
+
+    RSAnimationTimingProtocol timingProtocol;
+    timingProtocol.duration_ = -1;
+    timingProtocol.repeatCount_ = 0;
+    auto timingCurve = RSAnimationTimingCurve::LINEAR;
+    std::shared_ptr<AnimationFinishCallback> finishCallback = nullptr;
+    std::shared_ptr<AnimationRepeatCallback> repeatCallback = nullptr;
+
+    auto globalParam = std::make_tuple(timingProtocol, timingCurve, finishCallback, repeatCallback);
+    implicitAnimator->globalImplicitParams_.push(globalParam);
+    auto finishCallbackTest = std::make_shared<AnimationFinishCallback>(
+        nullptr, FinishCallbackType::TIME_INSENSITIVE);
+
+    EXPECT_TRUE(finishCallbackTest.use_count() == 1);
+    implicitAnimator->ProcessEmptyAnimations(finishCallbackTest);
+}
+
+/**
  * @tc.name: ProcessAnimationFinishCallbackGuaranteeTaskTest001
  * @tc.desc: Verify the ProcessAnimationFinishCallbackGuaranteeTaskTest001
  * @tc.type:FUNC
@@ -366,6 +297,7 @@ HWTEST_F(RSImplicitAnimatorTest, ProcessAnimationFinishCallbackGuaranteeTaskTest
 }
 
 /**
+<<<<<<< HEAD
  * @tc.name: RSImplicitAnimationParamTest001
  * @tc.desc: Verify the RSImplicitAnimationParamTest001
  * @tc.type:FUNC
@@ -432,6 +364,33 @@ HWTEST_F(RSImplicitAnimatorTest, RSImplicitAnimationParamTest001, TestSize.Level
     GTEST_LOG_(INFO) << "RSImplicitAnimatorTest RSImplicitAnimationParamTest001 end";
 }
 
+=======
+ * @tc.name: GetRSImplicitAnimator
+ * @tc.desc: Verify the GetRSImplicitAnimator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImplicitAnimatorTest, GetRSImplicitAnimator, TestSize.Level1)
+{
+    auto rsUIContext = std::make_shared<RSUIContext>();
+    // repeat count
+    int count = 10;
+    // thread count
+    int threadCount = 2;
+    std::thread t1([rsUIContext, count] {
+        for (int i = 0; i < count; i++) {
+            rsUIContext->GetRSImplicitAnimator();
+        }
+    });
+    std::thread t2([rsUIContext, count] {
+        for (int i = 0; i < count; i++) {
+            rsUIContext->GetRSImplicitAnimator();
+        }
+    });
+    t1.join();
+    t2.join();
+    EXPECT_EQ(rsUIContext->rsImplicitAnimators_.size(), threadCount);
+}
+>>>>>>> master
 
 /**
  * @tc.name: CheckImplicitAnimationConditionsTest001

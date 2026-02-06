@@ -71,10 +71,12 @@ public:
             EffectTemplateBase::DumpProperties().c_str());
         auto geFilter = RSNGRenderEffectHelper::CreateGEVisualEffect(Type);
         OnGenerateGEVisualEffect(geFilter);
-        std::apply([&geFilter](const auto&... propTag) {
-            (RSNGRenderEffectHelper::UpdateVisualEffectParam<std::decay_t<decltype(propTag)>>(geFilter, propTag), ...);
+        std::apply(
+            [&geFilter](const auto&... propTag) {
+                (RSNGRenderEffectHelper::UpdateVisualEffectParam<std::decay_t<decltype(propTag)>>(geFilter, propTag),
+                    ...);
             },
-            EffectTemplateBase::properties_);
+            this->EffectTemplateBase::properties_);
         RSNGRenderFilterBase::UpdateCacheData(RSNGRenderFilterBase::geFilter_, geFilter);
         RSNGRenderFilterBase::geFilter_ = std::move(geFilter);
 
@@ -119,6 +121,7 @@ public:
 
 #include "effect/rs_render_filter_def.in"
 
+// Note: if the definition is inconsistent with the client, place it here instead of in the .in file
 DECLARE_FILTER(ColorGradient, COLOR_GRADIENT,
     ADD_PROPERTY_TAG(ColorGradient, Colors),
     ADD_PROPERTY_TAG(ColorGradient, Positions),

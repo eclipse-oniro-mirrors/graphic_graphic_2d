@@ -222,6 +222,18 @@ public:
         return childHasVisibleHDRContent_;
     }
 
+    bool SelfOrChildHasHDR() const
+    {
+        return childHasVisibleHDRContent_ || hdrStatus_ != HdrStatus::NO_HDR;
+    }
+
+    void SetNodeColorSpace(GraphicColorGamut colorSpace);
+
+    GraphicColorGamut GetNodeColorSpace() const
+    {
+        return nodeColorSpace_;
+    }
+
     void SetNeedFilter(bool needFilter);
 
     inline bool NeedFilter() const
@@ -301,6 +313,7 @@ public:
         return cacheSize_;
     }
 
+    // used for RenderGroup
     void SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced);
     bool GetDrawingCacheChanged() const
     {
@@ -319,18 +332,32 @@ public:
     {
         return isNeedUpdateCache_;
     }
-
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const
     {
         return drawingCacheType_;
     }
-
-    void ExcludedFromNodeGroup(bool isExcluded);
+    bool ExcludedFromNodeGroup(bool isExcluded);
     bool IsExcludedFromNodeGroup() const;
-
     void SetHasChildExcludedFromNodeGroup(bool isExcluded);
     bool HasChildExcludedFromNodeGroup() const;
+    void SetRenderGroupExcludedStateChanged(bool isChanged);
+    bool IsRenderGroupExcludedStateChanged() const;
+    void SetRenderGroupSubTreeDirty(bool isDirty);
+    bool IsRenderGroupSubTreeDirty() const;
+    void SetChildHasTranslateOnSqueeze(bool val);
+    bool ChildHasTranslateOnSqueeze() const;
+    void SetDrawingCacheIncludeProperty(bool includeProperty);
+    bool GetDrawingCacheIncludeProperty() const
+    {
+        return drawingCacheIncludeProperty_;
+    }
+    void SetRSFreezeFlag(bool freezeFlag);
+    bool GetRSFreezeFlag() const
+    {
+        return freezeFlag_;
+    }
+    // !used for RenderGroup
 
     void OpincSetIsSuggest(bool isSuggest);
     bool OpincIsSuggest() const
@@ -355,17 +382,6 @@ public:
         return state;
     }
 
-    void SetDrawingCacheIncludeProperty(bool includeProperty);
-    bool GetDrawingCacheIncludeProperty() const
-    {
-        return drawingCacheIncludeProperty_;
-    }
-
-    void SetRSFreezeFlag(bool freezeFlag);
-    bool GetRSFreezeFlag() const
-    {
-        return freezeFlag_;
-    }
     void SetShadowRect(Drawing::Rect rect);
     Drawing::Rect GetShadowRect() const
     {
@@ -597,6 +613,7 @@ private:
     float hdrBrightness_ = 1.0f;
     HdrStatus hdrStatus_ = HdrStatus::NO_HDR;
     bool childHasVisibleHDRContent_ = false;
+    GraphicColorGamut nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     bool freezeFlag_ = false;
     bool childHasVisibleEffect_ = false;
     bool childHasVisibleFilter_ = false;

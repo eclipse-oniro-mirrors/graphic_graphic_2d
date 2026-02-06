@@ -246,6 +246,22 @@ HWTEST(RSProfilerBaseTest, RSLOGW2, Level1)
 }
 
 /*
+ * @tc.name: TimeNanoTest
+ * @tc.desc: Test Profiler TimeNano
+ * @tc.type: FUNC
+ * @tc.require: 21658
+ */
+HWTEST(RSProfilerBaseTest, TimeNanoTest, Level1)
+{
+    RSProfiler::SetReplayStartTimeNano(0);
+    ASSERT_EQ(RSProfiler::GetReplayStartTimeNano(), 0);
+
+    RSProfiler::SetReplayStartTimeNano(Utils::ToNanoseconds(1));
+    RSProfiler::SetTransactionTimeCorrection(1);
+    ASSERT_EQ(RSProfiler::GetReplayStartTimeNano(), Utils::ToNanoseconds(1));
+}
+
+/*
  * @tc.name: LightBlurMetrics
  * @tc.desc: Test LightBlurMetrics
  * @tc.type: FUNC
@@ -492,14 +508,14 @@ HWTEST(RSProfilerMetrics, DoNoAddNegativeBlurMetrics, Level1)
 }
 
 class RecorRsProfileRecordTest : public testing::Test {
-protected:
-    void SetUp() override
-    {
-        renderService = GetAndInitRenderService();
-        RSProfiler::Init(renderService);
-    }
+public:
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    void SetUp() override;
+    void TearDown() override;
 
 private:
+<<<<<<< HEAD
     sptr<RSRenderService> GetAndInitRenderService()
     {
         auto renderService = sptr<RSRenderService>::MakeSptr();
@@ -509,7 +525,35 @@ private:
 
 private:
     sptr<RSRenderService> renderService;
+=======
+    static sptr<RSRenderService> renderService_;
+    static RSMainThread* mainThread_;
+>>>>>>> master
 };
+sptr<RSRenderService> RecorRsProfileRecordTest::renderService_ = nullptr;
+RSMainThread* RecorRsProfileRecordTest::mainThread_ = nullptr;
+
+void RecorRsProfileRecordTest::SetUpTestCase()
+{
+    mainThread_ = RSMainThread::Instance();
+    mainThread_->runner_ = AppExecFwk::EventRunner::Create(true);
+    mainThread_->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread_->runner_);
+
+    renderService_ = new RSRenderService();
+    renderService_->mainThread_ = mainThread_;
+    renderService_->screenManager_ = CreateOrGetScreenManager();
+
+    RSProfiler::Init(renderService_);
+}
+
+void RecorRsProfileRecordTest::TearDownTestCase()
+{
+    // Wait for all tasks in the main thread to complete.
+    mainThread_->ScheduleTask([]() -> int { return 0; }).get();
+}
+
+void RecorRsProfileRecordTest::SetUp() {}
+void RecorRsProfileRecordTest::TearDown() {}
 
 /*
  * @tc.name: RecordStartFail

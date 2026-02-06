@@ -79,6 +79,7 @@ private:
     static bool FillFrostedGlassBg(napi_env env, napi_value* argv, std::shared_ptr<FrostedGlassEffectPara>& para);
     static bool FillFrostedGlassSd(napi_env env, napi_value* argv, std::shared_ptr<FrostedGlassEffectPara>& para);
     static bool FillFrostedGlassEnv(napi_env env, napi_value* argv, std::shared_ptr<FrostedGlassEffectPara>& para);
+    static bool FillFrostedGlassEdl(napi_env env, napi_value* argv, std::shared_ptr<FrostedGlassEffectPara>& para);
     static bool BuildFrostedGlassEffectPara(napi_env env, napi_value* argv,
         std::shared_ptr<FrostedGlassEffectPara>& outPara);
     std::shared_ptr<VisualEffect> m_EffectObj = nullptr;

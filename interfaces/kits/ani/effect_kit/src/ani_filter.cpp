@@ -45,7 +45,7 @@ AniFilter::~AniFilter()
     EFFECT_LOG_I("AniFilter destructor");
 }
 
-static const std::string ANI_CLASS_FILTER = "L@ohos/effectKit/effectKit/FilterInternal;";
+static const std::string ANI_CLASS_FILTER = "@ohos.effectKit.effectKit.FilterInternal";
 
 std::shared_ptr<Media::PixelMap> AniFilter::GetDstPixelMap()
 {
@@ -84,7 +84,67 @@ ani_object AniFilter::Blur(ani_env* env, ani_object obj, ani_double param)
     aniFilter->AddNextFilter(blur);
 
     return AniEffectKitUtils::CreateAniObject(
-        env, ANI_CLASS_FILTER.c_str(), "J:V", reinterpret_cast<ani_long>(aniFilter));
+        env, ANI_CLASS_FILTER.c_str(), "l:", reinterpret_cast<ani_long>(aniFilter));
+}
+
+ani_object AniFilter::EllipticalGradientBlur(ani_env *env, ani_object obj, ani_double blurRadius, ani_double centerX,
+    ani_double centerY, ani_double maskRadiusX, ani_double maskRadiusY, ani_array fractionStops)
+{
+    AniFilter *aniFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
+    if (aniFilter == nullptr) {
+        EFFECT_LOG_E("GetFilterFromEnv failed");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    float blurRadiusParam = 0.0f;
+    if (blurRadius >= 0) {
+        blurRadiusParam = static_cast<float>(blurRadius);
+    }
+    float centerXParam = static_cast<float>(centerX);
+    float centerYParam = static_cast<float>(centerY);
+    float maskRadiusXParam = 0.0f;
+    float maskRadiusYParam = 0.0f;
+    if (maskRadiusX >= 0) {
+        maskRadiusXParam = static_cast<float>(maskRadiusX);
+    }
+    if (maskRadiusY >= 0) {
+        maskRadiusYParam = static_cast<float>(maskRadiusY);
+    }
+    std::vector<float> positionsParam;
+    std::vector<float> degreesParam;
+    ani_size arrayLength = 0;
+    env->Array_GetLength(fractionStops, &arrayLength);
+    for (ani_size i = 0; i < arrayLength; ++i) {
+        ani_ref positionAndDegreeRef;
+        ani_array positionAndDegree;
+        env->Array_Get(fractionStops, i, &positionAndDegreeRef);
+        positionAndDegree = static_cast<ani_array>(positionAndDegreeRef);
+        ani_size positionAndDegreeArrayLength = 0;
+        env->Array_GetLength(positionAndDegree, &positionAndDegreeArrayLength);
+        if (positionAndDegreeArrayLength != 2) {
+            continue;
+        }
+        if (positionAndDegreeArrayLength == 2) {
+            ani_ref positionRef;
+            env->Array_Get(positionAndDegree, 0, &positionRef);
+            ani_double positionParam;
+            env->Object_CallMethodByName_Double(static_cast<ani_object>(positionRef), "toDouble", ":d", &positionParam);
+            positionsParam.emplace_back(static_cast<float>(positionParam));
+            ani_ref degreeRef;
+            env->Array_Get(positionAndDegree, 1, &degreeRef);
+            ani_double degreeParam;
+            env->Object_CallMethodByName_Double(static_cast<ani_object>(degreeRef), "toDouble", ":d", &degreeParam);
+            degreesParam.emplace_back(static_cast<float>(degreeParam));
+        }
+    }
+    if (positionsParam.empty() || degreesParam.empty()) {
+        EFFECT_LOG_E("Invalid fractionStops array: positions or degrees are empty");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    auto ellipticalGradientBlur = EffectImageFilter::EllipticalGradientBlur(
+        blurRadiusParam, centerXParam, centerYParam, maskRadiusXParam, maskRadiusYParam, positionsParam, degreesParam);
+    aniFilter->AddNextFilter(ellipticalGradientBlur);
+    return AniEffectKitUtils::CreateAniObject(
+        env, ANI_CLASS_FILTER.c_str(), "l:", reinterpret_cast<ani_long>(aniFilter));
 }
 
 ani_object AniFilter::Grayscale(ani_env* env, ani_object obj)
@@ -101,10 +161,10 @@ ani_object AniFilter::Grayscale(ani_env* env, ani_object obj)
         env, ANI_CLASS_FILTER.c_str(), nullptr, reinterpret_cast<ani_long>(aniFilter));
 }
 
-ani_object AniFilter::GetEffectPixelMap(ani_env* env, ani_object obj)
+ani_object AniFilter::GetEffectPixelMap(ani_env* env, ani_object obj, ani_boolean useCpuRender)
 {
     AniFilter* thisFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
-    bool forceCpu = false;
+    bool forceCpu = useCpuRender;
     if (!thisFilter) {
         EFFECT_LOG_E("thisFilter is null");
         return AniEffectKitUtils::CreateAniUndefined(env);
@@ -128,7 +188,7 @@ ani_object AniFilter::CreateEffect(ani_env* env, ani_object para)
     aniFilter->srcPixelMap_ = pixelMap;
 
     static const char* className = ANI_CLASS_FILTER.c_str();
-    const char* methodSig = "J:V";
+    const char* methodSig = "l:";
     return AniEffectKitUtils::CreateAniObject(
         env, className, methodSig, reinterpret_cast<ani_long>(aniFilter.release()));
 }
@@ -200,8 +260,8 @@ ani_object AniFilter::SetColorMatrix(ani_env* env, ani_object obj, ani_object ar
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
 
-    ani_double length;
-    if (ANI_OK != env->Object_GetPropertyByName_Double(arrayObj, "length", &length)) {
+    ani_int length;
+    if (ANI_OK != env->Object_GetPropertyByName_Int(arrayObj, "length", &length)) {
         EFFECT_LOG_E("get stretchSizes length failed");
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
@@ -209,11 +269,11 @@ ani_object AniFilter::SetColorMatrix(ani_env* env, ani_object obj, ani_object ar
     Drawing::ColorMatrix colorMatrix;
     constexpr int matrixLen = Drawing::ColorMatrix::MATRIX_SIZE;
     float matrix[matrixLen] = { 0 };
-    for (int i = 0; i < int(length) && i < matrixLen; ++i) {
+    for (int i = 0; i < static_cast<int>(length) && i < matrixLen; ++i) {
         ani_double val;
         ani_ref ref;
-        if (ANI_OK != env->Object_CallMethodByName_Ref(arrayObj, "$_get", "I:Lstd/core/Object;", &ref, (ani_int)i) ||
-            ANI_OK != env->Object_CallMethodByName_Double(static_cast<ani_object>(ref), "unboxed", ":D", &val)) {
+        if (ANI_OK != env->Object_CallMethodByName_Ref(arrayObj, "$_get", "i:Y", &ref, (ani_int)i) ||
+            ANI_OK != env->Object_CallMethodByName_Double(static_cast<ani_object>(ref), "toDouble", ":d", &val)) {
             EFFECT_LOG_E("Object_CallMethodByName_Ref or Object_CallMethodByName_Double failed");
             return AniEffectKitUtils::CreateAniUndefined(env);
         }
@@ -252,7 +312,7 @@ ani_object AniFilter::CreateEffectFromPtr(ani_env* env, std::shared_ptr<Media::P
     auto aniFilter = std::make_unique<AniFilter>();
     aniFilter->srcPixelMap_ = pixelMap;
     static const char* className = ANI_CLASS_FILTER.c_str();
-    const char* methodSig = "J:V";
+    const char* methodSig = "l:";
     return AniEffectKitUtils::CreateAniObject(
         env, className, methodSig, reinterpret_cast<ani_long>(aniFilter.release()));
 }
@@ -315,28 +375,29 @@ ani_status AniFilter::Init(ani_env* env)
     static const char* className = ANI_CLASS_FILTER.c_str();
     ani_class cls;
     if (env->FindClass(className, &cls) != ANI_OK) {
-        EFFECT_LOG_E("Not found L@ohos/effectKit/effectKit/FilterInternal");
+        EFFECT_LOG_E("Not found @ohos.effectKit.effectKit.FilterInternal");
         return ANI_NOT_FOUND;
     }
 
     std::array methods = {
-        ani_native_function { "blurNative", "D:L@ohos/effectKit/effectKit/Filter;",
+        ani_native_function { "blurNative", "d:C{@ohos.effectKit.effectKit.Filter}",
             reinterpret_cast<void*>(static_cast<ani_object(*)(ani_env*, ani_object, ani_double)>
             (&OHOS::Rosen::AniFilter::Blur)) },
-        ani_native_function { "grayscaleNative", ":L@ohos/effectKit/effectKit/Filter;",
+        ani_native_function { "grayscaleNative", ":C{@ohos.effectKit.effectKit.Filter}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::Grayscale) },
-        ani_native_function { "getEffectPixelMapNative", ":L@ohos/multimedia/image/image/PixelMap;",
+        ani_native_function { "getEffectPixelMapNative", "z:C{@ohos.multimedia.image.image.PixelMap}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::GetEffectPixelMap) },
-        ani_native_function { "blurNative", "DL@ohos/effectKit/effectKit/TileMode;:L@ohos/effectKit/effectKit/Filter;",
-            reinterpret_cast<void*>(static_cast<ani_object(*)(ani_env*, ani_object, ani_double, ani_enum_item)>
-            (&OHOS::Rosen::AniFilter::Blur)) },
-        ani_native_function { "brightnessNative", "D:L@ohos/effectKit/effectKit/Filter;",
+        ani_native_function{"blurNative",
+            "dC{@ohos.effectKit.effectKit.TileMode}:C{@ohos.effectKit.effectKit.Filter}",
+            reinterpret_cast<void *>(static_cast<ani_object (*)(ani_env *, ani_object, ani_double, ani_enum_item)>(
+                &OHOS::Rosen::AniFilter::Blur))},
+        ani_native_function { "brightnessNative", "d:C{@ohos.effectKit.effectKit.Filter}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::Brightness) },
-        ani_native_function { "invertNative", ":L@ohos/effectKit/effectKit/Filter;",
+        ani_native_function { "invertNative", ":C{@ohos.effectKit.effectKit.Filter}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::Invert) },
         ani_native_function { "setColorMatrixNative", nullptr,
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::SetColorMatrix) },
-        ani_native_function { "getPixelMapNative", ":L@ohos/multimedia/image/image/PixelMap;",
+        ani_native_function { "getPixelMapNative", ":C{@ohos.multimedia.image.image.PixelMap}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::GetPixelMap) },
     };
     ani_status ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
@@ -345,9 +406,9 @@ ani_status AniFilter::Init(ani_env* env)
         return ANI_ERROR;
     }
     std::array static_methods = {
-        ani_native_function { "kitTransferStaticNative", "Lstd/interop/ESValue;:Lstd/core/Object;",
+        ani_native_function { "kitTransferStaticNative", "C{std.interop.ESValue}:C{std.core.Object}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::KitTransferStaticEffect) },
-        ani_native_function { "kitTransferDynamicNative", "J:Lstd/interop/ESValue;",
+        ani_native_function { "kitTransferDynamicNative", "l:C{std.interop.ESValue}",
             reinterpret_cast<void*>(OHOS::Rosen::AniFilter::kitTransferDynamicEffect) }
     };
     ret = env->Class_BindStaticNativeMethods(cls, static_methods.data(), static_methods.size());

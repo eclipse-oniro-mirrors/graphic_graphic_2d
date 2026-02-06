@@ -24,6 +24,7 @@
 #include "draw/surface.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "feature/opinc/rs_opinc_draw_cache.h"
+#include "feature/render_group/rs_render_group_cache_drawable.h"
 #include "image/gpu_context.h"
 #include "pipeline/rs_render_node.h"
 
@@ -114,6 +115,14 @@ public:
     {
         return RSRenderNodeDrawableType::RS_NODE_DRAWABLE;
     }
+
+    void SetDrawBlurForCache(bool value);
+    bool IsDrawingBlurForCache();
+    void SetDrawExcludedSubTreeForCache(bool value);
+    bool IsDrawingExcludedSubTreeForCache();
+    void SetCanceledByParentRenderGroup(bool value);
+    bool IsCanceledByParentRenderGroup();
+
 protected:
     explicit RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::RS_NODE, OnGenerate>;
@@ -135,8 +144,6 @@ protected:
 
     static inline bool autoCacheDrawingEnable_ = false;
     static inline std::vector<std::pair<RectI, std::string>> autoCacheRenderNodeInfos_;
-    thread_local static inline bool isOpincDropNodeExt_ = true;
-    thread_local static inline int opincRootTotalCount_ = 0;
 
     static inline int32_t offsetX_ = 0;
     static inline int32_t offsetY_ = 0;
@@ -159,12 +166,14 @@ protected:
     bool CheckIfNeedUpdateCache(RSRenderParams& params, int32_t& updateTimes);
     void UpdateCacheSurface(Drawing::Canvas& canvas, const RSRenderParams& params);
     void TraverseSubTreeAndDrawFilterWithClip(Drawing::Canvas& canvas, const RSRenderParams& params);
+    bool UpdateCurRenderGroupCacheRootFilterState(const RSRenderParams& params);
+    bool IsCurRenderGroupCacheRootExcludedStateChanged(const RSRenderParams& params) const;
     bool SkipDrawByWhiteList(Drawing::Canvas& canvas);
+    // !used for render group cache
 
     static int GetProcessedNodeCount();
     static void ProcessedNodeCountInc();
     static void ClearProcessedNodeCount();
-    static thread_local bool drawBlurForCache_;
     static std::shared_ptr<Drawing::Image> GetImageAlias(
         std::shared_ptr<Drawing::Surface>& surface,
         Drawing::TextureOrigin textureOrigin = Drawing::TextureOrigin::BOTTOM_LEFT);
@@ -215,6 +224,7 @@ private:
     void ClearDrawingCacheContiUpdateTimeMap();
     friend class RsSubThreadCache;
     RSOpincDrawCache opincDrawCache_;
+    std::unique_ptr<RSRenderGroupCacheDrawable> renderGroupCache_ = nullptr;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

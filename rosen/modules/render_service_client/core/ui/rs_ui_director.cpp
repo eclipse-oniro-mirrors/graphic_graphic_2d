@@ -38,7 +38,7 @@
 #include "ui/rs_surface_node.h"
 #include "ui/rs_ui_context.h"
 #include "ui/rs_ui_context_manager.h"
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
 #include "modifier_render_thread/rs_modifiers_draw_thread.h"
 #include "modifier_render_thread/rs_modifiers_draw.h"
 #endif
@@ -60,7 +60,6 @@
 
 namespace OHOS {
 namespace Rosen {
-std::function<void()> RSUIDirector::requestVsyncCallback_ = nullptr;
 static std::mutex g_vsyncCallbackMutex;
 static std::once_flag g_initDumpNodeTreeProcessorFlag;
 static std::once_flag g_isResidentProcessFlag;
@@ -79,6 +78,7 @@ RSUIDirector::~RSUIDirector()
 void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance, std::shared_ptr<RSUIContext> rsUIContext)
 {
     AnimationCommandHelper::SetAnimationCallbackProcessor(AnimationCallbackProcessor);
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(ColorPickerCallbackProcessor);
     std::call_once(g_initDumpNodeTreeProcessorFlag,
         []() { RSNodeCommandHelper::SetDumpNodeTreeProcessor(RSUIDirector::DumpNodeTreeProcessor); });
 
@@ -123,6 +123,7 @@ void RSUIDirector::Init(bool shouldCreateRenderThread, bool isMultiInstance, std
 
     GoForeground();
     RSInterpolator::Init();
+    RSAnimationFraction::Init();
 }
 
 void RSUIDirector::SetFlushEmptyCallback(FlushEmptyCallback flushEmptyCallback)
@@ -142,7 +143,7 @@ void RSUIDirector::SetFlushEmptyCallback(FlushEmptyCallback flushEmptyCallback)
 
 void RSUIDirector::InitHybridRender()
 {
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
     if (RSSystemProperties::GetHybridRenderEnabled()) {
         CommitTransactionCallback callback =
             [] (std::shared_ptr<RSIRenderClient> &renderPiplineClient,
@@ -266,7 +267,7 @@ void RSUIDirector::GoForeground(bool isTextureExport)
             surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::FOREGROUND);
         }
     }
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
     RSModifiersDraw::InsertForegroundRoot(root_);
 #endif
 }
@@ -300,7 +301,7 @@ void RSUIDirector::GoBackground(bool isTextureExport)
             surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::BACKGROUND);
         }
         if (isTextureExport || isUniRenderEnabled_) {
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
             RSModifiersDraw::EraseForegroundRoot(root_);
 #endif
             return;
@@ -311,7 +312,7 @@ void RSUIDirector::GoBackground(bool isTextureExport)
                 std::shared_ptr<RSSurface> rsSurface = RSSurfaceExtractor::ExtractRSSurface(surfaceNode);
                 if (rsSurface == nullptr) {
                     ROSEN_LOGE("rsSurface is nullptr");
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
                     RSModifiersDraw::EraseForegroundRoot(root_);
 #endif
                     return;
@@ -330,7 +331,7 @@ void RSUIDirector::GoBackground(bool isTextureExport)
         });
 #endif
     }
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
     RSModifiersDraw::EraseForegroundRoot(root_);
 #endif
 }
@@ -444,8 +445,11 @@ void RSUIDirector::SetRequestVsyncCallback(const std::function<void()>& callback
         return;
     }
     std::unique_lock<std::mutex> lock(g_vsyncCallbackMutex);
-    requestVsyncCallback_ = callback;
-    requestVsyncCallbacks_[this] = callback;
+    if (rsUIContext_) {
+        rsUIContext_->SetRequestVsyncCallback(callback);
+    } else {
+        requestVsyncCallbacks_[this] = callback;
+    }
 }
 
 void RSUIDirector::SetTimeStamp(uint64_t timeStamp, const std::string& abilityName)
@@ -464,7 +468,7 @@ void RSUIDirector::SetDVSyncUpdate(uint64_t dvsyncTime)
 void RSUIDirector::SetCacheDir(const std::string& cacheFilePath)
 {
     cacheDir_ = cacheFilePath;
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
     if (!cacheDir_.empty() && RSSystemProperties::GetHybridRenderEnabled()) {
         RSModifiersDrawThread::Instance().SetCacheDir(cacheDir_);
     }
@@ -554,6 +558,7 @@ void RSUIDirector::SetUITaskRunner(const TaskRunner& uiTaskRunner, int32_t insta
         ROSEN_LOGD("multi-instance, RSUIDirector::SetUITaskRunner, rsUIContext_ is null!");
         return;
     }
+    rsUIContext_->SetUITaskRunner(uiTaskRunner);
     if (!isHgmConfigChangeCallbackReg_) {
         RSFrameRatePolicy::GetInstance()->RegisterHgmConfigChangeCallback();
         isHgmConfigChangeCallbackReg_ = true;
@@ -706,18 +711,7 @@ void RSUIDirector::ProcessUIContextMessages(
                 RSContext context; // RSCommand->process() needs it
                 cmd->Process(context);
             }
-            if (counter->fetch_sub(1) == 1) {
-                std::unique_lock<std::mutex> lock(g_vsyncCallbackMutex);
-                if (requestVsyncCallback_ != nullptr) {
-                    requestVsyncCallback_();
-                } else {
-                    auto rsTransaction = rsUICtx->GetRSTransaction();
-                    if (rsTransaction != nullptr) {
-                        rsTransaction->FlushImplicitTransaction();
-                    }
-                }
-                ROSEN_LOGD("ProcessUIContextMessages end");
-            }
+            rsUICtx->RequestVsyncCallback();
         });
     }
 }
@@ -779,6 +773,18 @@ void RSUIDirector::AnimationCallbackProcessor(NodeId nodeId, AnimationId animId,
         ROSEN_LOGE("RSUIDirector::AnimationCallbackProcessor, could not find animation %{public}" PRIu64 " on"
             " fallback node.", animId);
     }
+}
+
+void RSUIDirector::ColorPickerCallbackProcessor(NodeId nodeId, uint64_t token, uint32_t color)
+{
+    auto rsUICtx = RSUIContextManager::Instance().GetRSUIContext(token);
+    // Try to find the node in the node map
+    if (auto nodePtr =
+            rsUICtx ? rsUICtx->GetNodeMap().GetNode<RSNode>(nodeId) : RSNodeMap::Instance().GetNode<RSNode>(nodeId)) {
+        nodePtr->FireColorPickerCallback(color);
+        return;
+    }
+    ROSEN_LOGE("RSUIDirector::ColorPickerCallbackProcessor, could not find node %{public}" PRIu64, nodeId);
 }
 
 void RSUIDirector::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint64_t token, uint32_t taskId)

@@ -147,7 +147,7 @@ void HdiOutput::SetRSLayers(const std::vector<std::shared_ptr<RSLayer>>& rsLayer
         if (rsLayer->GetCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR) {
             auto iter = solidSurfaceIdMap_.find(solidLayerCount);
             if (iter != solidSurfaceIdMap_.end()) {
-                const std::shared_ptr<HdiLayer> &hdiLayer = iter->second;
+                const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
                 hdiLayer->UpdateRSLayer(rsLayer);
                 solidLayerCount++;
                 continue;
@@ -217,7 +217,7 @@ void HdiOutput::DeletePrevLayersLocked()
 
     auto surfaceIter = surfaceIdMap_.begin();
     while (surfaceIter != surfaceIdMap_.end()) {
-        const std::shared_ptr<HdiLayer> &hdiLayer = surfaceIter->second;
+        const std::shared_ptr<HdiLayer>& hdiLayer = surfaceIter->second;
         if (!hdiLayer->GetLayerStatus()) {
             surfaceIdMap_.erase(surfaceIter++);
         } else {
@@ -227,7 +227,7 @@ void HdiOutput::DeletePrevLayersLocked()
 
     auto layerIter = layerIdMap_.begin();
     while (layerIter != layerIdMap_.end()) {
-        const std::shared_ptr<HdiLayer> &hdiLayer = layerIter->second;
+        const std::shared_ptr<HdiLayer>& hdiLayer = layerIter->second;
         if (!hdiLayer->GetLayerStatus()) {
             layerIdMap_.erase(layerIter++);
         } else {
@@ -237,7 +237,7 @@ void HdiOutput::DeletePrevLayersLocked()
 
     auto iter = layersTobeRelease_.begin();
     while (iter != layersTobeRelease_.end()) {
-        const std::shared_ptr<HdiLayer> &hdiLayer = *iter;
+        const std::shared_ptr<HdiLayer>& hdiLayer = *iter;
         if (!hdiLayer->GetLayerStatus()) {
             layersTobeRelease_.erase(iter++);
         } else {
@@ -289,7 +289,7 @@ bool HdiOutput::CheckSupportCopybitMetadata()
     return false;
 }
 
-int32_t HdiOutput::CreateLayerLocked(uint64_t surfaceId, const std::shared_ptr<RSLayer> &rsLayer)
+int32_t HdiOutput::CreateLayerLocked(uint64_t surfaceId, const std::shared_ptr<RSLayer>& rsLayer)
 {
     std::shared_ptr<HdiLayer> hdiLayer = HdiLayer::CreateHdiLayer(screenId_);
     if (!hdiLayer->Init(rsLayer)) {
@@ -353,7 +353,7 @@ const std::vector<GraphicIRect>& HdiOutput::GetOutputDamages()
 void HdiOutput::GetComposeClientLayers(std::vector<std::shared_ptr<HdiLayer>>& clientLayers)
 {
     std::unique_lock<std::mutex> lock(mutex_);
-    for (const auto &[first, hdiLayer] : layerIdMap_) {
+    for (const auto& [first, hdiLayer] : layerIdMap_) {
         if (hdiLayer == nullptr || hdiLayer->GetRSLayer() == nullptr) {
             continue;
         }
@@ -466,7 +466,7 @@ int32_t HdiOutput::UpdateLayerCompType()
             continue;
         }
 
-        const std::shared_ptr<HdiLayer> &hdiLayer = iter->second;
+        const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
         hdiLayer->UpdateCompositionType(static_cast<GraphicCompositionType>(types[i]));
     }
 
@@ -553,7 +553,7 @@ int32_t HdiOutput::FlushScreen(std::vector<std::shared_ptr<HdiLayer>>& compClien
     }
 
     const auto& fbAcquireFence = fbEntry->acquireFence;
-    for (auto &hdiLayer : compClientLayers) {
+    for (auto& hdiLayer : compClientLayers) {
         if (hdiLayer != nullptr) {
             hdiLayer->MergeWithFramebufferFence(fbAcquireFence);
         }
@@ -619,7 +619,7 @@ int32_t HdiOutput::CommitAndGetReleaseFence(
     return ret;
 }
 
-void HdiOutput::UpdateThirdFrameAheadPresentFence(sptr<SyncFence> &fbFence)
+void HdiOutput::UpdateThirdFrameAheadPresentFence(sptr<SyncFence>& fbFence)
 {
     RS_TRACE_NAME_FMT("presentFenceIndex_ = %d", presentFenceIndex_);
     if (historicalPresentfences_.size() == NUMBER_OF_HISTORICAL_FRAMES) {
@@ -655,7 +655,7 @@ int32_t HdiOutput::UpdateInfosAfterCommit(sptr<SyncFence> fbFence)
         bool presentTimeUpdated = false;
         std::shared_ptr<HdiLayer> uniRenderLayer = nullptr;
         for (auto iter = layerIdMap_.begin(); iter != layerIdMap_.end(); ++iter) {
-            const std::shared_ptr<HdiLayer> &hdiLayer = iter->second;
+            const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
             RS_TRACE_NAME_FMT("HdiOutput::Iterate layerIdMap_ %u", iter->first);
             if (hdiLayer->RecordPresentTime(timestamp)) {
                 presentTimeUpdated = true;
@@ -789,7 +789,7 @@ std::unordered_map<std::shared_ptr<RSLayer>, sptr<SyncFence>> HdiOutput::GetLaye
             continue;
         }
 
-        const std::shared_ptr<HdiLayer> &hdiLayer = iter->second;
+        const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
         hdiLayer->MergeWithLayerFence(fences_[i]);
         res.emplace(hdiLayer->GetRSLayer(), hdiLayer->GetReleaseFence());
     }
@@ -846,8 +846,8 @@ void HdiOutput::DumpFps(std::string& result, const std::string& arg) const
         return;
     }
 
-    for (const LayerDumpInfo &layerInfo : dumpLayerInfos) {
-        const std::shared_ptr<HdiLayer> &hdiLayer = layerInfo.hdiLayer;
+    for (const LayerDumpInfo& layerInfo : dumpLayerInfos) {
+        const std::shared_ptr<HdiLayer>& hdiLayer = layerInfo.hdiLayer;
         if (arg == "UniRender") {
             if (hdiLayer->GetRSLayer()->GetUniRenderFlag()) {
                 result += "\n surface [" + arg + "] Id[" + std::to_string(layerInfo.surfaceId) + "]:\n";
@@ -877,8 +877,8 @@ void HdiOutput::DumpHitchs(std::string& result, const std::string& arg) const
     std::unique_lock<std::mutex> lock(mutex_);
     ReorderLayerInfoLocked(dumpLayerInfos);
     result.append("\n");
-    for (const LayerDumpInfo &layerInfo : dumpLayerInfos) {
-        const std::shared_ptr<HdiLayer> &hdiLayer = layerInfo.hdiLayer;
+    for (const LayerDumpInfo& layerInfo : dumpLayerInfos) {
+        const std::shared_ptr<HdiLayer>& hdiLayer = layerInfo.hdiLayer;
         if (hdiLayer->GetRSLayer()->GetUniRenderFlag()) {
             result += "\n window [" + arg + "] Id[" + std::to_string(layerInfo.surfaceId) + "]:\n";
             hdiLayer->SelectHitchsInfo(arg, result);
@@ -899,7 +899,7 @@ void HdiOutput::ClearFpsDump(std::string& result, const std::string& arg)
         return;
     }
 
-    for (const LayerDumpInfo &layerInfo : dumpLayerInfos) {
+    for (const LayerDumpInfo& layerInfo : dumpLayerInfos) {
         const std::shared_ptr<HdiLayer>& hdiLayer = layerInfo.hdiLayer;
         if (hdiLayer == nullptr || hdiLayer->GetRSLayer() == nullptr) {
             result += "layer is null.\n";
@@ -949,7 +949,7 @@ void HdiOutput::ReorderLayerInfoLocked(std::vector<LayerDumpInfo>& dumpLayerInfo
     std::sort(dumpLayerInfos.begin(), dumpLayerInfos.end(), Cmp);
 }
 
-int HdiOutput::GetBufferCacheSize()
+int HdiOutput::GetBufferCacheSize() const
 {
     return bufferCache_.size();
 }
@@ -959,11 +959,15 @@ void HdiOutput::ClearBufferCache()
     if (bufferCache_.empty()) {
         return;
     }
+    bufferCache_.clear();
+    if (device_ == nullptr) {
+        HLOGE("HdiOutput ClearBufferCache failed : HdiDevice is null");
+        return;
+    }
     int32_t ret = device_->ClearClientBuffer(screenId_);
     if (ret != GRAPHIC_DISPLAY_SUCCESS) {
         HLOGD("Call hdi ClearClientBuffer failed, ret is %{public}d", ret);
     }
-    bufferCache_.clear();
 }
 
 void HdiOutput::SetActiveRectSwitchStatus(bool flag, const GraphicIRect& activeRect)
@@ -990,7 +994,7 @@ RosenError HdiOutput::RegPrepareComplete(OnPrepareCompleteFunc func, void* data)
     return ROSEN_ERROR_OK;
 }
 
-static inline bool CmpZorder(const std::shared_ptr<RSLayer> &rsLayer1, const std::shared_ptr<RSLayer> &rsLayer2)
+static inline bool CmpZorder(const std::shared_ptr<RSLayer>& rsLayer1, const std::shared_ptr<RSLayer>& rsLayer2)
 {
     if (rsLayer1 == nullptr || rsLayer2 == nullptr) {
         return false;
@@ -1113,6 +1117,15 @@ void HdiOutput::SetScreenBacklight(uint32_t level)
 void HdiOutput::SetScreenPowerOnChanged(bool flag)
 {
     screenPowerOnChanged_ = flag;
+}
+
+int32_t HdiOutput::GetDisplayClientTargetProperty(int32_t& pixelFormat, int32_t& dataspace)
+{
+    int32_t ret = device_->GetDisplayClientTargetProperty(screenId_, pixelFormat, dataspace);
+    if (ret != GRAPHIC_DISPLAY_SUCCESS) {
+        HLOGD("Call hdi GetDisplayClientTargetProperty failed, ret is %{public}d", ret);
+    }
+    return ret;
 }
 } // namespace Rosen
 } // namespace OHOS

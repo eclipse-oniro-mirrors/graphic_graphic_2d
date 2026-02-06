@@ -16,21 +16,21 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_TRANSACTION_RS_RENDRE_INTERFACE_H
 #define RENDER_SERVICE_CLIENT_CORE_TRANSACTION_RS_RENDRE_INTERFACE_H
 
-#include <mutex>
-#include <map>
-
 #include "common/rs_common_def.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
 #include "transaction/rs_render_pipeline_client.h"
 #include "platform/drawing/rs_surface.h"
 #include "ui/rs_display_node.h"
 #include "ui/rs_surface_node.h"
+#include "platform/drawing/rs_surface.h"
+#include "transaction/rs_render_pipeline_client.h"
 
 namespace OHOS {
 namespace Rosen {
 using OcclusionChangeCallback = std::function<void(std::shared_ptr<RSOcclusionData>)>;
 using SurfaceOcclusionChangeCallback = std::function<void(float)>;
 class RSC_EXPORT RSRenderInterface {
+
 public:
     RSRenderInterface();
     ~RSRenderInterface() noexcept;
@@ -46,7 +46,7 @@ public:
 
     /**
      * @brief Get snapshot of surfaceNode, and security layer area is a drawn as a blur instead of white.
-     * @param node Indicates which node, usually point o a window.
+     * @param node Indicates which node, usually point to a window.
      * @param callback When the snapshot is complete, the callback will be triggered.
      * @param blurRadius Indicates blur radius of blur area.
      * @return return true if snaphot success, else return false.
@@ -101,13 +101,75 @@ public:
         bool isSync = false, const Drawing::Rect& specifiedAreaRect = Drawing::Rect(0.f, 0.f, 0.f, 0.f));
 
     /**
+     * @brief Get component snapshot.
+     * @param node can be rootNode、surfaceNode、canvasNode、CanvasDrawingNode.
+     * @param callback When the snapshot is complete, the callback will be triggered.
+     * @param RSSurfaceCaptureConfig Indicates RSSurfaceCaptureConfig.
+     * @return return true if snaphot success, else return false.
+     */
+    bool TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode> node,
+        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig = {});
+
+    /**
+     * @brief Get component snapshot Within the given node range.
+     * @param beginNode Indicates first child of snapshot.
+     * @param endNode Indicates end child of snapshot.
+     * @param useBeginNodeSize Indicates Whether use the size of begin node.
+     * @param callback When the snapshot is complete, the callback will be triggered.
+     * @param scaleX Indicates the scale of X-axis.
+     * @param scaleY Indicates the scale of Y-axis.
+     * @param isSync Indicates Whether wait until render is finished.
+     * @return return true if snaphot success, else return false.
+     */
+    bool TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode, bool useBeginNodeSize,
+        std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync);
+
+    /**
+     * @brief Get component snapshot Within the given node range.
+     * @param beginNode Indicates first child of snapshot.
+     * @param endNode Indicates end child of snapshot.
+     * @param useBeginNodeSize Indicates Whether use the size of begin node.
+     * @param callback When the snapshot is complete, the callback will be triggered.
+     * @param RSSurfaceCaptureConfig Indicates RSSurfaceCaptureConfig.
+     * @return return true if snaphot success, else return false.
+     */
+    bool TakeUICaptureInRangeWithConfig(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode,
+        bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback,
+        RSSurfaceCaptureConfig captureConfig = {});
+
+    /**
      * @brief Get a list of pixelmap information, each node of the component node tree will have a pixelmap.
      * @param node can be rootNode、surfaceNode、canvasNode、CanvasDrawingNode.
      * @return return a vector of pair, the first element is the NodeId, the second element is the pixelmap.
      */
-    std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>>
-        TakeSurfaceCaptureSoloNodeList(std::shared_ptr<RSNode> node);
-    
+    std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> TakeSurfaceCaptureSoloNodeList(
+    std::shared_ptr<RSNode> node);
+
+    /**
+     * @brief Take snapshot of displayNode.
+     * @param node Indicates a display node to be captured.
+     * @param callback Indicates callback to be triggered when snapshot is compeleted.
+     * @param captureConfig Indicates the configrutation items required for snapshot.
+     * @param checkDrmAndSurfaceLock Indicates the flag to check existing drm or surface lock window.
+     * @return return true if snaphot success, else return false.
+     */
+    bool TakeSurfaceCaptureWithAllWindows(std::shared_ptr<RSDisplayNode> node,
+        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig,
+        bool checkDrmAndSurfaceLock);
+
+    /**
+     * @brief Get snapshot of surfaceNode, and show the snapshot instead of surfaceNode.
+     * @param node Indicates which node, usually point to a window.
+     * @param isFreeze Indicates freeze or unfreeze this surfaceNode.
+     * @param callback When the snapshot is complete, the callback will be triggered.
+     * @param captureConfig Indicates the configuration items required for snapshot.
+     * @param blurRadius Indicates blur radius of blur area.
+     * @return return true if snaphot success, else return false.
+     */
+    bool SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode> node, bool isFreeze,
+        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig = {},
+        float blurRadius = 1E-6);
+
     /**
      * @brief Get snapshot of surfaceNode, and security layer area is a drawn normally, not white.
      * @param node Indicates which node, usually point to a window.
@@ -129,60 +191,12 @@ public:
         float scaleX, float scaleY);
 
     /**
-     * @brief Get component snapshot Within the given node range.
-     * @param beginNode Indicates first child of snapshot.
-     * @param endNode Indicates end child of snapshot.
-     * @param useBeginNodeSize Indicates Whether use the size of begin node.
-     * @param callback When the snapshot is complete, the callback will be triggered.
-     * @param scaleX Indicates the scale of X-axis.
-     * @param scaleY Indicates the scale of Y-axis.
-     * @param isSync Indicates Whether wait until render is finished.
-     * @return return true if snaphot success, else return false.
+     * @brief Set selfdrawing node to topLayer force use DSS.
+     * @param nodeId surfaceNode id.
+     * @param isTop is function switch.
+     * @param zOrder is zOrder of topLayer.
      */
-    bool TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode, bool useBeginNodeSize,
-        std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync);
-
-    /**
-     * @brief Take snapshot of displayNode.
-     * @param node Indicates a display node to be captured.
-     * @param callback Indicates callback to be triggered when snapshot is compeleted.
-     * @param captureConfig Indicates the configrutation items required for snapshot.
-     * @param checkDrmAndSurfaceLock Indicates the flag to check existing drm or surface lock window.
-     * @return return true if snaphot success, else return false.
-     */
-    bool TakeSurfaceCaptureWithAllWindows(std::shared_ptr<RSDisplayNode> node,
-        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig,
-        bool checkDrmAndSurfaceLock);
-
-    /**
-     * @brief Freeze or unfreeze screen.
-     * @param node Indicates a display node to freeze or unfreeze.
-     * @param isFreeze Indicates freeze or unfreeze the specified display node.
-     * @return return true if freeze or unfreeze success, else return false.
-     */
-    bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze);
-
-    /**
-     * @brief Get snapshot of surfaceNode, and show the snapshot instead of surfaceNode.
-     * @param node Indicates which node, usually point to a window.
-     * @param isFreeze Indicates freeze or unfreeze this surfaceNode.
-     * @param callback When the snapshot is complete, the callback will be triggered.
-     * @param captureConfig Indicates the configuration items required for snapshot.
-     * @param blurRadius Indicates blur radius of blur area.
-     * @return return true if snaphot success, else return false.
-     */
-    bool SetWindowFreezeImmediately(std::shared_ptr<RSSurfaceNode> node, bool isFreeze,
-        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig = {},
-        float blurRadius = 1E-6);
-
-    /**
-     * @brief Register a canvasNode as a container for nodes on the desktop.
-     * It is a child node of displayNode to achieve unified scalling and other effects.
-     * @param nodeId The id of the canvasNode, which will be moved below the displayNode of its subtree
-     * and marked as windowcontainer.
-     * @param value Mark a node as windowContainer or not.
-     */
-    void SetWindowContainer(NodeId nodeId, bool value);
+    void SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder);
 
     /**
      * @brief Register a callback to listen for the state of the buffer held by the DrawSurfaceBuffer OpItem,
@@ -203,12 +217,16 @@ public:
      */
     bool UnregisterSurfaceBufferCallback(pid_t pid, uint64_t uid);
 
+    /**
+     * @brief Register a canvasNode as a container for nodes on the desktop.
+     * It is a child node of displayNode to achieve unified scalling and other effects.
+     * @param nodeId The id of the canvasNode, which will be moved below the displayNode of its subtree
+     * and marked as windowcontainer.
+     * @param value Mark a node as windowContainer or not.
+     */
+    void SetWindowContainer(NodeId nodeId, bool value);
+
     bool RegisterTransactionDataCallback(uint64_t token, uint64_t timeStamp, std::function<void()> callback);
-
-    bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
-        float positionZ, float positionW);
-
-    void SetLayerTopForHWC(NodeId nodeId, bool isTop, uint32_t zOrder);
 
     /**
      * @brief Set the focus window information to renderService.
@@ -216,6 +234,18 @@ public:
      * @return 0 means success, others failed.
      */
     int32_t SetFocusAppInfo(const FocusAppInfo& info);
+
+    /**
+     * @brief Set the process ID list requiring frame dropping. Next time RS triggers rending,
+     * it will purge queued frames of corresponding self-rendering nodes in bufferQueue, and use the latest frame
+     * buffer for screen display.
+     * @param pidList Process ID list requiring frame dropping.
+     * @param dropFrameLevel Controls how many latest frames to retain:
+     *        - 0: No frame dropping (default)
+     *        - 1~N: Keep latest N frames, drop the rest
+     *        - >= bufferQueueSize: No frame dropping
+     */
+    void DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0);
 
     /**
      * @brief Set all anco node ForceDoDirect.
@@ -274,6 +304,24 @@ public:
      * @return Return true if high contrast text enabled, otherwise false.
      */
     bool GetHighContrastTextState();
+    /**
+     * @brief Freeze or unfreeze screen.
+     * @param node Indicates a display node to freeze or unfreeze.
+     * @param isFreeze Indicates freeze or unfreeze the specified display node.
+     * @return return true if freeze or unfreeze success, else return false.
+     */
+    bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze);
+    /**
+     * @brief Simplify the original interfaces set boundaries for cursor movement and reduce the workload.
+     * @param rsNodeId Indicates id of node.
+     * @param positionX Indicates x coordinate position.
+     * @param positionY Indicates y coordinate position.
+     * @param positionZ Indicates z coordinate position.
+     * @param positionW Indicates w coordinate position.
+     * @return return true if set success, else return false
+     */
+    bool SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY, float positionZ, float positionW);
+
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     /**
      * @brief Register Canvas SurfaceBuffer callback for memory attribution.
@@ -343,6 +391,15 @@ public:
     int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id);
 private:
     std::unique_ptr<RSRenderPipelineClient> renderPipelineClient_;
+     * @brief Set logical camera rotation correction, used to correct logical rotation.
+     * @param id Screen id.
+     * @param logicalCorrection Logical camera rotation correction, see ScreenRotation.
+     * @return 0 means success, others failed.
+     */
+    int32_t SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection);
+
+private:
+    std::unique_ptr<RSRenderPipelineClient> renderPiplineClient_;
     friend class RSUIContext;
     friend class RSApplicationAgentImpl;
     friend class RSDisplayNode;

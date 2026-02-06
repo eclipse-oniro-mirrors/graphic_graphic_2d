@@ -118,7 +118,7 @@ int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>&
 }
 
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
-    const Rect &srcRect)
+    const Rect &srcRect, bool transformEnabled)
 {
     return nullptr;
 }
@@ -259,6 +259,11 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
 {
 }
 
+int32_t RSRenderServiceClient::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    return StatusCode::RS_CONNECTION_ERROR;
+}
+
 RSScreenModeInfo RSRenderServiceClient::GetScreenActiveMode(ScreenId id)
 {
     return {};
@@ -291,6 +296,11 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
 
 void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
 {
+}
+
+PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
+{
+    return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
 }
 
 int32_t RSRenderServiceClient::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
@@ -455,7 +465,7 @@ uint32_t RSRenderServiceClient::SetScreenActiveRect(ScreenId id, const Rect& act
     return {};
 }
 
-void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offSetX, int32_t offSetY)
+void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY)
 {
 }
 
@@ -576,7 +586,7 @@ bool RSRenderServiceClient::NotifySoftVsyncRateDiscountEvent(uint32_t pid,
     return {};
 }
 
-void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
 }
 
@@ -655,15 +665,15 @@ bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenSta
     return false;
 }
 
-void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
-{
-}
-
 void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
 {
 }
 
 void RSRenderServiceClient::SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh)
+{
+}
+
+void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
 {
 }
 
@@ -686,17 +696,22 @@ int32_t RSRenderServiceClient::UnRegisterSelfDrawingNodeRectChangeCallback()
     return {};
 }
 
+void RSRenderServiceClient::NotifyPageName(const std::string &packageName,
+    const std::string &pageName, bool isEnter)
+{
+}
+
+bool RSRenderServiceClient::GetHighContrastTextState()
+{
+    return false;
+}
+
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 int32_t SetOverlayDisplayMode(int32_t mode)
 {
     return {};
 }
 #endif
-
-void RSRenderServiceClient::NotifyPageName(const std::string& packageName,
-    const std::string& pageName, bool isEnter)
-{
-}
 
 bool RSRenderServiceClient::SetBehindWindowFilterEnabled(bool enabled)
 {
@@ -708,7 +723,7 @@ bool RSRenderServiceClient::GetBehindWindowFilterEnabled(bool& enabled)
     return false;
 }
 
-int32_t RSRenderServiceClient::GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB)
+int32_t RSRenderServiceClient::GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB)
 {
     return {};
 }
@@ -721,6 +736,16 @@ void RSRenderServiceClient::AvcodecVideoStart(const std::vector<uint64_t>& uniqu
 void RSRenderServiceClient::AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
     const std::vector<std::string>& surfaceNameList, uint32_t fps)
 {
+}
+
+bool RSRenderServiceClient::AvcodecVideoGet(uint64_t uniqueId)
+{
+    return false;
+}
+ 
+bool RSRenderServiceClient::AvcodecVideoGetRecent()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

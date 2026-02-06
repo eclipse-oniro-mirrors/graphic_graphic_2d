@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,9 +26,7 @@
 #define LOG_TAG "RSRenderToComposerConnectionProxy"
 namespace OHOS {
 namespace Rosen {
-// static constexpr int32_t MAX_RETRY = 3;
 static constexpr int32_t MAX_RETRY_COUNT = 20;
-// static constexpr int32_t RETRY_INTERVAL = 1000; // 1000us = 1ms
 static constexpr int32_t RETRY_WAIT_TIME_US = 1000; // wait 1ms before retry SendRequest
 
 RSRenderToComposerConnectionProxy::RSRenderToComposerConnectionProxy(const sptr<IRemoteObject>& impl) :
@@ -122,8 +120,8 @@ void RSRenderToComposerConnectionProxy::ClearFrameBuffers()
     SendRequest(IRENDER_TO_COMPOSER_CONNECTION_CLEAR_FRAME_BUFFERS, parcel, reply, option);
 }
 
-RSComposerError RSRenderToComposerConnectionProxy::SendRequest(uint32_t command, MessageParcel &arg,
-    MessageParcel &reply, MessageOption &opt)
+RSComposerError RSRenderToComposerConnectionProxy::SendRequest(uint32_t command, MessageParcel& arg,
+    MessageParcel& reply, MessageOption& opt)
 {
     sptr<IRemoteObject> remote = Remote();
     if (remote == nullptr) {

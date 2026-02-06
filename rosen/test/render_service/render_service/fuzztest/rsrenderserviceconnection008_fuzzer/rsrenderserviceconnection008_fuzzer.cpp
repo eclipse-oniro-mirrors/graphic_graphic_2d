@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,11 +33,16 @@
 #include "securec.h"
 
 #include "pipeline/main_thread/rs_main_thread.h"
-#include "render_server/transaction/rs_client_to_service_connection.h"
 #include "transaction/rs_client_to_render_connection.h"
+<<<<<<< HEAD
 #include "platform/ohos/transaction/zidl/rs_irender_service.h"
 #include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
+=======
+#include "render_server/transaction/rs_client_to_service_connection.h"
+#include "platform/ohos/rs_irender_service.h"
+>>>>>>> master
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
+#include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
 #include "transaction/rs_transaction_proxy.h"
 
 namespace OHOS {
@@ -47,7 +52,11 @@ sptr<OHOS::Rosen::RSScreenManager> screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::R
 RSMainThread* mainThread_ = RSMainThread::Instance();
 sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
 sptr<RSClientToRenderConnectionStub> toRenderConnectionStub_ = nullptr;
+<<<<<<< HEAD
 sptr<OHOS::Rosen::RSRenderService> renderService_ = nullptr;
+=======
+sptr<RSIConnectionToken> token_ = new IRemoteStub<RSIConnectionToken>();
+>>>>>>> master
 const std::string CONFIG_FILE = "/etc/unirender.config";
 std::string g_originTag = "";
 
@@ -64,12 +73,11 @@ const uint8_t DO_GET_SCREEN_COLORSPACE = 8;
 const uint8_t DO_SET_SCREEN_COLORSPACE = 9;
 const uint8_t DO_GET_SCREEN_TYPE = 10;
 const uint8_t DO_SET_SCREEN_SKIP_FRAME_INTERVAL = 11;
-const uint8_t DO_GET_BITMAP = 12;
-const uint8_t DO_GET_PIXELMAP = 13;
+const uint8_t DO_GET_SCREEN_HDR_STATUS = 12;
+const uint8_t DO_SET_LOGICAL_CAMERA_ROTATION_CORRECTION = 13;
 const uint8_t TARGET_SIZE = 14;
-const uint8_t DO_GET_SCREEN_HDR_STATUS = 15;
 
-sptr<RSIClientToServiceConnection> CONN = nullptr;
+
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -86,19 +94,6 @@ T GetData()
     if (ret != EOK) {
         return {};
     }
-    g_pos += objectSize;
-    return object;
-}
-
-template<>
-std::string GetData()
-{
-    size_t objectSize = GetData<uint8_t>();
-    std::string object(objectSize, '\0');
-    if (DATA == nullptr || objectSize > g_size - g_pos) {
-        return object;
-    }
-    object.assign(reinterpret_cast<const char*>(DATA + g_pos), objectSize);
     g_pos += objectSize;
     return object;
 }
@@ -133,7 +128,10 @@ bool Init(const uint8_t* data, size_t size)
     DATA = data;
     g_size = size;
     g_pos = 0;
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     g_originTag = ReadUnirenderConfig();
     bool enableForAll = GetData<bool>();
     std::string tag = enableForAll ? "ENABLED_FOR_ALL" : "DISABLED";
@@ -147,21 +145,6 @@ void TearDown()
     WriteUnirenderConfig(g_originTag);
 }
 } // namespace
-
-namespace Mock {
-void CreateVirtualScreenStubbing(ScreenId screenId)
-{
-    uint32_t width = GetData<uint32_t>();
-    uint32_t height = GetData<uint32_t>();
-    int32_t flags = GetData<int32_t>();
-    std::string name = GetData<std::string>();
-    // Random name of IBufferProducer is not necessary
-    sptr<IBufferProducer> bp = IConsumerSurface::Create("DisplayNode")->GetProducer();
-    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
-
-    CONN->CreateVirtualScreen(name, width, height, pSurface, screenId, flags);
-}
-} // namespace Mock
 
 void DoCreatePixelMapFromSurface()
 {
@@ -335,6 +318,7 @@ void DoSetScreenSkipFrameInterval()
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
+<<<<<<< HEAD
 void DoGetBitmap()
 {
     uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BITMAP);
@@ -366,6 +350,8 @@ void DoGetPixelmap()
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
+=======
+>>>>>>> master
 void DoGetScreenHDRStatus()
 {
     uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_SCREEN_HDR_STATUS);
@@ -376,6 +362,24 @@ void DoGetScreenHDRStatus()
     dataParcel.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
     toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+<<<<<<< HEAD
+=======
+}
+
+void DoSetLogicalCameraRotationCorrection()
+{
+    uint32_t code =
+        static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_LOGICAL_CAMERA_ROTATION_CORRECTION);
+    MessageOption option;
+    MessageParcel dataParcel;
+    MessageParcel replyParcel;
+    ScreenId id = GetData<uint64_t>();
+    uint32_t logicalCorrection = GetData<uint32_t>();
+    dataParcel.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    dataParcel.WriteUint64(id);
+    dataParcel.WriteUint32(logicalCorrection);
+    toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+>>>>>>> master
 }
 } // namespace Rosen
 } // namespace OHOS
@@ -394,6 +398,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
     OHOS::sptr<OHOS::Rosen::VSyncDistributor> appVSyncDistributor_ =
         new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
+<<<<<<< HEAD
 
     OHOS::Rosen::renderService_ = OHOS::sptr<OHOS::Rosen::RSRenderService>::MakeSptr();
     auto vsyncManager = OHOS::sptr<OHOS::Rosen::RSVsyncManager>::MakeSptr();
@@ -432,6 +437,19 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 //     OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
 // #endif
 //     // OHOS::Rosen::RSHardwareThread::Instance().Start();
+=======
+    OHOS::Rosen::toServiceConnectionStub_ = new OHOS::Rosen::RSClientToServiceConnection(OHOS::Rosen::g_pid, nullptr,
+        OHOS::Rosen::mainThread_, OHOS::Rosen::screenManagerPtr_, token->AsObject(), appVSyncDistributor_);
+    OHOS::Rosen::toRenderConnectionStub_ = new OHOS::Rosen::RSClientToRenderConnection(OHOS::Rosen::g_pid, nullptr,
+        OHOS::Rosen::mainThread_, OHOS::Rosen::screenManagerPtr_, token->AsObject(), appVSyncDistributor_);
+#ifdef RS_ENABLE_VK
+    if (OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::VULKAN ||
+        OHOS::Rosen::RSSystemProperties::GetGpuApiType() == OHOS::Rosen::GpuApiType::DDGR) {
+        OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
+    }
+#endif
+    // OHOS::Rosen::RSHardwareThread::Instance().Start();
+>>>>>>> master
     return 0;
 }
 
@@ -480,14 +498,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SET_SCREEN_SKIP_FRAME_INTERVAL:
             OHOS::Rosen::DoSetScreenSkipFrameInterval();
             break;
-        case OHOS::Rosen::DO_GET_BITMAP:
-            OHOS::Rosen::DoGetBitmap();
-            break;
-        case OHOS::Rosen::DO_GET_PIXELMAP:
-            OHOS::Rosen::DoGetPixelmap();
-            break;
         case OHOS::Rosen::DO_GET_SCREEN_HDR_STATUS:
             OHOS::Rosen::DoGetScreenHDRStatus();
+            break;
+        case OHOS::Rosen::DO_SET_LOGICAL_CAMERA_ROTATION_CORRECTION:
+            OHOS::Rosen::DoSetLogicalCameraRotationCorrection();
             break;
         default:
             return -1;

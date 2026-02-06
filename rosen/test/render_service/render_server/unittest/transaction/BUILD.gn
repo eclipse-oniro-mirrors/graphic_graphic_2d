@@ -64,7 +64,7 @@ ohos_unittest("RSRenderToServiceConnectionProxyTest") {
     deps = [
         "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
         "$graphic_2d_root/rosen/modules/composer:libcomposer",
-        "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+        "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
         "$graphic_2d_root/rosen/modules/render_service:librender_service",
         "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
         "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
@@ -146,7 +146,7 @@ ohos_unittest("RSRenderToServiceConnectionStubTest") {
     deps = [
         "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
         "$graphic_2d_root/rosen/modules/composer:libcomposer",
-        "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+        "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
         "$graphic_2d_root/rosen/modules/render_service:librender_service",
         "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
         "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
@@ -230,7 +230,7 @@ ohos_unittest("RSRenderToServiceConnectionTest") {
     deps = [
         "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
         "$graphic_2d_root/rosen/modules/composer:libcomposer",
-        "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+        "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
         "$graphic_2d_root/rosen/modules/render_service:librender_service",
         "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
         "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",

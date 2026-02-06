@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,10 +49,15 @@ sptr<OHOS::Rosen::RSRenderService> renderService_ = nullptr;
 namespace {
 const uint8_t DO_SHOW_WATERMARK = 0;
 const uint8_t DO_SET_WATERMARK = 1;
-const uint8_t DO_REGISTER_TRANSACTION_DATA_CALLBACK = 2;
-const uint8_t TARGET_SIZE = 3;
+const uint8_t DO_SET_SURFACE_WATERMARK = 2;
+const uint8_t DO_CLEAR_SURFACE_WATERMARK_FOR_NODES = 3;
+const uint8_t DO_CLEAR_SURFACE_WATERMARK = 4;
+const uint8_t TARGET_SIZE = 5;
 
+<<<<<<< HEAD
 sptr<RSIClientToServiceConnection> CONN = nullptr;
+=======
+>>>>>>> master
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -99,21 +104,6 @@ bool Init(const uint8_t* data, size_t size)
 }
 } // namespace
 
-namespace Mock {
-void CreateVirtualScreenStubbing(ScreenId screenId)
-{
-    uint32_t width = GetData<uint32_t>();
-    uint32_t height = GetData<uint32_t>();
-    int32_t flags = GetData<int32_t>();
-    std::string name = GetData<std::string>();
-    // Random name of IBufferProducer is not necessary
-    sptr<IBufferProducer> bp = IConsumerSurface::Create("DisplayNode")->GetProducer();
-    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
-
-    CONN->CreateVirtualScreen(name, width, height, pSurface, screenId, flags);
-}
-} // namespace Mock
-
 void DoShowWatermark()
 {
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SHOW_WATERMARK);
@@ -122,14 +112,21 @@ void DoShowWatermark()
     MessageOption option;
 
     bool isShow = GetData<bool>();
+    int width = GetData<int32_t>();
+    int height = GetData<int32_t>();
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    dataParcel.WriteParcelable(pixelmap.get());
     dataParcel.WriteBool(isShow);
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 void DoSetWatermark()
 {
-    std::string name = "name";
+    std::string name = GetData<std::string>();
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
@@ -137,19 +134,31 @@ void DoSetWatermark()
         return;
     }
     option.SetFlags(MessageOption::TF_SYNC);
+    int width = GetData<int32_t>();
+    int height = GetData<int32_t>();
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
     dataP.WriteString(name);
+<<<<<<< HEAD
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_WATERMARK);
+=======
+    dataP.WriteParcelable(pixelmap.get());
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_WATERMARK);
+>>>>>>> master
     if (toServiceConnectionStub_ == nullptr) {
         return;
     }
     toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
-void DoRegisterTransactionDataCallback()
+void DoSetSurfaceWatermark()
 {
-    MessageParcel dataP;
+    MessageParcel dataParcel;
     MessageParcel reply;
     MessageOption option;
+<<<<<<< HEAD
     if (!dataP.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
         return;
     }
@@ -166,6 +175,86 @@ void DoRegisterTransactionDataCallback()
         return;
     }
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
+=======
+    if (!dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    pid_t pid = GetData<int32_t>();
+    std::string name = GetData<std::string>();
+    bool hasPixelMap = GetData<bool>();
+    int width = GetData<int32_t>();
+    int height = GetData<int32_t>();
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
+    std::vector<NodeId> nodeList;
+    uint8_t listSize = GetData<uint8_t>();
+    for (int i = 0; i < listSize; i++) {
+        NodeId nodeId = GetData<NodeId>();
+        nodeList.push_back(nodeId);
+    }
+    uint8_t watermarkType = GetData<uint8_t>();
+    dataParcel.WriteInt32(pid);
+    dataParcel.WriteString(name);
+    dataParcel.WriteBool(hasPixelMap);
+    dataParcel.WriteParcelable(pixelmap.get());
+    dataParcel.WriteUInt64Vector(nodeList);
+    dataParcel.WriteUint8(watermarkType);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SURFACE_WATERMARK);
+    if (toServiceConnectionStub_ == nullptr) {
+        return;
+    }
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, reply, option);
+}
+
+void DoClearSurfaceWatermarkForNodes()
+{
+    MessageParcel dataParcel;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    pid_t pid = GetData<int32_t>();
+    std::string name = GetData<std::string>();
+    std::vector<NodeId> nodeList;
+    uint8_t listSize = GetData<uint8_t>();
+    for (int i = 0; i < listSize; i++) {
+        NodeId nodeId = GetData<NodeId>();
+        nodeList.push_back(nodeId);
+    }
+    dataParcel.WriteInt32(pid);
+    dataParcel.WriteString(name);
+    dataParcel.WriteUInt64Vector(nodeList);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK_FOR_NODES);
+    if (toServiceConnectionStub_ == nullptr) {
+        return;
+    }
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, reply, option);
+}
+
+void DoClearSurfaceWatermark()
+{
+    MessageParcel dataParcel;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    pid_t pid = GetData<int32_t>();
+    std::string name = GetData<std::string>();
+    dataParcel.WriteInt32(pid);
+    dataParcel.WriteString(name);
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CLEAR_SURFACE_WATERMARK);
+    if (toServiceConnectionStub_ == nullptr) {
+        return;
+    }
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, reply, option);
+>>>>>>> master
 }
 
 } // namespace Rosen
@@ -234,11 +323,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SHOW_WATERMARK:
             OHOS::Rosen::DoShowWatermark();
             break;
-        case OHOS::Rosen::DO_REGISTER_TRANSACTION_DATA_CALLBACK:
-            OHOS::Rosen::DoRegisterTransactionDataCallback();
-            break;
         case OHOS::Rosen::DO_SET_WATERMARK:
             OHOS::Rosen::DoSetWatermark();
+            break;
+        case OHOS::Rosen::DO_SET_SURFACE_WATERMARK:
+            OHOS::Rosen::DoSetSurfaceWatermark();
+            break;
+        case OHOS::Rosen::DO_CLEAR_SURFACE_WATERMARK_FOR_NODES:
+            OHOS::Rosen::DoClearSurfaceWatermarkForNodes();
+            break;
+        case OHOS::Rosen::DO_CLEAR_SURFACE_WATERMARK:
+            OHOS::Rosen::DoClearSurfaceWatermark();
             break;
         default:
             return -1;

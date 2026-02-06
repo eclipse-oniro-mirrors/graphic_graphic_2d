@@ -47,10 +47,12 @@ public:
     ResType SetPixelFormat(GraphicPixelFormat pixelFormat);
     ResType SetScreenHDRFormat(ScreenHDRFormat hdrFormat);
     ResType SetVisibleRectOption(bool enableVisibleRect, const Rect& mainScreenRect, bool supportRotation);
-    ResType SetWhiteList(const std::unordered_set<uint64_t>& whiteList);
-    ResType SetBlackList(const std::unordered_set<uint64_t>& blackList);
-    ResType AddBlackList(const std::vector<uint64_t>& blackList);
-    ResType RemoveBlackList(const std::vector<uint64_t>& blackList);
+    ResType SetWhiteList(const std::unordered_set<NodeId>& whiteList);
+    void AddWhiteList(const std::vector<NodeId>& whiteList);
+    void RemoveWhiteList(const std::vector<NodeId>& whiteList);
+    ResType SetBlackList(const std::unordered_set<NodeId>& blackList);
+    ResType AddBlackList(const std::vector<NodeId>& blackList);
+    ResType RemoveBlackList(const std::vector<NodeId>& blackList);
     ResType SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
     ResType SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList);
     ResType SetSecurityMask(std::shared_ptr<Media::PixelMap> securityMask);
@@ -99,8 +101,8 @@ public:
     bool GetEnableVisibleRect() const;
     Rect GetMainScreenVisibleRect() const;
     bool GetVisibleRectSupportRotation() const;
-    std::unordered_set<uint64_t> GetWhiteList() const;
-    std::unordered_set<uint64_t> GetBlackList() const;
+    std::unordered_set<NodeId> GetWhiteList() const;
+    std::unordered_set<NodeId> GetBlackList() const;
     std::unordered_set<uint8_t> GetTypeBlackList() const;
     std::vector<uint64_t> GetSecurityExemptionList() const;
     std::shared_ptr<Media::PixelMap> GetSecurityMask() const;

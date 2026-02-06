@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <securec.h>
 
+#include "ipc_callbacks/rs_surface_buffer_callback.h"
 #include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_context.h"
@@ -235,7 +236,7 @@ bool RSDirtyRegionManagerFuzzTest(const uint8_t* data, size_t size)
     return true;
 }
 
-bool RSScreenRenderParamsNodeFuzzTest(const uint8_t* data, size_t size)
+bool RSScreenRenderNodeFuzzTest(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -243,13 +244,14 @@ bool RSScreenRenderParamsNodeFuzzTest(const uint8_t* data, size_t size)
 
     // getdata
     NodeId id = GetData<NodeId>();
+    uint64_t screenId = GetData<uint64_t>();
     std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
     std::shared_ptr<RSBaseRenderNode> node = std::make_shared<RSBaseRenderNode>(id, context);
     std::vector<RSBaseRenderNode::SharedPtr> vec = { node };
     bool isUniRender = GetData<bool>();
     CompositeType type = GetData<CompositeType>();
     bool flag = GetData<bool>();
-    RSScreenRenderNode::SharedPtr screenPtrNode = std::make_shared<RSScreenRenderNode>(id, 1, context);
+    RSScreenRenderNode::SharedPtr screenPtrNode = std::make_shared<RSScreenRenderNode>(id, screenId, context);
     uint32_t refreshRate = GetData<uint32_t>();
     uint32_t skipFrameInterval = GetData<uint32_t>();
     int32_t bufferage = GetData<int32_t>();
@@ -258,7 +260,7 @@ bool RSScreenRenderParamsNodeFuzzTest(const uint8_t* data, size_t size)
     int width = GetData<int>();
     int height = GetData<int>();
     RectI rect(left, top, width, height);
-    RSScreenRenderNode screenNode(id, 1, context);
+    RSScreenRenderNode screenNode(id, screenId, context);
 
     screenNode.CollectSurface(node, vec, isUniRender, false);
     screenNode.SetCompositeType(type);
@@ -435,6 +437,13 @@ bool RSSurfaceCallbackManagerFuzzerTest(const uint8_t* data, size_t size)
     uint32_t id = GetData<uint32_t>();
     std::vector<uint32_t> bufferIdVec{id};
     RSSurfaceBufferCallbackManager::Instance().SerializeBufferIdVec(bufferIdVec);
+    pid_t pid = GetData<pid_t>();
+    uint64_t uid = GetData<uint64_t>();
+    RSSurfaceBufferCallbackManager::Instance().RegisterSurfaceBufferCallback(
+        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback ({
+            .OnFinish = [](const FinishCallbackRet& ret) {},
+            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {},
+        }));
     RSSurfaceBufferCallbackManager::Instance().RunSurfaceBufferCallback();
 
     return true;
@@ -493,7 +502,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::RSContextFuzzTest(data, size);
     OHOS::Rosen::RSCanvasRenderNodeFuzzTest(data, size);
     OHOS::Rosen::RSDirtyRegionManagerFuzzTest(data, size);
-    OHOS::Rosen::RSScreenRenderParamsNodeFuzzTest(data, size);
+    OHOS::Rosen::RSScreenRenderNodeFuzzTest(data, size);
     OHOS::Rosen::RSDrawCmdListFuzzTest(data, size);
     OHOS::Rosen::RSOcclusionConfigFuzzTest(data, size);
 

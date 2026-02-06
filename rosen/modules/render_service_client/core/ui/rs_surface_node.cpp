@@ -140,7 +140,8 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         // codes for arkui-x
 #if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS) && !defined(SCREENLESS_DEVICE)
         if ((type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) &&
-            (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface")) {
+            (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface") ||
+            (surfaceNodeConfig.SurfaceNodeName == "xcomponentSurface")) {
             RSSurfaceExtConfig config = {
                 .type = RSSurfaceExtType::SURFACE_PLATFORM_TEXTURE,
                 .additionalData = nullptr,
@@ -629,14 +630,6 @@ void RSSurfaceNode::SetFreeze(bool isFreeze)
     AddCommand(command, true);
 }
 
-std::pair<std::string, std::string> RSSurfaceNode::SplitSurfaceNodeName(std::string surfaceNodeName)
-{
-    if (auto position = surfaceNodeName.find("#");  position != std::string::npos) {
-        return std::make_pair(surfaceNodeName.substr(0, position), surfaceNodeName.substr(position + 1));
-    }
-    return std::make_pair("", surfaceNodeName);
-}
-
 RSSurfaceNode::RSSurfaceNode(
     const RSSurfaceNodeConfig& config, bool isRenderServiceNode, std::shared_ptr<RSUIContext> rsUIContext)
     : RSNode(isRenderServiceNode, config.isTextureExportNode, rsUIContext, true), name_(config.SurfaceNodeName)
@@ -771,9 +764,7 @@ void RSSurfaceNode::CreateSurfaceExt(const RSSurfaceExtConfig& config)
         return;
     }
 #ifdef ROSEN_IOS
-    if (texture->GetSurfaceExtConfig().additionalData == nullptr) {
-        texture->UpdateSurfaceExtConfig(config);
-    }
+    texture->UpdateSurfaceExtConfig(config);
 #endif
     ROSEN_LOGD("RSSurfaceNode::CreateSurfaceExt %{public}" PRIu64 " type %{public}u", GetId(), config.type);
     std::unique_ptr<RSCommand> command =
@@ -902,6 +893,9 @@ void RSSurfaceNode::SetHDRPresent(bool hdrPresent, NodeId id)
 
 void RSSurfaceNode::SetSkipDraw(bool skip)
 {
+    if (isSkipDraw_ == skip) {
+        return;
+    }
     isSkipDraw_ = skip;
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetSkipDraw>(GetId(), skip);
@@ -988,7 +982,7 @@ void RSSurfaceNode::SetApiCompatibleVersion(uint32_t version)
 void RSSurfaceNode::SetSourceVirtualDisplayId(ScreenId screenId)
 {
     std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSourceVirtualDisplayId>(GetId(), screenId);
+        std::make_unique<RSSurfaceNodeSetSourceVirtualScreenId>(GetId(), screenId);
     AddCommand(command, true);
 }
 
@@ -1089,6 +1083,20 @@ void RSSurfaceNode::SetContainerWindowTransparent(bool isContainerWindowTranspar
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetContainerWindowTransparent>(GetId(), isContainerWindowTransparent);
     AddCommand(command, true);
+}
+
+void RSSurfaceNode::SetAppRotationCorrection(ScreenRotation appRotationCorrection)
+{
+    if (appRotationCorrection > ScreenRotation::INVALID_SCREEN_ROTATION) {
+        RS_LOGE(
+            "RSSurfaceNode::SetAppRotationCorrection %{public}" PRIu64 " set invalid AppRotationCorrection", GetId());
+        return;
+    }
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetAppRotationCorrection>(GetId(), appRotationCorrection);
+    AddCommand(command, true);
+    RS_LOGD("RSSurfaceNode::SetAppRotationCorrection: Node: %{public}" PRIu64 ", appRotationCorrection: %{public}u",
+        GetId(), appRotationCorrection);
 }
 } // namespace Rosen
 } // namespace OHOS

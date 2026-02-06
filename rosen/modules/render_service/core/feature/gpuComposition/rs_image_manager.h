@@ -43,6 +43,7 @@ public:
             UnMapImageFromSurfaceBuffer(bufferId);
         }
     }
+    virtual void UnMapImageFromSurfaceBuffer(const std::unordered_set<uint64_t>& unmappedCache) { return; }
     virtual std::shared_ptr<Drawing::Image> CreateImageFromBuffer(
         RSPaintFilterCanvas& canvas, const BufferDrawParam& params,
         const std::shared_ptr<Drawing::ColorSpace>& drawingColorSpace) = 0;

@@ -349,6 +349,14 @@ void RSRenderComposerAgent::ClearRefreshRateCounts(std::string& dumpString)
     ).wait();
 }
 
+void RSRenderComposerAgent::HandlePowerStatus(ScreenPowerStatus status)
+{
+    if (rsRenderComposer_ == nullptr) {
+        return;
+    }
+    rsRenderComposer_->HandlePowerStatus(status);
+}
+
 void RSRenderComposerAgent::PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer)
 {
     if (buffer && rsRenderComposer_) {

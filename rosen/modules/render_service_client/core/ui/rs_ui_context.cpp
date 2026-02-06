@@ -117,8 +117,24 @@ void RSUIContext::RemoveAnimationInner(const std::shared_ptr<RSAnimation>& anima
     animations_.erase(animation->GetId());
 }
 
+void RSUIContext::SetRequestVsyncCallback(const std::function<void()>& callback)
+{
+    requestVsyncCallback_ = callback;
+}
+
+void RSUIContext::RequestVsyncCallback()
+{
+    if (requestVsyncCallback_ == nullptr) {
+        ROSEN_LOGE("RSUIContext::RequestVsyncCallback failed requestVsyncCallback_ is null, token=%{public}" PRIu64 "",
+            token_);
+        return;
+    }
+    requestVsyncCallback_();
+}
+
 void RSUIContext::SetUITaskRunner(const TaskRunner& uiTaskRunner)
 {
+    std::lock_guard<std::recursive_mutex> lock(uiTaskRunnersVisitorMutex_);
     taskRunner_ = uiTaskRunner;
     if (rsTransactionHandler_) {
         rsTransactionHandler_->SetUITaskRunner(uiTaskRunner);
@@ -132,6 +148,7 @@ void RSUIContext::PostTask(const std::function<void()>& task)
 
 void RSUIContext::PostDelayTask(const std::function<void()>& task, uint32_t delay)
 {
+    std::lock_guard<std::recursive_mutex> lock(uiTaskRunnersVisitorMutex_);
     if (taskRunner_ == nullptr) {
         ROSEN_LOGW(
             "multi-instance RSUIContext::PostDelayTask failed, taskRunner is empty, token=%{public}" PRIu64, token_);
@@ -171,14 +188,41 @@ void RSUIContext::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t taskI
     transaction->FlushImplicitTransaction();
 }
 
-void RSUIContext::DetachFromUI()
+int32_t RSUIContext::GetUiPiplineNum()
 {
-    detachedFromUI_ = true;
+    std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
+    return uiPipelineNum_;
 }
 
-bool RSUIContext::HasDetachedFromUI() const
+void RSUIContext::DetachFromUI()
 {
-    return detachedFromUI_;
+    std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
+    if (uiPipelineNum_ <= 0) {
+        ROSEN_LOGE("RSUIContext::DetachFromUI failed. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_,
+            uiPipelineNum_);
+        return;
+    }
+    uiPipelineNum_--;
+    ROSEN_LOGI(
+        "RSUIContext::DetachFromUI. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_, uiPipelineNum_);
+}
+
+void RSUIContext::AttachFromUI()
+{
+    std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
+    ROSEN_LOGI(
+        "RSUIContext::AttachFromUI. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_, uiPipelineNum_);
+    if (uiPipelineNum_ == UI_PiPLINE_NUM_UNDEFINED) {
+        uiPipelineNum_ = 1;
+        return;
+    }
+    uiPipelineNum_++;
+}
+
+bool RSUIContext::HasTaskRunner()
+{
+    std::lock_guard<std::recursive_mutex> lock(uiTaskRunnersVisitorMutex_);
+    return taskRunner_ != nullptr;
 }
 
 void RSUIContext::MoveModifier(std::shared_ptr<RSUIContext> dstUIContext, NodeId nodeId)

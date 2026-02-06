@@ -41,6 +41,7 @@ public:
     void ClearFpsDump(std::string& dumpString, std::string& arg);
     void HitchsDump(std::string& dumpString, std::string& arg);
     void RefreshRateCounts(std::string& dumpString);
+    void HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status);
     void ClearRefreshRateCounts(std::string& dumpString);
 
 private:

@@ -19,6 +19,7 @@
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_logical_display_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -360,5 +361,84 @@ HWTEST_F(RSRenderNodeMapTest, AttachToDisplayTest, TestSize.Level1)
     ScreenId screenId = 1;
     RSRenderNodeMap rsRenderNodeMap;
     rsRenderNodeMap.AttachToDisplay(node, screenId, false);
+}
+
+/**
+ * @tc.name: FilterNodeByPid003
+ * @tc.desc: test results of FilterNodeByPid
+ * @tc.type:FUNC
+ * @tc.require: issueI9VAI2
+ */
+HWTEST_F(RSRenderNodeMapTest, FilterNodeByPid003, TestSize.Level1)
+{
+    auto pid = getpid();
+    uint32_t curId = 1;
+    NodeId id = ((NodeId)pid << 32) | curId;
+
+    RSRenderNodeMap rsRenderNodeMap;
+    rsRenderNodeMap.FilterNodeByPid(1);
+    RSDisplayNodeConfig config;
+    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id, config);
+    rsRenderNodeMap.logicalDisplayNodeMap_[id] = displayNode;
+    rsRenderNodeMap.FilterNodeByPid(pid);
+    EXPECT_FALSE(!rsRenderNodeMap.logicalDisplayNodeMap_.empty());
+}
+
+/**
+ * @tc.name: RegisterNeedAttachedNodeTest
+ * @tc.desc: test results of RegisterNeedAttachedNode
+ * @tc.type:FUNC
+ * @tc.require: issueI9VAI2
+ */
+HWTEST_F(RSRenderNodeMapTest, RegisterNeedAttachedNodeTest, TestSize.Level1)
+{
+    auto pid = getpid();
+    uint32_t curId = 1;
+    NodeId id = ((NodeId)pid << 32) | curId;
+    auto node = std::make_shared<RSSurfaceRenderNode>(id);
+    RSRenderNodeMap rsRenderNodeMap;
+    rsRenderNodeMap.RegisterNeedAttachedNode(node);
+    EXPECT_FALSE(rsRenderNodeMap.needAttachedNode_.empty());
+}
+ 
+/**
+ * @tc.name: AttachToDisplayTest002
+ * @tc.desc: test results of AttachToDisplay
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSRenderNodeMapTest, AttachToDisplayTest002, TestSize.Level1)
+{
+    auto pid = getpid();
+    uint32_t curId = 1;
+    NodeId id = ((NodeId)pid << 32) | curId;
+ 
+    RSRenderNodeMap rsRenderNodeMap;
+    RSDisplayNodeConfig config;
+    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(id, config);
+    rsRenderNodeMap.logicalDisplayNodeMap_[id] = displayNode;
+    RSSurfaceRenderNodeConfig surfaceRenderNodeconfig = {
+        .id = 0, .nodeType = RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE};
+    auto node = std::make_shared<RSSurfaceRenderNode>(surfaceRenderNodeconfig);
+    EXPECT_NE(node, nullptr);
+    ScreenId screenId = 1;
+    rsRenderNodeMap.AttachToDisplay(node, screenId, false);
+}
+ 
+/**
+ * @tc.name: AttachToDisplayTest003
+ * @tc.desc: test results of AttachToDisplay
+ * @tc.type: FUNC
+ * @tc.require: issueIAI1VN
+ */
+HWTEST_F(RSRenderNodeMapTest, AttachToDisplayTest003, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSSurfaceRenderNodeConfig config = {.id = id};
+    auto node = std::make_shared<RSSurfaceRenderNode>(config);
+    EXPECT_NE(node, nullptr);
+    ScreenId screenId = 1;
+    RSRenderNodeMap rsRenderNodeMap;
+    rsRenderNodeMap.AttachToDisplay(node, screenId, true);
 }
 } // namespace OHOS::Rosen

@@ -42,7 +42,6 @@ const char* DefaultLocale()
 ParagraphBuilderImpl::ParagraphBuilderImpl(
     const ParagraphStyle& style, std::shared_ptr<txt::FontCollection> fontCollection)
 {
-    threadId_ = pthread_self();
     builder_ = skt::ParagraphBuilder::make(TextStyleToSkStyle(style), fontCollection->CreateSktFontCollection());
 }
 
@@ -50,19 +49,16 @@ ParagraphBuilderImpl::~ParagraphBuilderImpl() = default;
 
 void ParagraphBuilderImpl::PushStyle(const TextStyle& style)
 {
-    RecordDifferentPthreadCall(__FUNCTION__);
     builder_->pushStyle(TextStyleToSkStyle(style));
 }
 
 void ParagraphBuilderImpl::Pop()
 {
-    RecordDifferentPthreadCall(__FUNCTION__);
     builder_->pop();
 }
 
 void ParagraphBuilderImpl::AddText(const std::u16string& text)
 {
-    RecordDifferentPthreadCall(__FUNCTION__);
     if (TextBundleConfigParser::GetInstance().IsTargetApiVersion(SINCE_API18_VERSION)) {
         std::u16string wideText = text;
         Utf16Utils::HandleIncompleteSurrogatePairs(wideText);
@@ -74,7 +70,6 @@ void ParagraphBuilderImpl::AddText(const std::u16string& text)
 
 void ParagraphBuilderImpl::AddPlaceholder(PlaceholderRun& run)
 {
-    RecordDifferentPthreadCall(__FUNCTION__);
     skt::PlaceholderStyle placeholderStyle;
     placeholderStyle.fHeight = run.height;
     placeholderStyle.fWidth = run.width;
@@ -87,7 +82,6 @@ void ParagraphBuilderImpl::AddPlaceholder(PlaceholderRun& run)
 
 std::unique_ptr<Paragraph> ParagraphBuilderImpl::Build()
 {
-    RecordDifferentPthreadCall(__FUNCTION__);
     auto ret = std::make_unique<ParagraphImpl>(builder_->Build(), std::move(paints_));
     builder_->Reset();
     return ret;
@@ -165,6 +159,12 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     }
 
     skStyle.setTextStyle(textStyle);
+    ParagraphStyleToSkParagraphStyle(txt, skStyle);
+    return skStyle;
+}
+
+void ParagraphBuilderImpl::ParagraphStyleToSkParagraphStyle(const ParagraphStyle& txt, skt::ParagraphStyle& skStyle)
+{
     skStyle.setTextOverflower(txt.textOverflower);
     skt::StrutStyle strutStyle;
     TextStyleToSKStrutStyle(strutStyle, txt);
@@ -173,9 +173,6 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     skStyle.setTextAlign(static_cast<skt::TextAlign>(txt.textAlign));
     skStyle.setTextDirection(static_cast<skt::TextDirection>(txt.textDirection));
     skStyle.setEllipsisMod(static_cast<skt::EllipsisModal>(txt.ellipsisModal));
-    if (txt.ellipsisModal != EllipsisModal::TAIL) {
-        skStyle.setEllipsis(txt.ellipsis);
-    }
     skStyle.setMaxLines(txt.maxLines);
     skStyle.setEllipsis(txt.ellipsis);
     skStyle.setTextHeightBehavior(static_cast<skt::TextHeightBehavior>(txt.textHeightBehavior));
@@ -184,13 +181,6 @@ skt::ParagraphStyle ParagraphBuilderImpl::TextStyleToSkStyle(const ParagraphStyl
     }
     skStyle.setReplaceTabCharacters(true);
     skStyle.setTextSplitRatio(txt.textSplitRatio);
-    SetRemainingParagraphProperties(skStyle, txt);
-
-    return skStyle;
-}
-
-void ParagraphBuilderImpl::SetRemainingParagraphProperties(skt::ParagraphStyle& skStyle, const ParagraphStyle& txt)
-{
     skStyle.setTextHeightBehavior(static_cast<skt::TextHeightBehavior>(txt.textHeightBehavior));
     skStyle.setTextTab(ConvertToSkTextTab(txt.tab));
     skStyle.setParagraphSpacing(txt.paragraphSpacing);
@@ -200,6 +190,8 @@ void ParagraphBuilderImpl::SetRemainingParagraphProperties(skt::ParagraphStyle& 
     skStyle.setEnableAutoSpace(txt.enableAutoSpace);
     skStyle.setVerticalAlignment(static_cast<skt::TextVerticalAlign>(txt.verticalAlignment));
     skStyle.setLineSpacing(txt.lineSpacing);
+    skStyle.setIncludeFontPadding(txt.includeFontPadding);
+    skStyle.setFallbackLineSpacing(txt.fallbackLineSpacing);
 }
 
 skt::TextStyle ParagraphBuilderImpl::TextStyleToSkStyle(const TextStyle& txt)
@@ -296,16 +288,6 @@ void ParagraphBuilderImpl::CopyTextStylePaint(const TextStyle& txt, skia::textla
         paint.symbol.SetSymbolShadow(txt.symbol.GetSymbolShadow());
         paint.symbol.SetFirstActive(txt.symbol.GetFirstActive());
         skStyle.setForegroundPaintID(AllocPaintID(paint));
-    }
-}
-
-void ParagraphBuilderImpl::RecordDifferentPthreadCall(const char* caller) const
-{
-    pthread_t currenetThreadId = pthread_self();
-    if (threadId_ != currenetThreadId) {
-        TEXT_LOGE_LIMIT3_HOUR("New pthread access paragraph builder, old %{public}lu, caller %{public}s",
-            threadId_, caller);
-        threadId_ = currenetThreadId;
     }
 }
 } // namespace SPText

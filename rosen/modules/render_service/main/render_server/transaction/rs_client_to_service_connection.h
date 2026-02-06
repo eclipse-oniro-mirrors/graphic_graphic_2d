@@ -82,7 +82,7 @@ private:
     ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode) override;
 
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
-        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap) override;
+        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) override;
 
     ErrCode GetDefaultScreenId(uint64_t& screenId) override;
 
@@ -99,14 +99,18 @@ private:
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) override;
 
-    int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector) override;
+    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
 
     ErrCode SetVirtualScreenTypeBlackList(
         ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) override;
 
-    ErrCode AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) override;
+    ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;
 
-    ErrCode RemoveVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) override;
+    ErrCode RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;
+
+    ErrCode AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) override;
+
+    ErrCode RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) override;
 
     int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<NodeId>& securityExemptionList) override;
@@ -168,6 +172,8 @@ private:
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
 
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status) override;
+    
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) override;
 
     ErrCode GetScreenActiveMode(uint64_t id, RSScreenModeInfo& info) override;
@@ -177,6 +183,8 @@ private:
     RSScreenCapability GetScreenCapability(ScreenId id) override;
 
     ErrCode GetScreenPowerStatus(uint64_t screenId, uint32_t& status) override;
+
+    ErrCode GetPanelPowerStatus(ScreenId screenId, PanelPowerStatus& status) override;
 
     RSScreenData GetScreenData(ScreenId id) override;
 
@@ -227,7 +235,7 @@ private:
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;
 
     bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) override;
-    int32_t RegisterTypeface(uint64_t id, uint32_t size, int32_t fd, int32_t& needUpdate, uint32_t index) override;
+    int32_t RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate) override;
     bool UnRegisterTypeface(uint64_t globalUniqueId) override;
 
     int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData) override;
@@ -263,6 +271,8 @@ private:
 
     ErrCode ReportJankStats() override;
 
+    void UpdateAnimationOcclusionStatus(const std::string& sceneId, bool isStart);
+
     ErrCode ReportEventResponse(DataBaseRs info) override;
 
     ErrCode ReportEventComplete(DataBaseRs info) override;
@@ -292,7 +302,7 @@ private:
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) override;
 
-    ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
+    ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) override;
 
     void NotifyDynamicModeEvent(bool enableDynamicModeEvent) override;
 
@@ -360,6 +370,10 @@ private:
 
     ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps) override;
+
+    ErrCode AvcodecVideoGet(uint64_t uniqueId) override;
+ 
+    ErrCode AvcodecVideoGetRecent() override;
 
     int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB) override;
 

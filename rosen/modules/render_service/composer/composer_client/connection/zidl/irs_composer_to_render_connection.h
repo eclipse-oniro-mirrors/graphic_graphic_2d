@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,7 +32,7 @@ struct ReleaseLayerBuffersInfo {
     uint64_t screenId = 0;
     std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>> timestampVec = {};
     std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>> releaseBufferFenceVec = {};
-    int64_t lastSwapBufferTime = 0; /* 每帧回执时长 */
+    int64_t lastSwapBufferTime = 0; /* Receipt duration per frame */
 };
 using ReleaseLayerBuffersCB = std::function<void(ReleaseLayerBuffersInfo& releaseLayerInfo)>;
 using JudgeLppLayerCB = std::function<void(uint64_t, const std::unordered_set<uint64_t>&)>;

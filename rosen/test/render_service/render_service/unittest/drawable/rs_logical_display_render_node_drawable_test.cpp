@@ -18,6 +18,7 @@
 #include <parameters.h>
 
 #include "drawable/rs_logical_display_render_node_drawable.h"
+#include "feature/special_layer/rs_special_layer_utils.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/rs_logical_display_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -615,7 +616,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest005, TestSize.Leve
     displayDrawable_->OnCapture(*drawingFilterCanvas_);
     EXPECT_TRUE(displayDrawable_->ShouldPaint());
     EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
-    EXPECT_NE(displayDrawable_->GetSpecialLayerType(*renderParams), NO_SPECIAL_LAYER);
+    EXPECT_NE(RSSpecialLayerUtils::GetSpecialLayerStateInSubTree(*renderParams, screenParams),
+        DisplaySpecialLayerState::NO_SPECIAL_LAYER);
 }
 
 /**
@@ -706,6 +708,40 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest009, TestSize.Leve
     EXPECT_TRUE(displayDrawable_->ShouldPaint());
     EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
     EXPECT_FALSE(RSUniRenderThread::Instance().GetBlackList().empty());
+}
+
+/**
+ * @tc.name: OnCaptureTest010
+ * @tc.desc: Test OnCapture when using virtual screen
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest010, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    std::string name = "virtualScreen01";
+    uint32_t width = 400;
+    uint32_t height = 400;
+    auto csurface = IConsumerSurface::Create();
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+    auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface);
+    ASSERT_NE(INVALID_SCREEN_ID, screenId);
+    screenManager->defaultScreenId_ = screenId;
+    params->SetScreenId(screenId);
+    ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
+    params->shouldPaint_ = true;
+    params->contentEmpty_ = false;
+
+    displayDrawable_->OnCapture(*drawingFilterCanvas_);
+    EXPECT_TRUE(displayDrawable_->ShouldPaint());
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
 }
 
 /**
@@ -2294,6 +2330,36 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest012, TestSi
 }
 
 /**
+ * @tc.name: DrawMirrorScreenTest013
+ * @tc.desc: Test DrawMirrorScreen when mirroredParams
+ * @tc.type: FUNC
+ * @tc.require: issue21104
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest013, TestSize.Level1)
+{
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto mirroredScreenParams = static_cast<RSScreenRenderParams*>(mirroredScreenDrawable_->GetRenderParams().get());
+    mirroredScreenParams->SetHDRPresent(false);
+    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
+    virtualProcesser->canvas_ = drawingFilterCanvas_;
+    RSUniRenderThread& instance = RSUniRenderThread::Instance();
+    instance.uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    ASSERT_NE(instance.uniRenderEngine_, nullptr);
+    instance.uniRenderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    ASSERT_TRUE(instance.IsColorFilterModeOn());
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
+    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
+ 
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    mirroredScreenParams->SetHDRPresent(true);
+    screenParams->SetHDRPresent(true);
+    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
+    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
+}
+
+/**
  * @tc.name: DrawMirrorCopyTest001
  * @tc.desc: Test DrawMirrorCopy when curScreenDrawable is nullptr
  * @tc.type: FUNC
@@ -3306,43 +3372,6 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, FinishOffscreenRender_ScreenSur
 }
 
 /**
- * @tc.name: GetSpecialLayerType
- * @tc.desc: Test GetSpecialLayerType
- * @tc.type: FUNC
- * @tc.require: issueIAGR5V
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, GetSpecialLayerType, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
-
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-    int32_t result = displayDrawable_->GetSpecialLayerType(*params);
-    ASSERT_EQ(result, 0);
-    params->hasCaptureWindow_ = true;
-    result = displayDrawable_->GetSpecialLayerType(*params);
-    ASSERT_EQ(result, 2);
-    params->hasCaptureWindow_ = false;
-
-    ScreenId screenId = 1;
-    params->SetScreenId(screenId);
-    params->specialLayerManager_.SetWithScreen(screenId, SpecialLayerType::HAS_BLACK_LIST, true);
-    result = displayDrawable_->GetSpecialLayerType(*params);
-    ASSERT_EQ(result, 1);
-    RSUniRenderThread::Instance().whiteList_.insert(0);
-    result = displayDrawable_->GetSpecialLayerType(*params);
-    ASSERT_EQ(result, 1);
-
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
-    result = displayDrawable_->GetSpecialLayerType(*params);
-    ASSERT_EQ(result, 0);
-    RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
-    params->specialLayerManager_.ClearScreenSpecialLayer();
-    RSUniRenderThread::Instance().whiteList_.clear();
-}
-
-/**
  * @tc.name: UpdateSlrScale001
  * @tc.desc: Test UpdateSlrScale
  * @tc.type: FUNC
@@ -3361,16 +3390,29 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, UpdateSlrScale001, TestSize.Lev
     screenProperty.Set<ScreenPropertyType::SAMPLING_OPTION>({true, 0.f, 0.f, 1.f});
     system::SetParameter("rosen.SLRScale.enabled", "1");
     // when scaleManager is nullptr
+<<<<<<< HEAD
     displayDrawable_->UpdateSlrScale(screenProperty);
+=======
+    displayDrawable_->UpdateSlrScale(screenInfo, 200, 200);
+>>>>>>> master
     ASSERT_NE(displayDrawable_->scaleManager_, nullptr);
     // when scaleManager is not nullptr
     displayDrawable_->scaleManager_ = std::make_unique<RSSLRScaleFunction>(
+<<<<<<< HEAD
         width, height, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     displayDrawable_->UpdateSlrScale(screenProperty);
+=======
+        screenInfo.phyWidth, screenInfo.phyHeight, screenInfo.width, screenInfo.height);
+    displayDrawable_->UpdateSlrScale(screenInfo, 200, 200);
+>>>>>>> master
     ASSERT_NE(displayDrawable_->scaleManager_, nullptr);
 
     system::SetParameter("rosen.SLRScale.enabled", "0");
+<<<<<<< HEAD
     displayDrawable_->UpdateSlrScale(screenProperty);
+=======
+    displayDrawable_->UpdateSlrScale(screenInfo, 200, 200);
+>>>>>>> master
     EXPECT_EQ(displayDrawable_->scaleManager_, nullptr);
     system::SetParameter("rosen.SLRScale.enabled", param);
 }
@@ -3393,7 +3435,11 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, UpdateSlrScale002, TestSize.Lev
     system::SetParameter("rosen.SLRScale.enabled", "1");
     // when params is not nullptr
     auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+<<<<<<< HEAD
     displayDrawable_->UpdateSlrScale(screenProperty, screenParams);
+=======
+    displayDrawable_->UpdateSlrScale(screenInfo, 200, 200, screenParams);
+>>>>>>> master
     ASSERT_NE(displayDrawable_->scaleManager_, nullptr);
     // recover rosen.SLRScale.enabled
     system::SetParameter("rosen.SLRScale.enabled", param);
@@ -3698,8 +3744,14 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest010, 
     displayParams->needOffscreen_ = false;
     displayDrawable_->useFixedOffscreenSurfaceSize_ = true;
     displayDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
+
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false);
+    screenParam->screenHDRStatus_ = HdrStatus::HDR_EFFECT;
+    auto param = system::GetParameter("rosen.EDRCanvasReplace.enabled", "0");
+    system::SetParameter("rosen.EDRCanvasReplace.enabled", "1");
     displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false);
     EXPECT_NE(displayParams->GetAncestorScreenDrawable().lock(), nullptr);
+    system::SetParameter("rosen.EDRCanvasReplace.enabled", param);
 }
 
 /**
@@ -3876,6 +3928,47 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawHardwareEnabledNodesTest001
 }
 
 /**
+ * @tc.name: DrawHardwareEnabledNodesTest002
+ * @tc.desc: Test OnCapture when using virtual screen
+ * @tc.type: FUNC
+ * @tc.require: #I9NVOG
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawHardwareEnabledNodesTest002, TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    std::string name = "virtualScreen01";
+    uint32_t width = 400;
+    uint32_t height = 400;
+    auto csurface = IConsumerSurface::Create();
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+    auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface);
+    ASSERT_NE(INVALID_SCREEN_ID, screenId);
+    screenManager->defaultScreenId_ = screenId;
+    params->SetScreenId(screenId);
+    ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
+
+    sptr<Surface> producerSurface_ = screenManager->GetProducerSurface(screenId);
+    ASSERT_NE(producerSurface_, nullptr);
+    params->shouldPaint_ = true;
+    params->contentEmpty_ = false;
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+    ASSERT_NE(buffer, nullptr);
+    ASSERT_NE(acquireFence, nullptr);
+    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    RSUniRenderThread::Instance().uniRenderEngine_->colorFilterMode_ = ColorFilterMode::INVERT_COLOR_DISABLE_MODE;
+    displayDrawable_->DrawHardwareEnabledNodes(canvas, *params, buffer, acquireFence);
+    ASSERT_TRUE(RSUniRenderThread::Instance().GetRenderEngine());
+    RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
+}
+
+/**
  * @tc.name: DrawCurtainScreen
  * @tc.desc: Test DrawCurtainScreen
  * @tc.type: FUNC
@@ -3925,23 +4018,6 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWatermarkIfNeedTest, TestSi
     RSUniRenderThread::Instance().Sync(std::move(uniParams2));
     displayDrawable_->DrawWatermarkIfNeed(*drawingFilterCanvas_);
     EXPECT_NE(RSUniRenderThread::Instance().GetWatermarkImg(), nullptr);
-}
-
-/**
- * @tc.name: SetScreenRotationForPointLight
- * @tc.desc: Test SetScreenRotationForPointLight
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, SetScreenRotationForPointLight, TestSize.Level1)
-{
-    ASSERT_NE(renderNode_, nullptr);
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
-
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-    displayDrawable_->SetScreenRotationForPointLight(*params);
 }
 
 /**
@@ -4132,6 +4208,9 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWatermarkIfNeed003, TestSiz
     rsRenderThreadParams->SetWatermark(true, img);
     params->screenRotation_ = ScreenRotation::ROTATION_0;
     displayDrawable_->DrawWatermarkIfNeed(canvas);
+    
+    Drawing::Rect dstRect(0, 0, 400, 400);
+    displayDrawable_->DrawWatermarkIfNeed(canvas, dstRect);
 }
 
 /**

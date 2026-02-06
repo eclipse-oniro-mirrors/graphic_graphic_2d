@@ -128,6 +128,12 @@ void SkiaCanvas::RecordState(Canvas* canvas)
     LOGD("skia does not support RecordState.");
 }
 
+bool SkiaCanvas::InheritStateAndContentFrom(Canvas* canvas)
+{
+    LOGD("skia does not support InheritStateAndContentFrom.");
+    return false;
+}
+
 void SkiaCanvas::SetParallelRender(bool parallelEnable)
 {
     LOGD("skia does not support subtree parallel render.");
@@ -465,6 +471,7 @@ void SkiaCanvas::DrawBackground(const Brush& brush)
 bool SkiaCanvas::GetLocalShadowBounds(const Matrix& ctm, const Path& path, const Point3& planeParams,
     const Point3& devLightPos, scalar lightRadius, ShadowFlags flag, bool isLimitElevation, Rect& rect)
 {
+#ifdef USE_M133_SKIA
     auto skiaMatrixImpl = ctm.GetImpl<SkiaMatrix>();
     if (skiaMatrixImpl == nullptr) {
         LOGE("skiaMatrixImpl is null, %{public}s return", __FUNCTION__);
@@ -485,6 +492,9 @@ bool SkiaCanvas::GetLocalShadowBounds(const Matrix& ctm, const Path& path, const
         return false;
     }
     return true;
+#else
+    return false;
+#endif
 }
 
 void SkiaCanvas::DrawShadow(const Path& path, const Point3& planeParams, const Point3& devLightPos, scalar lightRadius,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,7 +38,7 @@ private:
     bool FillParcelWithTransactionData(std::unique_ptr<RSLayerTransactionData>& transactionData,
         std::shared_ptr<MessageParcel>& data);
     RSComposerError SendLayers(std::vector<std::shared_ptr<MessageParcel>>& parcels);
-    RSComposerError SendRequest(uint32_t command, MessageParcel &arg, MessageParcel &reply, MessageOption &opt);
+    RSComposerError SendRequest(uint32_t command, MessageParcel& arg, MessageParcel& reply, MessageOption& opt);
 
     pid_t pid_ = GetRealPid();
     uint32_t transactionDataIndex_ = 0;

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef ROSEN_RENDER_SERVICE_BASE_DUMP_CALLBACK_INTERFACE_CODE_H
 #define ROSEN_RENDER_SERVICE_BASE_DUMP_CALLBACK_INTERFACE_CODE_H
 

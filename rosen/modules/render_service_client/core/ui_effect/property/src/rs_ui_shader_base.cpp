@@ -32,6 +32,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
             return std::make_shared<RSNGContourDiagonalFlowLight>();
         }
     },
+    {RSNGEffectType::DOT_MATRIX_SHADER, [] {
+            return std::make_shared<RSNGDotMatrixShader>();
+        }
+    },
     {RSNGEffectType::WAVY_RIPPLE_LIGHT, [] {
             return std::make_shared<RSNGWavyRippleLight>();
         }
@@ -60,6 +64,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
             return std::make_shared<RSNGAIBarGlow>();
         }
     },
+    {RSNGEffectType::AIBAR_RECT_HALO, [] {
+            return std::make_shared<RSNGAIBarRectHalo>();
+        }
+    },
     {RSNGEffectType::ROUNDED_RECT_FLOWLIGHT, [] {
             return std::make_shared<RSNGRoundedRectFlowlight>();
         }
@@ -74,6 +82,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     },
     {RSNGEffectType::FROSTED_GLASS_EFFECT, [] {
             return std::make_shared<RSNGFrostedGlassEffect>();
+        }
+    },
+    {RSNGEffectType::DISTORT_CHROMA, [] {
+            return std::make_shared<RSNGDistortChroma>();
         }
     },
 };
@@ -140,9 +152,12 @@ std::shared_ptr<RSNGShaderBase> ConvertColorGradientEffectPara(std::shared_ptr<V
     Vector4f color4 = colorGradientEffectPara->GetDefaultColor4f();
     Vector2f pos2 = colorGradientEffectPara->GetDefaultPoint();
     float strth = colorGradientEffectPara->GetDefaultStrength();
+    float brightness = colorGradientEffectPara->GetDefaultBrightness();
 
     colorGradientEffect->Setter<ColorGradientEffectBlendTag>(blend);
     colorGradientEffect->Setter<ColorGradientEffectBlendKTag>(blendK);
+    // Convert brightness from [0,2] range to [-1,1] range for normalizing the input
+    colorGradientEffect->Setter<ColorGradientEffectBrightnessTag>(brightness - 1.0f);
 
     ColorGradientEffectColorTags colorTag{};
     std::apply([&colorGradientEffect, &colors, color4] (auto&&... args) {
@@ -179,13 +194,13 @@ std::shared_ptr<RSNGShaderBase> ConvertFrostedGlassEffectPara(std::shared_ptr<Vi
     }
     auto frostedGlassEffect = std::static_pointer_cast<RSNGFrostedGlassEffect>(effect);
     auto frostedGlassEffectPara = std::static_pointer_cast<FrostedGlassEffectPara>(effectPara);
-    frostedGlassEffect->Setter<FrostedGlassEffectBlurParamTag>(frostedGlassEffectPara->GetBlurParam());
     frostedGlassEffect->Setter<FrostedGlassEffectWeightsEmbossTag>(frostedGlassEffectPara->GetWeightsEmboss());
     frostedGlassEffect->Setter<FrostedGlassEffectWeightsEdlTag>(frostedGlassEffectPara->GetWeightsEdl());
     frostedGlassEffect->Setter<FrostedGlassEffectBgRatesTag>(frostedGlassEffectPara->GetBgRates());
     frostedGlassEffect->Setter<FrostedGlassEffectBgKBSTag>(frostedGlassEffectPara->GetBgKBS());
     frostedGlassEffect->Setter<FrostedGlassEffectBgPosTag>(frostedGlassEffectPara->GetBgPos());
     frostedGlassEffect->Setter<FrostedGlassEffectBgNegTag>(frostedGlassEffectPara->GetBgNeg());
+    frostedGlassEffect->Setter<FrostedGlassEffectBgAlphaTag>(frostedGlassEffectPara->GetBgAlpha());
     frostedGlassEffect->Setter<FrostedGlassEffectRefractParamsTag>(frostedGlassEffectPara->GetRefractParams());
     frostedGlassEffect->Setter<FrostedGlassEffectSdParamsTag>(frostedGlassEffectPara->GetSdParams());
     frostedGlassEffect->Setter<FrostedGlassEffectSdRatesTag>(frostedGlassEffectPara->GetSdRates());
@@ -204,8 +219,7 @@ std::shared_ptr<RSNGShaderBase> ConvertFrostedGlassEffectPara(std::shared_ptr<Vi
     frostedGlassEffect->Setter<FrostedGlassEffectEdLightKBSTag>(frostedGlassEffectPara->GetEdLightKBS());
     frostedGlassEffect->Setter<FrostedGlassEffectEdLightPosTag>(frostedGlassEffectPara->GetEdLightPos());
     frostedGlassEffect->Setter<FrostedGlassEffectEdLightNegTag>(frostedGlassEffectPara->GetEdLightNeg());
-    frostedGlassEffect->Setter<FrostedGlassEffectBorderSizeTag>(frostedGlassEffectPara->GetBorderSize());
-    frostedGlassEffect->Setter<FrostedGlassEffectCornerRadiusTag>(frostedGlassEffectPara->GetCornerRadius());
+    frostedGlassEffect->Setter<FrostedGlassEffectMaterialColorTag>(frostedGlassEffectPara->GetMaterialColor());
     return frostedGlassEffect;
 }
 

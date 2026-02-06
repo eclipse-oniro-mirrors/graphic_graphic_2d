@@ -281,6 +281,28 @@ HWTEST_F(RSTypefaceCacheTest, ReplaySerializeTest001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ReplaySerializeTest002
+ * @tc.desc: Verify function ReplaySerialize
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, ReplaySerializeTest002, TestSize.Level1)
+{
+    RSTypefaceCache typefaceCache;
+    uint64_t uniqueId = 1;
+    typefaceCache.typefaceHashCode_[uniqueId] = 0;
+    uniqueId = 2; // font id
+    uint64_t hash = 1;
+    auto typeface = std::make_shared<Drawing::Typeface>(nullptr);
+    typefaceCache.typefaceHashCode_[uniqueId] = hash;
+    typefaceCache.typefaceHashMap_[hash] = std::make_tuple(typeface, 1);
+    size_t fontCount = 0;
+    std::stringstream stream;
+    typefaceCache.ReplaySerialize(stream);
+    stream.read(reinterpret_cast<char*>(&fontCount), sizeof(fontCount));
+    EXPECT_FALSE(fontCount);
+}
+
+/**
  * @tc.name: ReplayDeserializeTest001
  * @tc.desc: Verify function ReplayDeserialize
  * @tc.type:FUNC
@@ -294,6 +316,86 @@ HWTEST_F(RSTypefaceCacheTest, ReplayDeserializeTest001, TestSize.Level1)
     RSTypefaceCache::Instance().ReplayDeserialize(fontStream);
     EXPECT_NE(RSTypefaceCache::Instance().typefaceHashCode_.find(uniqueId | replayMask),
               RSTypefaceCache::Instance().typefaceHashCode_.end());
+}
+
+/**
+ * @tc.name: ReplayDeserializeTest002
+ * @tc.desc: Verify function ReplayDeserialize
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, ReplayDeserializeTest002, TestSize.Level1)
+{
+    RSTypefaceCache typefaceCache;
+    std::stringstream stream;
+    size_t count = 1;
+    stream.write(reinterpret_cast<char*>(&count), sizeof(count));
+    uint64_t uniqueId = 0;
+    stream.write(reinterpret_cast<char*>(&uniqueId), sizeof(uniqueId));
+    constexpr size_t maxSize = 40'000'000; // font data max size
+    size_t overloadSize = maxSize + 1;
+    stream.write(reinterpret_cast<char*>(&overloadSize), sizeof(overloadSize));
+    auto error = typefaceCache.ReplayDeserialize(stream);
+    EXPECT_FALSE(error.empty());
+}
+
+/**
+ * @tc.name: ReplayDeserializeTest003
+ * @tc.desc: Verify function ReplayDeserialize
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, ReplayDeserializeTest003, TestSize.Level1)
+{
+    RSTypefaceCache typefaceCache;
+    std::stringstream stream;
+    size_t count = 1;
+    stream.write(reinterpret_cast<char*>(&count), sizeof(count));
+    uint64_t uniqueId = 0;
+    stream.write(reinterpret_cast<char*>(&uniqueId), sizeof(uniqueId));
+    size_t data = 1;
+    size_t size = sizeof(data) + 1;
+    stream.write(reinterpret_cast<char*>(&size), sizeof(size));
+    stream.write(reinterpret_cast<char*>(&data), sizeof(data));
+    auto error = typefaceCache.ReplayDeserialize(stream);
+    EXPECT_FALSE(error.empty());
+}
+
+/**
+ * @tc.name: ReplayDeserializeTest004
+ * @tc.desc: Verify function ReplayDeserialize
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, ReplayDeserializeTest004, TestSize.Level1)
+{
+    RSTypefaceCache typefaceCache;
+    std::stringstream stream;
+    size_t count = 1;
+    stream.write(reinterpret_cast<char*>(&count), sizeof(count));
+    uint64_t uniqueId = 0;
+    stream.write(reinterpret_cast<char*>(&uniqueId), sizeof(uniqueId));
+    size_t data = 1;
+    size_t size = sizeof(data);
+    stream.write(reinterpret_cast<char*>(&size), sizeof(size));
+    stream.write(reinterpret_cast<char*>(&data), sizeof(data));
+    auto error = typefaceCache.ReplayDeserialize(stream);
+    EXPECT_FALSE(error.empty());
+}
+
+/**
+ * @tc.name: ReplayDeserializeTest005
+ * @tc.desc: Verify function ReplayDeserialize
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, ReplayDeserializeTest005, TestSize.Level1)
+{
+    RSTypefaceCache typefaceCache;
+    auto typeface = Drawing::Typeface::MakeDefault();
+    uint64_t uniqueId = 1;
+    typefaceCache.CacheDrawingTypeface(uniqueId, typeface);
+
+    std::stringstream stream;
+    typefaceCache.ReplaySerialize(stream);
+    auto error = typefaceCache.ReplayDeserialize(stream);
+    EXPECT_TRUE(error.empty());
 }
 
 /**
@@ -458,6 +560,142 @@ HWTEST_F(RSTypefaceCacheTest, RemoveHashQueueTest, TestSize.Level1) {
     auto mapSizeBefore = testMap.size();
     RemoveHashQueue(testMap, 9999); // 9999 is no exist uniqueId
     EXPECT_EQ(testMap.size(), mapSizeBefore);
+}
+
+/**
+ * @tc.name: UpdateDrawingTypefaceRefTest001
+ * @tc.desc: Verify function UpdateDrawingTypefaceRef
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, UpdateDrawingTypefaceRefTest001, TestSize.Level1) {
+    RSTypefaceCache::Instance().typefaceHashCode_.clear();
+    RSTypefaceCache::Instance().typefaceHashMap_.clear();
+    RSTypefaceCache::Instance().typefaceBaseHashMap_.clear();
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeDefault();
+    EXPECT_NE(typeface, nullptr);
+    pid_t pid1 = 123;
+    uint64_t uniqueId = (((uint64_t)pid1) << 32) | (uint64_t)(typeface->GetUniqueID());
+    EXPECT_EQ(RSTypefaceCache::Instance().GetDrawingTypefaceCache(uniqueId), nullptr);
+
+    RSTypefaceCache::Instance().CacheDrawingTypeface(uniqueId, typeface);
+    EXPECT_EQ(RSTypefaceCache::Instance().GetDrawingTypefaceCache(uniqueId), typeface);
+
+    
+    Drawing::SharedTypeface sharedTypeface(uniqueId, typeface);
+    auto result = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_EQ(result, typeface);
+}
+
+/**
+ * @tc.name: UpdateDrawingTypefaceRefTest002
+ * @tc.desc: Verify function UpdateDrawingTypefaceRef
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, UpdateDrawingTypefaceRefTest002, TestSize.Level1) {
+    std::shared_ptr<Drawing::Typeface> typeface = Drawing::Typeface::MakeDefault();
+    EXPECT_NE(typeface, nullptr);
+    pid_t pid1 = 123;
+    uint64_t uniqueId = (((uint64_t)pid1) << 32) | (uint64_t)(typeface->GetUniqueID());
+
+    RSTypefaceCache::Instance().CacheDrawingTypeface(uniqueId, typeface);
+    Drawing::SharedTypeface sharedTypeface(uniqueId, typeface);
+    sharedTypeface.hasFontArgs_ = true;
+    sharedTypeface.coords_ = { {2003265652, 100.0}, {2003072104, 62.5} };
+    auto result = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_NE(result, typeface);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name: UpdateDrawingTypefaceRefTest003
+ * @tc.desc: Verify function UpdateDrawingTypefaceRef
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, UpdateDrawingTypefaceRefTest003, TestSize.Level1) {
+    Drawing::SharedTypeface sharedTypeface;
+    sharedTypeface.id_ = 3;
+    sharedTypeface.hash_ = 789;
+    auto result = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: UpdateDrawingTypefaceRefTest004
+ * @tc.desc: Verify function UpdateDrawingTypefaceRef
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, UpdateDrawingTypefaceRefTest004, TestSize.Level1)
+{
+    std::vector<char> content;
+    LoadBufferFromFile("/system/fonts/Roboto-Regular.ttf", content);
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromAshmem(reinterpret_cast<const uint8_t*>(content.data()), content.size(), 0, "test");
+    ASSERT_NE(typeface, nullptr);
+    pid_t pid = getpid();
+    Drawing::SharedTypeface sharedTypeface(
+        (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(typeface->GetUniqueID()), typeface);
+    sharedTypeface.hasFontArgs_ = true;
+    sharedTypeface.coords_ = { {2003265652, 100.0}, {2003072104, 62.5} };
+    auto result = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_EQ(result, nullptr);
+    RSTypefaceCache::Instance().CacheDrawingTypeface(sharedTypeface.id_, typeface);
+    sharedTypeface.hasFontArgs_ = true;
+    sharedTypeface.coords_ = { {2003265652, 80.0}, {2003072104, 62.5} };
+    auto result1 = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_NE(result1, typeface);
+    EXPECT_NE(result1, nullptr);
+}
+
+/**
+ * @tc.name: UpdateDrawingTypefaceRefTest005
+ * @tc.desc: Verify function RemoveHashMap
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, UpdateDrawingTypefaceRefTest005, TestSize.Level1)
+{
+    std::vector<char> content;
+    LoadBufferFromFile("/system/fonts/Roboto-Regular.ttf", content);
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromAshmem(reinterpret_cast<const uint8_t*>(content.data()), content.size(), 0, "test");
+    ASSERT_NE(typeface, nullptr);
+    pid_t pid = getpid();
+    Drawing::SharedTypeface sharedTypeface(
+        (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(typeface->GetUniqueID()), typeface);
+    sharedTypeface.hasFontArgs_ = true;
+    sharedTypeface.coords_ = { {2003265652, 100.0}, {2003072104, 62.5} };
+    auto result = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_NE(result, nullptr);
+    RSTypefaceCache::Instance().CacheDrawingTypeface(sharedTypeface.id_, typeface);
+    sharedTypeface.hasFontArgs_ = true;
+    sharedTypeface.coords_ = { {2003265652, 80.0}, {2003072104, 62.5}, {2003072104, 72.5} };
+    auto result1 = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_NE(result1, typeface);
+    EXPECT_NE(result1, nullptr);
+    sharedTypeface.hasFontArgs_ = true;
+    sharedTypeface.coords_ = { {2003265652, 90.0}, {2003072104, 62.5}, {2003072104, 72.5}, {2003072104, 92.5} };
+    auto result2 = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
+    EXPECT_NE(result2, typeface);
+    EXPECT_NE(result2, nullptr);
+    RSTypefaceCache::Instance().RemoveDrawingTypefaceByGlobalUniqueId(sharedTypeface.id_);
+}
+
+/**
+ * @tc.name: UpdateDrawingTypefaceRefTest006
+ * @tc.desc: Verify function RemoveHashMap
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSTypefaceCacheTest, UpdateDrawingTypefaceRefTest006, TestSize.Level1)
+{
+    std::vector<char> content;
+    LoadBufferFromFile("/system/fonts/Roboto-Regular.ttf", content);
+    std::shared_ptr<Drawing::Typeface> typeface =
+        Drawing::Typeface::MakeFromAshmem(reinterpret_cast<const uint8_t*>(content.data()), content.size(), 0, "test");
+    ASSERT_NE(typeface, nullptr);
+    pid_t pid = getpid();
+    uint64_t globalID = (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(1);
+    std::unordered_map<uint64_t, TypefaceTuple> typefaceHashMap;
+    typefaceHashMap[globalID] = std::make_tuple(typeface, 1);
+    RSTypefaceCache::Instance().RemoveHashMap(pid, typefaceHashMap, globalID);
 }
 } // namespace Rosen
 } // namespace OHOS

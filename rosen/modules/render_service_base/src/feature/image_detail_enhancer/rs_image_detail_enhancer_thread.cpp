@@ -21,7 +21,6 @@
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
-#include "render/rs_pixel_map_util.h"
 #include "rs_trace.h"
 
 #ifdef ROSEN_OHOS
@@ -35,10 +34,13 @@
 #endif
 
 #ifdef RS_ENABLE_VK
+#ifndef ROSEN_ARKUI_X
 #include "platform/ohos/backend/native_buffer_utils.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
+#else
+#include "rs_vulkan_context.h"
 #endif
-
+#endif
 #define DMA_BUF_SET_LEAK_TYPE _IOW(DMA_BUF_BASE, 5, const char *)
 
 namespace OHOS {
@@ -48,7 +50,10 @@ constexpr int CHANNELS_CNT = 4; // Number of channels
 constexpr float MEMUNIT_RATE = 1024.0f; // Mem unit rate
 constexpr float MAX_IMAGE_CACHE = 150.0f; // Max image cache
 constexpr int MAX_SCALEUP_SIZE = 1920 * 1080; // Max scale up size
-constexpr int RELEASE_TIME = 5000; // Release scaledImage time
+constexpr int RELEASE_TIME = 5000; // Release scaledImage time (ms)
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+constexpr int DEBUG_NUM_DIVISIOR = 2; // Use for dump debug info
+#endif
 
 RSImageDetailEnhancerThread& RSImageDetailEnhancerThread::Instance()
 {
@@ -88,7 +93,7 @@ void RSImageDetailEnhancerThread::PostTask(const std::function<void()>& task)
 bool RSImageDetailEnhancerThread::RegisterCallback(const std::function<void(uint64_t)>& callback)
 {
     if (callback == nullptr) {
-        RS_LOGE("RSImageDetailEnhancerThread RegisterCallback failed, callBack is invalid!");
+        RS_LOGE("RSImageDetailEnhancerThread RegisterCallback failed, callback is invalid!");
         return false;
     }
     callback_ = callback;
@@ -106,12 +111,17 @@ void RSImageDetailEnhancerThread::MarkScaledImageDirty(uint64_t nodeId)
 
 bool RSImageDetailEnhancerThread::IsSizeSupported(int srcWidth, int srcHeight, int dstWidth, int dstHeight)
 {
+    // Return if target size is invalid or unchanged
     if (dstWidth <= 0 || dstHeight <= 0 || srcWidth == dstWidth || srcHeight == dstHeight) {
         return false;
     }
+
+    // Limit upscale target to 1080P
     if (srcWidth < dstWidth && srcHeight < dstHeight && srcWidth * srcHeight > MAX_SCALEUP_SIZE) {
         return false;
     }
+
+    // Check if source and target sizes fall within supported config range
     if (dstWidth > params_.minSize && dstHeight > params_.minSize &&
         srcWidth > params_.minSize && srcHeight > params_.minSize && dstWidth < params_.maxSize &&
         dstHeight < params_.maxSize && srcWidth < params_.maxSize && srcHeight < params_.maxSize) {
@@ -251,7 +261,7 @@ std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::ScaleByHDSampler(in
 void RSImageDetailEnhancerThread::ExecuteTaskAsync(int dstWidth, int dstHeight,
     const std::shared_ptr<Drawing::Image>& image, uint64_t nodeId, uint64_t imageId)
 {
-    RS_TRACE_NAME_FMT("RSImageDetailEnhancerThread::ExecuteTaskAsync");
+    RS_TRACE_NAME("RSImageDetailEnhancerThread::ExecuteTaskAsync");
     if (image == nullptr) {
         RS_LOGE("RSImageDetailEnhancerThread ExecuteTaskAsync image is nullptr!");
         return;
@@ -285,20 +295,28 @@ void RSImageDetailEnhancerThread::ExecuteTaskAsync(int dstWidth, int dstHeight,
 
 // used for ScaleImageAsync
 std::shared_ptr<Drawing::Image> RSImageDetailEnhancerThread::EnhanceImageAsync(bool& isScaledImageAsync,
-    const RSImageParams& rSImageParams)
+    const RSImageParams& RSImageParams)
 {
-    bool isEnabled = GetEnabled();
-    if (!isEnabled || rSImageParams.mPixelMap == nullptr) {
+    if (!GetEnabled() || RSImageParams.mPixelMap == nullptr || RSImageParams.mImage == nullptr) {
         return nullptr;
     }
-    bool isPidEnabled = IsPidEnabled(rSImageParams.mNodeId);
-    if (!isPidEnabled) {
+    if (!IsPidEnabled(RSImageParams.mNodeId)) {
         return nullptr;
     }
-    ScaleImageAsync(rSImageParams.mPixelMap, rSImageParams.mDst,
-        rSImageParams.mNodeId, rSImageParams.mUniqueId, rSImageParams.mImage);
-    std::shared_ptr<Drawing::Image> dstImage = GetScaledImage(rSImageParams.mUniqueId);
+    ScaleImageAsync(RSImageParams.mPixelMap, RSImageParams.mDst,
+        RSImageParams.mNodeId, RSImageParams.mUniqueId, RSImageParams.mImage);
+    std::shared_ptr<Drawing::Image> dstImage = GetScaledImage(RSImageParams.mUniqueId);
     if (dstImage == nullptr) {
+        isScaledImageAsync = false;
+        return nullptr;
+    }
+    if (dstImage->GetWidth() == 0 || RSImageParams.mImage->GetWidth() == 0) {
+        return nullptr;
+    }
+    float realDstWidth = RSImageParams.mDst.GetWidth() * RSImageParams.mMatrixScaleX;
+    float newScaleRatio = realDstWidth / static_cast<float>(dstImage->GetWidth());
+    float originScaleRatio = realDstWidth / static_cast<float>(RSImageParams.mImage->GetWidth());
+    if (abs(originScaleRatio - 1.0f) < abs(newScaleRatio - 1.0f)) {
         isScaledImageAsync = false;
         return nullptr;
     }
@@ -312,7 +330,7 @@ void RSImageDetailEnhancerThread::ScaleImageAsync(const std::shared_ptr<Media::P
     if (image == nullptr || !IsTypeSupport(pixelMap)) {
         return;
     }
-    RS_TRACE_NAME_FMT("RSImageDetailEnhancerThread::ScaleImageAsync");
+    RS_TRACE_NAME("RSImageDetailEnhancerThread::ScaleImageAsync");
     int srcWidth = image->GetWidth();
     int srcHeight = image->GetHeight();
     int dstWidth = static_cast<int>(dst.GetWidth());
@@ -332,9 +350,9 @@ void RSImageDetailEnhancerThread::DumpImage(const std::shared_ptr<Drawing::Image
     if (!RSSystemProperties::GetDumpUICaptureEnabled() || image == nullptr) {
         return;
     }
+    RS_TRACE_NAME("RSImageDetailEnhancerThread::DumpImage");
     int width = image->GetWidth();
     int height = image->GetHeight();
-    RS_TRACE_NAME_FMT("RSImageDetailEnhancerThread::DumpImage");
     Drawing::BitmapFormat format = { Drawing::ColorType::COLORTYPE_RGBA_8888, Drawing::AlphaType::ALPHATYPE_PREMUL };
     Drawing::Bitmap bitmap;
     bitmap.Build(width, height, format);
@@ -344,7 +362,7 @@ void RSImageDetailEnhancerThread::DumpImage(const std::shared_ptr<Drawing::Image
 
 void RSImageDetailEnhancerThread::ImageSamplingDump(uint64_t imageId)
 {
-    RS_TRACE_NAME_FMT("RSImageDetailEnhancerThread::ImageSamplingDump");
+    RS_TRACE_NAME("RSImageDetailEnhancerThread::ImageSamplingDump");
     std::shared_ptr<Drawing::Image> image = GetScaledImage(imageId);
     if (image == nullptr) {
         return;
@@ -352,7 +370,7 @@ void RSImageDetailEnhancerThread::ImageSamplingDump(uint64_t imageId)
     int width = image->GetWidth();
     int height = image->GetHeight();
     auto asyncEnhancerTask = [this, width, height, image, imageId]() {
-        RS_TRACE_NAME_FMT("RSImageDetailEnhancerThread::ImageSamplingDumpAsync");
+        RS_TRACE_NAME("RSImageDetailEnhancerThread::ImageSamplingDumpAsync");
         Drawing::BitmapFormat format = { Drawing::ColorType::COLORTYPE_RGBA_8888,
             Drawing::AlphaType::ALPHATYPE_PREMUL };
         Drawing::Bitmap bitmap;
@@ -361,11 +379,10 @@ void RSImageDetailEnhancerThread::ImageSamplingDump(uint64_t imageId)
         std::stringstream oss;
         int32_t w = bitmap.GetWidth();
         int32_t h = bitmap.GetHeight();
-
         oss << "[ imageId:" << imageId << " Width:" << w << " Height:" << h;
         oss << " pixels:" << std::hex << std::uppercase;
-        int32_t widthStep = std::max((w / 2) - 1, 1);
-        int32_t heightStep = std::max((h / 2) - 1, 1);
+        int32_t widthStep = std::max((w / DEBUG_NUM_DIVISIOR) - 1, 1);
+        int32_t heightStep = std::max((h / DEBUG_NUM_DIVISIOR) - 1, 1);
         for (int32_t i = 1; i < w; i += widthStep) {
             for (int32_t j = 1; j < h; j += heightStep) {
                 uint32_t pixel = static_cast<uint32_t>(bitmap.GetColor(i, j));
@@ -382,16 +399,18 @@ void RSImageDetailEnhancerThread::ImageSamplingDump(uint64_t imageId)
 void RSImageDetailEnhancerThread::SetScaledImage(uint64_t imageId, const std::shared_ptr<Drawing::Image>& image)
 {
     std::lock_guard<std::mutex> mapMutex(mapMutex_);
-    if (image) {
-        if (keyMap_.find(imageId) != keyMap_.end()) {
-            std::shared_ptr<Drawing::Image> cachedImage = keyMap_[imageId]->second;
-            curCache_ -= DetailEnhancerUtils::Instance().GetImageSize(cachedImage);
-            imageList_.erase(keyMap_[imageId]);
-        }
-        PushImageList(imageId, image);
-        RS_LOGD("RSImageDetailEnhancerThreadTest SetOutImage2,imageId=%{public}" PRIu64
-            ",mapSize=%{public}zu, curCacheSize2=%{public}f M ", imageId, imageList_.size(), curCache_);
+    if (image == nullptr) {
+        RS_LOGE("RSImageDetailEnhancerThread image is nullptr!");
+        return;
     }
+    if (keyMap_.find(imageId) != keyMap_.end()) {
+        std::shared_ptr<Drawing::Image> cachedImage = keyMap_[imageId]->second;
+        curCache_ -= DetailEnhancerUtils::Instance().GetImageSize(cachedImage);
+        imageList_.erase(keyMap_[imageId]);
+    }
+    PushImageList(imageId, image);
+    RS_LOGD("RSImageDetailEnhancerThreadTest SetOutImage2,imageId=%{public}" PRIu64
+        ",mapSize=%{public}zu, curCacheSize2=%{public}f M ", imageId, imageList_.size(), curCache_);
 }
 
 void RSImageDetailEnhancerThread::PushImageList(uint64_t imageId, const std::shared_ptr<Drawing::Image>& image)
@@ -483,7 +502,8 @@ bool RSImageDetailEnhancerThread::GetProcessReady(uint64_t imageId) const
 bool RSImageDetailEnhancerThread::GetEnabled()
 {
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
-    if (RSSystemProperties::GetScaleImageAsyncEnabled() &&
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR &&
+        RSSystemProperties::GetScaleImageAsyncEnabled() &&
         RSSystemProperties::GetMemoryWatermarkEnabled() &&
         isParamValidate_) {
         ifReleaseAllScaledImage_ = true;
@@ -543,7 +563,6 @@ std::shared_ptr<Drawing::Surface> DetailEnhancerUtils::InitSurface(int dstWidth,
     nativeSurfaceInfo->nativeWindowBuffer = nativeWindowBuffer;
     std::shared_ptr<Drawing::Surface> newSurface = NativeBufferUtils::CreateFromNativeWindowBufferImpl(context.get(),
         imageInfoForRenderTarget, *nativeSurfaceInfo, image->GetColorSpace());
-    DestroyNativeWindowBuffer(nativeWindowBuffer);
     return newSurface;
 }
 
@@ -676,7 +695,7 @@ void DetailEnhancerUtils::SavePixelmapToFile(Drawing::Bitmap& bitmap, const std:
 float DetailEnhancerUtils::GetImageSize(const std::shared_ptr<Drawing::Image>& image) const
 {
     if (image == nullptr) {
-        return 0;
+        return 0.0f;
     }
     return static_cast<float>(image->GetWidth() * image->GetHeight()
         * CHANNELS_CNT / MEMUNIT_RATE / MEMUNIT_RATE);

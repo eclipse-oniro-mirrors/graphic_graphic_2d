@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-#include "transaction/rs_render_service_client.h"
 #include "transaction/rs_render_pipeline_client.h"
+
+#include <iremote_stub.h>
+#include "rs_render_service_connect_hub.h"
 #include "surface_type.h"
 #include "rs_trace.h"
 #include "surface_utils.h"
@@ -32,7 +34,9 @@
 #include "command/rs_node_showing_command.h"
 #include "common/rs_xcollie.h"
 #include "ipc_callbacks/brightness_info_change_callback_stub.h"
+#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #include "ipc_callbacks/pointer_render/pointer_luminance_callback_stub.h"
+#endif
 #include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
 #include "ipc_callbacks/screen_switching_notify_callback_stub.h"
@@ -48,7 +52,6 @@
 #include "ipc_callbacks/rs_frame_rate_linker_expected_fps_update_callback_stub.h"
 #include "ipc_callbacks/rs_uiextension_callback_stub.h"
 #include "platform/common/rs_log.h"
-#include "platform/common/rs_system_properties.h"
 #include "render/rs_typeface_cache.h"
 #include "rs_render_service_connect_hub.h"
 #include "rs_surface_ohos.h"
@@ -332,7 +335,8 @@ bool RSRenderPipelineClient::GetHighContrastTextState()
 
 
 void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
-    std::shared_ptr<Media::PixelMap> pixelmap, std::shared_ptr<Media::PixelMap> pixelmapHDR)
+    std::shared_ptr<Media::PixelMap> pixelmap, CaptureError captureErrorCode,
+    std::shared_ptr<Media::PixelMap> pixelmapHDR)
 {
     ROSEN_LOGD("RSRenderPipelineClient::Into TriggerSurfaceCaptureCallback nodeId:[%{public}" PRIu64 "]", id);
     std::vector<std::shared_ptr<SurfaceCaptureCallback>> callbackVector;
@@ -373,7 +377,9 @@ void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSu
         if (surfaceCaptureHDR) {
             surfaceCaptureHDR->SetMemoryName("RSSurfaceCaptureForCallbackHDR");
         }
-        if (captureConfig.isHdrCapture) {
+        if (captureConfig.needErrorCode) {
+            callbackVector[i]->OnSurfaceCaptureWithErrorCode(surfaceCapture, surfaceCaptureHDR, captureErrorCode);
+        } else if (captureConfig.isHdrCapture) {
             callbackVector[i]->OnSurfaceCaptureHDR(surfaceCapture, surfaceCaptureHDR);
         } else {
             callbackVector[i]->OnSurfaceCapture(surfaceCapture);
@@ -386,11 +392,11 @@ public:
     explicit SurfaceCaptureCallbackDirector(RSRenderPipelineClient* client) : client_(client) {}
     ~SurfaceCaptureCallbackDirector() override {};
     void OnSurfaceCapture(NodeId id, const RSSurfaceCaptureConfig& captureConfig, Media::PixelMap* pixelmap,
-        Media::PixelMap* pixelmapHDR = nullptr) override
+        CaptureError captureErrorCode = CaptureError::CAPTURE_OK, Media::PixelMap* pixelmapHDR = nullptr) override
     {
         std::shared_ptr<Media::PixelMap> surfaceCapture(pixelmap);
         std::shared_ptr<Media::PixelMap> surfaceCaptureHDR(pixelmapHDR);
-        client_->TriggerSurfaceCaptureCallback(id, captureConfig, surfaceCapture, surfaceCaptureHDR);
+        client_->TriggerSurfaceCaptureCallback(id, captureConfig, surfaceCapture, captureErrorCode, surfaceCaptureHDR);
     };
 
 private:
@@ -665,7 +671,7 @@ int32_t RSRenderPipelineClient::GetScreenHDRStatus(ScreenId id, HdrStatus& hdrSt
     return resCode;
 }
 
-void RSRenderPipelineClient::DropFrameByPid(const std::vector<int32_t> pidList)
+void RSRenderPipelineClient::DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel)
 {
     auto clientToRender = RSRenderServiceConnectHub::GetClientToRenderConnection();
     if (clientToRender != nullptr) {
@@ -987,6 +993,16 @@ int32_t RSRenderPipelineClient::UnRegisterSurfaceOcclusionChangeCallback(NodeId 
         return RENDER_SERVICE_NULL;
     }
     return clientToRender->UnRegisterSurfaceOcclusionChangeCallback(id);
+int32_t RSRenderPipelineClient::SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection)
+{
+    auto renderPipeline = RSRenderServiceConnectHub::GetClientToRenderConnection();
+    if (renderPipeline == nullptr) {
+        ROSEN_LOGE("RSRenderPipelineClient::SetLogicalCameraRotationCorrection renderPipeline is nullptr!");
+        return RENDER_SERVICE_NULL;
+    }
+    RS_LOGD("RSRenderPipelineClient::SetLogicalCameraRotationCorrection, screenId: %{public}"
+        PRIu64 ", logicalCorrection: %{public}u", id, logicalCorrection);
+    return renderPipeline->SetLogicalCameraRotationCorrection(id, logicalCorrection);
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -39,6 +39,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
+#include "render_context/new_render_context/render_context_gl.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "ui/rs_surface_extractor.h"
 #include "ui/rs_surface_node.h"
@@ -56,8 +57,13 @@
 #endif
 
 #ifdef RS_ENABLE_VK
+#ifndef ROSEN_ARKUI_X
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
+#else
+#include "rs_vulkan_context.h"
+#include "vulkan/rs_surface_android_vulkan.h"
+#endif
 #endif
 
 namespace OHOS {
@@ -171,7 +177,6 @@ void RSRenderThreadVisitor::PrepareSurfaceRenderNode(RSSurfaceRenderNode& node)
     if (curDirtyManager_ == nullptr) {
         return;
     }
-    node.ApplyModifiers();
     bool dirtyFlag = dirtyFlag_;
     auto nodeParent = node.GetParent().lock();
     if (nodeParent == nullptr) {
@@ -416,34 +421,28 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     // Update queue size for each process loop in case it dynamically changes
     queueSize_ = rsSurface->GetQueueSize();
 
+#if defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK)
+    auto rc = RSRenderThread::Instance().GetRenderContext();
+    rsSurface->SetRenderContext(rc);
+#endif
+
     auto rsSurfaceColorSpace = rsSurface->GetColorSpace();
     if (surfaceNodeColorSpace != rsSurfaceColorSpace) {
         ROSEN_LOGD("Set new colorspace %{public}d to rsSurface", surfaceNodeColorSpace);
         rsSurface->SetColorSpace(surfaceNodeColorSpace);
     }
 
-#if defined(RS_ENABLE_GL) || defined (RS_ENABLE_VK)
-    auto rc = RSRenderThread::Instance().GetRenderContext();
-    rsSurface->SetRenderContext(rc);
-#endif
-
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK)
     if (RSSystemProperties::IsUseVulkan()) {
-        std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface)->SetCleanUpHelper(
-            [](std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo>& mSurfaceMap) {
-                RSRenderThread::Instance().PostSyncTask([&mSurfaceMap]() mutable {
-                    mSurfaceMap.clear();
-                    RSRenderThread::Instance().TrimMemory();
-                });
-            });
         auto skContext = RsVulkanContext::GetSingleton().CreateDrawingContext();
         if (skContext == nullptr) {
             ROSEN_LOGE("RSRenderThreadVisitor::ProcessRootRenderNode CreateDrawingContext is null");
             return;
         }
-        std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface)->SetSkContext(skContext);
+        rsSurface->SetSkContext(skContext);
     }
 #endif
+
     uiTimestamp_ = RSRenderThread::Instance().GetUITimestamp();
     RS_TRACE_BEGIN(ptr->GetName() + " rsSurface->RequestFrame");
 #ifdef ROSEN_OHOS
@@ -565,6 +564,9 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         DrawDirtyRegion();
     }
 
+#ifdef ROSEN_ARKUI_X
+    canvas_->Restore(); //It may be that non-OHOS systems also require this operation.
+#endif
 #ifdef ROSEN_OHOS
     if (overdrawListener != nullptr) {
         overdrawListener->Draw();
@@ -595,7 +597,8 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
     ROSEN_LOGD("RSRenderThreadVisitor FlushFrame surfaceNodeId = %{public}" PRIu64 ", uiTimestamp = %{public}" PRIu64,
         node.GetRSSurfaceNodeId(), uiTimestamp_);
     rsSurface->FlushFrame(surfaceFrame, uiTimestamp_);
-#ifdef RS_ENABLE_VK
+
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         auto fenceFd = std::static_pointer_cast<RSSurfaceOhosVulkan>(rsSurface)->DupReservedFlushFd();
@@ -608,6 +611,7 @@ void RSRenderThreadVisitor::ProcessRootRenderNode(RSRootRenderNode& node)
         fdsan_close_with_tag(fenceFd, LOG_DOMAIN);
     }
 #endif
+
 #ifdef ROSEN_OHOS
     FrameCollector::GetInstance().MarkFrameEvent(FrameEventType::FlushEnd);
 #endif
@@ -849,7 +853,8 @@ void RSRenderThreadVisitor::ProcessSurfaceRenderNode(RSSurfaceRenderNode& node)
     } else {
         ROSEN_LOGE("RSRenderThreadVisitor::ProcessSurfaceRenderNode, invertMatrix failed");
     }
-    if (!RSUniRenderJudgement::IsUniRender() && !node.GetIsTextureExportNode()) {
+    if (!RSUniRenderJudgement::IsUniRender() && !node.GetIsTextureExportNode()
+        && node.GetSurfaceNodeType() != RSSurfaceNodeType::SURFACE_TEXTURE_NODE) {
         node.SetContextMatrix(contextMatrix);
         node.SetContextAlpha(canvas_->GetAlpha());
     }
@@ -1025,6 +1030,8 @@ void RSRenderThreadVisitor::ProcessTextureSurfaceRenderNode(RSSurfaceRenderNode&
     auto height = std::floor(node.GetRenderProperties().GetBoundsHeight() - (2 * pixel)); // height decrease 2 pixels
 
     canvas_->Save();
+    Drawing::Brush brush;
+    canvas_->AttachBrush(brush);
     Drawing::Rect originRect = Drawing::Rect(x, y, width + x, height + y);
 
     if (node.IsNotifyRTBufferAvailable()) {
@@ -1035,6 +1042,7 @@ void RSRenderThreadVisitor::ProcessTextureSurfaceRenderNode(RSSurfaceRenderNode&
             canvas_->Clear(backgroundColor.AsArgbInt());
         }
     }
+    canvas_->DetachBrush();
     canvas_->Restore();
 }
 #endif

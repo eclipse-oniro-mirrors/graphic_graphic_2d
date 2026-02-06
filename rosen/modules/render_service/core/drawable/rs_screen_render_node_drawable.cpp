@@ -67,6 +67,7 @@
 #include "rs_frame_report.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_jank_stats_helper.h"
+#include "render/rs_filter_cache_memory_controller.h"
 #include "render/rs_pixel_map_util.h"
 #include "screen_manager/rs_screen_manager.h"
 // dfx
@@ -91,7 +92,8 @@ namespace OHOS::Rosen::DrawableV2 {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DEFAULT_CLEAR_GPU_CACHE = "DefaultClearGpuCache";
-constexpr int32_t CAPTURE_WINDOW = 2;     // To be deleted after captureWindow being deleted
+constexpr int32_t CAPTURE_WINDOW = 2; // To be deleted after captureWindow being deleted
+constexpr int32_t MAX_DAMAGE_REGION_INFO = 300;
 constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 
 std::string RectVectorToString(const std::vector<RectI>& regionRects)
@@ -405,7 +407,7 @@ void RSScreenRenderNodeDrawable::PostClearMemoryTask() const
 {
     auto& unirenderThread = RSUniRenderThread::Instance();
     if (unirenderThread.IsDefaultClearMemoryFinished()) {
-        unirenderThread.DefaultClearMemoryCache(); // default clean with no rendering in 5s
+        unirenderThread.DefaultClearMemoryCache(); //default clean with no rendering in 5s
         unirenderThread.SetDefaultClearMemoryFinished(false);
     }
 }
@@ -486,7 +488,8 @@ void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
         return;
     }
     bool isScreenOccluded = false;
-    RectI screenRect = { 0, 0, screenInfo.width, screenInfo.height };
+    RectI screenRect = (screenInfo.activeRect.IsEmpty() ?
+        RectI(0, 0, screenInfo.width, screenInfo.height) : screenInfo.activeRect);
     // top-down traversal all mainsurface
     // if upper surface reuse filter cache which fully cover whole screen
     // mark lower layers for process skip
@@ -579,7 +582,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     // if screen power off, skip on draw, needs to draw one more frame.
-    isRenderSkipIfScreenOff_ = uniParam->GetPowerOffRenderController().GetScreenRenderSkipped(params->GetScreenId());
+    // for regional projection, since buffer-copying is used, frame still need to be updated for mirror.
+    isRenderSkipIfScreenOff_ = RSUniRenderUtil::CheckRenderSkipIfScreenOff(true, params->GetScreenId()) &&
+        !(params->HasMirrorScreen() && MultiScreenParam::IsForceRenderForMirror());
     if (isRenderSkipIfScreenOff_) {
         SetDrawSkipType(DrawSkipType::RENDER_SKIP_IF_SCREEN_OFF);
         return;
@@ -694,6 +699,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (mirroredRenderParams || params->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE) {
         DirtyStatusAutoUpdate dirtyStatusAutoUpdate(*uniParam, params->GetChildDisplayCount() == 1);
         if (!processor->InitForRenderThread(*this, RSUniRenderThread::Instance().GetRenderEngine())) {
+            // Clear cacheImgForCapture so that mirrorScreen avoid using an expired cache
+            cacheImgForCapture_ = nullptr;
             SetDrawSkipType(DrawSkipType::RENDER_ENGINE_NULL);
             syncDirtyManager_->ResetDirtyAsSurfaceSize();
             syncDirtyManager_->UpdateDirty(false);
@@ -788,10 +795,13 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             params->ResetVirtualExpandAccumulatedParams();
             auto targetSurfaceRenderNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
                 params->GetTargetSurfaceRenderNodeDrawable().lock());
+            // Sometimes may require setting cacheImg, such as MultiScreenView and SingleAppCast
             if ((targetSurfaceRenderNodeDrawable || params->HasMirrorScreen()) && curCanvas_->GetSurface()) {
-                RS_TRACE_NAME("DrawExpandScreen cacheImgForMultiScreenView");
-                cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
+                RS_TRACE_NAME("DrawExpandScreen cacheImg for capture and multiscreenview");
+                cacheImgForCapture_ = curCanvas_->GetSurface()->GetImageSnapshot();
+                cacheImgForMultiScreenView_ = cacheImgForCapture_;
             } else {
+                cacheImgForCapture_ = nullptr;
                 cacheImgForMultiScreenView_ = nullptr;
             }
             // Restore the initial state of the canvas to avoid state accumulation
@@ -879,7 +889,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         uniParam->Reset();
         clipRegion = GetFlippedRegion(damageRegionrects, screenInfo);
         RS_TRACE_NAME_FMT("SetDamageRegion damageRegionrects num: %zu, info: %s",
-            damageRegionrects.size(), RectVectorToString(damageRegionrects).c_str());
+            damageRegionrects.size(),
+            RectVectorToString(damageRegionrects).substr(0, MAX_DAMAGE_REGION_INFO).c_str());
         if (!uniParam->IsRegionDebugEnabled()) {
             renderFrame->SetDamageRegion(damageRegionrects);
         }
@@ -912,6 +923,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RSOpincDrawCache::SetScreenRectInfo({ 0, 0, screenProperty.GetWidth(), screenProperty.GetHeight() });
     }
 #endif
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo({0, 0, screenInfo.width, screenInfo.height});
     UpdateSurfaceDrawRegion(curCanvas_, params);
 
     // canvas draw
@@ -976,9 +988,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
         if (RSSystemProperties::GetDrawMirrorCacheImageEnabled() && params->HasMirrorScreen() &&
             curCanvas_->GetSurface() != nullptr) {
-            cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
+            cacheImgForCapture_ = curCanvas_->GetSurface()->GetImageSnapshot();
         } else {
-            cacheImgForMultiScreenView_ = nullptr;
+            cacheImgForCapture_ = nullptr;
         }
     }
     RenderOverDraw();

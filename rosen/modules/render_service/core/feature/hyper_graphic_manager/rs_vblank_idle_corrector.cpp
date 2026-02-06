@@ -59,6 +59,9 @@ void RSVBlankIdleCorrector::ProcessScreenConstraint(ScreenId screenId, uint64_t 
 
     bool isScreenNeedAdaptive = frameRateMgr->AdaptiveStatus() == SupportASStatus::SUPPORT_AS &&
         frameRateMgr->IsGameNodeOnTree();
+    // TODO: chenqiang
+    // bool isScreenNeedAdaptive = frameRateMgr->AdaptiveStatus() == SupportASStatus::SUPPORT_AS &&
+    //     frameRateMgr->IsGameNodeOnTree() && CreateVSyncGenerator()->IsNeedAdaptiveAfterUpdateMode();
     if (isScreenNeedAdaptive) {
         RS_TRACE_NAME_FMT("%s: set 3 in Adaptive Mode!", __func__);
         scmFromHgm->SetScreenConstraint(screenId, 0, ScreenConstraintType::CONSTRAINT_ADAPTIVE);

@@ -115,7 +115,8 @@ private:
     ErrCode FreezeScreen(NodeId id, bool isFreeze) override;
 
     void TakeUICaptureInRange(
-        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig) override;
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+        RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     ErrCode SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
@@ -124,7 +125,7 @@ private:
 
     ErrCode GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus, int32_t& resCode) override;
 
-    ErrCode DropFrameByPid(const std::vector<int32_t> pidList) override;
+    ErrCode DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0) override;
 
     ErrCode SetAncoForceDoDirect(bool direct, bool& res) override;
 
@@ -168,6 +169,7 @@ private:
     ErrCode SetAppWindowNum(uint32_t num) override;
 
     std::string GetBundleName(pid_t pid) override;
+    int32_t SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection) override;
 
     pid_t remotePid_;
     wptr<RSRenderService> renderService_;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,10 +47,10 @@ RSRenderSurfaceLayer::RSRenderSurfaceLayer()
 
 RSRenderSurfaceLayer::~RSRenderSurfaceLayer()
 {
-    RS_TRACE_NAME_FMT("RSRenderSurfaceLayer::~RSRenderSurfaceLayer id: %" PRIu64 ", name: %s",
-        rsLayerId_, surfaceName_.c_str());
-    RS_LOGD("Destructing RSRenderSurfaceLayer, id: %{public}" PRIu64 ", surface name: %{public}s",
-        rsLayerId_, surfaceName_.c_str());
+    RS_TRACE_NAME_FMT("RSRenderSurfaceLayer::~RSRenderSurfaceLayer id: %" PRIu64 ", name: %s, layer type: %d",
+        rsLayerId_, surfaceName_.c_str(), layerType_);
+    RS_LOGD("Destructing RSRenderSurfaceLayer, id: %{public}" PRIu64 ", surface name: %{public}s, layer type: %{public}d",
+        rsLayerId_, surfaceName_.c_str(), layerType_);
 }
 
 RSLayerId RSRenderSurfaceLayer::GetRSLayerId() const

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,11 +47,11 @@ public:
     std::shared_ptr<RSComposerContext> GetComposerContext();
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
     void ClearFrameBuffers();
-    uint32_t GetUnExecuteTaskNum();
+    uint32_t GetUnExecuteTaskNum() const;
     void UpdatePipelineParam(const PipelineParam& pipelineParam);
     PipelineParam GetPipelineParam();
-    int GetAccumulatedBufferCount();
-    void DumpLayersInfo(std::string &dumpString);
+    int GetAccumulatedBufferCount() const;
+    void DumpLayersInfo(std::string& dumpString);
     void DumpCurrentFrameLayers();
     void ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds);
     void SetScreenBacklight(uint32_t level);

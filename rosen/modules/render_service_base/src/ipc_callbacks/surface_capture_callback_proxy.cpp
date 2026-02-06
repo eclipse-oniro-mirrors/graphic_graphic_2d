@@ -29,20 +29,28 @@ RSSurfaceCaptureCallbackProxy::RSSurfaceCaptureCallbackProxy(const sptr<IRemoteO
 bool RSSurfaceCaptureCallbackProxy::WriteSurfaceCaptureConfig(
     const RSSurfaceCaptureConfig& captureConfig, MessageParcel& data)
 {
-    // send mainScreenRect only to reduce ipc data size
-    if (!data.WriteBool(captureConfig.isHdrCapture) ||
+    if (!data.WriteFloat(captureConfig.scaleX) || !data.WriteFloat(captureConfig.scaleY) ||
+        !data.WriteBool(captureConfig.useDma) || !data.WriteBool(captureConfig.useCurWindow) ||
+        !data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType)) || !data.WriteBool(captureConfig.isSync) ||
+        !data.WriteBool(captureConfig.isHdrCapture) ||
         !data.WriteBool(captureConfig.needF16WindowCaptureForScRGB) ||
+        !data.WriteBool(captureConfig.needErrorCode) ||
         !data.WriteFloat(captureConfig.mainScreenRect.left_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.top_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.right_) ||
         !data.WriteFloat(captureConfig.mainScreenRect.bottom_) ||
-        !data.WriteUInt64Vector(captureConfig.blackList) ||
         !data.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId) ||
         !data.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize) ||
         !data.WriteFloat(captureConfig.specifiedAreaRect.left_) ||
         !data.WriteFloat(captureConfig.specifiedAreaRect.top_) ||
         !data.WriteFloat(captureConfig.specifiedAreaRect.right_) ||
-        !data.WriteFloat(captureConfig.specifiedAreaRect.bottom_)) {
+        !data.WriteFloat(captureConfig.specifiedAreaRect.bottom_) ||
+        !data.WriteUInt64Vector(captureConfig.blackList) ||
+        !data.WriteUint32(captureConfig.backGroundColor) ||
+        !data.WriteUint32(captureConfig.colorSpace.first) ||
+        !data.WriteBool(captureConfig.colorSpace.second) ||
+        !data.WriteUint32(captureConfig.dynamicRangeMode.first) ||
+        !data.WriteBool(captureConfig.dynamicRangeMode.second)) {
         ROSEN_LOGE("RSSurfaceCaptureCallbackProxy::WriteSurfaceCaptureConfig Write CaptureConfig failed");
         return false;
     }
@@ -50,7 +58,7 @@ bool RSSurfaceCaptureCallbackProxy::WriteSurfaceCaptureConfig(
 }
 
 void RSSurfaceCaptureCallbackProxy::OnSurfaceCapture(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
-    Media::PixelMap* pixelmap, Media::PixelMap* pixelmapHDR)
+    Media::PixelMap* pixelmap, CaptureError captureErrorCode, Media::PixelMap* pixelmapHDR)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -69,6 +77,10 @@ void RSSurfaceCaptureCallbackProxy::OnSurfaceCapture(NodeId id, const RSSurfaceC
     }
     if (!data.WriteParcelable(pixelmap)) {
         ROSEN_LOGE("SurfaceCaptureCallbackProxy::OnSurfaceCapture WriteParcelable failed");
+        return;
+    }
+    if (!data.WriteUint8(static_cast<uint8_t>(captureErrorCode))) {
+        ROSEN_LOGE("SurfaceCaptureCallbackProxy::OnSurfaceCapture WriteUint8 failed");
         return;
     }
     if (captureConfig.isHdrCapture && !data.WriteParcelable(pixelmapHDR)) {

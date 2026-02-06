@@ -139,6 +139,10 @@ ScreenId RSScreenManagerAgent::CreateVirtualScreen(const std::string &name, uint
         RS_LOGW("RSScreenManagerAgent::CreateVirtualScreen screenManager_ is nullptr");
         return INVALID_SCREEN_ID;
     }
+    if (whiteList.size() > MAX_SPECIAL_LAYER_NUM) {
+        RS_LOGW("%{public}s: white list is over max size!", __func__);
+        return INVALID_ARGUMENTS;
+    }
     auto screenId = screenManager_->CreateVirtualScreen(
         name, width, height, surface, associatedScreenId, flags, whiteList);
     if (screenId != INVALID_SCREEN_ID) {
@@ -249,8 +253,12 @@ void RSScreenManagerAgent::DisablePowerOffRenderControl(ScreenId id)
     screenManager_->DisablePowerOffRenderControl(id);
 }
 
-int32_t RSScreenManagerAgent::SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
+int32_t RSScreenManagerAgent::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
+    if (blackList.size() > MAX_SPECIAL_LAYER_NUM) {
+        RS_LOGW("%{public}s: blackList is over max size!", __func__);
+        return StatusCode::INVALID_ARGUMENTS;
+    }
     if (blackList.empty()) {
         RS_LOGW("%{public}s blackList is empty", __func__);
     }
@@ -273,8 +281,12 @@ int32_t RSScreenManagerAgent::SetVirtualScreenTypeBlackList(ScreenId id, const s
     return screenManager_->SetVirtualScreenTypeBlackList(id, typeBlackList);
 }
 
-int32_t RSScreenManagerAgent::AddVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
+int32_t RSScreenManagerAgent::AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
+    if (blackList.size() > MAX_SPECIAL_LAYER_NUM) {
+        RS_LOGW("%{public}s: blackList is over max size!", __func__);
+        return StatusCode::INVALID_ARGUMENTS;
+    }
     if (blackList.empty()) {
         RS_LOGW("%{public}s blacklist is empty", __func__);
         return StatusCode::BLACKLIST_IS_EMPTY;
@@ -286,10 +298,10 @@ int32_t RSScreenManagerAgent::AddVirtualScreenBlackList(ScreenId id, const std::
     return screenManager_->AddVirtualScreenBlackList(id, blackList);
 }
 
-int32_t RSScreenManagerAgent::RemoveVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList)
+int32_t RSScreenManagerAgent::RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
     if (blackList.empty()) {
-        RS_LOGW("RemoveVirtualScreenBlackList blackList is empty.");
+        RS_LOGW("%{public}s: blackList is over max size!", __func__);
         return StatusCode::BLACKLIST_IS_EMPTY;
     }
     if (!screenManager_) {
@@ -297,6 +309,36 @@ int32_t RSScreenManagerAgent::RemoveVirtualScreenBlackList(ScreenId id, const st
         return StatusCode::SCREEN_NOT_FOUND;
     }
     return screenManager_->RemoveVirtualScreenBlackList(id, blackList);
+}
+
+int32_t RSScreenManagerAgent::AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList)
+{
+    if (whiteList.size() > MAX_SPECIAL_LAYER_NUM) {
+        RS_LOGW("%{public}s: whiteList is over max size!", __func__);
+        return StatusCode::INVALID_ARGUMENTS;
+    }
+    if (whiteList.empty()) {
+        RS_LOGW("%{public}s whiteList is empty", __func__);
+        return StatusCode::WHITELIST_IS_EMPTY;
+    }
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->AddVirtualScreenWhiteList(id, whiteList);
+}
+
+int32_t RSScreenManagerAgent::RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList)
+{
+    if (whiteList.empty()) {
+        RS_LOGW("%{public}s: whiteList is over max size!", __func__);
+        return StatusCode::WHITELIST_IS_EMPTY;
+    }
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->RemoveVirtualScreenWhiteList(id, whiteList);
 }
 
 int32_t RSScreenManagerAgent::SetScreenSwitchingNotifyCallback(sptr<RSIScreenSwitchingNotifyCallback> callback)

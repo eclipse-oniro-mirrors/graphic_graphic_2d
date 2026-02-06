@@ -95,21 +95,20 @@ public:
     int32_t StartVSyncSampler(bool forceReSample = false);
     void SetPendingMode(int64_t period, int64_t timestamp);
     void ReleaseLayers(ReleaseLayerBuffersInfo& releaseLayerInfo);
-    int32_t GetBufferCacheSize();
+    int32_t GetBufferCacheSize() const;
     void SetVsyncSamplerEnabled(bool enabled);
     bool GetVsyncSamplerEnabled();
     void SetProtectedFrameBufferState(bool state)
     {
         isProtectedBufferAllocated_.store(state);
     }
-    bool GetProtectedFrameBufferState()
+    bool GetProtectedFrameBufferState() const
     {
         return isProtectedBufferAllocated_.load();
     }
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
 
     void SetActiveRectSwitchStatus(bool flag, const GraphicIRect& activeRect);
-
     void SetMaskLayer(const std::shared_ptr<HdiLayer>& maskLayer) { maskLayer_ = maskLayer; }
     RosenError RegPrepareComplete(OnPrepareCompleteFunc func, void* data);
     void Repaint();
@@ -127,7 +126,8 @@ public:
     {
         return thirdFrameAheadPresentTime_;
     }
-    void UpdateThirdFrameAheadPresentFence(sptr<SyncFence> &fbFence);
+    void UpdateThirdFrameAheadPresentFence(sptr<SyncFence>& fbFence);
+    int32_t GetDisplayClientTargetProperty(int32_t& pixelFormat, int32_t& dataspace);
 
 private:
     HdiDevice *device_ = nullptr;

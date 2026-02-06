@@ -38,6 +38,7 @@
 #include "ipc_callbacks/rs_transaction_data_callback.h"
 #include "memory/rs_memory_graphic.h"
 #include "platform/drawing/rs_surface.h"
+#include "rs_render_service_client_info.h"
 #include "rs_hrp_service.h"
 #include "rs_irender_client.h"
 #include "variable_frame_rate/rs_variable_frame_rate.h"
@@ -57,9 +58,7 @@
 #include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "info_collection/rs_layer_compose_collection.h"
 #include "utils/scalar.h"
-#include "rs_render_service_client_info.h"
 #include "rs_client_render_comm_def_info.h"
-
 namespace OHOS {
 namespace Rosen {
 // normal callback functor for client users.
@@ -100,7 +99,8 @@ public:
 
     int32_t GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid);
 
-    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid, const Rect &srcRect);
+    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid,
+        const Rect &srcRect, bool transformEnabled = false);
 
     ScreenId GetDefaultScreenId();
     ScreenId GetActiveScreenId();
@@ -114,13 +114,16 @@ public:
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
 
-    int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
+    // blacklist
+    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
+    int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
+    int32_t RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
+
+    // whitelist
+    int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
+    int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
 
     int32_t SetVirtualScreenTypeBlackList(ScreenId id, std::vector<NodeType>& typeBlackListVector);
-
-    int32_t AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
-
-    int32_t RemoveVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
 #endif
 
     int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
@@ -185,6 +188,8 @@ public:
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
 
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
+
     RSScreenModeInfo GetScreenActiveMode(ScreenId id);
 
     std::vector<RSScreenModeInfo> GetScreenSupportedModes(ScreenId id);
@@ -192,6 +197,8 @@ public:
     RSScreenCapability GetScreenCapability(ScreenId id);
 
     ScreenPowerStatus GetScreenPowerStatus(ScreenId id);
+
+    PanelPowerStatus GetPanelPowerStatus(ScreenId id);
 
     RSScreenData GetScreenData(ScreenId id);
 
@@ -295,7 +302,7 @@ public:
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount);
 
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType);
 
     void NotifyDynamicModeEvent(bool enableDynamicMode);
 
@@ -335,13 +342,13 @@ public:
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 
-    void SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh);
-
-    void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow);
+    void SetForceRefresh(const std::string& nodeIdStr, bool isForceRefresh);
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     int32_t SetOverlayDisplayMode(int32_t mode);
 #endif
+
+    void SetColorFollow(const std::string &nodeIdStr, bool isColorFollow);
 
 #ifdef TP_FEATURE_ENABLE
     void SetTpFeatureConfig(int32_t feature, const char* config,
@@ -367,7 +374,7 @@ public:
 
     bool GetBehindWindowFilterEnabled(bool& enabled);
 
-    int32_t GetPidGpuMemoryInMB(pid_t pid, float &gpuMemInMB);
+    int32_t GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB);
 
     RetCodeHrpService ProfilerServiceOpenFile(const HrpServiceDirInfo& dirInfo,
         const std::string& fileName, int32_t flags, int& outFd);
@@ -380,6 +387,10 @@ public:
 
     void AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps);
+
+    bool AvcodecVideoGet(uint64_t uniqueId);
+ 
+    bool AvcodecVideoGetRecent();
 
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
 private:

@@ -66,7 +66,13 @@ const uint8_t DO_GET_DISPLAY_IDENTIFICATION_DATA = 19;
 const uint8_t DO_RESIZE_VIRTUAL_SCREEN = 20;
 const uint8_t DO_CLEAN_VIRTUAL_SCREENS = 21;
 constexpr uint8_t DO_SET_ROG_SCREEN_RESOLUTION = 22;
+<<<<<<< HEAD
 const uint8_t TARGET_SIZE = 24;
+=======
+constexpr uint8_t DO_GET_ROG_SCREEN_RESOLUTION = 23;
+constexpr uint8_t DO_SET_SCREEN_SECURITY_MASK = 24;
+const uint8_t TARGET_SIZE = 25;
+>>>>>>> master
 } // namespace
 
 auto g_pid = getpid();
@@ -168,10 +174,19 @@ void DoCreateVirtualScreen(FuzzedDataProvider& fdp)
     MessageOption option;
     MessageParcel dataP;
     MessageParcel reply;
+<<<<<<< HEAD
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_VIRTUAL_SCREEN);
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
     sptr<IBufferProducer> bufferProducer = iface_cast<IBufferProducer>(remoteObject);
+=======
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::CREATE_VIRTUAL_SCREEN);
+    sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("FuzzTest");
+    sptr<IBufferProducer> bufferProducer = cSurface->GetProducer();
+    if (!bufferProducer) {
+        return;
+    }
+>>>>>>> master
 
     std::string name = fdp.ConsumeRandomLengthString();
     uint32_t width = fdp.ConsumeIntegral<uint32_t>();
@@ -229,6 +244,17 @@ void DoSetVirtualScreenSecurityExemptionList(FuzzedDataProvider& fdp)
     g_toServiceConnection->SetVirtualScreenSecurityExemptionList(id, secExemptionListVector);
 }
 
+void DoSetScreenSecurityMask(FuzzedDataProvider& fdp)
+{
+    ScreenId id = fdp.ConsumeIntegral<ScreenId>();
+    std::shared_ptr<Media::PixelMap> securityMask = nullptr;
+    g_toServiceConnection->SetScreenSecurityMask(id, securityMask);
+
+    g_toServiceConnection->screenManager_ = nullptr;
+    g_toServiceConnection->SetScreenSecurityMask(id, securityMask);
+    g_toServiceConnection->screenManager_ = RSScreenManager::GetInstance();
+}
+
 void DoSetMirrorScreenVisibleRect(FuzzedDataProvider& fdp)
 {
     uint64_t screenId = fdp.ConsumeIntegral<uint64_t>();
@@ -244,6 +270,10 @@ void DoSetMirrorScreenVisibleRect(FuzzedDataProvider& fdp)
     };
     bool supportRotation = fdp.ConsumeBool();
     g_toServiceConnection->SetMirrorScreenVisibleRect(screenId, mainScreenRect, supportRotation);
+
+    g_toServiceConnection->screenManager_ = nullptr;
+    g_toServiceConnection->SetMirrorScreenVisibleRect(screenId, mainScreenRect, supportRotation);
+    g_toServiceConnection->screenManager_ = RSScreenManager::GetInstance();
 }
 
 void DoSetScreenActiveMode(FuzzedDataProvider& fdp)
@@ -488,6 +518,20 @@ void DoResizeVirtualScreen(FuzzedDataProvider& fdp)
 
 void DoCleanVirtualScreens()
 {
+    g_toServiceConnection->screenManager_ = nullptr;
+    g_toServiceConnection->screenChangeCallback_ = nullptr;
+    g_toServiceConnection->CleanVirtualScreens();
+
+    g_toServiceConnection->screenManager_ = RSScreenManager::GetInstance();
+    g_toServiceConnection->screenChangeCallback_ = nullptr;
+    g_toServiceConnection->CleanVirtualScreens();
+
+    g_toServiceConnection->screenManager_ = RSScreenManager::GetInstance();
+    g_toServiceConnection->screenChangeCallback_ = sptr<RSIScreenChangeCallback>();
+    g_toServiceConnection->CleanVirtualScreens();
+
+    g_toServiceConnection->screenManager_ = RSScreenManager::GetInstance();
+    g_toServiceConnection->screenChangeCallback_ = nullptr;
     g_toServiceConnection->CleanVirtualScreens();
 }
 
@@ -582,6 +626,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SET_ROG_SCREEN_RESOLUTION:
             OHOS::Rosen::DoSetRogScreenResolution(fdp);
             break;
+<<<<<<< HEAD
+=======
+        case OHOS::Rosen::DO_GET_ROG_SCREEN_RESOLUTION:
+            OHOS::Rosen::DoGetRogScreenResolution(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_SCREEN_SECURITY_MASK:
+            OHOS::Rosen::DoSetScreenSecurityMask(fdp);
+            break;
+>>>>>>> master
         default:
             return -1;
     }

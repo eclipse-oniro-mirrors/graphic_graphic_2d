@@ -82,7 +82,8 @@ protected:
     void HitchsDump(std::string& dumpString, std::string& layerArg);
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
-    int64_t GetDelayTime();
+    void HandlePowerStatus(ScreenPowerStatus status);
+    int64_t GetDelayTime() const;
 
 private:
     void CreateAndInitComposer(const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property);
@@ -118,7 +119,7 @@ private:
     std::string GetSurfaceNameInLayersForTrace(const std::vector<std::shared_ptr<RSLayer>>& layers);
     void ChangeLayersForActiveRectOutside(std::vector<std::shared_ptr<RSLayer>>& layers);
     bool IsDropDirtyFrame(const std::vector<std::shared_ptr<RSLayer>>& layers);
-    void RecordTimestamp(uint64_t vsyncId, const std::vector<std::shared_ptr<RSLayer>>& layers);
+    void RecordTimestamp(uint64_t vsyncId);
     void ProcessComposerFrame(uint32_t currentRate, const PipelineParam& pipelineParam);
     template<typename Task, typename Return = std::invoke_result_t<Task>>
     std::future<Return> ScheduleTask(Task&& task)
@@ -139,6 +140,8 @@ private:
     void SetScreenBacklight(uint32_t level);
     void SetScreenPowerOnChanged(bool flag);
     void ReInit(const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property);
+    bool GetDisplayClientTargetProperty(GraphicPixelFormat& pixelFormat,
+        GraphicColorGamut& colorGamut, const std::vector<std::shared_ptr<RSLayer>>& layers);
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     std::shared_ptr<HdiOutput> hdiOutput_;

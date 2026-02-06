@@ -27,6 +27,7 @@
 #include "font_config.h"
 #include "font_parser.h"
 #include "font_utils.h"
+#include "recording/recording_canvas.h"
 #include "ohos/init_data.h"
 #include "rosen_text/font_collection_mgr.h"
 #include "rosen_text/typography.h"
@@ -38,10 +39,6 @@
 #include "utils/log.h"
 #include "utils/object_mgr.h"
 #include "utils/string_util.h"
-
-#ifdef USE_M133_SKIA
-#include "recording/recording_canvas.h"
-#endif
 
 using namespace OHOS::Rosen;
 
@@ -3693,4 +3690,12 @@ OH_Drawing_TextShadow *OH_Drawing_CopyTextShadow(OH_Drawing_TextShadow *shadow)
     }
 
     return reinterpret_cast<OH_Drawing_TextShadow*>(newSrcShadow);
+}
+
+void OH_Drawing_DestroyPositionAndAffinity(OH_Drawing_PositionAndAffinity* positionAndAffinity)
+{
+    if (positionAndAffinity == nullptr) {
+        return;
+    }
+    delete ConvertToOriginalText<IndexAndAffinity>(positionAndAffinity);
 }

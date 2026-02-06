@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,7 +49,7 @@ static const std::unordered_map<std::string, FontInfo> FONT_DATA = {
     {"FTTokens.ttf", {223, 61472, 61584, 61695}},
     {"HMOSColorEmojiCompat.ttf", {1513, 0, 128292, 1048727}},
     {"HMOSColorEmojiFlags.ttf", {26, 127462, 127474, 127487}},
-    {"HMSymbolVF.ttf", {4329, 32, 985230, 987450}},
+    {"HMSymbolVF.ttf", {4664, 32, 985230, 987450}},
     {"HYQiHeiL3.ttf", {60130, 32, 161155, 194988}},
     {"HarmonyOS_Sans.ttf", {874, 10, 943, 12539}},
     {"HarmonyOS_Sans_Condensed.ttf", {810, 32, 931, 12318}},

@@ -121,6 +121,13 @@ void RSSubThread::DumpMem(DfxString& log, bool isLite)
     });
 }
 
+void RSSubThread::DumpGpuMem(DfxString& log, const std::vector<std::pair<NodeId, std::string>>& nodeTags)
+{
+    PostSyncTask([&log, &nodeTags, this]() {
+        MemoryManager::DumpAllGpuInfoNew(log, grContext_.get(), nodeTags);
+    });
+}
+
 float RSSubThread::GetAppGpuMemoryInMB()
 {
     float total = 0.f;
@@ -128,6 +135,26 @@ float RSSubThread::GetAppGpuMemoryInMB()
         total = MemoryManager::GetAppGpuMemoryInMB(grContext_.get());
     });
     return total;
+}
+
+NodeId RSSubThread::GetSubAppNodeId(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable,
+    RSSurfaceRenderParams* surfaceParams)
+{
+    NodeId tagNodeId = nodeDrawable->GetId();
+    for (const auto& subDrawable : nodeDrawable->GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
+        if (UNLIKELY(!subDrawable)) {
+            continue;
+        }
+        auto subSurfaceParams = static_cast<RSSurfaceRenderParams*>(subDrawable->GetRenderParams().get());
+        if (UNLIKELY(!subSurfaceParams)) {
+            continue;
+        }
+        if (subSurfaceParams->IsAppWindow()) {
+            tagNodeId = subDrawable->GetId();
+            break;
+        }
+    }
+    return tagNodeId;
 }
 
 bool RSSubThread::CheckValid(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
@@ -164,7 +191,8 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
         return;
     }
 
-    RSTagTracker tagTracker(grContext_, RSTagTracker::TAGTYPE::TAG_UIFIRST);
+    RSTagTracker tagTracker(grContext_, GetSubAppNodeId(nodeDrawable, surfaceParams),
+            RSTagTracker::TAGTYPE::TAG_SUB_THREAD, nodeDrawable->GetName());
     // set cur firstlevel node in subThread
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), surfaceParams->GetId());

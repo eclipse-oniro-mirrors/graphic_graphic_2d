@@ -281,5 +281,25 @@ void RSRenderComposerManager::ClearRefreshRateCounts(std::string& dumpString)
         renderComposerAgent->ClearRefreshRateCounts(dumpString);
     }
 }
+
+void RSRenderComposerManager::HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status)
+{
+ 	RS_OPTIONAL_TRACE_NAME_FMT("%s: screenId %u", __func__, screenId);
+    std::shared_ptr<RSRenderComposerAgent> renderComposerAgent;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto iter = rsRenderComposerAgentMap_.find(screenId);
+        if (iter == rsRenderComposerAgentMap_.end()) {
+            RS_LOGE("%{public}s not find screenId:%{public}" PRIu64, __func__, screenId);
+            return;
+        }
+        renderComposerAgent = iter->second;
+    }
+    if (renderComposerAgent == nullptr) {
+        RS_LOGE("%{public}s renderComposerAgent is null, screenId:%{public}" PRIu64, __func__, screenId);
+        return;
+    }
+    renderComposerAgent->HandlePowerStatus(status);
+}
 } // namespace Rosen
 } // namespace OHOS

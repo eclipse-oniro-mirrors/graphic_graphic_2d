@@ -198,6 +198,8 @@ bool DoCreatePixelMapFromSurfaceId(const uint8_t* data, size_t size)
     uint64_t surfaceId = GetData<uint64_t>();
     Rect srcRect = {0, 0, 100, 100};
     renderServiceClient->CreatePixelMapFromSurfaceId(surfaceId, srcRect);
+    renderServiceClient->CreatePixelMapFromSurfaceId(surfaceId, srcRect, true);
+    renderServiceClient->CreatePixelMapFromSurfaceId(surfaceId, srcRect, false);
     return true;
 }
 
@@ -230,7 +232,7 @@ bool DoTriggerSurfaceCaptureCallback(const uint8_t* data, size_t size)
     captureConfig.mainScreenRect.right_ = GetData<float>();
     captureConfig.mainScreenRect.bottom_ = GetData<float>();
 
-    renderPipelineClient->TriggerSurfaceCaptureCallback(id, captureConfig, pixelmap);
+    renderPipelineClient->TriggerSurfaceCaptureCallback(id, captureConfig, pixelmap, CaptureError::CAPTURE_OK);
     return true;
 }
 
@@ -914,12 +916,15 @@ bool DoNotifyPackageEvent(const uint8_t* data, size_t size)
 bool DONotifyAppStrategyConfigChangeEvent(const uint8_t* data, size_t size)
 {
     std::shared_ptr<RSRenderServiceClient> renderServiceClient = std::make_shared<RSRenderServiceClient>();
-    std::string pkgName = GetData<std::string>();
-    uint32_t listSize = GetData<uint32_t>();
-    std::string configKey = GetData<std::string>();
-    std::string configValue = GetData<std::string>();
+    uint32_t strlen = GetData<uint32_t>() % 20;
+    std::string pkgName = GetStringFromData(strlen);
+    uint32_t listSize = GetData<uint32_t>() % 10;
     std::vector<std::pair<std::string, std::string>> newConfig;
-    newConfig.push_back(make_pair(configKey, configValue));
+    for (auto i = 0; i < listSize; i++) {
+        std::string configKey = GetStringFromData(strlen);
+        std::string configValue = GetStringFromData(strlen);
+        newConfig.push_back(make_pair(configKey, configValue));
+    }
     renderServiceClient->NotifyAppStrategyConfigChangeEvent(pkgName, listSize, newConfig);
     return true;
 }
@@ -953,8 +958,9 @@ bool DoNotifyTouchEvent(const uint8_t* data, size_t size)
     std::shared_ptr<RSRenderServiceClient> renderServiceClient = std::make_shared<RSRenderServiceClient>();
     int32_t touchStatus = GetData<int32_t>();
     int32_t touchCnt = GetData<int32_t>();
+    int32_t sourceType = GetData<int32_t>();
     bool enableDynamicMode = GetData<bool>();
-    renderServiceClient->NotifyTouchEvent(touchStatus, touchCnt);
+    renderServiceClient->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     renderServiceClient->NotifyDynamicModeEvent(enableDynamicMode);
     return true;
 }

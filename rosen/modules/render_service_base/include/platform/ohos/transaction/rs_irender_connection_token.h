@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef RENDER_SERVICE_BASE_PLATFORM_OHOS_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
 #define RENDER_SERVICE_BASE_PLATFORM_OHOS_TRANSACTION_RS_IRENDER_CONNECTION_TOKEN_H
 

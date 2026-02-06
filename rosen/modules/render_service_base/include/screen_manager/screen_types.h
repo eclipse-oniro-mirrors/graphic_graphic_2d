@@ -45,9 +45,6 @@ constexpr int32_t RS_ROTATION_180 = 180;
 constexpr int32_t RS_ROTATION_270 = 270;
 constexpr int32_t RS_ROTATION_360 = 360;
 
-constexpr uint32_t MAX_BLACK_LIST_NUM = 1024;
-constexpr uint32_t MAX_WHITE_LIST_NUM = 1024;
-
 inline constexpr ScreenId ToScreenId(ScreenPhysicalId physicalId)
 {
     return static_cast<ScreenId>(physicalId);
@@ -113,6 +110,12 @@ typedef enum : uint32_t {
     POWER_STATUS_BUTT,
     INVALID_POWER_STATUS,
 } ScreenPowerStatus;
+
+enum class PanelPowerStatus : uint32_t {
+    PANEL_POWER_STATUS_ON = 0,
+    PANEL_POWER_STATUS_OFF,
+    INVALID_PANEL_POWER_STATUS,
+};
 
 typedef enum : uint32_t {
     DISP_INTF_HDMI = 0,
@@ -203,6 +206,10 @@ typedef enum : uint32_t {
     READ_PARCEL_ERR,
     IPC_ERROR,
     HDI_ERR_NOT_SUPPORT,
+    MAIN_THREAD_NULL,
+    SCREEN_TYPE_ERROR,
+    WHITELIST_IS_EMPTY,
+    FEATURE_DISABLED,
 } StatusCode;
 
 typedef enum : uint32_t {
@@ -210,6 +217,12 @@ typedef enum : uint32_t {
     VIRTUAL_SCREEN_PAUSE,
     VIRTUAL_SCREEN_INVALID_STATUS,
 } VirtualScreenStatus;
+
+enum class DualScreenStatus : uint64_t {
+    DUAL_SCREEN_EXIT = 0,
+    DUAL_SCREEN_ENTER,
+    DUAL_SCREEN_STATUS_BUTT,
+};
 
 /*
  * @brief Enumerates screen color key types supported by hardware acceleration.

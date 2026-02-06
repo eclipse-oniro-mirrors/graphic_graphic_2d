@@ -63,7 +63,7 @@ void RSLayerTransactionTest::SetUpTestCase()
 
 void RSLayerTransactionTest::TearDownTestCase()
 {
-    rsRenderComposer->uniRenderEngine_  = nullptr;
+    rsRenderComposer->uniRenderEngine_ = nullptr;
 }
 
 /**

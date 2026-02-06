@@ -109,6 +109,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, InitTest, TestSize.Level1)
     composerAdapter_->Init(info, composerClient);
     EXPECT_NE(composerAdapter_->composerClient_, nullptr);
 }
+
 /**
  * @tc.name: SrcRectRotateTransform001
  * @tc.desc: Test RSUniRenderComposerAdapterTest.SrcRectRotateTransform
@@ -355,7 +356,7 @@ HWTEST_F(RSUniRenderComposerAdapterTest, CreateLayer001, TestSize.Level2)
     composerAdapter_->Init(info, composerClient);
     layer = composerAdapter_->CreateLayer(*rsScreenNode);
     ASSERT_NE(layer, nullptr);
-    
+
     composerAdapter_->composerClient_ = nullptr;
     layer = composerAdapter_->CreateLayer(*screenDrawable);
     ASSERT_EQ(layer, nullptr);
@@ -439,28 +440,15 @@ HWTEST_F(RSUniRenderComposerAdapterTest, SetBufferColorSpace001, TestSize.Level2
     };
     GSError ret = buffer->Alloc(requestConfig);
     ASSERT_EQ(ret, GSERROR_OK);
+<<<<<<< HEAD
 
     auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     surfaceHandler->SetBuffer(buffer, SyncFence::INVALID_FENCE, Rect(), 0, bufferOwnerCount);
 
+=======
+    surfaceHandler->SetBuffer(buffer, SyncFence::INVALID_FENCE, Rect(), 0);
+>>>>>>> master
     RSUniRenderComposerAdapter::SetBufferColorSpace(*screenDrawable);
-
-    CM_ColorSpaceType colorSpaceType;
-    ret = MetadataHelper::GetColorSpaceType(buffer, colorSpaceType);
-    ASSERT_TRUE(ret == GSERROR_OK || GSErrorStr(ret) == "<500 api call failed>with low error <Not supported>");
-    if (ret == GSERROR_OK) {
-        ASSERT_EQ(colorSpaceType, CM_P3_FULL);
-    }
-
-    CM_ColorSpaceInfo colorSpaceInfo;
-    ret = MetadataHelper::GetColorSpaceInfo(buffer, colorSpaceInfo);
-    ASSERT_TRUE(ret == GSERROR_OK || GSErrorStr(ret) == "<500 api call failed>with low error <Not supported>");
-    if (ret == GSERROR_OK) {
-        ASSERT_EQ(colorSpaceInfo.primaries, COLORPRIMARIES_P3_D65);
-        ASSERT_EQ(colorSpaceInfo.transfunc, TRANSFUNC_SRGB);
-        ASSERT_EQ(colorSpaceInfo.matrix, MATRIX_P3);
-        ASSERT_EQ(colorSpaceInfo.range, RANGE_FULL);
-    }
 }
 
 /**

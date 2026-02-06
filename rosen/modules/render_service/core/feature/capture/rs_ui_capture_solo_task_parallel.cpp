@@ -21,7 +21,6 @@
 
 #include "draw/surface.h"
 #include "draw/color.h"
-
 #include "rs_trace.h"
 
 #include "common/rs_background_thread.h"
@@ -35,8 +34,10 @@
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_base_render_node.h"
-#include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "transaction/rs_client_to_render_connection.h"
+#include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
@@ -46,6 +47,7 @@
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen_mode_info.h"
 #include "transaction/rs_client_to_service_connection.h"
+#include "pipeline/rs_canvas_render_node.h"
 
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/native_buffer_utils.h"
@@ -102,7 +104,7 @@ std::unique_ptr<Media::PixelMap> RSUiCaptureSoloTaskParallel::CaptureSoloNodePix
     };
     RSUniRenderThread::Instance().PostSyncTask(captureTask);
     if (captureHandle->pixelMap_ == nullptr) {
-        RS_LOGD("RSUiCaptureSoloTaskParallel::CaptureSoloNodePixelMap pixelMap_ is nullptr");
+        RS_LOGE("RSUiCaptureSoloTaskParallel::CaptureSoloNodePixelMap pixelMap_ is nullptr");
     }
     return std::move(captureHandle->pixelMap_);
 }

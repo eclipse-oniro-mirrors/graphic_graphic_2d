@@ -16,6 +16,7 @@
 #include "gtest/gtest.h"
 #include "common/rs_common_def.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature_cfg/feature_param/performance_feature/node_mem_release_param.h"
 #include "params/rs_canvas_drawing_render_params.h"
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #include "memory/rs_canvas_dma_buffer_cache.h"
@@ -32,6 +33,7 @@ using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
+static constexpr uint64_t TEST_ID = 126;
 constexpr NodeId DEFAULT_ID = 0xFFFF;
 class RSCanvasDrawingRenderNodeDrawableTest : public testing::Test {
 public:
@@ -81,7 +83,12 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateCanvasDrawingRenderNodeDra
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     std::string info;
     drawable->DumpSubDrawableTree(info);
-    ASSERT_EQ(info, ", dmaAllocationCount:0, dmaFallbackCount:0");
+    if (NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled() && RSUniRenderJudgement::IsUniRender() &&
+        RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled()) {
+        ASSERT_EQ(info, ", dmaAllocationCount:0, dmaFallbackCount:0");
+    } else {
+        ASSERT_EQ(info, "");
+    }
 #endif
 }
 
@@ -217,6 +224,10 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, PlaybackInCorrespondThreadTest, 
     drawable->canvas_ = std::make_shared<RSPaintFilterCanvas>(canvas.get());
     drawable->PostPlaybackInCorrespondThread();
     ASSERT_TRUE(drawable->canvas_);
+
+    canvas->gpuContext_ = std::make_shared<Drawing::GPUContext>();
+    drawable->PostPlaybackInCorrespondThread();
+    ASSERT_FALSE(drawable->canvas_);
 
     auto surface_ = std::make_shared<Drawing::Surface>();
     drawable->curThreadInfo_.second(surface_);
@@ -354,6 +365,11 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, FlushForVKTest, TestSize.Level1)
     drawable->FlushForVK(width, height, context, nodeId, rscanvas);
     ASSERT_FALSE(drawable->recordingCanvas_);
 
+    NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(false);
+    ASSERT_FALSE(NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled());
+    drawable->FlushForVK(width, height, context, nodeId, rscanvas);
+    NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(true);
+
     drawable->recordingCanvas_ = std::make_shared<ExtendRecordingCanvas>(width, height, false);
     drawable->FlushForVK(width, height, context, nodeId, rscanvas);
     drawable->recordingCanvas_->cmdList_ =
@@ -419,7 +435,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, FlushTest, TestSize.Level1)
  */
 HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ProcessCPURenderInBackgroundThreadTest, TestSize.Level1)
 {
-    auto node = std::make_shared<RSRenderNode>(0);
+    RSRenderNodeDrawable::Registrar registrar;
+    auto node = std::make_shared<RSRenderNode>(1);
     node->GetRenderParams();
     EXPECT_NE(node->renderDrawable_, nullptr);
 
@@ -476,6 +493,49 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnCapture001, TestSize.Level1)
     RSUniRenderThread::SetCaptureParam(params);
     drawable->OnCapture(canvas);
     ASSERT_FALSE(drawable->ShouldPaint());
+}
+
+/**
+ * @tc.name: OnCaptureTest002
+ * @tc.desc: Test If OnCapture Can Run
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
+{
+    // set render thread param
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetSecurityDisplay(true);
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+
+    NodeId nodeId = 0;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
+    ASSERT_NE(drawable, nullptr);
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    drawable->renderParams_ = nullptr;
+    drawable->OnCapture(canvas);
+    drawable->isDrawingCacheEnabled_ = false;
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
+    ASSERT_TRUE(drawable->GetRenderParams());
+    drawable->renderParams_->shouldPaint_ = true;
+    drawable->renderParams_->contentEmpty_ = false;
+    ASSERT_FALSE(drawable->isDrawingCacheEnabled_);
+    ASSERT_TRUE(drawable->GetRenderParams());
+    drawable->OnCapture(canvas);
+    ASSERT_TRUE(drawable->ShouldPaint());
+    nodeId = TEST_ID;
+    RSUniRenderThread::GetCaptureParam().endNodeId_ = TEST_ID;
+    canvas.SetUICapture(true);
+    drawable->OnCapture(canvas);
+    drawable->OnDraw(canvas);
+    ASSERT_TRUE(drawable->ShouldPaint());
+    RSUniRenderThread::GetCaptureParam().endNodeId_ = INVALID_NODEID;
+    RSUniRenderThread::GetCaptureParam().captureFinished_ = true;
+    drawable->OnCapture(canvas);
+    drawable->OnDraw(canvas);
+    ASSERT_TRUE(drawable->ShouldPaint());
 }
 
 /**
@@ -867,6 +927,36 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw004, TestSize.Level2)
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
+
+/**
+ * @tc.name: OnDraw005
+ * @tc.desc: Test OnDraw while opincBlockNodeSkip is false or true
+ * @tc.type: FUNC
+ * @tc.require: issue20602
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, OnDraw005, TestSize.Level2)
+{
+    auto drawable = RSCanvasDrawingRenderNodeDrawableTest::CreateDrawable();
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(0);
+    drawable->renderParams_->shouldPaint_ = true;
+    OHOS::Rosen::RectT<float> localDrawRect(0.0f, 0.0f, 100.0f, 100.0f);
+    drawable->renderParams_->localDrawRect_ = localDrawRect;
+
+    RSUniRenderThread::Instance().Sync(nullptr);
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    Drawing::Region region;
+    canvas.PushDirtyRegion(region);
+    RSOpincDrawCache::SetOpincBlockNodeSkip(false);
+    drawable->OnDraw(canvas);
+    EXPECT_NE(drawable->GetDrawSkipType(), DrawSkipType::OCCLUSION_SKIP);
+
+    RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    drawable->OnDraw(canvas);
+
+    // restore
+    RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
 #endif
 
 #if defined(RS_ENABLE_GPU) && defined(RS_ENABLE_PARALLEL_RENDER)
@@ -916,15 +1006,18 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ResetSurfaceforPlaybackTest, Tes
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 /**
- * @tc.name: CreateDmaBackendTexture
+ * @tc.name: CreateDmaBackendTextureTest001
  * @tc.desc: Test If CreateDmaBackendTexture Can Run
  * @tc.type: FUNC
  */
-HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, TestSize.Level1)
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest001, TestSize.Level1)
 {
+<<<<<<< HEAD
     RSMainThread::Instance()->composerClientManager_ = std::make_shared<RSComposerClientManager>();
     auto& context = RSMainThread::Instance()->GetContext();
     auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
+=======
+>>>>>>> master
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
     auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
     auto ret = drawable->CreateDmaBackendTexture(1, 100, 100);
@@ -936,19 +1029,20 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
     ASSERT_EQ(ret, false);
     auto node1 = std::make_shared<RSRenderNode>(1);
-    bufferCache.pendingBufferMap_.clear();
-    context.GetMutableNodeMap().RegisterRenderNode(node1);
+    RSCanvasDmaBufferCache::GetInstance().pendingBufferMap_.clear();
+    RSMainThread::Instance()->GetContext().GetMutableNodeMap().RegisterRenderNode(node1);
     node1->stagingRenderParams_->canvasDrawingResetSurfaceIndex_ = 1;
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
-    bufferCache.AddPendingBuffer(1, buffer, 1);
+    RSCanvasDmaBufferCache::GetInstance().AddPendingBuffer(1, buffer, 1);
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
     ASSERT_EQ(ret, false);
-    bufferCache.pendingBufferMap_.clear();
+    RSCanvasDmaBufferCache::GetInstance().pendingBufferMap_.clear();
     buffer = SurfaceBufferUtils::CreateCanvasSurfaceBuffer(1, 100, 100);
     ASSERT_NE(buffer, nullptr);
-    bufferCache.AddPendingBuffer(1, buffer, 1);
+    RSCanvasDmaBufferCache::GetInstance().AddPendingBuffer(1, buffer, 1);
     ret = drawable->CreateDmaBackendTexture(1, 100, 100);
-    ASSERT_EQ(ret, true);
+    ASSERT_EQ(ret, RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled() &&
+        NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled());
     drawable->backendTexture_ = {};
     ret = drawable->ReleaseSurfaceVk(100, 100);
     ASSERT_EQ(ret, true);
@@ -958,9 +1052,89 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest, Tes
     canvas.SetRecordingState(false);
     ret = drawable->ResetSurfaceForVK(10000, 10000, canvas);
     ASSERT_EQ(ret, true);
+    drawable->ResetSurface();
+    ASSERT_EQ(drawable->surface_, nullptr);
+}
+
+/**
+ * @tc.name: CreateDmaBackendTextureTest002
+ * @tc.desc: Test If CreateDmaBackendTexture Can Run
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, CreateDmaBackendTextureTest002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
     drawable->renderParams_ = nullptr;
-    ret = drawable->ResetSurfaceForVK(10000, 10000, canvas);
+    Drawing::Canvas drawingCanvas;
+    drawingCanvas.gpuContext_ = std::make_shared<Drawing::GPUContext>();
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto ret = drawable->ResetSurfaceForVK(10000, 10000, canvas);
     ASSERT_EQ(ret, true);
+    auto buffer = SurfaceBufferUtils::CreateCanvasSurfaceBuffer(1, 100, 100);
+    RSCanvasDmaBufferCache::GetInstance().AddPendingBuffer(2, buffer, 2);
+    drawable->renderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(2);
+    drawable->renderParams_->SetCanvasDrawingResetSurfaceIndex(2);
+    drawable->backendTexture_ = {};
+    ret = drawable->ReleaseSurfaceVk(100, 100);
+    ASSERT_EQ(ret, true);
+    drawable->ResetSurface();
+    ASSERT_EQ(drawable->surface_, nullptr);
+}
+
+/**
+ * @tc.name: ReleaseDmaSurfaceBufferTest
+ * @tc.desc: Test If ReleaseDmaSurfaceBuffer Can Run
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, ReleaseDmaSurfaceBufferTest, TestSize.Level1)
+{
+    auto& bufferCache = RSCanvasDmaBufferCache::GetInstance();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    bufferCache.AddPendingBuffer(1, buffer, 1);
+    auto& nodeBufferMap = bufferCache.pendingBufferMap_[1].second;
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
+    drawable->ReleaseDmaSurfaceBuffer(true);
+    ASSERT_EQ(drawable->renderParams_, nullptr);
+    ASSERT_EQ(nodeBufferMap.empty(), false);
+    drawable->renderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(1);
+    drawable->renderParams_->SetCanvasDrawingResetSurfaceIndex(1);
+    drawable->ReleaseDmaSurfaceBuffer(true);
+    ASSERT_NE(drawable->renderParams_, nullptr);
+    ASSERT_EQ(nodeBufferMap.empty(), false);
+    drawable->ReleaseDmaSurfaceBuffer(false);
+    ASSERT_EQ(nodeBufferMap.empty(), RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled() &&
+        NodeMemReleaseParam::IsCanvasDrawingNodeDMAMemEnabled());
 }
 #endif
+
+/**
+ * @tc.name: GetGpuContextTest
+ * @tc.desc: Test If GetGpuContext Can Run
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, GetGpuContextTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    auto drawable = std::make_shared<RSCanvasDrawingRenderNodeDrawable>(std::move(node));
+    RSUniRenderThread& uniRenderThread = RSUniRenderThread::Instance();
+    uniRenderThread.tid_ = gettid();
+    uniRenderThread.uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    uniRenderThread.uniRenderEngine_->renderContext_ = RenderContext::Create();
+    uniRenderThread.uniRenderEngine_->renderContext_->drGPUContext_ = std::make_shared<Drawing::GPUContext>();
+    auto context = drawable->GetGpuContext();
+    ASSERT_NE(context, nullptr);
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas rsCanvas(&canvas);
+    const Drawing::Rect rect(1.0f, 1.0f, 1.0f, 1.0f);
+    auto rsContext = std::make_shared<RSContext>();
+    drawable->DrawRenderContent(canvas, rect);
+    drawable->Flush(1, 1, rsContext, id, rsCanvas);
+    drawable->renderParams_ = std::make_unique<RSRenderParams>(0);
+    drawable->DrawRenderContent(canvas, rect);
+    drawable->Flush(1, 1, rsContext, id, rsCanvas);
+    context = drawable->GetGpuContext();
+    ASSERT_NE(context, nullptr);
+}
 }

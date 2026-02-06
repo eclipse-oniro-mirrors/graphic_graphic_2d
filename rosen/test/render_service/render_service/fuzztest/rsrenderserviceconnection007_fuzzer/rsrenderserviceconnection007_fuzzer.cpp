@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,8 +34,12 @@
 #include "render_server/transaction/rs_client_to_service_connection.h"
 #include "transaction/rs_client_to_render_connection.h"
 #include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
+<<<<<<< HEAD
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
 #include "platform/ohos/transaction/zidl/rs_irender_service.h"
+=======
+#include "ipc_callbacks/screen_switching_notify_callback_stub.h"
+>>>>>>> master
 #include "transaction/rs_transaction_proxy.h"
 
 namespace OHOS {
@@ -54,11 +58,11 @@ const uint8_t DO_SET_SCREEN_CORRECTION = 2;
 const uint8_t DO_SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION = 3;
 const uint8_t DO_SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE = 4;
 const uint8_t DO_SET_GLOBAL_DARK_COLOR_MODE = 5;
-const uint8_t DO_DROP_FRAME_BY_PID = 6;
-const uint8_t DO_SET_SCREEN_SWITCHING_NOTIFY_CALLBACK = 7;
-const uint8_t TARGET_SIZE = 8;
+const uint8_t DO_SET_SCREEN_SWITCHING_NOTIFY_CALLBACK = 6;
+const uint8_t DO_ADD_VIRTUAL_SCREEN_WHITE_LIST = 7;
+const uint8_t DO_REMOVE_VIRTUAL_SCREEN_WHITE_LIST = 8;
+const uint8_t TARGET_SIZE = 9;
 
-sptr<RSIClientToServiceConnection> CONN = nullptr;
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -79,19 +83,6 @@ T GetData()
     return object;
 }
 
-template<>
-std::string GetData()
-{
-    size_t objectSize = GetData<uint8_t>();
-    std::string object(objectSize, '\0');
-    if (DATA == nullptr || objectSize > g_size - g_pos) {
-        return object;
-    }
-    object.assign(reinterpret_cast<const char*>(DATA + g_pos), objectSize);
-    g_pos += objectSize;
-    return object;
-}
-
 bool Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -101,25 +92,13 @@ bool Init(const uint8_t* data, size_t size)
     DATA = data;
     g_size = size;
     g_pos = 0;
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
     return true;
 }
 } // namespace
-
-namespace Mock {
-void CreateVirtualScreenStubbing(ScreenId screenId)
-{
-    uint32_t width = GetData<uint32_t>();
-    uint32_t height = GetData<uint32_t>();
-    int32_t flags = GetData<int32_t>();
-    std::string name = GetData<std::string>();
-    // Random name of IBufferProducer is not necessary
-    sptr<IBufferProducer> bp = IConsumerSurface::Create("DisplayNode")->GetProducer();
-    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
-
-    CONN->CreateVirtualScreen(name, width, height, pSurface, screenId, flags);
-}
-} // namespace Mock
 
 void DoSetScreenColorGamut()
 {
@@ -156,7 +135,7 @@ void DoSetScreenCorrection()
     MessageParcel dataP;
     MessageParcel reply;
     MessageOption option;
-    if (!dataP.WriteInterfaceToken(RSIClientToServiceConnection::RSIClientToServiceConnection::GetDescriptor())) {
+    if (!dataP.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         return;
     }
     option.SetFlags(MessageOption::TF_SYNC);
@@ -193,7 +172,11 @@ void DoSetVirtualMirrorScreenCanvasRotation()
     }
 
     uint32_t code = static_cast<uint32_t>(
+<<<<<<< HEAD
         RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION);
+=======
+        RSIRenderServiceConnectionInterfaceCode::SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION);
+>>>>>>> master
     if (toServiceConnectionStub_ == nullptr) {
         return;
     }
@@ -238,6 +221,7 @@ void DoSetGlobalDarkColorMode()
     sleep(1);
 }
 
+<<<<<<< HEAD
 void DoDropFrameByPid()
 {
     uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::DROP_FRAME_BY_PID);
@@ -254,6 +238,25 @@ void DoDropFrameByPid()
     toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
     sleep(1);
 }
+=======
+class CustomTestScreenSwitchingNotifyCallback : public RSScreenSwitchingNotifyCallbackStub {
+public:
+    explicit CustomTestScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback &callback) : cb_(callback)
+    {}
+    ~CustomTestScreenSwitchingNotifyCallback() override{};
+
+    void OnScreenSwitchingNotify(bool status) override
+    {
+        if (cb_ != nullptr) {
+            cb_(status);
+        }
+    }
+
+private:
+    ScreenSwitchingNotifyCallback cb_;
+};
+
+>>>>>>> master
 
 void DoSetScreenSwitchingNotifyCallback()
 {
@@ -262,16 +265,91 @@ void DoSetScreenSwitchingNotifyCallback()
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
-    sptr<RSIScreenSwitchingNotifyCallback> rsIScreenSwitchingNotifyCallback_ =
-        iface_cast<RSIScreenSwitchingNotifyCallback>(remoteObject);
+    bool status = false;
+    auto callback = [&status](bool switchingStatus) {
+        status = switchingStatus;
+    };
+    sptr<CustomTestScreenSwitchingNotifyCallback> rsIScreenSwitchingNotifyCallback_ =
+        new CustomTestScreenSwitchingNotifyCallback(callback);
 
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteRemoteObject(rsIScreenSwitchingNotifyCallback_->AsObject());
     dataParcel.RewindRead(0);
+    if (toServiceConnectionStub_ == nullptr) {
+        return;
+    }
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
+
+ 
+bool DoAddVirtualScreenWhiteList()
+{
+    ScreenId id = GetData<ScreenId>();
+ 
+    // generate whitelist
+    std::vector<NodeId> whiteList;
+    uint8_t whiteListSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < whiteListSize; i++) {
+        NodeId nodeId = GetData<NodeId>();
+        whiteList.push_back(nodeId);
+    }
+ 
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUInt64Vector(whiteList)) {
+        return false;
+    }
+ 
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_WHITELIST);
+    if (toServiceConnectionStub_ == nullptr) {
+        return false;
+    }
+    toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+ 
+bool DoRemoveVirtualScreenWhiteList()
+{
+    ScreenId id = GetData<ScreenId>();
+ 
+    // generate whitelist
+    std::vector<NodeId> whiteList;
+    uint8_t whiteListSize = GetData<uint8_t>();
+    for (uint8_t i = 0; i < whiteListSize; i++) {
+        NodeId nodeId = GetData<NodeId>();
+        whiteList.push_back(nodeId);
+    }
+ 
+    MessageParcel dataP;
+    MessageParcel reply;
+    MessageOption option;
+    if (!dataP.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        return false;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!dataP.WriteUint64(id)) {
+        return false;
+    }
+    if (!dataP.WriteUInt64Vector(whiteList)) {
+        return false;
+    }
+ 
+    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_WHITELIST);
+    if (toServiceConnectionStub_ == nullptr) {
+        return false;
+    }
+    toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
+    return true;
+}
+
 } // namespace Rosen
 } // namespace OHOS
 
@@ -310,6 +388,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
         OHOS::sptr<OHOS::Rosen::RSRenderPipelineAgent>::MakeSptr(OHOS::Rosen::renderService_->renderPipeline_);
 
     OHOS::Rosen::toServiceConnectionStub_ = new OHOS::Rosen::RSClientToServiceConnection(
+<<<<<<< HEAD
         OHOS::Rosen::g_pid, renderServiceAgent_, renderProcessManagerAgent_,
         screenManagerAgent_, token_->AsObject(), vsyncManager->GetVsyncManagerAgent());
     OHOS::sptr<OHOS::Rosen::RSClientToRenderConnection> toRenderConnection =
@@ -324,6 +403,10 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     OHOS::Rosen::RSMainThread::Instance()->receiver_->connection_ = nullptr;
     OHOS::Rosen::RSMainThread::Instance()->receiver_ = nullptr;
     OHOS::Rosen::RSMainThread::Instance()->mainLoop_ = []() {};
+=======
+        OHOS::Rosen::g_pid, nullptr, OHOS::Rosen::mainThread_,
+        OHOS::Rosen::screenManagerPtr_, token_->AsObject(), appVSyncDistributor_);
+>>>>>>> master
     return 0;
 }
 
@@ -354,11 +437,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SET_GLOBAL_DARK_COLOR_MODE:
             OHOS::Rosen::DoSetGlobalDarkColorMode();
             break;
-        case OHOS::Rosen::DO_DROP_FRAME_BY_PID:
-            OHOS::Rosen::DoDropFrameByPid();
-            break;
         case OHOS::Rosen::DO_SET_SCREEN_SWITCHING_NOTIFY_CALLBACK:
             OHOS::Rosen::DoSetScreenSwitchingNotifyCallback();
+            break;
+        case OHOS::Rosen::DO_ADD_VIRTUAL_SCREEN_WHITE_LIST:
+            OHOS::Rosen::DoAddVirtualScreenWhiteList();
+            break;
+        case OHOS::Rosen::DO_REMOVE_VIRTUAL_SCREEN_WHITE_LIST:
+            OHOS::Rosen::DoRemoveVirtualScreenWhiteList();
             break;
         default:
             return -1;

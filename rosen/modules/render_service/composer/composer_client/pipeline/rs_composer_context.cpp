@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -69,7 +69,7 @@ std::shared_ptr<RSLayer> RSComposerContext::GetRSLayer(RSLayerId rsLayerId) cons
     return nullptr;
 }
 
-void RSComposerContext::DumpLayersInfo(std::string &dumpString)
+void RSComposerContext::DumpLayersInfo(std::string& dumpString)
 {
     std::unique_lock<std::mutex> lock(rsLayerMutex_);
     for (auto iter = rsLayers_.begin(); iter != rsLayers_.end(); iter++) {

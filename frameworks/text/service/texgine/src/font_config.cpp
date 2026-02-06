@@ -170,16 +170,17 @@ int FontConfigJson::ParseFile(const char* fname)
         fname = FONT_DEFAULT_CONFIG;
     }
 
-    TEXT_LOGI("ParseFile fname is: %{public}s", fname);
     fontPtr = std::make_shared<FontConfigJsonInfo>();
     indexMap = std::make_shared<std::unordered_map<std::string, size_t>>();
     fontPtr->fallbackGroupSet.emplace_back();
     fontPtr->fallbackGroupSet[0].groupName = "";
     int err = ParseConfigList(fname);
-    // only for compatible with old version
-    fontPtr->genericSet[0].adjustSet = { { 50, 100 }, { 80, 400 }, { 100, 700 }, { 200, 900 } };
+    if (!fontPtr->genericSet.empty()) {
+        // only for compatible with old version
+        fontPtr->genericSet[0].adjustSet = { { 50, 100 }, { 80, 400 }, { 100, 700 }, { 200, 900 } };
+    }
     if (err != 0) {
-        TEXT_LOGE("Failed to ParseFile ParseConfigList");
+        TEXT_LOGE("Failed to ParseFile ParseConfigList, fname: %{public}s", fname);
         return err;
     }
     return SUCCESSED;
@@ -212,7 +213,7 @@ void FontConfigJson::EmplaceFontJson(const FontJson& fontJson)
         auto exist = indexMap->find(fontJson.family);
         if (exist == indexMap->end()) {
             (*indexMap)[fontJson.family] = fontPtr->genericSet.size();
-            fontPtr->genericSet.emplace_back(FontGenericInfo { fontJson.family });
+            fontPtr->genericSet.emplace_back(FontGenericInfo { fontJson.family, fontJson.path });
             fontPtr->genericSet.back().aliasSet.emplace_back(AliasInfo { fontJson.alias, fontJson.weight });
             return;
         }
@@ -224,7 +225,8 @@ void FontConfigJson::EmplaceFontJson(const FontJson& fontJson)
         }
         return;
     }
-    fontPtr->fallbackGroupSet[0].fallbackInfoSet.emplace_back(FallbackInfo { fontJson.family, fontJson.lang });
+    fontPtr->fallbackGroupSet[0].fallbackInfoSet.emplace_back(
+        FallbackInfo { fontJson.family, fontJson.lang, fontJson.path });
 }
 
 int FontConfigJson::ParseDir(const cJSON* root)
@@ -258,6 +260,8 @@ void FontConfigJson::AnalyseFont(const cJSON* root)
             fontJson.weight = item->valueint;
         } else if (strcmp(item->string, "lang") == 0  && cJSON_IsString(item)) {
             fontJson.lang = item->valuestring;
+        } else if (strcmp(item->string, "file") == 0 && cJSON_IsString(item)) {
+            fontJson.path = item->valuestring;
         }
         item = item->next;
     }

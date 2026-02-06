@@ -633,7 +633,7 @@ private:
     static void StopBetaRecord();
     static bool IsBetaRecordStarted();
     static void UpdateBetaRecord(const RSContext& context);
-    static void SaveBetaRecord();
+    static void BetaRecordTick();
     static bool IsBetaRecordInactive();
     static void RequestVSyncOnBetaRecordInactivity();
     static void LaunchBetaRecordNotificationThread();
@@ -662,7 +662,9 @@ private:
     RSB_EXPORT static void BetaRecordOnFrameBegin();
     RSB_EXPORT static void BetaRecordOnFrameEnd();
 
-    RSB_EXPORT static void SetTransactionTimeCorrection(double replayStartTime, double recordStartTime);
+    RSB_EXPORT static void SetReplayStartTimeNano(uint64_t replayStartTimeNano);
+    RSB_EXPORT static uint64_t GetReplayStartTimeNano();
+    RSB_EXPORT static void SetTransactionTimeCorrection(double recordStartTime);
     RSB_EXPORT static void TimePauseAt(uint64_t curTime, uint64_t newPauseAfterTime, bool immediate);
     RSB_EXPORT static void TimePauseResume(uint64_t curTime);
     RSB_EXPORT static void TimePauseClear();
@@ -763,7 +765,7 @@ private:
     static bool IsPlaying();
 
     static bool IsLoadSaveFirstScreenInProgress();
-    static std::string FirstFrameMarshalling(uint32_t fileVersion);
+    static std::string FirstFrameMarshalling(uint32_t fileVersion, bool betaRecordingStarted = false);
     static std::string FirstFrameUnmarshalling(const std::string& data, uint32_t fileVersion);
     static void HiddenSpaceTurnOff();
     static void HiddenSpaceTurnOn();
@@ -809,6 +811,7 @@ private:
     static void DumpTreeToJson(const ArgList& args);
     static void DumpNodeSurface(const ArgList& args);
     static void ClearFilter(const ArgList& args);
+    static void ClearCaches(const ArgList& args);
     static void PrintNodeCache(const ArgList& args);
     static void PrintNodeCacheAll(const ArgList& args);
     static void PatchNode(const ArgList& args);
@@ -888,6 +891,11 @@ private:
     static void TestSaveSubTree(const ArgList& args);
     static void TestLoadSubTree(const ArgList& args);
     static void TestClearSubTree(const ArgList& args);
+
+    static void MarshalSelfDrawingBuffers(std::stringstream& data, bool isBetaRecording);
+    static void UnmarshalSelfDrawingBuffers();
+    static void RenderToReadableBuffer(std::shared_ptr<RSSurfaceRenderNode> node, sptr<SurfaceBuffer> toSurfaceBuffer);
+    static void SurfaceNodeUpdateBuffer(std::shared_ptr<RSRenderNode> node, sptr<SurfaceBuffer> buffer);
 
 private:
     using CommandRegistry = std::map<std::string, void (*)(const ArgList&)>;

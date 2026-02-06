@@ -61,6 +61,16 @@ constexpr int DISPLAY_SUCCESS = 1;
 constexpr int32_t VIRTUAL_KEYBOARD_FINGERS_MIN_CNT = 8;
 constexpr uint32_t FRAME_RATE_REPORT_MAX_RETRY_TIMES = 3;
 constexpr uint32_t FRAME_RATE_REPORT_DELAY_TIME = 20000;
+
+bool IsMouseOrTouchPadEvent(int32_t touchStatus, int32_t sourceType)
+{
+    if (sourceType != TouchSourceType::SOURCE_TYPE_MOUSE &&
+        sourceType != TouchSourceType::SOURCE_TYPE_TOUCHPAD) {
+        return false;
+    }
+    return touchStatus == TOUCH_MOVE || touchStatus == TOUCH_BUTTON_DOWN || touchStatus == TOUCH_BUTTON_UP ||
+           touchStatus == AXIS_BEGIN || touchStatus == AXIS_UPDATE || touchStatus == AXIS_END;
+}
 }
 
 HgmFrameRateManager::HgmFrameRateManager()
@@ -372,7 +382,7 @@ void HgmFrameRateManager::UpdateGuaranteedPlanVote(uint64_t timestamp)
 
 void HgmFrameRateManager::ProcessLtpoVote(const FrameRateRange& finalRange)
 {
-    frameVoter_.SetDragScene(finalRange.type_ & ACE_COMPONENT_FRAME_RATE_TYPE);
+    frameVoter_.SetDragScene(finalRange.type_ & DRAG_FRAME_RATE_TYPE);
     if (finalRange.IsValid()) {
         auto refreshRate = UpdateFrameRateWithDelay(CalcRefreshRate(curScreenId_.load(), finalRange));
         auto allTypeDescription = finalRange.GetAllTypeDescription();
@@ -776,9 +786,13 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
         HGM_LOGW("unknown event, eventName is %{public}s", eventName.c_str());
         return;
     }
-
-    HGM_LOGI("%{public}s(%{public}d) [%{public}d %{public}d] %{public}d %{public}s", eventName.c_str(), pid,
-        eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
+    if (eventName == "VOTER_TOUCH" || eventName == "VOTER_POINTER") {
+        HGM_LOGD("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
+            eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
+    } else {
+        HGM_LOGI("%{public}s %{public}d %{public}u %{public}u %{public}d %{public}s", eventName.c_str(), pid,
+            eventInfo.minRefreshRate, eventInfo.maxRefreshRate, eventInfo.eventStatus, eventInfo.description.c_str());
+    }
     if (eventName == "VOTER_SCENE") {
         HandleSceneEvent(pid, eventInfo);
     } else if (eventName == "VOTER_VIRTUALDISPLAY") {
@@ -793,7 +807,7 @@ void HgmFrameRateManager::HandleRefreshRateEvent(pid_t pid, const EventInfo& eve
     }
 }
 
-void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32_t touchCnt)
+void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     HGM_LOGD("status:%{public}d", touchStatus);
     if (frameVoter_.GetVoterGamesEffective() && touchManager_.GetState() == TouchState::DOWN_STATE) {
@@ -803,9 +817,8 @@ void HgmFrameRateManager::HandleTouchEvent(pid_t pid, int32_t touchStatus, int32
         (touchStatus == TOUCH_MOVE || touchStatus == TOUCH_BUTTON_DOWN || touchStatus == TOUCH_BUTTON_UP)) {
         return;
     }
-    HgmTaskHandleThread::Instance().PostTask([this, pid, touchStatus, touchCnt]() {
-        if (touchStatus == TOUCH_MOVE || touchStatus == TOUCH_BUTTON_DOWN || touchStatus == TOUCH_BUTTON_UP ||
-            touchStatus == AXIS_BEGIN || touchStatus == AXIS_UPDATE || touchStatus == AXIS_END) {
+    HgmTaskHandleThread::Instance().PostTask([this, pid, touchStatus, touchCnt, sourceType]() {
+        if (IsMouseOrTouchPadEvent(touchStatus, sourceType)) {
             HandlePointerTask(pid, touchStatus, touchCnt);
         } else {
             HandleTouchTask(pid, touchStatus, touchCnt);
@@ -849,7 +862,8 @@ void HgmFrameRateManager::HandlePointerTask(pid_t pid, int32_t pointerStatus, in
     if (pointerStatus == TOUCH_MOVE || pointerStatus == TOUCH_BUTTON_DOWN || pointerStatus == TOUCH_BUTTON_UP) {
         PolicyConfigData::StrategyConfig strategyRes;
         if (multiAppStrategy_.GetFocusAppStrategyConfig(strategyRes) == EXEC_SUCCESS &&
-            strategyRes.pointerMode != PointerModeType::POINTER_DISENABLED) {
+            (strategyRes.pointerMode == PointerModeType::POINTER_ENABLED ||
+             (pointerStatus != TOUCH_MOVE && strategyRes.pointerMode == PointerModeType::POINTER_ENABLED_EX_MOVE))) {
             HGM_LOGD("[pointer manager] active");
             pointerManager_.HandleTimerReset();
             pointerManager_.HandlePointerEvent(PointerEvent::POINTER_ACTIVE_EVENT, "");
@@ -899,7 +913,7 @@ void HgmFrameRateManager::HandleRefreshRateMode(int32_t refreshRateMode)
     HandlePageUrlEvent();
     multiAppStrategy_.CalcVote();
     HgmCore::Instance().SetLtpoConfig();
-    HgmConfigCallbackManager::GetInstance()->SyncHgmConfigChangeCallback();
+    HgmConfigCallbackManager::GetInstance()->SyncHgmConfigChangeCallback(multiAppStrategy_.GetSceneBoardPid());
     SyncHgmConfigUpdateCallback();
     UpdateAppSupportedState(); // sync app state config when RefreshRateMode changed
 }
@@ -1071,7 +1085,7 @@ void HgmFrameRateManager::UpdateScreenFrameRate()
     multiAppStrategy_.CalcVote();
     hgmCore.SetLtpoConfig();
     MarkVoteChange();
-    HgmConfigCallbackManager::GetInstance()->SyncHgmConfigChangeCallback();
+    HgmConfigCallbackManager::GetInstance()->SyncHgmConfigChangeCallback(multiAppStrategy_.GetSceneBoardPid());
     SyncHgmConfigUpdateCallback();
 
     // hgm warning: use !isLtpo_ instead after GetDisplaySupportedModes ready
@@ -1188,7 +1202,7 @@ void HgmFrameRateManager::MarkVoteChange(const std::string& voter)
         }
     } else {
         lastVoteInfo_ = resultVoteInfo;
-        HGM_LOGI("Strategy:%{public}s Screen:%{public}d Mode:%{public}d -- %{public}s", curScreenStrategyId_.c_str(),
+        HGM_LOGI("%{public}s %{public}d %{public}d %{public}s", curScreenStrategyId_.c_str(),
             static_cast<int>(curScreenId_.load()), curRefreshRateMode_, resultVoteInfo.ToSimpleString().c_str());
     }
 
@@ -1299,9 +1313,6 @@ VoteInfo HgmFrameRateManager::ProcessRefreshRateVote()
 
     auto sampler = CreateVSyncSampler();
     sampler->SetAdaptive(isAdaptive_.load() == SupportASStatus::SUPPORT_AS);
-    if (controller_ != nullptr) {
-        controller_->ChangeAdaptiveStatus(isAdaptive_.load() == SupportASStatus::SUPPORT_AS);
-    }
     return resultVoteInfo;
 }
 
@@ -1321,7 +1332,8 @@ void HgmFrameRateManager::CleanVote(pid_t pid)
                     HandlePackageEvent(DEFAULT_PID, {}); // handle empty pkg
                     break;
                 case CleanPidCallbackType::TOUCH_EVENT:
-                    HandleTouchEvent(DEFAULT_PID, TouchStatus::TOUCH_UP, LAST_TOUCH_CNT);
+                    HandleTouchEvent(DEFAULT_PID, TouchStatus::TOUCH_UP, LAST_TOUCH_CNT,
+                        TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
                     break;
                 case CleanPidCallbackType::GAMES:
                     DeliverRefreshRateVote({ "VOTER_GAMES" }, false);
@@ -1464,15 +1476,15 @@ void HgmFrameRateManager::CheckNeedUpdateAppOffset(uint32_t refreshRate, uint32_
         !controller_->CheckNeedUpdateAppOffsetRefreshRate(controllerRate)) {
         return;
     }
-    if (touchManager_.GetState() == TouchState::IDLE_STATE) {
-        isNeedUpdateAppOffset_ = true;
-        return;
-    }
     if (isLowPowerSlide_ && refreshRate == OLED_60_HZ) {
         isNeedUpdateAppOffset_ = true;
         return;
     }
-    auto voteRecord = frameVoter_.GetVoteRecord();
+    if (touchManager_.GetState() == TouchState::IDLE_STATE) {
+        isNeedUpdateAppOffset_ = true;
+        return;
+    }
+    const auto& voteRecord = frameVoter_.GetVoteRecord();
     if (auto iter = voteRecord.find("VOTER_THERMAL");
         iter != voteRecord.end() && !iter->second.first.empty() &&
         iter->second.first.back().max > 0 && iter->second.first.back().max <= OLED_60_HZ) {
@@ -1527,7 +1539,7 @@ void HgmFrameRateManager::FrameRateReportTask(uint32_t leftRetryTimes)
     HgmTaskHandleThread::Instance().PostTask(
         [this, leftRetryTimes]() {
             if (leftRetryTimes == 1 || system::GetBoolParameter("bootevent.boot.completed", false)) {
-                HGM_LOGI("FrameRateReportTask run and left retry:%{public}d", leftRetryTimes);
+                HGM_LOGI("FrameRateReportTask run and left retry:%{public}u", leftRetryTimes);
                 schedulePreferredFpsChange_ = true;
                 FrameRateReport();
                 return;

@@ -100,14 +100,14 @@ public:
     MOCK_CONST_METHOD0(GetBufferHandle, BufferHandle*());
 };
 
-/*
-* Function: SetHdiDeviceMock001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetHdiDeviceMock()
-*                  2. check ret
-*/
+/**
+ * Function: SetHdiDeviceMock001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetHdiDeviceMock()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, SetHdiDeviceMock001, Function | MediumTest| Level1)
 {
     // Set hdiLayer_->device_ to nullptr
@@ -118,14 +118,14 @@ HWTEST_F(HdiLayerTest, SetHdiDeviceMock001, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetHdiDeviceMock(hdiDeviceMock_), GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
-* Function: Init001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call Init()
-*                  2. check ret
-*/
+/**
+ * Function: Init001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call Init()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, Init001, Function | MediumTest| Level1)
 {
     ASSERT_EQ(HdiLayerTest::hdiLayer_->Init(nullptr), false);
@@ -135,14 +135,14 @@ HWTEST_F(HdiLayerTest, Init001, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->Init(HdiLayerTest::rsLayer_), true);
 }
 
-/*
-* Function: GetReleaseFence001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call GetReleaseFence()
-*                  2. check ret
-*/
+/**
+ * Function: GetReleaseFence001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call GetReleaseFence()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, GetReleaseFence001, Function | MediumTest| Level1)
 {
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetHdiLayerInfo(), GRAPHIC_DISPLAY_FAILURE);
@@ -154,14 +154,14 @@ HWTEST_F(HdiLayerTest, GetReleaseFence001, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->GetReleaseFence().GetRefPtr()->Get(), -1);
 }
 
-/*
-* Function: SetHdiLayerInfo002
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetHdiLayerInfo002(true)
-*                  2. check ret
-*/
+/**
+ * Function: SetHdiLayerInfo002
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetHdiLayerInfo002(true)
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, SetHdiLayerInfo002, Function | MediumTest| Level1)
 {
     EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillRepeatedly(testing::Return(0));
@@ -173,14 +173,14 @@ HWTEST_F(HdiLayerTest, SetHdiLayerInfo002, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetHdiLayerInfo(false), GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
-* Function: SetLayerTunnelHandle001
-* Type: Function
-* Rank: Important(3)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetLayerTunnelHandle()
-*                  2. check ret
-*/
+/**
+ * Function: SetLayerTunnelHandle001
+ * Type: Function
+ * Rank: Important(3)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetLayerTunnelHandle()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, SetLayerTunnelHandle001, Function | MediumTest| Level3)
 {
     HdiLayerTest::rsLayer_->SetTunnelHandleChange(true);
@@ -194,14 +194,14 @@ HWTEST_F(HdiLayerTest, SetLayerTunnelHandle001, Function | MediumTest| Level3)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetLayerTunnelHandle(), GRAPHIC_DISPLAY_SUCCESS);
 }
 
-/*
-* Function: SetTunnelLayerId001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetTunnelLayerId()
-*                  2. check ret
-*/
+/**
+ * Function: SetTunnelLayerId001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetTunnelLayerId()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, SetTunnelLayerId001, Function | MediumTest| Level1)
 {
     HdiLayerTest::hdiLayer_->prevRSLayer_ = nullptr;
@@ -210,14 +210,14 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerId001, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetTunnelLayerId(), GRAPHIC_DISPLAY_SUCCESS);
 }
  
-/*
-* Function: SetTunnelLayerId002
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetTunnelLayerId()
-*                  2. check ret
-*/
+/**
+ * Function: SetTunnelLayerId002
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetTunnelLayerId()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, SetTunnelLayerId002, Function | MediumTest| Level1)
 {
     uint32_t devId = 1;
@@ -228,14 +228,14 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerId002, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetTunnelLayerId(), 0);
 }
  
-/*
-* Function: SetTunnelLayerProperty001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetTunnelLayerProperty()
-*                  2. check ret
-*/
+/**
+ * Function: SetTunnelLayerProperty001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetTunnelLayerProperty()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, SetTunnelLayerProperty001, Function | MediumTest| Level1)
 {
     uint32_t devId = 1;
@@ -246,15 +246,15 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerProperty001, Function | MediumTest| Level1)
     ASSERT_EQ(HdiLayerTest::hdiLayer_->SetTunnelLayerProperty(), 0);
 }
 
-/*
-* Function: GetLayerStatus001
-* Type: Function
-* Rank: Important(3)
-* EnvConditions: N/A
-* CaseDescription: 1. call SetLayerStatus()
-*                  2. call GetLayerStatus()
-*                  3. check ret
-*/
+/**
+ * Function: GetLayerStatus001
+ * Type: Function
+ * Rank: Important(3)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetLayerStatus()
+ *                  2. call GetLayerStatus()
+ *                  3. check ret
+ */
 HWTEST_F(HdiLayerTest, GetLayerStatus001, Function | MediumTest| Level3)
 {
     bool isUsing = true;
@@ -287,14 +287,14 @@ HWTEST_F(HdiLayerTest, GetLayerStatus001, Function | MediumTest| Level3)
     hdiLayer_->ClearBufferCache();
 }
 
-/*
-* Function: CloseLayer001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call CloseLayer()
-*                  2. check ret
-*/
+/**
+ * Function: CloseLayer001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call CloseLayer()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, CreateLayer001, Function | MediumTest| Level1)
 {
     uint32_t layerId = 1;
@@ -307,21 +307,21 @@ HWTEST_F(HdiLayerTest, CreateLayer001, Function | MediumTest| Level1)
     EXPECT_CALL(*hdiDeviceMock_, CloseLayer(_, _)).WillRepeatedly(testing::Return(1));
 }
 
-/*
-* Function: ClearBufferCache001
-* Type: Function
-* Rank: Important(1)
-* EnvConditions: N/A
-* CaseDescription: 1. call ClearBufferCache()
-*                  2. check ret
-*/
+/**
+ * Function: ClearBufferCache001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call ClearBufferCache()
+ *                  2. check ret
+ */
 HWTEST_F(HdiLayerTest, ClearBufferCache001, Function | MediumTest| Level1)
 {
     HdiLayerTest::hdiLayer_->ClearBufferCache();
     EXPECT_EQ(hdiLayer_->bufferCache_.size(), 0);
 }
 
-/*
+/**
  * Function: SetPerFrameParameters001
  * Type: Function
  * Rank: Important(1)
@@ -335,7 +335,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters001, Function | MediumTest| Level1)
     EXPECT_EQ(result, GRAPHIC_DISPLAY_SUCCESS);
 }
  
-/*
+/**
  * Function: SetPerFrameParameters002
  * Type: Function
  * Rank: Important(1)
@@ -353,7 +353,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters002, Function | MediumTest| Level1)
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
  
-/*
+/**
  * Function: SetPerFrameParameters003
  * Type: Function
  * Rank: Important(1)
@@ -371,7 +371,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters003, Function | MediumTest| Level1)
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
  
-/*
+/**
  * Function: SetPerFrameParameters004
  * Type: Function
  * Rank: Important(1)
@@ -389,7 +389,7 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters004, Function | MediumTest| Level1)
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
  
-/*
+/**
  * Function: SetPerFrameParameters005
  * Type: Function
  * Rank: Important(1)
@@ -690,7 +690,30 @@ HWTEST_F(HdiLayerTest, CheckAndUpdateLayerBufferCache001, Function | MediumTest|
     uint32_t index = 0;
     std::vector<uint32_t> deletingList = {};
     EXPECT_CALL(*hdiDeviceMock_, ClearLayerBuffer(_, _)).WillRepeatedly(testing::Return(0));
-    ASSERT_EQ(hdiLayer_->CheckAndUpdateLayerBufferCahce(sequence, index, deletingList), false);
+    ASSERT_EQ(hdiLayer_->CheckAndUpdateLayerBufferCache(sequence, index, deletingList), false);
+}
+
+/**
+ * Function: CheckAndUpdateLayerBufferCache002
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call CheckAndUpdateLayerBufferCache()
+ *                  2. check ret
+ */
+HWTEST_F(HdiLayerTest, CheckAndUpdateLayerBufferCache002, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->bufferCache_.clear();
+    hdiLayer_->bufferCache_.push_back(1);
+    hdiLayer_->bufferCache_.push_back(2);
+    hdiLayer_->bufferCacheCountMax_ = 1;
+    hdiLayer_->rsLayer_ = HdiLayerTest::rsLayer_;
+    uint32_t sequence = 0;
+    uint32_t index = 0;
+    std::vector<uint32_t> deletingList = {};
+    EXPECT_CALL(*hdiDeviceMock_, ClearLayerBuffer(_, _)).WillRepeatedly(testing::Return(0));
+    ASSERT_EQ(hdiLayer_->CheckAndUpdateLayerBufferCache(sequence, index, deletingList), false);
 }
 
 /**

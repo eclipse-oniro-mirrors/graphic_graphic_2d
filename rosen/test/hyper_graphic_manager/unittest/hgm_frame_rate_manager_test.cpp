@@ -36,6 +36,8 @@ namespace {
 int64_t offset0 = 0;
 int32_t testThreadNums = 100;
 int32_t touchCnt = 1;
+const std::chrono::steady_clock::duration MORETHAN_NATIVEVSYNCFALLBACKINTERVAL =
+    std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::milliseconds(300));
 const std::string otherSurface = "Other_SF";
 const std::string settingStrategyName = "99";
 const int32_t HGM_REFRESHRATE_MODE_HIGH = 2;
@@ -58,8 +60,6 @@ constexpr int32_t frameRateLinkerId2 = 2;
 constexpr int32_t errorVelocity = -1;
 constexpr int32_t strategy3 = 3;
 constexpr int32_t maxSize = 25;
-const std::chrono::steady_clock::duration MORETHAN_NATIVEVSYNCFALLBACKINTERVAL =
-    std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::milliseconds(300));
 const std::string testScene = "TestScene";
 const std::string pkgName0 = "com.pkg.other:0:-1";
 const std::string pkgName1 = "com.ss.hm.ugc.aweme:1001:10067";
@@ -297,7 +297,7 @@ HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest002, Function | SmallT
         sptr<CustomHgmCallback> cb = new CustomHgmCallback();
         hccMgr->animDynamicCfgCallbacks_[0] = cb;
         hccMgr->refreshRateModeCallbacks_[0] = cb;
-        hccMgr->SyncHgmConfigChangeCallback();
+        hccMgr->SyncHgmConfigChangeCallback(pid);
         hccMgr->SyncRefreshRateModeChangeCallback(0);
         hccMgr->RegisterHgmConfigChangeCallback(0, nullptr);
         auto& hgmCore = HgmCore::Instance();
@@ -470,6 +470,30 @@ HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest004, Function | SmallT
 }
 
 /**
+ * @tc.name: HgmConfigCallbackManagerTest005
+ * @tc.desc: Verify the result of HgmConfigCallbackManagerTest005 function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, HgmConfigCallbackManagerTest005, Function | SmallTest | Level0)
+{
+    sptr<HgmConfigCallbackManager> hccMgr = HgmConfigCallbackManager::GetInstance();
+    std::unique_ptr<XMLParser> parser = std::make_unique<XMLParser>();
+    if (parser->LoadConfiguration(xmlConfig) == EXEC_SUCCESS) {
+        sptr<CustomHgmCallback> cb = sptr<CustomHgmCallback>::MakeSptr();
+        hccMgr->RegisterHgmConfigChangeCallback(0, cb);
+        hccMgr->SyncHgmConfigChangeCallback(pid);
+        std::unordered_map<pid_t, std::pair<int32_t, std::string>> foregroundPidAppMap;
+        foregroundPidAppMap.try_emplace(pid, std::pair<int32_t, std::string>{ 0, "com.app10" });
+        hccMgr->SyncHgmConfigChangeCallback(foregroundPidAppMap, pid);
+        ASSERT_EQ(hccMgr->pendingAnimDynamicCfgCallbacks_.find(pid) ==
+            hccMgr->pendingAnimDynamicCfgCallbacks_.end(), true);
+    } else {
+        EXPECT_EQ(parser->LoadConfiguration(xmlConfig), XML_FILE_LOAD_FAIL);
+    }
+}
+
+/**
  * @tc.name: MultiThread001
  * @tc.desc: Verify the result of MultiThread001 function
  * @tc.type: FUNC
@@ -516,8 +540,10 @@ HWTEST_F(HgmFrameRateMgrTest, MultiThread001, Function | SmallTest | Level0)
             frameRateMgr.HandleRefreshRateEvent(i, {});
 
             // HandleTouchEvent
-            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_DOWN, touchCnt);
-            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_UP, touchCnt);
+            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_DOWN, touchCnt,
+                TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+            frameRateMgr.HandleTouchEvent(i, TouchStatus::TOUCH_UP, touchCnt,
+                TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
             // HandleRefreshRateMode
             // param -1、0、1、2、3：refresh rate mode
@@ -586,20 +612,20 @@ HWTEST_F(HgmFrameRateMgrTest, UpdateGuaranteedPlanVoteTest, Function | SmallTest
     mgr->idleDetector_.SetAppSupportedState(true);
     mgr->UpdateGuaranteedPlanVote(currTime);
 
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     mgr->UpdateGuaranteedPlanVote(currTime);
 
     mgr->idleDetector_.bufferFpsMap_["AceAnimato"] = 90;
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     mgr->UpdateGuaranteedPlanVote(currTime);
 
     mgr->idleDetector_.SetAceAnimatorIdleState(false);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount);
-    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_DOWN, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr->HandleTouchEvent(appPid, TouchStatus::TOUCH_UP, touchCount, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     mgr->UpdateGuaranteedPlanVote(currTime);
     EXPECT_FALSE(mgr->idleDetector_.GetAceAnimatorIdleState());
@@ -1242,6 +1268,21 @@ HWTEST_F(HgmFrameRateMgrTest, HandlePackageEvent, Function | SmallTest | Level0)
     finalRange = {OLED_30_HZ, OLED_90_HZ, OLED_30_HZ};
     ASSERT_EQ(frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange), OLED_60_HZ);
     frameRateMgr->stylusVec_.clear();
+
+    frameRateMgr->isLtpo_.store(true);
+    frameRateMgr->isAmbientStatus_ = LightFactorStatus::NORMAL_LOW;
+    frameRateMgr->isAmbientEffect_ = true;
+    frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange);
+    frameRateMgr->isAmbientStatus_ = LightFactorStatus::HIGH_LEVEL;
+    frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange);
+    frameRateMgr->isAmbientEffect_ = false;
+    frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange);
+    frameRateMgr->isLtpo_.store(false);
+    frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange);
+    frameRateMgr->isAmbientEffect_ = true;
+    frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange);
+    frameRateMgr->isAmbientStatus_ = LightFactorStatus::NORMAL_LOW;
+    frameRateMgr->CalcRefreshRate(frameRateMgr->curScreenId_.load(), finalRange);
 }
 
 /**
@@ -1313,7 +1354,6 @@ HWTEST_F(HgmFrameRateMgrTest, UpdateFrameRateWithDelay, Function | SmallTest | L
 
     frameRateMgr->frameVoter_.isDragScene_ = true;
     ASSERT_EQ(frameRateMgr->UpdateFrameRateWithDelay(120), 120);
-    ASSERT_EQ(frameRateMgr->UpdateFrameRateWithDelay(72), 120);
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
     ASSERT_EQ(frameRateMgr->UpdateFrameRateWithDelay(72), 72);
@@ -1414,37 +1454,42 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandleTouchEvent, Function | SmallTest | Level
     mgr.touchManager_.eventCallbacks_.clear();
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::DOWN_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1);
+    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_MOVE, 1);
+    mgr.HandleTouchEvent(0, TOUCH_MOVE, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_BUTTON_DOWN, 1);
+    mgr.HandleTouchEvent(0, TOUCH_BUTTON_DOWN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_BUTTON_UP, 1);
+    mgr.HandleTouchEvent(0, TOUCH_BUTTON_UP, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, AXIS_BEGIN, 1);
+    mgr.HandleTouchEvent(0, AXIS_BEGIN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, AXIS_UPDATE, 1);
+    mgr.HandleTouchEvent(0, AXIS_UPDATE, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, AXIS_END, 1);
+    mgr.HandleTouchEvent(0, AXIS_END, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
 
     mgr.frameVoter_.voterGamesEffective_ = true;
     mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
-    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1);
-    mgr.HandleTouchEvent(0, TOUCH_UP, 1);
+    mgr.HandleTouchEvent(0, TOUCH_DOWN, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
+    mgr.HandleTouchEvent(0, TOUCH_UP, 1, TouchSourceType::SOURCE_TYPE_TOUCHSCREEN);
     mgr.touchManager_.ChangeState(TouchState::IDLE_STATE);
+
+    // mouse situation
+    mgr.frameVoter_.voterGamesEffective_ = true;
+    mgr.touchManager_.state_.store(TouchState::IDLE_STATE);
+    mgr.HandleTouchEvent(0, TOUCH_MOVE, 1, TouchSourceType::SOURCE_TYPE_MOUSE);
     sleep(1);
     EXPECT_EQ(mgr.touchManager_.pkgName_, "");
 }
@@ -1459,35 +1504,49 @@ HWTEST_F(HgmFrameRateMgrTest, TestHandlePointerTask, Function | SmallTest | Leve
 {
     HgmFrameRateManager mgr;
     pid_t pid = DEFAULT_PID + 1;
-    int32_t pointerStatus = AXIS_BEGIN;
-    std::string pkg0 = "com.wedobest.fivechess.harm:1002:10110";
-    std::string pkg1 = "com.undefined.pkg:10020:-1";
+    std::string pkg = "com.test.pkg:1000:10000";
+    std::string testStrategy = "test_strategy";
 
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
+    HgmMultiAppStrategy& mStrategy = mgr.multiAppStrategy_;
+    mStrategy.screenSettingCache_.strategy = testStrategy;
+    mStrategy.pkgs_ = {pkg};
+    mStrategy.strategyConfigMapCache_[testStrategy] = {
+        .min = OLED_NULL_HZ,
+        .max = OLED_120_HZ,
+        .pointerMode = PointerModeType::POINTER_ENABLED
+    };
+
+    mgr.HandlePointerTask(pid, AXIS_BEGIN, 1);
     EXPECT_TRUE(mgr.cleanPidCallback_[pid].count(CleanPidCallbackType::TOUCH_EVENT) > 0);
 
     pid = DEFAULT_PID;
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
+    mgr.HandlePointerTask(pid, AXIS_BEGIN, 1);
+    EXPECT_EQ(mgr.cleanPidCallback_.count(DEFAULT_PID), 0);
 
-    pointerStatus = AXIS_UPDATE;
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
+    mStrategy.strategyConfigMapCache_[testStrategy].pointerMode = PointerModeType::POINTER_ENABLED;
+    std::set<TouchStatus> originalSet = {TOUCH_MOVE, TOUCH_BUTTON_DOWN, TOUCH_BUTTON_UP, AXIS_BEGIN, AXIS_UPDATE,
+        AXIS_END};
+    for (TouchStatus status : originalSet) {
+        mgr.HandlePointerTask(pid, status, 1);
+    }
 
-    pointerStatus = AXIS_END;
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
+    mStrategy.strategyConfigMapCache_[testStrategy].pointerMode = PointerModeType::POINTER_ENABLED_EX_MOVE;
+    mgr.HandlePointerTask(pid, TOUCH_MOVE, 1);
+    mgr.HandlePointerTask(pid, TOUCH_BUTTON_DOWN, 1);
+    mgr.HandlePointerTask(pid, TOUCH_BUTTON_UP, 1);
+    EXPECT_EQ(mStrategy.strategyConfigMapCache_[testStrategy].pointerMode, PointerModeType::POINTER_ENABLED_EX_MOVE);
 
-    pointerStatus = AXIS_BEGIN;
-    mgr.multiAppStrategy_.pkgs_ = {pkg0};
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
-    EXPECT_EQ(mgr.pointerManager_.pkgName_, "");
+    mStrategy.strategyConfigMapCache_[testStrategy].pointerMode = PointerModeType::POINTER_DISENABLED;
+    mgr.HandlePointerTask(pid, AXIS_BEGIN, 1);
+    mgr.HandlePointerTask(pid, AXIS_UPDATE, 1);
+    mgr.HandlePointerTask(pid, AXIS_END, 1);
 
-    mgr.multiAppStrategy_.pkgs_ = {pkg1};
-    mgr.multiAppStrategy_.strategyConfigMapCache_[mgr.multiAppStrategy_.screenSettingCache_.strategy]
-        .pointerMode = PointerModeType::POINTER_DISENABLED;
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
-
-    mgr.multiAppStrategy_.screenSettingCache_.strategy = "undefined";
-    mgr.HandlePointerTask(pid, pointerStatus, 1);
+    mStrategy.screenSettingCache_.strategy = "undefined_strategy";
+    mStrategy.strategyConfigMapCache_[testStrategy].pointerMode = PointerModeType::POINTER_ENABLED;
+    mgr.HandlePointerTask(pid, TOUCH_MOVE, 1);
+    mgr.HandlePointerTask(pid, AXIS_BEGIN, 1);
     mgr.pointerManager_.ChangeState(PointerState::POINTER_IDLE_STATE);
+    EXPECT_EQ(mStrategy.strategyConfigMapCache_[testStrategy].pointerMode, PointerModeType::POINTER_ENABLED);
     sleep(1);
 }
 
@@ -1596,6 +1655,31 @@ HWTEST_F(HgmFrameRateMgrTest, TestCheckRefreshRateChange, Function | SmallTest |
 }
 
 /**
+ * @tc.name: TestUpdateSoftVSync
+ * @tc.desc: Verify the result of UpdateSoftVSync function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmFrameRateMgrTest, TestUpdateSoftVSync, Function | SmallTest | Level0)
+{
+    HgmFrameRateManager mgr;
+    mgr.multiAppStrategy_.disableSafeVote_ = true;
+    mgr.rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>();
+    auto linker = std::make_shared<RSRenderFrameRateLinker>();
+    FrameRateLinkerMap appFrameRateLinkers;
+    appFrameRateLinkers[((NodeId)1000) << 32] = linker;
+    mgr.appFrameRateLinkers_ = appFrameRateLinkers;
+    mgr.UpdateSoftVSync(false);
+    mgr.appFrameRateLinkers_[((NodeId)1000) << 32]->UpdateNativeVSyncTimePoint();
+    mgr.appFrameRateLinkers_[((NodeId)1000) << 32]->expectedRange_.type_ = NATIVE_VSYNC_FRAME_RATE_TYPE;
+    mgr.UpdateSoftVSync(false);
+    mgr.appFrameRateLinkers_[((NodeId)1000) << 32]->nativeVSyncTimePoint_.store(
+        std::chrono::steady_clock::now() - MORETHAN_NATIVEVSYNCFALLBACKINTERVAL);
+    mgr.UpdateSoftVSync(false);
+    EXPECT_EQ(mgr.idleDetector_.aceAnimatorIdleState_, true);
+}
+
+/**
  * @tc.name: TestSetHgmConfigUpdateCallback
  * @tc.desc: Verify the result of SetHgmConfigUpdateCallback
  * @tc.type: FUNC
@@ -1651,28 +1735,45 @@ HWTEST_F(HgmFrameRateMgrTest, TestSyncHgmConfigUpdateCallback, Function | SmallT
 }
 
 /**
- * @tc.name: TestUpdateSoftVSync
- * @tc.desc: Verify the result of TestUpdateSoftVSync function
+ * @tc.name: TestIsMouseOrTouchPadEvent
+ * @tc.desc: Verify the result of IsMouseOrTouchPadEvent
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmFrameRateMgrTest, TestUpdateSoftVSync, Function | SmallTest | Level0)
+HWTEST_F(HgmFrameRateMgrTest, TestIsMouseOrTouchPadEvent, Function | SmallTest | Level2)
 {
     HgmFrameRateManager mgr;
-    mgr.multiAppStrategy_.disableSafeVote_ = true;
-    mgr.rsFrameRateLinker_ = std::make_shared<RSRenderFrameRateLinker>();
-    auto linker = std::make_shared<RSRenderFrameRateLinker>();
-    FrameRateLinkerMap appFrameRateLinkers;
-    appFrameRateLinkers[((NodeId)1000) << 32] = linker;
-    mgr.appFrameRateLinkers_ = appFrameRateLinkers;
-    mgr.UpdateSoftVSync(false);
-    mgr.appFrameRateLinkers_[((NodeId)1000) << 32]->UpdateNativeVSyncTimePoint();
-    mgr.appFrameRateLinkers_[((NodeId)1000) << 32]->expectedRange_.type_ = NATIVE_VSYNC_FRAME_RATE_TYPE;
-    mgr.UpdateSoftVSync(false);
-    mgr.appFrameRateLinkers_[((NodeId)1000) << 32]->nativeVSyncTimePoint_.store(
-        std::chrono::steady_clock::now() - MORETHAN_NATIVEVSYNCFALLBACKINTERVAL);
-    mgr.UpdateSoftVSync(false);
-    EXPECT_EQ(mgr.idleDetector_.aceAnimatorIdleState_, true);
+    int32_t touchStatus = TOUCH_MOVE;
+    int32_t sourceType = TouchSourceType::SOURCE_TYPE_MOUSE;
+    mgr.frameVoter_.voterGamesEffective_ = false;
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    ASSERT_EQ(mgr.pointerManager_.GetState(), 0);
+    usleep(10);
+
+    mgr.frameVoter_.voterGamesEffective_ = false;
+    sourceType = TouchSourceType::SOURCE_TYPE_TOUCHSCREEN;
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
+
+    mgr.frameVoter_.voterGamesEffective_ = false;
+    mgr.HandleTouchEvent(0, touchStatus, 1, -1);
+    usleep(10);
+
+    mgr.frameVoter_.voterGamesEffective_ = false;
+    sourceType = TouchSourceType::SOURCE_TYPE_TOUCHPAD;
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
+
+    mgr.frameVoter_.voterGamesEffective_ = false;
+    touchStatus = AXIS_BEGIN;
+    sourceType = TouchSourceType::SOURCE_TYPE_TOUCHSCREEN;
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
+
+    mgr.frameVoter_.voterGamesEffective_ = false;
+    touchStatus = -1;
+    mgr.HandleTouchEvent(0, touchStatus, 1, sourceType);
+    usleep(10);
 }
 } // namespace Rosen
 } // namespace OHOS

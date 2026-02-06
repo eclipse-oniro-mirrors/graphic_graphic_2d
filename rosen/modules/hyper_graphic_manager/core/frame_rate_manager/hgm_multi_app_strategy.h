@@ -79,6 +79,8 @@ public:
     void CleanApp(pid_t pid);
     void UpdateXmlConfigCache();
 
+    pid_t GetSceneBoardPid() const { return sceneBoardPid_; }
+
 private:
     void UseStrategyNum();
     void FollowFocus();
@@ -116,6 +118,7 @@ private:
     PolicyConfigData::ScreenSetting& screenSettingCache_;
     PolicyConfigData::StrategyConfigMap& strategyConfigMapCache_;
     bool disableSafeVote_ = false;
+    pid_t sceneBoardPid_ = DEFAULT_PID;
 };
 } // namespace Rosen
 } // namespace OHOS

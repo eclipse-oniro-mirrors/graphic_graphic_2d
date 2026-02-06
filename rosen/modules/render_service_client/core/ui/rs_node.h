@@ -59,6 +59,7 @@ using BoundsChangedCallback = std::function<void (const Rosen::Vector4f&)>;
 using ExportTypeChangedCallback = std::function<void(bool)>;
 using DrawNodeChangeCallback = std::function<void(std::shared_ptr<RSNode> rsNode, bool isPositionZ)>;
 using PropertyNodeChangeCallback = std::function<void()>;
+using ColorPickerCallback = std::function<void(uint32_t)>;
 class RSAnimation;
 class RSCommand;
 class RSImplicitAnimParam;
@@ -72,6 +73,7 @@ class RSNGShapeBase;
 class Blender;
 enum class CancelAnimationStatus;
 enum class AnimationCallbackEvent : uint16_t;
+enum class FilterQuality;
 
 namespace ModifierNG {
 class RSModifier;
@@ -249,7 +251,8 @@ public:
     /**
      * @brief Casts this object to a shared pointer of the specified type T.
      *
-     * @return std::shared_ptr<const T> A shared pointer to the object as type T if the cast is valid, nullptr otherwise.
+     * @return std::shared_ptr<const T> A shared pointer to the object as type T if the cast is valid,
+     *         nullptr otherwise.
      */
     template<typename T>
     std::shared_ptr<const T> ReinterpretCastTo() const
@@ -366,12 +369,12 @@ public:
     static CancelAnimationStatus CloseImplicitCancelAnimationReturnStatus(
         const std::shared_ptr<RSUIContext> rsUIContext = nullptr);
     static bool IsImplicitAnimationOpen(const std::shared_ptr<RSUIContext> rsUIContext);
-    static void AddKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext, float fraction,
-        const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
-    static void AddKeyFrame(
-        const std::shared_ptr<RSUIContext> rsUIContext, float fraction, const PropertyCallback& callback);
-    static void AddDurationKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext, int duration,
-        const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
+    static void AddKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext,
+        float fraction, const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
+    static void AddKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext,
+        float fraction, const PropertyCallback& callback);
+    static void AddDurationKeyFrame(const std::shared_ptr<RSUIContext> rsUIContext,
+        int duration, const RSAnimationTimingCurve& timingCurve, const PropertyCallback& callback);
     void NotifyTransition(const std::shared_ptr<const RSTransitionEffect>& effect, bool isTransitionIn);
 
     void AddAnimation(const std::shared_ptr<RSAnimation>& animation, bool isStartAnimation = true);
@@ -561,7 +564,8 @@ public:
     /**
      * @brief Sets the corner radius of the node.
      *
-     * @param cornerRadius A Vector4f representing the corner radius for each corner (top-left, top-right, bottom-right, bottom-left).
+     * @param cornerRadius A Vector4f representing the corner radius for each corner (top-left, top-right,
+     *                     bottom-right, bottom-left).
      */
     void SetCornerRadius(const Vector4f& cornerRadius);
 
@@ -1116,6 +1120,24 @@ public:
      */
     void SetColorPickerParams(ColorPlaceholder placeholder, ColorPickStrategyType strategy, uint64_t interval);
 
+    /**
+     * @brief Registers a periodic task that extracts background luminance when the node is drawn and notifies
+     * the client via callback.
+     *
+     * @param interval Cooldown interval between two color picking tasks in ms.
+     * @param callback Only called when the change of background luminance > @p notifyThreshold.
+     * @param notifyThreshold Luminance threshold for notification (0-255).
+     * @return true if registration is successful.
+     */
+    bool RegisterColorPickerCallback(uint64_t interval, ColorPickerCallback callback, uint32_t notifyThreshold);
+
+    /**
+     * @brief Unregisters the color picking task.
+     *
+     * @return true if unregistration is successful.
+     */
+    bool UnregisterColorPickerCallback();
+
     // UIEffect
     /**
      * @brief Sets the background filter for the UI.
@@ -1207,6 +1229,14 @@ public:
      * @param materialFilter Indicates the material filter to be applied.
      */
     void SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& materialFilter);
+
+    /**
+     * @brief Sets the material filter with a quality level.
+     *
+     * @param materialFilter Indicates the material filter to be applied.
+     * @param quality Quality level of the filter.
+     */
+    void SetMaterialWithQualityLevel(const std::shared_ptr<RSNGFilterBase>& materialFilter, FilterQuality quality);
 
     /**
      * @brief Sets the parameters for linear gradient blur.
@@ -1330,7 +1360,6 @@ public:
      */
     void SetBgBrightnessNegCoeff(const Vector4f& coeff);
     void SetBgBrightnessFract(const float& fract);
-    void SetBorderLightShader(std::shared_ptr<VisualEffectPara> visualEffectPara);
 
     /**
      * @brief Sets the grey coefficient.
@@ -1442,7 +1471,8 @@ public:
      * @brief Sets a rounded rectangle clipping region for the node.
      *
      * @param clipRect The bounds of the clipping rectangle,represented as (x, y, width, height).
-     * @param clipRadius The radii for the rectangle's corners,represented as (topLeft, topRight, bottomRight, bottomLeft).
+     * @param clipRadius The radii for the rectangle's corners,represented as (topLeft, topRight, bottomRight,
+     *                   bottomLeft).
      */
     void SetClipRRect(const Vector4f& clipRect, const Vector4f& clipRadius);
 
@@ -1600,10 +1630,6 @@ public:
      */
     bool GetIsCustomTextType();
 
-    void SetIsCustomTypeface(bool isCustomTypeface);
-
-    bool GetIsCustomTypeface();
-
     /**
      * @brief Sets the drawing region for the node.
      *
@@ -1630,15 +1656,17 @@ public:
      * @param isNodeGroup       Whether to enable group rendering optimization for this node
      * @param isForced          When true, forces group marking ignoring system property checks
      * @param includeProperty   When true, packages node properties with the group
+     * @param colorAdaptive     When true, apply a color adaptive filter to the node group
      */
-    void MarkNodeGroup(bool isNodeGroup, bool isForced = true, bool includeProperty = false);
+    void MarkNodeGroup(
+        bool isNodeGroup, bool isForced = true, bool includeProperty = false, bool colorAdaptive = false);
 
     /**
      * @brief Mark node exclude from nodeGroup
      *
      * When node is marked ExcludedFromNodeGroup, it will not cached by renderGroup
      *
-     * @param isExcluded     When true, When node and its subtree will be exluded on renderGroup cache
+     * @param isExcluded     When true, When node and its subtree will be excluded on renderGroup cache
      */
     void ExcludedFromNodeGroup(bool isExcluded);
 
@@ -1702,7 +1730,8 @@ public:
 
     std::string GetFrameNodeTag();
 
-    virtual void SetBoundsChangedCallback(BoundsChangedCallback callback){};
+    virtual void SetBoundsChangedCallback(BoundsChangedCallback callback) {}
+
     bool IsTextureExportNode() const
     {
         return isTextureExportNode_;
@@ -1825,7 +1854,7 @@ public:
      *
      * @param hybridRenderCanvas true to enable hybrid rendering; false otherwise.
      */
-    virtual void SetHybridRenderCanvas(bool hybridRenderCanvas) {};
+    virtual void SetHybridRenderCanvas(bool hybridRenderCanvas) {}
 
     /**
      * @brief Gets whether the node is on the tree.
@@ -1860,10 +1889,6 @@ protected:
         bool isOnTheTree = false);
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr, bool isOnTheTree = false);
-
-    virtual void CreateRenderNode() const
-    {
-    }
 
     void DumpModifiers(std::string& out) const;
 
@@ -1954,16 +1979,22 @@ protected:
      */
     virtual void SetIsOnTheTree(bool flag);
 
-    bool IsCreateNodeCommand(const RSCommand& command) const
-    {
-        return createNodeCommandTypes_.find(std::make_pair(command.GetType(), command.GetSubType())) !=
-            createNodeCommandTypes_.end();
-    }
-
     bool IsLazyLoadCommand(const RSCommand& command) const
     {
-        return lazyLoadCommandTypes_.find(std::make_pair(command.GetType(), command.GetSubType())) !=
-            lazyLoadCommandTypes_.end();
+        return std::find(lazyLoadCommandTypes_.begin(), lazyLoadCommandTypes_.end(),
+            std::make_pair(command.GetType(), command.GetSubType())) != lazyLoadCommandTypes_.end();
+    }
+
+    bool IsChildOperationCommand(const RSCommand& command) const
+    {
+        return std::find(childOpCommandTypes_.begin(), childOpCommandTypes_.end(),
+            std::make_pair(command.GetType(), command.GetSubType())) != childOpCommandTypes_.end();
+    }
+
+    void AddLazyLoadCommand(std::unique_ptr<RSCommand>&& command, bool isRenderServiceCommand = false,
+        FollowType followType = FollowType::NONE, NodeId nodeId = 0)
+    {
+        lazyLoadCommands_.emplace_back(std::move(command), isRenderServiceCommand, followType, nodeId);
     }
 
     /**
@@ -2021,8 +2052,8 @@ private:
     static NodeId GenerateId();
     static void InitUniRenderEnabled();
 
-    static const std::set<std::pair<uint16_t, uint16_t>> createNodeCommandTypes_; // <CommandType, CommandSubType>
-    static const std::set<std::pair<uint16_t, uint16_t>> lazyLoadCommandTypes_; // <CommandType, CommandSubType>
+    static const std::array<std::pair<uint16_t, uint16_t>, 3> lazyLoadCommandTypes_; // <CommandType, CommandSubType>
+    static const std::array<std::pair<uint16_t, uint16_t>, 4> childOpCommandTypes_; // <CommandType, CommandSubType>
     NodeId id_;
     WeakPtr parent_;
     int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
@@ -2032,7 +2063,7 @@ private:
     std::vector<WeakPtr> children_;
     void SetParent(WeakPtr parent);
     void RemoveChildByNode(SharedPtr child);
-    virtual void CreateRenderNodeForTextureExportSwitch() {};
+    virtual void CreateRenderNodeForTextureExportSwitch() {}
 
     /**
      * @brief Sets a UIFilter property value for a specific modifier.
@@ -2067,6 +2098,7 @@ private:
 
     void NotifyPageNodeChanged() const;
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
+    bool FireColorPickerCallback(uint32_t color);
     bool HasPropertyAnimation(const PropertyId& id);
     std::vector<AnimationId> GetAnimationByPropertyId(const PropertyId& id);
     bool FallbackAnimationsToContext();
@@ -2132,7 +2164,8 @@ private:
     bool isUifirstNode_ = true;
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
-    bool isSkipCheckInMultiInstance_ = false;
+    bool isP3Color_ = false;
+    bool isSkipCheckInMultiInstance_ = true;
     RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     std::shared_ptr<RSUIContext> rsUIContext_;
 
@@ -2149,7 +2182,6 @@ private:
     std::unordered_map<PropertyId, uint32_t> animatingPropertyNum_;
     std::shared_ptr<RSMotionPathOption> motionPathOption_;
     std::shared_ptr<const RSTransitionEffect> transitionEffect_;
-
     struct CommandInfo {
         CommandInfo()
             : command_(nullptr), isRenderServiceCommand_(false),
@@ -2173,9 +2205,13 @@ private:
 
     std::recursive_mutex animationMutex_;
     mutable std::recursive_mutex propertyMutex_;
+    mutable std::recursive_mutex lazyLoadMutex_;
 
     bool isOnTheTree_ = false;
     bool isOnTheTreeInit_ = false;
+    ColorPickerCallback colorPickerCallback_;
+
+    std::bitset<3> hasReportedSetUIXXFilterCascade_ = 0b000;
 
     friend class RSUIDirector;
     friend class RSTransition;

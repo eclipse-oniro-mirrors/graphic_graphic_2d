@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Huawei Device Co., Ltd.
+ * Copyright (C) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,6 +22,17 @@
 
 namespace OHOS {
 namespace Rosen {
+
+// subset of FrostedGlass parameters that adapt to background color
+struct AdaptiveFrostedGlassParams {
+    Vector2f blurParams = Vector2f(48.0f, 4.0f);
+    Vector2f weightsEmboss = Vector2f(1.0f, 1.0f); // (envLight, sd)
+    Vector2f bgRates = Vector2f(-0.00003f, 1.2f);
+    Vector3f bgKBS = Vector3f(0.010834f, 0.007349f, 1.2f);
+    Vector3f bgPos = Vector3f(0.3f, 0.5f, 1.0f);
+    Vector3f bgNeg = Vector3f(0.5f, 0.5f, 1.0f);
+};
+
 class FrostedGlassPara : public FilterPara {
 public:
     FrostedGlassPara()
@@ -29,7 +40,7 @@ public:
         this->type_ = FilterPara::ParaType::FROSTED_GLASS;
     }
     ~FrostedGlassPara() override = default;
-    
+
     void SetBlurParams(Vector2f& blurParams)
     {
         blurParams_ = blurParams;
@@ -98,6 +109,16 @@ public:
     const Vector3f GetBgNeg() const
     {
         return bgNeg_;
+    }
+
+    void SetBgAlpha(float bgAlpha)
+    {
+        bgAlpha_ = bgAlpha;
+    }
+
+    float GetBgAlpha() const
+    {
+        return bgAlpha_;
     }
 
     void SetRefractParams(Vector3f& refractParams)
@@ -209,7 +230,7 @@ public:
     {
         return envLightNeg_;
     }
-    
+
     void SetEdLightParams(Vector2f& edLightParams)
     {
         edLightParams_ = edLightParams;
@@ -280,24 +301,64 @@ public:
         return edLightNeg_;
     }
 
-    void SetBorderSize(Vector2f& borderSize)
+    void SetBaseVibrancyEnabled(bool baseVibrancyEnabled)
     {
-        borderSize_ = borderSize;
+        baseVibrancyEnabled_ = baseVibrancyEnabled;
     }
 
-    const Vector2f GetBorderSize() const
+    bool GetBaseVibrancyEnabled() const
     {
-        return borderSize_;
+        return baseVibrancyEnabled_;
     }
 
-    void SetCornerRadius(float& cornerRadius)
+    void SetBaseMaterialType(float baseMaterialType)
     {
-        cornerRadius_ = cornerRadius;
+        baseMaterialType_ = baseMaterialType;
     }
 
-    const float& GetCornerRadius() const
+    float GetBaseMaterialType() const
     {
-        return cornerRadius_;
+        return baseMaterialType_;
+    }
+
+    void SetMaterialColor(const Vector4f& materialColor)
+    {
+        materialColor_ = materialColor;
+    }
+
+    Vector4f GetMaterialColor() const
+    {
+        return materialColor_;
+    }
+
+    void SetSamplingScale(float samplingScale)
+    {
+        samplingScale_ = samplingScale;
+    }
+
+    float GetSamplingScale() const
+    {
+        return samplingScale_;
+    }
+
+    void SetDarkAdaptiveParams(AdaptiveFrostedGlassParams darkParams)
+    {
+        darkAdaptiveParams_ = std::make_shared<AdaptiveFrostedGlassParams>(std::move(darkParams));
+    }
+
+    const std::shared_ptr<AdaptiveFrostedGlassParams>& GetDarkAdaptiveParams() const
+    {
+        return darkAdaptiveParams_;
+    }
+
+    void SetDarkScale(float scale)
+    {
+        darkScale_ = scale;
+    }
+
+    float GetDarkScale() const
+    {
+        return darkScale_;
     }
 
 private:
@@ -309,6 +370,7 @@ private:
     Vector3f bgKBS_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f bgPos_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f bgNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
+    float bgAlpha_ = 1.0f; // the alpha of brackground color
     // Refraction parameters
     Vector3f refractParams_ = Vector3f(0.0f, 0.0f, 0.0f);
     // Inner shadow parameters
@@ -325,14 +387,19 @@ private:
     Vector3f envLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
     // Edge highlights parameters
     Vector2f edLightParams_ = Vector2f(0.0f, 0.0f);
-    Vector2f edLightAngles_ = Vector2f(0.0f, 30.0f);
+    Vector2f edLightAngles_ = Vector2f(0.0f, 0.0f);
     Vector2f edLightDir_ = Vector2f(0.0f, 0.0f);
     Vector2f edLightRates_ = Vector2f(0.0f, 0.0f);
     Vector3f edLightKBS_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightPos_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
-    Vector2f borderSize_ = Vector2f(0.0f, 0.0f);
-    float cornerRadius_ = 0.0f;
+    bool baseVibrancyEnabled_ = true;
+    float baseMaterialType_ = 0.0f;
+    Vector4f materialColor_ = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    float darkScale_ = 0.0f; // later will use interpolation between 0.0 and 1.0
+    float samplingScale_ = 1.0f;
+
+    std::shared_ptr<AdaptiveFrostedGlassParams> darkAdaptiveParams_;
 };
 } // namespace Rosen
 } // namespace OHOS

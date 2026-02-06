@@ -212,6 +212,7 @@ private:
         std::vector<sptr<VSyncConnection>> &conns, bool isDvsyncThread);
     void OnVSyncTrigger(int64_t now, int64_t period,
         uint32_t refreshRate, VSyncMode vsyncMode, uint32_t vsyncMaxRefreshRate);
+    VsyncError SetQosVSyncRateLocked(uint64_t windowNodeId, int32_t rate, bool isSystemAnimateScene);
 
     sptr<VSyncSystemAbilityListener> saStatusChangeListener_ = nullptr;
     std::thread threadLoop_;

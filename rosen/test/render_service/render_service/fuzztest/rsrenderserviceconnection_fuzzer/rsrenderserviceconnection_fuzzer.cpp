@@ -254,8 +254,10 @@ bool DoSetPhysicalScreenResolution()
     if (rsToServiceConn_ == nullptr) {
         return false;
     }
-    ScreenId id = GetData<uint64_t>();
-    rsToServiceConn_->SetPhysicalScreenResolution(id, SCREEN_WIDTH, SCREEN_HEIGHT);
+    ScreenId id = GetData<ScreenId>();
+    uint32_t width = GetData<uint32_t>();
+    uint32_t height = GetData<uint32_t>();
+    rsToServiceConn_->SetPhysicalScreenResolution(id, width, height);
     return true;
 }
 
@@ -1211,7 +1213,8 @@ bool DONotifyTouchEvent()
     }
     int32_t touchStatus = GetData<int32_t>();
     int32_t touchCnt = GetData<int32_t>();
-    rsToServiceConn_->NotifyTouchEvent(touchStatus, touchCnt);
+    int32_t sourceType = GetData<int32_t>();
+    rsToServiceConn_->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     return true;
 }
 
@@ -1384,6 +1387,8 @@ bool DoCreatePixelMapFromSurface()
     };
     std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
     rsToServiceConn_->CreatePixelMapFromSurface(pSurface, srcRect, pixelMap);
+    rsToServiceConn_->CreatePixelMapFromSurface(pSurface, srcRect, pixelMap, true);
+    rsToServiceConn_->CreatePixelMapFromSurface(pSurface, srcRect, pixelMap, false);
     return true;
 }
 

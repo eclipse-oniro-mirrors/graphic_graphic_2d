@@ -84,7 +84,7 @@ public:
         int32_t& repCode) = 0;
 
     virtual ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
-        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap) = 0;
+        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) = 0;
 
     virtual ErrCode GetDefaultScreenId(uint64_t& screenId) = 0;
 
@@ -101,15 +101,19 @@ public:
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) = 0;
 
-    virtual int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector) = 0;
+    // blacklist
+    virtual int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) = 0;
+    virtual ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) = 0;
+    virtual ErrCode RemoveVirtualScreenBlackList(
+        ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) = 0;
+    
+    // whitelist
+    virtual ErrCode AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) = 0;
+    virtual ErrCode RemoveVirtualScreenWhiteList(
+        ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) = 0;
 
     virtual ErrCode SetVirtualScreenTypeBlackList(
         ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) = 0;
-
-    virtual ErrCode AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) = 0;
-    
-    virtual ErrCode RemoveVirtualScreenBlackList(
-        ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) = 0;
 
     virtual ErrCode SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         bool& success) = 0;
@@ -175,6 +179,8 @@ public:
 
     virtual void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) = 0;
 
+    virtual int32_t SetDualScreenState(ScreenId id, DualScreenStatus status) = 0;
+
     virtual RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) = 0;
 
     virtual ErrCode GetScreenActiveMode(uint64_t id, RSScreenModeInfo& screenModeInfo) = 0;
@@ -184,6 +190,8 @@ public:
     virtual RSScreenCapability GetScreenCapability(ScreenId id) = 0;
 
     virtual ErrCode GetScreenPowerStatus(uint64_t screenId, uint32_t& status) = 0;
+
+    virtual ErrCode GetPanelPowerStatus(ScreenId id, PanelPowerStatus& status) = 0;
 
     virtual RSScreenData GetScreenData(ScreenId id) = 0;
 
@@ -240,7 +248,7 @@ public:
     virtual int32_t GetScreenType(ScreenId id, RSScreenType& screenType) = 0;
 
     virtual bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) = 0;
-    virtual int32_t RegisterTypeface(uint64_t id, uint32_t size, int32_t fd, int32_t& needUpdate, uint32_t index) = 0;
+    virtual int32_t RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate) = 0;
     virtual bool UnRegisterTypeface(uint64_t globalUniqueId) = 0;
 
     virtual ErrCode SetScreenSkipFrameInterval(uint64_t id, uint32_t skipFrameInterval, int32_t& resCode) = 0;
@@ -288,7 +296,7 @@ public:
 
     virtual bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) = 0;
 
-    virtual ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) = 0;
+    virtual ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) = 0;
 
     virtual void NotifyDynamicModeEvent(bool enableDynamicMode) = 0;
 
@@ -358,6 +366,10 @@ public:
 
     virtual ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps) = 0;
+
+    virtual ErrCode AvcodecVideoGet(uint64_t uniqueId) = 0;
+ 
+    virtual ErrCode AvcodecVideoGetRecent() = 0;
 
     virtual ErrCode SetBehindWindowFilterEnabled(bool enabled) = 0;
 

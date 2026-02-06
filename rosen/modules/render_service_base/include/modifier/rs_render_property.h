@@ -70,6 +70,8 @@ enum PropertyUpdateType : uint8_t {
     UPDATE_TYPE_OVERWRITE = 0,   // overwrite by given value
     UPDATE_TYPE_INCREMENTAL,     // incremental update by given value
     UPDATE_TYPE_FORCE_OVERWRITE, // overwrite and cancel all previous animations
+    UPDATE_TYPE_ONLY_VALUE,      // update value without marking dirty or attaching to modifier
+                                 // must use it after animation calculation in main thread
 };
 
 enum class RSPropertyType : uint8_t {
@@ -112,6 +114,7 @@ enum class RSPropertyType : uint8_t {
     RS_RENDER_FILTER,
     VECTOR_FLOAT,
     VECTOR_VECTOR2F,
+    VECTOR_VECTOR4F,
     SHORT, // HRP: move it to the middle of FLOAT and INT
     RS_NG_RENDER_FILTER_BASE,
     RS_NG_RENDER_MASK_BASE,
@@ -318,6 +321,9 @@ public:
             return;
         }
         stagingValue_ = value;
+        if (type == UPDATE_TYPE_ONLY_VALUE) {
+            return;
+        }
         OnChange();
         if (updateUIPropertyFunc_) {
             updateUIPropertyFunc_(shared_from_this());
@@ -396,6 +402,10 @@ public:
 
     void Set(const T& value, PropertyUpdateType type = UPDATE_TYPE_OVERWRITE) override
     {
+        if (type == UPDATE_TYPE_ONLY_VALUE && !(value == RSRenderProperty<T>::stagingValue_)) {
+            RSRenderProperty<T>::stagingValue_ = value;
+            return;
+        }
         if (type == UPDATE_TYPE_OVERWRITE && value == RSRenderProperty<T>::stagingValue_) {
             return;
         }

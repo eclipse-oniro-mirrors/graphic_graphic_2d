@@ -89,9 +89,11 @@ public:
 
     int32_t SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height);
     int32_t SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height);
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
     ScreenPowerStatus GetScreenPowerStatus(ScreenId id) const;
+    PanelPowerStatus GetPanelPowerStatus(ScreenId id) const;
     void DisablePowerOffRenderControl(ScreenId id);
     // used to skip render frame or render only one frame when screen power is off.
     void MarkPowerOffNeedProcessOneFrame();
@@ -148,17 +150,20 @@ public:
     ScreenScaleMode GetScaleMode(ScreenId id) const;
 
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
+    VirtualScreenStatus GetVirtualScreenStatus(ScreenId id) const;
 
-    // type blacklist
-    int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList);
-    
     // blacklist
+    int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList);
     int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList);
     int32_t RemoveVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList);
 
-    // global blacklist
-    int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
+    // type blacklist
+    int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList);
+    
+    // whitelist
+    int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
+    int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
 
     int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<uint64_t>& securityExemptionList);

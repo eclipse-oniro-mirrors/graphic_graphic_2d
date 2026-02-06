@@ -75,10 +75,6 @@ ohos_source_set("rosen_ohos_sources") {
     sources += [ "rs_accessibility.cpp" ]
   }
 
-  if (graphic_2d_feature_mhc_enable) {
-    include_dirs += graphic_2d_mhc_configs.librender_service_mhc_include
-  }
-
   sources += [
     "backend/rs_surface_frame_ohos_raster.cpp",
     "backend/rs_surface_ohos_raster.cpp",
@@ -94,7 +90,6 @@ ohos_source_set("rosen_ohos_sources") {
         "backend/rs_surface_ohos_vulkan.cpp",
         "backend/rs_vulkan_context.cpp",
         "backend/surface_buffer_utils.cpp",
-        "backend/rs_hdr_vulkan_task.cpp",
         "$graphic_2d_root/rosen/modules/2d_graphics/src/render_context/new_render_context/render_context_vk.cpp",
       ]
     }
@@ -142,6 +137,10 @@ ohos_source_set("rosen_ohos_sources") {
   }
   include_dirs += [ "$graphic_2d_root/rosen/modules/render_service_profiler" ]
 
+  if (graphic_2d_feature_mhc_enable) {
+    include_dirs += graphic_2d_mhc_configs.librender_service_mhc_include
+  }
+
   public_deps = [
     "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
@@ -178,6 +177,12 @@ ohos_source_set("rosen_ohos_sources") {
 
   if (rosen_is_ohos) {
     external_deps += ["ffrt:libffrt",]
+  }
+
+  if (defined(graphic_2d_feature_hetero_hdr_enable) && graphic_2d_feature_hetero_hdr_enable
+      && defined(graphic_2d_hetero_hdr_configs)) {
+    include_dirs += graphic_2d_hetero_hdr_configs.librender_service_base_hetero_hdr_include
+    external_deps = graphic_2d_hetero_hdr_configs.librender_service_hetero_hdr_external_deps
   }
 
   if (defined(use_video_processing_engine) && use_video_processing_engine) {
@@ -240,7 +245,8 @@ ohos_source_set("rosen_ohos_sources") {
           "-mllvm",
           "-enable-partial-inlining",
         ]
-        ldflags += [
+        inputs = [ "${graphic_2d_feature_pgo_path}/librender_service_base.profdata" ]
+        ldflags = [
           "-Wl,--aarch64-inline-plt",
           "-Wl,-mllvm,-enable-partial-inlining",
         ]
@@ -265,6 +271,12 @@ ohos_source_set("rosen_ohos_sources") {
         cflags += [ "-moutline-atomics" ]
       }
     }
+  }
+
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.resourceschedule_resource_schedule_service)) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RES_SCHED_ENABLE" ]
   }
 
   part_name = "graphic_2d"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
+ * Copyright (C) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -111,6 +111,8 @@ constexpr uint32_t NUM_24 = 24;
 constexpr uint32_t NUM_25 = 25;
 constexpr uint32_t NUM_26 = 26;
 constexpr uint32_t NUM_27 = 27;
+constexpr uint32_t NUM_28 = 28;
+constexpr uint32_t NUM_29 = 29;
 constexpr uint32_t NUM_1000 = 1000;
 constexpr int32_t ERR_NOT_SYSTEM_APP = 202;
 

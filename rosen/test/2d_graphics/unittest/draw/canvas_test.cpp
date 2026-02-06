@@ -23,6 +23,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+static constexpr int32_t BITMAP_WIDTH = 200;
+static constexpr int32_t BITMAP_HEIGHT = 200;
 class CanvasTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -399,6 +401,51 @@ HWTEST_F(CanvasTest, CanvasGetLocalShadowBoundTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: DrawImageEffectHPSStatisticsEmptyImage
+ * @tc.desc: Test DrawImageEffectHPS Statistics Effect With EmptyImage
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(CanvasTest, DrawImageEffectHPSStatisticsEmptyImage, TestSize.Level1)
+{
+    auto canvas = std::make_unique<Canvas>();
+    ASSERT_TRUE(canvas != nullptr);
+    Drawing::Image image;
+    Drawing::Rect srcRect = { 0.0f, 0.0f, 100.0f, 100.0f };
+    Drawing::Rect dstRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+    std::vector<std::shared_ptr<HpsEffectParameter>> hpsEffectParams;
+    auto hpsStatisticsArgs = std::make_shared<Drawing::HpsStatisticsParameter>(srcRect, dstRect,
+        Drawing::HpsStatisticsType::MEAN);
+    hpsEffectParams.push_back(hpsStatisticsArgs);
+    ASSERT_TRUE(canvas->DrawImageEffectHPS(image, hpsEffectParams) == false);
+}
+
+/**
+ * @tc.name: DrawImageEffectHPSStatisticsWithPixelMap
+ * @tc.desc: Test DrawImageEffectHPS Statistics Effect With PixelMap
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(CanvasTest, DrawImageEffectHPSStatisticsWithPixelMap, TestSize.Level1)
+{
+    auto canvas = std::make_unique<Canvas>();
+    ASSERT_TRUE(canvas != nullptr);
+    Bitmap bmp;
+    BitmapFormat format {COLORTYPE_RGBA_8888, ALPHATYPE_OPAQUE};
+    bmp.Build(BITMAP_WIDTH, BITMAP_HEIGHT, format); // bitmap width and height
+    bmp.ClearWithColor(Drawing::Color::COLOR_BLUE);
+    Drawing::Image image;
+    image.BuildFromBitmap(bmp);
+    Drawing::Rect srcRect = { 0.0f, 0.0f, 100.0f, 100.0f };
+    Drawing::Rect dstRect = { 0.0f, 0.0f, 1.0f, 1.0f };
+    std::vector<std::shared_ptr<HpsEffectParameter>> hpsEffectParams;
+    auto hpsStatisticsArgs = std::make_shared<Drawing::HpsStatisticsParameter>(srcRect, dstRect,
+        Drawing::HpsStatisticsType::MEAN);
+    hpsEffectParams.push_back(hpsStatisticsArgs);
+    canvas->DrawImageEffectHPS(image, hpsEffectParams);
+}
+
+/**
  * @tc.name: CanvasDrawRegionTest001
  * @tc.desc: Test for drawing Region on the Canvas.
  * @tc.type: FUNC
@@ -577,6 +624,31 @@ HWTEST_F(CanvasTest, HpsEffectParameterGetTypeTest001, TestSize.Level1)
     auto hpsMesaArgs = std::make_shared<Drawing::HpsMesaParameter>(srcRect, dstRect,
     10.f, 1.f, 2.f, 11.f, 12.f, 13.f, 14.f, 1, 256.f, 256.f);
     EXPECT_EQ(hpsMesaArgs->GetEffectType(), Drawing::HpsEffect::MESA);
+    // STATISTICS
+    auto hpsStatisticsArgs = std::make_shared<Drawing::HpsStatisticsParameter>(srcRect, dstRect,
+        Drawing::HpsStatisticsType::MEAN);
+    EXPECT_EQ(hpsStatisticsArgs->GetEffectType(), Drawing::HpsEffect::STATISTICS);
+    // PIXEL_MAP_MASK
+    std::vector<float> colors2 = { 0, 0, 0, 0 };
+    auto sharedImage = std::make_shared<Drawing::Image>(image);
+    std::array<float, 9> transformMatrix = {0.312f, 0.0f, 0.344f, 0.0f, 0.691f, 0.154f, 0.0f, 0.0f, 1.0f};
+    auto hpsPixelMaskArgs = std::make_shared<Drawing::HpsPixelMapMaskParameter>(sharedImage, dstRect, transformMatrix,
+        colors2);
+    EXPECT_EQ(hpsPixelMaskArgs->GetMaskType(), Drawing::HpsMask::PIXEL_MAP_MASK);
+    // RADIAL_GRADIENT_MASK
+    std::vector<float> edgeColor = { 0.63922, 0.81961, 1.00, 0 };
+    std::vector<float> colors = { 1.00f, 1.00f, 0.00f };
+    std::vector<float> positions = { 0.00f, 0.91142f, 1.00f };
+    auto hpsRadialMaskArgs = std::make_shared<Drawing::HpsRadialGradientMaskParameter>(1.00,
+        0.33934, 0.92116, 0.92116, colors, positions);
+    EXPECT_EQ(hpsRadialMaskArgs->GetMaskType(), Drawing::HpsMask::RADIAL_GRADIENT_MASK);
+    // EDGE_LIGHT
+    std::vector<float> edgeDetectColor = { 0.22, 0.707, 0.875, 0.000 };
+    Drawing::HpsEdgeLightParameter::EdgeSobelParameter edgeSobelParams = { 0.1, 0.2, 0.3, edgeDetectColor };
+    auto hpsRadialArgs = std::make_shared<Drawing::HpsEdgeLightParameter>(srcRect, dstRect,
+        1, true, true, edgeColor, std::static_pointer_cast<Drawing::HpsMaskParameter>(hpsRadialMaskArgs),
+        edgeSobelParams, 1);
+    EXPECT_EQ(hpsRadialArgs->GetEffectType(), Drawing::HpsEffect::EDGE_LIGHT);
 }
 
 /**
@@ -975,8 +1047,6 @@ HWTEST_F(CanvasTest, GetDrawingTypeTest001, TestSize.Level1)
     std::shared_ptr<Drawing::OverDrawCanvas> overDrawCanvas;
     DrawingType type = overDrawCanvas->GetDrawingType();
     ASSERT_TRUE(type == DrawingType::OVER_DRAW);
-    overDrawCanvas->SetGrContext(nullptr);
-    EXPECT_EQ(overDrawCanvas->GetGPUContext(), nullptr);
 }
 
 /**
@@ -1120,7 +1190,7 @@ HWTEST_F(CanvasTest, GetGPUContext001, TestSize.Level1)
 
 /**
  * @tc.name: RecordStateTest
- * @tc.desc: Test Inherite State
+ * @tc.desc: Test Inherite State.
  * @tc.type: FUNC
  * @tc.require: IC8TIV
  */
@@ -1133,7 +1203,7 @@ HWTEST_F(CanvasTest, RecordStateTest, TestSize.Level1)
 
 /**
  * @tc.name: SetParallelRenderTest
- * @tc.desc: Test Set Parallel
+ * @tc.desc: Test Set Parallel.
  * @tc.type: FUNC
  * @tc.require: IC8TIV
  */
@@ -1143,6 +1213,19 @@ HWTEST_F(CanvasTest, SetParallelRenderTest, TestSize.Level1)
     ASSERT_TRUE(canvas != nullptr);
     canvas->SetParallelRender(true);
 }
+
+/**
+ * @tc.name: RecordCanvasTest
+ * @tc.desc: Test GetGPUContext.
+ * @tc.type: FUNC
+ * @tc.require: IC8TIV
+ */
+HWTEST_F(CanvasTest, RecordStateGPUContextTest, TestSize.Level1)
+{
+    auto stateRecordCanvas = std::make_shared<StateRecordCanvas>(1316, 1962);
+    ASSERT_TRUE(stateRecordCanvas->GetGPUContext() == nullptr);
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

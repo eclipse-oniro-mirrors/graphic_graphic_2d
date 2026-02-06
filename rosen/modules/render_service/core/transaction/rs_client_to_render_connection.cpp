@@ -52,6 +52,7 @@
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+#include "feature_cfg/feature_param/performance_feature/node_mem_release_param.h"
 #include "memory/rs_canvas_dma_buffer_cache.h"
 #endif
 #include "memory/rs_memory_manager.h"
@@ -448,7 +449,8 @@ ErrCode RSClientToRenderConnection::SetWindowFreezeImmediately(NodeId id, bool i
 }
 
 void RSClientToRenderConnection::TakeUICaptureInRange(
-    NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+    NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    RSSurfaceCapturePermissions permissions)
 {
     if (renderPipelineAgent_ == nullptr) {
         return;
@@ -481,7 +483,7 @@ ErrCode RSClientToRenderConnection::GetScreenHDRStatus(ScreenId id, HdrStatus& h
     return renderPipelineAgent_->GetScreenHDRStatus(id, hdrStatus, resCode);
 }
 
-ErrCode RSClientToRenderConnection::DropFrameByPid(const std::vector<int32_t> pidList)
+ErrCode RSClientToRenderConnection::DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel)
 {
     if (renderPipelineAgent_ == nullptr) {
         return ERR_INVALID_VALUE;
@@ -635,6 +637,28 @@ std::string RSClientToRenderConnection::GetBundleName(pid_t pid)
         return {};
     }
     return renderPipelineAgent_->GetBundleName(pid);
+int32_t RSClientToRenderConnection::SetLogicalCameraRotationCorrection(
+    ScreenId screenId, ScreenRotation logicalCorrection)
+{
+    // if (!mainThread_) {
+    //     return INVALID_ARGUMENTS;
+    // }
+    // auto task = [weakThis = wptr<RSClientToRenderConnection>(this), screenId, logicalCorrection]() -> void {
+    //     sptr<RSClientToRenderConnection> connection = weakThis.promote();
+    //     if (connection == nullptr || connection->mainThread_ == nullptr) {
+    //         return;
+    //     }
+    //     auto& nodeMap = connection->mainThread_->GetContext().GetNodeMap();
+    //     nodeMap.TraverseScreenNodes([screenId, logicalCorrection](const std::shared_ptr<RSScreenRenderNode>& node) {
+    //         if (node && node->GetScreenId() == screenId) {
+    //             RS_LOGD("SetLogicalCameraRotationCorrection nodeId: %{public}" PRIu64 ", logicalCorrection: %{public}u",
+    //                 node->GetId(), logicalCorrection);
+    //             node->SetLogicalCameraRotationCorrection(logicalCorrection);
+    //         }
+    //     });
+    // };
+    // mainThread_->PostTask(task);
+    return SUCCESS;
 }
 } // namespace Rosen
 } // namespace OHOS

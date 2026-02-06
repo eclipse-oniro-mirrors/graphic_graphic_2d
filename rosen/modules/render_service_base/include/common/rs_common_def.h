@@ -31,6 +31,7 @@
 #include "common/rs_macros.h"
 #include "common/rs_anco_type.h"
 #include "draw/color.h"
+#include "../../../../utils/color_manager/export/color_space.h"
 
 namespace OHOS {
 class Surface;
@@ -56,7 +57,6 @@ constexpr uint8_t TOP_OCCLUSION_SURFACES_NUM = 3;
 constexpr uint8_t OCCLUSION_ENABLE_SCENE_NUM = 2;
 constexpr int16_t DEFAULT_OCCLUSION_SURFACE_ORDER = -1;
 constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
-constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 
 /**
  * Bitmask enumeration for hierarchical type identification
@@ -303,6 +303,24 @@ struct RSUICaptureInRangeParam {
     bool useBeginNodeSize = true;
 };
 
+enum class CaptureError : uint8_t {
+    CAPTURE_OK = 0,
+    CAPTURE_NO_PERMISSION,
+    CAPTURE_NO_NODE,
+    CAPTURE_CONFIG_WRONG,
+    CAPTURE_PIXELMAP_NULL,
+    CAPTURE_PIXELMAP_COPY_ERROR,
+    CAPTURE_NULL_FAIL,
+    HDR_SET_FAIL,
+    CAPTURE_RENDER_FAIL,
+    AUTO_NOT_SUPPORT,
+    COLOR_SPACE_NOT_SUPPORT,
+    DYNAMIC_RANGE_NOT_SUPPORT,
+    CAPTURE_NO_SECURE_PERMISSION,
+    // please add new enum before this comment
+    CAPTURE_ERROR_BOUNDARY_BUTT,
+};
+
 struct RSSurfaceCaptureConfig {
     float scaleX = 1.0f;
     float scaleY = 1.0f;
@@ -315,16 +333,35 @@ struct RSSurfaceCaptureConfig {
     bool isSoloNodeUiCapture = false;
     bool isHdrCapture = false;
     bool needF16WindowCaptureForScRGB = false;
+    bool needErrorCode = false;
     RSUICaptureInRangeParam uiCaptureInRangeParam = {};
     Drawing::Rect specifiedAreaRect = {};
     uint32_t backGroundColor = Drawing::Color::COLOR_TRANSPARENT;
+    // {colorspace, isAutoAjust}
+    std::pair<uint32_t, bool> colorSpace = {OHOS::ColorManager::ColorSpaceName::SRGB, false};
+    // {dynamicRangeMode, isAutoAjust}
+    std::pair<uint32_t, bool> dynamicRangeMode = {DEFAULT_DYNAMIC_RANGE_MODE_STANDARD, false};
+    bool isSyncRender = false;
+    bool isConfigTriggered = false;
+
+    // When adding new members, please ensure to add the corresponding comparison logic in the operator== and
+    // serialization/deserialization logic in the OnSurfaceCapture method.
     bool operator==(const RSSurfaceCaptureConfig& config) const
     {
-        return mainScreenRect == config.mainScreenRect &&
-            specifiedAreaRect == config.specifiedAreaRect &&
-            uiCaptureInRangeParam.endNodeId == config.uiCaptureInRangeParam.endNodeId &&
-            uiCaptureInRangeParam.useBeginNodeSize == config.uiCaptureInRangeParam.useBeginNodeSize &&
-            blackList == config.blackList;
+        return ROSEN_EQ(scaleX, config.scaleX) && ROSEN_EQ(scaleY, config.scaleY) &&
+               (useDma == config.useDma) && (useCurWindow == config.useCurWindow) &&
+               (captureType == config.captureType) && (isSync == config.isSync) &&
+               (mainScreenRect == config.mainScreenRect) && (blackList == config.blackList) &&
+               (isSoloNodeUiCapture == config.isSoloNodeUiCapture) &&
+               (isHdrCapture == config.isHdrCapture) &&
+               (needF16WindowCaptureForScRGB == config.needF16WindowCaptureForScRGB) &&
+               (needErrorCode == config.needErrorCode) &&
+               (uiCaptureInRangeParam.endNodeId == config.uiCaptureInRangeParam.endNodeId) &&
+               (uiCaptureInRangeParam.useBeginNodeSize == config.uiCaptureInRangeParam.useBeginNodeSize) &&
+               (specifiedAreaRect == config.specifiedAreaRect) &&
+               (backGroundColor == config.backGroundColor) &&
+               (colorSpace == config.colorSpace) &&
+               (dynamicRangeMode == config.dynamicRangeMode);
     }
 };
 
@@ -341,6 +378,7 @@ struct RSSurfaceCaptureParam {
     bool isFreeze = false;
     RSSurfaceCaptureBlurParam blurParam = {};
     bool needCaptureSpecialLayer = false;
+    bool hasDirtyContentInSurfaceCapture = false;
 };
 
 struct RSSurfaceCapturePermissions {
@@ -565,58 +603,6 @@ constexpr float PI = M_PI;
 static const float PI = std::atanf(1.0) * 4;
 #endif
 
-template<typename T>
-inline constexpr bool ROSEN_EQ(const T& x, const T& y)
-{
-    if constexpr (std::is_floating_point<T>::value) {
-        return (std::abs((x) - (y)) <= (std::numeric_limits<T>::epsilon()));
-    } else {
-        return x == y;
-    }
-}
-
-template<typename T>
-inline bool ROSEN_EQ(T x, T y, T epsilon)
-{
-    return (std::abs((x) - (y)) <= (epsilon));
-}
-
-template<typename T>
-inline bool ROSEN_EQ(const std::weak_ptr<T>& x, const std::weak_ptr<T>& y)
-{
-    return !(x.owner_before(y) || y.owner_before(x));
-}
-
-template<typename T>
-inline constexpr bool ROSEN_NE(const T& x, const T& y)
-{
-    return !ROSEN_EQ(x, y);
-}
-
-inline bool ROSEN_LNE(float left, float right) // less not equal
-{
-    constexpr float epsilon = -0.001f;
-    return (left - right) < epsilon;
-}
-
-inline bool ROSEN_GNE(float left, float right) // great not equal
-{
-    constexpr float epsilon = 0.001f;
-    return (left - right) > epsilon;
-}
-
-inline bool ROSEN_GE(float left, float right) // great or equal
-{
-    constexpr float epsilon = -0.001f;
-    return (left - right) > epsilon;
-}
-
-inline bool ROSEN_LE(float left, float right) // less or equal
-{
-    constexpr float epsilon = 0.001f;
-    return (left - right) < epsilon;
-}
-
 class MemObject {
 public:
     explicit MemObject(size_t size) : size_(size) {}
@@ -702,6 +688,11 @@ enum class ComponentEnableSwitch : uint8_t {
     CANVAS,
     MAX_VALUE,
 };
+typedef enum : uint32_t {
+    SA_WATER_MARK_DEFAULT_SIZE = 0, // 512KB
+    SA_WATER_MARK_MIDDLE_SIZE = 1, // 6M
+    SA_WATER_MARK_BOTTOM = 2,
+} SaSurfaceWatermarkMaxSize;
 
 typedef enum : uint32_t {
     WATER_MARK_SUCCESS = 0,

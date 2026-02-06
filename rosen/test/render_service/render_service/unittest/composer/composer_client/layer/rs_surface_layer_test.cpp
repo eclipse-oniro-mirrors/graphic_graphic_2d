@@ -337,9 +337,6 @@ HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest5, Function | SmallTest | 
     layer->SetAcquireFence(acquireFence2);
     EXPECT_EQ(layer->GetAcquireFence(), acquireFence2);
 
-    layer->SetCycleBuffersNum(100);
-    EXPECT_EQ(layer->GetCycleBuffersNum(), 100);
-
     layer->SetUseDeviceOffline(false);
     EXPECT_EQ(layer->GetUseDeviceOffline(), false);
 

@@ -39,19 +39,14 @@ void RSAnimationManager::DumpAnimations(std::string& out) const
     if (animations_.empty()) {
         return;
     }
-    out += ", RSAnimationManager: [";
-    bool hasValidAnimation = false;
+    const auto lengthTwo = 2;
+    out.append(", RSAnimationManager: [");
     for (auto[id, animation]: animations_) {
-        if (!animation) {
-            continue;
-        }
-        if (hasValidAnimation) {
-            out += ", ";
-        }
         animation->DumpAnimation(out);
-        hasValidAnimation = true;
+        out.append(", ");
     }
-    out += "]";
+    out.erase(out.end() - lengthTwo, out.end());
+    out.append("]");
 }
 
 void RSAnimationManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
@@ -171,7 +166,7 @@ std::tuple<bool, bool, bool> RSAnimationManager::Animate(
                 "Animation finish background", animation->GetTargetId(), animation->GetAnimationId(), false);
             animation->Finish();
         }
-        bool isFinished = animation->Animate(time, minLeftDelayTime);
+        bool isFinished = animation->Animate(time, minLeftDelayTime, false);
         if (isFinished) {
             isCalculateAnimationValue = true;
             OnAnimationFinished(animation);

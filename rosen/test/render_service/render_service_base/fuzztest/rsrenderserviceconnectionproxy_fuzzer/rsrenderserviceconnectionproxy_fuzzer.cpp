@@ -105,6 +105,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     int32_t y = GetData<int32_t>();
     int32_t w = GetData<int32_t>();
     int32_t h = GetData<int32_t>();
+    int32_t sourceType = GetData<int32_t>();
     Rect activeRect {
         .x = x,
         .y = y,
@@ -257,14 +258,17 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToRenderConnectionProxy.GetBitmap(id1, bitmap, getBitmapSuccess);
     rsClientToRenderConnectionProxy.GetPixelmap(id1, pixelmap, &rect, drawCmdList, getPixelmapSuccess);
     rsClientToServiceConnectionProxy.RegisterTypeface(id1, typeface);
-    rsClientToServiceConnectionProxy.RegisterTypeface(id1, id2, screenId, resCode, id1);
     rsClientToServiceConnectionProxy.UnRegisterTypeface(id1);
     rsClientToServiceConnectionProxy.SetScreenSkipFrameInterval(id1, width, resCode);
     rsClientToServiceConnectionProxy.RegisterHgmConfigChangeCallback(rsIHgmConfigChangeCallback);
     rsClientToServiceConnectionProxy.RegisterHgmRefreshRateModeChangeCallback(rsIHgmConfigChangeCallback);
     rsClientToServiceConnectionProxy.RegisterHgmRefreshRateUpdateCallback(rsIHgmConfigChangeCallback);
     rsClientToServiceConnectionProxy.RegisterFirstFrameCommitCallback(rsIFirstFrameCommitCallback);
+<<<<<<< HEAD
     rsClientToRenderConnectionProxy.SetSystemAnimatedScenes(systemAnimatedScenes, false, success);
+=======
+    rsClientToServiceConnectionProxy.SetSystemAnimatedScenes(systemAnimatedScenes, false, success);
+>>>>>>> master
     rsClientToServiceConnectionProxy.ShowWatermark(watermarkImg, true);
     rsClientToServiceConnectionProxy.ResizeVirtualScreen(id1, width, height);
     rsClientToServiceConnectionProxy.ReportJankStats();
@@ -272,7 +276,7 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     rsClientToServiceConnectionProxy.NotifyPackageEvent(width, packageList);
     rsClientToServiceConnectionProxy.NotifyRefreshRateEvent(eventInfo);
     rsClientToServiceConnectionProxy.NotifySoftVsyncRateDiscountEvent(1, name, 1);
-    rsClientToServiceConnectionProxy.NotifyTouchEvent(pid1, uid);
+    rsClientToServiceConnectionProxy.NotifyTouchEvent(pid1, uid, sourceType);
     rsClientToServiceConnectionProxy.NotifyDynamicModeEvent(true);
     rsClientToServiceConnectionProxy.NotifyHgmConfigEvent(name, true);
     rsClientToServiceConnectionProxy.NotifyXComponentExpectedFrameRate(name, expectedFrameRate);
@@ -489,6 +493,54 @@ bool DoRemoveVirtualScreenBlackList(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DoAddVirtualScreenWhiteList(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // get data
+    ScreenId screenId = GetData<ScreenId>();
+    std::vector<NodeId> whiteList;
+    size_t whiteListSize = GetData<size_t>();
+    for (size_t i = 0; i < whiteListSize; ++i) {
+        NodeId nodeId = GetData<NodeId>();
+        whiteList.push_back(nodeId);
+    }
+
+    // test
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    RSClientToServiceConnectionProxy rsClientToServiceConnectionProxy(remoteObject);
+    int32_t repCode = 0;
+    rsClientToServiceConnectionProxy.AddVirtualScreenWhiteList(screenId, whiteList, repCode);
+    return true;
+}
+
+bool DoRemoveVirtualScreenWhiteList(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    // get data
+    ScreenId screenId = GetData<ScreenId>();
+    std::vector<NodeId> whiteList;
+    size_t whiteListSize = GetData<size_t>();
+    for (size_t i = 0; i < whiteListSize; ++i) {
+        NodeId nodeId = GetData<NodeId>();
+        whiteList.push_back(nodeId);
+    }
+
+    // test
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    RSClientToServiceConnectionProxy rsClientToServiceConnectionProxy(remoteObject);
+    int32_t repCode = 0;
+    rsClientToServiceConnectionProxy.RemoveVirtualScreenWhiteList(screenId, whiteList, repCode);
+    return true;
+}
+
 bool DoResizeVirtualScreen(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -637,6 +689,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoSetVirtualScreenBlackList(data, size);
     OHOS::Rosen::DoAddVirtualScreenBlackList(data, size);
     OHOS::Rosen::DoRemoveVirtualScreenBlackList(data, size);
+    OHOS::Rosen::DoAddVirtualScreenWhiteList(data, size);
+    OHOS::Rosen::DoRemoveVirtualScreenWhiteList(data, size);
     OHOS::Rosen::DoResizeVirtualScreen(data, size);
     OHOS::Rosen::DoSetVirtualScreenAutoRotation(data, size);
     OHOS::Rosen::DoProfilerServiceFuzzTest(data, size);

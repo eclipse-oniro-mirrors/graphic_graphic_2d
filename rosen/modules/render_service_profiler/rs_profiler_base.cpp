@@ -50,7 +50,6 @@
 #include "pipeline/rs_screen_render_node.h"
 #include "transaction/rs_ashmem_helper.h"
 
-#include "render/rs_shader_filter.h"
 #include "ge_shader_filter.h"
 
 namespace OHOS::Rosen {
@@ -684,6 +683,8 @@ void RSProfiler::MarshalNodes(const RSContext& context, std::stringstream& data,
             } else {
                 MarshalNode(*node, data, fileVersion);
             }
+            GetCustomMetrics().AddInt(
+                node->IsOnTheTree() ? RSPROFILER_METRIC_ONTREE_NODE_COUNT : RSPROFILER_METRIC_OFFTREE_NODE_COUNT, 1);
             std::shared_ptr<RSRenderNode> parent = node->GetParent().lock();
             if (!parent && (node != rootRenderNode)) {
                 nodes.emplace_back(node);
@@ -819,7 +820,7 @@ static void MarshalRenderModifier(const ModifierNG::RSRenderModifier& modifier, 
 }
 
 static uint32_t MarshalDrawCmdModifiers(
-    ModifierNG::RSRenderModifier& modifier, bool skipDrawCmdModifiers, std::stringstream& data)
+    ModifierNG::RSRenderModifier& modifier, bool skipDrawCmdModifiers, bool isBetaRecording, std::stringstream& data)
 {
     auto propertyType = ModifierNG::ModifierTypeConvertor::GetPropertyType(modifier.GetType());
     auto oldCmdList = modifier.Getter<Drawing::DrawCmdListPtr>(propertyType, nullptr);
@@ -833,6 +834,7 @@ static uint32_t MarshalDrawCmdModifiers(
 
     auto newCmdList = std::make_shared<Drawing::DrawCmdList>(
         oldCmdList->GetWidth(), oldCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::IMMEDIATE);
+    newCmdList->SetNoImageMarshallingFlag(isBetaRecording);
     oldCmdList->ProfilerMarshallingDrawOps(newCmdList.get());
     newCmdList->PatchTypefaceIds(oldCmdList);
     modifier.Setter<Drawing::DrawCmdListPtr>(propertyType, newCmdList);
@@ -883,7 +885,7 @@ void RSProfiler::MarshalNodeModifiers(const RSRenderNode& node, std::stringstrea
             if (!modifierNG || modifierNG->GetType() == ModifierNG::RSModifierType::PARTICLE_EFFECT) {
                 continue;
             }
-            modifierNGCount += MarshalDrawCmdModifiers(*modifierNG, skipDrawCmdModifiers, data);
+            modifierNGCount += MarshalDrawCmdModifiers(*modifierNG, skipDrawCmdModifiers, isBetaRecording, data);
         }
     }
 
@@ -1111,6 +1113,7 @@ static std::shared_ptr<ModifierNG::RSRenderModifier> UnmarshalRenderModifier(
         }
         errReason += ", size=" + std::to_string(buffer.size());
     }
+    parcel->~Parcel();
 
     return ptr;
 }
@@ -1271,10 +1274,20 @@ void RSProfiler::FilterAnimationForPlayback(RSAnimationManager& manager)
     });
 }
 
-void RSProfiler::SetTransactionTimeCorrection(double replayStartTime, double recordStartTime)
+void RSProfiler::SetReplayStartTimeNano(uint64_t replayStartTimeNano)
 {
-    g_transactionTimeCorrection = static_cast<int64_t>((replayStartTime - recordStartTime) * NS_TO_S);
-    g_replayStartTimeNano = replayStartTime * NS_TO_S;
+    g_replayStartTimeNano = static_cast<int64_t>(replayStartTimeNano);
+}
+
+uint64_t RSProfiler::GetReplayStartTimeNano()
+{
+    return g_replayStartTimeNano;
+}
+
+void RSProfiler::SetTransactionTimeCorrection(double recordStartTime)
+{
+    g_transactionTimeCorrection = static_cast<int64_t>(g_replayStartTimeNano) -
+        static_cast<int64_t>(Utils::ToNanoseconds(recordStartTime));
 }
 
 std::string RSProfiler::GetParcelCommandList()
@@ -1308,10 +1321,15 @@ void RSProfiler::PushOffset(std::vector<uint32_t>& commandOffsets, uint32_t offs
 
 void RSProfiler::TransactionUnmarshallingStart(const Parcel& parcel, uint32_t parcelNumber)
 {
-    std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
-    stream.write(reinterpret_cast<const char*>(&parcelNumber), sizeof(parcelNumber));
-    SendRSLogBase(RSProfilerLogType::PARCEL_UNMARSHALLING_START, stream.str());
     g_counterParseTransactionDataStart++;
+    if (!IsEnabled()) {
+        return;
+    }
+    if (IsWriteMode()) {
+        std::stringstream stream(std::ios::in | std::ios::out | std::ios::binary);
+        stream.write(reinterpret_cast<const char*>(&parcelNumber), sizeof(parcelNumber));
+        SendRSLogBase(RSProfilerLogType::PARCEL_UNMARSHALLING_START, stream.str());
+    }
 }
 
 void RSProfiler::PushOffsets(const Parcel& parcel, uint32_t parcelNumber, std::vector<uint32_t>& commandOffsets)
@@ -1446,7 +1464,10 @@ void RSProfiler::MarshalDrawingImage(std::shared_ptr<Drawing::Image>& image,
 
 void RSProfiler::EnableBetaRecord()
 {
-    RSSystemProperties::SetBetaRecordingMode(1);
+    static constexpr uint32_t recordingMode = 1u;
+    if (RSSystemProperties::GetBetaRecordingMode() != recordingMode) {
+        RSSystemProperties::SetBetaRecordingMode(recordingMode);
+    }
 }
 
 bool RSProfiler::IsBetaRecordSavingTriggered()
@@ -1856,7 +1877,7 @@ void RSProfiler::MetricRenderNodeChange(bool isOnTree)
         GetCustomMetrics().SubInt(RSPROFILER_METRIC_ONTREE_NODE_COUNT, 1);
     }
 }
- 
+
 void RSProfiler::MetricRenderNodeInit(RSContext* context)
 {
     if (!context) {
@@ -1864,23 +1885,7 @@ void RSProfiler::MetricRenderNodeInit(RSContext* context)
     }
     GetCustomMetrics().SetZero(RSPROFILER_METRIC_ONTREE_NODE_COUNT);
     GetCustomMetrics().SetZero(RSPROFILER_METRIC_OFFTREE_NODE_COUNT);
-    auto globalRootNodeId = context->GetGlobalRootRenderNode()->GetId();
-    auto& nodeMap = context->GetMutableNodeMap();
-    nodeMap.TraversalNodes([globalRootNodeId](const std::shared_ptr<RSBaseRenderNode>& node) {
-        if (node == nullptr) {
-            return;
-        }
-        auto parentPtr = node->GetParent().lock();
-        for (; parentPtr && parentPtr->GetId() != globalRootNodeId; parentPtr = parentPtr->GetParent().lock())
-            ;
-        if (parentPtr != nullptr) {
-            GetCustomMetrics().AddInt(RSPROFILER_METRIC_ONTREE_NODE_COUNT, 1);
-        } else {
-            GetCustomMetrics().AddInt(RSPROFILER_METRIC_OFFTREE_NODE_COUNT, 1);
-        }
-    });
 }
- 
 void RSProfiler::RSLogOutput(RSProfilerLogType type, const char* format, va_list argptr)
 {
     if (!IsEnabled() || !(IsWriteMode() || IsReadEmulationMode())) {

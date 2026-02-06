@@ -44,7 +44,7 @@ public:
 
     void OnSync() override;
     void OnPurge() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 protected:
     bool needSync_ = false;
@@ -96,7 +96,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     Drawing::Path stagingDrawingPath_;
@@ -112,6 +112,7 @@ private:
     RSClipToBoundsType stagingType_ = RSClipToBoundsType::INVALID;
     RSClipToBoundsType type_ = RSClipToBoundsType::INVALID;
     bool needSync_ = false;
+    std::shared_ptr<Drawing::GEVisualEffectContainer> stagingGeContainer_ = nullptr;
     std::shared_ptr<Drawing::GEVisualEffectContainer> geContainer_ = nullptr;
 };
 
@@ -162,7 +163,7 @@ public:
     bool IsAIBarFilter() const;
     bool CheckAndUpdateAIBarCacheStatus(bool intersectHwcDamage);
     // Return true if the cache interval of aibar has been successfully reduced; otherwise, return false.
-    bool ForceReduceAIBarCacheInterval();
+    bool ForceReduceAIBarCacheInterval(bool intersectHwcDamage);
     bool WouldDrawLargeAreaBlur();
     bool WouldDrawLargeAreaBlurPrecisely();
 
@@ -176,7 +177,7 @@ public:
 
     void PostUpdate(const RSRenderNode& node);
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
     const RectI GetFilterCachedRegion() const;
 
     bool GetEnableEDR() const override

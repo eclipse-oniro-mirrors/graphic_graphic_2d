@@ -69,6 +69,9 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
     EXPECT_CALL(*hdiDeviceMock_,
         GetDisplayProperty(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_EQ(hdiDeviceMock_->GetDisplayProperty(screenId, pid, pvalue), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_CALL(*hdiDeviceMock_,
+        SetDisplayProperty(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    EXPECT_EQ(hdiDeviceMock_->SetDisplayProperty(screenId, pid, pvalue), GRAPHIC_DISPLAY_SUCCESS);
     GraphicDisplayCapability dcpInfo;
     EXPECT_CALL(*hdiDeviceMock_,
         GetScreenCapability(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
@@ -121,7 +124,8 @@ HWTEST_F(HdiDeviceTest, DeviceFuncs001, Function | MediumTest| Level3)
         GetScreenSupportedColorGamuts(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     EXPECT_EQ(hdiDeviceMock_->GetScreenSupportedColorGamuts(screenId, gamuts), GRAPHIC_DISPLAY_SUCCESS);
     GraphicColorGamut gamut = GRAPHIC_COLOR_GAMUT_INVALID;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenColorGamut(screenId, gamut), GRAPHIC_DISPLAY_NOT_SUPPORT);
+    // SetScreenColorGamut has been implemented and is used only for external screen
+    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenColorGamut(screenId, gamut), GRAPHIC_DISPLAY_FAILURE);
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->GetScreenColorGamut(screenId, gamut), GRAPHIC_DISPLAY_NOT_SUPPORT);
     GraphicGamutMap gamutMap = GRAPHIC_GAMUT_MAP_CONSTANT;
     EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetScreenGamutMap(screenId, gamutMap), GRAPHIC_DISPLAY_NOT_SUPPORT);
@@ -234,7 +238,7 @@ HWTEST_F(HdiDeviceTest, SetTunnelLayerId, Function | MediumTest| Level3)
     uint32_t screenId = UINT32_MAX;
     uint32_t layerId = 0;
     uint64_t tunnelId = 0;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetTunnelLayerId(screenId, layerId, tunnelId), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_NE(HdiDeviceTest::hdiDevice_->SetTunnelLayerId(screenId, layerId, tunnelId), GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /*
@@ -250,7 +254,7 @@ HWTEST_F(HdiDeviceTest, SetTunnelLayerProperty, Function | MediumTest| Level3)
     uint32_t screenId = UINT32_MAX;
     uint32_t layerId = 0;
     uint32_t property = 0;
-    EXPECT_EQ(HdiDeviceTest::hdiDevice_->SetTunnelLayerProperty(screenId, layerId, property), GRAPHIC_DISPLAY_SUCCESS);
+    EXPECT_NE(HdiDeviceTest::hdiDevice_->SetTunnelLayerProperty(screenId, layerId, property), GRAPHIC_DISPLAY_SUCCESS);
 }
 
 /*

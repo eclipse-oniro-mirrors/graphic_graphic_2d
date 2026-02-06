@@ -59,6 +59,7 @@
 #endif
 #include "memory/rs_memory_manager.h"
 #include "monitor/self_drawing_node_monitor.h"
+#include "node_mem_release_param.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "feature/hyper_graphic_manager/rs_render_frame_rate_linker_map.h"
@@ -348,8 +349,24 @@ ErrCode RSClientToServiceConnection::CreatePixelMapFromSurface(sptr<Surface> sur
     return res;
 }
 
-ErrCode RSClientToServiceConnection::SetWatermark(const std::string& name,
-    std::shared_ptr<Media::PixelMap> watermark, bool& success)
+ErrCode RSClientToServiceConnection::CreatePixelMapFromSurface(sptr<Surface> surface,
+    const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelmap, bool transformEnabled)
+{
+    OHOS::Media::Rect rect = {
+        .left = srcRect.x,
+        .top = srcRect.y,
+        .width = srcRect.w,
+        .height = srcRect.h,
+    };
+    RS_LOGD("RSClientToServiceConnection::CreatePixelMapFromSurface: transformEnabled:%{public}d", transformEnabled);
+    RSBackgroundThread::Instance().PostSyncTask([surface, rect, transformEnabled, &pixelmap]() {
+        pixelmap = Rosen::CreatePixelMapFromSurface(surface, rect, transformEnabled);
+    });
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnection::SetWatermark(
+    const std::string& name, std::shared_ptr<Media::PixelMap> watermark, bool& success)
 {
     if (renderProcessManagerAgent_ == nullptr) {
         RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
@@ -428,12 +445,12 @@ ScreenId RSClientToServiceConnection::CreateVirtualScreen(
     return res;
 }
 
-int32_t RSClientToServiceConnection::SetVirtualScreenBlackList(ScreenId id, std::vector<uint64_t>& blackListVector)
+int32_t RSClientToServiceConnection::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blacklist)
 {
     if (!screenManagerAgent_) {
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManagerAgent_->SetVirtualScreenBlackList(id, blackListVector);
+    return screenManagerAgent_->SetVirtualScreenBlackList(id, blacklist);
 }
 
 ErrCode RSClientToServiceConnection::SetVirtualScreenTypeBlackList(
@@ -448,29 +465,50 @@ ErrCode RSClientToServiceConnection::SetVirtualScreenTypeBlackList(
 }
 
 ErrCode RSClientToServiceConnection::AddVirtualScreenBlackList(
-    ScreenId id, std::vector<uint64_t>& blackListVector, int32_t& repCode)
+    ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode)
 {
     if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
         repCode = StatusCode::SCREEN_NOT_FOUND;
         return ERR_INVALID_VALUE;
     }
-    repCode = screenManagerAgent_->AddVirtualScreenBlackList(id, blackListVector);
+    repCode = screenManagerAgent_->AddVirtualScreenBlackList(id, blackList);
     return ERR_OK;
 }
 
 ErrCode RSClientToServiceConnection::RemoveVirtualScreenBlackList(
-    ScreenId id, std::vector<uint64_t>& blackListVector, int32_t& repCode)
+    ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode)
 {
-    if (blackListVector.empty()) {
-        RS_LOGW("RemoveVirtualScreenBlackList blackList is empty.");
-        repCode = StatusCode::BLACKLIST_IS_EMPTY;
-        return ERR_INVALID_VALUE;
-    }
     if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
         repCode = StatusCode::SCREEN_NOT_FOUND;
         return ERR_INVALID_VALUE;
     }
-    repCode = screenManagerAgent_->RemoveVirtualScreenBlackList(id, blackListVector);
+    repCode = screenManagerAgent_->RemoveVirtualScreenBlackList(id, blackList);
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnection::AddVirtualScreenWhiteList(
+    ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
+        repCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
+    }
+    repCode = screenManagerAgent_->AddVirtualScreenWhiteList(id, whiteList);
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnection::RemoveVirtualScreenWhiteList(
+    ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
+        repCode = StatusCode::SCREEN_NOT_FOUND;
+        return ERR_INVALID_VALUE;
+    }
+    repCode = screenManagerAgent_->RemoveVirtualScreenWhiteList(id, whiteList);
     return ERR_OK;
 }
 
@@ -820,6 +858,7 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
         screenManagerAgent_->SetScreenPowerStatus(id, status);
+        renderServiceAgent_->HandlePowerStatus(id, status);
         HgmTaskHandleThread::Instance().PostTask([id, status]() {
             HgmCore::Instance().NotifyScreenPowerStatus(id, status);
         });
@@ -827,6 +866,25 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
     } else {
         renderServiceAgent_->ScheduleTask(
             [=]() { screenManagerAgent_->SetScreenPowerStatus(id, status); }).wait();
+    }
+}
+
+int32_t RSClientToServiceConnection::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    if (!screenManager_) {
+        RS_LOGE("%{public}s screenManager is null, id: %{public}" PRIu64, __func__, id);
+        return StatusCode::SCREEN_MANAGER_NULL;
+    }
+    auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+    if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+        return RSRenderComposerManager::GetInstance().PostSyncTask(id,
+            [=]() {return screenManager_->SetDualScreenState(id, status); });
+    } else if (mainThread_ != nullptr) {
+        return mainThread_->ScheduleTask(
+            [=]() { return screenManager_->SetDualScreenState(id, status); }).get();
+    } else {
+        RS_LOGE("%{public}s mainThread_ is null, id: %{public}" PRIu64, __func__, id);
+        return StatusCode::MAIN_THREAD_NULL;
     }
 }
 
@@ -1195,21 +1253,39 @@ bool RSClientToServiceConnection::RegisterTypeface(uint64_t globalUniqueId,
     return result;
 }
 
-int32_t RSClientToServiceConnection::RegisterTypeface(uint64_t id, uint32_t size, int32_t fd, int32_t& needUpdate, uint32_t index)
+int32_t RSClientToServiceConnection::RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate)
 {
-    auto tf = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(id);
+    if (sharedTypeface.fd_ < 0 || sharedTypeface.size_ == 0) {
+        RS_LOGE("RegisterTypeface: invalid parameters");
+        needUpdate = -1;
+        return -1;
+    }
+    uint32_t realSize = AshmemGetSize(sharedTypeface.fd_);
+    if (realSize < 0 || static_cast<uint32_t>(realSize) < sharedTypeface.size_) {
+        RS_LOGE("RegisterTypeface, realSize < 0 or realSize < given size");
+        ::close(sharedTypeface.fd_);
+        needUpdate = -1;
+        return -1;
+    }
+    auto tf = RSTypefaceCache::Instance().UpdateDrawingTypefaceRef(sharedTypeface);
     if (tf != nullptr) {
-        ::close(fd);
+        ::close(sharedTypeface.fd_);
+        sharedTypeface.fd_ = -1;
         needUpdate = 1;
+        RS_LOGI("RegisterTypeface: Find same typeface in cache, use existed typeface.");
         return tf->GetFd();
     }
+    RS_LOGI("RegisterTypeface: Failed to find typeface in cache, create a new typeface.");
     needUpdate = 0;
-    tf = Drawing::Typeface::MakeFromAshmem(fd, size, RSTypefaceCache::GetTypefaceId(id), index);
+    tf = Drawing::Typeface::MakeFromAshmem(sharedTypeface);
     if (tf != nullptr) {
-        RSTypefaceCache::Instance().CacheDrawingTypeface(id, tf);
+        RSTypefaceCache::Instance().CacheDrawingTypeface(sharedTypeface.id_, tf);
+        sharedTypeface.fd_ = -1;
         return tf->GetFd();
     }
-    ::close(fd);
+    ::close(sharedTypeface.fd_);
+    sharedTypeface.fd_ = -1;
+    needUpdate = -1;
     RS_LOGE("RegisterTypeface: failed to register typeface");
     return -1;
 }
@@ -1469,7 +1545,7 @@ bool RSClientToServiceConnection::NotifySoftVsyncRateDiscountEvent(uint32_t pid,
     return hgmContext_->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
 }
 
-ErrCode RSClientToServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+ErrCode RSClientToServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     if (vsyncManagerAgent_ != nullptr) {
         vsyncManagerAgent_->VsyncRSDistributorHandleTouchEvent(touchStatus, touchCnt);
@@ -2038,6 +2114,24 @@ ErrCode RSClientToServiceConnection::AvcodecVideoStop(const std::vector<uint64_t
         ret = (ret != ERR_OK) ? ret : retTmp;
     }
     return ret;
+}
+
+ErrCode RSClientToServiceConnection::AvcodecVideoGet(uint64_t uniqueId)
+{
+    auto task = [uniqueId]() -> void {
+        RSJankStats::GetInstance().AvcodecVideoGet(uniqueId);
+    };
+    mainThread_->PostTask(task);
+    return ERR_OK;
+}
+ 
+ErrCode RSClientToServiceConnection::AvcodecVideoGetRecent()
+{
+    auto task = []() -> void {
+        RSJankStats::GetInstance().AvcodecVideoGetRecent();
+    };
+    mainThread_->PostTask(task);
+    return ERR_OK;
 }
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY

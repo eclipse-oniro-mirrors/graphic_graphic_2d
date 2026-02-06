@@ -29,6 +29,10 @@
 #include "platform/ohos/rs_render_service_connect_hub.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_node_showing_command.h"
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+#include "ipc_callbacks/rs_icanvas_surface_buffer_callback.h"
+#include "platform/ohos/backend/surface_buffer_utils.h"
+#endif
 #include "iconsumer_surface.h"
 #include "pixel_map.h"
 #include "feature/capture/rs_capture_pixelmap_manager.h"
@@ -45,6 +49,16 @@ public:
 
     void OnBrightnessInfoChange(ScreenId screenId, const BrightnessInfo& brightnessInfo) override {}
 };
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+class MockRSCanvasSurfaceBufferCallbackProxy : public IRemoteProxy<RSICanvasSurfaceBufferCallback> {
+public:
+    explicit MockRSCanvasSurfaceBufferCallbackProxy(const sptr<IRemoteObject>& impl)
+        : IRemoteProxy<RSICanvasSurfaceBufferCallback>(impl) {};
+    virtual ~MockRSCanvasSurfaceBufferCallbackProxy() noexcept = default;
+    void OnCanvasSurfaceBufferChanged(NodeId nodeId, sptr<SurfaceBuffer> buffer, uint32_t resetSurfaceIndex) override {}
+};
+#endif
 } // namespace
 class RSClientToRenderConnectionProxyTest : public testing::Test {
 public:
@@ -576,6 +590,58 @@ HWTEST_F(RSClientToRenderConnectionProxyTest, RegisterBufferClearListener, TestS
     callback = iface_cast<RSIBufferClearCallback>(remoteObject);
     proxy->RegisterBufferClearListener(id, callback);
     ASSERT_NE(proxy->transactionDataIndex_, 5);
+}
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+/**
+ * @tc.name: RegisterCanvasCallbackTest
+ * @tc.desc: RegisterCanvasCallback Test
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSClientToRenderConnectionProxyTest, RegisterCanvasCallbackTest, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+    sptr<RSICanvasSurfaceBufferCallback> callback = nullptr;
+    proxy->RegisterCanvasCallback(callback);
+    callback = new MockRSCanvasSurfaceBufferCallbackProxy(nullptr);
+    proxy->RegisterCanvasCallback(callback);
+    sptr<IRemoteObject> remoteObject = new IRemoteObjectMock();
+    callback = new MockRSCanvasSurfaceBufferCallbackProxy(remoteObject);
+    proxy->RegisterCanvasCallback(callback);
+}
+
+/**
+ * @tc.name: SubmitCanvasPreAllocatedBufferTest
+ * @tc.desc: SubmitCanvasPreAllocatedBuffer Test
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSClientToRenderConnectionProxyTest, SubmitCanvasPreAllocatedBufferTest, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+    auto ret = proxy->SubmitCanvasPreAllocatedBuffer(1, nullptr, 1);
+    ASSERT_NE(ret, 0);
+    auto buffer = SurfaceBufferUtils::CreateCanvasSurfaceBuffer(1, 100, 100);
+    ret = proxy->SubmitCanvasPreAllocatedBuffer(1, buffer, 2);
+    ASSERT_NE(ret, 0);
+    buffer = SurfaceBuffer::Create();
+    ret = proxy->SubmitCanvasPreAllocatedBuffer(1, buffer, 3);
+    ASSERT_NE(ret, 0);
+}
+#endif
+
+/**
+ * @tc.name: SetLogicalCameraRotationCorrectionTest001
+ * @tc.desc: SetLogicalCameraRotationCorrection test to write legal degree.
+ * @tc.type:FUNC
+ * @tc.require: issueICS2J8
+ */
+HWTEST_F(RSClientToRenderConnectionProxyTest, SetLogicalCameraRotationCorrection001, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+    ScreenId screenId = 0;
+    ScreenRotation logicalCorrection = ScreenRotation::ROTATION_90;
+    auto ret = proxy->SetLogicalCameraRotationCorrection(screenId, logicalCorrection);
+    EXPECT_EQ(ret, 2);
 }
 } // namespace Rosen
 } // namespace OHOS

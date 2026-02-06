@@ -185,8 +185,7 @@ std::shared_ptr<VkImageResource> RSVkImageManager::CreateImageCacheFromBuffer(co
     auto bufferId = buffer->GetBufferId();
     auto imageCache = VkImageResource::Create(buffer);
     if (imageCache == nullptr) {
-        ROSEN_LOGE(
-            "RSVkImageManager::CreateImageCacheFromBuffer: failed to create ImageCache for bufferId:"
+        ROSEN_LOGE("RSVkImageManager::CreateImageCacheFromBuffer: failed to create ImageCache for bufferId:"
             "%{public}" PRIu64 ".", bufferId);
         return nullptr;
     }
@@ -219,7 +218,7 @@ std::shared_ptr<VkImageResource> RSVkImageManager::NewImageCacheFromBuffer(
     size_t imageCacheSeqSize = imageCacheSeqs_.size();
     DFX_LOGD(ENABLE_VKIMAGE_DFX,
         "RSVkImageManagerDfx: create image, bufferId=%{public}" PRIu64 ","
-        "threadIndex=%{public}d, isProtected=%{public}d,cacheSeq=%{public}lu, bufferDeletedFlag=%{public}u",
+        "threadIndex=%{public}d, isProtected=%{public}d, cacheSeq=%{public}lu, bufferDeletedFlag=%{public}u",
         bufferInfoCache.bufferId, threadIndex, isProtectedCondition, imageCacheSeqSize,
         bufferInfoCache.bufferDeletedFlag);
     RS_TRACE_NAME_FMT("RSVkImageManagerDfx: create image, bufferId=%" PRIu64 ", "
@@ -231,7 +230,7 @@ std::shared_ptr<VkImageResource> RSVkImageManager::NewImageCacheFromBuffer(
         return imageCache;
     }
 
-    RS_LOGD("RSVkImageManager::NewImageCacheFromBuffer %{public}" PRIu64 "", bufferInfoCache.bufferId);
+    RS_LOGD("RSVkImageManager::NewImageCacheFromBuffer %{public}" PRIu64, bufferInfoCache.bufferId);
     if (imageCacheSeqSize < MAX_CACHE_SIZE_FOR_REUSE) {
         imageCacheSeqs_.emplace(bufferInfoCache.bufferId, imageCache);
     }
@@ -281,6 +280,71 @@ void RSVkImageManager::UnMapImagesFromSurfaceBuffer(const std::unordered_set<uin
     }
 
     DFX_LOGD(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: scheduled unmapImages, count=%{public}zu", scheduledCount);
+void RSVkImageManager::UnMapImageOneByOne(pid_t threadIndex)
+{
+    auto func = [this]() {
+        pid_t thdIdx = UNI_RENDER_THREAD_INDEX;
+        {
+            std::lock_guard<std::mutex> lock(opMutex_);
+            if (oneByoneUnmapCacheSeqs_.empty()) {
+                RS_TRACE_NAME("RSVkImageManagerDfx: OneByOne Unmap stopped, no action needed");
+                return;
+            }
+            auto toRemove = oneByoneUnmapCacheSeqs_.front();
+            uint64_t id = toRemove.first;
+            RS_TRACE_NAME_FMT("RSVkImageManagerDfx: Unmap image one by one, bufferId=%" PRIu64
+                ", thread=%u, remaining=%u", id, toRemove.second, oneByoneUnmapCacheSeqs_.size() - 1);
+            imageCacheSeqs_.erase(id);
+            oneByoneUnmapCacheSeqs_.pop();
+            if (!oneByoneUnmapCacheSeqs_.empty()) {
+                thdIdx = oneByoneUnmapCacheSeqs_.front().second;
+            } else {
+                RS_TRACE_NAME("RSVkImageManagerDfx: OneByOne Unmap finished");
+                return;
+            }
+        }
+        UnMapImageOneByOne(thdIdx);
+    };
+    RSTaskDispatcher::GetInstance().PostTask(threadIndex, func, false);
+}
+
+void RSVkImageManager::UnMapImageFromSurfaceBuffer(const std::set<uint64_t>& unmappedCache)
+{
+    std::set<uint64_t> unmappedCacheTmp;
+    {
+        std::lock_guard<std::mutex> lock(opMutex_);
+        for (auto id : unmappedCache) {
+            if (imageCacheSeqs_.count(id) == 0) {
+                continue;
+            }
+            if (RSTaskDispatcher::GetInstance().HasRegisteredTask(imageCacheSeqs_[id]->GetThreadIndex())) {
+                RS_TRACE_NAME_FMT("RSVkImageManagerDfx: image will be unmapped one by one, bufferId=%" PRIu64 "", id);
+                std::pair<uint64_t, pid_t> pairTmp(id, imageCacheSeqs_[id]->GetThreadIndex());
+                oneByoneUnmapCacheSeqs_.push(pairTmp);
+            } else {
+                RS_TRACE_NAME_FMT("RSVkImageManagerDfx: image will be unmapped right now, bufferId=%" PRIu64 "", id);
+                unmappedCacheTmp.insert(id);
+            }
+        }
+    }
+
+    for (auto id : unmappedCacheTmp) {
+        std::lock_guard<std::mutex> lock(opMutex_);
+        RS_TRACE_NAME_FMT("RSVkImageManagerDfx: unmap image, bufferId=%" PRIu64 "", id);
+        imageCacheSeqs_.erase(id);
+        DFX_LOGD(ENABLE_VKIMAGE_DFX, "RSVkImageManagerDfx: UnmapImage, bufferId=%{public}" PRIu64 ", "
+            "cacheSeq=[%{public}lu]", id, imageCacheSeqs_.size());
+    }
+
+    pid_t threadIndex = 0;
+    {
+        std::lock_guard<std::mutex> lock(opMutex_);
+        if (oneByoneUnmapCacheSeqs_.empty()) {
+            return;
+        }
+        threadIndex = oneByoneUnmapCacheSeqs_.front().second;
+    }
+    UnMapImageOneByOne(threadIndex);
 }
 
 void RSVkImageManager::UnMapImageFromSurfaceBuffer(uint64_t seqNum)
@@ -313,7 +377,8 @@ void RSVkImageManager::DumpVkImageInfo(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(opMutex_);
     dumpString.append("\n---------RSVkImageManager-DumpVkImageInfo-Begin----------\n");
-    dumpString.append("imageCacheSeqs size: " + std::to_string(imageCacheSeqs_.size()) + "\n");
+    dumpString.append("imageCacheSeqs size: " + std::to_string(imageCacheSeqs_.size()) +
+        ", oneByOneUnmapCacheSeqs size:" + std::to_string(oneByoneUnmapCacheSeqs_.size()) +"\n");
     for (auto iter = imageCacheSeqs_.begin(); iter != imageCacheSeqs_.end(); ++iter) {
         auto bufferInfoCache = iter->second->GetBufferInfoCache();
         dumpString.append("vkimageinfo: bufferId=" + std::to_string(iter->first) +
@@ -349,15 +414,14 @@ std::shared_ptr<Drawing::Image> RSVkImageManager::CreateImageFromBuffer(RSPaintF
         RS_LOGD_IF(DEBUG_COMPOSER, "  - Buffer %{public}" PRIu64 " marked for deletion from cache, unmapping",
             buffer->GetBufferId());
         UnMapImageFromSurfaceBuffer(buffer->GetBufferId());
-        if ((buffer->GetBufferDeletedFlag() & BufferDeletedFlag::DELETED_FROM_CACHE) !=
-            static_cast<BufferDeletedFlag>(0)) {
+        if (((buffer->GetBufferDeletedFlag() & BufferDeletedFlag::DELETED_FROM_CACHE) !=
+            static_cast<BufferDeletedFlag>(0)) && RSSystemProperties::GetVKImageAdaptationForWallpaperEnabled()) {
             buffer->ClearBufferDeletedFlag(BufferDeletedFlag::DELETED_FROM_CACHE);
         }
     }
     auto bitmapFormat = RSBaseRenderUtil::GenerateDrawingBitmapFormat(buffer, alphaType);
     auto screenColorSpace = RSBaseRenderEngine::GetCanvasColorSpace(canvas);
-    if (screenColorSpace && drawingColorSpace && RSSystemProperties::GetSkipUnpremulEnabled() &&
-        drawingColorSpace->IsSRGB() != screenColorSpace->IsSRGB()) {
+    if (screenColorSpace && drawingColorSpace && drawingColorSpace->IsSRGB() != screenColorSpace->IsSRGB()) {
         bitmapFormat.alphaType = Drawing::AlphaType::ALPHATYPE_OPAQUE;
     }
     RS_LOGD_IF(DEBUG_COMPOSER, "  - Generated bitmap format: colorType = %{public}d, alphaType = %{public}d",
@@ -370,6 +434,7 @@ std::shared_ptr<Drawing::Image> RSVkImageManager::CreateImageFromBuffer(RSPaintF
         return nullptr;
     }
     auto& backendTexture = imageCache->GetBackendTexture();
+    RS_TRACE_NAME_FMT("BuildFromTexture, ignoreAlpha %d", params.ignoreAlpha);
     if (!image->BuildFromTexture(*contextDrawingVk, backendTexture.GetTextureInfo(),
         surfaceOrigin, bitmapFormat, drawingColorSpace,
         NativeBufferUtils::DeleteVkImage, imageCache->RefCleanupHelper(), params.ignoreAlpha)) {

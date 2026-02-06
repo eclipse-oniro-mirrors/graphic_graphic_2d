@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -41,14 +41,23 @@
 
 namespace OHOS {
 namespace Rosen {
-
 auto g_pid = getpid();
 sptr<OHOS::Rosen::RSScreenManager> screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
 auto mainThread_ = RSMainThread::Instance();
 
+<<<<<<< HEAD
 sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
 sptr<RSClientToRenderConnectionStub> toRenderConnectionStub_ = nullptr;
 sptr<OHOS::Rosen::RSRenderService> renderService_ = nullptr;
+=======
+sptr<VSyncConnection> connServerApp_ = nullptr;
+DVSyncFeatureParam dvsyncParam;
+auto generator = CreateVSyncGenerator();
+auto appVSyncController = new VSyncController(generator, 0);
+sptr<VSyncDistributor> appVSyncDistributor_ = new VSyncDistributor(appVSyncController, "app", dvsyncParam);
+sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = new RSClientToServiceConnection(
+    g_pid, nullptr, mainThread_, screenManagerPtr_, token_->AsObject(), appVSyncDistributor_);
+>>>>>>> master
 namespace {
 const uint8_t DO_NOTIFY_LIGHT_FACTOR_STATUS = 0;
 const uint8_t DO_NOTIFY_PACKAGE_EVENT = 1;
@@ -62,8 +71,8 @@ const uint8_t DO_NOTIFY_SOFT_VSYNC_RATE_DISCOUNT_EVENT = 8;
 const uint8_t DO_SET_BEHIND_WINDOW_FILTER_ENABLED = 9;
 const uint8_t TARGET_SIZE = 10;
 const uint16_t TASK_WAIT_MICROSECONDS = 50000;
+const uint32_t WAIT_TASK_RUN_TIME_NS = 10000;
 
-sptr<RSIClientToServiceConnection> CONN = nullptr;
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -109,21 +118,6 @@ bool Init(const uint8_t* data, size_t size)
     return true;
 }
 } // namespace
-
-namespace Mock {
-void CreateVirtualScreenStubbing(ScreenId screenId)
-{
-    uint32_t width = GetData<uint32_t>();
-    uint32_t height = GetData<uint32_t>();
-    int32_t flags = GetData<int32_t>();
-    std::string name = GetData<std::string>();
-    // Random name of IBufferProducer is not necessary
-    sptr<IBufferProducer> bp = IConsumerSurface::Create("DisplayNode")->GetProducer();
-    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(bp);
-
-    CONN->CreateVirtualScreen(name, width, height, pSurface, screenId, flags);
-}
-} // namespace Mock
 
 void DoNotifyLightFactorStatus()
 {
@@ -368,7 +362,7 @@ void DoSetLayerTopForHWC()
     dataParcel.WriteUint64(nodeId);
     dataParcel.WriteBool(isTop);
     dataParcel.WriteUint32(zOrder);
-    toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 } // namespace Rosen
 } // namespace OHOS
@@ -376,6 +370,7 @@ void DoSetLayerTopForHWC()
 /* Fuzzer envirement */
 extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
 {
+<<<<<<< HEAD
     OHOS::Rosen::g_pid = getpid();
     OHOS::Rosen::mainThread_ = OHOS::Rosen::RSMainThread::Instance();
     OHOS::Rosen::mainThread_->handler_ =
@@ -416,6 +411,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
     // reset recevier, otherwise maybe crash
     OHOS::Rosen::RSMainThread::Instance()->receiver_->connection_ = nullptr;
     OHOS::Rosen::RSMainThread::Instance()->receiver_ = nullptr;
+=======
+>>>>>>> master
     return 0;
 }
 
@@ -461,5 +458,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         default:
             return -1;
     }
+    usleep(OHOS::Rosen::WAIT_TASK_RUN_TIME_NS);
     return 0;
 }

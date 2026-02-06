@@ -98,6 +98,7 @@ private:
 
     // Hgm related
     const std::shared_ptr<HgmContext>& GetHgmContext() const { return hgmContext_; }
+    void HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status);
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;

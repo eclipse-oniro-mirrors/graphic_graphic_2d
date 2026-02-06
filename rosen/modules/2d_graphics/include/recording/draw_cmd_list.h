@@ -149,7 +149,7 @@ public:
     /**
      * @brief   Marshalling Draw Ops Param from vector to contiguous buffers. For Profiler Only.
      */
-    void ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist);
+    void ProfilerMarshallingDrawOps(Drawing::DrawCmdList *cmdlist) const;
 
     /**
      * @brief   Unmarshalling Draw Ops from contiguous buffers to vector
@@ -239,8 +239,6 @@ public:
 
     size_t GetSize();
 
-    void SetCanvasDrawingOpLimitEnable(bool isEnable);
-
     /**
      * @brief Gets the pixelmap rect for hybrid render.
      */
@@ -291,7 +289,6 @@ private:
     bool isNeedUnmarshalOnDestruct_ = false;
     bool noNeedUICaptured_ = false;
     bool isReplayMode = false;
-    bool isCanvasDrawingOpLimitEnabled_ = false;
 
     DrawCmdList::HybridRenderType hybridRenderType_ = DrawCmdList::HybridRenderType::NONE;
 };

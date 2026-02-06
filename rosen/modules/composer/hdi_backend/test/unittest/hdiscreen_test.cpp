@@ -58,6 +58,7 @@ void HdiScreenTest::SetUpTestCase()
     EXPECT_CALL(*mockDevice_, SetScreenVsyncEnabled(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, SetScreenColorTransform(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, SetScreenConstraint(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, SetDisplayProperty(_, _, _)).WillRepeatedly(testing::Return(0));
 }
 
 void HdiScreenTest::TearDownTestCase()
@@ -111,6 +112,8 @@ HWTEST_F(HdiScreenTest, CheckDeviceNull001, Function | MediumTest| Level3)
     uint64_t timestamp = 10000000;
     uint32_t type = 0;
     ASSERT_EQ(hdiScreen_->SetScreenConstraint(frameId, timestamp, type), GRAPHIC_DISPLAY_NULL_PTR);
+    uint64_t propertyValue = 0;
+    ASSERT_EQ(hdiScreen_->SetDisplayProperty(propertyValue), GRAPHIC_DISPLAY_NULL_PTR);
 }
 
 /*
@@ -147,6 +150,20 @@ HWTEST_F(HdiScreenTest, GetScreenCapability001, Function | MediumTest| Level3)
 {
     GraphicDisplayCapability displayCapability = {};
     ASSERT_EQ(HdiScreenTest::hdiScreen_->GetScreenCapability(displayCapability), 0);
+}
+
+/*
+* Function: SetDisplayProperty001
+* Type: Function
+* Rank: Important(3)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetDisplayProperty
+*                  2. check ret
+*/
+HWTEST_F(HdiScreenTest, SetDisplayProperty001, Function | MediumTest| Level3)
+{
+    uint64_t propertyValue = 0;
+    ASSERT_EQ(hdiScreen_->SetDisplayProperty(propertyValue), 0);
 }
 
 /*
@@ -410,20 +427,6 @@ HWTEST_F(HdiScreenTest, GetDisplayPropertyForHardCursor001, Function | MediumTes
     uint32_t screenId = 0;
     bool res = hdiScreen_->GetDisplayPropertyForHardCursor(screenId);
     EXPECT_FALSE(res);
-}
-
-/**
- * Function: SetScreenLinearMatrix_SizeInvalid
- * Type: Function
- * Rank: Important(3)
- * EnvConditions: N/A
- * CaseDescription: 1. call SetScreenLinearMatrix with wrong size
- *                  2. expect -1 (invalid parameter)
- */
-HWTEST_F(HdiScreenTest, SetScreenLinearMatrix_SizeInvalid, Function | MediumTest | Level3)
-{
-    std::vector<float> wrongSizeMatrix = {1.0f, 2.0f};
-    ASSERT_EQ(hdiScreen_->SetScreenLinearMatrix(wrongSizeMatrix), -1);
 }
 } // namespace
 } // namespace Rosen

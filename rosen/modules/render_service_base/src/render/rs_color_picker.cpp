@@ -34,12 +34,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-constexpr float RED_PROPORTION_FOR_CONTRAST = 0.299f;
-constexpr float GREEN_PROPORTION_FOR_CONTRAST = 0.587f;
-constexpr float BLUE_PROPORTION_FOR_CONTRAST = 0.114f;
-constexpr float BLACK_THRESHOLD_FOR_CONTRAST = 186.f;
-}
 
 std::shared_ptr<RSColorPicker> RSColorPicker::CreateColorPicker(const std::shared_ptr<Drawing::Pixmap>& pixmap,
     uint32_t &errorCode)
@@ -137,6 +131,50 @@ uint32_t RSColorPicker::GetAverageColor(Drawing::ColorQuad &color) const
     uint32_t blueMean = round(blueSum / (float)totalPixelNum);
     colorPicked = redMean << ARGB_R_SHIFT | greenMean << ARGB_G_SHIFT | blueMean << ARGB_B_SHIFT;
     color = colorPicked | 0xFF000000;
+    return RS_COLOR_PICKER_SUCCESS;
+}
+
+uint32_t RSColorPicker::GetAverageColorDirect(const std::shared_ptr<Drawing::Pixmap>& pixmap, Drawing::ColorQuad& color)
+{
+    if (pixmap == nullptr) {
+        return RS_COLOR_PICKER_ERR_EFFECT_INVALID_VALUE;
+    }
+
+    int width = pixmap->GetWidth();
+    int height = pixmap->GetHeight();
+    if (width <= 0 || height <= 0) {
+        return RS_COLOR_PICKER_ERR_EFFECT_INVALID_VALUE;
+    }
+
+    // Safety check: limit to reasonable size to prevent performance issues
+    // Typical usage is with pre-scaled images (10x10 or 100x100 from GpuScaleImage)
+    constexpr int MAX_PIXELS = 1000000; // 1 megapixel limit (e.g., 1000x1000)
+    int64_t totalPixels = static_cast<int64_t>(width) * height;
+    if (totalPixels > MAX_PIXELS) {
+        ROSEN_LOGW("RSColorPicker::GetAverageColorDirect: pixmap too large (%dx%d=%" PRId64 " pixels), limit is %d",
+            width, height, totalPixels, MAX_PIXELS);
+        return RS_COLOR_PICKER_ERR_EFFECT_INVALID_VALUE;
+    }
+
+    uint64_t redSum = 0;
+    uint64_t greenSum = 0;
+    uint64_t blueSum = 0;
+
+    // Directly read all pixels and calculate average without quantization
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            uint32_t pixelColor = pixmap->GetColor(x, y);
+            redSum += (pixelColor >> ARGB_R_SHIFT) & ARGB_MASK;
+            greenSum += (pixelColor >> ARGB_G_SHIFT) & ARGB_MASK;
+            blueSum += (pixelColor >> ARGB_B_SHIFT) & ARGB_MASK;
+        }
+    }
+
+    uint32_t redMean = static_cast<uint32_t>(redSum / totalPixels);
+    uint32_t greenMean = static_cast<uint32_t>(greenSum / totalPixels);
+    uint32_t blueMean = static_cast<uint32_t>(blueSum / totalPixels);
+
+    color = (redMean << ARGB_R_SHIFT) | (greenMean << ARGB_G_SHIFT) | (blueMean << ARGB_B_SHIFT) | 0xFF000000;
     return RS_COLOR_PICKER_SUCCESS;
 }
 
@@ -289,41 +327,6 @@ uint32_t RSColorPicker::HSVtoRGB(HSV hsv) const
     }
     rgb = r << ARGB_R_SHIFT | g << ARGB_G_SHIFT | b << ARGB_B_SHIFT;
     return rgb;
-}
-
-uint32_t RSColorPicker::GetContrastColor(Drawing::ColorQuad& color) const
-{
-    uint32_t errorCode = GetAverageColor(color);
-    auto red = Drawing::Color::ColorQuadGetR(color);
-    auto green = Drawing::Color::ColorQuadGetG(color);
-    auto blue = Drawing::Color::ColorQuadGetB(color);
-    float value = red * RED_PROPORTION_FOR_CONTRAST + green * GREEN_PROPORTION_FOR_CONTRAST +
-        blue * BLUE_PROPORTION_FOR_CONTRAST;
-    color = value > BLACK_THRESHOLD_FOR_CONTRAST ? Drawing::Color::COLOR_BLACK : Drawing::Color::COLOR_WHITE;
-    return errorCode;
-}
-
-uint32_t RSColorPicker::PickColor(Drawing::ColorQuad& color, ColorPickStrategyType strategy)
-{
-    uint32_t errorCode = 0;
-    switch (strategy) {
-        case ColorPickStrategyType::AVERAGE: {
-            errorCode = GetAverageColor(color);
-            break;
-        }
-        case ColorPickStrategyType::DOMINANT: {
-            errorCode = GetLargestProportionColor(color);
-            break;
-        }
-        case ColorPickStrategyType::CONTRAST: {
-            errorCode = GetContrastColor(color);
-            break;
-        }
-        default: {
-            errorCode = RS_COLOR_PICKER_ERROR;
-        }
-    }
-    return errorCode;
 }
 } // namespace Rosen
 } // namespace OHOS

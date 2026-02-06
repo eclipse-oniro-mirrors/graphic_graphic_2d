@@ -64,7 +64,7 @@ common_cflags_basic = [
 ]
 
 common_deps_transaction = [
-  "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+  "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
   "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
 ]
 
@@ -119,7 +119,7 @@ ohos_unittest("RSLayerTransactionTest") {
   deps = [
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
     "$graphic_2d_root/rosen/modules/render_service:librender_service",
-    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
+    "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
   ]
 

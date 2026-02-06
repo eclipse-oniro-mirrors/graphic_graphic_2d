@@ -21,7 +21,9 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <unistd.h>
-
+#ifdef RS_ENABLE_VK
+#include "platform/ohos/backend/rs_vulkan_context.h"
+#endif
 #include "securec.h"
 
 #include "screen_manager/rs_screen_manager.h"
@@ -42,7 +44,7 @@ constexpr uint8_t SCREEN_SCALE_MODE_SIZE = 3;
 constexpr uint8_t GRAPHIC_PIXEL_FORMAT_SIZE = 43;
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
-size_t g_pos= 0;
+size_t g_pos = 0;
 } // namespace
 
 sptr<RSScreenManager> screenManager_ = sptr<RSScreenManager>::MakeSptr();
@@ -90,7 +92,7 @@ void GetActiveScreenId()
 void SetVirtualScreenRefreshRate()
 {
     // get data
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t maxRefreshRate = GetData<uint32_t>();
     uint32_t actualRefreshRate = GetData<uint32_t>();
     screenManager_->SetVirtualScreenRefreshRate(screenId, maxRefreshRate, actualRefreshRate);
@@ -98,14 +100,14 @@ void SetVirtualScreenRefreshRate()
 
 void GetVirtualScreenResolution()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     RSVirtualScreenResolution virtualScreenResolution;
     screenManager_->GetVirtualScreenResolution(screenId, virtualScreenResolution);
 }
 
 void GetScreenActiveMode()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     RSScreenModeInfo screenModeInfo;
     screenManager_->GetScreenActiveMode(screenId, screenModeInfo);
 }
@@ -144,7 +146,7 @@ void CreateVirtualScreen()
     uint32_t width = GetData<uint32_t>();
     uint32_t height = GetData<uint32_t>();
     sptr<Surface> surface;
-    ScreenId mirrorId = GetData<Rosen::ScreenId>();
+    ScreenId mirrorId = GetData<ScreenId>();
     int32_t flags = GetData<int32_t>();
     NodeId nodeId = GetData<NodeId>();
     std::vector<NodeId> whiteList = { nodeId };
@@ -160,7 +162,7 @@ void SetVirtualScreenAutoRotation()
 
 void SetVirtualScreenBlackList()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint64_t id = GetData<uint64_t>();
     std::vector<uint64_t> blocklist = { id };
     screenManager_->SetVirtualScreenBlackList(screenId, blocklist);
@@ -168,7 +170,7 @@ void SetVirtualScreenBlackList()
 
 void SetVirtualScreenTypeBlackList()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint8_t id = GetData<uint8_t>();
     std::vector<uint8_t> typeBlackList = { id };
     screenManager_->SetVirtualScreenTypeBlackList(screenId, typeBlackList);
@@ -176,7 +178,7 @@ void SetVirtualScreenTypeBlackList()
 
 void AddVirtualScreenBlackList()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint64_t nodeId = GetData<uint64_t>();
     std::vector<uint64_t> blocklist = { nodeId };
     screenManager_->AddVirtualScreenBlackList(screenId, blocklist);
@@ -184,7 +186,7 @@ void AddVirtualScreenBlackList()
 
 void RemoveVirtualScreenBlackList()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint64_t nodeId = GetData<uint64_t>();
     std::vector<uint64_t> blocklist = { nodeId };
     screenManager_->RemoveVirtualScreenBlackList(screenId, blocklist);
@@ -192,7 +194,7 @@ void RemoveVirtualScreenBlackList()
 
 void SetVirtualScreenSecurityExemptionList()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint64_t nodeId = GetData<uint64_t>();
     std::vector<uint64_t> securityExemptionList = { nodeId };
     screenManager_->SetVirtualScreenSecurityExemptionList(screenId, securityExemptionList);
@@ -200,7 +202,7 @@ void SetVirtualScreenSecurityExemptionList()
 
 void SetMirrorScreenVisibleRect()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     Rect mainScreenRect;
     bool supportRotation = GetData<bool>();
     screenManager_->SetMirrorScreenVisibleRect(screenId, mainScreenRect, supportRotation);
@@ -208,7 +210,7 @@ void SetMirrorScreenVisibleRect()
 
 void SetCastScreenEnableSkipWindow()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     bool enable = GetData<bool>();
     screenManager_->SetCastScreenEnableSkipWindow(screenId, enable);
 }
@@ -221,7 +223,7 @@ void RemoveVirtualScreen()
 
 void SetScreenActiveMode()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t modeId = GetData<uint32_t>();
     screenManager_->SetScreenActiveMode(screenId, modeId);
 }
@@ -235,7 +237,7 @@ void SetScreenActiveRect()
 
 void SetPhysicalScreenResolution()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t width = GetData<uint32_t>();
     uint32_t height = GetData<uint32_t>();
     screenManager_->SetPhysicalScreenResolution(screenId, width, height);
@@ -243,7 +245,7 @@ void SetPhysicalScreenResolution()
 
 void SetVirtualScreenResolution()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t width = GetData<uint32_t>();
     uint32_t height = GetData<uint32_t>();
     screenManager_->SetVirtualScreenResolution(screenId, width, height);
@@ -251,7 +253,7 @@ void SetVirtualScreenResolution()
 
 void SetRogScreenResolution()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t width = GetData<uint32_t>();
     uint32_t height = GetData<uint32_t>();
     screenManager_->SetRogScreenResolution(screenId, width, height);
@@ -259,21 +261,21 @@ void SetRogScreenResolution()
 
 void SetScreenPowerStatus()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenPowerStatus status = static_cast<ScreenPowerStatus>(GetData<uint32_t>() % SCREEN_POWER_STATUS_SIZE);
     screenManager_->SetScreenPowerStatus(screenId, status);
 }
 
 void SetVirtualMirrorScreenCanvasRotation()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     bool canvasRotation = GetData<bool>();
     screenManager_->SetVirtualMirrorScreenCanvasRotation(screenId, canvasRotation);
 }
 
 void SetVirtualMirrorScreenScaleMode()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenScaleMode scaleMode = static_cast<ScreenScaleMode>(GetData<uint8_t>() % SCREEN_SCALE_MODE_SIZE);
     screenManager_->SetVirtualMirrorScreenScaleMode(screenId, scaleMode);
 }
@@ -286,7 +288,7 @@ void GetScreenData()
 
 void ResizeVirtualScreen()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t width = GetData<uint32_t>();
     uint32_t height = GetData<uint32_t>();
     screenManager_->ResizeVirtualScreen(screenId, width, height);
@@ -300,7 +302,7 @@ void GetScreenBacklight()
 
 void SetScreenBacklight()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t level = GetData<uint32_t>();
     screenManager_->SetScreenBacklight(screenId, level);
 }
@@ -331,7 +333,7 @@ void DisplayDump()
 
 void SetScreenConstraint()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint64_t timestamp = GetData<uint64_t>();
     ScreenConstraintType type = static_cast<ScreenConstraintType>(GetData<uint8_t>() % SCREEN_CONSTRAINT_TYPE_SIZE);
     screenManager_->SetScreenConstraint(screenId, timestamp, type);
@@ -339,7 +341,7 @@ void SetScreenConstraint()
 
 void GetScreenSupportedColorGamuts()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenColorGamut type = static_cast<ScreenColorGamut>(GetData<uint8_t>() % SCREEN_COLOR_GAMUT_SIZE);
     std::vector<ScreenColorGamut> mode = { type };
     screenManager_->GetScreenSupportedColorGamuts(screenId, mode);
@@ -347,63 +349,69 @@ void GetScreenSupportedColorGamuts()
 
 void GetScreenColorGamut()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenColorGamut type = static_cast<ScreenColorGamut>(GetData<uint8_t>() % SCREEN_COLOR_GAMUT_SIZE);
     screenManager_->GetScreenColorGamut(screenId, type);
 }
 
 void SetScreenColorGamut()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     int32_t modeIdx = GetData<int32_t>();
     screenManager_->SetScreenColorGamut(screenId, modeIdx);
 }
 
 void SetScreenGamutMap()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenGamutMap mode = static_cast<ScreenGamutMap>(GetData<uint8_t>() % SCREEN_GAMUT_MAP_SIZE);
     screenManager_->SetScreenGamutMap(screenId, mode);
 }
 
 void SetScreenCorrection()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenRotation screenRotation = static_cast<ScreenRotation>(GetData<uint8_t>() % SCREEN_ROTATION_SIZE);
     screenManager_->SetScreenCorrection(screenId, screenRotation);
 }
 
 void GetScreenGamutMap()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenGamutMap mode = static_cast<ScreenGamutMap>(GetData<uint8_t>() % SCREEN_GAMUT_MAP_SIZE);
     screenManager_->GetScreenGamutMap(screenId, mode);
 }
 
 void GetScreenHDRCapability()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     RSScreenHDRCapability screenHdrCapability;
     screenManager_->GetScreenHDRCapability(screenId, screenHdrCapability);
 }
 
 void GetScreenType()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     RSScreenType type = static_cast<RSScreenType>(GetData<uint8_t>() % SCREEN_SCREEN_TYPE_SIZE);
     screenManager_->GetScreenType(screenId, type);
 }
 
+void GetScreenConnectionType()
+{
+    ScreenId screenId = GetData<ScreenId>();
+    CreateOrGetScreenManager()->GetScreenConnectionType(screenId);
+}
+
 void SetScreenSkipFrameInterval()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint32_t skipFrameInterval = GetData<uint32_t>();
     screenManager_->SetScreenSkipFrameInterval(screenId, skipFrameInterval);
 }
 
 void GetDisplayIdentificationData()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     uint8_t outPort = GetData<uint8_t>();
     uint8_t data = GetData<uint8_t>();
     std::vector<uint8_t> edidData = { data };
@@ -412,7 +420,7 @@ void GetDisplayIdentificationData()
 
 void SetPixelFormat()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     GraphicPixelFormat pixelFormat = static_cast<GraphicPixelFormat>(GetData<uint8_t>() % GRAPHIC_PIXEL_FORMAT_SIZE);
     screenManager_->SetPixelFormat(screenId, pixelFormat);
     screenManager_->GetPixelFormat(screenId, pixelFormat);
@@ -420,21 +428,21 @@ void SetPixelFormat()
 
 void SetScreenHDRFormat()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     int32_t modeIdx = GetData<int32_t>();
     screenManager_->SetScreenHDRFormat(screenId, modeIdx);
 }
 
 void GetScreenHDRFormat()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenHDRFormat hdrFormat = static_cast<ScreenHDRFormat>(GetData<uint8_t>() % SCREEN_HDR_FORMAT_SIZE);
     screenManager_->GetScreenHDRFormat(screenId, hdrFormat);
 }
 
 void GetScreenSupportedHDRFormats()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     ScreenHDRFormat hdrFormat = static_cast<ScreenHDRFormat>(GetData<uint8_t>() % SCREEN_HDR_FORMAT_SIZE);
     std::vector<ScreenHDRFormat> hdrFormats = { hdrFormat };
     screenManager_->GetScreenSupportedHDRFormats(screenId, hdrFormats);
@@ -442,7 +450,7 @@ void GetScreenSupportedHDRFormats()
 
 void GetScreenColorSpace()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     GraphicCM_ColorSpaceType colorSpace =
         static_cast<GraphicCM_ColorSpaceType>(GetData<uint8_t>() % GRAPHIC_CM_COLOR_SPACE_TYPE_SIZE);
     screenManager_->GetScreenColorSpace(screenId, colorSpace);
@@ -450,7 +458,7 @@ void GetScreenColorSpace()
 
 void SetScreenColorSpace()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     GraphicCM_ColorSpaceType colorSpace =
         static_cast<GraphicCM_ColorSpaceType>(GetData<uint8_t>() % GRAPHIC_CM_COLOR_SPACE_TYPE_SIZE);
     screenManager_->SetScreenColorSpace(screenId, colorSpace);
@@ -458,7 +466,7 @@ void SetScreenColorSpace()
 
 void GetScreenSupportedColorSpaces()
 {
-    ScreenId screenId = GetData<Rosen::ScreenId>();
+    ScreenId screenId = GetData<ScreenId>();
     GraphicCM_ColorSpaceType colorSpace =
         static_cast<GraphicCM_ColorSpaceType>(GetData<uint8_t>() % GRAPHIC_CM_COLOR_SPACE_TYPE_SIZE);
     std::vector<GraphicCM_ColorSpaceType> colorSpaces = { colorSpace };
@@ -470,13 +478,6 @@ void DisablePowerOffRenderControl()
     ScreenId screenId = GetData<Rosen::ScreenId>();
     screenManager_->DisablePowerOffRenderControl(screenId);
 }
-
-void IsVisibleRectSupportRotation()
-{
-    // ScreenId screenId = GetData<Rosen::ScreenId>();
-    // screenManager_->IsVisibleRectSupportRotation(screenId);
-}
-   
 } // namespace Rosen
 } // namespace OHOS
 
@@ -532,6 +533,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         OHOS::Rosen::GetScreenGamutMap,
         OHOS::Rosen::GetScreenHDRCapability,
         OHOS::Rosen::GetScreenType,
+        OHOS::Rosen::GetScreenConnectionType,
         OHOS::Rosen::SetScreenSkipFrameInterval,
         OHOS::Rosen::GetDisplayIdentificationData,
         OHOS::Rosen::SetPixelFormat,
@@ -542,7 +544,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         OHOS::Rosen::SetScreenColorSpace,
         OHOS::Rosen::GetScreenSupportedColorSpaces,
         OHOS::Rosen::DisablePowerOffRenderControl,
-        OHOS::Rosen::IsVisibleRectSupportRotation,
         OHOS::Rosen::SetVirtualScreenAutoRotation
     };
     /* Run your code on data */

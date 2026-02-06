@@ -62,6 +62,7 @@ class RSUseEffectRenderModifier;
 struct DrawCmdIndex {
     int8_t transitionIndex_            = -1;
     int8_t envForeGroundColorIndex_    = -1;
+    int8_t materialFilterIndex_        = -1;
     int8_t shadowIndex_                = -1;
     int8_t renderGroupBeginIndex_      = -1;
     int8_t foregroundFilterBeginIndex_ = -1;
@@ -218,7 +219,7 @@ public:
     }
     struct FilterNodeInfo {
         FilterNodeInfo(NodeId nodeId, Drawing::Matrix matrix, std::vector<Drawing::RectI> rectVec)
-            : nodeId_(nodeId), matrix_(matrix), rectVec_(rectVec) {};
+            : nodeId_(nodeId), matrix_(matrix), rectVec_(rectVec) {}
         NodeId nodeId_ = 0;
         // Here, matrix_ and rectVec_ represent the transformation and FilterRect of the node relative to the off-screen
         Drawing::Matrix matrix_;
@@ -248,7 +249,6 @@ public:
     {
         return lastDrawnFilterNodeId_;
     }
-
 
     virtual void SetUIExtensionNeedToDraw(bool needToDraw) {}
 
@@ -302,17 +302,19 @@ protected:
     // Util functions
     std::string DumpDrawableVec(const std::shared_ptr<RSRenderNode>& renderNode) const;
     bool QuickReject(Drawing::Canvas& canvas, const RectF& localDrawRect);
-    bool HasFilterOrEffect() const;
+    bool HasFilterOrEffect(const RSRenderParams& params) const;
 
     // Draw functions
     void DrawAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawUifirstContentChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect);
     void DrawBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
+    void DrawBackgroundWithOutSaveAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawLeashWindowBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect,
         bool isStencilPixelOcclusionCullingEnabled = false, int64_t stencilVal = -1) const;
     void DrawContent(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawForeground(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
+    void DrawForegroundWithOutRestoreAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void ApplyForegroundColorIfNeed(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
 
     // used for foreground filter
@@ -321,13 +323,14 @@ protected:
     void DrawAfterCacheWithForegroundFilter(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
 
     // used for render group
-    void DrawBackgroundWithoutFilterAndEffect(Drawing::Canvas& canvas, const RSRenderParams& params);
-    void CheckShadowRectAndDrawBackground(Drawing::Canvas& canvas, const RSRenderParams& params);
+    void SkipDrawBackGroundAndClipHoleForBlur(Drawing::Canvas& canvas, const RSRenderParams& params);
     void DrawCacheWithProperty(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawBeforeCacheWithProperty(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawAfterCacheWithProperty(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void CollectInfoForNodeWithoutFilter(Drawing::Canvas& canvas);
     void CollectInfoForUnobscuredUEC(Drawing::Canvas& canvas);
+    void UpdateFilterInfoForNodeGroup(RSPaintFilterCanvas* curCanvas);
+    Drawing::Rect GetFilterRelativeRect(const Drawing::Rect& rect) const;
 
     // Note, the start is included, the end is excluded, so the range is [start, end)
     void DrawRangeImpl(Drawing::Canvas& canvas, const Drawing::Rect& rect, int8_t start, int8_t end) const;
@@ -346,7 +349,7 @@ protected:
         }
     };
 
-    const RSRenderNodeType nodeType_;
+    RSRenderNodeType nodeType_;
     // deprecated
     std::weak_ptr<const RSRenderNode> renderNode_;
     NodeId nodeId_;
@@ -357,12 +360,13 @@ protected:
     static std::unordered_map<NodeId, Drawing::Matrix> unobscuredUECMatrixMap_;
     std::shared_ptr<std::unordered_set<NodeId>> UECChildrenIds_ = std::make_shared<std::unordered_set<NodeId>>();
     std::unique_ptr<RSRenderParams> uifirstRenderParams_;
-    std::vector<Drawing::RecordingCanvas::DrawFunc> uifirstDrawCmdList_;
-    std::vector<Drawing::RecordingCanvas::DrawFunc> drawCmdList_;
+    RSDrawable::DrawList uifirstDrawCmdList_;
+    RSDrawable::DrawList drawCmdList_;
     std::vector<FilterNodeInfo> filterInfoVec_;
     std::unordered_map<NodeId, Drawing::Matrix> withoutFilterMatrixMap_;
     size_t filterNodeSize_ = 0;
     std::shared_ptr<DrawableV2::RSFilterDrawable> backgroundFilterDrawable_ = nullptr;
+    std::shared_ptr<DrawableV2::RSFilterDrawable> materialFilterDrawable_ = nullptr;
     std::shared_ptr<DrawableV2::RSFilterDrawable> compositingFilterDrawable_ = nullptr;
     std::function<void()> purgeFunc_;
 #ifdef ROSEN_OHOS
@@ -375,6 +379,8 @@ protected:
     
     ClearSurfaceTask clearSurfaceTask_ = nullptr;
 private:
+    const static size_t MAX_FILTER_CACHE_TYPES = 3;
+    using RSCacheDrawableArray = std::array<std::shared_ptr<DrawableV2::RSFilterDrawable>, MAX_FILTER_CACHE_TYPES>;
     static void InitRenderParams(const std::shared_ptr<const RSRenderNode>& node,
                             std::shared_ptr<RSRenderNodeDrawableAdapter>& sharedPtr);
     static std::map<RSRenderNodeType, Generator> GeneratorMap;
@@ -386,11 +392,11 @@ private:
     int8_t GetSkipIndex() const;
     std::atomic<DrawSkipType> drawSkipType_ = DrawSkipType::NONE;
     static void RemoveDrawableFromCache(const NodeId nodeId);
-    void UpdateFilterInfoForNodeGroup(RSPaintFilterCanvas* curCanvas);
     NodeId lastDrawnFilterNodeId_ = 0;
     std::atomic<bool> isOnDraw_ = false;
     mutable std::mutex rsLayerMutex_;
     std::unordered_map<ScreenId, std::shared_ptr<RSLayer>> rsLayersPerScreen_;
+    RSCacheDrawableArray filterDrawables_{};
 
     friend class OHOS::Rosen::RSRenderNode;
     friend class OHOS::Rosen::RSScreenRenderNode;

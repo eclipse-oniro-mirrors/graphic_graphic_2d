@@ -14,9 +14,10 @@
  */
 
 /**
- * @file rs_sync_transaction_handle.h
- * @brief This file is used to control the execution of synchronous transctions.
+ * @file rs_sync_transaction_handler.h
+ * @brief This file is used to control the execution of synchronous transactions.
  */
+
 
 #ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_SYNC_TRANSACTION_HANDLER_H
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_SYNC_TRANSACTION_HANDLER_H

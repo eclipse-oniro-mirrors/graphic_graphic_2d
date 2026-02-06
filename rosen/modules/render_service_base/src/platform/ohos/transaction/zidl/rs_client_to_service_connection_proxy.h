@@ -43,7 +43,7 @@ public:
         int32_t& repCode) override;
     
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
-        std::shared_ptr<Media::PixelMap> &pixelMap) override;
+        std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) override;
 
     ErrCode GetDefaultScreenId(uint64_t& screenId) override;
     ErrCode GetActiveScreenId(uint64_t& screenId) override;
@@ -59,14 +59,17 @@ public:
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) override;
 
-    int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector) override;
+    // blacklist
+    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
+    ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;
+    ErrCode RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;
+
+    // whitelist
+    ErrCode AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) override;
+    ErrCode RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList, int32_t& repCode) override;
 
     ErrCode SetVirtualScreenTypeBlackList(
         ScreenId id, std::vector<NodeType>& typeBlackListVector, int32_t& repCode) override;
-
-    ErrCode AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) override;
-    
-    ErrCode RemoveVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector, int32_t& repCode) override;
 
     ErrCode SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark, bool& success) override;
 
@@ -128,6 +131,8 @@ public:
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status) override;
 
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status) override;
+
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) override;
 
     ErrCode GetScreenActiveMode(uint64_t id, RSScreenModeInfo& screenModeInfo) override;
@@ -137,6 +142,8 @@ public:
     RSScreenCapability GetScreenCapability(ScreenId id) override;
 
     ErrCode GetScreenPowerStatus(uint64_t screenId, uint32_t& status) override;
+
+    ErrCode GetPanelPowerStatus(uint64_t screenId, PanelPowerStatus& status) override;
 
     RSScreenData GetScreenData(ScreenId id) override;
 
@@ -190,7 +197,7 @@ public:
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;
 
     bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) override;
-    int32_t RegisterTypeface(uint64_t id, uint32_t size, int32_t fd, int32_t& needUpdate, uint32_t index) override;
+    int32_t RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate) override;
     bool UnRegisterTypeface(uint64_t globalUniqueId) override;
 
     ErrCode SetScreenSkipFrameInterval(uint64_t id, uint32_t skipFrameInterval, int32_t& resCode) override;
@@ -238,7 +245,7 @@ public:
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) override;
 
-    ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt) override;
+    ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) override;
 
     void NotifyDynamicModeEvent(bool enableDynamicMode) override;
 
@@ -304,6 +311,12 @@ public:
 
     ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps) override;
+
+    ErrCode AvcodecVideoGet(uint64_t uniqueId) override;
+ 
+    ErrCode AvcodecVideoGetRecent() override;
+
+    bool GetHighContrastTextState() override;
 
     ErrCode SetBehindWindowFilterEnabled(bool enabled) override;
 

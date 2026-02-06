@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (C) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,7 @@ import image from '@ohos.multimedia.image';
 type RejectString = (e: BusinessError<string>) => void;
 
 namespace effectKit {
-  loadLibraryWithPermissionCheck('effectKit_ani', "@ohos.effectKit")
+  loadLibrary('effectKit_ani')
 
   export enum TileMode {
     CLAMP,
@@ -116,6 +116,24 @@ namespace effectKit {
     * @since 12
     */
     getEffectPixelMap(): Promise<image.PixelMap>;
+
+    /**
+    * Gets the PixelMap where all filter effects have been added to the image.
+    * @param { boolean } useCpuRender - The value indicates whether to use CPU rendering.
+    * @returns { Promise<image.PixelMap> } - returns the PixelMap generated.
+    * @syscap SystemCapability.Multimedia.Image.Core
+    * @since 11
+    */
+    /**
+    * Gets the PixelMap where all filter effects have been added to the image.
+    * @param { boolean } useCpuRender - The value indicates whether to use CPU rendering.
+    * @returns { Promise<image.PixelMap> } - returns the PixelMap generated.
+    * @syscap SystemCapability.Multimedia.Image.Core
+    * @form
+    * @atomicservice
+    * @since 12
+    */
+    getEffectPixelMap(useCpuRender: boolean): Promise<image.PixelMap>;
     
     /**
      * Adds the blur effect to the filter linked list, and returns the head node of the linked list.
@@ -205,11 +223,13 @@ namespace effectKit {
      * @useinstead effectKit.Filter#getEffectPixelMap
      */
     getPixelMap(): image.PixelMap;
+
   }
+
 
   export class FilterInternal implements Filter {
     static {
-      loadLibrary('effectKit_ani')
+	  loadLibrary('effectKit_ani')
     }
 
     private nativeObj: long = 0;
@@ -222,7 +242,7 @@ namespace effectKit {
 
     public native grayscaleNative(): Filter;
 
-    public native getEffectPixelMapNative(): image.PixelMap;
+    public native getEffectPixelMapNative(useCpuRender: boolean): image.PixelMap;
 
     public native blurNative(radius: double, tileMode: TileMode): Filter;
 
@@ -236,7 +256,7 @@ namespace effectKit {
 
     private static native kitTransferStaticNative(input: ESValue): Object;
 
-    private static native kitTransferDynamicNative(nativeObj: long): ESValue;
+	private static native kitTransferDynamicNative(nativeObj: long): ESValue;
 
     public blur(radius: double): Filter {
       return this.blurNative(radius);
@@ -250,11 +270,25 @@ namespace effectKit {
       return new Promise<image.PixelMap>((resolve: (value: image.PixelMap) => void,
         reject: (error: BusinessError) => void) => {
         taskpool.execute((): image.PixelMap => {
-          let pixelMap = this.getEffectPixelMapNative();
+          let pixelMap = this.getEffectPixelMapNative(false);
           return pixelMap;
-        }).then((ret: NullishType) => {
+        }).then((ret: Any) => {
           resolve(ret as image.PixelMap);
-        }).catch((err: NullishType) => {
+        }).catch((err: Any) => {
+          reject(err as BusinessError);
+        });
+      });
+    }
+
+    public getEffectPixelMap(useCpuRender: boolean): Promise<image.PixelMap> {
+      return new Promise<image.PixelMap>((resolve: (value: image.PixelMap) => void,
+        reject: (error: BusinessError) => void) => {
+        taskpool.execute((): image.PixelMap => {
+          let pixelMap = this.getEffectPixelMapNative(useCpuRender);
+          return pixelMap;
+        }).then((ret: Any) => {
+          resolve(ret as image.PixelMap);
+        }).catch((err: Any) => {
           reject(err as BusinessError);
         });
       });
@@ -276,14 +310,15 @@ namespace effectKit {
       return this.getPixelMapNative();
     }
     public static kitTransferStatic(input: Any): Object {
-      return FilterInternal.kitTransferStaticNative(ESValue.wrap(input));
-    }
-    public static kitTransferDynamic(input: Object): Any {
-      return FilterInternal.kitTransferDynamicNative((input as FilterInternal).nativeObj).unwrap();
-    }
+	  return FilterInternal.kitTransferStaticNative(ESValue.wrap(input));
+	}   
+	public static kitTransferDynamic(input: Object): Any {
+	  return FilterInternal.kitTransferDynamicNative((input as FilterInternal).nativeObj).unwrap();
+	}
   }
 
   export native function createEffect(source: image.PixelMap): Filter;
+
 
   export interface ColorPicker {
     getMainColor(): Promise<Color>;
@@ -292,13 +327,13 @@ namespace effectKit {
     getTopProportionColors(colorCount: int): Array<Color | null>;
     getHighestSaturationColor(): Color;
     getAverageColor(): Color;
-    isBlackOrWhiteOrGrayColor(color: int): boolean;
+    isBlackOrWhiteOrGrayColor(color: long): boolean;
   }
 
   export class ColorPickerInternal implements ColorPicker {
     static {
-      loadLibrary('effectKit_ani')
-    }
+	  loadLibrary('effectKit_ani')
+	}
 
     private nativeObj: long = 0;
 
@@ -311,9 +346,9 @@ namespace effectKit {
     public native getTopProportionColorsNative(colorCount: int): Array<Color | null>;
     public native getHighestSaturationColorNative(): Color;
     public native getAverageColorNative(): Color;
-    public native isBlackOrWhiteOrGrayColorNative(color: int): boolean;
+    public native isBlackOrWhiteOrGrayColorNative(color: long): boolean;
     private static native kitTransferStaticNative(input: ESValue): Object;
-    private static native kitTransferDynamicNative(nativeObj: long): ESValue;
+	private static native kitTransferDynamicNative(nativeObj: long): ESValue;
 
     public getMainColor(): Promise<Color> {
       return new Promise<Color>((resolve: (value: Color) => void,
@@ -321,9 +356,9 @@ namespace effectKit {
         taskpool.execute((): Color => {
           let color = this.getMainColorSync();
           return color;
-        }).then((ret: NullishType) => {
+        }).then((ret: Any) => {
           resolve(ret as Color);
-        }).catch((err: NullishType) => {
+        }).catch((err: Any) => {
           reject(err as BusinessError);
         });
       });
@@ -343,15 +378,15 @@ namespace effectKit {
     public getAverageColor(): Color {
       return this.getAverageColorNative();
     }
-    public isBlackOrWhiteOrGrayColor(color: int): boolean {
+    public isBlackOrWhiteOrGrayColor(color: long): boolean {
       return this.isBlackOrWhiteOrGrayColorNative(color);
     }
     public static kitTransferStatic(input: Any): Object {
-      return ColorPickerInternal.kitTransferStaticNative(ESValue.wrap(input));
-    }
-    public static kitTransferDynamic(input: Object): Any {
-      return ColorPickerInternal.kitTransferDynamicNative((input as ColorPickerInternal).nativeObj).unwrap();
-    }
+	  return ColorPickerInternal.kitTransferStaticNative(ESValue.wrap(input));
+	}
+	public static kitTransferDynamic(input: Object): Any {
+	  return ColorPickerInternal.kitTransferDynamicNative((input as ColorPickerInternal).nativeObj).unwrap();
+	}
   }
 
   native function createColorPickerNormal(source: image.PixelMap): ColorPicker
@@ -362,7 +397,7 @@ namespace effectKit {
       let cb = (): ColorPicker => {
         return createColorPickerNormal(source)
       };
-      taskpool.execute(cb).then((ret: NullishType): void => {
+      taskpool.execute(cb).then((ret: Any): void => {
         if (ret === null || ret === undefined) {
           let ret1: BusinessError<string> = {
             code: -1,
@@ -375,8 +410,8 @@ namespace effectKit {
           let colorpicker = ret as ColorPicker;
           resolve(colorpicker);
         }
-      }).catch((err: NullishType) => {
-        reject(err as BusinessError<string>);
+      }).catch((err: Any) => {
+        reject(err as BusinessError<string>);   
       });
     });
   }
@@ -384,7 +419,7 @@ namespace effectKit {
   export function createColorPicker(source: image.PixelMap, region: Array<double>): Promise<ColorPicker> {
     return new Promise<ColorPicker>((resolve : (v: ColorPicker) => void, reject: RejectString) => {
       let cb = (): ColorPicker => { return createColorPickerWithRegion(source, region) };
-      taskpool.execute(cb).then((ret: NullishType): void => {
+      taskpool.execute(cb).then((ret: Any): void => {
         if (ret === null || ret === undefined) {
           let ret1: BusinessError<string> = {
             code: -1,
@@ -397,7 +432,7 @@ namespace effectKit {
           let colorpicker = ret as ColorPicker;
           resolve(colorpicker);
         }
-      }).catch((err: NullishType) => {
+      }).catch((err: Any) => {
         reject(err as BusinessError<string>);
       });
     });
@@ -424,6 +459,7 @@ namespace effectKit {
       };
       callback(error, undefined);
     }
+
   }
 
   export function createColorPicker(source: image.PixelMap, region: Array<double>, callback: AsyncCallback<ColorPicker | undefined>): void {

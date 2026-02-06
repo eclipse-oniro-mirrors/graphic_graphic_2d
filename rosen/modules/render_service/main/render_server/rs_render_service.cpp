@@ -50,6 +50,13 @@
 #ifdef TP_FEATURE_ENABLE
 #include "screen_manager/touch_screen.h"
 #endif
+#include "system/rs_system_parameters.h"
+#include "text/font_mgr.h"
+#include "transaction/rs_client_to_render_connection.h"
+#include "vsync_generator.h"
+
+#undef LOG_TAG
+#define LOG_TAG "RSRenderService"
 
 #undef LOG_TAG
 #define LOG_TAG "RSRenderService"
@@ -270,6 +277,7 @@ bool RSRenderService::RemoveConnection(const sptr<RSIConnectionToken>& token)
     }
     // temporarily extending the life cycle
     auto tokenObj = token->AsObject();
+
     std::unique_lock<std::mutex> lock(mutex_);
     auto iter = connections_.find(tokenObj);
     if (iter == connections_.end()) {
@@ -278,6 +286,7 @@ bool RSRenderService::RemoveConnection(const sptr<RSIConnectionToken>& token)
     }
     connections_.erase(iter);
     lock.unlock();
+
     return true;
 }
 
@@ -304,6 +313,11 @@ void RSRenderService::GetRefreshInfoToSP(std::string& dumpString, NodeId nodeId)
 void RSRenderService::FpsDump(std::string& dumpString, const std::string& arg)
 {
     rsRenderComposerManager_->FpsDump(dumpString, arg);
+}
+
+void RSRenderService::HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status)
+{
+    rsRenderComposerManager_->HandlePowerStatus(screenId, status);
 }
 
 sptr<IRemoteObject> RSRenderService::ScreenManagerListener::OnScreenConnected(ScreenId screenId,

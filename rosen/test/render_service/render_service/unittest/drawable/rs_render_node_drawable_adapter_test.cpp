@@ -39,14 +39,11 @@ public:
         return true;
     }
     void OnSync() override {}
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override
     {
-        auto ptr = std::static_pointer_cast<const RSChildrenDrawableBrotherAdapter>(shared_from_this());
-        return [ptr](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-            for (const auto& drawable : ptr->childrenDrawableVec_) {
-                drawable->Draw(*canvas);
-            }
-        };
+        for (const auto& drawable : childrenDrawableVec_) {
+            drawable->Draw(*canvas);
+        }
     }
 
 private:
@@ -63,6 +60,17 @@ private:
     friend class RSRenderNode;
     friend class RSRenderNodeDrawableAdapter;
 };
+
+class RSTestDrawable : public RSDrawable {
+public:
+    RSTestDrawable() = default;
+    ~RSTestDrawable() override = default;
+
+    //no need to sync, content_ only used in render thread
+    void OnSync() override {};
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override {};
+};
+
 class RSRenderNodeDrawableAdapterTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -126,6 +134,16 @@ HWTEST(RSRenderNodeDrawableAdapterTest, OnGenerateTest, TestSize.Level1)
     renderNode->renderDrawable_ = std::make_shared<RSRenderNodeDrawable>(otherNode);
     retAdapter = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
     EXPECT_NE(retAdapter, nullptr);
+
+    auto adapterNode2 = std::make_shared<RSRenderNode>(id + 3);
+    auto adapter2 = std::make_shared<RSRenderNodeDrawable>(std::move(adapterNode2));
+    adapter2->nodeType_ = RSRenderNodeType::CANVAS_NODE;
+    EXPECT_NE(renderNode->GetType(), adapter2->GetNodeType());
+    wNode = adapter2;
+    RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.emplace(id, wNode);
+    retAdapter = RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
+    EXPECT_NE(retAdapter, nullptr);
+    RSRenderNodeDrawableAdapter::RenderNodeDrawableCache_.clear();
 }
 
 /**
@@ -292,7 +310,22 @@ HWTEST(RSRenderNodeDrawableAdapterTest, HasFilterOrEffectTest, TestSize.Level1)
     NodeId id = 7;
     auto node = std::make_shared<RSRenderNode>(id);
     auto adapter = std::make_shared<RSRenderNodeDrawable>(std::move(node));
-    auto ret = adapter->HasFilterOrEffect();
+    RSRenderParams params(id);
+    auto ret = adapter->HasFilterOrEffect(params);
+    EXPECT_FALSE(ret);
+
+    adapter->drawCmdIndex_.materialFilterIndex_ = 0;
+    ret = adapter->HasFilterOrEffect(params);
+    EXPECT_TRUE(ret);
+
+    params.SetShadowRect({0, 0, 10, 10});
+    adapter->drawCmdIndex_.materialFilterIndex_ = -1;
+    adapter->drawCmdIndex_.shadowIndex_ = 1;
+    ret = adapter->HasFilterOrEffect(params);
+    EXPECT_TRUE(ret);
+
+    adapter->drawCmdIndex_.shadowIndex_ = -1;
+    ret = adapter->HasFilterOrEffect(params);
     EXPECT_FALSE(ret);
 }
 
@@ -310,7 +343,9 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawRangeImplAndRelatedTest, TestSize.Le
     Drawing::Canvas drawingCanvas;
     Drawing::Rect rect;
     adapter->DrawForeground(drawingCanvas, rect);
+    adapter->DrawForegroundWithOutRestoreAll(drawingCanvas, rect);
     adapter->DrawBackground(drawingCanvas, rect);
+    adapter->DrawBackgroundWithOutSaveAll(drawingCanvas, rect);
     adapter->DrawBeforeCacheWithForegroundFilter(drawingCanvas, rect);
     adapter->DrawCacheWithForegroundFilter(drawingCanvas, rect);
     adapter->DrawAfterCacheWithForegroundFilter(drawingCanvas, rect);
@@ -320,13 +355,14 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawRangeImplAndRelatedTest, TestSize.Le
     adapter->DrawAll(drawingCanvas, rect);
     EXPECT_TRUE(adapter->drawCmdList_.empty());
 
-    Drawing::RecordingCanvas::DrawFunc drawFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawRangeImplTest drawFuncCallBack\n");
-    };
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
+    std::shared_ptr<RSTestDrawable> rsDrawable1 = std::make_shared<RSTestDrawable>();
+    std::shared_ptr<RSTestDrawable> rsDrawable2 = std::make_shared<RSTestDrawable>();
+    std::shared_ptr<RSTestDrawable> rsDrawable3 = std::make_shared<RSTestDrawable>();
+    std::shared_ptr<RSTestDrawable> rsDrawable4 = std::make_shared<RSTestDrawable>();
+    adapter->drawCmdList_.emplace_back(rsDrawable1);
+    adapter->drawCmdList_.emplace_back(rsDrawable2);
+    adapter->drawCmdList_.emplace_back(rsDrawable3);
+    adapter->drawCmdList_.emplace_back(rsDrawable4);
     auto start = 0;
     auto end = adapter->drawCmdList_.size();
     EXPECT_FALSE(adapter->drawCmdList_.empty() || start < 0 || end < 0 || start > end);
@@ -340,7 +376,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawRangeImplAndRelatedTest, TestSize.Le
     EXPECT_GT(end, skipIndex);
     adapter->DrawRangeImpl(drawingCanvas, rect, start, end + 1);
     adapter->DrawRangeImpl(drawingCanvas, rect, start, end);
-    std::vector<Drawing::RecordingCanvas::DrawFunc> drawCmdList;
+    RSDrawable::DrawList drawCmdList;
     adapter->drawCmdList_.swap(drawCmdList);
 }
 
@@ -360,15 +396,13 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawUifirstContentChildrenTest, TestSize
     adapter->DrawUifirstContentChildren(canvas, rect);
     EXPECT_TRUE(adapter->uifirstDrawCmdList_.empty());
 
-    Drawing::RecordingCanvas::DrawFunc drawuIFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawUifirstContentChildrenTest drawuIFuncCallBack\n");
-    };
-    adapter->uifirstDrawCmdList_.emplace_back(drawuIFuncCallBack);
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    adapter->uifirstDrawCmdList_.emplace_back(rsDrawable);
     EXPECT_TRUE(!adapter->uifirstDrawCmdList_.empty());
     adapter->uifirstDrawCmdIndex_.contentIndex_ = 0;
     adapter->uifirstDrawCmdIndex_.childrenIndex_ = 0;
     adapter->DrawUifirstContentChildren(canvas, rect);
-    std::vector<Drawing::RecordingCanvas::DrawFunc> uifirstDrawCmdIndex;
+    RSDrawable::DrawList uifirstDrawCmdIndex;
     adapter->uifirstDrawCmdList_.swap(uifirstDrawCmdIndex);
 }
 
@@ -388,10 +422,8 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawContentTest, TestSize.Level1)
     EXPECT_TRUE(adapter->drawCmdList_.empty());
     adapter->DrawContent(canvas, rect);
 
-    Drawing::RecordingCanvas::DrawFunc drawFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawContentTest drawFuncCallBack\n");
-    };
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    adapter->drawCmdList_.emplace_back(rsDrawable);
     EXPECT_EQ(adapter->drawCmdIndex_.contentIndex_, -1);
     adapter->DrawContent(canvas, rect);
 
@@ -415,10 +447,8 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawChildrenTest, TestSize.Level1)
     adapter->DrawChildren(canvas, rect);
     EXPECT_TRUE(adapter->drawCmdList_.empty());
 
-    Drawing::RecordingCanvas::DrawFunc drawFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawChildrenTest drawFuncCallBack\n");
-    };
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    adapter->drawCmdList_.emplace_back(rsDrawable);
     adapter->DrawContent(canvas, rect);
     EXPECT_EQ(adapter->drawCmdIndex_.contentIndex_, -1);
 
@@ -444,10 +474,8 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawImplTest, TestSize.Level1)
     EXPECT_TRUE(adapter->drawCmdList_.empty());
 
     index = 0;
-    Drawing::RecordingCanvas::DrawFunc drawFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawChildrenTest drawFuncCallBack\n");
-    };
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    adapter->drawCmdList_.emplace_back(rsDrawable);
     EXPECT_FALSE(
         adapter->drawCmdList_.empty() || index < 0 || index >= static_cast<int8_t>(adapter->drawCmdList_.size()));
     adapter->DrawImpl(canvas, rect, index);
@@ -525,49 +553,47 @@ HWTEST(RSRenderNodeDrawableAdapterTest, GetSkipIndexTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: DrawBackgroundWithoutFilterAndEffectTest
- * @tc.desc: Test DrawBackgroundWithoutFilterAndEffect
+ * @tc.name: SkipDrawBackGroundAndClipHoleForBlurTest
+ * @tc.desc: Test SkipDrawBackGroundAndClipHoleForBlur
  * @tc.type: FUNC
  * @tc.require: issueI9UTMA
  */
-HWTEST(RSRenderNodeDrawableAdapterTest, DrawBackgroundWithoutFilterAndEffectTest, TestSize.Level1)
+HWTEST(RSRenderNodeDrawableAdapterTest, SkipDrawBackGroundAndClipHoleForBlurTest, TestSize.Level1)
 {
     NodeId id = 15;
     auto node = std::make_shared<RSRenderNode>(id);
     auto adapter = std::make_shared<RSRenderNodeDrawable>(std::move(node));
-    adapter->drawCmdIndex_.backgroundColorIndex_ = 1;
-    adapter->drawCmdIndex_.shadowIndex_ = 2;
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     RSRenderParams params(id);
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
+    adapter->SkipDrawBackGroundAndClipHoleForBlur(canvas, params);
     EXPECT_TRUE(adapter->drawCmdList_.empty());
-    Drawing::RecordingCanvas::DrawFunc drawFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawBackgroundWithoutFilterAndEffectTest drawFuncCallBack\n");
-    };
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.backgroundEndIndex_ = 1;
-    adapter->drawCmdIndex_.shadowIndex_ = 0;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.backgroundEndIndex_ = 1;
-    adapter->drawCmdIndex_.shadowIndex_ = 0;
-    params.SetShadowRect({0, 0, 10, 10});
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.shadowIndex_ = 2;
-    adapter->drawCmdIndex_.useEffectIndex_ = 0;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.useEffectIndex_ = 3;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.backgroundFilterIndex_ = 0;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.backgroundFilterIndex_ = 4;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.backgroundNgShaderIndex_ = 0;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
-    adapter->drawCmdIndex_.backgroundNgShaderIndex_ = 5;
-    adapter->DrawBackgroundWithoutFilterAndEffect(canvas, params);
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    adapter->drawCmdList_.emplace_back(rsDrawable);
+    adapter->SkipDrawBackGroundAndClipHoleForBlur(canvas, params);
     EXPECT_FALSE(adapter->drawCmdList_.empty());
+}
+
+/**
+ * @tc.name: GetFilterRelativeRectTest
+ * @tc.desc: Test GetFilterRelativeRect
+ * @tc.type: FUNC
+ * @tc.require: issueI9UTMA
+ */
+HWTEST(RSRenderNodeDrawableAdapterTest, GetFilterRelativeRectTest, TestSize.Level1)
+{
+    NodeId id = 151;
+    auto renderNode = std::make_shared<RSRenderNode>(id);
+    auto adapter = std::make_shared<RSRenderNodeDrawable>(std::move(renderNode));
+
+    // case1: filterDrawables_ is empty
+    Drawing::Rect bounds(10.0f, 20.0f, 100.0f, 200.0f);
+    RectF rsRect(bounds.GetLeft(), bounds.GetTop(), bounds.GetWidth(), bounds.GetHeight());
+    Drawing::Rect result = adapter->GetFilterRelativeRect(bounds);
+    EXPECT_EQ(result.GetLeft(), bounds.GetLeft());
+    EXPECT_EQ(result.GetTop(), bounds.GetTop());
+    EXPECT_EQ(result.GetWidth(), bounds.GetWidth());
+    EXPECT_EQ(result.GetHeight(), bounds.GetHeight());
 }
 
 /**
@@ -726,10 +752,8 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawQuickImplTest, TestSize.Level1)
     NodeId id = 21;
     auto node = std::make_shared<RSRenderNode>(id);
     auto adapter = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node);
-    Drawing::RecordingCanvas::DrawFunc drawFuncCallBack = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        printf("DrawQuickImplTest drawFuncCallBack\n");
-    };
-    adapter->drawCmdList_.emplace_back(drawFuncCallBack);
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    adapter->drawCmdList_.emplace_back(rsDrawable);
     Drawing::Canvas canvas;
     Drawing::Rect rect;
     adapter->DrawQuickImpl(canvas, rect);
@@ -760,6 +784,30 @@ HWTEST(RSRenderNodeDrawableAdapterTest, DrawQuickImplTest, TestSize.Level1)
 
     adapter->drawCmdList_.clear();
     adapter->DrawQuickImpl(canvas, rect);
+}
+
+/**
+ * @tc.name: OnTreeStateChangedTest
+ * @tc.desc: test results of OnTreeStateChangedTest
+ * @tc.type: FUNC
+ * @tc.require: issueIALKED
+ */
+HWTEST(RSRenderNodeDrawableAdapterTest, OnTreeStateChangedTest, TestSize.Level1)
+{
+    auto canvasDrawingNode = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    canvasDrawingNode->isNeverOnTree_ = false;
+    canvasDrawingNode->OnTreeStateChanged();
+    EXPECT_FALSE(canvasDrawingNode->isNeverOnTree_);
+    canvasDrawingNode->isOnTheTree_ = true;
+    canvasDrawingNode->OnTreeStateChanged();
+    EXPECT_FALSE(canvasDrawingNode->isNeverOnTree_);
+
+    auto childDrawable = std::make_shared<RSChildrenDrawableBrotherAdapter>();
+    auto childNode = std::make_shared<RSRenderNode>(10);
+    auto childAdapter = std::make_shared<RSRenderNodeDrawable>(std::move(childNode));
+    childDrawable->childrenDrawableVec_.emplace_back(childAdapter);
+    canvasDrawingNode->GetDrawableVec(__func__)[static_cast<int32_t>(RSDrawableSlot::CHILDREN)] = childDrawable;
+    canvasDrawingNode->OnTreeStateChanged();
 }
 #endif
 }

@@ -73,6 +73,11 @@ void RSRenderServiceAgent::ProcessHgmFrameRate(uint64_t timestamp, uint64_t vsyn
     }
 }
 
+void RSRenderServiceAgent::HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status)
+{
+    renderService_.HandlePowerStatus(screenId, status);
+}
+
 void RSRenderServiceAgent::RemoveToken(const sptr<RSIConnectionToken>& token)
 {
     renderService_.RemoveConnection(token);

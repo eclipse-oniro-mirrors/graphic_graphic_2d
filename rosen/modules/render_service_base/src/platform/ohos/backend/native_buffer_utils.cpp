@@ -242,7 +242,7 @@ bool MakeFromNativeWindowBuffer(std::shared_ptr<Drawing::GPUContext> skContext, 
     std::shared_ptr<Drawing::VKTextureInfo> vkTextureInfo = std::make_shared<Drawing::VKTextureInfo>();
     vkTextureInfo->vkImage = image;
     vkTextureInfo->vkAlloc.memory = memory;
-    vkTextureInfo->vkAlloc.size = npProps.allocationSize;
+    vkTextureInfo->vkAlloc.size = nbProps.allocationSize;
     vkTextureInfo->vkAlloc.source = Drawing::VKMemSource::EXTERNAL;
     vkTextureInfo->imageTiling = VK_IMAGE_TILING_OPTIMAL;
     vkTextureInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -447,7 +447,7 @@ std::shared_ptr<Drawing::Surface> CreateFromNativeWindowBufferImpl(Drawing::GPUC
     std::shared_ptr<Drawing::VKTextureInfo> vkTextureInfo = std::make_shared<Drawing::VKTextureInfo>();
     vkTextureInfo->vkImage = image;
     vkTextureInfo->vkAlloc.memory = memory;
-    vkTextureInfo->vkAlloc.size = npProps.allocationSize;
+    vkTextureInfo->vkAlloc.size = nbProps.allocationSize;
     vkTextureInfo->vkAlloc.source = Drawing::VKMemSource::EXTERNAL;
     vkTextureInfo->imageTiling = VK_IMAGE_TILING_OPTIMAL;
     vkTextureInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;

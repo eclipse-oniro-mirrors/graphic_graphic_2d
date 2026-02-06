@@ -43,7 +43,20 @@ T GetData()
     g_pos += objectSize;
     return object;
 }
+
+bool Init(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    g_data = data;
+    g_size = size;
+    g_pos = 0;
+    return true;
+}
 } // namespace
+
 class SurfaceCaptureFuture : public SurfaceCaptureCallback {
     public:
         SurfaceCaptureFuture() = default;
@@ -62,16 +75,23 @@ class SurfaceCaptureFuture : public SurfaceCaptureCallback {
         std::shared_ptr<Media::PixelMap> pixelMap_ = nullptr;
 };
 
-bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+class TestRSCanvasSurfaceBufferCallback : public RSICanvasSurfaceBufferCallback {
+public:
+    explicit TestRSCanvasSurfaceBufferCallback() = default;
+    virtual ~TestRSCanvasSurfaceBufferCallback() noexcept = default;
+
+    void OnCanvasSurfaceBufferChanged(NodeId nodeId, sptr<SurfaceBuffer> buffer, uint32_t resetSurfaceIndex) override {}
+
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
     }
+};
+#endif
 
-    g_data = data;
-    g_size = size;
-    g_pos = 0;
-
+bool RSPhysicalScreenFuzzTest()
+{
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     float darkBuffer = GetData<float>();
     float brightBuffer = GetData<float>();
@@ -103,12 +123,33 @@ bool RSPhysicalScreenFuzzTest(const uint8_t* data, size_t size)
     rsInterfaces.NotifyScreenSwitched();
     return true;
 }
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+bool SubmitCanvasPreAllocatedBufferFuzzTest()
+{
+    auto& rsRenderInterfaces = RSRenderInterface::GetInstance();
+    sptr<RSICanvasSurfaceBufferCallback> callback = new TestRSCanvasSurfaceBufferCallback();
+    rsRenderInterfaces.RegisterCanvasCallback(callback);
+    NodeId nodeId = GetData<NodeId>();
+    uint32_t resetSurfaceIndex = GetData<uint32_t>();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    rsRenderInterfaces.SubmitCanvasPreAllocatedBuffer(nodeId, buffer, resetSurfaceIndex);
+    return true;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    OHOS::Rosen::RSPhysicalScreenFuzzTest(data, size);
+    if (!OHOS::Rosen::Init(data, size)) {
+        return -1;
+    }
+
+    OHOS::Rosen::RSPhysicalScreenFuzzTest();
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    OHOS::Rosen::SubmitCanvasPreAllocatedBufferFuzzTest();
+#endif
     return 0;
 }

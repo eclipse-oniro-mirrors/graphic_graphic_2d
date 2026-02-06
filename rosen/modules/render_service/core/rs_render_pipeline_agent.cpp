@@ -1478,7 +1478,7 @@ void RSRenderPipelineAgent::NotifyHwcEventToRender(
     if (rsRenderPipeline_ == nullptr) {
         return;
     }
-    RSUniHwcPrevalidateUtil::GetInstance().HandleHwcEvent(deviceId, eventId, eventData);
+    RSUniHwcEventManager::GetInstance().OnHwcEvent(deviceId, eventId, eventData, nullptr);
 }
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY

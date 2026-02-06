@@ -221,6 +221,12 @@ void RSRenderComposer::ClearRefreshRateCounts(std::string& dumpString)
     hgmHardwareUtils_->ClearRefreshRateCounts(dumpString);
 }
 
+void RSRenderComposer::HandlePowerStatus(ScreenPowerStatus status)
+{
+    RS_TRACE_NAME_FMT("%s: screenId: %" PRIu64 " PowerStatus: %d", __func__, screenId_, status);
+    PostTask([this, status]() { hgmHardwareUtils_->ResetRetryCount(status); });
+}
+
 void PrintHiperfSurfaceLog(const std::string& counterContext, uint64_t counter)
 {
 #ifdef HIPERF_TRACE_ENABLE
@@ -293,7 +299,7 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         RSTvMetadataManager::CombineMetadataForAllLayers(layers);
 #endif
         hdiOutput_->Repaint();
-        RecordTimestamp(pipelineParam.vsyncId, layers);
+        RecordTimestamp(pipelineParam.vsyncId);
     }
     ReleaseLayerBuffersInfo releaseLayerInfo;
     releaseLayerInfo.screenId = screenId_;
@@ -311,7 +317,7 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
     }
     lastActualTime_ = pipelineParam.actualTimestamp;
     int64_t endTime = GetCurTimeCount();
-    uint64_t frameTime = endTime - startTime;
+    uint64_t frameTime = static_cast<uint64_t>(endTime - startTime);
     uint32_t missedFrames = frameTime / REFRESH_PERIOD;
     uint16_t frameRate = currentRate;
     if (missedFrames >= HARD_JANK_TWO_TIME &&
@@ -407,25 +413,10 @@ void RSRenderComposer::EndCheck(RSTimer timer)
 
 void RSRenderComposer::RecordTimestamp(uint64_t vsyncId, const std::vector<std::shared_ptr<RSLayer>>& layers)
 {
-    for (auto& layer : layers) {
-        if (layer == nullptr) {
-            continue;
-        }
-        uint64_t id = layer->GetNodeId();
-        auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
-        if (layer->GetBuffer() == nullptr) {
-            continue;
-        }
-        if (layer->GetUniRenderFlag()) {
-            surfaceFpsManager.RecordPresentFdForUniRender(vsyncId, hdiOutput_->GetCurrentFramePresentFd());
-            surfaceFpsManager.RecordPresentTimeForUniRender(hdiOutput_->GetThirdFrameAheadPresentFd(),
-                hdiOutput_->GetThirdFrameAheadPresentTime());
-        } else {
-            surfaceFpsManager.RecordPresentFd(id, vsyncId, hdiOutput_->GetCurrentFramePresentFd());
-            surfaceFpsManager.RecordPresentTime(id, hdiOutput_->GetThirdFrameAheadPresentFd(),
-                hdiOutput_->GetThirdFrameAheadPresentTime());
-        }
-    }
+    auto& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    surfaceFpsManager.RecordPresentFd(vsyncId, hdiOutput_->GetCurrentFramePresentFd());
+    surfaceFpsManager.RecordPresentTime(hdiOutput_->GetThirdFrameAheadPresentFd(),
+        hdiOutput_->GetThirdFrameAheadPresentTime());
 }
 
 void RSRenderComposer::ChangeLayersForActiveRectOutside(std::vector<std::shared_ptr<RSLayer>>& layers)
@@ -897,7 +888,8 @@ void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<st
     std::shared_ptr<Drawing::ColorSpace> drawingColorSpace = nullptr;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     GraphicColorGamut colorGamut = ComputeTargetColorGamut(layers);
-    GraphicPixelFormat pixelFormat = ComputeTargetPixelFormat(layers);
+    GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
+    GetDisplayClientTargetProperty(pixelFormat, colorGamut, layers);
     RS_LOGD("Redraw computed target color gamut: %{public}d,"
         "pixel format: %{public}d, frame width: %{public}u, frame height: %{public}u",
         colorGamut, pixelFormat, composerScreenInfo_.phyWidth, composerScreenInfo_.phyHeight);
@@ -1106,6 +1098,29 @@ bool RSRenderComposer::ConvertColorGamutToSpaceType(const GraphicColorGamut& col
 
     colorSpaceType = RS_TO_COMMON_COLOR_SPACE_TYPE_MAP.at(colorGamut);
     return true;
+}
+
+bool RSRenderComposer::GetDisplayClientTargetProperty(GraphicPixelFormat &pixelFormat, GraphicColorGamut &colorGamut,
+    const std::vector<std::shared_ptr<RSLayer>>& layers)
+{
+    int32_t pixelFormatInt = 0;
+    int32_t dataspaceInt = 0;
+    if (hdiOutput_ != nullptr) {
+        int32_t ret = hdiOutput_->GetDisplayClientTargetProperty(pixelFormatInt, dataspaceInt);
+        if (ret == GRAPHIC_DISPLAY_SUCCESS) {
+            // Direct cast from int32_t to GraphicPixelFormat
+            pixelFormat = static_cast<GraphicPixelFormat>(pixelFormatInt);
+            return true;
+        } else {
+            RS_LOGD("GetDisplayClientTargetProperty failed, ret: %{public}d, fallback to computed values", ret);
+            pixelFormat = ComputeTargetPixelFormat(layers);
+            return false;
+        }
+    } else {
+        RS_LOGD("output returned nullptr, fallback to computed values");
+        pixelFormat = ComputeTargetPixelFormat(layers);
+        return false;
+    }
 }
 #endif
 

@@ -137,7 +137,8 @@ public:
     virtual ErrCode SetAppWindowNum(uint32_t num) = 0;
 
     virtual void TakeUICaptureInRange(NodeId id, sptr<RSISurfaceCaptureCallback> callback,
-        const RSSurfaceCaptureConfig& captureConfig) = 0;
+        const RSSurfaceCaptureConfig& captureConfig,
+        RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) = 0;
 
     virtual ErrCode SetHwcNodeBounds(
         int64_t rsNodeId, float positionX, float positionY, float positionZ, float positionW) = 0;
@@ -146,7 +147,7 @@ public:
 
     virtual ErrCode GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus, int32_t& resCode) = 0;
 
-    virtual ErrCode DropFrameByPid(const std::vector<int32_t> pidList) = 0;
+    virtual ErrCode DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0) = 0;
 
     virtual ErrCode RegisterSurfaceBufferCallback(
         pid_t pid, uint64_t uid, sptr<RSISurfaceBufferCallback> callback) = 0;
@@ -188,6 +189,7 @@ public:
         sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints) = 0;
 
     virtual int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id) = 0;
+    virtual int32_t SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection) = 0;
 };
 
 } // namespace Rosen

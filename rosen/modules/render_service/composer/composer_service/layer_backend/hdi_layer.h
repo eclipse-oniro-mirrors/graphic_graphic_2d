@@ -54,8 +54,8 @@ public:
     uint32_t GetLayerId() const;
     bool RecordPresentTime(int64_t timestamp);
     void RecordMergedPresentTime(int64_t timestamp); // used for uni render layer
-    void Dump(std::string& result);
-    void DumpMergedResult(std::string& result);  // used for uni render layer
+    void Dump(std::string& result) const;
+    void DumpMergedResult(std::string& result) const;  // used for uni render layer
     void ClearDump();
 
     void SetReleaseFence(const sptr<SyncFence>& layerReleaseFence);
@@ -128,7 +128,7 @@ private:
     bool IsSameLayerMetaDataSet();
     inline void CheckRet(int32_t ret, const char* func);
     int32_t SetLayerMaskInfo();
-    bool CheckAndUpdateLayerBufferCahce(uint32_t sequence, uint32_t& index,
+    bool CheckAndUpdateLayerBufferCache(uint32_t sequence, uint32_t& index,
                                         std::vector<uint32_t>& deletingList);
 
     int32_t SetPerFrameParameters();
@@ -137,6 +137,7 @@ private:
     int32_t SetPerFrameParameterBrightnessRatio();
     int32_t SetPerFrameLayerLinearMatrix();
     int32_t SetPerFrameLayerSourceTuning(); // used for source crop tuning
+    int32_t SetTunnelLayerParameters();
 };
 } // namespace Rosen
 } // namespace OHOS

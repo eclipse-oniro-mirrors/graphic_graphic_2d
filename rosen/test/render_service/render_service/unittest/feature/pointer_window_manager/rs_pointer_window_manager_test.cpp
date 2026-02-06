@@ -140,21 +140,17 @@ HWTEST_F(RSPointerWindowManagerTest, SetHardCursorNodeInfoTest002, TestSize.Leve
 
 /**
  * @tc.name: CheckHardCursorSupportTest
- * @tc.desc: Test CheckHardCursorSupport
+ * @tc.desc: Test CheckHardCursorSupportTest when screenNode is nullptr or not
  * @tc.type: FUNC
- * @tc.require: issueIAJ1DW
+ * @tc.require: issue21895
  */
 HWTEST_F(RSPointerWindowManagerTest, CheckHardCursorSupportTest, TestSize.Level2)
 {
     auto screenNode = std::make_shared<RSScreenRenderNode>(1, 1);
-    screenNode->screenProperty_.Set<ScreenPropertyType::IS_HARD_CURSOR_SUPPORT>(false);
-    auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
-    nodeMap.RegisterRenderNode(screenNode);
+    screenNode->screenProperty_.isHardCursorSupport_ = true;
     auto& rsPointerWindowManager = RSPointerWindowManager::Instance();
-    EXPECT_FALSE(rsPointerWindowManager.CheckHardCursorSupport(1));
-
-    screenNode->screenProperty_.Set<ScreenPropertyType::IS_HARD_CURSOR_SUPPORT>(true);
-    EXPECT_TRUE(rsPointerWindowManager.CheckHardCursorSupport(1));
+    EXPECT_TRUE(rsPointerWindowManager.CheckHardCursorSupport(screenNode));
+    EXPECT_FALSE(rsPointerWindowManager.CheckHardCursorSupport(nullptr));
 }
 
 /**

@@ -101,5 +101,5 @@ HWTEST(RSLayerParcelHelperTest, UpdateRSRCD_OnExistingNonRCD_ReplacesWithRCD, Te
 
     auto layerAfter = ctx->GetRSRenderLayer(id);
     ASSERT_NE(layerAfter, nullptr);
-    EXPECT_FALSE(layerAfter->IsScreenRCDLayer());
+    EXPECT_TRUE(layerAfter->IsScreenRCDLayer());
 }

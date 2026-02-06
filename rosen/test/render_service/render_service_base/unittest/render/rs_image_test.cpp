@@ -19,6 +19,7 @@
 #include "message_parcel.h"
 #include "pixel_map.h"
 #include "skia_canvas.h"
+#include "skia_surface.h"
 
 #include "draw/surface.h"
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
@@ -308,6 +309,12 @@ HWTEST_F(RSImageTest, DrawImageRepeatRectTest001, TestSize.Level1)
     image->innerRect_ = Drawing::RectI { 0, 0, 10, 10 };
     image->DrawImageRepeatRect(samplingOptions, canvas);
     EXPECT_EQ(image->frameRect_.left_, 0);
+
+    image->dstRect_ = RectF(0, 0, 1, 1);
+    image->frameRect_ = RectF(0, 0, 1000, 1000);
+    image->imageRepeat_ = ImageRepeat::REPEAT;
+    image->DrawImageRepeatRect(samplingOptions, canvas);
+    EXPECT_NE(image, nullptr);
 }
 
 /**
@@ -719,9 +726,8 @@ HWTEST_F(RSImageTest, addImageMatrixMarshallingTest, TestSize.Level1)
     rsImage->SetFitMatrix(matrix);
 
     MessageParcel parcel;
-    EXPECT_EQ(RSMarshallingHelper::Marshalling(parcel, rsImage), true);
-    std::shared_ptr<RSImage> newImage;
-    EXPECT_EQ(RSMarshallingHelper::Unmarshalling(parcel, newImage), true);
+    EXPECT_EQ(rsImage->Marshalling(parcel), true);
+    EXPECT_EQ(rsImage->Unmarshalling(parcel), nullptr);
 }
 
 /**
@@ -1252,5 +1258,164 @@ HWTEST_F(RSImageTest, CalcRepeatBoundsTest, TestSize.Level1)
     EXPECT_EQ(maxX, 0);
     EXPECT_EQ(minY, 0);
     EXPECT_EQ(maxY, 0);
+}
+
+/**
+ * @tc.name: RsImageDrawTest
+ * @tc.desc: Verify function RsImageDraw
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImageTest, RsImageDrawTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    EXPECT_NE(rsImage, nullptr);
+
+    auto sampling = Drawing::SamplingOptions();
+    Drawing::Canvas drawingCanvas;
+    rsImage->RsImageDraw(sampling, drawingCanvas, false);
+    EXPECT_NE(rsImage, nullptr);
+
+    // isAstc branch
+    rsImage->pixelMap_ = std::make_shared<Media::PixelMap>();
+    rsImage->pixelMap_->SetAstc(true);
+    rsImage->RsImageDraw(sampling, drawingCanvas, false);
+    EXPECT_NE(rsImage, nullptr);
+
+    // isOrientationValid_ branch
+    rsImage->isOrientationValid_ = true;
+    rsImage->RsImageDraw(sampling, drawingCanvas, false);
+    EXPECT_NE(rsImage, nullptr);
+
+    // image_ is not null branch
+    rsImage->image_ = std::make_shared<Drawing::Image>();
+    rsImage->RsImageDraw(sampling, drawingCanvas, false);
+    EXPECT_NE(rsImage, nullptr);
+}
+
+/**
+ * @tc.name: DrawImageRepeatOffScreenTest
+ * @tc.desc: Verify function DrawImageRepeatOffScreen
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImageTest, DrawImageRepeatOffScreenTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    auto sampling = Drawing::SamplingOptions();
+    Drawing::Canvas drawingCanvas;
+    int minX = 0;
+    int maxX = 1;
+    int minY = 0;
+    int maxY = 1;
+ 
+    // imageLine null
+    rsImage->DrawImageRepeatOffScreen(sampling, drawingCanvas, minX, maxX, minY, maxY);
+    EXPECT_NE(rsImage, nullptr);
+ 
+    // imageLine not null
+    rsImage->image_ = std::make_shared<Drawing::Image>();
+    rsImage->DrawImageRepeatOffScreen(sampling, drawingCanvas, minX, maxX, minY, maxY);
+    EXPECT_NE(rsImage, nullptr);
+ 
+    // needDrawLine true
+    rsImage->imageRepeat_  = ImageRepeat::REPEAT_X;
+    maxX = 10;
+    rsImage->DrawImageRepeatOffScreen(sampling, drawingCanvas, minX, maxX, minY, maxY);
+ 
+    // canvas Surface not null
+    Media::InitializationOptions opts;
+    opts.size.width = 100;
+    opts.size.height = 100;
+    auto surfacePtr = std::make_shared<Drawing::Surface>();
+    surfacePtr->impl_ = std::make_shared<Drawing::SkiaSurface>();
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    canvas.surface_ = surfacePtr.get();
+    rsImage->DrawImageRepeatOffScreen(sampling, canvas, minX, maxX, minY, maxY);
+ 
+    // get offScreenCanvas null
+    rsImage->dstRect_ = RectF(0, 0, 100, 100);
+    rsImage->frameRect_ = RectF(0, 0, 100, 100);
+    rsImage->DrawImageRepeatOffScreen(sampling, canvas, minX, maxX, minY, maxY);
+}
+
+/**
+ * @tc.name: RSImage Marshalling
+ * @tc.desc: RSImage Marshalling test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSImageTest, MarshallingTest, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    std::shared_ptr<Media::PixelMap> pixelMap;
+    int width = 200;
+    int height = 300;
+    pixelMap = CreatePixelMap(width, height);
+    
+    rsImage->SetPixelMap(nullptr);
+    MessageParcel parcel1;
+    EXPECT_EQ(rsImage->Marshalling(parcel1), true);
+
+    rsImage->SetPixelMap(pixelMap);
+    MessageParcel parcel2;
+    EXPECT_EQ(rsImage->Marshalling(parcel2), true);
+}
+
+/**
+ * @tc.name: CalcRepeatBoundsTest002
+ * @tc.desc: Verify function CalcRepeatBounds
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSImageTest, CalcRepeatBoundsTest002, TestSize.Level1)
+{
+    auto rsImage = std::make_shared<RSImage>();
+    RectF srcRf(10, 10, 0, 0);
+    rsImage->dstRect_ = srcRf;
+    rsImage->frameRect_ = { 0, 0, 100, 100 };
+    rsImage->imageRepeat_ = ImageRepeat::REPEAT;
+    int minX = 0;
+    int maxX = 0;
+    int minY = 0;
+    int maxY = 0;
+
+    rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
+    EXPECT_EQ(minX, 0);
+    EXPECT_EQ(maxX, 0);
+    EXPECT_EQ(minY, 0);
+    EXPECT_EQ(maxY, 0);
+
+    rsImage->dstRect_.width_ = 0;
+    rsImage->dstRect_.height_ = 50;
+    rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
+    EXPECT_EQ(minX, 0);
+    EXPECT_EQ(maxX, 0);
+    EXPECT_EQ(minY, 0);
+    EXPECT_EQ(maxY, 0);
+
+    rsImage->dstRect_.width_ = 50;
+    rsImage->dstRect_.height_ = 0;
+    rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
+    EXPECT_EQ(minX, 0);
+    EXPECT_EQ(maxX, 0);
+    EXPECT_EQ(minY, 0);
+    EXPECT_EQ(maxY, 0);
+
+    rsImage->dstRect_.width_ = 50;
+    rsImage->dstRect_.height_ = 50;
+    rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
+    EXPECT_EQ(minX, -1);
+    EXPECT_EQ(maxX, 1);
+    EXPECT_EQ(minY, -1);
+    EXPECT_EQ(maxY, 1);
+
+    minX = 0;
+    maxX = 0;
+    minY = 0;
+    maxY = 0;
+    rsImage->dstRect_.left_ = -10;
+    rsImage->dstRect_.top_ = -10;
+    rsImage->CalcRepeatBounds(minX, maxX, minY, maxY);
+    EXPECT_EQ(minX, 0);
+    EXPECT_EQ(maxX, 2);
+    EXPECT_EQ(minY, 0);
+    EXPECT_EQ(maxY, 2);
 }
 } // namespace OHOS::Rosen

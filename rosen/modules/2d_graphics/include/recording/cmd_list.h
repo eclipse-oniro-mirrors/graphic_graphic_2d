@@ -329,11 +329,6 @@ public:
     std::shared_ptr<ExtendDrawFuncObj> GetDrawFuncObj(uint32_t id);
 
     /*
-     * @brief  copy object vec to another CmdList.
-     */
-    void CopyObjectTo(CmdList& other) const;
-
-    /*
      * @brief  return recording op count.
      */
     uint32_t GetOpCnt() const;
@@ -366,7 +361,7 @@ public:
 #endif
 
     void SetNoImageMarshallingFlag(bool flag);
-    bool GetNoImageMarshallingFlag();
+    bool GetNoImageMarshallingFlag() const;
 
 protected:
     void ProfilerPushObjects(std::stringstream& stream, size_t size);
@@ -401,7 +396,7 @@ protected:
 #endif
     std::vector<std::shared_ptr<ExtendDrawFuncObj>> drawFuncObjVec_;
     std::mutex drawFuncObjMutex_;
-    bool noImageMarshallingFlag = false;
+    bool noImageMarshallingFlag_ = false;
 };
 } // namespace Drawing
 } // namespace Rosen

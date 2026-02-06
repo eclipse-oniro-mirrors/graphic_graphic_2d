@@ -93,6 +93,9 @@ public:
 
     int32_t SetPowerStatus(uint32_t powerStatus);
     ScreenPowerStatus GetPowerStatus();
+    PanelPowerStatus GetPanelPowerStatus() const;
+
+    int32_t SetDualScreenState(DualScreenStatus status);
 
     void SetScreenBacklight(uint32_t level);
     int32_t GetScreenBacklight() const;
@@ -140,13 +143,21 @@ public:
 
     bool SetVirtualScreenStatus(VirtualScreenStatus screenStatus);
 
+    // blacklist
     void SetCastScreenEnableSkipWindow(bool enable);
-    void SetBlackList(const std::unordered_set<uint64_t>& blackList);
+    void SetBlackList(const std::unordered_set<NodeId>& blackList);
+    std::unordered_set<NodeId> GetBlackList() const;
+    void AddBlackList(const std::vector<NodeId>& blackList);
+    void RemoveBlackList(const std::vector<NodeId>& blackList);
+
+    // type blacklist
     void SetTypeBlackList(const std::unordered_set<uint8_t>& typeBlackList);
-    void AddBlackList(const std::vector<uint64_t>& blackList);
-    void RemoveBlackList(const std::vector<uint64_t>& blackList);
-    std::unordered_set<uint64_t> GetBlackList() const;
-    std::unordered_set<uint64_t> GetWhiteList() const;
+
+    // whitelist
+    void SetWhiteList(const std::unordered_set<NodeId>& whiteList);
+    std::unordered_set<NodeId> GetWhiteList() const;
+    void AddWhiteList(const std::vector<NodeId>& whiteList);
+    void RemoveWhiteList(const std::vector<NodeId>& whiteList);
 
     void SetSecurityExemptionList(const std::vector<uint64_t>& securityExemptionList);
 
@@ -159,6 +170,7 @@ public:
 
     void SetDisablePowerOffRenderControl(bool disable);
 
+    bool GetAndResetWhiteListChange();
     void SetScreenSwitchStatus(bool status);
 
     using OnPropertyChangeCallback = std::function<void(ScreenId, ScreenPropertyType, const sptr<ScreenPropertyBase>&)>;
@@ -199,7 +211,8 @@ private:
         COLOR_GAMUT_DCI_P3,
         COLOR_GAMUT_ADOBE_RGB,
         COLOR_GAMUT_DISPLAY_P3,
-        COLOR_GAMUT_BT2100_HLG };
+        COLOR_GAMUT_BT2100_HLG,
+        COLOR_GAMUT_NATIVE };
     std::vector<ScreenColorGamut> supportedPhysicalColorGamuts_;
     std::atomic<int32_t> currentVirtualColorGamutIdx_ = 0;
     std::atomic<int32_t> currentPhysicalColorGamutIdx_ = 0;
@@ -221,7 +234,7 @@ private:
 
     std::atomic<bool> hasLogBackLightAfterPowerStatusChanged_ = false;
 
-    OnPropertyChangeCallback onPropertyChange_;
+    std::function<void(const sptr<RSScreenProperty>&)> onPropertyChange_;
     RSScreenThreadSafeProperty property_;
 };
 } // namespace Rosen

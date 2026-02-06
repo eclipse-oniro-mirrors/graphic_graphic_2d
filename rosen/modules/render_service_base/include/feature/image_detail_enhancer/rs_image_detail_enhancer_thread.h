@@ -40,6 +40,7 @@ struct RSImageParams {
     const Drawing::Rect mDst;
     uint64_t mUniqueId;
     std::shared_ptr<Drawing::Image> mImage;
+    float mMatrixScaleX;
 };
 
 class RSB_EXPORT RSImageDetailEnhancerThread final {
@@ -54,8 +55,8 @@ public:
         uint64_t nodeId, uint64_t imageId, const std::shared_ptr<Drawing::Image>& image);
     void ImageSamplingDump(uint64_t imageId);
 #endif
-    // use for ScaleImageAsync
-    std::shared_ptr<Drawing::Image> EnhanceImageAsync(bool& isScaledImageAsync, const RSImageParams& rSImageParams);
+    // used for ScaleImageAsync
+    std::shared_ptr<Drawing::Image> EnhanceImageAsync(bool& isScaledImageAsync, const RSImageParams& RSImageParams);
     void SetScaledImage(uint64_t imageId, const std::shared_ptr<Drawing::Image>& image);
     std::shared_ptr<Drawing::Image> GetScaledImage(uint64_t imageId);
     void ReleaseScaledImage(uint64_t imageId);
@@ -92,22 +93,22 @@ private:
     void DumpImage(const std::shared_ptr<Drawing::Image>& image, uint64_t imageId);
 #endif
 
-    bool isParamValidate_{false};
-    bool ifReleaseAllScaledImage_{false};
-    RSImageDetailEnhanceParams params_{};
+    bool isParamValidate_ = false;
+    bool ifReleaseAllScaledImage_ = false;
+    RSImageDetailEnhanceParams params_ = {};
     RSImageDetailEnhanceAlgoParams slrParams_{};
     RSImageDetailEnhanceAlgoParams esrParams_{};
-    std::shared_ptr<AppExecFwk::EventRunner> runner_{nullptr};
-    std::shared_ptr<AppExecFwk::EventHandler> handler_{nullptr};
-    std::list<std::pair<uint64_t, std::shared_ptr<Drawing::Image>>> imageList_{};
+    std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
+    std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
+    std::list<std::pair<uint64_t, std::shared_ptr<Drawing::Image>>> imageList_ = {};
     std::unordered_map<uint64_t,
-        std::list<std::pair<uint64_t, std::shared_ptr<Drawing::Image>>>::iterator> keyMap_{};
-    std::unordered_map<uint64_t, bool> processStatusMap_{};
-    std::unordered_map<uint64_t, bool> processReadyMap_{};
+        std::list<std::pair<uint64_t, std::shared_ptr<Drawing::Image>>>::iterator> keyMap_ = {};
+    std::unordered_map<uint64_t, bool> processStatusMap_ = {};
+    std::unordered_map<uint64_t, bool> processReadyMap_ = {};
     std::function<void(uint64_t)> callback_{};
     mutable std::mutex mapMutex_{};
-    float curCache_{0.0};
-    long long releaseTime_{0};
+    float curCache_ = 0.0f;
+    long long releaseTime_ = 0;
 };
 
 class RSB_EXPORT DetailEnhancerUtils {

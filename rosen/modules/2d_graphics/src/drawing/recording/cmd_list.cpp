@@ -416,14 +416,6 @@ uint32_t CmdList::SetupImageLatticeObject(const std::vector<std::shared_ptr<Exte
     return imageLatticeObjectVec_.size();
 }
 
-void CmdList::CopyObjectTo(CmdList& other) const
-{
-#ifdef SUPPORT_OHOS_PIXMAP
-    other.imageObjectVec_ = imageObjectVec_;
-#endif
-    other.imageBaseObjVec_ = imageBaseObjVec_;
-}
-
 uint32_t CmdList::GetOpCnt() const
 {
     return opCnt_;
@@ -483,12 +475,12 @@ std::shared_ptr<ExtendDrawFuncObj> CmdList::GetDrawFuncObj(uint32_t id)
 
 void CmdList::SetNoImageMarshallingFlag(bool flag)
 {
-    noImageMarshallingFlag = flag;
+    noImageMarshallingFlag_ = flag;
 }
 
-bool CmdList::GetNoImageMarshallingFlag()
+bool CmdList::GetNoImageMarshallingFlag() const
 {
-    return noImageMarshallingFlag;
+    return noImageMarshallingFlag_;
 }
 
 } // namespace Drawing

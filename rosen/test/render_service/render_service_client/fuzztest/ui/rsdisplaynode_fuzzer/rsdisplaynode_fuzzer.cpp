@@ -72,100 +72,133 @@ bool Init(const uint8_t* data, size_t size)
     return true;
 }
 
-bool DoCreate(const uint8_t* data, size_t size)
+bool DoCreate()
 {
     // test
     RSDisplayNodeConfig config = GetRSDisplayNodeConfigFromData();
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     return true;
 }
 
-bool DoMarshalling(const uint8_t* data, size_t size)
+bool DoMarshalling()
 {
     // test
     RSDisplayNodeConfig config = GetRSDisplayNodeConfigFromData();
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     Parcel parcel;
     displayNode->Marshalling(parcel);
     return true;
 }
 
-bool DoUnmarshalling(const uint8_t* data, size_t size)
+bool DoUnmarshalling()
 {
     // test
     RSDisplayNodeConfig config = GetRSDisplayNodeConfigFromData();
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     Parcel parcel;
+    parcel.WriteUint64(GetData<uint64_t>());
+    parcel.WriteUint64(GetData<uint64_t>());
+    parcel.WriteBool(GetData<bool>());
     displayNode->Unmarshalling(parcel);
     return true;
 }
 
-bool DoSetScreenId(const uint8_t* data, size_t size)
+bool DoSetScreenId()
 {
     // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     uint64_t screenId = GetData<uint64_t>();
     displayNode->SetScreenId(screenId);
     return true;
 }
 
-bool DoSetSecurityDisplay(const uint8_t* data, size_t size)
+bool DoSetSecurityDisplay()
 {
     // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     bool isSecurityDisplay = GetData<bool>();
     displayNode->SetSecurityDisplay(isSecurityDisplay);
     return true;
 }
 
-bool DoSetScreenRotation(const uint8_t* data, size_t size)
+bool DoSetScreenRotation()
 {
     // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     uint32_t rotation = GetData<uint32_t>();
     displayNode->SetScreenRotation(rotation);
     return true;
 }
 
-bool DoSetDisplayNodeMirrorConfig(const uint8_t* data, size_t size)
+bool DoSetDisplayNodeMirrorConfig()
 {
     // test
     RSDisplayNodeConfig config = GetRSDisplayNodeConfigFromData();
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     RSDisplayNodeConfig config2 = GetRSDisplayNodeConfigFromData();
     displayNode->SetDisplayNodeMirrorConfig(config2);
     return true;
 }
 
-bool DoSetBootAnimation(const uint8_t* data, size_t size)
+bool DoSetBootAnimation()
 {
     // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     bool isBootAnimation = GetData<bool>();
     displayNode->SetBootAnimation(isBootAnimation);
     return true;
 }
 
-bool DoCreateNode(const uint8_t* data, size_t size)
+bool DoCreateNode()
 {
     // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     RSDisplayNodeConfig config2;
     NodeId nodeId = GetData<NodeId>();
     displayNode->CreateNode(config2, nodeId);
     return true;
 }
 
-bool DoSetVirtualScreenMuteStatus(const uint8_t* data, size_t size)
+bool DoSetVirtualScreenMuteStatus()
 {
     // test
     RSDisplayNodeConfig config;
     RSDisplayNode::SharedPtr displayNode = RSDisplayNode::Create(config);
+    if (!displayNode) {
+        return false;
+    }
     bool muteStatus = GetData<bool>();
     displayNode->SetVirtualScreenMuteStatus(muteStatus);
     
@@ -182,15 +215,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
     /* Run your code on data */
-    OHOS::Rosen::DoCreate(data, size);
-    OHOS::Rosen::DoMarshalling(data, size);
-    OHOS::Rosen::DoUnmarshalling(data, size);
-    OHOS::Rosen::DoSetScreenId(data, size);
-    OHOS::Rosen::DoSetSecurityDisplay(data, size);
-    OHOS::Rosen::DoSetScreenRotation(data, size);
-    OHOS::Rosen::DoSetDisplayNodeMirrorConfig(data, size);
-    OHOS::Rosen::DoSetBootAnimation(data, size);
-    OHOS::Rosen::DoCreateNode(data, size);
-    OHOS::Rosen::DoSetVirtualScreenMuteStatus(data, size);
+    OHOS::Rosen::DoCreate();
+    OHOS::Rosen::DoMarshalling();
+    OHOS::Rosen::DoUnmarshalling();
+    OHOS::Rosen::DoSetScreenId();
+    OHOS::Rosen::DoSetSecurityDisplay();
+    OHOS::Rosen::DoSetScreenRotation();
+    OHOS::Rosen::DoSetDisplayNodeMirrorConfig();
+    OHOS::Rosen::DoSetBootAnimation();
+    OHOS::Rosen::DoCreateNode();
+    OHOS::Rosen::DoSetVirtualScreenMuteStatus();
     return 0;
 }

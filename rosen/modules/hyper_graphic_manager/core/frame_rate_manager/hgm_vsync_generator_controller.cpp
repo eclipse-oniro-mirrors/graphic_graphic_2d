@@ -98,7 +98,7 @@ int64_t HgmVSyncGeneratorController::ChangeGeneratorRate(const uint32_t controll
     VSyncGenerator::ListenerPhaseOffsetData listenerPhase;
 
     if (currentRate_ != controllerRate) {
-        HGM_LOGD("HgmVSyncGeneratorController::ChangeGeneratorRate controllerRate = %{public}d, appOffset = %{public}d",
+        HGM_LOGD("HgmVSyncGeneratorController::ChangeGeneratorRate controllerRate = %{public}u, appOffset = %{public}d",
             controllerRate, pulseNum_);
         RS_TRACE_NAME("HgmVSyncGeneratorController::ChangeGeneratorRate controllerRate: " +
             std::to_string(controllerRate) + ", appOffset: " + std::to_string(pulseNum_) +
@@ -122,15 +122,6 @@ int64_t HgmVSyncGeneratorController::ChangeGeneratorRate(const uint32_t controll
 bool HgmVSyncGeneratorController::CheckNeedUpdateAppOffsetRefreshRate(uint32_t refreshRate)
 {
     return refreshRate <= OLED_60_HZ;
-}
-
-void HgmVSyncGeneratorController::ChangeAdaptiveStatus(bool isAdaptive)
-{
-    if (rsController_ == nullptr) {
-        HGM_LOGE("HgmVSyncGeneratorController::ChangeAdaptiveStatus rsController is null");
-        return;
-    }
-    rsController_->ChangeAdaptiveStatus(isAdaptive);
 }
 } // namespace Rosen
 } // namespace OHOS

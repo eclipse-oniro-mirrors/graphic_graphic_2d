@@ -24,6 +24,7 @@ int32_t ImageEnhanceParamParse::ParseFeatureParam(FeatureParamMapType& featureMa
         RS_LOGE("ImageEnhanceParamParse stop parsing, no children nodes");
         return PARSE_GET_CHILD_FAIL;
     }
+
     std::unordered_map<std::string, std::function<int32_t(xmlNode&)>> parserMap = {
         { "ImageEnhance", [this] (xmlNode& node) {return ParseImageEnhanceInternal(node);} },
         { "ImageEnhanceParam", [this] (xmlNode& node) {return ParseImageEnhanceParamInternal(node);} },

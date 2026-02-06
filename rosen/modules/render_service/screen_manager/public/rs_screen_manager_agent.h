@@ -69,10 +69,12 @@ public:
 
     int32_t SetScreenSwitchingNotifyCallback(sptr<RSIScreenSwitchingNotifyCallback> callback);
 
-    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList);
+    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
     int32_t SetVirtualScreenTypeBlackList(ScreenId id, const std::vector<uint8_t>& typeBlackList);
     int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList);
     int32_t RemoveVirtualScreenBlackList(ScreenId id, const std::vector<uint64_t>& blackList);
+    int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
+    int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
     int32_t SetVirtualScreenSecurityExemptionList(ScreenId id, const std::vector<NodeId>& securityExemptionList);
     int32_t SetScreenSecurityMask(ScreenId id, std::shared_ptr<Media::PixelMap> securityMask);
     int32_t SetMirrorScreenVisibleRect(ScreenId id, const Rect& mainScreenRect, bool supportRotation);

@@ -29,6 +29,7 @@ using namespace ANIMATIONTEST;
 class RSPathAnimationTest : public RSAnimationBaseTest {
 };
 
+<<<<<<< HEAD
 #ifndef MODIFIER_NG
 /**
  * @tc.name: GetTimingCurveTest001
@@ -417,6 +418,8 @@ HWTEST_F(RSPathAnimationTest, StartNonNormalTest002, TestSize.Level1)
 }
 #endif
 
+=======
+>>>>>>> master
 /**
  * @tc.name: SetRotationTest001
  * @tc.desc: Verify the SetRotation

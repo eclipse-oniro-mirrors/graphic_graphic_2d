@@ -204,14 +204,16 @@ void RSRenderParams::SetDrawingCacheType(RSDrawingCacheType cacheType)
     needSync_ = true;
 }
 
-void RSRenderParams::ExcludedFromNodeGroup(bool isExcluded)
+bool RSRenderParams::ExcludedFromNodeGroup(bool isExcluded)
 {
     if (!renderGroupCache_) {
         renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
     }
     if (renderGroupCache_ && renderGroupCache_->ExcludedFromNodeGroup(isExcluded)) {
         needSync_ = true;
+        return true;
     }
+    return false;
 }
 
 bool RSRenderParams::IsExcludedFromNodeGroup() const
@@ -236,6 +238,63 @@ bool RSRenderParams::HasChildExcludedFromNodeGroup() const
 {
     if (renderGroupCache_) {
         return renderGroupCache_->HasChildExcludedFromNodeGroup();
+    }
+    return false;
+}
+
+void RSRenderParams::SetRenderGroupExcludedStateChanged(bool isChanged)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetRenderGroupExcludedStateChanged(isChanged)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::IsRenderGroupExcludedStateChanged() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->IsRenderGroupExcludedStateChanged();
+    }
+    return false;
+}
+
+void RSRenderParams::SetRenderGroupSubTreeDirty(bool isDirty)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetCachedSubTreeDirty(isDirty)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::IsRenderGroupSubTreeDirty() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->IsCachedSubTreeDirty();
+    }
+    return false;
+}
+
+void RSRenderParams::SetChildHasTranslateOnSqueeze(bool val)
+{
+    if (ChildHasTranslateOnSqueeze() == val) {
+        return;
+    }
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetChildHasTranslateOnSqueeze(val)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::ChildHasTranslateOnSqueeze() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->ChildHasTranslateOnSqueeze();
     }
     return false;
 }
@@ -337,6 +396,14 @@ void RSRenderParams::UpdateHDRStatus(HdrStatus hdrStatus, bool isAdd)
     }
     hdrStatus_ = newStatus;
     needSync_ = true;
+}
+
+void RSRenderParams::SetNodeColorSpace(GraphicColorGamut colorSpace)
+{
+    if (colorSpace != nodeColorSpace_) {
+        nodeColorSpace_ = colorSpace;
+        needSync_ = true;
+    }
 }
 
 void RSRenderParams::ClearHDRVideoStatus()

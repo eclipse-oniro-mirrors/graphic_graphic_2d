@@ -66,9 +66,9 @@ void RSComposerAdapterTest::SetUpTestCase()
     rsRenderComposerManager = std::make_shared<RSRenderComposerManager>(handler, nullptr);
     auto property = sptr<RSScreenProperty>::MakeSptr();
     rsRenderComposerManager->OnScreenConnected(hdiOutput_, property);
-    auto rsScreen = std::make_shared<RSScreen>(screenId_);
+    auto screen = std::make_shared<RSScreen>(screenId_);
     screenManager_ = sptr<RSScreenManager>::MakeSptr();
-    screenManager_->MockHdiScreenConnected(rsScreen);
+    screenManager_->MockHdiScreenConnected(screen);
     composerAdapter_ = std::make_unique<RSComposerAdapter>();
     hdiDeviceMock_ = Mock::HdiDeviceMock::GetInstance();
     EXPECT_CALL(*hdiDeviceMock_, RegHotPlugCallback(_, _)).WillRepeatedly(testing::Return(0));
@@ -110,7 +110,7 @@ void RSComposerAdapterTest::CreateComposerAdapterWithScreenInfo(uint32_t width, 
  */
 HWTEST_F(RSComposerAdapterTest, CommitLayersTest001, Function | SmallTest | Level2)
 {
-    // no init
+    // not init
     std::vector<RSLayerPtr> layers;
     composerAdapter_->CommitLayers(layers);
     composerAdapter_->output_ = HdiOutput::CreateHdiOutput(screenId_);

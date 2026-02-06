@@ -345,6 +345,7 @@ private:
     static void ProcessMessages(std::shared_ptr<RSTransactionData> cmds); // receive message
     static void AnimationCallbackProcessor(NodeId nodeId, AnimationId animId, uint64_t token,
         AnimationCallbackEvent event);
+    static void ColorPickerCallbackProcessor(NodeId nodeId, uint64_t token, uint32_t color);
     static void DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint64_t token, uint32_t taskId);        // DFX to do
     static void PostTask(const std::function<void()>& task, int32_t instanceId = INSTANCE_ID_UNDEFINED); // planing
     static void PostDelayTask(
@@ -365,7 +366,6 @@ private:
     inline static std::unordered_map<RSUIDirector*, std::function<void()>> requestVsyncCallbacks_;
     inline static std::mutex uiTaskRunnersVisitorMutex_;
 
-    std::mutex mutex_;
     NodeId root_ = 0;
     int32_t instanceId_ = INSTANCE_ID_UNDEFINED;
 
@@ -377,10 +377,7 @@ private:
     uint32_t index_ = 0;
     std::string abilityName_;
     std::weak_ptr<RSSurfaceNode> surfaceNode_;
-    int surfaceWidth_ = 0;
-    int surfaceHeight_ = 0;
     std::string cacheDir_;
-    static std::function<void()> requestVsyncCallback_;
     bool isHgmConfigChangeCallbackReg_ = false;
     std::shared_ptr<RSUIContext> rsUIContext_ = nullptr;
     std::weak_ptr<RSRootNode> rootNode_;

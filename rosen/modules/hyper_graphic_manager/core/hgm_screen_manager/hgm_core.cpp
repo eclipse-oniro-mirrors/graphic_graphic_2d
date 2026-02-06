@@ -33,6 +33,11 @@ namespace OHOS::Rosen {
 namespace {
 constexpr int64_t RENDER_VSYNC_OFFSET_DELAY_MIN = -16000000; // ns
 constexpr int64_t RENDER_VSYNC_OFFSET_DELAY_MAX = 16000000; // ns
+
+int64_t GetFixedVsyncOffset(int64_t value)
+{
+    return (value >= RENDER_VSYNC_OFFSET_DELAY_MIN && value <= RENDER_VSYNC_OFFSET_DELAY_MAX) ? value : 0;
+}
 } // namespace
 
 void HgmCore::SysModeChangeProcess(const char* key, const char* value, void* context)
@@ -79,7 +84,7 @@ void HgmCore::Init()
             customFrameRateMode_ = std::stoi(mPolicyConfigData_->defaultRefreshRateMode_);
         }
     } else {
-        HILOG_COMM_INFO("HgmCore No customer refreshrate mode found: %{public}d", newRateMode);
+        HILOG_COMM_INFO("HgmCore customer refreshrate mode found: %{public}d", newRateMode);
         customFrameRateMode_ = newRateMode;
         if (customFrameRateMode_ != HGM_REFRESHRATE_MODE_AUTO &&
             mPolicyConfigData_ != nullptr && mPolicyConfigData_->xmlCompatibleMode_) {
@@ -291,20 +296,12 @@ void HgmCore::SetPerformanceConfig(const PolicyConfigData::ScreenSetting& curScr
     }
     if (auto iter = curScreenSetting.performanceConfig.find("rsPhaseOffset");
         iter != curScreenSetting.performanceConfig.end() && XMLParser::IsNumber(iter->second)) {
-        int64_t rsPhaseOffset = std::stoll(iter->second);
-        if (rsPhaseOffset < RENDER_VSYNC_OFFSET_DELAY_MIN || rsPhaseOffset > RENDER_VSYNC_OFFSET_DELAY_MAX) {
-            rsPhaseOffset = 0;
-        }
-        rsPhaseOffset_.store(rsPhaseOffset);
+        rsPhaseOffset_.store(GetFixedVsyncOffset(std::stoll(it->second)));
         isVsyncOffsetCustomized_.store(true);
     }
     if (auto iter = curScreenSetting.performanceConfig.find("appPhaseOffset");
         iter != curScreenSetting.performanceConfig.end() && XMLParser::IsNumber(iter->second)) {
-        int64_t appPhaseOffset = std::stoll(iter->second);
-        if (appPhaseOffset < RENDER_VSYNC_OFFSET_DELAY_MIN || appPhaseOffset > RENDER_VSYNC_OFFSET_DELAY_MAX) {
-            appPhaseOffset = 0;
-        }
-        appPhaseOffset_.store(appPhaseOffset);
+        appPhaseOffset_.store(GetFixedVsyncOffset(std::stoll(it->second)));
         isVsyncOffsetCustomized_.store(true);
     }
 }
@@ -422,7 +419,7 @@ int32_t HgmCore::AddScreen(ScreenId id, int32_t defaultMode, ScreenSize& screenS
     const std::vector<RSScreenModeInfo>& supportedModes)
 {
     // add a physical screen to hgm during hotplug event
-    HILOG_COMM_INFO("HgmCore adding screen : " PUBI64 "", id);
+    HILOG_COMM_INFO("HgmCore adding screen : %{public}" PRIu64, id);
     bool removeId = std::any_of(screenIds_.begin(), screenIds_.end(),
         [id](const ScreenId screen) { return screen == id; });
     if (removeId) {

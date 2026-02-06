@@ -354,6 +354,7 @@ public:
     }
 };
 
+<<<<<<< HEAD
 #ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationSupplementTest005
@@ -469,6 +470,8 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest006, TestSize.Level1)
 }
 #endif
 
+=======
+>>>>>>> master
 /**
  * @tc.name: AnimationSupplementTest007
  * @tc.desc: Verify the setcallback of Animation
@@ -691,6 +694,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest015, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest015 end";
 }
 
+<<<<<<< HEAD
 #ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationSupplementTest016
@@ -733,6 +737,8 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest016, TestSize.Level1)
 }
 #endif
 
+=======
+>>>>>>> master
 /**
  * @tc.name: AnimationSupplementTest017
  * @tc.desc: Verify the setcallback of Animation
@@ -1013,7 +1019,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest021, TestSize.Level1)
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest021 end";
 }
 
-#ifndef MODIFIER_NG
 /**
  * @tc.name: AnimationSupplementTest022
  * @tc.desc: Verify the setcallback of Animation
@@ -1034,9 +1039,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     auto propertyUnit_ { RSPropertyUnit::UNKNOWN };
     property->SetPropertyUnit(propertyUnit_);
     auto base = std::make_shared<RSRenderProperty<bool>>();
-    base->SetModifierType(RSModifierType::BOUNDS);
-    auto type = base->GetModifierType();
-    EXPECT_TRUE(type == RSModifierType::BOUNDS);
     property->SetValueFromRender(base);
     property->SetUpdateCallback(nullptr);
     RSAnimationTimingProtocol timingProtocol;
@@ -1046,6 +1048,7 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     property->AnimateWithInitialVelocity(timingProtocol, timingCurve, targetValue);
 
     std::shared_ptr<RSNode> node = RSCanvasNode::Create();
+    EXPECT_TRUE(node != nullptr);
     node->SetShadowMask(true);
     node->IsImplicitAnimationOpen();
     node->GetChildByIndex(1);
@@ -1064,7 +1067,6 @@ HWTEST_F(RSAnimationTest, AnimationSupplementTest022, TestSize.Level1)
     node->SetSandBox(vec);
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSupplementTest022 end";
 }
-#endif
 
 /**
  * @tc.name: AnimationSupplementTest023

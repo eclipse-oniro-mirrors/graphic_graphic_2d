@@ -253,7 +253,7 @@ HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshalling001, TestSize.Level1
     EXPECT_FALSE(ret);
     // Test Unmarshalling none type
     Parcel noneParcel;
-    RSMarshallingHelper::Marshalling(noneParcel, static_cast<RSUIFilterTypeUnderlying>(RSNGEffectType::NONE));
+    RSMarshallingHelper::Marshalling(noneParcel, static_cast<RSNGEffectTypeUnderlying>(RSNGEffectType::NONE));
     std::shared_ptr<RSNGRenderFilterBase> noneFilter;
     ret = RSNGRenderFilterBase::Unmarshalling(noneParcel, noneFilter);
     EXPECT_FALSE(ret);
@@ -293,7 +293,7 @@ HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshalling002, TestSize.Level1
     auto filter = std::make_shared<RSNGRenderBlurFilter>();
     ret = (filter->Marshalling(parcel2));
     EXPECT_TRUE(ret);
-    RSUIFilterTypeUnderlying val = 0;
+    RSNGEffectTypeUnderlying val = 0;
     ret = RSMarshallingHelper::Unmarshalling(parcel2, val);
     EXPECT_TRUE(ret);
     current = filter;
@@ -349,40 +349,6 @@ HWTEST_F(RSRenderFilterBaseTest, AttachDetach002, TestSize.Level1)
     EXPECT_EQ(filter2->Getter<EdgeLightColorRenderTag>()->node_.lock(), nullptr);
 }
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: SetModifierType001
- * @tc.desc: Test the SetModifierType method can
- *           correctly set the modifier type for a filter's properties
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderFilterBaseTest, SetModifierType001, TestSize.Level1)
-{
-    auto filter = std::make_shared<RSNGRenderBlurFilter>();
-    auto prop = filter->Getter<BlurRadiusXRenderTag>();
-    EXPECT_EQ(prop->GetModifierType(), RSModifierType::INVALID);
-    auto targetType = RSModifierType::BACKGROUND_NG_FILTER;
-    filter->SetModifierType(targetType);
-    EXPECT_EQ(prop->GetModifierType(), targetType);
-}
-
-/**
- * @tc.name: SetModifierType002
- * @tc.desc: Test SetModifierType on a filter chain, all properties should be set.
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderFilterBaseTest, SetModifierTypeChain, TestSize.Level1)
-{
-    auto filter1 = std::make_shared<RSNGRenderBlurFilter>();
-    auto filter2 = std::make_shared<RSNGRenderEdgeLightFilter>();
-    filter1->nextEffect_ = filter2;
-    auto targetType = RSModifierType::BACKGROUND_NG_FILTER;
-    filter1->SetModifierType(targetType);
-    EXPECT_EQ(filter1->Getter<BlurRadiusXRenderTag>()->GetModifierType(), targetType);
-    EXPECT_EQ(filter2->Getter<EdgeLightColorRenderTag>()->GetModifierType(), targetType);
-}
-#endif
-
 /**
  * @tc.name: DumpProperties001
  * @tc.desc: Test the DumpProperties method outputs correct filter properties
@@ -426,5 +392,40 @@ HWTEST_F(RSRenderFilterBaseTest, CalculatePropTagHashImplRRect, TestSize.Level1)
     RectT<float> rect;
     RRect value(rect, 0.5f, 0.5f);
     RSNGRenderEffectHelper::CalculatePropTagHashImpl(hash, value);
+}
+
+/**
+ * @tc.name: AdaptiveParamDark
+ * @tc.desc: Test adaptive parameter update when dark scale is enabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, AdaptiveParamDark, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderFrostedGlassFilter>();
+    // set base and dark-mode specific properties
+    filter->Setter<FrostedGlassBgPosRenderTag>(Vector3f(1.0f, 2.0f, 3.0f));
+    filter->Setter<FrostedGlassDarkModeBgPosRenderTag>(Vector3f(9.0f, 8.0f, 7.0f));
+
+    // should not crash and should produce a geFilter
+    filter->GenerateGEVisualEffect();
+    EXPECT_NE(filter->geFilter_, nullptr);
+}
+
+/**
+ * @tc.name: CalcRect001
+ * @tc.desc: Test the CalcRect method
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, CalcRect001, TestSize.Level1)
+{
+    RectF bound(0.f, 0.f, 10.f, 10.f);
+    EXPECT_EQ(RSNGRenderFilterHelper::CalcRect(nullptr, bound, EffectRectType::TOTAL), RectF());
+
+    std::shared_ptr<RSNGRenderFilterBase> filter1 = std::make_shared<RSNGRenderBlurFilter>();
+    auto filter2 = std::make_shared<RSNGRenderEdgeLightFilter>();
+    filter1->nextEffect_ = filter2;
+    EXPECT_EQ(RSNGRenderFilterHelper::CalcRect(filter1, bound, EffectRectType::SNAPSHOT), bound);
+    EXPECT_EQ(RSNGRenderFilterHelper::CalcRect(filter1, bound, EffectRectType::DRAW), bound);
+    EXPECT_EQ(RSNGRenderFilterHelper::CalcRect(filter1, bound, EffectRectType::TOTAL), RectF());
 }
 } // namespace OHOS::Rosen

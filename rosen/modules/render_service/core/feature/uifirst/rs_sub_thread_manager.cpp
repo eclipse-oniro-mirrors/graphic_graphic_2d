@@ -87,6 +87,19 @@ void RSSubThreadManager::DumpMem(DfxString& log, bool isLite)
     }
 }
 
+void RSSubThreadManager::DumpGpuMem(DfxString& log, const std::vector<std::pair<NodeId, std::string>>& nodeTags)
+{
+    if (threadList_.empty()) {
+        return;
+    }
+    for (auto subThread : threadList_) {
+        if (!subThread) {
+            continue;
+        }
+        subThread->DumpGpuMem(log, nodeTags);
+    }
+}
+
 std::shared_ptr<Drawing::GPUContext> RSSubThreadManager::GetGrContextFromSubThread(pid_t tid)
 {
     auto iter = threadIndexMap_.find(tid);

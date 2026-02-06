@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+* Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,11 +26,16 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include "pipeline/main_thread/rs_main_thread.h"
-#include "render_server/transaction/rs_client_to_service_connection.h"
 #include "transaction/rs_client_to_render_connection.h"
+<<<<<<< HEAD
 #include "platform/ohos/transaction/zidl/rs_irender_service.h"
 #include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
+=======
+#include "render_server/transaction/rs_client_to_service_connection.h"
+#include "platform/ohos/rs_irender_service.h"
+>>>>>>> master
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
+#include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
 #include "transaction/rs_transaction_proxy.h"
 #include "message_parcel.h"
 #include "securec.h"
@@ -43,16 +48,15 @@ namespace Rosen {
 int32_t g_pid;
 sptr<OHOS::Rosen::RSScreenManager> screenManagerPtr_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
 RSMainThread* mainThread_ = RSMainThread::Instance();
-sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
 sptr<RSClientToRenderConnectionStub> toRenderConnectionStub_ = nullptr;
+<<<<<<< HEAD
 sptr<OHOS::Rosen::RSRenderService> renderService_ = nullptr;
+=======
+sptr<RSClientToServiceConnectionStub> toServiceConnectionStub_ = nullptr;
+>>>>>>> master
 namespace {
-const uint8_t DO_EXECUTE_SYNCHRONOUS_TASK = 0;
-const uint8_t DO_NOTIFY_TOUCH_EVENT = 1;
-const uint8_t DO_SET_HARDWARE_ENABLED = 2;
-const uint8_t TARGET_SIZE = 3;
-
-sptr<RSIClientToServiceConnection> CONN = nullptr;
+const uint8_t DO_NOTIFY_TOUCH_EVENT = 0;
+const uint8_t TARGET_SIZE = 1;
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -73,19 +77,6 @@ T GetData()
     return object;
 }
 
-template<>
-std::string GetData()
-{
-    size_t objectSize = GetData<uint8_t>();
-    std::string object(objectSize, '\0');
-    if (DATA == nullptr || objectSize > g_size - g_pos) {
-        return object;
-    }
-    object.assign(reinterpret_cast<const char*>(DATA + g_pos), objectSize);
-    g_pos += objectSize;
-    return object;
-}
-
 bool Init(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
@@ -99,6 +90,7 @@ bool Init(const uint8_t* data, size_t size)
 }
 } // namespace
 
+<<<<<<< HEAD
 namespace Mock {
 void CreateVirtualScreenStubbing(ScreenId screenId)
 {
@@ -130,6 +122,8 @@ void DoExecuteSynchronousTask()
     toRenderConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
+=======
+>>>>>>> master
 void DoNotifyTouchEvent()
 {
     uint32_t touchStatus = 0;
@@ -151,6 +145,7 @@ void DoNotifyTouchEvent()
     toServiceConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
 
+<<<<<<< HEAD
 void DoSetHardwareEnabled()
 {
     MessageParcel dataP;
@@ -171,6 +166,8 @@ void DoSetHardwareEnabled()
     dataP.WriteBool(dynamicHardwareEnable);
     toRenderConnectionStub_->OnRemoteRequest(code, dataP, reply, option);
 }
+=======
+>>>>>>> master
 } // namespace Rosen
 } // namespace OHOS
 
@@ -235,14 +232,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     /* Run your code on data */
     uint8_t tarPos = OHOS::Rosen::GetData<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
-        case OHOS::Rosen::DO_EXECUTE_SYNCHRONOUS_TASK:
-            OHOS::Rosen::DoExecuteSynchronousTask();
-            break;
         case OHOS::Rosen::DO_NOTIFY_TOUCH_EVENT:
             OHOS::Rosen::DoNotifyTouchEvent();
-            break;
-        case OHOS::Rosen::DO_SET_HARDWARE_ENABLED:
-            OHOS::Rosen::DoSetHardwareEnabled();
             break;
         default:
             return -1;

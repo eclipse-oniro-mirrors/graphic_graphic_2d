@@ -21,7 +21,6 @@
 #include "rs_trace.h"
 
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
-#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
@@ -34,6 +33,9 @@
 #include "rs_profiler.h"
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
+#endif
+#ifdef HETERO_HDR_ENABLE
+#include "rs_hetero_hdr_manager.h"
 #endif
 #ifdef MHC_ENABLE
 #include "rs_mhc_manager.h"
@@ -96,7 +98,9 @@ void RSDrawFrame::RenderFrame()
         unirenderInstance_.GetMinAccumulatedBufferCount());
     unirenderInstance_.UpdateScreenNodeScreenId();
     RSMainThread::Instance()->ProcessUiCaptureTasks();
+#ifdef HETERO_HDR_ENABLE
     RSHeteroHDRManager::Instance().PostHDRSubTasks();
+#endif
 #ifdef MHC_ENABLE
     RSMhcManager::Instance().UpdateFrameId();
 #endif
@@ -107,7 +111,7 @@ void RSDrawFrame::RenderFrame()
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Clear();
 #endif
-    ReleaseDrawingNodeBuffer();
+    ReleaseSelfDrawingNodeBuffer();
     NotifyClearGpuCache();
     RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
     RSRenderNodeGC::Instance().ReleaseDrawableMemory();
@@ -115,7 +119,6 @@ void RSDrawFrame::RenderFrame()
         unirenderInstance_.PurgeCacheBetweenFrames();
     }
     unirenderInstance_.MemoryManagementBetweenFrames();
-    unirenderInstance_.PurgeShaderCacheAfterAnimate();
     MemoryManager::MemoryOverCheck(unirenderInstance_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsEnd(unirenderInstance_.GetDynamicRefreshRate());
     SetEarlyZEnabled(unirenderInstance_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
@@ -166,7 +169,7 @@ void RSDrawFrame::NotifyClearGpuCache()
     }
 }
 
-void RSDrawFrame::ReleaseDrawingNodeBuffer()
+void RSDrawFrame::ReleaseSelfDrawingNodeBuffer()
 {
     unirenderInstance_.ReleaseSurfaceOpItemBuffer();
 }

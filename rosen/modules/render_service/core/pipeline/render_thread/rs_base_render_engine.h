@@ -29,6 +29,7 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "sync_fence.h"
 #ifdef RS_ENABLE_VK
+#include "feature/gpuComposition/rs_vk_image_manager.h"
 #include "platform/ohos/backend/rs_surface_frame_ohos_vulkan.h"
 #include "platform/ohos/backend/rs_surface_ohos_vulkan.h"
 #endif
@@ -110,9 +111,9 @@ public:
         if (targetSurface_ != nullptr) {
 #if defined(RS_ENABLE_VK)
             if (RSSystemProperties::IsUseVulkan()) {
-                auto surfaceVk = static_cast<RSSurfaceOhosVulkan*>(targetSurface_.get());
-                if (surfaceVk != nullptr) {
-                    surfaceVk->CancelBufferForCurrentFrame();
+                auto surfaceVK = static_cast<RSSurfaceOhosVulkan*>(targetSurface_.get());
+                if (surfaceVK != nullptr) {
+                    surfaceVK->CancelBufferForCurrentFrame();
                 }
             }
 #endif
@@ -269,11 +270,7 @@ public:
 #ifdef RS_ENABLE_VK
     const std::shared_ptr<Drawing::GPUContext> GetSkContext() const
     {
-        if (renderContext_ != nullptr) {
-            return renderContext_->GetSharedDrGPUContext();
-        } else {
-            return nullptr;
-        }
+        return skContext_;
     }
 #endif
     void DumpVkImageInfo(std::string &dumpString);
@@ -294,6 +291,9 @@ private:
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
     std::shared_ptr<RenderContext> renderContext_ = nullptr;
 #endif // RS_ENABLE_GL || RS_ENABLE_VK
+#ifdef RS_ENABLE_VK
+    std::shared_ptr<Drawing::GPUContext> skContext_ = nullptr;
+#endif
     std::shared_ptr<RSImageManager> imageManager_ = nullptr;
     std::shared_ptr<GPUCacheManager> gpuCacheManager_ = nullptr;
     using SurfaceId = uint64_t;

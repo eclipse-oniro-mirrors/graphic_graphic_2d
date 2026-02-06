@@ -73,7 +73,7 @@ struct RSSurfaceNodeConfig {
     /* Shared pointer to the UI context associated with this node. Defaults to nullptr. */
     std::shared_ptr<RSUIContext> rsUIContext = nullptr;
     /* isSkipCheckInMultiInstance true to skip Multi-Instance check; false otherwise. */
-    bool isSkipCheckInMultiInstance = false;
+    bool isSkipCheckInMultiInstance = true;
 };
 
 /**
@@ -258,7 +258,7 @@ public:
 
     /**
      * @brief Get the name of the node.
-     * 
+     *
      * @return A string representing the name of the node.
      */
     inline std::string GetName() const
@@ -341,6 +341,7 @@ public:
     void DetachFromWindowContainer(ScreenId screenId);
     void SetRegionToBeMagnified(const Vector4<int>& regionToBeMagnified);
     void SetContainerWindowTransparent(bool isContainerWindowTransparent);
+    void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
 protected:
     bool NeedForcedSendToRemote() const override;
     RSSurfaceNode(const RSSurfaceNodeConfig& config, bool isRenderServiceNode,
@@ -367,7 +368,6 @@ private:
     void SetSurfaceIdToRenderNode();
     void CreateRenderNodeForTextureExportSwitch() override;
     void SetIsTextureExportNode(bool isTextureExportNode);
-    std::pair<std::string, std::string> SplitSurfaceNodeName(std::string surfaceNodeName);
     void RegisterNodeMap() override;
     std::shared_ptr<RSSurface> surface_;
     std::string name_;

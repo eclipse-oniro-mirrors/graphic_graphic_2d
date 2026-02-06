@@ -66,6 +66,7 @@ public:
         const sptr<HgmProcessToServiceInfo>& processToServiceInfo,
         const sptr<HgmServiceToProcessInfo>& ServiceToProcessInfo);
     const std::shared_ptr<HgmContext>& GetHgmContext() const { return renderService_.GetHgmContext(); }
+    void HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status);
 
     // Dfx
     void GetRefreshInfoToSP(std::string& dumpString, NodeId nodeId);

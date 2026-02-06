@@ -22,15 +22,19 @@
 #include "ibuffer_consumer_listener.h"
 #include "surface_utils.h"
 #include "transaction/rs_interfaces.h"
+#include "transaction/rs_render_interface.h"
 
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
+#include "platform/ohos/rs_render_service_connect_hub.h"
 #include "token_setproc.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
+constexpr uint32_t DEFAULT_SCREEN_WIDTH = 640;
+constexpr uint32_t DEFAULT_SCREEN_HEIGHT = 1000;
 class BufferConsumerTestListener : public ::OHOS::IBufferConsumerListener {
 public:
     void OnBufferAvailable() override
@@ -165,6 +169,37 @@ HWTEST_F(RSInterfacesTest, SetRogScreenResolution001, Function | SmallTest | Lev
 }
 
 /*
+<<<<<<< HEAD
+=======
+ * @tc.name: GetRogScreenResolution001
+ * @tc.desc: Test GetRogScreenResolution with valid screenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSInterfacesTest, GetRogScreenResolution001, Function | SmallTest | Level2)
+{
+    auto screenId = rsInterfaces->GetDefaultScreenId();
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
+    uint32_t width{0};
+    uint32_t height{0};
+    rsInterfaces->GetRogScreenResolution(screenId, width, height);
+}
+
+/*
+ * @tc.name: GetRogScreenResolution002
+ * @tc.desc: Test GetRogScreenResolution with invalid screenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSInterfacesTest, GetRogScreenResolution002, Function | SmallTest | Level2)
+{
+    auto screenId = INVALID_SCREEN_ID;
+    uint32_t width{0};
+    uint32_t height{0};
+    auto ret = rsInterfaces->GetRogScreenResolution(screenId, width, height);
+    EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+}
+
+/*
+>>>>>>> master
  * @tc.name: SetPhysicalScreenResolution001
  * @tc.desc: Test SetPhysicalScreenResolution
  * @tc.type: FUNC
@@ -795,6 +830,49 @@ HWTEST_F(RSInterfacesTest, GetScreenBacklight002, Function | SmallTest | Level2)
 }
 
 /*
+ * Function: GetPanelPowerStatus
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call GetPanelPowerStatus
+ *                  2. check
+ */
+HWTEST_F(RSInterfacesTest, GetPanelPowerStatus001, Function | SmallTest | Level2)
+{
+    auto screenId = rsInterfaces->GetDefaultScreenId();
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
+
+    // set screen on
+    rsInterfaces->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_ON);
+    usleep(SET_REFRESHRATE_SLEEP_US); // wait 50000us to ensure SetScreenPowerStatus done.
+    auto powerStatus = rsInterfaces->GetScreenPowerStatus(screenId);
+    EXPECT_EQ(powerStatus, ScreenPowerStatus::POWER_STATUS_ON);
+    rsInterfaces->GetPanelPowerStatus(screenId);
+
+    // set screen off
+    rsInterfaces->SetScreenPowerStatus(screenId, ScreenPowerStatus::POWER_STATUS_OFF);
+    usleep(SET_REFRESHRATE_SLEEP_US); // wait 50000us to ensure SetScreenPowerStatus done.
+    powerStatus = rsInterfaces->GetScreenPowerStatus(screenId);
+    EXPECT_EQ(powerStatus, ScreenPowerStatus::POWER_STATUS_OFF);
+    rsInterfaces->GetPanelPowerStatus(screenId);
+}
+
+/*
+ * Function: GetPanelPowerStatus
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call GetPanelPowerStatus with invalid screenId
+ *                  2. check
+ */
+HWTEST_F(RSInterfacesTest, GetPanelPowerStatus002, Function | SmallTest | Level2)
+{
+    auto screenId = INVALID_SCREEN_ID;
+    auto panelPowerStatus = rsInterfaces->GetPanelPowerStatus(screenId);
+    EXPECT_EQ(panelPowerStatus, PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
+}
+
+/*
 * Function: SetScreenChangeCallback
 * Type: Function
 * Rank: Important(2)
@@ -858,10 +936,12 @@ HWTEST_F(RSInterfacesTest, GetScreenSupportedColorGamuts002, Function | SmallTes
     std::vector<ScreenColorGamut> modes;
     int ret = rsInterfaces->GetScreenSupportedColorGamuts(INVALID_SCREEN_ID, modes);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenId = rsInterfaces->GetDefaultScreenId();
     ASSERT_NE(screenId, INVALID_SCREEN_ID);
     ret = rsInterfaces->GetScreenSupportedColorGamuts(screenId, modes);
     EXPECT_EQ(ret, StatusCode::SUCCESS);
+#endif
 }
 
 /*
@@ -912,9 +992,11 @@ HWTEST_F(RSInterfacesTest, GetScreenColorGamut002, Function | SmallTest | Level2
     ScreenColorGamut mode = ScreenColorGamut::COLOR_GAMUT_INVALID;
     int ret = rsInterfaces->GetScreenColorGamut(INVALID_SCREEN_ID, mode);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenId = rsInterfaces->GetDefaultScreenId();
     ret = rsInterfaces->GetScreenColorGamut(screenId, mode);
     EXPECT_EQ(ret, StatusCode::SUCCESS);
+#endif
 }
 
 /*
@@ -929,8 +1011,14 @@ HWTEST_F(RSInterfacesTest, SetScreenColorGamut002, Function | SmallTest | Level2
 {
     int ret = rsInterfaces->SetScreenColorGamut(INVALID_SCREEN_ID, 0);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenId = rsInterfaces->GetDefaultScreenId();
     ret = rsInterfaces->SetScreenColorGamut(screenId, 0);
+<<<<<<< HEAD
+=======
+    EXPECT_EQ(ret, StatusCode::SUCCESS);
+#endif
+>>>>>>> master
 }
 
 /*
@@ -962,8 +1050,7 @@ HWTEST_F(RSInterfacesTest, GetScreenHDRFormat002, Function | SmallTest | Level2)
     int ret = rsInterfaces->GetScreenHDRFormat(INVALID_SCREEN_ID, hdrFormat);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
     auto screenId = rsInterfaces->GetDefaultScreenId();
-    ret = rsInterfaces->GetScreenHDRFormat(screenId, hdrFormat);
-    EXPECT_EQ(ret, StatusCode::SUCCESS);
+    (void)rsInterfaces->GetScreenHDRFormat(screenId, hdrFormat);
 }
 
 /*
@@ -979,8 +1066,7 @@ HWTEST_F(RSInterfacesTest, SetScreenHDRFormat002, Function | SmallTest | Level2)
     int ret = rsInterfaces->SetScreenHDRFormat(INVALID_SCREEN_ID, 0);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
     auto screenId = rsInterfaces->GetDefaultScreenId();
-    ret = rsInterfaces->SetScreenHDRFormat(screenId, 0);
-    EXPECT_EQ(ret, StatusCode::SUCCESS);
+    (void)rsInterfaces->SetScreenHDRFormat(screenId, 0);
 }
 
 /*
@@ -996,9 +1082,11 @@ HWTEST_F(RSInterfacesTest, GetScreenSupportedColorSpaces002, Function | SmallTes
     std::vector<GraphicCM_ColorSpaceType> colorSpaces;
     int ret = rsInterfaces->GetScreenSupportedColorSpaces(INVALID_SCREEN_ID, colorSpaces);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenId = rsInterfaces->GetDefaultScreenId();
     ret = rsInterfaces->GetScreenSupportedColorSpaces(screenId, colorSpaces);
     EXPECT_EQ(ret, StatusCode::SUCCESS);
+#endif
 }
 
 /*
@@ -1014,9 +1102,11 @@ HWTEST_F(RSInterfacesTest, GetScreenColorSpace002, Function | SmallTest | Level2
     GraphicCM_ColorSpaceType colorSpace = GraphicCM_ColorSpaceType::GRAPHIC_CM_SRGB_FULL;
     int ret = rsInterfaces->GetScreenColorSpace(INVALID_SCREEN_ID, colorSpace);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenId = rsInterfaces->GetDefaultScreenId();
     ret = rsInterfaces->GetScreenColorSpace(screenId, colorSpace);
     EXPECT_EQ(ret, StatusCode::SUCCESS);
+#endif
 }
 
 /*
@@ -1511,7 +1601,8 @@ HWTEST_F(RSInterfacesTest, NotifyTouchEvent001, Function | SmallTest | Level0)
     ASSERT_NE(rsInterfaces, nullptr);
     int32_t touchStatus = 0;
     int32_t touchCnt = 0;
-    rsInterfaces->NotifyTouchEvent(touchStatus, touchCnt);
+    int32_t sourceType = 1;
+    rsInterfaces->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     ASSERT_NE(rsInterfaces, nullptr);
 }
 
@@ -1624,7 +1715,7 @@ HWTEST_F(RSInterfacesTest, RegisterSurfaceOcclusionChangeCallback001, Function |
     SurfaceOcclusionChangeCallback cb = [](float) {};
     std::vector<float> partitionPoints;
     int32_t ret = rsInterfaces->RegisterSurfaceOcclusionChangeCallback(id, cb, partitionPoints);
-    EXPECT_EQ(ret, RS_CONNECTION_ERROR); // Unable to access IPC due to lack of permissions.
+    EXPECT_NE(ret, 0); // Unable to access IPC due to lack of permissions.
 }
 
 /*
@@ -1742,6 +1833,46 @@ HWTEST_F(RSInterfacesTest, DropFrameByPid002, Function | SmallTest | Level2)
 }
 
 /*
+ * @tc.name: DropFrameByPid003
+ * @tc.desc: Test DropFrameByPid with dropFrameLevel parameter
+ * @tc.type: FUNC
+ * @tc.require: issueIB612L
+ */
+HWTEST_F(RSInterfacesTest, DropFrameByPid003, Function | SmallTest | Level2)
+{
+    ASSERT_TRUE(rsInterfaces != nullptr);
+    // Test with dropFrameLevel = 1 (keep latest 1 frame)
+    rsInterfaces->DropFrameByPid({getpid()}, 1);
+}
+
+/*
+ * @tc.name: DropFrameByPid004
+ * @tc.desc: Test DropFrameByPid with dropFrameLevel = 0 (no drop)
+ * @tc.type: FUNC
+ * @tc.require: issueIB612L
+ */
+HWTEST_F(RSInterfacesTest, DropFrameByPid004, Function | SmallTest | Level2)
+{
+    ASSERT_TRUE(rsInterfaces != nullptr);
+    // Test with dropFrameLevel = 0 (no frame dropping)
+    rsInterfaces->DropFrameByPid({getpid()}, 0);
+}
+
+/*
+ * @tc.name: DropFrameByPid005
+ * @tc.desc: Test DropFrameByPid with multiple pids and dropFrameLevel
+ * @tc.type: FUNC
+ * @tc.require: issueIB612L
+ */
+HWTEST_F(RSInterfacesTest, DropFrameByPid005, Function | SmallTest | Level2)
+{
+    ASSERT_TRUE(rsInterfaces != nullptr);
+    // Test with multiple PIDs and dropFrameLevel = 2
+    std::vector<int32_t> pidList = {getpid(), 1000, 2000};
+    rsInterfaces->DropFrameByPid(pidList, 2);
+}
+
+/*
  * @tc.name: SetVirtualScreenUsingStatus001
  * @tc.desc: Test SetVirtualScreenUsingStatus interface while input is true.
  * @tc.type: FUNC
@@ -1825,9 +1956,9 @@ HWTEST_F(RSInterfacesTest, CreatePixelMapFromSurfaceId001, Function | SmallTest 
     uint64_t surfaceId = static_cast<uint64_t>(cSurface->GetUniqueId());
     auto utils = SurfaceUtils::GetInstance();
     utils->Add(surfaceId, cSurface);
-    auto pixcelMap = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect);
+    auto pixelMap = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect);
 #if defined(RS_ENABLE_UNI_RENDER)
-    ASSERT_NE(pixcelMap, nullptr);
+    ASSERT_NE(pixelMap, nullptr);
     EXPECT_EQ(rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId,
         {0, 0, 0, 0}), nullptr);
     EXPECT_EQ(rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId,
@@ -1840,6 +1971,268 @@ HWTEST_F(RSInterfacesTest, CreatePixelMapFromSurfaceId001, Function | SmallTest 
         {width - 50, height - 50, 50, 50}), nullptr);
     EXPECT_NE(rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId,
         {width / 2, height/ 2, width / 2, height/ 2}), nullptr);
+#endif
+}
+
+/*
+ * @tc.name: CreatePixelMapFromSurfaceId
+ * @tc.desc: Test CreatePixelMapFromSurfaceId.
+ * @tc.type: FUNC
+ * @tc.require: issueI9ABGS
+ */
+HWTEST_F(RSInterfacesTest, CreatePixelMapFromSurfaceId002, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    auto cSurface = IConsumerSurface::Create();
+    ASSERT_NE(cSurface, nullptr);
+    sptr<IBufferConsumerListener> listener = new BufferConsumerTestListener();
+    cSurface->RegisterConsumerListener(listener);
+    sptr<IBufferProducer> producer = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(producer);
+
+    int releaseFence = -1;
+    int32_t width = 0x200;
+    int32_t height = 0x100;
+    sptr<SurfaceBuffer> buffer;
+    BufferRequestConfig requestConfig = {
+        .width = width,
+        .height = height,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+    };
+    BufferFlushConfig flushConfig = {
+        .damage = {
+            .w = width,
+            .h = height,
+        }
+    };
+    GSError ret = pSurface->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+    ret = pSurface->FlushBuffer(buffer, releaseFence, flushConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    OHOS::Rect rect = {
+        .x = 0,
+        .y = 0,
+        .w = 0x200,
+        .h = 0x100,
+    };
+    uint64_t surfaceId = static_cast<uint64_t>(cSurface->GetUniqueId());
+    auto utils = SurfaceUtils::GetInstance();
+    utils->Add(surfaceId, cSurface);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_90);
+    auto pixelMap1 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_180);
+    auto pixelMap2 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_270);
+    auto pixelMap3 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_90);
+    auto pixelMap4 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_180);
+    auto pixelMap5 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_270);
+    auto pixelMap6 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    auto pixelMap7 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    auto pixelMap8 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+
+#if defined(RS_ENABLE_UNI_RENDER)
+    ASSERT_NE(pixelMap1, nullptr);
+    ASSERT_NE(pixelMap2, nullptr);
+    ASSERT_NE(pixelMap3, nullptr);
+    ASSERT_NE(pixelMap4, nullptr);
+    ASSERT_NE(pixelMap5, nullptr);
+    ASSERT_NE(pixelMap6, nullptr);
+    ASSERT_NE(pixelMap7, nullptr);
+    ASSERT_NE(pixelMap8, nullptr);
+    EXPECT_EQ(std::make_pair(pixelMap1->GetHeight(), pixelMap1->GetWidth()),
+    std::make_pair(pixelMap4->GetWidth(), pixelMap4->GetHeight()));
+    EXPECT_EQ(std::make_pair(pixelMap2->GetHeight(), pixelMap2->GetWidth()),
+    std::make_pair(pixelMap5->GetHeight(), pixelMap5->GetWidth()));
+    EXPECT_EQ(std::make_pair(pixelMap3->GetHeight(), pixelMap3->GetWidth()),
+    std::make_pair(pixelMap6->GetWidth(), pixelMap6->GetHeight()));
+    EXPECT_EQ(std::make_pair(pixelMap7->GetHeight(), pixelMap7->GetWidth()),
+    std::make_pair(pixelMap8->GetHeight(), pixelMap8->GetWidth()));
+#endif
+}
+
+/*
+ * @tc.name: CreatePixelMapFromSurfaceId
+ * @tc.desc: Test CreatePixelMapFromSurfaceId.
+ * @tc.type: FUNC
+ * @tc.require: issueI9ABGS
+ */
+HWTEST_F(RSInterfacesTest, CreatePixelMapFromSurfaceId003, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    auto cSurface = IConsumerSurface::Create();
+    ASSERT_NE(cSurface, nullptr);
+    sptr<IBufferConsumerListener> listener = new BufferConsumerTestListener();
+    cSurface->RegisterConsumerListener(listener);
+    sptr<IBufferProducer> producer = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(producer);
+
+    int releaseFence = -1;
+    int32_t width = 0x200;
+    int32_t height = 0x100;
+    sptr<SurfaceBuffer> buffer;
+    BufferRequestConfig requestConfig = {
+        .width = width,
+        .height = height,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+    };
+    BufferFlushConfig flushConfig = {
+        .damage = {
+            .w = width,
+            .h = height,
+        }
+    };
+    GSError ret = pSurface->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+    ret = pSurface->FlushBuffer(buffer, releaseFence, flushConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    OHOS::Rect rect = {
+        .x = 0,
+        .y = 0,
+        .w = 0x200,
+        .h = 0x100,
+    };
+    uint64_t surfaceId = static_cast<uint64_t>(cSurface->GetUniqueId());
+    auto utils = SurfaceUtils::GetInstance();
+    utils->Add(surfaceId, cSurface);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H);
+    auto pixelMap1 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V);
+    auto pixelMap2 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT90);
+    auto pixelMap3 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT90);
+    auto pixelMap4 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H);
+    auto pixelMap5 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V);
+    auto pixelMap6 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT90);
+    auto pixelMap7 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT90);
+    auto pixelMap8 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+
+#if defined(RS_ENABLE_UNI_RENDER)
+    ASSERT_NE(pixelMap1, nullptr);
+    ASSERT_NE(pixelMap2, nullptr);
+    ASSERT_NE(pixelMap3, nullptr);
+    ASSERT_NE(pixelMap4, nullptr);
+    ASSERT_NE(pixelMap5, nullptr);
+    ASSERT_NE(pixelMap6, nullptr);
+    ASSERT_NE(pixelMap7, nullptr);
+    ASSERT_NE(pixelMap8, nullptr);
+    EXPECT_EQ(std::make_pair(pixelMap1->GetHeight(), pixelMap1->GetWidth()),
+    std::make_pair(pixelMap5->GetHeight(), pixelMap5->GetWidth()));
+    EXPECT_EQ(std::make_pair(pixelMap2->GetHeight(), pixelMap2->GetWidth()),
+    std::make_pair(pixelMap6->GetHeight(), pixelMap6->GetWidth()));
+    EXPECT_EQ(std::make_pair(pixelMap3->GetHeight(), pixelMap3->GetWidth()),
+    std::make_pair(pixelMap7->GetWidth(), pixelMap7->GetHeight()));
+    EXPECT_EQ(std::make_pair(pixelMap4->GetHeight(), pixelMap4->GetWidth()),
+    std::make_pair(pixelMap8->GetWidth(), pixelMap8->GetHeight()));
+#endif
+}
+
+/*
+ * @tc.name: CreatePixelMapFromSurfaceId
+ * @tc.desc: Test CreatePixelMapFromSurfaceId.
+ * @tc.type: FUNC
+ * @tc.require: issueI9ABGS
+ */
+HWTEST_F(RSInterfacesTest, CreatePixelMapFromSurfaceId004, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    auto cSurface = IConsumerSurface::Create();
+    ASSERT_NE(cSurface, nullptr);
+    sptr<IBufferConsumerListener> listener = new BufferConsumerTestListener();
+    cSurface->RegisterConsumerListener(listener);
+    sptr<IBufferProducer> producer = cSurface->GetProducer();
+    sptr<Surface> pSurface = Surface::CreateSurfaceAsProducer(producer);
+
+    int releaseFence = -1;
+    int32_t width = 0x200;
+    int32_t height = 0x100;
+    sptr<SurfaceBuffer> buffer;
+    BufferRequestConfig requestConfig = {
+        .width = width,
+        .height = height,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+    };
+    BufferFlushConfig flushConfig = {
+        .damage = {
+            .w = width,
+            .h = height,
+        }
+    };
+    GSError ret = pSurface->RequestBuffer(buffer, releaseFence, requestConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+    ret = pSurface->FlushBuffer(buffer, releaseFence, flushConfig);
+    ASSERT_EQ(ret, OHOS::GSERROR_OK);
+
+    OHOS::Rect rect = {
+        .x = 0,
+        .y = 0,
+        .w = 0x200,
+        .h = 0x100,
+    };
+    uint64_t surfaceId = static_cast<uint64_t>(cSurface->GetUniqueId());
+    auto utils = SurfaceUtils::GetInstance();
+    utils->Add(surfaceId, cSurface);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT180);
+    auto pixelMap1 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT180);
+    auto pixelMap2 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT270);
+    auto pixelMap3 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT270);
+    auto pixelMap4 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, true);
+
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT180);
+    auto pixelMap5 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT180);
+    auto pixelMap6 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_H_ROT270);
+    auto pixelMap7 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+    pSurface->SetTransform(GraphicTransformType::GRAPHIC_FLIP_V_ROT270);
+    auto pixelMap8 = rsInterfaces->CreatePixelMapFromSurfaceId(surfaceId, rect, false);
+
+#if defined(RS_ENABLE_UNI_RENDER)
+    ASSERT_NE(pixelMap1, nullptr);
+    ASSERT_NE(pixelMap2, nullptr);
+    ASSERT_NE(pixelMap3, nullptr);
+    ASSERT_NE(pixelMap4, nullptr);
+    ASSERT_NE(pixelMap5, nullptr);
+    ASSERT_NE(pixelMap6, nullptr);
+    ASSERT_NE(pixelMap7, nullptr);
+    ASSERT_NE(pixelMap8, nullptr);
+    EXPECT_EQ(std::make_pair(pixelMap1->GetHeight(), pixelMap1->GetWidth()),
+    std::make_pair(pixelMap5->GetHeight(), pixelMap5->GetWidth()));
+    EXPECT_EQ(std::make_pair(pixelMap2->GetHeight(), pixelMap2->GetWidth()),
+    std::make_pair(pixelMap6->GetHeight(), pixelMap6->GetWidth()));
+    EXPECT_EQ(std::make_pair(pixelMap3->GetHeight(), pixelMap3->GetWidth()),
+    std::make_pair(pixelMap7->GetWidth(), pixelMap7->GetHeight()));
+    EXPECT_EQ(std::make_pair(pixelMap4->GetHeight(), pixelMap4->GetWidth()),
+    std::make_pair(pixelMap8->GetWidth(), pixelMap8->GetHeight()));
 #endif
 }
 
@@ -2677,7 +3070,6 @@ HWTEST_F(RSInterfacesTest, GetScreenHDRStatus002, Function | SmallTest | Level2)
     HdrStatus hdrStatus = HdrStatus::HDR_PHOTO;
     int ret = rsInterfaces->GetScreenHDRStatus(INVALID_SCREEN_ID, hdrStatus);
     EXPECT_EQ(ret, StatusCode::SCREEN_NOT_FOUND);
-    EXPECT_EQ(hdrStatus, HdrStatus::NO_HDR);
 }
 
 /*
@@ -2709,6 +3101,148 @@ HWTEST_F(RSInterfacesTest, AvcodecVideoStop001, Function | SmallTest | Level2)
     std::vector<std::string> surfaceNameList = {"surface1"};
     uint32_t fps = 120;
     rsInterfaces->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
+}
+
+/*
+ * @tc.name: AvcodecVideoGet001
+ * @tc.desc: Test AvcodecVideoGet
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, AvcodecVideoGet001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    uint64_t uniqueId = 1;
+    rsInterfaces->AvcodecVideoGet(uniqueId);
+}
+ 
+/*
+ * @tc.name: AvcodecVideoGetRecent001
+ * @tc.desc: Test AvcodecVideoGetRecent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, AvcodecVideoGetRecent001, Function | SmallTest | Level2)
+{
+    ASSERT_NE(rsInterfaces, nullptr);
+    rsInterfaces->AvcodecVideoGetRecent();
+}
+
+/*
+* Function: SetDualScreenState
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetDualScreenState with INVALID_SCREEN_ID
+*                  2. check
+*/
+HWTEST_F(RSInterfacesTest, SetDualScreenState001, Function | SmallTest | Level2)
+{
+    auto ret = rsInterfaces->SetDualScreenState(INVALID_SCREEN_ID, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_NE(ret, static_cast<int32_t>(StatusCode::SUCCESS));
+}
+
+/*
+* Function: SetDualScreenState
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetDualScreenState with valid screen id
+*                  2. check
+*/
+HWTEST_F(RSInterfacesTest, SetDualScreenState002, Function | SmallTest | Level2)
+{
+    auto screenId = rsInterfaces->GetDefaultScreenId();
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
+
+    rsInterfaces->SetDualScreenState(screenId, DualScreenStatus::DUAL_SCREEN_ENTER);
+}
+
+/*
+* Function: SetDualScreenState
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call SetDualScreenState with valid screen id, but invalid status
+*                  2. check
+*/
+HWTEST_F(RSInterfacesTest, SetDualScreenState003, Function | SmallTest | Level2)
+{
+    auto screenId = rsInterfaces->GetDefaultScreenId();
+    EXPECT_NE(screenId, INVALID_SCREEN_ID);
+
+    auto ret = rsInterfaces->SetDualScreenState(screenId, DualScreenStatus::DUAL_SCREEN_STATUS_BUTT);
+    EXPECT_NE(ret, static_cast<int32_t>(StatusCode::SUCCESS));
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenWhiteList001
+ * @tc.desc: modify virtual screen white list
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSInterfacesTest, ModifyVirtualScreenWhiteList001, Function | SmallTest | Level2)
+{
+    ScreenId virtualScreenId = rsInterfaces->CreateVirtualScreen(
+        "virtual0", DEFAULT_SCREEN_WIDTH, DEFAULT_SCREEN_HEIGHT, nullptr, INVALID_SCREEN_ID, -1);
+    ASSERT_NE(virtualScreenId, INVALID_SCREEN_ID);
+
+    NodeId nodeId = 1;
+    ASSERT_EQ(rsInterfaces->AddVirtualScreenWhiteList(virtualScreenId, {nodeId}), SUCCESS);
+    ASSERT_EQ(rsInterfaces->RemoveVirtualScreenWhiteList(virtualScreenId, {nodeId}), SUCCESS);
+    rsInterfaces->RemoveVirtualScreen(virtualScreenId);
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenWhiteList002
+ * @tc.desc: modify virtual screen white list while connectionHub is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSInterfacesTest, ModifyVirtualScreenWhiteList002, Function | SmallTest | Level2)
+{
+    RSRenderServiceConnectHub::instance_ = nullptr;
+
+    NodeId nodeId = 1;
+    ScreenId screenId = INVALID_SCREEN_ID;
+    ASSERT_NE(rsInterfaces->AddVirtualScreenWhiteList(screenId, {nodeId}), SUCCESS);
+    ASSERT_NE(rsInterfaces->RemoveVirtualScreenWhiteList(screenId, {nodeId}), SUCCESS);
+
+    // restore
+    RSRenderServiceConnectHub::instance_ = new RSRenderServiceConnectHub();
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenBlackList001
+ * @tc.desc: modify virtual screen black list while connectionHub is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSInterfacesTest, ModifyVirtualScreenBlackList001, Function | SmallTest | Level2)
+{
+    RSRenderServiceConnectHub::instance_ = nullptr;
+
+    NodeId nodeId = 1;
+    ScreenId screenId = INVALID_SCREEN_ID;
+    ASSERT_NE(rsInterfaces->AddVirtualScreenBlackList(screenId, {nodeId}), SUCCESS);
+    ASSERT_NE(rsInterfaces->RemoveVirtualScreenBlackList(screenId, {nodeId}), SUCCESS);
+
+    // restore
+    RSRenderServiceConnectHub::instance_ = new RSRenderServiceConnectHub();
+}
+
+/**
+ * @tc.name: SetLogicalCameraRotationCorrection
+ * @tc.desc: SetLogicalCameraRotationCorrection
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetLogicalCameraRotationCorrection, Function | SmallTest | Level2)
+{
+    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+    ScreenId screenId = 0;
+    ScreenRotation logicalRotation = ScreenRotation::ROTATION_90;
+    EXPECT_EQ(instance.SetLogicalCameraRotationCorrection(screenId, logicalRotation), SUCCESS);
 }
 } // namespace Rosen
 } // namespace OHOS

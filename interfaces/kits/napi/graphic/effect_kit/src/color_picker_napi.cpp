@@ -29,7 +29,7 @@ namespace {
     constexpr uint32_t NUM_2 = 2;
     constexpr uint32_t NUM_3 = 3;
     constexpr uint32_t NUM_4 = 4;
-    constexpr double PROPORTION_COLORS_NUM_LIMIT = 10.0; // proportion colors limit num 10
+    constexpr double PROPORTION_COLORS_NUM_LIMIT = 20.0; // proportion colors limit num 20
 }
 
 namespace {
@@ -218,7 +218,8 @@ napi_value ColorPickerNapi::Constructor(napi_env env, napi_callback_info info)
     pColorPickerNapi->env_ = env;
     pColorPickerNapi->nativeColorPicker_ = sColorPicker_;
 
-    status = napi_wrap(env, thisVar, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr, nullptr);
+    status = napi_wrap_s(env, thisVar, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr,
+        &ColorPickerNapi::NAPI_TYPE_TAG, nullptr);
     EFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, undefineVar, pColorPickerNapi,
         EFFECT_LOG_E("ColorPickerNapi Constructor wrap fail"));
 
@@ -247,7 +248,8 @@ napi_value ColorPickerNapi::CreateColorPickerFromPtr(napi_env env, std::shared_p
     }
     pColorPickerNapi->env_ = env;
     pColorPickerNapi->nativeColorPicker_ = picker;
-    auto status = napi_wrap(env, objValue, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr, nullptr);
+    auto status = napi_wrap_s(env, objValue, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr,
+        &ColorPickerNapi::NAPI_TYPE_TAG, nullptr);
     EFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, pColorPickerNapi,
         EFFECT_LOG_E("ColorPickerNapi CreateColorPickerFromPtr wrap fail"));
     return objValue;

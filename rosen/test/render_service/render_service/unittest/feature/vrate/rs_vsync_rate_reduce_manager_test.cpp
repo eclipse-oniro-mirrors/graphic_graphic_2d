@@ -124,9 +124,6 @@ HWTEST_F(RSVsyncRateReduceManagerTest, ResetFrameValues001, TestSize.Level1)
     EXPECT_EQ(0, rateReduceManager.oneFramePeriod_);
     EXPECT_EQ(true, rateReduceManager.curAllMainAndLeashWindowNodesIds_.empty());
 
-    rateReduceManager.lastVisMapForVSyncVisLevel_.emplace(nodeId, RSVisibleLevel::RS_ALL_VISIBLE);
-    rateReduceManager.ClearLastVisMapForVsyncRate();
-    EXPECT_EQ(false, rateReduceManager.lastVisMapForVSyncVisLevel_.empty());
     rateReduceManager.CollectSurfaceVsyncInfo(screenInfo, *surfaceNode);
     EXPECT_EQ(true, rateReduceManager.surfaceVRateMap_.empty());
 
@@ -136,9 +133,6 @@ HWTEST_F(RSVsyncRateReduceManagerTest, ResetFrameValues001, TestSize.Level1)
     rateReduceManager.curTime_ = noneZero;
     rateReduceManager.FrameDurationEnd();
     EXPECT_NE(0, rateReduceManager.curTime_);
-    rateReduceManager.isReduceBySystemAnimatedScenes_ = true;
-    rateReduceManager.SetIsReduceBySystemAnimatedScenes(false);
-    EXPECT_EQ(true, rateReduceManager.isReduceBySystemAnimatedScenes_);
 
     rateReduceManager.vRateConditionQualified_ = true;
     rateReduceManager.oneFramePeriod_ = 0;
@@ -178,9 +172,6 @@ HWTEST_F(RSVsyncRateReduceManagerTest, ResetFrameValues002, TestSize.Level1)
     EXPECT_NE(0, rateReduceManager.oneFramePeriod_);
     EXPECT_EQ(false, rateReduceManager.curAllMainAndLeashWindowNodesIds_.empty());
 
-    rateReduceManager.lastVisMapForVSyncVisLevel_.emplace(nodeId, RSVisibleLevel::RS_ALL_VISIBLE);
-    rateReduceManager.ClearLastVisMapForVsyncRate();
-    EXPECT_EQ(true, rateReduceManager.lastVisMapForVSyncVisLevel_.empty());
     rateReduceManager.CollectSurfaceVsyncInfo(screenInfo, *surfaceNode);
     EXPECT_EQ(false, rateReduceManager.surfaceVRateMap_.empty());
 
@@ -189,9 +180,6 @@ HWTEST_F(RSVsyncRateReduceManagerTest, ResetFrameValues002, TestSize.Level1)
     rateReduceManager.curTime_ = 100;
     rateReduceManager.FrameDurationEnd();
     EXPECT_EQ(0, rateReduceManager.curTime_);
-    rateReduceManager.isReduceBySystemAnimatedScenes_ = true;
-    rateReduceManager.SetIsReduceBySystemAnimatedScenes(false);
-    EXPECT_EQ(false, rateReduceManager.isReduceBySystemAnimatedScenes_);
 
     rateReduceManager.ResetFrameValues(0);
     EXPECT_EQ(false, rateReduceManager.vRateConditionQualified_);
@@ -265,7 +253,6 @@ HWTEST_F(RSVsyncRateReduceManagerTest, CheckNeedNotify001, TestSize.Level1)
     rateReduceManager.isSystemAnimatedScenes_ = true;
     EXPECT_EQ(true, rateReduceManager.CheckNeedNotify());
     EXPECT_EQ(false, rateReduceManager.CheckNeedNotify());
-    EXPECT_EQ(true, rateReduceManager.isReduceBySystemAnimatedScenes_);
 
     rateReduceManager.isSystemAnimatedScenes_ = false;
     rateReduceManager.curAllMainAndLeashWindowNodesIds_.emplace_back(nodeId);
@@ -274,7 +261,7 @@ HWTEST_F(RSVsyncRateReduceManagerTest, CheckNeedNotify001, TestSize.Level1)
     EXPECT_EQ(true, rateReduceManager.CheckNeedNotify());
     auto& vSyncRateMap = rateReduceManager.vSyncRateMap_;
     EXPECT_NE(vSyncRateMap.end(), vSyncRateMap.find(nodeId2));
-    EXPECT_EQ(false, rateReduceManager.CheckNeedNotify());
+    EXPECT_EQ(true, rateReduceManager.CheckNeedNotify());
     EXPECT_NE(vSyncRateMap.end(), vSyncRateMap.find(nodeId));
 }
 

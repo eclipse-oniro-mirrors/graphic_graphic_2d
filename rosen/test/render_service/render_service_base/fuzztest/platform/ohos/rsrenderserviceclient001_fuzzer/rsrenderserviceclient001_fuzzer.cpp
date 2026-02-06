@@ -206,6 +206,8 @@ bool DoCreatePixelMapFromSurfaceId()
     uint64_t surfaceId = GetData<uint64_t>();
     Rect srcRect = {0, 0, 100, 100};
     renderServiceClient->CreatePixelMapFromSurfaceId(surfaceId, srcRect);
+    renderServiceClient->CreatePixelMapFromSurfaceId(surfaceId, srcRect, true);
+    renderServiceClient->CreatePixelMapFromSurfaceId(surfaceId, srcRect, false);
     return true;
 }
 
@@ -235,7 +237,7 @@ bool DoTriggerSurfaceCaptureCallback()
     captureConfig.mainScreenRect.top_ = GetData<float>();
     captureConfig.mainScreenRect.right_ = GetData<float>();
     captureConfig.mainScreenRect.bottom_ = GetData<float>();
-    renderPipelineClient->TriggerSurfaceCaptureCallback(id, captureConfig, pixelMap);
+    renderPipelineClient->TriggerSurfaceCaptureCallback(id, captureConfig, pixelMap, CaptureError::CAPTURE_OK);
     return true;
 }
 

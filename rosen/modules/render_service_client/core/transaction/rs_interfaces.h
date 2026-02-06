@@ -89,11 +89,11 @@ public:
     /**
      * @brief Set list of surface node id, these nodes will be excluded from this screen.
      * @param id Valid screen id: set screen record black list; INVALID_SCREEN_ID: set screen cast black list.
-     * @param blackListVector List of surface node id. If the screen id is INVALID_SCREEN_ID, the blackListVector will
+     * @param blackList List of surface node id. If the screen id is INVALID_SCREEN_ID, the blackList will
      * apply to all virtual screens.
      * @return 0 means success.
      */
-    int32_t SetVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
+    int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
 
     /**
      * @brief Use nodeType to Set blackList for mirror screen.
@@ -106,18 +106,34 @@ public:
     /**
      * @brief Add list of surfaceNodeId excluded on virtual screen.
      * @param id Screen id.
-     * @param blackListVector Vector of surfaceNodeId excluded on virtual screen.
+     * @param blackList Vector of surfaceNodeId excluded on virtual screen.
      * @return 0 means success, others failed.
      */
-    int32_t AddVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
+    int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
 
     /**
      * @brief Remove list of surfaceNodeId excluded on virtual screen.
      * @param id screen id.
-     * @param blackListVector Vector of surfaceNodeId excluded on virtual screen.
+     * @param blackList Vector of surfaceNodeId excluded on virtual screen.
      * @return 0 means success, others failed.
      */
-    int32_t RemoveVirtualScreenBlackList(ScreenId id, std::vector<NodeId>& blackListVector);
+    int32_t RemoveVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
+
+    /**
+     * @brief Add nodeIds that are allowed to render on the specified virtual screen
+     * @param id screen id.
+     * @param whiteList nodeIds to be added to the whitelist (duplicates will be ignored)
+     * @return 0 means success, others failed.
+     */
+    int32_t AddVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
+
+    /**
+     * @brief Remove nodeIds that are allowed to render on the specified virtual screen
+     * @param id screen id.
+     * @param whiteList nodeIds to be removed from the whitelist
+     * @return 0 means success, others failed.
+     */
+    int32_t RemoveVirtualScreenWhiteList(ScreenId id, const std::vector<NodeId>& whiteList);
 
     /**
      * @brief Set security layer exemption list for mirror screen.
@@ -202,10 +218,14 @@ public:
      * @brief Set watermark for surfaceNode.
      * @param name Watermark name.
      * @param watermark Watermark pixelmap.
+     * @param maxSize The maximum supported image size is 6MB. if the maximum image size exceeds 512Kb,
+     * the time to draw the watermark will increase. In such cases, consider using DMA mode for pixelMap
+     * @attention watermark has a maximum of 1000 images.
+     * @attention When not using a watermark, the watermark image should be released.
      * @return set watermark success return true, else return false.
      */
-    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
-
+    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+        SaSurfaceWatermarkMaxSize maxSize = SaSurfaceWatermarkMaxSize::SA_WATER_MARK_DEFAULT_SIZE);
 
     /**
      * @brief Set watermark for surfaceNode.
@@ -214,27 +234,32 @@ public:
      * @param watermark Watermark pixelmap.
      * @param nodeIdList Node id list
      * @param watermarkType custom or system watermark.
+     * @attention if the maximum image size exceeds 512Kb, the time to draw the watermark will increase. In such cases,
+     * consider using DMA mode for pixelMap
+     * @attention watermark has a maximum of 1000 images.
+     * @attention When not using a watermark, the watermark image should be released.
+     * @attention if SurfaceWatermarkType is SYSTEM_WATER_MARK, the nodeList is ineffective. Therefore,
+     * SetWatermarkEnabled needs to be set.
      * @return set watermark success return 0, else return errorCode.
      */
-    uint32_t SetSurfaceWatermark(pid_t pid, const std::string &name,
-        const std::shared_ptr<Media::PixelMap> &watermark,
+    uint32_t SetSurfaceWatermark(pid_t pid,
+        const std::string &name, const std::shared_ptr<Media::PixelMap> &watermark,
         const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType);
 
     /**
-     * @brief Set watermark for surfaceNode.
+     * @brief Clear watermark for select surfaceNodes.
      * @param pid pid of process.
-     * @param name Watermark name.
-     * @param watermark Watermark pixelmap.
+     * @param name Watermark name. Note: Ensure the watermark name is unique
+     * @param nodeIdList Clear watermark for surfaceNodes
      */
-    void ClearSurfaceWatermarkForNodes(pid_t pid, const std::string &name,
-        const std::vector<NodeId> &nodeIdList);
+    void ClearSurfaceWatermarkForNodes(pid_t pid, const std::string& name, const std::vector<NodeId>& nodeIdList);
 
     /**
-     * @brief Set watermark for surfaceNode.
+     * @brief Clear watermark
      * @param pid pid of process.
-     * @param name Watermark name.
+     * @param name Watermark name. Note: ensure watermark name is unique.
      */
-    void ClearSurfaceWatermark(pid_t pid, const std::string &name);
+    void ClearSurfaceWatermark(pid_t pid, const std::string& name);
 
     /**
      * @brief Get pixelmaps generated by this selfDrawingNodes in the process.
@@ -253,6 +278,16 @@ public:
      */
     bool TakeSurfaceCapture(std::shared_ptr<RSSurfaceNode> node, std::shared_ptr<SurfaceCaptureCallback> callback,
         RSSurfaceCaptureConfig captureConfig = {});
+
+    /**
+     * @brief Get component snapshot.
+     * @param node can be rootNode、surfaceNode、canvasNode、CanvasDrawingNode.
+     * @param callback When the snapshot is complete, the callback will be triggered.
+     * @param RSSurfaceCaptureConfig Indicates RSSurfaceCaptureConfig.
+     * @return return true if snaphot success, else return false.
+     */
+    bool TakeSurfaceCaptureForUIWithConfig(std::shared_ptr<RSNode> node,
+        std::shared_ptr<SurfaceCaptureCallback> callback, RSSurfaceCaptureConfig captureConfig = {});
 
     /**
      * @brief Get snapshot of surfaceNode, and security layer area is a drawn as a blur instead of white.
@@ -363,6 +398,19 @@ public:
      */
     bool TakeUICaptureInRange(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode, bool useBeginNodeSize,
         std::shared_ptr<SurfaceCaptureCallback> callback, float scaleX, float scaleY, bool isSync);
+
+    /**
+     * @brief Get component snapshot Within the given node range.
+     * @param beginNode Indicates first child of snapshot.
+     * @param endNode Indicates end child of snapshot.
+     * @param useBeginNodeSize Indicates Whether use the size of begin node.
+     * @param callback When the snapshot is complete, the callback will be triggered.
+     * @param RSSurfaceCaptureConfig Indicates RSSurfaceCaptureConfig.
+     * @return return true if snaphot success, else return false.
+     */
+    bool TakeUICaptureInRangeWithConfig(std::shared_ptr<RSNode> beginNode, std::shared_ptr<RSNode> endNode,
+        bool useBeginNodeSize, std::shared_ptr<SurfaceCaptureCallback> callback,
+        RSSurfaceCaptureConfig captureConfig = {});
 
     /**
      * @brief Simplify the original interfaces set boundaries for cursor movemonet and reduce the workload.
@@ -510,7 +558,15 @@ public:
      * @param status The status to set to the screen.
      */
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
-    
+
+    /**
+     * @brief Set dual-screen display mode.
+     * @param id Id of the screen to set.
+     * @param status The status to set to the screen, see DualScreenStatus
+     * @return 0 means success, others failed.
+     */
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
+
     /**
      * @brief Get active mode of the screen.
      * @param id Id of the screen to get active mode.
@@ -610,6 +666,13 @@ public:
      * @return ScreenPowerStatus.
      */
     ScreenPowerStatus GetScreenPowerStatus(ScreenId id);
+
+    /**
+     * @brief Get power status of the specified screen.
+     * @param id Id of the screen.
+     * @return PanelPowerStatus.
+     */
+    PanelPowerStatus GetPanelPowerStatus(ScreenId id);
 
     /**
      * @brief Get date of screen.
@@ -834,9 +897,11 @@ public:
      * @brief Create a pixelmap obeject from surface id.
      * @param surfaceId Indicates the id of surface.
      * @param srcRect Indicates the area that requires a rectangle.
+     * @param transformEnabled Indicates the rotation toggle for the pixelmap interface.
      * @return return a pixelmap obeject.
      */
-    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceId, const Rect &srcRect);
+    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceId,
+        const Rect &srcRect, bool transformEnabled = false);
 
     /**
      * @brief Register window occlusion change callback.
@@ -916,12 +981,6 @@ public:
      * @return UnRegister result, 0 success, else failed.
      */
     int32_t UnRegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid);
-
-    /**
-     * @brief Set appWindow number.
-     * @param num winodw number.
-     */
-    void SetAppWindowNum(uint32_t num);
 
     /*
      * @brief Set the system overload Animated Scenes to RS for special load shedding.
@@ -1018,8 +1077,9 @@ public:
      * @brief Notify touch event.
      * @param touchStatus status of touch.
      * @param touchCnt the count of touch.
+     * @param sourceType the input type from multiinput.
      */
-    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType);
 
     /**
      * @brief Notify dynamic mode event.
@@ -1103,9 +1163,12 @@ public:
      * @brief Set the process ID list requiring frame dropping. Next time RS triggers rending,
      * it will purge queued frames of corresponding self-rendering nodes in bufferQueue, and use the latest frame
      * buffer for screen display.
-     * @param pidList Process ID list requiring frame dropping.
+     * @param dropFrameLevel Controls how many latest frames to retain:
+     *        - 0: No frame dropping (default)
+     *        - 1~N: Keep latest N frames, drop the rest
+     *        - >= bufferQueueSize: No frame dropping
      */
-    void DropFrameByPid(const std::vector<int32_t> pidList);
+    void DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0);
 
     /**
      * @brief Get active dirty region info.
@@ -1298,6 +1361,18 @@ public:
 
     void AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps);
+
+    bool AvcodecVideoGet(uint64_t uniqueId);
+
+    bool AvcodecVideoGetRecent();
+
+    /**
+     * @brief Set logical camera rotation correction, used to correct logical rotation.
+     * @param id Screen id.
+     * @param logicalCorrection Logical camera rotation correction, see ScreenRotation.
+     * @return 0 means success, others failed.
+     */
+    int32_t SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection);
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

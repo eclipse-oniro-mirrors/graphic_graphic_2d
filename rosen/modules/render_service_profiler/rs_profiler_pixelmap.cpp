@@ -144,6 +144,42 @@ bool PixelMapStorage::Push(uint64_t id, const ImageInfo& info, const PixelMemInf
     return true;
 }
 
+bool PixelMapStorage::Push(uint64_t id, SurfaceBuffer& buffer)
+{
+    if (buffer.GetFormat() != GRAPHIC_PIXEL_FMT_RGBA_8888) {
+        return false;
+    }
+    ImageInfo info { .size = { buffer.GetWidth(), buffer.GetHeight() },
+        .pixelFormat = Media::PixelFormat::RGBA_8888,
+        .colorSpace = Media::ColorSpace::SRGB };
+    const auto pixels =
+        GenerateImageData(id, reinterpret_cast<const uint8_t*>(buffer.GetVirAddr()), buffer.GetSize(), false, 4);
+    ImageProperties properties(info, AllocatorType::DMA_ALLOC);
+    return PushImage(id, pixels, 0, buffer.GetBufferHandle(), &properties);
+}
+
+bool PixelMapStorage::Pull(uint64_t id, SurfaceBuffer& buffer)
+{
+    auto image = ImageCache::Get(id);
+    if (!image) {
+        return false;
+    }
+
+    const BufferRequestConfig config = { .width = image->dmaWidth,
+        .height = image->dmaHeight,
+        .strideAlignment = image->dmaStride,
+        .format = image->dmaFormat,
+        .usage = image->dmaUsage };
+    buffer.Alloc(config);
+
+    if (!CopyImageData(image, static_cast<uint8_t*>(buffer.GetVirAddr()), image->dmaSize)) {
+        return false;
+    }
+    buffer.FlushCache();
+
+    return true;
+}
+
 bool PixelMapStorage::PullSharedMemory(uint64_t id, const ImageInfo& info, PixelMemInfo& memory, size_t& skipBytes)
 {
     skipBytes = 0u;
@@ -267,25 +303,22 @@ bool PixelMapStorage::PushHeapMemory(uint64_t id, const ImageInfo& info, const P
 
 bool PixelMapStorage::PushHeapMemory(uint64_t id, PixelMap& map)
 {
-    if (!map.GetFd()) {
+    const auto *data = map.GetPixels();
+    const auto size = static_cast<size_t>(map.GetByteCount());
+    if (!data || !size) {
         return false;
     }
 
-    constexpr size_t skipBytes = 24u;
-    const auto baseSize = static_cast<size_t>(const_cast<PixelMap&>(map).GetByteCount());
+    constexpr size_t skipFdSize = 24u; // skip fd size
+    const auto skipBytes = (size <= PixelMap::MIN_IMAGEDATA_SIZE) ? size : skipFdSize;
     const ImageProperties properties(map);
-    const uint8_t *base = map.GetPixels();
-    if (base && baseSize) {
-        const auto pixels = GenerateImageData(0, base, baseSize, map);
-        return PushImage(id, pixels, skipBytes, nullptr, &properties);
-    }
-    return false;
+    return PushImage(id, GenerateImageData(0, data, size, map), skipBytes, nullptr, &properties);
 }
 
 bool PixelMapStorage::PullHeapMemory(uint64_t id, const ImageInfo& info, PixelMemInfo& memory, size_t& skipBytes)
 {
-    if (memory.bufferSize <= PixelMap::MIN_IMAGEDATA_SIZE) {
-        return false;
+    if (memory.bufferSize <= static_cast<int32_t>(PixelMap::MIN_IMAGEDATA_SIZE)) {
+        return PullSharedMemory(id, info, memory, skipBytes);
     }
 
     auto retCode = PullSharedMemory(id, info, memory, skipBytes);

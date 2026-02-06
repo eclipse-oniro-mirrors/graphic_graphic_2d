@@ -94,17 +94,9 @@ void RSVsyncRateReduceManager::PushWindowNodeId(NodeId nodeId)
     curAllMainAndLeashWindowNodesIds_.emplace_back(nodeId);
 }
 
-void RSVsyncRateReduceManager::ClearLastVisMapForVsyncRate()
-{
-    if (!vRateReduceEnabled_) {
-        return;
-    }
-    lastVisMapForVSyncVisLevel_.clear();
-}
-
 void RSVsyncRateReduceManager::FrameDurationBegin()
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     curTime_ = Now();
@@ -112,7 +104,7 @@ void RSVsyncRateReduceManager::FrameDurationBegin()
 
 void RSVsyncRateReduceManager::FrameDurationEnd()
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     if (oneFramePeriod_ > 0) {
@@ -120,14 +112,6 @@ void RSVsyncRateReduceManager::FrameDurationEnd()
         EnqueueFrameDuration(val);
     }
     curTime_ = 0;
-}
-
-void RSVsyncRateReduceManager::SetIsReduceBySystemAnimatedScenes(bool isReduceBySystemAnimatedScenes)
-{
-    if (!vRateReduceEnabled_) {
-        return;
-    }
-    isReduceBySystemAnimatedScenes_ = isReduceBySystemAnimatedScenes;
 }
 
 void RSVsyncRateReduceManager::EnqueueFrameDuration(float duration)
@@ -141,7 +125,7 @@ void RSVsyncRateReduceManager::EnqueueFrameDuration(float duration)
 
 void RSVsyncRateReduceManager::CollectSurfaceVsyncInfo(const ScreenInfo& screenInfo, RSSurfaceRenderNode& surfaceNode)
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     if (surfaceNode.IsHardwareEnabledTopSurface()) {
@@ -175,7 +159,7 @@ void RSVsyncRateReduceManager::CollectSurfaceVsyncInfo(const ScreenInfo& screenI
 
 void RSVsyncRateReduceManager::SetUniVsync()
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     RS_TRACE_FUNC();
@@ -406,7 +390,7 @@ bool RSVsyncRateReduceManager::CheckNeedNotify()
 {
     bool surfaceIdsChanged = lastAllMainAndLeashWindowNodesIds_ != curAllMainAndLeashWindowNodesIds_;
     bool focusChanged = lastFocusedNodeId_ != focusedNodeId_;
-    bool needRefresh = !isSystemAnimatedScenes_ && isReduceBySystemAnimatedScenes_;
+    bool needRefresh = !isSystemAnimatedScenes_;
     bool notifyCdt = vSyncRatesChanged_ || surfaceIdsChanged || focusChanged || needRefresh;
     RS_LOGD("CheckNeedNotify notifyCdt=%{public}d %{public}s%{public}s%{public}s%{public}s%{public}s", notifyCdt,
         isSystemAnimatedScenes_ ? "sysAnimated|" : "", needRefresh ? "needR|" : "", vSyncRatesChanged_ ? "ratesC|" : "",
@@ -423,18 +407,12 @@ bool RSVsyncRateReduceManager::CheckNeedNotify()
     if (focusChanged) {
         lastFocusedNodeId_ = focusedNodeId_;
     }
-    if (needRefresh) {
-        isReduceBySystemAnimatedScenes_ = false;
-    }
     if (surfaceIdsChanged || needRefresh) {
         for (const auto& [nodeId, rate]: lastVSyncRateMap_) {
             if (vSyncRateMap_.find(nodeId) == vSyncRateMap_.end()) {
                 vSyncRateMap_.emplace(nodeId, DEFAULT_RATE);
             }
         }
-    }
-    if (isSystemAnimatedScenes_) {
-        isReduceBySystemAnimatedScenes_ = true;
     }
     return true;
 }

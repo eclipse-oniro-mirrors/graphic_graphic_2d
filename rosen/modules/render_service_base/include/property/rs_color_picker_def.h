@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +15,8 @@
 
 #ifndef RENDER_SERVICE_BASE_PROPERTY_RS_COLOR_PICKER_DEF_H
 #define RENDER_SERVICE_BASE_PROPERTY_RS_COLOR_PICKER_DEF_H
+
+#include <cstdint>
 
 namespace OHOS {
 namespace Rosen {
@@ -33,7 +35,27 @@ enum class ColorPickStrategyType : int16_t {
     DOMINANT,
     AVERAGE,
     CONTRAST,
-    MAX = CONTRAST
+    CLIENT_CALLBACK, // pick average color and callback to notify client side
+    MAX = CLIENT_CALLBACK
+};
+
+struct ColorPickerParam {
+    ColorPlaceholder placeholder = ColorPlaceholder::NONE;
+    ColorPickStrategyType strategy = ColorPickStrategyType::NONE;
+    uint64_t interval = 0;
+    uint32_t notifyThreshold = 0; // minimum luminance difference to trigger notification (0-255, 0 = always notify).
+                                  // Skip notification if difference is less than this value.
+
+    ColorPickerParam() = default;
+    ColorPickerParam(ColorPlaceholder ph, ColorPickStrategyType st, uint64_t itv)
+        : placeholder(ph), strategy(st), interval(itv)
+    {}
+
+    bool operator==(const ColorPickerParam& other) const
+    {
+        return placeholder == other.placeholder && strategy == other.strategy && interval == other.interval &&
+               notifyThreshold == other.notifyThreshold;
+    }
 };
 } // namespace Rosen
 } // namespace OHOS

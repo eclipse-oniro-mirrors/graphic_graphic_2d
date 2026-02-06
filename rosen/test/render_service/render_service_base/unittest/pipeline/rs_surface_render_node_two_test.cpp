@@ -594,7 +594,6 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, AccumulateOcclusionRegion, TestSize.Level1)
     EXPECT_TRUE(accumulatedRegion.IsEmpty());
     auto parentSurfaceNode = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
     testNode->SetParent(parentSurfaceNode);
-    testNode->isOcclusionInSpecificScenes_ = true;
     testNode->AccumulateOcclusionRegion(
         accumulatedRegion, curRegion, hasFilterCacheOcclusion, isUniRender, filterCacheOcclusionEnabled);
     EXPECT_FALSE(hasFilterCacheOcclusion);
@@ -632,6 +631,40 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, AccumulateOcclusionRegion, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AccumulateOcclusionRegion002
+ * @tc.desc: test results of testNode's animateState ande parentNode in scale
+ * @tc.type: FUNC
+ * @tc.require: issue20843
+ */
+HWTEST_F(RSSurfaceRenderNodeTwoTest, AccumulateOcclusionRegion002, TestSize.Level1)
+{
+    auto testNode = std::make_shared<RSSurfaceRenderNode>(id, context);
+    auto parentNode = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
+    Occlusion::Region accumulatedRegion;
+    Occlusion::Region curRegion;
+    bool hasFilterCacheOcclusion = false;
+    bool isUniRender = true;
+    bool filterCacheOcclusionEnabled = true;
+    testNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    parentNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    testNode->animateState_ = false;
+    parentNode->isScale_ = false;
+    testNode->parent_ = parentNode;
+    testNode->name_ = "TestNode";
+    testNode->AccumulateOcclusionRegion(
+        accumulatedRegion, curRegion, hasFilterCacheOcclusion, isUniRender, filterCacheOcclusionEnabled);
+    EXPECT_EQ(testNode->isTreatedAsTransparent_, false);
+    parentNode->isScale_ = true;
+    testNode->AccumulateOcclusionRegion(
+        accumulatedRegion, curRegion, hasFilterCacheOcclusion, isUniRender, filterCacheOcclusionEnabled);
+    EXPECT_EQ(testNode->isTreatedAsTransparent_, true);
+    testNode->animateState_ = true;
+    testNode->AccumulateOcclusionRegion(
+        accumulatedRegion, curRegion, hasFilterCacheOcclusion, isUniRender, filterCacheOcclusionEnabled);
+    EXPECT_EQ(testNode->isTreatedAsTransparent_, true);
+}
+
+/**
  * @tc.name: UpdateSurfaceSubTreeDirtyFlag
  * @tc.desc: test results of UpdateSurfaceSubTreeDirtyFlag
  * @tc.type: FUNC
@@ -646,23 +679,6 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, UpdateSurfaceSubTreeDirtyFlag, TestSize.Lev
     node->stagingRenderParams_->SetNeedSync(true);
     node->UpdateSurfaceSubTreeDirtyFlag();
     ASSERT_NE(node->stagingRenderParams_, nullptr);
-}
-
-/**
- * @tc.name: ResetDrawingCacheStatusIfNodeStatic
- * @tc.desc: test results of ResetDrawingCacheStatusIfNodeStatic
- * @tc.type: FUNC
- * @tc.require: issueIA4VTS
- */
-HWTEST_F(RSSurfaceRenderNodeTwoTest, ResetDrawingCacheStatusIfNodeStatic, TestSize.Level1)
-{
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(id);
-    std::unordered_map<NodeId, std::unordered_set<NodeId>> allRects;
-    renderNode->ResetDrawingCacheStatusIfNodeStatic(allRects);
-    auto node = std::make_shared<RSRenderNode>(1);
-    renderNode->UpdateDrawingCacheNodes(node);
-    renderNode->ResetDrawingCacheStatusIfNodeStatic(allRects);
-    EXPECT_EQ(renderNode->drawingCacheNodes_.size(), 0);
 }
 
 /**
@@ -714,22 +730,52 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion, TestSize.Level
     auto rsnode = std::make_shared<RSRenderNode>(0);
     rsnode->SetIsScale(true);
     node->parent_ = rsnode;
-    node->CheckParticipateInOcclusion();
+    node->CheckParticipateInOcclusion(false);
     node->dstRectChanged_ = true;
-    node->CheckParticipateInOcclusion();
-    node->isOcclusionInSpecificScenes_ = true;
-    node->CheckParticipateInOcclusion();
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
     node->SetAbilityBGAlpha(255);
     node->SetGlobalAlpha(1.0f);
     node->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
     node->SetContainerWindow(true, rrect);
-    node->CheckParticipateInOcclusion();
+    EXPECT_TRUE(node->CheckParticipateInOcclusion(true));
     node->isSubSurfaceNode_ = true;
-    node->CheckParticipateInOcclusion();
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
     node->SetIsRotating(true);
-    node->CheckParticipateInOcclusion();
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(true));
     node->SetAnimateState();
-    EXPECT_FALSE(node->CheckParticipateInOcclusion());
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
+    node->SetAbilityBGAlpha(0);
+    node->SetGlobalAlpha(0.0f);
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
+}
+
+/**
+ * @tc.name: CheckParticipateInOcclusion002
+ * @tc.desc: test all results of CheckParticipateInOcclusion
+ * @tc.type: FUNC
+ * @tc.require: issue20843
+ */
+HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion002, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    node->SetAbilityBGAlpha(255);
+    node->SetGlobalAlpha(1.0f);
+    node->SetIsRotating(false);
+    node->isSubSurfaceNode_ = false;
+    EXPECT_TRUE(node->CheckParticipateInOcclusion(true));
+    node->isSubSurfaceNode_ = true;
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(true));
+    node->SetIsRotating(true);
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(true));
+    node->SetAnimateState();
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(true));
+    node->SetAbilityBGAlpha(0);
+    node->SetGlobalAlpha(0.0f);
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
+    NodeId idOne = 1;
+    node->AddChildBlurBehindWindow(idOne);
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
 }
 
 /**

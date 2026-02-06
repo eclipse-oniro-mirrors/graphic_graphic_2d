@@ -99,6 +99,21 @@ namespace OHOS::Rosen::Text {
         *value = static_cast<int>(style->fontWidth);
         return OH_DRAWING_SUCCESS;
     }
+
+    OH_Drawing_ErrorCode SetTypographyStyleEllipsisModal(TypographyStyle* style, int value)
+    {
+        if (value < ELLIPSIS_MODAL_HEAD || value > ELLIPSIS_MODAL_MULTILINE_MIDDLE) {
+            return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
+        }
+        style->ellipsisModal = EllipsisModal(value);
+        return OH_DRAWING_SUCCESS;
+    }
+
+    OH_Drawing_ErrorCode GetTypographyStyleEllipsisModal(const TypographyStyle* style, int* value)
+    {
+        *value = static_cast<int>(style->ellipsisModal);
+        return OH_DRAWING_SUCCESS;
+    }
     
     OH_Drawing_ErrorCode SetCompressHeadPunctuation(TypographyStyle* style, bool value)
     {
@@ -109,6 +124,30 @@ namespace OHOS::Rosen::Text {
     OH_Drawing_ErrorCode GetCompressHeadPunctuation(const TypographyStyle* style, bool* value)
     {
         *value = static_cast<bool>(style->compressHeadPunctuation);
+        return OH_DRAWING_SUCCESS;
+    }
+
+    OH_Drawing_ErrorCode SetIncludeFontPadding(TypographyStyle* style, bool value)
+    {
+        style->includeFontPadding = value;
+        return OH_DRAWING_SUCCESS;
+    }
+
+    OH_Drawing_ErrorCode GetIncludeFontPadding(const TypographyStyle* style, bool* value)
+    {
+        *value = style->includeFontPadding;
+        return OH_DRAWING_SUCCESS;
+    }
+
+    OH_Drawing_ErrorCode SetFallbackLineSpacing(TypographyStyle* style, bool value)
+    {
+        style->fallbackLineSpacing = value;
+        return OH_DRAWING_SUCCESS;
+    }
+
+    OH_Drawing_ErrorCode GetFallbackLineSpacing(const TypographyStyle* style, bool* value)
+    {
+        *value = style->fallbackLineSpacing;
         return OH_DRAWING_SUCCESS;
     }
 
@@ -130,22 +169,28 @@ namespace OHOS::Rosen::Text {
         g_typographyStyleIntSetters = {
             { TYPOGRAPHY_STYLE_ATTR_I_LINE_HEIGHT_STYLE, SetLineHeightStyle },
             { TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, SetTypographyStyleFontWidth},
+            { TYPOGRAPHY_STYLE_ATTR_I_ELLIPSIS_MODAL, SetTypographyStyleEllipsisModal},
     };
 
     static std::unordered_map<OH_Drawing_TypographyStyleAttributeId, TypographyStyleIntGetter>
         g_typographyStyleIntGetters = {
             { TYPOGRAPHY_STYLE_ATTR_I_LINE_HEIGHT_STYLE, GetLineHeightStyle },
             { TYPOGRAPHY_STYLE_ATTR_I_FONT_WIDTH, GetTypographyStyleFontWidth},
+            { TYPOGRAPHY_STYLE_ATTR_I_ELLIPSIS_MODAL, GetTypographyStyleEllipsisModal},
     };
 
     static std::unordered_map<OH_Drawing_TypographyStyleAttributeId, TypographyStyleBoolSetter>
         g_typographyStyleBoolSetters = {
             { TYPOGRAPHY_STYLE_ATTR_B_COMPRESS_HEAD_PUNCTUATION, SetCompressHeadPunctuation },
+            { TYPOGRAPHY_STYLE_ATTR_B_INCLUDE_FONT_PADDING, SetIncludeFontPadding },
+            { TYPOGRAPHY_STYLE_ATTR_B_FALLBACK_LINE_SPACING, SetFallbackLineSpacing },
     };
 
     static std::unordered_map<OH_Drawing_TypographyStyleAttributeId, TypographyStyleBoolGetter>
         g_typographyStyleBoolGetters = {
             { TYPOGRAPHY_STYLE_ATTR_B_COMPRESS_HEAD_PUNCTUATION, GetCompressHeadPunctuation },
+            { TYPOGRAPHY_STYLE_ATTR_B_INCLUDE_FONT_PADDING, GetIncludeFontPadding },
+            { TYPOGRAPHY_STYLE_ATTR_B_FALLBACK_LINE_SPACING, GetFallbackLineSpacing },
     };
 }
 

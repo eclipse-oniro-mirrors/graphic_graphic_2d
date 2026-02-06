@@ -18,13 +18,14 @@
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "pipeline/rs_test_util.h"
 
 using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
 
 namespace OHOS::Rosen {
-    constexpr NodeId DEFAULT_ID = 0xFFFF;
+constexpr NodeId DEFAULT_ID = 0xFFFF;
 }
 
 namespace OHOS::Rosen {
@@ -36,7 +37,11 @@ public:
     void TearDown() override;
 };
 
-void RsSubThreadManagerTest::SetUpTestCase() {}
+void RsSubThreadManagerTest::SetUpTestCase()
+{
+    RSTestUtil::InitRenderNodeGC();
+}
+
 void RsSubThreadManagerTest::TearDownTestCase() {}
 void RsSubThreadManagerTest::SetUp() {}
 void RsSubThreadManagerTest::TearDown() {}
@@ -116,6 +121,27 @@ HWTEST_F(RsSubThreadManagerTest, DumpMemTest002, TestSize.Level1)
     rsSubThreadManager->threadList_.push_back(curThread);
     rsSubThreadManager->threadList_.push_back(curThreadf);
     rsSubThreadManager->DumpMem(log, true);
+    EXPECT_FALSE(rsSubThreadManager->threadList_.empty());
+    rsSubThreadManager->threadList_.clear();
+}
+
+/**
+ * @tc.name: DumpGpuMemTest001
+ * @tc.desc: Verify function DumpGpuMem
+ * @tc.type:FUNC
+ */
+HWTEST_F(RsSubThreadManagerTest, DumpGpuMemTest001, TestSize.Level1)
+{
+    auto rsSubThreadManager = RSSubThreadManager::Instance();
+    DfxString log;
+    std::vector<std::pair<NodeId, std::string>> nodeTags;
+    auto renderContext = RenderContext::Create();
+    std::shared_ptr<RSSubThread> curThread = nullptr;
+    auto curThreadf = std::make_shared<RSSubThread>(renderContext, 0);
+    rsSubThreadManager->DumpGpuMem(log, nodeTags);
+    rsSubThreadManager->threadList_.push_back(curThread);
+    rsSubThreadManager->threadList_.push_back(curThreadf);
+    rsSubThreadManager->DumpGpuMem(log, nodeTags);
     EXPECT_FALSE(rsSubThreadManager->threadList_.empty());
     rsSubThreadManager->threadList_.clear();
 }
@@ -296,12 +322,12 @@ HWTEST_F(RsSubThreadManagerTest, ReleaseSurfaceTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: AddToReleaseQueue
- * @tc.desc: Test RsSubThreadManagerTest.AddToReleaseQueue
+ * @tc.name: AddToReleaseQueueTest001
+ * @tc.desc: Test AddToReleaseQueue failed
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issue21071
  */
-HWTEST_F(RsSubThreadManagerTest, AddToReleaseQueue, TestSize.Level1)
+HWTEST_F(RsSubThreadManagerTest, AddToReleaseQueueTest001, TestSize.Level1)
 {
     const Drawing::ImageInfo info =
         Drawing::ImageInfo { 200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE }; // image size 200*200
@@ -309,6 +335,26 @@ HWTEST_F(RsSubThreadManagerTest, AddToReleaseQueue, TestSize.Level1)
     auto rsSubThreadManager = RSSubThreadManager::Instance();
     ASSERT_NE(rsSubThreadManager, nullptr);
     rsSubThreadManager->AddToReleaseQueue(std::move(surface), 10); // 10 is invalid
+}
+
+/**
+ * @tc.name: AddToReleaseQueueTest002
+ * @tc.desc: Test AddToReleaseQueue success
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, AddToReleaseQueueTest002, TestSize.Level1)
+{
+    auto rsSubThreadManager = RSSubThreadManager::Instance();
+    const Drawing::ImageInfo info = Drawing::ImageInfo { 200, 200, Drawing::COLORTYPE_N32, Drawing::ALPHATYPE_OPAQUE };
+    auto surface(Drawing::Surface::MakeRaster(info));
+
+    auto context = RenderContext::Create();
+    auto subThread = std::make_shared<RSSubThread>(context, 0);
+    rsSubThreadManager->threadList_.push_back(subThread);
+    // add surface to thread queue
+    rsSubThreadManager->AddToReleaseQueue(std::move(surface), 0);
+    ASSERT_FALSE(subThread->tmpSurfaces_.empty());
 }
 
 /**
@@ -335,26 +381,28 @@ HWTEST_F(RsSubThreadManagerTest, ScheduleRenderNodeDrawableTest, TestSize.Level1
     rsSubThreadManager->ScheduleRenderNodeDrawable(drawable);
     EXPECT_FALSE(drawable);
 
-    auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(DEFAULT_ID);
-    auto nodeDrawable = std::make_shared<RSSurfaceRenderNodeDrawable>(std::move(surfaceRenderNode));
+    auto surfaceRenderNode = RSTestUtil::CreateSurfaceNode();
+    auto nodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceRenderNode));
     rsSubThreadManager->ScheduleRenderNodeDrawable(nodeDrawable);
-    EXPECT_FALSE(nodeDrawable->GetRenderParams());
+    EXPECT_TRUE(nodeDrawable->GetRenderParams());
 
-    nodeDrawable->renderParams_ = std::make_unique<RSSurfaceRenderParams>(DEFAULT_ID);
-    uint32_t index = 1;
+    uint32_t index = 0;
     auto context = RenderContext::Create();
     auto threadPtr = std::make_shared<RSSubThread>(context, index);
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
-    rsSubThreadManager->threadList_[rsSubThreadManager->defaultThreadIndex_] = threadPtr;
+    rsSubThreadManager->threadList_.push_back(threadPtr);
     rsSubThreadManager->ScheduleRenderNodeDrawable(nodeDrawable);
     EXPECT_TRUE(nodeDrawable->GetRenderParams());
     EXPECT_TRUE(rsSubThreadManager->defaultThreadIndex_ == 1);
 
+    index = 1;
     auto threadSharedPtr = std::make_shared<RSSubThread>(context, index);
     threadSharedPtr->DoingCacheProcessNumInc();
-    rsSubThreadManager->threadList_[rsSubThreadManager->defaultThreadIndex_] = threadSharedPtr;
+    rsSubThreadManager->threadList_.push_back(threadSharedPtr);
+    index = 2;
     auto threadShared = std::make_shared<RSSubThread>(context, index);
-    rsSubThreadManager->threadList_[2] = threadShared;
+    rsSubThreadManager->threadList_.push_back(threadShared);
     rsSubThreadManager->ScheduleRenderNodeDrawable(nodeDrawable);
     EXPECT_TRUE(rsSubThreadManager->defaultThreadIndex_ == 2);
 
@@ -395,8 +443,153 @@ HWTEST_F(RsSubThreadManagerTest, ScheduleReleaseCacheSurfaceOnlyTest, TestSize.L
     surfaceDrawable->GetRsSubThreadCache().lastFrameUsedThreadIndex_ = 2;
     auto context = RenderContext::Create();
     auto threadPtr = std::make_shared<RSSubThread>(context, index);
-    rsSubThreadManager->threadList_[1] = threadPtr;
+    rsSubThreadManager->threadList_.push_back(threadPtr);
     rsSubThreadManager->ScheduleReleaseCacheSurfaceOnly(surfaceDrawable);
-    EXPECT_FALSE(rsSubThreadManager->threadList_.size());
+    EXPECT_FALSE(rsSubThreadManager->threadList_.empty());
+}
+
+/**
+ * @tc.name: TryReleaseTextureForIdleThreadTest
+ * @tc.desc: Test relase texture failed
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, TryReleaseTextureForIdleThreadTest001, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    subThreadManager->threadList_.clear();
+    subThreadManager->TryReleaseTextureForIdleThread();
+    ASSERT_FALSE(subThreadManager->needCancelReleaseTextureTask_);
+}
+
+/**
+ * @tc.name: TryReleaseTextureForIdleThreadTest
+ * @tc.desc: Test relase texture success
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, TryReleaseTextureForIdleThreadTest002, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    subThreadManager->threadList_.clear();
+
+    auto context = RenderContext::Create();
+    auto subThread = std::make_shared<RSSubThread>(context, 0);
+    auto subThread2 = std::make_shared<RSSubThread>(context, 1);
+    auto subThread3 = std::make_shared<RSSubThread>(context, 2);
+    subThreadManager->threadList_.push_back(subThread);
+    subThreadManager->threadList_.push_back(subThread2);
+    subThreadManager->threadList_.push_back(subThread3);
+    subThread->doingCacheProcessNum_ = 0;
+    subThreadManager->needCancelReleaseTextureTask_ = false;
+    subThreadManager->TryReleaseTextureForIdleThread();
+    ASSERT_TRUE(subThreadManager->needCancelReleaseTextureTask_);
+
+    subThread->doingCacheProcessNum_ = 1;
+    subThreadManager->needCancelReleaseTextureTask_ = false;
+    subThreadManager->TryReleaseTextureForIdleThread();
+    ASSERT_TRUE(subThreadManager->needCancelReleaseTextureTask_);
+    subThreadManager->threadList_.clear();
+}
+
+/**
+ * @tc.name: ForceReleaseResourceTest
+ * @tc.desc: Test ForceReleaseResource success
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, ForceReleaseResourceTest, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    subThreadManager->needResetContext_ = false;
+    subThreadManager->ForceReleaseResource();
+    ASSERT_TRUE(subThreadManager->needResetContext_);
+
+    subThreadManager->needResetContext_ = true;
+    subThreadManager->ForceReleaseResource();
+    ASSERT_TRUE(subThreadManager->needResetContext_);
+}
+
+/**
+ * @tc.name: GetGrContextFromSubThreadTest001
+ * @tc.desc: Test GetGrContextFromSubThread failed when tid not in thread map
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, GetGrContextFromSubThreadTest001, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    pid_t threadTid1 = 100;
+    subThreadManager->threadIndexMap_.clear();
+    subThreadManager->threadIndexMap_.emplace(threadTid1, 0);
+
+    // tid not in thread map
+    ASSERT_EQ(subThreadManager->GetGrContextFromSubThread(500), nullptr);
+    subThreadManager->threadIndexMap_.clear();
+}
+
+/**
+ * @tc.name: GetGrContextFromSubThreadTest002
+ * @tc.desc: Test GetGrContextFromSubThread failed when index is invalid
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, GetGrContextFromSubThreadTest002, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    pid_t threadTid1 = 100;
+    subThreadManager->threadIndexMap_.clear();
+    subThreadManager->threadIndexMap_.emplace(threadTid1, -1);
+
+    // index invalid
+    ASSERT_EQ(subThreadManager->GetGrContextFromSubThread(threadTid1), nullptr);
+    subThreadManager->threadIndexMap_.clear();
+}
+
+/**
+ * @tc.name: GetGrContextFromSubThreadTest003
+ * @tc.desc: Test GetGrContextFromSubThread failed when index is invalid
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, GetGrContextFromSubThreadTest003, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    pid_t threadTid1 = 100;
+    subThreadManager->threadIndexMap_.emplace(threadTid1, 10);
+
+    // index invalid
+    ASSERT_EQ(subThreadManager->GetGrContextFromSubThread(threadTid1), nullptr);
+    subThreadManager->threadIndexMap_.clear();
+}
+
+/**
+ * @tc.name: GetGrContextFromSubThreadTest004
+ * @tc.desc: Test GetGrContextFromSubThread success
+ * @tc.type: FUNC
+ * @tc.require: issue21071
+ */
+HWTEST_F(RsSubThreadManagerTest, GetGrContextFromSubThreadTest004, TestSize.Level1)
+{
+    auto subThreadManager = RSSubThreadManager::Instance();
+    pid_t threadTid1 = 100;
+    pid_t threadTid2 = 200;
+    pid_t threadTid3 = 300;
+    subThreadManager->threadIndexMap_.emplace(threadTid1, 0);
+    subThreadManager->threadIndexMap_.emplace(threadTid2, 1);
+    subThreadManager->threadIndexMap_.emplace(threadTid3, 2);
+    auto context = RenderContext::Create();
+    auto subThread = std::make_shared<RSSubThread>(context, 0);
+    subThread->grContext_ = std::make_shared<Drawing::GPUContext>();
+    subThreadManager->threadList_.push_back(subThread);
+    subThreadManager->threadList_.push_back(subThread);
+    subThreadManager->threadList_.push_back(subThread);
+
+    // tid not in thread map
+    ASSERT_NE(subThreadManager->GetGrContextFromSubThread(threadTid1), nullptr);
+    ASSERT_NE(subThreadManager->GetGrContextFromSubThread(threadTid2), nullptr);
+    ASSERT_NE(subThreadManager->GetGrContextFromSubThread(threadTid3), nullptr);
+
+    subThreadManager->threadIndexMap_.clear();
 }
 } // namespace OHOS::Rosen

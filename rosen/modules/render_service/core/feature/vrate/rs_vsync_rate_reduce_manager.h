@@ -93,14 +93,12 @@ private:
     }
 private:
     bool vRateReduceEnabled_ = false;
-    bool vRateConditionQualified_ = false;
+    std::atomic<bool> vRateConditionQualified_ = false;
     bool vSyncRatesChanged_ = false;
     std::unordered_map<NodeId, int> vSyncRateMap_;
     std::unordered_map<NodeId, int> lastVSyncRateMap_;
     std::vector<NodeId> curAllMainAndLeashWindowNodesIds_;
     std::vector<NodeId> lastAllMainAndLeashWindowNodesIds_;
-    std::map<NodeId, RSVisibleLevel> visMapForVSyncVisLevel_;
-    std::map<NodeId, RSVisibleLevel> lastVisMapForVSyncVisLevel_;
 
     NodeId focusedNodeId_ = 0;
     NodeId lastFocusedNodeId_ = 0;
@@ -114,7 +112,6 @@ private:
     std::deque<float> frameDurations_;
 
     bool isSystemAnimatedScenes_ = false;
-    bool isReduceBySystemAnimatedScenes_ = false;
 
     bool isDeviceSupprotVRate_ = false;
     std::map<NodeId, SurfaceVRateInfo> surfaceVRateMap_;

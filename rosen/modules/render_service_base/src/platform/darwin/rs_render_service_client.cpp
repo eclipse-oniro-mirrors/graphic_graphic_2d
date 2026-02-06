@@ -118,7 +118,7 @@ int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>&
 }
 
 std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfaceId(uint64_t surfaceId,
-    const Rect &srcRect)
+    const Rect &srcRect, bool transformEnabled)
 {
     return nullptr;
 }
@@ -167,7 +167,7 @@ uint32_t RSRenderServiceClient::SetScreenActiveMode(ScreenId id, uint32_t modeId
     return 0;
 }
 
-void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offSetX, int32_t offSetY)
+void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY)
 {
 }
 
@@ -263,6 +263,11 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
 {
 }
 
+int32_t RSRenderServiceClient::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    return StatusCode::RS_CONNECTION_ERROR;
+}
+
 void RSRenderServiceClient::DisablePowerOffRenderControl(ScreenId id)
 {
 }
@@ -299,6 +304,11 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
 
 void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
 {
+}
+
+PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
+{
+    return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
 }
 
 int32_t RSRenderServiceClient::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
@@ -584,7 +594,7 @@ void RSRenderServiceClient::NotifyXComponentExpectedFrameRate(const std::string&
 {
 }
 
-void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt)
+void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
 }
 
@@ -714,6 +724,16 @@ void RSRenderServiceClient::AvcodecVideoStart(const std::vector<uint64_t>& uniqu
 void RSRenderServiceClient::AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
     const std::vector<std::string>& surfaceNameList, uint32_t fps)
 {
+}
+
+bool RSRenderServiceClient::AvcodecVideoGet(uint64_t uniqueId)
+{
+    return false;
+}
+ 
+bool RSRenderServiceClient::AvcodecVideoGetRecent()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -45,7 +45,7 @@ bool RSPhysicalScreenProcessor::Init(RSScreenRenderNode& node, std::shared_ptr<R
     }
 #endif
 
-    return composerAdapter_->Init(node, screenInfo_, mirroredScreenInfo_, mirrorAdaptiveCoefficient_,
+    return composerAdapter_->Init(screenInfo_, mirrorAdaptiveCoefficient_,
         [this](const auto& surface, const auto& layers) { Redraw(surface, layers); }, composerClient_->GetOutput());
 }
 

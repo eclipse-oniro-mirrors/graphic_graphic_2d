@@ -43,15 +43,25 @@ enum class RoundingStrategyType : uint8_t {
     ROUND_STATIC_CAST_INT,
     ROUND_BUTT,
 };
+namespace Drawing {
+class GEVisualEffectContainer;
+}
 
 class RSPropertyDrawableUtils {
 public:
     static Drawing::RoundRect RRect2DrawingRRect(const RRect& rr);
     static Drawing::Rect Rect2DrawingRect(const RectF& r);
+    static RectI DrawingRectI2RectI(const Drawing::RectI& r);
     static RRect GetRRectForDrawingBorder(
         const RSProperties& properties, const std::shared_ptr<RSBorder>& border, const bool& isOutline);
     static RRect GetInnerRRectForDrawingBorder(
         const RSProperties& properties, const std::shared_ptr<RSBorder>& border, const bool& isOutline);
+    /**
+     * @brief Check if the background is light or dark using extracted color,
+     * and update the adaptive frosted glass params.
+     */
+    static void ApplyAdaptiveFrostedGlassParams(
+        Drawing::Canvas* canvas, const std::shared_ptr<RSDrawingFilter>& filter);
     static Color GetColorForShadowSyn(Drawing::Canvas* canvas, Drawing::Path& path, const Color& color,
         const int& colorStrategy);
     static std::shared_ptr<Drawing::Image> GetShadowRegionImage(Drawing::Canvas* canvas,
@@ -59,7 +69,7 @@ public:
     static bool PickColorSyn(Drawing::Canvas* canvas, Drawing::Path& drPath, Drawing::Matrix& matrix,
         RSColor& colorPicked, const int& colorStrategy);
     static bool PickColor(std::shared_ptr<Drawing::GPUContext> context, std::shared_ptr<Drawing::Image> image,
-        Drawing::ColorQuad& colorPicked, ColorPickStrategyType strategy);
+        Drawing::ColorQuad& colorPicked);
     static std::shared_ptr<Drawing::Image> GpuScaleImage(std::shared_ptr<Drawing::GPUContext> context,
         std::shared_ptr<Drawing::Image> image);
     static void GetDarkColor(RSColor& color);
@@ -110,6 +120,9 @@ public:
     static bool RSFilterSetPixelStretch(const RSProperties& property, const std::shared_ptr<RSFilter>& filter);
     static void RSFilterRemovePixelStretch(const std::shared_ptr<RSFilter>& filter);
     static void DrawFilterWithDRM(Drawing::Canvas* canvas, bool isDark);
+    static void DrawColorUsingSDFWithDRM(Drawing::Canvas* canvas, const Drawing::Rect* rect, bool isDark,
+        const std::shared_ptr<Drawing::GEVisualEffectContainer>& filterGEContainer, const std::string& filterTag,
+        const std::string& shapeTag);
 
     static std::shared_ptr<RSFilter> GenerateBehindWindowFilter(float radius, float saturation, float brightness,
         RSColor maskColor);
@@ -124,7 +137,7 @@ public:
         const Drawing::Matrix& totalMatrix, const Drawing::Rect& relativeRect, RoundingStrategyType roundingStrategy);
     RSB_EXPORT static std::tuple<Drawing::RectI, Drawing::RectI> GetAbsRectByStrategyForImage(
         const Drawing::Surface* surface, const Drawing::Matrix& totalMatrix, const Drawing::Rect& relativeRect);
-    static void ApplySDFShapeToFrostedGlassFilter(const RSProperties& properties,
+    static void ApplySDFShapeToFilter(const RSProperties& properties,
         const std::shared_ptr<RSDrawingFilter>& drawingFilter, NodeId nodeId);
 
 private:

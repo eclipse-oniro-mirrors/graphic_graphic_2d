@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -207,7 +207,7 @@ void RSSurfaceLayer::SetVisibleRegions(const std::vector<GraphicIRect>& visibleR
     SetRSLayerCmd<RSRenderLayerVisibleRegionsCmd>(visibleRegions);
 }
 
-const std::vector<GraphicIRect> &RSSurfaceLayer::GetVisibleRegions() const
+const std::vector<GraphicIRect>& RSSurfaceLayer::GetVisibleRegions() const
 {
     return visibleRegions_;
 }
@@ -366,7 +366,7 @@ GraphicColorDataSpace RSSurfaceLayer::GetColorDataSpace() const
     return colorSpace_;
 }
 
-void RSSurfaceLayer::SetMetaData(const std::vector<GraphicHDRMetaData> &metaData)
+void RSSurfaceLayer::SetMetaData(const std::vector<GraphicHDRMetaData>& metaData)
 {
     if (metaData_ == metaData) {
         return;
@@ -380,7 +380,7 @@ const std::vector<GraphicHDRMetaData>& RSSurfaceLayer::GetMetaData() const
     return metaData_;
 }
 
-void RSSurfaceLayer::SetMetaDataSet(const GraphicHDRMetaDataSet &metaDataSet)
+void RSSurfaceLayer::SetMetaDataSet(const GraphicHDRMetaDataSet& metaDataSet)
 {
     if (metaDataSet_ == metaDataSet) {
         return;
@@ -723,7 +723,7 @@ LayerMask RSSurfaceLayer::GetLayerMaskInfo() const
     return layerMask_;
 }
 
-void RSSurfaceLayer::SetSurface(const sptr<IConsumerSurface> &surface)
+void RSSurfaceLayer::SetSurface(const sptr<IConsumerSurface>& surface)
 {
     cSurface_ = surface;
 }
@@ -747,7 +747,7 @@ void RSSurfaceLayer::SetSurfaceUniqueId(uint64_t uniqueId)
     SetRSLayerCmd<RSRenderLayerSurfaceUniqueIdCmd>(uniqueId);
 }
 
-void RSSurfaceLayer::SetBuffer(const sptr<SurfaceBuffer> &sbuffer, const sptr<SyncFence> &acquireFence)
+void RSSurfaceLayer::SetBuffer(const sptr<SurfaceBuffer>& sbuffer, const sptr<SyncFence>& acquireFence)
 {
     sbuffer_ = sbuffer;
     acquireFence_ = acquireFence;
@@ -766,7 +766,7 @@ sptr<SurfaceBuffer> RSSurfaceLayer::GetBuffer() const
     return sbuffer_;
 }
 
-void RSSurfaceLayer::SetPreBuffer(const sptr<SurfaceBuffer> &buffer)
+void RSSurfaceLayer::SetPreBuffer(const sptr<SurfaceBuffer>& buffer)
 {
     if (buffer == pbuffer_) {
         return;

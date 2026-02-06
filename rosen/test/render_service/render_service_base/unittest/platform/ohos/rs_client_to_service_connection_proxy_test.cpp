@@ -639,6 +639,38 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenPowerStatus, TestSize.Le
 }
 
 /**
+ * @tc.name: GetPanelPowerStatus Test
+ * @tc.desc: GetPanelPowerStatus Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetPanelPowerStatus001, TestSize.Level1)
+{
+    ScreenId id = 1;
+    PanelPowerStatus status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    auto ret = proxy->GetPanelPowerStatus(id, status);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name: GetPanelPowerStatus Test
+ * @tc.desc: Test GetPanelPowerStatus with mock remoteObject
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetPanelPowerStatus002, TestSize.Level1)
+{
+    ScreenId id = 1;
+    PanelPowerStatus status = PanelPowerStatus::PANEL_POWER_STATUS_ON;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockproxy, nullptr);
+    
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    mockproxy->GetPanelPowerStatus(id, status);
+}
+
+/**
  * @tc.name: SetScreenBacklight Test
  * @tc.desc: SetScreenBacklight Test
  * @tc.type:FUNC
@@ -838,6 +870,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, UnRegisterTypeface, TestSize.Leve
  */
 HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterSharedTypeface, TestSize.Level1)
 {
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     std::vector<char> content;
     LoadBufferFromFile("/system/fonts/Roboto-Regular.ttf", content);
     std::shared_ptr<Drawing::Typeface> typeface =
@@ -845,10 +878,13 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterSharedTypeface, TestSize.
     ASSERT_NE(typeface, nullptr);
     int32_t needUpdate;
     pid_t pid = getpid();
-    uint64_t id = (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(typeface->GetHash());
-    EXPECT_TRUE(proxy->RegisterTypeface(id, typeface->GetSize(), typeface->GetFd(), needUpdate, 0));
-    EXPECT_EQ(needUpdate, 0);
-    EXPECT_TRUE(proxy->UnRegisterTypeface(typeface->GetHash()));
+
+    Drawing::SharedTypeface sharedTypeface(
+        (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(typeface->GetUniqueID()), typeface);
+    clientToService->RegisterTypeface(sharedTypeface, needUpdate);
+    clientToService->RegisterTypeface(sharedTypeface, needUpdate);
+    EXPECT_EQ(needUpdate, 1);
+    EXPECT_TRUE(clientToService->UnRegisterTypeface(typeface->GetHash()));
 }
 
 /**
@@ -884,6 +920,22 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterFirstFrameCommitCallback,
 }
 
 /**
+<<<<<<< HEAD
+=======
+ * @tc.name: SetSystemAnimatedScenes Test
+ * @tc.desc: SetSystemAnimatedScenes Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetSystemAnimatedScenes, TestSize.Level1)
+{
+    bool success;
+    proxy->SetSystemAnimatedScenes(SystemAnimatedScenes::ENTER_MISSION_CENTER, false, success);
+    ASSERT_FALSE(success);
+}
+
+/**
+>>>>>>> master
  * @tc.name: ResizeVirtualScreen Test
  * @tc.desc: ResizeVirtualScreen Test
  * @tc.type:FUNC
@@ -951,7 +1003,8 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetCacheEnabledForRotation, TestS
     proxy->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
     int32_t touchStatus = 1;
     int32_t touchCnt = 0;
-    proxy->NotifyTouchEvent(touchStatus, touchCnt);
+    int32_t sourceType = 2;
+    proxy->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     proxy->NotifyDynamicModeEvent(true);
     proxy->SetCacheEnabledForRotation(true);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
@@ -1302,6 +1355,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, AvcodecVideoStopTest, TestSize.Le
 }
 
 /**
+<<<<<<< HEAD
  * @tc.name: SetScreenFrameGravity Test
  * @tc.desc: SetScreenFrameGravity Test
  * @tc.type:FUNC
@@ -1315,5 +1369,59 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenFrameGravity, TestSize.L
     ASSERT_NE(proxy->transactionDataIndex_, 5);
 }
 
+=======
+ * @tc.name: AvcodecVideoGet Test
+ * @tc.desc: AvcodecVideoGet Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AvcodecVideoGetTest, TestSize.Level1)
+{
+    uint64_t uniqueId = 1;
+    proxy->AvcodecVideoGet(uniqueId);
+    ASSERT_TRUE(proxy);
+}
+ 
+/**
+ * @tc.name: AvcodecVideoGetRecent Test
+ * @tc.desc: AvcodecVideoGetRecent Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AvcodecVideoGetRecentTest, TestSize.Level1)
+{
+    proxy->AvcodecVideoGetRecent();
+    ASSERT_TRUE(proxy);
+}
+
+/**
+ * @tc.name: SetDualScreenState Test
+ * @tc.desc: Test SetDualScreenState
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetDualScreenState001, TestSize.Level1)
+{
+    ScreenId id = 1;
+    auto ret = proxy->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_NE(ret, StatusCode::READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: SetDualScreenState Test
+ * @tc.desc: Test SetDualScreenState with mock remoteObject
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetDualScreenState002, TestSize.Level1)
+{
+    ScreenId id = 1;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    auto ret = mockproxy->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
+}
+>>>>>>> master
 } // namespace Rosen
 } // namespace OHOS

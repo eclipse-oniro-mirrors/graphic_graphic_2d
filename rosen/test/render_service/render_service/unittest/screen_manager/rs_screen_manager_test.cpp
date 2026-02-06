@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "hgm_core.h"
 #include "limit_number.h"
 #include <parameter.h>
 #include <parameters.h>
@@ -88,6 +89,8 @@ void RSScreenManagerTest::SetUpTestCase()
         DoAll(SaveArg<1>(&Mock::HdiDeviceMock::powerStatusMock_), testing::Return(0)));
     EXPECT_CALL(*hdiDeviceMock_, GetScreenPowerStatus(mockScreenId_, _)).WillRepeatedly(
         DoAll(SetArgReferee<1>(ByRef(Mock::HdiDeviceMock::powerStatusMock_)), testing::Return(0)));
+    EXPECT_CALL(*hdiDeviceMock_, GetPanelPowerStatus(mockScreenId_, _)).WillRepeatedly(
+        DoAll(SetArgReferee<1>(ByRef(Mock::HdiDeviceMock::panelPowerStatusMock_)), testing::Return(0)));
 #ifdef RS_ENABLE_VK
     RsVulkanContext::SetRecyclable(false);
 #endif
@@ -297,6 +300,51 @@ HWTEST_F(RSScreenManagerTest, SetPhysicalScreenResolution_001, TestSize.Level1)
     uint32_t height = 1080;
     auto result = screenManager_->SetPhysicalScreenResolution(id, width, height);
     ASSERT_EQ(result, SCREEN_NOT_FOUND);
+}
+
+/*
+ * @tc.name: SetDualScreenState_001
+ * @tc.desc: Test SetDualScreenState with invalid screen id
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, SetDualScreenState_001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(screenManager, nullptr);
+
+    ScreenId id = INVALID_SCREEN_ID;
+    int32_t ret = screenManager->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_EQ(ret, static_cast<int32_t>(StatusCode::SCREEN_NOT_FOUND));
+}
+
+/*
+ * @tc.name: SetDualScreenState_002
+ * @tc.desc: Test SetDualScreenState with valid screen id
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, SetDualScreenState_002, TestSize.Level1)
+{
+    auto screenManager = sptr<RSScreenManager>::MakeSptr();
+    ASSERT_NE(screenManager, nullptr);
+
+    // mock HDI device
+    ScreenId id = mockScreenId_;
+    auto rsScreen = std::make_shared<RSScreen>(HdiOutput::CreateHdiOutput(id));
+    ASSERT_NE(rsScreen, nullptr);
+    ASSERT_NE(rsScreen->hdiScreen_, nullptr);
+    ASSERT_NE(hdiDeviceMock_, nullptr);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+
+    // mount rsScreen to screen manager
+    screenManager->screens_[mockScreenId_] = rsScreen;
+    EXPECT_CALL(*hdiDeviceMock_, SetDisplayProperty(id, _, _)).WillOnce(testing::Return(0));
+    int32_t ret = screenManager->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
+    EXPECT_EQ(ret, static_cast<int32_t>(StatusCode::SUCCESS));
+
+    // unmount rsScreen
+    screenManager->screens_.erase(mockScreenId_);
 }
 
 /*
@@ -588,6 +636,48 @@ HWTEST_F(RSScreenManagerTest, GetScreenType_001, TestSize.Level1)
     ASSERT_EQ(StatusCode::SUCCESS, screenManager_->GetScreenType(id, type));
 
     screenManager_->RemoveVirtualScreen(id);
+    sleep(1);
+}
+
+/*
+ * @tc.name: GetScreenConnectionType_001
+ * @tc.desc: Test GetScreenConnectionType false.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetScreenConnectionType_001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    ASSERT_EQ(ScreenConnectionType::INVALID_DISPLAY_CONNECTION_TYPE, screenManager->GetScreenConnectionType(SCREEN_ID));
+}
+
+/*
+ * @tc.name: GetScreenConnectionType_002
+ * @tc.desc: Test GetScreenConnectionType succeed.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetScreenConnectionType_002, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    std::string name = "virtualScreen01";
+    uint32_t width = 480;
+    uint32_t height = 320;
+
+    auto csurface = IConsumerSurface::Create();
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    auto id = screenManager->CreateVirtualScreen(name, width, height, psurface);
+    ASSERT_NE(INVALID_SCREEN_ID, id);
+
+    screenManager->GetScreenConnectionType(id);
+
+    screenManager->RemoveVirtualScreen(id);
     sleep(1);
 }
 
@@ -1111,6 +1201,53 @@ HWTEST_F(RSScreenManagerTest, GetScreenPowerStatus_003, TestSize.Level1)
 }
 
 /*
+ * @tc.name: GetPanelPowerStatus_001
+ * @tc.desc: Test GetPanelPowerStatus, with INVALID_SCREEN_ID
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetPanelPowerStatus_001, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ScreenId screenId = INVALID_SCREEN_ID;
+    ASSERT_EQ(screenManager->GetPanelPowerStatus(screenId), PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
+}
+
+/*
+ * @tc.name: GetPanelPowerStatus_002
+ * @tc.desc: Test GetPanelPowerStatus, with virtual screen
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetPanelPowerStatus_002, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ScreenId screenId = 1;
+    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
+    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
+    screenManager->MockHdiScreenConnected(rsScreen);
+    ASSERT_EQ(screenManager->GetPanelPowerStatus(screenId), PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
+}
+
+/*
+ * @tc.name: GetPanelPowerStatus_003
+ * @tc.desc: Test GetPanelPowerStatus, with mock HDI device
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenManagerTest, GetPanelPowerStatus_003, TestSize.Level1)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    ScreenId screenId = mockScreenId_;
+    auto hdiOutput = HdiOutput::CreateHdiOutput(screenId);
+    auto rsScreen = std::make_shared<RSScreen>(hdiOutput);
+    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
+    screenManager->MockHdiScreenConnected(rsScreen);
+    ASSERT_EQ(screenManager->GetPanelPowerStatus(screenId), PanelPowerStatus::PANEL_POWER_STATUS_ON);
+}
+
+/*
  * @tc.name: SetScreenCorrection_001
  * @tc.desc: Test SetScreenCorrection, with INVALID_SCREEN_ID
  * @tc.type: FUNC
@@ -1448,7 +1585,7 @@ HWTEST_F(RSScreenManagerTest, ResizeVirtualScreen_002, TestSize.Level1)
     sleep(1);
 }
 
-/*
+/**
  * @tc.name: SetRogScreenResolution_001
  * @tc.desc: Test SetRogScreenResolution while screen's id doesn't match
  * @tc.type: FUNC
@@ -1474,7 +1611,7 @@ HWTEST_F(RSScreenManagerTest, SetRogScreenResolution_001, TestSize.Level2)
     usleep(SLEEP_TIME_US);
 }
 
-/*
+/**
  * @tc.name: SetRogScreenResolution_002
  * @tc.desc: Test SetRogScreenResolution while the screen's id match
  * @tc.type: FUNC
@@ -1791,9 +1928,9 @@ HWTEST_F(RSScreenManagerTest, SetVirtualScreenBlackList006, TestSize.Level1)
 
 /*
  * @tc.name: AddVirtualScreenBlackList001
- * @tc.desc: Test AddVirtualScreenBlackList, when id is INVALID_SCREEN_ID
+ * @tc.desc: Test AddVirtualScreenBlackList, with multi-id
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList001, TestSize.Level1)
 {
@@ -1804,7 +1941,7 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList001, TestSize.Level1)
     std::vector<uint64_t> blackList = {};
     ASSERT_EQ(screenManager_->AddVirtualScreenBlackList(id, blackList), StatusCode::SUCCESS);
 
-    for (auto nodeId = 0; nodeId <= MAX_BLACK_LIST_NUM + 1; nodeId++) {
+    for (auto nodeId = 0; nodeId <= MAX_SPECIAL_LAYER_NUM + 1; nodeId++) {
         blackList.push_back(nodeId);
     }
     ASSERT_EQ(screenManager_->AddVirtualScreenBlackList(id, blackList), StatusCode::INVALID_ARGUMENTS);
@@ -1814,7 +1951,7 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList001, TestSize.Level1)
  * @tc.name: AddVirtualScreenBlackList002
  * @tc.desc: Test AddVirtualScreenBlackList, input id in screens_, and screens_[id] is multiple
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList002, TestSize.Level1)
 {
@@ -1837,9 +1974,9 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList002, TestSize.Level1)
 
 /*
  * @tc.name: AddVirtualScreenBlackList003
- * @tc.desc: Test AddVirtualScreenBlackList, screens_[id]!=nullptr, id!=mainId, screens_[mainId]==null
+ * @tc.desc: Test AddVirtualScreenBlackList, id!=mainId, screens_[id]!=nullptr, screens_[mainId]==nullptr
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList003, TestSize.Level1)
 {
@@ -1863,9 +2000,9 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList003, TestSize.Level1)
 
 /*
  * @tc.name: AddVirtualScreenBlackList004
- * @tc.desc: Test AddVirtualScreenBlackList, screens_[id]!=nullptr, id!=mainId,  screens_[mainId]!=nullptr
+ * @tc.desc: Test AddVirtualScreenBlackList, id!=mainId, screens_[id]!=nullptr, screens_[mainId]!=nullptr
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList004, TestSize.Level1)
 {
@@ -1886,7 +2023,7 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList004, TestSize.Level1)
     std::vector<uint64_t> blackList = {};
     ASSERT_EQ(screenManager_->AddVirtualScreenBlackList(id, blackList), StatusCode::SUCCESS);
 
-    for (auto nodeId = 0; nodeId <= MAX_BLACK_LIST_NUM + 1; nodeId++) {
+    for (auto nodeId = 0; nodeId <= MAX_SPECIAL_LAYER_NUM + 1; nodeId++) {
         blackList.push_back(nodeId);
     }
     ASSERT_EQ(screenManager_->AddVirtualScreenBlackList(id, blackList), StatusCode::INVALID_ARGUMENTS);
@@ -1896,7 +2033,7 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList004, TestSize.Level1)
  * @tc.name: AddVirtualScreenBlackList005
  * @tc.desc: Test AddVirtualScreenBlackList and RemoveVirtualScreenBlackList
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueICHZO3
  */
 HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList005, TestSize.Level1)
 {
@@ -1911,9 +2048,9 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList005, TestSize.Level1)
 
 /*
  * @tc.name: RemoveVirtualScreenBlackList001
- * @tc.desc: Test RemoveVirtualScreenBlackList, when id is INVALID_SCREEN_ID
+ * @tc.desc: Test RemoveVirtualScreenBlackList, with multi-id
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList001, TestSize.Level1)
 {
@@ -1928,7 +2065,7 @@ HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList001, TestSize.Level1)
  * @tc.name: RemoveVirtualScreenBlackList002
  * @tc.desc: Test RemoveVirtualScreenBlackList, input id in screens_, and screens_[id] is multiple
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList002, TestSize.Level1)
 {
@@ -1950,9 +2087,9 @@ HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList002, TestSize.Level1)
 
 /*
  * @tc.name: RemoveVirtualScreenBlackList003
- * @tc.desc: Test RemoveVirtualScreenBlackList, id!=mainId, screens_[id]!=nullptr,screens_[mainId]==nullptr
+ * @tc.desc: Test RemoveVirtualScreenBlackList, id!=mainId, screens_[id]!=nullptr, screens_[mainId]==nullptr
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList003, TestSize.Level1)
 {
@@ -1977,7 +2114,7 @@ HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList003, TestSize.Level1)
  * @tc.name: RemoveVirtualScreenBlackList004
  * @tc.desc: Test RemoveVirtualScreenBlackList, id!=mainId, screens_[id]!=nullptr, screens_[mainId]!=nullptr
  * @tc.type: FUNC
- * @tc.require: issueIB3TS6
+ * @tc.require: issueIB2WOT
  */
 HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenBlackList004, TestSize.Level1)
 {
@@ -2160,9 +2297,9 @@ HWTEST_F(RSScreenManagerTest, SetMirrorScreenVisibleRect003, TestSize.Level1)
 
 /*
  * @tc.name: SetMirrorScreenVisibleRect004
- * @tc.desc: Test SetMirrorScreenVisibleRect with zero rect.
+ * @tc.desc: Test SetMirrorScreenVisibleRect with normal params.
  * @tc.type: FUNC
- * @tc.require: issueIB9E4C
+ * @tc.require: issueIB2KBH
  */
 HWTEST_F(RSScreenManagerTest, SetMirrorScreenVisibleRect004, TestSize.Level1)
 {
@@ -3014,6 +3151,27 @@ HWTEST_F(RSScreenManagerTest, CheckFoldScreenIdBuiltIn, TestSize.Level1)
 }
 
 /*
+ * @tc.name: OnHwcDeadEvent
+ * @tc.desc: Test OnHwcDeadEvent
+ * @tc.type: FUNC
+ * @tc.require: issueIBIQ0Q
+ */
+HWTEST_F(RSScreenManagerTest, OnHwcDeadEvent, TestSize.Level1)
+{
+    EXPECT_NE(screenManager_, nullptr);
+
+    ScreenId sId0 = 0;
+    screenManager->screens_[sId0] = std::make_shared<RSScreen>(sId0);
+    ScreenId sId1 = 1;
+    VirtualScreenConfigs config {.id = sId1};
+    auto virtualScreen = std::make_shared<RSScreen>(config);
+    screenManager->screens_[sId1] = virtualScreen;
+    std::map<ScreenId, std::shared_ptr<RSScreen>> retScreens = {};
+    screenManager->OnHwcDeadEvent(retScreens);
+    EXPECT_NE(retScreens.size(), 0);
+}
+
+/*
  * @tc.name: QueryScreenPropertyTest
  * @tc.desc: Test results of QueryScreenProperty
  * @tc.type: FUNC
@@ -3034,6 +3192,7 @@ HWTEST_F(RSScreenManagerTest, QueryScreenPropertyTest, TestSize.Level1)
  * @tc.name: ProcessPendingConnectionsTest
  * @tc.desc: Test ProcessPendingConnections
  * @tc.type: FUNC
+ * @tc.require:
  */
 HWTEST_F(RSScreenManagerTest, ProcessPendingConnectionsTest, TestSize.Level1)
 {
@@ -3196,5 +3355,207 @@ HWTEST_F(RSScreenManagerTest, ProcessScreenDisConnectedTest, TestSize.Level1)
 {
     ASSERT_NE(screenManager_, nullptr);
     screenManager_->ProcessScreenDisConnected(0);
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenWhiteList001
+ * @tc.desc: modify virtual screen white list while screenId invalid
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, ModifyVirtualScreenWhiteList001, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+    screenManager->screens_.clear();
+
+    ScreenId screenId = INVALID_SCREEN_ID;
+    ASSERT_NE(screenManager->AddVirtualScreenWhiteList(screenId, {}), ERR_OK);
+    ASSERT_NE(screenManager->RemoveVirtualScreenWhiteList(screenId, {}), ERR_OK);
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenWhiteList002
+ * @tc.desc: modify virtual screen when the screen type is not a virtual screen
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, ModifyVirtualScreenWhiteList002, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    ScreenId screenId = 1;
+    screenManager->screens_[screenId] = std::make_shared<RSScreen>(nullptr);
+
+    ASSERT_NE(screenManager->AddVirtualScreenWhiteList(screenId, {}), ERR_OK);
+    ASSERT_NE(screenManager->RemoveVirtualScreenWhiteList(screenId, {}), ERR_OK);
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenWhiteList003
+ * @tc.desc: modify virtual screen success
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, ModifyVirtualScreenWhiteList003, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    auto screenId =
+        screenManager->CreateVirtualScreen("virtual0", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(screenId, INVALID_SCREEN_ID);
+
+    NodeId nodeId = 0;
+    ASSERT_EQ(screenManager->AddVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
+    ASSERT_EQ(screenManager->RemoveVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
+    
+    // restore
+    screenManager->RemoveVirtualScreen(screenId);
+}
+
+/*
+ * @tc.name: ModifyVirtualScreenWhiteList004
+ * @tc.desc: modify screen's whitelist by RSScreen's interfaces
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, ModifyVirtualScreenWhiteList004, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    auto screenId =
+        screenManager->CreateVirtualScreen("virtual0", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(screenId, INVALID_SCREEN_ID);
+    auto screen = screenManager->GetScreen(screenId);
+    ASSERT_NE(screen, nullptr);
+
+    NodeId nodeId = 0;
+    // modify with OnPropertyChangedCallback
+    screen->SetWhiteList({nodeId});
+    ASSERT_FALSE(screen->GetWhiteList().empty());
+    screen->AddWhiteList({nodeId});;
+    ASSERT_FALSE(screen->GetWhiteList().empty());
+    screen->RemoveWhiteList({nodeId});
+    ASSERT_TRUE(screen->GetWhiteList().empty());
+
+    // modify without OnPropertyChangedCallback
+    screen->onPropertyChange_ = nullptr;
+    screen->SetWhiteList({nodeId});
+    ASSERT_FALSE(screen->GetWhiteList().empty());
+    screen->AddWhiteList({nodeId});;
+    ASSERT_FALSE(screen->GetWhiteList().empty());
+    screen->RemoveWhiteList({nodeId});
+    ASSERT_TRUE(screen->GetWhiteList().empty());
+
+    // restore
+    screenManager->RemoveVirtualScreen(screenId);
+}
+
+/*
+ * @tc.name: AddVirtualScreenWhiteList001
+ * @tc.desc: modify virtual screen when whitelist exceeds the limit
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenWhiteList001, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    auto screenId =
+        screenManager->CreateVirtualScreen("virtual0", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(screenId, INVALID_SCREEN_ID);
+
+    std::vector<NodeId> whiteList(MAX_SPECIAL_LAYER_NUM + 1);
+    ASSERT_NE(screenManager->AddVirtualScreenWhiteList(screenId, whiteList), ERR_OK);
+
+    // restore
+    screenManager->RemoveVirtualScreen(screenId);
+}
+
+/*
+ * @tc.name: AddVirtualScreenBlackList006
+ * @tc.desc: Test AddVirtualScreenBlackList while main screen's blacklist oversize
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenBlackList006, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    ScreenId mainId = 0;
+    ScreenId mirrorId1 = 1;
+    ScreenId mirrorId2 = 2;
+    {
+        std::lock_guard<std::mutex> lock(screenManager->screenMapMutex_);
+        screenManager->screens_[mainId] = std::make_shared<RSScreen>(nullptr);
+        screenManager->screens_[mirrorId1] = std::make_shared<RSScreen>(nullptr);
+        screenManager->screens_[mirrorId2] = std::make_shared<RSScreen>(nullptr);
+    }
+    screenManager->defaultScreenId_ = mainId;
+
+    std::vector<NodeId> blackList1(1);
+    ASSERT_EQ(screenManager->AddVirtualScreenBlackList(mirrorId1, blackList1), StatusCode::SUCCESS);
+    std::vector<NodeId> blackList2(MAX_SPECIAL_LAYER_NUM);
+    ASSERT_NE(screenManager->AddVirtualScreenBlackList(mirrorId2, blackList2), StatusCode::SUCCESS);
+
+    // restore
+    {
+        std::lock_guard<std::mutex> lock(screenManager->screenMapMutex_);
+        screenManager->screens_.erase(mainId);
+        screenManager->screens_.erase(mirrorId1);
+        screenManager->screens_.erase(mirrorId2);
+    }
+}
+
+/*
+ * @tc.name: AddVirtualScreenWhiteList002
+ * @tc.desc: check if whitelist change after AddVirtualScreenWhiteList
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenWhiteList002, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    auto screenId =
+        screenManager->CreateVirtualScreen("virtual0", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(screenId, INVALID_SCREEN_ID);
+
+    NodeId nodeId = 0;
+    ASSERT_EQ(screenManager->AddVirtualScreenWhiteList(screenId, {++nodeId}), ERR_OK);
+    ASSERT_EQ(screenManager->AddVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
+
+    // restore
+    screenManager->RemoveVirtualScreen(screenId);
+}
+
+/*
+ * @tc.name: RemoveVirtualScreenWhiteList001
+ * @tc.desc: check if whitelist change after RemoveVirtualScreenWhiteList
+ * @tc.type: FUNC
+ * @tc.require: issue21114
+ */
+HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenWhiteList001, TestSize.Level2)
+{
+    auto screenManager = CreateOrGetScreenManager();
+    ASSERT_NE(nullptr, screenManager);
+
+    auto screenId =
+        screenManager->CreateVirtualScreen("virtual0", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(screenId, INVALID_SCREEN_ID);
+
+    NodeId nodeId = 0;
+    ASSERT_EQ(screenManager->AddVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
+    ASSERT_EQ(screenManager->RemoveVirtualScreenWhiteList(screenId, {nodeId++}), ERR_OK);
+    ASSERT_EQ(screenManager->RemoveVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
+
+    // restore
+    screenManager->RemoveVirtualScreen(screenId);
 }
 } // namespace OHOS::Rosen

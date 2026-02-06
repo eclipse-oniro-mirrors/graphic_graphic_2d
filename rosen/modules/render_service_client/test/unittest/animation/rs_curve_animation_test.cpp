@@ -28,6 +28,7 @@ using namespace ANIMATIONTEST;
 class RSCurveAnimationTest : public RSAnimationBaseTest {
 };
 
+<<<<<<< HEAD
 #ifndef MODIFIER_NG
 /**
  * @tc.name: GetTimingCurveTest001
@@ -382,6 +383,8 @@ HWTEST_F(RSCurveAnimationTest, SetIsCustomTest002, TestSize.Level1)
 }
 #endif
 
+=======
+>>>>>>> master
 /**
  * @tc.name: IsSupportInteractiveAnimator001
  * @tc.desc: Verify the IsSupportInteractiveAnimator

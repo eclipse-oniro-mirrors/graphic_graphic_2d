@@ -15,7 +15,6 @@
 
 #include "common/rs_singleton.h"
 #include "display_engine/rs_luminance_control.h"
-#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
 #include "feature/hdr/rs_hdr_util.h"
 #include "info_collection/rs_layer_compose_collection.h"
 #include "rs_uni_render_engine.h"
@@ -25,6 +24,9 @@
 #endif
 #ifdef RS_ENABLE_TV_PQ_METADATA
 #include "feature/tv_metadata/rs_tv_metadata_manager.h"
+#endif
+#ifdef HETERO_HDR_ENABLE
+#include "rs_hetero_hdr_manager.h"
 #endif
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
@@ -46,14 +48,20 @@ void RSUniRenderEngine::DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas,
     PostProcessFunc postProcess)
 {
     canvas.Save();
+#ifdef HETERO_HDR_ENABLE
     bool hdrHeteroRet = RSHeteroHDRManager::Instance().UpdateHDRHeteroParams(canvas, surfaceDrawable, params);
+#endif
     canvas.ConcatMatrix(params.matrix);
     RS_TRACE_NAME_FMT("RSUniRenderEngine::DrawSurfaceNodeWithParams ignoreAlpha[%d]", params.ignoreAlpha);
     if (!params.useCPU) {
+#ifdef HETERO_HDR_ENABLE
         if (hdrHeteroRet) {
             std::shared_ptr<RSSurfaceHandler> hdrSurfaceHandler = RSHeteroHDRManager::Instance().GetHDRSurfaceHandler();
             DrawImage(canvas, params);
         } else {
+#else
+        {
+#endif
 #ifdef RS_ENABLE_TV_PQ_METADATA
             auto& renderParams = surfaceDrawable.GetRenderParams();
             if (renderParams) {
@@ -107,7 +115,7 @@ void RSUniRenderEngine::DrawLayers(RSPaintFilterCanvas& canvas, const std::vecto
             }
             continue;
         } else if (layer->IsScreenRCDLayer()) {
-            continue;
+            continue; // current flow skip rcd layer wich not have resource to canvas draw
         }
         Drawing::AutoCanvasRestore acr(canvas, true);
         DrawLayerPreProcess(canvas, layer, composerScreenInfo);

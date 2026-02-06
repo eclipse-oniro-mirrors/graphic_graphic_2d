@@ -161,7 +161,7 @@ public:
 
     int32_t GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus);
 
-    void DropFrameByPid(const std::vector<int32_t> pidList);
+    void DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0);
 
     bool RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
         std::shared_ptr<SurfaceBufferCallback> callback);
@@ -199,9 +199,12 @@ public:
         NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints);
 
     int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id);
+    int32_t SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection);
+
 private:
     void TriggerSurfaceCaptureCallback(NodeId id, const RSSurfaceCaptureConfig& captureConfig,
-        std::shared_ptr<Media::PixelMap> pixelmap, std::shared_ptr<Media::PixelMap> pixelmapHDR = nullptr);
+        std::shared_ptr<Media::PixelMap> pixelmap, CaptureError captureErrorCode,
+        std::shared_ptr<Media::PixelMap> pixelmapHDR = nullptr);
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
     void TriggerTransactionDataCallbackAndErase(uint64_t token, uint64_t timeStamp);

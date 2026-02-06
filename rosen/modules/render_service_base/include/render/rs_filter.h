@@ -89,7 +89,6 @@ public:
         BEZIER_WARP,
         DISPERSION,
         CONTENT_LIGHT,
-        SDF_EFFECT,
         GASIFY_SCALE_TWIST,
         GASIFY_BLUR,
         GASIFY,
@@ -145,12 +144,7 @@ public:
         needSnapshotOutset_ = needSnapshotOutset;
     }
 
-    bool GetHpaeCallback() const {
-        return hasHpae_;
-    }
-
 protected:
-    bool hasHpae_ = false;
     FilterType type_;
     uint32_t hash_ = 0;
     bool needSnapshotOutset_ = true;

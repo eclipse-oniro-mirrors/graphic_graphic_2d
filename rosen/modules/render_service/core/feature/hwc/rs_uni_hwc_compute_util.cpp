@@ -377,7 +377,6 @@ void RSUniHwcComputeUtil::UpdateHwcNodeByScalingMode(RSSurfaceRenderNode& node, 
     const Drawing::Matrix& gravityMatrix, const Drawing::Matrix& scalingModeMatrix)
 {
     auto surfaceHandler = node.GetRSSurfaceHandler();
-    const auto& property = node.GetRenderProperties();
     const auto buffer = surfaceHandler->GetBuffer();
     const auto consumer = surfaceHandler->GetConsumer();
     float bufferWidth = buffer->GetSurfaceBufferWidth();
@@ -557,6 +556,8 @@ void RSUniHwcComputeUtil::UpdateHwcEnableByProperty(const std::shared_ptr<RSSurf
             "childNode, isNodeRenderByDrawingCache[%d], isNodeRenderByChildNode[%d]",
             hwcNode->GetName().c_str(), hwcNode->GetId(), ctx.isNodeRenderByDrawingCache, ctx.isNodeRenderByChildNode);
         hwcNode->SetHardwareForcedDisabledState(true);
+        HwcDisabledReasonCollection::GetInstance().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
+            HwcDisabledReasons::DISABLED_BY_DRAWING_CACHE, hwcNode->GetName());
     }
 }
 
@@ -567,7 +568,6 @@ void RSUniHwcComputeUtil::UpdateHwcNodeProperty(const std::shared_ptr<RSSurfaceR
         return;
     }
     std::vector<RectI> currIntersectedRoundCornerAABBs = {};
-    bool hasCornerRadius = !hwcNode->GetRenderProperties().GetCornerRadius().IsZero();
     const auto& hwcNodeGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
     auto hwcNodeRect = hwcNodeGeo->GetAbsRect();
     HwcPropertyContext ctx;

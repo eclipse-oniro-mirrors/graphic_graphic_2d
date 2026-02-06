@@ -42,6 +42,11 @@ public:
 
     std::shared_ptr<Drawing::Image> GetCacheImgForCapture() const
     {
+        return cacheImgForCapture_;
+    }
+
+    std::shared_ptr<Drawing::Image> GetCacheImgForMultiScreenView() const
+    {
         return cacheImgForMultiScreenView_;
     }
 
@@ -174,6 +179,7 @@ private:
     std::unique_ptr<RSRenderFrame> expandRenderFrame_ = nullptr;
     std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr; // temporarily holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_ = nullptr; // backup current canvas before offscreen render
+    std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
     std::shared_ptr<Drawing::Image> cacheImgForMultiScreenView_ = nullptr;
     GraphicPixelFormat lastPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
     bool isScreenNodeSkip_ = false;

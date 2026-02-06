@@ -15,6 +15,7 @@ import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/ace_platforms.gni")
 import("//foundation/graphic/graphic_2d/frameworks/text/config.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
+import("//foundation/graphic/graphic_2d/rosen/modules/platform/config.gni")
 
 drawing_root = "$rosen_root/modules/2d_graphics"
 drawing_core_include_dir = "$rosen_root/modules/2d_graphics/include"
@@ -168,10 +169,13 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/recording/record_cmd.cpp",
       "$drawing_core_src_dir/recording/recording_canvas.cpp",
       "$drawing_core_src_dir/text/font.cpp",
+      "$drawing_core_src_dir/text/font_filetype.cpp",
       "$drawing_core_src_dir/text/font_harfbuzz.cpp",
+      "$drawing_core_src_dir/text/font_metadata.cpp",
       "$drawing_core_src_dir/text/font_mgr.cpp",
       "$drawing_core_src_dir/text/font_unicode_query.cpp",
       "$drawing_core_src_dir/text/font_style_set.cpp",
+      "$drawing_core_src_dir/text/font_variation_info.cpp",
       "$drawing_core_src_dir/text/hm_symbol.cpp",
       "$drawing_core_src_dir/text/text.cpp",
       "$drawing_core_src_dir/text/text_blob.cpp",
@@ -220,6 +224,8 @@ template("graphics2d_source_set") {
         sources +=
             [ "$drawing_core_src_dir/utils/system_graphic_properties.cpp" ]
       }
+    } else if (platform == "android") {
+      sources += [ "$drawing_core_src_dir/utils/system_properties.cpp" ]
     }
     if (is_emulator) {
       defines += [ "ROSEN_EMULATOR" ]
@@ -243,6 +249,10 @@ template("graphics2d_source_set") {
 
     if (graphic_2d_feature_upgrade_skia) {
       defines += [ "USE_M133_SKIA" ]
+    }
+
+    if (current_os == "mac" || is_mac) {
+      defines += [ "CURRENT_OS_MAC" ]
     }
 
     if (defined(graphic_2d_feature_enable_sdf) &&
@@ -352,6 +362,9 @@ template("graphics2d_source_set") {
       deps += [ "$rosen_root/modules/platform:hilog" ]
 
       if (is_arkui_x) {
+        if(graphic_2d_feature_enable_vulkan) {
+          public_external_deps -= [ "vulkan-headers:vulkan_headers" ]
+        }
         deps += [
           "//third_party/bounds_checking_function:libsec_static",
           "//third_party/skia:skia_$platform",
@@ -451,6 +464,14 @@ if (!is_arkui_x) {
 
     if (platform == "ohos") {
       version_script = "2d_graphics.versionscript"
+    }
+
+    if (is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path)) {
+      ldflags = [ 
+        "-Wl,--emit-relocs",
+        "-Wl,--no-relax", 
+        "-mno-fix-cortex-a53-843419" 
+      ]
     }
 
     part_name = "graphic_2d"

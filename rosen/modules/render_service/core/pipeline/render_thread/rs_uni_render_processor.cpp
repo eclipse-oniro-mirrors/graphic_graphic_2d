@@ -270,6 +270,36 @@ void RSUniRenderProcessor::CreateSolidColorLayer(RSLayerPtr layer, RSSurfaceRend
         solidColorLayerProperty.layerColor = {color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()};
         layer->SetSolidColorLayerProperty(solidColorLayerProperty);
     }
+    auto solidColorLayer = RSSurfaceLayer::CreateLayer(composerClient_);
+    if (solidColorLayer == nullptr) {
+        RS_LOGE("RSUniRenderProcessor::CreateSolidColorLayer failed to create layer");
+        return;
+    }
+    solidColorLayer->SetNodeId(params.GetId());
+    solidColorLayer->CopyLayerInfo(layer);
+    if (layer->GetZorder() > 0) {
+        solidColorLayer->SetZorder(layer->GetZorder() - 1);
+    }
+    solidColorLayer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    auto dstRect = params.layerInfo_.dstRect;
+    auto rogWidthRatio = uniComposerAdapter_->GetScreenInfo().GetRogWidthRatio();
+    auto rogHeightRatio = uniComposerAdapter_->GetScreenInfo().GetRogHeightRatio();
+    GraphicIRect layerRect = { static_cast<int32_t>(std::floor(dstRect.x * rogWidthRatio)),
+        static_cast<int32_t>(std::floor(dstRect.y * rogHeightRatio)),
+        static_cast<int32_t>(std::ceil(dstRect.w * rogWidthRatio)),
+        static_cast<int32_t>(std::ceil(dstRect.h * rogHeightRatio)) };
+    RS_OPTIONAL_TRACE_NAME_FMT("CreateSolidColorLayer name:%s id:%" PRIu64 " dst:[%d, %d, %d, %d] "
+        "adjustDst:[%d, %d, %d, %d] color:%08x",
+        params.GetName().c_str(), params.GetId(), dstRect.x, dstRect.y, dstRect.w, dstRect.h,
+        layerRect.x, layerRect.y, layerRect.w, layerRect.h, color.AsArgbInt());
+    solidColorLayer->SetLayerSize(layerRect);
+    solidColorLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_SOLID_COLOR);
+    solidColorLayer->SetLayerColor({color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha()});
+    solidColorLayer->SetSurface({});
+    solidColorLayer->SetBuffer({}, {});
+    solidColorLayer->SetPreBuffer({});
+    solidColorLayer->SetMetaData({});
+    layers_.emplace_back(solidColorLayer);
 }
 
 bool RSUniRenderProcessor::GetForceClientForDRM(RSSurfaceRenderParams& params)
@@ -282,9 +312,6 @@ bool RSUniRenderProcessor::GetForceClientForDRM(RSSurfaceRenderParams& params)
         return true;
     }
     if (!params.GetCornerRadiusInfoForDRM().empty()) {
-        return true;
-    }
-    if (params.GetIsOutOfScreen() == true) {
         return true;
     }
     bool forceClientForDRM = false;

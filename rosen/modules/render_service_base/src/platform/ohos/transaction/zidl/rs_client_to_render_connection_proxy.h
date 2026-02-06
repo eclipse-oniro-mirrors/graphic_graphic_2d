@@ -93,7 +93,8 @@ public:
     ErrCode FreezeScreen(NodeId id, bool isFreeze) override;
 
     void TakeUICaptureInRange(
-        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig) override;
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+        RSSurfaceCapturePermissions permissions = RSSurfaceCapturePermissions()) override;
 
     ErrCode SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW) override;
@@ -104,7 +105,7 @@ public:
     
     ErrCode GetScreenHDRStatus(ScreenId id, HdrStatus& hdrStatus, int32_t& resCode) override;
 
-    ErrCode DropFrameByPid(const std::vector<int32_t> pidList) override;
+    ErrCode DropFrameByPid(const std::vector<int32_t>& pidList, int32_t dropFrameLevel = 0) override;
 
     ErrCode RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
         sptr<RSISurfaceBufferCallback> callback) override;
@@ -150,6 +151,7 @@ public:
     void ClearSurfaceWatermark(pid_t pid, const std::string &name) override;
     
     ErrCode RegisterOcclusionChangeCallback(sptr<RSIOcclusionChangeCallback> callback) override;
+    int32_t SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection) override;
 
     int32_t RegisterSurfaceOcclusionChangeCallback(
         NodeId id, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints) override;
