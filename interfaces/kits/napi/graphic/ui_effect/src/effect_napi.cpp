@@ -1066,12 +1066,12 @@ napi_value EffectNapi::CreateFrostedGlassEffect(napi_env env, napi_callback_info
     }
 
     if (realArgc >= minArgc + NUM_2) {
- 	    Mask* mask = nullptr;
- 	    if (napi_unwrap(env, argv[NUM_26], reinterpret_cast<void**>(&mask)) == napi_ok && mask != nullptr) {
- 	        para->SetMask(mask->GetMaskPara());
- 	    }
- 	}
- 	
+        Mask* mask = nullptr;
+        if (napi_unwrap(env, argv[NUM_26], reinterpret_cast<void**>(&mask)) == napi_ok && mask != nullptr) {
+            para->SetMask(mask->GetMaskPara());
+        }
+    }
+
     VisualEffect* visualEffectObj = nullptr;
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&visualEffectObj));
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && visualEffectObj != nullptr, nullptr,
