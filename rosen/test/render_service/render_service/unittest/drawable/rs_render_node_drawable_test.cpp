@@ -18,6 +18,7 @@
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "params/rs_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "feature_cfg/feature_param/performance_feature/opinc_param.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
@@ -51,7 +52,22 @@ void RSRenderNodeDrawableTest::SetUpTestCase()
 }
 void RSRenderNodeDrawableTest::TearDownTestCase() {}
 void RSRenderNodeDrawableTest::SetUp() {}
-void RSRenderNodeDrawableTest::TearDown() {}
+void RSRenderNodeDrawableTest::TearDown()
+{
+    RSRenderNodeDrawable::drawingCacheUpdateTimeMap_.clear();
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.clear();
+    RSRenderNodeDrawable::isOffScreenWithClipHole_ = false;
+    RSRenderNodeDrawable::SetDrawBlurForCache(false);
+    RSRenderNodeDrawable::SetDrawExcludedSubTreeForCache(false);
+
+    // Clear RSUniRenderThread global state
+    CaptureParam emptyParam;
+    RSUniRenderThread::SetCaptureParam(emptyParam);
+    RSUniRenderThread::Instance().SetWhiteList({});
+
+    // Clear OPIncParam global state
+    OPIncParam::SetImageAliasEnable(true);
+}
 
 std::shared_ptr<RSRenderNodeDrawable> RSRenderNodeDrawableTest::CreateDrawable()
 {
