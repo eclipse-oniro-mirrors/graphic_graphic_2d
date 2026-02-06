@@ -44,27 +44,21 @@ const std::vector<std::array<float, WATER_DROPLET_PARAMS_COUNT>> waterDropletPar
 
 constexpr int WATER_GLASS_PARAMS_COUNT = 23;
 const std::vector<std::array<float, WATER_GLASS_PARAMS_COUNT>> waterGlassParams = {
-    // INVALID_DATA_MIN: 全部超出有效范围（负值）
     {-0.5f, -0.5f, -0.5f, -0.5f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
      -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
      -1.0f, -1.0f, -1.0f},
-    // VALID_DATA1: 基础效果 - 波纹较弱
     {0.5f, 0.5f, 0.3f, 0.3f, 20.0f, 20.0f, 1.0f, 1.0f, 0.5f, 0.5f,
      0.5f, 0.5f, 0.5f, 0.2f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
      0.5f, 1.0f},
-    // VALID_DATA2: 中等强度效果
     {0.5f, 0.5f, 0.5f, 0.5f, 40.0f, 40.0f, 3.0f, 3.0f, 2.0f, 1.0f,
      1.0f, 1.0f, 0.7f, 0.5f, 1.0f, 0.5f, 0.3f, 0.3f, 0.3f, 0.3f,
      0.5f, 2.0f},
-    // VALID_DATA3: 明显的水波扭曲效果
     {0.5f, 0.5f, 0.8f, 0.8f, 60.0f, 60.0f, 5.0f, 5.0f, 3.0f, 1.5f,
      2.0f, 2.0f, 0.9f, 0.8f, 1.5f, 0.5f, 0.2f, 0.2f, 0.2f, 0.2f,
      0.5f, 3.0f},
-    // INVALID_AND_VALID_DATA: 部分超出范围（distortXY超出1.0）
     {0.5f, 0.5f, 1.5f, 1.5f, 100.0f, 100.0f, 10.0f, 10.0f, 5.0f, 2.0f,
      5.0f, 10.0f, 1.0f, 1.0f, 2.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
      0.0f, 5.0f},
-    // INVALID_DATA_MAX: 部分超出范围（shapeDistortion超出2.0）
     {0.5f, 0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 3.0f, 0.0f, 0.0f, 0.0f,
      0.0f, 10.0f}
@@ -95,18 +89,32 @@ struct MapColorByBrightnessTestData {
     std::vector<float> positions;
 };
 
-const std::vector<MapColorByBrightnessTestData> mapColorByBrightnessParams = {
+const std::vector<MapColorByBrightnessTestData> mapColorByBrightnessParams1 = {
     {{}, {}},
-    {{{1.0f, 1.0f, 1.0f, 1.0f}, {0.5f, 0.5f, 0.5f, 1.0f}, {0.0f, 0.0f, 0.0f, 1.0f}},
-     {0.0f, 0.5f, 1.0f}},
-    {{{1.0f, 0.8f, 0.6f, 1.0f}, {0.8f, 0.6f, 0.4f, 1.0f}, {0.4f, 0.3f, 0.2f, 1.0f}},
-     {0.0f, 0.5f, 1.0f}},
-    {{{0.0f, 0.5f, 1.0f, 1.0f}, {0.2f, 0.6f, 0.8f, 1.0f}, {0.0f, 0.3f, 0.5f, 1.0f}},
-     {0.0f, 0.5f, 1.0f}},
-    {{{1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f},
-      {0.5f, 1.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.5f, 1.0f}},
-     {0.0f, 0.25f, 0.5f, 0.75f, 1.0f}},
-    {{{0.5f, 0.5f, 0.5f, 1.0f}}, {0.5f}}
+    {{{0.96f, 0.7f, 0.74f, 1.0f}}, {0.5f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}}, {0.2f, 0.7f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f}},
+    {0.5f, 0.2f, 0.8f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f},
+    {0.87f, 0.86f, 0.87f, 1.0f}}, {0.1f, 0.2f, 0.6f, 0.9f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f},
+    {0.87f, 0.86f, 0.87f, 1.0f}, {0.99f, 0.22f, 0.87f, 1.0f}}, {0.1f, 0.4f, 0.6f, 0.8f, 0.95f}}
+};
+
+const std::vector<MapColorByBrightnessTestData> mapColorByBrightnessParams2 = {
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f},
+    {0.87f, 0.86f, 0.87f, 1.0f}, {0.09f, 0.22f, 0.87f, 1.0f}, {0.99f, 0.0f, 0.0f, 1.0f}},
+    {0.1f, 0.4f, 0.6f, 0.8f, 0.95f, 1.0f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f}},
+    {0.1f, 0.45f, 0.58f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f}},
+    {0.75f, 0.35f, 0.58f}},
+    {{{0.96f, 0.7f, 0.74f, 1.0f}, {0.88f, 0.97f, 0.58f, 1.0f}, {0.53f, 0.9f, 0.59f, 1.0f}},
+    {0.35f, 0.1f, 0.85f}},
+    {{{0.639f, 0.77f, 0.95f, 1.0f}, {0.69f, 0.67f, 0.76f, 1.0f}, {0.97f, 0.72f, 0.23f, 1.0f},
+    {0.90f, 0.34f, 0.003f, 1.0f}, {0.97f, 0.82f, 0.44f, 1.0f}}, {0.106f, 0.49f, 0.70f, 0.84f, 1.0f}},
+    {{{0.639f, 0.77f, 0.95f, 1.0f}, {0.69f, 0.67f, 0.76f, 1.0f}, {0.97f, 0.72f, 0.23f, 1.0f},
+    {0.90f, 0.34f, 0.003f, 1.0f}}, {0.106f, 0.70f, 0.49f, 0.84f}}
 };
 
 struct BlurWithDirectionTestData {
@@ -115,13 +123,22 @@ struct BlurWithDirectionTestData {
     EffectTileMode tileMode;
 };
 
-const std::vector<BlurWithDirectionTestData> blurWithDirectionParams = {
-    {-1.0f, -1.0f, EffectTileMode::CLAMP},
-    {5.0f, 0.0f, EffectTileMode::CLAMP},
-    {5.0f, 90.0f, EffectTileMode::CLAMP},
-    {8.0f, 45.0f, EffectTileMode::CLAMP},
-    {20.0f, 180.0f, EffectTileMode::MIRROR},
-    {-1.0f, 200.0f, EffectTileMode::DECAL}
+const std::vector<BlurWithDirectionTestData> blurWithDirectionParams1 = {
+    {50.0f, 0.0f, EffectTileMode::CLAMP},
+    {30.0f, 180.0f, EffectTileMode::CLAMP},
+    {50.0f, 90.0f, EffectTileMode::CLAMP},
+    {-10.0f, 20.0f, EffectTileMode::CLAMP},
+    {500.0f, 0.0f, EffectTileMode::CLAMP},
+    {100.0f, 90.0f, EffectTileMode::CLAMP}
+};
+
+const std::vector<BlurWithDirectionTestData> blurWithDirectionParams2 = {
+    {50.0f, 45.0f, EffectTileMode::CLAMP},
+    {50.0f, 75.0f, EffectTileMode::CLAMP},
+    {50.0f, 135.0f, EffectTileMode::CLAMP},
+    {100.0f, 200.0f, EffectTileMode::REPEAT},
+    {200.0f, -10.0f, EffectTileMode::REPEAT},
+    {300.0f, 30.0f, EffectTileMode::REPEAT}
 };
 
 struct LinearGradientMaskTestData {
