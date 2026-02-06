@@ -52,6 +52,16 @@ std::vector<TextBox> GetTxtTextBoxes(const std::vector<skt::TextBox>& skiaBoxes)
     }
     return boxes;
 }
+
+Range<size_t> FromSkRange(const skt::SkRange<size_t>& skRange)
+{
+    return Range<size_t>(skRange.start, skRange.end);
+}
+
+Range<size_t> FromTextRange(const skt::TextRange& textRange)
+{
+    return Range<size_t>(textRange.start, textRange.end);
+}
 } // anonymous namespace
 
 ParagraphImpl::ParagraphImpl(std::unique_ptr<skt::Paragraph> paragraph, std::vector<PaintRecord>&& paints)
@@ -378,6 +388,56 @@ std::vector<std::unique_ptr<SPText::TextLineBase>> ParagraphImpl::GetTextLines()
         lines.emplace_back(std::move(textLinePtr));
     }
     return lines;
+}
+
+PositionWithAffinity ParagraphImpl::GetCharacterPositionAtCoordinate(double dx, double dy, TextEncoding encoding) const
+{
+    if (paragraph_ == nullptr) {
+        TEXT_LOGE("paragraph_ is null");
+        return {0, Affinity::DOWNSTREAM};
+    }
+
+    skt::PositionWithAffinity pos = paragraph_->getCharacterPositionAtCoordinate(dx, dy,
+        static_cast<skt::TextEncoding>(encoding));
+    return PositionWithAffinity(pos.position, static_cast<Affinity>(pos.affinity));
+}
+
+Range<size_t> ParagraphImpl::GetCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
+    Range<size_t>* actualGlyphRange, TextEncoding encoding) const
+{
+    if (paragraph_ == nullptr) {
+        TEXT_LOGE("paragraph_ is null");
+        return {0, 0};
+    }
+
+    skt::SkRange<size_t> actualTextRange;
+    skt::TextRange result = paragraph_->getCharacterRangeForGlyphRange(glyphStart, glyphEnd,
+        &actualTextRange, static_cast<skt::TextEncoding>(encoding));
+
+    // Only set actualGlyphRange if caller requested it (non-NULL)
+    if (actualGlyphRange != nullptr) {
+        *actualGlyphRange = FromSkRange(actualTextRange);
+    }
+    return FromTextRange(result);
+}
+
+Range<size_t> ParagraphImpl::GetGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
+    Range<size_t>* actualCharRange, TextEncoding encoding) const
+{
+    if (paragraph_ == nullptr) {
+        TEXT_LOGE("paragraph_ is null");
+        return {0, 0};
+    }
+
+    skt::TextRange actualTextRange;
+    skt::SkRange<size_t> result = paragraph_->getGlyphRangeForCharacterRange(charStart, charEnd,
+        &actualTextRange, static_cast<skt::TextEncoding>(encoding));
+
+    // Only set actualCharRange if caller requested it (non-NULL)
+    if (actualCharRange != nullptr) {
+        *actualCharRange = FromTextRange(actualTextRange);
+    }
+    return FromSkRange(result);
 }
 
 std::unique_ptr<Paragraph> ParagraphImpl::CloneSelf()

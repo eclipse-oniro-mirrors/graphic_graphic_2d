@@ -29,6 +29,7 @@
 #include "ui/rs_display_node.h"
 #include "ui/rs_surface_node.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
+#include "rs_render_interface.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -411,9 +412,10 @@ public:
      * @brief Freeze or unfreeze screen.
      * @param node Indicates a display node to freeze or unfreeze.
      * @param isFreeze Indicates freeze or unfreeze the specified display node.
+     * @param needSync If true, the operation will be performed synchronously.
      * @return return true if freeze or unfreeze success, else return false.
      */
-    bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze);
+    bool FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool isFreeze, bool needSync = false);
 
     /**
      * @brief Get component snapshot Within the given node range.
@@ -682,6 +684,7 @@ public:
      */
     std::string GetRefreshInfo(pid_t pid);
     std::string GetRefreshInfoToSP(NodeId id);
+    std::string GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId);
 
 #ifndef ROSEN_ARKUI_X
     /**
@@ -1408,6 +1411,7 @@ private:
         float scaleX, float scaleY);
 
     std::unique_ptr<RSRenderServiceClient> renderServiceClient_;
+    std::unique_ptr<RSRenderInterface> renderInterface_;
 };
 } // namespace Rosen
 } // namespace OHOS

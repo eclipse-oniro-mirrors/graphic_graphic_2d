@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,7 @@
 #include "dirty_region/rs_gpu_dirty_collector.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_screen_render_node_drawable.h"
+#include "feature/dirty/rs_uni_dirty_occlusion_util.h"
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
@@ -62,6 +63,7 @@ constexpr uint64_t REFRESH_PERIOD = 16666667;
 constexpr uint64_t SKIP_COMMAND_FREQ_LIMIT = 30;
 constexpr uint32_t DEFAULT_SCREEN_WIDTH = 480;
 constexpr uint32_t DEFAULT_SCREEN_HEIGHT = 320;
+constexpr uint32_t ADD_SAME_NODE_NUMS = 5;
 class RSMainThreadTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -269,6 +271,7 @@ HWTEST_F(RSMainThreadTest, SetAnimationOcclusionInfo001, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
+    bool& isAnimationOcclusion = RSUniDirtyOcclusionUtil::GetIsAnimationOcclusionRef().first;
     auto enable = DirtyRegionParam::IsAnimationOcclusionEnable();
     DirtyRegionParam::SetAnimationOcclusionEnable(true);
     ASSERT_TRUE(DirtyRegionParam::IsAnimationOcclusionEnable());
@@ -276,31 +279,31 @@ HWTEST_F(RSMainThreadTest, SetAnimationOcclusionInfo001, TestSize.Level1)
     system::SetParameter("rosen.graphic.animation.occlusion.enabled", "1");
     string sceneId = "LAUNCHER_APP_LAUNCH_FROM_ICON";
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, true);
+    ASSERT_EQ(isAnimationOcclusion, true);
     mainThread->SetAnimationOcclusionInfo(sceneId, false);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
     sceneId = "LAUNCHER_APP_LAUNCH_FROM_DOCK";
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, true);
+    ASSERT_EQ(isAnimationOcclusion, true);
     mainThread->SetAnimationOcclusionInfo(sceneId, false);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
     sceneId = "LAUNCHER_APP_SWIPE_TO_HOME";
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, true);
+    ASSERT_EQ(isAnimationOcclusion, true);
     mainThread->SetAnimationOcclusionInfo(sceneId, false);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
     sceneId = "UNKNOWN";
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
 
     system::SetParameter("rosen.graphic.animation.occlusion.enabled", "0");
     sceneId = "LAUNCHER_APP_SWIPE_TO_HOME";
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
     DirtyRegionParam::SetAnimationOcclusionEnable(false);
     ASSERT_FALSE(DirtyRegionParam::IsAnimationOcclusionEnable());
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
 
     DirtyRegionParam::SetAnimationOcclusionEnable(enable);
     system::SetParameter("rosen.graphic.animation.occlusion.enabled", ret);
@@ -4120,6 +4123,7 @@ HWTEST_F(RSMainThreadTest, CheckSystemSceneStatus003, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
+    bool& isAnimationOcclusion = RSUniDirtyOcclusionUtil::GetIsAnimationOcclusionRef().first;
     auto enable = DirtyRegionParam::IsAnimationOcclusionEnable();
     DirtyRegionParam::SetAnimationOcclusionEnable(true);
     ASSERT_TRUE(DirtyRegionParam::IsAnimationOcclusionEnable());
@@ -4127,20 +4131,20 @@ HWTEST_F(RSMainThreadTest, CheckSystemSceneStatus003, TestSize.Level1)
     system::SetParameter("rosen.graphic.animation.occlusion.enabled", "1");
     string sceneId = "LAUNCHER_APP_LAUNCH_FROM_ICON";
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, true);
+    ASSERT_EQ(isAnimationOcclusion, true);
     sleep(1);
     mainThread->CheckSystemSceneStatus();
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
 
     mainThread->SetAnimationOcclusionInfo(sceneId, true);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, true);
+    ASSERT_EQ(isAnimationOcclusion, true);
     mainThread->CheckSystemSceneStatus();
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, true);
+    ASSERT_EQ(isAnimationOcclusion, true);
 
     mainThread->SetAnimationOcclusionInfo(sceneId, false);
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
     mainThread->CheckSystemSceneStatus();
-    ASSERT_EQ(mainThread->isAnimationOcclusion_.first, false);
+    ASSERT_EQ(isAnimationOcclusion, false);
 
     DirtyRegionParam::SetAnimationOcclusionEnable(enable);
     system::SetParameter("rosen.graphic.animation.occlusion.enabled", ret);
@@ -6330,5 +6334,193 @@ HWTEST_F(RSMainThreadTest, ProcessNeedAttachedNodesTest002, TestSize.Level1)
     auto &mutablenodeMap = mainThread->context_->GetMutableNodeMap();
     mutablenodeMap.RegisterNeedAttachedNode(node);
     mainThread->ProcessNeedAttachedNodes();
+}
+
+HWTEST_F(RSMainThreadTest, AddUICaptureNode001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->uiCaptureNodeMap_.clear();
+    pid_t testPidBase = 1234;
+    uint32_t uidBase = 5678;
+
+    NodeId id1 = MakeNodeId(testPidBase, uidBase++);
+    mainThread->AddUICaptureNode(id1);
+    EXPECT_TRUE(mainThread->CheckUICaptureNode(id1));
+
+    mainThread->RemoveUICaptureNode(id1);
+    EXPECT_TRUE(mainThread->uiCaptureNodeMap_.empty());
+    EXPECT_FALSE(mainThread->CheckUICaptureNode(id1));
+}
+
+HWTEST_F(RSMainThreadTest, AddUICaptureNode002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->uiCaptureNodeMap_.clear();
+    pid_t testPidBase = 1234;
+    uint32_t uidBase = 5678;
+
+    NodeId id1 = MakeNodeId(testPidBase, uidBase++);
+    mainThread->AddUICaptureNode(id1);
+
+    NodeId id2 = MakeNodeId(testPidBase, uidBase++);
+    mainThread->AddUICaptureNode(id2);
+
+    NodeId id3 = MakeNodeId(testPidBase, uidBase++);
+    mainThread->AddUICaptureNode(id3);
+
+    bool check = (mainThread->uiCaptureNodeMap_.size() == 1);
+    EXPECT_TRUE(check);
+    if (check) {
+        auto& nodeIdCountMap = mainThread->uiCaptureNodeMap_[testPidBase];
+        EXPECT_EQ(nodeIdCountMap.size(), 3);
+    }
+
+    mainThread->RemoveUICaptureNode(id1);
+    check = (mainThread->uiCaptureNodeMap_.size() == 1);
+    EXPECT_TRUE(check);
+    if (check) {
+        auto& nodeIdCountMap = mainThread->uiCaptureNodeMap_[testPidBase];
+        EXPECT_EQ(nodeIdCountMap.size(), 2);
+    }
+
+    mainThread->RemoveUICaptureNode(id2);
+    check = (mainThread->uiCaptureNodeMap_.size() == 1);
+    EXPECT_TRUE(check);
+    if (check) {
+        auto& nodeIdCountMap = mainThread->uiCaptureNodeMap_[testPidBase];
+        EXPECT_EQ(nodeIdCountMap.size(), 1);
+    }
+
+    mainThread->RemoveUICaptureNode(id3);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 0);
+}
+
+HWTEST_F(RSMainThreadTest, AddUICaptureNode003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->uiCaptureNodeMap_.clear();
+    pid_t testPidBase = 1234;
+    uint32_t uidBase = 5678;
+
+    NodeId id1 = MakeNodeId(testPidBase, uidBase++);
+    for (uint32_t i = 1; i <= ADD_SAME_NODE_NUMS; i++) {
+        mainThread->AddUICaptureNode(id1);
+        bool check = (mainThread->uiCaptureNodeMap_.size() == 1);
+        EXPECT_TRUE(check);
+        if (check) {
+            auto& nodeIdCountMap = mainThread->uiCaptureNodeMap_[testPidBase];
+            EXPECT_EQ(nodeIdCountMap.size(), 1);
+            auto iter = nodeIdCountMap.begin();
+            EXPECT_EQ(iter->first, id1);
+            EXPECT_EQ(iter->second, i);
+        }
+    }
+
+    for (uint32_t i = 1; i <= ADD_SAME_NODE_NUMS; i++) {
+        mainThread->RemoveUICaptureNode(id1);
+        if (i != ADD_SAME_NODE_NUMS) {
+            bool check = (mainThread->uiCaptureNodeMap_.size() == 1);
+            EXPECT_TRUE(check);
+            if (check) {
+                auto& nodeIdCountMap = mainThread->uiCaptureNodeMap_[testPidBase];
+                EXPECT_EQ(nodeIdCountMap.size(), 1);
+                auto iter = nodeIdCountMap.begin();
+                EXPECT_EQ(iter->first, id1);
+                EXPECT_EQ(iter->second, ADD_SAME_NODE_NUMS - i);
+            }
+        } else {
+            EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 0);
+        }
+    }
+    EXPECT_TRUE(mainThread->uiCaptureNodeMap_.empty());
+}
+
+HWTEST_F(RSMainThreadTest, AddUICaptureNode004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    pid_t testPidBase = 1234;
+    uint32_t uidBase = 5678;
+
+    NodeId id1 = MakeNodeId(testPidBase++, uidBase++);
+    NodeId id2 = MakeNodeId(testPidBase++, uidBase++);
+    NodeId id3 = MakeNodeId(testPidBase, uidBase++);
+    NodeId id4 = MakeNodeId(testPidBase, uidBase++);
+    NodeId id5 = MakeNodeId(testPidBase++, uidBase++);
+    NodeId id6 = MakeNodeId(testPidBase, uidBase++);
+
+    mainThread->AddUICaptureNode(id1);
+    mainThread->AddUICaptureNode(id2);
+    mainThread->AddUICaptureNode(id3);
+    mainThread->AddUICaptureNode(id4);
+    mainThread->AddUICaptureNode(id5);
+    for (uint32_t i = 0; i < ADD_SAME_NODE_NUMS; i++) {
+        mainThread->AddUICaptureNode(id6);
+    }
+
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 4);
+    auto& nodeIdCountMap1 = mainThread->uiCaptureNodeMap_[ExtractPid(id1)];
+    EXPECT_EQ(nodeIdCountMap1.size(), 1);
+    EXPECT_EQ(nodeIdCountMap1[id1], 1);
+
+    auto& nodeIdCountMap2 = mainThread->uiCaptureNodeMap_[ExtractPid(id2)];
+    EXPECT_EQ(nodeIdCountMap2.size(), 1);
+    EXPECT_EQ(nodeIdCountMap2[id2], 1);
+
+    auto& nodeIdCountMap3 = mainThread->uiCaptureNodeMap_[ExtractPid(id3)];
+    EXPECT_EQ(nodeIdCountMap3.size(), 3);
+    EXPECT_EQ(nodeIdCountMap3[id3], 1);
+    EXPECT_EQ(nodeIdCountMap3[id4], 1);
+    EXPECT_EQ(nodeIdCountMap3[id5], 1);
+
+    auto& nodeIdCountMap4 = mainThread->uiCaptureNodeMap_[ExtractPid(id6)];
+    EXPECT_EQ(nodeIdCountMap4.size(), 1);
+    EXPECT_EQ(nodeIdCountMap4[id6], ADD_SAME_NODE_NUMS);
+
+    mainThread->RemoveUICaptureNode(id1);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 3);
+    mainThread->RemoveUICaptureNode(id2);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 2);
+    mainThread->RemoveUICaptureNode(id3);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 2);
+    mainThread->RemoveUICaptureNode(id4);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 2);
+    mainThread->RemoveUICaptureNode(id5);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 1);
+
+    auto& nodeIdCountMap5 = mainThread->uiCaptureNodeMap_[ExtractPid(id6)];
+    for (uint32_t i = 0; i < ADD_SAME_NODE_NUMS; i++) {
+        mainThread->RemoveUICaptureNode(id6);
+        EXPECT_EQ(nodeIdCountMap5[id6], ADD_SAME_NODE_NUMS - i - 1);
+    }
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 0);
+}
+
+HWTEST_F(RSMainThreadTest, AddUICaptureNode005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    mainThread->uiCaptureNodeMap_.clear();
+    pid_t testPidBase = 1234;
+    uint32_t uidBase = 5678;
+
+    NodeId id1 = MakeNodeId(testPidBase, uidBase);
+    NodeId id2 = MakeNodeId(testPidBase, ++uidBase);
+    NodeId id3 = MakeNodeId(++testPidBase, uidBase++);
+    NodeId id4 = MakeNodeId(testPidBase++, uidBase++);
+    mainThread->AddUICaptureNode(id1);
+    EXPECT_TRUE(mainThread->CheckUICaptureNode(id1));
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 1);
+
+    EXPECT_TRUE(mainThread->CheckUICaptureNode(id2));
+    EXPECT_FALSE(mainThread->CheckUICaptureNode(id3));
+    EXPECT_FALSE(mainThread->CheckUICaptureNode(id4));
+
+    mainThread->RemoveUICaptureNode(id2);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 1);
+    mainThread->RemoveUICaptureNode(id3);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 1);
+    mainThread->RemoveUICaptureNode(id4);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 1);
+    mainThread->RemoveUICaptureNode(id1);
+    EXPECT_EQ(mainThread->uiCaptureNodeMap_.size(), 0);
 }
 } // namespace OHOS::Rosen

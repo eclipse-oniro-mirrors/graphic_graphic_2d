@@ -272,6 +272,11 @@ std::string RSRenderServiceClient::GetRefreshInfoToSP(NodeId id)
     return "";
 }
 
+std::string RSRenderServiceClient::GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId)
+{
+    return "";
+}
+
 int32_t RSRenderServiceClient::SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height)
 {
     return 0;

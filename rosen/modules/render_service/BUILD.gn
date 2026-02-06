@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -124,6 +124,7 @@ ohos_shared_library("librender_service") {
     "core/feature/anco_manager/rs_anco_manager.cpp",
     "core/feature/capture/rs_surface_capture_task.cpp",
     "core/feature/dirty/rs_uni_dirty_compute_util.cpp",
+    "core/feature/dirty/rs_uni_dirty_occlusion_util.cpp",
     "core/feature/drm/rs_drm_util.cpp",
     "core/feature/hdr/rs_hdr_util.cpp",
     "core/feature/hwc/hpae_offline/rs_hpae_offline_layer.cpp",
@@ -215,6 +216,7 @@ ohos_shared_library("librender_service") {
     "core/feature_cfg/feature_param/performance_feature/vrate_param.cpp",
     "core/feature_cfg/feature_param/performance_feature/video_metadata_param.cpp",
     "core/feature_cfg/feature_param/performance_feature/vma_block_param.cpp",
+    "core/feature_cfg/feature_param/performance_feature/buffer_reclaim_param.cpp",
     "core/feature_cfg/graphic_feature_param_manager.cpp",
     "core/feature_cfg/xml_parser/extend_feature_parser/capture_base_param_parse.cpp",
     "core/feature_cfg/xml_parser/extend_feature_parser/color_gamut_param_parse.cpp",
@@ -244,6 +246,7 @@ ohos_shared_library("librender_service") {
     "core/feature_cfg/xml_parser/performance_feature_parser/vrate_param_parse.cpp",
     "core/feature_cfg/xml_parser/performance_feature_parser/video_metadata_param_parse.cpp",
     "core/feature_cfg/xml_parser/performance_feature_parser/vma_block_param_parse.cpp",
+    "core/feature_cfg/xml_parser/performance_feature_parser/buffer_reclaim_param_parse.cpp",
     "core/feature_cfg/xml_parser/xml_parser_base.cpp",
   ]
 

@@ -256,6 +256,33 @@ bool RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
     return true;
 }
 
+void RSHdrUtil::UpdateSelfDrawingNodesNit(RSScreenRenderNode& node)
+{
+    const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
+    for (const auto& selfDrawingNode : selfDrawingNodes) {
+        if (!selfDrawingNode) {
+            RS_LOGD("RSHdrUtil::UpdateSelfDrawingNodesNit selfDrawingNode is nullptr");
+            continue;
+        }
+        if (!selfDrawingNode->IsOnTheTree()) {
+            RS_LOGD("RSHdrUtil::UpdateSelfDrawingNodesNit node(%{public}s) is not on the tree",
+                selfDrawingNode->GetName().c_str());
+            continue;
+        }
+        auto ancestor = selfDrawingNode->GetAncestorScreenNode().lock();
+        if (!ancestor) {
+            RS_LOGD("RSHdrUtil::UpdateSelfDrawingNodesNit ancestor is nullptr");
+            continue;
+        }
+        if (node.GetId() == ancestor->GetId()) {
+            if (float scaler; RSHdrUtil::UpdateSurfaceNodeNit(*selfDrawingNode, node.GetScreenId(), scaler)) {
+                uint32_t level = RSLuminanceControl::Get().ConvertScalerFromFloatToLevel(scaler);
+                node.UpdateHeadroomMapIncrease(selfDrawingNode->GetVideoHdrStatus(), level);
+            }
+        }
+    }
+}
+
 void RSHdrUtil::UpdateSurfaceNodeLayerLinearMatrix(RSSurfaceRenderNode& surfaceNode, ScreenId screenId)
 {
     if (!surfaceNode.GetRSSurfaceHandler()) {
@@ -333,12 +360,7 @@ void RSHdrUtil::CheckPixelFormatWithSelfDrawingNode(RSSurfaceRenderNode& surface
         return;
     }
     auto screenId = screenNode.GetScreenId();
-    HdrStatus status = surfaceNode.GetVideoHdrStatus();
-    if (float scaler; RSHdrUtil::UpdateSurfaceNodeNit(surfaceNode, screenId, scaler)) {
-        uint32_t level = RSLuminanceControl::Get().ConvertScalerFromFloatToLevel(scaler);
-        screenNode.UpdateHeadroomMapIncrease(status, level);
-    }
-    screenNode.CollectHdrStatus(status);
+    screenNode.CollectHdrStatus(surfaceNode.GetVideoHdrStatus());
 
     if (RSLuminanceControl::Get().IsForceCloseHdr()) {
         RS_LOGD("RSHdrUtil::CheckPixelFormatWithSelfDrawingNode node(%{public}s) forceCloseHdr.",

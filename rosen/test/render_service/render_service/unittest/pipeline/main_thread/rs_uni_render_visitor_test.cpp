@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,6 +58,7 @@
 #include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "gmock/gmock.h"
+#include "surface_buffer_impl.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -2348,38 +2349,6 @@ HWTEST_F(RSUniRenderVisitorTest, CheckIfRoundCornerIntersectDRM, TestSize.Level2
 }
 
 /*
- * @tc.name: PrepareForUIFirstNode001
- * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is not leash window and hardware enabled
- * @tc.type: FUNC
- * @tc.require: issuesI8MQCS
- */
-HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode001, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONE);
-    surfaceNode->SetHardwareForcedDisabledState(false);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->PrepareForUIFirstNode(*surfaceNode);
-}
-
-/*
- * @tc.name: PrepareForUIFirstNode002
- * @tc.desc: Test PrePareForUIFirstNode with last frame uifirst flag is leash window and hardware disabled
- * @tc.type: FUNC
- * @tc.require: issuesI8MQCS
- */
-HWTEST_F(RSUniRenderVisitorTest, PrepareForCapsuleWindowMode002, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    ASSERT_NE(surfaceNode, nullptr);
-    surfaceNode->SetLastFrameUifirstFlag(MultiThreadCacheType::LEASH_WINDOW);
-    surfaceNode->SetHardwareForcedDisabledState(true);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    rsUniRenderVisitor->PrepareForUIFirstNode(*surfaceNode);
-}
-
-/*
  * @tc.name: QuickPrepareSurfaceRenderNode001
  * @tc.desc: Test RSUniRenderVisitorTest.QuickPrepareSurfaceRenderNode while surface node has security layer
  * @tc.type: FUNC
@@ -3431,6 +3400,72 @@ HWTEST_F(RSUniRenderVisitorTest, BeforeUpdateSurfaceDirtyCalc002, TestSize.Level
     node->SetNodeName("CapsuleWindow");
     ASSERT_TRUE(rsUniRenderVisitor->BeforeUpdateSurfaceDirtyCalc(*node));
     screenManager->RemoveVirtualScreen(screenId);
+}
+
+/**
+ * @tc.name: BeforeUpdateSurfaceDirtyCalc003
+ * @tc.desc: Test BeforeUpdateSurfaceDirtyCalc with nonEmpty node
+ * @tc.type: FUNC
+ * @tc.require: issueIABP1V
+ */
+HWTEST_F(RSUniRenderVisitorTest, BeforeUpdateSurfaceDirtyCalc003, TestSize.Level2)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    ASSERT_NE(rsContext, nullptr);
+    auto rsDisplayRenderNode = std::make_shared<RSScreenRenderNode>(1, 0, rsContext->weak_from_this());
+    ASSERT_NE(rsDisplayRenderNode, nullptr);
+    rsDisplayRenderNode->InitRenderParams();
+
+    auto node = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(node, nullptr);
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto screenManager = CreateOrGetScreenManager();
+    auto screenId = CreateVirtualScreen(screenManager);
+    ASSERT_NE(screenId, INVALID_SCREEN_ID);
+    
+    rsDisplayRenderNode->stagingRenderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(screenId);
+    ASSERT_NE(rsDisplayRenderNode->stagingRenderParams_, nullptr);
+    rsUniRenderVisitor->curScreenNode_ = rsDisplayRenderNode;
+    rsUniRenderVisitor->InitScreenInfo(*rsDisplayRenderNode);
+
+    bool isBufferReclaimEnable = BufferReclaimParam::GetInstance().IsBufferReclaimEnable();
+    auto surfaceHandle = node->GetMutableRSSurfaceHandler();
+    ASSERT_NE(surfaceHandle, nullptr);
+
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    BufferRequestConfig requestConfig = {
+        .width = 0x100,
+        .height = 0x100,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    ASSERT_EQ(ret, GSERROR_OK);
+    surfaceHandle->SetBuffer(buffer, SyncFence::INVALID_FENCE, Rect(), 0);
+    surfaceHandle->SetLastBufferId(buffer->GetBufferId());
+    surfaceHandle->lastBufferReclaimNum_ = 4;
+    EXPECT_TRUE(surfaceHandle->ReclaimLastBufferPrepare());
+    EXPECT_TRUE(surfaceHandle->ReclaimLastBufferProcess());
+    EXPECT_TRUE(buffer->IsReclaimed());
+
+
+    node->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    BufferReclaimParam::GetInstance().SetBufferReclaimEnable(false);
+    ASSERT_TRUE(rsUniRenderVisitor->BeforeUpdateSurfaceDirtyCalc(*node));
+    EXPECT_TRUE(buffer->IsReclaimed());
+
+    node->name_ = "RosenWeb";
+    EXPECT_TRUE(node->IsRosenWeb());
+    BufferReclaimParam::GetInstance().SetBufferReclaimEnable(true);
+    ASSERT_TRUE(rsUniRenderVisitor->BeforeUpdateSurfaceDirtyCalc(*node));
+    EXPECT_FALSE(buffer->IsReclaimed());
+
+    screenManager->RemoveVirtualScreen(screenId);
+    BufferReclaimParam::GetInstance().SetBufferReclaimEnable(isBufferReclaimEnable);
 }
 
 /**
@@ -5468,53 +5503,6 @@ HWTEST_F(RSUniRenderVisitorTest, CalculateOpaqueAndTransparentRegion007, TestSiz
 
     rsUniRenderVisitor->CalculateOpaqueAndTransparentRegion(*rsSurfaceRenderNode);
     ASSERT_TRUE(rsUniRenderVisitor->accumulatedOcclusionRegionBehindWindow_.Sub(regionFilter).IsEmpty());
-}
-
-/**
- * @tc.name: CheckResetAccumulatedOcclusionRegion001
- * @tc.desc: Test CheckResetAccumulatedOcclusionRegion with needReset
- * @tc.type: FUNC
- * @tc.require: issue21091
- */
-HWTEST_F(RSUniRenderVisitorTest, CheckResetAccumulatedOcclusionRegion001, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    RSMainThread::Instance()->isAnimationOcclusion_.first = true;
-
-    auto rsContext = std::make_shared<RSContext>();
-    ASSERT_NE(rsContext, nullptr);
-    RSSurfaceRenderNodeConfig config;
-    config.id = 0;
-    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config, rsContext->weak_from_this());
-    ASSERT_NE(rsSurfaceRenderNode, nullptr);
-    rsSurfaceRenderNode->InitRenderParams();
-
-    // set surface node trasnparent.
-    rsSurfaceRenderNode->globalAlpha_ = 0.f;
-    rsSurfaceRenderNode->abilityBgAlpha_ = 0;
-    NodeId id = 1;
-    rsUniRenderVisitor->curScreenNode_ = std::make_shared<RSScreenRenderNode>(id, 0, rsContext);
-    RectI screenRect = { 0, 0, 1000, 1000};
-    rsUniRenderVisitor->curScreenNode_->screenRect_ = screenRect;
-    // add filter node to parent surface.
-    auto filterNode = std::make_shared<RSCanvasRenderNode>(++id);
-    filterNode->oldDirtyInSurface_ = screenRect;
-    auto& nodeMap = rsContext->GetMutableNodeMap();
-    nodeMap.renderNodeMap_.clear();
-    nodeMap.RegisterRenderNode(filterNode);
-    rsSurfaceRenderNode->visibleFilterChild_.push_back(filterNode->GetId());
-
-    RectI rect = RectI(0, 0, 100, 100);
-    auto occlusionRegion = Occlusion::Region(rect);
-    rsUniRenderVisitor->accumulatedOcclusionRegion_ = occlusionRegion;
-    rsUniRenderVisitor->CheckResetAccumulatedOcclusionRegion(*rsSurfaceRenderNode);
-    ASSERT_TRUE(rsUniRenderVisitor->accumulatedOcclusionRegion_.IsEmpty());
-
-    rsUniRenderVisitor->accumulatedOcclusionRegion_ = occlusionRegion;
-    RSMainThread::Instance()->isAnimationOcclusion_.first = false;
-    rsUniRenderVisitor->CheckResetAccumulatedOcclusionRegion(*rsSurfaceRenderNode);
-    ASSERT_FALSE(rsUniRenderVisitor->accumulatedOcclusionRegion_.IsEmpty());
 }
 
 /**

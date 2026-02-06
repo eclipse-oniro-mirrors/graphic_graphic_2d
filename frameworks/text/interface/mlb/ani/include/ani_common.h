@@ -116,6 +116,7 @@ namespace OHOS::Text::ANI {
 #define ANI_ENUM_TEXT_HIGH_CONTRAST "@ohos.graphics.text.text.TextHighContrast"
 #define ANI_ENUM_TEXT_UNDEFINED_GLYPH_DISPLAY "@ohos.graphics.text.text.TextUndefinedGlyphDisplay"
 #define ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE "@ohos.graphics.text.text.LineHeightStyle"
+#define ANI_ENUM_TEXT_ENCODING "@ohos.graphics.drawing.drawing.TextEncoding"
 
 enum class TextErrorCode : int32_t {
     OK = 0,
