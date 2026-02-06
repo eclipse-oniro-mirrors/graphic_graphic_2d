@@ -52,6 +52,13 @@ DECLARE_MASK(WaveGradientMask, WAVE_GRADIENT_MASK,
     ADD_PROPERTY_TAG(WaveGradientMask, TurbulenceStrength)
 );
 
+DECLARE_MASK(WaveDisturbanceMask, WAVE_DISTURBANCE_MASK,
+ 	ADD_PROPERTY_TAG(WaveDisturbanceMask, Progress),
+ 	ADD_PROPERTY_TAG(WaveDisturbanceMask, ClickPos),
+ 	ADD_PROPERTY_TAG(WaveDisturbanceMask, WaveRD),
+ 	ADD_PROPERTY_TAG(WaveDisturbanceMask, WaveLWH)
+);
+
 DECLARE_MASK(DoubleRippleMask, DOUBLE_RIPPLE_MASK,
     ADD_PROPERTY_TAG(DoubleRippleMask, Center1),
     ADD_PROPERTY_TAG(DoubleRippleMask, Center2),
