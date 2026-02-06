@@ -4008,7 +4008,7 @@ HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable002, TestSize.Level1)
     ASSERT_NE(node, nullptr);
 
     // Set a non-ColorPicker drawable at the COLOR_PICKER slot
-    auto filterDrawable = DrawableV2::RSFilterDrawable::Create();
+    auto filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
     ASSERT_NE(filterDrawable, nullptr);
     node->GetDrawableVec(__func__).at(static_cast<int8_t>(RSDrawableSlot::COLOR_PICKER)) = filterDrawable;
 
@@ -4027,7 +4027,7 @@ HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable003, TestSize.Level1)
     RSRenderNode node(1);
 
     // Create a ColorPicker drawable
-    auto colorPickerDrawable = std::make_shared<DrawableV2::RSColorPickerDrawable>(false);
+    auto colorPickerDrawable = std::make_shared<DrawableV2::RSColorPickerDrawable>(false, 0);
     ASSERT_NE(colorPickerDrawable, nullptr);
 
     // Set it at the COLOR_PICKER slot
