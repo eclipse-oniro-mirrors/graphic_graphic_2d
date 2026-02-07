@@ -67,16 +67,16 @@ struct RippleMaskInfo {
 const std::vector<DistortChromaInfo> DistortChromaParams = {
     // Strength brightness dispersion saturation granularity frequency sharpness distortFactor moveDistance progress
     { { 0.3f, 0.5f, 0.3f }, 1.0f, 0.2f, 0.2f, { 10.1f, 10.1f }, 2.1f, 1.0f, { 0.1f, 0.1f }, 0.0f, 0.0f },
-    { { 0.2f, 0.2f, 0.2f }, 5.0f, 1.0f, 2.0f, { 2.1f, 2.1f }, 1.0f, 1.5f, { 0.2f, 0.3f }, 1.0f, 1.0f },
+    { { 0.2f, 0.2f, 0.2f }, 1.0f, 1.0f, 1.0f, { 2.1f, 2.1f }, 1.0f, 1.5f, { 0.2f, 0.3f }, 1.0f, 1.0f },
     { { 1.0f, 1.3f, 1.3f }, 1.0f, 1.0f, 0.3f, { 3.1f, 3.1f }, 0.8f, 1.0f, { 0.3f, 0.4f }, -1.0f, -1.0f },
     { { 2.0f, 2.0f, 2.0f }, 3.0f, 2.0f, 3.0f, { 4.1f, 4.1f }, 2.0f, 2.0f, { 0.5f, 0.6f }, 2.0f, 2.0f },
-    { { 0.5f, 0.5f, 0.5f }, 10.0f, 0.5f, 1.0f, { 5.1f, 5.1f }, 0.5f, 0.5f, { -0.1f, -0.1f }, 0.5f, 0.5f },
-    { { 0.6f, 0.2f, 0.2f }, 1.2f, 0.2f, 0.2f, { 6.1f, 6.1f }, 0.2f, 0.2f, { -0.2f, 0.3f }, 0.2f, 0.2f },
+    { { 0.5f, 0.5f, 0.5f }, 10.0f, 0.8f, 1.2f, { 5.1f, 5.1f }, 1.2f, 1.2f, { -0.35f, -0.35f }, 0.5f, 0.5f },
+    { { 0.6f, 0.2f, 0.2f }, 1.2f, 0.6f, 0.5f, { 6.1f, 6.1f }, 1.0f, 1.0f, { -0.35f, 0.45f }, 0.2f, 0.2f },
 };
 
 const std::vector<DupoliNoiseMaskInfo> DupoliNoiseMaskParams = {
     { 5.0f, -1.0f, 1.5f },
-    { -2.0f, 2.0f, 2.7f },
+    { 2.0f, 2.0f, 2.7f },
     { 20.5f, 3.0f, 1.0f },
     { 10.0f, 0.4f, 5.0f },
     { 3.0f, 5.0f, 2.0f },
