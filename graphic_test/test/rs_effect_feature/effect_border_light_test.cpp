@@ -207,4 +207,48 @@ GRAPHIC_TEST(BorderLightTest, EFFECT_TEST, Set_Border_Light_Foreground_Test)
     usleep(SLEEP_TIME_FOR_PROXY);
 }
 
+GRAPHIC_TEST(BorderLightTest, EFFECT_TEST, Set_Border_Light_Validity_Check)
+{
+    const int sizeX = screenWidth_ / 2;
+    const int sizeY = screenHeight_ / 2;
+
+    auto leftContainer = RSCanvasNode::Create();
+    leftContainer->SetBounds({0, 0, sizeX, sizeY});
+    leftContainer->SetFrame({0, 0, sizeX, sizeY});
+    leftContainer->SetBackgroundColor(0xff182028);
+    auto borderShader = std::make_shared<RSNGBorderLight>();
+    SetBorderLightParams(borderShader, borderLightParams[0]);
+    borderShader->Setter<BorderLightIntensityTag>(0.8f);
+    borderShader->Setter<BorderLightWidthTag>(0.1f);
+    leftContainer->SetBackgroundNGShader(borderShader);
+    GetRootNode()->AddChild(leftContainer);
+    RegisterNode(leftContainer);
+
+    auto rightContainer = RSCanvasNode::Create();
+    rightContainer->SetBounds({sizeX, 0, sizeX, sizeY});
+    rightContainer->SetFrame({sizeX, 0, sizeX, sizeY});
+    rightContainer->SetBackgroundColor(0xff102040);
+    auto aiBarGlowShader = std::make_shared<RSNGAIBarGlow>();
+    aiBarGlowShader->Setter<AIBarGlowLTWHTag>(Vector4f {0.1f, 0.1f, 0.8f, 0.8f});
+    aiBarGlowShader->Setter<AIBarGlowStretchFactorTag>(1.0f);
+    aiBarGlowShader->Setter<AIBarGlowBarAngleTag>(0.0f);
+    aiBarGlowShader->Setter<AIBarGlowColor0Tag>(Vector4f {1.0f, 0.0f, 0.0f, 1.0f});
+    aiBarGlowShader->Setter<AIBarGlowColor1Tag>(Vector4f {0.0f, 1.0f, 0.0f, 1.0f});
+    aiBarGlowShader->Setter<AIBarGlowColor2Tag>(Vector4f {0.0f, 0.0f, 1.0f, 1.0f});
+    aiBarGlowShader->Setter<AIBarGlowColor3Tag>(Vector4f {1.0f, 1.0f, 0.0f, 1.0f});
+    aiBarGlowShader->Setter<AIBarGlowPosition0Tag>(Vector2f {0.0f, 0.0f});
+    aiBarGlowShader->Setter<AIBarGlowPosition1Tag>(Vector2f {0.33f, 0.0f});
+    aiBarGlowShader->Setter<AIBarGlowPosition2Tag>(Vector2f {0.66f, 0.0f});
+    aiBarGlowShader->Setter<AIBarGlowPosition3Tag>(Vector2f {1.0f, 0.0f});
+    aiBarGlowShader->Setter<AIBarGlowStrengthTag>(Vector4f {0.3f, 0.4f, 0.5f, 0.6f});
+    aiBarGlowShader->Setter<AIBarGlowBrightnessTag>(1.0f);
+    aiBarGlowShader->Setter<AIBarGlowProgressTag>(0.5f);
+    rightContainer->SetBackgroundNGShader(aiBarGlowShader);
+    GetRootNode()->AddChild(rightContainer);
+    RegisterNode(rightContainer);
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+}
+
 } // namespace OHOS::Rosen
