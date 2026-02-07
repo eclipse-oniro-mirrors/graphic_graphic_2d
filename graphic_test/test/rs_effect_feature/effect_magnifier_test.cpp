@@ -18,8 +18,6 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
-#include "rs_graphic_test_img.h"
-
 #include "property/rs_properties.h"
 
 using namespace testing;
@@ -27,7 +25,6 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 namespace {
-constexpr const char* TEST_IMAGE_PATH = "/data/local/tmp/fg_test.jpg";
 constexpr uint32_t SLEEP_TIME_FOR_PROXY = 100000; // 100 ms
 }
 
@@ -39,7 +36,31 @@ private:
     void SetupMagnifierCase(float factor, float width, float height,
         float cornerRadius, float borderWidth, float offsetX, float offsetY)
     {
-        auto testNodeBackGround = SetUpNodeBgImage(TEST_IMAGE_PATH, {0, 0, screenWidth, screenHeight});
+        auto backLayer = RSCanvasNode::Create();
+        backLayer->SetBounds({0, 0, screenWidth, screenHeight});
+        backLayer->SetFrame({0, 0, screenWidth, screenHeight});
+        backLayer->SetBackgroundColor(0xff101820);
+        GetRootNode()->AddChild(backLayer);
+        RegisterNode(backLayer);
+
+        const int halfW = screenWidth / 2;
+        const int halfH = screenHeight / 2;
+        const uint32_t colors[4] = {0xffd94f4f, 0xff4fd96d, 0xff4f79d9, 0xffd9c84f};
+        for (int i = 0; i < 4; ++i) {
+            auto patch = RSCanvasNode::Create();
+            const int px = (i % 2) * halfW;
+            const int py = (i / 2) * halfH;
+            patch->SetBounds({px, py, halfW, halfH});
+            patch->SetFrame({px, py, halfW, halfH});
+            patch->SetBackgroundColor(colors[i]);
+            backLayer->AddChild(patch);
+            RegisterNode(patch);
+        }
+
+        auto magnifierHost = RSCanvasNode::Create();
+        magnifierHost->SetBounds({0, 0, screenWidth, screenHeight});
+        magnifierHost->SetFrame({0, 0, screenWidth, screenHeight});
+        magnifierHost->SetBackgroundColor(0x00000000);
         auto magnifierParams = std::make_shared<Rosen::RSMagnifierParams>();
         magnifierParams->factor_ = std::clamp(factor, 1.2f, 4.0f);
         magnifierParams->width_ = std::clamp(width, 120.0f, 420.0f);
@@ -48,9 +69,9 @@ private:
         magnifierParams->borderWidth_ = std::clamp(borderWidth, 2.0f, 8.0f);
         magnifierParams->offsetX_ = std::clamp(offsetX, 30.0f, 260.0f);
         magnifierParams->offsetY_ = std::clamp(offsetY, 30.0f, 260.0f);
-        testNodeBackGround->SetMagnifierParams(magnifierParams);
-        GetRootNode()->AddChild(testNodeBackGround);
-        RegisterNode(testNodeBackGround);
+        magnifierHost->SetMagnifierParams(magnifierParams);
+        GetRootNode()->AddChild(magnifierHost);
+        RegisterNode(magnifierHost);
         RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
         usleep(SLEEP_TIME_FOR_PROXY);
     }
