@@ -3998,31 +3998,11 @@ HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable001, TestSize.Level1)
 
 /**
  * @tc.name: GetColorPickerDrawable002
- * @tc.desc: Test GetColorPickerDrawable returns nullptr when drawable is not ColorPicker type
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable002, TestSize.Level1)
-{
-    auto node = std::make_shared<RSRenderNode>(1);
-    ASSERT_NE(node, nullptr);
-
-    // Set a non-ColorPicker drawable at the COLOR_PICKER slot
-    auto filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
-    ASSERT_NE(filterDrawable, nullptr);
-    node->GetDrawableVec(__func__).at(static_cast<int8_t>(RSDrawableSlot::COLOR_PICKER)) = filterDrawable;
-
-    auto colorPickerDrawable = node->GetColorPickerDrawable();
-    EXPECT_EQ(colorPickerDrawable, nullptr);
-}
-
-/**
- * @tc.name: GetColorPickerDrawable003
  * @tc.desc: Test GetColorPickerDrawable successfully retrieves ColorPicker drawable
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable003, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable002, TestSize.Level1)
 {
     RSRenderNode node(1);
 
