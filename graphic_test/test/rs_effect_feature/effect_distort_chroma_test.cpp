@@ -30,12 +30,12 @@ public:
     // called before each tests
     void BeforeEach() override
     {
-        SetScreenSize(screenWidth, screenHeight);
+        SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
 private:
-    const int screenWidth = 1200;
-    const int screenHeight = 2000;
+    static constexpr int SCREEN_WIDTH = 1200;
+    static constexpr int SCREEN_HEIGHT = 2000;
 };
 
 struct DistortChromaInfo {
@@ -125,37 +125,37 @@ void SetDistortChromaRippleMask(std::shared_ptr<RSNGDistortChroma> distortChroma
     distortChroma->Setter<DistortChromaMaskTag>(alphaMask);
 }
 
-constexpr int kColumnCount = 2;
-constexpr int kRippleTopRowsCount = 2;
-constexpr int kRippleTopRowsItemCount = kColumnCount * kRippleTopRowsCount;
-constexpr float kRippleBrightnessScale = 1.25f;
-constexpr float kRippleTopRowsExtraBrightnessScale = 1.2f;
-constexpr float kRippleSaturationScale = 1.5f;
+constexpr int K_COLUMN_COUNT = 2;
+constexpr int K_RIPPLE_TOP_ROWS_COUNT = 2;
+constexpr int K_RIPPLE_TOP_ROWS_ITEM_COUNT = K_COLUMN_COUNT * K_RIPPLE_TOP_ROWS_COUNT;
+constexpr float K_RIPPLE_BRIGHTNESS_SCALE = 1.25f;
+constexpr float K_RIPPLE_TOP_ROWS_EXTRA_BRIGHTNESS_SCALE = 1.2f;
+constexpr float K_RIPPLE_SATURATION_SCALE = 1.5f;
 
 void SetParameterForRipple(std::shared_ptr<RSNGDistortChroma> distortChroma, int index)
 {
     SetParameter(distortChroma, index);
 
-    float brightness = DistortChromaParams[index].brightness * kRippleBrightnessScale;
-    if (index < kRippleTopRowsItemCount) {
-        brightness *= kRippleTopRowsExtraBrightnessScale;
+    float brightness = DistortChromaParams[index].brightness * K_RIPPLE_BRIGHTNESS_SCALE;
+    if (index < K_RIPPLE_TOP_ROWS_ITEM_COUNT) {
+        brightness *= K_RIPPLE_TOP_ROWS_EXTRA_BRIGHTNESS_SCALE;
     }
     distortChroma->Setter<DistortChromaBrightnessTag>(brightness);
 
-    float saturation = DistortChromaParams[index].saturation * kRippleSaturationScale;
+    float saturation = DistortChromaParams[index].saturation * K_RIPPLE_SATURATION_SCALE;
     distortChroma->Setter<DistortChromaSaturationTag>(saturation);
 }
 
 GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_DupoliNoiseMask_Test)
 {
     int rowCount = static_cast<int>(DistortChromaParams.size());
-    auto sizeX = screenWidth / kColumnCount;
-    auto sizeY = screenHeight * kColumnCount / rowCount;
+    auto sizeX = SCREEN_WIDTH / K_COLUMN_COUNT;
+    auto sizeY = SCREEN_HEIGHT * K_COLUMN_COUNT / rowCount;
     for (size_t index = 0; index < DistortChromaParams.size(); ++index) {
         auto distortChroma = std::make_shared<RSNGDistortChroma>();
         SetParameter(distortChroma, index);
-        int x = static_cast<int>(index % kColumnCount) * sizeX;
-        int y = static_cast<int>(index / kColumnCount) * sizeY;
+        int x = static_cast<int>(index % K_COLUMN_COUNT) * sizeX;
+        int y = static_cast<int>(index / K_COLUMN_COUNT) * sizeY;
         auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { x, y, sizeX, sizeY });
         backgroundTestNode->SetForegroundShader(distortChroma);
         GetRootNode()->AddChild(backgroundTestNode);
@@ -166,14 +166,14 @@ GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_DupoliNoiseMask_T
 GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_RippleMask_Test)
 {
     int rowCount = static_cast<int>(DistortChromaParams.size());
-    auto sizeX = screenWidth / kColumnCount;
-    auto sizeY = screenHeight * kColumnCount / rowCount;
+    auto sizeX = SCREEN_WIDTH / K_COLUMN_COUNT;
+    auto sizeY = SCREEN_HEIGHT * K_COLUMN_COUNT / rowCount;
     for (size_t index = 0; index < DistortChromaParams.size(); ++index) {
         auto distortChroma = std::make_shared<RSNGDistortChroma>();
         SetParameterForRipple(distortChroma, index);
         SetDistortChromaRippleMask(distortChroma, index);
-        int x = static_cast<int>(index % kColumnCount) * sizeX;
-        int y = static_cast<int>(index / kColumnCount) * sizeY;
+        int x = static_cast<int>(index % K_COLUMN_COUNT) * sizeX;
+        int y = static_cast<int>(index / K_COLUMN_COUNT) * sizeY;
         auto backgroundTestNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { x, y, sizeX, sizeY });
         backgroundTestNode->SetForegroundShader(distortChroma);
         GetRootNode()->AddChild(backgroundTestNode);
