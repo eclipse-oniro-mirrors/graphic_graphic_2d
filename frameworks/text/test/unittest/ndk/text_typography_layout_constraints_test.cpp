@@ -41,6 +41,7 @@ const double LAYOUT_HEIGHT_MEDIUM = 200.0;
 const double LAYOUT_HEIGHT_LARGE = 1000.0;
 const double NEGATIVE_LAYOUT_LENGTH = -10.0;
 const double DEFAULT_SINGLE_LINE_HEIGHT = 59.0;
+const double FONT_HEIGHT_SCALE = 1.5;
 
 // Test text samples
 const char* SHORT_TEXT = "Hello";
@@ -97,6 +98,7 @@ private:
     OH_Drawing_TypographyCreate* fHandler{nullptr};
     OH_Drawing_Typography* fTypography{nullptr};
     OH_Drawing_TypographyStyle* fTypoStyle{nullptr};
+    OH_Drawing_TextStyle* fTextStyle{nullptr};
     OH_Drawing_FontCollection* fFontCollection{nullptr};
 };
 
@@ -105,6 +107,9 @@ void NdkTypographyLayoutConstraintsTest::SetUp()
     fTypoStyle = OH_Drawing_CreateTypographyStyle();
     ASSERT_NE(fTypoStyle, nullptr);
     OH_Drawing_SetTypographyTextFontSize(fTypoStyle, DEFAULT_FONT_SIZE);
+    fTextStyle = OH_Drawing_CreateTextStyle();
+    ASSERT_NE(fTextStyle, nullptr);
+    OH_Drawing_SetTextStyleFontSize(fTextStyle, DEFAULT_FONT_SIZE);
 
     fFontCollection = OH_Drawing_CreateFontCollection();
     ASSERT_NE(fFontCollection, nullptr);
@@ -140,24 +145,19 @@ void NdkTypographyLayoutConstraintsTest::CreateTypography()
 
 void NdkTypographyLayoutConstraintsTest::AddText(const char* text)
 {
-    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
-    ASSERT_NE(txtStyle, nullptr);
-    OH_Drawing_SetTextStyleFontSize(txtStyle, DEFAULT_FONT_SIZE);
-    OH_Drawing_TypographyHandlerPushTextStyle(fHandler, txtStyle);
+    OH_Drawing_TypographyHandlerPushTextStyle(fHandler, fTextStyle);
     OH_Drawing_TypographyHandlerAddText(fHandler, text);
     OH_Drawing_TypographyHandlerPopTextStyle(fHandler);
-    OH_Drawing_DestroyTextStyle(txtStyle);
+    OH_Drawing_DestroyTextStyle(fTextStyle);
 }
 
 void NdkTypographyLayoutConstraintsTest::AddTextWithStyle(const char* text, double fontSize)
 {
-    OH_Drawing_TextStyle* txtStyle = OH_Drawing_CreateTextStyle();
-    ASSERT_NE(txtStyle, nullptr);
-    OH_Drawing_SetTextStyleFontSize(txtStyle, fontSize);
-    OH_Drawing_TypographyHandlerPushTextStyle(fHandler, txtStyle);
+    OH_Drawing_SetTextStyleFontSize(fTextStyle, fontSize);
+    OH_Drawing_TypographyHandlerPushTextStyle(fHandler, fTextStyle);
     OH_Drawing_TypographyHandlerAddText(fHandler, text);
     OH_Drawing_TypographyHandlerPopTextStyle(fHandler);
-    OH_Drawing_DestroyTextStyle(txtStyle);
+    OH_Drawing_DestroyTextStyle(fTextStyle);
 }
 
 void NdkTypographyLayoutConstraintsTest::CleanupTypography()
@@ -1673,6 +1673,188 @@ HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest
     EXPECT_EQ(lineCnt, EXPECT_LINE_CNT);
     const double expectRectWidth = 256.33111572265625;
     VerifyRectSize(expectRectWidth, DEFAULT_SINGLE_LINE_HEIGHT * EXPECT_LINE_CNT, result);
+
+    EXPECT_EQ(OH_Drawing_DestroyArray(rangeArray), OH_Drawing_ErrorCode::OH_DRAWING_SUCCESS);
+}
+
+/**
+ * @tc.name: TypographyLayoutWithConstraintsTest049
+ * @tc.desc: Test LayoutWithConstraints with disable all height behavior
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest049, TestSize.Level0)
+{
+    OH_Drawing_SetTextStyleFontHeight(fTextStyle, FONT_HEIGHT_SCALE);
+    OH_Drawing_TypographyTextSetHeightBehavior(fTypoStyle,
+        OH_Drawing_TextHeightBehavior::TEXT_HEIGHT_DISABLE_ALL);
+    CreateTypographyHandler();
+    AddText(MIXED_TEXT);
+    CreateTypography();
+
+    OH_Drawing_Array* rangeArray = nullptr;
+    size_t rangeCount = 0;
+
+    OH_Drawing_RectSize result = CallLayoutWithConstraints(LAYOUT_WIDTH_MEDIUM, LAYOUT_HEIGHT_LARGE,
+                                                           &rangeArray, &rangeCount);
+
+    ASSERT_NE(rangeArray, nullptr);
+    EXPECT_EQ(rangeCount, 1);
+    const size_t rangeEnd = 82;
+    std::vector<std::pair<size_t, size_t>> expectedRanges = { {0, rangeEnd} };
+    VerifyAllRanges(expectedRanges, rangeArray, rangeCount);
+    const double EXPECT_WIDTH = 304.99969482421875;
+    size_t lineCnt = OH_Drawing_TypographyGetLineCount(GetTypography());
+    const size_t EXPECT_LINE_CNT = 9;
+    EXPECT_EQ(lineCnt, EXPECT_LINE_CNT);
+    const double EXPECT_HEIGHT = 659;
+    VerifyRectSize(EXPECT_WIDTH, EXPECT_HEIGHT, result);
+
+    EXPECT_EQ(OH_Drawing_DestroyArray(rangeArray), OH_Drawing_ErrorCode::OH_DRAWING_SUCCESS);
+}
+
+/**
+ * @tc.name: TypographyLayoutWithConstraintsTest050
+ * @tc.desc: Test LayoutWithConstraints with disable first height behavior
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest050, TestSize.Level0)
+{
+    OH_Drawing_SetTextStyleFontHeight(fTextStyle, FONT_HEIGHT_SCALE);
+    OH_Drawing_TypographyTextSetHeightBehavior(fTypoStyle,
+        OH_Drawing_TextHeightBehavior::TEXT_HEIGHT_DISABLE_FIRST_ASCENT);
+    CreateTypographyHandler();
+    AddText(MIXED_TEXT);
+    CreateTypography();
+
+    OH_Drawing_Array* rangeArray = nullptr;
+    size_t rangeCount = 0;
+
+    OH_Drawing_RectSize result = CallLayoutWithConstraints(LAYOUT_WIDTH_MEDIUM, LAYOUT_HEIGHT_LARGE,
+                                                           &rangeArray, &rangeCount);
+
+    ASSERT_NE(rangeArray, nullptr);
+    EXPECT_EQ(rangeCount, 1);
+    const size_t rangeEnd = 82;
+    std::vector<std::pair<size_t, size_t>> expectedRanges = { {0, rangeEnd} };
+    VerifyAllRanges(expectedRanges, rangeArray, rangeCount);
+    const double EXPECT_WIDTH = 304.99969482421875;
+    size_t lineCnt = OH_Drawing_TypographyGetLineCount(GetTypography());
+    const size_t EXPECT_LINE_CNT = 9;
+    EXPECT_EQ(lineCnt, EXPECT_LINE_CNT);
+    const double EXPECT_HEIGHT = 662;
+    VerifyRectSize(EXPECT_WIDTH, EXPECT_HEIGHT, result);
+
+    EXPECT_EQ(OH_Drawing_DestroyArray(rangeArray), OH_Drawing_ErrorCode::OH_DRAWING_SUCCESS);
+}
+
+/**
+ * @tc.name: TypographyLayoutWithConstraintsTest051
+ * @tc.desc: Test LayoutWithConstraints with disable last height behavior
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest051, TestSize.Level0)
+{
+    OH_Drawing_SetTextStyleFontHeight(fTextStyle, FONT_HEIGHT_SCALE);
+    OH_Drawing_TypographyTextSetHeightBehavior(fTypoStyle,
+        OH_Drawing_TextHeightBehavior::TEXT_HEIGHT_DISABLE_LAST_ASCENT);
+    CreateTypographyHandler();
+    AddText(MIXED_TEXT);
+    CreateTypography();
+
+    OH_Drawing_Array* rangeArray = nullptr;
+    size_t rangeCount = 0;
+
+    OH_Drawing_RectSize result = CallLayoutWithConstraints(LAYOUT_WIDTH_MEDIUM, LAYOUT_HEIGHT_LARGE,
+                                                           &rangeArray, &rangeCount);
+
+    ASSERT_NE(rangeArray, nullptr);
+    EXPECT_EQ(rangeCount, 1);
+    const size_t rangeEnd = 82;
+    std::vector<std::pair<size_t, size_t>> expectedRanges = { {0, rangeEnd} };
+    VerifyAllRanges(expectedRanges, rangeArray, rangeCount);
+    const double EXPECT_WIDTH = 304.99969482421875;
+    size_t lineCnt = OH_Drawing_TypographyGetLineCount(GetTypography());
+    const size_t EXPECT_LINE_CNT = 9;
+    EXPECT_EQ(lineCnt, EXPECT_LINE_CNT);
+    const double EXPECT_HEIGHT = 672;
+    VerifyRectSize(EXPECT_WIDTH, EXPECT_HEIGHT, result);
+
+    EXPECT_EQ(OH_Drawing_DestroyArray(rangeArray), OH_Drawing_ErrorCode::OH_DRAWING_SUCCESS);
+}
+
+/**
+ * @tc.name: TypographyLayoutWithConstraintsTest052
+ * @tc.desc: Test LayoutWithConstraints with lineSpacing
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest052, TestSize.Level0)
+{
+    const double LINE_SPACING = 100;
+    OH_Drawing_SetTypographyStyleAttributeDouble(fTypoStyle,
+        OH_Drawing_TypographyStyleAttributeId::TYPOGRAPHY_STYLE_ATTR_D_LINE_SPACING, LINE_SPACING);
+    CreateTypographyHandler();
+    AddText(MIXED_TEXT);
+    CreateTypography();
+
+    OH_Drawing_Array* rangeArray = nullptr;
+    size_t rangeCount = 0;
+
+    const double RECT_HEIGHT = 400;
+    OH_Drawing_RectSize result = CallLayoutWithConstraints(LAYOUT_WIDTH_MEDIUM, RECT_HEIGHT,
+                                                           &rangeArray, &rangeCount);
+
+    ASSERT_NE(rangeArray, nullptr);
+    EXPECT_EQ(rangeCount, 1);
+    const size_t rangeEnd = 16;
+    std::vector<std::pair<size_t, size_t>> expectedRanges = { {0, rangeEnd} };
+    VerifyAllRanges(expectedRanges, rangeArray, rangeCount);
+    const double EXPECT_WIDTH = 300.79971313476562;
+    size_t lineCnt = OH_Drawing_TypographyGetLineCount(GetTypography());
+    const size_t EXPECT_LINE_CNT = 2;
+    EXPECT_EQ(lineCnt, EXPECT_LINE_CNT);
+    const double EXPECT_HEIGHT = 318;
+    VerifyRectSize(EXPECT_WIDTH, EXPECT_HEIGHT, result);
+
+    EXPECT_EQ(OH_Drawing_DestroyArray(rangeArray), OH_Drawing_ErrorCode::OH_DRAWING_SUCCESS);
+}
+
+/**
+ * @tc.name: TypographyLayoutWithConstraintsTest053
+ * @tc.desc: Test LayoutWithConstraints with lineSpacing and disable last height behavior
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest053, TestSize.Level0)
+{
+    const double LINE_SPACING = 100;
+    OH_Drawing_SetTypographyStyleAttributeDouble(fTypoStyle,
+        OH_Drawing_TypographyStyleAttributeId::TYPOGRAPHY_STYLE_ATTR_D_LINE_SPACING, LINE_SPACING);
+    OH_Drawing_TypographyTextSetHeightBehavior(fTypoStyle,
+        OH_Drawing_TextHeightBehavior::TEXT_HEIGHT_DISABLE_LAST_ASCENT);
+    CreateTypographyHandler();
+    AddText(MIXED_TEXT);
+    CreateTypography();
+
+    OH_Drawing_Array* rangeArray = nullptr;
+    size_t rangeCount = 0;
+
+    const double RECT_HEIGHT = 400;
+    OH_Drawing_RectSize result = CallLayoutWithConstraints(LAYOUT_WIDTH_MEDIUM, RECT_HEIGHT,
+                                                           &rangeArray, &rangeCount);
+
+    ASSERT_NE(rangeArray, nullptr);
+    EXPECT_EQ(rangeCount, 1);
+    const size_t rangeEnd = 28;
+    std::vector<std::pair<size_t, size_t>> expectedRanges = { {0, rangeEnd} };
+    VerifyAllRanges(expectedRanges, rangeArray, rangeCount);
+    const double EXPECT_WIDTH = 300.79971313476562;
+    size_t lineCnt = OH_Drawing_TypographyGetLineCount(GetTypography());
+    // lineSpacing is always added optimistically per line,
+    // and MUST be subtracted when the current line is treated as the last line.
+    // This is required for correct constraints layout.
+    const size_t EXPECT_LINE_CNT = 3;
+    EXPECT_EQ(lineCnt, EXPECT_LINE_CNT);
+    const double EXPECT_HEIGHT = 377;
+    VerifyRectSize(EXPECT_WIDTH, EXPECT_HEIGHT, result);
 
     EXPECT_EQ(OH_Drawing_DestroyArray(rangeArray), OH_Drawing_ErrorCode::OH_DRAWING_SUCCESS);
 }
