@@ -20,6 +20,7 @@
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
+#include "rs_graphic_test_utils.h"
 #include "transaction/rs_interfaces.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 
