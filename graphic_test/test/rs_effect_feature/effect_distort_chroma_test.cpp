@@ -125,6 +125,20 @@ void SetDistortChromaRippleMask(std::shared_ptr<RSNGDistortChroma> distortChroma
     distortChroma->Setter<DistortChromaMaskTag>(alphaMask);
 }
 
+void SetParameterForRipple(std::shared_ptr<RSNGDistortChroma> distortChroma, int index)
+{
+    SetParameter(distortChroma, index);
+
+    float brightness = DistortChromaParams[index].brightness * 1.25f;
+    if (index < 4) {
+        brightness *= 1.2f;
+    }
+    distortChroma->Setter<DistortChromaBrightnessTag>(brightness);
+
+    float saturation = DistortChromaParams[index].saturation * 1.15f;
+    distortChroma->Setter<DistortChromaSaturationTag>(saturation);
+}
+
 constexpr int kColumnCount = 2;
 
 GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_DupoliNoiseMask_Test)
@@ -151,7 +165,7 @@ GRAPHIC_TEST(DistortChromaTest, EFFECT_TEST, Set_DistortChroma_RippleMask_Test)
     auto sizeY = screenHeight * kColumnCount / rowCount;
     for (size_t index = 0; index < DistortChromaParams.size(); ++index) {
         auto distortChroma = std::make_shared<RSNGDistortChroma>();
-        SetParameter(distortChroma, index);
+        SetParameterForRipple(distortChroma, index);
         SetDistortChromaRippleMask(distortChroma, index);
         int x = static_cast<int>(index % kColumnCount) * sizeX;
         int y = static_cast<int>(index / kColumnCount) * sizeY;
