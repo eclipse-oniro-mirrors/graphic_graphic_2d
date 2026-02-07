@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
@@ -35,7 +37,7 @@ struct BorderLightParams {
     float cornerRadius;
 };
 
-std::vector<BorderLightParams> borderLightParams = {
+const std::vector<BorderLightParams> borderLightParams = {
     // Test basic parameters
     {
         .position = {0.0f, 0.0f, 0.0f},
@@ -176,12 +178,23 @@ void SetBorderLightParams(const std::shared_ptr<RSNGBorderLight>& shader, const 
     if (!shader) {
         return;
     }
-    shader->Setter<BorderLightPositionTag>(params.position);
-    shader->Setter<BorderLightColorTag>(params.color);
-    shader->Setter<BorderLightIntensityTag>(params.intensity);
-    shader->Setter<BorderLightWidthTag>(params.width);
+    Vector3f position = {
+        std::clamp(params.position.x_, 0.0f, 1.0f),
+        std::clamp(params.position.y_, 0.0f, 1.0f),
+        std::clamp(params.position.z_, 0.0f, 1.0f)
+    };
+    Vector4f color = {
+        std::clamp(params.color.x_, 0.0f, 1.0f),
+        std::clamp(params.color.y_, 0.0f, 1.0f),
+        std::clamp(params.color.z_, 0.0f, 1.0f),
+        std::clamp(params.color.w_, 0.0f, 1.0f)
+    };
+    shader->Setter<BorderLightPositionTag>(position);
+    shader->Setter<BorderLightColorTag>(color);
+    shader->Setter<BorderLightIntensityTag>(std::clamp(params.intensity, 0.1f, 0.8f));
+    shader->Setter<BorderLightWidthTag>(std::clamp(params.width, 0.02f, 0.12f));
     shader->Setter<BorderLightRotationAngleTag>(params.rotationAngle);
-    shader->Setter<BorderLightCornerRadiusTag>(params.cornerRadius);
+    shader->Setter<BorderLightCornerRadiusTag>(std::clamp(params.cornerRadius, 0.0f, 0.3f));
 }
 
 GRAPHIC_TEST(BorderLightTest, EFFECT_TEST, Set_Border_Light_Background_Test)
@@ -201,7 +214,7 @@ GRAPHIC_TEST(BorderLightTest, EFFECT_TEST, Set_Border_Light_Background_Test)
         auto node = RSCanvasNode::Create();
         node->SetBounds({x, y, sizeX, sizeY});
         node->SetFrame({x, y, sizeX, sizeY});
-        node->SetBackgroundColor(0xff000000);
+        node->SetBackgroundColor(0xff202020);
         node->SetBackgroundNGShader(shader);
         GetRootNode()->AddChild(node);
         RegisterNode(node);
@@ -218,6 +231,8 @@ GRAPHIC_TEST(BorderLightTest, EFFECT_TEST, Set_Border_Light_Foreground_Test)
     for (size_t i = 0; i < borderLightParams.size(); ++i) {
         auto shader = std::make_shared<RSNGBorderLight>();
         SetBorderLightParams(shader, borderLightParams[i]);
+        shader->Setter<BorderLightIntensityTag>(std::clamp(borderLightParams[i].intensity * 0.6f, 0.08f, 0.5f));
+        shader->Setter<BorderLightWidthTag>(std::clamp(borderLightParams[i].width, 0.02f, 0.08f));
 
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;

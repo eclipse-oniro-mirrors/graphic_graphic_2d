@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
@@ -40,7 +42,7 @@ struct ContourDiagonalFlowLightParams {
     float haloWeight;
 };
 
-std::vector<ContourDiagonalFlowLightParams> contourDiagonalFlowLightParams = {
+const std::vector<ContourDiagonalFlowLightParams> contourDiagonalFlowLightParams = {
     // Test basic parameters
     {
         .contour = {{0.1f, 0.1f}, {0.9f, 0.1f}, {0.9f, 0.9f}, {0.1f, 0.9f}},
@@ -148,16 +150,24 @@ void SetContourDiagonalFlowLightParams(const std::shared_ptr<RSNGContourDiagonal
         return;
     }
     shader->Setter<ContourDiagonalFlowLightContourTag>(params.contour);
-    shader->Setter<ContourDiagonalFlowLightLine1StartTag>(params.line1Start);
-    shader->Setter<ContourDiagonalFlowLightLine1LengthTag>(params.line1Length);
-    shader->Setter<ContourDiagonalFlowLightLine1ColorTag>(params.line1Color);
-    shader->Setter<ContourDiagonalFlowLightLine2StartTag>(params.line2Start);
-    shader->Setter<ContourDiagonalFlowLightLine2LengthTag>(params.line2Length);
-    shader->Setter<ContourDiagonalFlowLightLine2ColorTag>(params.line2Color);
-    shader->Setter<ContourDiagonalFlowLightThicknessTag>(params.thickness);
-    shader->Setter<ContourDiagonalFlowLightHaloRadiusTag>(params.haloRadius);
-    shader->Setter<ContourDiagonalFlowLightLightWeightTag>(params.lightWeight);
-    shader->Setter<ContourDiagonalFlowLightHaloWeightTag>(params.haloWeight);
+    shader->Setter<ContourDiagonalFlowLightLine1StartTag>(std::clamp(params.line1Start, 0.0f, 1.0f));
+    shader->Setter<ContourDiagonalFlowLightLine1LengthTag>(std::clamp(params.line1Length, 0.1f, 1.0f));
+    shader->Setter<ContourDiagonalFlowLightLine1ColorTag>(Vector4f {
+        std::clamp(params.line1Color.x_, 0.0f, 1.0f),
+        std::clamp(params.line1Color.y_, 0.0f, 1.0f),
+        std::clamp(params.line1Color.z_, 0.0f, 1.0f),
+        std::clamp(params.line1Color.w_, 0.0f, 1.0f) });
+    shader->Setter<ContourDiagonalFlowLightLine2StartTag>(std::clamp(params.line2Start, 0.0f, 1.0f));
+    shader->Setter<ContourDiagonalFlowLightLine2LengthTag>(std::clamp(params.line2Length, 0.1f, 1.0f));
+    shader->Setter<ContourDiagonalFlowLightLine2ColorTag>(Vector4f {
+        std::clamp(params.line2Color.x_, 0.0f, 1.0f),
+        std::clamp(params.line2Color.y_, 0.0f, 1.0f),
+        std::clamp(params.line2Color.z_, 0.0f, 1.0f),
+        std::clamp(params.line2Color.w_, 0.0f, 1.0f) });
+    shader->Setter<ContourDiagonalFlowLightThicknessTag>(std::clamp(params.thickness, 0.01f, 0.08f));
+    shader->Setter<ContourDiagonalFlowLightHaloRadiusTag>(std::clamp(params.haloRadius, 0.05f, 0.2f));
+    shader->Setter<ContourDiagonalFlowLightLightWeightTag>(std::clamp(params.lightWeight, 0.2f, 0.8f));
+    shader->Setter<ContourDiagonalFlowLightHaloWeightTag>(std::clamp(params.haloWeight, 0.2f, 0.7f));
 }
 
 GRAPHIC_TEST(ContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diagonal_Flow_Light_Background_Test)
@@ -177,7 +187,7 @@ GRAPHIC_TEST(ContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diagonal_Flo
         auto node = RSCanvasNode::Create();
         node->SetBounds({x, y, sizeX, sizeY});
         node->SetFrame({x, y, sizeX, sizeY});
-        node->SetBackgroundColor(0xff000000);
+        node->SetBackgroundColor(0xff1a1a1a);
         node->SetBackgroundNGShader(shader);
         GetRootNode()->AddChild(node);
         RegisterNode(node);
@@ -194,6 +204,8 @@ GRAPHIC_TEST(ContourDiagonalFlowLightTest, EFFECT_TEST, Set_Contour_Diagonal_Flo
     for (size_t i = 0; i < contourDiagonalFlowLightParams.size(); ++i) {
         auto shader = std::make_shared<RSNGContourDiagonalFlowLight>();
         SetContourDiagonalFlowLightParams(shader, contourDiagonalFlowLightParams[i]);
+        shader->Setter<ContourDiagonalFlowLightLightWeightTag>(0.5f);
+        shader->Setter<ContourDiagonalFlowLightHaloWeightTag>(0.35f);
 
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;

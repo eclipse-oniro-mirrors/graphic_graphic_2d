@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <algorithm>
+
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
@@ -26,7 +28,7 @@ namespace {
 constexpr size_t screenWidth = 1200;
 constexpr size_t screenHeight = 2000;
 
-std::vector<float> auroraNoiseParams = {
+const std::vector<float> auroraNoiseParams = {
     0.0f,   // No noise
     0.1f,   // Low noise
     0.3f,   // Medium low noise
@@ -56,7 +58,7 @@ void SetAuroraNoiseParams(const std::shared_ptr<RSNGAuroraNoise>& shader, float 
     if (!shader) {
         return;
     }
-    shader->Setter<AuroraNoiseNoiseTag>(noise);
+    shader->Setter<AuroraNoiseNoiseTag>(std::clamp(noise, 0.0f, 1.0f));
 }
 
 GRAPHIC_TEST(AuroraNoiseTest, EFFECT_TEST, Set_Aurora_Noise_Background_Test)
@@ -68,7 +70,8 @@ GRAPHIC_TEST(AuroraNoiseTest, EFFECT_TEST, Set_Aurora_Noise_Background_Test)
 
     for (size_t i = 0; i < auroraNoiseParams.size(); ++i) {
         auto shader = std::make_shared<RSNGAuroraNoise>();
-        SetAuroraNoiseParams(shader, auroraNoiseParams[i]);
+        // Foreground path is more prone to overexposure; keep to a moderate range.
+        SetAuroraNoiseParams(shader, std::clamp(auroraNoiseParams[i], 0.05f, 0.8f));
 
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;

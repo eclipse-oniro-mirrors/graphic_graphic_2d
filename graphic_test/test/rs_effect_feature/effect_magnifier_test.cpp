@@ -22,6 +22,9 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+namespace {
+constexpr const char* TEST_IMAGE_PATH = "/data/local/tmp/fg_test.jpg";
+}
 
 class MagnifierEffectTest : public RSGraphicTest {
 private:
@@ -42,7 +45,7 @@ GRAPHIC_TEST(MagnifierEffectTest, EFFECT_TEST, Set_Magnifier_Params_Test1)
     auto sizeY = screenHeight;
     int x = 0;
     int y = 0;
-    std::string testImagePath = "/data/local/tmp/Images/3200x2000.jpg";
+    std::string testImagePath = TEST_IMAGE_PATH;
     auto testNodeBackGround = SetUpNodeBgImage(testImagePath, { x, y, sizeX, sizeY });
     auto magnifierParams = std::make_shared<Rosen::RSMagnifierParams>();
     magnifierParams->factor_ = 2;
@@ -63,7 +66,7 @@ GRAPHIC_TEST(MagnifierEffectTest, EFFECT_TEST, Set_Magnifier_Params_Test2)
     auto sizeY = screenHeight;
     int x = 0;
     int y = 0;
-    std::string testImagePath = "/data/local/tmp/Images/3200x2000.jpg";
+    std::string testImagePath = TEST_IMAGE_PATH;
     auto testNodeBackGround = SetUpNodeBgImage(testImagePath, { x, y, sizeX, sizeY });
     auto magnifierParams = std::make_shared<Rosen::RSMagnifierParams>();
     magnifierParams->factor_ = 3;
@@ -84,7 +87,7 @@ GRAPHIC_TEST(MagnifierEffectTest, EFFECT_TEST, Set_Magnifier_Params_Test3)
     auto sizeY = screenHeight;
     int x = 0;
     int y = 0;
-    std::string testImagePath = "/data/local/tmp/Images/3200x2000.jpg";
+    std::string testImagePath = TEST_IMAGE_PATH;
     auto testNodeBackGround = SetUpNodeBgImage(testImagePath, { x, y, sizeX, sizeY });
     auto magnifierParams = std::make_shared<Rosen::RSMagnifierParams>();
     magnifierParams->factor_ = 5;
@@ -105,7 +108,7 @@ GRAPHIC_TEST(MagnifierEffectTest, EFFECT_TEST, Set_Magnifier_Params_Test4)
     auto sizeY = screenHeight;
     int x = 0;
     int y = 0;
-    std::string testImagePath = "/data/local/tmp/Images/3200x2000.jpg";
+    std::string testImagePath = TEST_IMAGE_PATH;
     auto testNodeBackGround = SetUpNodeBgImage(testImagePath, { x, y, sizeX, sizeY });
     auto magnifierParams = std::make_shared<Rosen::RSMagnifierParams>();
     magnifierParams->factor_ = 10;
