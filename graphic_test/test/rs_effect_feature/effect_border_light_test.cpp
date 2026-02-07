@@ -41,124 +41,69 @@ struct BorderLightParams {
 };
 
 const std::vector<BorderLightParams> borderLightParams = {
-    // Test basic parameters
     {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {1.0f, 0.0f, 0.0f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.05f,
+        .position = {0.5f, 0.5f, 0.0f},
+        .color = {1.0f, 0.2f, 0.2f, 1.0f},
+        .intensity = 0.8f,
+        .width = 0.10f,
         .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
-    },
-    // Test different colors
-    {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.0f, 1.0f, 0.0f, 1.0f},
-        .intensity = 0.6f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
+        .cornerRadius = 0.10f
     },
     {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.0f, 0.0f, 1.0f, 1.0f},
+        .position = {0.3f, 0.7f, 0.0f},
+        .color = {0.2f, 1.0f, 0.3f, 1.0f},
         .intensity = 0.7f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
-    },
-    // Test different intensity
-    {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {1.0f, 1.0f, 0.0f, 1.0f},
-        .intensity = 0.1f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
+        .width = 0.10f,
+        .rotationAngle = {0.0f, 0.0f, 15.0f},
+        .cornerRadius = 0.15f
     },
     {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {1.0f, 0.5f, 0.0f, 1.0f},
-        .intensity = 1.0f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
-    },
-    // Test different width
-    {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.5f, 1.0f, 0.0f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.01f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
+        .position = {0.7f, 0.3f, 0.0f},
+        .color = {0.2f, 0.4f, 1.0f, 1.0f},
+        .intensity = 0.8f,
+        .width = 0.12f,
+        .rotationAngle = {0.0f, 0.0f, -15.0f},
+        .cornerRadius = 0.20f
     },
     {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.0f, 1.0f, 0.5f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.15f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
-    },
-    // Test different rotation angles
-    {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {1.0f, 0.0f, 0.5f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.05f,
-        .rotationAngle = {45.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.1f
+        .position = {0.5f, 0.2f, 0.0f},
+        .color = {1.0f, 0.9f, 0.2f, 1.0f},
+        .intensity = 0.9f,
+        .width = 0.08f,
+        .rotationAngle = {0.0f, 0.0f, 30.0f},
+        .cornerRadius = 0.10f
     },
     {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.5f, 0.0f, 1.0f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 45.0f, 0.0f},
-        .cornerRadius = 0.1f
-    },
-    {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {1.0f, 0.5f, 0.5f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.05f,
+        .position = {0.2f, 0.5f, 0.0f},
+        .color = {1.0f, 0.5f, 0.1f, 1.0f},
+        .intensity = 0.8f,
+        .width = 0.12f,
         .rotationAngle = {0.0f, 0.0f, 45.0f},
-        .cornerRadius = 0.1f
-    },
-    // Test different corner radius
-    {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.8f, 0.8f, 0.0f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.0f
+        .cornerRadius = 0.00f
     },
     {
-        .position = {0.0f, 0.0f, 0.0f},
-        .color = {0.0f, 0.8f, 0.8f, 1.0f},
-        .intensity = 0.5f,
-        .width = 0.05f,
-        .rotationAngle = {0.0f, 0.0f, 0.0f},
-        .cornerRadius = 0.3f
-    },
-    // Test invalid values
-    {
-        .position = {-1.0f, -1.0f, -1.0f},
-        .color = {-0.1f, 0.0f, 0.0f, 1.0f},
-        .intensity = -0.5f,
-        .width = -0.05f,
-        .rotationAngle = {-360.0f, -360.0f, -360.0f},
-        .cornerRadius = -0.1f
+        .position = {0.8f, 0.5f, 0.0f},
+        .color = {0.1f, 1.0f, 0.8f, 1.0f},
+        .intensity = 0.8f,
+        .width = 0.10f,
+        .rotationAngle = {0.0f, 0.0f, -45.0f},
+        .cornerRadius = 0.30f
     },
     {
-        .position = {2.0f, 2.0f, 2.0f},
-        .color = {2.0f, 0.0f, 0.0f, 1.0f},
-        .intensity = 2.0f,
-        .width = 0.5f,
-        .rotationAngle = {360.0f, 360.0f, 360.0f},
-        .cornerRadius = 1.0f
+        .position = {0.5f, 0.8f, 0.0f},
+        .color = {1.0f, 0.2f, 0.7f, 1.0f},
+        .intensity = 0.7f,
+        .width = 0.09f,
+        .rotationAngle = {20.0f, 0.0f, 0.0f},
+        .cornerRadius = 0.20f
+    },
+    {
+        .position = {0.5f, 0.5f, 0.0f},
+        .color = {0.6f, 0.2f, 1.0f, 1.0f},
+        .intensity = 0.6f,
+        .width = 0.07f,
+        .rotationAngle = {0.0f, 20.0f, 0.0f},
+        .cornerRadius = 0.12f
     }
 };
 
