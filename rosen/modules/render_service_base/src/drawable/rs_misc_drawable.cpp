@@ -215,6 +215,10 @@ void RSColorPickerDrawable::OnSync()
     nodeId_ = stagingNodeId_;
     params_ = stagingColorPicker_ ? *stagingColorPicker_ : ColorPickerParam();
 
+    if (colorPickerManager_) {
+        colorPickerManager_->SetSystemDarkColorMode(stagingIsSystemDarkColorMode_);
+    }
+
     needSync_ = false;
 }
 
@@ -240,6 +244,15 @@ void RSColorPickerDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
         colorPickerManager_->ScheduleColorPick(*paintFilterCanvas, rect, params_);
     }
 }
+
+void RSColorPickerDrawable::SetIsSystemDarkColorMode(bool isSystemDarkColorMode)
+{
+    if (stagingIsSystemDarkColorMode_ != isSystemDarkColorMode) {
+        stagingIsSystemDarkColorMode_ = isSystemDarkColorMode;
+        needSync_ = true;
+    }
+}
+
 
 // ==================== RSCustomModifierDrawable ===================
 RSDrawable::Ptr RSCustomModifierDrawable::OnGenerate(const RSRenderNode& node, ModifierNG::RSModifierType type)

@@ -75,6 +75,7 @@ public:
     bool OnUpdate(const RSRenderNode& content) override;
     void OnSync() override;
     void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
+    void SetIsSystemDarkColorMode(bool isSystemDarkColorMode);
 
     /**
      * @brief Prepare ColorPicker for execution on main thread
@@ -101,6 +102,7 @@ private:
     std::atomic<bool> needExecute_ { false }; // Set in Prepare (main thread), read in OnDraw (render thread)
     bool isTaskScheduled_ = false;            // Flag to indicate if a task is already scheduled during cooldown
     uint64_t lastUpdateTime_ = 0;             // Set in Prepare
+    bool stagingIsSystemDarkColorMode_ = false;
 };
 
 // RSCustomModifierDrawable, for drawing custom modifiers

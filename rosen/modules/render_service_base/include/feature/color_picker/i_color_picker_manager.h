@@ -39,6 +39,9 @@ public:
     // The result will be delivered via callback or client notification.
     virtual void ScheduleColorPick(
         RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, const ColorPickerParam& params) = 0;
+
+    // Sets the system dark color mode for color picker.
+    virtual void SetSystemDarkColorMode(bool isSystemDarkColorMode) = 0;
 };
 
 } // namespace OHOS::Rosen

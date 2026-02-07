@@ -474,5 +474,102 @@ HWTEST_F(ColorPickAltManagerTest, ThreadSafetyConcurrentHandleColorUpdate, TestS
     EXPECT_EQ(updateCount.load(), numThreads * updatesPerThread);
 }
 
+// ============================================================================
+// RSColorPickerManager::HandleColorUpdate - Early Return Tests
+// ============================================================================
+
+/**
+ * @tc.name: HandleColorUpdateWithEmptyColorPickedAlwaysUpdates
+ * @tc.desc: Test that HandleColorUpdate always updates when colorPicked_ is empty,
+ *          even if the new color matches the default (black/white based on dark mode)
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSColorPickerManagerTest, HandleColorUpdateWithEmptyColorPickedAlwaysUpdates, TestSize.Level1)
+{
+    RSColorPickerManager manager(1);
+
+    // Initial state: colorPicked_ is nullopt, isSystemDarkColorMode_ = false
+    auto color1 = manager.GetColorPick();
+    EXPECT_TRUE(color1.has_value());
+    EXPECT_EQ(color1.value(), Drawing::Color::COLOR_BLACK);
+
+    // First update with white (same as default for light mode)
+    // Should NOT early return because colorPicked_ is empty
+    manager.HandleColorUpdate(Drawing::Color::COLOR_WHITE, ColorPickStrategyType::AVERAGE);
+
+    // Wait for animation to complete
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+    auto color2 = manager.GetColorPick();
+    EXPECT_TRUE(color2.has_value());
+    EXPECT_EQ(color2.value(), Drawing::Color::COLOR_WHITE);
+
+    // Verify animStartTime_ was set (not 0 anymore)
+    EXPECT_NE(manager.animStartTime_.load(), 0);
+}
+
+/**
+ * @tc.name: HandleColorUpdateWithSameColorSkipsUpdate
+ * @tc.desc: Test that HandleColorUpdate skips update when colorPicked_ has value
+ *          and newColor equals the stored color
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSColorPickerManagerTest, HandleColorUpdateWithSameColorSkipsUpdate, TestSize.Level1)
+{
+    RSColorPickerManager manager(1);
+
+    // First update: set color to white
+    manager.HandleColorUpdate(Drawing::Color::COLOR_WHITE, ColorPickStrategyType::AVERAGE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    auto color1 = manager.GetColorPick();
+    ASSERT_TRUE(color1.has_value());
+
+    // Store animStartTime_ before second update
+    uint64_t animStartTimeBefore = manager.animStartTime_.load();
+
+    // Second update with same color (white)
+    // Should early return and NOT reset animStartTime_
+    manager.HandleColorUpdate(Drawing::Color::COLOR_WHITE, ColorPickStrategyType::AVERAGE);
+
+    // Verify animStartTime_ was NOT changed (early return occurred)
+    EXPECT_EQ(manager.animStartTime_.load(), animStartTimeBefore);
+}
+
+/**
+ * @tc.name: HandleColorUpdateWithDifferentColorAlwaysUpdates
+ * @tc.desc: Test that HandleColorUpdate always updates when colorPicked_ has value
+ *          but newColor is different from stored color
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSColorPickerManagerTest, HandleColorUpdateWithDifferentColorAlwaysUpdates, TestSize.Level1)
+{
+    RSColorPickerManager manager(1);
+
+    // First update: set color to white
+    manager.HandleColorUpdate(Drawing::Color::COLOR_WHITE, ColorPickStrategyType::AVERAGE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+    auto color1 = manager.GetColorPick();
+    ASSERT_EQ(color1.value(), Drawing::Color::COLOR_WHITE);
+
+    // Store animStartTime_ before second update
+    uint64_t animStartTimeBefore = manager.animStartTime_.load();
+
+    // Second update with different color (black)
+    // Should NOT early return, should update and reset animStartTime_
+    manager.HandleColorUpdate(Drawing::Color::COLOR_BLACK, ColorPickStrategyType::AVERAGE);
+
+    // Verify animStartTime_ WAS changed (update occurred)
+    EXPECT_NE(manager.animStartTime_.load(), animStartTimeBefore);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
+
+    auto color2 = manager.GetColorPick();
+    EXPECT_EQ(color2.value(), Drawing::Color::COLOR_BLACK);
+}
 } // namespace Rosen
 } // namespace OHOS
