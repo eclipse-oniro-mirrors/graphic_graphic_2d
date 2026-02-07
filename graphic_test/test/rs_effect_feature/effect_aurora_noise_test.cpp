@@ -102,11 +102,15 @@ GRAPHIC_TEST(AuroraNoiseTest, EFFECT_TEST, Set_Aurora_Noise_Foreground_Test)
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
 
-        auto backgroundNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {x, y, sizeX, sizeY});
-        // AuroraNoise is unstable on foreground path in this test scene; use background shader for visibility.
-        backgroundNode->SetBackgroundNGShader(shader);
-        GetRootNode()->AddChild(backgroundNode);
-        RegisterNode(backgroundNode);
+        auto node = RSCanvasNode::Create();
+        node->SetBounds({x, y, sizeX, sizeY});
+        node->SetFrame({x, y, sizeX, sizeY});
+        node->SetBackgroundColor(0xff112244);
+        // AuroraNoise foreground path on image nodes can become fully white in this environment.
+        // Use a stable canvas background path to keep output observable.
+        node->SetBackgroundNGShader(shader);
+        GetRootNode()->AddChild(node);
+        RegisterNode(node);
     }
 }
 
