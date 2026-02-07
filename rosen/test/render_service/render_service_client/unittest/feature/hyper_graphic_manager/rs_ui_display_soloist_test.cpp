@@ -23,7 +23,6 @@ namespace OHOS::Rosen {
 namespace {
     constexpr uint32_t OLED_MIN_HZ = 0;
     constexpr uint32_t OLED_120_HZ = 120;
-    constexpr uint32_t OLED_90_HZ = 90;
     constexpr uint32_t OLED_60_HZ = 60;
     constexpr uint32_t OLED_30_HZ = 30;
     constexpr uint32_t INTERVAL_TIME = 50000; // us
