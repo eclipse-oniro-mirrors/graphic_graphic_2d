@@ -14,9 +14,13 @@
  */
 
 #include <algorithm>
+#include <filesystem>
+#include <unistd.h>
 
 #include "rs_graphic_test.h"
+#include "rs_graphic_test_director.h"
 #include "rs_graphic_test_img.h"
+#include "transaction/rs_interfaces.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 
 using namespace testing;
@@ -29,6 +33,9 @@ constexpr size_t screenWidth = 1200;
 constexpr size_t screenHeight = 2000;
 constexpr float FOREGROUND_NOISE_MIN = 0.02f;
 constexpr float FOREGROUND_NOISE_MAX = 0.55f;
+constexpr uint32_t MAX_TIME_WAITING_FOR_CALLBACK = 200;
+constexpr uint32_t SLEEP_TIME_IN_US = 10000;      // 10 ms
+constexpr uint32_t SLEEP_TIME_FOR_PROXY = 100000; // 100 ms
 
 const std::vector<float> auroraNoiseParams = {
     0.0f,   // No noise
@@ -40,6 +47,46 @@ const std::vector<float> auroraNoiseParams = {
     -0.1f,  // Invalid negative
     2.0f    // Invalid high value
 };
+
+class AuroraNoiseCaptureCallback : public SurfaceCaptureCallback {
+public:
+    void OnSurfaceCapture(std::shared_ptr<Media::PixelMap> pixelMap) override
+    {
+        if (pixelMap == nullptr) {
+            return;
+        }
+        isCallbackCalled_ = true;
+        const ::testing::TestInfo* const testInfo = ::testing::UnitTest::GetInstance()->current_test_info();
+        std::string fileName = "/data/local/graphic_test/effect_aurora_noise/";
+        namespace fs = std::filesystem;
+        if (!fs::exists(fileName)) {
+            (void)fs::create_directories(fileName);
+        }
+        fileName += std::string(testInfo->test_case_name()) + "_" + std::string(testInfo->name()) + "_manual.png";
+        (void)WriteToPngWithPixelMap(fileName, *pixelMap);
+    }
+
+    void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelMap,
+        std::shared_ptr<Media::PixelMap> pixelMapHDR) override {}
+
+    bool isCallbackCalled_ = false;
+};
+
+static bool CheckSurfaceCaptureCallback(const std::shared_ptr<AuroraNoiseCaptureCallback>& callback)
+{
+    if (!callback) {
+        return false;
+    }
+    uint32_t times = 0;
+    while (times < MAX_TIME_WAITING_FOR_CALLBACK) {
+        if (callback->isCallbackCalled_) {
+            return true;
+        }
+        usleep(SLEEP_TIME_IN_US);
+        ++times;
+    }
+    return false;
+}
 
 } // namespace
 
@@ -93,6 +140,7 @@ GRAPHIC_TEST(AuroraNoiseTest, EFFECT_TEST, Set_Aurora_Noise_Foreground_Test)
     const int rowCount = auroraNoiseParams.size();
     auto sizeX = screenWidth_ / columnCount;
     auto sizeY = screenHeight_ * columnCount / rowCount;
+    std::shared_ptr<RSNode> captureNode = nullptr;
 
     for (size_t i = 0; i < auroraNoiseParams.size(); ++i) {
         auto shader = std::make_shared<RSNGAuroraNoise>();
@@ -102,16 +150,20 @@ GRAPHIC_TEST(AuroraNoiseTest, EFFECT_TEST, Set_Aurora_Noise_Foreground_Test)
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
 
-        auto node = RSCanvasNode::Create();
-        node->SetBounds({x, y, sizeX, sizeY});
-        node->SetFrame({x, y, sizeX, sizeY});
-        node->SetBackgroundColor(0xff112244);
-        // AuroraNoise foreground path on image nodes can become fully white in this environment.
-        // Use a stable canvas background path to keep output observable.
-        node->SetBackgroundNGShader(shader);
-        GetRootNode()->AddChild(node);
-        RegisterNode(node);
+        auto backgroundNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", {x, y, sizeX, sizeY});
+        backgroundNode->SetForegroundShader(shader);
+        GetRootNode()->AddChild(backgroundNode);
+        RegisterNode(backgroundNode);
+        if (captureNode == nullptr) {
+            captureNode = backgroundNode;
+        }
     }
+
+    RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
+    usleep(SLEEP_TIME_FOR_PROXY);
+    auto callback = std::make_shared<AuroraNoiseCaptureCallback>();
+    RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(captureNode, callback);
+    EXPECT_TRUE(CheckSurfaceCaptureCallback(callback));
 }
 
 } // namespace OHOS::Rosen
