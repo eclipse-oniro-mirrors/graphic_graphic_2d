@@ -4169,6 +4169,7 @@ void RSUniRenderVisitor::PrepareColorPickerDrawable(const RSRenderNode& node)
 
     auto drawable = std::static_pointer_cast<DrawableV2::RSColorPickerDrawable>(colorPickerDrawable);
     if (drawable) {
+        drawable->SetIsSystemDarkColorMode(RSMainThread::Instance()->GetGlobalDarkColorMode());
         uint64_t vsyncTime = RSMainThread::Instance()->GetCurrentVsyncTime();
         drawable->Prepare(vsyncTime);
         bool needExecute = drawable->NeedExecute();

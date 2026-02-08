@@ -39,6 +39,7 @@ public:
     std::optional<Drawing::ColorQuad> GetColorPick() override;
     void ScheduleColorPick(RSPaintFilterCanvas& canvas, const Drawing::Rect* rect,
         const ColorPickerParam& params) override;
+    void SetSystemDarkColorMode(bool isSystemDarkColorMode) override;
 
 private:
     struct ColorPickerInfo {
@@ -113,11 +114,13 @@ private:
     static Drawing::ColorQuad GetContrastColor(Drawing::ColorQuad color, bool prevDark);
 
     std::mutex colorMtx_;
-    Drawing::ColorQuad colorPicked_ = Drawing::Color::COLOR_BLACK;
-    Drawing::ColorQuad prevColor_ = Drawing::Color::COLOR_BLACK;
+    std::optional<Drawing::ColorQuad> colorPicked_ = std::nullopt;
+    std::optional<Drawing::ColorQuad> prevColor_ = std::nullopt;
 
     std::atomic<uint64_t> animStartTime_ = 0;
     const NodeId nodeId_;
+
+    std::atomic<bool> isSystemDarkColorMode_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

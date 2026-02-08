@@ -50,6 +50,11 @@ std::optional<Drawing::ColorQuad> RSColorPickerManager::GetColorPick()
     return InterpolateColor(prevColor, curColor, animFraction);
 }
 
+void RSColorPickerManager::SetSystemDarkColorMode(bool isSystemDarkColorMode)
+{
+    isSystemDarkColorMode_.store(isSystemDarkColorMode, std::memory_order_relaxed);
+}
+
 void RSColorPickerManager::ScheduleColorPick(
     RSPaintFilterCanvas& canvas, const Drawing::Rect* rect, const ColorPickerParam& params)
 {
@@ -121,22 +126,27 @@ void RSColorPickerManager::PickColor(
 void RSColorPickerManager::HandleColorUpdate(
     Drawing::ColorQuad newColor, ColorPickStrategyType strategy)
 {
+    const bool isSystemDarkColorMode = isSystemDarkColorMode_.load(std::memory_order_relaxed);
     {
-        RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
-            "RSColorPickerManager::extracted background color = %x, prevColor = %x, nodeId = %lu", newColor, prevColor_,
-            nodeId_);
         std::lock_guard<std::mutex> lock(colorMtx_);
+        Drawing::ColorQuad prevColor = prevColor_.has_value() ? prevColor_.value() :
+            (isSystemDarkColorMode ? Drawing::Color::COLOR_WHITE : Drawing::Color::COLOR_BLACK);
+        Drawing::ColorQuad curColor = colorPicked_.has_value() ? colorPicked_.value() :
+            (isSystemDarkColorMode ? Drawing::Color::COLOR_WHITE : Drawing::Color::COLOR_BLACK);
+        RS_OPTIONAL_TRACE_NAME_FMT_LEVEL(TRACE_LEVEL_TWO,
+            "RSColorPickerManager::extracted isSystemDarkColorMode: %d background color = %x, prevColor = %x"
+            ", nodeId = %lu", isSystemDarkColorMode, newColor, prevColor, nodeId_);
         if (strategy == ColorPickStrategyType::CONTRAST) {
-            newColor = GetContrastColor(newColor, colorPicked_ == Drawing::Color::COLOR_BLACK);
+            newColor = GetContrastColor(newColor, curColor == Drawing::Color::COLOR_BLACK);
         }
-        if (newColor == colorPicked_) {
+        if (colorPicked_.has_value() && newColor == colorPicked_.value()) {
             return;
         }
 
         const uint64_t now = NowMs();
         float animFraction = static_cast<float>(now - animStartTime_) / COLOR_PICKER_ANIMATE_DURATION;
         animFraction = std::clamp(animFraction, 0.0f, 1.0f);
-        prevColor_ = InterpolateColor(prevColor_, colorPicked_, animFraction);
+        prevColor_ = InterpolateColor(prevColor, curColor, animFraction);
         colorPicked_ = newColor;
         animStartTime_ = now;
     }
@@ -170,8 +180,13 @@ Drawing::ColorQuad RSColorPickerManager::InterpolateColor(
 
 inline std::pair<Drawing::ColorQuad, Drawing::ColorQuad> RSColorPickerManager::GetColor()
 {
+    const bool isSystemDarkColorMode = isSystemDarkColorMode_.load(std::memory_order_relaxed);
     std::lock_guard<std::mutex> lock(colorMtx_);
-    return { prevColor_, colorPicked_ };
+    Drawing::ColorQuad prevColor = prevColor_.has_value() ? prevColor_.value() :
+        (isSystemDarkColorMode ? Drawing::Color::COLOR_WHITE : Drawing::Color::COLOR_BLACK);
+    Drawing::ColorQuad curColor = colorPicked_.has_value() ? colorPicked_.value() :
+        (isSystemDarkColorMode ? Drawing::Color::COLOR_WHITE : Drawing::Color::COLOR_BLACK);
+    return { prevColor, curColor };
 }
 
 namespace {
