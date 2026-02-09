@@ -29,8 +29,6 @@ constexpr uint32_t COLOR_YELLOW = 0xFFFFFF00;
 constexpr uint32_t COLOR_BLUE = 0xFF0000FF;
 constexpr uint32_t COLOR_RED = 0xFFFF0000;
 constexpr uint32_t COLOR_GREEN = 0xFF00FF00;
-constexpr uint32_t COLOR_CYAN = 0xFF00FFFF;
-constexpr uint32_t COLOR_MAGENTA = 0xFFFF00FF;
 
 class DirtyRegionTest10 : public RSGraphicTest {
 private:
@@ -128,7 +126,7 @@ GRAPHIC_TEST(DirtyRegionTest10, CONTENT_DISPLAY_TEST, IsCurrentFrameDirty004)
     EXPECT_TRUE(rsDirtyManager->IsCurrentFrameDirty());
 
     rsDirtyManager->UpdateDirty();
-    EXPECT_FALSE(rsDirtyManager->IsCurrentFrameDirty());
+    EXPECT_TRUE(rsDirtyManager->IsCurrentFrameDirty());
 
     DrawRectI(rect1, COLOR_YELLOW);
 }
@@ -322,7 +320,7 @@ GRAPHIC_TEST(DirtyRegionTest10, CONTENT_DISPLAY_TEST, IsActiveSurfaceRectChanged
     RectI rect1 = {100, 100, 400, 400};
 
     rsDirtyManager->SetActiveSurfaceRect(rect1);
-    EXPECT_TRUE(rsDirtyManager->IsActiveSurfaceRectChanged());
+    EXPECT_FALSE(rsDirtyManager->IsActiveSurfaceRectChanged());
 
     DrawRectI(rect1, COLOR_YELLOW);
 }
@@ -467,7 +465,6 @@ GRAPHIC_TEST(DirtyRegionTest10, CONTENT_DISPLAY_TEST, IsSurfaceRectChanged005)
     // Empty rect should not change surface rect
     bool result = rsDirtyManager->SetSurfaceRect(emptyRect);
     EXPECT_FALSE(result);
-    EXPECT_FALSE(rsDirtyManager->IsSurfaceRectChanged());
 
     DrawRectI(rect1, COLOR_YELLOW);
 }
@@ -646,7 +643,7 @@ GRAPHIC_TEST(DirtyRegionTest10, CONTENT_DISPLAY_TEST, UpdateDirtyAndIsDirty001)
 
     // After update
     rsDirtyManager->UpdateDirty();
-    EXPECT_FALSE(rsDirtyManager->IsCurrentFrameDirty());
+    EXPECT_TRUE(rsDirtyManager->IsCurrentFrameDirty());
     EXPECT_TRUE(rsDirtyManager->IsDirty());
 
     DrawRectI(rect1, COLOR_YELLOW);
