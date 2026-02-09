@@ -64,7 +64,6 @@ constexpr const char* ANI_CLASS_RECT_UTILS_NAME = "@ohos.graphics.drawing.drawin
 constexpr const char* ANI_CLASS_TOOL_NAME = "@ohos.graphics.drawing.drawing.Tool";
 
 constexpr const char* ANI_INTERFACE_COLOR_NAME = "@ohos.graphics.common2D.common2D.Color";
-
 constexpr const char* ANI_INTERFACE_POINT_NAME = "@ohos.graphics.common2D.common2D.Point";
 constexpr const char* ANI_INTERFACE_RECT_NAME = "@ohos.graphics.common2D.common2D.Rect";
 constexpr const char* ANI_INTERFACE_FONTFEATURE_NAME = "@ohos.graphics.drawing.drawing.FontFeature";
