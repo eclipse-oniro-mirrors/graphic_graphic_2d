@@ -24,6 +24,7 @@ hgm_test_deps = [
 
 hgm_test_external_deps = [
   "c_utils:utils",
+  "config_policy:configpolicy_util",
   "eventhandler:libeventhandler",
   "ffrt:libffrt",
   "googletest:gmock",
@@ -35,7 +36,6 @@ hgm_test_external_deps = [
   "init:libbeget_proxy",
   "init:libbegetutil",
   "libxml2:libxml2",
-  "config_policy:configpolicy_util",
 ]
 
 ohos_unittest("hyper_graphic_manager_test") {
