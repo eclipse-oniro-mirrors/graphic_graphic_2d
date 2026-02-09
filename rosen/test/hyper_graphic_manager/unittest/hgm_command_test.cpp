@@ -47,7 +47,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr char CONFIG_FILE_PRODUCT[] = "/sys_prod/etc/graphic/hgm_policy_config.xml";
-std::string g_mockStr(CONFIG_FILE_PRODUCT);
+std::string g_mockStr = {CONFIG_FILE_PRODUCT};
 }
  
 extern "C" char* GetOneCfgFile(const char* pathSuffix, char* buf, unsigned int bufLength)
