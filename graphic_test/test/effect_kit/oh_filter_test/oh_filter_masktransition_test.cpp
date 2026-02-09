@@ -13,12 +13,8 @@
  * limitations under the License.
  */
 
-#include "effect_ndk/include/effect_filter.h"
 #include "oh_filter_test_utils.h"
 #include "oh_filter_test_params.h"
-#include "pixelmap_native_impl.h"
-#include "rs_graphic_test.h"
-#include "rs_graphic_test_img.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -34,22 +30,6 @@ public:
     void BeforeEach() override
     {
         SetScreenSize(screenWidth, screenHeight);
-    }
-
-    void DrawBackgroundNodeOHPixelMap(OH_PixelmapNative* pixelMapNative,
-        const Rosen::Vector4f bounds)
-    {
-        auto pixelmap = pixelMapNative->GetInnerPixelmap();
-        auto image = std::make_shared<Rosen::RSImage>();
-        image->SetPixelMap(pixelmap);
-        image->SetImageFit((int)ImageFit::FILL);
-        auto node = Rosen::RSCanvasNode::Create();
-        node->SetBounds(bounds);
-        node->SetFrame(bounds);
-        node->SetBgImageSize(bounds[2], bounds[3]);
-        node->SetBgImage(image);
-        GetRootNode()->AddChild(node);
-        RegisterNode(node);
     }
 
 private:
