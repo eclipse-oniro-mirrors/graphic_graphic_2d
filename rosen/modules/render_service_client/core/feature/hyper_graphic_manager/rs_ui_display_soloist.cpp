@@ -19,7 +19,13 @@
 
 namespace OHOS {
 namespace Rosen {
-
+namespace {
+const std::string TIME_OUT_TASK = "vsync_time_out_task_";
+const std::vector<int32_t> REFRESH_RATE_LIST{ 90, 120, 144 };
+std::vector<int32_t> REFRESH_RATE_FACTORS;
+std::unordered_map<int32_t, std::vector<int32_t>> RATE_TO_FACTORS;
+std::once_flag COMPUTE_FACTORS_FLAG;
+}
 // class RSC_EXPORT SoloistId
 
 std::shared_ptr<SoloistId> SoloistId::Create()

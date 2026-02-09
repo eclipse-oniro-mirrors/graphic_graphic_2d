@@ -32,12 +32,7 @@ using SoloistIdType = uint32_t;
 using TimestampType = int64_t;
 using DisplaySoloistOnFrameCallback = std::function<void(long long, long long, void*)>;
 
-inline const std::string TIME_OUT_TASK = "vsync_time_out_task_";
 constexpr int64_t TIME_OUT_MILLISECONDS = 600;
-inline const std::vector<int32_t> REFRESH_RATE_LIST{ 90, 120, 144 };
-inline std::vector<int32_t> REFRESH_RATE_FACTORS;
-inline std::unordered_map<int32_t, std::vector<int32_t>> RATE_TO_FACTORS;
-inline std::once_flag COMPUTE_FACTORS_FLAG;
 constexpr float SECOND_IN_NANO = 1000000000.0f;
 constexpr int32_t FRAME_RATE_0 = 0;
 constexpr int32_t SOLOIST_ERROR = -1;
