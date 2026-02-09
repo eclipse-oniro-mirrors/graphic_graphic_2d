@@ -32,12 +32,6 @@ using SoloistIdType = uint32_t;
 using TimestampType = int64_t;
 using DisplaySoloistOnFrameCallback = std::function<void(long long, long long, void*)>;
 
-constexpr int64_t TIME_OUT_MILLISECONDS = 600;
-constexpr float SECOND_IN_NANO = 1000000000.0f;
-constexpr int32_t FRAME_RATE_0 = 0;
-constexpr int32_t SOLOIST_ERROR = -1;
-constexpr int32_t EXEC_SUCCESS = 0;
-
 enum class ActiveStatus : int32_t {
     INACTIVE = 0,
     ACTIVE = 1,
