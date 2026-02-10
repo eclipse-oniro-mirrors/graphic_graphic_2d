@@ -645,7 +645,6 @@ DrawingError EffectImageChain::InitWithoutCanvas(const std::shared_ptr<Media::Pi
     opts.pixelFormat = srcPixelMap_->GetPixelFormat();
     opts.alphaType = srcPixelMap_->GetAlphaType();
     opts.editable = true;
-    // opts.useDMA = true;
     opts.allocatorType = Media::AllocatorType::DMA_ALLOC;
     auto dstPixelMap = Media::PixelMap::Create(opts);
     if (dstPixelMap == nullptr) {
