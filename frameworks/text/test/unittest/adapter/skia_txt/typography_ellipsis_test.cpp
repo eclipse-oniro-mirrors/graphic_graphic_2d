@@ -55,6 +55,7 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest001, TestSize.Level0)
     ASSERT_NE(typography1, nullptr);
 
     typography1->Layout(100.0);
+    auto longestLine1 = typography1->GetLongestLineWithIndent();
 
     // Create second typography with ellipsis "......" (different ellipsis)
     TypographyStyle style2;
@@ -73,14 +74,13 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest001, TestSize.Level0)
     ASSERT_NE(typography2, nullptr);
 
     typography2->Layout(100.0);
+    auto longestLine2 = typography2->GetLongestLineWithIndent();
 
     // Assert
-    // The two typographies should have different ellipsis in their output
+    // The two typographies should have different longest lines due to different ellipsis lengths
+    // Longer ellipsis ("......") should result in shorter longest line than shorter ellipsis ("...")
     // This tests that the cache correctly differentiates based on ellipsis string
-    auto ellipsis1 = typography1->GetEllipsis();
-    auto ellipsis2 = typography2->GetEllipsis();
-
-    EXPECT_NE(ellipsis1, ellipsis2);
+    EXPECT_GT(longestLine1, longestLine2);
 }
 
 /*
@@ -113,6 +113,7 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest002, TestSize.Level0)
     auto typography1 = typographyCreate->CreateTypography();
     ASSERT_NE(typography1, nullptr);
     typography1->Layout(100.0);
+    auto longestLine1 = typography1->GetLongestLineWithIndent();
 
     // Create second typography with different ellipsis
     TypographyStyle style2;
@@ -129,11 +130,11 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest002, TestSize.Level0)
     auto typography2 = typographyCreate2->CreateTypography();
     ASSERT_NE(typography2, nullptr);
     typography2->Layout(100.0);
+    auto longestLine2 = typography2->GetLongestLineWithIndent();
 
-    // Assert - Verify that both typographies exist and can be laid out
+    // Assert - Verify that different ellipsis strings result in different longest lines
     // The cache should treat them as different due to different ellipsis
-    EXPECT_NE(typography1, nullptr);
-    EXPECT_NE(typography2, nullptr);
+    EXPECT_GT(longestLine1, longestLine2);
 }
 
 /*
@@ -167,6 +168,7 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest003, TestSize.Level0)
     auto typography1 = typographyCreate1->CreateTypography();
     ASSERT_NE(typography1, nullptr);
     typography1->Layout(100.0);
+    auto longestLine1 = typography1->GetLongestLineWithIndent();
 
     // Create second typography with same ellipsis "..."
     std::unique_ptr<TypographyCreate> typographyCreate2 = TypographyCreate::Create(style, fontCollection);
@@ -179,11 +181,80 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest003, TestSize.Level0)
     auto typography2 = typographyCreate2->CreateTypography();
     ASSERT_NE(typography2, nullptr);
     typography2->Layout(100.0);
+    auto longestLine2 = typography2->GetLongestLineWithIndent();
 
-    // Assert - Both should layout successfully
-    // When ellipsis is the same, cache should work
-    EXPECT_NE(typography1, nullptr);
-    EXPECT_NE(typography2, nullptr);
+    // Assert - Both should have the same longest line when using same configuration
+    // When ellipsis is the same, cache should work and produce identical results
+    EXPECT_FLOAT_EQ(longestLine1, longestLine2);
+}
+
+/*
+ * @tc.name: TypographyEllipsisTest004
+ * @tc.desc: Test that different ellipsis strings result in different longest line widths after cache invalidation
+ * @tc.type: FUNC
+ */
+HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest004, TestSize.Level0)
+{
+    // Arrange
+    std::shared_ptr<FontCollection> fontCollection = FontCollection::Create();
+    ASSERT_NE(fontCollection, nullptr);
+
+    TypographyStyle style;
+    style.maxLines = 1;
+    style.textAlign = TextAlign::LEFT;
+
+    TextStyle textStyle;
+    textStyle.fontSize = 20.0f;
+    const std::u16string text = u"This is a very long text that will definitely be truncated with ellipsis";
+
+    // Create typography with short ellipsis "..."
+    style.ellipsis = u"...";
+    std::unique_ptr<TypographyCreate> typographyCreate1 = TypographyCreate::Create(style, fontCollection);
+    ASSERT_NE(typographyCreate1, nullptr);
+    typographyCreate1->PushStyle(textStyle);
+    typographyCreate1->AppendText(text);
+    typographyCreate1->PopStyle();
+
+    auto typography1 = typographyCreate1->CreateTypography();
+    ASSERT_NE(typography1, nullptr);
+    typography1->Layout(200.0);
+    auto longestLine1 = typography1->GetLongestLineWithIndent();
+
+    // Create typography with longer ellipsis "------"
+    style.ellipsis = u"------";
+    std::unique_ptr<TypographyCreate> typographyCreate2 = TypographyCreate::Create(style, fontCollection);
+    ASSERT_NE(typographyCreate2, nullptr);
+    typographyCreate2->PushStyle(textStyle);
+    typographyCreate2->AppendText(text);
+    typographyCreate2->PopStyle();
+
+    auto typography2 = typographyCreate2->CreateTypography();
+    ASSERT_NE(typography2, nullptr);
+    typography2->Layout(200.0);
+    auto longestLine2 = typography2->GetLongestLineWithIndent();
+
+    // Create typography with no ellipsis
+    style.ellipsis = u"";
+    std::unique_ptr<TypographyCreate> typographyCreate3 = TypographyCreate::Create(style, fontCollection);
+    ASSERT_NE(typographyCreate3, nullptr);
+    typographyCreate3->PushStyle(textStyle);
+    typographyCreate3->AppendText(text);
+    typographyCreate3->PopStyle();
+
+    auto typography3 = typographyCreate3->CreateTypography();
+    ASSERT_NE(typography3, nullptr);
+    typography3->Layout(200.0);
+    auto longestLine3 = typography3->GetLongestLineWithIndent();
+
+    // Assert: Different ellipsis should result in different longest line widths
+    // Shorter ellipsis allows more text content, so longest line should be longer
+    EXPECT_GT(longestLine1, longestLine2);
+    // No ellipsis should allow the most text content
+    EXPECT_GT(longestLine2, longestLine3);
+    // All should be positive
+    EXPECT_GT(longestLine1, 0.0);
+    EXPECT_GT(longestLine2, 0.0);
+    EXPECT_GT(longestLine3, 0.0);
 }
 } // namespace Rosen
 } // namespace OHOS
