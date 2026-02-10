@@ -770,7 +770,7 @@ void RSUniRenderVisitor::UpdateCurFrameInfoDetail(RSRenderNode& node, bool subTr
 {
     if (GetDumpRsTreeDetailEnabled()) {
         auto& curFrameInfoDetail = node.GetCurFrameInfoDetail();
-        curFrameInfoDetail.curFrameVsyncId = HgmCore::Instance().GetVsyncId();
+        curFrameInfoDetail.curFrameVsyncId = static_cast<uint32_t>(HgmCore::Instance().GetVsyncId());
         curFrameInfoDetail.curFrameSubTreeSkipped = subTreeSkipped;
         if (isPostPrepare) {
             curFrameInfoDetail.curFramePostPrepareSeqNum = IncreasePostPrepareSeq();

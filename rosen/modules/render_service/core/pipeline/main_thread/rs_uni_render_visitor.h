@@ -135,9 +135,9 @@ public:
 
     bool GetDumpRsTreeDetailEnabled() { return isDumpRsTreeDetailEnabled_; }
 
-    uint32_t IncreasePrepareSeq() { return ++nodePreparedSeqNum_; }
+    uint16_t IncreasePrepareSeq() { return ++nodePreparedSeqNum_; }
 
-    uint32_t IncreasePostPrepareSeq() { return ++nodePostPreparedSeqNum_; }
+    uint16_t IncreasePostPrepareSeq() { return ++nodePostPreparedSeqNum_; }
 
     void UpdateCurFrameInfoDetail(RSRenderNode& node, bool subTreeSkipped = false, bool isPostPrepare = false);
 
@@ -503,8 +503,8 @@ private:
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
 
     bool isDumpRsTreeDetailEnabled_ = false;
-    uint32_t nodePreparedSeqNum_ = 0;
-    uint32_t nodePostPreparedSeqNum_ = 0;
+    uint16_t nodePreparedSeqNum_ = 0;
+    uint16_t nodePostPreparedSeqNum_ = 0;
 
     // used in uifirst for checking whether leashwindow or its parent should paint or not
     bool globalShouldPaint_ = true;
