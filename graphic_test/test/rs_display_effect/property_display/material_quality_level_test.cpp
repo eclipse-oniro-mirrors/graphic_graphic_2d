@@ -21,6 +21,14 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 
+// Helper function to convert int to FilterQuality
+static FilterQuality IntToFilterQuality(int level)
+{
+    if (level < 0) return FilterQuality::NONE;
+    if (level > static_cast<int>(FilterQuality::HIGH)) return FilterQuality::HIGH;
+    return static_cast<FilterQuality>(level);
+}
+
 class MaterialQualityLevelTest : public RSGraphicTest {
 private:
     const int screenWidth = 1200;
@@ -46,7 +54,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
     testNode->SetBackgroundColor(0xffff0000);
 
     // Set material with quality level
-    testNode->SetMaterialWithQualityLevel(1);
+    testNode->SetMaterialWithQualityLevel(nullptr, FilterQuality::LOW);
 
     GetRootNode()->AddChild(testNode);
     RegisterNode(testNode);
@@ -75,7 +83,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
         auto testNode = RSCanvasNode::Create();
         testNode->SetBounds({ (int)i * 140 + 50, 50, 130, 130 });
         testNode->SetBackgroundColor(0xffff0000);
-        testNode->SetMaterialWithQualityLevel(qualityLevels[i]);
+        testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[i]));
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
     }
@@ -98,7 +106,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
             testNode->SetBounds({ (int)col * 380 + 50, (int)row * 350 + 50, 300, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetAlpha(alphaList[col]);
-            testNode->SetMaterialWithQualityLevel(qualityLevels[row]);
+            testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[row]));
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
@@ -118,16 +126,16 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
     testNode->SetBackgroundColor(0xffff0000);
 
     // Set initial quality level
-    testNode->SetMaterialWithQualityLevel(1);
+    testNode->SetMaterialWithQualityLevel(nullptr, FilterQuality::MEDIUM);
 
     GetRootNode()->AddChild(testNode);
     RegisterNode(testNode);
 
     // Update to different level
-    testNode->SetMaterialWithQualityLevel(2);
+    testNode->SetMaterialWithQualityLevel(nullptr, FilterQuality::HIGH);
 
     // Update again
-    testNode->SetMaterialWithQualityLevel(3);
+    testNode->SetMaterialWithQualityLevel(nullptr, FilterQuality::HIGH);
 }
 
 /*
@@ -147,7 +155,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
             testNode->SetBounds({ (int)col * 380 + 50, (int)row * 380 + 50, 300, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetRotation(rotationList[col]);
-            testNode->SetMaterialWithQualityLevel(qualityLevels[row]);
+            testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[row]));
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
@@ -174,7 +182,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetScale(scaleList[i].first, scaleList[i].second);
-        testNode->SetMaterialWithQualityLevel((i % 3) + 1);
+        testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality((i % 3) + 1));
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
     }
@@ -199,7 +207,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
         testNode->SetBounds({ zeroBounds[i].x_, zeroBounds[i].y_,
             zeroBounds[i].z_, zeroBounds[i].w_ });
         testNode->SetBackgroundColor(0xffff0000);
-        testNode->SetMaterialWithQualityLevel(i + 1);
+        testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(i + 1));
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
     }
@@ -222,7 +230,7 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
             testNode->SetBounds({ (int)col * 380 + 50, (int)row * 380 + 50, 300, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetBackgroundFilterRadius(blurRadius[col]);
-            testNode->SetMaterialWithQualityLevel(qualityLevels[row]);
+            testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[row]));
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
@@ -245,8 +253,8 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
     for (size_t i = 0; i < qualityLevels.size(); i++) {
         auto testNode = RSCanvasNode::Create();
         testNode->SetBounds({ (int)i * 230 + 50, 50, 200, 200 });
-        testNode->SetPixelMap(pixelMap);
-        testNode->SetMaterialWithQualityLevel(qualityLevels[i]);
+        testNode->SetPixelmap(pixelMap);
+        testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[i]));
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
     }
@@ -263,14 +271,14 @@ GRAPHIC_TEST(MaterialQualityLevelTest, CONTENT_DISPLAY_TEST, MaterialQualityLeve
     auto parent = RSCanvasNode::Create();
     parent->SetBounds({ 50, 50, 1100, 500 });
     parent->SetBackgroundColor(0xffff0000);
-    parent->SetMaterialWithQualityLevel(1);
+    parent->SetMaterialWithQualityLevel(nullptr, FilterQuality::LOW);
 
     // Add children with different quality levels
     for (int i = 0; i < 3; i++) {
         auto child = RSCanvasNode::Create();
         child->SetBounds({ 50 + i * 350, 50, 300, 400 });
         child->SetBackgroundColor(0xff00ff00);
-        child->SetMaterialWithQualityLevel(i + 1);
+        child->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(i + 1));
         parent->AddChild(child);
     }
 

@@ -249,7 +249,7 @@ GRAPHIC_TEST(SurfaceCompositeLayerTest, CONTENT_DISPLAY_TEST, SurfaceCompositeLa
     for (size_t i = 0; i < compositeTypes.size(); i++) {
         auto surfaceNode = RSSurfaceNode::Create();
         surfaceNode->SetBounds({ (int)i * 230 + 50, 50, 200, 200 });
-        surfaceNode->SetPixelMap(pixelMap);
+        surfaceNode->SetPixelmap(pixelMap);
         surfaceNode->SetCompositeType(compositeTypes[i]);
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);

@@ -21,6 +21,14 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 
+// Helper function to convert int to FilterQuality
+static FilterQuality IntToFilterQuality(int level)
+{
+    if (level < 0) return FilterQuality::NONE;
+    if (level > static_cast<int>(FilterQuality::HIGH)) return FilterQuality::HIGH;
+    return static_cast<FilterQuality>(level);
+}
+
 class RSNodeSurfaceDisplayTest : public RSGraphicTest {
 private:
     const int screenWidth = 1200;
@@ -554,7 +562,7 @@ GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDispla
             testNode->SetBounds({ (int)col * 290 + 50, (int)row * 350 + 50, 250, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetShadowRadius(shadowRadius[col]);
-            testNode->SetMaterialWithQualityLevel(qualityLevels[row]);
+            testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[row]));
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }

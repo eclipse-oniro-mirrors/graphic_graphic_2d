@@ -260,7 +260,7 @@ GRAPHIC_TEST(ParticleRippleTest, CONTENT_DISPLAY_TEST, ParticleRippleTest_009)
     for (size_t i = 0; i < paramsList.size(); i++) {
         auto testNode = RSCanvasNode::Create();
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
-        testNode->SetPixelMap(pixelMap);
+        testNode->SetPixelmap(pixelMap);
 
         auto [param1, param2, param3] = paramsList[i];
         testNode->SetParticleRippleFields(param1, param2, param3);

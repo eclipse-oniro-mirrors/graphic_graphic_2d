@@ -21,6 +21,14 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 
+// Helper function to convert int to FilterQuality
+static FilterQuality IntToFilterQuality(int level)
+{
+    if (level < 0) return FilterQuality::NONE;
+    if (level > static_cast<int>(FilterQuality::HIGH)) return FilterQuality::HIGH;
+    return static_cast<FilterQuality>(level);
+}
+
 class RSNodeComprehensiveTest : public RSGraphicTest {
 private:
     const int screenWidth = 1200;
@@ -83,10 +91,10 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
             auto testNode = RSCanvasNode::Create();
             testNode->SetBounds({ (int)j * 380 + 50, (int)i * 350 + 50, 300, 300 });
             if (i == 0 && j == 0) {
-                testNode->SetPixelMap(nullptr); // null pixelmap
+                testNode->SetPixelmap(nullptr); // null pixelmap
                 testNode->SetBackgroundColor(0xffff0000);
             } else {
-                testNode->SetPixelMap(pixelMap);
+                testNode->SetPixelmap(pixelMap);
             }
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
@@ -1374,7 +1382,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
             testNode->SetBounds({ (int)col * 290 + 50, (int)row * 350 + 50, 250, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetBackgroundFilterRadius(blurRadius[col]);
-            testNode->SetMaterialWithQualityLevel(qualityLevels[row]);
+            testNode->SetMaterialWithQualityLevel(nullptr, IntToFilterQuality(qualityLevels[row]));
             GetRootNode()->AddChild(testNode);
             RegisterNode(testNode);
         }
