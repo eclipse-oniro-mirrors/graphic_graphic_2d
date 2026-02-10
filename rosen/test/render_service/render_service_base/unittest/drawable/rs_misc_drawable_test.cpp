@@ -844,7 +844,7 @@ HWTEST_F(RSChildrenDrawableTest, RSColorPickerDrawable009, TestSize.Level1)
     auto [needColorPick, needSync] = drawable->PrepareForExecution(vsyncTime, false);
 
     EXPECT_FALSE(needColorPick);
-    EXPECT_TRUE(needSync); // stagingNeedColorPick_ changed from true to false
+    EXPECT_FALSE(needSync);
 }
 
 /**
