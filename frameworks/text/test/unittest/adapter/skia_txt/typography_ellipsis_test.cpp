@@ -80,7 +80,7 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest001, TestSize.Level0)
     // The two typographies should have different longest lines due to different ellipsis lengths
     // Longer ellipsis ("......") should result in shorter longest line than shorter ellipsis ("...")
     // This tests that the cache correctly differentiates based on ellipsis string
-    EXPECT_GT(longestLine1, longestLine2);
+    EXPECT_LT(longestLine1, longestLine2);
 }
 
 /*
@@ -105,7 +105,7 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest002, TestSize.Level0)
     textStyle.fontSize = 20.0;
     typographyCreate->PushStyle(textStyle);
 
-    const std::u16string text = u"Short text";
+    const std::u16string text = u"Not short text, test ellipsis.";
     typographyCreate->AppendText(text);
     typographyCreate->PopStyle();
 
@@ -134,7 +134,7 @@ HWTEST_F(TypographyEllipsisTest, TypographyEllipsisTest002, TestSize.Level0)
 
     // Assert - Verify that different ellipsis strings result in different longest lines
     // The cache should treat them as different due to different ellipsis
-    EXPECT_GT(longestLine1, longestLine2);
+    EXPECT_LT(longestLine1, longestLine2);
 }
 
 /*
