@@ -102,7 +102,8 @@ GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDispla
  * @tc.desc: Test SetSurfaceTextureAttachCallBack
  * @tc.type: FUNC
  */
-GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDisplayTest_SetSurfaceTextureAttachCallBack_001)
+GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST,
+    RSNodeSurfaceDisplayTest_SetSurfaceTextureAttachCallBack_001)
 {
     auto surfaceNode = RSSurfaceNode::Create();
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
@@ -119,7 +120,8 @@ GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDispla
  * @tc.desc: Test SetSurfaceTextureUpdateCallBack
  * @tc.type: FUNC
  */
-GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDisplayTest_SetSurfaceTextureUpdateCallBack_001)
+GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST,
+    RSNodeSurfaceDisplayTest_SetSurfaceTextureUpdateCallBack_001)
 {
     auto surfaceNode = RSSurfaceNode::Create();
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
@@ -136,7 +138,8 @@ GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDispla
  * @tc.desc: Test SetSurfaceTextureInitTypeCallBack
  * @tc.type: FUNC
  */
-GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST, RSNodeSurfaceDisplayTest_SetSurfaceTextureInitTypeCallBack_001)
+GRAPHIC_TEST(RSNodeSurfaceDisplayTest, CONTENT_DISPLAY_TEST,
+    RSNodeSurfaceDisplayTest_SetSurfaceTextureInitTypeCallBack_001)
 {
     auto surfaceNode = RSSurfaceNode::Create();
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
