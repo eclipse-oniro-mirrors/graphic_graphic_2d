@@ -358,30 +358,29 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetAncoFlags)
 /* SetWindowId: normal values */
 GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetWindowId)
 {
-    std::variant<uint64_t, std::string> id1 = 1000;
-    std::variant<uint64_t, std::string> id2 = "test_window_id";
+    std::vector<uint32_t> windowIds = {
+        0,
+        1,
+        1000,
+        0xFFFFFFFF
+    };
 
-    auto surfaceNode1 = RSSurfaceNode::Create();
-    surfaceNode1->SetBounds({50, 50, 300, 300});
-    std::visit([&surfaceNode1](auto&& arg) { surfaceNode1->SetWindowId(arg); }, id1);
-    GetRootNode()->AddChild(surfaceNode1);
-    RegisterNode(surfaceNode1);
+    for (size_t i = 0; i < windowIds.size(); i++) {
+        auto surfaceNode = RSSurfaceNode::Create();
+        surfaceNode->SetBounds({static_cast<float>((i % 2) * 500 + 50),
+                                static_cast<float>((i / 2) * 300 + 50),
+                                300, 300});
+        surfaceNode->SetWindowId(windowIds[i]);
+        GetRootNode()->AddChild(surfaceNode);
+        RegisterNode(surfaceNode);
 
-    auto canvasNode1 = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-        {50, 50}, 300, 300);
-    GetRootNode()->AddChild(canvasNode1);
-    RegisterNode(canvasNode1);
-
-    auto surfaceNode2 = RSSurfaceNode::Create();
-    surfaceNode2->SetBounds({400, 50, 300, 300});
-    std::visit([&surfaceNode2](auto&& arg) { surfaceNode2->SetWindowId(arg); }, id2);
-    GetRootNode()->AddChild(surfaceNode2);
-    RegisterNode(surfaceNode2);
-
-    auto canvasNode2 = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-        {400, 50}, 300, 300);
-    GetRootNode()->AddChild(canvasNode2);
-    RegisterNode(canvasNode2);
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>((i % 2) * 500 + 50),
+             static_cast<float>((i / 2) * 300 + 50)},
+            300, 300);
+        GetRootNode()->AddChild(canvasNode);
+        RegisterNode(canvasNode);
+    }
 }
 
 /* Combined: multiple properties - matrix 2x2x2 */
@@ -443,14 +442,16 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetContainerWind
 {
     struct WindowInfo {
         bool hasContainerWindow;
-        RRect rrect;
+        Rect rect;
+        float radiusX;
+        float radiusY;
     };
 
     std::vector<WindowInfo> windowInfos = {
-        {true, RRect(0, 0, 200, 200, 0)},
-        {true, RRect(0, 0, 200, 200, 25)},
-        {true, RRect(0, 0, 200, 200, 50)},
-        {false, RRect(0, 0, 0, 0, 0)}
+        {true, {0, 0, 200, 200}, 0, 0},
+        {true, {0, 0, 200, 200}, 25, 25},
+        {true, {0, 0, 200, 200}, 50, 50},
+        {false, {0, 0, 0, 0}, 0, 0}
     };
 
     for (size_t i = 0; i < windowInfos.size(); i++) {
@@ -458,7 +459,9 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetContainerWind
         surfaceNode->SetBounds({static_cast<float>((i % 2) * 400 + 100),
                                 static_cast<float>((i / 2) * 400 + 100),
                                 300, 300});
-        surfaceNode->SetContainerWindow(windowInfos[i].hasContainerWindow, windowInfos[i].rrect);
+
+        RRect rrect(windowInfos[i].rect, windowInfos[i].radiusX, windowInfos[i].radiusY);
+        surfaceNode->SetContainerWindow(windowInfos[i].hasContainerWindow, rrect);
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
