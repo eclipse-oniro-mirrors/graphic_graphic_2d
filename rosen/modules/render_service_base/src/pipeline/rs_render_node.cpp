@@ -4642,7 +4642,12 @@ void RSRenderNode::UpdateDrawableEnableEDR()
 {
     bool hasEDREffect = std::any_of(edrDrawableSlots.begin(), edrDrawableSlots.end(), [this](auto slot) {
         auto drawable = findMapValueRef(this->GetDrawableVec(__func__), static_cast<int8_t>(slot));
-        return drawable && drawable->GetEnableEDR();
+        bool edrEnabled = drawable && drawable->GetEnableEDR();
+        if (edrEnabled) {
+            RS_TRACE_NAME_FMT("UpdateDrawableEnableEDR slot[%d] has EDR effect, nodeId:%" PRIu64,
+                static_cast<int>(slot), GetId());
+        }
+        return edrEnabled;
     });
     SetEnableHdrEffect(hasEDREffect);
 }
