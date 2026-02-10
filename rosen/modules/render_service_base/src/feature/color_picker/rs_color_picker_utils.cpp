@@ -112,10 +112,10 @@ void ScheduleColorPickWithSemaphore(
         RS_LOGE("ScheduleColorPickWithSemaphore: ColorPickerInfo is null");
         return;
     }
-    // Flush with semaphore signaling instead of finishedProc callback
     Drawing::FlushInfo flushInfo;
     flushInfo.backendSurfaceAccess = true;
     flushInfo.finishedContext = info.release();
+    // Work in progress, still using finishedProc callback, semaphore not working
     flushInfo.finishedProc = [](void* ctx) {
         if (!ctx) {
             return;
