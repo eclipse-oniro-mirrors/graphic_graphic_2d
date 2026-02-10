@@ -36,23 +36,23 @@ constexpr uint32_t RECORDING_HEIGHT = 400;
 constexpr uint32_t MAX_PIXELMAP_WIDTH = 5000;
 constexpr uint32_t MAX_PIXELMAP_HEIGHT = 5000;
 
-// 不同类型的颜色方案，用于视觉对比
-constexpr uint32_t COLOR_NONE_BG = 0xFFFFF0E0;      // 浅橙色背景
-constexpr uint32_t COLOR_NONE_TEXT = 0xFF8B4513;    // 深棕色文字
+// Color schemes for different hybrid render types
+constexpr uint32_t COLOR_NONE_BG = 0xFFFFF0E0;      // Light orange background
+constexpr uint32_t COLOR_NONE_TEXT = 0xFF8B4513;    // Dark brown text
 
-constexpr uint32_t COLOR_TEXT_BG = 0xFFE0F7FA;      // 浅蓝色背景
-constexpr uint32_t COLOR_TEXT_TEXT = 0xFF01579B;    // 深蓝色文字
+constexpr uint32_t COLOR_TEXT_BG = 0xFFE0F7FA;      // Light blue background
+constexpr uint32_t COLOR_TEXT_TEXT = 0xFF01579B;    // Dark blue text
 
-constexpr uint32_t COLOR_SVG_BG = 0xFFE8F5E9;       // 浅绿色背景
-constexpr uint32_t COLOR_SVG_SHAPE = 0xFF2E7D32;    // 深绿色图形
+constexpr uint32_t COLOR_SVG_BG = 0xFFE8F5E9;       // Light green background
+constexpr uint32_t COLOR_SVG_SHAPE = 0xFF2E7D32;    // Dark green shape
 
-constexpr uint32_t COLOR_HMSYMBOL_BG = 0xFFF3E5F5;   // 浅紫色背景
-constexpr uint32_t COLOR_HMSYMBOL_TEXT = 0xFF6A1B9A; // 深紫色文字
+constexpr uint32_t COLOR_HMSYMBOL_BG = 0xFFF3E5F5;   // Light purple background
+constexpr uint32_t COLOR_HMSYMBOL_TEXT = 0xFF6A1B9A; // Dark purple text
 
-constexpr uint32_t COLOR_CANVAS_BG = 0xFFFFEBEE;    // 浅红色背景
-constexpr uint32_t COLOR_CANVAS_SHAPE = 0xFFC62828; // 深红色图形
+constexpr uint32_t COLOR_CANVAS_BG = 0xFFFFEBEE;    // Light red background
+constexpr uint32_t COLOR_CANVAS_SHAPE = 0xFFC62828; // Dark red shape
 
-// 辅助颜色
+// Auxiliary colors
 constexpr uint32_t COLOR_YELLOW = 0xFFFFFF00;
 constexpr uint32_t COLOR_CYAN = 0xFF00FFFF;
 constexpr uint32_t COLOR_MAGENTA = 0xFFFF00FF;
@@ -60,8 +60,8 @@ constexpr uint32_t COLOR_MAGENTA = 0xFFFF00FF;
 
 /**
  * @class HybridRenderInterfacesTest
- * @brief 像素级比对测试类，测试混合渲染相关接口
- *        使用不同颜色和图形进行视觉对比验证
+ * @brief Pixel-level comparison test class for hybrid render interfaces
+ *        Uses different colors and graphics for visual comparison verification
  */
 class HybridRenderInterfacesTest : public RSGraphicTest {
 private:
@@ -74,7 +74,7 @@ public:
         SetScreenSize(screenWidth, screenHeight);
     }
 
-    // 辅助函数：创建带颜色的CanvasNode
+    // Helper function: Create colored CanvasNode
     std::shared_ptr<RSCanvasNode> CreateColoredNode(float x, float y, float w, float h,
         uint32_t bgColor = SK_ColorWHITE)
     {
@@ -88,7 +88,7 @@ public:
         return canvasNode;
     }
 
-    // 辅助函数：绘制彩色文本
+    // Helper function: Draw colored text
     void DrawColoredText(::OHOS::Rosen::ExtendRecordingCanvas* canvas, const std::string& text,
         uint32_t textColor, uint32_t offsetX = DEFAULT_SCALAR_X, uint32_t offsetY = DEFAULT_SCALAR_Y)
     {
@@ -103,7 +103,7 @@ public:
         canvas->DetachBrush();
     }
 
-    // 辅助函数：绘制彩色矩形
+    // Helper function: Draw colored rectangle
     void DrawColoredRect(::OHOS::Rosen::ExtendRecordingCanvas* canvas, float left, float top,
         float right, float bottom, uint32_t color)
     {
@@ -114,7 +114,7 @@ public:
         canvas->DetachBrush();
     }
 
-    // 辅助函数：绘制彩色圆形
+    // Helper function: Draw colored circle
     void DrawColoredCircle(::OHOS::Rosen::ExtendRecordingCanvas* canvas, float centerX, float centerY,
         float radius, uint32_t color)
     {
@@ -126,7 +126,7 @@ public:
         canvas->DetachBrush();
     }
 
-    // 辅助函数：绘制彩色路径
+    // Helper function: Draw colored path
     void DrawColoredPath(::OHOS::Rosen::ExtendRecordingCanvas* canvas, uint32_t color)
     {
         Path path;
@@ -145,12 +145,12 @@ public:
 };
 
 // ============================================================================
-// SetHybridRenderType 和 GetHybridRenderType 测试 - 使用不同颜色区分类型
+// SetHybridRenderType and GetHybridRenderType tests - Use different colors to distinguish types
 // ============================================================================
 
 /**
  * @tc.name: SetGetHybridRenderType_None_001
- * @tc.desc: 测试NONE类型 - 浅橙色背景+深棕色文字+黄色装饰
+ * @tc.desc: Test NONE type - Light orange background + dark brown text + yellow decoration
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -174,7 +174,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
 /**
  * @tc.name: SetGetHybridRenderType_Text_002
- * @tc.desc: 测试TEXT类型 - 浅蓝色背景+深蓝色文字+青色装饰
+ * @tc.desc: Test TEXT type - Light blue background + dark blue text + cyan decoration
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -198,7 +198,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
 /**
  * @tc.name: SetGetHybridRenderType_SVG_003
- * @tc.desc: 测试SVG类型 - 浅绿色背景+深绿色图形+路径绘制
+ * @tc.desc: Test SVG type - Light green background + dark green shapes + path drawing
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -223,7 +223,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
 /**
  * @tc.name: SetGetHybridRenderType_HMSymbol_004
- * @tc.desc: 测试HMSYMBOL类型 - 浅紫色背景+深紫色文字+品红装饰
+ * @tc.desc: Test HMSYMBOL type - Light purple background + dark purple text + magenta decoration
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -248,7 +248,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
 /**
  * @tc.name: SetGetHybridRenderType_Canvas_005
- * @tc.desc: 测试CANVAS类型 - 浅红色背景+深红色图形+组合形状
+ * @tc.desc: Test CANVAS type - Light red background + dark red shapes + combined forms
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -274,7 +274,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
 /**
  * @tc.name: SetGetHybridRenderType_TypeMax_006
- * @tc.desc: 测试边界值TYPE_MAX - 灰色背景+黑色文字
+ * @tc.desc: Test boundary value TYPE_MAX - Gray background + black text
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -297,7 +297,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
 /**
  * @tc.name: SetGetHybridRenderType_Comparison_007
- * @tc.desc: 组合测试：所有类型横向排列对比
+ * @tc.desc: Combination test: All types arranged horizontally for comparison
  * @tc.type: FUNC
  * @tc.require: issueICRTWV
  */
@@ -327,7 +327,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 
         DrawColoredText(recordingCanvas, types[i].label, types[i].contentColor, 50, 80);
 
-        // 绘制不同形状增强对比
+        // Draw different shapes to enhance contrast
         if (types[i].type == DrawCmdList::HybridRenderType::SVG) {
             DrawColoredPath(recordingCanvas, types[i].contentColor);
         } else if (types[i].type == DrawCmdList::HybridRenderType::CANVAS) {
@@ -347,12 +347,12 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, SetGetHybridRenderT
 }
 
 // ============================================================================
-// GetBounds 测试 - 使用可视化边界框
+// GetBounds test - Use visual bounding boxes
 // ============================================================================
 
 /**
  * @tc.name: GetBounds_ValidRect_001
- * @tc.desc: 测试有效边界 - 绘制内容并用边框标注边界
+ * @tc.desc: Test valid bounds - Draw content and mark bounds with border
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -361,15 +361,15 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_ValidRect
     auto canvasNode = CreateColoredNode(50, 500, RECORDING_WIDTH, RECORDING_HEIGHT, 0xFFFFF8DC);
     auto recordingCanvas = canvasNode->BeginRecording(RECORDING_WIDTH, RECORDING_HEIGHT);
 
-    // 绘制内容
+    // Draw content
     DrawColoredRect(recordingCanvas, 100, 100, 300, 250, 0xFFFF5722);
     DrawColoredText(recordingCanvas, "Bounds Test", 0xFFBF360C, 120, 200);
 
-    // 获取边界
+    // Get bounds
     Rect rect;
     recordingCanvas->GetDrawCmdList()->GetBounds(rect);
 
-    // 绘制边界框（用虚线效果）
+    // Draw border box (with dashed line effect)
     if (rect.IsValid()) {
         Pen pen;
         pen.SetColor(SK_ColorBLUE);
@@ -386,7 +386,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_ValidRect
 
 /**
  * @tc.name: GetBounds_EmptyContent_002
- * @tc.desc: 测试空内容边界 - 只有背景无绘制
+ * @tc.desc: Test empty content bounds - Only background without drawing
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -395,12 +395,12 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_EmptyCont
     auto canvasNode = CreateColoredNode(500, 500, RECORDING_WIDTH, RECORDING_HEIGHT, 0xFFEFEBE9);
     auto recordingCanvas = canvasNode->BeginRecording(RECORDING_WIDTH, RECORDING_HEIGHT);
 
-    // 不绘制任何内容，只有背景
+    // Do not draw any content, only background
     Rect rect;
     recordingCanvas->GetDrawCmdList()->GetBounds(rect);
     EXPECT_FALSE(rect.IsValid());
 
-    // 添加说明文字
+    // Add explanatory text
     DrawColoredText(recordingCanvas, "Empty", 0xFFD32F2F, 150, 200);
 
     canvasNode->FinishRecording();
@@ -410,7 +410,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_EmptyCont
 
 /**
  * @tc.name: GetBounds_MultiContent_003
- * @tc.desc: 测试多内容边界 - 多个图形组合
+ * @tc.desc: Test multiple content bounds - Multiple shape combination
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -419,7 +419,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_MultiCont
     auto canvasNode = CreateColoredNode(50, 950, RECORDING_WIDTH, RECORDING_HEIGHT, 0xFFE3F2FD);
     auto recordingCanvas = canvasNode->BeginRecording(RECORDING_WIDTH, RECORDING_HEIGHT);
 
-    // 绘制多个分散的内容
+    // Draw multiple scattered contents
     DrawColoredRect(recordingCanvas, 50, 50, 150, 100, 0xFF1976D2);
     DrawColoredCircle(recordingCanvas, 300, 100, 50, 0xFFE91E63);
     DrawColoredRect(recordingCanvas, 100, 250, 200, 80, 0xFF4CAF50);
@@ -428,7 +428,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_MultiCont
     Rect rect;
     recordingCanvas->GetDrawCmdList()->GetBounds(rect);
 
-    // 绘制边界框
+    // Draw border box
     if (rect.IsValid()) {
         Pen pen(SK_ColorMAGENTA);
         pen.SetWidth(2.0f);
@@ -443,12 +443,12 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, GetBounds_MultiCont
 }
 
 // ============================================================================
-// IsHybridRenderEnabled 测试 - 启用/禁用状态可视化
+// IsHybridRenderEnabled test - Enable/disable state visualization
 // ============================================================================
 
 /**
  * @tc.name: IsHybridRenderEnabled_Enabled_001
- * @tc.desc: 测试启用状态 - 绿色背景表示启用
+ * @tc.desc: Test enabled state - Green background indicates enabled
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -461,7 +461,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, IsHybridRenderEnabl
     bool isEnabled = recordingCanvas->GetDrawCmdList()->IsHybridRenderEnabled(
         MAX_PIXELMAP_WIDTH, MAX_PIXELMAP_HEIGHT);
 
-    // 根据状态绘制不同内容
+    // Draw different content based on state
     if (isEnabled) {
         DrawColoredText(recordingCanvas, "ENABLED", 0xFF2E7D32, 130, 180);
         DrawColoredCircle(recordingCanvas, 200, 250, 60, 0xFF4CAF50);
@@ -474,7 +474,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, IsHybridRenderEnabl
 
 /**
  * @tc.name: IsHybridRenderEnabled_SizeExceed_002
- * @tc.desc: 测试尺寸超限禁用 - 红色背景表示禁用
+ * @tc.desc: Test size limit exceeded disable - Red background indicates disabled
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -488,7 +488,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, IsHybridRenderEnabl
 
     bool isEnabled = recordingCanvas->GetDrawCmdList()->IsHybridRenderEnabled(5000, 5000);
 
-    // 根据状态绘制不同内容
+    // Draw different content based on state
     if (!isEnabled) {
         DrawColoredText(recordingCanvas, "DISABLED", 0xFFC62828, 110, 180);
         DrawColoredRect(recordingCanvas, 100, 250, 200, 50, 0xFFEF5350);
@@ -500,18 +500,18 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, IsHybridRenderEnabl
 }
 
 // ============================================================================
-// ResetHybridRenderSize 测试 - 尺寸变化可视化
+// ResetHybridRenderSize test - Size change visualization
 // ============================================================================
 
 /**
  * @tc.name: ResetHybridRenderSize_Compare_001
- * @tc.desc: 测试尺寸重置对比 - 左右对比不同尺寸
+ * @tc.desc: Test size reset comparison - Left-right comparison of different sizes
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
 GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, ResetHybridRenderSize_Compare_001)
 {
-    // 左侧：正常尺寸
+    // Left side: Normal size
     auto canvasNode1 = CreateColoredNode(50, 1850, 300, 300, 0xFFE1BEE7);
     auto recordingCanvas1 = canvasNode1->BeginRecording(300, 300);
     recordingCanvas1->ResetHybridRenderSize(200.0f, 200.0f);
@@ -520,7 +520,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, ResetHybridRenderSi
     canvasNode1->FinishRecording();
     RegisterNode(canvasNode1);
 
-    // 右侧：大尺寸
+    // Right side: Large size
     auto canvasNode2 = CreateColoredNode(400, 1850, 300, 300, 0xFFB2DFDB);
     auto recordingCanvas2 = canvasNode2->BeginRecording(300, 300);
     recordingCanvas2->ResetHybridRenderSize(400.0f, 400.0f);
@@ -534,7 +534,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, ResetHybridRenderSi
 
 /**
  * @tc.name: ResetHybridRenderSize_Grid_002
- * @tc.desc: 测试多种尺寸网格布局展示
+ * @tc.desc: Test multiple sizes grid layout display
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -564,7 +564,7 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, ResetHybridRenderSi
         recordingCanvas->ResetHybridRenderSize(sizes[i].w, sizes[i].h);
         DrawColoredText(recordingCanvas, sizes[i].label, 0xFF4A148C, 50, 100);
 
-        // 绘制尺寸指示框
+        // Draw size indicator box
         Pen pen;
         pen.SetColor(0xFF6A1B9A);
         pen.SetWidth(2.0f);
@@ -580,12 +580,12 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, ResetHybridRenderSi
 }
 
 // ============================================================================
-// 组合测试：全面展示
+// Combination test: Full display
 // ============================================================================
 
 /**
  * @tc.name: Combined_FullDisplay_001
- * @tc.desc: 全面展示：所有类型+状态+尺寸的综合展示
+ * @tc.desc: Full display: Comprehensive display of all types + states + sizes
  * @tc.type: FUNC
  * @tc.require: IC2UAC
  */
@@ -616,10 +616,10 @@ GRAPHIC_TEST(HybridRenderInterfacesTest, HYBRID_RENDER_TEST, Combined_FullDispla
 
         DrawColoredText(recordingCanvas, displays[i].label, displays[i].contentColor, 80, 50);
 
-        // 绘制尺寸指示圆圈
+        // Draw size indicator circle
         DrawColoredCircle(recordingCanvas, 125, 150, displays[i].size * 0.3f, displays[i].contentColor);
 
-        // 绘制状态指示
+        // Draw state indicator
         recordingCanvas->GetDrawCmdList()->SetHybridRenderType(displays[i].type);
         bool isEnabled = recordingCanvas->GetDrawCmdList()->IsHybridRenderEnabled(5000, 5000);
 
