@@ -698,12 +698,9 @@ std::shared_ptr<Drawing::Surface> EffectImageChain::CreateSurface(bool forceCPU)
 #endif
 }
 
-
 void EffectImageChain::Release()
 {
-
     std::lock_guard<std::mutex> lock(apiMutex_);
-
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::Release");
 
     surface_ = nullptr;
