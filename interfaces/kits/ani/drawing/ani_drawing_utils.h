@@ -179,7 +179,8 @@ ani_status CreateRectObj(ani_env* env, const Drawing::Rect& rect, ani_object& ob
 
 bool GetValueFromAniRectObj(ani_env* env, ani_object obj, std::vector<double>& ltrb);
 
-bool DrawingValueConvertToAniRect(ani_env* env, ani_object obj, ani_double left, ani_double top, ani_double right, ani_double bottom);
+bool DrawingValueConvertToAniRect(ani_env* env, ani_object obj, ani_double left, ani_double top,
+    ani_double right, ani_double bottom);
 
 bool GetColor4fFromAniColor4fObj(ani_env* env, ani_object obj, Drawing::Color4f &color);
 

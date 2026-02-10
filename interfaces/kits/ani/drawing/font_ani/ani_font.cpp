@@ -132,7 +132,8 @@ static const std::array g_methods = {
     ani_native_function { "getTextPath", nullptr, reinterpret_cast<void*>(AniFont::GetTextPath) },
     ani_native_function { "setThemeFontFollowed", nullptr, reinterpret_cast<void*>(AniFont::SetThemeFontFollowed) },
     ani_native_function { "isThemeFontFollowed", nullptr, reinterpret_cast<void*>(AniFont::IsThemeFontFollowed) },
-    ani_native_function { "measureSingleCharacterWithFeatures", nullptr, reinterpret_cast<void*>(AniFont::MeasureSingleCharacterWithFeatures) },
+    ani_native_function { "measureSingleCharacterWithFeatures", nullptr,
+        reinterpret_cast<void*>(AniFont::MeasureSingleCharacterWithFeatures) },
 };
 
 ani_status AniFont::AniInit(ani_env *env)
@@ -329,8 +330,9 @@ ani_double AniFont::MeasureSingleCharacterWithFeatures(ani_env* env, ani_object 
     }
     uint32_t size = static_cast<uint32_t>(aniLength);
 
-    std::shared_ptr<Drawing::DrawingFontFeatures> drawingFontFeatures = std::make_shared<Drawing::DrawingFontFeatures>();
-    if(!MakeFontFeaturesFromAniObjArray(env, drawingFontFeatures, size, featuresobj)) {
+    std::shared_ptr<Drawing::DrawingFontFeatures> drawingFontFeatures =
+        std::make_shared<Drawing::DrawingFontFeatures>();
+    if (!MakeFontFeaturesFromAniObjArray(env, drawingFontFeatures, size, featuresobj)) {
         ROSEN_LOGE("AniFont::MeasureSingleCharacterWithFeatures MakeFontFeaturesFromAniObjArray is fail");
         return -1;
     }

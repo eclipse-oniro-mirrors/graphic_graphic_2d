@@ -191,7 +191,7 @@ void AniGlobalClass::InitInterfaceClass(ani_env* env)
     point = AniFindClass(env, ANI_CLASS_POINT_NAME);
     rect = AniFindClass(env, ANI_CLASS_RECT_NAME);
     colorInterface = AniFindClass(env, ANI_INTERFACE_COLOR_NAME);
-    color4fInterface = AniFindClass(env, ANI_INTERFACE_COLOR4f_NAME);
+    color4fInterface = AniFindClass(env, ANI_INTERFACE_COLOR4F_NAME);
     pointInterface = AniFindClass(env, ANI_INTERFACE_POINT_NAME);
     rectInterface = AniFindClass(env, ANI_INTERFACE_RECT_NAME);
     point3dInterface = AniFindClass(env, ANI_INTERFACE_POINT3D_NAME);

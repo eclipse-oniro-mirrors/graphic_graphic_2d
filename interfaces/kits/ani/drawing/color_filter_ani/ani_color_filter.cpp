@@ -47,7 +47,8 @@ ani_status AniColorFilter::AniInit(ani_env *env)
         ani_native_function { "createComposeColorFilter", nullptr, reinterpret_cast<void*>(CreateComposeColorFilter) },
         ani_native_function { "createLinearToSRGBGamma", nullptr, reinterpret_cast<void*>(CreateLinearToSRGBGamma) },
         ani_native_function { "createLumaColorFilter", nullptr, reinterpret_cast<void*>(CreateLumaColorFilter) },
-        ani_native_function { "createLightingColorFilter", nullptr, reinterpret_cast<void*>(CreateLightingColorFilterWithColor) },
+        ani_native_function { "createLightingColorFilter", nullptr,
+            reinterpret_cast<void*>(CreateLightingColorFilterWithColor) },
         ani_native_function { "createSRGBGammaToLinear", nullptr, reinterpret_cast<void*>(CreateSRGBGammaToLinear) },
     };
 

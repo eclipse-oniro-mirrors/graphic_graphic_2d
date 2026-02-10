@@ -340,7 +340,8 @@ static const std::array g_methods = {
     ani_native_function { "resetMatrix", nullptr, reinterpret_cast<void*>(AniCanvas::ResetMatrix) },
     ani_native_function { "quickRejectPath", nullptr, reinterpret_cast<void*>(AniCanvas::QuickRejectPath) },
     ani_native_function { "quickRejectRect", nullptr, reinterpret_cast<void*>(AniCanvas::QuickRejectRect) },
-    ani_native_function { "drawSingleCharacterWithFeatures", nullptr, reinterpret_cast<void*>(AniCanvas::DrawSingleCharacterWithFeatures) },
+    ani_native_function { "drawSingleCharacterWithFeatures", nullptr,
+        reinterpret_cast<void*>(AniCanvas::DrawSingleCharacterWithFeatures) },
 };
 
 ani_status AniCanvas::AniInit(ani_env *env)
@@ -2155,6 +2156,25 @@ ani_boolean AniCanvas::QuickRejectPath(ani_env* env, ani_object obj, ani_object 
     bool result = canvas->QuickReject(*aniPath->GetPath());
     return static_cast<ani_boolean>(result);
 }
+std::shared_ptr<Drawing::DrawingFontFeatures> ParseFontFeatures(ani_env* env, ani_array featuresobj)
+{
+    ani_size aniLength;
+    if (ANI_OK != env->Array_GetLength(featuresobj, &aniLength)) {
+        ROSEN_LOGE("AniCanvas::ParseFontFeatures featuresobj are invalid");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::DrawSingleCharacterWithFeatures incorrect type points.");
+        return nullptr;
+    }
+    uint32_t size = static_cast<uint32_t>(aniLength);
+
+    std::shared_ptr<Drawing::DrawingFontFeatures> drawingFontFeatures =
+                std::make_shared<Drawing::DrawingFontFeatures>();
+    if (!MakeFontFeaturesFromAniObjArray(env, drawingFontFeatures, size, featuresobj)) {
+        ROSEN_LOGE("AniCanvas::drawSingleCharacterWithFeatures MakeFontFeaturesFromAniObjArray is fail");
+        return nullptr;
+    }
+    return drawingFontFeatures;
+}
 
 void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, ani_string text, ani_object fontobj,
     ani_double x, ani_double y, ani_array featuresobj)
@@ -2199,17 +2219,10 @@ void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, an
             "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed. text should be single character.");
         return;
     }
-    ani_size aniLength;
-    if (ANI_OK != env->Array_GetLength(featuresobj, &aniLength)) {
-        ROSEN_LOGE("AniCanvas::DrawSingleCharacterWithFeatures points are invalid");
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawSingleCharacterWithFeatures incorrect type points.");
-        return;
-    }
-    uint32_t size = static_cast<uint32_t>(aniLength);
-
-    std::shared_ptr<Drawing::DrawingFontFeatures> drawingFontFeatures = std::make_shared<Drawing::DrawingFontFeatures>();
-    if(!MakeFontFeaturesFromAniObjArray(env, drawingFontFeatures, size, featuresobj)) {
-        ROSEN_LOGE("AniCanvas::drawSingleCharacterWithFeatures MakeFontFeaturesFromAniObjArray is fail");
+    auto drawingFontFeatures = ParseFontFeatures(env, featuresobj);
+    if (!drawingFontFeatures) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::DrawSingleCharacterWithFeatures drawingFontFeatures is nullptr");
         return;
     }
 

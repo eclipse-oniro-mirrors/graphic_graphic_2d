@@ -449,7 +449,8 @@ ani_status CreateRectObj(ani_env* env, const Drawing::Rect& rect, ani_object& ob
     return ANI_OK;
 }
 
-bool DrawingValueConvertToAniRect(ani_env* env, ani_object obj, ani_double left, ani_double top, ani_double right, ani_double bottom)
+bool DrawingValueConvertToAniRect(ani_env* env, ani_object obj, ani_double left, ani_double top, ani_double right,
+    ani_double bottom)
 {
     ani_method rectSetLeft = AniGlobalMethod::GetInstance().rectSetLeft;
     ani_method rectSetTop = AniGlobalMethod::GetInstance().rectSetTop;
@@ -469,7 +470,8 @@ bool DrawingValueConvertToAniRect(ani_env* env, ani_object obj, ani_double left,
     return true;
 }
 
-bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::DrawingFontFeatures> fontfeatures, uint32_t size, ani_array featuresobj)
+bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::DrawingFontFeatures> fontfeatures,
+    uint32_t size, ani_array featuresobj)
 {
     fontfeatures->clear();
     ani_boolean isFontFeatureClass = false;
@@ -486,7 +488,7 @@ bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::Draw
                 return false;
             }
             env->Object_InstanceOf(static_cast<ani_object>(fontFeatureRef), fontFeatureClass, &isFontFeatureClass);
-            if(!isFontFeatureClass) {
+            if (!isFontFeatureClass) {
                 ROSEN_LOGE("fontFeatureRef is invalid");
                 return false;
             }
@@ -494,7 +496,8 @@ bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::Draw
         
         ani_method fontFeatureGetName = AniGlobalMethod::GetInstance().fontFeatureGetName;
         ani_ref nameRef = nullptr;
-        ani_status ret = env->Object_CallMethod_Ref(static_cast<ani_object>(fontFeatureRef), fontFeatureGetName, &nameRef);
+        ani_status ret = env->Object_CallMethod_Ref(static_cast<ani_object>(fontFeatureRef),
+            fontFeatureGetName, &nameRef);
         if (ret != ANI_OK) {
             ROSEN_LOGE("Failed to get name, ret %{public}d", ret);
             return false;
@@ -505,7 +508,8 @@ bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::Draw
         }
 
         ani_double valueDouble;
-        ret = env->Object_CallMethod_Double(static_cast<ani_object>(fontFeatureRef), AniGlobalMethod::GetInstance().fontFeatureGetValue, &valueDouble);
+        ret = env->Object_CallMethod_Double(static_cast<ani_object>(fontFeatureRef),
+            AniGlobalMethod::GetInstance().fontFeatureGetValue, &valueDouble);
         if (ret != ANI_OK) {
             ROSEN_LOGE("Failed to get value, ret %{public}d", ret);
             return false;
@@ -513,7 +517,6 @@ bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::Draw
         fontfeatures->push_back({{name, valueDouble}});
     }
     return true;
-
 }
 
 ani_status GetPointFromPointObj(ani_env* env, ani_object obj, Drawing::Point& point)
