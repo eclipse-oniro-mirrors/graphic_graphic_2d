@@ -645,7 +645,8 @@ DrawingError EffectImageChain::InitWithoutCanvas(const std::shared_ptr<Media::Pi
     opts.pixelFormat = srcPixelMap_->GetPixelFormat();
     opts.alphaType = srcPixelMap_->GetAlphaType();
     opts.editable = true;
-    opts.useDMA = true;
+    // opts.useDMA = true;
+    opts.allocatorType = Media::AllocatorType::DMA_ALLOC;
     auto dstPixelMap = Media::PixelMap::Create(opts);
     if (dstPixelMap == nullptr) {
         image_ = nullptr;
@@ -697,12 +698,37 @@ std::shared_ptr<Drawing::Surface> EffectImageChain::CreateSurface(bool forceCPU)
 #endif
 }
 
-EffectImageChain::~EffectImageChain()
+
+void EffectImageChain::Release()
 {
+
+    std::lock_guard<std::mutex> lock(apiMutex_);
+
+    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::Release");
+
+    surface_ = nullptr;
+    canvas_ = nullptr;
+
     if (gpuContext_) {
         gpuContext_->ReleaseResourcesAndAbandonContext();
         gpuContext_ = nullptr;
     }
+    renderContext_ = nullptr;
+    prepared_ = false;
+    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+}
+
+EffectImageChain::~EffectImageChain()
+{
+    surface_ = nullptr;
+    canvas_ = nullptr;
+    filters_ = nullptr;
+    image_ = nullptr;
+    if (gpuContext_) {
+        gpuContext_->ReleaseResourcesAndAbandonContext();
+        gpuContext_ = nullptr;
+    }
+    renderContext_ = nullptr;
 }
 
 static std::shared_ptr<GEShaderFilter> GenerateExtShaderWaterGlass(

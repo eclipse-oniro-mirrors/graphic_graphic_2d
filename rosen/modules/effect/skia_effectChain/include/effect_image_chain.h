@@ -90,6 +90,7 @@ public:
     DrawingError Draw();
 
     std::shared_ptr<Media::PixelMap> GetPixelMap();
+    void Release();
 
 private:
     bool CheckPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap);
