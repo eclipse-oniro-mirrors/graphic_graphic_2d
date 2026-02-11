@@ -917,7 +917,7 @@ HWTEST_F(RSInterfacesTest, GetPanelPowerStatus001, Function | SmallTest | Level2
  */
 HWTEST_F(RSInterfacesTest, GetPanelPowerStatus002, Function | SmallTest | Level2)
 {
-    auto screenId = rsInterface->GetDefaultScreenId();
+    auto screenId = rsInterfaces->GetDefaultScreenId();
     EXPECT_NE(screenId, INVALID_SCREEN_ID);
     rsInterfaces->GetPanelPowerStatus(screenId);
 }

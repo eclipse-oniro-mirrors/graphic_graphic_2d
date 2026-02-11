@@ -732,7 +732,7 @@ HWTEST_F(RSServiceClientTest, SetRogScreenResolution002, TestSize.Level1)
     EXPECT_NE(id, INVALID_SCREEN_ID);
     uint32_t width = 1920;
     uint32_t height = 1080;
-    RSRenderServiceConnectHub::Destory();
+    RSRenderServiceConnectHub::Destroy();
     rsClient->SetRogScreenResolution(id, width, height);
     RSRenderServiceConnectHub::Init();
 }
@@ -756,13 +756,13 @@ HWTEST_F(RSServiceClientTest, GetRogScreenResolution001, TestSize.Level1)
  * @tc.desc: Test GetRogScreenResolution with empty renderSerivce
  * @tc.type: FUNC
  */
-HWTEST_F(RSServiceClientTest, GetRogScreenResolution001, TestSize.Level1)
+HWTEST_F(RSServiceClientTest, GetRogScreenResolution002, TestSize.Level1)
 {
     auto id = rsClient->GetDefaultScreenId();
     EXPECT_NE(id, INVALID_SCREEN_ID);
     uint32_t width{0};
     uint32_t height{0};
-    RSRenderServiceConnectHub::Destory();
+    RSRenderServiceConnectHub::Destroy();
     rsClient->GetRogScreenResolution(id, width, height);
     RSRenderServiceConnectHub::Init();
 }
