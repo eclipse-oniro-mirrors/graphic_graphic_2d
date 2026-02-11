@@ -1089,10 +1089,11 @@ bool RSCanvasDrawingRenderNodeDrawable::GpuContextResetVK(
         isGpuSurface_ = false;
         return CreateCpuSurface(info);
     }
+    return true;
 #else
     surface_ = Drawing::Surface::MakeRaster(info);
+    return surface_ != nullptr;
 #endif
-    return true;
 }
 
 bool RSCanvasDrawingRenderNodeDrawable::ResetSurfaceforPlayback(int width, int height)
