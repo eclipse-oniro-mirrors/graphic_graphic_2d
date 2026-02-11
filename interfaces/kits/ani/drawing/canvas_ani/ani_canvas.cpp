@@ -2197,7 +2197,7 @@ void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, an
     env->String_GetUTF8Size(text, &len);
     if (len == 0 || len > 4) { // 4 is the maximum length of a character encoded in UTF8.
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
-            "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed. text should be single character.");
+            "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed");
         return;
     }
 
@@ -2216,7 +2216,7 @@ void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, an
     size_t byteLen = currentStr - str;
     if (byteLen != len) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
-        "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed. text should be single character.");
+            "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed");
         return;
     }
     auto drawingFontFeatures = ParseFontFeatures(env, featuresobj);
