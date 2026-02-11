@@ -515,7 +515,7 @@ namespace drawing {
    * @syscap SystemCapability.Graphics.Drawing
    * @crossplatform
    * @atomicservice
-   * @since 23 static
+   * @since 24
    */
   export interface FontFeature {
     /**
