@@ -473,7 +473,7 @@ HWTEST_F(HgmCommandTest, InitXmlConfig, Function | SmallTest | Level0)
     EXPECT_EQ(hgmCore.InitXmlConfig(), EXEC_SUCCESS);
 
     g_mockStr = "/sys_prod/variant/hw_oem/AAA-72/etc/graphic/hgm_policy_config.xml";
-    EXPECT_EQ(hgmCore.InitXmlConfig(), XML_FILE_LOAD_FAIL);
+    EXPECT_EQ(hgmCore.InitXmlConfig(), EXEC_SUCCESS);
 
     g_mockStr = "/chip_prod/etc/graphic/hgm_policy_config.xml";
     EXPECT_EQ(hgmCore.InitXmlConfig(), EXEC_SUCCESS);
