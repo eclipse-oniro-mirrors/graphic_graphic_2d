@@ -188,10 +188,8 @@ int32_t HgmCore::InitXmlConfig()
         mParser_ = std::make_unique<XMLParser>();
     }
 
-    int32_t ret = mParser_->LoadConfiguration(GetXmlPath().c_str());
-    if (ret != EXEC_SUCCESS) {
-        HGM_LOGW("HgmCore failed to load prod xml configuration file, errNum:%{public}d", ret);
-        return ret;
+    if (mParser_->LoadConfiguration(GetXmlPath().c_str()) != EXEC_SUCCESS) {
+        HGM_LOGW("HgmCore failed to load prod xml configuration file");
     }
     if (mParser_->Parse() != EXEC_SUCCESS) {
         HGM_LOGW("HgmCore failed to parse prod xml configuration");
