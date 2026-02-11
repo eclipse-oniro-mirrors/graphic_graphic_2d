@@ -3863,8 +3863,8 @@ OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRangeWithBuffer(
     return reinterpret_cast<OH_Drawing_Range*>(resultCharacterRange);
 }
 
-OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinateWithBuffer(OH_Drawing_Typography* typography,
-    double dx, double dy, OH_Drawing_TextEncoding textEncodingType)
+OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinateWithBuffer(
+    OH_Drawing_Typography* typography, double dx, double dy, OH_Drawing_TextEncoding textEncodingType)
 {
     if (typography == nullptr) {
         TEXT_LOGE("Null typography");

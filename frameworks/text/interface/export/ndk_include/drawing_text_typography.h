@@ -3306,7 +3306,7 @@ OH_Drawing_TextShadow *OH_Drawing_CopyTextShadow(OH_Drawing_TextShadow *shadow);
 void OH_Drawing_DestroyPositionAndAffinity(OH_Drawing_PositionAndAffinity* positionAndAffinity);
 
 /**
- * @brief Gets an <b>OH_Drawing_Range</b> object representing the character range for the specified glyph range.
+ * @brief Gets the character range corresponding to the specified glyph range.
  *
  * @param typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
  * @param glyphRangeStart Indicates the start of the glyph range.
@@ -3328,12 +3328,11 @@ OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRangeWithBuffer(
     OH_Drawing_TextEncoding textEncodingType);
 
 /**
- * @brief Gets an <b>OH_Drawing_PositionAndAffinity</b> object representing
- *        the character position at the specified coordinate.
+ * @brief Gets the character position and affinity from the specified coordinate.
  *
  * @param typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
- * @param dx Indicates the positionX of typography.
- * @param dy Indicates the positionY of typography.
+ * @param dx Indicates the positionX of typography to set.
+ * @param dy Indicates the positionY of typography to set.
  * @param textEncodingType Indicates the text encoding type <b>OH_Drawing_TextEncoding</b>.
  *     Currently only UTF-8 and UTF-16 encoding types are supported.
  *     For UTF-8 encoding, the returned position represents a byte offset.
@@ -3346,7 +3345,7 @@ OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoord
     OH_Drawing_Typography* typography, double dx, double dy, OH_Drawing_TextEncoding textEncodingType);
 
 /**
- * @brief Gets an <b>OH_Drawing_Range</b> object representing the glyph range for the specified character range.
+ * @brief Gets the glyph range corresponding to the specified character range.
  *
  * @param typography Indicates the pointer to an <b>OH_Drawing_Typography</b> object.
  * @param characterRangeStart Indicates the start of the character range.
