@@ -502,13 +502,6 @@ namespace drawing {
     private static native getSamplingOptionsAddr(input: SamplingOptions): long;
   }
 
-        /**
-   * Describes font feature for drawing and measuring single character.
-   * @typedef FontFeature
-   * @syscap SystemCapability.Graphics.Drawing
-   * @crossplatform
-   * @since 20
-   */
   /**
    * Describes font feature for drawing and measuring single character.
    * @typedef FontFeature
