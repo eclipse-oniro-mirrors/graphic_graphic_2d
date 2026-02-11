@@ -548,6 +548,9 @@ void RSImage::DrawImageRepeatRect(const Drawing::SamplingOptions& samplingOption
     uint64_t loopTime = (maxX - minX) * (maxY - minY);
     bool isNeedOffscreen = (maxX - minX >= 1) &&  loopTime > REPEAT_LOOP_TIME_LIMIT;
     if (!hdrImageDraw && imageRepeat_ == ImageRepeat::REPEAT && isNeedOffscreen) {
+        RS_LOGE("RSImage draw repeat too many times, looptime:%{public}" PRIu64
+                ", dstRect_:%{public}s, frameRect_:%{public}s, uniqueId_:%{public}" PRIu64,
+ 	            loopTime, dstRect_.ToString().c_str(), frameRect_.ToString().c_str(), uniqueId_);
         DrawImageRepeatOffScreen(samplingOptions, canvas, minX, maxX, minY, maxY);
         return;
     }
