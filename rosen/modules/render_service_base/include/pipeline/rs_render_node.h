@@ -76,9 +76,9 @@ enum class RSModifierType : uint16_t;
 struct SharedTransitionParam;
 
 struct CurFrameInfoDetail {
-    uint32_t curFramePrepareSeqNum = 0;
-    uint32_t curFramePostPrepareSeqNum = 0;
-    uint64_t curFrameVsyncId = 0;
+    uint16_t curFramePrepareSeqNum = 0;
+    uint16_t curFramePostPrepareSeqNum = 0;
+    uint32_t curFrameVsyncId = 0;
     bool curFrameSubTreeSkipped = false;
     bool curFrameReverseChildren = false;
 };
