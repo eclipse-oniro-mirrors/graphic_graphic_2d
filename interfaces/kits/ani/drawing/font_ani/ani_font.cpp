@@ -312,7 +312,7 @@ ani_double AniFont::MeasureSingleCharacterWithFeatures(ani_env* env, ani_object 
     if (status != ANI_OK) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniFont::MeasureSingleCharacterWithFeatures String_GetUTF8 failed");
-        return;
+        return -1;
     }
     str[realLen] = '\0';
     const char* currentStr = str;
