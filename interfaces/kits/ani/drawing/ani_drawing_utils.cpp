@@ -474,7 +474,6 @@ bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::Draw
     uint32_t size, ani_array featuresobj)
 {
     fontfeatures->clear();
-    ani_boolean isFontFeatureClass = false;
     for (uint32_t i = 0; i < size; ++i) {
         ani_ref fontFeatureRef;
         if (ANI_OK != env->Array_Get(featuresobj, static_cast<ani_size>(i), &fontFeatureRef)) {
