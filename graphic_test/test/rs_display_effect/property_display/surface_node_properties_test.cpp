@@ -48,7 +48,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetSkipDraw_Matr
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -91,7 +92,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetHDRPresent_Ma
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -111,7 +113,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetForceUIFirst_
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -131,7 +134,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetSurfaceBuffer
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -151,7 +155,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetGlobalPositio
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -171,7 +176,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetFrameGravityN
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -215,7 +221,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetHidePrivacyCo
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
@@ -313,7 +320,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetIsNotifyUIBuf
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {static_cast<float>(i * 500 + 50), 50, 400, 400});
+        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>(i * 500 + 50), 50, 400, 400});
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }

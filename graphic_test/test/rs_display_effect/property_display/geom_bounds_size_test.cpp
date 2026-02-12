@@ -64,7 +64,6 @@ GRAPHIC_TEST(BoundsSizeTest, CONTENT_DISPLAY_TEST, BoundsSize_Boundary_Zero)
     for (size_t i = 0; i < zeroSizes.size(); i++) {
         auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
             {50, static_cast<float>(i * 300 + 50), 200, 200});
-//         // testNode->SetBoundsSize(zeroSizes[i]); // Method does not exist
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
     }
@@ -85,7 +84,6 @@ GRAPHIC_TEST(BoundsSizeTest, CONTENT_DISPLAY_TEST, BoundsSize_Boundary_Minimum)
         float x = static_cast<float>((i % 2) * 600 + 50);
         float y = static_cast<float>((i / 2) * 200 + 50);
         testNode->SetBounds({x, y, 100, 100});
-//         // testNode->SetBoundsSize(minSizes[i]); // Method does not exist
         testNode->SetBackgroundColor(0xff00ff00);
         GetRootNode()->AddChild(testNode);
         RegisterNode(testNode);
@@ -185,6 +183,11 @@ GRAPHIC_TEST(BoundsSizeTest, CONTENT_DISPLAY_TEST, BoundsSize_Rapid_Updates)
     GetRootNode()->AddChild(testNode);
     RegisterNode(testNode);
 
+    // Rapid sequential size updates
+    testNode->SetBounds({100, 100, 100, 100});
+    testNode->SetBounds({100, 100, 200, 200});
+    testNode->SetBounds({100, 100, 300, 300});
+    testNode->SetBounds({100, 100, 400, 400});
 }
 
 /* SetBoundsSize: size before position */
@@ -229,10 +232,10 @@ GRAPHIC_TEST(BoundsSizeTest, CONTENT_DISPLAY_TEST, BoundsSize_SetBounds_Interact
     GetRootNode()->AddChild(testNode);
     RegisterNode(testNode);
 
-//     // SetBounds followed by SetBoundsSize
+    // SetBounds followed by SetBoundsSize
     testNode->SetBounds({50, 50, 200, 200});
 
-//     // SetBoundsSize followed by SetBounds
+    // SetBoundsSize followed by SetBounds
     testNode->SetBounds({100, 100, 100, 100});
 }
 

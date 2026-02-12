@@ -642,4 +642,286 @@ GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModi
         RegisterNode(testNode);
     }
 }
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_021
+ * @tc.desc: Test SetBoundsPosition with normal values - matrix 4x3
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_021)
+{
+    std::vector<float> positionsX = {0, 50, 100, 150};
+    std::vector<float> positionsY = {0, 50, 100};
+    for (size_t row = 0; row < positionsY.size(); row++) {
+        for (size_t col = 0; col < positionsX.size(); col++) {
+            auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+            modifier->SetBoundsPosition({positionsX[col], positionsY[row]});
+            auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {50, 50, 200, 200});
+            std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+            modifier->ApplyGeometry(geometry);
+            testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+                static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+            GetRootNode()->AddChild(testNode);
+            RegisterNode(testNode);
+        }
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_022
+ * @tc.desc: Test SetBoundsPosition with boundary values
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_022)
+{
+    std::vector<Vector2f> positions = {
+        {0, 0}, {-100, 0}, {0, -100}, {-100, -100}, {-200, -200}, {-500, -500}
+    };
+    for (size_t i = 0; i < positions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPosition(positions[i]);
+        auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>((i % 2) * 300 + 200), static_cast<float>((i / 2) * 300 + 200), 200, 200});
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_023
+ * @tc.desc: Test SetBoundsPosition with extreme values
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_023)
+{
+    std::vector<Vector2f> extremePositions = {
+        {std::numeric_limits<float>::max(), std::numeric_limits<float>::max()},
+        {-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()},
+        {1000, 1000}, {-1000, -1000}, {5000, 5000}, {-5000, -5000},
+        {std::numeric_limits<float>::min(), std::numeric_limits<float>::min()}
+    };
+    for (size_t i = 0; i < extremePositions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPosition(extremePositions[i]);
+        auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>((i % 2) * 100 + 50), static_cast<float>((i / 2) * 100 + 50), 100, 100});
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_024
+ * @tc.desc: Test SetBoundsPositionX with normal values
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_024)
+{
+    std::vector<float> positions = {-100, -50, 0, 50, 100};
+    for (size_t i = 0; i < positions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPositionX(positions[i]);
+        auto testNode = RSCanvasNode::Create();
+        testNode->SetBounds({static_cast<float>(i * 200 + 50), 100, 150, 150});
+        testNode->SetBackgroundColor(0xff00ff00);
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_025
+ * @tc.desc: Test SetBoundsPositionY with normal values
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_025)
+{
+    std::vector<float> positions = {-100, -50, 0, 50, 100};
+    for (size_t i = 0; i < positions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPositionY(positions[i]);
+        auto testNode = RSCanvasNode::Create();
+        testNode->SetBounds({100, static_cast<float>(i * 200 + 50), 150, 150});
+        testNode->SetBackgroundColor(0xff0000ff);
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_026
+ * @tc.desc: Test SetBoundsPositionX/Y combined
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_026)
+{
+    std::vector<float> positionsX = {-100, 0, 100};
+    std::vector<float> positionsY = {-100, 0, 100};
+    for (size_t row = 0; row < positionsY.size(); row++) {
+        for (size_t col = 0; col < positionsX.size(); col++) {
+            auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+            modifier->SetBoundsPosition({positionsX[col], positionsY[row]});
+            auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+                {static_cast<float>(col * 300 + 100), static_cast<float>(row * 300 + 100), 200, 200});
+            std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+            modifier->ApplyGeometry(geometry);
+            testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+                static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+            GetRootNode()->AddChild(testNode);
+            RegisterNode(testNode);
+        }
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_027
+ * @tc.desc: Test SetBoundsPosition with fractional values
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_027)
+{
+    std::vector<Vector2f> fractionalPositions = {
+        {0.5f, 0.5f}, {1.5f, 1.5f}, {10.5f, 10.5f}, {50.5f, 50.5f}, {100.5f, 100.5f}
+    };
+    for (size_t i = 0; i < fractionalPositions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPosition(fractionalPositions[i]);
+        auto testNode = RSCanvasNode::Create();
+        float x = static_cast<float>((i % 3) * 300 + 50);
+        float y = static_cast<float>((i / 3) * 200 + 50);
+        testNode->SetBounds({x, y, 200, 200});
+        testNode->SetBackgroundColor(0xffccff00);
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_028
+ * @tc.desc: Test SetBoundsPosition with quadrant positions
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_028)
+{
+    std::vector<Vector2f> quadrantPositions = {
+        {-100, -100}, {100, -100}, {-100, 100}, {100, 100}
+    };
+    for (size_t i = 0; i < quadrantPositions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPosition(quadrantPositions[i]);
+        auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
+            {static_cast<float>((i % 2) * 400 + 200), static_cast<float>((i / 2) * 400 + 200), 300, 300});
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_029
+ * @tc.desc: Test SetBoundsPosition with diagonal positions
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_029)
+{
+    std::vector<Vector2f> diagonalPositions = {
+        {-200, -200}, {-100, -100}, {0, 0}, {100, 100}, {200, 200}
+    };
+    for (size_t i = 0; i < diagonalPositions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPosition(diagonalPositions[i]);
+        auto testNode = RSCanvasNode::Create();
+        float x = static_cast<float>(i * 200 + 50);
+        float y = 100;
+        testNode->SetBounds({x, y, 200, 200});
+        testNode->SetBackgroundColor(0xffff00ff);
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_030
+ * @tc.desc: Test SetBoundsPosition rapid sequential updates
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_030)
+{
+    auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+    auto testNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {100, 100, 300, 300});
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+    std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+    Vector2f pos1 = {50, 50};
+    modifier->SetBoundsPosition(pos1);
+    modifier->ApplyGeometry(geometry);
+    Vector2f pos2 = {100, 100};
+    modifier->SetBoundsPosition(pos2);
+    modifier->ApplyGeometry(geometry);
+    Vector2f pos3 = {150, 150};
+    modifier->SetBoundsPosition(pos3);
+    modifier->ApplyGeometry(geometry);
+    Vector2f pos4 = {200, 200};
+    modifier->SetBoundsPosition(pos4);
+    modifier->ApplyGeometry(geometry);
+    testNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+        static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+/**
+ * @tc.name: RSBoundsModifierApplyGeometry_031
+ * @tc.desc: Test SetBoundsPosition with hierarchical positioning
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(ModifierBoundsApplyGeometryTest, CONTENT_DISPLAY_TEST, RSBoundsModifierApplyGeometry_031)
+{
+    auto parentNode = RSCanvasNode::Create();
+    parentNode->SetBounds({50, 50, 500, 500});
+    parentNode->SetBackgroundColor(0xffcccccc);
+    GetRootNode()->AddChild(parentNode);
+    RegisterNode(parentNode);
+    std::vector<Vector2f> childPositions = {{0, 0}, {50, 50}, {100, 100}, {150, 150}};
+    for (size_t i = 0; i < childPositions.size(); i++) {
+        auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        modifier->SetBoundsPosition(childPositions[i]);
+        auto childNode = RSCanvasNode::Create();
+        childNode->SetBounds({childPositions[i].x_, childPositions[i].y_, 100, 100});
+        childNode->SetBackgroundColor(0xffff0000);
+        std::shared_ptr<RSObjAbsGeometry> geometry = std::make_shared<RSObjAbsGeometry>();
+        modifier->ApplyGeometry(geometry);
+        childNode->SetBounds({static_cast<int>(geometry->GetX()), static_cast<int>(geometry->GetY()),
+            static_cast<int>(geometry->GetWidth()), static_cast<int>(geometry->GetHeight())});
+        parentNode->AddChild(childNode);
+        RegisterNode(childNode);
+    }
+}
 } // namespace OHOS::Rosen
