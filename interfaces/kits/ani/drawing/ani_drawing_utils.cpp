@@ -490,7 +490,8 @@ bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::Draw
             return false;
         }
         std::string name = CreateStdString(env, reinterpret_cast<ani_string>(nameRef));
-        if (ret != ANI_OK) {
+        if (name == "") {
+            ROSEN_LOGE("Failed to get CreateStdString");
             return false;
         }
 

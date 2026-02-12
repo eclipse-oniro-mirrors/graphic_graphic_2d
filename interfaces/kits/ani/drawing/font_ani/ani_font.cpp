@@ -299,8 +299,8 @@ ani_double AniFont::MeasureSingleCharacterWithFeatures(ani_env* env, ani_object 
     }
 
     ani_size len = 0;
-    env->String_GetUTF8Size(text, &len);
-    if (len == 0 || len > ARGC_FOUR) {
+    ani_status status = env->String_GetUTF8Size(text, &len);
+    if (status != ANI_OK || len == 0 || len > ARGC_FOUR) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniFont::MeasureSingleCharacterWithFeatures text should be single character.");
         return -1;
@@ -308,7 +308,12 @@ ani_double AniFont::MeasureSingleCharacterWithFeatures(ani_env* env, ani_object 
 
     char str[len + 1];
     ani_size realLen = 0;
-    env->String_GetUTF8(text, str, len + 1, &realLen);
+    status = env->String_GetUTF8(text, str, len + 1, &realLen);
+    if (status != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniFont::MeasureSingleCharacterWithFeatures String_GetUTF8 failed");
+        return;
+    }
     str[realLen] = '\0';
     const char* currentStr = str;
     int32_t unicode = SkUTF::NextUTF8(&currentStr, currentStr + len);

@@ -2194,8 +2194,8 @@ void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, an
     }
 
     ani_size len = 0;
-    env->String_GetUTF8Size(text, &len);
-    if (len == 0 || len > 4) { // 4 is the maximum length of a character encoded in UTF8.
+    ani_status status = env->String_GetUTF8Size(text, &len);
+    if (status != ANI_OK || len == 0 || len > 4) { // 4 is the maximum length of a character encoded in UTF8.
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed");
         return;
@@ -2203,7 +2203,12 @@ void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, an
 
     char str[len + 1];
     ani_size realLen = 0;
-    env->String_GetUTF8(text, str, len + 1, &realLen);
+    status = env->String_GetUTF8(text, str, len + 1, &realLen);
+    if (status != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::DrawSingleCharacterWithFeatures String_GetUTF8 failed");
+        return;
+    }
     str[realLen] = '\0';
     const char* currentStr = str;
     int32_t unicode = SkUTF::NextUTF8(&currentStr, currentStr + len);
