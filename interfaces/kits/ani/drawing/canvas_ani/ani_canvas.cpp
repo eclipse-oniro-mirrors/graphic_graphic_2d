@@ -2203,12 +2203,7 @@ void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, an
 
     char str[len + 1];
     ani_size realLen = 0;
-    status = env->String_GetUTF8(text, str, len + 1, &realLen);
-    if (status != ANI_OK) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
-            "AniCanvas::DrawSingleCharacterWithFeatures String_GetUTF8 failed");
-        return;
-    }
+    env->String_GetUTF8(text, str, len + 1, &realLen);
     str[realLen] = '\0';
     const char* currentStr = str;
     int32_t unicode = SkUTF::NextUTF8(&currentStr, currentStr + len);

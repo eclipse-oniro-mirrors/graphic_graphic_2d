@@ -84,24 +84,7 @@ inline ani_string CreateAniString(ani_env* env, const std::string& stdStr)
     return aniString;
 }
 
-inline std::string CreateStdString(ani_env* env, ani_string aniStr)
-{
-    ani_size aniStrSize = 0;
-    ani_status status = env->String_GetUTF8Size(aniStr, &aniStrSize);
-    if (status != ANI_OK) {
-        ROSEN_LOGE("failed to get utf8 strsize");
-        return "";
-    }
-    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(aniStrSize + 1);
-    ani_size byteSize = 0;
-    status = env->String_GetUTF8(aniStr, buffer.get(), aniStrSize + 1, &byteSize);
-    if (status != ANI_OK) {
-        ROSEN_LOGE("failed to get utf8 size");
-        return "";
-    }
-    buffer[byteSize] = '\0';
-    return std::string(buffer.get());
-}
+std::string CreateStdString(ani_env* env, ani_string aniStr);
 
 ani_status CreateStdStringUtf16(ani_env* env, const ani_string& str, std::u16string& utf16Str);
 
