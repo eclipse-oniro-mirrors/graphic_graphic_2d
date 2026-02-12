@@ -25,6 +25,43 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
+
+std::string GetAvailableBackgroundPath()
+{
+    const std::vector<std::string> candidates = {
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+        FG_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return path;
+        }
+    }
+    return BG_PATH;
+}
+
+std::shared_ptr<Media::PixelMap> GetAvailableMask()
+{
+    const std::vector<std::string> candidates = {
+        MASK_RGB_PATH,
+        FG_TEST_JPG_PATH,
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return pixelMap;
+        }
+    }
+
+    Media::InitializationOptions options;
+    options.size.width = 64;
+    options.size.height = 64;
+    return Media::PixelMap::Create(options);
+}
 }  // namespace
 
 class NGFilterOtherExtendTest : public RSGraphicTest {
@@ -32,10 +69,12 @@ public:
     void BeforeEach() override
     {
         SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        backgroundPath_ = GetAvailableBackgroundPath();
+        maskRGB = GetAvailableMask();
     }
 
-    std::shared_ptr<Media::PixelMap> maskRGB =
-        DecodePixelMap(MASK_RGB_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
+    std::string backgroundPath_ = BG_PATH;
+    std::shared_ptr<Media::PixelMap> maskRGB = nullptr;
 };
 
 // Test ContentLight RotationAngle
@@ -61,7 +100,7 @@ GRAPHIC_TEST(NGFilterOtherExtendTest, EFFECT_TEST, Set_NG_Filter_Content_Light_R
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         contentLightFilter->Setter<ContentLightRotationAngleTag>(angleValues[i]);
         backgroundNode->SetForegroundNGFilter(contentLightFilter);
@@ -88,7 +127,7 @@ GRAPHIC_TEST(NGFilterOtherExtendTest, EFFECT_TEST, Set_NG_Filter_MaskTransition_
     int row = 4;
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         maskTransitionFilter->Setter<MaskTransitionMaskTag>(std::static_pointer_cast<RSNGMaskBase>(imageMask));
         backgroundNode->SetForegroundNGFilter(maskTransitionFilter);
@@ -115,7 +154,7 @@ GRAPHIC_TEST(NGFilterOtherExtendTest, EFFECT_TEST, Set_NG_Filter_VariableRadiusB
     int row = 4;
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         variableRadiusBlurFilter->Setter<VariableRadiusBlurMaskTag>(std::static_pointer_cast<RSNGMaskBase>(imageMask));
         backgroundNode->SetForegroundNGFilter(variableRadiusBlurFilter);

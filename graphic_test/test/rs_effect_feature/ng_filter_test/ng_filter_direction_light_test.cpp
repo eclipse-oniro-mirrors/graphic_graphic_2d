@@ -25,6 +25,43 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
+
+std::string GetAvailableBackgroundPath()
+{
+    const std::vector<std::string> candidates = {
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+        FG_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return path;
+        }
+    }
+    return BG_PATH;
+}
+
+std::shared_ptr<Media::PixelMap> GetAvailableMask()
+{
+    const std::vector<std::string> candidates = {
+        MASK_RGB_PATH,
+        FG_TEST_JPG_PATH,
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return pixelMap;
+        }
+    }
+
+    Media::InitializationOptions options;
+    options.size.width = 64;
+    options.size.height = 64;
+    return Media::PixelMap::Create(options);
+}
 }  // namespace
 
 class NGFilterDirectionLightTest : public RSGraphicTest {
@@ -32,10 +69,12 @@ public:
     void BeforeEach() override
     {
         SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        backgroundPath_ = GetAvailableBackgroundPath();
+        maskRGB = GetAvailableMask();
     }
 
-    std::shared_ptr<Media::PixelMap> maskRGB =
-        DecodePixelMap(MASK_RGB_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
+    std::string backgroundPath_ = BG_PATH;
+    std::shared_ptr<Media::PixelMap> maskRGB = nullptr;
 };
 
 // Test DirectionLight with uncovered properties
@@ -55,7 +94,7 @@ GRAPHIC_TEST(NGFilterDirectionLightTest, EFFECT_TEST, Set_NG_Filter_Direction_Li
     int row = 4;
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         directionLightFilter->Setter<DirectionLightMaskTag>(std::static_pointer_cast<RSNGMaskBase>(imageMask));
         backgroundNode->SetForegroundNGFilter(directionLightFilter);
@@ -81,7 +120,7 @@ GRAPHIC_TEST(NGFilterDirectionLightTest, EFFECT_TEST, Set_NG_Filter_Direction_Li
     const std::vector<float> factorValues = {0.0f, 0.25f, 0.5f, 1.0f};
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         directionLightFilter->Setter<DirectionLightFactorTag>(factorValues[i]);
         backgroundNode->SetForegroundNGFilter(directionLightFilter);
@@ -111,7 +150,7 @@ GRAPHIC_TEST(NGFilterDirectionLightTest, EFFECT_TEST, Set_NG_Filter_Direction_Li
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         directionLightFilter->Setter<DirectionLightDirectionTag>(directionValues[i]);
         backgroundNode->SetForegroundNGFilter(directionLightFilter);
@@ -152,7 +191,7 @@ GRAPHIC_TEST(NGFilterDirectionLightTest, EFFECT_TEST, Set_NG_Filter_Direction_Li
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         // Convert RGBA to Vector4f
         uint32_t color = rgbaValues[i];
@@ -189,7 +228,7 @@ GRAPHIC_TEST(NGFilterDirectionLightTest, EFFECT_TEST, Set_NG_Filter_Direction_Li
     const std::vector<float> intensityValues = {0.1f, 0.4f, 0.7f, 1.0f};
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         directionLightFilter->Setter<DirectionLightIntensityTag>(intensityValues[i]);
         backgroundNode->SetForegroundNGFilter(directionLightFilter);
@@ -232,7 +271,7 @@ GRAPHIC_TEST(NGFilterDirectionLightTest, EFFECT_TEST, Set_NG_Filter_Direction_Li
     int nodeHeight = 220;
     int start = 100;
 
-    auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+    auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
         {start, start, nodeWidth, nodeHeight});
     backgroundNode->SetForegroundNGFilter(directionLightFilter);
     GetRootNode()->AddChild(backgroundNode);

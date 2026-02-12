@@ -25,6 +25,43 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
+
+std::string GetAvailableBackgroundPath()
+{
+    const std::vector<std::string> candidates = {
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+        FG_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return path;
+        }
+    }
+    return BG_PATH;
+}
+
+std::shared_ptr<Media::PixelMap> GetAvailableMask()
+{
+    const std::vector<std::string> candidates = {
+        MASK_RGB_PATH,
+        FG_TEST_JPG_PATH,
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return pixelMap;
+        }
+    }
+
+    Media::InitializationOptions options;
+    options.size.width = 64;
+    options.size.height = 64;
+    return Media::PixelMap::Create(options);
+}
 }  // namespace
 
 class NGFilterEdgeLightExtendTest : public RSGraphicTest {
@@ -32,10 +69,12 @@ public:
     void BeforeEach() override
     {
         SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        backgroundPath_ = GetAvailableBackgroundPath();
+        maskRGB = GetAvailableMask();
     }
 
-    std::shared_ptr<Media::PixelMap> maskRGB =
-        DecodePixelMap(MASK_RGB_PATH, Media::AllocatorType::SHARE_MEM_ALLOC);
+    std::string backgroundPath_ = BG_PATH;
+    std::shared_ptr<Media::PixelMap> maskRGB = nullptr;
 };
 
 // Test EdgeLight with uncovered properties: Alpha, Mask, UseRawColor
@@ -55,7 +94,7 @@ GRAPHIC_TEST(NGFilterEdgeLightExtendTest, EFFECT_TEST, Set_NG_Filter_Edge_Light_
     const std::vector<float> alphaValues = {0.2f, 0.5f, 0.7f, 1.0f};
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         edgeLightFilter->Setter<EdgeLightAlphaTag>(alphaValues[i]);
         backgroundNode->SetForegroundNGFilter(edgeLightFilter);
@@ -80,7 +119,7 @@ GRAPHIC_TEST(NGFilterEdgeLightExtendTest, EFFECT_TEST, Set_NG_Filter_Edge_Light_
     int row = 4;
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (start + nodeWidth) * i, nodeWidth * (i + 1), nodeHeight * (i + 1)});
         edgeLightFilter->Setter<EdgeLightMaskTag>(std::static_pointer_cast<RSNGMaskBase>(imageMask));
         backgroundNode->SetForegroundNGFilter(edgeLightFilter);
@@ -103,7 +142,7 @@ GRAPHIC_TEST(NGFilterEdgeLightExtendTest, EFFECT_TEST, Set_NG_Filter_Edge_Light_
     int start = 50;
 
     for (int i = 0; i < 2; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {start, start + (nodeWidth + 20) * i, nodeWidth, nodeHeight});
         edgeLightFilter->Setter<EdgeLightUseRawColorTag>(i == 0);
         backgroundNode->SetForegroundNGFilter(edgeLightFilter);
@@ -146,7 +185,7 @@ GRAPHIC_TEST(NGFilterEdgeLightExtendTest, EFFECT_TEST, Set_NG_Filter_Edge_Light_
     int nodeHeight = 250;
     int start = 100;
 
-    auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+    auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
         {start, start, nodeWidth, nodeHeight});
     backgroundNode->SetForegroundNGFilter(edgeLightFilter);
     GetRootNode()->AddChild(backgroundNode);
