@@ -26,7 +26,7 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
-const std::vector<float> COLOR_GRADIENT_COLORS = {0.5f, 0.6f, 0.9f, 0.9f};
+const std::vector<float> COLOR_GRADIENT_COLORS = {1.0f, 0.3f, 0.2f, 1.0f};
 const std::vector<float> COLOR_GRADIENT_POSITIONS = {0.2f, 0.8f};
 const std::vector<float> COLOR_GRADIENT_STRENGTHS = {1.5f};
 
@@ -67,16 +67,16 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Be
     int row = 4;
 
     const std::vector<Vector4f> innerBezierValues = {
-        Vector4f(0.0f, 0.0f, 0.5f, 0.5f),
-        Vector4f(0.0f, 0.5f, 1.0f, 0.5f),
-        Vector4f(0.5f, 0.0f, 0.5f, 1.0f),
-        Vector4f(1.0f, 1.0f, 1.0f, 1.0f)
+        Vector4f(0.0f, 0.0f, 0.4f, 0.4f),
+        Vector4f(0.0f, 0.4f, 0.8f, 0.4f),
+        Vector4f(0.2f, 0.0f, 0.4f, 0.8f),
+        Vector4f(0.4f, 0.4f, 0.6f, 0.6f)
     };
     const std::vector<Vector4f> outerBezierValues = {
-        Vector4f(0.0f, 0.0f, 0.5f, 0.5f),
-        Vector4f(0.0f, 0.5f, 1.0f, 0.5f),
-        Vector4f(0.5f, 0.0f, 0.5f, 1.0f),
-        Vector4f(1.0f, 1.0f, 1.0f, 1.0f)
+        Vector4f(0.0f, 0.0f, 0.8f, 0.8f),
+        Vector4f(0.0f, 0.2f, 1.0f, 0.8f),
+        Vector4f(0.0f, 0.0f, 0.8f, 1.0f),
+        Vector4f(0.0f, 0.0f, 1.0f, 1.0f)
     };
 
     for (int i = 0; i < row; i++) {
@@ -94,7 +94,7 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Be
         InitColorGradientFilter(effect);
         effect->Setter<ColorGradientMaskTag>(std::static_pointer_cast<RSNGMaskBase>(mask));
 
-        backgroundNode->SetForegroundNGFilter(effect);
+        backgroundNode->SetBackgroundNGFilter(effect);
         GetRootNode()->AddChild(backgroundNode);
         RegisterNode(backgroundNode);
     }
@@ -124,7 +124,7 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
         InitColorGradientFilter(effect);
         effect->Setter<ColorGradientMaskTag>(std::static_pointer_cast<RSNGMaskBase>(mask));
 
-        backgroundNode->SetForegroundNGFilter(effect);
+        backgroundNode->SetBackgroundNGFilter(effect);
         GetRootNode()->AddChild(backgroundNode);
         RegisterNode(backgroundNode);
     }
@@ -156,7 +156,7 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Fr
         InitColorGradientFilter(effect);
         effect->Setter<ColorGradientMaskTag>(std::static_pointer_cast<RSNGMaskBase>(mask));
 
-        backgroundNode->SetForegroundNGFilter(effect);
+        backgroundNode->SetBackgroundNGFilter(effect);
         GetRootNode()->AddChild(backgroundNode);
         RegisterNode(backgroundNode);
     }
@@ -187,7 +187,7 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
 
     auto backgroundNode = SetUpNodeBgImage(BG_PATH,
         {start, start, nodeWidth, nodeHeight});
-    backgroundNode->SetForegroundNGFilter(colorGradientEffect);
+    backgroundNode->SetBackgroundNGFilter(colorGradientEffect);
     GetRootNode()->AddChild(backgroundNode);
     RegisterNode(backgroundNode);
 }
