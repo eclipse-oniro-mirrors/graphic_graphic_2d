@@ -409,6 +409,7 @@ ohos_source_set("render_service_base_src") {
   if (rs_enable_gpu) {
     sources += [
       #drawable
+      "src/drawable/rs_color_picker_drawable.cpp",
       "src/drawable/rs_drawable.cpp",
       "src/drawable/rs_misc_drawable.cpp",
       "src/drawable/rs_property_drawable.cpp",

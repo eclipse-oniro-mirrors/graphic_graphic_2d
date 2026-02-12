@@ -1085,6 +1085,7 @@ protected:
     void DumpModifiers(std::string& out) const;
 
     virtual void OnTreeStateChanged();
+    void HandleNodeRemovedFromTree();
     void AddSubSurfaceUpdateInfo(SharedPtr curParent, SharedPtr preParent);
 
     static void SendCommandFromRT(std::unique_ptr<RSCommand>& command, NodeId nodeId);
