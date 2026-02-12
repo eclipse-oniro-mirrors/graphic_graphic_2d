@@ -5020,7 +5020,23 @@ void RSRenderNode::AddModifier(
         ModifierNGContainer modifiers { modifier };
         modifiersNG_.emplace(type, modifiers);
     } else {
-        modifiersIt->second.emplace_back(modifier);
+        // Deduplication is disabled by default. Only apply deduplication logic when:
+        // modifier supports it (BOUNDS/FRAME) AND IsDeduplicationEnabled() returns true
+        if (modifier->IsDeduplicationEnabled()) {
+            // Apply deduplication: check if modifier with same ID exists
+            auto it = std::find_if(modifiersIt->second.begin(), modifiersIt->second.end(),
+                [modifier](const auto& m)->bool {return m->GetId() == modifier->GetId();});
+            if (it == modifiersIt->second.end()) {
+                modifiersIt->second.emplace_back(modifier);
+            } else {
+                ModifierNG::RSPropertyType propertyType = (type == ModifierNG::RSModifierType::BOUNDS
+                    ? ModifierNG::RSPropertyType::BOUNDS : ModifierNG::RSPropertyType::FRAME);
+                (*it)->Setter(propertyType, modifier->Getter(propertyType, Vector4f()));
+            }
+        } else {
+            // Default behavior: no deduplication, directly add modifier
+            modifiersIt->second.emplace_back(modifier);
+        }
     }
     modifier->OnAttachModifier(*this);
 }
