@@ -137,6 +137,7 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     auto mainThread = RSMainThread::Instance();
     renderEngine_ = mainThread->GetRenderEngine();
     hasMirrorDisplay_ = mainThread->HasMirrorDisplay();
+    hasMirrorUsedInDirtyRegion_ = RSUniDirtyComputeUtil::HasMirrorDisplay();
     // when occlusion enabled is false, subTree do not skip, but not influence visible region
     isOcclusionEnabled_ = RSSystemProperties::GetOcclusionEnabled();
     isDrawingCacheEnabled_ = RSSystemParameters::GetDrawingCacheEnabled();
@@ -632,7 +633,7 @@ bool RSUniRenderVisitor::IsSubTreeOccluded(RSRenderNode& node) const
                 "name:[%s] visibleRegionIsEmpty[%d]",
                 std::to_string(node.GetId()).c_str(), surfaceNode.GetName().c_str(),
                 surfaceNode.GetVisibleRegion().IsEmpty());
-            auto isOccluded = hasMirrorDisplay_ ?
+            auto isOccluded = hasMirrorUsedInDirtyRegion_ ?
                 surfaceNode.GetVisibleRegionInVirtual().IsEmpty() : surfaceNode.GetVisibleRegion().IsEmpty();
             isOccluded = isOccluded && (!RSUifirstManager::Instance().IsSubTreeNeedPrepareForSnapshot(surfaceNode));
             if (isOccluded && curSurfaceDirtyManager_) {
@@ -2563,7 +2564,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionAndCreateLayer(
         auto surfaceHandler = hwcNodePtr->GetMutableRSSurfaceHandler();
         if (hwcNodePtr->IsLayerTop()) {
             topLayers.emplace_back(hwcNodePtr);
-            if (hasMirrorDisplay_ && hwcNodePtr->GetRSSurfaceHandler() &&
+            if (hasMirrorUsedInDirtyRegion_ && hwcNodePtr->GetRSSurfaceHandler() &&
                 hwcNodePtr->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
                 !(node->GetVisibleRegion().IsEmpty()) && curScreenDirtyManager_) {
                 // merge hwc top node dst rect for virtual screen dirty, in case the main display node skip
@@ -2681,7 +2682,7 @@ void RSUniRenderVisitor::UpdateHwcNodeDirtyRegionForApp(std::shared_ptr<RSSurfac
     if (hwcNode->IsHardwareForcedDisabled() && hwcNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed()) {
         appNode->GetDirtyManager()->MergeDirtyRect(hwcNode->GetOldDirtyInSurface());
     }
-    if (hasMirrorDisplay_ && hwcNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
+    if (hasMirrorUsedInDirtyRegion_ && hwcNode->GetRSSurfaceHandler()->IsCurrentFrameBufferConsumed() &&
         !appNode->GetVisibleRegion().IsEmpty()) {
         // merge hwc node dst rect for virtual screen dirty, in case the main display node skip
         curScreenDirtyManager_->MergeHwcDirtyRect(hwcNode->GetDstRect());
@@ -2983,7 +2984,7 @@ void RSUniRenderVisitor::CheckMergeDisplayDirtyByTransparent(RSSurfaceRenderNode
     // surfaceNode is transparent
     const auto& dirtyRect = surfaceNode.GetDirtyManager()->GetCurrentFrameDirtyRegion();
     auto oldDirtyInSurface = surfaceNode.GetOldDirtyInSurface();
-    Occlusion::Region visibleRegion = hasMirrorDisplay_ ?
+    Occlusion::Region visibleRegion = hasMirrorUsedInDirtyRegion_ ?
         surfaceNode.GetVisibleRegionInVirtual() : surfaceNode.GetVisibleRegion();
     if (surfaceNode.IsMainWindowType() && !visibleRegion.IsIntersectWith(dirtyRect)) {
         return;
