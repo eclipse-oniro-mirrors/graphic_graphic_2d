@@ -26,6 +26,23 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
+
+std::string GetAvailableBackgroundPath()
+{
+    const std::vector<std::string> candidates = {
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+        FG_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return path;
+        }
+    }
+    return BG_PATH;
+}
+
 void InitColorGradientEffect(const std::shared_ptr<RSNGColorGradientEffect>& effect,
     const std::shared_ptr<RSNGMaskBase>& mask)
 {
@@ -33,17 +50,41 @@ void InitColorGradientEffect(const std::shared_ptr<RSNGColorGradientEffect>& eff
         return;
     }
     effect->Setter<ColorGradientEffectColor0Tag>(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
-    effect->Setter<ColorGradientEffectColor1Tag>(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
-    effect->Setter<ColorGradientEffectColor2Tag>(Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
-    effect->Setter<ColorGradientEffectColor3Tag>(Vector4f(1.0f, 0.0f, 1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectColor1Tag>(Vector4f(0.0f, 0.6f, 1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectColor2Tag>(Vector4f(1.0f, 0.2f, 0.8f, 1.0f));
+    effect->Setter<ColorGradientEffectColor3Tag>(Vector4f(1.0f, 0.9f, 0.2f, 1.0f));
+    effect->Setter<ColorGradientEffectColor4Tag>(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectColor5Tag>(Vector4f(0.0f, 0.6f, 1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectColor6Tag>(Vector4f(1.0f, 0.2f, 0.8f, 1.0f));
+    effect->Setter<ColorGradientEffectColor7Tag>(Vector4f(1.0f, 0.9f, 0.2f, 1.0f));
+    effect->Setter<ColorGradientEffectColor8Tag>(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectColor9Tag>(Vector4f(0.0f, 0.6f, 1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectColor10Tag>(Vector4f(1.0f, 0.2f, 0.8f, 1.0f));
+    effect->Setter<ColorGradientEffectColor11Tag>(Vector4f(1.0f, 0.9f, 0.2f, 1.0f));
     effect->Setter<ColorGradientEffectPosition0Tag>(Vector2f(0.0f, 1.0f));
     effect->Setter<ColorGradientEffectPosition1Tag>(Vector2f(1.0f, 0.0f));
     effect->Setter<ColorGradientEffectPosition2Tag>(Vector2f(0.0f, 0.0f));
     effect->Setter<ColorGradientEffectPosition3Tag>(Vector2f(1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectPosition4Tag>(Vector2f(0.0f, 1.0f));
+    effect->Setter<ColorGradientEffectPosition5Tag>(Vector2f(1.0f, 0.0f));
+    effect->Setter<ColorGradientEffectPosition6Tag>(Vector2f(0.0f, 0.0f));
+    effect->Setter<ColorGradientEffectPosition7Tag>(Vector2f(1.0f, 1.0f));
+    effect->Setter<ColorGradientEffectPosition8Tag>(Vector2f(0.0f, 1.0f));
+    effect->Setter<ColorGradientEffectPosition9Tag>(Vector2f(1.0f, 0.0f));
+    effect->Setter<ColorGradientEffectPosition10Tag>(Vector2f(0.0f, 0.0f));
+    effect->Setter<ColorGradientEffectPosition11Tag>(Vector2f(1.0f, 1.0f));
     effect->Setter<ColorGradientEffectStrength0Tag>(5.4f);
     effect->Setter<ColorGradientEffectStrength1Tag>(5.4f);
     effect->Setter<ColorGradientEffectStrength2Tag>(5.4f);
     effect->Setter<ColorGradientEffectStrength3Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength4Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength5Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength6Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength7Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength8Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength9Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength10Tag>(5.4f);
+    effect->Setter<ColorGradientEffectStrength11Tag>(5.4f);
     effect->Setter<ColorGradientEffectColorNumberTag>(4.0f);
     effect->Setter<ColorGradientEffectBlendTag>(6.0f);
     effect->Setter<ColorGradientEffectBlendKTag>(20.0f);
@@ -51,15 +92,16 @@ void InitColorGradientEffect(const std::shared_ptr<RSNGColorGradientEffect>& eff
     effect->Setter<ColorGradientEffectMaskTag>(mask);
 }
 
-void InitWaveDisturbanceMask(const std::shared_ptr<RSNGWaveDisturbanceMask>& mask)
+void InitWaveDisturbanceMask(const std::shared_ptr<RSNGWaveDisturbanceMask>& mask, int width, int height)
 {
     if (!mask) {
         return;
     }
-    mask->Setter<WaveDisturbanceMaskProgressTag>(0.5f);
-    mask->Setter<WaveDisturbanceMaskClickPosTag>(Vector2f(0.5f, 0.5f));
-    mask->Setter<WaveDisturbanceMaskWaveRDTag>(Vector2f(5.0f, 0.5f));
-    mask->Setter<WaveDisturbanceMaskWaveLWHTag>(Vector3f(120.0f, 40.0f, 30.0f));
+    mask->Setter<WaveDisturbanceMaskProgressTag>(0.35f);
+    mask->Setter<WaveDisturbanceMaskClickPosTag>(
+        Vector2f(static_cast<float>(width) * 0.5f, static_cast<float>(height) * 0.5f));
+    mask->Setter<WaveDisturbanceMaskWaveRDTag>(Vector2f(6.0f, 0.3f));
+    mask->Setter<WaveDisturbanceMaskWaveLWHTag>(Vector3f(220.0f, 60.0f, 35.0f));
 }
 } // namespace
 
@@ -68,26 +110,36 @@ public:
     void BeforeEach() override
     {
         SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        backgroundPath_ = GetAvailableBackgroundPath();
     }
+
+    std::string backgroundPath_ = BG_PATH;
 };
 
 // Test WaveDisturbanceMask with Progress property
 GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbance_Progress_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
-    const std::vector<float> progressValues = {0.0f, 0.3f, 0.5f, 1.0f};
+    const std::vector<float> progressValues = {0.1f, 0.35f, 0.6f, 0.9f};
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
+            {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGWaveDisturbanceMask>();
-        InitWaveDisturbanceMask(mask);
+        InitWaveDisturbanceMask(mask, nodeWidth, nodeHeight);
         mask->Setter<WaveDisturbanceMaskProgressTag>(progressValues[i]);
 
         // Create effect for each iteration
@@ -103,25 +155,32 @@ GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbanc
 // Test WaveDisturbanceMask with ClickPos property
 GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbance_ClickPos_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
     const std::vector<Vector2f> clickPosValues = {
-        Vector2f(0.0f, 0.0f),
-        Vector2f(0.5f, 0.5f),
-        Vector2f(1.0f, 0.0f),
-        Vector2f(0.5f, 1.0f)
+        Vector2f(nodeWidth * 0.25f, nodeHeight * 0.25f),
+        Vector2f(nodeWidth * 0.75f, nodeHeight * 0.25f),
+        Vector2f(nodeWidth * 0.25f, nodeHeight * 0.75f),
+        Vector2f(nodeWidth * 0.75f, nodeHeight * 0.75f)
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
+            {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGWaveDisturbanceMask>();
-        InitWaveDisturbanceMask(mask);
+        InitWaveDisturbanceMask(mask, nodeWidth, nodeHeight);
         mask->Setter<WaveDisturbanceMaskClickPosTag>(clickPosValues[i]);
 
         // Create effect for each iteration
@@ -137,25 +196,32 @@ GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbanc
 // Test WaveDisturbanceMask with WaveRD property
 GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbance_WaveRD_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
     const std::vector<Vector2f> waveRDValues = {
-        Vector2f(1.0f, 0.0f),
-        Vector2f(5.0f, 0.3f),
-        Vector2f(10.0f, 0.6f),
-        Vector2f(20.0f, 1.0f)
+        Vector2f(1.0f, 0.1f),
+        Vector2f(6.0f, 0.3f),
+        Vector2f(12.0f, 0.5f),
+        Vector2f(18.0f, 0.7f)
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
+            {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGWaveDisturbanceMask>();
-        InitWaveDisturbanceMask(mask);
+        InitWaveDisturbanceMask(mask, nodeWidth, nodeHeight);
         mask->Setter<WaveDisturbanceMaskWaveRDTag>(waveRDValues[i]);
 
         // Create effect for each iteration
@@ -171,25 +237,32 @@ GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbanc
 // Test WaveDisturbanceMask with WaveLWH property
 GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbance_WaveLWH_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
     const std::vector<Vector3f> waveLWHValues = {
-        Vector3f(20.0f, 20.0f, 20.0f),
-        Vector3f(40.0f, 40.0f, 40.0f),
-        Vector3f(60.0f, 60.0f, 60.0f),
-        Vector3f(80.0f, 80.0f, 80.0f)
+        Vector3f(160.0f, 40.0f, 20.0f),
+        Vector3f(220.0f, 60.0f, 35.0f),
+        Vector3f(300.0f, 90.0f, 50.0f),
+        Vector3f(380.0f, 110.0f, 70.0f)
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
+            {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGWaveDisturbanceMask>();
-        InitWaveDisturbanceMask(mask);
+        InitWaveDisturbanceMask(mask, nodeWidth, nodeHeight);
         mask->Setter<WaveDisturbanceMaskWaveLWHTag>(waveLWHValues[i]);
 
         // Create effect for each iteration
@@ -207,22 +280,25 @@ GRAPHIC_TEST(NGMaskWaveDisturbanceTest, EFFECT_TEST, Set_NG_Mask_Wave_Disturbanc
 {
     // Create WaveDisturbanceMask with all properties
     auto waveDisturbanceMask = std::make_shared<RSNGWaveDisturbanceMask>();
-    InitWaveDisturbanceMask(waveDisturbanceMask);
+    int nodeWidth = 920;
+    int nodeHeight = 1500;
+    InitWaveDisturbanceMask(waveDisturbanceMask, nodeWidth, nodeHeight);
     waveDisturbanceMask->Setter<WaveDisturbanceMaskProgressTag>(0.6f);
-    waveDisturbanceMask->Setter<WaveDisturbanceMaskClickPosTag>(Vector2f(0.5f, 0.5f));
-    waveDisturbanceMask->Setter<WaveDisturbanceMaskWaveRDTag>(Vector2f(12.0f, 0.8f));
-    waveDisturbanceMask->Setter<WaveDisturbanceMaskWaveLWHTag>(Vector3f(60.0f, 60.0f, 60.0f));
+    waveDisturbanceMask->Setter<WaveDisturbanceMaskClickPosTag>(
+        Vector2f(static_cast<float>(nodeWidth) * 0.5f, static_cast<float>(nodeHeight) * 0.5f));
+    waveDisturbanceMask->Setter<WaveDisturbanceMaskWaveRDTag>(Vector2f(12.0f, 0.55f));
+    waveDisturbanceMask->Setter<WaveDisturbanceMaskWaveLWHTag>(Vector3f(360.0f, 100.0f, 65.0f));
 
     // Create effect with mask
     auto colorGradientEffect = std::make_shared<RSNGColorGradientEffect>();
     InitColorGradientEffect(colorGradientEffect, std::static_pointer_cast<RSNGMaskBase>(waveDisturbanceMask));
 
-    int nodeWidth = 300;
-    int nodeHeight = 300;
-    int start = 100;
+    int startX = 140;
+    int startY = 200;
 
-    auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-        {start, start, nodeWidth, nodeHeight});
+    auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
+        {startX, startY, nodeWidth, nodeHeight});
+    backgroundNode->SetBackgroundColor(0xFF22324A);
     backgroundNode->SetForegroundShader(colorGradientEffect);
     GetRootNode()->AddChild(backgroundNode);
     RegisterNode(backgroundNode);

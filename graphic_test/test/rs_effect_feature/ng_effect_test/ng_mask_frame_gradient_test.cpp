@@ -26,9 +26,35 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
-const std::vector<float> COLOR_GRADIENT_COLORS = {0.5f, 0.6f, 0.9f, 0.9f};
-const std::vector<float> COLOR_GRADIENT_POSITIONS = {0.2f, 0.8f};
-const std::vector<float> COLOR_GRADIENT_STRENGTHS = {1.5f};
+const std::vector<float> COLOR_GRADIENT_COLORS = {
+    0.05f, 0.35f, 1.0f, 1.0f,
+    0.0f, 0.85f, 0.75f, 1.0f,
+    1.0f, 0.35f, 0.7f, 1.0f,
+    1.0f, 0.85f, 0.2f, 1.0f,
+};
+const std::vector<float> COLOR_GRADIENT_POSITIONS = {
+    0.0f, 0.0f,
+    1.0f, 0.0f,
+    0.0f, 1.0f,
+    1.0f, 1.0f,
+};
+const std::vector<float> COLOR_GRADIENT_STRENGTHS = {2.8f, 2.8f, 2.8f, 2.8f};
+
+std::string GetAvailableBackgroundPath()
+{
+    const std::vector<std::string> candidates = {
+        BG_PATH,
+        APPEARANCE_TEST_JPG_PATH,
+        FG_TEST_JPG_PATH,
+    };
+    for (const auto& path : candidates) {
+        auto pixelMap = DecodePixelMap(path, Media::AllocatorType::SHARE_MEM_ALLOC);
+        if (pixelMap != nullptr) {
+            return path;
+        }
+    }
+    return BG_PATH;
+}
 
 void InitColorGradientFilter(const std::shared_ptr<RSNGColorGradientFilter>& filter)
 {
@@ -55,16 +81,23 @@ public:
     void BeforeEach() override
     {
         SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+        backgroundPath_ = GetAvailableBackgroundPath();
     }
+
+    std::string backgroundPath_ = BG_PATH;
 };
 
 // Test FrameGradientMask with InnerBezier and OuterBezier properties
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Bezier_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
     const std::vector<Vector4f> innerBezierValues = {
         Vector4f(0.0f, 0.0f, 0.5f, 0.5f),
@@ -73,15 +106,18 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Be
         Vector4f(1.0f, 1.0f, 1.0f, 1.0f)
     };
     const std::vector<Vector4f> outerBezierValues = {
-        Vector4f(0.0f, 0.0f, 0.5f, 0.5f),
-        Vector4f(0.0f, 0.5f, 1.0f, 0.5f),
-        Vector4f(0.5f, 0.0f, 0.5f, 1.0f),
-        Vector4f(1.0f, 1.0f, 1.0f, 1.0f)
+        Vector4f(0.0f, 0.0f, 0.6f, 0.6f),
+        Vector4f(0.0f, 0.3f, 1.0f, 0.6f),
+        Vector4f(0.2f, 0.0f, 0.8f, 1.0f),
+        Vector4f(0.0f, 0.0f, 1.0f, 1.0f)
     };
 
     for (int i = 0; i < row; i++) {
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
+            {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
@@ -119,8 +155,9 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
     for (int i = 0; i < row; i++) {
         int x = startX + (i % col) * (nodeWidth + gapX);
         int y = startY + (i / col) * (nodeHeight + gapY);
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
@@ -156,8 +193,9 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Fr
     for (int i = 0; i < row; i++) {
         int x = startX + (i % col) * (nodeWidth + gapX);
         int y = startY + (i / col) * (nodeHeight + gapY);
-        auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+        auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {x, y, nodeWidth, nodeHeight});
+        backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
@@ -201,8 +239,9 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
     colorGradientEffect->Setter<ColorGradientMaskTag>(
         std::static_pointer_cast<RSNGMaskBase>(frameGradientMask));
 
-    auto backgroundNode = SetUpNodeBgImage(BG_PATH,
+    auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
         {startX, startY, nodeWidth, nodeHeight});
+    backgroundNode->SetBackgroundColor(0xFF22324A);
     backgroundNode->SetBackgroundNGFilter(colorGradientEffect);
     GetRootNode()->AddChild(backgroundNode);
     RegisterNode(backgroundNode);
