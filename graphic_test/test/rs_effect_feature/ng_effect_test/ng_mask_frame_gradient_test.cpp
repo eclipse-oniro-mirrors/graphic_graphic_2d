@@ -105,16 +105,22 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Be
 // Test FrameGradientMask with CornerRadius property
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_CornerRadius_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
     const std::vector<float> cornerRadiusValues = {0.0f, 10.0f, 20.0f, 50.0f};
 
     for (int i = 0; i < row; i++) {
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
         auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+            {x, y, nodeWidth, nodeHeight});
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
@@ -135,17 +141,23 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
 // Test FrameGradientMask with FrameWidth properties
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_FrameWidth_Test)
 {
-    int nodeWidth = 200;
-    int nodeHeight = 200;
-    int start = 50;
+    int nodeWidth = 460;
+    int nodeHeight = 420;
+    int startX = 120;
+    int startY = 120;
+    int gapX = 40;
+    int gapY = 60;
     int row = 4;
+    int col = 2;
 
     const std::vector<float> innerFrameWidthValues = {5.0f, 10.0f, 15.0f, 20.0f};
     const std::vector<float> outerFrameWidthValues = {10.0f, 15.0f, 20.0f, 25.0f};
 
     for (int i = 0; i < row; i++) {
+        int x = startX + (i % col) * (nodeWidth + gapX);
+        int y = startY + (i / col) * (nodeHeight + gapY);
         auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-            {start, start + (start + nodeWidth) * i, nodeWidth, nodeHeight});
+            {x, y, nodeWidth, nodeHeight});
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
@@ -167,6 +179,11 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Fr
 // Test FrameGradientMask with all properties together
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Complete_Test)
 {
+    int nodeWidth = 920;
+    int nodeHeight = 1500;
+    int startX = 140;
+    int startY = 200;
+
     // Create FrameGradientMask with all properties
     auto frameGradientMask = std::make_shared<RSNGFrameGradientMask>();
     frameGradientMask->Setter<FrameGradientMaskInnerBezierTag>(Vector4f(0.0f, 0.0f, 1.0f, 1.0f));
@@ -174,8 +191,9 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
     frameGradientMask->Setter<FrameGradientMaskCornerRadiusTag>(25.0f);
     frameGradientMask->Setter<FrameGradientMaskInnerFrameWidthTag>(15.0f);
     frameGradientMask->Setter<FrameGradientMaskOuterFrameWidthTag>(20.0f);
-    frameGradientMask->Setter<FrameGradientMaskRectWHTag>(Vector2f(300.0f, 300.0f));
-    frameGradientMask->Setter<FrameGradientMaskRectPosTag>(Vector2f(50.0f, 50.0f));
+    frameGradientMask->Setter<FrameGradientMaskRectWHTag>(
+        Vector2f(static_cast<float>(nodeWidth), static_cast<float>(nodeHeight)));
+    frameGradientMask->Setter<FrameGradientMaskRectPosTag>(Vector2f(0.0f, 0.0f));
 
     // Create effect with mask and gradient colors
     auto colorGradientEffect = std::make_shared<RSNGColorGradientFilter>();
@@ -183,12 +201,8 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
     colorGradientEffect->Setter<ColorGradientMaskTag>(
         std::static_pointer_cast<RSNGMaskBase>(frameGradientMask));
 
-    int nodeWidth = 350;
-    int nodeHeight = 350;
-    int start = 100;
-
     auto backgroundNode = SetUpNodeBgImage(BG_PATH,
-        {start, start, nodeWidth, nodeHeight});
+        {startX, startY, nodeWidth, nodeHeight});
     backgroundNode->SetBackgroundNGFilter(colorGradientEffect);
     GetRootNode()->AddChild(backgroundNode);
     RegisterNode(backgroundNode);
