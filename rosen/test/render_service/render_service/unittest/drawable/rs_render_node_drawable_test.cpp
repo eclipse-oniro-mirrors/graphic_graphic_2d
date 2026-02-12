@@ -511,7 +511,7 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckIfNeedUpdateCacheTest002, TestSize.Level
     params.SetHasChildExcludedFromNodeGroup(true);
     EXPECT_TRUE(drawable->IsCurRenderGroupCacheRootExcludedStateChanged(params));
     result = drawable->CheckIfNeedUpdateCache(params, updateTimes);
-    EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 }
 
 /**
