@@ -39,6 +39,8 @@ const std::vector<float> COLOR_GRADIENT_POSITIONS = {
     1.0f, 1.0f,
 };
 const std::vector<float> COLOR_GRADIENT_STRENGTHS = {2.8f, 2.8f, 2.8f, 2.8f};
+const Vector4f DEFAULT_INNER_BEZIER = Vector4f(0.0f, 0.0f, 1.0f, 1.0f);
+const Vector4f DEFAULT_OUTER_BEZIER = Vector4f(0.0f, 1.0f, 0.0f, 1.0f);
 
 std::string GetAvailableBackgroundPath()
 {
@@ -84,12 +86,33 @@ public:
         backgroundPath_ = GetAvailableBackgroundPath();
     }
 
+    void AddSceneBase() const
+    {
+        auto sceneNode = RSCanvasNode::Create();
+        sceneNode->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
+        sceneNode->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
+        sceneNode->SetBackgroundColor(0xFF0F1A2E);
+        GetRootNode()->AddChild(sceneNode);
+        RegisterNode(sceneNode);
+    }
+
+    void AddTileBase(int x, int y, int width, int height) const
+    {
+        auto tileNode = RSCanvasNode::Create();
+        tileNode->SetBounds({x, y, width, height});
+        tileNode->SetFrame({x, y, width, height});
+        tileNode->SetBackgroundColor(0xFF1C2F4A);
+        GetRootNode()->AddChild(tileNode);
+        RegisterNode(tileNode);
+    }
+
     std::string backgroundPath_ = BG_PATH;
 };
 
 // Test FrameGradientMask with CornerRadius property
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_CornerRadius_Test)
 {
+    AddSceneBase();
     int nodeWidth = 460;
     int nodeHeight = 420;
     int startX = 120;
@@ -106,12 +129,15 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
     for (int i = 0; i < row; i++) {
         int x = startX + (i % col) * (nodeWidth + gapX);
         int y = startY + (i / col) * (nodeHeight + gapY);
+        AddTileBase(x, y, nodeWidth, nodeHeight);
         auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {x, y, nodeWidth, nodeHeight});
         backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
+        mask->Setter<FrameGradientMaskInnerBezierTag>(DEFAULT_INNER_BEZIER);
+        mask->Setter<FrameGradientMaskOuterBezierTag>(DEFAULT_OUTER_BEZIER);
         mask->Setter<FrameGradientMaskInnerFrameWidthTag>(innerFrameWidth);
         mask->Setter<FrameGradientMaskOuterFrameWidthTag>(outerFrameWidth);
         mask->Setter<FrameGradientMaskCornerRadiusTag>(cornerRadiusValues[i]);
@@ -131,6 +157,7 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Co
 // Test FrameGradientMask with FrameWidth properties
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_FrameWidth_Test)
 {
+    AddSceneBase();
     int nodeWidth = 460;
     int nodeHeight = 420;
     int startX = 120;
@@ -146,12 +173,15 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Fr
     for (int i = 0; i < row; i++) {
         int x = startX + (i % col) * (nodeWidth + gapX);
         int y = startY + (i / col) * (nodeHeight + gapY);
+        AddTileBase(x, y, nodeWidth, nodeHeight);
         auto backgroundNode = SetUpNodeBgImage(backgroundPath_,
             {x, y, nodeWidth, nodeHeight});
         backgroundNode->SetBackgroundColor(0xFF22324A);
 
         // Create mask for each iteration
         auto mask = std::make_shared<RSNGFrameGradientMask>();
+        mask->Setter<FrameGradientMaskInnerBezierTag>(DEFAULT_INNER_BEZIER);
+        mask->Setter<FrameGradientMaskOuterBezierTag>(DEFAULT_OUTER_BEZIER);
         mask->Setter<FrameGradientMaskInnerFrameWidthTag>(innerFrameWidthValues[i]);
         mask->Setter<FrameGradientMaskOuterFrameWidthTag>(outerFrameWidthValues[i]);
         InitFrameGradientMaskRect(mask, nodeWidth, nodeHeight);
@@ -170,6 +200,7 @@ GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Fr
 // Test FrameGradientMask with all properties together
 GRAPHIC_TEST(NGMaskFrameGradientTest, EFFECT_TEST, Set_NG_Mask_Frame_Gradient_Complete_Test)
 {
+    AddSceneBase();
     int nodeWidth = 920;
     int nodeHeight = 1500;
     int startX = 140;
