@@ -19,6 +19,7 @@
 #include "common/rs_common_def.h"
 #include "common/rs_obj_abs_geometry.h"
 #include "dirty_region/rs_optimize_canvas_dirty_collector.h"
+#include "drawable/rs_color_picker_drawable.h"
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_property_drawable_foreground.h"
