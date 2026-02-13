@@ -150,7 +150,7 @@ std::shared_ptr<Drawing::Surface> CreateSurfaceFromNativeBuffer(RsVulkanContext&
     const Drawing::ImageInfo &imageInfo, OH_NativeBuffer *nativeBuffer,
     const std::shared_ptr<Drawing::ColorSpace> &colorSpace);
  
-Drawing::BackendTexture MakeBackendTextureFromNativeBufferImpl(RsVulkanContext& vkCtx, 
+Drawing::BackendTexture MakeBackendTextureFromNativeBufferImpl(RsVulkanContext& vkCtx,
     OH_NativeBuffer* nativeBuffer, int width, int height, bool isProtected = false);
 
 #ifdef RS_ENABLE_VK
