@@ -32,13 +32,7 @@ public:
     static bool CreateSDF(int spreadFactor, bool generateDerivs = true);
     static bool SetColorMatrix(std::vector<float> cjcolorMatrix, uint32_t& code);
     static std::shared_ptr<OHOS::Media::PixelMap> GetEffectPixelMap(bool forceCPU = false);
-
-    /**
-     * @brief manually clear data in FilterCommon, since sConstructor is persistent across calls.
-     *
-     */
     void Clear();
-
     static thread_local std::shared_ptr<FilterCommon> sConstructor_;
     void AddNextFilter(std::shared_ptr<EffectImageFilter> filter);
     std::shared_ptr<Media::PixelMap> GetDstPixelMap();
@@ -46,6 +40,7 @@ public:
     std::vector<std::shared_ptr<EffectImageFilter>> effectFilters_;
     std::shared_ptr<Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<Media::PixelMap> dstPixelMap_ = nullptr;
+    Drawing::ImageInfo imageInfo_ = {};
 };
 } // namespace Rosen
 } // namespace OHOS

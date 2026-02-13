@@ -28,6 +28,9 @@
 #include "render_context/render_context.h"
 
 namespace OHOS::Rosen {
+
+class RsVulkanContext;
+
 enum class DrawingError {
     ERR_OK = 0,
     ERR_NOT_PREPARED,
@@ -72,12 +75,14 @@ public:
     ~EffectImageChain();
 
     DrawingError Prepare(const std::shared_ptr<Media::PixelMap>& srcPixelMap, bool forceCPU);
-
+    DrawingError PrepareDstNative(const std::shared_ptr<Media::PixelMap> &srcPixelMap,
+        std::shared_ptr<OH_NativeBuffer> &dstNativeBuffer, bool forceCPU);
     DrawingError ApplyDrawingFilter(const std::shared_ptr<Drawing::ImageFilter>& filter);
     DrawingError ApplyBlur(float radius, const Drawing::TileMode& tileMode,
         bool isDirection = false, float angle = 0.0);
     DrawingError ApplyMapColorByBrightness(const std::vector<Vector4f>& colors, const std::vector<float>& positions);
     DrawingError ApplyGammaCorrection(float gamma);
+    DrawingError ApplyBlur(float radius, const Drawing::TileMode& tileMode);
     DrawingError ApplyEllipticalGradientBlur(float blurRadius, float centerX, float centerY,
         float maskRadiusX, float maskRadiusY, const std::vector<float> &positions, const std::vector<float> &degrees);
     DrawingError ApplySDFCreation(int spreadFactor, bool generateDerivs);
@@ -88,6 +93,7 @@ public:
     DrawingError ApplyWaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& waterGlassDate);
     DrawingError ApplyReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& reededGlassDate);
     DrawingError Draw();
+    DrawingError DrawNativeBuffer();
 
     std::shared_ptr<Media::PixelMap> GetPixelMap();
     void Release();
@@ -115,9 +121,13 @@ private:
     std::shared_ptr<Media::PixelMap> dstPixelMap_ = nullptr;
 
     std::shared_ptr<RenderContext> renderContext_ = nullptr;
+    std::shared_ptr<RsVulkanContext> vkContext_ = nullptr;
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;
     std::shared_ptr<Drawing::Canvas> canvas_ = nullptr;
     std::shared_ptr<Drawing::Surface> surface_ = nullptr;
+
+    int32_t srcWidth_ = 0;
+    int32_t srcHeight_ = 0;
 };
 } // namespace OHOS::Rosen
 #endif // EFFECT_IMAGE_CHAIN_H

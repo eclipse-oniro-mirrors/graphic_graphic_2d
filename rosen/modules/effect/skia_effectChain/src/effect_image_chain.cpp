@@ -30,9 +30,11 @@
 #include "platform/common/rs_system_properties.h"
 #include "render/rs_hps_blur.h"
 #include "render/rs_pixel_map_util.h"
+#include "surface_buffer.h"
 
 #ifdef RS_ENABLE_VK
 #include "effect_vulkan_context.h"
+#include "platform/ohos/backend/native_buffer_utils.h"
 #endif
 
 namespace OHOS::Rosen {
@@ -127,6 +129,8 @@ DrawingError EffectImageChain::Prepare(const std::shared_ptr<Media::PixelMap>& s
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
     srcPixelMap_ = srcPixelMap;
+    srcWidth_ = srcPixelMap_->GetWidth();
+    srcHeight_ = srcPixelMap_->GetHeight();
 
     if (InitWithoutCanvas(srcPixelMap_) != DrawingError::ERR_OK) {
         EFFECT_LOG_E("EffectImageChain::Prepare: Failed to init.");
@@ -144,6 +148,65 @@ DrawingError EffectImageChain::Prepare(const std::shared_ptr<Media::PixelMap>& s
     prepared_ = true;
     return DrawingError::ERR_OK;
 }
+
+#ifdef RS_ENABLE_VK
+DrawingError EffectImageChain::PrepareDstNative(const std::shared_ptr<Media::PixelMap> &srcPixelMap,
+    std::shared_ptr<OH_NativeBuffer> &dstNativeBuffer, bool forceCPU)
+{
+    std::lock_guard<std::mutex> lock(apiMutex_);
+    // CPU not supported
+    forceCPU_ = forceCPU;
+    if (forceCPU_) {
+        EFFECT_LOG_E("EffectImageChain::ApplyMaskTransitionFilter: Not support CPU.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+    if (!CheckPixelMap(srcPixelMap)) {
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+    srcPixelMap_ = srcPixelMap;
+    srcWidth_ = srcPixelMap_->GetWidth();
+    srcHeight_ = srcPixelMap_->GetHeight();
+ 
+    imageInfo_ = Drawing::ImageInfo{srcWidth_,
+        srcHeight_,
+        ImageUtil::PixelFormatToDrawingColorType(srcPixelMap_->GetPixelFormat()),
+        ImageUtil::AlphaTypeToDrawingAlphaType(srcPixelMap_->GetAlphaType()),
+        RSPixelMapUtil::GetPixelmapColorSpace(srcPixelMap_)};
+ 
+    Drawing::Bitmap bitmap;
+    bitmap.InstallPixels(imageInfo_,
+        reinterpret_cast<void *>(srcPixelMap_->GetWritablePixels()),
+        static_cast<uint32_t>(srcPixelMap_->GetRowStride()));
+    image_ = std::make_shared<Drawing::Image>();
+    image_->BuildFromBitmap(bitmap);
+ 
+    if (RSSystemProperties::IsUseVulkan()) {
+        gpuContext_ = RsVulkanContext::GetSingleton().CreateDrawingContext();
+    }
+    if (gpuContext_ == nullptr) {
+        EFFECT_COMM_LOG_E("EffectImageChain::CreateGPUSurface: create gpuContext failed.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
+ 
+    surface_ = NativeBufferUtils::CreateSurfaceFromNativeBuffer(
+        RsVulkanContext::GetSingleton(), imageInfo_, dstNativeBuffer.get(), imageInfo_.GetColorSpace());
+    if (surface_ == nullptr) {
+        EFFECT_LOG_E("EffectImageChain::Prepare: Failed to create surface %{public}d.", forceCPU_);
+        return DrawingError::ERR_SURFACE;
+    }
+ 
+    canvas_ = surface_->GetCanvas();
+    prepared_ = true;
+    return DrawingError::ERR_OK;
+}
+#else
+DrawingError EffectImageChain::PrepareDstNative(const std::shared_ptr<Media::PixelMap> &srcPixelMap,
+    std::shared_ptr<OH_NativeBuffer> &dstNativeBuffer, bool forceCPU)
+{
+    EFFECT_COMM_LOG_E("EffectImageChain::PrepareDstNative: Failed. Requires Vulkan backend");
+    return DrawingError::ERR_ILLEGAL_INPUT;
+}
+#endif
 
 DrawingError EffectImageChain::ApplyDrawingFilter(const std::shared_ptr<Drawing::ImageFilter>& filter)
 {
@@ -231,10 +294,8 @@ DrawingError EffectImageChain::ApplyEllipticalGradientBlur(float blurRadius, flo
 
     Drawing::GEVariableRadiusBlurShaderFilterParams filterParams{radialGradientShaderMask, blurRadius, true};
     auto variableRadiusBlurFilter = std::make_shared<GEVariableRadiusBlurShaderFilter>(filterParams);
-    image_ = variableRadiusBlurFilter->ProcessImage(*canvas_,
-        image_,
-        Drawing::Rect(0, 0, srcPixelMap_->GetWidth(), srcPixelMap_->GetHeight()),
-        Drawing::Rect(0, 0, srcPixelMap_->GetWidth(), srcPixelMap_->GetHeight()));
+    image_ = variableRadiusBlurFilter->ProcessImage(
+        *canvas_, image_, Drawing::Rect(0, 0, srcWidth_, srcHeight_), Drawing::Rect(0, 0, srcWidth_, srcHeight_));
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
     return DrawingError::ERR_OK;
 }
@@ -603,6 +664,25 @@ DrawingError EffectImageChain::Draw()
     } while (false);
 
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+    return ret;
+}
+
+DrawingError EffectImageChain::DrawNativeBuffer()
+{
+    std::lock_guard<std::mutex> lock(apiMutex_);
+    ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageChain::Draw");
+    auto ret = DrawingError::ERR_OK;
+    do {
+        if (!prepared_) {
+            EFFECT_LOG_E("EffectImageChain::Draw: Not ready, need prepare first.");
+            ret = DrawingError::ERR_NOT_PREPARED;
+            break;
+        }
+        DrawOnFilter();
+        gpuContext_->FlushAndSubmit();
+    } while (false);
+    ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
+ 
     return ret;
 }
 

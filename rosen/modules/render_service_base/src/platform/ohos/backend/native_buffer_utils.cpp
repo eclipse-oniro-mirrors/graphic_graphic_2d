@@ -331,74 +331,10 @@ Drawing::BackendTexture MakeBackendTextureFromNativeBuffer(NativeWindowBuffer* n
     int width, int height, bool isProtected)
 {
     OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer);
-    if (!nativeBuffer) {
-        ROSEN_LOGE("MakeBackendTextureFromNativeBuffer: OH_NativeBufferFromNativeWindowBuffer failed");
-        return {};
-    }
-
     auto& vkContext = RsVulkanContext::GetSingleton();
-    VkDevice device = vkContext.GetDevice();
 
-    VkNativeBufferFormatPropertiesOHOS nbFormatProps;
-    VkNativeBufferPropertiesOHOS nbProps;
-    if (!GetNativeBufferFormatProperties(vkContext, device, nativeBuffer, &nbFormatProps, &nbProps)) {
-        return {};
-    }
-
-    VkImageUsageFlags usageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
-    if (nbFormatProps.format != VK_FORMAT_UNDEFINED) {
-        usageFlags = usageFlags | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-
-    VkImage image;
-    if (!CreateVkImage(vkContext, &image, nbFormatProps, {width, height, 1}, usageFlags, isProtected)) {
-        return {};
-    }
-
-    VkDeviceMemory memory;
-    if (!AllocateDeviceMemory(vkContext, &memory, image, nativeBuffer, nbProps, isProtected)) {
-        return {};
-    }
-
-    if (!BindImageMemory(device, vkContext, image, memory)) {
-        return {};
-    }
-
-    Drawing::BackendTexture backendTexture(true);
-    Drawing::TextureInfo textureInfo;
-    textureInfo.SetWidth(width);
-    textureInfo.SetHeight(height);
-
-    std::shared_ptr<Drawing::VKTextureInfo> imageInfo = std::make_shared<Drawing::VKTextureInfo>();
-    imageInfo->vkImage = image;
-    imageInfo->vkAlloc.memory = memory;
-    imageInfo->vkAlloc.size = npProps.allocationSize;
-    imageInfo->vkAlloc.source = Drawing::VKMemSource::EXTERNAL;
-    imageInfo->vkProtected = isProtected ? true : false;
-    imageInfo->imageTiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo->imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo->format = nbFormatProps.format;
-    imageInfo->imageUsageFlags = usageFlags;
-    imageInfo->levelCount = 1;
-    imageInfo->currentQueueFamily = VK_QUEUE_FAMILY_EXTERNAL;
-    imageInfo->ycbcrConversionInfo.format = nbFormatProps.format;
-    imageInfo->ycbcrConversionInfo.externalFormat = nbFormatProps.externalFormat;
-    imageInfo->ycbcrConversionInfo.ycbcrModel = nbFormatProps.suggestedYcbcrModel;
-    imageInfo->ycbcrConversionInfo.ycbcrRange = nbFormatProps.suggestedYcbcrRange;
-    imageInfo->ycbcrConversionInfo.xChromaOffset = nbFormatProps.suggestedXChromaOffset;
-    imageInfo->ycbcrConversionInfo.yChromaOffset = nbFormatProps.suggestedYChromaOffset;
-    imageInfo->ycbcrConversionInfo.chromaFilter = VK_FILTER_NEAREST;
-    imageInfo->ycbcrConversionInfo.forceExplicitReconstruction = VK_FALSE;
-    imageInfo->ycbcrConversionInfo.formatFeatures = nbFormatProps.formatFeatures;
-    if (VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT & nbFormatProps.formatFeatures) {
-        imageInfo->ycbcrConversionInfo.chromaFilter = VK_FILTER_LINEAR;
-    }
-    imageInfo->sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    textureInfo.SetVKTextureInfo(imageInfo);
-    backendTexture.SetTextureInfo(textureInfo);
-    return backendTexture;
-}
+    return MakeBackendTextureFromNativeBufferImpl(vkContext, nativeBuffer, width, height, isProtected);
+ }
 
 std::shared_ptr<Drawing::Surface> CreateFromNativeWindowBuffer(Drawing::GPUContext* gpuContext,
     const Drawing::ImageInfo& imageInfo, NativeSurfaceInfo& nativeSurface)
