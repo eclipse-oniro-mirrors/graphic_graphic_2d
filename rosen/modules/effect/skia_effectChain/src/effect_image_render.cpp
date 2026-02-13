@@ -305,16 +305,16 @@ DrawingError EffectImageReededGlassFilter::Apply(const std::shared_ptr<EffectIma
     return image->ApplyReededGlass(reededGlassData_);
 }
 
-DrawingError EffectImageRender::RenderDstNative(const std::shared_ptr<Media::PixelMap> &srcPixelMap,
-    std::shared_ptr<OH_NativeBuffer> &dstNativeBuffer,
-    const std::vector<std::shared_ptr<EffectImageFilter>> &effectFilters, bool forceCPU)
+DrawingError EffectImageRender::RenderDstNative(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
+    std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
+    const std::vector<std::shared_ptr<EffectImageFilter>>& effectFilters, bool forceCPU)
 {
     ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "EffectImageRender::Render");
  
     auto ret = DrawingError::ERR_OK;
     do {
         auto effectImage = std::make_shared<EffectImageChain>();
-        ret = effectImage->PrepareDstNative(srcPixelMap, dstNativeBuffer, forceCPU);
+        ret = effectImage->PrepareNativeBuffer(srcPixelMap, dstNativeBuffer, forceCPU);
         if (ret != DrawingError::ERR_OK) {
             EFFECT_LOG_E("EffectImageRender::Render: Failed to prepare image, ret=%{public}d.", ret);
             break;
