@@ -25,6 +25,7 @@ namespace OHOS::Rosen {
 namespace {
 const int SCREEN_WIDTH = 1200;
 const int SCREEN_HEIGHT = 2000;
+const int FALLBACK_MASK_SIZE = 64;
 
 std::string GetAvailableBackgroundPath()
 {
@@ -58,8 +59,8 @@ std::shared_ptr<Media::PixelMap> GetAvailableMask()
     }
 
     Media::InitializationOptions options;
-    options.size.width = 64;
-    options.size.height = 64;
+    options.size.width = FALLBACK_MASK_SIZE;
+    options.size.height = FALLBACK_MASK_SIZE;
     return Media::PixelMap::Create(options);
 }
 }  // namespace
