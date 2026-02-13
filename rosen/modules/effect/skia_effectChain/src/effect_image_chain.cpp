@@ -129,8 +129,6 @@ DrawingError EffectImageChain::Prepare(const std::shared_ptr<Media::PixelMap>& s
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
     srcPixelMap_ = srcPixelMap;
-    srcWidth_ = srcPixelMap_->GetWidth();
-    srcHeight_ = srcPixelMap_->GetHeight();
 
     if (InitWithoutCanvas(srcPixelMap_) != DrawingError::ERR_OK) {
         EFFECT_LOG_E("EffectImageChain::Prepare: Failed to init.");
@@ -294,9 +292,9 @@ DrawingError EffectImageChain::ApplyEllipticalGradientBlur(float blurRadius, flo
 
     Drawing::GEVariableRadiusBlurShaderFilterParams filterParams{radialGradientShaderMask, blurRadius, true};
     auto variableRadiusBlurFilter = std::make_shared<GEVariableRadiusBlurShaderFilter>(filterParams);
-    image_ = variableRadiusBlurFilter->ProcessImage(*canvas_,	 
-        image_,	 
-        Drawing::Rect(0, 0, srcPixelMap_->GetWidth(), srcPixelMap_->GetHeight()),	 
+    image_ = variableRadiusBlurFilter->ProcessImage(*canvas_,
+        image_,
+        Drawing::Rect(0, 0, srcPixelMap_->GetWidth(), srcPixelMap_->GetHeight()),
         Drawing::Rect(0, 0, srcPixelMap_->GetWidth(), srcPixelMap_->GetHeight()));
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
     return DrawingError::ERR_OK;
