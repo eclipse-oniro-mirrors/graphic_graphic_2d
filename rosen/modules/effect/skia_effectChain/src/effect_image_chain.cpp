@@ -162,11 +162,9 @@ DrawingError EffectImageChain::PrepareDstNative(const std::shared_ptr<Media::Pix
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
     srcPixelMap_ = srcPixelMap;
-    srcWidth_ = srcPixelMap_->GetWidth();
-    srcHeight_ = srcPixelMap_->GetHeight();
  
-    imageInfo_ = Drawing::ImageInfo{srcWidth_,
-        srcHeight_,
+    imageInfo_ = Drawing::ImageInfo{srcPixelMap_->GetWidth(),
+        srcPixelMap_->GetHeight(),
         ImageUtil::PixelFormatToDrawingColorType(srcPixelMap_->GetPixelFormat()),
         ImageUtil::AlphaTypeToDrawingAlphaType(srcPixelMap_->GetAlphaType()),
         RSPixelMapUtil::GetPixelmapColorSpace(srcPixelMap_)};
