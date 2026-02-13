@@ -46,11 +46,10 @@ public:
         const std::shared_ptr<Drawing::GEWaterDropletTransitionFilterParams>& geWaterDropletParams);
     bool WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params);
     bool ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& params);
-    bool RenderResult(bool forceCPU, OH_NativeBuffer* dstNativeBuffer);
+    bool RenderNativeBuffer(bool forceCPU, OH_NativeBuffer* dstNativeBuffer);
 private:
     void AddNextFilter(std::shared_ptr<EffectImageFilter> filter);
     bool Render(bool forceCPU);
-    bool Render(bool forceCPU, OH_NativeBuffer* dstNativeBuffer);
     std::vector<std::shared_ptr<EffectImageFilter>> effectFilters_;
     std::shared_ptr<OHOS::Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<OHOS::Media::PixelMap> dstPixelMap_ = nullptr;
