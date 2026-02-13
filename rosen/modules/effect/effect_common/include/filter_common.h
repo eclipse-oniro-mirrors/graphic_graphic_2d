@@ -40,7 +40,6 @@ public:
     std::vector<std::shared_ptr<EffectImageFilter>> effectFilters_;
     std::shared_ptr<Media::PixelMap> srcPixelMap_ = nullptr;
     std::shared_ptr<Media::PixelMap> dstPixelMap_ = nullptr;
-    Drawing::ImageInfo imageInfo_ = {};
 };
 } // namespace Rosen
 } // namespace OHOS
