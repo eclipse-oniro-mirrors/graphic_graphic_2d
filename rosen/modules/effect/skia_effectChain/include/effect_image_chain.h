@@ -120,7 +120,6 @@ private:
     std::shared_ptr<Media::PixelMap> dstPixelMap_ = nullptr;
 
     std::shared_ptr<RenderContext> renderContext_ = nullptr;
-    std::shared_ptr<RsVulkanContext> vkContext_ = nullptr;
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;
     std::shared_ptr<Drawing::Canvas> canvas_ = nullptr;
     std::shared_ptr<Drawing::Surface> surface_ = nullptr;
