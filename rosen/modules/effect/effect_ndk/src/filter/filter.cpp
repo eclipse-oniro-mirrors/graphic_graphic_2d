@@ -47,7 +47,6 @@ bool Filter::Render(bool forceCPU, OH_NativeBuffer* dstNativeBuffer)
     dstNativeBuffer,
     [](OH_NativeBuffer* p) {}
     );
-    // auto dstNativeBufferSharedPtr = std::make_shared<OH_NativeBuffer>(dstNativeBuffer);
     auto error = imageRender.RenderDstNative(srcPixelMap_, dstNativeBufferSharedPtr, effectFilters_, forceCPU);
     return error == DrawingError::ERR_OK;
 }
