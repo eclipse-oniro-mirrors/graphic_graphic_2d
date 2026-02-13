@@ -47,12 +47,6 @@ public:
     bool WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params);
     bool ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& params);
     bool RenderResult(bool forceCPU, OH_NativeBuffer* dstNativeBuffer);
-    bool MaskTransition(const std::shared_ptr<OHOS::Media::PixelMap>& topLayer,
-        const std::shared_ptr<Drawing::GEShaderMask>& mask, float factor, bool inverse);
-    bool WaterDropletTransition(const std::shared_ptr<OHOS::Media::PixelMap>& topLayer,
-        const std::shared_ptr<Drawing::GEWaterDropletTransitionFilterParams>& geWaterDropletParams);
-    bool WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params);
-    bool ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& params);
     private:
     void AddNextFilter(std::shared_ptr<EffectImageFilter> filter);
     bool Render(bool forceCPU);
