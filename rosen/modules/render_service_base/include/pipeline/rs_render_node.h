@@ -63,7 +63,6 @@ class RSRenderParams;
 class RSContext;
 class RSNodeVisitor;
 class RSCommand;
-class RSCanvasDrawingRenderNode;
 namespace NativeBufferUtils {
 class VulkanCleanupHelper;
 }
@@ -76,9 +75,9 @@ enum class RSModifierType : uint16_t;
 struct SharedTransitionParam;
 
 struct CurFrameInfoDetail {
-    uint32_t curFramePrepareSeqNum = 0;
-    uint32_t curFramePostPrepareSeqNum = 0;
-    uint64_t curFrameVsyncId = 0;
+    uint16_t curFramePrepareSeqNum = 0;
+    uint16_t curFramePostPrepareSeqNum = 0;
+    uint32_t curFrameVsyncId = 0;
     bool curFrameSubTreeSkipped = false;
     bool curFrameReverseChildren = false;
 };
@@ -1080,7 +1079,7 @@ protected:
 
     static void DumpNodeType(RSRenderNodeType nodeType, std::string& out);
 
-    virtual void DumpSubClassNode(std::string& out) const;
+    void DumpSubClassNode(std::string& out) const;
     void DumpDrawCmdModifiers(std::string& out) const;
     void DumpModifiers(std::string& out) const;
 

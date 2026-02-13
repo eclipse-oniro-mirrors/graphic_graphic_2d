@@ -309,6 +309,7 @@ void ParagraphImpl::GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, T
     textStyle.maxLineHeight = skStyle.getMaxLineHeight();
     textStyle.minLineHeight = skStyle.getMinLineHeight();
     textStyle.lineHeightStyle = static_cast<OHOS::Rosen::LineHeightStyle>(skStyle.getLineHeightStyle());
+    textStyle.fontEdging = skStyle.getFontEdging();
 }
 
 TextStyle ParagraphImpl::SkStyleToTextStyle(const skt::TextStyle& skStyle)
@@ -402,7 +403,7 @@ PositionWithAffinity ParagraphImpl::GetCharacterPositionAtCoordinate(double dx, 
     }
 
     skt::PositionWithAffinity pos = paragraph_->getCharacterPositionAtCoordinate(dx, dy,
-        static_cast<skt::TextEncoding>(encoding));
+        static_cast<RSDrawing::TextEncoding>(encoding));
     return PositionWithAffinity(pos.position, static_cast<Affinity>(pos.affinity));
 }
 
@@ -414,13 +415,13 @@ Range<size_t> ParagraphImpl::GetCharacterRangeForGlyphRange(size_t glyphStart, s
         return {0, 0};
     }
 
-    skt::SkRange<size_t> actualTextRange;
+    skt::SkRange<size_t> tempGlyphRange;
     skt::TextRange result = paragraph_->getCharacterRangeForGlyphRange(glyphStart, glyphEnd,
-        &actualTextRange, static_cast<skt::TextEncoding>(encoding));
+        &tempGlyphRange, static_cast<RSDrawing::TextEncoding>(encoding));
 
     // Only set actualGlyphRange if caller requested it (non-NULL)
     if (actualGlyphRange != nullptr) {
-        *actualGlyphRange = FromSkRange(actualTextRange);
+        *actualGlyphRange = FromSkRange(tempGlyphRange);
     }
     return FromTextRange(result);
 }
@@ -435,7 +436,7 @@ Range<size_t> ParagraphImpl::GetGlyphRangeForCharacterRange(size_t charStart, si
 
     skt::TextRange actualTextRange;
     skt::SkRange<size_t> result = paragraph_->getGlyphRangeForCharacterRange(charStart, charEnd,
-        &actualTextRange, static_cast<skt::TextEncoding>(encoding));
+        &actualTextRange, static_cast<RSDrawing::TextEncoding>(encoding));
 
     // Only set actualCharRange if caller requested it (non-NULL)
     if (actualCharRange != nullptr) {

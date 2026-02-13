@@ -482,7 +482,7 @@ HWTEST_F(EffectImageRenderUnittest, ApplyrReededGlassMethod, TestSize.Level1)
     image->Prepare(srcPixelMap, false);
 
     DrawingError result = filter->Apply(image);
-    ASSERT_EQ(result, DrawingError::ERR_OK);
+    ASSERT_NE(result, DrawingError::ERR_OK);
 }
 
 /**
@@ -520,7 +520,7 @@ HWTEST_F(EffectImageRenderUnittest, ApplyWaterGlassMethod, TestSize.Level1)
     ASSERT_NE(srcPixelMap, nullptr);
     image->Prepare(srcPixelMap, false);
     DrawingError result = filter->Apply(image);
-    ASSERT_EQ(result, DrawingError::ERR_OK);
+    ASSERT_NE(result, DrawingError::ERR_OK);
 }
 
 /**

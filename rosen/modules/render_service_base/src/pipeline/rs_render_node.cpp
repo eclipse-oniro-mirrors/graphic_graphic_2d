@@ -1392,6 +1392,10 @@ void RSRenderNode::DumpSubClassNode(std::string& out) const
     } else if (GetType() == RSRenderNodeType::WINDOW_KEYFRAME_NODE) {
         auto wndKeyframeNode = static_cast<const RSWindowKeyFrameRenderNode*>(this);
         out += ", linkedNodeId: " + std::to_string(wndKeyframeNode->GetLinkedNodeId());
+    } else if (GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+        auto canvasDrawingNode = static_cast<const RSCanvasDrawingRenderNode*>(this);
+        out += ", lastResetSurfaceTime: " + std::to_string(canvasDrawingNode->lastResetSurfaceTime_);
+        out += ", opCountAfterReset: " + std::to_string(canvasDrawingNode->opCountAfterReset_);
     }
 }
 
@@ -4263,8 +4267,7 @@ void RSRenderNode::AddSubSurfaceUpdateInfo(SharedPtr curParent, SharedPtr prePar
 {
     if (!selfAddForSubSurfaceCnt_ && GetType() == RSRenderNodeType::SURFACE_NODE) {
         auto surfaceNode = ReinterpretCastTo<RSSurfaceRenderNode>();
-        subSurfaceCnt_ = (surfaceNode && (surfaceNode->IsLeashWindow() || surfaceNode->IsAppWindow())) ?
-            subSurfaceCnt_ + 1 : subSurfaceCnt_;
+        subSurfaceCnt_ = (surfaceNode && surfaceNode->IsLeashOrMainWindow()) ? subSurfaceCnt_ + 1 : subSurfaceCnt_;
         selfAddForSubSurfaceCnt_ = true;
     }
     if (subSurfaceCnt_ == 0) {

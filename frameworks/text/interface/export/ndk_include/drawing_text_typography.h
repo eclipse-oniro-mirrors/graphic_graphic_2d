@@ -610,6 +610,8 @@ typedef enum OH_Drawing_TextStyleAttributeId {
     TEXT_STYLE_ATTR_I_LINE_HEIGHT_STYLE = 2,
     /** Font width */
     TEXT_STYLE_ATTR_I_FONT_WIDTH = 3,
+    /** Font edging */
+    TEXT_STYLE_ATTR_I_FONT_EDGING = 4,
 } OH_Drawing_TextStyleAttributeId;
 
 /**
@@ -1303,7 +1305,7 @@ void OH_Drawing_TypographyLayout(OH_Drawing_Typography*, double /* maxWidth */);
  * @return Returns Indicates the pointer to an <b>OH_Drawing_RectSize</b> object that paragraph's actually rectangle.
  * @since 24
  */
-OH_Drawing_RectSize OH_Drawing_TypographyLayoutWithConstraints(OH_Drawing_Typography* typography,
+OH_Drawing_RectSize OH_Drawing_TypographyLayoutWithConstraintsWithBuffer(OH_Drawing_Typography* typography,
     OH_Drawing_RectSize constraintsRect, OH_Drawing_Array** fitStrRangeArr, size_t* fitStrRangeArrayLen);
 
 /**
@@ -1325,13 +1327,13 @@ OH_Drawing_Range* OH_Drawing_GetRangeByArrayIndex(OH_Drawing_Array* array, size_
  * Supported array type: String indices array, get by <b>OH_Drawing_GetRunStringIndices</b>.
  * Supported array type: Rect array, get by <b>OH_Drawing_RectCreateArray</b>.
  * Supported array type: FontDescriptors array, get by <b>OH_Drawing_GetFontFullDescriptorsFromStream</b>.
- * Supported array type: Text ranges array, get by <b>OH_Drawing_TypographyLayoutWithConstraints</b>.
+ * Supported array type: Text ranges array, get by <b>OH_Drawing_TypographyLayoutWithConstraintsWithBuffer</b>.
  * @return Returns the error code.
  *         Returns {@link OH_DRAWING_SUCCESS} if the operation is successful.
  *         Returns {@link OH_DRAWING_ERROR_INCORRECT_PARAMETER} if the array is nullptr or not supported.
  * @since 24
  */
-OH_Drawing_ErrorCode OH_Drawing_DestroyArray(OH_Drawing_Array* array);
+OH_Drawing_ErrorCode OH_Drawing_ReleaseArrayBuffer(OH_Drawing_Array* array);
 
 /**
  * @brief Paints text on the canvas.
@@ -3314,16 +3316,16 @@ void OH_Drawing_DestroyPositionAndAffinity(OH_Drawing_PositionAndAffinity* posit
  * @param actualGlyphRange Indicates the pointer to an <b>OH_Drawing_Range</b> pointer.
  *     If this parameter is <b>NULL</b>, the actual glyph range will not be provided,
  *     indicating that the actual glyph range information is not required.
- *     Released through the <b>OH_Drawing_DestroyRange</b> interface after use.
+ *     Releases memory by <b>OH_Drawing_ReleaseRangeBuffer</b>.
  * @param textEncodingType Indicates the text encoding type <b>OH_Drawing_TextEncoding</b>.
  *     Currently only UTF-8 and UTF-16 encoding types are supported.
  *     For UTF-8 encoding, the returned character range represents byte ranges.
  *     For UTF-16 encoding, the returned character range represents UTF-16 code unit ranges.
  * @return The pointer to the <b>OH_Drawing_Range</b> object representing the character range.
- *     Released through the <b>OH_Drawing_DestroyRange</b> interface after use.
+ *     Releases memory by <b>OH_Drawing_ReleaseRangeBuffer</b>.
  * @since 24
  */
-OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRange(OH_Drawing_Typography* typography,
+OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRangeWithBuffer(OH_Drawing_Typography* typography,
     size_t glyphRangeStart, size_t glyphRangeEnd, OH_Drawing_Range** actualGlyphRange,
     OH_Drawing_TextEncoding textEncodingType);
 
@@ -3338,11 +3340,11 @@ OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRange(OH_Drawing
  *     For UTF-8 encoding, the returned position represents a byte offset.
  *     For UTF-16 encoding, the returned position represents a UTF-16 code unit offset.
  * @return The pointer to the <b>OH_Drawing_PositionAndAffinity</b> object.
- *     Released through the <b>OH_Drawing_DestroyPositionAndAffinity</b> interface after use.
+ *     Releases memory by <b>OH_Drawing_DestroyPositionAndAffinity</b>.
  * @since 24
  */
-OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinate(OH_Drawing_Typography* typography,
-    double dx, double dy, OH_Drawing_TextEncoding textEncodingType);
+OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinateWithBuffer(
+    OH_Drawing_Typography* typography, double dx, double dy, OH_Drawing_TextEncoding textEncodingType);
 
 /**
  * @brief Gets the glyph range corresponding to the specified character range.
@@ -3353,16 +3355,16 @@ OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoord
  * @param actualCharacterRange Indicates the pointer to an <b>OH_Drawing_Range</b> pointer.
  *     If this parameter is <b>NULL</b>, the actual character range will not be provided,
  *     indicating that the actual character range information is not required.
- *     Released through the <b>OH_Drawing_DestroyRange</b> interface after use.
+ *     Releases memory by <b>OH_Drawing_ReleaseRangeBuffer</b>.
  * @param textEncodingType Indicates the text encoding type <b>OH_Drawing_TextEncoding</b>.
  *     Currently only UTF-8 and UTF-16 encoding types are supported.
  *     For UTF-8 encoding, the input character range should be interpreted as byte ranges.
  *     For UTF-16 encoding, the input character range should be interpreted as UTF-16 code unit ranges.
  * @return The pointer to the <b>OH_Drawing_Range</b> object representing the glyph range.
- *     Released through the <b>OH_Drawing_DestroyRange</b> interface after use.
+ *     Releases memory by <b>OH_Drawing_ReleaseRangeBuffer</b>.
  * @since 24
  */
-OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRange(OH_Drawing_Typography* typography,
+OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRangeWithBuffer(OH_Drawing_Typography* typography,
     size_t characterRangeStart, size_t characterRangeEnd, OH_Drawing_Range** actualCharacterRange,
     OH_Drawing_TextEncoding textEncodingType);
 
@@ -3372,7 +3374,7 @@ OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRange(OH_Drawing
  * @param range Indicates the pointer to an <b>OH_Drawing_Range</b> object.
  * @since 24
  */
-void OH_Drawing_DestroyRange(OH_Drawing_Range* range);
+void OH_Drawing_ReleaseRangeBuffer(OH_Drawing_Range* range);
 #ifdef __cplusplus
 }
 #endif

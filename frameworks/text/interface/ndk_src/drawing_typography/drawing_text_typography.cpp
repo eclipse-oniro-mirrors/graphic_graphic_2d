@@ -520,7 +520,7 @@ void OH_Drawing_TypographyLayout(OH_Drawing_Typography* typography, double maxWi
     ConvertToOriginalText<Typography>(typography)->Layout(maxWidth);
 }
 
-OH_Drawing_RectSize OH_Drawing_TypographyLayoutWithConstraints(OH_Drawing_Typography* typography,
+OH_Drawing_RectSize OH_Drawing_TypographyLayoutWithConstraintsWithBuffer(OH_Drawing_Typography* typography,
     OH_Drawing_RectSize size, OH_Drawing_Array** fitStrRangeArr, size_t* fitStrRangeArrayLen)
 {
     if (!typography || !fitStrRangeArrayLen || !fitStrRangeArr) {
@@ -531,26 +531,13 @@ OH_Drawing_RectSize OH_Drawing_TypographyLayoutWithConstraints(OH_Drawing_Typogr
     TextLayoutResult result =
         ConvertToOriginalText<Typography>(typography)->LayoutWithConstraints({size.width, size.height});
     *fitStrRangeArrayLen = result.fitStrRange.size();
-    RangeObject* data = new (std::nothrow) RangeObject[*fitStrRangeArrayLen];
-    if (data == nullptr) {
-        TEXT_LOGE("Failed to create fitStrRange array");
-        *fitStrRangeArr = nullptr;
-        *fitStrRangeArrayLen = 0;
-        return OH_Drawing_RectSize();
-    }
+    RangeObject* data = new RangeObject[*fitStrRangeArrayLen];
     for (size_t rangeIndex = 0; rangeIndex < *fitStrRangeArrayLen; ++rangeIndex) {
         TextRange range = result.fitStrRange[rangeIndex];
         data[rangeIndex].start = range.start;
         data[rangeIndex].end = range.end;
     }
-    ObjectArray* array = new (std::nothrow) ObjectArray();
-    if (array == nullptr) {
-        TEXT_LOGE("Failed to create array");
-        delete[] data;
-        *fitStrRangeArr = nullptr;
-        *fitStrRangeArrayLen = 0;
-        return OH_Drawing_RectSize();
-    }
+    ObjectArray* array = new ObjectArray();
     array->addr = data;
     array->num = *fitStrRangeArrayLen;
     array->type = ObjectType::TEXT_RANGE;
@@ -593,7 +580,7 @@ void OH_Drawing_DestroyStringRangeArray(OH_Drawing_Array* array)
     delete textRangeArray;
 }
 
-OH_Drawing_ErrorCode OH_Drawing_DestroyArray(OH_Drawing_Array* array)
+OH_Drawing_ErrorCode OH_Drawing_ReleaseArrayBuffer(OH_Drawing_Array* array)
 {
     if (!array) {
         return OH_Drawing_ErrorCode::OH_DRAWING_ERROR_INCORRECT_PARAMETER;
@@ -3819,7 +3806,7 @@ void OH_Drawing_DestroyPositionAndAffinity(OH_Drawing_PositionAndAffinity* posit
     delete ConvertToOriginalText<IndexAndAffinity>(positionAndAffinity);
 }
 
-OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRange(OH_Drawing_Typography* typography,
+OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRangeWithBuffer(OH_Drawing_Typography* typography,
     size_t glyphRangeStart, size_t glyphRangeEnd, OH_Drawing_Range **actualGlyphRange,
     OH_Drawing_TextEncoding textEncodingType)
 {
@@ -3863,8 +3850,8 @@ OH_Drawing_Range* OH_Drawing_TypographyGetCharacterRangeForGlyphRange(OH_Drawing
     return reinterpret_cast<OH_Drawing_Range*>(resultCharacterRange);
 }
 
-OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinate(OH_Drawing_Typography* typography,
-    double dx, double dy, OH_Drawing_TextEncoding textEncodingType)
+OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoordinateWithBuffer(
+    OH_Drawing_Typography* typography, double dx, double dy, OH_Drawing_TextEncoding textEncodingType)
 {
     if (typography == nullptr) {
         TEXT_LOGE("Null typography");
@@ -3886,7 +3873,7 @@ OH_Drawing_PositionAndAffinity* OH_Drawing_TypographyGetCharacterPositionAtCoord
     return reinterpret_cast<OH_Drawing_PositionAndAffinity*>(charPosAndAffinityResult);
 }
 
-OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRange(OH_Drawing_Typography* typography,
+OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRangeWithBuffer(OH_Drawing_Typography* typography,
     size_t characterRangeStart, size_t characterRangeEnd, OH_Drawing_Range** actualCharacterRange,
     OH_Drawing_TextEncoding textEncodingType)
 {
@@ -3930,7 +3917,7 @@ OH_Drawing_Range* OH_Drawing_TypographyGetGlyphRangeForCharacterRange(OH_Drawing
     return reinterpret_cast<OH_Drawing_Range*>(glyphRangeResult);
 }
 
-void OH_Drawing_DestroyRange(OH_Drawing_Range* range)
+void OH_Drawing_ReleaseRangeBuffer(OH_Drawing_Range* range)
 {
     if (range == nullptr) {
         TEXT_LOGE("Null range");
