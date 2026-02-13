@@ -47,7 +47,7 @@ public:
     bool WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params);
     bool ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& params);
     bool RenderResult(bool forceCPU, OH_NativeBuffer* dstNativeBuffer);
-    private:
+private:
     void AddNextFilter(std::shared_ptr<EffectImageFilter> filter);
     bool Render(bool forceCPU);
     bool Render(bool forceCPU, OH_NativeBuffer* dstNativeBuffer);
