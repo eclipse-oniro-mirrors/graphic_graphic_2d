@@ -447,7 +447,7 @@ void RSClientToRenderConnection::TakeUICaptureInRange(
     if (renderPipelineAgent_ == nullptr) {
         return;
     }
-    renderPipelineAgent_->TakeUICaptureInRange(id, callback, captureConfig);
+    renderPipelineAgent_->TakeUICaptureInRange(id, callback, captureConfig, permissions);
 }
 
 ErrCode RSClientToRenderConnection::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,

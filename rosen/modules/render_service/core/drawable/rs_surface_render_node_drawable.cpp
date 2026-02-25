@@ -94,6 +94,9 @@ RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const R
     surfaceNodeType_ = surfaceNode->GetSurfaceNodeType();
 #ifndef ROSEN_CROSS_PLATFORM
     consumerOnDraw_ = surfaceNode->GetRSSurfaceHandler()->GetConsumer();
+    if (consumerOnDraw_) {
+        uniqueId_ = consumerOnDraw_->GetUniqueId();
+    }
 #endif
     subThreadCache_.SetNodeId(surfaceNode->GetId());
 
@@ -105,6 +108,7 @@ RSSurfaceRenderNodeDrawable::RSSurfaceRenderNodeDrawable(std::shared_ptr<const R
                 static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_ADD),
                 id_,
                 name_,
+                uniqueId_,
             };
             PipelineParam param = composerClientMgr->GetPipelineParam(curDisplayScreenId_);
             param.SurfaceFpsOpList.push_back(op);
@@ -123,6 +127,7 @@ RSSurfaceRenderNodeDrawable::~RSSurfaceRenderNodeDrawable()
                 static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_REMOVE),
                 id_,
                 name_,
+                uniqueId_,
             };
             PipelineParam param = composerClientMgr->GetPipelineParam(curDisplayScreenId_);
             param.SurfaceFpsOpList.push_back(op);

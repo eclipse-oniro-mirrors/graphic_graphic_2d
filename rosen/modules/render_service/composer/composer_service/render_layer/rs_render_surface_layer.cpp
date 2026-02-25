@@ -483,7 +483,6 @@ uint32_t RSRenderSurfaceLayer::GetAncoFlags() const
     return ancoFlags_;
 }
 
-// to-do
 bool RSRenderSurfaceLayer::IsAncoNative() const
 {
     constexpr uint32_t ANCO_NATIVE_NODE_FLAG = static_cast<uint32_t>(AncoFlags::ANCO_NATIVE_NODE);
@@ -703,6 +702,73 @@ void RSRenderSurfaceLayer::UpdateRSLayerCmd(const std::shared_ptr<RSRenderLayerC
         ROSEN_LOGE("%{public}s type err:%{public}d", __func__, static_cast<int32_t>(type));
     }
     ROSEN_LOGD("%{public}s type:%{public}d", __func__, static_cast<int32_t>(type));
+}
+
+// only used for separate rendering
+void RSRenderSurfaceLayer::Dump(std::string& result) const
+{
+    if (TransformTypeStrs.find(transformType_) != TransformTypeStrs.end() &&
+        CompositionTypeStrs.find(compositionType_) != CompositionTypeStrs.end() &&
+        BlendTypeStrs.find(blendType_) != BlendTypeStrs.end()) {
+        result += " zOrder = " + std::to_string(zOrder_) +
+            ", visibleNum = " + std::to_string(visibleRegions_.size()) +
+            ", transformType = " + TransformTypeStrs.at(transformType_) +
+            ", compositionType = " + CompositionTypeStrs.at(compositionType_) +
+            ", blendType = " + BlendTypeStrs.at(blendType_) +
+            ", layerAlpha = [enGlobalAlpha(" + std::to_string(layerAlpha_.enGlobalAlpha) + "), enPixelAlpha(" +
+            std::to_string(layerAlpha_.enPixelAlpha) + "), alpha0(" +
+            std::to_string(layerAlpha_.alpha0) + "), alpha1(" +
+            std::to_string(layerAlpha_.alpha1) + "), gAlpha(" +
+            std::to_string(layerAlpha_.gAlpha) + ")].\n";
+    }
+    result += " layerRect = [" + std::to_string(layerRect_.x) + ", " +
+        std::to_string(layerRect_.y) + ", " +
+        std::to_string(layerRect_.w) + ", " +
+        std::to_string(layerRect_.h) + "], ";
+    result += "cropRect = [" + std::to_string(cropRect_.x) + ", " +
+        std::to_string(cropRect_.y) + ", " +
+        std::to_string(cropRect_.w) + ", " +
+        std::to_string(cropRect_.h) + "],";
+    for (decltype(visibleRegions_.size()) i = 0; i < visibleRegions_.size(); i++) {
+        result += "visibleRegions[" + std::to_string(i) + "] = [" +
+            std::to_string(visibleRegions_[i].x) + ", " +
+            std::to_string(visibleRegions_[i].y) + ", " +
+            std::to_string(visibleRegions_[i].w) + ", " +
+            std::to_string(visibleRegions_[i].h) + "], ";
+    }
+    for (decltype(dirtyRegions_.size()) i = 0; i < dirtyRegions_.size(); i++) {
+        result += "dirtyRegions[" + std::to_string(i) + "] = [" +
+            std::to_string(dirtyRegions_[i].x) + ", " +
+            std::to_string(dirtyRegions_[i].y) + ", " +
+            std::to_string(dirtyRegions_[i].w) + ", " +
+            std::to_string(dirtyRegions_[i].h) + "], ";
+    }
+    result += "layerColor = [R:" + std::to_string(layerColor_.r) + ", G:" +
+        std::to_string(layerColor_.g) + ", B:" +
+        std::to_string(layerColor_.b) + ", A:" +
+        std::to_string(layerColor_.a) + "],";
+    if (cSurface_ != nullptr) {
+        cSurface_->Dump(result);
+    }
+    result += " displayNit = " + std::to_string(displayNit_) +
+        ", brightnessRatio = " + std::to_string(brightnessRatio_) + ", ";
+    result += " ancoFlags = " + std::to_string(ancoFlags_) + ", ";
+    result += " cycleBuffersNum = " + std::to_string(cycleBuffersNum_) + ", ";
+    result += "surfaceName = " + surfaceName_ + ", ";
+    result += "solidColorLayer Composition type = " + std::to_string(solidColorLayerProperty_.compositionType) +
+        " Zorder = " + std::to_string(solidColorLayerProperty_.zOrder) + ", ";
+    result += "useDeviceOffline" + std::to_string(useDeviceOffline_) + ", ";
+    result += "ignoreAlpha" + std::to_string(ignoreAlpha_) + ", ";
+    result += "ancoSrcRect = [" + std::to_string(ancoSrcRect_.x) + ", " + std::to_string(ancoSrcRect_.y) + ", " +
+        std::to_string(ancoSrcRect_.w) + ", " + std::to_string(ancoSrcRect_.h) + "]" + ";\n";
+}
+
+// only used for separate rendering
+void RSRenderSurfaceLayer::DumpCurrentFrameLayer() const
+{
+    if (cSurface_ != nullptr) {
+        cSurface_->DumpCurrentFrameLayer();
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -1859,7 +1859,6 @@ HWTEST_F(HdiOutputTest, UpdateLayerCompType001, Function | MediumTest | Level1)
     HdiOutputTest::hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
     ASSERT_EQ(HdiOutputTest::hdiOutput_->UpdateLayerCompType(), GRAPHIC_DISPLAY_SUCCESS);
     HdiOutputTest::hdiOutput_->device_ = preDevice;
-    HdiOutputTest::hdiOutput_->SetScreenPowerOnChanged(false);
 }
 
 /**
@@ -1901,7 +1900,6 @@ HWTEST_F(HdiOutputTest, Repaint001, Function | MediumTest | Level1)
     EXPECT_CALL(*hdiDeviceMock_, GetScreenCompChange(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_FAILURE));
     HdiOutputTest::hdiOutput_->device_ = nullptr;
     HdiOutputTest::hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
-    HdiOutputTest::hdiOutput_->SetScreenPowerOnChanged(false);
     HdiOutputTest::hdiOutput_->Repaint();
 
     skipState = GRAPHIC_DISPLAY_FAILURE;
@@ -1918,7 +1916,6 @@ HWTEST_F(HdiOutputTest, Repaint001, Function | MediumTest | Level1)
     EXPECT_CALL(*hdiDeviceMock_, GetScreenCompChange(_, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     HdiOutputTest::hdiOutput_->device_ = nullptr;
     HdiOutputTest::hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
-    HdiOutputTest::hdiOutput_->SetScreenPowerOnChanged(true);
     HdiOutputTest::hdiOutput_->Repaint();
 }
 
@@ -2136,8 +2133,6 @@ HWTEST_F(HdiOutputTest, SetScreenBacklight_And_PowerOnChanged, Function | Medium
     hdiOutput_->device_ = nullptr;
     hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
     hdiOutput_->SetScreenBacklight(80u);
-    hdiOutput_->SetScreenPowerOnChanged(true);
-    hdiOutput_->SetScreenPowerOnChanged(false);
 }
 
 /*
@@ -2340,8 +2335,6 @@ HWTEST_F(HdiOutputTest, SetScreenBacklight_And_PowerOnChanged, Function | Medium
     hdiOutput_->device_ = nullptr;
     hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
     hdiOutput_->SetScreenBacklight(80u);
-    hdiOutput_->SetScreenPowerOnChanged(true);
-    hdiOutput_->SetScreenPowerOnChanged(false);
 }
 
 /*

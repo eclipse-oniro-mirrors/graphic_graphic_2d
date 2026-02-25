@@ -22,6 +22,8 @@
 #include "vsync_controller.h"
 #include "vsync_manager_agent.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "screen_manager/rs_screen_property.h"
+#include "screen_manager/screen_types.h"
 #include "hgm_core.h"
 #include "graphic_feature_param_manager.h"
 
@@ -39,17 +41,21 @@ public:
     sptr<VSyncController> GetVSyncAppController();
     sptr<VSyncSampler> GetVSyncSampler();
     bool init(sptr<RSScreenManager> screenManager);
+    ScreenId OnScreenConnected(ScreenId screenId, std::shared_ptr<AppExecFwk::EventHandler> handler);
+    void OnScreenDisconnected(ScreenId id, std::shared_ptr<AppExecFwk::EventHandler> handler);
+    void OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property,
+        std::shared_ptr<AppExecFwk::EventHandler> handler, bool isFoldScreen);
     VsyncError AddRSVsyncConnection(const sptr<VSyncConnection>& connection);
     sptr<VSyncConnection> CreateRSVSyncConnection(std::string name,
         const sptr<IRemoteObject>& token = nullptr);
-    void RegSetScreenVsyncEnabledCallbackForRenderService(ScreenId vsyncEnabledScreenId,
-        std::shared_ptr<AppExecFwk::EventHandler> handler);
-    uint64_t JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected);
     sptr<RSVsyncManagerAgent> GetVsyncManagerAgent();
 
 private:
     bool VsyncComponentInit();
     DVSyncFeatureParam InitDVSyncParams();
+    void RegSetScreenVsyncEnabledCallbackForRenderService(ScreenId vsyncEnabledScreenId,
+        std::shared_ptr<AppExecFwk::EventHandler> handler);
+    uint64_t JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected);
     sptr<VSyncGenerator> vsyncGenerator_ = nullptr;
     sptr<VSyncSampler> vsyncSampler_ = nullptr;
     sptr<VSyncController> rsVSyncController_ = nullptr;
@@ -58,6 +64,8 @@ private:
     sptr<VSyncDistributor> appVSyncDistributor_ = nullptr;
     sptr<RSScreenManager> screenManager_ = nullptr;
     sptr<RSVsyncManagerAgent> rsVsyncManagerAgent_ = nullptr;
+    mutable std::mutex mutex_;
+    std::unordered_set<ScreenId> physicalScreens_;
 };
 } // namespace Rosen
 } // namespace OHOS

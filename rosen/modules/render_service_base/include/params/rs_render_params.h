@@ -69,6 +69,7 @@ struct SurfaceFpsOp {
     uint32_t surfaceFpsOpType = 0;
     NodeId surfaceNodeId = 0;
     std::string surfaceName = "";
+    uint64_t uniqueId = 0;
 };
 
 struct PipelineParam {

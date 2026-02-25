@@ -1265,7 +1265,7 @@ void RSRenderComposer::UpdateForSurfaceFps(const PipelineParam& pipelineParam) {
             RS_LOGD("update for surfaceFps add op id: %{public}" PRIu64 ", name: %{public}s",
                 pipelineParam.SurfaceFpsOpList[i].surfaceNodeId, pipelineParam.SurfaceFpsOpList[i].surfaceName.c_str());
             RSSurfaceFpsManager::GetInstance().RegisterSurfaceFps(pipelineParam.SurfaceFpsOpList[i].surfaceNodeId,
-                pipelineParam.SurfaceFpsOpList[i].surfaceName.c_str());
+                pipelineParam.SurfaceFpsOpList[i].surfaceName.c_str(), pipelineParam.SurfaceFpsOpList[i].uniqueId);
         } else if (pipelineParam.SurfaceFpsOpList[i].surfaceFpsOpType ==
             static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_REMOVE)) {
             RS_LOGD("update for surfaceFps remove op id: %{public}" PRIu64 ", name: %{public}s",
@@ -1364,15 +1364,6 @@ void RSRenderComposer::SetScreenBacklight(uint32_t level)
         return;
     }
     hdiOutput_->SetScreenBacklight(level);
-}
-
-// todo
-void RSRenderComposer::SetScreenPowerOnChanged(bool flag)
-{
-    if (hdiOutput_ == nullptr) {
-        return;
-    }
-    hdiOutput_->SetScreenPowerOnChanged(flag);
 }
 
 int64_t RSRenderComposer::GetDelayTime() const

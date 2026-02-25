@@ -287,20 +287,19 @@ void RSPiplineDumper::RegisterBufferFuncs(std::shared_ptr<RSPiplineDumpManager> 
 {
     RSDumpFunc currentFrameBufferFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
                                                std::string &dumpString) -> void {
-        // todo : 分离渲染适配
         auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
         if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
             RS_TRACE_NAME("RSProcessDumper dump current frame buffer in UniRenderThread");
             RS_LOGD("dump current frame buffer in UniRenderThread");
             RSUniRenderThread::Instance().DumpCurrentFrameLayers();
         } else {
-// #ifdef RS_ENABLE_GPU
-//             RSHardwareThread::Instance().ScheduleTask([this]() {
-//                 RS_TRACE_NAME("RSRenderService dump current frame buffer in HardwareThread");
-//                 RS_LOGD("dump current frame buffer in HardwareThread");
-//                 return screenManager_->DumpCurrentFrameLayers();
-//             });
-// #endif
+            ScheduleTask([this]() {
+                std::vector<std::shared_ptr<HdiOutput>> hdiOutputVec;
+                RSUniRenderThread::Instance().GetComposerClientManager()->GetAllScreenHdiOutput(hdiOutputVec);
+                for (auto iter = hdiOutputVec.begin(); iter != hdiOutputVec.end(); iter++) {
+                    (*iter)->DumpCurrentFrameLayers();
+                }
+            });
         }
     };
 
@@ -313,11 +312,21 @@ void RSPiplineDumper::RegisterBufferFuncs(std::shared_ptr<RSPiplineDumpManager> 
 
 void RSPiplineDumper::RegisterSurfaceInfoFuncs(std::shared_ptr<RSPiplineDumpManager> rpDumpManager)
 {
-    // todo : 分离渲染适配
     // surface info
     RSDumpFunc surfaceInfoFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
                                         std::string &dumpString) -> void {
-        RSUniRenderThread::Instance().DumpSurfaceInfo(dumpString);
+        auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
+        if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
+            RSUniRenderThread::Instance().DumpSurfaceInfo(dumpString);
+        } else {
+            ScheduleTask([this, &dumpString]() {
+                std::vector<std::shared_ptr<HdiOutput>> hdiOutputVec;
+                RSUniRenderThread::Instance().GetComposerClientManager()->GetAllScreenHdiOutput(hdiOutputVec);
+                for (auto iter = hdiOutputVec.begin(); iter != hdiOutputVec.end(); iter++) {
+                    (*iter)->Dump(dumpString, true);
+                }
+            });
+        }
     };
 
     std::vector<RSDumpHander> handers = {

@@ -328,9 +328,7 @@ sptr<IRemoteObject> RSRenderService::ScreenManagerListener::OnScreenConnected(Sc
     if (const auto& hgmContext = renderService_.GetHgmContext()) {
         hgmContext->AddScreenToHgm(property);
     }
-    uint64_t vsyncEnabledScreenId = renderService_.vsyncManager_->JudgeVSyncEnabledScreenWhileHotPlug(screenId, true);
-    renderService_.vsyncManager_->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId,
-        renderService_.handler_);
+    ScreenId vsyncEnabledScreenId = renderService_.vsyncManager_->OnScreenConnected(screenId, renderService_.handler_);
     renderService_.screenManager_->SetScreenVsyncEnableById(vsyncEnabledScreenId, screenId, false);
     return renderService_.renderProcessManager_->OnScreenConnected(screenId, output, property);
 }
@@ -342,9 +340,7 @@ void RSRenderService::ScreenManagerListener::OnScreenDisconnected(ScreenId id)
     if (const auto& hgmContext = renderService_.GetHgmContext()) {
         hgmContext->RemoveScreenFromHgm(id);
     }
-    uint64_t vsyncEnabledScreenId = renderService_.vsyncManager_->JudgeVSyncEnabledScreenWhileHotPlug(id, false);
-    renderService_.vsyncManager_->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId,
-        renderService_.handler_);
+    renderService_.vsyncManager_->OnScreenDisconnected(id, renderService_.handler_);
     renderService_.renderProcessManager_->OnScreenDisconnected(id);
 }
 
@@ -352,12 +348,8 @@ void RSRenderService::ScreenManagerListener::OnScreenPropertyChanged(
     ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property)
 {
     RS_LOGD("%{public}s: ScreenId[%{public}" PRIu64 "]", __func__, id);
-    if (type == ScreenPropertyType::POWER_STATUS) {
-        auto prop = static_cast<ScreenProperty<uint32_t>*>(property.GetRefPtr());
-        auto status = static_cast<ScreenPowerStatus>(prop->Get());
-        renderService_.vsyncManager_->GetVSyncSampler()->ProcessVSyncScreenIdWhilePowerStatusChanged(id, status,
-            renderService_.handler_, renderService_.screenManager_->GetIsFoldScreenFlag());
-    }
+    renderService_.vsyncManager_->OnScreenPropertyChanged(id, type, property,
+        renderService_.handler_, renderService_.screenManager_->GetIsFoldScreenFlag());
     renderService_.renderProcessManager_->OnScreenPropertyChanged(id, type, property);
 }
 

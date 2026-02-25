@@ -45,13 +45,13 @@ bool ConvertToLongLongUint(const std::string& str, uint64_t& value, int8_t base 
     return true;
 }
 
-bool RSSurfaceFpsManager::RegisterSurfaceFps(NodeId id, const std::string& name)
+bool RSSurfaceFpsManager::RegisterSurfaceFps(NodeId id, const std::string& name, uint64_t uniqueId)
 {
     std::unique_lock<std::shared_mutex> lock(smtx);
     if (surfaceFpsMap_.find(id) != surfaceFpsMap_.end()) {
         return false;
     }
-    surfaceFpsMap_[id] = std::make_shared<RSSurfaceFps>(name);
+    surfaceFpsMap_[id] = std::make_shared<RSSurfaceFps>(name, uniqueId);
     return true;
 }
 
@@ -202,6 +202,26 @@ const std::string RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPid(pid_t nodePid
         }
     }
     RS_LOGE("RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPid no self drawing nodes belong to pid %{public}d",
+        static_cast<int32_t>(nodePid));
+    return "";
+}
+
+const std::string RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPidAndUniqueId(pid_t nodePid, uint64_t uniqueId) const
+{
+    for (auto [id, surfaceFps] : surfaceFpsMap_) {
+        auto name = surfaceFps->GetName();
+        if (ExtractPid(id) == nodePid && name.find("RosenWeb") == std::string::npos) {
+#ifndef ROSEN_CROSS_PLATFORM
+            if (surfaceFps->GetUniqueId() == uniqueId) {
+                return name;
+            }
+#else
+            return name;
+#endif
+        }
+    }
+    RS_LOGE(
+        "RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPidAndUniqueId no self drawing nodes belong to pid %{public}d",
         static_cast<int32_t>(nodePid));
     return "";
 }

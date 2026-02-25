@@ -34,7 +34,8 @@ const uint8_t DO_GET_REFRESH_INFO = 8;
 const uint8_t DO_REFRESH_RATE_UPDATE_CALLBACK = 9;
 const uint8_t DO_REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK = 10;
 const uint8_t DO_REFRESH_RATE_MODE_CHANGE_CALLBACK = 11;
-const uint8_t TARGET_SIZE = 12;
+const uint8_t DO_GET_REFRESH_INFO_BY_PID_AND_UNIQUEID = 12;
+const uint8_t TARGET_SIZE = 13;
 
 const uint8_t* DATA = nullptr;
 size_t g_size = 0;
@@ -140,6 +141,14 @@ void DoGetRefreshInfo()
     rsInterfaces.GetRefreshInfo(pid);
 }
 
+void DoGetRefreshInfoByPidAndUniqueId()
+{
+    pid_t pid = GetData<pid_t>();
+    uint64_t uniqueId = GetData<uint64_t>();
+    auto& rsInterfaces = RSInterfaces::GetInstance();
+    rsInterfaces.GetRefreshInfoByPidAndUniqueId(pid, uniqueId);
+}
+
 void DoRegisterHgmRefreshRateUpdateCallback()
 {
     HgmRefreshRateUpdateCallback callback;
@@ -208,6 +217,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_REFRESH_RATE_MODE_CHANGE_CALLBACK:
             OHOS::Rosen::DoRegisterHgmRefreshRateModeChangeCallback();
+            break;
+        case OHOS::Rosen::DO_GET_REFRESH_INFO_BY_PID_AND_UNIQUEID:
+            OHOS::Rosen::DoGetRefreshInfoByPidAndUniqueId();
             break;
         default:
             return -1;

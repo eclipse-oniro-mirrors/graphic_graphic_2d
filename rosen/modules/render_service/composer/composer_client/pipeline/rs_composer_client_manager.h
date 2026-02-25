@@ -43,6 +43,7 @@ public:
     void DumpSurfaceInfo(std::string& dumpString);
     void DumpCurrentFrameLayers();
     void ClearFrameBuffers(const std::unordered_set<ScreenId>& screenHasProtectedLayerSet);
+    void GetAllScreenHdiOutput(std::vector<std::shared_ptr<HdiOutput>>& hdiOutputVec);
 
 private:
     mutable std::mutex rsComposerMapMutex_;

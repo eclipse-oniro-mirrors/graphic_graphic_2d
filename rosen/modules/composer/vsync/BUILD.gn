@@ -25,10 +25,6 @@ config("vsync_config") {
     "-g3",
   ]
 
-  if (graphic_2d_feature_enable_dvsync) {
-    gpu_defines += [ "RS_ENABLE_DVSYNC_2" ]
-  }
-
   defines = []
   defines += gpu_defines
 

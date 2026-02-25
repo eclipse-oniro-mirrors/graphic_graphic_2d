@@ -940,6 +940,38 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID): {
+            auto token = data.ReadInterfaceToken();
+            if (token != RSIClientToServiceConnection::GetDescriptor()) {
+                ret = ERR_INVALID_STATE;
+                break;
+            }
+            int32_t pid { 0 };
+            if (!data.ReadInt32(pid)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID Read pid failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            uint64_t uniqueId { 0 };
+            if (!data.ReadUint64(uniqueId)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID Read uniqueId failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (!IsValidCallingPid(pid, callingPid)) {
+                RS_LOGW("GET_REFRESH_INFO_BY_PID_AND_UNIQUEID invalid callingPid[%{public}d]", callingPid);
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            std::string refreshInfo;
+            if (GetRefreshInfoByPidAndUniqueId(pid, uniqueId, refreshInfo) != ERR_OK ||
+                !reply.WriteString(refreshInfo)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID "
+                        "Write refreshInfo failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_ROG_SCREEN_RESOLUTION): {
             ScreenId id{INVALID_SCREEN_ID};
             uint32_t width{0};
@@ -2045,7 +2077,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 RS_LOGE("RSClientToServiceConnectionStub::std::shared_ptr<Media::PixelMap> watermark == nullptr");
                 break;
             }
-            bool success;
+            bool success = false;
             if (SetWatermark(name, watermark, success) != ERR_OK || !success) {
                 RS_LOGE("RSClientToServiceConnectionStub::SetWatermark failed");
             }

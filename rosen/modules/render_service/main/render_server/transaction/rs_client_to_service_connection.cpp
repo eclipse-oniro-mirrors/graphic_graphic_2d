@@ -367,7 +367,7 @@ ErrCode RSClientToServiceConnection::SetWatermark(
     for (auto conn : serviceToRenderConns) {
         bool successTmp = true;
         if (conn->SetWatermark(callingPid, name, watermark, successTmp) != ERR_OK || successTmp != true) {
-            RS_LOGE("RSMultiRenderProcessManager::SetWatermark a connection failed!");
+            RS_LOGE("RSClientToServiceConnection::SetWatermark a connection failed!");
             success = false;
             return ERR_INVALID_VALUE;
         }
@@ -710,7 +710,6 @@ uint32_t RSClientToServiceConnection::GetRealtimeRefreshRate(ScreenId screenId)
             screenManagerAgent_->GetActiveScreenId(screenId);
         }
     }
-
     auto conn = renderProcessManagerAgent_->GetServiceToRenderConn(screenId);
     if (conn == nullptr) {
         RS_LOGE("%{public}s serviceToRenderConn is nullptr", __func__);
@@ -746,6 +745,26 @@ ErrCode RSClientToServiceConnection::GetRefreshInfoToSP(NodeId id, std::string& 
     }
     std::string dumpString;
     renderServiceAgent_->GetRefreshInfoToSP(dumpString, id);
+    enable = dumpString;
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnection::GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId, std::string& enable)
+{
+    if (renderServiceAgent_ == nullptr) {
+        enable = "";
+        RS_LOGE("%{public}s renderServiceAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    std::string surfaceName =
+        (uniqueId == 0 ? RSSurfaceFpsManager::GetInstance().GetSelfDrawSurfaceNameByPid(pid)
+                       : RSSurfaceFpsManager::GetInstance().GetSelfDrawSurfaceNameByPidAndUniqueId(pid, uniqueId));
+    if (surfaceName.empty()) {
+        enable = "";
+        return ERR_INVALID_VALUE;
+    }
+    std::string dumpString;
+    renderServiceAgent_->FpsDump(dumpString, surfaceName);
     enable = dumpString;
     return ERR_OK;
 }
@@ -1305,11 +1324,6 @@ bool RSClientToServiceConnection::UnRegisterTypeface(uint64_t globalUniqueId)
         return false;
     }
 
-    RS_LOGW("%{public}s: pid[%{public}d], uniqueId:%{puiblic}u", __func__,
-        RSTypefaceCache::GetTypefacePid(globalUniqueId), RSTypefaceCache::GetTypefaceId(globalUniqueId));
-
-    RSTypefaceCache::Instance().AddDelayDestroyQueue(globalUniqueId);
-
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.size() == 0) {
         RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
@@ -1462,7 +1476,7 @@ ErrCode RSClientToServiceConnection::ReportJankStats()
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1604,7 +1618,7 @@ ErrCode RSClientToServiceConnection::ReportEventResponse(DataBaseRs info)
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1623,7 +1637,7 @@ ErrCode RSClientToServiceConnection::ReportEventComplete(DataBaseRs info)
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1642,7 +1656,7 @@ ErrCode RSClientToServiceConnection::ReportEventJankFrame(DataBaseRs info)
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1661,7 +1675,7 @@ ErrCode RSClientToServiceConnection::ReportRsSceneJankStart(AppInfo info)
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1680,7 +1694,7 @@ ErrCode RSClientToServiceConnection::ReportRsSceneJankEnd(AppInfo info)
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1886,7 +1900,7 @@ ErrCode RSClientToServiceConnection::SetGpuCrcDirtyEnabledPidList(const std::vec
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty() || pidList.size() > PIDLIST_SIZE_MAX) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     for (auto conn : serviceToRenderConns) {
@@ -1923,7 +1937,7 @@ int32_t RSClientToServiceConnection::RegisterUIExtensionCallback(uint64_t userId
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -1955,7 +1969,7 @@ ErrCode RSClientToServiceConnection::SetLayerTop(const std::string &nodeIdStr, b
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     ErrCode ret = ERR_OK;
@@ -1970,7 +1984,7 @@ ErrCode RSClientToServiceConnection::SetForceRefresh(const std::string &nodeIdSt
 {
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     ErrCode ret = ERR_OK;
@@ -2093,7 +2107,7 @@ ErrCode RSClientToServiceConnection::AvcodecVideoStart(const std::vector<uint64_
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -2113,7 +2127,7 @@ ErrCode RSClientToServiceConnection::AvcodecVideoStop(const std::vector<uint64_t
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;
@@ -2154,7 +2168,7 @@ ErrCode RSClientToServiceConnection::SetOverlayDisplayMode(int32_t mode)
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     for (auto conn : serviceToRenderConns) {
@@ -2211,7 +2225,7 @@ int32_t RSClientToServiceConnection::GetPidGpuMemoryInMB(pid_t pid, float &gpuMe
     }
     auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
     if (serviceToRenderConns.empty()) {
-        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
         return ERR_INVALID_VALUE;
     }
     int32_t ret = ERR_OK;

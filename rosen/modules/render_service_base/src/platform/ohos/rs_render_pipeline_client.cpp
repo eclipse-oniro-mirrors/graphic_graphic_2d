@@ -228,6 +228,7 @@ bool RSRenderPipelineClient::RegisterBufferClearListener(NodeId id, const Buffer
 {
     auto clientToRender = RSRenderServiceConnectHub::GetClientToRenderConnection();
     if (clientToRender == nullptr) {
+        ROSEN_LOGE("RSRenderPipelineClient::RegisterBufferClearListener clientToRender is nullptr!");
         return false;
     }
     sptr<RSIBufferClearCallback> bufferClearCb = new CustomBufferClearCallback(callback);
@@ -276,6 +277,7 @@ uint32_t RSRenderPipelineClient::SetHidePrivacyContent(NodeId id, bool needHideP
         clientToRender->SetHidePrivacyContent(id, needHidePrivacyContent, resCode);
         return resCode;
     }
+    ROSEN_LOGE("RSRenderPipelineClient::SetHidePrivacyContent clientToRender is nullptr!");
     return static_cast<uint32_t>(RSInterfaceErrorCode::UNKNOWN_ERROR);
 }
 

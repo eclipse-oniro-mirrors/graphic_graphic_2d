@@ -50,6 +50,15 @@ struct DVSyncFeatureParam {
     std::unordered_map<std::string, std::string> adaptiveConfigs;
 };
 
+struct BufferInfo {
+    uint64_t id;
+    std::string name;
+    uint32_t queueSize;
+    int32_t bufferCount;
+    int64_t lastConsumeTime;
+    bool isUrgent;
+};
+
 class VSyncConnection : public VSyncConnectionStub {
 public:
     using RequestNativeVSyncCallback = std::function<void()>;
@@ -159,6 +168,7 @@ public:
     virtual int64_t GetUiCommandDelayTime();
     void UpdatePendingReferenceTime(int64_t &timeStamp);
     void SetHardwareTaskNum(uint32_t num);
+    void SetPhysicalScreenNum(uint32_t num);
     int64_t GetVsyncCount();
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
     VsyncError SetNativeDVSyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection);
@@ -166,8 +176,7 @@ public:
     void FirstRequestVsync();
     void NotifyPackageEvent(const std::vector<std::string>& packageList);
     void HandleTouchEvent(int32_t touchStatus, int32_t touchCnt);
-    void SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
-        int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent);
+    void SetBufferInfo(const BufferInfo& bufferInfo);
     // forcefully enable DVsync in RS
     void ForceRsDVsync(const std::string& sceneId);
 

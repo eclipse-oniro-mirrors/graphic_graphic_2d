@@ -256,7 +256,7 @@ bool RSCanvasDrawingNode::GetBitmap(Drawing::Bitmap& bitmap,
     std::shared_ptr<Drawing::DrawCmdList> drawCmdList, const Drawing::Rect* rect)
 {
     if (IsRenderServiceNode()) {
-        auto renderPipelineClient =std::static_pointer_cast<RSRenderPipelineClient>(
+        auto renderPipelineClient = std::static_pointer_cast<RSRenderPipelineClient>(
             RSIRenderClient::CreateRenderPiplineClient());
         if (renderPipelineClient == nullptr) {
             ROSEN_LOGE("RSCanvasDrawingNode::GetBitmap renderServiceClient is nullptr!");

@@ -134,6 +134,8 @@ public:
     GraphicTransformType GetTransform() const override { return transform_; }
     void SetCompositionType(GraphicCompositionType type) override { compType_ = type; }
     GraphicCompositionType GetCompositionType() const override { return compType_; }
+    void SetHdiCompositionType(GraphicCompositionType type) override { hdiCompType_ = type; }
+    GraphicCompositionType GetHdiCompositionType() const override { return hdiCompType_; }
     void SetVisibleRegions(const std::vector<GraphicIRect>& visibleRegions) override
     { visibleRegions_ = visibleRegions; }
     const std::vector<GraphicIRect>& GetVisibleRegions() const override { return visibleRegions_; }
@@ -253,6 +255,7 @@ private:
     GraphicLayerType layerType_ = GraphicLayerType::GRAPHIC_LAYER_TYPE_BUTT;
     GraphicTransformType transform_ = GraphicTransformType::GRAPHIC_ROTATE_NONE;
     GraphicCompositionType compType_ = GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT;
+    GraphicCompositionType hdiCompType_ = GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT;
     std::vector<GraphicIRect> visibleRegions_;
     std::vector<GraphicIRect> dirtyRegions_;
     GraphicBlendType blendType_ = GraphicBlendType::GRAPHIC_BLEND_NONE;
@@ -2155,23 +2158,6 @@ HWTEST_F(RsRenderComposerTest, SetScreenBacklight_Branches, TestSize.Level1)
     auto backup = rsRenderComposer_->hdiOutput_;
     rsRenderComposer_->hdiOutput_ = nullptr;
     rsRenderComposer_->SetScreenBacklight(0);
-    rsRenderComposer_->hdiOutput_ = backup;
-}
-
-/**
- * Function: SetScreenPowerOnChanged_Branches
- * Type: Function
- * Rank: Important(2)
- * EnvConditions: N/A
- * CaseDescription: 1. call with valid hdiOutput_
- *                  2. call with null hdiOutput_
- */
-HWTEST_F(RsRenderComposerTest, SetScreenPowerOnChanged_Branches, TestSize.Level1)
-{
-    rsRenderComposer_->SetScreenPowerOnChanged(true);
-    auto backup = rsRenderComposer_->hdiOutput_;
-    rsRenderComposer_->hdiOutput_ = nullptr;
-    rsRenderComposer_->SetScreenPowerOnChanged(false);
     rsRenderComposer_->hdiOutput_ = backup;
 }
 

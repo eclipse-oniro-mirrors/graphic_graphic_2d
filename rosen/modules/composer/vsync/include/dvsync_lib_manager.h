@@ -39,6 +39,7 @@ using GetUiCommandDelayTimeFunc = int64_t (*)();
 using UpdatePendingReferenceTimeFunc = void (*)(int64_t& timeStamp);
 using GetRealTimeOffsetOfDvsyncFunc = uint64_t (*)(int64_t time);
 using SetHardwareTaskNumFunc = void (*)(uint32_t num);
+using SetPhysicalScreenNumFunc = void (*)(uint32_t num);
 using SetTaskEndWithTimeFunc = void (*)(uint64_t time);
 using InitWithParamFunc = void (*)(DVSyncFeatureParam dvsyncParam);
 using SetDistributorFunc = bool (*)(bool isRs, const sptr<VSyncDistributor>& distributor);
@@ -69,7 +70,8 @@ using SetToCurrentPeriodFunc = void (*)();
 using GetVsyncCountFunc = int64_t (*)(int64_t& VsyncCount);
 using SetCallbackFunc = void (*)(OHOS::Rosen::VSyncController::Callback *cb);
 using SetEnableFunc = void (*)(bool enable, bool& isGeneratorEnable);
-using InitDvsyncControllerFunc = void (*)(const sptr<VSyncGenerator>& gen, int64_t offset, sptr<VSyncController>& controller);
+using InitDvsyncControllerFunc = void (*)(const sptr<VSyncGenerator>& gen, int64_t offset,
+    sptr<VSyncController>& controller);
 using SetVSyncTimeUpdatedFunc = void (*)();
 
 //dvsync delay
@@ -82,7 +84,8 @@ public:
     DVSyncLibManager(const DVSyncLibManager&) = delete;
     DVSyncLibManager& operator=(const DVSyncLibManager&) = delete;
     static DVSyncLibManager& Instance();
-    bool Initialize(const std::string& libPath = "libdvsync.so");
+    static DVSyncLibManager& DvsyncDelayInstance();
+    bool Initialize(const std::string& libPath = "libdvsync.z.so", bool isDvsyncDelay = false);
     void Shutdown();
     bool IsInitialized() const { return initialized_; }
     bool AllFunctionsLoaded() const;
@@ -103,6 +106,7 @@ public:
     void UpdatePendingReferenceTime(int64_t& timeStamp);
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
     void SetHardwareTaskNum(uint32_t num);
+    void SetPhysicalScreenNum(uint32_t num);
     void SetTaskEndWithTime(uint64_t time);
     void InitWithParam(DVSyncFeatureParam dvsyncParam);
     bool SetDistributor(bool isRs, const sptr<VSyncDistributor>& distributor);
@@ -118,7 +122,7 @@ public:
     void HandleTouchEvent(int32_t touchStatus, int32_t touchCnt);
     bool SetBufferInfo(uint64_t id, const std::string& name, int32_t queueSize, int32_t bufferCount,
         int64_t lastConsumeTime);
-    bool IsAppRequested(); 
+    bool IsAppRequested();
     void GetVSyncConnectionApp(sptr<VSyncConnection>& connection);
     bool NeedUpdateVSyncTime(int32_t& pid);
     int64_t GetLastUpdateTime();
@@ -159,6 +163,7 @@ private:
     UpdatePendingReferenceTimeFunc updatePendingReferenceTimeFunc_ = nullptr;
     GetRealTimeOffsetOfDvsyncFunc getRealTimeOffsetOfDvsyncFunc_ = nullptr;
     SetHardwareTaskNumFunc setHardwareTaskNumFunc_ = nullptr;
+    SetPhysicalScreenNumFunc setPhysicalScreenNumFunc_ = nullptr;
     SetTaskEndWithTimeFunc setTaskEndWithTimeFunc_ = nullptr;
     InitWithParamFunc initWithParamFunc_ = nullptr;
     SetDistributorFunc setDistributorFunc_ = nullptr;
@@ -193,7 +198,9 @@ private:
 
     //inner func
     bool LoadAllFunctions();
+    bool LoadDvsyncDelayFunctions();
     void ClearAllFunctions();
+    void ClearDvsyncDelayFunctions();
     template<typename FuncPtr> bool LoadFunction(const std::string& funcName, FuncPtr& funcPtr);
 };
 }

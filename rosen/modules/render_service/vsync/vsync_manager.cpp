@@ -88,13 +88,58 @@ bool RSVsyncManager::VsyncComponentInit()
 
     auto dvsyncParam = InitDVSyncParams();
     rsVSyncDistributor_ = new VSyncDistributor(rsVSyncController_, "rs", dvsyncParam);
+    rsVSyncDistributor_->InitDVSync(dvsyncParam);
     appVSyncDistributor_ = new VSyncDistributor(appVSyncController_, "app", dvsyncParam);
+    appVSyncDistributor_->InitDVSync(dvsyncParam);
     vsyncGenerator_->SetRSDistributor(rsVSyncDistributor_);
     vsyncGenerator_->SetAppDistributor(appVSyncDistributor_);
     rsVsyncManagerAgent_ = new RSVsyncManagerAgent(vsyncGenerator_, rsVSyncDistributor_, appVSyncDistributor_);
     return true;
 }
 
+ScreenId RSVsyncManager::OnScreenConnected(ScreenId screenId, std::shared_ptr<AppExecFwk::EventHandler> handler)
+{
+    ScreenId vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhileHotPlug(screenId, true);
+    RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId, handler);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (physicalScreens_.find(screenId) == physicalScreens_.end()) {
+            physicalScreens_.insert(screenId);
+        }
+        if (rsVSyncDistributor_ != nullptr) {
+            rsVSyncDistributor_->SetPhysicalScreenNum(physicalScreens_.size());
+        }
+    }
+    return vsyncEnabledScreenId;
+}
+
+void RSVsyncManager::OnScreenDisconnected(ScreenId screenId, std::shared_ptr<AppExecFwk::EventHandler> handler)
+{
+    ScreenId vsyncEnabledScreenId = JudgeVSyncEnabledScreenWhileHotPlug(screenId, false);
+    RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId, handler);
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = physicalScreens_.find(screenId);
+        if (it != physicalScreens_.end()) {
+            physicalScreens_.erase(screenId);
+        }
+        if (rsVSyncDistributor_ != nullptr) {
+            rsVSyncDistributor_->SetPhysicalScreenNum(physicalScreens_.size());
+        }
+    }
+}
+
+void RSVsyncManager::OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type,
+    const sptr<ScreenPropertyBase>& property, std::shared_ptr<AppExecFwk::EventHandler> handler, bool isFoldScreen)
+{
+    if (type == ScreenPropertyType::POWER_STATUS) {
+        auto prop = static_cast<ScreenProperty<uint32_t>*>(property.GetRefPtr());
+        auto status = static_cast<ScreenPowerStatus>(prop->Get());
+        if (vsyncSampler_ != nullptr) {
+            vsyncSampler_->ProcessVSyncScreenIdWhilePowerStatusChanged(id, status, handler, isFoldScreen);
+        }
+    }
+}
 
 VsyncError RSVsyncManager::AddRSVsyncConnection(const sptr<VSyncConnection>& connection)
 {

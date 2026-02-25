@@ -29,12 +29,22 @@ DVSyncLibManager& DVSyncLibManager::Instance()
     return instance;
 }
 
+DVSyncLibManager& DVSyncLibManager::DvsyncDelayInstance()
+{
+    static DVSyncLibManager dvsyncDelayInstance;
+    static std::once_flag dvsyncDelayCreateFlag;
+    std::call_once(dvsyncDelayCreateFlag, []() {
+        dvsyncDelayInstance.Initialize("libdvsync.z.so", true);
+    });
+    return dvsyncDelayInstance;
+}
+
 DVSyncLibManager::~DVSyncLibManager()
 {
     Shutdown();
 }
 
-bool DVSyncLibManager::Initialize(const std::string& libPath)
+bool DVSyncLibManager::Initialize(const std::string& libPath, bool isDvsyncDelay)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (initialized_) {
@@ -45,9 +55,19 @@ bool DVSyncLibManager::Initialize(const std::string& libPath)
         VLOGE("Failed to load library %{public}s.", libPath.c_str());
         return false;
     }
-    if (!LoadAllFunctions()) {
+    if (isDvsyncDelay) {
+        if (!LoadDvsyncDelayFunctions()) {
+            dlclose(libHandle_);
+            libHandle_ = nullptr;
+            ClearDvsyncDelayFunctions();
+            initialized_ = false;
+            return false;
+        }
+    } else if (!LoadAllFunctions()) {
         dlclose(libHandle_);
         libHandle_ = nullptr;
+        ClearAllFunctions();
+        initialized_ = false;
         return false;
     }
     initialized_ = true;
@@ -60,56 +80,67 @@ void DVSyncLibManager::Shutdown()
     if (libHandle_) {
         dlclose(libHandle_);
         libHandle_ = nullptr;
+        ClearAllFunctions();
+        initialized_ = false;
     }
 }
 
 bool DVSyncLibManager::LoadAllFunctions() {
     // load dvsync
-    LoadFunction("IsAppDVSyncOn", isAppDVSyncOnFunc_);
-    LoadFunction("SetAppRequestedStatus", setAppRequestedStatusFunc_);
-    LoadFunction("CheckVsyncReceivedAndGetRelTs", checkVsyncReceivedAndGetRelTsFunc_);
-    LoadFunction("GetOccurPeriod", getOccurPeriodFunc_);
-    LoadFunction("GetOccurRefreshRate", getOccurRefreshRateFunc_);
-    LoadFunction("RecordVSync", recordVSyncFunc_);
-    LoadFunction("GetConnectionApp", getConnectionAppFunc_);
-    LoadFunction("MarkRSRendering", markRSRenderingFunc_);
-    LoadFunction("SetAppDVSyncSwitch", setAppDVSyncSwitchFunc_);
-    LoadFunction("SetUiDVSyncConfig", setUiDVSyncConfigFunc_);
-    LoadFunction("GetUiCommandDelayTime", getUiCommandDelayTimeFunc_);
-    LoadFunction("UpdatePendingReferenceTime", updatePendingReferenceTimeFunc_);
-    LoadFunction("GetRealTimeOffsetOfDvsync", getRealTimeOffsetOfDvsyncFunc_);
-    LoadFunction("SetHardwareTaskNum", setHardwareTaskNumFunc_);
-    LoadFunction("SetTaskEndWithTime", setTaskEndWithTimeFunc_);
-    LoadFunction("InitWithParam", initWithParamFunc_);
-    LoadFunction("SetDistributor", setDistributorFunc_);
-    LoadFunction("SetConnection", setConnectionFunc_);
-    LoadFunction("DisableVSync", disableVSyncFunc_);
-    LoadFunction("NeedSkipAndUpdateTs", needSkipAndUpdateTsFunc_);
-    LoadFunction("NeedSkipUi", needSkipUiFunc_);
-    LoadFunction("RecordEnableVsync", recordEnableVsyncFunc_);
-    LoadFunction("RecordRNV", recordRNVFunc_);
-    LoadFunction("NeedPreexecuteAndUpdateTs", needPreexecuteAndUpdateTsFunc_);
-    LoadFunction("NotifyPackageEvent", notifyPackageEventFunc_);
-    LoadFunction("HandleTouchEvent", handleTouchEventFunc_);
-    LoadFunction("SetBufferInfo", setBufferInfoFunc_);
-    LoadFunction("IsAppRequested", isAppRequestedFunc_);
-    LoadFunction("GetVSyncConnectionApp", getVSyncConnectionAppFunc_);
-    LoadFunction("NeedUpdateVSyncTime", needUpdateVSyncTimeFunc_);
-    LoadFunction("GetLastUpdateTime", getLastUpdateTimeFunc_);
-    LoadFunction("DVSyncUpdate", dvsyncUpdateFunc_);
-    LoadFunction("ForceRsDVsync", forceRsDVsyncFunc_);
-    LoadFunction("UpdateReferenceTimeAndPeriod", updateReferenceTimeAndPeriodFunc_);
-    LoadFunction("SetCurrentRefreshRate", setCurrentRefreshRateFunc_);
-    LoadFunction("DVSyncRateChanged", dvsyncRateChangedFunc_);
-    LoadFunction("SetToCurrentPeriod", setToCurrentPeriodFunc_);
-    LoadFunction("GetVsyncCount", getVsyncCountFunc_);
-    LoadFunction("InitDvsyncController", initDvsyncControllerFunc_);
-    LoadFunction("SetVSyncTimeUpdated", setVSyncTimeUpdatedFunc_);
+    bool loadSuccess = true;
+    loadSuccess &= LoadFunction("IsAppDVSyncOn", isAppDVSyncOnFunc_);
+    loadSuccess &= LoadFunction("SetAppRequestedStatus", setAppRequestedStatusFunc_);
+    loadSuccess &= LoadFunction("CheckVsyncReceivedAndGetRelTs", checkVsyncReceivedAndGetRelTsFunc_);
+    loadSuccess &= LoadFunction("GetOccurPeriod", getOccurPeriodFunc_);
+    loadSuccess &= LoadFunction("GetOccurRefreshRate", getOccurRefreshRateFunc_);
+    loadSuccess &= LoadFunction("RecordVSync", recordVSyncFunc_);
+    loadSuccess &= LoadFunction("GetConnectionApp", getConnectionAppFunc_);
+    loadSuccess &= LoadFunction("MarkRSRendering", markRSRenderingFunc_);
+    loadSuccess &= LoadFunction("SetAppDVSyncSwitch", setAppDVSyncSwitchFunc_);
+    loadSuccess &= LoadFunction("SetUiDVSyncConfig", setUiDVSyncConfigFunc_);
+    loadSuccess &= LoadFunction("GetUiCommandDelayTime", getUiCommandDelayTimeFunc_);
+    loadSuccess &= LoadFunction("UpdatePendingReferenceTime", updatePendingReferenceTimeFunc_);
+    loadSuccess &= LoadFunction("GetRealTimeOffsetOfDvsync", getRealTimeOffsetOfDvsyncFunc_);
+    loadSuccess &= LoadFunction("SetHardwareTaskNum", setHardwareTaskNumFunc_);
+    loadSuccess &= LoadFunction("SetPhysicalScreenNum", setPhysicalScreenNumFunc_);
+    loadSuccess &= LoadFunction("SetTaskEndWithTime", setTaskEndWithTimeFunc_);
+    loadSuccess &= LoadFunction("InitWithParam", initWithParamFunc_);
+    loadSuccess &= LoadFunction("SetDistributor", setDistributorFunc_);
+    loadSuccess &= LoadFunction("SetConnection", setConnectionFunc_);
+    loadSuccess &= LoadFunction("DisableVSync", disableVSyncFunc_);
+    loadSuccess &= LoadFunction("NeedSkipAndUpdateTs", needSkipAndUpdateTsFunc_);
+    loadSuccess &= LoadFunction("NeedSkipUi", needSkipUiFunc_);
+    loadSuccess &= LoadFunction("RecordEnableVsync", recordEnableVsyncFunc_);
+    loadSuccess &= LoadFunction("RecordRNV", recordRNVFunc_);
+    loadSuccess &= LoadFunction("NeedPreexecuteAndUpdateTs", needPreexecuteAndUpdateTsFunc_);
+    loadSuccess &= LoadFunction("NotifyPackageEvent", notifyPackageEventFunc_);
+    loadSuccess &= LoadFunction("HandleTouchEvent", handleTouchEventFunc_);
+    loadSuccess &= LoadFunction("SetBufferInfo", setBufferInfoFunc_);
+    loadSuccess &= LoadFunction("IsAppRequested", isAppRequestedFunc_);
+    loadSuccess &= LoadFunction("GetVSyncConnectionApp", getVSyncConnectionAppFunc_);
+    loadSuccess &= LoadFunction("NeedUpdateVSyncTime", needUpdateVSyncTimeFunc_);
+    loadSuccess &= LoadFunction("GetLastUpdateTime", getLastUpdateTimeFunc_);
+    loadSuccess &= LoadFunction("DVSyncUpdate", dvsyncUpdateFunc_);
+    loadSuccess &= LoadFunction("ForceRsDVsync", forceRsDVsyncFunc_);
+    loadSuccess &= LoadFunction("UpdateReferenceTimeAndPeriod", updateReferenceTimeAndPeriodFunc_);
+    loadSuccess &= LoadFunction("SetCurrentRefreshRate", setCurrentRefreshRateFunc_);
+    loadSuccess &= LoadFunction("DVSyncRateChanged", dvsyncRateChangedFunc_);
+    loadSuccess &= LoadFunction("SetToCurrentPeriod", setToCurrentPeriodFunc_);
+    loadSuccess &= LoadFunction("GetVsyncCount", getVsyncCountFunc_);
+    loadSuccess &= LoadFunction("InitDvsyncController", initDvsyncControllerFunc_);
+    loadSuccess &= LoadFunction("SetVSyncTimeUpdated", setVSyncTimeUpdatedFunc_);
     //load dvsync delay
-    LoadFunction("ToDelay", toDelayFunc_);
-    LoadFunction("SetTouchEvent", setTouchEventFunc_);
-    LoadFunction("UpdateDelayInfo", updateDelayInfoFunc_);
-    return true;
+    loadSuccess &= LoadDvsyncDelayFunctions();
+    return loadSuccess;
+}
+
+bool DVSyncLibManager::LoadDvsyncDelayFunctions() {
+    //load dvsync delay
+    bool loadSuccess = true;
+    loadSuccess &= LoadFunction("ToDelay", toDelayFunc_);
+    loadSuccess &= LoadFunction("SetTouchEvent", setTouchEventFunc_);
+    loadSuccess &= LoadFunction("UpdateDelayInfo", updateDelayInfoFunc_);
+    return loadSuccess;
 }
 
 template<typename FuncPtr> 
@@ -124,9 +155,59 @@ bool DVSyncLibManager::LoadFunction(const std::string& funcName, FuncPtr& funcPt
     return true;
 }
 
+void DVSyncLibManager::ClearDvsyncDelayFunctions()
+{
+    toDelayFunc_ = nullptr;
+    setTouchEventFunc_ = nullptr;
+    updateDelayInfoFunc_ = nullptr;
+}
+
 void DVSyncLibManager::ClearAllFunctions()
 {
-    
+    isAppDVSyncOnFunc_ = nullptr;
+    setAppRequestedStatusFunc_ = nullptr;
+    checkVsyncReceivedAndGetRelTsFunc_ = nullptr;
+    getOccurPeriodFunc_ = nullptr;
+    getOccurRefreshRateFunc_ = nullptr;
+    recordVSyncFunc_ = nullptr;
+    getConnectionAppFunc_ = nullptr;
+    markRSRenderingFunc_ = nullptr;
+    setAppDVSyncSwitchFunc_ = nullptr;
+    setUiDVSyncConfigFunc_ = nullptr;
+    getUiCommandDelayTimeFunc_ = nullptr;
+    updatePendingReferenceTimeFunc_ = nullptr;
+    getRealTimeOffsetOfDvsyncFunc_ = nullptr;
+    setHardwareTaskNumFunc_ = nullptr;
+    setPhysicalScreenNumFunc_ = nullptr;
+    setTaskEndWithTimeFunc_ = nullptr;
+    initWithParamFunc_ = nullptr;
+    setDistributorFunc_ = nullptr;
+    setConnectionFunc_ = nullptr;
+    disableVSyncFunc_ = nullptr;
+    needSkipAndUpdateTsFunc_ = nullptr;
+    needSkipUiFunc_ = nullptr;
+    recordEnableVsyncFunc_ = nullptr;
+    recordRNVFunc_ = nullptr;
+    needPreexecuteAndUpdateTsFunc_ = nullptr;
+    notifyPackageEventFunc_ = nullptr;
+    handleTouchEventFunc_ = nullptr;
+    setBufferInfoFunc_ = nullptr;
+    isAppRequestedFunc_ = nullptr;
+    getVSyncConnectionAppFunc_ = nullptr;
+    needUpdateVSyncTimeFunc_ = nullptr;
+    getLastUpdateTimeFunc_ = nullptr;
+    dvsyncUpdateFunc_ = nullptr;
+    forceRsDVsyncFunc_ = nullptr;
+    updateReferenceTimeAndPeriodFunc_ = nullptr;
+    setCurrentRefreshRateFunc_ = nullptr;
+    dvsyncRateChangedFunc_ = nullptr;
+    setToCurrentPeriodFunc_ = nullptr;
+    getVsyncCountFunc_ = nullptr;
+    initDvsyncControllerFunc_ = nullptr;
+    setVSyncTimeUpdatedFunc_ = nullptr;
+
+    ClearDvsyncDelayFunctions();
+
 }
 
 bool DVSyncLibManager::IsAppDVSyncOn()
@@ -241,6 +322,14 @@ void DVSyncLibManager::SetHardwareTaskNum(uint32_t num)
         return;
     }
     setHardwareTaskNumFunc_(num);
+}
+
+void DVSyncLibManager::SetPhysicalScreenNum(uint32_t num)
+{
+    if (setPhysicalScreenNumFunc_ == nullptr) {
+        return;
+    }
+    setPhysicalScreenNumFunc_(num);
 }
 
 void DVSyncLibManager::SetTaskEndWithTime(uint64_t time)
@@ -457,7 +546,6 @@ void DVSyncLibManager::SetVSyncTimeUpdated()
     setVSyncTimeUpdatedFunc_();
 }
 
-//dvsync delay
 void DVSyncLibManager::ToDelay(const AppExecFwk::InnerEvent::Callback& callback, const std::string& name,
     int32_t fd)
 {

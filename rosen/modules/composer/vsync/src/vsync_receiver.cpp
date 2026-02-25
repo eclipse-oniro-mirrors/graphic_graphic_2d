@@ -23,9 +23,7 @@
 #include <hitrace_meter.h>
 
 #include "accesstoken_kit.h"
-#if defined(RS_ENABLE_DVSYNC_2)
 #include "dvsync_lib_manager.h"
-#endif
 #include "event_handler.h"
 #include "graphic_common.h"
 #include "ipc_skeleton.h"
@@ -304,9 +302,7 @@ VsyncError VSyncReceiver::SetNativeDVSyncSwitch(bool dvsyncSwitch)
 
 void VSyncReceiver::SetTouchEvent(int32_t touchType)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
-    DVSyncLibManager::Instance().SetTouchEvent(touchType);
-#endif
+    DVSyncLibManager::DvsyncDelayInstance().SetTouchEvent(touchType);
 }
 } // namespace Rosen
 } // namespace OHOS

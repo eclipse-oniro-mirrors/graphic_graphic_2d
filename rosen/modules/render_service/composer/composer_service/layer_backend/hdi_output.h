@@ -75,7 +75,8 @@ public:
     const std::vector<GraphicIRect>& GetOutputDamages();
     sptr<Surface> GetFrameBufferSurface();
     std::unique_ptr<FrameBufferEntry> GetFramebuffer();
-    void Dump(std::string& result) const;
+    void Dump(std::string& result, bool isSplitRender = false) const;
+    void DumpCurrentFrameLayers() const;
     void DumpFps(std::string& result, const std::string& arg) const;
     void DumpHitchs(std::string& result, const std::string& arg) const;
     void ClearFpsDump(std::string& result, const std::string& arg);
@@ -113,7 +114,6 @@ public:
     RosenError RegPrepareComplete(OnPrepareCompleteFunc func, void* data);
     void Repaint();
     void SetScreenBacklight(uint32_t level);
-    void SetScreenPowerOnChanged(bool flag);
     int32_t GetCurrentFramePresentFd() const
     {
         return curPresentFd_;
@@ -192,12 +192,12 @@ private:
     void ReorderRSLayers(std::vector<std::shared_ptr<RSLayer>>& newRSLayer);
     void OnPrepareComplete(bool needFlush, std::vector<std::shared_ptr<RSLayer>>& newRSLayer);
     int32_t PrepareCompleteIfNeed(bool needFlush);
+    void DumpLayerInfoForSplitRender(std::string& result) const;
 
     bool isActiveRectSwitching_ = false;
     void DirtyRegions(uint32_t solidLayerCount, const std::shared_ptr<RSLayer>& rsLayer);
     OnPrepareCompleteFunc onPrepareCompleteCb_ = nullptr;
     void* onPrepareCompleteCbData_ = nullptr;
-    bool screenPowerOnChanged_ = false;
     int32_t thirdFrameAheadPresentFenceFd_ = 0;
     int64_t thirdFrameAheadPresentTime_ = 0;
     int32_t curPresentFd_ = 0;

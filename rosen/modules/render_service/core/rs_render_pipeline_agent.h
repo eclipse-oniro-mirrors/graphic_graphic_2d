@@ -79,7 +79,8 @@ public:
     ErrCode FreezeScreen(NodeId id, bool isFreeze);
 
     void TakeUICaptureInRange(
-        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig);
+        NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+        RSSurfaceCapturePermissions permissions);
 
     ErrCode SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
         float positionZ, float positionW);

@@ -62,13 +62,12 @@ void RSVsyncManagerAgent::NotifyPackageEvent(const std::vector<std::string>& pac
     rsVsyncDistributor_->NotifyPackageEvent(packageList);
 }
 
-void RSVsyncManagerAgent::SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
-    int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent)
+void RSVsyncManagerAgent::SetBufferInfo(const BufferInfo& bufferInfo)
 {
     if (rsVsyncDistributor_ == nullptr) {
         return;
     }
-    rsVsyncDistributor_->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime, isUrgent);
+    rsVsyncDistributor_->SetBufferInfo(bufferInfo);
 }
 
 uint64_t RSVsyncManagerAgent::GetRealTimeOffsetOfDvsync(int64_t time)

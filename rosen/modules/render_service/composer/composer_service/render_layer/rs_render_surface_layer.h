@@ -165,8 +165,8 @@ public:
     void SetDeleteLayer(bool isDeleteLayer) const override {}
 
     void CopyLayerInfo(const std::shared_ptr<RSLayer>& rsLayer) override;
-    void Dump(std::string& result) const override {};
-    void DumpCurrentFrameLayer() const override {};
+    void Dump(std::string& result) const override;
+    void DumpCurrentFrameLayer() const override;
     void SetIsNeedComposition(bool isNeedComposition) override;
     bool GetIsNeedComposition() const override;
 

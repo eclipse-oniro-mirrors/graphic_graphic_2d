@@ -321,19 +321,16 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit = nullptr;
             int32_t readData{0};
             if (!data.ReadInt32(readData)) {
-                RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                 RS_LOGE("RSClientToRenderConnectionStub::COMMIT_TRANSACTION read parcel failed");
                 return ERR_INVALID_DATA;
             }
             if (readData == 0) { // indicate normal parcel
-                RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                 if (isUniRender) {
                     // in uni render mode, if parcel size over threshold,
                     // Unmarshalling task will be post to RSUnmarshalThread,
                     // copy the origin parcel to maintain the parcel lifetime
                     parsedParcel = CopyParcelIfNeed(data, callingPid);
                 }
-                RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                 if (parsedParcel == nullptr) {
                     // no need to copy or copy failed, use original parcel
                     // execute Unmarshalling immediately
@@ -347,14 +344,12 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                             RS_LOGE("RSClientToRenderConnectionStub::COMMIT_TRANSACTION IsCallingPidValid check failed");
                         }
                     }
-                    RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                     CommitTransaction(transactionData);
                     break;
                 }
             } else {
                 // indicate ashmem parcel
                 // should be parsed to normal parcel before Unmarshalling
-                RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                 parsedParcel = RSAshmemHelper::ParseFromAshmemParcel(&data, ashmemFdWorker, ashmemFlowControlUnit,
                     callingPid);
                 if (parsedParcel) {
@@ -368,12 +363,10 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             RSMarshallingHelper::UnmarshallingTransactionVer(*parsedParcel);
             if (isUniRender) {
                 // post Unmarshalling task to RSUnmarshalThread
-                RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                 RSUnmarshalThread::Instance().RecvParcel(parsedParcel, isNonSystemAppCalling, callingPid,
                     std::move(ashmemFdWorker), ashmemFlowControlUnit, parcelNumber);
             } else {
                 // execute Unmarshalling immediately
-                RS_TRACE_NAME_FMT("RSClientToRenderConnectionStub::%s, %d", __func__, __LINE__);
                 auto transactionData = RSBaseRenderUtil::ParseTransactionData(*parsedParcel, parcelNumber);
                 if (transactionData && isNonSystemAppCalling) {
                     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
@@ -594,7 +587,8 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             auto remoteObject = data.ReadRemoteObject();
             bool isFromRenderThread{false};
             if (!data.ReadBool(isFromRenderThread)) {
-                RS_LOGE("RSClientToRenderConnectionStub::SET_BUFFER_AVAILABLE_LISTENER read isFromRenderThread failed!");
+                RS_LOGE("RSClientToRenderConnectionStub::SET_BUFFER_AVAILABLE_LISTENER "
+                    "read isFromRenderThread failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }

@@ -31,7 +31,8 @@ class VSyncSampler : public RefBase {
 public:
     using SetScreenVsyncEnabledCallback = std::function<void(uint64_t, bool)>;
     using UpdateVsyncEnabledScreenIdCallback = std::function<bool(uint64_t)>;
-    using JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback = std::function<uint64_t(uint64_t, ScreenPowerStatus, uint64_t)>;
+    using JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback = std::function<uint64_t(uint64_t,
+        ScreenPowerStatus, uint64_t)>;
     using UpdateFoldScreenConnectStatusLockedCallback = std::function<void(uint64_t, bool)>;
     using SetScreenVsyncEnableByIdCallback = std::function<void(uint64_t, uint64_t, bool)>;
     using GetScreenVsyncEnableByIdCallback = std::function<uint64_t(uint64_t)>;
@@ -64,7 +65,8 @@ public:
         std::shared_ptr<AppExecFwk::EventHandler> handler, bool isFold) = 0;
     virtual uint64_t JudgeVSyncEnabledScreenWhileHotPlug(uint64_t screenId, bool connected) = 0;
     virtual void RegUpdateVsyncEnabledScreenIdCallback(UpdateVsyncEnabledScreenIdCallback cb) = 0;
-    virtual void RegJudgeVSyncEnabledScreenWhilePowerStatusChangedCallback(JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback cb) = 0;
+    virtual void RegJudgeVSyncEnabledScreenWhilePowerStatusChangedCallback(
+        JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback cb) = 0;
     virtual void RegUpdateFoldScreenConnectStatusLockedCallback(UpdateFoldScreenConnectStatusLockedCallback cb) = 0;
     virtual void RegSetScreenVsyncEnableByIdCallback(SetScreenVsyncEnableByIdCallback cb) = 0;
     virtual void RegGetScreenVsyncEnableByIdCallback(GetScreenVsyncEnableByIdCallback cb) = 0;
@@ -109,8 +111,10 @@ public:
         std::shared_ptr<AppExecFwk::EventHandler> handler, bool isFold) override;
     virtual uint64_t JudgeVSyncEnabledScreenWhileHotPlug(uint64_t screenId, bool connected) override;
     virtual void RegUpdateVsyncEnabledScreenIdCallback(UpdateVsyncEnabledScreenIdCallback cb) override;
-    virtual void RegJudgeVSyncEnabledScreenWhilePowerStatusChangedCallback(JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback cb) override;
-    virtual void RegUpdateFoldScreenConnectStatusLockedCallback(UpdateFoldScreenConnectStatusLockedCallback cb) override;
+    virtual void RegJudgeVSyncEnabledScreenWhilePowerStatusChangedCallback(
+        JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback cb) override;
+    virtual void RegUpdateFoldScreenConnectStatusLockedCallback(
+        UpdateFoldScreenConnectStatusLockedCallback cb) override;
     virtual void RegSetScreenVsyncEnableByIdCallback(SetScreenVsyncEnableByIdCallback cb) override;
     virtual void RegGetScreenVsyncEnableByIdCallback(GetScreenVsyncEnableByIdCallback cb) override;
 

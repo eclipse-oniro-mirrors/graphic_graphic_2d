@@ -250,8 +250,8 @@ constexpr uint32_t MAX_DROP_FRAME_PID_LIST_SIZE = 1024;
 const std::string  FORCE_REFRESH_ONE_FRAME_TASK_NAME = "ForceRefreshOneFrameIfNoRNV";
 
 #ifdef RS_ENABLE_GL
-constexpr size_t DEFAULT_SKIA_CACHE_SIZE        = 96 * (1 << 20);
-constexpr int DEFAULT_SKIA_CACHE_COUNT          = 2 * (1 << 12);
+constexpr size_t DEFAULT_SKIA_CACHE_SIZE = 96 * (1 << 20);
+constexpr int DEFAULT_SKIA_CACHE_COUNT = 2 * (1 << 12);
 #endif
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
 constexpr const char* MEM_GPU_TYPE = "gpu";
@@ -844,7 +844,6 @@ void RSMainThread::CleanResources(pid_t pid)
             auto &monitor = SelfDrawingNodeMonitor::GetInstance();
             monitor.UnRegisterRectChangeCallback(pid);
     }
-
 }
 
 void RSMainThread::OnScreenConnected(const sptr<RSScreenProperty>& screenProperty)
@@ -5193,11 +5192,10 @@ void RSMainThread::MultiDisplayChange(bool isMultiDisplay)
     isMultiDisplayPre_ = isMultiDisplay;
 }
 
-void RSMainThread::SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
-    int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent)
+void RSMainThread::SetBufferInfo(const BufferInfo& bufferInfo)
 {
     if (rsVsyncManagerAgent_ != nullptr) {
-        rsVsyncManagerAgent_->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime, isUrgent);
+        rsVsyncManagerAgent_->SetBufferInfo(bufferInfo);
     }
 }
 

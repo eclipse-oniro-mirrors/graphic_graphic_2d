@@ -38,9 +38,7 @@
 #include "system_ability_definition.h"
 #endif
 
-#if defined(RS_ENABLE_DVSYNC_2)
 #include "dvsync_lib_manager.h"
-#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -428,12 +426,7 @@ VSyncDistributor::VSyncDistributor(sptr<VSyncController> controller, std::string
     if (name == DEFAULT_RS_NAME) {
         isRs_ = true;
     }
-#if defined(RS_ENABLE_DVSYNC_2)
-    DVSyncLibManager::Instance().Initialize("libdvsync.z.so");
-#endif
-    // Start of DVSync
-    InitDVSync(dvsyncParam);
-    // End of DVSync
+    (void)dvsyncParam;
 }
 
 VSyncDistributor::~VSyncDistributor()
@@ -628,11 +621,10 @@ void VSyncDistributor::OnVSyncTrigger(int64_t now, int64_t period,
         } else {
             CollectConnections(waitForVSync, now, conns, event_.vsyncCount);
         }
-#if defined(RS_ENABLE_DVSYNC_2)
-        bool canDisableVsync = isRs_ || !DVSyncLibManager::Instance().IsAppDVSyncOn();
-#else
         bool canDisableVsync = true;
-#endif
+        if (!DVSyncLibManager::Instance().IsInitialized()) {
+            canDisableVsync = isRs_ || !DVSyncLibManager::Instance().IsAppDVSyncOn();
+        }
         if (!waitForVSync && canDisableVsync) {
             DisableVSync();
             return;
@@ -659,9 +651,7 @@ void VSyncDistributor::TriggerNext(sptr<VSyncConnection> con)
 
 void VSyncDistributor::ConnPostEvent(sptr<VSyncConnection> con, int64_t now, int64_t period, int64_t vsyncCount)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
-    (void)DVSyncLibManager::Instance().SetAppRequestedStatus(con, false);
-#endif
+    DVSyncLibManager::Instance().SetAppRequestedStatus(con, false);
     int32_t ret = con->PostEvent(now, period, vsyncCount);
     VLOGD("Distributor name: %{public}s, Conn name: %{public}s, ret: %{public}d",
         name_.c_str(), con->info_.name.c_str(), ret);
@@ -839,11 +829,7 @@ void VSyncDistributor::CollectConnectionsLTPO(bool &waitForVSync, int64_t timest
 
 uint64_t VSyncDistributor::CheckVsyncReceivedAndGetRelTs(uint64_t timestamp)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().CheckVsyncReceivedAndGetRelTs(timestamp);
-#else
-    return timestamp;
-#endif
 }
 
 VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &connection, const std::string &fromWhom,
@@ -855,9 +841,7 @@ VsyncError VSyncDistributor::RequestNextVSync(const sptr<VSyncConnection> &conne
     }
     RS_TRACE_NAME_FMT("%s_RequestNextVSync", connection->info_.name_.c_str());
     bool isDvsyncConn = false;
-#if defined(RS_ENABLE_DVSYNC_2)
     isDvsyncConn = DVSyncLibManager::Instance().SetAppRequestedStatus(connection, true);
-#endif
     bool NeedPreexecute = false;
     bool isUrgent = fromWhom == URGENT_SELF_DRAWING;
     int64_t timestamp = 0;
@@ -1185,7 +1169,9 @@ void VSyncDistributor::DisableDVSyncController()
 void VSyncDistributor::OnDVSyncEvent(int64_t now, int64_t period,
     uint32_t refreshRate, VSyncMode vsyncMode, uint32_t vsyncMaxRefreshRate)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
+    if (!DVSyncLibManager::Instance().IsInitialized()) {
+        return;
+    }
     int64_t dvsyncPeriod = DVSyncLibManager::Instance().GetOccurPeriod();
     uint32_t dvsyncRefreshRate = DVSyncLibManager::Instance().GetOccurRefreshRate();
     if (dvsyncPeriod != 0 && dvsyncRefreshRate != 0) {
@@ -1232,40 +1218,32 @@ void VSyncDistributor::OnDVSyncEvent(int64_t now, int64_t period,
         CountTrace(HITRACE_TAG_GRAPHIC_AGP, "vsync-" + name_, countTraceValue_);
     }
     ConnectionsPostEvent(conns, now, period, refreshRate, vsyncCount, true);
-#endif
 }
 // End of DVSync
 
 void VSyncDistributor::SetFrameIsRender(bool isRender)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     ScopedBytrace trace("SetFrameIsRender:" + std::to_string(isRender));
     DVSyncLibManager::Instance().MarkRSRendering(isRender);
-#endif
 }
 
 VsyncError VSyncDistributor::SetUiDvsyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().SetAppDVSyncSwitch(connection, dvsyncSwitch, false);
-#endif
     return VSYNC_ERROR_OK;
 }
 
 VsyncError VSyncDistributor::SetUiDvsyncConfig(int32_t bufferCount, bool compositeSceneEnable,
     bool nativeDelayEnable, const std::vector<std::string>& rsDvsyncAnimationList)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
-    DVSyncLibManager::Instance().SetUiDVSyncConfig(bufferCount, compositeSceneEnable, nativeDelayEnable, rsDvsyncAnimationList);
-#endif
+    DVSyncLibManager::Instance().SetUiDVSyncConfig(bufferCount, compositeSceneEnable, nativeDelayEnable,
+        rsDvsyncAnimationList);
     return VSYNC_ERROR_OK;
 }
 
 VsyncError VSyncDistributor::SetNativeDVSyncSwitch(bool dvsyncSwitch, const sptr<VSyncConnection> &connection)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().SetAppDVSyncSwitch(connection, dvsyncSwitch, true);
-#endif
     return VSYNC_ERROR_OK;
 }
 
@@ -1281,43 +1259,32 @@ uint32_t VSyncDistributor::GetRefreshRate()
 
 bool  VSyncDistributor::IsUiDvsyncOn()
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().IsAppDVSyncOn();
-#else
-    return false;
-#endif
 }
 
 int64_t VSyncDistributor::GetUiCommandDelayTime()
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().GetUiCommandDelayTime();
-#else
-    return 0;
-#endif
 }
 
 void VSyncDistributor::UpdatePendingReferenceTime(int64_t &timeStamp)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().UpdatePendingReferenceTime(timeStamp);
-#endif
 }
 
 uint64_t VSyncDistributor::GetRealTimeOffsetOfDvsync(int64_t time)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().GetRealTimeOffsetOfDvsync(time);
-#else
-    return 0;
-#endif
 }
 
 void VSyncDistributor::SetHardwareTaskNum(uint32_t num)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().SetHardwareTaskNum(num);
-#endif
+}
+
+void VSyncDistributor::SetPhysicalScreenNum(uint32_t num)
+{
+    DVSyncLibManager::Instance().SetPhysicalScreenNum(num);
 }
 
 int64_t VSyncDistributor::GetVsyncCount()
@@ -1348,68 +1315,51 @@ void VSyncDistributor::FirstRequestVsync()
 
 void VSyncDistributor::InitDVSync(DVSyncFeatureParam dvsyncParam)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
+    if (!DVSyncLibManager::Instance().IsInitialized()) {
+        return;
+    }
     DVSyncLibManager::Instance().InitWithParam(dvsyncParam);
     bool IsEnable = DVSyncLibManager::Instance().SetDistributor(isRs_, this);
     if (IsEnable && isRs_ == false) {
         auto generator = CreateVSyncGenerator();
         DVSyncLibManager::Instance().InitDvsyncController(generator, 0, dvsyncController_);
     }
-#endif
 }
 
 void VSyncDistributor::DVSyncAddConnection(const sptr<VSyncConnection> &connection)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().SetConnection(isRs_, connection);
-#endif
 }
 
 void VSyncDistributor::DVSyncDisableVSync()
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().DisableVSync(this);
-#endif
 }
 
 void VSyncDistributor::DVSyncRecordVSync(int64_t now, int64_t period, uint32_t refreshRate, bool isDvsyncController)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().RecordVSync(this, now, period, refreshRate, false);
-#endif
 }
 
 bool VSyncDistributor::DVSyncCheckSkipAndUpdateTs(const sptr<VSyncConnection> &connection, int64_t &timeStamp)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().NeedSkipAndUpdateTs(connection, timeStamp);
-#else
-    return false;
-#endif
 }
 
 bool VSyncDistributor::DVSyncNeedSkipUi(const sptr<VSyncConnection> &connection)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().NeedSkipUi(connection);
-#else
-    return false;
-#endif
 }
 
 void VSyncDistributor::RecordEnableVsync()
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().RecordEnableVsync(this);
-#endif
 }
 
 void VSyncDistributor::DVSyncRecordRNV(const sptr<VSyncConnection> &connection, const std::string &fromWhom,
     int64_t lastVSyncTS, int64_t requestVsyncTime)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().RecordRNV(connection, fromWhom, vsyncMode_, lastVSyncTS, requestVsyncTime);
-#endif
 }
 
 bool VSyncDistributor::VSyncCheckPreexecuteAndUpdateTs(const sptr<VSyncConnection> &connection, int64_t &timestamp,
@@ -1435,7 +1385,9 @@ bool VSyncDistributor::VSyncCheckPreexecuteAndUpdateTs(const sptr<VSyncConnectio
 bool VSyncDistributor::DVSyncCheckPreexecuteAndUpdateTs(const sptr<VSyncConnection> &connection, int64_t &timestamp,
     int64_t &period, int64_t &vsyncCount)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
+    if (!DVSyncLibManager::Instance().IsInitialized()) {
+        return false;
+    }
     bool NeedPreexecute = DVSyncLibManager::Instance().NeedPreexecuteAndUpdateTs(connection, timestamp, period);
     if (NeedPreexecute) {
         RS_TRACE_NAME_FMT("DVSync::DVSyncCheckPreexecuteAndUpdateTs timestamp:%" PRId64 ", period:%" PRId64,
@@ -1448,32 +1400,26 @@ bool VSyncDistributor::DVSyncCheckPreexecuteAndUpdateTs(const sptr<VSyncConnecti
         connection->triggerThisTime_ = false;
     }
     return NeedPreexecute;
-#else
-    return false;
-#endif
 }
 
 void VSyncDistributor::NotifyPackageEvent(const std::vector<std::string>& packageList)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().NotifyPackageEvent(packageList);
-#endif
 }
 
 void VSyncDistributor::HandleTouchEvent(int32_t touchStatus, int32_t touchCnt)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().HandleTouchEvent(touchStatus, touchCnt);
-#endif
 }
 
-void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
-    int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent)
+void VSyncDistributor::SetBufferInfo(const BufferInfo& bufferInfo)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
-    bool isNativeDVSyncEnable = DVSyncLibManager::Instance().SetBufferInfo(id, name, queueSize,
-        bufferCount, lastConsumeTime);
-    if (isUrgent || !isNativeDVSyncEnable) {
+    if (!DVSyncLibManager::Instance().IsInitialized()) {
+        return;
+    }
+    bool isNativeDVSyncEnable = DVSyncLibManager::Instance().SetBufferInfo(bufferInfo.id, bufferInfo.name,
+        bufferInfo.queueSize, bufferInfo.bufferCount, bufferInfo.lastConsumeTime);
+    if (bufferInfo.isUrgent || !isNativeDVSyncEnable) {
         return;
     }
     bool isAppRequested = DVSyncLibManager::Instance().IsAppRequested();
@@ -1495,54 +1441,37 @@ void VSyncDistributor::SetBufferInfo(uint64_t id, const std::string &name, uint3
     if (needPreexecute) {
         ConnPostEvent(connection, timestamp, period, vsyncCount);
     }
-#endif
 }
 
 void VSyncDistributor::SetTaskEndWithTime(uint64_t time)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().SetTaskEndWithTime(time);
-#endif
 }
 
 bool VSyncDistributor::NeedUpdateVSyncTime(int32_t& pid)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().NeedUpdateVSyncTime(pid);
-#else
-    return false;
-#endif
 }
 
 void VSyncDistributor::SetVSyncTimeUpdated()
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().SetVSyncTimeUpdated();
-#endif
 }
 
 int64_t VSyncDistributor::GetLastUpdateTime()
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     return DVSyncLibManager::Instance().GetLastUpdateTime();
-#else
-    return 0;
-#endif
 }
 
 void VSyncDistributor::DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     DVSyncLibManager::Instance().DVSyncUpdate(dvsyncTime, vsyncTime);
-#endif
 }
 
 void VSyncDistributor::ForceRsDVsync(const std::string& sceneId)
 {
-#if defined(RS_ENABLE_DVSYNC_2)
     RS_TRACE_NAME("VSyncDistributor::ForceRsDVsync");
     DVSyncLibManager::Instance().ForceRsDVsync(sceneId);
-#endif
 }
 }
 }

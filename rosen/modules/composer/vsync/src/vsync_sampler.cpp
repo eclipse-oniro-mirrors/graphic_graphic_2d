@@ -97,7 +97,8 @@ void VSyncSampler::ProcessVSyncScreenIdWhilePowerStatusChanged(ScreenId id, Scre
     }
     if (isFold) {
         uint64_t lastVsyncEnabledScreenId = GetVsyncEnabledScreenId();
-        uint64_t vsyncEnabledScreenId = judgeVSyncEnabledScreenWhilePowerStatusChangedCallback_(id, status, lastVsyncEnabledScreenId);
+        uint64_t vsyncEnabledScreenId = judgeVSyncEnabledScreenWhilePowerStatusChangedCallback_(
+            id, status, lastVsyncEnabledScreenId);
         if (vsyncEnabledScreenId != lastVsyncEnabledScreenId) {
             RS_TRACE_NAME_FMT("vsyncEnabledScreenId has changed, need disable lastVsyncEnabledScreenId vsync, "
                 "vsyncEnabledScreenId:%lu, lastVsyncEnabledScreenId:%lu",

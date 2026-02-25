@@ -31,8 +31,7 @@ public:
     void DVSyncUpdate(uint64_t dvsyncTime, uint64_t vsyncTime);
     void SetTaskEndWithTime(uint64_t time);
     void NotifyPackageEvent(const std::vector<std::string>& packageList);
-    void SetBufferInfo(uint64_t id, const std::string &name, uint32_t queueSize,
-        int32_t bufferCount, int64_t lastConsumeTime, bool isUrgent);
+    void SetBufferInfo(const BufferInfo& bufferInfo);
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
     void SetHardwareTaskNum(uint32_t num);
     uint64_t CheckVsyncReceivedAndGetRelTs(uint64_t timestamp);

@@ -819,9 +819,36 @@ void HdiOutput::SetPendingMode(int64_t period, int64_t timestamp)
     CreateVSyncGenerator()->SetPendingMode(period, timestamp);
 }
 
-void HdiOutput::Dump(std::string& result) const
+// only used for separate rendering
+void HdiOutput::DumpLayerInfoForSplitRender(std::string& result) const
+{
+    std::vector<LayerDumpInfo> dumpLayerInfos;
+    ReorderLayerInfoLocked(dumpLayerInfos);
+
+    result.append("\n");
+    result.append("-- LayerInfo ScreenId: " + std::to_string(screenId_) + "\n");
+
+    for (const LayerDumpInfo& layerInfo : dumpLayerInfos) {
+        const std::shared_ptr<HdiLayer>& hdiLayer = layerInfo.hdiLayer;
+        if (hdiLayer == nullptr || hdiLayer->GetRSLayer() == nullptr) {
+            continue;
+        }
+        auto surface = hdiLayer->GetRSLayer()->GetSurface();
+        const std::string& name = surface ? surface->GetName() :
+            "Layer Without Surface" + std::to_string(hdiLayer->GetRSLayer()->GetZorder());
+        auto info = hdiLayer->GetRSLayer();
+        result += "\n surface [" + name + "] NodeId[" + std::to_string(layerInfo.nodeId) + "]";
+        result += " LayerId[" + std::to_string(hdiLayer->GetLayerId()) + "]:\n";
+        info->Dump(result);
+    }
+}
+
+void HdiOutput::Dump(std::string& result, bool isSplitRender) const
 {
     std::unique_lock<std::mutex> lock(mutex_);
+    if (isSplitRender) {
+        DumpLayerInfoForSplitRender(result);
+    }
     if (fbSurface_ != nullptr) {
         result += "\n";
         result += "FrameBufferSurface\n";
@@ -829,6 +856,24 @@ void HdiOutput::Dump(std::string& result) const
     }
     CreateVSyncGenerator()->Dump(result);
     CreateVSyncSampler()->Dump(result);
+}
+
+// only used for separate rendering
+void HdiOutput::DumpCurrentFrameLayers() const
+{
+    std::vector<LayerDumpInfo> dumpLayerInfos;
+    std::unique_lock<std::mutex> lock(mutex_);
+    ReorderLayerInfoLocked(dumpLayerInfos);
+
+    for (const LayerDumpInfo& layerInfo : dumpLayerInfos) {
+        const std::shared_ptr<HdiLayer>& hdiLayer = layerInfo.hdiLayer;
+        if (hdiLayer == nullptr || hdiLayer->GetRSLayer() == nullptr ||
+            hdiLayer->GetRSLayer()->GetSurface() == nullptr) {
+            continue;
+        }
+        auto info = hdiLayer->GetRSLayer();
+        info->DumpCurrentFrameLayer();
+    }
 }
 
 void HdiOutput::DumpFps(std::string& result, const std::string& arg) const
@@ -1064,11 +1109,6 @@ void HdiOutput::Repaint()
         HLOGE("first commit failed, ret is %{public}d, skipState is %{public}d", ret, skipState);
     }
 
-    if (screenPowerOnChanged_) {
-        HLOGI("Power On First Frame commit finish");
-        screenPowerOnChanged_ = false;
-    }
-
     if (skipState != GRAPHIC_DISPLAY_SUCCESS) {
         ret = UpdateLayerCompType();
         if (ret != GRAPHIC_DISPLAY_SUCCESS) {
@@ -1113,11 +1153,6 @@ void HdiOutput::SetScreenBacklight(uint32_t level)
     if (device_ != nullptr) {
         device_->SetScreenBacklight(screenId_, level);
     }
-}
-
-void HdiOutput::SetScreenPowerOnChanged(bool flag)
-{
-    screenPowerOnChanged_ = flag;
 }
 
 int32_t HdiOutput::GetDisplayClientTargetProperty(int32_t& pixelFormat, int32_t& dataspace)

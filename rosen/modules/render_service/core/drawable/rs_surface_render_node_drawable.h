@@ -189,6 +189,7 @@ private:
         RSSurfaceRenderParams* surfaceParams);
 #endif
     std::string name_;
+    uint64_t uniqueId_ = 0;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<IBufferConsumerListener> consumerListener_ = nullptr;

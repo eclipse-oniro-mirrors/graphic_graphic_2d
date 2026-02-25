@@ -373,13 +373,7 @@ void TakeSurfaceCaptureForUiParallel(
     }
 
     auto node = RSMainThread::Instance()->GetContext().GetNodeMap().GetRenderNode<RSRenderNode>(id);
-    if (!node) {
-        RS_LOGE("TakeSurfaceCaptureForUiParallel node is nullptr");
-        callback->OnSurfaceCapture(id, captureConfig, nullptr);
-        return;
-    }
-
-    if (node->IsOnTheTree() && !node->IsDirty() && !node->IsSubTreeDirty()) {
+    if (node != nullptr && node->IsOnTheTree() && !node->IsDirty() && !node->IsSubTreeDirty()) {
         RSMainThread::Instance()->PostTask(captureTask);
     } else {
         RSMainThread::Instance()->AddUiCaptureTask(id, captureTask);
@@ -437,7 +431,7 @@ void RSRenderPipelineAgent::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCapture
                 RS_LOGE("TakeSurfaceCapture uicapture failed, nodeId:[%{public}" PRIu64
                         "], isSystemCalling: %{public}u, selfCapture: %{public}u",
                     id, isSystemCalling, selfCapture);
-                callback->OnSurfaceCapture(id, captureConfig, nullptr);
+                callback->OnSurfaceCapture(id, captureConfig, nullptr, CaptureError::CAPTURE_NO_SECURE_PERMISSION);
                 return;
             }
             if (RSUniRenderJudgement::IsUniRender()) {
@@ -463,6 +457,23 @@ void RSRenderPipelineAgent::TakeSurfaceCapture(NodeId id, sptr<RSISurfaceCapture
             callback->OnSurfaceCapture(id, captureConfig, nullptr);
             return;
         }
+        
+        auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>();
+        if (captureConfig.isSyncRender && surfaceNode &&
+            !surfaceNode->GetSpecialLayerMgr().Find(HAS_GENERAL_SPECIAL)) {
+            RS_LOGI("RSClientToRenderConnection::TakeSurfaceCapture, Node:%{public}" PRIu64
+                ", isSyncRender:%{public}d, hasSpecialLayer: %{public}d, specialLayerType:%{public}u",
+                surfaceNode->GetId(), captureConfig.isSyncRender,
+                surfaceNode->GetSpecialLayerMgr().Find(HAS_GENERAL_SPECIAL),
+                surfaceNode->GetSpecialLayerMgr().Get());
+            surfaceNode->RegisterCaptureCallback(callback, captureConfig);
+            surfaceNode->SetDirty(true);
+            RSMainThread::Instance()->SetDirtyFlag();
+            RSMainThread::Instance()->RequestNextVSync();
+            RS_TRACE_NAME_FMT("RSClientToRenderConnection::TakeSurfaceCapture SetNeedSyncCaptureWindow");
+            return;
+        }
+
         if (RSUniRenderJudgement::GetUniRenderEnabledType() == UniRenderEnabledType::UNI_RENDER_DISABLED) {
             RS_LOGD("RSRenderPipelineAgent::TakeSurfaceCapture captureTaskInner nodeId:[%{public}" PRIu64 "]", id);
             ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSRenderPipelineAgent::TakeSurfaceCapture");
@@ -659,12 +670,20 @@ ErrCode RSRenderPipelineAgent::SetWindowFreezeImmediately(NodeId id, bool isFree
 }
 
 void RSRenderPipelineAgent::TakeUICaptureInRange(
-    NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig)
+    NodeId id, sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& captureConfig,
+    RSSurfaceCapturePermissions permissions)
 {
     if (rsRenderPipeline_ == nullptr) {
         return;
     }
-    std::function<void()> captureTask = [id, callback, captureConfig]() -> void {
+    std::function<void()> captureTask = [id, callback, captureConfig,
+        isSystemCalling = permissions.isSystemCalling]() -> void {
+        if (!isSystemCalling) {
+            RS_LOGE("TakeUICaptureInRange failed, not system calling, nodeId:[%{public}" PRIu64
+                "], isSystemCalling: %{public}u", id, isSystemCalling);
+            callback->OnSurfaceCapture(id, captureConfig, nullptr, CaptureError::CAPTURE_NO_PERMISSION);
+            return;
+        }
         RS_TRACE_NAME_FMT("RSRenderPipelineAgent::TakeUICaptureInRange captureTask nodeId:[%" PRIu64 "]", id);
         RS_LOGD("RSRenderPipelineAgent::TakeUICaptureInRange captureTask nodeId:[%{public}" PRIu64 "]", id);
         TakeSurfaceCaptureForUiParallel(id, callback, captureConfig, {});
@@ -1402,7 +1421,10 @@ ErrCode RSRenderPipelineAgent::SetWatermark(
         success = false;
         return ERR_INVALID_VALUE;
     }
-    rsRenderPipeline_->GetMainThread()->SetWatermark(callingPid, name, watermark);
+    auto task = [renderPipeline = rsRenderPipeline_, callingPid, name, watermark]() -> void {
+        renderPipeline->GetMainThread()->SetWatermark(callingPid, name, watermark);
+    };
+    rsRenderPipeline_->GetMainThread()->PostTask(task);
     success = true;
     return ERR_OK;
 }

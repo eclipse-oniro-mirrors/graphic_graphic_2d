@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include "vsync_distributor.h"
 #include "vsync_controller.h"
+#include "dvsync_lib_manager.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -1342,11 +1343,11 @@ HWTEST_F(VSyncDistributorTest, OnDVSyncEventTest001, Function | MediumTest| Leve
     VSyncMode vsyncMode = VSYNC_MODE_LTPO;
     uint32_t vsyncMaxRefreshRate = 120;
     vsyncDistributor->OnDVSyncEvent(now, period, refreshRate, vsyncMode, vsyncMaxRefreshRate);
-#if defined(RS_ENABLE_DVSYNC_2)
-    ASSERT_EQ(vsyncDistributor->vsyncMode_, VSYNC_MODE_LTPO);
-#else
-    ASSERT_EQ(vsyncDistributor->vsyncMode_, VSYNC_MODE_LTPS);
-#endif
+    if (DVSyncLibManager::Instance().IsInitialized()) {
+        ASSERT_EQ(vsyncDistributor->vsyncMode_, VSYNC_MODE_LTPO);
+    } else {
+        ASSERT_EQ(vsyncDistributor->vsyncMode_, VSYNC_MODE_LTPS);
+    }
 }
 
 /*

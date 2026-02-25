@@ -52,6 +52,7 @@
 #include "render_server/transaction/rs_render_to_service_connection.h"
 #include "render_service/composer/composer_client/connection/rs_composer_to_render_connection.h"
 #include "transaction/rs_connect_to_render_process.h"
+#include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "ipc_callbacks/surface_capture_callback_stub.h"
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
@@ -1208,6 +1209,105 @@ HWTEST_F(RSClientToServiceConnectionStubTest, TestRSRenderServiceConnectionStub0
     data.WriteBool(true);
     int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(res, ERR_INVALID_STATE);
+}
+
+/**
+ * @tc.name: TestGetRefreshInfoByPidAndUniqueId001
+ * @tc.desc: Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, TestGetRefreshInfoByPidAndUniqueId001, TestSize.Level1)
+{
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        uint32_t code =
+            static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+        ASSERT_EQ(res, ERR_INVALID_STATE);
+    }
+
+    {
+        EXPECT_EQ(OnRemoteRequestTest(static_cast<uint32_t>(
+                      RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID)),
+            ERR_INVALID_DATA);
+    }
+
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteInt32(1000);
+        uint32_t code =
+            static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+        ASSERT_EQ(res, ERR_INVALID_DATA);
+    }
+
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option;
+        data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+        data.WriteInt32(1000);
+        data.WriteUint64(0);
+        uint32_t code =
+            static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+        int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+        ASSERT_EQ(res, ERR_OK);
+    }
+}
+
+/**
+ * @tc.name: TestGetRefreshInfoByPidAndUniqueId002
+ * @tc.desc: Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, TestGetRefreshInfoByPidAndUniqueId002, TestSize.Level1)
+{
+    pid_t newPid = 1003;
+    NodeId nodeId = (static_cast<uint64_t>(newPid) << 32) | 0x00001031;
+    sptr<RSClientToServiceConnection> clientToServiceConnection =
+        iface_cast<RSClientToServiceConnection>(connectionStub_);
+    ASSERT_NE(clientToServiceConnection, nullptr);
+    std::string res = "";
+    clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, 0, res);
+    ASSERT_EQ(res, "");
+
+    RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+    std::string name = "surfacefps0";
+    uint64_t uniqueId = 1000;
+    surfaceFpsManager.RegisterSurfaceFps(nodeId, name, uniqueId);
+    clientToServiceConnection->GetRefreshInfoByPidAndUniqueId(newPid, uniqueId, res);
+    ASSERT_NE(res, "");
+
+    surfaceFpsManager.UnregisterSurfaceFps(nodeId);
+}
+
+/**
+ * @tc.name: TestGetRefreshInfoByPidAndUniqueId003
+ * @tc.desc: Test Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, TestGetRefreshInfoByPidAndUniqueId003, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    data.WriteInt32(1000);
+    data.WriteUint64(0);
+    uint32_t code =
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID);
+    reply.writable_ = false;
+    reply.data_ = nullptr;
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(res, ERR_INVALID_REPLY);
 }
 
 /**

@@ -294,7 +294,6 @@ bool RSRenderPipeline::RemoveConnection(const sptr<RSIConnectionToken>& token)
     std::unique_lock<std::mutex> lock(renderConnectionMutex_);
     auto iter = renderConnections_.find(tokenObj);
     if (iter == renderConnections_.end()) {
-        RS_LOGE("RSRenderPipelineAgent RemoveConnection: connections_ cannot find token");
         return false;
     }
     renderConnections_.erase(tokenObj);

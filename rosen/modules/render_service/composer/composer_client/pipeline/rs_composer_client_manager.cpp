@@ -59,6 +59,18 @@ std::shared_ptr<RSComposerClient> RSComposerClientManager::GetComposerClient(Scr
     }
 }
 
+void RSComposerClientManager::GetAllScreenHdiOutput(std::vector<std::shared_ptr<HdiOutput>>& hdiOutputVec)
+{
+    std::unordered_map<ScreenId, std::shared_ptr<RSComposerClient>> clientMap;
+    {
+        std::lock_guard<std::mutex> lock(rsComposerMapMutex_);
+        clientMap = composerClientMap_;
+    }
+    for (const auto& [_, client] : clientMap) {
+        hdiOutputVec.push_back(client->GetOutput());
+    }
+}
+
 void RSComposerClientManager::ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds)
 {
     std::unordered_map<ScreenId, std::shared_ptr<RSComposerClient>> clientMap;

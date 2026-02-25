@@ -138,7 +138,6 @@ private:
     void UpdateForSurfaceFps(const PipelineParam&);
     void AddSolidColorLayer(std::vector<std::shared_ptr<RSLayer>>& layers);
     void SetScreenBacklight(uint32_t level);
-    void SetScreenPowerOnChanged(bool flag);
     void ReInit(const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property);
     bool GetDisplayClientTargetProperty(GraphicPixelFormat& pixelFormat,
         GraphicColorGamut& colorGamut, const std::vector<std::shared_ptr<RSLayer>>& layers);

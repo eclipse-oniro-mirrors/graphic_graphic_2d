@@ -91,11 +91,12 @@ void RSRenderServiceListener::SetBufferInfoAndRequest(const std::shared_ptr<RSSu
     }
     int32_t bufferCount = surfaceHandler->GetAvailableBufferCount();
     std::string name = node->GetName();
-    if (RSMainThread::Instance()->CheckAdaptiveCompose()) {
-        RSMainThread::Instance()->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime, true);
+    BufferInfo bufferInfo {id, name, queueSize, bufferCount, lastConsumeTime,
+        RSMainThread::Instance()->CheckAdaptiveCompose()};
+    RSMainThread::Instance()->SetBufferInfo(bufferInfo);
+    if (bufferInfo.isUrgent) {
         RSMainThread::Instance()->RequestNextVSync("UrgentSelfdrawing");
     } else {
-        RSMainThread::Instance()->SetBufferInfo(id, name, queueSize, bufferCount, lastConsumeTime, false);
         RSMainThread::Instance()->RequestNextVSync("selfdrawing");
     }
 }

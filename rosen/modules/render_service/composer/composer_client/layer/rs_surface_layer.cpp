@@ -698,7 +698,8 @@ uint32_t RSSurfaceLayer::GetAncoFlags() const
 
 bool RSSurfaceLayer::IsAncoNative() const
 {
-    return false;
+    constexpr uint32_t ANCO_NATIVE_NODE_FLAG = static_cast<uint32_t>(AncoFlags::ANCO_NATIVE_NODE);
+    return (ancoFlags_ & ANCO_NATIVE_NODE_FLAG) == ANCO_NATIVE_NODE_FLAG;
 }
 
 void RSSurfaceLayer::SetLayerMaskInfo(LayerMask mask)

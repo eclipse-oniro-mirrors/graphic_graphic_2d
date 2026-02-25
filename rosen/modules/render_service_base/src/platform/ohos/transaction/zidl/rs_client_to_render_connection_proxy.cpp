@@ -263,7 +263,7 @@ ErrCode RSClientToRenderConnectionProxy::CreateNode(const RSDisplayNodeConfig& d
         return ERR_INVALID_VALUE;
     }
     success = true;
-    return success;
+    return ERR_OK;
 }
 
 ErrCode RSClientToRenderConnectionProxy::CreateNode(const RSSurfaceRenderNodeConfig& config, bool& success)
@@ -487,6 +487,7 @@ ErrCode RSClientToRenderConnectionProxy::GetBitmap(NodeId id, Drawing::Bitmap& b
     }
     bool result{false};
     if (!reply.ReadBool(result)) {
+        success = false;
         ROSEN_LOGE("RSClientToRenderConnectionProxy::GetBitmap Read result failed");
         return READ_PARCEL_ERR;
     }
@@ -555,6 +556,7 @@ ErrCode RSClientToRenderConnectionProxy::GetPixelmap(NodeId id, std::shared_ptr<
     bool result{false};
     if (!reply.ReadBool(result)) {
         ROSEN_LOGE("RSClientToRenderConnectionProxy::GetPixelmap Read result failed");
+        success = false;
         return READ_PARCEL_ERR;
     }
     if (!result || !RSMarshallingHelper::Unmarshalling(reply, pixelmap)) {
