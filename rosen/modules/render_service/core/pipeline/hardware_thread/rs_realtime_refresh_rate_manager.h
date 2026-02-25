@@ -23,7 +23,7 @@
 #include <thread>
 #include <unordered_map>
 
-#include "screen_manager/screen_types.h"
+#include "screen_manager/rs_screen_property.h"
 
 namespace OHOS::Rosen {
 enum class RealtimeRefreshRateType : int32_t {
@@ -43,7 +43,7 @@ public:
         return showEnabled_;
     }
     void SetShowRefreshRateEnabled(bool enabled, int32_t type);
-    void UpdateScreenRefreshRate(ScreenId screenId, uint32_t refreshRate);
+    void UpdateScreenRefreshRate(const RSScreenProperty& property, ScreenPropertyType type);
     std::pair<uint32_t, uint32_t> GetRefreshRateByScreenId(ScreenId screenId);
     uint32_t GetRealtimeRefreshRateByScreenId(ScreenId screenId);
 

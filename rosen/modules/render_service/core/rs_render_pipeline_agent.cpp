@@ -172,16 +172,14 @@ ErrCode RSRenderPipelineAgent::CreateNode(const RSDisplayNodeConfig& displayNode
         auto& context = renderPipeline->GetMainThread()->GetContext();
         auto& nodeMap = context.GetMutableNodeMap();
         nodeMap.RegisterRenderNode(node);
-        nodeMap.TraverseScreenNodes([&node, id = node->GetScreenId()](auto& screenNode) {
-            if (!screenNode || screenNode->GetScreenId() != id) {
-                return;
-            }
-            screenNode->AddChild(node);
-        });
 
+        DisplayNodeCommandHelper::AddDisplayNodeToTree(context, nodeId);
         DisplayNodeCommandHelper::SetDisplayMode(context, nodeId, displayNodeConfig);
     };
-    rsRenderPipeline_->PostMainThreadSyncTask(registerNode);
+    if (!rsRenderPipeline_->PostMainThreadSyncTask(registerNode)) {
+        RS_LOGW("%{public}s: Sync task not ready, Post async tasks instead.", __func__);
+        rsRenderPipeline_->PostMainThreadTask(registerNode);
+    }
     success = true;
     return ERR_OK;
 }
@@ -1124,15 +1122,9 @@ ErrCode RSRenderPipelineAgent::CreateNodeAndSurface(const RSSurfaceRenderNodeCon
     }
     surface->SetDefaultUsage(defaultUsage | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_HW_COMPOSER);
     node->GetRSSurfaceHandler()->SetConsumer(surface);
-#ifdef RS_ENABLE_GPU
-    // Use GPUCacheManager to register buffer delete callback (avoids circular reference)
     if (auto renderEngine = rsRenderPipeline_->GetUniRenderThread()->GetRenderEngine()) {
-        if (auto gpuCacheManager = renderEngine->GetGPUCacheManager()) {
-            node->GetRSSurfaceHandler()->RegisterDeleteBufferListener(
-                gpuCacheManager->CreateBufferDeleteCallback());
-        }
+        node->GetRSSurfaceHandler()->RegisterDeleteBufferListener(renderEngine->CreateBufferDeleteCallback());
     }
-#endif
     std::function<void()> registerNode = [node, renderPipeline = rsRenderPipeline_]() -> void {
         if (auto preNode = renderPipeline->GetMainThread()->GetContext().GetNodeMap().GetRenderNode(node->GetId())) {
             if (auto preSurfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>()) {

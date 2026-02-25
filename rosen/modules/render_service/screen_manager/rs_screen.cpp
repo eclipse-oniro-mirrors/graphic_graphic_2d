@@ -445,35 +445,58 @@ bool RSScreen::CalculateMaskRectAndReviseRect(const Rect& activeRect, Rect& revi
     return false;
 }
 
+void RSScreen::SetRogResolution(uint32_t width, uint32_t height)
+{
+    if (!hdiScreen_) {
+        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
+        return;
+    }
+
+    if ((width == 0 || height == 0) ||
+        (width == property_.GetWidth() && height == property_.GetHeight()) ||
+        (width > property_.GetPhyWidth() || height > property_.GetPhyHeight())) {
+        RS_LOGD("%{public}s: width: %{public}u, height: %{public}u.", __func__, width, height);
+        return;
+    }
+
+    if (hdiScreen_->SetScreenOverlayResolution(width, height) < 0) {
+        RS_LOGE("%{public}s: hdi set screen rog resolution failed.", __func__);
+        return;
+    }
+    isRogResolution_ = true;
+    UPDATE_PROPERTY(Resolution, std::make_pair(width, height));
+    UpdateSamplingScale(property_.GetPhyWidth(), property_.GetPhyHeight(), width, height);
+    RS_LOGI("%{public}s: RSScreen(id %{public}" PRIu64 "), width: %{public}u,"
+        " height: %{public}u, phywidth: %{public}u, phyHeight: %{public}u.",
+        __func__, property_.GetId(), width, height, property_.GetPhyWidth(), property_.GetPhyHeight());
+}
+
+int32_t RSScreen::GetRogResolution(uint32_t& width, uint32_t& height)
+{
+    if (isRogResolution_) {
+        width = property_.GetWidth();
+        height = property_.GetHeight();
+        RS_LOGD("%{public}s: width: %{public}u, height: %{public}u.", __func__, width, height);
+        return StatusCode::SUCCESS;
+    }
+    return StatusCode::INVALID_ARGUMENTS;
+}
+
 int32_t RSScreen::SetResolution(uint32_t width, uint32_t height)
 {
-    auto phyWidth = property_.GetPhyWidth();
-    auto phyHeight = property_.GetPhyHeight();
-    HILOG_COMM_INFO("%{public}s screenId: %{public}" PRIu64 " width: %{public}u height: %{public}u,"
-                    "phyWidth: %{public}u, phyHeight: %{public}u.",
-                    __func__, property_.GetId(), width, height, phyWidth, phyHeight);
+    HILOG_COMM_INFO("SetResolution screenId: %{public}" PRIu64 " width: %{public}u height: %{public}u",
+                    property_.GetId(), width, height);
     if (IsVirtual()) {
         UPDATE_PROPERTY(Resolution, std::make_pair(width, height));
         return StatusCode::SUCCESS;
     }
-    bool isValidArgs = (width > 0 && width <= phyWidth && height > 0 && height <= phyHeight) ||
-                       (width >= phyWidth && height >= phyHeight);
-    if (!isValidArgs) {
-        HILOG_COMM_ERROR("%{public}s invalid arguments width: %{public}u, height: %{public}u", __func__, width, height);
+    auto phyWidth = property_.GetPhyWidth();
+    auto phyHeight = property_.GetPhyHeight();
+    if (width < phyWidth || height < phyHeight) {
+        HILOG_COMM_ERROR("SetResolution phyWidth: %{public}u phyHeight: %{public}u", phyWidth, phyHeight);
         return StatusCode::INVALID_ARGUMENTS;
     }
-    if (!hdiScreen_) {
-        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
-        return StatusCode::HDI_ERROR;
-    }
-
-    if (width <= phyWidth && height <= phyHeight) {
-        // smaller size to set rog resolution
-        if (hdiScreen_->SetScreenOverlayResolution(width, height) < 0) {
-            RS_LOGE("%{public}s: hdi set screen rog resolution failed.", __func__);
-            return StatusCode::HDI_ERROR;
-        }
-    }
+    isRogResolution_ = false;
     UPDATE_PROPERTY(Resolution, std::make_pair(width, height));
     UpdateSamplingScale(phyWidth, phyHeight, width, height);
     return StatusCode::SUCCESS;
@@ -541,13 +564,12 @@ std::optional<GraphicDisplayModeInfo> RSScreen::GetActiveMode() const
         return {};
     }
 
-    uint32_t modeId = 0;
-
     if (hdiScreen_ == nullptr) {
         RS_LOGE("%{public}s: id: %{public}" PRIu64 " hdiScreen is null.", __func__, property_.GetId());
         return {};
     }
 
+    uint32_t modeId = 0;
     if (hdiScreen_->GetScreenMode(modeId) < 0) {
         RS_LOGE("%{public}s: id: %{public}" PRIu64 " GetScreenMode failed.", __func__, property_.GetId());
         return {};
@@ -1370,40 +1392,6 @@ int32_t RSScreen::GetDisplayIdentificationData(uint8_t& outPort, std::vector<uin
     }
     RS_LOGD("%{public}s:: EdidSize: %{public}zu", __func__, edidData.size());
     return SUCCESS;
-}
-
-int32_t RSScreen::SetScreenLinearMatrix(const std::vector<float> &matrix)
-{
-    if (IsVirtual()) {
-        RS_LOGW("%{public}s: virtual screen not support SetScreenLinearMatrix.", __func__);
-        return StatusCode::VIRTUAL_SCREEN;
-    }
-    if (!hdiScreen_) {
-        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
-        return StatusCode::HDI_ERROR;
-    }
-    if (linearMatrix_ == matrix) {
-        return StatusCode::SUCCESS;
-    }
-    if (hdiScreen_->SetScreenLinearMatrix(matrix) < 0) {
-        RS_LOGI("%{public}s failed, matrix is invalid", __func__);
-        return StatusCode::INVALID_ARGUMENTS;
-    }
-
-    linearMatrix_ = matrix;
-    return StatusCode::SUCCESS;
-}
-
-// only used in virtual screen
-bool RSScreen::GetAndResetWhiteListChange()
-{
-    bool expected = true;
-    return whiteListChange_.compare_exchange_strong(expected, false);
-}
-
-void RSScreen::SetWhiteListChange(bool whiteListChange)
-{
-    whiteListChange_ = whiteListChange;
 }
 
 sptr<RSScreenProperty> RSScreen::GetProperty() const

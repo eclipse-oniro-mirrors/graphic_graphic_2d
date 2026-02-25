@@ -56,7 +56,8 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
         return false;
     }
 
-    scaleMode_ = screenProperty.GetScaleMode();
+    auto scaleModeDFX = static_cast<ScreenScaleMode>(RSSystemProperties::GetVirtualScreenScaleModeDFX());
+    scaleMode_ = (scaleModeDFX == ScreenScaleMode::INVALID_MODE) ? screenProperty.GetScaleMode() : scaleModeDFX;
     enableVisibleRect_ = screenProperty.GetEnableVisibleRect();
     canvasRotation_ = screenProperty.GetCanvasRotation();
     if (enableVisibleRect_) {

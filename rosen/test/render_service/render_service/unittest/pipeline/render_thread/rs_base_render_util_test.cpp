@@ -17,7 +17,7 @@
 #include "limit_number.h"
 #include "parameters.h"
 
-#include "feature/hyper_graphic_manager/hgm_rp_context.h"
+#include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "params/rs_screen_render_params.h"
 #include "pipeline/render_thread/rs_base_render_util.h"
@@ -342,7 +342,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_002, TestSize.Level2)
 
     // flush buffer
     sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
-    RSMainThread::Instance()->hgmRPContext_ = std::make_shared<HgmRPContext>(nullptr);
+    RSMainThread::Instance()->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
     ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
     ASSERT_EQ(ret, GSERROR_OK);
 
@@ -386,7 +386,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_003, TestSize.Level2)
 
     // flush buffer
     sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
-    RSMainThread::Instance()->hgmRPContext_ = std::make_shared<HgmRPContext>(nullptr);
+    RSMainThread::Instance()->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
     ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
     ASSERT_EQ(ret, GSERROR_OK);
 
@@ -431,7 +431,7 @@ HWTEST_F(RSBaseRenderUtilTest, ConsumeAndUpdateBuffer_004, TestSize.Level2)
 
     // flush buffer
     sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
-    RSMainThread::Instance()->hgmRPContext_ = std::make_shared<HgmRPContext>(nullptr);
+    RSMainThread::Instance()->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
     ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
     ASSERT_EQ(ret, GSERROR_OK);
 

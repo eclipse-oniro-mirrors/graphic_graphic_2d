@@ -423,6 +423,15 @@ int32_t RSScreenManagerAgent::SetRogScreenResolution(ScreenId id, uint32_t width
     return screenManager_->SetRogScreenResolution(id, width, height);
 }
 
+int32_t RSScreenManagerAgent::GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height)
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->GetRogScreenResolution(id, width, height);
+}
+
 void RSScreenManagerAgent::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
 {
     if (!screenManager_) {
@@ -715,6 +724,22 @@ void RSScreenManagerAgent::SetScreenFrameGravity(ScreenId id, int32_t gravity)
         return;
     }
     screenManager_->SetScreenFrameGravity(id, gravity);
+}
+
+int32_t RSScreenManagerAgent::SetDualScreenState(ScreenId id, DualScreenStatus status)
+{
+    if (!screenManager_) {
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetDualScreenState(id, status);
+}
+
+PanelPowerStatus RSScreenManagerAgent::GetPanelPowerStatus(ScreenId id) const
+{
+    if (!screenManager_) {
+        return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    }
+    return screenManager_->GetPanelPowerStatus(id);
 }
 
 } // namespace Rosen

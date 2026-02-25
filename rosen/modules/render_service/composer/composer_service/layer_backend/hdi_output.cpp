@@ -358,9 +358,12 @@ void HdiOutput::GetComposeClientLayers(std::vector<std::shared_ptr<HdiLayer>>& c
         if (hdiLayer == nullptr || hdiLayer->GetRSLayer() == nullptr) {
             continue;
         }
-        if (hdiLayer->GetRSLayer()->GetHdiCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT ||
-            hdiLayer->GetRSLayer()->GetHdiCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT_CLEAR ||
-            hdiLayer->GetRSLayer()->GetHdiCompositionType() == GraphicCompositionType::GRAPHIC_COMPOSITION_TUNNEL) {
+        if (hdiLayer->GetRSLayer()->GetHdiCompositionType() ==
+                GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT ||
+            hdiLayer->GetRSLayer()->GetHdiCompositionType() ==
+                GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT_CLEAR ||
+            hdiLayer->GetRSLayer()->GetHdiCompositionType() ==
+                GraphicCompositionType::GRAPHIC_COMPOSITION_TUNNEL) {
             clientLayers.emplace_back(hdiLayer);
         }
     }

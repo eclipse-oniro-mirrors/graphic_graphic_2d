@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef HGM_RP_CONTEXT_H
-#define HGM_RP_CONTEXT_H
+#ifndef HGM_RENDER_CONTEXT_H
+#define HGM_RENDER_CONTEXT_H
 
 #include <set>
 #include <unordered_map>
@@ -33,12 +33,12 @@ class RSIRenderToServiceConnection;
 class RSRenderNodeMap;
 struct PipelineParam;
 
-class HgmRPContext {
+class HgmRenderContext {
 public:
     using ConvertFrameRateFunc = std::function<int32_t(RSPropertyUnit, float, int32_t, int32_t)>;
 
-    HgmRPContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
-    ~HgmRPContext() noexcept = default;
+    HgmRenderContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection);
+    ~HgmRenderContext() noexcept = default;
 
     int32_t InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,
         std::unordered_map<std::string, std::string>& solidLayerConfig, std::vector<std::string>& appBufferList);
@@ -86,4 +86,4 @@ private:
 };
 } // namespace OHOS
 } // namespace Rosen
-#endif // HGM_RP_CONTEXT_H
+#endif // HGM_RENDER_CONTEXT_H

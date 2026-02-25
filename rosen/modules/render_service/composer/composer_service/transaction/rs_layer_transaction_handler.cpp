@@ -22,7 +22,8 @@
 #define LOG_TAG "RSLayerTransactionHandler"
 namespace OHOS {
 namespace Rosen {
-void RSLayerTransactionHandler::SetRSComposerConnectionProxy(const sptr<IRSRenderToComposerConnection>& rsComposerConnection)
+void RSLayerTransactionHandler::SetRSComposerConnectionProxy(
+    const sptr<IRSRenderToComposerConnection>& rsComposerConnection)
 {
     if (rsComposerConnection == nullptr) {
         RS_LOGE("%{public}s connection is nullptr", __func__);

@@ -72,7 +72,7 @@
 #include "feature/tv_metadata/rs_tv_metadata_manager.h"
 #endif
 #include "feature/hpae/rs_hpae_manager.h"
-#include "feature/hyper_graphic_manager/hgm_rp_context.h"
+#include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "frame_report.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "graphic_feature_param_manager.h"
@@ -518,7 +518,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
 #ifdef RS_ENABLE_GPU
         RSUifirstManager::Instance().PrepareCurrentFrameEvent();
 #endif
-        hgmRPContext_->NotifyRpHgmFrameRate(vsyncId_, context_,
+        hgmRenderContext_->NotifyRpHgmFrameRate(vsyncId_, context_,
             rsVsyncRateReduceManager_.GetVrateMap(), rsVsyncRateReduceManager_.CheckNeedNotify(), pipelineParam_);
         RS_PROFILER_ON_RENDER_BEGIN();
         // cpu boost feature start
@@ -761,8 +761,8 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
 
     hwcContext_ = std::make_shared<RSHwcContext>(
         HWCParam::GetSourceTuningForAppMap(), HWCParam::GetSolidColorLayerMap());
-    hgmRPContext_ = std::make_shared<HgmRPContext>(renderToServiceConnection);
-    hgmRPContext_->InitHgmConfig(hwcContext_->GetMutableSourceTuningConfig(), hwcContext_->GetMutableSolidLayerConfig(),
+    hgmRenderContext_ = std::make_shared<HgmRenderContext>(renderToServiceConnection);
+    hgmRenderContext_->InitHgmConfig(hwcContext_->GetMutableSourceTuningConfig(), hwcContext_->GetMutableSolidLayerConfig(),
         context_->GetMutableUiFrameworkTypeTable());
 
     RegisterScreenSwitchFinishCallback(renderToServiceConnection);
@@ -1001,10 +1001,16 @@ void RSMainThread::InitGPUCacheManager()
     // Set GPU cache manager to RenderEngine
     renderEngine->SetGPUCacheManager(gpuCacheManager);
 
-    // Set Composer Client manager (UniRender mode only)
+    // Set Composer-side cache cleanup callback (UniRender mode only)
     if (isUniRender_) {
-        gpuCacheManager->SetComposerClientManager(
-            RSUniRenderThread::Instance().GetComposerClientManager()
+        std::weak_ptr<RSComposerClientManager> weakComposerClientManager =
+            RSUniRenderThread::Instance().GetComposerClientManager();
+        gpuCacheManager->SetComposerCacheCleanupCallback(
+            [weakComposerClientManager](const std::unordered_set<uint64_t>& bufferIds) {
+                if (auto manager = weakComposerClientManager.lock()) {
+                    manager->ClearRedrawGPUCompositionCache(bufferIds);
+                }
+            }
         );
     }
 
@@ -1711,7 +1717,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                     consumer->GetSurfaceSourceType() != OH_SURFACE_SOURCE_GAME &&
                     consumer->GetSurfaceSourceType() != OH_SURFACE_SOURCE_CAMERA &&
                     consumer->GetSurfaceSourceType() != OH_SURFACE_SOURCE_VIDEO) {
-                    hgmRPContext_->UpdateSurfaceData(name, ExtractPid(surfaceNode->GetId()));
+                    hgmRenderContext_->UpdateSurfaceData(name, ExtractPid(surfaceNode->GetId()));
                 }
             }
             surfaceHandler->ResetCurrentFrameBufferConsumed();
@@ -1759,8 +1765,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                     }
                     RSGpuDirtyCollector::SetGpuDirtyEnabled(buffer,
                         RSGpuDirtyCollector::GetInstance().IsGpuDirtyEnable(surfaceNode->GetId()));
-                    surfaceNode->UpdateBufferInfo(
-                        buffer, bufferOwnerCount, surfaceHandler->GetDamageRegion(), surfaceHandler->GetAcquireFence(), preBuffer, preBufferOwnerCount);
+                    surfaceNode->UpdateBufferInfo(buffer, bufferOwnerCount, surfaceHandler->GetDamageRegion(),
+                        surfaceHandler->GetAcquireFence(), preBuffer, preBufferOwnerCount);
                     if (surfaceHandler->GetBufferSizeChanged() || surfaceHandler->GetBufferTransformTypeChanged()) {
                         surfaceNode->SetContentDirty();
                         doDirectComposition_ = false;
@@ -3497,7 +3503,7 @@ void RSMainThread::Animate(uint64_t timestamp)
         }
         totalAnimationSize += node->animationManager_.GetAnimationsSize();
         node->animationManager_.SetRateDeciderEnable(
-            isRateDeciderEnabled, hgmRPContext_->GetConvertFrameRateFunc());
+            isRateDeciderEnabled, hgmRenderContext_->GetConvertFrameRateFunc());
         auto [hasRunningAnimation, nodeNeedRequestNextVsync, nodeCalculateAnimationValue] =
             node->Animate(timestamp, minLeftDelayTime, period, isDisplaySyncEnabled);
         if (!hasRunningAnimation) {
@@ -3505,7 +3511,7 @@ void RSMainThread::Animate(uint64_t timestamp)
             RS_LOGD("Animate removing finished animating node %{public}" PRIu64, node->GetId());
         } else {
             node->UpdateDisplaySyncRange();
-            hgmRPContext_->GetRSCurrRangeRef().Merge(node->animationManager_.GetDecideFrameRateRange());
+            hgmRenderContext_->GetRSCurrRangeRef().Merge(node->animationManager_.GetDecideFrameRateRange());
         }
         // request vsync if: 1. node has running animation, or 2. transition animation just ended
         needRequestNextVsync = needRequestNextVsync || nodeNeedRequestNextVsync || (node.use_count() == 1);
@@ -3542,7 +3548,7 @@ void RSMainThread::Animate(uint64_t timestamp)
     RS_LOGD("Animate end, animating nodes remains, has window animation: %{public}d", curWinAnim);
 
     if (needRequestNextVsync) {
-        hgmRPContext_->GetHgmRPEnergy()->StatisticAnimationTime(timestamp / NS_PER_MS);
+        hgmRenderContext_->GetHgmRPEnergy()->StatisticAnimationTime(timestamp / NS_PER_MS);
         // greater than one frame time (16.6 ms)
         constexpr int64_t oneFrameTimeInFPS60 = 17;
         // maximum delay time 60000 milliseconds, which is equivalent to 60 seconds.
@@ -4385,11 +4391,11 @@ bool RSMainThread::CheckAdaptiveCompose()
     if (!context_) {
         return false;
     }
-    auto adaptiveStatus = hgmRPContext_->AdaptiveStatus();
+    auto adaptiveStatus = hgmRenderContext_->AdaptiveStatus();
     if (adaptiveStatus != SupportASStatus::SUPPORT_AS) {
         return false;
     }
-    bool onlyGameNodeOnTree = hgmRPContext_->IsGameNodeOnTree();
+    bool onlyGameNodeOnTree = hgmRenderContext_->IsGameNodeOnTree();
     // TODO: chenqiang
     // bool isNeedAdaptiveCompose = onlyGameNodeOnTree && hgmContext_.GetIsAdaptiveVsyncComposeReady();
     bool isNeedAdaptiveCompose = false;
@@ -5178,7 +5184,7 @@ void RSMainThread::SetFrameInfo(uint64_t frameCount, bool forceRefreshFlag)
     auto &frameDeadline = RsFrameDeadlinePredict::GetInstance();
     uint32_t currentRate = pipelineParam_.pendingScreenRefreshRate;
     int64_t idealPeriod = IDEAL_PERIOD.count(currentRate) ? IDEAL_PERIOD[currentRate] : 0;
-    bool ltpoEnabled = hgmRPContext_->GetLtpoEnabled();
+    bool ltpoEnabled = hgmRenderContext_->GetLtpoEnabled();
     frameDeadline.ReportRsFrameDeadline(currentRate, idealPeriod, ltpoEnabled, forceRefreshFlag);
 }
 
@@ -5255,11 +5261,12 @@ void RSMainThread::CreateScreenNode(const sptr<RSScreenProperty>& property)
 static bool NeedForceRefreshOneFrame(ScreenPropertyType type)
 {
     switch (type) {
-        case ScreenPropertyType::RENDER_RESOLUTION:
-        case ScreenPropertyType::PRODUCER_SURFACE:
         case ScreenPropertyType::GAMUT_MAP:
+        case ScreenPropertyType::PRODUCER_SURFACE:
+        case ScreenPropertyType::RENDER_RESOLUTION:
         case ScreenPropertyType::SCREEN_STATUS:
         case ScreenPropertyType::SCREEN_SWITCH_STATUS:
+        case ScreenPropertyType::WHITE_LIST:
             return true;
         default:
             return false;
@@ -5365,10 +5372,7 @@ void RSMainThread::UpdateScreenProperty(
         if (node && node->GetScreenId() == id) {
             node->UpdateScreenProperty(type, property);
             RSSpecialLayerUtils::UpdateScreenSpecialLayer(node->GetScreenProperty(), type);
-            if (type == ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE) {
-                auto refreshRate = node->GetScreenProperty().GetRefreshRate();
-                RSRealtimeRefreshRateManager::Instance().UpdateScreenRefreshRate(id, refreshRate);
-            }
+            RSRealtimeRefreshRateManager::Instance().UpdateScreenRefreshRate(node->GetScreenProperty(), type);
         }
     };
 

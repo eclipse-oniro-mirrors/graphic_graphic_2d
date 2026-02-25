@@ -30,7 +30,8 @@ RsFrameDeadlinePredict& RsFrameDeadlinePredict::GetInstance()
 
 RsFrameDeadlinePredict::RsFrameDeadlinePredict() {}
 
-void RsFrameDeadlinePredict::ReportRsFrameDeadline(uint32_t rate, int64_t period, bool ltpoEnabled, bool forceRefreshFlag)
+void RsFrameDeadlinePredict::ReportRsFrameDeadline(uint32_t rate, int64_t period, bool ltpoEnabled,
+    bool forceRefreshFlag)
 {
     int64_t extraReserve = 0;
     int64_t vsyncOffset = 0;

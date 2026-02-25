@@ -739,7 +739,8 @@ int32_t RSClientToServiceConnectionProxy::SetCastScreenEnableSkipWindow(ScreenId
         ROSEN_LOGE("SetCastScreenEnableSkipWindow: WriteBool enable err.");
         return WRITE_PARCEL_ERR;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::SET_CAST_SCREEN_ENABLE_SKIP_WINDOW);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::SetCastScreenEnableSkipWindow: Send Request err.");
@@ -1084,7 +1085,8 @@ uint32_t RSClientToServiceConnectionProxy::GetScreenCurrentRefreshRate(ScreenId 
         ROSEN_LOGE("GetScreenCurrentRefreshRate: WriteUint64 id err.");
         return SUCCESS;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_CURRENT_REFRESH_RATE);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSRenderServiceProxy sendrequest error : %{public}d", err);
@@ -1372,6 +1374,41 @@ int32_t RSClientToServiceConnectionProxy::SetRogScreenResolution(ScreenId id, ui
     int32_t status{0};
     if (!reply.ReadInt32(status)) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::SetRogScreenResolution Read status failed");
+        return READ_PARCEL_ERR;
+    }
+    return status;
+}
+
+int32_t RSClientToServiceConnectionProxy::GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_SYNC);
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("GetRogScreenResolution: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("GetRogScreenResolution: WriteUint64 id err.");
+        return WRITE_PARCEL_ERR;
+    }
+    auto code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_ROG_SCREEN_RESOLUTION);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetRogScreenResolution: SendRequest error: %{public}d.", err);
+        return RS_CONNECTION_ERROR;
+    }
+    int32_t status{0};
+    if (!reply.ReadInt32(status)) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetRogScreenResolution Read status failed");
+        return READ_PARCEL_ERR;
+    }
+    if (!reply.ReadUint32(width)) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetRogScreenResolution Read width failed");
+        return READ_PARCEL_ERR;
+    }
+    if (!reply.ReadUint32(height)) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetRogScreenResolution Read height failed");
         return READ_PARCEL_ERR;
     }
     return status;
@@ -4569,8 +4606,8 @@ int32_t RSClientToServiceConnectionProxy::RegisterSelfDrawingNodeRectChangeCallb
         ROSEN_LOGE("RegisterSelfDrawingNodeRectChangeCallback: WriteRemoteObject callback->AsObject() err.");
         return WRITE_PARCEL_ERR;
     }
-    uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK);
+    uint32_t code =static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RegisterSelfDrawingNodeRectChangeCallback: Send request err.");

@@ -221,6 +221,7 @@ public:
     void DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, RSSurfaceHandler& surfaceHandler,
         BufferDrawParam& params);
     void RegisterDeleteBufferListener(const sptr<IConsumerSurface>& consumer, bool isForUniRedraw = false);
+    std::function<void(uint64_t)> CreateBufferDeleteCallback() const;
 
     // GPU cache management
     std::shared_ptr<GPUCacheManager> GetGPUCacheManager() const { return gpuCacheManager_; }

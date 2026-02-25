@@ -1705,35 +1705,6 @@ HWTEST_F(RSScreenManagerTest, GetCanvasRotation_002, TestSize.Level1)
 }
 
 /*
- * @tc.name: GetScaleMode_001
- * @tc.desc: Test GetScaleMode, input invalid id, expect false.
- * @tc.type: FUNC
- * @tc.require: issueIAINL7
- */
-HWTEST_F(RSScreenManagerTest, GetScaleMode_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, screenManager_);
-
-    ScreenId screenId = INVALID_SCREEN_ID;
-    ASSERT_EQ(screenManager_->GetScaleMode(screenId), ScreenScaleMode::INVALID_MODE);
-}
-
-/*
- * @tc.name: GetScaleMode_002
- * @tc.desc: Test GetScaleMode, input screens_ with nullptr, expect false.
- * @tc.type: FUNC
- * @tc.require: issueIAINL7
- */
-HWTEST_F(RSScreenManagerTest, GetScaleMode_002, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, screenManager_);
-
-    ScreenId screenId = SCREEN_ID;
-    screenManager_->screens_[screenId] = nullptr;
-    ASSERT_EQ(screenManager_->GetScaleMode(screenId), ScreenScaleMode::INVALID_MODE);
-}
-
-/*
  * @tc.name: SetVirtualMirrorScreenScaleMode_001
  * @tc.desc: Test SetVirtualMirrorScreenScaleMode false.
  * @tc.type: FUNC

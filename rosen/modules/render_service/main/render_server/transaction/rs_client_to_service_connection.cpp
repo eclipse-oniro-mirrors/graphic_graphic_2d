@@ -803,6 +803,14 @@ int32_t RSClientToServiceConnection::SetRogScreenResolution(ScreenId id, uint32_
     return screenManagerAgent_->SetRogScreenResolution(id, width, height);
 }
 
+int32_t RSClientToServiceConnection::GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height)
+{
+    if (!screenManagerAgent_) {
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManagerAgent_->GetRogScreenResolution(id, width, height);
+}
+
 ErrCode RSClientToServiceConnection::MarkPowerOffNeedProcessOneFrame()
 {
     if (!screenManagerAgent_) {
@@ -1044,31 +1052,13 @@ void RSClientToServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level
 
 ErrCode RSClientToServiceConnection::GetPanelPowerStatus(ScreenId screenId, PanelPowerStatus& status)
 {
-    // TODO CAR
-//     if (!screenManager_) {
-//         RS_LOGE("%{public}s screenManager_ is nullptr.", __func__);
-//         status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
-//         return ERR_INVALID_OPERATION;
-//     }
-//     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
-//     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
-// #ifdef RS_ENABLE_GPU
-//         status = RSRenderComposerManager::GetInstance().PostSyncTask(screenId,
-//             [screenManager = screenManager_, screenId]() {
-//                 return screenManager->GetPanelPowerStatus(screenId);
-//             });
-// #else
-//         status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
-// #endif
-//     } else if (mainThread_ != nullptr) {
-//         status = mainThread_->ScheduleTask(
-//             [screenManager = screenManager_, screenId]() {
-//                 return screenManager->GetPanelPowerStatus(screenId);
-//             }).get();
-//     } else {
-//         status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
-//         return ERR_INVALID_VALUE;
-//     }
+    if (!screenManagerAgent_) {
+        RS_LOGE("%{public}s screenManagerAgent_ is nullptr.", __func__);
+        status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+        return ERR_INVALID_OPERATION;
+    }
+
+    status = screenManagerAgent_->GetPanelPowerStatus(screenId);
     return ERR_OK;
 }
 

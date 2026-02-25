@@ -31,10 +31,10 @@ namespace OHOS {
 namespace Rosen {
 class RSSurfaceRCDLayer : public RSSurfaceLayer {
 public:
-    virtual ~RSSurfaceRCDLayer() = default;
+    ~RSSurfaceRCDLayer() = default;
     static std::shared_ptr<RSLayer> Create(RSLayerId rsLayerId, const std::shared_ptr<RSComposerContext>& context);
 
-    virtual bool IsScreenRCDLayer() const override { return true; };
+    bool IsScreenRCDLayer() const override { return true; };
     void SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap);
     std::shared_ptr<Media::PixelMap> GetPixelMap() const;
 

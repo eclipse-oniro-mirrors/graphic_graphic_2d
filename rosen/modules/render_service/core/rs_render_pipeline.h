@@ -79,7 +79,7 @@ public:
 
     void PostUniRenderThreadTask(RSTaskMessage::RSTask task);
 
-    void PostMainThreadSyncTask(RSTaskMessage::RSTask task);
+    bool PostMainThreadSyncTask(RSTaskMessage::RSTask task);
 
     void PostUniRenderThreadSyncTask(RSTaskMessage::RSTask task);
 
@@ -103,7 +103,6 @@ public:
     void OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     void OnScreenRefresh(ScreenId screenId);
     void RegisterScreenSwitchFinishCallback(const sptr<RSIRenderToServiceConnection>& conn);
-    std::shared_ptr<RSComposerClientManager> GetComposerClientManager() const;
 
 private:
     void Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler, const std::shared_ptr<VSyncReceiver>& receiver,
@@ -132,6 +131,7 @@ private:
     {
         return uniRenderThread_;
     }
+    std::shared_ptr<RSComposerClientManager> GetComposerClientManager() const;
 
     // LPP
     void RegisterJudgeLppLayerCB(const sptr<IRSComposerToRenderConnection>& composerToRenderConn);

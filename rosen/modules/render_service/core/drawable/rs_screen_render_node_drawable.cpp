@@ -81,8 +81,6 @@
 #include "graphic_feature_param_manager.h"
 // hpae offline
 #include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
-// #include "rs_composer_context.h"
-// #include "rs_layer_factory.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
@@ -1135,14 +1133,9 @@ bool RSScreenRenderNodeDrawable::CreateSurface(sptr<IBufferConsumerListener> lis
     RS_LOGI("RSScreenRenderNodeDrawable::CreateSurface end");
     surfaceCreated_ = true;
     surfaceHandler_->SetConsumer(consumer);
-#ifdef RS_ENABLE_GPU
-    // Use GPUCacheManager to register buffer delete callback (avoids circular reference)
     if (auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine()) {
-        if (auto gpuCacheManager = renderEngine->GetGPUCacheManager()) {
-            surfaceHandler_->RegisterDeleteBufferListener(gpuCacheManager->CreateBufferDeleteCallback());
-        }
+        surfaceHandler_->RegisterDeleteBufferListener(renderEngine->CreateBufferDeleteCallback());
     }
-#endif
     return true;
 }
 #endif

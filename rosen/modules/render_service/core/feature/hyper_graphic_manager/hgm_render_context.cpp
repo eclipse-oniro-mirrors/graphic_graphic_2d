@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "feature/hyper_graphic_manager/hgm_rp_context.h"
+#include "feature/hyper_graphic_manager/hgm_render_context.h"
 
 #include "hgm_frame_rate_manager.h"
 #include "params/rs_render_params.h"
@@ -30,7 +30,7 @@ namespace {
 constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config.xml";
 }
 
-HgmRPContext::HgmRPContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection)
+HgmRenderContext::HgmRenderContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection)
     : renderToServiceConnection_(renderToServiceConnection),
       rpFrameRatePolicy_(std::make_shared<RPFrameRatePolicy>()),
       hgmRPEnergy_(std::make_shared<HgmRPEnergy>())
@@ -40,7 +40,7 @@ HgmRPContext::HgmRPContext(const sptr<RSIRenderToServiceConnection>& renderToSer
     };
 }
 
-int32_t HgmRPContext::InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,
+int32_t HgmRenderContext::InitHgmConfig(std::unordered_map<std::string, std::string>& sourceTuningConfig,
     std::unordered_map<std::string, std::string>& solidLayerConfig, std::vector<std::string>& appBufferList)
 {
     auto parser = std::make_unique<RPHgmXMLParser>();
@@ -54,7 +54,7 @@ int32_t HgmRPContext::InitHgmConfig(std::unordered_map<std::string, std::string>
     return EXEC_SUCCESS;
 }
 
-void HgmRPContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_ptr<RSContext>& rsContext,
+void HgmRenderContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_ptr<RSContext>& rsContext,
     const std::unordered_map<NodeId, int>& vRateMap, bool isNeedRefreshVRate, PipelineParam& pipelineParam)
 {
     int changed = 0;
@@ -82,7 +82,7 @@ void HgmRPContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_ptr<
         pipelineParam.pendingScreenRefreshRate, pipelineParam.pendingConstraintRelativeTime);
 }
 
-void HgmRPContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
+void HgmRenderContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
 {
     if (isAdaptive_ != SupportASStatus::SUPPORT_AS) {
         isGameNodeOnTree_ = false;
@@ -114,7 +114,7 @@ void HgmRPContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
     isGameNodeOnTree_ = isGameSelfNodeOnTree && !isOtherSelfNodeOnTree;
 }
 
-void HgmRPContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> serviceToProcessInfo,
+void HgmRenderContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> serviceToProcessInfo,
     uint32_t& pendingScreenRefreshRate, uint64_t& pendingConstraintRelativeTime)
 {
     if (serviceToProcessInfo == nullptr) {
@@ -143,7 +143,7 @@ void HgmRPContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> service
     hgmRPEnergy_->SetTouchState(serviceToProcessInfo->isPowerIdle);
 }
 
-void HgmRPContext::UpdateSurfaceData(const std::string& surfaceName, pid_t pid) {
+void HgmRenderContext::UpdateSurfaceData(const std::string& surfaceName, pid_t pid) {
     surfaceData_.emplace_back(std::tuple<std::string, pid_t>({surfaceName, pid}));
 }
 } // namespace Rosen

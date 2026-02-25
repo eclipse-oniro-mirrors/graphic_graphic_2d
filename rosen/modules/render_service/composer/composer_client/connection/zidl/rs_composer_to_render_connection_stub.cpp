@@ -86,7 +86,8 @@ int32_t RSComposerToRenderConnectionStub::ReleaseLayerBuffersStub(MessageParcel&
         sptr<SurfaceBuffer> buffer = nullptr;
         bool hasBuffer = data.ReadBool();
         if (hasBuffer) {
-            auto readSafeFdFunc = [](OHOS::MessageParcel& parcel, std::function<int(OHOS::MessageParcel&)> readFdDefaultFunc) -> int {
+            auto readSafeFdFunc = [](OHOS::MessageParcel& parcel,
+                std::function<int(OHOS::MessageParcel&)> readFdDefaultFunc) -> int {
                 return parcel.ReadFileDescriptor();
             };
             auto ret = ReadSurfaceBufferImpl(data, sequence, buffer, readSafeFdFunc);

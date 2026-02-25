@@ -85,6 +85,7 @@ public:
     int32_t ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height);
     RSVirtualScreenResolution GetVirtualScreenResolution(ScreenId id) const;
     int32_t SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height);
+    int32_t GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height);
 
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
 
@@ -118,6 +119,8 @@ public:
     void SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY);
     void SetScreenSwitchStatus(ScreenId id, bool status);
     void SetScreenFrameGravity(ScreenId id, int32_t gravity);
+    int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
+    PanelPowerStatus GetPanelPowerStatus(ScreenId id) const;
 
 private:
     sptr<RSScreenManager> screenManager_;

@@ -278,15 +278,19 @@ HWTEST_F(RSRealtimeRefreshRateManagerTest, UpdateScreenRefreshRate001, TestSize.
     instance.screenRefreshRateMap_.clear();
     ASSERT_TRUE(instance.screenRefreshRateMap_.empty());
 
-    instance.UpdateScreenRefreshRate(0, 90);
+    RSScreenProperty property;
+    property.Set<ScreenPropertyType::ID>(0);
+    property.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>({0, 0, 90});
+    instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
     auto iter = instance.screenRefreshRateMap_.find(0);
     ASSERT_NE(iter, instance.screenRefreshRateMap_.end());
     ASSERT_EQ(iter->second, 90);
 
-    instance.UpdateScreenRefreshRate(0, 90);
+    instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
     ASSERT_EQ(iter->second, 90);
 
-    instance.UpdateScreenRefreshRate(0, 120);
+    property.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>({0, 0, 120});
+    instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
     ASSERT_EQ(iter->second, 120);
 }
 
@@ -306,15 +310,20 @@ HWTEST_F(RSRealtimeRefreshRateManagerTest, UpdateScreenRefreshRate002, TestSize.
     instance.screenRefreshRateMap_.clear();
     ASSERT_TRUE(instance.screenRefreshRateMap_.empty());
 
-    instance.UpdateScreenRefreshRate(0, 90);
+    RSScreenProperty property;
+    property.Set<ScreenPropertyType::ID>(0);
+    property.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>({0, 0, 90});
+    instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
     auto iter = instance.screenRefreshRateMap_.find(0);
     ASSERT_NE(iter, instance.screenRefreshRateMap_.end());
     ASSERT_EQ(iter->second, 90);
 
+    instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
     instance.UpdateScreenRefreshRate(0, 90);
     ASSERT_EQ(iter->second, 90);
 
-    instance.UpdateScreenRefreshRate(0, 120);
+    property.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>({0, 0, 120});
+    instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
     ASSERT_EQ(iter->second, 120);
 }
 

@@ -30,53 +30,9 @@ namespace Rosen {
 class RSComposerContext;
 class RSRenderLayerCmd;
 
-static const std::map<GraphicTransformType, std::string> TransformTypeStrs = {
-    {GRAPHIC_ROTATE_NONE,                    "0 <no rotation>"},
-    {GRAPHIC_ROTATE_90,                      "1 <rotation by 90 degrees>"},
-    {GRAPHIC_ROTATE_180,                     "2 <rotation by 180 degrees>"},
-    {GRAPHIC_ROTATE_270,                     "3 <rotation by 270 degrees>"},
-    {GRAPHIC_FLIP_H,                         "4 <flip horizontally>"},
-    {GRAPHIC_FLIP_V,                         "5 <flip vertically>"},
-    {GRAPHIC_FLIP_H_ROT90,                   "6 <flip horizontally and rotate 90 degrees>"},
-    {GRAPHIC_FLIP_V_ROT90,                   "7 <flip vertically and rotate 90 degrees>"},
-    {GRAPHIC_FLIP_H_ROT180,                  "8 <flip horizontally and rotate 180 degrees>"},
-    {GRAPHIC_FLIP_V_ROT180,                  "9 <flip vertically and rotate 180 degrees>"},
-    {GRAPHIC_FLIP_H_ROT270,                  "10 <flip horizontally and rotate 270 degrees>"},
-    {GRAPHIC_FLIP_V_ROT270,                  "11 <flip vertically and rotate 270 degrees>"},
-    {GRAPHIC_ROTATE_BUTT,                    "12 <uninitialized>"},
-};
-
-static const std::map<GraphicCompositionType, std::string> CompositionTypeStrs = {
-    {GRAPHIC_COMPOSITION_CLIENT,             "0 <client composition>"},
-    {GRAPHIC_COMPOSITION_DEVICE,             "1 <device composition>"},
-    {GRAPHIC_COMPOSITION_CURSOR,             "2 <cursor composition>"},
-    {GRAPHIC_COMPOSITION_VIDEO,              "3 <video composition>"},
-    {GRAPHIC_COMPOSITION_DEVICE_CLEAR,       "4 <device clear composition>"},
-    {GRAPHIC_COMPOSITION_CLIENT_CLEAR,       "5 <client clear composition>"},
-    {GRAPHIC_COMPOSITION_TUNNEL,             "6 <tunnel composition>"},
-    {GRAPHIC_COMPOSITION_SOLID_COLOR,        "7 <layercolor composition>"},
-    {GRAPHIC_COMPOSITION_BUTT,               "8 <uninitialized>"},
-};
-
-static const std::map<GraphicBlendType, std::string> BlendTypeStrs = {
-    {GRAPHIC_BLEND_NONE,                     "0 <No blending>"},
-    {GRAPHIC_BLEND_CLEAR,                    "1 <CLEAR blending>"},
-    {GRAPHIC_BLEND_SRC,                      "2 <SRC blending>"},
-    {GRAPHIC_BLEND_SRCOVER,                  "3 <SRC_OVER blending>"},
-    {GRAPHIC_BLEND_DSTOVER,                  "4 <DST_OVER blending>"},
-    {GRAPHIC_BLEND_SRCIN,                    "5 <SRC_IN blending>"},
-    {GRAPHIC_BLEND_DSTIN,                    "6 <DST_IN blending>"},
-    {GRAPHIC_BLEND_SRCOUT,                   "7 <SRC_OUT blending>"},
-    {GRAPHIC_BLEND_DSTOUT,                   "8 <DST_OUT blending>"},
-    {GRAPHIC_BLEND_SRCATOP,                  "9 <SRC_ATOP blending>"},
-    {GRAPHIC_BLEND_DSTATOP,                  "10 <DST_ATOP blending>"},
-    {GRAPHIC_BLEND_ADD,                      "11 <ADD blending>"},
-    {GRAPHIC_BLEND_XOR,                      "12 <XOR blending>"},
-    {GRAPHIC_BLEND_DST,                      "13 <DST blending>"},
-    {GRAPHIC_BLEND_AKS,                      "14 <AKS blending>"},
-    {GRAPHIC_BLEND_AKD,                      "15 <AKD blending>"},
-    {GRAPHIC_BLEND_BUTT,                     "16 <Uninitialized>"},
-};
+extern const std::map<GraphicTransformType, std::string> TransformTypeStrs;
+extern const std::map<GraphicCompositionType, std::string> CompositionTypeStrs;
+extern const std::map<GraphicBlendType, std::string> BlendTypeStrs;
 
 class RSB_EXPORT RSLayer : public std::enable_shared_from_this<RSLayer> {
 public:

@@ -67,7 +67,8 @@ void RSRenderPipelineClient::CommitTransaction(std::unique_ptr<RSTransactionData
     if (clientToRender != nullptr) {
         clientToRender->CommitTransaction(transactionData);
     } else {
-        RS_LOGE_LIMIT(__func__, __line__, "RSRenderPipelineClient::CommitTransaction failed, clientToRender is nullptr");
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSRenderPipelineClient::CommitTransaction failed, clientToRender is nullptr");
     }
 }
 
@@ -80,7 +81,8 @@ void RSRenderPipelineClient::ExecuteSynchronousTask(const std::shared_ptr<RSSync
     if (clientToRender != nullptr) {
         clientToRender->ExecuteSynchronousTask(task);
     } else {
-        RS_LOGE_LIMIT(__func__, __line__, "RSRenderPipelineClient::ExecuteSynchronousTask failed, clientToRender is nullptr");
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSRenderPipelineClient::ExecuteSynchronousTask failed, clientToRender is nullptr");
     }
 }
 
@@ -90,7 +92,8 @@ void RSRenderPipelineClient::RegisterApplicationAgent(uint32_t pid, sptr<IApplic
     if (clientToRender != nullptr) {
         clientToRender->RegisterApplicationAgent(pid, app);
     } else {
-        RS_LOGE_LIMIT(__func__, __line__, "RSRenderPipelineClient::RegisterApplicationAgent failed, clientToRender is nullptr");
+        RS_LOGE_LIMIT(__func__, __line__,
+            "RSRenderPipelineClient::RegisterApplicationAgent failed, clientToRender is nullptr");
     }
 }
 

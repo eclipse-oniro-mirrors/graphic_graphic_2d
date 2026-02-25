@@ -37,8 +37,8 @@ class RSRenderComposerContext;
 template<uint16_t rsLayerParcelType, auto processFunc, typename... Params>
 class RSLayerParcelTemplate : public RSLayerParcel {
 public:
-    RSLayerParcelTemplate(const Params&... params) : params_(params...) {}
-    RSLayerParcelTemplate(std::tuple<Params...>&& params) : params_(std::move(params)) {}
+    explicit RSLayerParcelTemplate(const Params&... params) : params_(params...) {}
+    explicit RSLayerParcelTemplate(std::tuple<Params...>&& params) : params_(std::move(params)) {}
     ~RSLayerParcelTemplate() override = default;
 
     uint16_t GetRSLayerParcelType() const override

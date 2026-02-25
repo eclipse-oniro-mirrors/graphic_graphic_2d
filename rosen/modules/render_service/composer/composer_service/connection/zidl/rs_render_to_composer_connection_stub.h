@@ -24,7 +24,7 @@
 namespace OHOS::Rosen {
 class RSRenderToComposerConnectionStub : public IRemoteStub<IRSRenderToComposerConnection> {
 public:
-    virtual int32_t OnRemoteRequest(uint32_t code, OHOS::MessageParcel& data,
+    int32_t OnRemoteRequest(uint32_t code, OHOS::MessageParcel& data,
         OHOS::MessageParcel& reply, MessageOption& option) override;
 
 private:

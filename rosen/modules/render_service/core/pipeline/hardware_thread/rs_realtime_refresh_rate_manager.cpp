@@ -100,16 +100,20 @@ void RSRealtimeRefreshRateManager::SetShowRefreshRateEnabled(bool enabled, int32
     HgmTaskHandleThread::Instance().PostEvent(EVENT_ID, showRefreshRateTask_, EVENT_INTERVAL);
 }
 
-void RSRealtimeRefreshRateManager::UpdateScreenRefreshRate(ScreenId screenId, uint32_t refreshRate)
+void RSRealtimeRefreshRateManager::UpdateScreenRefreshRate(const RSScreenProperty& property, ScreenPropertyType type)
 {
+    if (type != ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE) {
+        return;
+    }
+
     std::unique_lock<std::mutex> lock(realtimeRateMutex_);
     bool isScreenRefreshRateChange = false;
-    auto iter = screenRefreshRateMap_.find(screenId);
+    auto iter = screenRefreshRateMap_.find(property.GetScreenId());
     if (iter == screenRefreshRateMap_.end()) {
-        screenRefreshRateMap_.emplace(screenId, refreshRate);
+        screenRefreshRateMap_.emplace(property.GetScreenId(), property.GetRefreshRate());
         isScreenRefreshRateChange = true;
-    } else if (iter->second != refreshRate) {
-        iter->second = refreshRate;
+    } else if (iter->second != property.GetRefreshRate()) {
+        iter->second = property.GetRefreshRate();
         isScreenRefreshRateChange = true;
     }
     if (isScreenRefreshRateChange) {

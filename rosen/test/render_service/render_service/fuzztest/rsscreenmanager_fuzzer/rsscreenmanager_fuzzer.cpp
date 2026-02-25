@@ -313,12 +313,6 @@ void GetCanvasRotation()
     screenManager_->GetCanvasRotation(screenId);
 }
 
-void GetScaleMode()
-{
-    ScreenId screenId = GetData<Rosen::ScreenId>();
-    screenManager_->GetScaleMode(screenId);
-}
-
 void GetProducerSurface()
 {
     ScreenId screenId = GetData<Rosen::ScreenId>();
@@ -521,7 +515,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         OHOS::Rosen::GetScreenBacklight,
         OHOS::Rosen::SetScreenBacklight,
         OHOS::Rosen::GetCanvasRotation,
-        OHOS::Rosen::GetScaleMode,
         OHOS::Rosen::GetProducerSurface,
         OHOS::Rosen::DisplayDump,
         OHOS::Rosen::SetScreenConstraint,

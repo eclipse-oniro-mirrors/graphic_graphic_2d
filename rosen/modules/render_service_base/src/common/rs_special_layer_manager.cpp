@@ -340,7 +340,8 @@ void ScreenSpecialLayerInfo::ClearEmptyInfo()
     EraseEmptyValues(screenSpecialLayerInfoByNode_);
 }
 
-std::unordered_set<ScreenId> ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType type, std::pair<NodeId, LeashPersistentId> id)
+std::unordered_set<ScreenId> ScreenSpecialLayerInfo::QueryEnableScreen(SpecialLayerType type,
+    std::pair<NodeId, LeashPersistentId> id)
 {
     auto typeIter = screenSpecialLayerInfoByNode_.find(type);
     if (typeIter == screenSpecialLayerInfoByNode_.end()) {

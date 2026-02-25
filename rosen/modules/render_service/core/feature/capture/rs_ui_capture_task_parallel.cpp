@@ -24,6 +24,7 @@
 
 #include "common/rs_background_thread.h"
 #include "common/rs_obj_abs_geometry.h"
+#include "drawable/rs_canvas_render_node_drawable.h"
 #include "feature/capture/rs_surface_capture_task_parallel.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature/hdr/rs_colorspace_util.h"
@@ -31,10 +32,11 @@
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_surface_render_params.h"
+#include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
-#include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
@@ -45,13 +47,11 @@
 #include "render/rs_skia_filter.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/rs_screen_mode_info.h"
-#include "drawable/rs_canvas_render_node_drawable.h"
-#include "pipeline/rs_canvas_render_node.h"
+#include "transaction/rs_client_to_service_connection.h"
 #include <unistd.h>
 #include "utils/matrix.h"
 #include <sys/stat.h>
 #include <sys/time.h>
-#include "transaction/rs_client_to_service_connection.h"
 
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/native_buffer_utils.h"

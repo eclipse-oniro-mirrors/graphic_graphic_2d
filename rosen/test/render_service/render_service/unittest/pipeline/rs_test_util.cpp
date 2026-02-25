@@ -15,7 +15,7 @@
 
 #include "rs_test_util.h"
 
-#include "feature/hyper_graphic_manager/hgm_rp_context.h"
+#include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "feature/round_corner_display/rs_rcd_render_listener.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -66,7 +66,7 @@ std::shared_ptr<RSSurfaceRenderNode> RSTestUtil::CreateSurfaceNodeWithBuffer()
     sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
     [[maybe_unused]] GSError ret = psurf->RequestBuffer(buffer, requestFence, requestConfig);
     sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
-    RSMainThread::Instance()->hgmRPContext_ = std::make_shared<HgmRPContext>(nullptr);
+    RSMainThread::Instance()->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
     ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
     OHOS::sptr<SurfaceBuffer> cbuffer;
     Rect damage;
@@ -103,7 +103,7 @@ std::shared_ptr<RSRcdSurfaceRenderNode> RSTestUtil::CreateRcdNodeWithBuffer()
     sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
     [[maybe_unused]] GSError ret = psurf->RequestBuffer(buffer, requestFence, requestConfig);
     sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
-    RSMainThread::Instance()->hgmRPContext_ = std::make_shared<HgmRPContext>(nullptr);
+    RSMainThread::Instance()->hgmRenderContext_ = std::make_shared<HgmRenderContext>(nullptr);
     ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
     OHOS::sptr<SurfaceBuffer> cbuffer;
     Rect damage;

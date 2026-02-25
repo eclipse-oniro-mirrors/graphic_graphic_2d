@@ -188,21 +188,16 @@ void RSFoldScreenManager::UnRegisterSensorCallback()
     }
 }
 
-void RSFoldScreenManager::OnBootComplete(const char* key, const char* value, void *context)
+void RSFoldScreenManager::OnBootComplete(const char* key, const char* value, void* context)
 {
     if (strcmp(key, BOOTEVENT_BOOT_COMPLETED.c_str()) == 0 && strcmp(value, "true") == 0) {
-        RSFoldScreenManager* foldScreenManager = nullptr;
         if (!context) {
             RS_LOGI("%{public}s: data is nullptr", __func__);
+            return;
         } else {
             RS_LOGI("%{public}s: data is not nullptr", __func__);
         }
-        foldScreenManager = static_cast<RSFoldScreenManager*>(context);
-        if (!foldScreenManager) {
-            RS_LOGE("%{public}s: processor is nullptr", __func__);
-            return;
-        }
-
+        auto foldScreenManager = static_cast<RSFoldScreenManager*>(context);
         foldScreenManager->OnBootCompleteEvent();
     } else {
         RS_LOGE("%{public}s key:%{public}s, value:%{public}s", __func__, key, value);

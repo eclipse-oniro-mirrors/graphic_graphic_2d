@@ -897,6 +897,14 @@ void RSBaseRenderEngine::RegisterDeleteBufferListener(const sptr<IConsumerSurfac
 #endif // #ifdef RS_ENABLE_EGLIMAGE
 }
 
+std::function<void(uint64_t)> RSBaseRenderEngine::CreateBufferDeleteCallback() const
+{
+    if (!gpuCacheManager_) {
+        return nullptr;
+    }
+    return gpuCacheManager_->CreateBufferDeleteCallback();
+}
+
 void RSBaseRenderEngine::ShrinkCachesIfNeeded(bool isForUniRedraw)
 {
 #if (defined(RS_ENABLE_EGLIMAGE) && defined(RS_ENABLE_GPU))
@@ -909,7 +917,9 @@ void RSBaseRenderEngine::ShrinkCachesIfNeeded(bool isForUniRedraw)
 void RSBaseRenderEngine::ClearCacheSet(const std::unordered_set<uint64_t>& unmappedCache)
 {
     if (imageManager_ != nullptr) {
-        imageManager_->UnMapImagesFromSurfaceBuffer(unmappedCache);
+        for (auto id : unmappedCache) {
+            imageManager_->UnMapImageFromSurfaceBuffer(id);
+        }
     }
 }
 } // namespace Rosen

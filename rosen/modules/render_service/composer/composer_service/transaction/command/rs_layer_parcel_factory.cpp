@@ -22,7 +22,7 @@ namespace OHOS {
 namespace Rosen {
 inline uint32_t MakeKey(uint16_t commandType)
 {
-    return ((uint32_t)commandType);
+    return (static_cast<uint32_t>(commandType));
 }
 
 RSLayerParcelFactory& RSLayerParcelFactory::Instance()

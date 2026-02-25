@@ -641,7 +641,8 @@ ErrCode RSClientToRenderConnectionProxy::SetHardwareEnabled(NodeId id, bool isEn
     return ERR_OK;
 }
 
-ErrCode RSClientToRenderConnectionProxy::SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent, uint32_t& resCode)
+ErrCode RSClientToRenderConnectionProxy::SetHidePrivacyContent(NodeId id,
+    bool needHidePrivacyContent, uint32_t& resCode)
 {
     MessageParcel data;
     MessageParcel reply;

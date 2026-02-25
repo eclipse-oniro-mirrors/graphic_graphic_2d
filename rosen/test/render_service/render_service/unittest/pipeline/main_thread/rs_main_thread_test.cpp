@@ -29,7 +29,7 @@
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "feature/image_detail_enhancer/rs_image_detail_enhancer_thread.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
-#include "feature/hyper_graphic_manager/hgm_rp_context.h"
+#include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_render_engine.h"
@@ -225,8 +225,8 @@ void RSMainThreadTest::SetUpTestCase()
     renderService_.screenManager_ = screenManager_;
     auto mockRenderProcessManager = sptr<RSSingleRenderProcessManagerMock>::MakeSptr(renderService_);
     renderService_.renderProcessManager_ = mockRenderProcessManager;
-    RSMainThread::Instance()->hgmRPContext_ = 
-        std::make_shared<HgmRPContext>(mockRenderProcessManager->renderToServiceConnection_);
+    RSMainThread::Instance()->hgmRenderContext_ = 
+        std::make_shared<HgmRenderContext>(mockRenderProcessManager->renderToServiceConnection_);
 }
 
 void RSMainThreadTest::TearDownTestCase()

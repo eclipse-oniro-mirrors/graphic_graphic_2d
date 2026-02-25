@@ -22,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <set>
+#include <unordered_set>
 
 #include "common/rs_macros.h"
 
@@ -30,7 +31,6 @@ namespace Rosen {
 
 // Forward declarations
 class RSBaseRenderEngine;
-class RSComposerClientManager;
 
 /**
  * @brief GPU Operation Guard (RAII)
@@ -71,7 +71,7 @@ private:
  *
  * Design Principles:
  * - SRP: Only responsible for GPU cache coordination
- * - DIP: Dependencies injected via constructor
+ * - DIP: Dependencies injected via callbacks
  * - RAII: Automatic resource management for GPU operations
  *
  * Based on AOSP's callback-driven pattern:
@@ -80,6 +80,7 @@ private:
  */
 class GPUCacheManager : public std::enable_shared_from_this<GPUCacheManager> {
 public:
+    using ComposerCacheCleanupCallback = std::function<void(const std::unordered_set<uint64_t>& bufferIds)>;
 
     /**
      * @brief Factory method to create GPUCacheManager
@@ -125,13 +126,14 @@ public:
     void ScheduleBufferCleanup(uint64_t bufferId);
 
     /**
-     * @brief Set RSComposerClientManager for cache cleanup
+     * @brief Set Composer-side cache cleanup callback
      *
-     * Using dependency injection pattern to avoid hard-coded dependency.
+     * GPUCacheManager should not depend on Composer implementation types. Inject a callback from
+     * the owner (e.g. RSMainThread) to perform optional Composer-side cleanup.
      *
-     * @param manager RSComposerClientManager to use for cleanup
+     * @param callback Callback to cleanup Composer-side caches for given buffer IDs
      */
-    void SetComposerClientManager(const std::shared_ptr<RSComposerClientManager>& manager);
+    void SetComposerCacheCleanupCallback(ComposerCacheCleanupCallback callback);
 
     /**
      * @brief Create buffer delete callback (uint64_t version)
@@ -182,8 +184,8 @@ private:
     // RenderEngine for cache cleanup (global object, won't be destroyed)
     RSBaseRenderEngine& renderEngine_;
 
-    // RSComposerClientManager for cache cleanup (dependency injection)
-    std::weak_ptr<RSComposerClientManager> composerClientManager_;
+    // Optional Composer-side cache cleanup (dependency injection via callback)
+    ComposerCacheCleanupCallback composerCacheCleanupCallback_;
 
     // Active GPU draw count (atomic operation, thread-safe)
     std::atomic<int32_t> activeDrawCount_{0};

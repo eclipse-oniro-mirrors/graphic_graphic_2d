@@ -295,9 +295,11 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
     }
     auto accessible = securityManager_.IsInterfaceCodeAccessible(code);
     if (!accessible &&
+        code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE) &&
         code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_AVAILABLE_LISTENER) &&
         code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER) &&
-        code != static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS)) {
+        code != static_cast<uint32_t>(
+            RSIClientToRenderConnectionInterfaceCode::TAKE_SURFACE_CAPTURE_WITH_ALL_WINDOWS)) {
         RS_LOGE("RSClientToRenderConnectionStub::OnRemoteRequest no permission code:%{public}u", code);
         return ERR_INVALID_STATE;
     }
@@ -341,7 +343,8 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                     if (transactionData && isNonSystemAppCalling) {
                         const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
                         if (!transactionData->IsCallingPidValid(callingPid, nodeMap)) {
-                            RS_LOGE("RSClientToRenderConnectionStub::COMMIT_TRANSACTION IsCallingPidValid check failed");
+                            RS_LOGE("RSClientToRenderConnectionStub::COMMIT_TRANSACTION "
+                                "IsCallingPidValid check failed");
                         }
                     }
                     CommitTransaction(transactionData);

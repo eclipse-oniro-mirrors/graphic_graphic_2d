@@ -125,12 +125,12 @@ void RSRenderPipeline::PostUniRenderThreadTask(RSTaskMessage::RSTask task)
     uniRenderThread_->PostTask(task);
 }
 
-void RSRenderPipeline::PostMainThreadSyncTask(RSTaskMessage::RSTask task)
+bool RSRenderPipeline::PostMainThreadSyncTask(RSTaskMessage::RSTask task)
 {
     if (mainThread_ == nullptr) {
-        return;
+        return false;
     }
-    mainThread_->PostSyncTask(task);
+    return mainThread_->PostSyncTask(task);
 }
 
 void RSRenderPipeline::PostUniRenderThreadSyncTask(RSTaskMessage::RSTask task)
@@ -317,8 +317,8 @@ sptr<RSIClientToRenderConnection> RSRenderPipeline::FindClientToRenderConnection
     auto it = renderConnections_.find(token);
     if (it != renderConnections_.end()) {
         auto clientToRenderConnection = it->second;
-        RS_LOGE("RSRenderPipelineAgent::FindClientToRenderConnection::%{public}s, has the same token one %{public}p, return "
-                "%{public}p",
+        RS_LOGE("RSRenderPipelineAgent::FindClientToRenderConnection::%{public}s,"
+            "has the same token one %{public}p, return %{public}p",
             __func__, token.GetRefPtr(), clientToRenderConnection.GetRefPtr());
         return clientToRenderConnection;
     }

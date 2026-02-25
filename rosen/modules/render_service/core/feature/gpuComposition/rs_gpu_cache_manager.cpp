@@ -15,12 +15,11 @@
 
 #include "rs_gpu_cache_manager.h"
 
-#include <inttypes.h>
+#include <cinttypes>
 #include <unordered_set>
 
 #include "pipeline/render_thread/rs_base_render_engine.h"
 #include "platform/common/rs_log.h"
-#include "rs_composer_client_manager.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -111,9 +110,9 @@ void GPUCacheManager::ScheduleBufferCleanup(uint64_t bufferId)
     }
 }
 
-void GPUCacheManager::SetComposerClientManager(const std::shared_ptr<RSComposerClientManager>& manager)
+void GPUCacheManager::SetComposerCacheCleanupCallback(ComposerCacheCleanupCallback callback)
 {
-    composerClientManager_ = manager;
+    composerCacheCleanupCallback_ = std::move(callback);
 }
 
 std::function<void(uint64_t)> GPUCacheManager::CreateBufferDeleteCallback()
@@ -144,7 +143,6 @@ void GPUCacheManager::OnGPUDrawStart()
     // memory_order_relaxed is sufficient here because this counter is not used to protect any other data;
     // it only gates when cleanup is allowed to run.
     activeDrawCount_.fetch_add(1, std::memory_order_relaxed);
-    RS_LOGD("GPUCacheManager::OnGPUDrawStart: count = %{public}d", activeDrawCount_.load());
 }
 
 void GPUCacheManager::OnGPUDrawEnd()
@@ -158,8 +156,6 @@ void GPUCacheManager::OnGPUDrawEnd()
     // In many cases memory_order_relaxed would also work for a pure counter, but acq_rel makes the intent explicit
     // because reaching 0 immediately enables cleanup of GPU resources.
     auto prevCount = activeDrawCount_.fetch_sub(1, std::memory_order_acq_rel);
-    RS_LOGD("GPUCacheManager::OnGPUDrawEnd: count = %{public}d (was %{public}d)",
-        activeDrawCount_.load(), prevCount);
 
     // Cleanup buffers when GPU draw count reaches zero
     if (prevCount == 1) {
@@ -185,9 +181,9 @@ void GPUCacheManager::CleanupPendingBuffers()
     // Cleanup RenderEngine cache
     renderEngine_.ClearCacheSet(bufferIdSet);
 
-    // Cleanup Composer Client cache via RSComposerClientManager
-    if (auto composerClientManager = composerClientManager_.lock()) {
-        composerClientManager->ClearRedrawGPUCompositionCache(bufferIdSet);
+    // Cleanup Composer-side cache (optional)
+    if (composerCacheCleanupCallback_) {
+        composerCacheCleanupCallback_(bufferIdSet);
     }
 }
 

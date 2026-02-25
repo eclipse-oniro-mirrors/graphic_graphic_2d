@@ -88,6 +88,7 @@ public:
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
 
     int32_t SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height);
+    int32_t GetRogScreenResolution(ScreenId id, uint32_t& width, uint32_t& height);
     int32_t SetPhysicalScreenResolution(ScreenId id, uint32_t width, uint32_t height);
     int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
 
@@ -125,7 +126,6 @@ public:
     void SetScreenSwitchStatus(ScreenId id, bool status);
 
     uint32_t SetScreenActiveRect(ScreenId id, const Rect& activeRect);
-    int32_t SetScreenLinearMatrix(ScreenId id, const std::vector<float>& matrix);
 
     // virtual screen
     ScreenId CreateVirtualScreen(const std::string& name, uint32_t width, uint32_t height, sptr<Surface> surface,
@@ -134,7 +134,6 @@ public:
     uint32_t GetCurrentVirtualScreenNum();
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
-    sptr<Surface> GetProducerSurface(ScreenId id) const;
 
     int32_t ResizeVirtualScreen(ScreenId id, uint32_t width, uint32_t height);
     int32_t SetVirtualScreenResolution(ScreenId id, uint32_t width, uint32_t height);
@@ -147,10 +146,8 @@ public:
     bool GetVirtualScreenAutoRotation(ScreenId id) const;
 
     bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode ScaleMode);
-    ScreenScaleMode GetScaleMode(ScreenId id) const;
 
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
-    VirtualScreenStatus GetVirtualScreenStatus(ScreenId id) const;
 
     // blacklist
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
@@ -190,7 +187,6 @@ private:
     void OnHwcDeadEvent(std::map<ScreenId, std::shared_ptr<RSScreen>>& retScreens);
 
     // physical screen
-    bool CheckFoldScreenIdBuiltIn(ScreenId id);
     void ProcessScreenConnected(ScreenId id);
     void ProcessPendingConnections();
     void ProcessScreenDisConnected(ScreenId id);
@@ -213,7 +209,7 @@ private:
     // global blacklist
     int32_t SetGlobalBlackList(const std::unordered_set<NodeId>& blackList);
     int32_t AddGlobalBlackList(const std::vector<NodeId>& blackList);
-    int32_t RemoveGlobalBlackList(const std::vector<uint64_t>& blackList);
+    int32_t RemoveGlobalBlackList(const std::vector<NodeId>& blackList);
 
     std::atomic<ScreenId> defaultScreenId_ = INVALID_SCREEN_ID;
 
@@ -231,8 +227,8 @@ private:
     mutable std::mutex hotPlugAndConnectMutex_;
     std::vector<ScreenId> pendingConnectedIds_;
 
-    mutable std::shared_mutex powerStatusMutex_;
-    std::unordered_map<ScreenId, uint32_t> screenPowerStatus_;
+    mutable std::mutex powerStatusMutex_;
+    std::unordered_map<ScreenId, ScreenPowerStatus> screenPowerStatus_;
 
     mutable std::shared_mutex backLightAndCorrectionMutex_;
     std::unordered_map<ScreenId, uint32_t> screenBacklight_;

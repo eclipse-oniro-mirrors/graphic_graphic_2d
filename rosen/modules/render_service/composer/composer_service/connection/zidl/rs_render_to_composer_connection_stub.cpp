@@ -83,7 +83,8 @@ int32_t RSRenderToComposerConnectionStub::OnRemoteRequest(uint32_t code, OHOS::M
     return ret;
 }
 
-std::unique_ptr<RSLayerTransactionData> RSRenderToComposerConnectionStub::ParseTransactionData(OHOS::MessageParcel& parcel)
+std::unique_ptr<RSLayerTransactionData> RSRenderToComposerConnectionStub::ParseTransactionData(
+    OHOS::MessageParcel& parcel)
 {
     RS_TRACE_NAME("ParseTransactionData data size:" + std::to_string(parcel.GetDataSize()));
     auto transactionData = RSLayerTransactionData::Unmarshalling(parcel);
@@ -96,7 +97,8 @@ std::unique_ptr<RSLayerTransactionData> RSRenderToComposerConnectionStub::ParseT
     return transData;
 }
 
-int32_t RSRenderToComposerConnectionStub::GetCleanLayerBufferSurfaceId(OHOS::MessageParcel& parcel, uint64_t& surfaceId)
+int32_t RSRenderToComposerConnectionStub::GetCleanLayerBufferSurfaceId(OHOS::MessageParcel& parcel,
+    uint64_t& surfaceId)
 {
     if (!parcel.ReadUint64(surfaceId)) {
         RS_LOGE("%{public}s read surface id failed.", __func__);

@@ -63,6 +63,9 @@ public:
     RSScreenType GetScreenType() const;
     ScreenConnectionType GetConnectionType() const;
 
+    void SetRogResolution(uint32_t width, uint32_t height);
+    int32_t GetRogResolution(uint32_t& width, uint32_t& height);
+
     int32_t SetResolution(uint32_t width, uint32_t height);
     // render resolution
     uint32_t Width() const;
@@ -70,10 +73,6 @@ public:
     // physical screen resolution
     uint32_t PhyWidth() const;
     uint32_t PhyHeight() const;
-    bool IsSamplingOn() const;
-    float GetSamplingTranslateX() const;
-    float GetSamplingTranslateY() const;
-    float GetSamplingScale() const;
 
     void DisplayDump(int32_t screenIndex, std::string& dumpString);
     void SetScreenSkipFrameInterval(uint32_t skipFrameInterval);
@@ -121,10 +120,6 @@ public:
     int32_t GetScreenSupportedColorSpaces(std::vector<GraphicCM_ColorSpaceType>& colorSpaces) const;
 
     uint32_t SetScreenActiveRect(const Rect& activeRect);
-    RectI GetActiveRect() const;
-    RectI GetMaskRect() const;
-    RectI GetReviseRect() const;
-    int32_t SetScreenLinearMatrix(const std::vector<float>& matrix);
 
     // virtual screen
     void SetProducerSurface(sptr<Surface> producerSurface);
@@ -169,17 +164,15 @@ public:
     void SetScreenFrameGravity(int32_t gravity);
 
     void SetDisablePowerOffRenderControl(bool disable);
-
-    bool GetAndResetWhiteListChange();
-    void SetWhiteListChange(bool whiteListChange);  //change by jianghongxi
     void SetScreenSwitchStatus(bool status);
 
     using OnPropertyChangeCallback = std::function<void(ScreenId, ScreenPropertyType, const sptr<ScreenPropertyBase>&)>;
     void SetOnPropertyChangedCallback(OnPropertyChangeCallback callback);
+    void SetOnBacklightChangedCallback(std::function<void(ScreenId, uint32_t)> callback);
+
     sptr<RSScreenProperty> GetProperty() const;
     ScreenInfo GetScreenInfo() const;
 
-    void SetOnBacklightChangedCallback(std::function<void(ScreenId, uint32_t)> callback);
 private:
     // create hdiScreen and get some information from drivers.
     void PhysicalScreenInit() noexcept;
@@ -230,15 +223,9 @@ private:
 
     std::function<void(ScreenId, uint32_t)> onBackLightChange_;
     std::atomic<int32_t> backlightLevel_ = INVALID_BACKLIGHT_VALUE;
-
-    std::vector<float> linearMatrix_ = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-
     std::atomic<bool> hasLogBackLightAfterPowerStatusChanged_ = false;
 
-    // status for full screen dirty region update   // change by jianghongxi
-    std::atomic<bool> pSurfaceChange_ = false;
-    std::atomic<bool> virtualScreenPlay_ = false;
-    std::atomic<bool> whiteListChange_ = false;
+    bool isRogResolution_ = false;
 
     OnPropertyChangeCallback onPropertyChange_;  //change by jianghongxi
     RSScreenThreadSafeProperty property_;

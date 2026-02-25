@@ -43,7 +43,7 @@ private:
 #ifdef RS_SUBSCRIBE_SENSOR_ENABLE
     void RegisterSensorCallback();
     void UnRegisterSensorCallback();
-    static void OnBootComplete(const char* key, const char* value, void *context);
+    static void OnBootComplete(const char* key, const char* value, void* context);
     void OnBootCompleteEvent();
     void HandlePostureData(const SensorEvent* const event);
     void HandleSensorData(float angle);

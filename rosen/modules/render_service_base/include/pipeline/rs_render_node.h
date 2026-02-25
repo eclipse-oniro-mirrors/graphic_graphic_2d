@@ -1064,7 +1064,6 @@ public:
     RectI GetFilterDrawableSnapshotRegion() const;
     void SetRSLayer(ScreenId screenId, const std::shared_ptr<RSLayer>& layer)
     {
-        std::lock_guard<std::mutex> lock(rsLayerMutex_);
         rsLayersPerScreen_[screenId] = layer;
     }
 protected:
@@ -1177,7 +1176,6 @@ protected:
     RSHwcRecorder hwcRecorder_;
 
 private:
-    mutable std::mutex rsLayerMutex_;
     std::unordered_map<ScreenId, std::shared_ptr<RSLayer>> rsLayersPerScreen_;
     // mark cross node in physical extended screen model
     bool isRepaintBoundary_ = false;

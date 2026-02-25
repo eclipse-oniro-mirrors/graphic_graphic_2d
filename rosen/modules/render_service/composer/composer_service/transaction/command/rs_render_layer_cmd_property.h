@@ -281,7 +281,8 @@ public:
             return true;
         }
         sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
-        auto readSafeFdFunc = [](OHOS::MessageParcel& parcel, std::function<int(OHOS::MessageParcel&)> readFdDefaultFunc) -> int {
+        auto readSafeFdFunc = [](OHOS::MessageParcel& parcel,
+            std::function<int(OHOS::MessageParcel&)> readFdDefaultFunc) -> int {
             return parcel.ReadFileDescriptor();
         };
         GSError ret = buffer->ReadAllPropertiesFromMessageParcel(parcel, readSafeFdFunc);

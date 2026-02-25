@@ -65,7 +65,7 @@ namespace OHOS::Rosen {
 #if defined(ACCESSIBILITY_ENABLE)
 class AccessibilityObserver;
 #endif
-class HgmRPContext;
+class HgmRenderContext;
 class RSIRenderToServiceConnection;
 class RSUniRenderVisitor;
 class GPUCacheManager;
@@ -815,7 +815,7 @@ private:
 
     bool hasCanvasDrawingNodeCachedOp_ = false;
 
-    std::shared_ptr<HgmRPContext> hgmRPContext_ = nullptr;
+    std::shared_ptr<HgmRenderContext> hgmRenderContext_ = nullptr;
     std::shared_ptr<RSComposerClientManager> composerClientManager_ = nullptr;
 };
 } // namespace OHOS::Rosen

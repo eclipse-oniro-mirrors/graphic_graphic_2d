@@ -2720,83 +2720,6 @@ HWTEST_F(RSScreenTest, InitDisplayPropertyForHardCursorTest, TestSize.Level1)
 }
 
 /*
- * @tc.name: SetScreenLinearMatrixTest001
- * @tc.desc: Test SetScreenLinearMatrix
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetScreenLinearMatrixTest001, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    ASSERT_NE(nullptr, rsScreen);
-
-    rsScreen->property_.SetIsVirtual(true);
-    std::vector<float> matrix;
-    ASSERT_EQ(StatusCode::VIRTUAL_SCREEN, rsScreen->SetScreenLinearMatrix(matrix));
-}
-
-/*
- * @tc.name: SetScreenLinearMatrixTest002
- * @tc.desc: Test SetScreenLinearMatrix
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetScreenLinearMatrixTest002, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    ASSERT_NE(nullptr, rsScreen);
-
-    rsScreen->hdiScreen_ = nullptr;
-    std::vector<float> matrix;
-    ASSERT_EQ(StatusCode::HDI_ERROR, rsScreen->SetScreenLinearMatrix(matrix));
-}
-
-/*
- * @tc.name: SetScreenLinearMatrixTest003
- * @tc.desc: Test SetScreenLinearMatrix
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetScreenLinearMatrixTest003, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    ASSERT_NE(nullptr, rsScreen);
-
-    std::vector<float> matrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-    ASSERT_EQ(StatusCode::SUCCESS, rsScreen->SetScreenLinearMatrix(matrix));
-}
-
-/*
- * @tc.name: SetScreenLinearMatrixTest004
- * @tc.desc: Test SetScreenLinearMatrix
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetScreenLinearMatrixTest004, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    ASSERT_NE(nullptr, rsScreen);
-
-    std::vector<float> matrix = {2.0f};
-    ASSERT_EQ(StatusCode::INVALID_ARGUMENTS, rsScreen->SetScreenLinearMatrix(matrix));
-}
-
-/*
- * @tc.name: SetScreenLinearMatrixTest005
- * @tc.desc: Test SetScreenLinearMatrix
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetScreenLinearMatrixTest005, TestSize.Level1)
-{
-    auto rsScreen = std::make_shared<RSScreen>(0);
-    ASSERT_NE(nullptr, rsScreen);
-
-    std::vector<float> matrix = {2.0f, 0.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 0.0f, 2.0f};
-    ASSERT_EQ(StatusCode::INVALID_ARGUMENTS, rsScreen->SetScreenLinearMatrix(matrix));
-}
-
-/*
  * @tc.name: SetOnBacklightChangedCallbackTest
  * @tc.desc: SetOnBacklightChangedCallback Test
  * @tc.type: FUNC
@@ -3827,32 +3750,6 @@ HWTEST_F(RSScreenTest, SetScreenActiveRect_BoundaryTests_001, TestSize.Level1)
     EXPECT_CALL(*hdiDeviceMock_, SetScreenActiveRect).WillOnce(testing::Return(0));
     auto ret3 = rsScreen->SetScreenActiveRect(activeRect3);
     EXPECT_EQ(ret3, StatusCode::SUCCESS);
-}
-
-/*
- * @tc.name: SetScreenLinearMatrix_EqualityCheck_001
- * @tc.desc: Test SetScreenLinearMatrix equality check
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSScreenTest, SetScreenLinearMatrix_EqualityCheck_001, TestSize.Level1)
-{
-    auto rsScreen = std::make_unique<RSScreen>(nullptr);
-    ASSERT_NE(rsScreen, nullptr);
-
-    std::vector<float> matrix1 = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
-
-    rsScreen->hdiScreen_ = std::make_unique<HdiScreen>(100);
-    rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
-
-    // First call should invoke HDI
-    EXPECT_CALL(*hdiDeviceMock_, SetDisplayPerFrameParameterSmq).WillOnce(testing::Return(0));
-    auto ret1 = rsScreen->SetScreenLinearMatrix(matrix1);
-    EXPECT_EQ(ret1, StatusCode::SUCCESS);
-
-    // Second call with same matrix should return SUCCESS without HDI call (early return)
-    auto ret2 = rsScreen->SetScreenLinearMatrix(matrix1);
-    EXPECT_EQ(ret2, StatusCode::SUCCESS);
 }
 
 /*

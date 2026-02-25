@@ -66,8 +66,9 @@ const uint8_t DO_GET_DISPLAY_IDENTIFICATION_DATA = 19;
 const uint8_t DO_RESIZE_VIRTUAL_SCREEN = 20;
 const uint8_t DO_CLEAN_VIRTUAL_SCREENS = 21;
 constexpr uint8_t DO_SET_ROG_SCREEN_RESOLUTION = 22;
-constexpr uint8_t DO_SET_SCREEN_SECURITY_MASK = 23;
-const uint8_t TARGET_SIZE = 24;
+constexpr uint8_t DO_GET_ROG_SCREEN_RESOLUTION = 23;
+constexpr uint8_t DO_SET_SCREEN_SECURITY_MASK = 25;
+const uint8_t TARGET_SIZE = 26;
 } // namespace
 
 auto g_pid = getpid();
@@ -292,6 +293,18 @@ void DoSetRogScreenResolution(FuzzedDataProvider& fdp)
     dataP.WriteUint32(width);
     uint32_t height = fdp.ConsumeIntegral<uint32_t>();
     dataP.WriteUint32(height);
+    g_toServiceConnectionStub->OnRemoteRequest(code, dataP, reply, option);
+}
+
+void DoGetRogScreenResolution(FuzzedDataProvider& fdp)
+{
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_ROG_SCREEN_RESOLUTION);
+    MessageOption option;
+    MessageParcel dataP;
+    MessageParcel reply;
+    dataP.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    ScreenId id = fdp.ConsumeIntegral<uint64_t>();
+    dataP.WriteUint64(id);
     g_toServiceConnectionStub->OnRemoteRequest(code, dataP, reply, option);
 }
 

@@ -300,44 +300,6 @@ void RSEglImageManager::ShrinkCachesIfNeeded(bool isForUniRedraw)
     }
 }
 
-void RSEglImageManager::UnMapImagesFromSurfaceBuffer(const std::unordered_set<uint64_t>& bufferIds)
-{
-    if (bufferIds.empty()) {
-        return;
-    }
-
-    RS_LOGD("RSEglImageManager::UnMapImagesFromSurfaceBuffer: request %{public}zu buffers", bufferIds.size());
-
-    // Remove matching cache entries from the shared map first, then release them on their target threads.
-    // This prevents an already-scheduled unmap task from erasing a newly recreated cache with the same bufferId.
-    std::unordered_map<pid_t, std::vector<std::unique_ptr<EglImageResource>>> resourcesByThread;
-    {
-        std::lock_guard<std::mutex> lock(opMutex_);
-        for (auto bufferId : bufferIds) {
-            auto iter = imageCacheSeqs_.find(bufferId);
-            if (iter == imageCacheSeqs_.end() || !iter->second) {
-                continue;
-            }
-            pid_t threadIndex = iter->second->GetThreadIndex();
-            resourcesByThread[threadIndex].push_back(std::move(iter->second));
-            imageCacheSeqs_.erase(iter);
-        }
-    }
-
-    for (auto& [threadIndex, resources] : resourcesByThread) {
-        if (resources.empty()) {
-            continue;
-        }
-        auto resourcesHolder = std::make_shared<std::vector<std::unique_ptr<EglImageResource>>>(std::move(resources));
-        auto task = [resourcesHolder = std::move(resourcesHolder)]() mutable {
-            RS_OPTIONAL_TRACE_NAME_FMT("UnmapEglImage batch count: %zu", resourcesHolder->size());
-            // Release EglImageResource instances on this thread explicitly.
-            resourcesHolder->clear();
-        };
-        RSTaskDispatcher::GetInstance().PostTask(threadIndex, task);
-    }
-}
-
 void RSEglImageManager::UnMapImageFromSurfaceBuffer(uint64_t seqNum)
 {
     std::unique_ptr<EglImageResource> resource;

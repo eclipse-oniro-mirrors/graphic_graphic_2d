@@ -35,7 +35,7 @@ class RSRenderLayerCmd;
 
 class RSSurfaceLayer : public RSLayer {
 public:
-    virtual ~RSSurfaceLayer();
+    ~RSSurfaceLayer();
     static std::shared_ptr<RSLayer> Create(RSLayerId rsLayerId, const std::shared_ptr<RSComposerContext>& context);
 
     RSLayerId GetRSLayerId() const override;
