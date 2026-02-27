@@ -295,8 +295,8 @@ void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const RSScreenPro
     auto originSrcRect = srcRect;
 
     RectI dstRectI(dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_);
-    auto screenWidth = static_cast<int32_t>(screenInfo.width);
-    auto screenHeight = static_cast<int32_t>(screenInfo.height);
+    auto screenWidth = static_cast<int32_t>(screenProperty.GetWidth());
+    auto screenHeight = static_cast<int32_t>(screenProperty.GetHeight());
     RectI screenRectI(0, 0, screenWidth, screenHeight);
     RectI resDstRect = dstRectI.IntersectRect(screenRectI);
     if (resDstRect == dstRectI) {

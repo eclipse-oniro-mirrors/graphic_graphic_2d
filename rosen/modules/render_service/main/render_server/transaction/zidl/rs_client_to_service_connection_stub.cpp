@@ -357,7 +357,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
     if (!accessible &&
         code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_MEMORY_GRAPHIC) &&
         code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO) &&
-        code != static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID)) {
+        code != static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_REFRESH_INFO_BY_PID_AND_UNIQUEID)) {
         RS_LOGE("RSClientToServiceConnectionStub::OnRemoteRequest no permission code:%{public}u", code);
         return ERR_INVALID_STATE;
     }
@@ -2827,7 +2827,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             break;
         }
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
-        case static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE) : {
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE) : {
             RS_LOGI("RSRenderServicrConnectionStub::OnRemoteRequest SET_OVERLAY_DISPLAY_MODE");
             int32_t mode{0};
             if (!data.ReadInt32(mode)) {
@@ -3153,17 +3153,6 @@ bool RSClientToServiceConnectionStub::ReadGameStateDataRs(GameStateData& info, M
         !data.ReadInt32(info.state) || !data.ReadInt32(info.renderTid) ||
         !data.ReadString(info.bundleName)) {
         RS_LOGE("RSClientToServiceConnectionStub::ReadGameStateDataRs Read parcel failed!");
-        return false;
-    }
-    return true;
-}
-
-bool RSClientToServiceConnectionStub::WriteBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
-{
-    if (!data.WriteFloat(brightnessInfo.currentHeadroom) ||
-        !data.WriteFloat(brightnessInfo.maxHeadroom) ||
-        !data.WriteFloat(brightnessInfo.sdrNits)) {
-        RS_LOGE("RSClientToServiceConnectionStub::WriteBrightnessInfo write brightnessInfo failed!");
         return false;
     }
     return true;

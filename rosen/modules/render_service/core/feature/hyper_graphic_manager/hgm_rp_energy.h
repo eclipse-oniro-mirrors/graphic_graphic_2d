@@ -41,4 +41,3 @@ private:
     std::unordered_map<std::string, int32_t> componentPowerConfig_;
 };
 }; // namespace OHOS::Rosen
-#endif

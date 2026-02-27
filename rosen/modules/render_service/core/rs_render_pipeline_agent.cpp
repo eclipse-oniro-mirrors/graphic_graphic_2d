@@ -1840,7 +1840,7 @@ void RSRenderPipelineAgent::OnScreenBacklightChanged(ScreenId screenId, uint32_t
         });
         return;
     }
-    if (RSUniREnderJudgement::IsUniRender()) {
+    if (RSUniRenderJudgement::IsUniRender()) {
         rsRenderPipeline_->GetComposerClientManager()->SetScreenBacklight(screenId, level);
     } else {
         auto composerClient = rsRenderPipeline_->GetComposerClientManager()->GetComposerClient(screenId);

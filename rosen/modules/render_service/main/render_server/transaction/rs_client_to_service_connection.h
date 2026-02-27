@@ -392,6 +392,9 @@ private:
     sptr<RSScreenManagerAgent> screenManagerAgent_;
     sptr<IRemoteObject> token_;
 
+    std::unordered_map<pid_t, std::string> pidToBundleName_;
+    mutable std::mutex pidToBundleMutex_;
+    
     class RSConnectionDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
         explicit RSConnectionDeathRecipient(wptr<RSClientToServiceConnection> conn);

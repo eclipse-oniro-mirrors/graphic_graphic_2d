@@ -262,7 +262,7 @@ bool RSRenderInterface::FreezeScreen(std::shared_ptr<RSDisplayNode> node, bool i
         ROSEN_LOGE("%{public}s node is nullptr", __func__);
         return false;
     }
-    return renderPiplineClient_->FreezeScreen(node->GetId(), isFreeze, needSync);
+    return renderPipelineClient_->FreezeScreen(node->GetId(), isFreeze, needSync);
 }
 
 bool RSRenderInterface::RegisterSurfaceBufferCallback(pid_t pid, uint64_t uid,
