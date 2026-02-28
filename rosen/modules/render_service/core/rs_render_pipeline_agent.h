@@ -23,7 +23,7 @@ namespace OHOS {
 namespace Rosen {
 class RSRenderPipelineAgent : public RefBase {
 public:
-    RSRenderPipelineAgent(std::shared_ptr<RSRenderPipeline>& rsRenderPipeline);
+    explicit RSRenderPipelineAgent(std::shared_ptr<RSRenderPipeline>& rsRenderPipeline);
     ~RSRenderPipelineAgent() = default;
 
     ErrCode CommitTransaction(pid_t callingPid, bool isTokenTypeValid, bool isNonSystemAppCalling,
@@ -140,7 +140,8 @@ public:
     ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode);
     float GetRotationInfoFromSurfaceBuffer(const sptr<SurfaceBuffer>& buffer);
     void SetVmaCacheStatus(bool flag);
-    ErrCode SetWatermark(pid_t callingPid, const std::string& name, std::shared_ptr<Media::PixelMap> watermark, bool& success);
+    ErrCode SetWatermark(pid_t callingPid, const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+        bool& success);
     ErrCode GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap,
     const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList, bool& success);
     void ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow);

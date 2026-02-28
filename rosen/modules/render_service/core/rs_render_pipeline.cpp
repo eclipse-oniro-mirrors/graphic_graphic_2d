@@ -89,9 +89,6 @@ void RSRenderPipeline::Init(const std::shared_ptr<AppExecFwk::EventHandler>& han
     // Gfx init
     InitDumper(handler);
 
-    // todo
-    // RS_PROFILER_INIT(this);
-
     RS_LOGD("%{public}s: render pipeline int success.", __func__);
 }
 

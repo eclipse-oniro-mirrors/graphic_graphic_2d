@@ -710,7 +710,8 @@ ErrCode RSServiceToRenderConnectionProxy::SetWatermark(pid_t callingPid, const s
     return ERR_OK;
 }
 
-void RSServiceToRenderConnectionProxy::DoDump(std::unordered_set<std::u16string>& argSets, sptr<RSIDumpCallback> callback)
+void RSServiceToRenderConnectionProxy::DoDump(std::unordered_set<std::u16string>& argSets,
+    sptr<RSIDumpCallback> callback)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -736,7 +737,8 @@ void RSServiceToRenderConnectionProxy::DoDump(std::unordered_set<std::u16string>
     }
 }
 
-void RSServiceToRenderConnectionProxy::NotifyPackageEvent(uint32_t listSize, const std::vector<std::string>& packageList)
+void RSServiceToRenderConnectionProxy::NotifyPackageEvent(uint32_t listSize,
+    const std::vector<std::string>& packageList)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -850,7 +852,8 @@ ErrCode RSServiceToRenderConnectionProxy::SetBehindWindowFilterEnabled(bool enab
     uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSServiceToRenderConnectionProxy::SetBehindWindowFilterEnabled sendrequest error : %{public}d", err);
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::SetBehindWindowFilterEnabled sendrequest error : "
+                   " %{public}d", err);
         return ERR_INVALID_VALUE;
     }
     return ERR_OK;
@@ -869,7 +872,8 @@ ErrCode RSServiceToRenderConnectionProxy::GetBehindWindowFilterEnabled(bool& ena
     uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
-        ROSEN_LOGE("RSServiceToRenderConnectionProxy::GetBehindWindowFilterEnabled sendrequest error : %{public}d", err);
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::GetBehindWindowFilterEnabled sendrequest error : "
+                   " %{public}d", err);
         return ERR_INVALID_VALUE;
     }
     if (!reply.ReadBool(enabled)) {
@@ -997,7 +1001,8 @@ void RSServiceToRenderConnectionProxy::HgmForceUpdateTask(bool flag, const std::
     }
 }
 
-void RSServiceToRenderConnectionProxy::HandleHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData)
+void RSServiceToRenderConnectionProxy::HandleHwcEvent(uint32_t deviceId, uint32_t eventId,
+    const std::vector<int32_t>& eventData)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1161,8 +1166,8 @@ int32_t RSServiceToRenderConnectionProxy::RegisterSelfDrawingNodeRectChangeCallb
         ROSEN_LOGE("RegisterSelfDrawingNodeRectChangeCallback: WriteRemoteObject callback->AsObject() err.");
         return WRITE_PARCEL_ERR;
     }
-    uint32_t code =
-        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(
+        RSIServiceToRenderConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RegisterSelfDrawingNodeRectChangeCallback: Send request err.");

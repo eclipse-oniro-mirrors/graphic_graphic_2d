@@ -406,13 +406,6 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            // 安全校验
-            // RS_PROFILER_PATCH_PID(data, pid);
-            // if (!accessible && !IsValidCallingPid(pid, callingPid)) {
-            //     RS_LOGW("RSServiceToRenderStub::GET_MEMORY_GRAPHIC invalid pid[%{public}d]", callingPid);
-            //     ret = ERR_INVALID_DATA;
-            //     break;
-            // }
             MemoryGraphic memoryGraphic;
             if (GetMemoryGraphic(pid, memoryGraphic) != ERR_OK || !reply.WriteParcelable(&memoryGraphic)) {
                 ret = ERR_INVALID_REPLY;
@@ -640,8 +633,8 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             }
             uint32_t size;
             if (!data.ReadUint32(size)) {
-                ROSEN_LOGE(
-                    "RSIServiceToRenderConnectionStub::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK Read size failed");
+                ROSEN_LOGE("RSIServiceToRenderConnectionStub::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK Read "
+                           "size failed");
                 ret = ERR_INVALID_REPLY;
                 break;
             }

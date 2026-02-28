@@ -506,10 +506,17 @@ void RSProfiler::CreateMockConnection(pid_t pid)
         renderProcessManagerAgent, screenManagerAgent, tokenObj, g_renderService->vsyncManager_->GetVsyncManagerAgent()));
 
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(g_renderService->renderPipeline_);
+    // Force it: RSClientToRenderConnection constructor has this line,
+    // but fails on token_->AddDeathRecipient(connDeathRecipient_)
+    if (renderPipelineAgent) {
+        renderPipelineAgent->AddTransactionDataPidInfo(pid);
+    }
+
     sptr<RSIClientToRenderConnection> newRenderConn(
         new RSClientToRenderConnection(pid, renderPipelineAgent, tokenObj));
+
     std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> tmp;
-    std::unique_lock<std::mutex> lock(g_renderService->mutex_);
+    const std::unique_lock<std::mutex> lock(g_renderService->mutex_);
     auto it = g_renderService->connections_.find(tokenObj);
     if (it != g_renderService->connections_.end()) {
         tmp = it->second;
@@ -1093,33 +1100,42 @@ void RSProfiler::UnmarshalSelfDrawingBuffers()
 
 void RSProfiler::SurfaceNodeUpdateBuffer(std::shared_ptr<RSRenderNode> node, sptr<SurfaceBuffer> buffer)
 {
-    // TODO CAR
-    // auto surfaceNode = std::static_pointer_cast<RSSurfaceRenderNode>(node);
-    // if (!surfaceNode) {
-    //     HRPE("SurfaceNodeUpdateBuffer: failed get surface node");
-    //     return;
-    // }
-    // auto handler = surfaceNode->GetRSSurfaceHandler();
-    // if (!handler) {
-    //     HRPE("SurfaceNodeUpdateBuffer: handler not found");
-    //     return;
-    // }
+    if (!g_mainThread) {
+        HRPE("SurfaceNodeUpdateBuffer: Invalid main thread");
+        return;
+    }
 
-    // BufferFlushConfigWithDamages flushConfig = {
-    //     .damages = { {
-    //         .w = buffer->GetWidth(),
-    //         .h = buffer->GetHeight(),
-    //     } },
-    // };
-    // g_mainThread->PostSyncTask([&handler, &surfaceNode, &buffer, &flushConfig] {
-    //     handler->SetBuffer(buffer, SyncFence::InvalidFence(), flushConfig.damages[0], 0);
-    //     surfaceNode->UpdateBufferInfo(buffer, flushConfig.damages[0], handler->GetAcquireFence(), nullptr);
+    if (!buffer || !buffer->GetWidth() || !buffer->GetHeight()) {
+        HRPE("SurfaceNodeUpdateBuffer: Invalid surface buffer");
+        return;
+    }
 
-    //     surfaceNode->SetNodeDirty(true);
-    //     surfaceNode->SetDirty();
-    //     surfaceNode->SetContentDirty();
-    //     g_mainThread->SetDirtyFlag();
-    // });
+    const auto surfaceNode = node->ReinterpretCastTo<RSSurfaceRenderNode>();
+    if (!surfaceNode) {
+        HRPE("SurfaceNodeUpdateBuffer: Invalid surface node");
+        return;
+    }
+
+    const auto surfaceHandler = surfaceNode->GetRSSurfaceHandler();
+    if (!surfaceHandler) {
+        HRPE("SurfaceNodeUpdateBuffer: Invalid surface handler");
+        return;
+    }
+
+    g_mainThread->PostSyncTask([surfaceNode, surfaceHandler, buffer] {
+        const Rect extent {
+            .w = buffer->GetWidth(),
+            .h = buffer->GetHeight(),
+        };
+        surfaceHandler->SetBuffer(buffer, SyncFence::InvalidFence(), extent, 0, nullptr);
+        surfaceNode->UpdateBufferInfo(surfaceHandler->GetBuffer(), surfaceHandler->GetBufferOwnerCount(), extent,
+            surfaceHandler->GetAcquireFence(), surfaceHandler->GetPreBuffer(),
+            surfaceHandler->GetPreBufferOwnerCount());
+        surfaceNode->SetNodeDirty(true);
+        surfaceNode->SetDirty();
+        surfaceNode->SetContentDirty();
+        g_mainThread->SetDirtyFlag();
+    });
     AwakeRenderServiceThread();
 }
 

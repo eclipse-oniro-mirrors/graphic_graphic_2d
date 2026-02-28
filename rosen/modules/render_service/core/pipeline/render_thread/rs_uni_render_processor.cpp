@@ -192,15 +192,15 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     }
     auto& params = *(static_cast<RSSurfaceRenderParams*>(paramsSp.get()));
     auto buffer = offlineResult ? offlineResult->buffer : params.GetBuffer();
-    if (buffer == nullptr) {
-        return;
-    }
     auto& layerInfo = params.GetLayerInfo();
     const Rect& dirtyRect = offlineResult ? offlineResult->damageRect : params.GetBufferDamage();
     const auto& srcRect = offlineResult ? offlineResult->bufferRect : layerInfo.srcRect;
     auto preBuffer = offlineResult ? offlineResult->preBuffer : params.GetPreBuffer();
     auto acquireFence = offlineResult ? offlineResult->acquireFence : params.GetAcquireFence();
     auto consumer = offlineResult ? offlineResult->consumer : surfaceDrawable.GetConsumerOnDraw();
+    if (buffer == nullptr || consumer == nullptr) {
+        return;
+    }
     RSLayerPtr layer = GetLayerInfo(static_cast<RSSurfaceRenderParams&>(params), buffer, preBuffer,
         consumer, acquireFence, offlineResult);
     if (layer == nullptr) {

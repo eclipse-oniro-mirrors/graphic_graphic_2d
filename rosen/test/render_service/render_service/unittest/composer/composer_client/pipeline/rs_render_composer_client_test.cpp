@@ -46,8 +46,6 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-
-    static inline uint32_t screenId = 0;
     static inline std::shared_ptr<RSComposerClient> client = nullptr;
 };
 
@@ -63,6 +61,19 @@ void RSRenderComposerClientTest::TearDownTestCase() {}
 void RSRenderComposerClientTest::SetUp() {}
 void RSRenderComposerClientTest::TearDown() {}
 
+std::shared_ptr<RSComposerClient> CreateClient()
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    auto mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+    auto output = std::make_shared<HdiOutput>(0);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    mgr->OnScreenConnected(output, property);
+    auto conn = mgr->GetRSComposerConnection(0);
+    sptr<IRSRenderToComposerConnection> ifaceConn = conn;
+
+    return RSComposerClient::Create(ifaceConn, nullptr);
+}
 /**
  * @tc.name: ClientCreateTest
  * @tc.desc: Test Create Client
@@ -71,16 +82,7 @@ void RSRenderComposerClientTest::TearDown() {}
  */
 HWTEST_F(RSRenderComposerClientTest, ClientCreateTest, Function | SmallTest | Level2)
 {
-    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
-    auto mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
-    auto output = std::make_shared<HdiOutput>(screenId);
-    output->Init();
-    sptr<RSScreenProperty> property = new RSScreenProperty();
-    mgr->OnScreenConnected(output, property);
-    auto conn = mgr->GetRSComposerConnection(screenId);
-    sptr<IRSRenderToComposerConnection> ifaceConn = conn;
-
-    client = RSComposerClient::Create(ifaceConn, nullptr);
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     EXPECT_NE(client, nullptr);
 }
 
@@ -93,6 +95,8 @@ HWTEST_F(RSRenderComposerClientTest, ClientCreateTest, Function | SmallTest | Le
 HWTEST_F(RSRenderComposerClientTest, LayerFuncTest, Function | SmallTest | Level2)
 {
     auto layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     ASSERT_NE(client, nullptr);
     auto context = client->GetComposerContext();
     ASSERT_NE(context, nullptr);
@@ -107,6 +111,7 @@ HWTEST_F(RSRenderComposerClientTest, LayerFuncTest, Function | SmallTest | Level
  */
 HWTEST_F(RSRenderComposerClientTest, CommitRSLayerTest, Function | SmallTest | Level2)
 {
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     auto layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     layer->SetTunnelHandleChange(true);
     ASSERT_NE(client, nullptr);
@@ -137,6 +142,7 @@ HWTEST_F(RSRenderComposerClientTest, CommitRSLayerTest, Function | SmallTest | L
  */
 HWTEST_F(RSRenderComposerClientTest, ReleaseLayerBuffersTest, Function | SmallTest | Level2)
 {
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     ASSERT_NE(client, nullptr);
     std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>> timestampVec;
     std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>> releaseBufferFenceVec;
@@ -161,6 +167,7 @@ HWTEST_F(RSRenderComposerClientTest, ReleaseLayerBuffersTest, Function | SmallTe
  */
 HWTEST_F(RSRenderComposerClientTest, SetOutputTest, Function | SmallTest | Level2)
 {
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     auto output = std::make_shared<HdiOutput>(0);
     ASSERT_NE(client, nullptr);
     client->SetOutput(output);
@@ -175,6 +182,7 @@ HWTEST_F(RSRenderComposerClientTest, SetOutputTest, Function | SmallTest | Level
  */
 HWTEST_F(RSRenderComposerClientTest, ClearRedrawGPUCompositionCacheTest, Function | SmallTest | Level2)
 {
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     ASSERT_NE(client, nullptr);
     std::unordered_set<uint64_t> bufferIds;
     client->ClearRedrawGPUCompositionCache(bufferIds);
@@ -199,6 +207,7 @@ HWTEST_F(RSRenderComposerClientTest, ClearRedrawGPUCompositionCacheTest, Functio
  */
 HWTEST_F(RSRenderComposerClientTest, SetScreenBacklightTest, Function | SmallTest | Level2)
 {
+    std::shared_ptr<RSComposerClient> client = CreateClient();
     ASSERT_NE(client, nullptr);
     client->SetScreenBacklight(0);
     std::shared_ptr<HdiOutput> output = std::make_shared<HdiOutput>(0);

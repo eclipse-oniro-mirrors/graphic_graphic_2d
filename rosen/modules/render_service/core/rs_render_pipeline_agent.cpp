@@ -1254,7 +1254,8 @@ ErrCode RSRenderPipelineAgent::GetMemoryGraphic(int pid, MemoryGraphic& memoryGr
                 ret = ERR_INVALID_VALUE;
                 return;
             }
-            auto context = renderPipeline->GetUniRenderThread()->GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
+            auto context =
+                renderPipeline->GetUniRenderThread()->GetRenderEngine()->GetRenderContext()->GetDrGPUContext();
             memoryGraphic = MemoryManager::CountPidMemory(pid, context); 
         });
     return ERR_OK;

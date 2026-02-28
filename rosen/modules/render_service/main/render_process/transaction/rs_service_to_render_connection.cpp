@@ -137,7 +137,8 @@ void RSServiceToRenderConnection::HgmForceUpdateTask(bool flag, const std::strin
     renderPipelineAgent_->HgmForceUpdateTask(flag, fromWhom);
 }
 
-void RSServiceToRenderConnection::HandleHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData)
+void RSServiceToRenderConnection::HandleHwcEvent(uint32_t deviceId, uint32_t eventId,
+    const std::vector<int32_t>& eventData)
 {
     renderPipelineAgent_->NotifyHwcEventToRender(deviceId, eventId, eventData);
 }
