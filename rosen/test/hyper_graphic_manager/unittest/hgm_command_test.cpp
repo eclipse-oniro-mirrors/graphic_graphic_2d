@@ -95,48 +95,6 @@ void HgmCommandTest::LoadXmlContent1()
 }
 
 /**
- * @tc.name: UpdateRefreshRateForSettings
- * @tc.desc: Verify the result of UpdateRefreshRateForSettings function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmCommandTest, UpdateRefreshRateForSettings001, Function | SmallTest | Level0)
-{
-    auto& hgmCore = HgmCore::Instance();
-    hgmCore.InitXmlConfig();
-    LoadXmlContent1();
-
-    // padmode
-    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("padmode");
-    const auto& settings = hgmCore.mPolicyConfigData_->refreshRateForSettings_;
-    std::vector<std::pair<int32_t, int32_t>> padSettings = {
-        {-1, -1}, {60, 1}, {120, 2}, {144, 3}
-    };
-    ASSERT_EQ(settings.size(), padSettings.size());
-    for (size_t i = 0; i < settings.size(); ++i) {
-        EXPECT_EQ(settings[i], padSettings[i]);
-    }
-
-    // pcmode
-    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("pcmode");
-    std::vector<std::pair<int32_t, int32_t>> pcSettings = {
-        {-1, -101}, {60, 101}, {120, 102}
-    };
-    ASSERT_EQ(settings.size(), pcSettings.size());
-    for (size_t i = 0; i < settings.size(); ++i) {
-        EXPECT_EQ(settings[i], pcSettings[i]);
-    }
-
-    // test unknowmode
-    auto originSettings = settings;
-    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("unknownMode");
-    ASSERT_EQ(settings.size(), originSettings.size());
-    for (size_t i = 0; i < settings.size(); ++i) {
-        EXPECT_EQ(settings[i], originSettings[i]);
-    }
-}
-
-/**
  * @tc.name: AddParamWatcher
  * @tc.desc: Verify the result of AddParamWatcher function
  * @tc.type: FUNC
@@ -169,48 +127,6 @@ HWTEST_F(HgmCommandTest, SysModeChangeProcess001, Function | SmallTest | Level0)
 
     HgmCore::SysModeChangeProcess("persist.sys.mode", "testmode", nullptr);
     std::this_thread::sleep_for(std::chrono::milliseconds(delayTime));
-}
-
-/**
- * @tc.name: SettingModeId2XmlModeId
- * @tc.desc: Verify the result of SettingModeId2XmlModeId function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmCommandTest, SettingModeId2XmlModeId, Function | SmallTest | Level0)
-{
-    using namespace std;
-    auto& hgmCore = HgmCore::Instance();
-    hgmCore.InitXmlConfig();
-    LoadXmlContent1();
-    EXPECT_NE(hgmCore.mPolicyConfigData_, nullptr);
-
-    // test when auto mode exists
-    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("pcmode");
-    vector<pair<int, optional<string>>> testConfig = {
-        {-1, "-101"},
-        {-10, optional<string>()},
-        {10, optional<string>()},
-        {2, "102"}
-    };
-    for (const auto& p : testConfig) {
-        auto ret = visitor_->SettingModeId2XmlModeId(p.first);
-        EXPECT_EQ(ret, p.second);
-    }
-
-    // no auto mode
-    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("testmode_no_auto");
-    testConfig = {
-        {-10, optional<string>()},
-        {-1, optional<string>()},
-        {10, optional<string>()},
-        {1, "101"},
-        {2, "102"}
-    };
-    for (const auto& p : testConfig) {
-        auto ret = visitor_->SettingModeId2XmlModeId(p.first);
-        EXPECT_EQ(ret, p.second);
-    }
 }
 
 /**
@@ -295,10 +211,32 @@ HWTEST_F(HgmCommandTest, Init001, Function | SmallTest | Level0)
     hgmCore.mPolicyConfigVisitor_ = configVisitor;
     configData->xmlCompatibleMode_ = false;
     frameRateMgr->Init(nullptr, nullptr, nullptr, nullptr);
+
     // recovery
     hgmCore.mPolicyConfigData_ = configData;
     hgmCore.mPolicyConfigVisitor_ = configVisitor;
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+/**
+ * @tc.name: GetRefreshRateModeName
+ * @tc.desc: Verify the result of GetRefreshRateModeName function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, GetRefreshRateModeName, Function | SmallTest | Level0)
+{
+    std::vector<std::pair<int32_t, int32_t>> testCase = {
+        // <refreshRateModeId, fps>
+        { -1, -1 },
+        { 1, OLED_60_HZ },
+        { 2, OLED_120_HZ },
+        { 3, 0 },
+    };
+
+    for (const auto& [refreshRateModeId, fps] : testCase) {
+        EXPECT_EQ(visitor_->GetRefreshRateModeName(refreshRateModeId), fps);
+    }
 }
 
 /**
@@ -321,26 +259,6 @@ HWTEST_F(HgmCommandTest, SimpleGet, Function | SmallTest | Level0)
 }
 
 /**
- * @tc.name: GetRefreshRateModeName
- * @tc.desc: Verify the result of GetRefreshRateModeName function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmCommandTest, GetRefreshRateModeName, Function | SmallTest | Level0)
-{
-    std::vector<std::pair<int32_t, int32_t>> testCase = {
-        // <refreshRateModeId, fps>
-        { -1, -1 },
-        { 1, OLED_60_HZ },
-        { 2, OLED_120_HZ },
-        { 3, 0 },
-    };
-    for (const auto& [refreshRateModeId, fps] : testCase) {
-        EXPECT_EQ(visitor_->GetRefreshRateModeName(refreshRateModeId), fps);
-    }
-}
-
-/**
  * @tc.name: XmlModeId2SettingModeId
  * @tc.desc: Verify the result of XmlModeId2SettingModeId function
  * @tc.type: FUNC
@@ -357,6 +275,7 @@ HWTEST_F(HgmCommandTest, XmlModeId2SettingModeId, Function | SmallTest | Level0)
         { "3", std::optional<int32_t>() },
         { "0", std::optional<int32_t>() },
     };
+
     for (const auto& [xmlModeId, settingModeId] : testCase) {
         EXPECT_EQ(visitor_->XmlModeId2SettingModeId(xmlModeId), settingModeId);
     }
@@ -367,6 +286,7 @@ HWTEST_F(HgmCommandTest, XmlModeId2SettingModeId, Function | SmallTest | Level0)
     hgmCore.InitXmlConfig();
     LoadXmlContent1();
     EXPECT_NE(hgmCore.mPolicyConfigData_, nullptr);
+
     vector<pair<int32_t, int32_t>> noAutoConfig = {
         {60, 101},
         {120, 102}
@@ -376,6 +296,7 @@ HWTEST_F(HgmCommandTest, XmlModeId2SettingModeId, Function | SmallTest | Level0)
     for (size_t i = 0; i < noAutoConfig.size(); ++i) {
         EXPECT_EQ(noAutoConfig[i], visitor_->configData_.refreshRateForSettings_[i]);
     }
+
     testCase = {
         { "-1", std::optional<int32_t>() },
         { "0", std::optional<int32_t>() },
@@ -387,7 +308,47 @@ HWTEST_F(HgmCommandTest, XmlModeId2SettingModeId, Function | SmallTest | Level0)
     for (const auto& [xmlModeId, settingModeId] : testCase) {
         EXPECT_EQ(visitor_->XmlModeId2SettingModeId(xmlModeId), settingModeId);
     }
+
     hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("");
+}
+
+/**
+ * @tc.name: GetAppStrategyConfig
+ * @tc.desc: Verify the result of GetAppStrategyConfig function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, GetAppStrategyConfig, Function | SmallTest | Level0)
+{
+    int32_t appType = 111;
+    int32_t appType1 = 222;
+    int32_t appType2 = 333;
+
+    PolicyConfigData::StrategyConfig settingStrategy;
+    // aaa/bbb means pkgName
+    EXPECT_EQ(visitor_->GetAppStrategyConfig("aaa", appType, settingStrategy), EXEC_SUCCESS);
+    EXPECT_EQ(visitor_->GetAppStrategyConfig("bbb", appType, settingStrategy), EXEC_SUCCESS);
+    EXPECT_EQ(visitor_->GetAppStrategyConfig("bbb", appType1, settingStrategy), EXEC_SUCCESS);
+    EXPECT_EQ(visitor_->GetAppStrategyConfig("bbb", appType2, settingStrategy), HGM_ERROR);
+}
+
+/**
+ * @tc.name: GetScreenSetting
+ * @tc.desc: Verify the result of GetScreenSetting function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, GetScreenSetting, Function | SmallTest | Level0)
+{
+    visitor_->screenConfigType_ = "unknown";
+    EXPECT_TRUE(visitor_->GetScreenSetting().appList.empty());
+    
+    visitor_->screenConfigType_ = "LTPO-DEFAULT";
+    visitor_->xmlModeId_ = "5"; // id dont existed
+    EXPECT_TRUE(visitor_->GetScreenSetting().appList.empty());
+
+    visitor_->xmlModeId_ = "-1"; // auto mode
+    EXPECT_FALSE(visitor_->GetScreenSetting().appList.empty());
 }
 
 /**
@@ -415,45 +376,6 @@ HWTEST_F(HgmCommandTest, SetSettingModeId, Function | SmallTest | Level0)
     EXPECT_EQ(visitor_->xmlModeId_, "-1");
     visitor_->SetXmlModeId("-1");
     EXPECT_EQ(visitor_->xmlModeId_, "-1");
-}
-
-/**
- * @tc.name: GetScreenSetting
- * @tc.desc: Verify the result of GetScreenSetting function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmCommandTest, GetScreenSetting, Function | SmallTest | Level0)
-{
-    visitor_->screenConfigType_ = "unknown";
-    EXPECT_TRUE(visitor_->GetScreenSetting().appList.empty());
-    
-    visitor_->screenConfigType_ = "LTPO-DEFAULT";
-    visitor_->xmlModeId_ = "5"; // id dont existed
-    EXPECT_TRUE(visitor_->GetScreenSetting().appList.empty());
-
-    visitor_->xmlModeId_ = "-1"; // auto mode
-    EXPECT_FALSE(visitor_->GetScreenSetting().appList.empty());
-}
-
-/**
- * @tc.name: GetAppStrategyConfig
- * @tc.desc: Verify the result of GetAppStrategyConfig function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmCommandTest, GetAppStrategyConfig, Function | SmallTest | Level0)
-{
-    int32_t appType = 111;
-    int32_t appType1 = 222;
-    int32_t appType2 = 333;
-
-    PolicyConfigData::StrategyConfig settingStrategy;
-    // aaa/bbb means pkgName
-    EXPECT_EQ(visitor_->GetAppStrategyConfig("aaa", appType, settingStrategy), EXEC_SUCCESS);
-    EXPECT_EQ(visitor_->GetAppStrategyConfig("bbb", appType, settingStrategy), EXEC_SUCCESS);
-    EXPECT_EQ(visitor_->GetAppStrategyConfig("bbb", appType1, settingStrategy), EXEC_SUCCESS);
-    EXPECT_EQ(visitor_->GetAppStrategyConfig("bbb", appType2, settingStrategy), HGM_ERROR);
 }
 
 /**
@@ -486,6 +408,90 @@ HWTEST_F(HgmCommandTest, SetRefreshRateMode, Function | SmallTest | Level0)
         hgmCore.SetRefreshRateMode(input);
         EXPECT_EQ(configVisitorImpl->settingModeId_, settingModeId);
         EXPECT_EQ(configVisitorImpl->xmlModeId_, xmlModeId);
+    }
+}
+
+/**
+ * @tc.name: UpdateRefreshRateForSettings
+ * @tc.desc: Verify the result of UpdateRefreshRateForSettings function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, UpdateRefreshRateForSettings001, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    hgmCore.InitXmlConfig();
+    LoadXmlContent1();
+
+    // padmode
+    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("padmode");
+    const auto& settings = hgmCore.mPolicyConfigData_->refreshRateForSettings_;
+    std::vector<std::pair<int32_t, int32_t>> padSettings = {
+        {-1, -1}, {60, 1}, {120, 2}, {144, 3}
+    };
+    ASSERT_EQ(settings.size(), padSettings.size());
+    for (size_t i = 0; i < settings.size(); ++i) {
+        EXPECT_EQ(settings[i], padSettings[i]);
+    }
+
+    // pcmode
+    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("pcmode");
+    std::vector<std::pair<int32_t, int32_t>> pcSettings = {
+        {-1, -101}, {60, 101}, {120, 102}
+    };
+    ASSERT_EQ(settings.size(), pcSettings.size());
+    for (size_t i = 0; i < settings.size(); ++i) {
+        EXPECT_EQ(settings[i], pcSettings[i]);
+    }
+
+    // test unknowmode
+    auto originSettings = settings;
+    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("unknownMode");
+    ASSERT_EQ(settings.size(), originSettings.size());
+    for (size_t i = 0; i < settings.size(); ++i) {
+        EXPECT_EQ(settings[i], originSettings[i]);
+    }
+}
+
+/**
+ * @tc.name: SettingModeId2XmlModeId
+ * @tc.desc: Verify the result of SettingModeId2XmlModeId function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, SettingModeId2XmlModeId, Function | SmallTest | Level0)
+{
+    using namespace std;
+    auto& hgmCore = HgmCore::Instance();
+    hgmCore.InitXmlConfig();
+    LoadXmlContent1();
+    EXPECT_NE(hgmCore.mPolicyConfigData_, nullptr);
+
+    // test when auto mode exists
+    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("pcmode");
+    vector<pair<int, optional<string>>> testConfig = {
+        {-1, "-101"},
+        {-10, optional<string>()},
+        {10, optional<string>()},
+        {2, "102"}
+    };
+    for (const auto& p : testConfig) {
+        auto ret = visitor_->SettingModeId2XmlModeId(p.first);
+        EXPECT_EQ(ret, p.second);
+    }
+
+    // no auto mode
+    hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("testmode_no_auto");
+    testConfig = {
+        {-10, optional<string>()},
+        {-1, optional<string>()},
+        {10, optional<string>()},
+        {1, "101"},
+        {2, "102"}
+    };
+    for (const auto& p : testConfig) {
+        auto ret = visitor_->SettingModeId2XmlModeId(p.first);
+        EXPECT_EQ(ret, p.second);
     }
 }
 } // namespace Rosen
