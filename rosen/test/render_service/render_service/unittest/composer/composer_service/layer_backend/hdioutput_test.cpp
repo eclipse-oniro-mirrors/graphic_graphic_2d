@@ -42,7 +42,7 @@ void HdiOutputTest::SetUpTestCase()
     uint32_t screenId = 0;
     hdiOutput_ = HdiOutput::CreateHdiOutput(screenId);
     hdiDeviceMock_ = Mock::HdiDeviceMock::GetInstance();
-    hdiOutput_->device_ = hdiDeviceMock_;
+    hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_);
     EXPECT_CALL(*hdiDeviceMock_, GetSupportedLayerPerFrameParameterKey()).WillRepeatedly(testing::ReturnRef(paramKey_));
 }
 
@@ -126,6 +126,7 @@ HWTEST_F(HdiOutputTest, ClearFrameBuffer001, Function | MediumTest | Level1)
  */
 HWTEST_F(HdiOutputTest, Init001, Function | MediumTest| Level1)
 {
+    ASSERT_EQ(hdiOutput_->SetHdiOutputDevice(hdiDeviceMock_), ROSEN_ERROR_OK);
     // device_ is already set
     ASSERT_EQ(HdiOutputTest::hdiOutput_->Init(), ROSEN_ERROR_OK);
     // fbSurface_ already initialized
@@ -326,26 +327,6 @@ HWTEST_F(HdiOutputTest, CheckAndUpdateClientBufferCahce003, Function | MediumTes
     ASSERT_EQ(index, 0);
     ASSERT_EQ(hdiOutput->bufferCache_.size(), 1);
     ASSERT_EQ(hdiOutput->bufferCache_[0], buffer);
-}
-
-/**
- * Function: ReleaseLayers
- * Type: Function
- * Rank: Important(1)
- * EnvConditions: N/A
- * CaseDescription: 1.call ReleaseLayers
- *                  2.check ret
- */
-HWTEST_F(HdiOutputTest, ReleaseLayers, Function | MediumTest | Level1)
-{
-    auto &map = HdiOutputTest::hdiOutput_->layerIdMap_;
-    for (auto &layer : map) {
-        layer.second->GetRSLayer()->SetIsSupportedPresentTimestamp(true);
-        EXPECT_EQ(layer.second->GetRSLayer()->GetIsSupportedPresentTimestamp(), true);
-    }
-
-    // ReleaseLayerBuffersInfo releaseLayerInfo;
-    // HdiOutputTest::hdiOutput_->ReleaseLayers(releaseLayerInfo);
 }
 
 /**

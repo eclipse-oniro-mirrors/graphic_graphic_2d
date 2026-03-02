@@ -15,6 +15,7 @@ import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 group("unittest") {
   testonly = true
+
   deps = [
     "composer_client/connection:unittest",
     "composer_client/layer:unittest",

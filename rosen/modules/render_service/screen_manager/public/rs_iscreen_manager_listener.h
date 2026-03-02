@@ -19,8 +19,8 @@
 #include <iremote_object.h>
 #include <refbase.h>
 
-#include "screen_manager/screen_types.h"
 #include "screen_manager/rs_screen_property.h"
+#include "screen_manager/screen_types.h"
 
 namespace OHOS {
 namespace Rosen {

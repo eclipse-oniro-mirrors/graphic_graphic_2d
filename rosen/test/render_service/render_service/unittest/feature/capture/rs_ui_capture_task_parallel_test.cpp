@@ -120,12 +120,16 @@ public:
 
     static void TearDownTestCase()
     {
+        RSTestUtil::InitRenderNodeGC();
         rsInterfaces_->RemoveVirtualScreen(mirrorConfig_.screenId);
         rsInterfaces_ = nullptr;
         renderContext_ = nullptr;
         displayNode_ = nullptr;
         RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
         usleep(SLEEP_TIME_FOR_PROXY);
+        auto& nodeMap = RSMainThread::Instance()->GetContext().GetMutableNodeMap();
+        nodeMap.FilterNodeByPid(0, true);
+        RSUniRenderThread::Instance().ReleaseSurface();
     }
 
     static void InitRenderContext()

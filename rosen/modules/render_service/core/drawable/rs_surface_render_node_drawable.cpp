@@ -1459,7 +1459,8 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
             VideoInfo videoInfo;
             auto surfaceNodeImage = renderEngine->CreateImageFromBuffer(canvas, params, videoInfo);
 
-            RSUniRenderThread::Instance().OnDrawBuffer(consumerOnDraw_, params.buffer, surfaceParams.GetBufferOwnerCount());
+            RSUniRenderThread::Instance().OnDrawBuffer(consumerOnDraw_, params.buffer,
+                                                       surfaceParams.GetBufferOwnerCount());
 
             // Use to adapt to AIBar DSS solution
             Color solidLayerColor = RgbPalette::Transparent();

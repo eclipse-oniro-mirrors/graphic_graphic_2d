@@ -52,6 +52,8 @@ public:
         const std::vector<std::string>& surfaceNameList, uint32_t fps, uint64_t reportTime) = 0;
     virtual ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps) = 0;
+    virtual ErrCode AvcodecVideoGet(uint64_t uniqueId) = 0;
+    virtual ErrCode AvcodecVideoGetRecent() = 0;
     virtual ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic) = 0;
     virtual ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) = 0;
 

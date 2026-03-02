@@ -362,4 +362,31 @@ HWTEST_F(RSSurfaceFpsManagerTest, GetSelfDrawSurfaceNameByPidAndUniqueId, TestSi
     surfaceFpsManager.RegisterSurfaceFps(uid, "RosenWeb", uniqueId);
     EXPECT_EQ(surfaceFpsManager.GetSelfDrawSurfaceNameByPidAndUniqueId(upid, uniqueId), "");
 }
+
+/**
+ * @tc.name: GetSelfDrawSurfaceNameByPid
+ * @tc.desc: test results of GetSelfDrawSurfaceNameByPid
+ * @tc.type:FUNC
+ * @tc.require: IBE7GI
+ */
+HWTEST_F(RSSurfaceFpsManagerTest, GetSelfDrawSurfaceNameByPid, TestSize.Level1)
+{
+    RSSurfaceFpsManager& surfaceFpsManager = RSSurfaceFpsManager::GetInstance();
+
+    pid_t upid = 3;
+    uint64_t uniqueId = 3000;
+    EXPECT_EQ(surfaceFpsManager.GetSelfDrawSurfaceNameByPid(upid), "");
+
+    NodeId uid = 3ull << 32;
+    std::string name = "surfacefps1";
+    surfaceFpsManager.RegisterSurfaceFps(uid, name, uniqueId);
+    EXPECT_EQ(surfaceFpsManager.GetSelfDrawSurfaceNameByPid(upid), name);
+
+    EXPECT_EQ(surfaceFpsManager.GetSelfDrawSurfaceNameByPid(1), "");
+
+    surfaceFpsManager.UnregisterSurfaceFps(uid);
+    surfaceFpsManager.RegisterSurfaceFps(uid, "RosenWeb", uniqueId);
+    EXPECT_EQ(surfaceFpsManager.GetSelfDrawSurfaceNameByPid(upid), "");
+    surfaceFpsManager.UnregisterSurfaceFps(uid);
+}
 }

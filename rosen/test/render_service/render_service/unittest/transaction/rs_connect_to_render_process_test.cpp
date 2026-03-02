@@ -37,16 +37,17 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+    static inline std::shared_ptr<RSRenderPipeline> renderPipeline_;
 };
 
 void RSConnectToRenderProcessTest::SetUpTestCase()
 {
     auto runner = AppExecFwk::EventRunner::Create(true);
     auto handler = std::make_shared<AppExecFwk::EventHandler>(runner);
-    auto renderPipeline = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
+    renderPipeline_ = RSRenderPipeline::Create(handler, nullptr, nullptr, nullptr);
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    sptr<RSRenderPipelineAgent> renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    sptr<RSRenderPipelineAgent> renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline_);
     g_connection = sptr<RSConnectToRenderProcess>::MakeSptr(renderPipelineAgent);
 }
 void RSConnectToRenderProcessTest::TearDownTestCase() {}
@@ -62,6 +63,9 @@ void RSConnectToRenderProcessTest::TearDown() {}
 HWTEST_F(RSConnectToRenderProcessTest, CreateRenderConnectionTest, TestSize.Level1)
 {
     sptr<RSIConnectionToken> token = new IRemoteStub<RSIConnectionToken>();
-    ASSERT_TRUE(g_connection->CreateRenderConnection(token));
+    auto connection = g_connection->CreateRenderConnection(token);
+    ASSERT_TRUE(connection != nullptr);
+    RSClientToRenderConnection* rawPtr = (RSClientToRenderConnection*)(connection.GetRefPtr());
+    rawPtr->cleanDone = true;
 }
 } // namespace OHOS::Rosen

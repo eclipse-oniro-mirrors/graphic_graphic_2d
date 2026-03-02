@@ -30,6 +30,20 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+namespace {
+constexpr uint32_t BUFFER_WIDTH = 8;
+constexpr uint32_t BUFFER_HEIGHT = 8;
+constexpr uint32_t BUFFER_STRIDE = 8;
+constexpr uint64_t TEST_LAYER_ID = 1;
+constexpr uint64_t TEST_SCREEN_ID = 1;
+
+static uint64_t GenerateBufferId()
+{
+    static uint64_t counter = 1;
+    return counter++;
+}
+}
+
 class RSBufferManagerTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -272,5 +286,443 @@ HWTEST_F(RSBufferManagerTest, OnDraw_BufferCollector_State, TestSize.Level1)
     // end -> bufferCollector_ destroyed/reset
     mgr->OnDrawEnd(nullptr);
     ASSERT_EQ(RSBufferManager::bufferCollector_.get(), nullptr);
+}
+
+/**
+ * @tc.name: SetAcquireFence_MergeFenceTest001
+ * @tc.desc: Test fence merge path in RSBufferCollectorHelper::SetAcquireFence
+ *           when fence_ exists and is valid (Get() != -1), trigger MergeFence
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, SetAcquireFence_MergeFenceTest001, TestSize.Level2)
+{
+    RSBufferCollectorHelper helper;
+    sptr<SyncFence> fence1 = new SyncFence(dup(STDOUT_FILENO));
+    // First call: fence_ is InvalidFence, Get() == -1, so fence_ is set directly without merge
+    helper.SetAcquireFence(fence1);
+    ASSERT_NE(helper.fence_, nullptr);
+    ASSERT_NE(helper.fence_->Get(), -1);
+
+    sptr<SyncFence> fence2 = new SyncFence(dup(STDERR_FILENO));
+    // Second call: fence_ now exists and is valid (Get() != -1), triggers MergeFence
+    helper.SetAcquireFence(fence2);
+}
+
+/**
+ * @tc.name: OnCanvasDrawBuffer_NullConsumerTest001
+ * @tc.desc: Test null consumer path in RSBufferCollectorHelper::OnCanvasDrawBuffer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, OnCanvasDrawBuffer_NullConsumerTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    mgr->OnDrawStart();
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    // Consumer is null, should return early without calling AddRef
+    mgr->OnDrawBuffer(nullptr, buffer, owner);
+    ASSERT_EQ(owner->refCount_.load(), 1);
+}
+
+/**
+ * @tc.name: OnCanvasDrawBuffer_NullBufferTest001
+ * @tc.desc: Test null buffer path in RSBufferCollectorHelper::OnCanvasDrawBuffer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, OnCanvasDrawBuffer_NullBufferTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    mgr->OnDrawStart();
+    auto consumer = IConsumerSurface::Create("bm-ut");
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    // Buffer is null, should return early without calling AddRef
+    mgr->OnDrawBuffer(consumer, nullptr, owner);
+    ASSERT_EQ(owner->refCount_.load(), 1);
+}
+
+/**
+ * @tc.name: OnCanvasDrawBuffer_NullBufferOwnerCountTest001
+ * @tc.desc: Test null bufferOwnerCount path in RSBufferCollectorHelper::OnCanvasDrawBuffer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, OnCanvasDrawBuffer_NullBufferOwnerCountTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    mgr->OnDrawStart();
+    auto consumer = IConsumerSurface::Create("bm-ut");
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    // BufferOwnerCount is null, should return early without adding to pending list
+    mgr->OnDrawBuffer(consumer, buffer, nullptr);
+}
+
+/**
+ * @tc.name: AddPendingReleaseBuffer_WithConsumer_NullFenceTest001
+ * @tc.desc: Test null fence path in AddPendingReleaseBuffer with consumer
+ *           When bufferId already exists and new fence is null, should skip fence merge
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithConsumer_NullFenceTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto consumer = IConsumerSurface::Create("bm-ut");
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    sptr<SyncFence> fence1 = new SyncFence(dup(STDOUT_FILENO));
+    // First add with valid fence, create entry with fence
+    mgr->AddPendingReleaseBuffer(consumer, buffer, fence1);
+    // Second add with null fence, fence is null so skip merge branch
+    mgr->AddPendingReleaseBuffer(consumer, buffer, nullptr);
+    mgr->ReleaseBufferById(buffer->GetBufferId());
+}
+
+/**
+ * @tc.name: AddPendingReleaseBuffer_WithConsumer_UpdateConsumerTest001
+ * @tc.desc: Test consumer update path when consumer_ is null
+ *           First add without consumer, then add with consumer to update
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithConsumer_UpdateConsumerTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));
+    // First add without consumer (using bufferId overload), consumer_ is null
+    mgr->AddPendingReleaseBuffer(buffer->GetBufferId(), f);
+    auto consumer = IConsumerSurface::Create("bm-ut-update");
+    sptr<SyncFence> f2 = new SyncFence(dup(STDERR_FILENO));
+    // Second add with consumer, consumer_ is null so update consumer_ branch
+    mgr->AddPendingReleaseBuffer(consumer, buffer, f2);
+    mgr->ReleaseBufferById(buffer->GetBufferId());
+}
+
+/**
+ * @tc.name: AddPendingReleaseBuffer_WithoutConsumer_NullFenceTest001
+ * @tc.desc: Test null fence path in AddPendingReleaseBuffer without consumer
+ *           Should return early and log error
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithoutConsumer_NullFenceTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    // Fence is null, should return early with error log
+    mgr->AddPendingReleaseBuffer(TEST_LAYER_ID, nullptr);
+}
+
+/**
+ * @tc.name: AddPendingReleaseBuffer_WithoutConsumer_MergeFenceTest001
+ * @tc.desc: Test fence merge path in AddPendingReleaseBuffer without consumer
+ *           When mergedFence_ exists and is valid, merge with new fence
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithoutConsumer_MergeFenceTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    sptr<SyncFence> f1 = new SyncFence(dup(STDOUT_FILENO));
+    sptr<SyncFence> f2 = new SyncFence(dup(STDERR_FILENO));
+    // First add, mergedFence_ is InvalidFence so set directly
+    mgr->AddPendingReleaseBuffer(TEST_SCREEN_ID, f1);
+    // Second add, mergedFence_ now valid, triggers merge branch
+    mgr->AddPendingReleaseBuffer(TEST_SCREEN_ID, f2);
+}
+
+/**
+ * @tc.name: AddPendingReleaseBuffer_WithoutConsumer_SetFenceTest001
+ * @tc.desc: Test set fence path when mergedFence_ is null or invalid
+ *           Should directly set the new fence without merging
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithoutConsumer_SetFenceTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    // First add with InvalidFence, mergedFence_ is InvalidFence (Get() == -1)
+    mgr->AddPendingReleaseBuffer(TEST_LAYER_ID, SyncFence::InvalidFence());
+    sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));
+    // Second add, mergedFence_ is still invalid, set directly without merge
+    mgr->AddPendingReleaseBuffer(TEST_LAYER_ID, f);
+}
+
+/**
+ * @tc.name: AddPendingReleaseBuffer_WithoutConsumer_MergedFenceNullTest001
+ * @tc.desc: Test mergedFence is null path in AddPendingReleaseBuffer without consumer
+ *           When mergedFence is null, directly set new fence without merge
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithoutConsumer_MergedFenceNullTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+
+    // Directly set mergedFence_ to nullptr
+    mgr->pendingReleaseBuffers_[buffer->GetBufferId()].mergedFence_ = nullptr;
+
+    //add without consumer, mergedFence_ is null, should set directly
+    sptr<SyncFence> f = new SyncFence(dup(STDERR_FILENO));
+    mgr->AddPendingReleaseBuffer(buffer->GetBufferId(), f);
+}
+
+/**
+ * @tc.name: OnReleaseLayerBuffers_NullLayerTest001
+ * @tc.desc: Test null layer path in OnReleaseLayerBuffers
+ *           When layer weak_ptr.lock() returns nullptr, should skip
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, OnReleaseLayerBuffers_NullLayerTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));
+
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+
+    std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>> releaseVec;
+    // Reset layer to make weak_ptr expired, lock() will return nullptr
+    layer.reset();
+    releaseVec.emplace_back(TEST_LAYER_ID, buffer, f);
+
+    mgr->OnReleaseLayerBuffers(rsLayers, releaseVec, TEST_SCREEN_ID);
+}
+
+/**
+ * @tc.name: OnReleaseLayerBuffers_UniRenderFlagFalseTest001
+ * @tc.desc: Test GetUniRenderFlag false path in OnReleaseLayerBuffers
+ *           When uniRender flag is false, should not set uniBufferCount
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, OnReleaseLayerBuffers_UniRenderFlagFalseTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    // UniRender flag is false, uniBufferCount should not be set
+    layer->SetUniRenderFlag(false);
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    std::atomic<bool> released{false};
+    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+    layer->SetBufferOwnerCount(owner, false);
+
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    owner->bufferId_ = buffer->GetBufferId();
+    sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));
+
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+
+    std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>> releaseVec;
+    releaseVec.emplace_back(TEST_LAYER_ID, buffer, f);
+
+    mgr->OnReleaseLayerBuffers(rsLayers, releaseVec, TEST_SCREEN_ID);
+}
+
+/**
+ * @tc.name: OnReleaseLayerBuffers_UniRenderFlagTrueTest001
+ * @tc.desc: Test GetUniRenderFlag true path in OnReleaseLayerBuffers
+ *           When uniRender flag is true, should set uniBufferCount and uniFence
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, OnReleaseLayerBuffers_UniRenderFlagTrueTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    // UniRender flag is true, uniBufferCount should be set
+    layer->SetUniRenderFlag(true);
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    std::atomic<bool> released{false};
+    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+    layer->SetBufferOwnerCount(owner, false);
+
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+    owner->bufferId_ = buffer->GetBufferId();
+    sptr<SyncFence> f = new SyncFence(dup(STDOUT_FILENO));
+
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+
+    std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>> releaseVec;
+    releaseVec.emplace_back(TEST_LAYER_ID, buffer, f);
+
+    mgr->OnReleaseLayerBuffers(rsLayers, releaseVec, TEST_SCREEN_ID);
+}
+
+/**
+ * @tc.name: ReleaseUniOnDrawBuffers_NullLayerTest001
+ * @tc.desc: Test null layer path in ReleaseUniOnDrawBuffers
+ *           When layer weak_ptr.lock() returns nullptr, should skip and log error
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_NullLayerTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    owner->bufferId_ = GenerateBufferId();
+    std::atomic<bool> released{false};
+    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+
+    // Insert a layerId into uniOnDrawBuffersMap_
+    owner->InsertUniOnDrawSet(TEST_LAYER_ID, GenerateBufferId());
+
+    // Create rsLayers with expired weak_ptr (layer has been released)
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+    // Reset layer to make weak_ptr expired, lock() will return nullptr
+    layer.reset();
+
+    std::set<uint32_t> decedSet{};
+    sptr<SyncFence> uniFence = new SyncFence(dup(STDOUT_FILENO));
+    // Call ReleaseUniOnDrawBuffers, should skip when layer == nullptr
+    mgr->ReleaseUniOnDrawBuffers(owner, uniFence, decedSet, rsLayers, TEST_SCREEN_ID);
+}
+
+/**
+ * @tc.name: ReleaseUniOnDrawBuffers_DecedSetSkipTest001
+ * @tc.desc: Test bufferId in decedSet path in ReleaseUniOnDrawBuffers
+ *           When bufferId is found in decedSet, should skip processing without AddPendingReleaseBuffer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_DecedSetSkipTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    owner->bufferId_ = GenerateBufferId();
+    std::atomic<bool> released{false};
+    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+
+    // Insert layerId and bufferId into uniOnDrawBuffersMap_
+    uint64_t targetBufferId = GenerateBufferId();
+    owner->InsertUniOnDrawSet(TEST_LAYER_ID, targetBufferId);
+
+    // Create rsLayers
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+
+    // Put bufferOwnerCount into layer so PopBufferOwnerCountById can return it
+    auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    bufferOwnerCount->bufferId_ = targetBufferId;
+    layer->SetBufferOwnerCount(bufferOwnerCount, false);
+
+    // Set targetBufferId into decedSet to trigger skip branch
+    std::set<uint32_t> decedSet{};
+    decedSet.insert(static_cast<uint32_t>(targetBufferId));
+
+    sptr<SyncFence> uniFence = new SyncFence(dup(STDOUT_FILENO));
+    // Call ReleaseUniOnDrawBuffers, should skip when bufferId in decedSet
+    mgr->ReleaseUniOnDrawBuffers(owner, uniFence, decedSet, rsLayers, TEST_SCREEN_ID);
+
+    // Verify buffer was not added to pending release
+    ASSERT_FALSE(released.load());
+}
+
+/**
+ * @tc.name: ReleaseUniOnDrawBuffers_NullBufferOwnerCountTest001
+ * @tc.desc: Test null bufferOwnerCount path in ReleaseUniOnDrawBuffers
+ *           When PopBufferOwnerCountById returns nullptr, should skip and log error
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_NullBufferOwnerCountTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    owner->bufferId_ = GenerateBufferId();
+    std::atomic<bool> released{false};
+    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+
+    // Insert layerId and bufferId into uniOnDrawBuffersMap_
+    uint64_t targetBufferId = GenerateBufferId();
+    owner->InsertUniOnDrawSet(TEST_LAYER_ID, targetBufferId);
+
+    // Create rsLayers with valid layer
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+
+    // Do NOT put bufferOwnerCount into layer, so PopBufferOwnerCountById returns nullptr
+
+    std::set<uint32_t> decedSet{};
+    sptr<SyncFence> uniFence = new SyncFence(dup(STDOUT_FILENO));
+    // Call ReleaseUniOnDrawBuffers, should skip when bufferOwnerCount == nullptr
+    mgr->ReleaseUniOnDrawBuffers(owner, uniFence, decedSet, rsLayers, TEST_SCREEN_ID);
+
+    // Verify buffer was not added to pending release
+    ASSERT_FALSE(released.load());
+}
+
+/**
+ * @tc.name: ReleaseUniOnDrawBuffers_NotLastUniBufferOwnerTest001
+ * @tc.desc: Test CheckLastUniBufferOwner false path in ReleaseUniOnDrawBuffers
+ *           When CheckLastUniBufferOwner returns false, should call SetBufferOwnerCount with false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBufferManagerTest, ReleaseUniOnDrawBuffers_NotLastUniBufferOwnerTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    owner->bufferId_ = GenerateBufferId();
+    std::atomic<bool> released{false};
+    owner->bufferReleaseCb_ = [&released](uint64_t){ released = true; };
+
+    // Insert layerId and bufferId into uniOnDrawBuffersMap_
+    uint64_t targetBufferId = GenerateBufferId();
+    owner->InsertUniOnDrawSet(TEST_LAYER_ID, targetBufferId);
+
+    // Set uniBufferOwner with different bufferId and screenId to make CheckLastUniBufferOwner return false
+    owner->SetUniBufferOwner(GenerateBufferId(), TEST_SCREEN_ID);
+
+    // Create rsLayers with valid layer
+    auto layer = std::make_shared<RSSurfaceLayer>();
+    std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>> rsLayers;
+    rsLayers[TEST_LAYER_ID] = std::static_pointer_cast<RSLayer>(layer);
+
+    // Put bufferOwnerCount into layer so PopBufferOwnerCountById returns non-null
+    auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    bufferOwnerCount->bufferId_ = targetBufferId;
+    layer->SetBufferOwnerCount(bufferOwnerCount, false);
+
+    std::set<uint32_t> decedSet{};
+    sptr<SyncFence> uniFence = new SyncFence(dup(STDOUT_FILENO));
+    // Call ReleaseUniOnDrawBuffers, CheckLastUniBufferOwner returns false so SetBufferOwnerCount(false) called
+    mgr->ReleaseUniOnDrawBuffers(owner, uniFence, decedSet, rsLayers, TEST_SCREEN_ID);
+    ASSERT_EQ(bufferOwnerCount->refCount_.load(), 1);
 }
 }

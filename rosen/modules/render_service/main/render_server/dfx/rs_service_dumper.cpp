@@ -69,7 +69,8 @@ static void InitGLES()
         RS_LOGE("Failed to get default display.");
         return;
     }
-    EGLint major, minor;
+    EGLint major;
+    EGLint minor;
     if (eglInitialize(g_tmpDisplay, &major, &minor) == EGL_FALSE) {
         RS_LOGE("Failed to initialize EGL.");
         return;
@@ -316,7 +317,8 @@ void RSServiceDumper::ClearFps(std::string& dumpString, std::string& layerName) 
     auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
     if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-        ScheduleTask([this, &dumpString, &layerName]() { rsRenderComposerManager_->ClearFpsDump(dumpString, layerName); });
+        ScheduleTask(
+            [this, &dumpString, &layerName]() { rsRenderComposerManager_->ClearFpsDump(dumpString, layerName); });
 #endif
     } else {
         // RSMainThread::Instance()->ScheduleTask(
@@ -396,7 +398,9 @@ void RSServiceDumper::WindowHitchsDump(
         auto renderType = RSUniRenderJudgement::GetUniRenderEnabledType();
         if (renderType == UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL) {
 #ifdef RS_ENABLE_GPU
-            ScheduleTask([this, &dumpString, &layerArg]() { return rsRenderComposerManager_->HitchsDump(dumpString, layerArg); });
+            ScheduleTask([this, &dumpString, &layerArg]() {
+                return rsRenderComposerManager_->HitchsDump(dumpString, layerArg);
+            });
 #endif
         } else {
             // RSMainThread::Instance()->ScheduleTask(

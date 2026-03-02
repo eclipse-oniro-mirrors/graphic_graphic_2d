@@ -173,14 +173,14 @@ HWTEST_F(RSUniRenderEngineTest, DrawLayers002, TestSize.Level1)
         layers.emplace_back(nullptr);
     }
 
-    RSLayerPtr layer1 = std::make_shared<RSSurfaceLayer>();
+    RSLayerPtr layer1 = std::make_shared<RSSurfaceLayer>(0, nullptr);
     layer1->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
     sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("layer1");
     layer1->SetSurface(cSurface);
     layer1->SetRotationFixed(true);
     layer1->SetUseDeviceOffline(true);
 
-    RSLayerPtr layer2 = std::make_shared<RSSurfaceLayer>();
+    RSLayerPtr layer2 = std::make_shared<RSSurfaceLayer>(0, nullptr);
     layer2->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
     cSurface = IConsumerSurface::Create("layer2");
     layer2->SetSurface(cSurface);
@@ -194,7 +194,7 @@ HWTEST_F(RSUniRenderEngineTest, DrawLayers002, TestSize.Level1)
 
     layers.emplace_back(layer1);
     layers.emplace_back(layer2);
-    ScreenInfo screenInfo;
+    ComposerScreenInfo screenInfo;
     uniRenderEngine->DrawLayers(*canvas, layers, false, screenInfo);
 }
 

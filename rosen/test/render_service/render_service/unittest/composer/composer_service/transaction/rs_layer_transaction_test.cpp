@@ -27,7 +27,6 @@
 using namespace testing;
 using namespace testing::ext;
 
-
 namespace OHOS {
 namespace Rosen {
 class RSLayerTransactionTest : public testing::Test {
@@ -67,8 +66,8 @@ void RSLayerTransactionTest::TearDownTestCase()
 }
 
 /**
- * @tc.name: SetRSComposerConnectionTest
- * @tc.desc: Test SetRSComposerConnection
+ * @tc.name: SetRSComposerConnectionProxyTest
+ * @tc.desc: Test SetRSComposerConnectionProxy
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */

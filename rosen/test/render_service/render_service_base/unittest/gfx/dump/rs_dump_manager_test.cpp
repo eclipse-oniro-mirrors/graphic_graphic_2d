@@ -451,23 +451,20 @@ HWTEST_F(RSDumpManagerTest, ReleaseMemory_ValidParameters, TestSize.Level1)
 }
 
 /*
- * @tc.name: ReleaseMemory_OnlyAddr
- * @tc.desc: Test ReleaseMemory with only address
+ * @tc.name: ReleaseMemory_ContextNull
+ * @tc.desc: Test ReleaseMemory with null context
  * @tc.type: FUNC
  * @tc.require: AR000GSH6G
  */
-HWTEST_F(RSDumpManagerTest, ReleaseMemory_OnlyAddr, TestSize.Level1)
+HWTEST_F(RSDumpManagerTest, ReleaseMemory_ContextNull, TestSize.Level1)
 {
-    // Given: Valid address but null context
+    // Given: null context
     constexpr int32_t allocType = SHARE_MEM_ALLOC;
-    void *addr = malloc(1024);
-    ASSERT_NE(addr, nullptr);
 
     // When: Release memory with null context
-    RSDumpManager::ReleaseMemory(allocType, addr, nullptr, 1024);
+    RSDumpManager::ReleaseMemory(allocType, nullptr, nullptr, 1024);
 
     // Then: Should not crash
-    free(addr);  // Manual cleanup since context was null
     SUCCEED();
 }
 

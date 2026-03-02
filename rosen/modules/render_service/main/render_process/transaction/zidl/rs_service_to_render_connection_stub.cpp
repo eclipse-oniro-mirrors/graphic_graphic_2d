@@ -166,6 +166,28 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::AVCODEC_VIDEO_GET): {
+            uint64_t uniqueId{0};
+            if (!data.ReadUint64(uniqueId)) {
+                RS_LOGE("RSServiceToRenderStub::AVCODEC_VIDEO_GET : read data err!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            int32_t result = AvcodecVideoGet(uniqueId);
+            if (!reply.WriteInt32(result)) {
+                RS_LOGE("RSServiceToRenderStub::AVCODEC_VIDEO_GET Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::AVCODEC_VIDEO_GET_RECENT): {
+            int32_t result = AvcodecVideoGetRecent();
+            if (!reply.WriteInt32(result)) {
+                RS_LOGE("RSServiceToRenderStub::AVCODEC_VIDEO_GET_RECENT Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }        
         case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::GET_MEMORY_GRAPHICS): {
             std::vector<MemoryGraphic> memoryGraphics;
             if (GetMemoryGraphics(memoryGraphics) != ERR_OK ||

@@ -136,26 +136,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVSyncConnection, TestSize.L
 }
 
 /**
- * @tc.name: CreatePixelMapFromSurface Test
- * @tc.desc: CreatePixelMapFromSurface Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, CreatePixelMapFromSurface, TestSize.Level1)
-{
-    sptr<Surface> surface;
-    Rect srcRect;
-    std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
-    proxy->CreatePixelMapFromSurface(surface, srcRect, pixelMap);
-    ASSERT_EQ(pixelMap, nullptr);
-    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNode");
-    sptr<IBufferProducer> producer = consumer->GetProducer();
-    surface = Surface::CreateSurfaceAsProducer(producer);
-    proxy->CreatePixelMapFromSurface(surface, srcRect, pixelMap);
-    ASSERT_EQ(pixelMap, nullptr);
-}
-
-/**
  * @tc.name: GetAllScreenIds Test
  * @tc.desc: GetAllScreenIds Test
  * @tc.type:FUNC

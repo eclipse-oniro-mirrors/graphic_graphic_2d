@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,6 @@
 
 #include "connection/rs_render_to_composer_connection.h"
 #include "feature/hyper_graphic_manager/hgm_context.h"
-#include "layer/rs_surface_layer.h"
 #include "layer_backend/hdi_output.h"
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/rs_vulkan_context.h"
@@ -32,9 +31,9 @@
 #include "pipeline/rs_render_composer_agent.h"
 #include "pipeline/rs_composer_client.h"
 #include "pipeline/rs_render_composer_manager.h"
+#include "rs_surface_layer.h"
 #include "screen_manager/rs_screen_property.h"
 #include "transaction/rs_layer_transaction_data.h"
-#include "rs_surface_layer.h"
 
 using namespace testing::ext;
 
@@ -46,7 +45,6 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-    static inline std::shared_ptr<RSComposerClient> client = nullptr;
 };
 
 void RSRenderComposerClientTest::SetUpTestCase()
@@ -74,6 +72,7 @@ std::shared_ptr<RSComposerClient> CreateClient()
 
     return RSComposerClient::Create(ifaceConn, nullptr);
 }
+
 /**
  * @tc.name: ClientCreateTest
  * @tc.desc: Test Create Client
@@ -104,12 +103,12 @@ HWTEST_F(RSRenderComposerClientTest, LayerFuncTest, Function | SmallTest | Level
 }
 
 /**
- * @tc.name: CommitRSLayerTest
+ * @tc.name: CommitLayersTest
  * @tc.desc: Test Func CommitLayers
  * @tc.type: FUNC
  * @tc.require: #I9NVOG
  */
-HWTEST_F(RSRenderComposerClientTest, CommitRSLayerTest, Function | SmallTest | Level2)
+HWTEST_F(RSRenderComposerClientTest, CommitLayersTest, Function | SmallTest | Level2)
 {
     std::shared_ptr<RSComposerClient> client = CreateClient();
     auto layer = std::make_shared<RSSurfaceLayer>(0, nullptr);

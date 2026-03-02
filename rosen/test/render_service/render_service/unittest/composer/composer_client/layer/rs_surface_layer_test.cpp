@@ -72,7 +72,7 @@ void RSSurfaceLayerTest::SetUpTestCase()
 
 void RSSurfaceLayerTest::TearDownTestCase()
 {
-    for(auto [screenId, agent]: sMgr->rsRenderComposerAgentMap_) {
+    for (auto [screenId, agent] : sMgr->rsRenderComposerAgentMap_) {
         agent->rsRenderComposer_->uniRenderEngine_ = nullptr;
     }
 }
@@ -305,7 +305,7 @@ HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest4, Function | SmallTest | 
 
     EXPECT_EQ(layer->IsAncoNative(), false);
 
-    LayerMask mask {};
+    LayerMask mask = {};
     layer->SetLayerMaskInfo(mask);
     EXPECT_EQ(layer->GetLayerMaskInfo(), mask);
 

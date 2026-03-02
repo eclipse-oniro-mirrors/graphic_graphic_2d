@@ -1042,7 +1042,8 @@ CM_INLINE bool RSBaseRenderUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfac
         surfaceBuffer->RegisterReleaseBufferListener([](uint64_t bufferId){
             RSUniRenderThread::Instance().ReleaseBufferById(bufferId);
         });
-        RSUniRenderThread::Instance().AddPendingReleaseBuffer(consumer, surfaceBuffer->buffer, SyncFence::InvalidFence());
+        RSUniRenderThread::Instance().AddPendingReleaseBuffer(consumer, surfaceBuffer->buffer,
+                                                              SyncFence::InvalidFence());
         RS_LOGD_IF(DEBUG_PIPELINE,
             "RsDebug surfaceHandler(id: %{public}" PRIu64 ") AcquireBuffer success, acquireTimeStamp = "
             "%{public}" PRIu64 ", buffer timestamp = %{public}" PRId64 ", seq = %{public}" PRIu32 ".",

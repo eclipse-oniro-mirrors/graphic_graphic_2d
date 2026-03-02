@@ -22,6 +22,39 @@
 namespace OHOS {
 namespace Rosen {
 
+static inline bool TryWaitFences(std::vector<sptr<SyncFence>>& fences)
+{
+    for (auto iter = fences.begin(); iter != fences.end();) {
+        auto fence = *iter;
+        // remove obsolete fence
+        if (!fence || fence->Get() == -1) {
+            iter = fences.erase(iter);
+            continue;
+        }
+
+        // wait fence, if success remove it from vector
+        if (fence->Wait(0) != 0) {
+            return false;
+        }
+        RS_OPTIONAL_TRACE_NAME_FMT("TryWaitFences: wait fence: %d success", fence->Get());
+        iter = fences.erase(iter);
+    }
+
+    return true;
+}
+
+static inline sptr<SyncFence> TryMergeFence(sptr<SyncFence> fence1, sptr<SyncFence> fence2)
+{
+    sptr<SyncFence> fenceRet = fence2;
+    // caller use fence2 not nullptr
+    if (fence1 && fence1->Get() != -1 && fence1->Wait(0) != 0) {
+        fenceRet = SyncFence::MergeFence("bufferFence", fence1, fence2);
+        RS_OPTIONAL_TRACE_NAME_FMT("TryMergeFence %d fence %d success", fence1 ? fence1->Get() : -1, fence2->Get());
+    }
+    return fenceRet;
+}
+
+
 void RSBufferCollectorHelper::OnCanvasDrawEnd()
 {
     for (auto& info : pendingReleaseBufferInfos_) {

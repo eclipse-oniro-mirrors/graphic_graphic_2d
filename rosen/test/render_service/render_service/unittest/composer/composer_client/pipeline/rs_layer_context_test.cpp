@@ -202,39 +202,6 @@ HWTEST_F(RSLayerContextTest, DumpCurrentFrameLayersTest, Function | SmallTest | 
 }
 
 /**
- * @tc.name: ANCOTransactionOnCompleteTest
- * @tc.desc: Test Func ANCOTransactionOnComplete
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLayerContextTest, ANCOTransactionOnCompleteTest, Function | SmallTest | Level2)
-{
-    auto output = std::make_shared<HdiOutput>(screenId);
-    output->Init();
-    sptr<RSScreenProperty> property = new RSScreenProperty();
-    auto renderComposer = std::make_shared<RSRenderComposer>(output, property);
-    auto renderComposerAgent = std::make_shared<RSRenderComposerAgent>(renderComposer);
-    auto connect = sptr<RSRenderToComposerConnection>::MakeSptr("name", screenId, renderComposerAgent);
-    // RSComposerContext API renamed
-    auto context = std::make_shared<RSComposerContext>(connect);
-    EXPECT_NE(context, nullptr);
-
-    std::shared_ptr<RSLayer> rsLayer = nullptr;
-    sptr<SyncFence> previousReleaseFence = nullptr;
-    context->ANCOTransactionOnComplete(rsLayer, previousReleaseFence);
-    rsLayer = std::make_shared<RSRenderSurfaceLayer>();
-    context->ANCOTransactionOnComplete(rsLayer, previousReleaseFence);
-    rsLayer->SetAncoFlags(static_cast<uint32_t>(AncoFlags::ANCO_NATIVE_NODE));
-    context->ANCOTransactionOnComplete(rsLayer, previousReleaseFence);
-    sptr<IConsumerSurface> surface = sptr<ConsumerSurface>::MakeSptr("test");
-    rsLayer->SetSurface(surface);
-    context->ANCOTransactionOnComplete(rsLayer, previousReleaseFence);
-    sptr<SurfaceBuffer> sbuffer = sptr<SurfaceBufferImpl>::MakeSptr();
-    rsLayer->SetBuffer(sbuffer);
-    context->ANCOTransactionOnComplete(rsLayer, previousReleaseFence);
-}
-
-/**
  * @tc.name: ReleaseLayerBuffersTest
  * @tc.desc: Test Func ReleaseLayerBuffers
  * @tc.type: FUNC

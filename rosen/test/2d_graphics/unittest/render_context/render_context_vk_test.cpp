@@ -152,4 +152,125 @@ HWTEST_F(RenderContextVKTest, CreateFromWindowTest, Level1)
     bool ret = renderContext->FlushSurface(nullptr);
     EXPECT_EQ(ret, false);
 }
+
+/**
+ * @tc.name: SetRenderContextTypeTest
+ * @tc.desc: Verify the SetRenderContextType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, SetRenderContextTypeTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+    renderContext->SetRenderContextType(1);
+    EXPECT_EQ(renderContext->isProtected_.load(), true);
+    renderContext->SetRenderContextType(2);
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+}
+
+/**
+ * @tc.name: ChangeProtectedStateTest
+ * @tc.desc: Verify the ChangeProtectedState
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, ChangeProtectedStateTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+    renderContext->isProtected_.store(false);
+    renderContext->ChangeProtectedState(true);
+    EXPECT_EQ(renderContext->isProtected_.load(), true);
+    renderContext->ChangeProtectedState(true);
+    EXPECT_EQ(renderContext->isProtected_.load(), true);
+}
+
+/**
+ * @tc.name: ChangeProtectedStateFromTrueToFalseTest
+ * @tc.desc: Verify the ChangeProtectedState from true to false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, ChangeProtectedStateFromTrueToFalseTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+    renderContext->isProtected_.store(true);
+    renderContext->ChangeProtectedState(false);
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+}
+
+/**
+ * @tc.name: ChangeProtectedStateNoChangeTest
+ * @tc.desc: Verify the ChangeProtectedState when state doesn't change
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, ChangeProtectedStateNoChangeTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+    renderContext->isProtected_.store(false);
+    auto originalContext = renderContext->drGPUContext_;
+    renderContext->ChangeProtectedState(false);
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+    // drGPUContext_ should not change when isProtected_ doesn't change
+    EXPECT_EQ(renderContext->drGPUContext_, originalContext);
+}
+
+/**
+ * @tc.name: SetRenderContextTypeBasicRenderTest
+ * @tc.desc: Verify the SetRenderContextType with BASIC_RENDER type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, SetRenderContextTypeBasicRenderTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+    renderContext->isProtected_.store(true); // Start with protected state
+    renderContext->SetRenderContextType(0); // BASIC_RENDER
+    // BASIC_RENDER should not change isProtected_ state
+    EXPECT_EQ(renderContext->isProtected_.load(), true);
+}
+
+/**
+ * @tc.name: SetRenderContextTypeInvalidValueTest
+ * @tc.desc: Verify the SetRenderContextType with invalid value
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, SetRenderContextTypeInvalidValueTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+    renderContext->isProtected_.store(false);
+    // Test with value >= MAX_INTERFACE_TYPE (invalid)
+    renderContext->SetRenderContextType(3);
+    // Invalid value should not change isProtected_ state
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+
+    renderContext->isProtected_.store(true);
+    renderContext->SetRenderContextType(200);
+    EXPECT_EQ(renderContext->isProtected_.load(), true);
+}
+
+/**
+ * @tc.name: SetRenderContextTypeSequenceTest
+ * @tc.desc: Verify the SetRenderContextType with sequential calls
+ * @tc.type: FUNC
+ */
+HWTEST_F(RenderContextVKTest, SetRenderContextTypeSequenceTest, Level1)
+{
+    auto renderContext = std::make_shared<RenderContextVK>();
+    EXPECT_NE(renderContext, nullptr);
+
+    // Test sequence: BASIC -> PROTECTED -> UNPROTECTED -> BASIC
+    renderContext->SetRenderContextType(0); // BASIC_RENDER
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+
+    renderContext->SetRenderContextType(1); // PROTECTED_REDRAW
+    EXPECT_EQ(renderContext->isProtected_.load(), true);
+
+    renderContext->SetRenderContextType(2); // UNPROTECTED_REDRAW
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+
+    renderContext->SetRenderContextType(0); // BASIC_RENDER
+    EXPECT_EQ(renderContext->isProtected_.load(), false);
+}
 } // namespace OHOS::Rosen

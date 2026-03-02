@@ -169,7 +169,8 @@ void RSUniHwcComputeUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const D
     node.SetSrcRect({newSrcRect.GetLeft(), newSrcRect.GetTop(), newSrcRect.GetWidth(), newSrcRect.GetHeight()});
 }
 
-void RSUniHwcComputeUtil::DealWithNodeGravityOldVersion(RSSurfaceRenderNode& node, const RSScreenProperty& screenProperty)
+void RSUniHwcComputeUtil::DealWithNodeGravityOldVersion(RSSurfaceRenderNode& node,
+                                                        const RSScreenProperty& screenProperty)
 {
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
     if (!buffer) {

@@ -47,7 +47,6 @@ private:
     void OnBootCompleteEvent();
     void HandlePostureData(const SensorEvent* const event);
     void HandleSensorData(float angle);
-    FoldState TransferAngleToScreenState(float angle);
 #endif
 
     RSScreenPreprocessor& screenPreprocessor_;

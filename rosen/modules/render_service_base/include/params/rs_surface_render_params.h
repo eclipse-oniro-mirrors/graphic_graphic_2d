@@ -416,9 +416,11 @@ public:
     ScreenId GetScreenId() const;
 
 #ifndef ROSEN_CROSS_PLATFORM
-    void SetBuffer(const sptr<SurfaceBuffer>& buffer, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) override;
+    void SetBuffer(const sptr<SurfaceBuffer>& buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) override;
     sptr<SurfaceBuffer> GetBuffer() const override;
-    void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) override;
+    void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) override;
     sptr<SurfaceBuffer> GetPreBuffer() override;
     void SetAcquireFence(const sptr<SyncFence>& acquireFence) override;
     sptr<SyncFence> GetAcquireFence() const override;

@@ -33,6 +33,7 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 namespace {
+constexpr unit32_t delay_110Ms = 110;
 constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config.xml";
 }
 class HgmRenderContextTest : public testing::Test {
@@ -122,6 +123,8 @@ HWTEST_F(HgmRenderContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
     EXPECT_EQ(pipelineParam.pendingConstraintRelativeTime, 2);
     EXPECT_EQ(renderService.hgmContext_->currVsyncId_, 100);
     EXPECT_EQ(renderService.hgmContext_->rsCurrRange_.preferred_, 60);
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
+    mgr->rsFrameRateLinker_ = nullptr;
 }
 
 /**

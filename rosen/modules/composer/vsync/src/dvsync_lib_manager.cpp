@@ -143,18 +143,6 @@ bool DVSyncLibManager::LoadDvsyncDelayFunctions() {
     return loadSuccess;
 }
 
-template<typename FuncPtr> 
-bool DVSyncLibManager::LoadFunction(const std::string& funcName, FuncPtr& funcPtr) {
-    void* symbol = dlsym(libHandle_, funcName.c_str());
-    if (!symbol) {
-        VLOGE("Failed to load function %{public}s", funcName.c_str());
-        funcPtr = nullptr;
-        return false;
-    }
-    funcPtr = reinterpret_cast<FuncPtr>(symbol);
-    return true;
-}
-
 void DVSyncLibManager::ClearDvsyncDelayFunctions()
 {
     toDelayFunc_ = nullptr;

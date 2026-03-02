@@ -73,6 +73,16 @@ ErrCode RSServiceToRenderConnection::AvcodecVideoStop(const std::vector<uint64_t
     return renderPipelineAgent_->AvcodecVideoStop(uniqueIdList, surfaceNameList, fps);
 }
 
+ErrCode RSServiceToRenderConnection::AvcodecVideoGet(uint64_t uniqueId)
+{
+    return renderPipelineAgent_->AvcodecVideoGet(uniqueId);
+}
+
+ErrCode RSServiceToRenderConnection::AvcodecVideoGetRecent()
+{
+    return renderPipelineAgent_->AvcodecVideoGetRecent();
+}
+
 void RSServiceToRenderConnection::DoDump(std::unordered_set<std::u16string>& argSets, sptr<RSIDumpCallback> callback)
 {
     renderPipelineAgent_->DoDump(argSets, callback);

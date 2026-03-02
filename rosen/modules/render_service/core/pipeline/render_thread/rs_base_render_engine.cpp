@@ -86,11 +86,12 @@ RSBaseRenderEngine::~RSBaseRenderEngine() noexcept
 {
 }
 
-void RSBaseRenderEngine::Init()
+void RSBaseRenderEngine::Init(RenderEngineType type)
 {
 #if (defined RS_ENABLE_GL) || (defined RS_ENABLE_VK)
     renderContext_ = RenderContext::Create();
     renderContext_->Init();
+    renderContext_->SetRenderContextType(static_cast<uint8_t>(type));
     if (RSUniRenderJudgement::IsUniRender()) {
         RS_LOGI("RSRenderEngine::RSRenderEngine set new cacheDir");
         renderContext_->SetUniRenderMode(true);

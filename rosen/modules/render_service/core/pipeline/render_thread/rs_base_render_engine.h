@@ -183,12 +183,19 @@ struct VideoInfo {
 #endif
 };
 
+enum class RenderEngineType : uint8_t {
+    BASIC_RENDER = 0,
+    PROTECTED_REDRAW,
+    UNPROTECTED_REDRAW,
+    MAX_INTERFACE_TYPE,
+};
+
 // This render engine aims to do the client composition for all surfaces that hardware can't handle.
 class RSBaseRenderEngine {
 public:
     RSBaseRenderEngine();
     virtual ~RSBaseRenderEngine() noexcept;
-    void Init();
+    void Init(RenderEngineType type = RenderEngineType::BASIC_RENDER);
     RSBaseRenderEngine(const RSBaseRenderEngine&) = delete;
     void operator=(const RSBaseRenderEngine&) = delete;
 

@@ -1021,6 +1021,7 @@ ErrCode RSRenderPipelineAgent::ReportEventResponse(DataBaseRs info)
     rsRenderPipeline_->PostUniRenderThreadTask(task);
     RSUifirstManager::Instance().OnProcessEventResponse(info);
     RSUifirstFrameRateControl::Instance().SetAnimationStartInfo(info);
+    UpdateAnimationOcclusionStatus(info.sceneId, true);
     return ERR_OK;
 }
 
@@ -1046,7 +1047,18 @@ ErrCode RSRenderPipelineAgent::ReportEventJankFrame(DataBaseRs info)
     };
     rsRenderPipeline_->PostUniRenderThreadTask(task);
     RSUifirstFrameRateControl::Instance().SetAnimationEndInfo(info);
+    UpdateAnimationOcclusionStatus(info.sceneId, false);
     return ERR_OK;
+}
+
+void RSRenderPipelineAgent::UpdateAnimationOcclusionStatus(const std::string& sceneId, bool isStart)
+{
+    if (rsRenderPipeline_ != nullptr) {
+        auto task = [renderPipeline = rsRenderPipeline_, sceneId, isStart]() -> void {
+            renderPipeline->GetMainThread()->SetAnimationOcclusionInfo(sceneId, isStart);
+        };
+        rsRenderPipeline_->PostMainThreadTask(task);
+    }
 }
 
 ErrCode RSRenderPipelineAgent::ReportRsSceneJankStart(AppInfo info)
@@ -1095,10 +1107,34 @@ ErrCode RSRenderPipelineAgent::AvcodecVideoStop(const std::vector<uint64_t>& uni
     return ERR_OK;
 }
 
+ErrCode RSRenderPipelineAgent::AvcodecVideoGet(uint64_t uniqueId)
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return ERR_INVALID_VALUE;
+    }
+    auto task = [uniqueId]() -> void {
+        RSJankStats::GetInstance().AvcodecVideoGet(uniqueId);
+    };
+    rsRenderPipeline_->PostMainThreadTask(task);
+    return ERR_OK;
+}
+
+ErrCode RSRenderPipelineAgent::AvcodecVideoGetRecent()
+{
+    if (rsRenderPipeline_ == nullptr) {
+        return ERR_INVALID_VALUE;
+    }
+    auto task = []() -> void {
+        RSJankStats::GetInstance().AvcodecVideoGetRecent();
+    };
+    rsRenderPipeline_->PostMainThreadTask(task);
+    return ERR_OK;
+}
+
 ErrCode RSRenderPipelineAgent::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, sptr<Surface>& sfc,
         bool unobscured)
 {
-    if (rsRenderPipeline_ == nullptr) {
+    if (!rsRenderPipeline_) {
         return ERR_INVALID_VALUE;
     }
     std::shared_ptr<RSSurfaceRenderNode> node = SurfaceNodeCommandHelper::CreateWithConfigInRS(

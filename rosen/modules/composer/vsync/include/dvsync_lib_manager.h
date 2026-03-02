@@ -71,7 +71,7 @@ using GetVsyncCountFunc = int64_t (*)(int64_t& VsyncCount);
 using SetCallbackFunc = void (*)(OHOS::Rosen::VSyncController::Callback *cb);
 using SetEnableFunc = void (*)(bool enable, bool& isGeneratorEnable);
 using InitDvsyncControllerFunc = void (*)(const sptr<VSyncGenerator>& gen, int64_t offset,
-    sptr<VSyncController>& controller);
+                                          sptr<VSyncController>& controller);
 using SetVSyncTimeUpdatedFunc = void (*)();
 
 //dvsync delay
@@ -201,7 +201,18 @@ private:
     bool LoadDvsyncDelayFunctions();
     void ClearAllFunctions();
     void ClearDvsyncDelayFunctions();
-    template<typename FuncPtr> bool LoadFunction(const std::string& funcName, FuncPtr& funcPtr);
+    
+    template<typename FuncPtr>
+    bool LoadFunction(const std::string& funcName, FuncPtr& funcPtr)
+    {
+        void* symbol = dlsym(libHandle_, funcName.c_str());
+        if (!symbol) {
+            funcPtr = nullptr;
+            return false;
+        }
+        funcPtr = reinterpret_cast<FuncPtr>(symbol);
+        return true;
+    }
 };
 }
 }

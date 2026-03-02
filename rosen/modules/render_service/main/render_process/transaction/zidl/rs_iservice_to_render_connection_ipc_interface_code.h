@@ -39,6 +39,8 @@ enum class RSIServiceToRenderConnectionInterfaceCode : CodeUnderlyingType {
     GET_SHOW_REFRESH_RATE_ENABLED = 20,
     AVCODEC_VIDEO_START = 22,
     AVCODEC_VIDEO_STOP = 23,
+    AVCODEC_VIDEO_GET = 24,
+    AVCODEC_VIDEO_GET_RECENT = 25,
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     SET_OVERLAY_DISPLAY_MODE = 27,
 #endif

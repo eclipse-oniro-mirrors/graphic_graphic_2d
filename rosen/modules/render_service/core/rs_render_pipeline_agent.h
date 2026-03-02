@@ -115,12 +115,15 @@ public:
     ErrCode ReportEventResponse(DataBaseRs info);
     ErrCode ReportEventComplete(DataBaseRs info);
     ErrCode ReportEventJankFrame(DataBaseRs info);
+    void UpdateAnimationOcclusionStatus(const std::string& sceneId, bool isStart);
     ErrCode ReportRsSceneJankStart(AppInfo info);
     ErrCode ReportRsSceneJankEnd(AppInfo info);
     ErrCode AvcodecVideoStart(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps, uint64_t reportTime);
     ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps);
+    ErrCode AvcodecVideoGet(uint64_t uniqueId);
+    ErrCode AvcodecVideoGetRecent();
     ErrCode CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, sptr<Surface>& sfc,
         bool unobscured = false);
     int32_t SetBrightnessInfoChangeCallback(pid_t pid, sptr<RSIBrightnessInfoChangeCallback> callback);

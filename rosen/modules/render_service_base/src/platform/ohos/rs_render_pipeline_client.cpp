@@ -869,6 +869,7 @@ void RSRenderPipelineClient::ClearUifirstCache(NodeId id)
 {
     auto clientToRender = RSRenderServiceConnectHub::GetClientToRenderConnection();
     if (!clientToRender) {
+        ROSEN_LOGE("RSRenderPipelineClient::%{public}s clientToRender == nullptr!", __func__);
         return;
     }
     clientToRender->ClearUifirstCache(id);

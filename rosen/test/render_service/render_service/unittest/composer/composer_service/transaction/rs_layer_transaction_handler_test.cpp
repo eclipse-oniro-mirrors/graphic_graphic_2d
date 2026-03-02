@@ -108,7 +108,7 @@ HWTEST(RSLayerTransactionHandlerTest, SetProxy_NonNull_CommitFail_KeepsData, Tes
 
     class MockRemoteLocal : public IRemoteObject {
     public:
-        MockRemoteLocal() : IRemoteObject(IRSComposerToRenderConnection::GetDescriptor()) {}
+        MockRemoteLocal() : IRemoteObject(IRSRenderToComposerConnection::GetDescriptor()) {}
         int32_t GetObjectRefCount() override { return 1; }
         int SendRequest(uint32_t, MessageParcel &, MessageParcel &, MessageOption &) override { return 1; }
         bool AddDeathRecipient(const sptr<DeathRecipient> &) override { return false; }

@@ -74,7 +74,7 @@ public:
     {
         auto composerConn = renderService_.rsRenderComposerManager_->GetRSComposerConnection(property->GetScreenId());
         renderService_.renderPipeline_->OnScreenConnected(property, composerConn, composerToRenderConnection_,
-            renderService_.rsVsyncManagerAgent_, output);
+            output);
         return connectToRenderConnection_->AsObject();
     }
 
@@ -97,7 +97,7 @@ public:
     void OnVirtualScreenConnected(ScreenId id, ScreenId associatedScreenId,
         const sptr<RSScreenProperty>& property) override
     {
-        renderService_.renderPipeline_->OnScreenConnected(property, nullptr, nullptr, nullptr, nullptr);
+        renderService_.renderPipeline_->OnScreenConnected(property, nullptr, nullptr, nullptr);
     }
 
     void OnVirtualScreenDisconnected(ScreenId id) override

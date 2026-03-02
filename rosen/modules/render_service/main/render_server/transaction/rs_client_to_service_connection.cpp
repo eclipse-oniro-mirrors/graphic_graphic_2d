@@ -2136,22 +2136,40 @@ ErrCode RSClientToServiceConnection::AvcodecVideoStop(const std::vector<uint64_t
 
 ErrCode RSClientToServiceConnection::AvcodecVideoGet(uint64_t uniqueId)
 {
-    // todo car
-    // auto task = [uniqueId]() -> void {
-    //     RSJankStats::GetInstance().AvcodecVideoGet(uniqueId);
-    // };
-    // mainThread_->PostTask(task);
-    return ERR_OK;
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%s{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.empty()) {
+        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    int32_t ret = ERR_OK;
+    for (auto conn : serviceToRenderConns) {
+        int32_t retTmp = conn->AvcodecVideoGet(uniqueId);
+        ret = (ret != ERR_OK) ? ret : retTmp;
+    }
+    return ret;
 }
  
 ErrCode RSClientToServiceConnection::AvcodecVideoGetRecent()
 {
-    // todo car
-    // auto task = []() -> void {
-    //     RSJankStats::GetInstance().AvcodecVideoGetRecent();
-    // };
-    // mainThread_->PostTask(task);
-    return ERR_OK;
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%s{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.empty()) {
+        RS_LOGE("%s{public}s serviceToRenderConns is empty", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    int32_t ret = ERR_OK;
+    for (auto conn : serviceToRenderConns) {
+        int32_t retTmp = conn->AvcodecVideoGetRecent();
+        ret = (ret != ERR_OK) ? ret : retTmp;
+    }
+    return ret;
 }
 
 #ifdef RS_ENABLE_OVERLAY_DISPLAY

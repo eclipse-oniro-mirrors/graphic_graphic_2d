@@ -467,9 +467,11 @@ public:
 
     // overrided surface params
 #ifndef ROSEN_CROSS_PLATFORM
-    virtual void SetBuffer(const sptr<SurfaceBuffer>& buffer, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) {}
+    virtual void SetBuffer(const sptr<SurfaceBuffer>& buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) {}
     virtual sptr<SurfaceBuffer> GetBuffer() const { return nullptr; }
-    virtual void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) {}
+    virtual void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) {}
     virtual sptr<SurfaceBuffer> GetPreBuffer() { return nullptr; }
     virtual void SetAcquireFence(const sptr<SyncFence>& acquireFence) {}
     virtual sptr<SyncFence> GetAcquireFence() const { return nullptr; }

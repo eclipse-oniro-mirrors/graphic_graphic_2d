@@ -579,28 +579,6 @@ HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp001, Function | SmallTest |
 }
 
 /**
- * @tc.name: LayerPresentTimestamp002
- * @tc.desc: RSComposerAdapter.LayerPresentTimestamp test, SupportedPresentTimestamp
- * @tc.type: FUNC
- * @tc.require: issueI7HDVG
- */
-HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp002, Function | SmallTest | Level2)
-{
-    uint32_t width = 2160;
-    uint32_t height = 1080;
-    CreateComposerAdapterWithScreenInfo(
-        width, height, ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN, ScreenRotation::ROTATION_0);
-    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(surfaceNode, nullptr);
-    auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
-    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
-    layer->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
-    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
-    composerAdapter_->LayerPresentTimestamp(layer, consumer);
-    RSTestUtil::UnregisterConsumerListener();
-}
-
-/**
  * @tc.name: LayerPresentTimestamp003
  * @tc.desc: RSComposerAdapter.LayerPresentTimestamp test with null buffer
  * @tc.type: FUNC
@@ -614,9 +592,59 @@ HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp003, Function | SmallTest |
         width, height, ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN, ScreenRotation::ROTATION_0);
     RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     ASSERT_NE(layer, nullptr);
+    layer->SetIsSupportedPresentTimestamp(true);
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
     ASSERT_NE(consumer, nullptr);
     composerAdapter_->LayerPresentTimestamp(layer, consumer);
+}
+
+/**
+ * @tc.name: LayerPresentTimestamp004
+ * @tc.desc: RSComposerAdapter.LayerPresentTimestamp test with valid buffer
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp004, Function | SmallTest | Level2)
+{
+    uint32_t width = 2160;
+    uint32_t height = 1080;
+    CreateComposerAdapterWithScreenInfo(
+        width, height, ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN, ScreenRotation::ROTATION_0);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>();
+    layer->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
+    layer->SetIsSupportedPresentTimestamp(true);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    composerAdapter_->LayerPresentTimestamp(layer, consumer);
+    RSTestUtil::UnregisterConsumerListener();
+}
+
+/**
+ * @tc.name: LayerPresentTimestamp005
+ * @tc.desc: RSComposerAdapter.LayerPresentTimestamp test with invalid buffer sequence
+ * @tc.type: FUNC
+ * @tc.require: issueI7HDVG
+ */
+HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp005, Function | SmallTest | Level2)
+{
+    uint32_t width = 2160;
+    uint32_t height = 1080;
+    CreateComposerAdapterWithScreenInfo(
+        width, height, ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN, ScreenRotation::ROTATION_0);
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>();
+    layer->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
+    layer->SetIsSupportedPresentTimestamp(true);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    // Create buffer with invalid sequence number not registered in the consumer's queue
+    sptr<SurfaceBuffer> testBuffer = new SurfaceBufferImpl(0);
+    layer->SetBuffer(testBuffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
+    composerAdapter_->LayerPresentTimestamp(layer, consumer);
+    RSTestUtil::UnregisterConsumerListener();
 }
 
 /**

@@ -51,6 +51,8 @@ public:
         const std::vector<std::string>& surfaceNameList, uint32_t fps, uint64_t reportTime) override;
     ErrCode AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
         const std::vector<std::string>& surfaceNameList, uint32_t fps) override;
+    ErrCode AvcodecVideoGet(uint64_t uniqueId) override;
+    ErrCode AvcodecVideoGetRecent() override;
     ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic) override;
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
 

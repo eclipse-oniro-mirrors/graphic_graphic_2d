@@ -93,7 +93,8 @@ HWTEST_F(DVSyncLibManagerTest, Initialize001, Function | MediumTest| Level1)
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.NeedSkipAndUpdateTs(vsyncConnection, timeStamp), false);
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.NeedSkipUi(vsyncConnection), false);
     DVSyncLibManagerTest::dvsyncLibManager.RecordEnableVsync(vsyncDistributor);
-    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.NeedPreexecuteAndUpdateTs(vsyncConnection, timeStamp, period), false);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.NeedPreexecuteAndUpdateTs(vsyncConnection, timeStamp, period),
+        false);
 
     DVSyncLibManagerTest::dvsyncLibManager.NotifyPackageEvent(packageList);
     DVSyncLibManagerTest::dvsyncLibManager.HandleTouchEvent(touchStatus, touchCnt);
@@ -303,6 +304,160 @@ HWTEST_F(DVSyncLibManagerTest, Initialize005, Function | MediumTest| Level1)
     ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.setToCurrentPeriodFunc_, nullptr);
     DVSyncLibManagerTest::dvsyncLibManager.SetVSyncTimeUpdated();
     ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.setVSyncTimeUpdatedFunc_, nullptr);
+    DVSyncLibManagerTest::dvsyncLibManager.Shutdown();
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
+}
+
+/*
+* Function: LoadFunction001
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. test LoadFunction when load func not exist.
+ */
+HWTEST_F(DVSyncLibManagerTest, LoadFunction001, Function | MediumTest| Level1)
+{
+    bool success = dvsyncLibManager.Initialize("libdvsync.z.so");
+    if (!success) {
+        return;
+    }
+    ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
+    bool loadSuccess = true;
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongIsAppDVSyncOn", dvsyncLibManager.isAppDVSyncOnFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetAppRequestedStatus",
+        dvsyncLibManager.setAppRequestedStatusFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongCheckVsyncReceivedAndGetRelTs",
+        dvsyncLibManager.checkVsyncReceivedAndGetRelTsFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetOccurPeriod", dvsyncLibManager.getOccurPeriodFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetOccurRefreshRate",
+        dvsyncLibManager.getOccurRefreshRateFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongRecordVSync", dvsyncLibManager.recordVSyncFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetConnectionApp", dvsyncLibManager.getConnectionAppFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongMarkRSRendering", dvsyncLibManager.markRSRenderingFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetAppDVSyncSwitch", dvsyncLibManager.setAppDVSyncSwitchFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetUiDVSyncConfig",
+        dvsyncLibManager.setUiDVSyncConfigFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetUiCommandDelayTime",
+        dvsyncLibManager.getUiCommandDelayTimeFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongUpdatePendingReferenceTime",
+        dvsyncLibManager.updatePendingReferenceTimeFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetRealTimeOffsetOfDvsync",
+        dvsyncLibManager.getRealTimeOffsetOfDvsyncFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetHardwareTaskNum", dvsyncLibManager.setHardwareTaskNumFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetPhysicalScreenNum",
+        dvsyncLibManager.setPhysicalScreenNumFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetTaskEndWithTime", dvsyncLibManager.setTaskEndWithTimeFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongInitWithParam", dvsyncLibManager.initWithParamFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetDistributor", dvsyncLibManager.setDistributorFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetConnection", dvsyncLibManager.setConnectionFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongDisableVSync", dvsyncLibManager.disableVSyncFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongNeedSkipAndUpdateTs",
+        dvsyncLibManager.needSkipAndUpdateTsFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongNeedSkipUi", dvsyncLibManager.needSkipUiFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongRecordEnableVsync", dvsyncLibManager.recordEnableVsyncFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongRecordRNV", dvsyncLibManager.recordRNVFunc_);
+    ASSERT_NE(loadSuccess, true);
+    DVSyncLibManagerTest::dvsyncLibManager.Shutdown();
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
+}
+
+/*
+* Function: LoadFunction002
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. test LoadFunction when load func not exist.
+ */
+HWTEST_F(DVSyncLibManagerTest, LoadFunction002, Function | MediumTest| Level1)
+{
+    bool success = dvsyncLibManager.Initialize("libdvsync.z.so");
+    if (!success) {
+        return;
+    }
+    ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
+    bool loadSuccess = true;
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongNeedPreexecuteAndUpdateTs",
+        dvsyncLibManager.needPreexecuteAndUpdateTsFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongNotifyPackageEvent", dvsyncLibManager.notifyPackageEventFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongHandleTouchEvent", dvsyncLibManager.handleTouchEventFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetBufferInfo", dvsyncLibManager.setBufferInfoFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongIsAppRequested", dvsyncLibManager.isAppRequestedFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetVSyncConnectionApp",
+        dvsyncLibManager.getVSyncConnectionAppFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongNeedUpdateVSyncTime",
+        dvsyncLibManager.needUpdateVSyncTimeFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetLastUpdateTime", dvsyncLibManager.getLastUpdateTimeFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongDVSyncUpdate", dvsyncLibManager.dvsyncUpdateFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongForceRsDVsync", dvsyncLibManager.forceRsDVsyncFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongUpdateReferenceTimeAndPeriod",
+        dvsyncLibManager.updateReferenceTimeAndPeriodFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetCurrentRefreshRate",
+        dvsyncLibManager.setCurrentRefreshRateFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongDVSyncRateChanged", dvsyncLibManager.dvsyncRateChangedFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetToCurrentPeriod", dvsyncLibManager.setToCurrentPeriodFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongGetVsyncCount", dvsyncLibManager.getVsyncCountFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongInitDvsyncController",
+        dvsyncLibManager.initDvsyncControllerFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetVSyncTimeUpdated",
+        dvsyncLibManager.setVSyncTimeUpdatedFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongToDelay", dvsyncLibManager.toDelayFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongSetTouchEvent", dvsyncLibManager.setTouchEventFunc_);
+    loadSuccess &= dvsyncLibManager.LoadFunction("WrongUpdateDelayInfo", dvsyncLibManager.updateDelayInfoFunc_);
+    ASSERT_NE(loadSuccess, true);
+    DVSyncLibManagerTest::dvsyncLibManager.Shutdown();
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
+}
+
+/*
+* Function: LoadFunction003
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. test LoadFunction when load func not exist.
+ */
+HWTEST_F(DVSyncLibManagerTest, LoadFunction003, Function | MediumTest| Level1)
+{
+    uint64_t timestamp = 0;
+    DVSyncFeatureParam dvsyncParam;
+    std::vector<std::string> packageList;
+    int32_t touchStatus = 0;
+    int32_t touchCnt = 0;
+    std::string sceneId = "1";
+    uint64_t id = 0;
+    std::string name = "test";
+    int32_t queueSize = 0;
+    int32_t bufferCount = 0;
+    int64_t lastConsumeTime = 0;
+    int64_t VsyncCount = 0;
+    int64_t offset = 0;
+    uint32_t num = 0;
+    int64_t time = 0;
+    bool success = dvsyncLibManager.Initialize("libdvsync.z.so");
+    if (!success) {
+        return;
+    }
+    ASSERT_NE(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
+    bool loadSuccess = dvsyncLibManager.LoadAllFunctions();
+    ASSERT_NE(loadSuccess, false);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.CheckVsyncReceivedAndGetRelTs(timestamp), 0);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetOccurPeriod(), 0);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetOccurRefreshRate(), 0);
+    DVSyncLibManagerTest::dvsyncLibManager.MarkRSRendering(true);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetUiCommandDelayTime(), 0);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.GetRealTimeOffsetOfDvsync(time), 0);
+    DVSyncLibManagerTest::dvsyncLibManager.SetHardwareTaskNum(num);
+    DVSyncLibManagerTest::dvsyncLibManager.SetPhysicalScreenNum(num);
+    DVSyncLibManagerTest::dvsyncLibManager.SetTaskEndWithTime(timestamp);
+    DVSyncLibManagerTest::dvsyncLibManager.InitWithParam(dvsyncParam);
+    ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.SetDistributor(true, vsyncDistributor), true);
+    DVSyncLibManagerTest::dvsyncLibManager.NotifyPackageEvent(packageList);
+    DVSyncLibManagerTest::dvsyncLibManager.HandleTouchEvent(touchStatus, touchCnt);
+    bool result = DVSyncLibManagerTest::dvsyncLibManager.SetBufferInfo(id, name, queueSize,
+        bufferCount, lastConsumeTime);
+    ASSERT_EQ(result, false);
+    DVSyncLibManagerTest::dvsyncLibManager.ForceRsDVsync(sceneId);
+    DVSyncLibManagerTest::dvsyncLibManager.GetVsyncCount(VsyncCount);
+    DVSyncLibManagerTest::dvsyncLibManager.InitDvsyncController(vsyncGenerator, offset, vsyncController);
     DVSyncLibManagerTest::dvsyncLibManager.Shutdown();
     ASSERT_EQ(DVSyncLibManagerTest::dvsyncLibManager.libHandle_, nullptr);
 }

@@ -360,6 +360,11 @@ ohos_unittest("RSUiCaptureTaskParallelTest") {
     "$graphic_2d_root/rosen/modules/render_service_base/src/pipeline/rs_canvas_render_node.cpp",
     "capture/rs_ui_capture_task_parallel_test.cpp",
   ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = true
+  }
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
@@ -437,7 +442,6 @@ ohos_unittest("RSUniUiCaptureTest") {
   ]
   deps = [
     ":rs_test_common",
-    "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -725,7 +729,6 @@ ohos_unittest("RSUniHwcPrevalidateUtilTest") {
   ]
   deps = [
     ":rs_test_common",
-    "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -762,7 +765,6 @@ ohos_unittest("RSUniHwcPrevalidateUtilTest1") {
   deps = [
     ":mock_dlsym",
     ":rs_test_common",
-    "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
     "../../../../../modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -834,7 +836,6 @@ ohos_unittest("RSEglImageManagerTest") {
   ]
   deps = [
     ":rs_test_common",
-    "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
   ]
   external_deps = [
@@ -952,7 +953,6 @@ ohos_unittest("HgmRenderContextTest") {
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
-    "$graphic_2d_root/rosen/modules/render_service/composer:render_composer",
   ]
   external_deps = [
     "c_utils:utils",

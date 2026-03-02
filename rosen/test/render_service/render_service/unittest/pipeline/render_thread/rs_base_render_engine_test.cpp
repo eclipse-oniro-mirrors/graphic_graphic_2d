@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "drawable/rs_screen_render_node_drawable.h"
 #include "gtest/gtest.h"
 
 #ifdef RS_ENABLE_VK
@@ -36,6 +37,8 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
+const Drawing::Rect DEFAULT_RECT(0.0f, 0.0f, 50.0f, 50.0f);
 #ifdef RS_ENABLE_VK
 static sptr<SurfaceBuffer> CreateBuffer()
 {
@@ -358,7 +361,13 @@ HWTEST_F(RSBaseRenderEngineUnitTest, DrawImageRect, TestSize.Level1)
  */
 HWTEST_F(RSBaseRenderEngineUnitTest, RegisterDeleteBufferListener001, TestSize.Level1)
 {
+    // RegisterDeleteBufferListener without gpuCacheManager
     auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->RegisterDeleteBufferListener(nullptr, true);
+
+    // RegisterDeleteBufferListener with gpuCacheManager
+    auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
+    renderEngine->SetGPUCacheManager(gpuCacheManager);
     renderEngine->RegisterDeleteBufferListener(nullptr, true);
     renderEngine->RegisterDeleteBufferListener(nullptr, false);
 #ifdef RS_ENABLE_VK
@@ -1071,6 +1080,260 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ClearCacheSet001, TestSize.Level1)
             EXPECT_EQ(flag, RSSystemProperties::GetReleaseImageOneByOneFlag());
         }
     }
+#endif
+}
+
+/**
+ * @tc.name: SetColorFilterModeTest
+ * @tc.desc: Test SetColorFilterMode
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SetColorFilterModeTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    ASSERT_NE(renderEngine, nullptr);
+
+    // Test INVERT_COLOR_DISABLE_MODE
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+
+    // Test DALTONIZATION modes while INVERT_COLOR_DISABLE
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+
+    // Test INVERT_COLOR_ENABLE_MODE
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::INVERT_COLOR_ENABLE_MODE),
+        static_cast<uint32_t>(ColorFilterMode::INVERT_COLOR_ENABLE_MODE));
+
+    // Test DALTONIZATION modes
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE),
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE));
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE),
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE));
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE),
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE));
+
+    // Test DALTONIZATION_NORMAL_MODE
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+}
+
+/**
+ * @tc.name: ConvertColorSpaceNameToDrawingColorSpaceAdobeRGBTest
+ * @tc.desc: Test ConvertColorSpaceNameToDrawingColorSpace with ADOBE_RGB
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ConvertColorSpaceNameToDrawingColorSpaceAdobeRGBTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    OHOS::ColorManager::ColorSpaceName colorSpaceName = OHOS::ColorManager::ColorSpaceName::ADOBE_RGB;
+    std::shared_ptr<Drawing::ColorSpace> colorSpace = nullptr;
+    colorSpace = renderEngine->ConvertColorSpaceNameToDrawingColorSpace(colorSpaceName);
+    auto colorSpaceType = colorSpace->GetType();
+    ASSERT_EQ(colorSpaceType, Drawing::ColorSpace::ColorSpaceType::RGB);
+}
+
+/**
+ * @tc.name: DrawImageWithMirrorTest
+ * @tc.desc: Test DrawImage with isMirror parameter
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawImageWithMirrorTest, TestSize.Level2)
+{
+#ifdef RS_ENABLE_VK
+    if (!RSSystemProperties::IsUseVulkan()) {
+        return;
+    }
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    ASSERT_NE(renderEngine, nullptr);
+
+    auto drawingRecordingCanvas =
+        std::make_unique<Drawing::RecordingCanvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
+    auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(drawingRecordingCanvas.get());
+    ASSERT_NE(recordingCanvas, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    auto buffer = node->GetRSSurfaceHandler()->GetBuffer();
+    ASSERT_NE(buffer, nullptr);
+
+    BufferDrawParam params;
+    params.buffer = buffer;
+    params.isMirror = true;
+    params.useCPU = false;
+    params.useBilinearInterpolation = true;
+    params.srcRect = DEFAULT_RECT;
+    params.dstRect = DEFAULT_RECT;
+    params.targetColorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
+    Drawing::Brush paint;
+    params.paint = paint;
+    renderEngine->DrawImage(*recordingCanvas, params);
+#endif
+}
+
+/**
+ * @tc.name: DrawScreenNodeWithParamsForSurfaceHandlerTest
+ * @tc.desc: Test DrawScreenNodeWithParams with RSSurfaceHandler
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParamsForSurfaceHandlerTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    std::unique_ptr<Drawing::Canvas> drawingCanvas =
+        std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    auto& surfaceHandler = *node->GetRSSurfaceHandler();
+
+    BufferDrawParam params;
+    params.useCPU = false;
+
+    renderEngine->DrawScreenNodeWithParams(*canvas, surfaceHandler, params);
+}
+
+/**
+ * @tc.name: DrawScreenNodeWithParamsWithDrawableTest
+ * @tc.desc: Test DrawScreenNodeWithParams with RSScreenRenderNode
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParamsWithDrawableTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    ASSERT_NE(renderEngine, nullptr);
+
+    std::unique_ptr<Drawing::Canvas> drawingCanvas =
+        std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    NodeId id = 0;
+    ScreenId screenId = 1;
+    auto rsContext = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    ASSERT_NE(screenNode, nullptr);
+    auto screenDrawable = std::make_shared<DrawableV2::RSScreenRenderNodeDrawable>(screenNode);
+    screenNode->renderDrawable_ = screenDrawable;
+    screenDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(id);
+
+    BufferDrawParam params;
+    params.useCPU = false;
+    renderEngine->DrawScreenNodeWithParams(*canvas, *screenNode, params);
+}
+
+/**
+ * @tc.name: DrawScreenNodeWithParamsForSurfaceHandlerTest_002
+ * @tc.desc: Test DrawScreenNodeWithParams with RSSurfaceHandler
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParamsForSurfaceHandlerTest_002, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    std::unique_ptr<Drawing::Canvas> drawingCanvas =
+        std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    auto& surfaceHandler = *node->GetRSSurfaceHandler();
+
+    BufferDrawParam params;
+    params.useCPU = true;
+
+    renderEngine->DrawScreenNodeWithParams(*canvas, surfaceHandler, params);
+}
+
+/**
+ * @tc.name: SetColorFilterModeTest_002
+ * @tc.desc: Test SetColorFilterMode default case
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SetColorFilterModeTest_002, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    ASSERT_NE(renderEngine, nullptr);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::COLOR_FILTER_END);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+}
+
+/**
+ * @tc.name: ConvertDrawingColorSpaceToSpaceInfoTest_002
+ * @tc.desc: Test ConvertDrawingColorSpaceToSpaceInfo with ADOBE_RGB and REC2020
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ConvertDrawingColorSpaceToSpaceInfoTest_002, TestSize.Level2)
+{
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    std::shared_ptr<Drawing::ColorSpace> colorSpace;
+    CM_ColorSpaceInfo colorSpaceInfo;
+
+    colorSpace = Drawing::ColorSpace::CreateRGB(
+        Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::ADOBE_RGB);
+    ASSERT_TRUE(RSBaseRenderEngine::ConvertDrawingColorSpaceToSpaceInfo(colorSpace, colorSpaceInfo));
+
+    colorSpace = Drawing::ColorSpace::CreateRGB(
+        Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::REC2020);
+    ASSERT_TRUE(RSBaseRenderEngine::ConvertDrawingColorSpaceToSpaceInfo(colorSpace, colorSpaceInfo));
+#endif
+}
+
+/**
+ * @tc.name: ColorSpaceConvertorTest_002
+ * @tc.desc: Test ColorSpaceConvertor with null inputShader
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ColorSpaceConvertorTest_002, TestSize.Level2)
+{
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+
+    BufferDrawParam params;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    params.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    ASSERT_NE(params.buffer, nullptr);
+    Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter parameter;
+
+    std::shared_ptr<Drawing::ShaderEffect> shaderEffect = nullptr;
+    renderEngine->ColorSpaceConvertor(shaderEffect, params, parameter, RSPaintFilterCanvas::HDRProperties());
 #endif
 }
 }

@@ -486,6 +486,62 @@ ErrCode RSServiceToRenderConnectionProxy::AvcodecVideoStop(const std::vector<uin
     return result;
 }
 
+ErrCode RSServiceToRenderConnectionProxy::AvcodecVideoGet(uint64_t uniqueId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_SYNC);
+
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("AvcodecVideoGet: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint64(uniqueId)) {
+        ROSEN_LOGE("AvcodecVideoGet: WriteUint64 uniqueId err.");
+        return ERR_INVALID_VALUE;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::AVCODEC_VIDEO_GET);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::AvcodecVideoGet: Send Request err.");
+        return ERR_INVALID_VALUE;
+    }
+    int32_t result{0};
+    if (!reply.ReadInt32(result)) {
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::AvcodecVideoGet Read result failed");
+        return ERR_INVALID_VALUE;
+    }
+    return result;
+}
+
+ErrCode RSServiceToRenderConnectionProxy::AvcodecVideoGetRecent()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_SYNC);
+
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("AvcodecVideoGetRecent: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::AVCODEC_VIDEO_GET_RECENT);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::AvcodecVideoGetRecent: Send Request err.");
+        return ERR_INVALID_VALUE;
+    }
+    int32_t result{0};
+    if (!reply.ReadInt32(result)) {
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::AvcodecVideoGetRecent Read result failed");
+        return ERR_INVALID_VALUE;
+    }
+    return result;
+}
+
 ErrCode RSServiceToRenderConnectionProxy::GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics)
 {
     MessageParcel data;

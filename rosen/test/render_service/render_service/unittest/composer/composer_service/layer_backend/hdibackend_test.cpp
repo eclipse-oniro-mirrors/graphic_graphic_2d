@@ -390,7 +390,6 @@ HWTEST_F(HdiBackendTest, OnScreenRefresh, Function | MediumTest| Level3)
     data->onScreenRefreshCb_ = nullptr;
     data->OnScreenRefresh(0);
 }
-
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

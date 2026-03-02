@@ -731,6 +731,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest010, TestSize.Leve
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurface, nullptr);
+    screenManager_->Init(nullptr);
     auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface);
     ASSERT_NE(INVALID_SCREEN_ID, screenId);
     screenManager->defaultScreenId_ = screenId;
@@ -3930,6 +3931,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawHardwareEnabledNodesTest002
     auto producer = csurface->GetProducer();
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurface, nullptr);
+    screenManager_->Init(nullptr);
     auto screenId = screenManager->CreateVirtualScreen(name, width, height, psurface);
     ASSERT_NE(INVALID_SCREEN_ID, screenId);
     screenManager->defaultScreenId_ = screenId;

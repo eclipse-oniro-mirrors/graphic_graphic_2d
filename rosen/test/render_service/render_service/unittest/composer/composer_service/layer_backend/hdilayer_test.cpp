@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 
 #include "hdi_layer.h"
 #include "mock_hdi_device.h"
@@ -94,7 +93,7 @@ void HdiLayerTest::SetUpTestCase()
 }
 
 void HdiLayerTest::TearDownTestCase() {}
-
+namespace {
 class MockSurfaceBuffer : public SurfaceBufferImpl {
 public:
     MOCK_CONST_METHOD0(GetBufferHandle, BufferHandle*());
@@ -769,6 +768,101 @@ HWTEST_F(HdiLayerTest, ClearBufferCache002, Function | MediumTest| Level1)
 }
 
 /**
+ * Function: SetTunnelLayerParametersTest
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call SetTunnelLayerParameters()
+ *                  2. check ret
+ */
+HWTEST_F(HdiLayerTest, SetTunnelLayerParametersTest, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    rsLayer->SetTunnelLayerId(1);
+    rsLayer->SetTunnelLayerProperty(1);
+    hdiLayer_->rsLayer_ = rsLayer;
+    EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerId(_, _, _)).WillRepeatedly(testing::Return(-1));
+    auto ret = hdiLayer_->SetTunnelLayerParameters();
+    EXPECT_EQ(ret, -1);
+    EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerId(_, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerProperty(_, _, _)).WillRepeatedly(testing::Return(-1));
+    ret = hdiLayer_->SetTunnelLayerParameters();
+    EXPECT_EQ(ret, -1);
+}
+
+/**
+ * Function: ResetBufferCache001
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call ResetBufferCache() with rsLayer_ is nullptr
+ *                  2. check bufferCache_ is cleared and bufferCleared_ is true
+ */
+HWTEST_F(HdiLayerTest, ResetBufferCache001, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->bufferCache_.clear();
+    hdiLayer_->bufferCache_.push_back(1);
+    hdiLayer_->bufferCleared_ = false;
+    hdiLayer_->rsLayer_ = nullptr;
+
+    hdiLayer_->ResetBufferCache();
+
+    EXPECT_EQ(hdiLayer_->bufferCache_.size(), 0);
+    EXPECT_TRUE(hdiLayer_->bufferCleared_);
+}
+
+/**
+ * Function: ResetBufferCache002
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call ResetBufferCache() with rsLayer_ is not nullptr but buffer is nullptr
+ *                  2. check bufferCache_ is cleared and bufferCleared_ is true
+ */
+HWTEST_F(HdiLayerTest, ResetBufferCache002, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->bufferCache_.clear();
+    hdiLayer_->bufferCache_.push_back(1);
+    hdiLayer_->bufferCleared_ = false;
+    hdiLayer_->rsLayer_ = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    hdiLayer_->rsLayer_->SetBuffer(nullptr);
+
+    hdiLayer_->ResetBufferCache();
+
+    EXPECT_EQ(hdiLayer_->bufferCache_.size(), 0);
+    EXPECT_TRUE(hdiLayer_->bufferCleared_);
+}
+
+/**
+ * Function: ResetBufferCache003
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. call ResetBufferCache() with rsLayer_ is not nullptr and buffer is not nullptr
+ *                  2. check bufferCache_ is cleared, bufferCleared_ is true, and currBuffer_ is set
+ */
+HWTEST_F(HdiLayerTest, ResetBufferCache003, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->bufferCache_.clear();
+    hdiLayer_->bufferCache_.push_back(1);
+    hdiLayer_->bufferCleared_ = false;
+    hdiLayer_->currBuffer_ = nullptr;
+    hdiLayer_->rsLayer_ = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    sptr<SurfaceBuffer> buffer = new SurfaceBufferImpl();
+    hdiLayer_->rsLayer_->SetBuffer(buffer);
+
+    hdiLayer_->ResetBufferCache();
+
+    EXPECT_EQ(hdiLayer_->bufferCache_.size(), 0);
+    EXPECT_TRUE(hdiLayer_->bufferCleared_);
+    EXPECT_EQ(hdiLayer_->currBuffer_, buffer);
+}
+
+/**
  * Function: SetTransformMode_NoChangeOrButt
  * Type: Function
  * Rank: Important(1)
@@ -871,7 +965,7 @@ HWTEST_F(HdiLayerTest, CheckAndUpdateLayerBufferCache_Found, Function | MediumTe
     hdiLayer_->bufferCacheCountMax_ = 5;
     uint32_t index = 0;
     std::vector<uint32_t> deletingList;
-    bool found = hdiLayer_->CheckAndUpdateLayerBufferCahce(10, index, deletingList);
+    bool found = hdiLayer_->CheckAndUpdateLayerBufferCache(10, index, deletingList);
     ASSERT_TRUE(found);
     ASSERT_EQ(index, 0u);
     ASSERT_TRUE(deletingList.empty());
@@ -949,5 +1043,6 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_AllKeys_Success, Function | MediumT
     auto ret = hdiLayer_->SetPerFrameParameters();
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
+} // namespace
 } // namespace Rosen
 } // namespace OHOS
