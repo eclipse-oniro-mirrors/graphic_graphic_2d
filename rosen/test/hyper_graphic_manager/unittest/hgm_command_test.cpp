@@ -361,19 +361,25 @@ HWTEST_F(HgmCommandTest, SetSettingModeId, Function | SmallTest | Level0)
 {
     visitor_->SetSettingModeId(0);
     EXPECT_EQ(visitor_->settingModeId_, 0);
+
     visitor_->SetSettingModeId(0);
     EXPECT_EQ(visitor_->settingModeId_, 0);
+
     visitor_->SetSettingModeId(1);
     EXPECT_EQ(visitor_->settingModeId_, 1);
 
     visitor_->SetXmlModeId("0");
     EXPECT_EQ(visitor_->xmlModeId_, "1");
+
     visitor_->SetXmlModeId("0");
     EXPECT_EQ(visitor_->xmlModeId_, "1");
+
     visitor_->SetXmlModeId("1");
     EXPECT_EQ(visitor_->xmlModeId_, "1");
+
     visitor_->SetXmlModeId("-1");
     EXPECT_EQ(visitor_->xmlModeId_, "-1");
+
     visitor_->SetXmlModeId("-1");
     EXPECT_EQ(visitor_->xmlModeId_, "-1");
 }
@@ -430,6 +436,7 @@ HWTEST_F(HgmCommandTest, UpdateRefreshRateForSettings001, Function | SmallTest |
         {-1, -1}, {60, 1}, {120, 2}, {144, 3}
     };
     ASSERT_EQ(settings.size(), padSettings.size());
+
     for (size_t i = 0; i < settings.size(); ++i) {
         EXPECT_EQ(settings[i], padSettings[i]);
     }
@@ -440,6 +447,7 @@ HWTEST_F(HgmCommandTest, UpdateRefreshRateForSettings001, Function | SmallTest |
         {-1, -101}, {60, 101}, {120, 102}
     };
     ASSERT_EQ(settings.size(), pcSettings.size());
+
     for (size_t i = 0; i < settings.size(); ++i) {
         EXPECT_EQ(settings[i], pcSettings[i]);
     }
@@ -448,6 +456,7 @@ HWTEST_F(HgmCommandTest, UpdateRefreshRateForSettings001, Function | SmallTest |
     auto originSettings = settings;
     hgmCore.mPolicyConfigData_->UpdateRefreshRateForSettings("unknownMode");
     ASSERT_EQ(settings.size(), originSettings.size());
+
     for (size_t i = 0; i < settings.size(); ++i) {
         EXPECT_EQ(settings[i], originSettings[i]);
     }
