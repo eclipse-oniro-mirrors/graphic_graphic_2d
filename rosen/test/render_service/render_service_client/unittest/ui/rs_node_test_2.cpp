@@ -1156,5 +1156,4 @@ HWTEST_F(RSNodeTest2, SetMaterialWithQualityLevel_AdaptiveFrostedGlass, TestSize
         modifier->GetProperty(ModifierNG::RSPropertyType::COLOR_PICKER_INTERVAL));
     ASSERT_NE(propInterval, nullptr);
 }
-
 } // namespace OHOS::Rosen
