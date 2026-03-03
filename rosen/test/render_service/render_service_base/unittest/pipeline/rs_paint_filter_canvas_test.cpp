@@ -2263,7 +2263,7 @@ HWTEST_F(RSPaintFilterCanvasTest, PushAndPopLayerPartRenderDirtyRegion002, TestS
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSPPaintFilterCanvasTest, GetCurLayerPartRenderDirtyRegion, TestSize.Level1)
+HWTEST_F(RSPaintFilterCanvasTest, GetCurLayerPartRenderDirtyRegion, TestSize.Level1)
 {
     Drawing::Canvas canvas;
     auto filterCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);

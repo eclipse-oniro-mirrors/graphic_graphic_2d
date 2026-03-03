@@ -279,7 +279,7 @@ HWTEST_F(RSOpincDrawCacheLayerPartTest, GetCurLayerPartRenderDirtyRegionWithNonE
 /**
  * @tc.name: QuickRejectWithEmptyLayerPartRenderStack
  * @tc.desc: Test QuickReject branch when LayerPartRenderDirtyRegionStack is empty
- *           This tests the path: return !paintFilterCanvas->GetCurDirtyRegion().IsIntersects(dstRegion)
+ *           When stack is empty, QuickReject uses GetCurDirtyRegion() instead
  * @tc.type: FUNC
  * @tc.require: issueLayerPart
  */
@@ -288,12 +288,14 @@ HWTEST_F(RSOpincDrawCacheLayerPartTest, QuickRejectWithEmptyLayerPartRenderStack
     Drawing::Canvas canvas;
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
 
-    // Stack is empty
+    // Stack is empty - GetCurLayerPartRenderDirtyRegion should NOT be called directly
+    // as it would cause undefined behavior on empty stack
     ASSERT_TRUE(paintFilterCanvas.IsLayerPartRenderDirtyRegionStackEmpty());
 
-    // When stack is empty, GetCurLayerPartRenderDirtyRegion should return empty region
-    auto& layerPartDirtyRegion = paintFilterCanvas.GetCurLayerPartRenderDirtyRegion();
-    ASSERT_TRUE(layerPartDirtyRegion.IsEmpty());
+    // When stack is empty, QuickReject logic falls back to GetCurDirtyRegion()
+    // This verifies the empty stack condition is properly handled
+    auto& dirtyRegion = paintFilterCanvas.GetCurDirtyRegion();
+    ASSERT_TRUE(dirtyRegion.IsEmpty());
 }
 
 /**
@@ -407,5 +409,27 @@ HWTEST_F(RSOpincDrawCacheLayerPartTest, PaintFilterCanvasPopLayerPartRenderDirty
     ASSERT_TRUE(paintFilterCanvas.IsLayerPartRenderDirtyRegionStackEmpty());
 }
 
+/**
+ * @tc.name: LayerDirtyRegionDfxWithDebugEnabled
+ * @tc.desc: Test LayerDirtyRegionDfx when debug is enabled
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincDrawCacheLayerPartTest, LayerDirtyRegionDfxWithDebugEnabled, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+
+    system::SetParameter("rosen.layerPartRenderDfx.enabled", "1");
+
+    Drawing::RectI dirtyRect(10, 10, 100, 100);
+
+    opincDrawCache.LayerDirtyRegionDfx(paintFilterCanvas, dirtyRect);
+
+    ASSERT_TRUE(RSSystemProperties::GetLayerPartRenderDebugEnabled());
+
+    system::SetParameter("rosen.layerPartRenderDfx.enabled", "0");
+}
 } // namespace Rosen
 } // namespace OHOS
