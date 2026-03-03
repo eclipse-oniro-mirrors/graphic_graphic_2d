@@ -721,6 +721,21 @@ HWTEST_F(ParagraphTest, ParagraphTestMiddleEllipsis015, TestSize.Level0)
     EXPECT_EQ(paragraphMiddleEllipsis_->GetGlyphPositionAtCoordinate(270, 0.0).position, 16.0);
 }
 
+/*
+ * @tc.name: ParagraphTestMiddleEllipsis016
+ * @tc.desc: test for Middle Ellipsis 016, get rects for range
+ * @tc.type: FUNC
+ */
+HWTEST_F(ParagraphTest, ParagraphTestMiddleEllipsis016, TestSize.Level0)
+{
+    size_t maxLines = 1;
+    PrepareMiddleEllipsis(maxLines, u"...", u"你好世界12312212\n你好世界");
+    paragraphMiddleEllipsis_->Layout(280);
+    std::vector<TextBox> boxes =
+        paragraphMiddleEllipsis_->GetRectsForRange(0, text_.size(), RectHeightStyle::TIGHT, RectWidthStyle::TIGHT);
+    EXPECT_EQ(boxes.size(), 3);
+}
+
 OHOS::Rosen::SPText::ParagraphImpl* ProcessRelayout(std::shared_ptr<Paragraph> paragraph, std::optional<RSBrush> brush)
 {
     std::vector<OHOS::Rosen::SPText::TextStyle> textStyles;
