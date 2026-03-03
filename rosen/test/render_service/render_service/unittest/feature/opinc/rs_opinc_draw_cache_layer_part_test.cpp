@@ -24,6 +24,7 @@
 #include "feature/opinc/rs_opinc_draw_cache.h"
 #include "params/rs_render_params.h"
 #include "platform/common/rs_system_properties.h"
+#include "parameters.h"
 
 using namespace testing;
 using namespace testing::ext;

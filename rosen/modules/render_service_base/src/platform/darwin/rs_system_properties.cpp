@@ -643,7 +643,7 @@ bool RSSystemProperties::GetLayerPartRenderEnabled()
     return false;
 }
 
-bool RSSystemProperties::GetLayerPartRenderDfxEnabled()
+bool RSSystemProperties::GetLayerPartRenderDebugEnabled()
 {
     return false;
 }

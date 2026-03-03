@@ -17,8 +17,6 @@
 #include "feature/opinc/rs_opinc_draw_cache.h"
 #include "feature/opinc/rs_opinc_manager.h"
 #include "params/rs_render_params.h"
-#include <parameter.h>
-#include <parameters.h>
 
 using namespace testing;
 using namespace testing::ext;

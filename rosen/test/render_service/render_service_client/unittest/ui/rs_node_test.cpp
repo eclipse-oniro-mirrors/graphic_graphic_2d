@@ -31,8 +31,7 @@
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
 #include "modifier_ng/custom/rs_content_style_modifier.h"
 #include "modifier_ng/custom/rs_node_modifier.h"
-#include <parameter.h>
-#include <parameters.h>
+#include "parameters.h"
 #include "render/rs_filter.h"
 #include "render/rs_material_filter.h"
 #include "ui/rs_canvas_node.h"
