@@ -696,10 +696,10 @@ HWTEST_F(RSScreenTest, SetRogResolution_001, testing::ext::TestSize.Level1)
     ScreenId id = INVALID_SCREEN_ID;
     auto rsScreen = std::make_shared<RSScreen>(HdiOutput::CreateHdiOutput(id));
     ASSERT_NE(rsScreen, nullptr);
-    uint32_t newWidth = 100;
-    uint32_t newHeight = 100;
-    rsScreen->property_.SetWidth(newWidth);
-    rsScreen->property_.SetHeight(newHeight);
+    uint32_t newWidth = 0;
+    uint32_t newHeight = 0;
+    rsScreen->property_.SetWidth(newWidth + 1);
+    rsScreen->property_.SetHeight(newHeight + 1);
     rsScreen->SetRogResolution(newWidth, newHeight);
     ASSERT_NE(nullptr, rsScreen->hdiScreen_);
     ASSERT_EQ(0, rsScreen->Width());
