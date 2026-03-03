@@ -4461,20 +4461,16 @@ bool RSMainThread::CheckFastCompose(int64_t lastFlushedDesiredPresentTimeStamp)
 
 bool RSMainThread::CheckAdaptiveCompose()
 {
-    if (!context_) {
+    if (!hgmRenderContext_) {
         return false;
     }
     auto adaptiveStatus = hgmRenderContext_->AdaptiveStatus();
     if (adaptiveStatus != SupportASStatus::SUPPORT_AS) {
         return false;
     }
-    bool onlyGameNodeOnTree = hgmRenderContext_->IsGameNodeOnTree();
-    // TODO: chenqiang
-    // bool isNeedAdaptiveCompose = onlyGameNodeOnTree && hgmContext_.GetIsAdaptiveVsyncComposeReady();
-    bool isNeedAdaptiveCompose = false;
     // in game adaptive sync mode and ignore animation scenario and mult-window scenario
     // selfdrawing node request next vsync as UrgentSelfdrawing
-    return isNeedAdaptiveCompose;
+    return hgmRenderContext_->IsGameNodeOnTree() && hgmRenderContext_->IsAdaptiveVsyncReady();
 }
 
 

@@ -15,6 +15,7 @@
 
 #include <gtest/gtest.h>
 
+#include "common/rs_special_layer_manager.h"
 #include "feature/capture/rs_ui_capture.h"
 #include "transaction/rs_render_service_client.h"
 #include "platform/ohos/rs_render_service_connect_hub.h"
@@ -251,12 +252,12 @@ HWTEST_F(RSServiceClientTest, SetVirtualScreenSurface001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetVirtualScreenBlackList Test
- * @tc.desc: SetVirtualScreenBlackList Test
- * @tc.type:FUNC
+ * @tc.name: SetVirtualScreenBlackListTest001
+ * @tc.desc: Test SetVirtualScreenBlackList when blacklist is valid
+ * @tc.type: FUNC
  * @tc.require: issues#IC98BX
  */
-HWTEST_F(RSServiceClientTest, SetVirtualScreenBlackListTest, TestSize.Level1)
+HWTEST_F(RSServiceClientTest, SetVirtualScreenBlackListTest001, TestSize.Level1)
 {
     ASSERT_NE(rsClient, nullptr);
     ScreenId screenId = 100;
@@ -266,17 +267,60 @@ HWTEST_F(RSServiceClientTest, SetVirtualScreenBlackListTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: AddVirtualScreenBlackList Test
- * @tc.desc: AddVirtualScreenBlackList Test
+ * @tc.name: SetVirtualScreenBlackListTest002
+ * @tc.desc: Test SetVirtualScreenBlackList when ScreenId is not found
+ * @tc.type: FUNC
+ * @tc.require: issues#IC98BX
+ */
+HWTEST_F(RSServiceClientTest, SetVirtualScreenBlackListTest002, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    ScreenId screenId = 100;
+    std::vector<NodeId> blackList;
+    int32_t ret = rsClient->SetVirtualScreenBlackList(screenId, blackList);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: SetVirtualScreenBlackListTest003
+ * @tc.desc: Test SetVirtualScreenBlackList when blackList is invalid
+ * @tc.type: FUNC
+ * @tc.require: issues#IC98BX
+ */
+HWTEST_F(RSServiceClientTest, SetVirtualScreenBlackListTest003, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    std::vector<NodeId> blackList(MAX_SPECIAL_LAYER_NUM + 1);
+    int32_t ret = rsClient->SetVirtualScreenBlackList(INVALID_SCREEN_ID, blackList);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenBlackListTest001
+ * @tc.desc: Test AddVirtualScreenBlackList
  * @tc.type:FUNC
  * @tc.require: issues#IC98BX
  */
-HWTEST_F(RSServiceClientTest, AddVirtualScreenBlackListTest, TestSize.Level1)
+HWTEST_F(RSServiceClientTest, AddVirtualScreenBlackListTest001, TestSize.Level1)
 {
     ASSERT_NE(rsClient, nullptr);
     ScreenId screenId = 100;
     std::vector<NodeId> blackListVector({1, 2, 3});
     int32_t ret = rsClient->AddVirtualScreenBlackList(screenId, blackListVector);
+    ASSERT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenBlackListTest002
+ * @tc.desc: Test AddVirtualScreenBlackList when blackList size is over limit
+ * @tc.type:FUNC
+ * @tc.require: issues#IC98BX
+ */
+HWTEST_F(RSServiceClientTest, AddVirtualScreenBlackListTest002, TestSize.Level1)
+{
+    ASSERT_NE(rsClient, nullptr);
+    std::vector<NodeId> blackList(MAX_SPECIAL_LAYER_NUM + 1);
+    int32_t ret = rsClient->AddVirtualScreenBlackList(INVALID_SCREEN_ID, blackList);
     ASSERT_EQ(ret, 0);
 }
 

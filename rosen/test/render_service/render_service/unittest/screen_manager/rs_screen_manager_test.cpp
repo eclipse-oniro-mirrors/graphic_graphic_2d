@@ -646,7 +646,8 @@ HWTEST_F(RSScreenManagerTest, GetScreenType_001, TestSize.Level1)
 HWTEST_F(RSScreenManagerTest, GetScreenConnectionType_001, TestSize.Level1)
 {
     ASSERT_NE(nullptr, screenManager_);
-    ASSERT_EQ(ScreenConnectionType::INVALID_DISPLAY_CONNECTION_TYPE, screenManager_->GetScreenConnectionType(SCREEN_ID));
+    ASSERT_EQ(ScreenConnectionType::INVALID_DISPLAY_CONNECTION_TYPE,
+        screenManager_->GetScreenConnectionType(SCREEN_ID));
 }
 
 /*
@@ -935,7 +936,8 @@ HWTEST_F(RSScreenManagerTest, ScreenGamutMap_001, TestSize.Level1)
 HWTEST_F(RSScreenManagerTest, ScreenGamutMap_002, TestSize.Level1)
 {
     ASSERT_NE(nullptr, screenManager_);
-    auto virtualScreenId = screenManager_->CreateVirtualScreen("virtualScreen01", 480, 320, nullptr, INVALID_SCREEN_ID, 0, {});
+    auto virtualScreenId = screenManager_->CreateVirtualScreen(
+        "virtualScreen01", 480, 320, nullptr, INVALID_SCREEN_ID, 0, {});
     ScreenGamutMap mode = ScreenGamutMap::GAMUT_MAP_CONSTANT;
     ASSERT_NE(INVALID_SCREEN_ID, virtualScreenId);
     int32_t setStatusCode = screenManager_->SetScreenGamutMap(virtualScreenId, mode);
@@ -952,7 +954,8 @@ HWTEST_F(RSScreenManagerTest, ScreenGamutMap_002, TestSize.Level1)
  */
 HWTEST_F(RSScreenManagerTest, GetScreenCapability_002, TestSize.Level1)
 {
-    auto virtualScreenId = screenManager_->CreateVirtualScreen("virtualScreen01", 480, 320, nullptr, INVALID_SCREEN_ID, 0, {});
+    auto virtualScreenId = screenManager_->CreateVirtualScreen(
+        "virtualScreen01", 480, 320, nullptr, INVALID_SCREEN_ID, 0, {});
     RSScreenCapability screenCapability;
     screenCapability.SetName("virtualScreen01");
     screenCapability.SetType(ScreenInterfaceType::DISP_INTF_LCD);
@@ -1658,8 +1661,8 @@ HWTEST_F(RSScreenManagerTest, SetVirtualMirrorScreenCanvasRotationn_002, TestSiz
     auto psurface = Surface::CreateSurfaceAsProducer(producer);
     ASSERT_NE(psurface, nullptr);
 
-    auto id = screenManager_->
-        CreateVirtualScreen("virtualScreen01", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, psurface, INVALID_SCREEN_ID, 0, {});
+    auto id = screenManager_->CreateVirtualScreen(
+        "virtualScreen01", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, psurface, INVALID_SCREEN_ID, 0, {});
     ASSERT_NE(INVALID_SCREEN_ID, id);
 
     ASSERT_EQ(static_cast<StatusCode>(
@@ -2375,7 +2378,8 @@ HWTEST_F(RSScreenManagerTest, SetScreenSecurityMask001, TestSize.Level1)
     ASSERT_NE(nullptr, screenManager_);
     constexpr uint32_t sizeWidth = 720;
     constexpr uint32_t sizeHeight = 1280;
-    auto virtualScreenId = screenManager_->CreateVirtualScreen("virtualScreen01", sizeWidth, sizeHeight, nullptr, INVALID_SCREEN_ID, 0, {});
+    auto virtualScreenId = screenManager_->CreateVirtualScreen(
+        "virtualScreen01", sizeWidth, sizeHeight, nullptr, INVALID_SCREEN_ID, 0, {});
     auto ret = screenManager_->SetScreenSecurityMask(virtualScreenId, nullptr);
     ASSERT_EQ(ret, StatusCode::SUCCESS);
 }
@@ -3068,7 +3072,7 @@ HWTEST_F(RSScreenManagerTest, ProcessScreenConnected01, TestSize.Level1)
     EXPECT_NE(screenManager_, nullptr);
 
     uint32_t id = 0;
-    screenManager_->screens_.clear(); 
+    screenManager_->screens_.clear();
     screenManager_->foldScreenIds_.clear();
     screenManager_->isFoldScreenFlag_ = true;
     screenManager_->ProcessScreenConnected(id);
@@ -3364,7 +3368,7 @@ HWTEST_F(RSScreenManagerTest, ModifyVirtualScreenWhiteList003, TestSize.Level2)
     NodeId nodeId = 0;
     ASSERT_EQ(screenManager_->AddVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
     ASSERT_EQ(screenManager_->RemoveVirtualScreenWhiteList(screenId, {nodeId}), ERR_OK);
-    
+
     // restore
     screenManager_->RemoveVirtualScreen(screenId);
 }

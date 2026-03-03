@@ -24,7 +24,7 @@
 #include "common/rs_thread_looper.h"
 #include "event_handler.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/buffer_thread/rs_buffer_manager.h"
+#include "pipeline/buffer_manager/rs_buffer_manager.h"
 #include "pipeline/rs_context.h"
 #include "rs_base_render_engine.h"
 #include "rs_composer_client_manager.h"
@@ -284,15 +284,18 @@ public:
     }
 
     struct BufferManagerGuard {
-        BufferManagerGuard() {
+        BufferManagerGuard()
+        {
             RSUniRenderThread::Instance().bufferManager_.OnDrawStart();
         }
 
-        ~BufferManagerGuard() {
+        ~BufferManagerGuard()
+        {
             RSUniRenderThread::Instance().bufferManager_.OnDrawEnd(fence_);
         }
 
-        void SetAcquireFence(sptr<SyncFence> fence) {
+        void SetAcquireFence(sptr<SyncFence> fence)
+        {
             if (!fence || !fence->IsValid()) {
                 fence_ = SyncFence::InvalidFence();
             } else {

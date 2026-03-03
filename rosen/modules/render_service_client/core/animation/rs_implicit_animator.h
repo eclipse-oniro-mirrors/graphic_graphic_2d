@@ -24,6 +24,21 @@
 #include "animation/rs_animation_timing_protocol.h"
 #include "common/rs_macros.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#define gettid GetCurrentThreadId
+#endif
+
+#ifdef __APPLE__
+#define gettid getpid
+#endif
+
+#ifdef __gnu_linux__
+#include <sys/types.h>
+#include <sys/syscall.h>
+#define gettid []() -> int32_t { return static_cast<int32_t>(syscall(SYS_gettid)); }
+#endif
+
 namespace OHOS {
 namespace Rosen {
 class AnimationFinishCallback;

@@ -984,7 +984,7 @@ void RSSurfaceLayer::DumpCurrentFrameLayer() const
     }
 }
 
-void RSSurfaceLayer::SetBufferOwnerCount(std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount,
+void RSSurfaceLayer::SetBufferOwnerCount(const std::shared_ptr<RSSurfaceHandler::BufferOwnerCount>& bufferOwnerCount,
     bool needUpdate)
 {
     if (bufferOwnerCount == nullptr) {

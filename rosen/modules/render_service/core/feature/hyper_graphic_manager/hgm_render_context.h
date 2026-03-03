@@ -52,8 +52,9 @@ public:
 
     std::shared_ptr<HgmRPEnergy> GetHgmRPEnergy() { return hgmRPEnergy_; }
 
-    bool AdaptiveStatus() const { return isAdaptive_; }
-    bool IsGameNodeOnTree() const { return isGameNodeOnTree_; }
+    bool AdaptiveStatus() const { return isAdaptive_.load(); }
+    bool IsGameNodeOnTree() const { return isGameNodeOnTree_.load(); }
+    bool IsAdaptiveVsyncReady() const { return isAdaptiveVsyncReaddy_.load(); }
 
     bool GetLtpoEnabled() const { return ltpoEnabled_; }
     bool IsDelayMode() const { return isDelayMode_; }
@@ -73,9 +74,10 @@ private:
 
     const std::shared_ptr<HgmRPEnergy> hgmRPEnergy_;
 
-    bool isAdaptive_ = false;
+    std::atomic<bool> isAdaptive_ = false;
     std::string gameNodeName_ = "";
-    bool isGameNodeOnTree_ = false;
+    std::atomic<bool> isGameNodeOnTree_ = false;
+    std::atomic<bool> isAdaptiveVsyncReaddy_ = false;
 
     bool ltpoEnabled_ = false;
     bool isDelayMode_ = false;

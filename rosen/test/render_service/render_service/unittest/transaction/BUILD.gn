@@ -29,9 +29,6 @@ group("unittest") {
     ":RSClientToRenderConnectionStubTest",
     ":RSRenderServiceStubTest",
     ":RSUnmarshalThreadTest",
-    ":RSConnectToRenderProcessTest",
-    ":RSConnectToRenderProcessProxyTest",
-    # ":RSConnectToRenderProcessStubTest",
   ]
 }
 
@@ -113,6 +110,13 @@ ohos_unittest("RSClientToServiceConnectionStubTest") {
   }
   defines = []
   defines += gpu_defines
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 }
 
 ## Build RSClientToServiceConnectionStubTestExt

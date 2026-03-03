@@ -1640,5 +1640,10 @@ void HgmFrameRateManager::TriggerAdaptiveVsyncUpdateCallback()
         adaptiveVsyncUpdateCallback_(lastIsAdaptive_, lastGameNodeName_);
     }
 }
+
+bool HgmFrameRateManager::IsNeedAdaptiveAfterUpdateMode()
+{
+    return controller_ != nullptr && controller_->IsNeedAdaptiveAfterUpdateMode();
+}
 } // namespace Rosen
 } // namespace OHOS

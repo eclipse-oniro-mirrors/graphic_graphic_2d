@@ -52,6 +52,7 @@
 #include "feature/watermark/rs_surface_watermark.h"
 #include "platform/common/rs_event_manager.h"
 #include "platform/drawing/rs_vsync_client.h"
+#include "platform/ohos/transaction/zidl/rs_iclient_to_render_connection.h"
 #include "transaction/rs_transaction_data.h"
 #include "transaction/rs_uiextension_data.h"
 

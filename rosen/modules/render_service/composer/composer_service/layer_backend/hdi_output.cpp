@@ -759,8 +759,13 @@ void HdiOutput::ReleaseLayers(ReleaseLayerBuffersInfo& releaseLayerInfo)
                 RS_OPTIONAL_TRACE_NAME_FMT("%s releaseBufferFenceVec bufferId %" PRIu64
                     " Fence %d", __func__, rsLayer->GetPreBuffer() ? rsLayer->GetPreBuffer()->GetBufferId() : 0,
                     fence ? fence->Get() : -1);
-                releaseLayerInfo.releaseBufferFenceVec.push_back(std::tuple(rsLayer->GetRSLayerId(),
-                    rsLayer->GetPreBuffer(), fence));
+                if (rsLayer->IsAncoNative()) {
+                    releaseLayerInfo.releaseBufferFenceVec.push_back(std::tuple(rsLayer->GetRSLayerId(),
+                        rsLayer->GetBuffer(), fence));
+                } else {
+                    releaseLayerInfo.releaseBufferFenceVec.push_back(std::tuple(rsLayer->GetRSLayerId(),
+                        rsLayer->GetPreBuffer(), fence));
+                }
             }
         }
     }

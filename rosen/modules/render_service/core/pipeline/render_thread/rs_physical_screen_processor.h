@@ -29,7 +29,7 @@ public:
         return Type;
     }
     
-    RSPhysicalScreenProcessor(ScreenId screenId);
+    explicit RSPhysicalScreenProcessor(ScreenId screenId);
     ~RSPhysicalScreenProcessor() noexcept override;
 
     bool Init(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine) override;

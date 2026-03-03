@@ -138,7 +138,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetAllBlackList002, TestSize.Level2)
     nodeMap.Initialize(rsContext->weak_from_this());
 
     // Create screen node with black list
-    auto screenNode1 = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId(), rsContext->weak_from_this());
+    auto screenNode1 =
+        std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId(), rsContext->weak_from_this());
     RSScreenProperty property;
     property.Set<ScreenPropertyType::BLACK_LIST>(std::unordered_set<NodeId>{GenerateNodeId()});
     screenNode1->SetScreenProperty(property);
@@ -146,7 +147,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetAllBlackList002, TestSize.Level2)
 
     ScreenSpecialLayerInfo::SetGlobalBlackList(std::unordered_set<NodeId>{GenerateNodeId()});
     // Create screen node with black list and global blacklist enabled
-    auto screenNode2 = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId(), rsContext->weak_from_this());
+    auto screenNode2 =
+        std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId(), rsContext->weak_from_this());
     RSScreenProperty property2;
     property2.Set<ScreenPropertyType::BLACK_LIST>(std::unordered_set<NodeId>{GenerateNodeId()});
     property2.Set<ScreenPropertyType::ENABLE_SKIP_WINDOW>(true);
@@ -206,7 +208,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, GetAllWhiteList002, TestSize.Level2)
     nodeMap.Initialize(rsContext->weak_from_this());
 
     // Create screen node with white list
-    auto screenNode1 = std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId(), rsContext->weak_from_this());
+    auto screenNode1 =
+        std::make_shared<RSScreenRenderNode>(GenerateNodeId(), GenerateScreenId(), rsContext->weak_from_this());
     RSScreenProperty property;
     property.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>{GenerateNodeId()});
     screenNode1->SetScreenProperty(property);
@@ -480,7 +483,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateScreenSpecialLayersRecord001, TestSize.L
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     // Update blacklist Info
     RSScreenProperty property;
@@ -508,7 +512,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateScreenSpecialLayersRecord002, TestSize.L
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     // Update blacklist Info
     RSScreenProperty property;
@@ -535,7 +540,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateSpecialLayersRecord001, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->SetSkipLayer(true);
@@ -556,7 +562,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateSpecialLayersRecord002, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->SetSkipLayer(true);
@@ -577,7 +584,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateSpecialLayersRecord003, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->SetSecurityLayer(true);
@@ -598,7 +606,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateSpecialLayersRecord004, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->SetSkipLayer(true);
@@ -620,7 +629,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, UpdateSpecialLayersRecord005, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->SetSkipLayer(true);
@@ -642,7 +652,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, DealWithSpecialLayer001, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->isCloneCrossNode_ = false;
@@ -664,7 +675,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, DealWithSpecialLayer002, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     auto sourceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
@@ -688,7 +700,8 @@ HWTEST_F(RSSpecialLayerUtilsTest, DealWithSpecialLayer003, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     RSDisplayNodeConfig displayConfig;
     displayConfig.screenId = GenerateScreenId();
-    auto displayNode = std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
+    auto displayNode =
+        std::make_shared<RSLogicalDisplayRenderNode>(GenerateNodeId(), displayConfig, rsContext->weak_from_this());
 
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(GenerateNodeId(), rsContext->weak_from_this());
     surfaceNode->isCloneCrossNode_ = true;

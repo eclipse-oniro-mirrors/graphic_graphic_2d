@@ -27,14 +27,10 @@ void RSScreenManagerAgentListener::OnScreenConnected(ScreenId id,
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!screenChangeCallback_) {
-        RS_LOGW("RSScreenManagerAgentListener::%{public}s screenChangeCallback is nullptr.", __func__);
+        RS_LOGD("RSScreenManagerAgentListener::%{public}s screenChangeCallback is nullptr.", __func__);
         return;
     }
-    // if (reason == ScreenChangeReason::HWCDEAD && (id == 0 || !MultiScreenParam::IsRsReportHwcDead())) {
-    //     RS_LOGI("RSScreenManagerAgentListener::%{public}s don't invoke callback, screenId:%{public}" PRIu64,
-    //             __func__, id);
-    //     return;
-    // }   change by jianghongxi
+
     RS_LOGI("%{public}s id:%{public}" PRIu64 "event connected reason %{public}u.", __func__, id,
         static_cast<uint8_t>(reason));
     screenChangeCallback_->OnScreenChanged(id, ScreenEvent::CONNECTED, reason, remoteConn);
@@ -44,15 +40,10 @@ void RSScreenManagerAgentListener::OnScreenDisconnected(ScreenId id, ScreenChang
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!screenChangeCallback_) {
-        RS_LOGW("RSScreenManagerAgentListener::%{public}s screenChangeCallback is nullptr.", __func__);
+        RS_LOGD("RSScreenManagerAgentListener::%{public}s screenChangeCallback is nullptr.", __func__);
         return;
     }
 
-    if (reason == ScreenChangeReason::HWCDEAD) {
-        RS_LOGI("RSScreenManagerAgentListener::%{public}s don't invoke callback, screenId:%{public}" PRIu64,
-                __func__, id);
-        return;
-    }
     RS_LOGI("%{public}s: id:%{public}" PRIu64 "event disconnected reason %{public}u.", __func__, id,
         static_cast<uint8_t>(reason));
     screenChangeCallback_->OnScreenChanged(id, ScreenEvent::DISCONNECTED, reason);
@@ -603,7 +594,7 @@ int32_t RSScreenManagerAgent::SetPixelFormat(ScreenId id, GraphicPixelFormat pix
         RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManager_->SetPixelFormat(id, pixelFormat); 
+    return screenManager_->SetPixelFormat(id, pixelFormat);
 }
 
 int32_t RSScreenManagerAgent::GetPixelFormat(ScreenId id, GraphicPixelFormat& pixelFormat) const

@@ -33,6 +33,7 @@
 #include "info_collection/rs_layer_compose_collection.h"
 #include "irs_render_to_composer_connection.h"
 #include "memory/rs_memory_manager.h"
+#include "platform/ohos/transaction/zidl/rs_iclient_to_render_connection.h"
 #include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
 #include "rs_composer_client_manager.h"
 #include "vsync_receiver.h"

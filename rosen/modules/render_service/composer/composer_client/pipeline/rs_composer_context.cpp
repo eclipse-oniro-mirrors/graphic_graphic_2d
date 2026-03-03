@@ -108,23 +108,6 @@ bool RSComposerContext::CommitLayers(ComposerInfo& composerInfo)
     return rsLayerTransactionHandler_->CommitRSLayerTransaction(composerInfo);
 }
 
-
-void RSComposerContext::ANCOTransactionOnComplete(const std::shared_ptr<RSLayer>& rsLayer,
-    const sptr<SyncFence>& previousReleaseFence)
-{
-    if (rsLayer == nullptr) {
-        return;
-    }
-    if (rsLayer->IsAncoNative()) {
-        auto consumer = rsLayer->GetSurface();
-        auto curBuffer = rsLayer->GetBuffer();
-        if (consumer == nullptr || curBuffer == nullptr) {
-            return;
-        }
-        consumer->ReleaseBuffer(curBuffer, previousReleaseFence);
-    }
-}
-
 void RSComposerContext::ReleaseLayerBuffers(uint64_t screenId,
     std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
     std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec)

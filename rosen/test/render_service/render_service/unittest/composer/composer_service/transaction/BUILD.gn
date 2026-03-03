@@ -153,6 +153,11 @@ ohos_unittest("RSLayerTransactionTest") {
 ## Build RSTransactionDataTest
 ohos_unittest("RSTransactionDataTest") {
   module_out_path = module_output_path
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = true
+  }
   sources = [ "rs_layer_transaction_data_test.cpp" ]
 
   include_dirs = common_include_dirs_transaction

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-
 #include "hdi_layer.h"
 #include "mock_hdi_device.h"
 #include "surface_buffer_impl.h"
@@ -93,6 +92,7 @@ void HdiLayerTest::SetUpTestCase()
 }
 
 void HdiLayerTest::TearDownTestCase() {}
+
 namespace {
 class MockSurfaceBuffer : public SurfaceBufferImpl {
 public:
@@ -1041,6 +1041,881 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameters_AllKeys_Success, Function | MediumT
 
     EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, _, _)).WillRepeatedly(testing::Return(0));
     auto ret = hdiLayer_->SetPerFrameParameters();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_ColorsMatch_Line379_TrueBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true and colors match
+ *                  2. call SetLayerColor
+ *                  3. verify early return (line 379 true branch)
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_ColorsMatch_Line379_TrueBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Create prevRSLayer with GRAPHIC_COMPOSITION_DEVICE type
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor color = { 200, 100, 50, 255 };
+    prevRSLayer->SetLayerColor(color);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set same color on current rsLayer
+    hdiLayer_->rsLayer_->SetLayerColor(color);
+
+    // Expect SetLayerColor NOT to be called (line 379 true branch - colors match)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).Times(0);
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_ColorsDiffer_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true but colors differ
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called (line 379 false branch)
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_ColorsDiffer_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Create prevRSLayer with GRAPHIC_COMPOSITION_DEVICE type
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor prevColor = { 100, 50, 25, 128 };
+    prevRSLayer->SetLayerColor(prevColor);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set different color on current rsLayer
+    GraphicLayerColor curColor = { 200, 150, 75, 255 };
+    hdiLayer_->rsLayer_->SetLayerColor(curColor);
+
+    // Expect SetLayerColor to be called (line 379 false branch - colors differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_RComponentDiffer_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. red component differs between current and previous
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_RComponentDiffer_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor prevColor = { 100, 50, 25, 128 };
+    prevRSLayer->SetLayerColor(prevColor);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change only R component
+    GraphicLayerColor curColor = { 200, 50, 25, 128 };
+    hdiLayer_->rsLayer_->SetLayerColor(curColor);
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_GComponentDiffer_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. green component differs between current and previous
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_GComponentDiffer_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor prevColor = { 100, 50, 25, 128 };
+    prevRSLayer->SetLayerColor(prevColor);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change only G component
+    GraphicLayerColor curColor = { 100, 200, 25, 128 };
+    hdiLayer_->rsLayer_->SetLayerColor(curColor);
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_BComponentDiffer_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. blue component differs between current and previous
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_BComponentDiffer_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor prevColor = { 100, 50, 25, 128 };
+    prevRSLayer->SetLayerColor(prevColor);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change only B component
+    GraphicLayerColor curColor = { 100, 50, 200, 128 };
+    hdiLayer_->rsLayer_->SetLayerColor(curColor);
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_AComponentDiffer_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. alpha component differs between current and previous
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_AComponentDiffer_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor prevColor = { 100, 50, 25, 128 };
+    prevRSLayer->SetLayerColor(prevColor);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change only A component
+    GraphicLayerColor curColor = { 100, 50, 25, 255 };
+    hdiLayer_->rsLayer_->SetLayerColor(curColor);
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_PrevCompositionTypeNotDevice_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. prevRSLayer composition type is not GRAPHIC_COMPOSITION_DEVICE
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called (doLayerInfoCompare_ will be false)
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_PrevCompositionTypeNotDevice_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Set prevRSLayer with CLIENT composition type (not DEVICE)
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    GraphicLayerColor color = { 100, 50, 25, 128 };
+    prevRSLayer->SetLayerColor(color);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set same color on current rsLayer
+    hdiLayer_->rsLayer_->SetLayerColor(color);
+
+    // Expect SetLayerColor to be called (doLayerInfoCompare_ will be false due to composition type)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColor_MultipleDifferingComponents_Line379_FalseBranch
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. multiple color components differ
+ *                  2. call SetLayerColor
+ *                  3. verify SetLayerColor is called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColor_MultipleDifferingComponents_Line379_FalseBranch, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    GraphicLayerColor prevColor = { 100, 100, 100, 100 };
+    prevRSLayer->SetLayerColor(prevColor);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change all components
+    GraphicLayerColor curColor = { 200, 150, 175, 255 };
+    hdiLayer_->rsLayer_->SetLayerColor(curColor);
+
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColor(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColor();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_MatricesMatch_Line397_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, matrices are identical
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform NOT called (line 397 false)
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_MatricesMatch_Line397_False, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Set up prevRSLayer with DEVICE composition type to make doLayerInfoCompare_ true
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> matrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    prevRSLayer->SetColorTransform(matrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set same matrix on current rsLayer
+    hdiLayer_->rsLayer_->SetColorTransform(matrix);
+
+    // Line 395: doLayerInfoCompare_ is true
+    // Line 397: IsNeedSetInfoToDevice returns false (matrices match)
+    // Expect SetLayerColorTransform NOT to be called
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).Times(0);
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_MatricesDiffer_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, matrices differ
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called (line 397 true)
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_MatricesDiffer_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Set up prevRSLayer with DEVICE composition type
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set different matrix on current rsLayer
+    std::vector<float> curMatrix = {1.0f, 0.1f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: doLayerInfoCompare_ is true
+    // Line 397: IsNeedSetInfoToDevice returns true (matrices differ)
+    // Expect SetLayerColorTransform to be called
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_SizeDiffers_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, matrix sizes differ
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_SizeDiffers_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Set up prevRSLayer with DEVICE composition type
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {1.0f, 0.0f, 0.0f};
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set different size matrix on current rsLayer
+    std::vector<float> curMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: doLayerInfoCompare_ is true
+    // Line 397: IsNeedSetInfoToDevice returns true (sizes differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_AllZero_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, prev matrix has zeros, current has values
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_AllZero_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    std::vector<float> curMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: true, Line 397: true (matrices differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_EmptyMatrix_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, empty vs non-empty matrices
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_EmptyMatrix_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {}; // Empty
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    std::vector<float> curMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: true, Line 397: true (sizes differ: 0 vs 9)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_IdentityMatrices_Line397_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, both are identity matrices
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform NOT called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_IdentityMatrices_Line397_False, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    // Identity matrix
+    std::vector<float> identityMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    prevRSLayer->SetColorTransform(identityMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    hdiLayer_->rsLayer_->SetColorTransform(identityMatrix);
+
+    // Line 395: true, Line 397: false (matrices are identical)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).Times(0);
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_LargeMatrix_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, large matrices differ
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_LargeMatrix_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix(16, 0.5f); // 4x4 matrix
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    std::vector<float> curMatrix(16, 0.6f); // Different values
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: true, Line 397: true (matrices differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_SingleDiff_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, single element differs
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_SingleDiff_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change only one element
+    std::vector<float> curMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.1f, 1.0f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: true, Line 397: true (one element differs)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_NegativeValues_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, matrices with negative values differ
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_NegativeValues_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {-0.5f, 0.0f, 0.0f, 0.0f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    std::vector<float> curMatrix = {-0.6f, 0.0f, 0.0f, 0.0f, -0.6f, 0.0f, 0.0f, 0.0f, 1.0f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: true, Line 397: true (matrices differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerColorTransform_DoLayerInfoCompareTrue_LastElementDiff_Line397_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, last matrix element differs
+ *                  2. call SetLayerColorTransform
+ *                  3. verify SetLayerColorTransform IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_LastElementDiff_Line397_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    std::vector<float> prevMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    prevRSLayer->SetColorTransform(prevMatrix);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Change last element
+    std::vector<float> curMatrix = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.9f};
+    hdiLayer_->rsLayer_->SetColorTransform(curMatrix);
+
+    // Line 395: true, Line 397: true (last element differs)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerColorTransform(_, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerColorTransform();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSetSame_Line476_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, meta data sets are identical
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify early return (line 476 false, no call to SetLayerMetaDataSet)
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSetSame_Line476_False, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Set up prevRSLayer with DEVICE composition type
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    // Set meta data set
+    std::vector<uint8_t> metaData = {1, 2, 3, 4};
+    GraphicHDRMetaDataSet metaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, metaData};
+    prevRSLayer->SetMetaDataSet(metaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set same meta data set on current rsLayer
+    hdiLayer_->rsLayer_->SetMetaDataSet(metaDataSet);
+
+    // Line 474: doLayerInfoCompare_ is true
+    // Line 476: IsSameLayerMetaDataSet returns true (meta data sets are same)
+    // Expect SetLayerMetaDataSet NOT to be called
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).Times(0);
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataDiffer_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, meta data differs
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called (line 476 true)
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataDiffer_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    // Set up prevRSLayer with DEVICE composition type
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    std::vector<uint8_t> prevMetaData = {1, 2, 3, 4};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, prevMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set different meta data on current rsLayer
+    std::vector<uint8_t> curMetaData = {1, 2, 3, 5}; // Different last element
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: doLayerInfoCompare_ is true
+    // Line 476: IsSameLayerMetaDataSet returns false (meta data differs)
+    // Expect SetLayerMetaDataSet to be called
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_KeyDiffers_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, keys differ
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_KeyDiffers_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    std::vector<uint8_t> metaData = {1, 2, 3, 4};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, metaData}; // Key = 5
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set different key on current rsLayer
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_WHITE_PRIMARY_X, metaData}; // Key = 6
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (keys differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSizeDiffers_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, meta data sizes differ
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSizeDiffers_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    std::vector<uint8_t> prevMetaData = {1, 2, 3, 4};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, prevMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Set different size meta data on current rsLayer
+    std::vector<uint8_t> curMetaData = {1, 2, 3};
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (sizes differ)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_EmptyMetaData_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, empty vs non-empty meta data
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_EmptyMetaData_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    // Empty meta data
+    std::vector<uint8_t> emptyMetaData = {};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, emptyMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Non-empty meta data on current
+    std::vector<uint8_t> curMetaData = {1, 2};
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (empty vs non-empty)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataEmptyBoth_Line476_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, both meta data are empty
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify early return (line 476 false)
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataEmptyBoth_Line476_False, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    // Empty meta data for both
+    std::vector<uint8_t> emptyMetaData = {};
+    GraphicHDRMetaDataSet metaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, emptyMetaData};
+    prevRSLayer->SetMetaDataSet(metaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    hdiLayer_->rsLayer_->SetMetaDataSet(metaDataSet);
+
+    // Line 474: true, Line 476: false (both empty, same)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).Times(0);
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_LargeMetaData_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, large meta data with difference
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_LargeMetaData_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    // Large meta data
+    std::vector<uint8_t> prevMetaData(100, 128);
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_MAX_CONTENT_LIGHT_LEVEL, prevMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Different large meta data
+    std::vector<uint8_t> curMetaData(100, 129);
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_MAX_CONTENT_LIGHT_LEVEL, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (large meta data differs)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_FirstElementDiffers_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, first meta data element differs
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_FirstElementDiffers_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    std::vector<uint8_t> prevMetaData = {1, 2, 3, 4};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, prevMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // First element differs
+    std::vector<uint8_t> curMetaData = {0, 2, 3, 4};
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (first element differs)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_LastElementDiffers_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, last meta data element differs
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_LastElementDiffers_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    std::vector<uint8_t> prevMetaData = {1, 2, 3, 4};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, prevMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Last element differs
+    std::vector<uint8_t> curMetaData = {1, 2, 3, 5};
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (last element differs)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_AllZeroMetaData_Line476_False
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, both meta data are all zeros
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify early return (line 476 false)
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_AllZeroMetaData_Line476_False, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    // All zero meta data
+    std::vector<uint8_t> zeroMetaData = {0, 0, 0, 0};
+    GraphicHDRMetaDataSet metaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, zeroMetaData};
+    prevRSLayer->SetMetaDataSet(metaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    hdiLayer_->rsLayer_->SetMetaDataSet(metaDataSet);
+
+    // Line 474: true, Line 476: false (both identical)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).Times(0);
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetLayerMetaDataSet_DoLayerInfoCompareTrue_MaxMetaData_Line476_True
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. doLayerInfoCompare_ is true, max value meta data differs
+ *                  2. call SetLayerMetaDataSet
+ *                  3. verify SetLayerMetaDataSet IS called
+ */
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MaxMetaData_Line476_True, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    prevRSLayer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+
+    // Max value meta data
+    std::vector<uint8_t> prevMetaData = {255, 255, 255, 255};
+    GraphicHDRMetaDataSet prevMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, prevMetaData};
+    prevRSLayer->SetMetaDataSet(prevMetaDataSet);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+
+    // Slightly different
+    std::vector<uint8_t> curMetaData = {254, 255, 255, 255};
+    GraphicHDRMetaDataSet curMetaDataSet = {GRAPHIC_MATAKEY_BLUE_PRIMARY_Y, curMetaData};
+    hdiLayer_->rsLayer_->SetMetaDataSet(curMetaDataSet);
+
+    // Line 474: true, Line 476: true (meta data differs)
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerMetaDataSet(_, _, _, _)).WillOnce(testing::Return(0));
+    auto ret = hdiLayer_->SetLayerMetaDataSet();
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 } // namespace

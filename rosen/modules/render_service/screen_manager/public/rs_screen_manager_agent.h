@@ -104,7 +104,7 @@ public:
     int32_t SetScreenCorrection(ScreenId id, ScreenRotation screenRotation);
     bool SetVirtualMirrorScreenCanvasRotation(ScreenId id, bool canvasRotation);
     int32_t SetVirtualScreenAutoRotation(ScreenId id, bool isAutoRotation);
-    bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode); 
+    bool SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenScaleMode scaleMode);
 
     int32_t SetPixelFormat(ScreenId id, GraphicPixelFormat pixelFormat);
     int32_t GetPixelFormat(ScreenId id, GraphicPixelFormat& pixelFormat) const;

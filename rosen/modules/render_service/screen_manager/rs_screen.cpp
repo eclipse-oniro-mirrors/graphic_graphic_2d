@@ -192,7 +192,7 @@ void RSScreen::PhysicalScreenInit() noexcept
         property_.SetScreenType(RSScreenType::EXTERNAL_TYPE_SCREEN);
     }
     ScreenCapabilityInit();
-    InitDisplayPropertyForHardCursor();  
+    InitDisplayPropertyForHardCursor();
 
     auto outType = GraphicDisplayConnectionType::GRAPHIC_DISPLAY_CONNECTION_TYPE_INTERNAL;
     if (hdiScreen_->GetScreenConnectionType(outType) != 0) {
@@ -504,7 +504,8 @@ int32_t RSScreen::SetResolution(uint32_t width, uint32_t height)
 
 void RSScreen::UpdateSamplingScale(uint32_t phyWidth, uint32_t phyHeight, uint32_t width, uint32_t height)
 {
-    bool isSamplingOn = (width >= phyWidth && height >= phyHeight) && !(width == phyWidth && height == phyHeight);
+    bool isSamplingOn = (width >= phyWidth && height >= phyHeight) && !(width == phyWidth && height == phyHeight) &&
+        width > 0 && height > 0;
     float samplingScale = 1.f;
     float translateX = 0.f;
     float translateY = 0.f;
@@ -651,7 +652,7 @@ void RSScreen::SetProducerSurface(sptr<Surface> producerSurface)
 {
     UPDATE_PROPERTY(ProducerSurface, producerSurface);
     if (producerSurface) {
-        UPDATE_PROPERTY(State, ScreenState::PRODUCER_SURFACE_ENABLE);  // jianghongxi
+        UPDATE_PROPERTY(State, ScreenState::PRODUCER_SURFACE_ENABLE);
     } else {
         UPDATE_PROPERTY(State, ScreenState::DISABLED);
     }
@@ -1269,19 +1270,19 @@ std::unordered_set<NodeId> RSScreen::GetWhiteList() const
     return property_.GetWhiteList();
 }
 
-void RSScreen::SetWhiteList(const std::unordered_set<NodeId>& whiteList)  //change by jianghongxi
+void RSScreen::SetWhiteList(const std::unordered_set<NodeId>& whiteList)
 {
     UPDATE_PROPERTY(WhiteList, whiteList);
 }
 
-void RSScreen::AddWhiteList(const std::vector<NodeId>& whiteList)   //change by jianghongxi
+void RSScreen::AddWhiteList(const std::vector<NodeId>& whiteList)
 {
     auto prop = property_.AddWhiteList(whiteList);
     NotifyScreenPropertyChange(prop);
 }
 
-void RSScreen::RemoveWhiteList(const std::vector<NodeId>& whiteList)  //change by jianghongxi
-{ 
+void RSScreen::RemoveWhiteList(const std::vector<NodeId>& whiteList)
+{
     auto prop = property_.RemoveWhiteList(whiteList);
     NotifyScreenPropertyChange(prop);
 }

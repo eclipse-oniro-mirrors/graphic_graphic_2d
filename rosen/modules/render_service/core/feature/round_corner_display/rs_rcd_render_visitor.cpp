@@ -54,7 +54,7 @@ bool RSRcdRenderVisitor::ConsumeAndUpdateBuffer(RSRcdSurfaceRenderNode& node)
     }
     auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
     bufferOwnerCount->bufferId_ = buffer->GetBufferId();
-    bufferOwnerCount->bufferReleaseCb_ = [](uint64_t bufferId){
+    bufferOwnerCount->bufferReleaseCb_ = [](uint64_t bufferId) {
         RSUniRenderThread::Instance().ReleaseBufferById(bufferId);
     };
     RSUniRenderThread::Instance().AddPendingReleaseBuffer(consumer, buffer, SyncFence::InvalidFence());
@@ -100,8 +100,7 @@ bool RSRcdRenderVisitor::ProcessRcdSurfaceRenderNode(
         return false;
     }
 
-    sptr<SurfaceBuffer> buffer = node.GetBuffer();
-    if (!resourceChanged && buffer != nullptr) {
+    if (!resourceChanged && node.GetBuffer() != nullptr) {
         node.ResetCurrentFrameBufferConsumed();
         uniProcessor_->ProcessRcdSurface(node);
         return true;

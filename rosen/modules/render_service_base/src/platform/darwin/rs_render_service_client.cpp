@@ -14,7 +14,7 @@
  */
 
 #include "transaction/rs_render_service_client.h"
-
+#include "transaction/rs_render_pipeline_client.h"
 #include "platform/common/rs_log.h"
 #include "rs_surface_darwin.h"
 #include "rs_vsync_client_darwin.h"
@@ -143,11 +143,6 @@ void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
 }
 
 int32_t RSRenderServiceClient::SetBrightnessInfoChangeCallback(const BrightnessInfoChangeCallback& callback)
-{
-    return 0;
-}
-
-int32_t RSRenderServiceClient::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
 {
     return 0;
 }

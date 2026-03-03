@@ -32,6 +32,11 @@ group("unittest") {
 ohos_unittest("RSLayerContextTest") {
   module_out_path = module_output_path
   testonly = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = true
+  }
   cflags = [
     "-Wall",
     "-Werror",

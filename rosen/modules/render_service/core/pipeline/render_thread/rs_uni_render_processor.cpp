@@ -99,32 +99,30 @@ bool RSUniRenderProcessor::UpdateMirrorInfo(DrawableV2::RSLogicalDisplayRenderNo
 
 void RSUniRenderProcessor::PostProcess()
 {
+    std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> uniBufferOwnerCount = nullptr;
     if (uniLayer_) {
-        auto uniBufferOwnerCount = uniLayer_->GetBufferOwnerCount();
-        if (uniBufferOwnerCount) {
-            for (auto layerPtr : layers_) {
-                auto layer = layerPtr.lock();
-                if (layer == nullptr || layer == uniLayer_ || layer->GetBuffer() == nullptr) {
-                    continue;
-                }
-                uniBufferOwnerCount->InsertUniOnDrawSet(layer->GetRSLayerId(), layer->GetBuffer()->GetBufferId());
-                auto bufferOwnerCount = layer->GetBufferOwnerCount();
-                if (bufferOwnerCount == nullptr) {
-                    continue;
-                }
-                bufferOwnerCount->SetUniBufferOwner(uniBufferOwnerCount->bufferId_, screenInfo_.id);
-            }
-        }
-    } else {
-        RS_LOGE("PostProcess() uniLayer_ is nullptr;");
+        uniBufferOwnerCount = uniLayer_->GetBufferOwnerCount();
     }
-
+    if (uniBufferOwnerCount) {
+        for (auto layerPtr : layers_) {
+            auto layer = layerPtr.lock();
+            if (layer == nullptr || layer == uniLayer_ || layer->GetBuffer() == nullptr) {
+                continue;
+            }
+            uniBufferOwnerCount->InsertUniOnDrawSet(layer->GetRSLayerId(), layer->GetBuffer()->GetBufferId());
+            auto bufferOwnerCount = layer->GetBufferOwnerCount();
+            if (bufferOwnerCount == nullptr) {
+                continue;
+            }
+            bufferOwnerCount->SetUniBufferOwner(uniBufferOwnerCount->bufferId_, screenInfo_.id);
+        }
+    }
     uniComposerAdapter_->CommitLayers();
     LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers_.size());
     RS_LOGD("RSUniRenderProcessor::PostProcess layers_:%{public}zu", layers_.size());
 }
 
-void RSUniRenderProcessor::CreateLayer(/*const ??? todo */ RSSurfaceRenderNode& node, RSSurfaceRenderParams& params,
+void RSUniRenderProcessor::CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRenderParams& params,
     const std::shared_ptr<ProcessOfflineResult>& offlineResult)
 {
     auto surfaceHandler = node.GetRSSurfaceHandler();

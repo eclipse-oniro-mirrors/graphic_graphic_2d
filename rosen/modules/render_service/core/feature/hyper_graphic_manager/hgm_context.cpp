@@ -27,8 +27,6 @@ namespace Rosen {
 namespace {
 const std::string VOTER_SCENE_BLUR = "VOTER_SCENE_BLUR";
 const std::string VOTER_SCENE_GPU = "VOTER_SCENE_GPU";
-// TODO: chenqiang
-// constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 }
 
 HgmContext::HgmContext(const std::shared_ptr<AppExecFwk::EventHandler>& handler,
@@ -127,10 +125,6 @@ void HgmContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> serviceTo
         serviceToProcessInfo->hgmDataChangeTypes.set(HgmDataChangeType::ADAPTIVE_VSYNC);
         serviceToProcessInfo->isAdaptive = isAdaptive_;
         serviceToProcessInfo->gameNodeName = gameNodeName_;
-        // TODO: chenqiang
-        // isAdaptiveVsyncComposeReady_ =
-        //     rsContext.GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM &&
-        //     rsContext.GetAnimatingNodeList().empty();
     }
 
     if (hgmDataChangeTypes_.test(HgmDataChangeType::HGM_CONFIG_DATA)) {

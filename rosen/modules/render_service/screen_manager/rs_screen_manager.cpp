@@ -265,8 +265,7 @@ void RSScreenManager::SetScreenVsyncEnableById(ScreenId vsyncEnabledScreenId, Sc
         if (vsyncEnabledScreenId == screenId && screens_.find(screenId) != screens_.end()) {
             screens_[screenId]->SetScreenVsyncEnabled(true);
         }
-    }
-    else {
+    } else {
         auto screen = GetScreen(screenId);
         if (screen == nullptr) {
             RS_LOGE("SetScreenVsyncEnableById:%{public}d failed, screen %{public}" PRIu64 " not found",
@@ -294,7 +293,8 @@ bool RSScreenManager::GetIsFoldScreenFlag()
     return isFoldScreenFlag_;
 }
 
-uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status, uint64_t enabledScreenId)
+uint64_t RSScreenManager::JudgeVSyncEnabledScreenWhilePowerStatusChanged(
+    ScreenId screenId, ScreenPowerStatus status, uint64_t enabledScreenId)
 {
     std::unique_lock<std::mutex> lock(screenMapMutex_);
     auto it = foldScreenIds_.find(screenId);

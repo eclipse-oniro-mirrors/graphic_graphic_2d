@@ -18,7 +18,7 @@
 #include "platform/common/rs_log.h"
 #include "rs_surface_windows.h"
 #include "rs_vsync_client_windows.h"
-
+#include "transaction/rs_render_pipeline_client.h"
 namespace OHOS {
 namespace Rosen {
 std::shared_ptr<RSIRenderClient> RSIRenderClient::CreateRenderServiceClient()
@@ -153,11 +153,6 @@ int32_t RSRenderServiceClient::SetScreenSwitchingNotifyCallback(const ScreenSwit
 }
 
 int32_t RSRenderServiceClient::SetBrightnessInfoChangeCallback(const BrightnessInfoChangeCallback& callback)
-{
-    return 0;
-}
-
-int32_t RSRenderServiceClient::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
 {
     return 0;
 }

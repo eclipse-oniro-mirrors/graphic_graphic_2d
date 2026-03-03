@@ -32,7 +32,7 @@ public:
     }
 
     RSUniRenderProcessor() = default;
-    RSUniRenderProcessor(ScreenId screenId);
+    explicit RSUniRenderProcessor(ScreenId screenId);
     ~RSUniRenderProcessor() noexcept override;
 
     bool Init(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine) override;

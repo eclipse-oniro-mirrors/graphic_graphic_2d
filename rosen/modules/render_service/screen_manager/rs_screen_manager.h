@@ -177,7 +177,8 @@ public:
     void ExecuteCallback(const sptr<RSIScreenChangeCallback>& callback) const;
 
     bool UpdateVsyncEnabledScreenId(ScreenId screenId);
-    uint64_t JudgeVSyncEnabledScreenWhilePowerStatusChanged(ScreenId screenId, ScreenPowerStatus status, uint64_t enabledScreenId);
+    uint64_t JudgeVSyncEnabledScreenWhilePowerStatusChanged(
+        ScreenId screenId, ScreenPowerStatus status, uint64_t enabledScreenId);
     void UpdateFoldScreenConnectStatusLocked(ScreenId screenId, bool connected);
     void SetScreenVsyncEnableById(ScreenId vsyncEnabledScreenId, ScreenId screenId, bool enabled);
     uint64_t GetScreenVsyncEnableById(ScreenId vsyncEnabledScreenId);

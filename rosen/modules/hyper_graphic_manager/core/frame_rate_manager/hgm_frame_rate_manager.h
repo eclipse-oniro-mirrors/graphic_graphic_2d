@@ -134,6 +134,7 @@ public:
 
     // Adaptive Vsync
     int32_t AdaptiveStatus() const { return isAdaptive_.load(); }
+    bool IsNeedAdaptiveAfterUpdateMode();
     // called by RSHardwareThread
     bool IsGameNodeOnTree() const { return isGameNodeOnTree_.load(); }
     void SetIsGameNodeOnTree(bool isGameNodeOnTree) { isGameNodeOnTree_.store(isGameNodeOnTree); }

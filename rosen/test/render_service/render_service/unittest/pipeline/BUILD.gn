@@ -78,7 +78,7 @@ config("pipeline_test") {
 ## Build RSBufferManagerTest
 ohos_unittest("RSBufferManagerTest") {
   module_out_path = module_output_path
-  sources = [ "buffer_thread/rs_buffer_manager_test.cpp" ]
+  sources = [ "buffer_manager/rs_buffer_manager_test.cpp" ]
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",

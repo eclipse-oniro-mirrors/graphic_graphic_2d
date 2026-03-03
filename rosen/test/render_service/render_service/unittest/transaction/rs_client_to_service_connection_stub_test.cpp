@@ -26,6 +26,7 @@
 #include "limit_number.h"
 #include "mock_hdi_device.h"
 #include "sandbox_utils.h"
+#include "common/rs_special_layer_manager.h"
 #include "ipc_callbacks/rs_frame_rate_linker_expected_fps_update_callback_stub.h"
 #include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback_ipc_interface_code.h"
 #include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback.h"
@@ -67,6 +68,7 @@ constexpr const int DEFAULT_HEIGHT = 1080;
 constexpr const int INVALID_PIDLIST_SIZE = 200;
 constexpr const int WAIT_HANDLER_TIME = 1; // 1S
 constexpr const int WAIT_HANDLER_TIME_COUNT = 5;
+constexpr const size_t PARCEL_MAX_CAPACITY = 2000 * 1024;
 };
 
 namespace OHOS::Rosen {
@@ -406,6 +408,22 @@ void RSClientToServiceConnectionStubTest::CreateComposerAdapterWithScreenInfo(ui
     composerAdapter_ = std::make_unique<RSComposerAdapter>();
     composerAdapter_->Init(info, mirrorAdaptiveCoefficient, nullptr, nullptr);
     composerAdapter_->SetHdiBackendDevice(hdiDeviceMock_);
+}
+
+static void SetLeftSize(Parcel& parcel, uint32_t leftSize)
+{
+    parcel.SetMaxCapacity(PARCEL_MAX_CAPACITY);
+    size_t useSize = PARCEL_MAX_CAPACITY - leftSize;
+    size_t writeInt32Count = useSize / 4;
+    size_t writeBoolCount = useSize % 4;
+
+    for (size_t i = 0; i < writeInt32Count; i++) {
+        parcel.WriteInt32(0);
+    }
+
+    for (size_t j = 0; j < writeBoolCount; j++) {
+        parcel.WriteBoolUnaligned(false);
+    }
 }
 
 /**
@@ -1986,10 +2004,14 @@ HWTEST_F(RSClientToServiceConnectionStubTest, GetPanelPowerStatus004, TestSize.L
 
     // empty screen manager
     PanelPowerStatus status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
-    auto screenMgr = clientToServiceConnection->screenManagerAgent_;
+    auto screenManagerAgent = clientToServiceConnection->screenManagerAgent_;
     clientToServiceConnection->screenManagerAgent_ = nullptr;
     int ret = clientToServiceConnection->GetPanelPowerStatus(SCREEN_ID, status);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+
+    // restore screenManagerAgent
+    clientToServiceConnection->screenManagerAgent_ = screenManagerAgent;
+    ASSERT_NE(clientToServiceConnection->screenManagerAgent_, nullptr);
 }
 
 /**
@@ -3354,12 +3376,12 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenBlackList001, Test
 }
 
 /**
- * @tc.name: SetVirtualScreenTypeBlackList001
- * @tc.desc: Test SetVirtualScreenTypeBlackList001
+ * @tc.name: SetVirtualScreenTypeBlackListTest001
+ * @tc.desc: Test SetVirtualScreenTypeBlackList
  * @tc.type: FUNC
  * @tc.require: issue20886
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackList001, TestSize.Level2)
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest001, TestSize.Level2)
 {
     ASSERT_NE(connectionStub_, nullptr);
     MessageParcel reply;
@@ -3385,6 +3407,70 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackList001, 
     data3.WriteUInt8Vector(typeBlackListVector);
     res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
     EXPECT_EQ(res, ERR_NONE);
+}
+
+/**
+ * @tc.name: SetVirtualScreenTypeBlackListTest002
+ * @tc.desc: Test SetVirtualScreenTypeBlackList when screenManagerAgent_ of connection is nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue20886
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest002, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
+    ASSERT_NE(connection, nullptr);
+
+    ScreenId screenId = INVALID_SCREEN_ID;
+    std::vector<NodeType> typeBlackListVector;
+    int32_t repCode;
+
+    auto screenManagerAgent = connection->screenManagerAgent_;
+    connection->screenManagerAgent_ = nullptr;
+    auto res = connection->SetVirtualScreenTypeBlackList(screenId, typeBlackListVector, repCode);
+    ASSERT_EQ(res, ERR_INVALID_VALUE);
+
+    // restore screenManagerAgent
+    connection->screenManagerAgent_ = screenManagerAgent;
+    ASSERT_NE(connection->screenManagerAgent_, nullptr);
+}
+
+/**
+ * @tc.name: SetVirtualScreenTypeBlackListTest003
+ * @tc.desc: Test SetVirtualScreenTypeBlackList when typeBlackListVector is empty
+ * @tc.type: FUNC
+ * @tc.require: issue20886
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest003, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
+    ASSERT_NE(connection, nullptr);
+
+    ScreenId screenId = INVALID_SCREEN_ID;
+    std::vector<NodeType> typeBlackListVector;
+    int32_t repCode;
+    auto res = connection->SetVirtualScreenTypeBlackList(screenId, typeBlackListVector, repCode);
+    ASSERT_EQ(res, ERR_OK);
+}
+
+/**
+ * @tc.name: SetVirtualScreenTypeBlackListTest004
+ * @tc.desc: Test SetVirtualScreenTypeBlackList when typeBlackListVector size is over MAX_SPECIAL_LAYER_NUM
+ * @tc.type: FUNC
+ * @tc.require: issue20886
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, SetVirtualScreenTypeBlackListTest004, TestSize.Level2)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    sptr<RSClientToServiceConnection> connection = iface_cast<RSClientToServiceConnection>(connectionStub_);
+    ASSERT_NE(connection, nullptr);
+
+    ScreenId screenId = INVALID_SCREEN_ID;
+    std::vector<NodeType> typeBlackListVector(MAX_SPECIAL_LAYER_NUM + 1);
+    int32_t repCode;
+    auto res = connection->SetVirtualScreenTypeBlackList(screenId, typeBlackListVector, repCode);
+    ASSERT_EQ(res, ERR_OK);
 }
 
 /**

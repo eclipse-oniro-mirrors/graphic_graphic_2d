@@ -28,6 +28,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config.xml";
+constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 }
 
 HgmRenderContext::HgmRenderContext(const sptr<RSIRenderToServiceConnection>& renderToServiceConnection)
@@ -63,8 +64,10 @@ void HgmRenderContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_
     }
 
     HandleGameNode(rsContext->GetNodeMap());
+    isAdaptiveVsyncReaddy_.store(rsContext->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM &&
+                                 rsContext->GetAnimatingNodeList().empty());
     auto info = sptr<HgmProcessToServiceInfo>::MakeSptr();
-    info->isGameNodeOnTree = isGameNodeOnTree_;
+    info->isGameNodeOnTree = isGameNodeOnTree_.load();
     info->rsCurrRange = rsCurrRange_;
     rsCurrRange_.Reset();
     info->surfaceData = std::move(surfaceData_);
@@ -84,8 +87,8 @@ void HgmRenderContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_
 
 void HgmRenderContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
 {
-    if (isAdaptive_ != SupportASStatus::SUPPORT_AS) {
-        isGameNodeOnTree_ = false;
+    if (isAdaptive_.load() != SupportASStatus::SUPPORT_AS) {
+        isGameNodeOnTree_.store(false);
         return;
     }
     bool isGameSelfNodeOnTree = false;
@@ -111,7 +114,7 @@ void HgmRenderContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
     });
     RS_TRACE_NAME_FMT(
         "%s: game node on tree: %d, other node no tree: %d", __func__, isGameSelfNodeOnTree, isOtherSelfNodeOnTree);
-    isGameNodeOnTree_ = isGameSelfNodeOnTree && !isOtherSelfNodeOnTree;
+    isGameNodeOnTree_.store(isGameSelfNodeOnTree && !isOtherSelfNodeOnTree);
 }
 
 void HgmRenderContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> serviceToProcessInfo,
@@ -129,7 +132,7 @@ void HgmRenderContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> ser
     pendingConstraintRelativeTime = serviceToProcessInfo->pendingConstraintRelativeTime;
 
     if (serviceToProcessInfo->hgmDataChangeTypes.test(HgmDataChangeType::ADAPTIVE_VSYNC)) {
-        isAdaptive_ = serviceToProcessInfo->isAdaptive;
+        isAdaptive_.store(serviceToProcessInfo->isAdaptive);
         gameNodeName_ = serviceToProcessInfo->gameNodeName;
     }
 

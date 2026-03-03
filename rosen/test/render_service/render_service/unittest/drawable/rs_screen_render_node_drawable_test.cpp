@@ -1173,8 +1173,8 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrameIrregularRefreshRateTest002, T
             }
             usleep(refreshRateInterval);
             curTime = static_cast<uint64_t>(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
-                    .count());
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
         }
         ASSERT_LE(abs(static_cast<int32_t>(actualRefreshRateCount - expectedRefreshRate)),
             (expectedRefreshRate * 20 / 100));
@@ -1219,8 +1219,8 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrameIrregularRefreshRateTest003, T
             }
             usleep(refreshRateInterval);
             curTime = static_cast<uint64_t>(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
-                    .count());
+                std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now().time_since_epoch()).count());
         }
         ASSERT_LE(abs(static_cast<int32_t>(actualRefreshRateCount - refreshRate)), (refreshRate * 20 / 100));
     };
@@ -1229,7 +1229,7 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, SkipFrameIrregularRefreshRateTest003, T
     skipFrameIrregularRefreshRateTestFunc(60);
     skipFrameIrregularRefreshRateTestFunc(61);
     skipFrameIrregularRefreshRateTestFunc(UINT32_MAX);
-    skipFrameIrregularRefreshRateTestFunc(UINT32_MAX + 1);    
+    skipFrameIrregularRefreshRateTestFunc(UINT32_MAX + 1);
 }
 
 /**

@@ -117,7 +117,6 @@ HWTEST_F(RSScreenManagerAgentTest, GetDefaultScreenId001, TestSize.Level1)
  */
 HWTEST_F(RSScreenManagerAgentTest, GetActiveScreenId001, TestSize.Level1)
 {
-    // screenManager_->activeScreenId_ = GenerateScreenId();
     screenManager_->isFoldScreenFlag_ = true;
     ScreenId activeScreenId = INVALID_SCREEN_ID;
     screenManagerAgent_->screenManager_ = nullptr;
@@ -1019,8 +1018,9 @@ HWTEST_F(RSScreenManagerAgentTest, SetVirtualScreenStatus001, TestSize.Level1)
     ScreenId virtualScreenId = screenManagerAgent_->CreateVirtualScreen(
         "virtual", defaultWidth, defaultHeight, psurface, screenId, -1);
     EXPECT_NE(virtualScreenId, INVALID_SCREEN_ID);
-    EXPECT_EQ(screenManagerAgent_->SetVirtualScreenStatus(virtualScreenId, VirtualScreenStatus::VIRTUAL_SCREEN_PLAY), true);
-    EXPECT_EQ(screenManagerAgent_->SetVirtualScreenStatus(virtualScreenId, VirtualScreenStatus::VIRTUAL_SCREEN_PAUSE), true);
+    EXPECT_TRUE(screenManagerAgent_->SetVirtualScreenStatus(virtualScreenId, VirtualScreenStatus::VIRTUAL_SCREEN_PLAY));
+    EXPECT_TRUE(screenManagerAgent_->SetVirtualScreenStatus(
+        virtualScreenId, VirtualScreenStatus::VIRTUAL_SCREEN_PAUSE));
     screenManagerAgent_->RemoveVirtualScreen(virtualScreenId);
 }
 

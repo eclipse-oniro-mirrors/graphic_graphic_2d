@@ -69,7 +69,8 @@ void RSScreenPreprocessor::OnHwcDead(void* data)
     processor->OnHwcDeadEvent();
 }
 
-void RSScreenPreprocessor::OnHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData, void* data)
+void RSScreenPreprocessor::OnHwcEvent(
+    uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData, void* data)
 {
     RS_LOGI("%{public}s: deviceId:%{public}" PRIu32 ", eventId:%{public}" PRIu32 "",
         __func__, deviceId, eventId);

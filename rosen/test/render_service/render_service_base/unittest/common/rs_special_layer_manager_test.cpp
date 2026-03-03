@@ -141,7 +141,7 @@ HWTEST_F(RSSpecialLayerManagerTest, SetWithScreen001, TestSize.Level1)
     ASSERT_TRUE(slManager.SetWithScreen(screenId1, SpecialLayerType::IS_BLACK_LIST, false));
     ASSERT_TRUE(slManager.SetWithScreen(screenId2, SpecialLayerType::IS_BLACK_LIST, false));
     slManager.ClearScreenSpecialLayer();
-} 
+}
 
 /**
  * @tc.name: AutoSpecialLayerStateRecover

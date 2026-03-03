@@ -80,7 +80,8 @@ HWTEST_F(RSScreenPropertyTest, Marshalling002, TestSize.Level1)
     srcProperty.Set<ScreenPropertyType::AUTO_BUFFER_ROTATION>(false);
     srcProperty.Set<ScreenPropertyType::ACTIVE_RECT_OPTION>(activeRectValType(RectI(), RectI(), RectI()));
     srcProperty.Set<ScreenPropertyType::SKIP_FRAME_OPTION>({1, 30, SKIP_FRAME_BY_ACTIVE_REFRESH_RATE});
-    srcProperty.Set<ScreenPropertyType::PIXEL_FORMAT>(static_cast<int32_t>(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888));
+    srcProperty.Set<ScreenPropertyType::PIXEL_FORMAT>(
+        static_cast<int32_t>(GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888));
     srcProperty.Set<ScreenPropertyType::HDR_FORMAT>(static_cast<uint32_t>(ScreenHDRFormat::NOT_SUPPORT_HDR));
     srcProperty.Set<ScreenPropertyType::VISIBLE_RECT_OPTION>(visibleRectValType(false, Rect(), false));
     srcProperty.Set<ScreenPropertyType::WHITE_LIST>(std::unordered_set<NodeId>());

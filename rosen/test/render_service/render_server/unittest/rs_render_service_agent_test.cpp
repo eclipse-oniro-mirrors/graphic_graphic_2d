@@ -48,8 +48,6 @@ public:
 void RSRenderServiceAgentTest::SetUpTestCase()
 {
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
-    renderService.Init();
-    RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
     g_rsAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
 }
 

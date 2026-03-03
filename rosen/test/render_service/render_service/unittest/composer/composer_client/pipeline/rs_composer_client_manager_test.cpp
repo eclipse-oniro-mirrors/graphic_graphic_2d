@@ -333,7 +333,7 @@ HWTEST_F(RSComposerClientManagerTest, DumpSurfaceInfo_WithCommittedLayer_HasOutp
     std::string dump;
     mgr.DumpSurfaceInfo(dump);
     // Expect dump contains our screen and surface marker
-    EXPECT_NE(dump.find("-- LayerInfo " + std::to_string(sid)), std::string::npos);
+    EXPECT_NE(dump.find("-- LayerInfo ScreenId: " + std::to_string(sid)), std::string::npos);
 }
 
 /**
@@ -352,7 +352,7 @@ HWTEST_F(RSComposerClientManagerTest, DumpCurrentFrameLayers_NoCrash, TestSize.L
     mgr.DumpCurrentFrameLayers();
     std::string dump;
     mgr.DumpSurfaceInfo(dump);
-    EXPECT_NE(dump.find("-- LayerInfo 1"), std::string::npos);
+    EXPECT_NE(dump.find("-- LayerInfo ScreenId: 1"), std::string::npos);
 }
 
 /**

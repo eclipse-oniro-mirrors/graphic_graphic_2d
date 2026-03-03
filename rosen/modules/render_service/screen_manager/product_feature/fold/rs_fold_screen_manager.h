@@ -33,7 +33,7 @@ enum class FoldState : uint32_t {
 
 class RSFoldScreenManager {
 public:
-    RSFoldScreenManager(RSScreenPreprocessor& screenPreprocessor)
+    explicit RSFoldScreenManager(RSScreenPreprocessor& screenPreprocessor)
         : screenPreprocessor_(screenPreprocessor) {}
     ~RSFoldScreenManager() noexcept;
     ScreenId GetActiveScreenId();

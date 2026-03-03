@@ -590,7 +590,8 @@ HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp003, Function | SmallTest |
     uint32_t height = 1080;
     CreateComposerAdapterWithScreenInfo(
         width, height, ScreenColorGamut::COLOR_GAMUT_SRGB, ScreenState::UNKNOWN, ScreenRotation::ROTATION_0);
-    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    auto ctx = std::make_shared<RSRenderComposerContext>(nullptr);
+    RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
     ASSERT_NE(layer, nullptr);
     layer->SetIsSupportedPresentTimestamp(true);
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");

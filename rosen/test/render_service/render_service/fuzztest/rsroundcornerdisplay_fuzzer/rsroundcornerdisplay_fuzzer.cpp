@@ -268,7 +268,7 @@ bool RSRoundCornerAPIsTest(
     Rosen::RSContext context;
     auto topLayer = std::make_shared<Rosen::rs_rcd::RoundCornerLayer>();
     auto bottomLayer = std::make_shared<Rosen::rs_rcd::RoundCornerLayer>();
-    std::shared_ptr<Rosen::RSComposerClientManager> rsComposerClientMgr = std::make_shared<Rosen::RSComposerClientManager>();
+    auto rsComposerClientMgr = std::make_shared<Rosen::RSComposerClientManager>();
     Rosen::RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
     auto uniProcessor = Rosen::RSProcessorFactory::CreateProcessor(Rosen::CompositeType::UNI_RENDER_COMPOSITE, 0);
 

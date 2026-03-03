@@ -1654,7 +1654,8 @@ HWTEST_F(RSBaseRenderUtilTest, GetRotationLockParamTest001, TestSize.Level2)
     std::shared_ptr<RSScreenRenderNode> screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
     screenNode->InitRenderParams();
 
-    screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(static_cast<uint32_t>(ScreenRotation::ROTATION_180));
+    screenNode->screenProperty_.Set<ScreenPropertyType::CORRECTION>(
+        static_cast<uint32_t>(ScreenRotation::ROTATION_180));
     EXPECT_EQ(screenNode->screenProperty_.GetScreenCorrection(), ScreenRotation::ROTATION_180);
 
     auto screenNodeParams =

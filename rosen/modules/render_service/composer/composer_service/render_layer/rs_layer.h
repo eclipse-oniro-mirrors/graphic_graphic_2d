@@ -143,7 +143,7 @@ public:
     virtual void SetCycleBuffersNum(uint32_t cycleBuffersNum) = 0;
     virtual uint32_t GetCycleBuffersNum() const = 0;
     virtual void SetSurfaceName(std::string surfaceName) = 0;
-    virtual void SetBufferOwnerCount(std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount,
+    virtual void SetBufferOwnerCount(const std::shared_ptr<RSSurfaceHandler::BufferOwnerCount>& bufferOwnerCount,
         bool needUpdate = true) = 0;
     virtual std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> PopBufferOwnerCountById(uint64_t bufferId) = 0;
     virtual std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetBufferOwnerCount() const = 0;

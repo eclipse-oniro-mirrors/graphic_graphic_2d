@@ -66,8 +66,6 @@ protected:
     void SetScreenBacklight(uint32_t level);
 
 private:
-    void ANCOTransactionOnComplete(const std::shared_ptr<RSLayer>& rsLayer,
-        const sptr<SyncFence>& previousReleaseFence);
     mutable std::recursive_mutex rsLayerTransMutex_;
     std::shared_ptr<RSLayerTransactionHandler> rsLayerTransactionHandler_;
     mutable std::mutex rsLayerMutex_;

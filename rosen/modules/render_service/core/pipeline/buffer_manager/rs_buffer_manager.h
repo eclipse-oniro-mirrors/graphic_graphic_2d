@@ -16,14 +16,14 @@
 #ifndef RENDER_SERVICE_BUFFER_THREAD_RS_BUFFER_MANAGER_H
 #define RENDER_SERVICE_BUFFER_THREAD_RS_BUFFER_MANAGER_H
 
-#include <list>
-#include <set>
-
 #ifndef ROSEN_CROSS_PLATFORM
 #include <iconsumer_surface.h>
 #include <surface.h>
 #include "sync_fence.h"
 #endif
+
+#include <list>
+#include <set>
 
 #include "rs_layer.h"
 #include "pipeline/rs_surface_handler.h"
@@ -37,7 +37,8 @@ public:
     {
         OnCanvasDrawEnd();
     }
-    void OnCanvasDrawBuffer(sptr<IConsumerSurface> consumer, sptr<SurfaceBuffer> buffer, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount);
+    void OnCanvasDrawBuffer(sptr<IConsumerSurface> consumer, sptr<SurfaceBuffer> buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount);
 
     void SetAcquireFence(sptr<SyncFence> fence);
 
@@ -68,7 +69,8 @@ public:
     {
         bufferCollector_ = std::make_unique<RSBufferCollectorHelper>();
     }
-    void OnDrawBuffer(sptr<IConsumerSurface> consumer, sptr<SurfaceBuffer> buffer, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount)
+    void OnDrawBuffer(sptr<IConsumerSurface> consumer, sptr<SurfaceBuffer> buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount)
     {
         if (bufferCollector_ != nullptr) {
             bufferCollector_->OnCanvasDrawBuffer(consumer, buffer, bufferOwnerCount);
@@ -79,7 +81,6 @@ public:
         if (bufferCollector_ != nullptr) {
             bufferCollector_->SetAcquireFence(canvasAcquireFence);
             bufferCollector_.reset();
-            bufferCollector_ = nullptr;
         }
     }
 
@@ -95,7 +96,7 @@ private:
     struct PendingReleaseBufferInfo {
         sptr<IConsumerSurface> consumer_;
         sptr<SurfaceBuffer> buffer_ = nullptr;
-        sptr<SyncFence> mergedFence_ = SyncFence::InvalidFence();
+        std::vector<sptr<SyncFence>> mergedFences_;
     };
 
     mutable std::mutex screenNodeBufferReleasedMutex_;

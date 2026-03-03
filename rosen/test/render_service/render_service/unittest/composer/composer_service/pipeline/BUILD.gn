@@ -42,7 +42,7 @@ _common_deps = [
 _common_external_deps = [
   "c_utils:utils",
   "eventhandler:libeventhandler",
-  "googletest:gmock_main",
+  "googletest:gtest_main",
   "graphic_surface:surface",
   "hilog:libhilog",
   "ipc:ipc_core",
@@ -63,9 +63,15 @@ template("rs_render_composer_unittest") {
   ohos_unittest(target_name) {
     forward_variables_from(invoker, "*")
     module_out_path = module_output_path
+    sanitize = {
+      cfi = true
+      cfi_cross_dso = true
+      debug = true
+    }
     configs = [ ":rs_render_composer_common_test_config" ]
     deps = _common_deps
     external_deps = _common_external_deps
+    external_deps += ["googletest:gmock_main"]
     defines = []
     if (graphic_2d_feature_enable_vulkan) {
       defines += [ "RS_ENABLE_VK" ]

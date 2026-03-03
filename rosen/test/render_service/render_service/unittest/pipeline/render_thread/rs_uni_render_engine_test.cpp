@@ -21,6 +21,7 @@
 #include "platform/common/rs_system_properties.h"
 #include "recording/recording_canvas.h"
 #include "rs_surface_layer.h"
+#include "rs_surface_rcd_layer.h"
 #include "screen_manager/rs_screen_manager.h"
 
 using namespace testing;
@@ -128,15 +129,28 @@ HWTEST_F(RSUniRenderEngineTest, DrawLayers001, TestSize.Level1)
     sptr<IConsumerSurface> cSurface = IConsumerSurface::Create("layer3");
     layer3->SetSurface(cSurface);
 
+    auto ctx4 = std::make_shared<RSRenderComposerContext>(nullptr);
+    RSLayerPtr layer4 = RSSurfaceLayer::Create(0, ctx4);
+    layer4->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    GraphicLayerColor layerColor = { .r = 1, .g = 1, .b = 1, .a = 1 };
+    layer4->SetLayerColor(layerColor);
+
+    auto ctx5 = std::make_shared<RSRenderComposerContext>(nullptr);
+    RSLayerPtr layer5 = RSSurfaceRCDLayer::Create(0, ctx5);
+    layer5->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+
     if (RSSystemProperties::IsUseVulkan()) {
         layer1->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
         layer2->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
         layer3->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
+        layer5->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
     }
 
     layers.emplace_back(layer1);
     layers.emplace_back(layer2);
     layers.emplace_back(layer3);
+    layers.emplace_back(layer4);
+    layers.emplace_back(layer5);
     ComposerScreenInfo screenInfo;
     uniRenderEngine->DrawLayers(*canvas, layers, false, screenInfo);
 }

@@ -462,15 +462,244 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenSupportedRefreshRates, T
 }
 
 /**
- * @tc.name: SetShowRefreshRateEnabled Test
+ * @tc.name: GetShowRefreshRateEnabled001
+ * @tc.desc: Test GetShowRefreshRateEnabled when enabled is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled001, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Invoke(
+            [](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(true);
+                return 0;
+            }
+        ));
+
+    bool enable = false;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_TRUE(enable);
+}
+
+/**
+ * @tc.name: GetShowRefreshRateEnabled002
+ * @tc.desc: Test GetShowRefreshRateEnabled when enabled is false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Invoke(
+            [](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(false);
+                return 0;
+            }
+        ));
+
+    bool enable = true;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_FALSE(enable);
+}
+
+/**
+ * @tc.name: GetShowRefreshRateEnabled003
+ * @tc.desc: Test GetShowRefreshRateEnabled when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(-1));
+
+    bool enable = false;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: GetShowRefreshRateEnabled004
+ * @tc.desc: Test GetShowRefreshRateEnabled when ReadBool fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Invoke(
+            [](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                // Not writing any bool to reply, causing ReadBool to fail
+                return 0;
+            }
+        ));
+
+    bool enable = false;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled001
  * @tc.desc: SetShowRefreshRateEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9KXXE
  */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled001, TestSize.Level1)
 {
     proxy->SetShowRefreshRateEnabled(true, 0);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled002
+ * @tc.desc: Test SetShowRefreshRateEnabled with enabled=true, type=0
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(0));
+
+    mockproxy->SetShowRefreshRateEnabled(true, 0);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled003
+ * @tc.desc: Test SetShowRefreshRateEnabled with enabled=false, type=1
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(0));
+
+    mockproxy->SetShowRefreshRateEnabled(false, 1);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled004
+ * @tc.desc: Test SetShowRefreshRateEnabled when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    mockproxy->SetShowRefreshRateEnabled(true, 0);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate001
+ * @tc.desc: Test GetRealtimeRefreshRate returns 60
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate001, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteUint32(60);
+                return 0;
+            }));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, 60u);
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate002
+ * @tc.desc: Test GetRealtimeRefreshRate returns 120
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteUint32(120);
+                return 0;
+            }));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, 120u);
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate003
+ * @tc.desc: Test GetRealtimeRefreshRate when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, 0u); // SUCCESS
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate004
+ * @tc.desc: Test GetRealtimeRefreshRate when ReadUint32 fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                // Not writing any uint32 to reply, causing ReadUint32 to fail
+                return 0;
+            }));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, StatusCode::READ_PARCEL_ERR);
 }
 
 /**

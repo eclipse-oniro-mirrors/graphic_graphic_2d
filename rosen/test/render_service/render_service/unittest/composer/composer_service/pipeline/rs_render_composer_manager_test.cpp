@@ -477,5 +477,246 @@ HWTEST_F(RsRenderComposerManagerTest, GetRefreshInfoToSP_Branches, TestSize.Leve
     mgr->GetRefreshInfoToSP(dumpString, 0);
     EXPECT_GE(dumpString.size(), 0u);
 }
+
+/**
+ * Function: OnScreenConnected_NotUniRenderEnabled_EarlyReturn
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. set uniRenderEnabledType to NOT UNI_RENDER_ENABLED_FOR_ALL
+ *                  2. call OnScreenConnected with valid output and property
+ *                  3. verify function returns early (line 33 branch true)
+ *                     and no composer is added to the map
+ */
+HWTEST_F(RsRenderComposerManagerTest, OnScreenConnected_NotUniRenderEnabled_EarlyReturn, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    auto output = std::make_shared<HdiOutput>(88u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+
+    // Test case 3: After restoring to UNI_RENDER_ENABLED_FOR_ALL, composer should be added
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    mgr->OnScreenConnected(output, property);
+    // Verify composer was added
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+    EXPECT_EQ(mgr->rsComposerConnectionMap_.size(), 1u);
+}
+
+/**
+ * Function: OnScreenConnected_UniRenderEnabledForAll_ComposerAdded
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. set uniRenderEnabledType to UNI_RENDER_ENABLED_FOR_ALL
+ *                  2. call OnScreenConnected with valid output and property
+ *                  3. verify composer is added to the map (line 33 branch false)
+ */
+HWTEST_F(RsRenderComposerManagerTest, OnScreenConnected_UniRenderEnabledForAll_ComposerAdded, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    auto output = std::make_shared<HdiOutput>(89u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+
+    // Save original uniRenderEnabledType
+    auto originalType = RSUniRenderJudgement::uniRenderEnabledType_;
+
+    // Set to UNI_RENDER_ENABLED_FOR_ALL (line 33 branch false)
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    mgr->OnScreenConnected(output, property);
+
+    // Verify composer was added to the maps
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+    EXPECT_EQ(mgr->rsComposerConnectionMap_.size(), 1u);
+
+    // Verify the connection can be retrieved
+    auto conn = mgr->GetRSComposerConnection(89u);
+    EXPECT_NE(conn, nullptr);
+
+    // Restore original type
+    RSUniRenderJudgement::uniRenderEnabledType_ = originalType;
+}
+
+/**
+ * Function: HandlePowerStatus_ScreenIdNotFound
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposerManager without any connected screens
+ *                  2. call HandlePowerStatus with non-existent screenId
+ *                  3. verify function returns early (line 292 branch true)
+ */
+HWTEST_F(RsRenderComposerManagerTest, HandlePowerStatus_ScreenIdNotFound, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    // Call HandlePowerStatus with non-existent screenId
+    mgr->HandlePowerStatus(9999, ScreenPowerStatus::POWER_STATUS_ON);
+
+    // Verify no composer was added
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 0u);
+}
+
+/**
+ * Function: HandlePowerStatus_ScreenIdFound_Success
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposerManager and connect a screen
+ *                  2. call HandlePowerStatus with existing screenId
+ *                  3. verify function executes normally (line 292 branch false, line 298 branch false)
+ */
+HWTEST_F(RsRenderComposerManagerTest, HandlePowerStatus_ScreenIdFound_Success, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    auto output = std::make_shared<HdiOutput>(111u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    mgr->OnScreenConnected(output, property);
+    ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+
+    // Call HandlePowerStatus with existing screenId
+    mgr->HandlePowerStatus(111u, ScreenPowerStatus::POWER_STATUS_ON);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    // Verify composer still exists in map
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+}
+
+/**
+ * Function: HandlePowerStatus_NullAgentInMap
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposerManager
+ *                  2. manually insert nullptr agent into the map
+ *                  3. call HandlePowerStatus
+ *                  4. verify function returns early (line 298 branch true)
+ */
+HWTEST_F(RsRenderComposerManagerTest, HandlePowerStatus_NullAgentInMap, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    // Manually insert nullptr agent into the map
+    mgr->rsRenderComposerAgentMap_.insert(std::pair(222u, nullptr));
+
+    // Call HandlePowerStatus with screenId that has nullptr agent
+    mgr->HandlePowerStatus(222u, ScreenPowerStatus::POWER_STATUS_OFF);
+
+    // Verify map still contains the nullptr entry (no removal occurred)
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+}
+
+/**
+ * Function: HandlePowerStatus_DifferentPowerStatus
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposerManager and connect a screen
+ *                  2. call HandlePowerStatus with different power statuses
+ *                  3. verify all status changes are handled correctly
+ */
+HWTEST_F(RsRenderComposerManagerTest, HandlePowerStatus_DifferentPowerStatus, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    auto output = std::make_shared<HdiOutput>(112u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    mgr->OnScreenConnected(output, property);
+    ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+
+    // Test different power statuses
+    mgr->HandlePowerStatus(112u, ScreenPowerStatus::POWER_STATUS_ON);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    mgr->HandlePowerStatus(112u, ScreenPowerStatus::POWER_STATUS_OFF);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    mgr->HandlePowerStatus(112u, ScreenPowerStatus::POWER_STATUS_DOZE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    mgr->HandlePowerStatus(112u, ScreenPowerStatus::POWER_STATUS_DOZE_SUSPEND);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    mgr->HandlePowerStatus(112u, ScreenPowerStatus::POWER_STATUS_SUSPEND);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    // Verify composer still exists in map
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+}
+
+/**
+ * Function: HandlePowerStatus_MultipleScreens
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposerManager and connect multiple screens
+ *                  2. call HandlePowerStatus for each screen
+ *                  3. verify all screens are handled correctly
+ */
+HWTEST_F(RsRenderComposerManagerTest, HandlePowerStatus_MultipleScreens, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    // Connect multiple screens
+    for (uint32_t screenId = 120u; screenId < 123u; screenId++) {
+        auto output = std::make_shared<HdiOutput>(screenId);
+        output->Init();
+        sptr<RSScreenProperty> property = new RSScreenProperty();
+        mgr->OnScreenConnected(output, property);
+    }
+    ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 3u);
+
+    // Handle power status for each screen
+    mgr->HandlePowerStatus(120u, ScreenPowerStatus::POWER_STATUS_ON);
+    mgr->HandlePowerStatus(121u, ScreenPowerStatus::POWER_STATUS_OFF);
+    mgr->HandlePowerStatus(122u, ScreenPowerStatus::POWER_STATUS_DOZE);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    // Verify all composers still exist
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 3u);
+}
+
+/**
+ * Function: HandlePowerStatus_InvalidScreenId
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSRenderComposerManager and connect a screen
+ *                  2. call HandlePowerStatus with invalid screenId
+ *                  3. verify function returns early without affecting existing composers
+ */
+HWTEST_F(RsRenderComposerManagerTest, HandlePowerStatus_InvalidScreenId, TestSize.Level1)
+{
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    std::shared_ptr<RSRenderComposerManager> mgr = std::make_shared<RSRenderComposerManager>(handler, nullptr);
+
+    auto output = std::make_shared<HdiOutput>(113u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    mgr->OnScreenConnected(output, property);
+    ASSERT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+
+    // Call HandlePowerStatus with non-existent screenId
+    mgr->HandlePowerStatus(9999, ScreenPowerStatus::POWER_STATUS_ON);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    // Verify original composer still exists
+    EXPECT_EQ(mgr->rsRenderComposerAgentMap_.size(), 1u);
+    auto agent = mgr->rsRenderComposerAgentMap_.find(113);
+    EXPECT_NE(agent, mgr->rsRenderComposerAgentMap_.end());
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -86,8 +86,6 @@ public:
     uint64_t GetLastForceUpdateVsyncId() { return lastForceUpdateVsyncId_; }
     void SetLastForceUpdateVsyncId(uint64_t currVsyncId) { lastForceUpdateVsyncId_ = currVsyncId; }
 
-    bool GetIsAdaptiveVsyncComposeReady() const { return isAdaptiveVsyncComposeReady_; }
-
 private:
     void InitHgmUpdateCallback();
 
@@ -118,8 +116,6 @@ private:
 
     bool isAdaptive_ = false;
     std::string gameNodeName_ = "";
-
-    std::atomic<bool> isAdaptiveVsyncComposeReady_ = false;
 };
 } // namespace OHOS
 } // namespace Rosen

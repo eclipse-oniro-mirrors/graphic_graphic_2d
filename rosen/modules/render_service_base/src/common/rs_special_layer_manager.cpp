@@ -43,7 +43,8 @@ template <class TYPE_T> inline bool HasType(TYPE_T x, TYPE_T y)
 }
 
 template<typename K, typename V>
-void EraseEmptyValues(std::unordered_map<K, V>& map) {
+void EraseEmptyValues(std::unordered_map<K, V>& map)
+{
     auto it = map.begin();
     while (it != map.end()) {
         if (it->second.empty()) {

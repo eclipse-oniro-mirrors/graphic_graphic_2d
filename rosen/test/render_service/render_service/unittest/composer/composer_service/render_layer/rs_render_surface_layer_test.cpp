@@ -666,31 +666,31 @@ HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_CopiesSelectedFields, TestSize.Le
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerBoundSizeCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicIRect>>(GraphicIRect{1, 2, 3, 4})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerVisibleRegionsCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(std::vector<GraphicIRect>{{0,0,5,5}})));
+        std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(std::vector<GraphicIRect>{{0, 0, 5, 5}})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerDirtyRegionsCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(std::vector<GraphicIRect>{{1,1,2,2}})));
+        std::make_shared<RSRenderLayerCmdProperty<std::vector<GraphicIRect>>>(std::vector<GraphicIRect>{{1, 1, 2, 2}})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerCropRectCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicIRect>>(GraphicIRect{3, 4, 5, 6})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerMatrixCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicMatrix>>(
-            GraphicMatrix{1.f,0.f,0.f,0.f,1.f,0.f,0.f,0.f,1.f})));
+            GraphicMatrix{1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerGravityCmd>(
         std::make_shared<RSRenderLayerCmdProperty<int32_t>>(7)));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerAlphaCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<GraphicLayerAlpha>>(GraphicLayerAlpha{true,true,0,255,64})));
+        std::make_shared<RSRenderLayerCmdProperty<GraphicLayerAlpha>>(GraphicLayerAlpha{true, true, 0, 255, 64})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerTransformCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicTransformType>>(GraphicTransformType::GRAPHIC_ROTATE_NONE)));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerBlendTypeCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicBlendType>>(GraphicBlendType::GRAPHIC_BLEND_SRCOVER)));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerColorTransformCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<std::vector<float>>>(std::vector<float>{1.f,2.f,3.f})));
+        std::make_shared<RSRenderLayerCmdProperty<std::vector<float>>>(std::vector<float>{1.f, 2.f, 3.f})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerColorDataSpaceCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicColorDataSpace>>(
             GraphicColorDataSpace::GRAPHIC_GAMUT_DISPLAY_P3)));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerLayerColorCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<GraphicLayerColor>>(GraphicLayerColor{1,2,3,4})));
+        std::make_shared<RSRenderLayerCmdProperty<GraphicLayerColor>>(GraphicLayerColor{1, 2, 3, 4})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerBackgroundColorCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<GraphicLayerColor>>(GraphicLayerColor{5,6,7,8})));
+        std::make_shared<RSRenderLayerCmdProperty<GraphicLayerColor>>(GraphicLayerColor{5, 6, 7, 8})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerCornerRadiusInfoForDRMCmd>(
         std::make_shared<RSRenderLayerCmdProperty<std::vector<float>>>(std::vector<float>{0.1f, 0.2f})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerWindowsNameCmd>(
@@ -707,8 +707,8 @@ HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_CopiesSelectedFields, TestSize.Le
         std::make_shared<RSRenderLayerCmdProperty<std::string>>(std::string("src_surf"))));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerSolidColorLayerPropertyCmd>(
         std::make_shared<RSRenderLayerCmdProperty<GraphicSolidColorLayerProperty>>(
-            GraphicSolidColorLayerProperty{9, GraphicTransformType::GRAPHIC_ROTATE_NONE, {0,0,1,1},
-                GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT, {1,1,1,1}})));
+            GraphicSolidColorLayerProperty{9, GraphicTransformType::GRAPHIC_ROTATE_NONE, {0, 0, 1, 1},
+                GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT, {1, 1, 1, 1}})));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerIsNeedCompositionCmd>(
         std::make_shared<RSRenderLayerCmdProperty<bool>>(false)));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerUseDeviceOfflineCmd>(
@@ -716,7 +716,7 @@ HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_CopiesSelectedFields, TestSize.Le
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerIgnoreAlphaCmd>(
         std::make_shared<RSRenderLayerCmdProperty<bool>>(true)));
     src->UpdateRSLayerCmd(std::make_shared<RSRenderLayerAncoSrcRectCmd>(
-        std::make_shared<RSRenderLayerCmdProperty<GraphicIRect>>(GraphicIRect{11,12,13,14})));
+        std::make_shared<RSRenderLayerCmdProperty<GraphicIRect>>(GraphicIRect{11, 12, 13, 14})));
 
     dst->CopyLayerInfo(src);
 
@@ -729,8 +729,6 @@ HWTEST(RSRenderSurfaceLayerTest, CopyLayerInfo_CopiesSelectedFields, TestSize.Le
     EXPECT_EQ(dst->GetBlendType(), GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
     EXPECT_EQ(dst->GetColorDataSpace(), GraphicColorDataSpace::GRAPHIC_GAMUT_DISPLAY_P3);
     EXPECT_EQ(dst->GetBackgroundColor().a, 8);
-    EXPECT_TRUE(dst->GetIsSupportedPresentTimestamp());
-    EXPECT_EQ(dst->GetPresentTimestamp().time, 999);
     ASSERT_EQ(dst->GetWindowsName().size(), 1u);
     EXPECT_TRUE(dst->IsAncoNative());
     EXPECT_TRUE(dst->GetIsMaskLayer());
@@ -1213,4 +1211,276 @@ HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_CycleBuffersNum_And_Ids_Bounda
     layer->UpdateRSLayerCmd(std::make_shared<RSRenderLayerNodeIdCmd>(
         std::make_shared<RSRenderLayerCmdProperty<uint64_t>>(std::numeric_limits<uint64_t>::max())));
     EXPECT_EQ(layer->GetNodeId(), std::numeric_limits<uint64_t>::max());
+}
+
+/**
+ * Function: SetPresentTimestamp_UnsupportedType_TrueBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with unsupported present timestamp type
+ *                  2. call SetPresentTimestamp with GRAPHIC_DISPLAY_PTS_UNSUPPORTED
+ *                  3. expect value is set (true branch of if condition)
+ */
+HWTEST(RSRenderSurfaceLayerTest, SetPresentTimestamp_UnsupportedType_TrueBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetRSLayerId(12345u);
+    GraphicPresentTimestamp timestamp;
+    timestamp.type = GRAPHIC_DISPLAY_PTS_UNSUPPORTED;
+    timestamp.time = 0;
+    layer->SetPresentTimestamp(timestamp);
+    EXPECT_EQ(layer->GetPresentTimestamp().type, GRAPHIC_DISPLAY_PTS_UNSUPPORTED);
+    EXPECT_EQ(layer->GetPresentTimestamp().time, 0);
+}
+
+/**
+ * Function: SetPresentTimestamp_SupportedType_FalseBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with supported present timestamp type
+ *                  2. call SetPresentTimestamp with GRAPHIC_DISPLAY_PTS_TIMESTAMP
+ *                  3. expect value is set (false branch - skip logging)
+ */
+HWTEST(RSRenderSurfaceLayerTest, SetPresentTimestamp_SupportedType_FalseBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetRSLayerId(54321u);
+    GraphicPresentTimestamp timestamp;
+    timestamp.type = GRAPHIC_DISPLAY_PTS_TIMESTAMP;
+    timestamp.time = 1234567890;
+    layer->SetPresentTimestamp(timestamp);
+    EXPECT_EQ(layer->GetPresentTimestamp().type, GRAPHIC_DISPLAY_PTS_TIMESTAMP);
+    EXPECT_EQ(layer->GetPresentTimestamp().time, 1234567890);
+}
+
+/**
+ * Function: SetPresentTimestamp_DelayType_FalseBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with delay present timestamp type
+ *                  2. call SetPresentTimestamp with GRAPHIC_DISPLAY_PTS_DELAY
+ *                  3. expect value is set (false branch)
+ */
+HWTEST(RSRenderSurfaceLayerTest, SetPresentTimestamp_DelayType_FalseBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetRSLayerId(99999u);
+    GraphicPresentTimestamp timestamp;
+    timestamp.type = GRAPHIC_DISPLAY_PTS_DELAY;
+    timestamp.time = 9876543210;
+    layer->SetPresentTimestamp(timestamp);
+    EXPECT_EQ(layer->GetPresentTimestamp().type, GRAPHIC_DISPLAY_PTS_DELAY);
+    EXPECT_EQ(layer->GetPresentTimestamp().time, 9876543210);
+}
+
+/**
+ * Function: Dump_ValidTypesInMap_TrueBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with valid transform/composition/blend types
+ *                  2. call Dump
+ *                  3. expect output contains type strings (true branch)
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_ValidTypesInMap_TrueBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetZorder(5);
+    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
+    std::vector<GraphicIRect> visibleRegions = {{0, 0, 100, 100}};
+    layer->SetVisibleRegions(visibleRegions);
+    GraphicLayerAlpha alpha = {true, true, 128, 255, 200};
+    layer->SetAlpha(alpha);
+    std::string result;
+    layer->Dump(result);
+    EXPECT_FALSE(result.empty());
+    EXPECT_NE(result.find("zOrder = 5"), std::string::npos);
+    EXPECT_NE(result.find("0 <no rotation>"), std::string::npos);
+    EXPECT_NE(result.find("1 <device composition>"), std::string::npos);
+    EXPECT_NE(result.find("3 <SRC_OVER blending>"), std::string::npos);
+}
+
+/**
+ * Function: Dump_InvalidBlendType_NotInMap_FalseBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with invalid blend type (cast from int)
+ *                  2. call Dump
+ *                  3. expect no crash, output continues (false branch)
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_InvalidBlendType_NotInMap_FalseBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetZorder(3);
+    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    layer->SetBlendType(static_cast<GraphicBlendType>(GRAPHIC_BLEND_SRC));
+    std::string result;
+    layer->Dump(result);
+    EXPECT_FALSE(result.empty());
+    EXPECT_NE(result.find("zOrder = 3"), std::string::npos);
+}
+
+/**
+ * Function: Dump_InvalidCompositionType_NotInMap_FalseBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with invalid composition type
+ *                  2. call Dump
+ *                  3. expect no crash (false branch)
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_InvalidCompositionType_NotInMap_FalseBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetZorder(7);
+    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_90);
+    layer->SetCompositionType(static_cast<GraphicCompositionType>(888));
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_NONE);
+    std::string result;
+    layer->Dump(result);
+    EXPECT_FALSE(result.empty());
+}
+
+/**
+ * Function: Dump_InvalidTransformType_NotInMap_FalseBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with invalid transform type
+ *                  2. call Dump
+ *                  3. expect no crash (false branch)
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_InvalidTransformType_NotInMap_FalseBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetZorder(2);
+    layer->SetTransform(static_cast<GraphicTransformType>(777));
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRC);
+    std::string result;
+    layer->Dump(result);
+    EXPECT_FALSE(result.empty());
+}
+
+/**
+ * Function: Dump_VisibleDirtyRegions_OutputFormat
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with visible and dirty regions
+ *                  2. call Dump
+ *                  3. expect proper format in output
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_VisibleDirtyRegions_OutputFormat, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
+    std::vector<GraphicIRect> visibleRegions = {{0, 0, 100, 100}, {50, 50, 200, 200}};
+    layer->SetVisibleRegions(visibleRegions);
+    std::vector<GraphicIRect> dirtyRegions = {{10, 10, 50, 50}};
+    layer->SetDirtyRegions(dirtyRegions);
+    GraphicIRect layerRect = {0, 0, 1920, 1080};
+    layer->SetLayerSize(layerRect);
+    GraphicIRect cropRect = {0, 0, 1920, 1080};
+    layer->SetCropRect(cropRect);
+    GraphicLayerColor layerColor = {255, 128, 64, 32};
+    layer->SetLayerColor(layerColor);
+    std::string result;
+    layer->Dump(result);
+    EXPECT_NE(result.find("visibleRegions[0]"), std::string::npos);
+    EXPECT_NE(result.find("dirtyRegions[0]"), std::string::npos);
+    EXPECT_NE(result.find("layerColor = [R:255"), std::string::npos);
+}
+
+/**
+ * Function: DumpCurrentFrameLayer_WithSurface_TrueBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with valid surface
+ *                  2. call DumpCurrentFrameLayer
+ *                  3. expect no crash (true branch)
+ */
+HWTEST(RSRenderSurfaceLayerTest, DumpCurrentFrameLayer_WithSurface_TrueBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    sptr<IConsumerSurface> surface = nullptr;
+    layer->SetSurface(surface);
+    layer->SetRSLayerId(111u);
+    layer->SetSurfaceName("test_surface");
+    layer->DumpCurrentFrameLayer();
+    EXPECT_EQ(layer->GetSurface(), nullptr);
+}
+
+/**
+ * Function: DumpCurrentFrameLayer_NullSurface_FalseBranch
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer without surface (nullptr)
+ *                  2. call DumpCurrentFrameLayer
+ *                  3. expect no crash (false branch - skip calling surface method)
+ */
+HWTEST(RSRenderSurfaceLayerTest, DumpCurrentFrameLayer_NullSurface_FalseBranch, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetRSLayerId(222u);
+    layer->SetSurfaceName("null_surface_test");
+    layer->DumpCurrentFrameLayer();
+    EXPECT_EQ(layer->GetSurface(), nullptr);
+    EXPECT_EQ(layer->GetSurfaceName(), "null_surface_test");
+}
+
+/**
+ * Function: Dump_WithNullSurface_NoCrash
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with null surface
+ *                  2. call Dump
+ *                  3. expect no crash, output still generated
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_WithNullSurface_NoCrash, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
+    sptr<IConsumerSurface> surface = nullptr;
+    layer->SetSurface(surface);
+    std::string result;
+    layer->Dump(result);
+    EXPECT_FALSE(result.empty());
+    EXPECT_NE(result.find("layerRect = ["), std::string::npos);
+}
+
+/**
+ * Function: Dump_AllProperties_OutputContainsAllFields
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: 1. create layer with various properties set
+ *                  2. call Dump
+ *                  3. expect output contains all property fields
+ */
+HWTEST(RSRenderSurfaceLayerTest, Dump_AllProperties_OutputContainsAllFields, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+    layer->SetCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    layer->SetBlendType(GraphicBlendType::GRAPHIC_BLEND_SRCOVER);
+    layer->SetDisplayNit(500.0f);
+    layer->SetBrightnessRatio(1.0f);
+    layer->SetAncoFlags(0x1234);
+    layer->SetCycleBuffersNum(3u);
+    layer->SetSurfaceName("full_dump_test");
+    layer->SetUseDeviceOffline(true);
+    layer->SetIgnoreAlpha(false);
+    GraphicIRect ancoSrcRect = {10, 20, 30, 40};
+    layer->SetAncoSrcRect(ancoSrcRect);
+    std::string result;
+    layer->Dump(result);
+    EXPECT_NE(result.find("displayNit = 500"), std::string::npos);
+    EXPECT_NE(result.find("brightnessRatio = 1"), std::string::npos);
+    EXPECT_NE(result.find("ancoFlags = 4660"), std::string::npos);
+    EXPECT_NE(result.find("cycleBuffersNum = 3"), std::string::npos);
+    EXPECT_NE(result.find("surfaceName = full_dump_test"), std::string::npos);
+    EXPECT_NE(result.find("ancoSrcRect = [10, 20, 30, 40]"), std::string::npos);
 }

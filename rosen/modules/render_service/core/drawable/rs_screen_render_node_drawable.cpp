@@ -974,7 +974,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             if (!activeRect.IsEmpty() && (!dirtyManager->GetDirtyRegion().IsInsideOf(activeRect) ||
                                           !uniParam->IsPartialRenderEnabled() || uniParam->IsRegionDebugEnabled())) {
                 RS_TRACE_NAME_FMT("global dirty region:[%s] is not inside of active surface rect:[%s], "
-                                  "clear extra area to black", 
+                                  "clear extra area to black",
                     dirtyManager->GetDirtyRegion().ToString().c_str(), activeRect.ToString().c_str());
                 curCanvas_->Save();
                 auto activeRegion =
@@ -1234,7 +1234,7 @@ void RSScreenRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
         if (surfaceDrawable->GetRenderParams()->GetHardwareEnabled() &&
             surfaceDrawable->GetRenderParams()->GetLayerInfo().useDeviceOffline) {
             if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(
-                    surfaceDrawable, RSUniRenderThread::Instance().GetVsyncId())) {
+                surfaceDrawable, RSUniRenderThread::Instance().GetVsyncId())) {
                 RS_LOGW("RSUniRenderProcessor::ProcessSurface: post offline task failed, go redraw");
             }
         }

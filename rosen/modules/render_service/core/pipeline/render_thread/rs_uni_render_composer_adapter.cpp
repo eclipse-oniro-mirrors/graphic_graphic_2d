@@ -1064,8 +1064,8 @@ RSLayerPtr RSUniRenderComposerAdapter::CreateLayer(DrawableV2::RSScreenRenderNod
         RS_LOGE("RSUniRenderComposerAdapter::CreateLY fail, surfaceHandler is nullptr");
         return nullptr;
     }
-    RS_LOGD("RSUniRenderComposerAdapter::CreateLayer displayNode id:%{public}" PRIu64 " available buffer:%{public}d",
-        screenDrawable.GetId(), surfaceHandler->GetAvailableBufferCount());
+    RS_LOGD("RSUniRenderComposerAdapter::CreateLayer screenDrawableNode id:%{public}" PRIu64 " available "
+        "buffer:%{public}d", screenDrawable.GetId(), surfaceHandler->GetAvailableBufferCount());
     if (!screenDrawable.IsSurfaceCreated()) {
         sptr<IBufferConsumerListener> listener = new RSUniRenderListener(surfaceHandler);
         if (!screenDrawable.CreateSurface(listener)) {

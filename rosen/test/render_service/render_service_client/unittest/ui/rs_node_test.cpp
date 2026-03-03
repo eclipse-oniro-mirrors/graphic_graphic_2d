@@ -4996,8 +4996,7 @@ HWTEST_F(RSNodeTest, ExecuteWithoutAnimation, TestSize.Level1)
     callback = []() {};
     rsNode->ExecuteWithoutAnimation(callback, rsUIContext, implicitAnimator);
 
-    auto uiDirector1 = RSUIDirector::Create();
-    rsUIContext = uiDirector1->GetRSUIContext();
+    rsUIContext = std::make_shared<RSUIContext>(0);
     rsNode->ExecuteWithoutAnimation(callback, rsUIContext, implicitAnimator);
     EXPECT_NE(rsUIContext, nullptr);
 
@@ -6651,7 +6650,7 @@ HWTEST_F(RSNodeTest, RegisterTransitionPairWithRSUIContext, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     auto uiDirector1 = RSUIDirector::Create();
-    auto rsUIContext = uiDirector1->GetRSUIContext();
+    auto rsUIContext = std::make_shared<rsUIContext>(0);
     NodeId inNodeId = 1;
     NodeId outNodeId = 1;
     rsNode->RegisterTransitionPair(rsUIContext, inNodeId, outNodeId, true);
@@ -6670,7 +6669,7 @@ HWTEST_F(RSNodeTest, UnregisterTransitionPairWithRSUIContext, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     auto uiDirector1 = RSUIDirector::Create();
-    auto rsUIContext = uiDirector1->GetRSUIContext();
+    auto rsUIContext = std::make_shared<rsUIContext>(0);
     NodeId inNodeId = 1;
     NodeId outNodeId = 1;
     rsNode->UnregisterTransitionPair(rsUIContext, inNodeId, outNodeId);
