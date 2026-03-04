@@ -234,6 +234,7 @@ constexpr const char* DRAWING_CACHE_DFX = "rosen.drawingCache.enabledDfx";
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* ENABLE_DEBUG_FMT_TRACE = "sys.graphic.openTestModeTrace";
 constexpr const char* BUFFER_OVERFLOW = "Buffer Overflow";
+constexpr const char* FRAMEWORK_XWEB_NAME = "oh_xweb_";
 constexpr uint64_t ONE_SECOND_TIMESTAMP = 1e9;
 constexpr int SKIP_FIRST_FRAME_DRAWING_NUM = 1;
 constexpr uint32_t MAX_ANIMATED_SCENES_NUM = 0xFFFF;
@@ -1586,15 +1587,8 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 if (rsVSyncDistributor_ != nullptr) {
                     rsVSyncDistributor_->SetHasNativeBuffer();
                 }
-                auto name = surfaceNode->GetName().empty() ? DEFAULT_SURFACE_NODE_NAME : surfaceNode->GetName();
-                auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
-                const auto& consumer = surfaceHandler->GetConsumer();
-                if (LIKELY(frameRateMgr != nullptr) && consumer != nullptr &&
-                    consumer->GetSurfaceSourceType() != OH_SURFACE_SOURCE_GAME &&
-                    consumer->GetSurfaceSourceType() != OH_SURFACE_SOURCE_CAMERA &&
-                    consumer->GetSurfaceSourceType() != OH_SURFACE_SOURCE_VIDEO) {
-                    frameRateMgr->UpdateSurfaceTime(name, ExtractPid(surfaceNode->GetId()), UIFWKType::FROM_SURFACE);
-                }
+
+                UpdateHgmSurfaceTime(surfaceHandler, surfaceNode);
             }
             PostTryReclaimLastBuffer(surfaceNode, surfaceHandler);
             surfaceHandler->ResetCurrentFrameBufferConsumed();
@@ -2100,6 +2094,30 @@ bool RSMainThread::IsRequestedNextVSync()
 void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 {
     hgmContext_.ProcessHgmFrameRate(timestamp, rsVSyncDistributor_, vsyncId_);
+}
+
+void RSMainThread::UpdateHgmSurfaceTime(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
+    const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
+{
+    if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr(); LIKELY(frameRateMgr != nullptr)) {
+        const auto& consumer = surfaceHandler->GetConsumer();
+        if (consumer == nullptr) {
+            return;
+        }
+        if (const auto& sourceType = consumer->GetSurfaceSourceType();
+            sourceType != OH_SURFACE_SOURCE_GAME &&
+            sourceType != OH_SURFACE_SOURCE_CAMERA &&
+            sourceType != OH_SURFACE_SOURCE_VIDEO) {
+            if (const auto& appFrameworkType = consumer->GetSurfaceAppFrameworkType();
+                appFrameworkType.rfind(FRAMEWORK_XWEB_NAME, 0) == 0) {
+                auto name = appFrameworkType;
+                frameRateMgr->UpdateSurfaceTime(name, ExtractPid(surfaceNode->GetId()), UIFWKType::FROM_SURFACE);
+            } else {
+                auto name = surfaceNode->GetName().empty() ? DEFAULT_SURFACE_NODE_NAME : surfaceNode->GetName();
+                frameRateMgr->UpdateSurfaceTime(name, ExtractPid(surfaceNode->GetId()), UIFWKType::FROM_SURFACE);
+            }
+        }
+    }
 }
 
 void RSMainThread::SetFrameIsRender(bool isRender)
