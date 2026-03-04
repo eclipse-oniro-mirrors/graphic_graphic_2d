@@ -2098,7 +2098,8 @@ void RSMainThread::ProcessHgmFrameRate(uint64_t timestamp)
 void RSMainThread::UpdateHgmSurfaceTime(const std::shared_ptr<RSSurfaceHandler>& surfaceHandler,
     const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
 {
-    if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr(); LIKELY(frameRateMgr != nullptr)) {
+    if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr();
+        LIKELY(frameRateMgr != nullptr)) {
         const auto& consumer = surfaceHandler->GetConsumer();
         if (consumer == nullptr) {
             return;
