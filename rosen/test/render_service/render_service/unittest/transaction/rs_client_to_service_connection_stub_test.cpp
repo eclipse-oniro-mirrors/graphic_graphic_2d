@@ -3694,7 +3694,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, NotifyTouchEventTest001, TestSize.
  */
 HWTEST_F(RSClientToServiceConnectionStubTest, UpdateHgmSurfaceTime001, TestSize.Level1)
 {
-    std::string frameworkType = "oh_xweb_1"
+    std::string frameworkType = "oh_xweb_1";
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
 
@@ -3702,7 +3702,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, UpdateHgmSurfaceTime001, TestSize.
     auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(MakeNodeId(2, 2), mainThread->context_);
     ASSERT_NE(surfaceNode, nullptr);
     ASSERT_NE(surfaceNode2, nullptr);
-    surfaceNode->GetRSSurfaceHandler()->SetConsumer(IConsumerSurface::Create("surfaceNode"));
+    surfaceNode->GetRSSurfaceHandler()->SetConsumer(IConsumerSurface::Create("SurfaceNode"));
 
     auto surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler();
     auto surfaceHandler2 = surfaceNode2->GetMutableRSSurfaceHandler();
