@@ -957,7 +957,8 @@ HWTEST_F(HgmContextTest, HandleTouchEventTest001, TestSize.Level1)
         pid_t pid = 0;
         int32_t touchStatus = 1;
         int32_t touchCnt = 0;
-        hgmContext->HandleTouchEvent(pid, touchStatus, touchCnt);
+        int32_t sourceType = 0;
+        hgmContext->HandleTouchEvent(pid, touchStatus, touchCnt, sourceType);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
     } else {

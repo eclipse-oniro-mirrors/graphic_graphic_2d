@@ -227,6 +227,28 @@ HWTEST_F(RSFrameRateVoteTest, VoteRate001, Function | SmallTest | Level0)
 }
 
 /**
+ * @tc.name: VoteRate002
+ * @tc.desc: test when voterRateFunc_ is not nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSFrameRateVoteTest, VoteRate002, Function | SmallTest | Level0)
+{
+    VideoVoterFunc oriVoterRateFunc = DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_;
+
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_ = false;
+    ASSERT_FALSE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+    VideoVoterFunc voterRateFunc = [](const std::string& key, const std::string& value) {};
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_ = voterRateFunc;
+    ASSERT_NE(DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_, nullptr);
+
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->VoteRate(DEFAULT_PID, "VOTER_VIDEO", 30);
+    EXPECT_TRUE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_ = oriVoterRateFunc;
+}
+
+/**
  * @tc.name: CancelVoteRate001
  * @tc.desc: Verify the result of CancelVoteRate function
  * @tc.type: FUNC
@@ -238,6 +260,42 @@ HWTEST_F(RSFrameRateVoteTest, CancelVoteRate001, Function | SmallTest | Level0)
     ASSERT_TRUE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
     DelayedSingleton<RSFrameRateVote>::GetInstance()->CancelVoteRate(DEFAULT_PID, "VOTER_VIDEO");
     ASSERT_FALSE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+}
+
+/**
+ * @tc.name: CancelVoteRate002
+ * @tc.desc: test when isVoted_ is false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSFrameRateVoteTest, CancelVoteRate002, Function | SmallTest | Level0)
+{
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_ = false;
+    ASSERT_FALSE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CancelVoteRate(DEFAULT_PID, "VOTER_VIDEO");
+    ASSERT_FALSE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+}
+
+/**
+ * @tc.name: CancelVoteRate003
+ * @tc.desc: test when isVoted_ is false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSFrameRateVoteTest, CancelVoteRate003, Function | SmallTest | Level0)
+{
+    VideoVoterFunc oriVoterRateFunc = DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_;
+
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_ = true;
+    ASSERT_TRUE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+    VideoVoterFunc voterRateFunc = [](const std::string& key, const std::string& value) {};
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_ = voterRateFunc;
+    ASSERT_NE(DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_, nullptr);
+
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->CancelVoteRate(DEFAULT_PID, "VOTER_VIDEO");
+    EXPECT_FALSE(DelayedSingleton<RSFrameRateVote>::GetInstance()->isVoted_);
+
+    DelayedSingleton<RSFrameRateVote>::GetInstance()->voterRateFunc_ = oriVoterRateFunc;
 }
 } // namespace Rosen
 } // namespace OHOS

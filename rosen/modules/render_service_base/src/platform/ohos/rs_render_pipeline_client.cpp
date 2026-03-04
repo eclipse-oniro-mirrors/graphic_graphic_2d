@@ -946,8 +946,7 @@ private:
     OcclusionChangeCallback cb_;
 };
 
-class CustomSurfaceOcclusionChangeCallback : public RSSurfaceOcclusionChangeCallbackStub
-{
+class CustomSurfaceOcclusionChangeCallback : public RSSurfaceOcclusionChangeCallbackStub {
 public:
     explicit CustomSurfaceOcclusionChangeCallback(const SurfaceOcclusionChangeCallback &callback) : cb_(callback) {}
     ~CustomSurfaceOcclusionChangeCallback() override {};

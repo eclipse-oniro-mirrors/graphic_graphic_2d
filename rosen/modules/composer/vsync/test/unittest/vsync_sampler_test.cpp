@@ -592,7 +592,7 @@ HWTEST_F(VSyncSamplerTest, RegSetScreenVsyncEnabledCallbackForRenderService002, 
     sampler->updateVsyncEnabledScreenIdCallback_ = [](bool vsyncEnabledScreenId)->bool{
         return true;};
     sampler->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId, nullptr);
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = AppExecFwk::EventRunner::create(false);
+    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = AppExecFwk::EventRunner::Create(false);
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> handler = std::make_shared<AppExecFwk::EventHandler>(runner);
     sampler->RegSetScreenVsyncEnabledCallbackForRenderService(vsyncEnabledScreenId + 1, nullptr);
     ASSERT_NE(sampler->vsyncEnabledScreenId_, vsyncEnabledScreenId);
@@ -676,7 +676,7 @@ HWTEST_F(VSyncSamplerTest, JudgeVSyncEnabledScreenWhileHotPlug002, Function | Me
     enableId = sampler->JudgeVSyncEnabledScreenWhileHotPlug(id, false);
     ASSERT_EQ(enableId, sampler->vsyncEnabledScreenId_);
     sampler->vsyncEnabledScreenId_ = id;
-    sampler->RegGetScreenVsyncEnableByIdCallback([](ScreenId screenId, bool connected)->ScreenId{return 0;});
+    sampler->RegGetScreenVsyncEnableByIdCallback([](uint64_t vsyncEnabledScreenId)->ScreenId{return 0;});
     enableId = sampler->JudgeVSyncEnabledScreenWhileHotPlug(id, false);
     ASSERT_EQ(enableId, 0);
 }

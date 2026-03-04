@@ -396,7 +396,7 @@ HWTEST_F(RSAnimationTest, AnimationStatus004, TestSize.Level1)
     animation->OnReverse();
     animation->OnSetFraction(0.5);
 
-    auto propAnimation = std::make_shared<RSPropertyAnimation>(rsUIContext, nullptr);
+    auto propAnimation = std::make_shared<RSPropertyAnimation>(canvasNode->GetRSUIContext(), nullptr);
     propAnimation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
     propAnimation->property_ = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     propAnimation->UpdateStagingValueOnInteractiveFinish(RSInteractiveAnimationPosition::CURRENT);

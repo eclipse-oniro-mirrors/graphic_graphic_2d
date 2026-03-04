@@ -1558,7 +1558,7 @@ void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer,
         auto bufferOwnerCount = surfaceParams->GetBufferOwnerCount();
         if (bufferOwnerCount) {
             bufferOwnerCount->DecRef();
-         }
+        }
     } else {
         RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::UpdateBufferInfo SetPreBuffer %" PRIu64,
             uint32_t(preBufferOwnerCount ? preBufferOwnerCount->bufferId_ : 0));

@@ -47,10 +47,10 @@ void RSRenderPipelineTest::TearDownTestCase()
     RSMainThread::Instance()->receiver_ = nullptr;
     RSMainThread::Instance()->renderEngine_ = nullptr;
 
-    RSUniRenderThread::Instance()->handler_ = nullptr;
-    RSUniRenderThread::Instance()->runner_ = nullptr;
-    RSUniRenderThread::Instance()->uniRenderEngine_->renderContext_ = nullptr;
-    RSUniRenderThread::Instance()->uniRenderEngine_ = nullptr;
+    RSUniRenderThread::Instance().handler_ = nullptr;
+    RSUniRenderThread::Instance().runner_ = nullptr;
+    RSUniRenderThread::Instance().uniRenderEngine_->renderContext_ = nullptr;
+    RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
 
     auto& renderNodeGC = RSRenderNodeGC::Instance();
     renderNodeGC.nodeBucket_ = std::queue<std::vector<RSRenderNode*>>();

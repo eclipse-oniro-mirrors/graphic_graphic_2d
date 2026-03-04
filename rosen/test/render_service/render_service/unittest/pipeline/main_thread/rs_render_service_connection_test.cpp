@@ -638,7 +638,6 @@ HWTEST_F(RSRenderServiceConnectionTest, CleanAllTest, TestSize.Level1)
  */
 HWTEST_F(RSRenderServiceConnectionTest, RegisterCanvasCallbackAndCleanTest, TestSize.Level1)
 {
-
     pid_t testPid = 12345;
     sptr<RSIConnectionToken> token1 = new IRemoteStub<RSIConnectionToken>();
     sptr<RSScreenManagerAgent> screenManagerAgent_ = new RSScreenManagerAgent(CreateOrGetScreenManager());

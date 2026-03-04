@@ -715,7 +715,6 @@ int32_t RSInterfaces::SetVirtualScreenRefreshRate(ScreenId id, uint32_t maxRefre
 bool RSInterfaces::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
 {
     return renderInterface_->SetSystemAnimatedScenes(systemAnimatedScenes, isRegularAnimation);
-
 }
 
 int32_t RSInterfaces::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)

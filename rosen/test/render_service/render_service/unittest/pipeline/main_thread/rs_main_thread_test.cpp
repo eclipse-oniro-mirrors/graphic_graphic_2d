@@ -227,6 +227,9 @@ void RSMainThreadTest::SetUpTestCase()
     renderService_.renderProcessManager_ = mockRenderProcessManager;
     RSMainThread::Instance()->hgmRenderContext_ = 
         std::make_shared<HgmRenderContext>(mockRenderProcessManager->renderToServiceConnection_);
+    auto vsyncManager = sptr<RSVsyncManager>::MakeSptr();
+    vsyncManager->init(screenManager_);
+    RSMainThread::Instance()->rsVsyncManagerAgent_ = vsyncManager->GetVsyncManagerAgent();
 }
 
 void RSMainThreadTest::TearDownTestCase()
@@ -2881,21 +2884,6 @@ HWTEST_F(RSMainThreadTest, CheckSurfaceOcclusionNeedProcess003, TestSize.Level1)
     ASSERT_FALSE(result2);
 }
 
-// /**
-//  * @tc.name: GetVsyncRefreshRate
-//  * @tc.desc: GetVsyncRefreshRate Test
-//  * @tc.type: FUNC
-//  * @tc.require: issueICAANX
-//  */
-// HWTEST_F(RSMainThreadTest, GetVsyncRefreshRate001, TestSize.Level1)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     mainThread->vsyncGenerator_ = nullptr;
-//     uint32_t refreshRate = mainThread->GetVsyncRefreshRate();
-//     ASSERT_EQ(refreshRate, 0);
-// }
-
 /**
  * @tc.name: CalcOcclusion002
  * @tc.desc: CalcOcclusion Test
@@ -4839,39 +4827,6 @@ HWTEST_F(RSMainThreadTest, GetDynamicRefreshRate002, TestSize.Level2)
     ASSERT_EQ(mainThread->GetDynamicRefreshRate(), OHOS::Rosen::STANDARD_REFRESH_RATE);
 }
 
-// /**
-//  * @tc.name: SetFrameIsRender
-//  * @tc.desc: test SetFrameIsRender001, rsVSyncDistributor_ = nullptr
-//  * @tc.type: FUNC
-//  * @tc.require: issueIAIPI3
-//  */
-// HWTEST_F(RSMainThreadTest, SetFrameIsRender001, TestSize.Level2)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     auto rsVSyncDistributor = mainThread->rsVSyncDistributor_;
-//     mainThread->rsVSyncDistributor_ = nullptr;
-//     mainThread->SetFrameIsRender(true);
-//     mainThread->rsVSyncDistributor_ = rsVSyncDistributor;
-// }
-
-// /**
-//  * @tc.name: SetFrameIsRender
-//  * @tc.desc: test SetFrameIsRender002, rsVSyncDistributor_ != nullptr
-//  * @tc.type: FUNC
-//  * @tc.require: issueIAIPI3
-//  */
-// HWTEST_F(RSMainThreadTest, SetFrameIsRender002, TestSize.Level2)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-
-//     auto vsyncGenerator = CreateVSyncGenerator();
-//     auto vsyncController = new VSyncController(vsyncGenerator, 0);
-//     mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-//     mainThread->SetFrameIsRender(true);
-// }
-
 /**
  * @tc.name: OnUniRenderDraw
  * @tc.desc: test OnUniRenderDraw001, test isUniRender_ & doDirectComposition_ = false
@@ -5386,31 +5341,6 @@ HWTEST_F(RSMainThreadTest, ConnectChipsetVsyncSer, TestSize.Level2)
 }
 #endif
 
-// /**
-//  * @tc.name: SetVsyncInfo
-//  * @tc.desc: test SetVsyncInfo
-//  * @tc.type: FUNC
-//  * @tc.require:issuesIB6292
-//  */
-// #if defined(RS_ENABLE_CHIPSET_VSYNC)
-// HWTEST_F(RSMainThreadTest, SetVsyncInfo, TestSize.Level2)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     ASSERT_NE(mainThread->context_, nullptr);
-//     auto receiver = mainThread->receiver_;
-//     if (mainThread->rsVSyncDistributor_ == nullptr) {
-//         auto vsyncGenerator = CreateVSyncGenerator();
-//         auto vsyncController = new VSyncController(vsyncGenerator, 0);
-//         mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-//     }
-//     sptr<VSyncConnection> conn = new VSyncConnection(mainThread->rsVSyncDistributor_, "rs");
-//     mainThread->receiver_ = std::make_shared<VSyncReceiver>(conn);
-//     mainThread->SetVsyncInfo(0);
-//     mainThread->receiver_ = receiver;
-// }
-// #endif
-
 /**
  * @tc.name: IsOcclusionNodesNeedSync001
  * @tc.desc: test IsOcclusionNodesNeedSync001
@@ -5882,50 +5812,41 @@ HWTEST_F(RSMainThreadTest, IsFastComposeVsyncTimeSync002, TestSize.Level1)
     mainThread->timestamp_ = timestamp;
 }
 
-// /**
-//  * @tc.name: CheckFastCompose
-//  * @tc.desc: test CheckFastCompose
-//  * @tc.type: FUNC
-//  * @tc.require: issueIBGV2W
-//  */
-// HWTEST_F(RSMainThreadTest, CheckFastCompose001, TestSize.Level1)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     auto receiver = mainThread->receiver_;
-//     if (mainThread->rsVSyncDistributor_ == nullptr) {
-//         auto vsyncGenerator = CreateVSyncGenerator();
-//         auto vsyncController = new VSyncController(vsyncGenerator, 0);
-//         mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-//     }
-//     sptr<VSyncConnection> conn = new VSyncConnection(mainThread->rsVSyncDistributor_, "rs");
-//     mainThread->receiver_ = nullptr;
-//     mainThread->CheckFastCompose(0);
-//     mainThread->receiver_ = std::make_shared<VSyncReceiver>(conn);
-//     mainThread->lastFastComposeTimeStamp_ = 0;
-//     mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
-//     mainThread->lastFastComposeTimeStamp_ = mainThread->timestamp_;
-//     mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
-//     ASSERT_NE(mainThread->requestNextVsyncNum_.load(), 0);
-//     mainThread->receiver_ = receiver;
-// }
+/**
+ * @tc.name: CheckFastCompose
+ * @tc.desc: test CheckFastCompose
+ * @tc.type: FUNC
+ * @tc.require: issueIBGV2W
+ */
+HWTEST_F(RSMainThreadTest, CheckFastCompose001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    bool result;
+    mainThread->CheckFastCompose(0);
+    mainThread->lastFastComposeTimeStamp_ = 0;
+    mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    mainThread->lastFastComposeTimeStamp_ = mainThread->timestamp_;
+    result = mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    ASSERT_NE(result, false);
+}
 
-// /**
-//  * @tc.name: CheckFastCompose
-//  * @tc.desc: test CheckFastCompose
-//  * @tc.type: FUNC
-//  * @tc.require: issueICGGHY
-//  */
-// HWTEST_F(RSMainThreadTest, CheckFastCompose002, TestSize.Level1)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     uint64_t timestamp = mainThread->timestamp_;
-//     mainThread->timestamp_ = mainThread->timestamp_ - 16666666;
-//     mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
-//     ASSERT_NE(mainThread->requestNextVsyncNum_.load(), 0);
-//     mainThread->timestamp_ = timestamp;
-// }
+/**
+ * @tc.name: CheckFastCompose
+ * @tc.desc: test CheckFastCompose
+ * @tc.type: FUNC
+ * @tc.require: issueICGGHY
+ */
+HWTEST_F(RSMainThreadTest, CheckFastCompose002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    bool result;
+    ASSERT_NE(mainThread, nullptr);
+    uint64_t timestamp = mainThread->timestamp_;
+    mainThread->timestamp_ = mainThread->timestamp_ - 16666666;
+    result = mainThread->CheckFastCompose(mainThread->timestamp_ - 1);
+    ASSERT_NE(result, false);
+    mainThread->timestamp_ = timestamp;
+}
 
 /**
  * @tc.name: InitVulkanErrorCallback001Test
@@ -6271,19 +6192,18 @@ HWTEST_F(RSMainThreadTest, DoDirectComposition003, TestSize.Level1)
 //     mainThread->renderEngine_ = nullptr;
 // }
 
-// /**
-//  * @tc.name: SetTaskEndWithTime001
-//  * @tc.desc: Test SetTaskEndWithTime
-//  * @tc.type: FUNC
-//  * @tc.require:
-//  */
-// HWTEST_F(RSMainThreadTest, SetTaskEndWithTime001, TestSize.Level1)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     auto rsVSyncDistributor = mainThread->rsVSyncDistributor_;
-//     mainThread->SetTaskEndWithTime(0);
-// }
+/**
+ * @tc.name: SetTaskEndWithTime001
+ * @tc.desc: Test SetTaskEndWithTime
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetTaskEndWithTime001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    mainThread->SetTaskEndWithTime(0);
+}
 
 /**
  * @tc.name: CheckAdaptiveCompose001
@@ -6338,38 +6258,6 @@ HWTEST_F(RSMainThreadTest, NeedConsumeMultiCommand001, TestSize.Level1)
     auto ret = mainThread->NeedConsumeMultiCommand(dvsyncPid);
     ASSERT_EQ(ret, false);
 }
-
-// /**
-//  * @tc.name: NeedConsumeDVSyncCommand001
-//  * @tc.desc: NeedConsumeDVSyncCommand001
-//  * @tc.type: FUNC
-//  * @tc.require:
-//  */
-// HWTEST_F(RSMainThreadTest, NeedConsumeDVSyncCommand001, TestSize.Level1)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     if (mainThread->rsVSyncDistributor_ == nullptr) {
-//         auto vsyncGenerator = CreateVSyncGenerator();
-//         auto vsyncController = new VSyncController(vsyncGenerator, 0);
-//         mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs", {});
-//     }
-
-//     std::vector<std::unique_ptr<RSTransactionData>> trans;
-//     uint32_t endIndex = 0;
-//     auto ret = mainThread->NeedConsumeDVSyncCommand(endIndex, trans);
-//     ASSERT_EQ(ret, false);
-
-//     std::unique_ptr<RSTransactionData> rsTransactionData1 = std::make_unique<RSTransactionData>();
-//     std::unique_ptr<RSTransactionData> rsTransactionData2 = std::make_unique<RSTransactionData>();
-//     rsTransactionData1->timestamp_ = 100;
-//     rsTransactionData2->timestamp_ = 90;
-
-//     trans.push_back(std::move(rsTransactionData1));
-//     trans.push_back(std::move(rsTransactionData2));
-//     ret = mainThread->NeedConsumeDVSyncCommand(endIndex, trans);
-//     ASSERT_EQ(ret, true);
-//     mainThread->rsVSyncDistributor_ = nullptr;
-// }
 
 // /**
 //  * @tc.name: CheckAndUpdateTransactionIndex001
@@ -6528,25 +6416,6 @@ HWTEST_F(RSMainThreadTest, NotifyPackageEvent001, TestSize.Level1)
     std::vector<std::string> packageList = {};
     mainThread->NotifyPackageEvent(packageList);
 }
-
-// /**
-//  * @tc.name: SetForceRsDVsync001
-//  * @tc.desc: SetForceRsDVsync001
-//  * @tc.type: FUNC
-//  * @tc.require: issueICPQPM
-//  */
-// HWTEST_F(RSMainThreadTest, SetForceRsDVsync001, TestSize.Level1)
-// {
-//     auto mainThread = RSMainThread::Instance();
-//     ASSERT_NE(mainThread, nullptr);
-//     std::string sceneId = "APP_SWIPER_FLING";
-//     if (mainThread->rsVSyncDistributor_ == nullptr) {
-//         auto vsyncGenerator = CreateVSyncGenerator();
-//         auto vsyncController = new VSyncController(vsyncGenerator, 0);
-//         mainThread->rsVSyncDistributor_ = new VSyncDistributor(vsyncController, "rs");
-//     }
-//     mainThread->SetForceRsDVsync(sceneId);
-// }
 
 // /**
 //  * @tc.name: CreateNodeAndSurfaceTest001

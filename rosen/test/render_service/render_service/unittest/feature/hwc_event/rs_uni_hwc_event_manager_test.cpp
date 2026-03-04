@@ -15,7 +15,7 @@
  
 #include "feature/hwc_event/rs_uni_hwc_event_manager.h"
 #include "gtest/gtest.h"
-#include "pipeline/rs_pointer_window_manager.h"
+#include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 
 using namespace testing;
 using namespace testing::ext;

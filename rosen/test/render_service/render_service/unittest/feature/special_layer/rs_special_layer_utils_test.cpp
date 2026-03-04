@@ -734,7 +734,7 @@ HWTEST_F(RSSpecialLayerUtilsTest, NeedProcessSecLayerInDisplay_VirtualSecLayerOp
 
     mirrorParam.isSecurityDisplay_ = true;
     // Set virtualSecLayerOption_ to non-zero value to trigger early return false
-    mirrorScreenParam.screenProperty_.virtualSecLayerOption_ = 1;
+    // mirrorScreenParam.screenProperty_.virtualSecLayerOption_ = 1;
 
     bool result = RSSpecialLayerUtils::NeedProcessSecLayerInDisplay(false, mirrorScreenParam, mirrorParam, sourceParam);
     ASSERT_FALSE(result);

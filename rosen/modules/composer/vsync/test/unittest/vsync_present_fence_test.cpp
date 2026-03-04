@@ -37,7 +37,7 @@ void VSyncPresentFenceTest::SetUpTestCase()
     vsyncSampler = CreateVSyncSampler();
 }
 
-void VSyncDistributorTest::TearDownTestCase()
+void VSyncPresentFenceTest::TearDownTestCase()
 {
     sleep(WAIT_SYSTEM_ABILITY_REPORT_DATA_SECONDS);
 }

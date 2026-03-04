@@ -21,8 +21,8 @@
 
 namespace OHOS {
 namespace Rosen {
-RSRenderToServiceConnectionProxy::RSRenderToServiceConnectionProxy(const sptr<IRemoteObject>& impl) :
-    IRemoteProxy<RSIRenderToServiceConnection>(impl) {}
+RSRenderToServiceConnectionProxy::RSRenderToServiceConnectionProxy(
+    const sptr<IRemoteObject>& impl) : IRemoteProxy<RSIRenderToServiceConnection>(impl) {}
 
 sptr<HgmServiceToProcessInfo> RSRenderToServiceConnectionProxy::NotifyRpHgmFrameRate(uint64_t timestamp,
     uint64_t vsyncId, const sptr<HgmProcessToServiceInfo>& processToServiceInfo)

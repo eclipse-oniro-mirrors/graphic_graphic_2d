@@ -319,7 +319,6 @@ HWTEST_F(RSRealtimeRefreshRateManagerTest, UpdateScreenRefreshRate002, TestSize.
     ASSERT_EQ(iter->second, 90);
 
     instance.UpdateScreenRefreshRate(property, ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE);
-    instance.UpdateScreenRefreshRate(0, 90);
     ASSERT_EQ(iter->second, 90);
 
     property.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>({0, 0, 120});

@@ -940,12 +940,13 @@ GRAPHIC_TEST(AnimationTest, ANIMATION_TEST, Animation_RemoveAllAnimations_Test_1
     GetRootNode()->AddChild(testNode);
     RegisterNode(testNode);
 
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext();
     auto property = std::make_shared<RSAnimatableProperty<float>>(0.0f);
     auto endProperty = std::make_shared<RSAnimatableProperty<float>>(1.0f);
-    auto curveAnimation = std::make_shared<RSCurveAnimation>(property, endProperty);
+    auto curveAnimation = std::make_shared<RSCurveAnimation>(rsUIContext, property, endProperty);
     curveAnimation->SetDuration(300);
 
-    auto curveAnimation2 = std::make_shared<RSCurveAnimation>(property, endProperty);
+    auto curveAnimation2 = std::make_shared<RSCurveAnimation>(rsUIContext, property, endProperty);
     curveAnimation2->SetDuration(400);
     testNode->AddAnimation(curveAnimation);
     testNode->AddAnimation(curveAnimation2);
@@ -976,12 +977,13 @@ GRAPHIC_TEST(AnimationTest, ANIMATION_TEST, Animation_RemoveAnimation_Test_1)
     GetRootNode()->AddChild(testNode);
     RegisterNode(testNode);
 
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext();
     auto property = std::make_shared<RSAnimatableProperty<float>>(0.0f);
     auto endProperty = std::make_shared<RSAnimatableProperty<float>>(1.0f);
-    auto curveAnimation = std::make_shared<RSCurveAnimation>(property, endProperty);
+    auto curveAnimation = std::make_shared<RSCurveAnimation>(rsUIContext, property, endProperty);
     curveAnimation->SetDuration(300);
 
-    auto curveAnimation2 = std::make_shared<RSCurveAnimation>(property, endProperty);
+    auto curveAnimation2 = std::make_shared<RSCurveAnimation>(rsUIContext, property, endProperty);
     curveAnimation2->SetDuration(400);
     testNode->AddAnimation(curveAnimation);
     testNode->AddAnimation(curveAnimation2);

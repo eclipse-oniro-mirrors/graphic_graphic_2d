@@ -852,6 +852,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, HgmForceUpdateTaskTest, TestSize.
 {
     ASSERT_TRUE(proxy);
     proxy->HgmForceUpdateTask(true, "test");
+    proxy->HgmForceUpdateTask(false, "test");
 }
 
 /**
@@ -967,7 +968,8 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetShowRefreshRateEnabledTest003,
 HWTEST_F(RSServiceToRenderConnectionProxyTest, GetRealtimeRefreshRateTest, TestSize.Level1)
 {
     ASSERT_TRUE(proxy);
-    EXPECT_EQ(proxy->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
+    auto result = proxy->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    EXPECT_EQ(result, 0);
 }
 
 /**

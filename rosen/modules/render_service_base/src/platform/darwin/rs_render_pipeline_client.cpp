@@ -51,8 +51,7 @@ bool RSRenderPipelineClient::RegisterBufferAvailableListener(
     return {};
 }
 
-bool RSRenderPipelineClient::RegisterBufferClearListener(
-        NodeId id, const BufferClearCallback& callback)
+bool RSRenderPipelineClient::RegisterBufferClearListener(NodeId id, const BufferClearCallback& callback)
 {
     return {};
 }

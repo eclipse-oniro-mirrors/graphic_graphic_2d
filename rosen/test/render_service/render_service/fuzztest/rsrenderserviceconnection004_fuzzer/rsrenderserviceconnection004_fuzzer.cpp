@@ -108,7 +108,8 @@ void DoSetPointerColorInversionConfig()
     dataParcel.WriteFloat(brightBuffer);
     dataParcel.WriteInt64(interval);
     dataParcel.WriteInt32(rangeSize);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_CONFIG);
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, reply, option);
 #endif
 }
@@ -124,7 +125,8 @@ void DoSetPointerColorInversionEnabled()
     }
     bool enable = GetData<bool>();
     dataParcel.WriteBool(enable);
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::SET_POINTER_COLOR_INVERSION_ENABLED);
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, reply, option);
 #endif
 }
@@ -154,7 +156,8 @@ void DoRegisterPointerLuminanceChangeCallback()
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK);
 
     int32_t brightness = GetData<int32_t>();
     auto callback = [&brightness](int32_t brightness_) { brightness = brightness_; };
@@ -176,7 +179,8 @@ void DoUnRegisterPointerLuminanceChangeCallback()
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::REGISTER_POINTER_LUMINANCE_CALLBACK);
 
     if (!dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         return;
@@ -285,7 +289,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
         OHOS::Rosen::RSRenderProcessManager::Create(*OHOS::Rosen::renderService_);
     auto renderServiceAgent_ = OHOS::sptr<OHOS::Rosen::RSRenderServiceAgent>::MakeSptr(*OHOS::Rosen::renderService_);
     OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent> renderProcessManagerAgent_ =
-        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(OHOS::Rosen::renderService_->renderProcessManager_);
+        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(
+            OHOS::Rosen::renderService_->renderProcessManager_);
 
     OHOS::sptr<OHOS::Rosen::RSScreenManagerAgent> screenManagerAgent_ =
         new OHOS::Rosen::RSScreenManagerAgent(OHOS::Rosen::screenManagerPtr_);

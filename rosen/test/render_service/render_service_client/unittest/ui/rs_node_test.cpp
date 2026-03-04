@@ -4626,11 +4626,13 @@ HWTEST_F(RSNodeTest, AnimateWithCurrentOptionsTest, TestSize.Level1)
     EXPECT_EQ(vec, animateWithCurrentOptions);
 
     propertyCallback = []() {};
-    animateWithCurrentOptions = RSNode::AnimateWithCurrentOptions(uiContext, propertyCallback, finishCallback, timingSensitive);
+    animateWithCurrentOptions = RSNode::AnimateWithCurrentOptions(uiContext,
+        propertyCallback, finishCallback, timingSensitive);
     EXPECT_TRUE(propertyCallback != nullptr);
 
     finishCallback = []() {};
-    animateWithCurrentOptions = RSNode::AnimateWithCurrentOptions(uiContext, propertyCallback, finishCallback, timingSensitive);
+    animateWithCurrentOptions = RSNode::AnimateWithCurrentOptions(uiContext,
+        propertyCallback, finishCallback, timingSensitive);
     EXPECT_TRUE(finishCallback != nullptr);
 }
 /**

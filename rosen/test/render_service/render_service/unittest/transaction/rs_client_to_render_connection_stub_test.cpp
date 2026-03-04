@@ -36,7 +36,7 @@
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "transaction/rs_client_to_render_connection.h"
 #include "pipeline/rs_logical_display_render_node.h"
-#include "pipeline/rs_pointer_window_manager.h"
+#include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"

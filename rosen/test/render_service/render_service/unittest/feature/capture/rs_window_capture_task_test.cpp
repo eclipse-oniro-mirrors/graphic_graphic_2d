@@ -149,7 +149,6 @@ void RSWindowCaptureTaskTest::SetUpTestCase()
 {
     RSTestUtil::InitRenderNodeGC();
     rsInterfaces_ = &(RSInterfaces::GetInstance());
-
     if (rsInterfaces_ == nullptr) {
         HiLog::Error(LOG_LABEL, "%s: rsInterfaces_ == nullptr or rsInterfaces_ == nullptr", __func__);
         return;

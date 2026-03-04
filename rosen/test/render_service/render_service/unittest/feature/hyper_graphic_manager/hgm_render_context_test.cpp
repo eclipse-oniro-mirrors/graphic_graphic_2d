@@ -33,7 +33,7 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 namespace {
-constexpr unit32_t delay_110Ms = 110;
+constexpr uint32_t delay_110Ms = 110;
 constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config.xml";
 }
 class HgmRenderContextTest : public testing::Test {

@@ -60,13 +60,26 @@ void RSServiceToRenderConnectionTest::SetUpTestCase()
     renderPipeline->uniRenderThread_->handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner2);
 
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
-    renderPipeline_->uniRenderThread_->uniRenderEngine_ = std::make_shared<OHOS::Rosen::RSRenderEngine>();
-    renderPipeline_->uniRenderThread_->uniRenderEngine_->renderContext_ = OHOS::Rosen::RenderContext::Create();
+    renderPipeline->uniRenderThread_->uniRenderEngine_ = std::make_shared<OHOS::Rosen::RSRenderEngine>();
+    renderPipeline->uniRenderThread_->uniRenderEngine_->renderContext_ = OHOS::Rosen::RenderContext::Create();
     g_rsConn = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
 }
 void RSServiceToRenderConnectionTest::TearDownTestCase() {}
 void RSServiceToRenderConnectionTest::SetUp() {}
 void RSServiceToRenderConnectionTest::TearDown() {}
+
+/**
+ * @tc.name: HgmForceUpdateTaskTest
+ * @tc.desc: Test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionTest, HgmForceUpdateTaskTest, TestSize.Level1)
+{
+    g_rsConn->HgmForceUpdateTask(false, "");
+    g_rsConn->HgmForceUpdateTask(true, "");
+    ASSERT_TRUE(g_rsConn);
+}
 
 /**
  * @tc.name: GetRealtimeRefreshRateTest
@@ -76,8 +89,9 @@ void RSServiceToRenderConnectionTest::TearDown() {}
  */
 HWTEST_F(RSServiceToRenderConnectionTest, GetRealtimeRefreshRateTest, TestSize.Level1)
 {
-    EXPECT_GE(g_rsConn->GetRealtimeRefreshRate(INVALID_SCREEN_ID), 0);
     ASSERT_TRUE(g_rsConn);
+    auto result = g_rsConn->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    EXPECT_GE(result, 0);
 }
 
 /**

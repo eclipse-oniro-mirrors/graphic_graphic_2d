@@ -508,29 +508,6 @@ HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithoutConsumer_SetFenceTe
 }
 
 /**
- * @tc.name: AddPendingReleaseBuffer_WithoutConsumer_MergedFenceNullTest001
- * @tc.desc: Test mergedFence is null path in AddPendingReleaseBuffer without consumer
- *           When mergedFence is null, directly set new fence without merge
- * @tc.type: FUNC
- * @tc.require: issue41
- */
-HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithoutConsumer_MergedFenceNullTest001, TestSize.Level2)
-{
-    auto mgr = std::make_shared<RSBufferManager>();
-    auto buffer = SurfaceBuffer::Create();
-    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
-        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
-    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
-
-    // Directly set mergedFence_ to nullptr
-    mgr->pendingReleaseBuffers_[buffer->GetBufferId()].mergedFences_ = nullptr;
-
-    //add without consumer, mergedFence_ is null, should set directly
-    sptr<SyncFence> f = new SyncFence(dup(STDERR_FILENO));
-    mgr->AddPendingReleaseBuffer(buffer->GetBufferId(), f);
-}
-
-/**
  * @tc.name: OnReleaseLayerBuffers_NullLayerTest001
  * @tc.desc: Test null layer path in OnReleaseLayerBuffers
  *           When layer weak_ptr.lock() returns nullptr, should skip

@@ -1141,7 +1141,8 @@ std::vector<int32_t> RSClientToServiceConnectionProxy::GetScreenSupportedRefresh
         ROSEN_LOGE("GetScreenSupportedRefreshRates: WriteUint64 id err.");
         return screenSupportedRates;
     }
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_REFRESH_RATES);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_REFRESH_RATES);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         return screenSupportedRates;
@@ -3698,18 +3699,15 @@ void RSClientToServiceConnectionProxy::ReportGameStateData(GameStateData info)
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("ReportGameStateData: WriteInterfaceToken GetDescriptor err.");
         // return ERR_INVALID_VALUE;
-        return; // ??? todo
+        return;
     }
     ReportGameStateDataRs(data, reply, option, info);
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::ReportGameStateData: Send Request err.");
-        // return ERR_INVALID_VALUE;
-        return; // ??? todo
-    }
-    // return ERR_OK;
-    return; // ??? todo
+        return; 
+    } 
 }
 
 ErrCode RSClientToServiceConnectionProxy::NotifyLightFactorStatus(int32_t lightFactorStatus)
@@ -3850,8 +3848,8 @@ void RSClientToServiceConnectionProxy::SetWindowExpectedRefreshRate(
     }
 }
 
-ErrCode RSClientToServiceConnectionProxy::NotifyAppStrategyConfigChangeEvent(const std::string& pkgName, uint32_t listSize,
-    const std::vector<std::pair<std::string, std::string>>& newConfig)
+ErrCode RSClientToServiceConnectionProxy::NotifyAppStrategyConfigChangeEvent(
+    const std::string& pkgName, uint32_t listSize, const std::vector<std::pair<std::string, std::string>>& newConfig)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -4606,7 +4604,7 @@ int32_t RSClientToServiceConnectionProxy::RegisterSelfDrawingNodeRectChangeCallb
         ROSEN_LOGE("RegisterSelfDrawingNodeRectChangeCallback: WriteRemoteObject callback->AsObject() err.");
         return WRITE_PARCEL_ERR;
     }
-    uint32_t code =static_cast<uint32_t>(
+    uint32_t code = static_cast<uint32_t>(
         RSIClientToServiceConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {

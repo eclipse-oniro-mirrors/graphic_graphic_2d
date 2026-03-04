@@ -333,7 +333,7 @@ void DoAvcodecVideoStop()
 
 void DoAvcodecVideoGet()
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::AVCODEC_VIDEO_GET);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;

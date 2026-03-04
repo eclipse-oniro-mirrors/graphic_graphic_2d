@@ -368,7 +368,7 @@ HWTEST_F(HyperGraphicManagerTest, AddScreen, Function | MediumTest | Level0)
             ScreenId screenId = 2;
             auto mPolicyConfigData = instance.mPolicyConfigData_;
             instance.mPolicyConfigData_ = nullptr;
-            auto addScreen = instance.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
             STEP_ASSERT_EQ(addScreen, 0);
             instance.mPolicyConfigData_ = mPolicyConfigData;
         }

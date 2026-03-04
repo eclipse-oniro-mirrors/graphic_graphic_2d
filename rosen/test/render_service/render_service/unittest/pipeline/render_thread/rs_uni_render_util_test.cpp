@@ -1205,7 +1205,7 @@ HWTEST_F(RSUniRenderUtilTest, MergeDirtyHistoryInVirtual001, TestSize.Level1)
     params->SetAllMainAndLeashSurfaceDrawables(surfaceAdapters);
     ScreenInfo screenInfo;
     auto rects = RSUniRenderUtil::MergeDirtyHistoryInVirtual(
-        *displayDrawable, bufferAge, screenInfo, defaultDisplayId);
+        *screenDrawable, bufferAge, screenInfo, defaultDisplayId);
     EXPECT_EQ(rects.empty(), true);
     screenDrawable = nullptr;
 }

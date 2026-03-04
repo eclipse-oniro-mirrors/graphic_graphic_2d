@@ -1259,7 +1259,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, NotifyHgmConfigEvent, TestSize.Le
 //     NodeId id = 1;
 //     proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT, true);
 //     proxy->NotifyLightFactorStatus(1);
-//     ASSERT_EQ(proxy->transactionDataIndex_, 0);
+//     ASSERT_EQ(proxy->transactionDataIndex_, 5);
 // }
 
 /**

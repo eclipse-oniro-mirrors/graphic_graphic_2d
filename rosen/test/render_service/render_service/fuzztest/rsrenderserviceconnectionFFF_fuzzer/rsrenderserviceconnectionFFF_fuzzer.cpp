@@ -292,13 +292,6 @@ void DoNotifySoftVsyncRateDiscountEvent()
     dataParcel.WriteUint32(rateDiscount);
     toServiceConnectionStub_->OnRemoteRequest(code, dataParcel, replyParcel, option);
 
-    // if (!connServerApp_) {
-    //     uint64_t pidApp = static_cast<uint64_t>(getpid());
-    //     uint64_t id = pidApp << 32U;
-    //     connServerApp_ = new VSyncConnection(appVSyncDistributor_, "TestVsync", nullptr, id);
-    //     appVSyncDistributor_->AddConnection(connServerApp_);
-    // }
-
     MessageParcel dataP;
     pid = getpid();
     name = "TestVsync";
@@ -340,7 +333,8 @@ void DoSetBehindWindowFilterEnabled()
 
 void DoSetLayerTopForHWC()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToRenderConnectionInterfaceCode::SET_LAYER_TOP_FOR_HARDWARE_COMPOSER);
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     MessageOption option;
@@ -401,7 +395,8 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
         OHOS::Rosen::RSRenderProcessManager::Create(*OHOS::Rosen::renderService_);
     auto renderServiceAgent_ = OHOS::sptr<OHOS::Rosen::RSRenderServiceAgent>::MakeSptr(*OHOS::Rosen::renderService_);
     OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent> renderProcessManagerAgent_ =
-        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(OHOS::Rosen::renderService_->renderProcessManager_);
+        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(
+            OHOS::Rosen::renderService_->renderProcessManager_);
 
     OHOS::sptr<OHOS::Rosen::RSScreenManagerAgent> screenManagerAgent_ =
         new OHOS::Rosen::RSScreenManagerAgent(OHOS::Rosen::screenManagerPtr_);

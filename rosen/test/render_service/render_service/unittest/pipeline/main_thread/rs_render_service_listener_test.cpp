@@ -163,7 +163,7 @@ HWTEST_F(RSRenderServiceListenerTest, OnBufferAvailable001, TestSize.Level1)
 HWTEST_F(RSRenderServiceListenerTest, SetBufferInfoAndRequest001, TestSize.Level1)
 {
     std::weak_ptr<RSSurfaceRenderNode> wp;
-    std::shared_ptr<RSRenderServiceListener> rsListener = std::make_shared<RSRenderServiceListener>(wp);
+    std::shared_ptr<RSRenderServiceListener> rsListener = std::make_shared<RSRenderServiceListener>(wp, nullptr);
     std::shared_ptr<RSSurfaceRenderNode> node = RSTestUtil::CreateSurfaceNode();
     NodeId id = 0;
     std::shared_ptr<RSSurfaceHandler> handler = std::make_shared<RSSurfaceHandler>(id);

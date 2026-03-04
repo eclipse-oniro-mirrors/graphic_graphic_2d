@@ -180,7 +180,7 @@ HWTEST_F(RSSpecialLayerManagerTest, AddIds002, TestSize.Level1)
     }
     slManager.AddIds(SpecialLayerType::SKIP, id);
     ASSERT_EQ(slManager.specialLayerIds_[SpecialLayerType::SKIP].size(), MAX_SPECIAL_LAYER_NUM);
-    slManager.ClearSpecialLayerIds();
+    slManager.Clear();
 }
 
 /**

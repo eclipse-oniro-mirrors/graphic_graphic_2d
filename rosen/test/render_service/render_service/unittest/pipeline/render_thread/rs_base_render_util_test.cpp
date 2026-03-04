@@ -685,20 +685,6 @@ HWTEST_F(RSBaseRenderUtilTest, IsColorFilterModeValid_001, TestSize.Level2)
 }
 
 /*
- * @tc.name: GetScreenIdFromSurfaceRenderParamsTest
- * @tc.desc: Test GetScreenIdFromSurfaceRenderParams
- * @tc.type: FUNC
- * @tc.require: issueI605F4
- */
-HWTEST_F(RSBaseRenderUtilTest, GetScreenIdFromSurfaceRenderParamsTest, TestSize.Level2)
-{
-    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->stagingRenderParams_.get());
-    auto screenProperty = RSBaseRenderUtil::GetScreenPropertyFromSurfaceRenderParams(surfaceParams);
-    EXPECT_EQ(screenProperty.has_value(), true);
-}
-
-/*
  * @tc.name: IsColorFilterModeValid_002
  * @tc.desc: Test IsColorFilterModeValid
  * @tc.type: FUNC

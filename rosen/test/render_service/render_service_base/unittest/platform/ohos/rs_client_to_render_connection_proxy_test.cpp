@@ -258,8 +258,6 @@ HWTEST_F(RSClientToRenderConnectionProxyTest, RegisterBufferAvailableListener, T
 HWTEST_F(RSClientToRenderConnectionProxyTest, GetBitmap, TestSize.Level1)
 {
     ScreenId id = 1;
-    // RSScreenType screenType = RSScreenType::VIRTUAL_TYPE_SCREEN;
-    // ASSERT_EQ(proxy->GetScreenType(id, screenType), 2);
     Drawing::Bitmap bitmap;
     bool success;
     ASSERT_EQ(proxy->GetBitmap(id, bitmap, success), ERR_INVALID_VALUE);
@@ -302,7 +300,6 @@ HWTEST_F(RSClientToRenderConnectionProxyTest, GetPixelmap, TestSize.Level1)
  */
 HWTEST_F(RSClientToRenderConnectionProxyTest, SetSystemAnimatedScenes, TestSize.Level1)
 {
-    // proxy->SetAppWindowNum(1);
     bool success;
     proxy->SetSystemAnimatedScenes(SystemAnimatedScenes::ENTER_MISSION_CENTER, false, success);
     ASSERT_FALSE(success);

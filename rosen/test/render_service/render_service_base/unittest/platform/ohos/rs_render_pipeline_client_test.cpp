@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -250,7 +250,7 @@ HWTEST_F(RSPipelineClientTest, RegisterBufferAvailableListener_False, TestSize.L
 HWTEST_F(RSPipelineClientTest, RegisterBufferAvailableListener_Nullptr, TestSize.Level1)
 {
     ASSERT_NE(rsClient, nullptr);
-    rsClient->RegisterBufferAvailableListener(TEST_ID, nullptr, false); // NodeId: 123
+    ASSERT_EQ(rsClient->RegisterBufferAvailableListener(TEST_ID, nullptr, false), true); // NodeId: 123
 }
 
 /**

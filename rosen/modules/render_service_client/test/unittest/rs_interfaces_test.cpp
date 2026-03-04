@@ -982,6 +982,7 @@ HWTEST_F(RSInterfacesTest, SetScreenColorGamut002, Function | SmallTest | Level2
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     auto screenId = rsInterfaces->GetDefaultScreenId();
     ret = rsInterfaces->SetScreenColorGamut(screenId, 0);
+#endif
 }
 
 /*
@@ -3202,10 +3203,9 @@ HWTEST_F(RSInterfacesTest, ModifyVirtualScreenBlackList001, Function | SmallTest
  */
 HWTEST_F(RSInterfacesTest, SetLogicalCameraRotationCorrection, Function | SmallTest | Level2)
 {
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
     ScreenId screenId = 0;
     ScreenRotation logicalRotation = ScreenRotation::ROTATION_90;
-    EXPECT_EQ(instance.SetLogicalCameraRotationCorrection(screenId, logicalRotation), SUCCESS);
+    EXPECT_EQ(rsInterfaces->SetLogicalCameraRotationCorrection(screenId, logicalRotation), SUCCESS);
 }
 } // namespace Rosen
 } // namespace OHOS

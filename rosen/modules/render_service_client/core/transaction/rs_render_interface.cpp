@@ -399,7 +399,6 @@ bool RSRenderInterface::GetHighContrastTextState()
 bool RSRenderInterface::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
 {
     return renderPipelineClient_->SetSystemAnimatedScenes(systemAnimatedScenes, isRegularAnimation);
-
 }
 
 bool RSRenderInterface::SetGlobalDarkColorMode(bool isDark)

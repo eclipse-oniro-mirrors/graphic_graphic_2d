@@ -313,12 +313,6 @@ void GetCanvasRotation()
     screenManager_->GetCanvasRotation(screenId);
 }
 
-void GetProducerSurface()
-{
-    ScreenId screenId = GetData<Rosen::ScreenId>();
-    screenManager_->GetProducerSurface(screenId);
-}
-
 void DisplayDump()
 {
     std::string dumpString(STRING_LEN, GetData<char>());
@@ -393,7 +387,7 @@ void GetScreenType()
 void GetScreenConnectionType()
 {
     ScreenId screenId = GetData<ScreenId>();
-    CreateOrGetScreenManager()->GetScreenConnectionType(screenId);
+    screenManager_->GetScreenConnectionType(screenId);
 }
 
 void SetScreenSkipFrameInterval()
@@ -515,7 +509,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         OHOS::Rosen::GetScreenBacklight,
         OHOS::Rosen::SetScreenBacklight,
         OHOS::Rosen::GetCanvasRotation,
-        OHOS::Rosen::GetProducerSurface,
         OHOS::Rosen::DisplayDump,
         OHOS::Rosen::SetScreenConstraint,
         OHOS::Rosen::GetScreenSupportedColorGamuts,
