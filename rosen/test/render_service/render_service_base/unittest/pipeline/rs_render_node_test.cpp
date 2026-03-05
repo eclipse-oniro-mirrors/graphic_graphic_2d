@@ -3513,6 +3513,8 @@ HWTEST_F(RSRenderNodeTest, NotForceClearFilterCacheWithoutBackgroundDirtyTest, T
         = backgroundFilterDrawable;
     auto filterDrawable = std::make_shared<DrawableV2::RSMaterialFilterDrawable>();
     renderNode->GetDrawableVec(__func__)[static_cast<int8_t>(RSDrawableSlot::MATERIAL_FILTER)] = filterDrawable;
+    auto backgroundColorDrawable = std::make_shared<DrawableV2::RSBackgroundColorDrawable>();
+    renderNode->GetDrawableVec(__func__)[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_COLOR)] = backgroundColorDrawable;
     renderNode->GetMutableRenderProperties().GetEffect().materialFilter_ = std::make_shared<RSFilter>();
     renderNode->MarkForceClearFilterCacheWithInvisible();
     renderNode->UpdateFilterCacheWithBackgroundDirty();
