@@ -507,6 +507,14 @@
               "header_files": [],
               "header_base": "//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/include"
             }
+          },
+          {
+            "type": "so",
+            "name": "//foundation/graphic/graphic_2d/frameworks/text/interface/mlb/ani:text_engine_ani",
+            "header": {
+              "header_files": [ "ani_paragraph.h" ],
+              "header_base": "//foundation/graphic/graphic_2d/frameworks/text/interface/mlb/ani/include"
+            }
           }
         ],
         "test": [
