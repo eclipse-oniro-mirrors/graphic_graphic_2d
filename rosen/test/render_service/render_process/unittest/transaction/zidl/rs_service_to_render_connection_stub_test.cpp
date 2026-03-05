@@ -555,4 +555,46 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, SetBehindWindowFilterEnabled002, T
     auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(ret, ERR_NONE);
 }
+
+/**
+ * @tc.name: OnGlobalBlacklistChangedStubTest001
+ * @tc.desc: Test OnGlobalBlacklistChanged stub with ReadUInt64Vector failure
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, OnGlobalBlacklistChangedStubTest001, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::ON_GLOBAL_BLACKLIST_CHANGED);
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: OnGlobalBlacklistChangedStubTest002
+ * @tc.desc: Test OnGlobalBlacklistChanged stub with empty blacklist
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, OnGlobalBlacklistChangedStubTest002, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::ON_GLOBAL_BLACKLIST_CHANGED);
+    std::vector<NodeId> globalBlackList;
+    data.WriteUInt64Vector(globalBlackList);
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(ret, ERR_NONE);
+}
 } // namespace OHOS::Rosen

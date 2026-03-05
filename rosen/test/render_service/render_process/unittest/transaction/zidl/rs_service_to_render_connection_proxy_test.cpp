@@ -1409,4 +1409,30 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetBehindWindowFilterEnabledTest0
     mockProxy->SetBehindWindowFilterEnabled(true);
     mockProxy->SetBehindWindowFilterEnabled(false);
 }
+
+/**
+ * @tc.name: OnGlobalBlacklistChangedTest001
+ * @tc.desc: Test OnGlobalBlacklistChanged with empty blacklist
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, OnGlobalBlacklistChangedTest001, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+    std::unordered_set<NodeId> globalBlackList;
+    proxy->OnGlobalBlacklistChanged(globalBlackList);
+}
+
+/**
+ * @tc.name: OnGlobalBlacklistChangedTest002
+ * @tc.desc: Test OnGlobalBlacklistChanged with single element
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, OnGlobalBlacklistChangedTest002, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+    std::unordered_set<NodeId> globalBlackList = {100};
+    proxy->OnGlobalBlacklistChanged(globalBlackList);
+}
 } // namespace OHOS::Rosen

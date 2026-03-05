@@ -141,6 +141,8 @@ RSUniRenderVisitor::RSUniRenderVisitor()
     renderEngine_ = mainThread->GetRenderEngine();
     hasMirrorDisplay_ = mainThread->HasMirrorDisplay();
     hasMirrorUsedInDirtyRegion_ = RSUniDirtyComputeUtil::HasMirrorDisplay();
+    hasMirrorUsedInSpecialLayer_ =
+        RSSpecialLayerUtils::HasMirrorDisplay(RSMainThread::Instance()->GetContext().GetNodeMap());
     // when occlusion enabled is false, subTree do not skip, but not influence visible region
     isOcclusionEnabled_ = RSSystemProperties::GetOcclusionEnabled();
     isDrawingCacheEnabled_ = RSSystemParameters::GetDrawingCacheEnabled();
@@ -1144,7 +1146,7 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         RSBaseRenderUtil::GetRotationLockParam(node, curScreenNode_);
     }
 
-    bool needCalcScreenSpecialLayer = curScreenNode_->GetScreenProperty().IsVirtual() || hasMirrorDisplay_;
+    bool needCalcScreenSpecialLayer = curScreenNode_->GetScreenProperty().IsVirtual() || hasMirrorUsedInSpecialLayer_;
     RSSpecialLayerUtils::DealWithSpecialLayer(node, *curLogicalDisplayNode_, needCalcScreenSpecialLayer);
     // avoid cross node subtree visited twice or more
     if (CheckSkipAndPrepareForCrossNode(node)) {
