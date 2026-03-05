@@ -2442,7 +2442,7 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoAfterChildrenTest001, TestSize.
 
     childNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONE);
     nodeTest->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
-    nodeTest->SetForceDisableNodeGroup(true);
+    nodeTest->SetForceDisableNodeGroup(false);
     nodeTest->UpdateDrawingCacheInfoAfterChildren();
     EXPECT_EQ(nodeTest->GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
 }
