@@ -2436,11 +2436,13 @@ HWTEST_F(RSRenderNodeTest, UpdateDrawingCacheInfoAfterChildrenTest001, TestSize.
 
     childNode->SetLastFrameUifirstFlag(MultiThreadCacheType::ARKTS_CARD);
     // ArkTsCard disable render group
+    nodeTest->SetForceDisableNodeGroup(true);
     nodeTest->UpdateDrawingCacheInfoAfterChildren();
     EXPECT_EQ(nodeTest->GetDrawingCacheType(), RSDrawingCacheType::DISABLED_CACHE);
 
     childNode->SetLastFrameUifirstFlag(MultiThreadCacheType::NONE);
     nodeTest->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    nodeTest->SetForceDisableNodeGroup(true);
     nodeTest->UpdateDrawingCacheInfoAfterChildren();
     EXPECT_EQ(nodeTest->GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
 }
