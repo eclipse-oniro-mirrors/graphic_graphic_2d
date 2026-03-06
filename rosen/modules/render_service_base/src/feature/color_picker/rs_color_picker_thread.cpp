@@ -56,7 +56,7 @@ bool RSColorPickerThread::PostTask(const std::function<void()>& task, bool limit
         return false;
     }
     if (!limited) {
-        handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::HIGH);
+        handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
         return true;
     }
 
@@ -79,7 +79,7 @@ bool RSColorPickerThread::PostTask(const std::function<void()>& task, bool limit
         return false;
     }
 
-    handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::HIGH);
+    handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     return true;
 }
 
