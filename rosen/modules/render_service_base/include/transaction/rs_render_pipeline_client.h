@@ -80,7 +80,7 @@ using UIExtensionCallback = std::function<void(std::shared_ptr<RSUIExtensionData
 using SelfDrawingNodeRectChangeCallback = std::function<void(std::shared_ptr<RSSelfDrawingNodeRectData>)>;
 using FirstFrameCommitCallback = std::function<void(uint64_t, int64_t)>;
 
-class RSRenderPipelineClient : public RSIRenderClient {
+class RSB_EXPORT RSRenderPipelineClient : public RSIRenderClient {
 public:
     RSRenderPipelineClient() = default;
     ~RSRenderPipelineClient() = default;

@@ -22,11 +22,22 @@
 #include "securec.h"
 #include "rs_trace.h"
 
+#ifdef ROSEN_OHOS
+#include "ashmem.h"
+#include <sys/mman.h>
+#include <unistd.h>
+#include "ipc_file_descriptor.h"
+#endif
+#include "parcel.h"
+#include "refbase.h"
+
 namespace OHOS::Rosen {
 // Define a static constant to represent the fixed length of HELPINFO_CMD
 static const size_t HELPINFO_CMD_FIXED_LENGTH = 30;
+#ifdef ROSEN_OHOS
 constexpr int32_t SHARE_MEM_ALLOC = 2;
 constexpr int32_t MAX_BUFFER_SIZE = 32 * 1024 * 1024;
+#endif
 
 RSDumpManager::RSDumpManager()
 {
@@ -158,6 +169,7 @@ void RSDumpManager::DumpHelpInfo(std::string &out)
     }
 }
 
+#ifdef ROSEN_OHOS
 bool RSDumpManager::WriteFileDescriptor(Parcel &parcel, int fd)
 {
     if (fd < 0) {
@@ -176,7 +188,7 @@ bool RSDumpManager::WriteFileDescriptor(Parcel &parcel, int fd)
     }
     return result;
 }
- 
+
 int RSDumpManager::ReadFileDescriptor(Parcel &parcel)
 {
     sptr<IPCFileDescriptor> descriptor = parcel.ReadObject<IPCFileDescriptor>();
@@ -191,7 +203,7 @@ int RSDumpManager::ReadFileDescriptor(Parcel &parcel)
     }
     return dup(fd);
 }
- 
+
 bool RSDumpManager::WriteAshmemDataToParcel(Parcel &parcel, size_t size, const char* dataPtr)
 {
 #ifdef ROSEN_OHOS
@@ -202,7 +214,7 @@ bool RSDumpManager::WriteAshmemDataToParcel(Parcel &parcel, size_t size, const c
         RS_LOGE("RSDumpManager::WriteAshmemDataToParcel failed fd=%{public}d invalid", fd);
         return false;
     }
- 
+
     int result = AshmemSetProt(fd, PROT_READ | PROT_WRITE);
     ROSEN_LOGI("AshmemSetProt:[%{public}d].", result);
     if (result < 0) {
@@ -215,23 +227,24 @@ bool RSDumpManager::WriteAshmemDataToParcel(Parcel &parcel, size_t size, const c
         RS_LOGE("WriteAshmemData map failed, errno:%{public}d", errno);
         return false;
     }
-    ROSEN_LOGI("mmap success");
- 
+    RS_LOGI("mmap success");
+
     if (memcpy_s(ptr, size, dataPtr, size) != EOK) {
         ::munmap(ptr, size);
         ::close(fd);
         RS_LOGE("WriteAshmemData memcpy_s error");
         return false;
     }
- 
+
     RS_LOGI("memcpy mmap success");
+
     if (!WriteFileDescriptor(parcel, fd)) {
         ::munmap(ptr, size);
         ::close(fd);
         RS_LOGE("WriteAshmemData WriteFileDescriptor error");
         return false;
     }
-    
+
     ::munmap(ptr, size);
     ::close(fd);
     return true;
@@ -239,7 +252,7 @@ bool RSDumpManager::WriteAshmemDataToParcel(Parcel &parcel, size_t size, const c
     return false;
 #endif
 }
- 
+
 char *RSDumpManager::ReadAshmemDataFromParcel(Parcel &parcel, int32_t size)
 {
     char *base = nullptr;
@@ -255,14 +268,14 @@ char *RSDumpManager::ReadAshmemDataFromParcel(Parcel &parcel, int32_t size)
         close(fd);
         return nullptr;
     }
- 
+
     void *ptr = ::mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
     if (ptr == MAP_FAILED) {
         RS_LOGE("RSDumpManager::ReadAshmemDataFromParcel mmap error");
         ::close(fd);
         return base;
     }
- 
+
     base = static_cast<char *>(malloc(size));
     if (base == nullptr) {
         RS_LOGE("RSDumpManager::ReadAshmemDataFromParcel malloc error");
@@ -276,12 +289,12 @@ char *RSDumpManager::ReadAshmemDataFromParcel(Parcel &parcel, int32_t size)
         base = nullptr;
         return base;
     }
- 
+
     RS_LOGI("RSDumpManager::ReadAshmemDataFromParcel success");
     ReleaseMemory(SHARE_MEM_ALLOC, ptr, &fd, size);
     return base;
 }
- 
+
 void RSDumpManager::ReleaseMemory(int32_t allocType, void *addr, void *context, uint32_t size)
 {
     if (allocType == SHARE_MEM_ALLOC) {
@@ -298,4 +311,34 @@ void RSDumpManager::ReleaseMemory(int32_t allocType, void *addr, void *context, 
         }
     }
 }
+#else
+bool RSDumpManager::WriteFileDescriptor(Parcel &parcel, int fd)
+{
+    RS_LOGI("RSDumpManager::WriteFileDescriptor not supported on non-OHOS platform");
+    return false;
+}
+
+int RSDumpManager::ReadFileDescriptor(Parcel &parcel)
+{
+    RS_LOGI("RSDumpManager::ReadFileDescriptor not supported on non-OHOS platform");
+    return -1;
+}
+
+bool RSDumpManager::WriteAshmemDataToParcel(Parcel &parcel, size_t size, const char* dataPtr)
+{
+    RS_LOGI("RSDumpManager::WriteAshmemDataToParcel not supported on non-OHOS platform");
+    return false;
+}
+
+char *RSDumpManager::ReadAshmemDataFromParcel(Parcel &parcel, int32_t size)
+{
+    RS_LOGI("RSDumpManager::ReadAshmemDataFromParcel not supported on non-OHOS platform");
+    return nullptr;
+}
+
+void RSDumpManager::ReleaseMemory(int32_t allocType, void *addr, void *context, uint32_t size)
+{
+    RS_LOGI("RSDumpManager::ReleaseMemory not supported on non-OHOS platform");
+}
+#endif
 }  // namespace OHOS::Rosen

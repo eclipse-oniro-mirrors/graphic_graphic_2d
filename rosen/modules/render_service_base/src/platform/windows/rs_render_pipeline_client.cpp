@@ -29,6 +29,10 @@ void RSRenderPipelineClient::ExecuteSynchronousTask(const std::shared_ptr<RSSync
 {
 }
 
+void RSRenderPipelineClient::RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app)
+{
+}
+
 bool RSRenderPipelineClient::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
 {
     return {};
@@ -44,6 +48,12 @@ std::shared_ptr<RSSurface> RSRenderPipelineClient::CreateNodeAndSurface(const RS
 {
     return std::make_shared<RSSurfaceWindows>(reinterpret_cast<OnRenderFunc>(config.additionalData));
 }
+
+std::shared_ptr<RSSurface> RSRenderPipelineClient::CreateRSSurface(const sptr<Surface> &surface)
+{
+    return std::make_shared<RSSurfaceWindows>(reinterpret_cast<OnRenderFunc>(0));
+}
+
 bool RSRenderPipelineClient::RegisterBufferAvailableListener(
     NodeId id, const BufferAvailableCallback &callback, bool isFromRenderThread)
 {
@@ -135,6 +145,14 @@ void RSRenderPipelineClient::TriggerSurfaceCaptureCallback(NodeId id, const RSSu
 {
 }
 
+void RSRenderPipelineClient::TriggerOnFinish(const FinishCallbackRet& ret) const
+{
+}
+
+void RSRenderPipelineClient::TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const
+{
+}
+
 bool RSRenderPipelineClient::TakeSurfaceCapture(NodeId id, std::shared_ptr<SurfaceCaptureCallback> callback,
     const RSSurfaceCaptureConfig& captureConfig, const RSSurfaceCaptureBlurParam& blurParam,
     const Drawing::Rect& specifiedAreaRect)
@@ -186,6 +204,11 @@ bool RSRenderPipelineClient::SetHwcNodeBounds(int64_t rsNodeId, float positionX,
 }
 
 int32_t RSRenderPipelineClient::SetFocusAppInfo(const FocusAppInfo& info)
+{
+    return 0;
+}
+
+int32_t RSRenderPipelineClient::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
 {
     return 0;
 }
