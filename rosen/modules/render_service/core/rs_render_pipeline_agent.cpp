@@ -170,7 +170,7 @@ ErrCode RSRenderPipelineAgent::CreateNode(const RSDisplayNodeConfig& displayNode
         success = false;
         return ERR_INVALID_VALUE;
     }
-    std::function<void()> registerNode = [renderPipeline = rsRenderPipeline_, nodeId, node, &displayNodeConfig]() {
+    std::function<void()> registerNode = [renderPipeline = rsRenderPipeline_, nodeId, node, displayNodeConfig]() {
         auto& context = renderPipeline->GetMainThread()->GetContext();
         auto& nodeMap = context.GetMutableNodeMap();
         nodeMap.RegisterRenderNode(node);

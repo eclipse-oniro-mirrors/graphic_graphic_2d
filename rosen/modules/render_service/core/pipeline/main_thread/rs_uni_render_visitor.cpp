@@ -345,18 +345,20 @@ bool RSUniRenderVisitor::IsWiredMirrorScreen(RSScreenRenderNode& node)
 
 void RSUniRenderVisitor::HandleWiredMirrorScreenColorGamut(RSScreenRenderNode& node)
 {
+    std::vector<ScreenColorGamut> mode = node.GetScreenProperty().GetScreenSupportedColorGamuts();
     if (!MultiScreenParam::IsMirrorDisplayCloseP3()) {
         std::shared_ptr<RSScreenRenderNode> mirrorNode = node.GetMirrorSource().lock();
         if (!mirrorNode) {
             return;
         }
-        std::vector<ScreenColorGamut> modes = node.GetScreenProperty().GetScreenSupportedColorGamuts();
         bool isSupportedDisplayP3 =
-            std::any_of(modes.begin(), modes.end(), [](const auto gamut) { return gamut == COLOR_GAMUT_DISPLAY_P3; });
+            std::any_of(mode.begin(), mode.end(), [](const auto gamut) { return gamut == COLOR_GAMUT_DISPLAY_P3; });
         if (isSupportedDisplayP3) {
             // wired mirror and mirror support P3, mirror gamut = main gamut
             node.SetColorSpace(mirrorNode->GetColorSpace());
         }
+    } else {
+        node.SelectBestGamut(mode);
     }
 
     ScreenColorGamut screenColorGamut = node.GetScreenProperty().GetScreenColorGamut();
@@ -3423,6 +3425,7 @@ void RSUniRenderVisitor::MarkBlurIntersectWithDRM(std::shared_ptr<RSRenderNode> 
 void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
     const RSRenderNode& rootNode, RSDirtyRegionManager& dirtyManager)
 {
+    auto rotationStatus = GetRotationStatus();
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     for (auto& child : rootNode.GetVisibleFilterChild()) {
         auto& filterNode = nodeMap.GetRenderNode<RSRenderNode>(child);
@@ -3439,6 +3442,8 @@ void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
         }
 
         RS_OPTIONAL_TRACE_NAME_FMT("UpdateFilterRegionInSkippedSurfaceNode node[%" PRIu64 "]", filterNode->GetId());
+        filterNode->CheckBlurFilterCacheNeedForceClearOrSave(
+            rotationStatus.rotationChanged, rotationStatus.rotationStatusChanged);
         RectI filterRect;
         filterNode->UpdateFilterRegionInSkippedSubTree(dirtyManager, rootNode, filterRect,
             prepareClipRect_, prepareFilterClipRect_);
@@ -3450,10 +3455,7 @@ void RSUniRenderVisitor::UpdateFilterRegionInSkippedSurfaceNode(
 void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
     const RSRenderNode& rootNode, RSDirtyRegionManager& dirtyManager)
 {
-    bool rotationChanged = curLogicalDisplayNode_ ?
-        curLogicalDisplayNode_->IsRotationChanged() || curLogicalDisplayNode_->IsLastRotationChanged() : false;
-    bool rotationStatusChanged = curLogicalDisplayNode_ ?
-        curLogicalDisplayNode_->GetPreRotationStatus() != curLogicalDisplayNode_->GetCurRotationStatus() : false;
+    auto rotationStatus = GetRotationStatus();
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     for (auto& child : rootNode.GetVisibleFilterChild()) {
         auto& filterNode = nodeMap.GetRenderNode<RSRenderNode>(child);
@@ -3478,7 +3480,8 @@ void RSUniRenderVisitor::CheckFilterNodeInSkippedSubTreeNeedClearCache(
             RSHpaeManager::GetInstance().RegisterHpaeCallback(*filterNode, curScreenNode_);
         }
 #endif
-        filterNode->CheckBlurFilterCacheNeedForceClearOrSave(rotationChanged, rotationStatusChanged);
+        filterNode->CheckBlurFilterCacheNeedForceClearOrSave(
+            rotationStatus.rotationChanged, rotationStatus.rotationStatusChanged);
         filterNode->MarkClearFilterCacheIfEffectChildrenChanged();
         if (filterNode->GetRenderProperties().GetMaterialFilter()) {
             filterNode->UpdateFilterCacheWithBelowDirty(
@@ -3521,6 +3524,7 @@ void RSUniRenderVisitor::UpdateVisibleEffectChildrenStatus(const RSRenderNode& r
 void RSUniRenderVisitor::CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(
     const RSRenderNode& rootNode, RSDirtyRegionManager& dirtyManager)
 {
+    auto rotationStatus = GetRotationStatus();
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     // calculate visibleEffectChild oldDirtyInSurface for effectNode
     for (auto& child : rootNode.GetVisibleEffectChild()) {
@@ -3550,6 +3554,8 @@ void RSUniRenderVisitor::CheckFilterNodeInOccludedSkippedSubTreeNeedClearCache(
         if (effectNode == nullptr) {
             continue;
         }
+        effectNode->CheckBlurFilterCacheNeedForceClearOrSave(
+            rotationStatus.rotationChanged, rotationStatus.rotationStatusChanged);
         effectNode->UpdateChildHasVisibleEffectWithoutEmptyRect();
         effectNode->MarkClearFilterCacheIfEffectChildrenChanged();
         RectI filterRect;
@@ -4152,6 +4158,15 @@ RSSubTreePrepareController::~RSSubTreePrepareController()
     if (condition_) {
         isSubTreeForcePrepare_ = false;
     }
+}
+
+RSUniRenderVisitor::RotationStatus RSUniRenderVisitor::GetRotationStatus() const
+{
+    bool rotationChanged = curLogicalDisplayNode_ ?
+        curLogicalDisplayNode_->IsRotationChanged() || curLogicalDisplayNode_->IsLastRotationChanged() : false;
+    bool rotationStatusChanged = curLogicalDisplayNode_ ?
+        curLogicalDisplayNode_->GetPreRotationStatus() != curLogicalDisplayNode_->GetCurRotationStatus() : false;
+    return {rotationChanged, rotationStatusChanged};
 }
 } // namespace Rosen
 } // namespace OHOS
