@@ -203,8 +203,8 @@ private:
     bool isSupportedPresentTimestamp_ = false;
     GraphicPresentTimestamp presentTimestamp_ = {GRAPHIC_DISPLAY_PTS_UNSUPPORTED, 0};
     sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
-    sptr<SurfaceBuffer> sbuffer_ = nullptr;
-    sptr<SurfaceBuffer> pbuffer_ = nullptr;
+    wptr<SurfaceBuffer> sbuffer_ = nullptr;
+    wptr<SurfaceBuffer> pbuffer_ = nullptr;
     bool preMulti_ = false;
     bool needBilinearInterpolation_ = false;
     LayerMask layerMask_ = LayerMask::LAYER_MASK_NORMAL;

@@ -806,7 +806,12 @@ void RSSurfaceLayer::SetBuffer(const sptr<SurfaceBuffer>& sbuffer)
 
 sptr<SurfaceBuffer> RSSurfaceLayer::GetBuffer() const
 {
-    return sbuffer_;
+    auto sbuffer = sbuffer_.promote();
+    if (sbuffer == nullptr) {
+        ROSEN_LOGE("%{public}s layer id: %{public}" PRIu64 "buffer is released", __func__, rsLayerId_);
+        return nullptr;
+    }
+    return sbuffer;
 }
 
 void RSSurfaceLayer::SetPreBuffer(const sptr<SurfaceBuffer>& buffer)
@@ -820,7 +825,12 @@ void RSSurfaceLayer::SetPreBuffer(const sptr<SurfaceBuffer>& buffer)
 
 sptr<SurfaceBuffer> RSSurfaceLayer::GetPreBuffer() const
 {
-    return pbuffer_;
+    auto pbuffer = pbuffer_.promote();
+    if (pbuffer == nullptr) {
+        ROSEN_LOGE("%{public}s layer id: %{public}" PRIu64 "buffer is released", __func__, rsLayerId_);
+        return nullptr;
+    }
+    return pbuffer;
 }
 
 void RSSurfaceLayer::SetAcquireFence(const sptr<SyncFence>& acquireFence)

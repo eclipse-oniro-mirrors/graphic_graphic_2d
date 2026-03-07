@@ -195,6 +195,11 @@ void RSVsyncManagerAgent::VsyncRSDistributorHandleTouchEvent(int32_t touchStatus
     rsVsyncDistributor_->HandleTouchEvent(touchStatus, touchCnt);
 }
 
+bool RSVsyncManagerAgent::IsVsyncRSDistributorExist()
+{
+    return rsVsyncDistributor_ != nullptr;
+}
+
 bool RSVsyncManagerAgent::IsVsyncAppDistributorExist()
 {
     return appVSyncDistributor_ != nullptr;

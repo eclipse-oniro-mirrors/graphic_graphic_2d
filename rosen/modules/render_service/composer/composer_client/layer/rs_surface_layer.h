@@ -208,8 +208,8 @@ private:
     GraphicPresentTimestamp presentTimestamp_ = {GRAPHIC_DISPLAY_PTS_UNSUPPORTED, 0};
     sptr<IConsumerSurface> cSurface_ = nullptr;
     sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
-    sptr<SurfaceBuffer> sbuffer_ = nullptr;
-    sptr<SurfaceBuffer> pbuffer_ = nullptr;
+    wptr<SurfaceBuffer> sbuffer_ = nullptr;
+    wptr<SurfaceBuffer> pbuffer_ = nullptr;
     mutable std::mutex ownerCountMutex_;
     std::map<uint64_t, std::shared_ptr<RSSurfaceHandler::BufferOwnerCount>> bufferOwnerCounts_;
     std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount_;

@@ -104,7 +104,7 @@ public:
 private:
     struct PendingReleaseBufferInfo {
         sptr<IConsumerSurface> consumer_;
-        sptr<SurfaceBuffer> buffer_ = nullptr;
+        wptr<SurfaceBuffer> buffer_ = nullptr;
         std::vector<sptr<SyncFence>> mergedFences_;
     };
 

@@ -244,15 +244,16 @@ void RSBufferManager::ReleaseBufferById(uint64_t bufferId)
     }
     auto info = iter->second;
     auto consumer = info.consumer_;
-    if (consumer == nullptr || info.buffer_ == nullptr) {
-        RS_LOGE("RSBufferManager::ReleaseBufferById consumer or info.buffer_ is null");
+    auto buffer = info.buffer_.promote();
+    if (consumer == nullptr || buffer == nullptr) {
+        RS_LOGE("RSBufferManager::ReleaseBufferById consumer or buffer is null");
         return;
     }
 
     auto mergedFence = TryMergeFence(info.mergedFences_);
     RS_OPTIONAL_TRACE_NAME_FMT("RSBufferManager::ReleaseBufferById bufferId %" PRIu64 " Fence %d",
-        info.buffer_->GetBufferId(), mergedFence->Get());
-    consumer->ReleaseBuffer(info.buffer_, mergedFence);
+        buffer->GetBufferId(), mergedFence->Get());
+    consumer->ReleaseBuffer(buffer, mergedFence);
     pendingReleaseBuffers_.erase(iter);
 }
 
@@ -281,11 +282,11 @@ void RSBufferManager::DumpPendingReleaseBuffers(std::string& output)
             }
 
             // Buffer info
-            if (info.buffer_) {
+            if (auto buffer = info.buffer_.promote()) {
                 oss << "valid\t\t";
-                oss << info.buffer_->GetWidth() << "\t";
-                oss << info.buffer_->GetHeight() << "\t";
-                oss << info.buffer_->GetSeqNum() << "\t";
+                oss << buffer->GetWidth() << "\t";
+                oss << buffer->GetHeight() << "\t";
+                oss << buffer->GetSeqNum() << "\t";
             } else {
                 oss << "null\t\t";
                 oss << "-\t";

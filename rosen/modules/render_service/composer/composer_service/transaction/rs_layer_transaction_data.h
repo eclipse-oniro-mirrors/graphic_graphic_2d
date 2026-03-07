@@ -141,8 +141,6 @@ private:
     uint64_t index_ = 0;
     ComposerInfo composerInfo_;
     mutable size_t marshallingIndex_ = 0;
-    int32_t parentPid_ = -1;
-    uint32_t parcelNumber_ = 0;
     mutable std::mutex rsLayerParcelMutex_;
     friend class RSLayerTransactionHandler;
 };

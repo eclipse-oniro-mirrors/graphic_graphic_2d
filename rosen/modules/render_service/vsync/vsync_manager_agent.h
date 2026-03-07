@@ -50,6 +50,7 @@ public:
     sptr<VSyncConnection> CreateAppVsyncConnection(std::string name,
         const sptr<VSyncIConnectionToken>& token, uint64_t id, uint64_t windowNodeId);
     void VsyncRSDistributorHandleTouchEvent(int32_t touchStatus, int32_t touchCnt);
+    bool IsVsyncRSDistributorExist();
     bool IsVsyncAppDistributorExist();
 private:
     sptr<VSyncGenerator> vsyncGenerator_ = nullptr;

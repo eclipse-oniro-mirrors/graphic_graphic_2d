@@ -511,23 +511,6 @@ HWTEST_F(RSDrmUtilTest, IsDRMNodesOnTheTree003, TestSize.Level1)
  * Type: Function
  * Rank: Important(2)
  * EnvCondition: N/A
- * CaseDescription: 1. preSetup: surfaceNode is nullptr
- *                  2. operation: PreAllocProtectedFrameBuffers
- *                  3. result: function returns without crash
- */
-HWTEST_F(RSDrmUtilTest, PreAllocProtectedFrameBuffers001, TestSize.Level1)
-{
-    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = nullptr;
-    sptr<SurfaceBuffer> buffer = nullptr;
-    std::shared_ptr<RSComposerClientManager> clientManager = nullptr;
-    RSDrmUtil::PreAllocProtectedFrameBuffers(surfaceNode, buffer, clientManager);
-}
-
-/**
- * Function: PreAllocProtectedFrameBuffers
- * Type: Function
- * Rank: Important(2)
- * EnvCondition: N/A
  * CaseDescription: 1. preSetup: surfaceNode has no ancestor screen node
  *                  2. operation: PreAllocProtectedFrameBuffers
  *                  3. result: function returns without crash

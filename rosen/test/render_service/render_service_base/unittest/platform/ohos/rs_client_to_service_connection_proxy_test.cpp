@@ -1682,5 +1682,21 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTes
         EXPECT_EQ(result, "");
     }
 }
+
+/**
+ * @tc.name: ReportGameStateData Test
+ * @tc.desc: ReportGameStateData Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, ReportGameStateDataTest, TestSize.Level1)
+{
+    GameStateData info;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    uint32_t gameEventCode = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE);
+    EXPECT_CALL(*remoteObject, SendRequest(gameEventCode, _, _, _)).Times(1);
+    mockProxy->ReportGameStateData(info);
+}
 } // namespace Rosen
 } // namespace OHOS

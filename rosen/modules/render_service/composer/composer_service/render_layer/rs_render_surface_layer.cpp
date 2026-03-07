@@ -533,7 +533,12 @@ void RSRenderSurfaceLayer::SetBuffer(const sptr<SurfaceBuffer>& sbuffer)
 
 sptr<SurfaceBuffer> RSRenderSurfaceLayer::GetBuffer() const
 {
-    return sbuffer_;
+    auto sbuffer = sbuffer_.promote();
+    if (sbuffer == nullptr) {
+        RS_LOGE("%{public}s layer id: %{public}" PRIu64 "buffer is released", __func__, rsLayerId_);
+        return nullptr;
+    }
+    return sbuffer;
 }
 
 void RSRenderSurfaceLayer::SetPreBuffer(const sptr<SurfaceBuffer>& buffer)
@@ -543,7 +548,12 @@ void RSRenderSurfaceLayer::SetPreBuffer(const sptr<SurfaceBuffer>& buffer)
 
 sptr<SurfaceBuffer> RSRenderSurfaceLayer::GetPreBuffer() const
 {
-    return pbuffer_;
+    auto pbuffer = pbuffer_.promote();
+    if (pbuffer == nullptr) {
+        RS_LOGE("%{public}s layer id: %{public}" PRIu64 "buffer is released", __func__, rsLayerId_);
+        return nullptr;
+    }
+    return pbuffer;
 }
 
 void RSRenderSurfaceLayer::SetAcquireFence(const sptr<SyncFence>& acquireFence)
@@ -655,7 +665,7 @@ void RSRenderSurfaceLayer::CopyLayerInfo(const std::shared_ptr<RSLayer>& rsLayer
     tunnelHandleChange_ = rsLayer->GetTunnelHandleChange();
     surfaceUniqueId_ = rsLayer->GetSurfaceUniqueId();
     sbuffer_ = rsLayer->GetBuffer();
-    pbuffer_= rsLayer->GetPreBuffer();
+    pbuffer_ = rsLayer->GetPreBuffer();
     acquireFence_ = rsLayer->GetAcquireFence();
     preMulti_ = rsLayer->IsPreMulti();
     sdrNit_ = rsLayer->GetSdrNit();

@@ -58,10 +58,6 @@ public:
     void FrameDurationBegin();
     void FrameDurationEnd();
 
-    // bool GetIsReduceBySystemAnimatedScenes() const   // todo chuliangliang  change by jianghongxi
-    // {
-    //     return isReduceBySystemAnimatedScenes_;
-    // }
     void SetIsReduceBySystemAnimatedScenes(bool isReduceBySystemAnimatedScenes);
     void Init();
     void ResetFrameValues(uint32_t rsRefreshRate);
