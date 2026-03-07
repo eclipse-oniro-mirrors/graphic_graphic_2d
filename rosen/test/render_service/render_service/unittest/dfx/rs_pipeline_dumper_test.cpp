@@ -792,12 +792,12 @@ HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_ValidPid, TestSize.Level1)
 }
 
 /*
- * @tc.name: DumpExistPidMem_InvalidPid
- * @tc.desc: Test DumpExistPidMem with invalid pid
+ * @tc.name: DumpExistPidMem_NonNumeric
+ * @tc.desc: Test DumpExistPidMem with non-numeric pid
  * @tc.type: FUNC
  * @tc.require: AR000GSH6G
  */
-HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_InvalidPid, TestSize.Level1)
+HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_NonNumeric, TestSize.Level1)
 {
     // Given: A dumper instance
     ASSERT_NE(dumper_, nullptr);
@@ -849,6 +849,837 @@ HWTEST_F(RSPipelineDumperTest, DumpMem_EmptyPid, TestSize.Level1)
 
     // Then: Should execute without crash
     EXPECT_FALSE(out.empty());
+}
+
+/*
+ * @tc.name: Constructor_WithValidHandler
+ * @tc.desc: Test constructor with valid event handler
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, Constructor_WithValidHandler, TestSize.Level1)
+{
+    // Given: A valid event handler
+    std::shared_ptr<AppExecFwk::EventRunner> runner = AppExecFwk::EventRunner::Create(true);
+    std::shared_ptr<AppExecFwk::EventHandler> handler = std::make_shared<AppExecFwk::EventHandler>(runner);
+    runner->Run();
+
+    // When: Create dumper with handler
+    auto dumperWithHandler = std::make_unique<RSPipelineDumper>(handler);
+
+    // Then: Should be created successfully
+    ASSERT_NE(dumperWithHandler, nullptr);
+}
+
+/*
+ * @tc.name: RegisterFpsFuncs_NonUniRender
+ * @tc.desc: Test RegisterFpsFuncs when not in uni render mode
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterFpsFuncs_NonUniRender, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Initialize dump
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // Then: FPS commands should be registered
+    std::unordered_set<std::u16string> argSets = { u"fpsInfo" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterRSGfxFuncs_WithLogFlagArgs
+ * @tc.desc: Test RegisterRSGfxFuncs with log flag arguments
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterRSGfxFuncs_WithLogFlagArgs, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute rsLogFlag command with argument
+    std::unordered_set<std::u16string> argSets = { u"rsLogFlag", u"DEBUG" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle the command
+    EXPECT_TRUE(out.find("Successed") != std::string::npos || 
+                out.find("Failed") != std::string::npos ||
+                !out.empty());
+}
+
+/*
+ * @tc.name: RegisterRSGfxFuncs_WithoutArgs
+ * @tc.desc: Test RegisterRSGfxFuncs without additional arguments
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterRSGfxFuncs_WithoutArgs, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute rsLogFlag without argument
+    std::unordered_set<std::u16string> argSets = { u"rsLogFlag" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterRSTreeFuncs_WithSurfaceNodeId
+ * @tc.desc: Test RegisterRSTreeFuncs with surface node id
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterRSTreeFuncs_WithSurfaceNodeId, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute surfacenode command with id
+    std::unordered_set<std::u16string> argSets = { u"surfacenode", u"12345" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterRSTreeFuncs_WithoutNodeId
+ * @tc.desc: Test RegisterRSTreeFuncs without node id
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterRSTreeFuncs_WithoutNodeId, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute surfacenode command without id
+    std::unordered_set<std::u16string> argSets = { u"surfacenode" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterBufferFuncs_UniRender
+ * @tc.desc: Test RegisterBufferFuncs in uni render mode
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterBufferFuncs_UniRender, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute buffer command
+    std::unordered_set<std::u16string> argSets = { u"buffer" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterSurfaceInfoFuncs_UniRender
+ * @tc.desc: Test RegisterSurfaceInfoFuncs in uni render mode
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, RegisterSurfaceInfoFuncs_UniRender, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute surface command
+    std::unordered_set<std::u16string> argSets = { u"surface" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpExistPidMem_InvalidPid
+ * @tc.desc: Test DumpExistPidMem with invalid pid
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_InvalidPid, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute existPidMem with invalid pid
+    std::unordered_set<std::u16string> argSets = { u"dumpExistPidMem", u"invalid" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpExistPidMem_NumericPid
+ * @tc.desc: Test DumpExistPidMem with numeric pid value
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_NumericPid, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute existPidMem with valid pid
+    std::unordered_set<std::u16string> argSets = { u"dumpExistPidMem", u"12345" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: WindowHitchsDump_WithoutLayerName
+ * @tc.desc: Test WindowHitchsDump without layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, WindowHitchsDump_WithoutLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute hitchs without layer name
+    std::unordered_set<std::u16string> argSets = { u"hitchs" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: WindowHitchsDump_WithLayerName
+ * @tc.desc: Test WindowHitchsDump with layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, WindowHitchsDump_WithLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute hitchs with layer name
+    std::unordered_set<std::u16string> argSets = { u"hitchs", u"testLayer" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpProcess_WithoutLayerName
+ * @tc.desc: Test FPSDumpProcess without layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, FPSDumpProcess_WithoutLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute fpsInfo without layer name
+    std::unordered_set<std::u16string> argSets = { u"fpsInfo" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpProcess_WithLayerName
+ * @tc.desc: Test FPSDumpProcess with layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, FPSDumpProcess_WithLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute fpsInfo with layer name
+    std::unordered_set<std::u16string> argSets = { u"fpsInfo", u"testLayer" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpClearProcess_WithoutLayerName
+ * @tc.desc: Test FPSDumpClearProcess without layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, FPSDumpClearProcess_WithoutLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute fpsClear without layer name
+    std::unordered_set<std::u16string> argSets = { u"fpsClear" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpClearProcess_WithLayerName
+ * @tc.desc: Test FPSDumpClearProcess with layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, FPSDumpClearProcess_WithLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute fpsClear with layer name
+    std::unordered_set<std::u16string> argSets = { u"fpsClear", u"testLayer" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: ScheduleTask_WithHandlerAndTask
+ * @tc.desc: Test ScheduleTask with valid handler and task
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, ScheduleTask_WithHandlerAndTask, TestSize.Level1)
+{
+    // Given: A dumper with valid handler
+    std::shared_ptr<AppExecFwk::EventRunner> runner = AppExecFwk::EventRunner::Create(true);
+    std::shared_ptr<AppExecFwk::EventHandler> handler = std::make_shared<AppExecFwk::EventHandler>(runner);
+    runner->Run();
+
+    auto dumperWithHandler = std::make_unique<RSPipelineDumper>(handler);
+
+    // When: Schedule a task
+    bool taskExecuted = false;
+    dumperWithHandler->ScheduleTask([&taskExecuted]() { taskExecuted = true; });
+
+    // Then: Task should execute
+    // Note: Due to async nature, we just verify it doesn't crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpMem_NonUniRender
+ * @tc.desc: Test DumpMem when not in uni render mode
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpMem_NonUniRender, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute dumpMem command
+    std::unordered_set<std::u16string> argSets = { u"dumpMem", u"123" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpMem_WithMultipleArgs
+ * @tc.desc: Test DumpMem with multiple arguments
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpMem_WithMultipleArgs, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute dumpMem with multiple args
+    std::unordered_set<std::u16string> argSets = { u"dumpMem", u"123", u"456", u"789" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpNodesNotOnTheTree_Command
+ * @tc.desc: Test DumpNodesNotOnTheTree via registered command
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpNodesNotOnTheTree_Command, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute nodeNotOnTree command
+    std::unordered_set<std::u16string> argSets = { u"nodeNotOnTree" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+
+/*
+ * @tc.name: DumpRenderServiceTree_Command
+ * @tc.desc: Test DumpRenderServiceTree via registered command
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpRenderServiceTree_Command, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute RSTree command
+    std::unordered_set<std::u16string> argSets = { u"RSTree" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+
+/*
+ * @tc.name: DumpRenderServiceTree_MultiTrees
+ * @tc.desc: Test DumpRenderServiceTree with multi trees
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpRenderServiceTree_MultiTrees, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute MultiRSTrees command
+    std::unordered_set<std::u16string> argSets = { u"MultiRSTrees" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+
+/*
+ * @tc.name: DumpAllNodesMemSize_Command
+ * @tc.desc: Test DumpAllNodesMemSize via registered command
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpAllNodesMemSize_Command, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute allSurfacesMem command
+    std::unordered_set<std::u16string> argSets = { u"allSurfacesMem" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+
+/*
+ * @tc.name: DumpRSEvenParam_Command
+ * @tc.desc: Test DumpRSEvenParam via registered command
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpRSEvenParam_Command, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute EventParamList command
+    std::unordered_set<std::u16string> argSets = { u"EventParamList" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+
+/*
+ * @tc.name: DumpJankStatsRs_Command
+ * @tc.desc: Test DumpJankStatsRs via registered command
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpJankStatsRs_Command, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute flushJankStatsRs command
+    std::unordered_set<std::u16string> argSets = { u"flushJankStatsRs" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+
+#ifdef RS_ENABLE_VK
+/*
+ * @tc.name: DumpVkTextureLimit_Command
+ * @tc.desc: Test DumpVkTextureLimit via registered command
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpVkTextureLimit_Command, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute vktextureLimit command
+    std::unordered_set<std::u16string> argSets = { u"vktextureLimit" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should execute without crash
+    EXPECT_FALSE(out.empty());
+}
+#endif
+
+/*
+ * @tc.name: DumpSurfaceNode_InvalidId
+ * @tc.desc: Test DumpSurfaceNode with invalid node id
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpSurfaceNode_InvalidId, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute surfacenode command with invalid id
+    std::unordered_set<std::u16string> argSets = { u"surfacenode", u"0" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpSurfaceNode_LargeId
+ * @tc.desc: Test DumpSurfaceNode with large node id
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpSurfaceNode_LargeId, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RenderPipelineDumpInit(dumpManager_);
+
+    // When: Execute surfacenode command with large id
+    std::unordered_set<std::u16string> argSets = { u"surfacenode", u"999999999999" };
+    std::string out;
+    dumpManager_->CmdExec(argSets, out, nullptr);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpNodesNotOnTheTree_DirectCall
+ * @tc.desc: Direct call DumpNodesNotOnTheTree function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpNodesNotOnTheTree_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpNodesNotOnTheTree
+    std::string dumpString;
+    dumper_->DumpNodesNotOnTheTree(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+/*
+ * @tc.name: DumpRenderServiceTree_DirectCall
+ * @tc.desc: Direct call DumpRenderServiceTree function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpRenderServiceTree_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpRenderServiceTree with default parameter
+    std::string dumpString;
+    dumper_->DumpRenderServiceTree(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+/*
+ * @tc.name: DumpRenderServiceTree_ForceDump
+ * @tc.desc: Direct call DumpRenderServiceTree with forceDumpSingleFrame=true
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpRenderServiceTree_ForceDump, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpRenderServiceTree with forceDumpSingleFrame=true
+    std::string dumpString;
+    dumper_->DumpRenderServiceTree(dumpString, true);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+/*
+ * @tc.name: DumpAllNodesMemSize_DirectCall
+ * @tc.desc: Direct call DumpAllNodesMemSize function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpAllNodesMemSize_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpAllNodesMemSize
+    std::string dumpString;
+    dumper_->DumpAllNodesMemSize(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+/*
+ * @tc.name: DumpRSEvenParam_DirectCall
+ * @tc.desc: Direct call DumpRSEvenParam function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpRSEvenParam_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpRSEvenParam
+    std::string dumpString;
+    dumper_->DumpRSEvenParam(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+#ifdef RS_ENABLE_VK
+/*
+ * @tc.name: DumpVkTextureLimit_DirectCall
+ * @tc.desc: Direct call DumpVkTextureLimit function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpVkTextureLimit_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpVkTextureLimit
+    std::string dumpString;
+    dumper_->DumpVkTextureLimit(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+#endif
+
+/*
+ * @tc.name: DumpJankStatsRs_DirectCall
+ * @tc.desc: Direct call DumpJankStatsRs function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpJankStatsRs_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpJankStatsRs
+    std::string dumpString;
+    dumper_->DumpJankStatsRs(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+/*
+ * @tc.name: DumpSurfaceNode_DirectCall
+ * @tc.desc: Direct call DumpSurfaceNode function with valid id
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpSurfaceNode_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpSurfaceNode with node id 0
+    std::string dumpString;
+    NodeId testId = 0;
+    dumper_->DumpSurfaceNode(dumpString, testId);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpExistPidMem_DirectCall_Valid
+ * @tc.desc: Direct call DumpExistPidMem function with valid pid
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_DirectCall_Valid, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpExistPidMem with valid arguments
+    std::unordered_set<std::u16string> argSets = { u"12345" };
+    std::string dumpString;
+    dumper_->DumpExistPidMem(argSets, dumpString);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpExistPidMem_DirectCall_Empty
+ * @tc.desc: Direct call DumpExistPidMem function with empty args
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpExistPidMem_DirectCall_Empty, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpExistPidMem with empty args
+    std::unordered_set<std::u16string> argSets;
+    std::string dumpString;
+    dumper_->DumpExistPidMem(argSets, dumpString);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpMem_DirectCall_Valid
+ * @tc.desc: Direct call DumpMem function with valid pid
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpMem_DirectCall_Valid, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpMem with valid pid
+    std::unordered_set<std::u16string> argSets = { u"dumpMem", u"12345" };
+    std::string dumpString;
+    dumper_->DumpMem(argSets, dumpString);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpMem_DirectCall_Empty
+ * @tc.desc: Direct call DumpMem function with empty args
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSPipelineDumperTest, DumpMem_DirectCall_Empty, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpMem with empty args
+    std::unordered_set<std::u16string> argSets;
+    std::string dumpString;
+    dumper_->DumpMem(argSets, dumpString);
+
+    // Then: Should execute without crash
+    SUCCEED();
 }
 
 } // namespace OHOS::Rosen

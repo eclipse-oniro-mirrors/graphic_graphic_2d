@@ -135,7 +135,7 @@ public:
         NodeId id, pid_t pid, sptr<RSISurfaceOcclusionChangeCallback> callback, std::vector<float>& partitionPoints);
     int32_t UnRegisterSurfaceOcclusionChangeCallback(NodeId id);
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
-        std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false);  
+        std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false);
     ErrCode GetMemoryGraphic(int pid, MemoryGraphic& memoryGraphic);
     void NotifyPackageEvent(const std::vector<std::string>& packageList);
     void HgmForceUpdateTask(bool flag, const std::string& fromWhom);

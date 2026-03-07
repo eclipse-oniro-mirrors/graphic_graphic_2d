@@ -233,7 +233,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
                 break;
             }
             std::vector<PixelMapInfo> pixelMapInfoVector;
-            int32_t repCode;
+            int32_t repCode = ERR_OK;
             if (GetPixelMapByProcessId(pixelMapInfoVector, static_cast<pid_t>(pid), repCode) != ERR_OK ||
                 !reply.WriteInt32(repCode)) {
                 RS_LOGE("RSServiceToRenderStub::GET_PIXELMAP_BY_PROCESSID Write repCode failed!");
@@ -331,11 +331,13 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             if (!data.ReadString16Vector(&args)) {
                 RS_LOGE("RSRenderServiceStub::DFX_DUMP Read args failed!");
                 ret = ERR_INVALID_DATA;
+                break;
             }
             auto remoteObject = data.ReadRemoteObject();
             if (!remoteObject) {
                 RS_LOGE("RSRenderServiceStub::DFX_DUMP Read Object failed!");
                 ret = ERR_NULL_OBJECT;
+                break;
             }
             std::unordered_set<std::u16string> argSets;
             for (decltype(args.size()) index = 0; index < args.size(); ++index) {
@@ -401,7 +403,7 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED): {
             bool enabled {false};
-            if(!data.ReadBool(enabled)) {
+            if (!data.ReadBool(enabled)) {
                 RS_LOGE("RSServiceToRenderStub::SET_BEHIND_WINDOW_FILTER_ENABLED Read enabled failed");
                 ret = ERR_INVALID_DATA;
                 break;

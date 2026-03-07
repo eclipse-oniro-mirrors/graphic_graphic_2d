@@ -17,6 +17,7 @@
 #include "gtest/gtest.h"
 
 #include "common/rs_common_def.h"
+#include "composer/composer_client/pipeline/rs_composer_client_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_processor_factory.h"
@@ -503,5 +504,175 @@ HWTEST_F(RSDrmUtilTest, IsDRMNodesOnTheTree003, TestSize.Level1)
     EXPECT_FALSE(RSDrmUtil::IsDRMNodesOnTheTree());
     RSDrmUtil::ClearDrmNodes();
     RSMainThread::Instance()->GetContext().GetMutableNodeMap().UnregisterRenderNode(surfaceNode->GetId());
+}
+
+/**
+ * Function: PreAllocProtectedFrameBuffers
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode is nullptr
+ *                  2. operation: PreAllocProtectedFrameBuffers
+ *                  3. result: function returns without crash
+ */
+HWTEST_F(RSDrmUtilTest, PreAllocProtectedFrameBuffers001, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = nullptr;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    std::shared_ptr<RSComposerClientManager> clientManager = nullptr;
+    RSDrmUtil::PreAllocProtectedFrameBuffers(surfaceNode, buffer, clientManager);
+}
+
+/**
+ * Function: PreAllocProtectedFrameBuffers
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode has no ancestor screen node
+ *                  2. operation: PreAllocProtectedFrameBuffers
+ *                  3. result: function returns without crash
+ */
+HWTEST_F(RSDrmUtilTest, PreAllocProtectedFrameBuffers002, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    sptr<SurfaceBuffer> buffer = nullptr;
+    std::shared_ptr<RSComposerClientManager> clientManager = nullptr;
+    RSDrmUtil::PreAllocProtectedFrameBuffers(surfaceNode, buffer, clientManager);
+}
+
+/**
+ * Function: PreAllocProtectedFrameBuffers
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode has screen node, clientManager is nullptr
+ *                  2. operation: PreAllocProtectedFrameBuffers
+ *                  3. result: AddScreenHasProtectedLayerSet is called
+ */
+HWTEST_F(RSDrmUtilTest, PreAllocProtectedFrameBuffers003, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    
+    NodeId id = 0;
+    ScreenId screenId = 0;
+    auto rsContext = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    ASSERT_NE(screenNode, nullptr);
+    
+    surfaceNode->ancestorScreenNode_ = screenNode;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    std::shared_ptr<RSComposerClientManager> clientManager = nullptr;
+    RSDrmUtil::PreAllocProtectedFrameBuffers(surfaceNode, buffer, clientManager);
+}
+
+/**
+ * Function: PreAllocProtectedFrameBuffers
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode has screen node, clientManager is valid
+ *                  2. operation: PreAllocProtectedFrameBuffers
+ *                  3. result: AddScreenHasProtectedLayerSet and clientManager->PreAllocProtectedFrameBuffers are called
+ */
+HWTEST_F(RSDrmUtilTest, PreAllocProtectedFrameBuffers004, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    
+    NodeId id = 0;
+    ScreenId screenId = 0;
+    auto rsContext = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    ASSERT_NE(screenNode, nullptr);
+    
+    surfaceNode->ancestorScreenNode_ = screenNode;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    auto clientManager = std::make_shared<RSComposerClientManager>();
+    RSDrmUtil::PreAllocProtectedFrameBuffers(surfaceNode, buffer, clientManager);
+}
+
+/**
+ * Function: PreAllocProtectedFrameBuffers
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode has screen node, buffer is valid, clientManager is valid
+ *                  2. operation: PreAllocProtectedFrameBuffers
+ *                  3. result: AddScreenHasProtectedLayerSet and clientManager->PreAllocProtectedFrameBuffers are called
+ */
+HWTEST_F(RSDrmUtilTest, PreAllocProtectedFrameBuffers005, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    
+    NodeId id = 0;
+    ScreenId screenId = 0;
+    auto rsContext = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    ASSERT_NE(screenNode, nullptr);
+    
+    node->ancestorScreenNode_ = screenNode;
+
+    auto clientManager = std::make_shared<RSComposerClientManager>();
+    RSDrmUtil::PreAllocProtectedFrameBuffers(node, node->GetRSSurfaceHandler()->GetBuffer(), clientManager);
+}
+
+/**
+ * Function: DealWithDRMNodes
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode, buffer, clientManager are valid
+ *                  2. operation: DealWithDRMNodes
+ *                  3. result: CollectDrmNodes and PreAllocProtectedFrameBuffers are called
+ */
+HWTEST_F(RSDrmUtilTest, DealWithDRMNodes001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    
+    sptr<SurfaceBuffer> buffer = nullptr;
+    auto clientManager = std::make_shared<RSComposerClientManager>();
+    RSDrmUtil::DealWithDRMNodes(surfaceNode, buffer, clientManager);
+    RSDrmUtil::ClearDrmNodes();
+}
+
+/**
+ * Function: DealWithDRMNodes
+ * Type: Function
+ * Rank: Important(2)
+ * EnvCondition: N/A
+ * CaseDescription: 1. preSetup: surfaceNode has screen node, buffer, clientManager are valid
+ *                  2. operation: DealWithDRMNodes
+ *                  3. result: CollectDrmNodes and PreAllocProtectedFrameBuffers are called
+ */
+HWTEST_F(RSDrmUtilTest, DealWithDRMNodes002, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig surfaceConfig;
+    surfaceConfig.id = 1;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceConfig);
+    ASSERT_NE(surfaceNode, nullptr);
+    
+    NodeId id = 0;
+    ScreenId screenId = 0;
+    auto rsContext = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    ASSERT_NE(screenNode, nullptr);
+    
+    surfaceNode->ancestorScreenNode_ = screenNode;
+    
+    sptr<SurfaceBuffer> buffer = nullptr;
+    auto clientManager = std::make_shared<RSComposerClientManager>();
+    RSDrmUtil::DealWithDRMNodes(surfaceNode, buffer, clientManager);
+    RSDrmUtil::ClearDrmNodes();
 }
 }

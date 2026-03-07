@@ -632,7 +632,7 @@ HWTEST_F(RSComposerAdapterTest, LayerPresentTimestamp005, Function | SmallTest |
     auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
     ASSERT_NE(surfaceNode, nullptr);
     auto buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
-    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0 ,nullptr);
+    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     layer->SetBuffer(buffer, surfaceNode->GetRSSurfaceHandler()->GetAcquireFence());
     layer->SetIsSupportedPresentTimestamp(true);
     sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");

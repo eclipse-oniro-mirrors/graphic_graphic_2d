@@ -801,7 +801,8 @@ HWTEST_F(RSScreenManagerTest, GetScreenHDRCapability_001, testing::ext::TestSize
  */
 HWTEST_F(RSScreenManagerTest, GetScreenHDRCapability_002, TestSize.Level1)
 {
-    auto virtualScreenId = screenManager_->CreateVirtualScreen("virtualScreen01", 480, 320, nullptr, INVALID_SCREEN_ID, 0, {});
+    auto virtualScreenId =
+        screenManager_->CreateVirtualScreen("virtualScreen01", 480, 320, nullptr, INVALID_SCREEN_ID, 0, {});
     RSScreenHDRCapability screenHdrCapability;
     auto ret = screenManager_->GetScreenHDRCapability(virtualScreenId, screenHdrCapability);
     ASSERT_EQ(ret, StatusCode::SUCCESS);

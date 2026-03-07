@@ -413,22 +413,6 @@ void RSClientToServiceConnectionStubTest::CreateComposerAdapterWithScreenInfo(ui
     composerAdapter_->SetHdiBackendDevice(hdiDeviceMock_);
 }
 
-// static void SetLeftSize(Parcel& parcel, uint32_t leftSize)
-// {
-//     parcel.SetMaxCapacity(PARCEL_MAX_CAPACITY);
-//     size_t useSize = PARCEL_MAX_CAPACITY - leftSize;
-//     size_t writeInt32Count = useSize / 4;
-//     size_t writeBoolCount = useSize % 4;
-
-//     for (size_t i = 0; i < writeInt32Count; i++) {
-//         parcel.WriteInt32(0);
-//     }
-
-//     for (size_t j = 0; j < writeBoolCount; j++) {
-//         parcel.WriteBoolUnaligned(false);
-//     }
-// }
-
 /**
  * @tc.name: TestRSRenderServiceConnectionStub002
  * @tc.desc: Test screen related transaction, with non empty data.
@@ -1358,7 +1342,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, NotifyWindowExpectedByWindowIDTest
     MessageParcel reply;
     MessageOption option;
     data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::NOTIFY_WINDOW_EXPECTED_BY_WINDOW_ID);
     data.WriteUint32(1);
     data.WriteUint64(0);
     EventInfo eventInfo = {"VOTER1", true, 60, 120, "SCENE1"};

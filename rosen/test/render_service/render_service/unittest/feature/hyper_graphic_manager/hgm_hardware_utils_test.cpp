@@ -165,7 +165,7 @@ HWTEST_F(HgmHardwareUtilsTest, PerformSetActiveModeTest, TestSize.Level1)
     hgmHardwareUtils->setRateRetryMap_.erase(SCREEN_ID);
     if (hgmCore.modeListToApply_ == nullptr) {
         hgmCore.modeListToApply_ = std::make_unique<std::unordered_map<ScreenId, int32_t>>();
-    } 
+    }
     hgmCore.modeListToApply_->try_emplace(SCREEN_IDINVALID, 3);
     hgmHardwareUtils->PerformSetActiveMode(outputInvalid, screenManager);
     EXPECT_EQ(hgmCore.modeListToApply_, nullptr);

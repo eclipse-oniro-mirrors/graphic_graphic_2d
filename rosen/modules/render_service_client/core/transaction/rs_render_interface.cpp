@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <functional>
 
-#include "rs_interfaces.h" 
+#include "rs_interfaces.h"
 #include "rs_trace.h"
 
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"

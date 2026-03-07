@@ -1570,7 +1570,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 break;
             }
             std::vector<PixelMapInfo> pixelMapInfoVector;
-            int32_t repCode;
+            int32_t repCode = ERR_OK;
             if (GetPixelMapByProcessId(pixelMapInfoVector, static_cast<pid_t>(pid), repCode) != ERR_OK ||
                 !reply.WriteInt32(repCode)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_PIXELMAP_BY_PROCESSID Write repCode failed!");
@@ -2910,7 +2910,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             SetGpuCrcDirtyEnabledPidList(pidList);
             break;
         }
-        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC): {
+        case static_cast<uint32_t>(
+            RSIClientToServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC): {
             ForceRefreshOneFrameWithNextVSync();
             break;
         }

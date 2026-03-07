@@ -18,6 +18,7 @@
 #include <message_parcel.h>
 #include <parameters.h>
 
+#include "dirty_region/rs_gpu_dirty_collector.h"
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "mock_hdi_device.h"
@@ -27,7 +28,9 @@
 #include "ipc_callbacks/rs_canvas_surface_buffer_callback_stub.h"
 #include "platform/ohos/backend/surface_buffer_utils.h"
 #endif
+#include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/rs_frame_rate_linker_expected_fps_update_callback_stub.h"
+#include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback_ipc_interface_code.h"
 #include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
@@ -227,6 +230,20 @@ public:
     RSBufferClearCallbackStubMock() = default;
     ~RSBufferClearCallbackStubMock() noexcept override = default;
     void OnBufferClear() override {}
+};
+ 
+class RSOcclusionChangeCallbackStubMock : public RSOcclusionChangeCallbackStub {
+public:
+    RSOcclusionChangeCallbackStubMock() = default;
+    virtual ~RSOcclusionChangeCallbackStubMock() = default;
+    void OnOcclusionVisibleChanged(std::shared_ptr<RSOcclusionData> occlusionData) override {}
+};
+
+class RSSurfaceOcclusionChangeCallbackStubMock : public RSSurfaceOcclusionChangeCallbackStub {
+public:
+    RSSurfaceOcclusionChangeCallbackStubMock() = default;
+    virtual ~RSSurfaceOcclusionChangeCallbackStubMock() = default;
+    void OnSurfaceOcclusionVisibleChanged(float visibleAreaRatio) override {}
 };
 
 class RSSurfaceBufferCallbackStubMock : public RSSurfaceBufferCallbackStub {
@@ -2576,33 +2593,6 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetSystemAnimatedScenesTest004, Tes
     int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
     ASSERT_EQ(ret, ERR_NONE);
 }
- 
-// /**
-//  * @tc.name: SetSystemAnimatedScenesTest005
-//  * @tc.desc: Test SetSystemAnimatedScenes when mainThread_ is nullptr
-//  * @tc.type: FUNC
-//  * @tc.require: issue20726
-//  */
-// HWTEST_F(RSClientToRenderConnectionStubTest, SetSystemAnimatedScenesTest005, TestSize.Level1)
-// {
-//     MessageParcel data;
-//     MessageParcel reply;
-//     MessageOption option;
-//     uint32_t code =
-//         static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_SYSTEM_ANIMATED_SCENES);
-//     data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
-//     data.WriteUint32(0);
-//     data.WriteBool(true);
-//     sptr<RSIClientToServiceConnection> clientToServiceConnection =
-//         iface_cast<RSIClientToServiceConnection>(connectionStub_);
-//     ASSERT_NE(clientToServiceConnection, nullptr);
-//     auto mainThread = clientToServiceConnection->mainThread_;
-//     clientToServiceConnection->mainThread_ = nullptr;
-//     int ret = connectionStub_->OnRemoteRequest(code, data, reply, option);
-//     ASSERT_EQ(ret, ERR_INVALID_DATA);
- 
-//     clientToServiceConnection->mainThread_ = mainThread;
-// }
 
 /**
  * @tc.name: ExecuteSynchronousTaskTest001
@@ -3201,7 +3191,8 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest003, TestSize
     permissions.selfCapture = true;
     ASSERT_NE(callback, nullptr);
     // Test UICAPTURE with selfCapture permission - should proceed
-    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback, captureConfig, blurParam, specifiedAreaRect, permissions);
+    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
+        captureConfig, blurParam, specifiedAreaRect, permissions);
 }
 
 /**
@@ -3225,7 +3216,8 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest004, TestSize
     permissions.selfCapture = false;
     ASSERT_NE(callback, nullptr);
     // Test UICAPTURE with system calling permission - should proceed
-    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback, captureConfig, blurParam, specifiedAreaRect, permissions);
+    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
+        captureConfig, blurParam, specifiedAreaRect, permissions);
 }
 
 /**
@@ -4316,4 +4308,229 @@ HWTEST_F(RSClientToRenderConnectionStubTest, CommitTransaction_ZeroPid_012, Test
     EXPECT_FALSE(renderPipelineAgent_->rsRenderPipeline_->mainThread_->cachedTransactionDataMap_.empty());
 }
 
+/**
+ * @tc.name: GetHighContrastTextStateTest001
+ * @tc.desc: Test GetHighContrastTextState
+ * branch)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, GetHighContrastTextStateTest001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_HIGH_CONTRAST_TEXT_STATE);
+
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    ASSERT_EQ(res, ERR_NONE);
+}
+
+/**
+ * @tc.name: CreateNodeAndSurfaceTest001
+ * @tc.desc: Test CreateNodeAndSurfaceTest when surfacenode is self drawing node
+ * branch)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, CreateNodeAndSurfaceTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    config.id = 1;
+    config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    sptr<Surface> surface = nullptr;
+    std::vector<int32_t> pidList;
+    pidList.emplace_back(ExtractPid(config.id));
+    RSGpuDirtyCollector::GetInstance().SetSelfDrawingGpuDirtyPidList(pidList);
+    connectionStub_->CreateNodeAndSurface(config, surface, false);
+    ASSERT_NE(surface, nullptr);
+    surface = nullptr;
+    auto param = system::GetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "");
+    system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
+    connectionStub_->CreateNodeAndSurface(config, surface, false);
+    ASSERT_NE(surface, nullptr);
+    system::GetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", param);
+}
+
+/**
+ * @tc.name: RegisterOcclusionChangeCallbackTest001
+ * @tc.desc: Test REGISTER_OCCLUSION_CHANGE_CALLBACK interface code path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, RegisterOcclusionChangeCallbackTest001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_OCCLUSION_CHANGE_CALLBACK);
+
+    // Test case 1: missing remoteObject (should fail at ReadRemoteObject)
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(res, ERR_NULL_OBJECT);
+
+    // Test case 2: valid data with valid remoteObject (success path)
+    MessageParcel data2;
+    data2.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    sptr<RSIOcclusionChangeCallback> callback = new RSOcclusionChangeCallbackStubMock();
+    data2.WriteRemoteObject(callback->AsObject());
+    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
+}
+
+/**
+ * @tc.name: RegisterSurfaceOcclusionChangeCallbackTest001
+ * @tc.desc: Test REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK interface code path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, RegisterSurfaceOcclusionChangeCallbackTest001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code =
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK);
+
+    // Test case 1: missing id (should fail at UnmarshallingPidPlusId)
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(res, ERR_INVALID_DATA);
+
+    // Test case 2: invalid pid (should fail at IsValidCallingPid)
+    MessageParcel data2;
+    data2.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    NodeId nodeId = ((NodeId)999999 << 32 | SURFACE_NODE_ID);
+    data2.WriteUint64(nodeId);
+    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
+    EXPECT_EQ(res, ERR_NULL_OBJECT);
+
+    // Test case 3: valid id but missing remoteObject
+    MessageParcel data3;
+    data3.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    data3.WriteUint64(surfaceNode_->GetId());
+    res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
+    EXPECT_EQ(res, ERR_NULL_OBJECT);
+
+    // Test case 4: valid id and remoteObject but missing partitionPoints
+    MessageParcel data4;
+    data4.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    data4.WriteUint64(surfaceNode_->GetId());
+    sptr<RSISurfaceOcclusionChangeCallback> callback = new RSSurfaceOcclusionChangeCallbackStubMock();
+    data4.WriteRemoteObject(callback->AsObject());
+    res = connectionStub_->OnRemoteRequest(code, data4, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
+
+    // Test case 5: valid data with id, remoteObject, and partitionPoints (success path)
+    MessageParcel data5;
+    data5.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    data5.WriteUint64(surfaceNode_->GetId());
+    data5.WriteRemoteObject(callback->AsObject());
+    std::vector<float> partitionPoints = { 0.0f, 0.5f, 1.0f };
+    data5.WriteFloatVector(partitionPoints);
+    res = connectionStub_->OnRemoteRequest(code, data5, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
+}
+
+/**
+ * @tc.name: UnregisterSurfaceOcclusionChangeCallbackTest001
+ * @tc.desc: Test UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK interface code path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, UnregisterSurfaceOcclusionChangeCallbackTest001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    uint32_t code =
+        static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK);
+
+    // Test case 1: missing id (should fail at UnmarshallingPidPlusId)
+    data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(res, ERR_INVALID_DATA);
+
+    // Test case 2: invalid pid (should fail at IsValidCallingPid)
+    MessageParcel data2;
+    data2.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    NodeId nodeId = ((NodeId)999999 << 32 | SURFACE_NODE_ID);
+    data2.WriteUint64(nodeId);
+    res = connectionStub_->OnRemoteRequest(code, data2, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
+
+    // Test case 3: valid data with valid id (success path)
+    MessageParcel data3;
+    data3.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
+    data3.WriteUint64(surfaceNode_->GetId());
+    res = connectionStub_->OnRemoteRequest(code, data3, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
+}
+
+/**
+ * @tc.name: RegisterOcclusionChangeCallbackTest002
+ * @tc.desc: Test REGISTER_OCCLUSION_CHANGE_CALLBACK interface code path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, RegisterOcclusionChangeCallbackTest002, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+    auto pipeline = renderPipelineAgent_->rsRenderPipeline_;
+    renderPipelineAgent_->rsRenderPipeline_ = nullptr;
+    pid_t pid = getpid();
+    sptr<RSIOcclusionChangeCallback> callback = nullptr;
+    auto res = renderPipelineAgent_->RegisterOcclusionChangeCallback(pid, callback);
+    EXPECT_EQ(res, StatusCode::INVALID_ARGUMENTS);
+    renderPipelineAgent_->rsRenderPipeline_ = pipeline;
+    res = renderPipelineAgent_->RegisterOcclusionChangeCallback(pid, callback);
+    EXPECT_EQ(res, StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: RegisterSurfaceOcclusionChangeCallbackTest002
+ * @tc.desc: Test REGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK interface code path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, RegisterSurfaceOcclusionChangeCallbackTest002, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+    auto pipeline = renderPipelineAgent_->rsRenderPipeline_;
+    renderPipelineAgent_->rsRenderPipeline_ = nullptr;
+    pid_t pid = getpid();
+    NodeId id = 1;
+    sptr<RSISurfaceOcclusionChangeCallback> callback = nullptr;
+    std::vector<float> partitionPoints = { 0.0f, 0.5f, 1.0f };
+    auto res = renderPipelineAgent_->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
+    EXPECT_EQ(res, StatusCode::INVALID_ARGUMENTS);
+    renderPipelineAgent_->rsRenderPipeline_ = pipeline;
+    res = renderPipelineAgent_->RegisterSurfaceOcclusionChangeCallback(id, pid, callback, partitionPoints);
+    EXPECT_EQ(res, StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: UnregisterSurfaceOcclusionChangeCallbackTest002
+ * @tc.desc: Test UNREGISTER_SURFACE_OCCLUSION_CHANGE_CALLBACK interface code path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, UnregisterSurfaceOcclusionChangeCallbackTest002, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+    auto pipeline = renderPipelineAgent_->rsRenderPipeline_;
+    renderPipelineAgent_->rsRenderPipeline_ = nullptr;
+    NodeId id = 1;
+    auto res = renderPipelineAgent_->UnRegisterSurfaceOcclusionChangeCallback(id);
+    EXPECT_EQ(res, StatusCode::INVALID_ARGUMENTS);
+    renderPipelineAgent_->rsRenderPipeline_ = pipeline;
+    res = renderPipelineAgent_->UnRegisterSurfaceOcclusionChangeCallback(id);
+    EXPECT_EQ(res, StatusCode::SUCCESS);
+}
 } // namespace OHOS::Rosen

@@ -543,6 +543,19 @@ HWTEST_F(RSClientToRenderConnectionProxyTest, TakeSurfaceCaptureWithAllWindowsTe
 }
 
 /**
+ * @tc.name: NotifyLightFactorStatus Test
+ * @tc.desc: NotifyLightFactorStatus Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToRenderConnectionProxyTest, NotifyLightFactorStatus, TestSize.Level1)
+{
+    NodeId id = 1;
+    proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT, true);
+    ASSERT_EQ(proxy->transactionDataIndex_, 5);
+}
+
+/**
  * @tc.name: FreezeScreenTest
  * @tc.desc: FreezeScreen test to freeze or unfreeze screen.
  * @tc.type:FUNC

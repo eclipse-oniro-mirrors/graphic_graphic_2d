@@ -69,10 +69,10 @@ HWTEST_F(RSScreenManagerAgentTest, RSScreenManagerAgent001, TestSize.Level1)
     sptr<RSScreenManagerAgent> screenManagerAgent1 = sptr<RSScreenManagerAgent>::MakeSptr(nullptr);
     sptr<RSScreenManagerAgent> screenManagerAgent2 = sptr<RSScreenManagerAgent>::MakeSptr(nullptr);
     screenManagerAgent2->agentListener_ = nullptr;
-    sptr<RSScreenManagerAgent> screenManagerAgent3 = sptr<RSScreenManagerAgent>::MakeSptr(screenManagerAgent_->screenManager_);
+    sptr<RSScreenManagerAgent> screenManagerAgent3 = sptr<RSScreenManagerAgent>::MakeSptr(screenManager_);
     EXPECT_NE(screenManagerAgent3->screenManager_, nullptr);
     screenManagerAgent3->agentListener_ = nullptr;
-    sptr<RSScreenManagerAgent> screenManagerAgent4 = sptr<RSScreenManagerAgent>::MakeSptr(screenManagerAgent_->screenManager_);
+    sptr<RSScreenManagerAgent> screenManagerAgent4 = sptr<RSScreenManagerAgent>::MakeSptr(screenManager_);
     EXPECT_NE(screenManagerAgent4->screenManager_, nullptr);
 
     ScreenChangeReason reason = ScreenChangeReason::DEFAULT;

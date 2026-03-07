@@ -424,4 +424,186 @@ HWTEST_F(RSServiceDumpManagerTest, InitProcessDumpTask_MultipleCalls, TestSize.L
     SUCCEED();
 }
 
+/*
+ * @tc.name: DoDump_ServiceCmdOnly
+ * @tc.desc: Test DoDump with only service commands
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_ServiceCmdOnly, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with service command only
+    std::vector<std::u16string> args = { u"screen" };
+    std::string dumpString;
+
+    // Then: Should execute service dump (processManager is null, will return early)
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DoDump_ProcessCmdOnly
+ * @tc.desc: Test DoDump with screen command (service command)
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_ProcessCmdOnly, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with screen command (service command)
+    std::vector<std::u16string> args = { u"screen" };
+    std::string dumpString;
+
+    // Then: Should execute service dump (does not access processManager)
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DoDump_BothCmds
+ * @tc.desc: Test DoDump with multiple service commands
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_BothCmds, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with multiple service commands
+    std::vector<std::u16string> args = { u"screen", u"fps" };
+    std::string dumpString;
+
+    // Then: Should handle multiple service commands
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DoDump_NonCmdArgs
+ * @tc.desc: Test DoDump with empty arguments - processArgSets empty
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_NonCmdArgs, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with empty args (processArgSets empty)
+    std::vector<std::u16string> args;
+    std::string dumpString;
+
+    // Then: Should execute (both sets empty, processArgSets.empty() = true)
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DoDump_ServiceOnlyCommands
+ * @tc.desc: Test DoDump with only service commands - processArgSets empty
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_ServiceOnlyCommands, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with only service commands
+    std::vector<std::u16string> args = { u"screen" };
+    std::string dumpString;
+
+    // Then: Should execute (processArgSets empty)
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DoDump_MixedArgsNoProcess
+ * @tc.desc: Test DoDump with mixed args but no process command - processArgSets empty
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_MixedArgsNoProcess, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with service commands and extra args (no process cmd)
+    std::vector<std::u16string> args = { u"screen", u"fps", u"extraArg" };
+    std::string dumpString;
+
+    // Then: Should execute service dump only (processArgSets may have extraArg but not process cmd)
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DoDump_EmptyArgs
+ * @tc.desc: Test DoDump with empty arguments
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, DoDump_EmptyArgs, TestSize.Level1)
+{
+    // Given: A dump manager instance
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Execute DoDump with empty arguments
+    std::vector<std::u16string> args;
+    std::string dumpString;
+
+    // Then: Should handle gracefully
+    dumpManager_->DoDump(args, dumpString, nullptr);
+
+    // Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: IsDumpCompleted_True
+ * @tc.desc: Test IsDumpCompleted returns true when all processes complete
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumpManagerTest, IsDumpCompleted_True, TestSize.Level1)
+{
+    // Given: A dump manager initialized with 3 processes and all completed
+    dumpManager_->InitProcessDumpTask(3);
+    
+    // Simulate completion
+    std::string dump1 = "data1";
+    std::string dump2 = "data2";
+    std::string dump3 = "data3";
+    dumpManager_->CollectDump(dump1);
+    dumpManager_->CollectDump(dump2);
+    dumpManager_->CollectDump(dump3);
+
+    // When: Check if dump is completed
+    // Note: IsDumpCompleted is private, indirectly tested through WaitForDump
+    std::string dumpString;
+    dumpManager_->WaitForDump(dumpString);
+
+    // Then: Should complete without timeout
+    EXPECT_TRUE(dumpString.find("RSProcessDump") != std::string::npos);
+}
+
 } // namespace OHOS::Rosen

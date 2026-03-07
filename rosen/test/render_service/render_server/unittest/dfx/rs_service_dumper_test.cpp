@@ -693,4 +693,454 @@ HWTEST_F(RSServiceDumperTest, ErrorHandling_EmptyArguments, TestSize.Level1)
     SUCCEED();
 }
 
+/*
+ * @tc.name: ScheduleTask_WithNullHandler
+ * @tc.desc: Test ScheduleTask when mainHandler is null
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, ScheduleTask_WithNullHandler, TestSize.Level1)
+{
+    // Given: Dumper with null handler (default constructed)
+    auto nullHandlerDumper = std::make_unique<RSServiceDumper>();
+
+    // When: Schedule a task with null handler
+    bool taskExecuted = false;
+    nullHandlerDumper->ScheduleTask([&taskExecuted]() { taskExecuted = true; });
+
+    // Then: Task should not execute
+    EXPECT_FALSE(taskExecuted);
+}
+
+/*
+ * @tc.name: IsNumber_ValidNumbers
+ * @tc.desc: Test IsNumber with valid numeric strings
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, IsNumber_ValidNumbers, TestSize.Level1)
+{
+    // Given: Valid numeric strings
+    std::vector<std::string> validNumbers = {"0", "123", "456789", "007", "999"};
+
+    // When & Then: All should be recognized as numbers (tested via dumpMem command)
+    for (const auto& numStr : validNumbers) {
+        std::unordered_set<std::u16string> argSets = { u"dumpMem", std::u16string(numStr.begin(), numStr.end()) };
+        std::string dumpString;
+        dumpManager_->CmdExec(argSets, dumpString);
+    }
+    // Should complete without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: IsNumber_InvalidStrings
+ * @tc.desc: Test IsNumber with invalid non-numeric strings
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, IsNumber_InvalidStrings, TestSize.Level1)
+{
+    // Given: Invalid non-numeric strings
+    std::vector<std::string> invalidStrings = {"abc", "12a", "a1b2c3", "test", "invalid"};
+
+    // When & Then: Should handle gracefully (tested via dumpMem command)
+    for (const auto& str : invalidStrings) {
+        std::unordered_set<std::u16string> argSets = { u"dumpMem", std::u16string(str.begin(), str.end()) };
+        std::string dumpString;
+        dumpManager_->CmdExec(argSets, dumpString);
+    }
+    // Should complete without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: IsNumber_MixedStrings
+ * @tc.desc: Test IsNumber with mixed alphanumeric strings
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, IsNumber_MixedStrings, TestSize.Level1)
+{
+    // Given: Mixed alphanumeric strings
+    std::vector<std::string> mixedStrings = {"12abc", "abc123", "1a2b3c", "test123abc"};
+
+    // When & Then: Should handle gracefully (tested via dumpMem command)
+    for (const auto& str : mixedStrings) {
+        std::unordered_set<std::u16string> argSets = { u"dumpMem", std::u16string(str.begin(), str.end()) };
+        std::string dumpString;
+        dumpManager_->CmdExec(argSets, dumpString);
+    }
+    // Should complete without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: IsNumber_SpecialCharacters
+ * @tc.desc: Test IsNumber with special characters
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, IsNumber_SpecialCharacters, TestSize.Level1)
+{
+    // Given: Strings with special characters
+    std::vector<std::string> specialStrs = {"12.5", "-123", "+456", "12 ", " 34", "1e2"};
+
+    // When & Then: Should handle gracefully (tested via dumpMem command)
+    for (const auto& str : specialStrs) {
+        std::unordered_set<std::u16string> argSets = { u"dumpMem", std::u16string(str.begin(), str.end()) };
+        std::string dumpString;
+        dumpManager_->CmdExec(argSets, dumpString);
+    }
+    // Should complete without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterRSGfxFuncs_WithLogFlagArgs
+ * @tc.desc: Test RegisterRSGfxFuncs with log flag arguments
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, RegisterRSGfxFuncs_WithLogFlagArgs, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RsDumpInit(dumpManager_);
+
+    // When: Execute rsLogFlag command with argument
+    std::unordered_set<std::u16string> argSets = { u"rsLogFlag", u"DEBUG" };
+    std::string dumpString;
+    dumpManager_->CmdExec(argSets, dumpString);
+
+    // Then: Should handle the command
+    EXPECT_TRUE(dumpString.find("Successed") != std::string::npos || 
+                dumpString.find("Failed") != std::string::npos ||
+                !dumpString.empty());
+}
+
+/*
+ * @tc.name: FPSDumpProcess_EmptyLayerName
+ * @tc.desc: Test FPSDumpProcess with empty layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, FPSDumpProcess_EmptyLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RsDumpInit(dumpManager_);
+
+    // When: Execute fps command without layer name
+    std::unordered_set<std::u16string> argSets = { u"fps" };
+    std::string dumpString;
+    dumpManager_->CmdExec(argSets, dumpString);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpClearProcess_EmptyLayerName
+ * @tc.desc: Test FPSDumpClearProcess with empty layer name
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, FPSDumpClearProcess_EmptyLayerName, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RsDumpInit(dumpManager_);
+
+    // When: Execute fpsClear command without layer name
+    std::unordered_set<std::u16string> argSets = { u"fpsClear" };
+    std::string dumpString;
+    dumpManager_->CmdExec(argSets, dumpString);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: WindowHitchsDump_NoLayerArg
+ * @tc.desc: Test WindowHitchsDump without layer argument
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, WindowHitchsDump_NoLayerArg, TestSize.Level1)
+{
+    // Given: Initialized dumper
+    ASSERT_NE(dumper_, nullptr);
+    dumper_->RsDumpInit(dumpManager_);
+
+    // When: Execute hitchs command without layer name
+    std::unordered_set<std::u16string> argSets = { u"hitchs" };
+    std::string dumpString;
+    dumpManager_->CmdExec(argSets, dumpString);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpAllNodesMemSize_DirectCall
+ * @tc.desc: Direct call DumpAllNodesMemSize function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, DumpAllNodesMemSize_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpAllNodesMemSize
+    std::string dumpString;
+    dumper_->DumpAllNodesMemSize(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+
+#ifdef RS_ENABLE_GPU
+/*
+ * @tc.name: DumpGpuInfo_DirectCall
+ * @tc.desc: Direct call DumpGpuInfo function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, DumpGpuInfo_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpGpuInfo
+    std::string dumpString;
+    dumper_->DumpGpuInfo(dumpString);
+
+    // Then: Should generate output
+    EXPECT_FALSE(dumpString.empty());
+}
+#endif
+
+/*
+ * @tc.name: WindowHitchsDump_DirectCall
+ * @tc.desc: Direct call WindowHitchsDump function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, WindowHitchsDump_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call WindowHitchsDump
+    std::unordered_set<std::u16string> argSets = { u"hitchs", u"testLayer" };
+    std::string dumpString;
+    std::u16string arg = u"hitchs";
+    dumper_->WindowHitchsDump(argSets, dumpString, arg);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpProcess_DirectCall
+ * @tc.desc: Direct call FPSDumpProcess function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, FPSDumpProcess_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call FPSDumpProcess
+    std::unordered_set<std::u16string> argSets = { u"fpsInfo", u"testLayer" };
+    std::string dumpString;
+    std::u16string arg = u"fpsInfo";
+    dumper_->FPSDumpProcess(argSets, dumpString, arg);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpProcess_EmptyArgs_DirectCall
+ * @tc.desc: Direct call FPSDumpProcess with empty args
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, FPSDumpProcess_EmptyArgs_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call FPSDumpProcess with empty args
+    std::unordered_set<std::u16string> argSets;
+    std::string dumpString;
+    std::u16string arg = u"fpsInfo";
+    dumper_->FPSDumpProcess(argSets, dumpString, arg);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: DumpFps_DirectCall
+ * @tc.desc: Direct call DumpFps function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, DumpFps_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call DumpFps
+    std::string dumpString;
+    std::string layerName = "testLayer";
+    dumper_->DumpFps(dumpString, layerName);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpClearProcess_DirectCall
+ * @tc.desc: Direct call FPSDumpClearProcess function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, FPSDumpClearProcess_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call FPSDumpClearProcess
+    std::unordered_set<std::u16string> argSets = { u"fpsClear", u"testLayer" };
+    std::string dumpString;
+    std::u16string arg = u"fpsClear";
+    dumper_->FPSDumpClearProcess(argSets, dumpString, arg);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: FPSDumpClearProcess_EmptyArgs_DirectCall
+ * @tc.desc: Direct call FPSDumpClearProcess with empty args
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, FPSDumpClearProcess_EmptyArgs_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call FPSDumpClearProcess with empty args
+    std::unordered_set<std::u16string> argSets;
+    std::string dumpString;
+    std::u16string arg = u"fpsClear";
+    dumper_->FPSDumpClearProcess(argSets, dumpString, arg);
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: ClearFps_DirectCall
+ * @tc.desc: Direct call ClearFps function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, ClearFps_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call ClearFps
+    std::string dumpString;
+    std::string layerName = "testLayer";
+    dumper_->ClearFps(dumpString, layerName);
+
+    // Then: Should execute without crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: ScheduleTask_DirectCall
+ * @tc.desc: Direct call ScheduleTask function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, ScheduleTask_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+
+    // When: Directly call ScheduleTask
+    bool taskExecuted = false;
+    dumper_->ScheduleTask([&taskExecuted]() { taskExecuted = true; });
+
+    // Then: Should handle gracefully
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterMemFuncs_DirectCall
+ * @tc.desc: Direct call RegisterMemFuncs function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, RegisterMemFuncs_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Directly call RegisterMemFuncs
+    dumper_->RegisterMemFuncs(dumpManager_);
+
+    // Then: Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterFpsFuncs_DirectCall
+ * @tc.desc: Direct call RegisterFpsFuncs function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, RegisterFpsFuncs_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Directly call RegisterFpsFuncs
+    dumper_->RegisterFpsFuncs(dumpManager_);
+
+    // Then: Should not crash
+    SUCCEED();
+}
+
+/*
+ * @tc.name: RegisterGpuFuncs_DirectCall
+ * @tc.desc: Direct call RegisterGpuFuncs function
+ * @tc.type: FUNC
+ * @tc.require: AR000GSH6G
+ */
+HWTEST_F(RSServiceDumperTest, RegisterGpuFuncs_DirectCall, TestSize.Level1)
+{
+    // Given: A dumper instance
+    ASSERT_NE(dumper_, nullptr);
+    ASSERT_NE(dumpManager_, nullptr);
+
+    // When: Directly call RegisterGpuFuncs
+    dumper_->RegisterGpuFuncs(dumpManager_);
+
+    // Then: Should not crash
+    SUCCEED();
+}
+
 } // namespace OHOS::Rosen

@@ -300,7 +300,7 @@ HWTEST_F(RSTransactionHandlerTest, FlushImplicitTransaction007, TestSize.Level1)
     renderServiceClient.reset();
     ASSERT_EQ(renderServiceClient, nullptr);
     transaction->SetRenderThreadClient(renderThreadClient);
-    // // transaction->SetRenderServiceClient(renderServiceClient);
+    // add rendRenderPipelineClient
     FlushEmptyCallback callback = [](const uint64_t timestamp) -> bool {
         return true;
     };
@@ -1080,7 +1080,7 @@ HWTEST_F(RSTransactionHandlerTest, ExecuteSynchronousTask005, TestSize.Level1)
     auto task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(0, nullptr);
     ASSERT_NE(task, nullptr);
     transaction->SetRenderThreadClient(renderThreadClient);
-    // transaction->SetRenderServiceClient(renderServiceClient);
+    // add rendRenderPipelineClient
     transaction->ExecuteSynchronousTask(task, false);
     transaction->ExecuteSynchronousTask(task, true);
 }

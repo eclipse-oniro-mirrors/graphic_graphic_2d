@@ -63,9 +63,9 @@ constexpr uint32_t DYNAMIC_RANGE_MODE_HIGH = 0;
 constexpr uint32_t DYNAMIC_RANGE_MODE_CONSTRAINT = 1;
 constexpr int32_t UI_PiPLINE_NUM_UNDEFINED = -1;
 
-template<typename T> 
+template<typename T>
 inline constexpr bool ROSEN_EQ(const T& x, const T& y)
-{ 
+{
     if constexpr (std::is_floating_point<T>::value) {
         return (std::abs((x) - (y)) <= (std::numeric_limits<T>::epsilon()));
     } else {
@@ -90,29 +90,29 @@ template<typename T>
 inline constexpr bool ROSEN_NE(const T& x, const T& y)
 {
     return !ROSEN_EQ(x, y);
-} 
+}
 
 inline bool ROSEN_LNE(float left, float right) // less not equal
-{ 
+{
     constexpr float epsilon = -0.001f;
     return (left - right) < epsilon;
-} 
+}
 
 
 inline bool ROSEN_GNE(float left, float right) // great not equal
-{ 
+{
     constexpr float epsilon = 0.001f;
     return (left - right) > epsilon;
-} 
+}
 
 inline bool ROSEN_GE(float left, float right) // great or equal
 {
     constexpr float epsilon = -0.001f;
     return (left - right) > epsilon;
-} 
+}
 
 inline bool ROSEN_LE(float left, float right) // less or equal
-{ 
+{
     constexpr float epsilon = 0.001f;
     return (left - right) < epsilon;
 }

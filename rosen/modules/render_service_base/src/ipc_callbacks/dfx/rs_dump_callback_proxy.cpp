@@ -18,6 +18,9 @@
 
 namespace OHOS {
 namespace Rosen {
+RSDumpCallbackProxy::RSDumpCallbackProxy(const sptr<IRemoteObject>& impl)
+    : IRemoteProxy<RSIDumpCallback>(impl) {}
+
 void RSDumpCallbackProxy::OnDumpResult(std::string& dumpResult)
 {
     MessageParcel data;

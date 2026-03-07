@@ -34,6 +34,7 @@ namespace OHOS::Rosen {
 namespace {
 constexpr const int WAIT_HANDLER_TIME = 1; // 1S
 constexpr const int WAIT_HANDLER_TIME_COUNT = 5;
+constexpr const int SLEEP_TIME = 110;
 
 std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
 sptr<RSServiceToRenderConnection> g_rsConn = nullptr;
@@ -76,7 +77,7 @@ void RSServiceToRenderConnectionTest::SetUpTestCase()
 
 void RSServiceToRenderConnectionTest::TearDownTestCase()
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(110));
+    std::this_thread::sleep_for(std::chrono::milliseconds(SLEEP_TIME));
 
     WaitHandlerTask();
     renderPipeline->mainThread_->handler_->eventRunner_->Stop();

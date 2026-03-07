@@ -1260,21 +1260,19 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, NotifyHgmConfigEvent, TestSize.Le
     ASSERT_TRUE(proxy);
 }
 
-// /**
-//  * @tc.name: NotifyLightFactorStatus Test
-//  * @tc.desc: NotifyLightFactorStatus Test
-//  * @tc.type:FUNC
-//  * @tc.require: issueI9KXXE
-//  */
-// HWTEST_F(RSClientToServiceConnectionProxyTest, NotifyLightFactorStatus, TestSize.Level1)
-// {
-//     GameStateData info;
-//     proxy->ReportGameStateData(info);
-//     NodeId id = 1;
-//     proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT, true);
-//     proxy->NotifyLightFactorStatus(1);
-//     ASSERT_EQ(proxy->transactionDataIndex_, 5);
-// }
+/**
+ * @tc.name: NotifyLightFactorStatus Test
+ * @tc.desc: NotifyLightFactorStatus Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, ReportGameStateData, TestSize.Level1)
+{
+    GameStateData info;
+    proxy->ReportGameStateData(info);
+    proxy->NotifyLightFactorStatus(1);
+    ASSERT_EQ(proxy->transactionDataIndex_, 5);
+}
 
 /**
  * @tc.name: NotifyXComponentExpectedFrameRate Test

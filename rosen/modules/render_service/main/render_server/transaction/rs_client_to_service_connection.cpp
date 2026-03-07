@@ -298,24 +298,32 @@ ErrCode RSClientToServiceConnection::CreateVSyncConnection(sptr<IVSyncConnection
 ErrCode RSClientToServiceConnection::GetPixelMapByProcessId(
     std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode)
 {
-    // if (mainThread_ == nullptr) {
-    //     repCode = INVALID_ARGUMENTS;
-    //     return ERR_INVALID_VALUE;
-    // }
-
-    // std::vector<std::tuple<sptr<SurfaceBuffer>, std::string, RectI>> sfBufferInfoVector;
-    // std::function<void()> collectBuffersTask = [weakThis = wptr<RSClientToServiceConnection>(this),
-    //                                               &sfBufferInfoVector, pid]() -> void {
-    //     sptr<RSClientToServiceConnection> connection = weakThis.promote();
-    //     if (connection == nullptr || connection->mainThread_ == nullptr) {
-    //         return;
-    //     }
-    //     connection->CollectSurfaceBuffersByProcessId(sfBufferInfoVector, pid);
-    // };
-    // mainThread_->PostSyncTask(collectBuffersTask);
-
-    // ConvertBuffersToPixelMaps(sfBufferInfoVector, pixelMapInfoVector);
-    // repCode = SUCCESS;
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        repCode = INVALID_ARGUMENTS;
+        return ERR_INVALID_VALUE;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.size() == 0) {
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
+        repCode = INVALID_ARGUMENTS;
+        return ERR_INVALID_VALUE;
+    }
+    for (auto conn : serviceToRenderConns) {
+        std::vector<PixelMapInfo> pixelMapInfoVectorTmp;
+        int32_t repCodeTmp = ERR_OK;
+        if (conn->GetPixelMapByProcessId(pixelMapInfoVectorTmp, pid, repCodeTmp) != ERR_OK || repCodeTmp != SUCCESS) {
+            RS_LOGE("RSMultiRenderProcessManager::GetPixelMapByProcessId a connection failed!");
+            repCode = INVALID_ARGUMENTS;
+            return ERR_INVALID_VALUE;
+        }
+        if (pixelMapInfoVectorTmp.size() != 0) {
+            for (auto pixelMapInfo : pixelMapInfoVectorTmp) {
+                pixelMapInfoVector.emplace_back(pixelMapInfo);
+            }
+        }
+    }
+    repCode = SUCCESS;
     return ERR_OK;
 }
 

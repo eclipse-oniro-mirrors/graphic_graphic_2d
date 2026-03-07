@@ -1716,7 +1716,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
  * @tc.type: FUNC
  * @tc.require: issue41
  */
-HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_EnableVisibleRectNoMirrorCopyTest001, TestSize.Level2)
+HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_EnableVisibleRectNoMirrorCopyTest001,
+    TestSize.Level2)
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
@@ -1757,7 +1758,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_Enable
  * @tc.type: FUNC
  * @tc.require: issue41
  */
-HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_EnableVisibleRectWithSamplingTest001, TestSize.Level2)
+HWTEST_F(RSUniRenderVirtualProcessorTest, CanvasClipRegionForUniscaleMode_EnableVisibleRectWithSamplingTest001,
+    TestSize.Level2)
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 

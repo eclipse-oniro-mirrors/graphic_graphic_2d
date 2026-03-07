@@ -223,7 +223,7 @@ void RSMainThreadTest::SetUpTestCase()
     renderService_.screenManager_ = screenManager_;
     auto mockRenderProcessManager = sptr<RSSingleRenderProcessManagerMock>::MakeSptr(renderService_);
     renderService_.renderProcessManager_ = mockRenderProcessManager;
-    RSMainThread::Instance()->hgmRenderContext_ = 
+    RSMainThread::Instance()->hgmRenderContext_ =
         std::make_shared<HgmRenderContext>(mockRenderProcessManager->renderToServiceConnection_);
     vsyncManager_ = sptr<RSVsyncManager>::MakeSptr();
     vsyncManager_->init(screenManager_);

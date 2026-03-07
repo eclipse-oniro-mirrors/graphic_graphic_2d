@@ -3717,7 +3717,6 @@ void RSClientToServiceConnectionProxy::ReportGameStateData(GameStateData info)
     MessageOption option;
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("ReportGameStateData: WriteInterfaceToken GetDescriptor err.");
-        // return ERR_INVALID_VALUE;
         return;
     }
     ReportGameStateDataRs(data, reply, option, info);
@@ -3725,8 +3724,8 @@ void RSClientToServiceConnectionProxy::ReportGameStateData(GameStateData info)
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         ROSEN_LOGE("RSClientToServiceConnectionProxy::ReportGameStateData: Send Request err.");
-        return; 
-    } 
+        return;
+    }
 }
 
 ErrCode RSClientToServiceConnectionProxy::NotifyLightFactorStatus(int32_t lightFactorStatus)
