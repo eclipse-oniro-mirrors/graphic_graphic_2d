@@ -918,8 +918,7 @@ void RSRenderPipelineClient::ClearSurfaceWatermark(pid_t pid, const std::string 
     clientToRender->ClearSurfaceWatermark(pid, name);
 }
 
-class CustomOcclusionChangeCallback : public RSOcclusionChangeCallbackStub
-{
+class CustomOcclusionChangeCallback : public RSOcclusionChangeCallbackStub {
 public:
     explicit CustomOcclusionChangeCallback(const OcclusionChangeCallback &callback) : cb_(callback) {}
     ~CustomOcclusionChangeCallback() override {};

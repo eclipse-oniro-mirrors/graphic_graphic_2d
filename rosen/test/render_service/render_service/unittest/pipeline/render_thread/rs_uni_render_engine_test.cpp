@@ -499,7 +499,8 @@ HWTEST_F(RSUniRenderEngineTest, DrawLayerPreProcess_DrmCornerRadiusTransparentTe
 /**
  * @tc.name: DrawLayerPreProcess_ProtectedBufferTest001
  * @tc.desc: Test DrawLayerPreProcess with protected buffer and non-transparent background
- *           The if (buffer && BUFFER_USAGE_PROTECTED && backgroundColor != Transparent) branch at line 188 should be true
+ *           The if (buffer && BUFFER_USAGE_PROTECTED && backgroundColor != Transparent)
+ *           branch at line 188 should be true
  * @tc.type: FUNC
  * @tc.require: issue41
  */

@@ -142,7 +142,8 @@ HWTEST_F(RSGPUCacheManagerTest, GuardEndWithNoPendingDoesNothing001, TestSize.Le
 
 /**
  * @tc.name: BufferDeleteCallbackWorksAndExpiredIsNoop001
- * @tc.desc: Buffer delete callbacks should schedule cleanup when manager is alive; be a noop after manager is destroyed.
+ * @tc.desc: Buffer delete callbacks should schedule cleanup when manager is alive;
+ *           be a noop after manager is destroyed.
  * @tc.type: FUNC
  */
 HWTEST_F(RSGPUCacheManagerTest, BufferDeleteCallbackWorksAndExpiredIsNoop001, TestSize.Level1)

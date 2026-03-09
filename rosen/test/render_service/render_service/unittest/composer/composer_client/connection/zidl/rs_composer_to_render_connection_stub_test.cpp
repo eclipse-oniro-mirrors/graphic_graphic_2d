@@ -213,7 +213,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_DefaultBranc
  * CaseDescription: 1. write valid token but missing vsyncId data
  *                  2. expect ERR_INVALID_DATA (line 116 true branch, ReadUint64 fails)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_VsyncIdReadFail_Line116_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_Notify_VsyncIdReadFail_Line116_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -242,7 +243,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_Vsync
  * CaseDescription: 1. write valid token and vsyncId but missing size data
  *                  2. expect ERR_INVALID_DATA (line 121 true branch, ReadInt32 fails)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_SizeReadFail_Line121_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_Notify_SizeReadFail_Line121_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -272,7 +274,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_SizeR
  * CaseDescription: 1. write valid token, vsyncId, size > MAX_LPP_LAYER_SIZE(5)
  *                  2. expect ERR_INVALID_DATA (line 121 true branch, size > limit)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_SizeExceedsLimit_Line121_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_Notify_SizeExceedsLimit_Line121_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -302,7 +305,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_SizeE
  * CaseDescription: 1. write valid token, vsyncId, size=1 but missing nodeId data
  *                  2. expect ERR_INVALID_DATA (line 128 true branch, ReadUint64 fails for nodeId)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_FirstNodeIdReadFail_Line128_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_Notify_FirstNodeIdReadFail_Line128_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -333,7 +337,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_First
  * CaseDescription: 1. write valid token, vsyncId, size=2 but only 1 nodeId
  *                  2. expect ERR_INVALID_DATA (line 128 true branch, second ReadUint64 fails)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_SecondNodeIdReadFail_Line128_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_Notify_SecondNodeIdReadFail_Line128_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -365,7 +370,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_Secon
  * CaseDescription: 1. write valid token, vsyncId, size=5 but only 3 nodeIds
  *                  2. expect ERR_INVALID_DATA (line 128 true branch, 4th ReadUint64 fails)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_MultipleNodeIds_MiddleReadFail_Line128_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_Notify_MultipleNodeIds_MiddleReadFail_Line128_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -399,7 +405,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_Notify_Multi
  * CaseDescription: 1. write valid token with second vecSize > 1000 (releaseBufferFenceVec)
  *                  2. expect ERR_INVALID_DATA (line 79 true branch)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeExceeds_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeExceeds_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -431,7 +438,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with second vecSize = 1002 (releaseBufferFenceVec)
  *                  2. expect ERR_INVALID_DATA (line 79 true branch, boundary2)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSize1002_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSize1002_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -463,7 +471,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with second vecSize = UINT32_MAX (releaseBufferFenceVec)
  *                  2. expect ERR_INVALID_DATA (line 79 true branch, extreme value)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeMaxUint32_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeMaxUint32_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -495,7 +504,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with timestamps and second vecSize > 1000
  *                  2. expect ERR_INVALID_DATA (line 79 true branch with non-empty timestampVec)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_WithTimestamps_SecondVecExceeds_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_WithTimestamps_SecondVecExceeds_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -535,7 +545,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with second vecSize = 5000 (releaseBufferFenceVec)
  *                  2. expect ERR_INVALID_DATA (line 79 true branch, much larger value)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSize5000_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSize5000_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -567,7 +578,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with second vecSize = 1000 (releaseBufferFenceVec)
  *                  2. expect success, line 79 condition is false (vecSize <= 1000)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeAtLimit_FalseBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeAtLimit_FalseBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     ReleaseLayerBuffersInfo captured {};
@@ -610,7 +622,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with second vecSize = 1 (releaseBufferFenceVec)
  *                  2. expect success, line 79 condition is false (1 <= 1000)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeOne_FalseBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_SecondVecSizeOne_FalseBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     ReleaseLayerBuffersInfo captured {};
@@ -647,7 +660,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with first vecSize > 1000 (timestampVec)
  *                  2. expect ERR_INVALID_DATA (line 66 true branch)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_FirstVecSizeExceeds, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_FirstVecSizeExceeds, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -678,7 +692,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with hasBuffer=true but incomplete buffer data
  *                  2. expect ERR_INVALID_DATA (line 88 true branch, ReadSurfaceBufferImpl fails at line 94)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_HasBufferTrue_ReadFail_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_HasBufferTrue_ReadFail_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -717,7 +732,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with hasBuffer=true but missing fence data
  *                  2. expect error or handling (line 88 true branch, fence read may fail)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_HasBufferTrue_MissingFence_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_HasBufferTrue_MissingFence_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -755,7 +771,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with multiple entries, some hasBuffer=true
  *                  2. expect ERR_INVALID_DATA when buffer read fails (line 88 true branch)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_MultipleEntries_HasBufferTrue_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_MultipleEntries_HasBufferTrue_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -801,7 +818,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with first entry hasBuffer=true, incomplete data
  *                  2. expect ERR_INVALID_DATA at line 94 (line 88 true branch for first entry)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_FirstEntryHasBufferTrue_TrueBranch, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_FirstEntryHasBufferTrue_TrueBranch, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;
@@ -842,7 +860,8 @@ HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayer
  * CaseDescription: 1. write valid token with hasBuffer=true but missing sequence
  *                  2. expect error (line 88 true branch, ReadSurfaceBufferImpl fails reading sequence)
  */
-HWTEST_F(RSComposerToRenderConnectionStubTest, Stub_OnRemoteRequest_ReleaseLayerBuffers_HasBufferTrue_NoSequence_Fail, TestSize.Level1)
+HWTEST_F(RSComposerToRenderConnectionStubTest,
+    Stub_OnRemoteRequest_ReleaseLayerBuffers_HasBufferTrue_NoSequence_Fail, TestSize.Level1)
 {
     RSComposerToRenderConnection stub;
     bool called = false;

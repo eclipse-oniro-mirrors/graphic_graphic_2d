@@ -166,7 +166,7 @@ void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offsetX, int32_
 {
 }
 
-void RSRenderPipelineClient::SetScreenFrameGravity(ScreenId id, int32_t gravity)
+void RSRenderServiceClient::SetScreenFrameGravity(ScreenId id, int32_t gravity)
 {
 }
 

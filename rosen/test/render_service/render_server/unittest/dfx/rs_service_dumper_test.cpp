@@ -814,7 +814,7 @@ HWTEST_F(RSServiceDumperTest, RegisterRSGfxFuncs_WithLogFlagArgs, TestSize.Level
     dumpManager_->CmdExec(argSets, dumpString);
 
     // Then: Should handle the command
-    EXPECT_TRUE(dumpString.find("Successed") != std::string::npos || 
+    EXPECT_TRUE(dumpString.find("Successed") != std::string::npos ||
                 dumpString.find("Failed") != std::string::npos ||
                 !dumpString.empty());
 }

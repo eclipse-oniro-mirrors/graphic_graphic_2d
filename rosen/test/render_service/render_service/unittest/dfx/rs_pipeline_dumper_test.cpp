@@ -912,7 +912,7 @@ HWTEST_F(RSPipelineDumperTest, RegisterRSGfxFuncs_WithLogFlagArgs, TestSize.Leve
     dumpManager_->CmdExec(argSets, out, nullptr);
 
     // Then: Should handle the command
-    EXPECT_TRUE(out.find("Successed") != std::string::npos || 
+    EXPECT_TRUE(out.find("Successed") != std::string::npos ||
                 out.find("Failed") != std::string::npos ||
                 !out.empty());
 }

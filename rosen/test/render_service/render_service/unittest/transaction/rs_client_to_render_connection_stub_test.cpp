@@ -3471,10 +3471,12 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest012, TestSize
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     RSSurfaceCaptureBlurParam blurParam;
+    blurParam.isNeedBlur = false;  // Explicitly set to false
     Drawing::Rect specifiedAreaRect;
     RSSurfaceCapturePermissions permissions;
     permissions.isSystemCalling = true;
     permissions.selfCapture = true;
+    permissions.screenCapturePermission = false;  // Not needed for SURFACE_NODE without blur
     ASSERT_NE(callback, nullptr);
     // Test with dirty SURFACE_NODE - should set hasDirtyContentInSurfaceCapture = true
     renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
@@ -3504,12 +3506,165 @@ HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest013, TestSize
     RSSurfaceCaptureConfig captureConfig;
     captureConfig.captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
     RSSurfaceCaptureBlurParam blurParam;
+    blurParam.isNeedBlur = false;  // Explicitly set to false
+    Drawing::Rect specifiedAreaRect;
+    RSSurfaceCapturePermissions permissions;
+    permissions.isSystemCalling = true;
+    permissions.selfCapture = true;
+    permissions.screenCapturePermission = false;  // Not needed for SURFACE_NODE without blur
+    ASSERT_NE(callback, nullptr);
+    // Test with subtree dirty SURFACE_NODE - should set hasDirtyContentInSurfaceCapture = true
+    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
+        captureConfig, blurParam, specifiedAreaRect, permissions);
+
+    nodeMap.UnregisterRenderNode(nodeId);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureTest014
+ * @tc.desc: Test TakeSurfaceCapture with isSyncRender enabled and no special layer
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest014, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+
+    // Register surfaceNode
+    auto& nodeMap = RSMainThread::Instance()->GetContext().nodeMap;
+    nodeMap.RegisterRenderNode(surfaceNode_);
+
+    NodeId nodeId = surfaceNode_->GetId();
+    sptr<RSISurfaceCaptureCallback> callback = new RSSurfaceCaptureCallbackStubMock();
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
+    captureConfig.isSyncRender = true;  // Enable isSyncRender to trigger the branch
+    RSSurfaceCaptureBlurParam blurParam;
     Drawing::Rect specifiedAreaRect;
     RSSurfaceCapturePermissions permissions;
     permissions.isSystemCalling = true;
     permissions.selfCapture = true;
     ASSERT_NE(callback, nullptr);
-    // Test with subtree dirty SURFACE_NODE - should set hasDirtyContentInSurfaceCapture = true
+    // Test with isSyncRender=true - should trigger the RegisterCaptureCallback branch (lines 461-474)
+    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
+        captureConfig, blurParam, specifiedAreaRect, permissions);
+
+    nodeMap.UnregisterRenderNode(nodeId);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureTest015
+ * @tc.desc: Test TakeSurfaceCapture with isSyncRender enabled, HAS_GENERAL_SPECIAL layer and dirty node
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest015, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+
+    // Register surfaceNode
+    auto& nodeMap = RSMainThread::Instance()->GetContext().nodeMap;
+    nodeMap.RegisterRenderNode(surfaceNode_);
+
+    NodeId nodeId = surfaceNode_->GetId();
+    // Add HAS_GENERAL_SPECIAL to the special layer manager
+    surfaceNode_->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, true);
+    // Mark node as dirty to differentiate from Test017 (which tests clean nodes)
+    surfaceNode_->SetDirty(true);
+
+    sptr<RSISurfaceCaptureCallback> callback = new RSSurfaceCaptureCallbackStubMock();
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
+    captureConfig.isSyncRender = true;  // Enable isSyncRender
+    RSSurfaceCaptureBlurParam blurParam;
+    blurParam.isNeedBlur = false;
+    Drawing::Rect specifiedAreaRect;
+    RSSurfaceCapturePermissions permissions;
+    permissions.isSystemCalling = true;
+    permissions.selfCapture = true;
+    permissions.screenCapturePermission = false;
+    ASSERT_NE(callback, nullptr);
+    // Test with HAS_GENERAL_SPECIAL and dirty - should skip RegisterCaptureCallback but set dirty flag
+    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
+        captureConfig, blurParam, specifiedAreaRect, permissions);
+
+    // Clean up
+    surfaceNode_->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, false);
+    nodeMap.UnregisterRenderNode(nodeId);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureTest016
+ * @tc.desc: Test TakeSurfaceCapture with non-surface node and isSyncRender
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest016, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+
+    // Create a LOGICAL_DISPLAY_NODE (non-surface node)
+    pid_t pid = 2003;
+    NodeId nodeId = ((NodeId)pid << 32 | 2003);
+    RSDisplayNodeConfig config;
+    config.screenId = 0;
+    auto displayNode = std::shared_ptr<RSLogicalDisplayRenderNode>(
+        new RSLogicalDisplayRenderNode(nodeId, config, std::weak_ptr<RSContext>(), false),
+        RSRenderNodeGC::NodeDestructor);
+
+    // Register node
+    auto& nodeMap = RSMainThread::Instance()->GetContext().nodeMap;
+    nodeMap.RegisterRenderNode(displayNode);
+
+    sptr<RSISurfaceCaptureCallback> callback = new RSSurfaceCaptureCallbackStubMock();
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
+    captureConfig.isSyncRender = true;  // Enable isSyncRender
+    RSSurfaceCaptureBlurParam blurParam;
+    blurParam.isNeedBlur = false;
+    Drawing::Rect specifiedAreaRect;
+    RSSurfaceCapturePermissions permissions;
+    permissions.isSystemCalling = true;
+    permissions.screenCapturePermission = true;
+    ASSERT_NE(callback, nullptr);
+    // Test with non-surface node - surfaceNode will be null, skip RegisterCaptureCallback branch
+    renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
+        captureConfig, blurParam, specifiedAreaRect, permissions);
+
+    nodeMap.UnregisterRenderNode(nodeId);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureTest017
+ * @tc.desc: Test TakeSurfaceCapture with clean SURFACE_NODE (not dirty, not subtree dirty)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, TakeSurfaceCaptureTest017, TestSize.Level1)
+{
+    ASSERT_NE(renderPipelineAgent_, nullptr);
+
+    // Register surfaceNode without dirty flags
+    auto& nodeMap = RSMainThread::Instance()->GetContext().nodeMap;
+    nodeMap.RegisterRenderNode(surfaceNode_);
+
+    NodeId nodeId = surfaceNode_->GetId();
+    surfaceNode_->SetDirty(false);  // Ensure not dirty
+    surfaceNode_->SetSubTreeDirty(false);  // Ensure subtree not dirty
+
+    sptr<RSISurfaceCaptureCallback> callback = new RSSurfaceCaptureCallbackStubMock();
+    RSSurfaceCaptureConfig captureConfig;
+    captureConfig.captureType = SurfaceCaptureType::DEFAULT_CAPTURE;
+    captureConfig.isSyncRender = false;  // Disable isSyncRender to go to else path
+    RSSurfaceCaptureBlurParam blurParam;
+    blurParam.isNeedBlur = false;
+    Drawing::Rect specifiedAreaRect;
+    RSSurfaceCapturePermissions permissions;
+    permissions.isSystemCalling = true;
+    permissions.selfCapture = true;
+    permissions.screenCapturePermission = false;
+    ASSERT_NE(callback, nullptr);
+    // Test with clean SURFACE_NODE - should not set hasDirtyContentInSurfaceCapture
     renderPipelineAgent_->TakeSurfaceCapture(nodeId, callback,
         captureConfig, blurParam, specifiedAreaRect, permissions);
 
@@ -4532,5 +4687,50 @@ HWTEST_F(RSClientToRenderConnectionStubTest, UnregisterSurfaceOcclusionChangeCal
     renderPipelineAgent_->rsRenderPipeline_ = pipeline;
     res = renderPipelineAgent_->UnRegisterSurfaceOcclusionChangeCallback(id);
     EXPECT_EQ(res, StatusCode::SUCCESS);
+}
+
+/**
+ * @tc.name: SetLogicalCameraRotationCorrectionTest002
+ * @tc.desc: Test SetLogicalCameraRotationCorrection function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, SetLogicalCameraRotationCorrectionTest002, TestSize.Level1)
+{
+    EXPECT_EQ(connectionStub_->SetLogicalCameraRotationCorrection(WAIT_HANDLER_TIME,
+        ScreenRotation::ROTATION_90), ERR_OK);
+    EXPECT_EQ(connectionStub_->SetLogicalCameraRotationCorrection(screenId_,
+        ScreenRotation::ROTATION_90), ERR_OK);
+    EXPECT_EQ(connectionStub_->SetLogicalCameraRotationCorrection(surfaceNode_->GetId(),
+        ScreenRotation::ROTATION_90), ERR_OK);
+}
+
+/**
+ * @tc.name: GetBundleNameTest001
+ * @tc.desc: GetBundleName
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, GetBundleNameTest001, TestSize.Level1)
+{
+    constexpr pid_t testPid = 1234;
+    const std::string expectedBundleName = "com.example.app";
+    connectionStub_->renderPipelineAgent_->pidToBundleName_[testPid] = expectedBundleName;
+
+    std::string actualBundleName = connectionStub_->GetBundleName(testPid);
+    EXPECT_EQ(actualBundleName, expectedBundleName);
+}
+
+/**
+ * @tc.name: GetBundleNameTest002
+ * @tc.desc: GetBundleName
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToRenderConnectionStubTest, GetBundleNameTest002, TestSize.Level1)
+{
+    constexpr pid_t testPid = -1;
+    const std::string bundleName = connectionStub_->GetBundleName(testPid);
+    EXPECT_TRUE(bundleName.empty());
 }
 } // namespace OHOS::Rosen

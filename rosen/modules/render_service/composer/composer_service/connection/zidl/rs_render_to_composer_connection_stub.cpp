@@ -107,7 +107,8 @@ int32_t RSRenderToComposerConnectionStub::GetCleanLayerBufferSurfaceId(OHOS::Mes
     return COMPOSITOR_ERROR_OK;
 }
 
-std::unordered_set<uint64_t> RSRenderToComposerConnectionStub::ParseClearRedrawCacheBufferIds(OHOS::MessageParcel& parcel)
+std::unordered_set<uint64_t> RSRenderToComposerConnectionStub::ParseClearRedrawCacheBufferIds(
+    OHOS::MessageParcel& parcel)
 {
     std::vector<uint64_t> bufferIdsVector;
     std::unordered_set<uint64_t> bufferIds;

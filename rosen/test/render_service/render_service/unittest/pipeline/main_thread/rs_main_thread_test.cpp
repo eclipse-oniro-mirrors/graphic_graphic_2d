@@ -32,6 +32,7 @@
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "feature_cfg/graphic_feature_param_manager.h"
+#include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_engine.h"
@@ -235,6 +236,11 @@ void RSMainThreadTest::TearDownTestCase()
     std::this_thread::sleep_for(std::chrono::seconds(WAIT_HANDLER_TIME));
     RSMainThread::Instance()->hgmRenderContext_ = nullptr;
     RSMainThread::Instance()->rsVsyncManagerAgent_ = nullptr;
+    if (RSUniHwcPrevalidateUtil::GetInstance().preValidateHandle_ != nullptr) {
+        RSUniHwcPrevalidateUtil::GetInstance().preValidateHandle_ = nullptr;
+        RSUniHwcPrevalidateUtil::GetInstance().preValidateFunc_ = nullptr;
+        RSUniHwcPrevalidateUtil::GetInstance().handleEventFunc_ = nullptr;
+    }
     ASSERT_NE(nullptr, screenManager_);
     screenManager_->defaultScreenId_ = INVALID_SCREEN_ID;
 

@@ -3804,7 +3804,8 @@ HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_HasGameScene2, TestSize.Leve
  * CaseDescription: 1. create RSRenderComposer
  *                  2. set composerToRenderConnection_ to not null
  *                  3. call ProcessComposerFrame
- *                  4. verify ReleaseLayerBuffers is called when composerToRenderConnection_ is not null (line 310 condition true)
+ *                  4. verify ReleaseLayerBuffers is called
+ *                     when composerToRenderConnection_ is not null (line 310 condition true)
  */
 HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_ComposerToRenderConnectionNotNull, TestSize.Level1)
 {
@@ -3875,7 +3876,8 @@ HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_HardJankReport_True, TestSiz
  * EnvConditions: N/A
  * CaseDescription: 1. create RSRenderComposer
  *                  2. set intervalTimePoints_ to trigger time condition
- *                  3. call ProcessComposerFrame quickly to keep missedFrames < HARD_JANK_TWO_TIME (line 323 condition false)
+ *                  3. call ProcessComposerFrame quickly to keep
+ *                     missedFrames < HARD_JANK_TWO_TIME (line 323 condition false)
  *                  4. verify no load warning event is reported when missedFrames < 2
  */
 HWTEST_F(RsRenderComposerTest, ProcessComposerFrame_HardJankReport_False_LowMissedFrames, TestSize.Level1)
@@ -5097,7 +5099,8 @@ HWTEST_F(RsRenderComposerTest, ClearFrameBuffersInner_OtherGpuApi_NoWaitSurfaceC
     // Verify surface is in the map
     EXPECT_TRUE(rsRenderComposerTmp->frameBufferSurfaceOhosMap_.count(surfaceId));
 
-    // Call ClearFrameBuffersInner - for non-Vulkan/DDGR GPU API type, WaitSurfaceClear is NOT called (line 807 condition false)
+    // Call ClearFrameBuffersInner - for non-Vulkan/DDGR GPU API type,
+    // WaitSurfaceClear is NOT called (line 807 condition false)
     rsRenderComposerTmp->uniRenderEngine_ = nullptr;
     GSError ret = rsRenderComposerTmp->ClearFrameBuffersInner(false);
     ASSERT_NE(ret, GSERROR_OK);
@@ -5691,7 +5694,8 @@ HWTEST_F(RsRenderComposerTest, Redraw_ProtectedBufferDetection_Vulkan, TestSize.
 
     // When GPU API type is VULKAN or DDGR, line 881 condition is true
     // This enters line 883 for loop to iterate through layers
-    // The for loop checks: if (layer && layer->GetBuffer() && (layer->GetBuffer()->GetUsage() & BUFFER_USAGE_PROTECTED))
+    // The for loop checks:
+    // if (layer && layer->GetBuffer() && (layer->GetBuffer()->GetUsage() & BUFFER_USAGE_PROTECTED))
     rsRenderComposerTmp->Redraw(psurface, layers);
 
     // Verify all layers are processed
@@ -6336,7 +6340,8 @@ HWTEST_F(RsRenderComposerTest, ComputeTargetColorGamut005, TestSize.Level1)
         sptr<SurfaceBuffer> extraBuffer;
         ret = sProducer->RequestBuffer(extraBuffer, requestFence, requestConfig);
         EXPECT_EQ(ret, GSERROR_OK);
-        RSLayerPtr l = std::static_pointer_cast<RSLayer>(std::make_shared<FakeRSLayer>(i, false, "L" + std::to_string(i)));
+        RSLayerPtr l = std::static_pointer_cast<RSLayer>(
+            std::make_shared<FakeRSLayer>(i, false, "L" + std::to_string(i)));
         l->SetBuffer(extraBuffer);
         layers.emplace_back(l);
     }

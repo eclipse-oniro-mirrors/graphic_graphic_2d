@@ -1610,7 +1610,8 @@ HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_EmptyMatrix
  *                  2. call SetLayerColorTransform
  *                  3. verify SetLayerColorTransform NOT called
  */
-HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_IdentityMatrices_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_IdentityMatrices_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -1723,7 +1724,8 @@ HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_NegativeVal
  *                  2. call SetLayerColorTransform
  *                  3. verify SetLayerColorTransform IS called
  */
-HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_LastElementDiff_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_LastElementDiff_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -1750,7 +1752,8 @@ HWTEST_F(HdiLayerTest, SetLayerColorTransform_DoLayerInfoCompareTrue_LastElement
  * EnvConditions: N/A
  * CaseDescription: 1. doLayerInfoCompare_ is true, meta data sets are identical
  *                  2. call SetLayerMetaDataSet
- *                  3. verify sizes match, early return (meta data same, sizes match, early return, no call to SetLayerMetaDataSet)
+ *                  3. verify sizes match, early return
+ *                     (meta data same, sizes match, early return, no call to SetLayerMetaDataSet)
  */
 HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSetSame_False, Function | MediumTest| Level1)
 {
@@ -1852,7 +1855,8 @@ HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_KeyDiffers_Tru
  *                  2. call SetLayerMetaDataSet
  *                  3. verify SetLayerMetaDataSet IS called
  */
-HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSizeDiffers_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataSizeDiffers_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -1917,7 +1921,8 @@ HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_EmptyMetaData_
  *                  2. call SetLayerMetaDataSet
  *                  3. verify sizes match, early return (meta data same, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataEmptyBoth_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_MetaDataEmptyBoth_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -1980,7 +1985,8 @@ HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_LargeMetaData_
  *                  2. call SetLayerMetaDataSet
  *                  3. verify SetLayerMetaDataSet IS called
  */
-HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_FirstElementDiffers_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_FirstElementDiffers_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2012,7 +2018,8 @@ HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_FirstElementDi
  *                  2. call SetLayerMetaDataSet
  *                  3. verify SetLayerMetaDataSet IS called
  */
-HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_LastElementDiffers_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerMetaDataSet_DoLayerInfoCompareTrue_LastElementDiffers_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2282,7 +2289,8 @@ HWTEST_F(HdiLayerTest, SetLayerSize_DoLayerInfoCompareTrue_AllFieldsDiffer_False
  *                  2. call SetLayerSize
  *                  3. verify SetLayerSize IS called (doLayerInfoCompare_ will be false)
  */
-HWTEST_F(HdiLayerTest, SetLayerSize_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerSize_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2665,7 +2673,8 @@ HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionsMatch
  *                  2. call SetLayerVisibleRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_MultipleRegionsMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_MultipleRegionsMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2695,7 +2704,8 @@ HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_MultipleRegi
  *                  2. call SetLayerVisibleRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_LargeRegionsMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_LargeRegionsMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2722,7 +2732,8 @@ HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_LargeRegions
  *                  2. call SetLayerVisibleRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionWithOffset_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionWithOffset_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2830,7 +2841,8 @@ HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionYMatch
  *                  2. call SetLayerVisibleRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionWidthMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionWidthMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2857,7 +2869,8 @@ HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionWidthM
  *                  2. call SetLayerVisibleRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionHeightMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionHeightMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2884,7 +2897,8 @@ HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_RegionHeight
  *                  2. call SetLayerVisibleRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_FourRegionsMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerVisibleRegion_DoLayerInfoCompareTrue_FourRegionsMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -2973,7 +2987,8 @@ HWTEST_F(HdiLayerTest, SetLayerDirtyRegion_DoLayerInfoCompareTrue_RegionsMatch_T
  *                  2. call SetLayerDirtyRegion
  *                  3. verify sizes match, early return (regions match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerDirtyRegion_DoLayerInfoCompareTrue_MultipleRegionsMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerDirtyRegion_DoLayerInfoCompareTrue_MultipleRegionsMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3711,7 +3726,8 @@ HWTEST_F(HdiLayerTest, SetLayerBuffer_BufferCachedBufferClearedFalse_True, Funct
  *                  2. call SetLayerCompositionType
  *                  3. verify sizes match, early return (types match, sizes match, early return)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientTypeMatch_True, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientTypeMatch_True,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3737,7 +3753,8 @@ HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientType
  *                  2. call SetLayerCompositionType
  *                  3. verify SetLayerCompositionType IS called (types differ, set called)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_DeviceVsClient_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_DeviceVsClient_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3761,7 +3778,8 @@ HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_DeviceVsCl
  *                  2. call SetLayerCompositionType
  *                  3. verify SetLayerCompositionType IS called (types differ, set called)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientVsDevice_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientVsDevice_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3786,7 +3804,8 @@ HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientVsDe
  *                  2. call SetLayerCompositionType
  *                  3. verify SetLayerCompositionType IS called (types differ, set called)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_DeviceVsCursor_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_DeviceVsCursor_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3810,7 +3829,8 @@ HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_DeviceVsCu
  *                  2. call SetLayerCompositionType
  *                  3. verify SetLayerCompositionType IS called (types differ, set called)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_CursorVsDevice_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_CursorVsDevice_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3835,7 +3855,8 @@ HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_CursorVsDe
  *                  2. call SetLayerCompositionType
  *                  3. verify SetLayerCompositionType IS called (types differ, set called)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientVsCursor_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientVsCursor_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -3860,7 +3881,8 @@ HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareTrue_ClientVsCu
  *                  2. call SetLayerCompositionType
  *                  3. verify SetLayerCompositionType IS called (doLayerInfoCompare_ will be false)
  */
-HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCompositionType_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -4093,7 +4115,8 @@ HWTEST_F(HdiLayerTest, SetLayerBlendType_DoLayerInfoCompareTrue_SrcOverVsSrc_Fal
  *                  2. call SetLayerBlendType
  *                  3. verify SetLayerBlendType IS called (doLayerInfoCompare_ will be false)
  */
-HWTEST_F(HdiLayerTest, SetLayerBlendType_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerBlendType_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -4293,7 +4316,8 @@ HWTEST_F(HdiLayerTest, SetLayerCrop_DoLayerInfoCompareTrue_AllFieldsDiffer_False
  *                  2. call SetLayerCrop
  *                  3. verify SetLayerCrop IS called (doLayerInfoCompare_ will be false)
  */
-HWTEST_F(HdiLayerTest, SetLayerCrop_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetLayerCrop_DoLayerInfoCompareFalse_PrevCompositionTypeNotDevice_False,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -4603,7 +4627,8 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_PrevNull_ParameterSet
  *                  2. Call SetPerFrameParameterBrightnessRatio
  *                  3. Verify SetLayerPerFrameParameterSmq is called (brightness ratios differ)
  */
-HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferLargeValues_ParameterSet, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferLargeValues_ParameterSet,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -4633,7 +4658,8 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferLargeValu
  *                  2. Call SetPerFrameParameterBrightnessRatio
  *                  3. Verify SetLayerPerFrameParameterSmq is called (brightness ratios differ)
  */
-HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferSmallValues_ParameterSet, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferSmallValues_ParameterSet,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -4663,7 +4689,8 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferSmallValu
  *                  2. Call SetPerFrameParameterBrightnessRatio
  *                  3. Verify SetLayerPerFrameParameterSmq is called (brightness ratios differ)
  */
-HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferNegativeValues_ParameterSet, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferNegativeValues_ParameterSet,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 
@@ -4693,7 +4720,8 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferNegativeV
  *                  2. Call SetPerFrameParameterBrightnessRatio
  *                  3. Verify SetLayerPerFrameParameterSmq is called (brightness ratios differ)
  */
-HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPositive_ParameterSet, Function | MediumTest| Level1)
+HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPositive_ParameterSet,
+    Function | MediumTest| Level1)
 {
     ASSERT_NE(hdiLayer_, nullptr);
 

@@ -2222,9 +2222,11 @@ HWTEST_F(HdiOutputTest, PrepareCompleteIfNeed_NeedFlushTrue_CallFlushScreen, Fun
     while (!out->fbSurface_->availableBuffers_.empty()) {
         out->fbSurface_->availableBuffers_.pop();
     }
-    out->fbSurface_->availableBuffers_.push(std::make_unique<FrameBufferEntry>(buffer, acquireFence, timestamp, damage));
+    out->fbSurface_->availableBuffers_.push(
+        std::make_unique<FrameBufferEntry>(buffer, acquireFence, timestamp, damage));
     EXPECT_CALL(*hdiDeviceMock_, SetScreenClientDamage(_, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
-    EXPECT_CALL(*hdiDeviceMock_, SetScreenClientBuffer(_, _, _, _)).WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenClientBuffer(_, _, _, _))
+        .WillRepeatedly(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
     out->device_ = nullptr;
     out->SetHdiOutputDevice(hdiDeviceMock_);
 
@@ -3796,7 +3798,8 @@ HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_AllNullLayers_AllSkipped, Fu
  *                  2. call DumpLayerInfoForSplitRender
  *                  3. verify valid layers processed, null layers skipped (null layers skipped)
  */
-HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_AlternatingNullLayers_MixedProcessing, Function | MediumTest | Level1)
+HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_AlternatingNullLayers_MixedProcessing,
+    Function | MediumTest | Level1)
 {
     auto hdiOutput = HdiOutputTest::hdiOutput_;
 
@@ -3832,7 +3835,8 @@ HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_AlternatingNullLayers_MixedP
  *                  2. call DumpLayerInfoForSplitRender
  *                  3. verify first layer processed, second skipped (second layer skipped)
  */
-HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_LayerWithNullRSLayer_AfterValid_LayerSkipped, Function | MediumTest | Level1)
+HWTEST_F(HdiOutputTest, DumpLayerInfoForSplitRender_LayerWithNullRSLayer_AfterValid_LayerSkipped,
+    Function | MediumTest | Level1)
 {
     auto hdiOutput = HdiOutputTest::hdiOutput_;
 
