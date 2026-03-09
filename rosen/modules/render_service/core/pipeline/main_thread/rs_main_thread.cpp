@@ -178,6 +178,7 @@
 
 #ifdef RS_ENABLE_UNI_RENDER
 #include "ability_manager_client.h"
+#include "xcollie/process_kill_reason.h"
 #endif
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 using namespace FRAME_TRACE;
@@ -959,6 +960,7 @@ void RSMainThread::InitVulkanErrorCallback(Drawing::GPUContext* gpuContext)
         }
 #ifdef RS_ENABLE_UNI_RENDER
         AAFwk::ExitReasonCompability killReason{AAFwk::Reason::REASON_UNKNOWN, reason};
+        killReason.killId = HiviewDFX::ProcessKillReason::KillEventId::REASON_GPU_THRESHOLD_KILLER;
         for (const auto pid : pidsToKill) {
             if (pid <= 0) {
                 continue;

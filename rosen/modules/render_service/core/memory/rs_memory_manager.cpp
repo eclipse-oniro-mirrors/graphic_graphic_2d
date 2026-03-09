@@ -60,6 +60,7 @@
 
 #ifdef RS_ENABLE_UNI_RENDER
 #include "ability_manager_client.h"
+#include "xcollie/process_kill_reason.h"
 #endif
 
 #ifdef RS_ENABLE_VK
@@ -1027,6 +1028,7 @@ static void KillProcessByPid(const pid_t pid, const MemorySnapshotInfo& info, co
 #ifdef RS_ENABLE_UNI_RENDER
     if (pid > 0) {
         AAFwk::ExitReasonCompability killReason{AAFwk::Reason::REASON_RESOURCE_CONTROL, KILL_PROCESS_TYPE, reason};
+        killReason.killId = HiviewDFX::ProcessKillReason::KillEventId::REASON_RESOURCE_LEAK_GPU_RS_LEAK;
         int32_t ret = AAFwk::AbilityManagerClient::GetInstance()->KillAppWithReason(pid, killReason);
         // To prevent the print from being filtered, use RS_LOGE.
         std::string logInfo = "KillProcessByPid, pid: " + std::to_string(pid) + ", process name: " + info.bundleName +
