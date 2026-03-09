@@ -910,11 +910,7 @@ public:
         isOcclusionVisibleWithoutFilter_ = visible;
     }
 
-    void SetIsParticipateInOcclusion(bool isParticipate)
-    {
-        isParticipateInOcclusion_ = isParticipate;
-    }
-
+    void SetIsParticipateInOcclusion(bool isParticipate);
     bool GetIsParticipateInOcclusion() const
     {
         return isParticipateInOcclusion_;

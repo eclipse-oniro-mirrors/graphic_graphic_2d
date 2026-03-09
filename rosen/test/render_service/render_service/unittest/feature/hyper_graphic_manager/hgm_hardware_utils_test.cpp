@@ -229,38 +229,38 @@ HWTEST_F(HgmHardwareUtilsTest, SwitchRefreshRateTest, TestSize.Level1)
 
     uint32_t currentRate = 0;
     hgmHardwareUtils->TransactRefreshRateParam(currentRate, 0, 0, 0);
-    hgmHardwareUtils->SwitchRefreshRate(output);
+    hgmHardwareUtils->SwitchRefreshRate(output, 0);
 
     hgmHardwareUtils->TransactRefreshRateParam(currentRate, 60, 0, 0);
-    hgmHardwareUtils->SwitchRefreshRate(output);
+    hgmHardwareUtils->SwitchRefreshRate(output, 0);
     bool isSelfOwnedScreen = false;
     ScreenSize sSize = {720, 1080, 685, 1218};
     hgmCore.AddScreen(SCREEN_ID, 0, sSize, isSelfOwnedScreen);
-    hgmHardwareUtils->SwitchRefreshRate(output);
+    hgmHardwareUtils->SwitchRefreshRate(output, 0);
 
     hgmCore.RemoveScreen(SCREEN_ID);
     hgmCore.AddScreen(SCREEN_ID, 0, sSize, isSelfOwnedScreen);
     auto screen = hgmCore.GetScreen(SCREEN_ID);
     screen->SetSelfOwnedScreenFlag(true);
-    hgmHardwareUtils->SwitchRefreshRate(output);
+    hgmHardwareUtils->SwitchRefreshRate(output, 0);
 
     hgmCore.SetScreenManager(screenManager.GetRefPtr());
-    hgmHardwareUtils->SwitchRefreshRate(output);
+    hgmHardwareUtils->SwitchRefreshRate(output, 0);
 
     if (RSSystemProperties::IsFoldDeviceOfOldDss()) {
-        hgmHardwareUtils->SwitchRefreshRate(output);
+        hgmHardwareUtils->SwitchRefreshRate(output, 0);
 
         auto rsScreen = std::make_shared<RSScreen>(SCREEN_ID);
         rsScreen->hdiScreen_ = HdiScreen::CreateHdiScreen(SCREEN_ID);
         rsScreen->property_.SetPowerStatus(ScreenPowerStatus::POWER_STATUS_ON);
         screenManager->screens_[SCREEN_ID] = rsScreen;
-        hgmHardwareUtils->SwitchRefreshRate(output);
+        hgmHardwareUtils->SwitchRefreshRate(output, 0);
         
         rsScreen->property_.SetPowerStatus(ScreenPowerStatus::POWER_STATUS_OFF);
-        hgmHardwareUtils->SwitchRefreshRate(output);
+        hgmHardwareUtils->SwitchRefreshRate(output, 0);
         
         rsScreen->property_.SetPowerStatus(ScreenPowerStatus::POWER_STATUS_SUSPEND);
-        hgmHardwareUtils->SwitchRefreshRate(output);
+        hgmHardwareUtils->SwitchRefreshRate(output, 0);
     }
     hgmCore.SetScreenManager(orgScmFromHgm);
 }

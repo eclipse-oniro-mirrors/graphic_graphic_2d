@@ -133,7 +133,9 @@ public:
     bool IsLtpo() const { return isLtpo_.load(); }
 
     // Adaptive Vsync
-    int32_t AdaptiveStatus() const { return isAdaptive_.load(); }
+    int32_t AdaptiveStatus() const;
+    bool IsSupportASConfig() const { return isAdaptive_.load() == SupportASStatus::SUPPORT_AS; }
+    void UpdateASStateForFps(bool state);
     bool IsNeedAdaptiveAfterUpdateMode();
     // called by RSHardwareThread
     bool IsGameNodeOnTree() const { return isGameNodeOnTree_.load(); }
@@ -252,8 +254,6 @@ private:
     int64_t vsyncCountOfChangeGeneratorRate_ = -1; // default vsyncCount
     std::atomic<bool> changeGeneratorRateValid_{ true };
     HgmSimpleTimer changeGeneratorRateValidTimer_;
-    // if current game's self drawing node is on tree,default false
-    std::atomic<bool> isGameNodeOnTree_ = false;
     // current game app's self drawing node name
     std::string curGameNodeName_;
     // concurrency protection <<<
@@ -304,12 +304,16 @@ private:
     uint32_t schedulePreferredFps_ = 60;
     int32_t schedulePreferredFpsChange_ = false;
 
+    // Adaptive Sync
     std::atomic<int32_t> isAdaptive_ = SupportASStatus::NOT_SUPPORT;
+    std::atomic<bool> asStateForFps_ = false;
     // Does current game require Adaptive Sync
     int32_t isGameSupportAS_ = SupportASStatus::NOT_SUPPORT;
     std::atomic<int32_t> lastIsAdaptive_ = SupportASStatus::NOT_SUPPORT;
     std::string lastGameNodeName_;
     std::function<void(bool, const std::string&)> adaptiveVsyncUpdateCallback_ = nullptr;
+    // if current game's self drawing node is on tree,default false
+    std::atomic<bool> isGameNodeOnTree_ = false;
 
     std::atomic<uint64_t> timestamp_ = 0;
 

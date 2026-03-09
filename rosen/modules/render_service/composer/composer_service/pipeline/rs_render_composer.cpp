@@ -276,7 +276,7 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
 
     bool shouldDropFrame = IsDropDirtyFrame(layers);
     if (!shouldDropFrame) {
-        hgmHardwareUtils_->SwitchRefreshRate(hdiOutput_);
+        hgmHardwareUtils_->SwitchRefreshRate(hdiOutput_, startTime);
     }
 
     if (RSSystemProperties::IsSuperFoldDisplay() && screenId_ == 0) {
