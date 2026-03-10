@@ -982,6 +982,27 @@ HWTEST_F(RecordingCanvasTest, ClipRegion001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ResetClip001
+ * @tc.desc: Test the playback of the ResetClip function.
+ * @tc.type: FUNC
+ * @tc.require: I7K0BS
+ */
+HWTEST_F(RecordingCanvasTest, ResetClip001, TestSize.Level1)
+{
+    auto recordingCanvas1 = std::make_shared<RecordingCanvas>(CANAS_WIDTH, CANAS_HEIGHT);
+    auto recordingCanvas2 = std::make_shared<RecordingCanvas>(CANAS_WIDTH, CANAS_HEIGHT, false);
+    EXPECT_TRUE(recordingCanvas1 != nullptr && recordingCanvas2 != nullptr);
+    recordingCanvas1->ResetClip();
+    recordingCanvas2->ResetClip();
+    auto drawCmdList1 = recordingCanvas1->GetDrawCmdList();
+    auto drawCmdList2 = recordingCanvas2->GetDrawCmdList();
+    EXPECT_TRUE(drawCmdList1 != nullptr && drawCmdList2 != nullptr);
+    Canvas canvas;
+    drawCmdList1->Playback(canvas);
+    drawCmdList2->Playback(canvas);
+}
+
+/**
  * @tc.name: SetMatrix001
  * @tc.desc: Test the playback of the SetMatrix function.
  * @tc.type: FUNC

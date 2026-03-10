@@ -514,6 +514,17 @@ void RecordingCanvas::ClipRegion(const Region& region, ClipOp op)
     cmdList_->AddDrawOp<ClipRegionOpItem::ConstructorHandle>(regionHandle, op);
 }
 
+void RecordingCanvas::ResetClip()
+{
+    CheckForLazySave();
+    Canvas::ResetClip();
+    if (!addDrawOpImmediate_) {
+        cmdList_->AddDrawOp(std::make_shared<ResetClipOpItem>());
+        return;
+    }
+    cmdList_->AddDrawOp<ResetClipOpItem::ConstructorHandle>();
+}
+
 void RecordingCanvas::SetMatrix(const Matrix& matrix)
 {
     CheckForLazySave();

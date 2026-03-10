@@ -1507,6 +1507,21 @@ HWTEST_F(DrawCmdTest, ResetMatrixOpItem_Marshalling001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ResetClipOpItem_Marshalling001
+ * @tc.desc: Test ResetClipOpItem_Marshalling
+ * @tc.type: FUNC
+ * @tc.require: IAKWZL
+ */
+HWTEST_F(DrawCmdTest, ResetClipOpItem_Marshalling001, TestSize.Level1)
+{
+    auto drawCmdList = DrawCmdList::CreateFromData({nullptr, 0}, false);
+    ResetClipOpItem opItem;
+    ASSERT_TRUE(drawCmdList != nullptr);
+    opItem.Marshalling(*drawCmdList);
+    EXPECT_EQ(drawCmdList->opCnt_, 1);
+}
+
+/**
  * @tc.name: SetMatrixOpItem_Marshalling001
  * @tc.desc: Test SetMatrixOpItem_Marshalling
  * @tc.type: FUNC

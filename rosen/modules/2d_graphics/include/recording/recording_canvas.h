@@ -108,6 +108,7 @@ public:
     void ClipRoundRect(const Rect& rect, std::vector<Point>& pts, bool doAntiAlias) override;
     void ClipPath(const Path& path, ClipOp op, bool doAntiAlias) override;
     void ClipRegion(const Region& region, ClipOp op = ClipOp::INTERSECT) override;
+    void ResetClip() override;
 
     void SetMatrix(const Matrix& matrix) override;
     void ResetMatrix() override;
