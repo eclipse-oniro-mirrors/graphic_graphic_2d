@@ -41,7 +41,13 @@ public:
     bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext = nullptr) override;
     void SetRenderContextType(uint8_t type) override;
     void ChangeProtectedState(bool isProtected) override;
-
+    #ifdef ROSEN_ARKUI_X
+    void AddSurface() override {}
+    void DeleteSurface() override {}
+    void SetCleanUpHelper(std::function<void()> func) override {}
+    void DestroySharedSource() override {}
+    #endif
+    
 private:
     std::atomic<bool> isProtected_{false};
 };
