@@ -23,12 +23,12 @@ namespace OHOS {
 namespace Rosen {
 class RS_EXPORT RSFrameControlTool {
 public:
-    void InsertNodeIdToAppWindowSet(NodeId id);
-    bool SerchNodeIdFromAppWindowsSet(NodeId id);
+    void SetAppWindowNodeId(NodeId id);
+    bool CheckAppWindowNodeId(NodeId id);
     static RSFrameControlTool& Instance();
 private:
     // refreshAppWindowSet_ cannot be operated concurrently
-    std::set<NodeId> refreshAppWindowSet_ {};
+    NodeId refreshAppWindowNodeId_;
 };
 }
 }
