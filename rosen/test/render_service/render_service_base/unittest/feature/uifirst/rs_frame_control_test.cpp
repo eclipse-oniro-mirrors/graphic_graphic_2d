@@ -38,18 +38,18 @@ void RSFrameControlToolTest::SetUp() {}
 void RSFrameControlToolTest::TearDown() {}
 
 /**
-* @tc.name: SerchNodeIdFromAppWindowsSet001
+* @tc.name: CheckAppWindowNodeId001
 * @tc.desc: test single frame modifier add to list
 * @tc.type: FUNC
 * @tc.require:
 */
-HWTEST_F(RSFrameControlToolTest, SerchNodeIdFromAppWindowsSet001, TestSize.Level1)
+HWTEST_F(RSFrameControlToolTest, CheckAppWindowNodeId001, TestSize.Level1)
     NodeId id1 = 100;
     NodeId id2 = 200;
     // case1
-    RSFrameControlTool::Instance().InsertNodeIdToAppWindowSet(id1);
-    EXPECT_EQ(RSFrameControlTool::Instance().SerchNodeIdFromAppWindowsSet(id1), true);
+    RSFrameControlTool::Instance().SetAppWindowNodeId(id1);
+    EXPECT_EQ(RSFrameControlTool::Instance().CheckAppWindowNodeId(id1), true);
     // case2
-    EXPECT_EQ(RSFrameControlTool::Instance().SerchNodeIdFromAppWindowsSet(id2), false);
+    EXPECT_EQ(RSFrameControlTool::Instance().CheckAppWindowNodeId(id2), false);
 }
 }
