@@ -140,18 +140,12 @@ void RSRenderComposer::CreateAndInitComposer(const std::shared_ptr<HdiOutput>& o
 
     if (handler_) {
         ScheduleTask([this]() {
-#if defined (RS_ENABLE_VK)
-            // Change vk interface type from UNIRENDER into UNPROTECTED_REDRAW, this is necessary for hardware init.
-            if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-                RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-                RsVulkanContext::GetSingleton().SetIsProtected(false);
-            }
-#endif
 #ifdef RES_SCHED_ENABLE
             SubScribeSystemAbility();
 #endif
             uniRenderEngine_ = std::make_shared<RSUniRenderEngine>();
-            uniRenderEngine_->Init();
+            // vk interface type from UNIRENDER into UNPROTECTED_REDRAW, this is necessary for hardware init
+            uniRenderEngine_->Init(RenderEngineType::UNPROTECTED_REDRAW);
             // posttask for multithread safely release surface and image
             ContextRegisterPostTask();
             threadTid_ = gettid();
@@ -885,7 +879,7 @@ void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<st
                 break;
             }
         }
-        RsVulkanContext::GetSingleton().SetIsProtected(isProtected);
+        uniRenderEngine_->GetRenderContext()->ChangeProtectedState(isProtected);
     }
 #endif
 
@@ -1135,13 +1129,13 @@ void RSRenderComposer::ContextRegisterPostTask()
 #if defined(RS_ENABLE_VK) && defined(IS_ENABLE_DRM)
     if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-        RsVulkanContext::GetSingleton().SetIsProtected(true);
-        auto context = RsVulkanContext::GetSingleton().GetDrawingContext();
+        uniRenderEngine_->GetRenderContext()->ChangeProtectedState(true);
+        auto context = uniRenderEngine_->GetRenderContext()->GetSharedDrGPUContext();
         if (context) {
             context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
         }
-        RsVulkanContext::GetSingleton().SetIsProtected(false);
-        context = RsVulkanContext::GetSingleton().GetDrawingContext();
+        uniRenderEngine_->GetRenderContext()->ChangeProtectedState(false);
+        context = uniRenderEngine_->GetRenderContext()->GetSharedDrGPUContext();
         if (context) {
             context->RegisterPostFunc([this](const std::function<void()>& task) { PostTask(task); });
         }
