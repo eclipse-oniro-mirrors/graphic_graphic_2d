@@ -105,7 +105,7 @@ bool RSUifirstFrameRateControl::SubThreadFrameDropDecision(const RSSurfaceRender
     
     bool isNeedFrameContrel = true;
     NodeId id = node.GetFirstLevelNodeId();
-    if (FrameControlTool::Instance().SerchNodeIdFromAppWindowsSet(id)) {
+    if (RSFrameControlTool::Instance().SerchNodeIdFromAppWindowsSet(id)) {
         isNeedFrameContrel = false;
     }
     return inAnimation && ((forceRefreshOnce_ && isNeedFrameContrel) || (!hasMultipleSubSurfaces && canDropFrame));
