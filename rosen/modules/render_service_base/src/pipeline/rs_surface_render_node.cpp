@@ -2899,8 +2899,8 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
             firstLevelNodeId = parentNode->GetFirstLevelNodeId();
         }
     }
-    // insert surfaceNode id to appwiondowset for refalsh when frame control
-    InsertSurfaceNodeIdToSet();
+    // set surfaceNode id to RSFrameControlTool for refalsh when frame control
+    SetOnTreeNodeIdToFrameControl();
 
     if (auto context = GetContext().lock(); context && onTree) {
         context->GetMutableNodeMap().ObtainLauncherNodeId(
