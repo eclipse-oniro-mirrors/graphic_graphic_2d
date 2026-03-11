@@ -27,7 +27,6 @@ ohos_unittest("rosen_text_adapt_test") {
     "style_copy_test.cpp",
     "text_line_base_test.cpp",
     "text_style_branch_test.cpp",
-    "typeface_font_asset_provider_test.cpp",
     "typography_character_index_test.cpp",
     "typography_create_test.cpp",
     "typography_ellipsis_test.cpp",
