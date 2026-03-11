@@ -795,7 +795,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, AlignRectToDevicePixelsTest002, TestSize
     auto adapter = std::make_shared<RSRenderNodeDrawable>(std::move(node));
     
     Drawing::Matrix scaleMatrix;
-    scaleMatrix.Scale(2.0f, 2.0f);  // 2x scaling
+    scaleMatrix.SetScale(2.0f, 2.0f);  // 2x scaling
     Drawing::Rect inputRect(10.5f, 20.7f, 100.3f, 200.9f);
     Drawing::Rect originalRect = inputRect;
     
@@ -872,7 +872,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, AlignRectToDevicePixelsTest005, TestSize
     
     // Create a singular matrix (no inverse)
     Drawing::Matrix singularMatrix;
-    singularMatrix.Scale(0.0f, 0.0f);  // Singular matrix
+    singularMatrix.SetScale(0.0f, 0.0f);  // Singular matrix
     Drawing::Rect inputRect(10.5f, 20.7f, 100.3f, 200.9f);
     Drawing::Rect originalRect = inputRect;
     
@@ -924,7 +924,7 @@ HWTEST(RSRenderNodeDrawableAdapterTest, AlignRectToDevicePixelsTest007, TestSize
     
     // Create a complex transformation matrix
     Drawing::Matrix complexMatrix;
-    complexMatrix.Scale(1.5f, 2.0f);
+    complexMatrix.SetScale(1.5f, 2.0f);
     complexMatrix.Set(Drawing::Matrix::TRANS_X, 3.0f);
     complexMatrix.Set(Drawing::Matrix::TRANS_Y, -2.0f);
     Drawing::Rect inputRect(10.0f, 15.0f, 20.0f, 25.0f);
