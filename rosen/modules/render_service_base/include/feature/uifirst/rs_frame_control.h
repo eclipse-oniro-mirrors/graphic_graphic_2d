@@ -27,7 +27,7 @@ public:
     bool CheckAppWindowNodeId(NodeId id);
     static RSFrameControlTool& Instance();
 private:
-    // refreshAppWindowSet_ cannot be operated concurrently
+    // refreshAppWindowNodeId_ cannot be operated concurrently
     NodeId refreshAppWindowNodeId_;
 };
 }
