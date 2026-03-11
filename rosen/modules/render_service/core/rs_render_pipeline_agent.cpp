@@ -1030,54 +1030,54 @@ ErrCode RSRenderPipelineAgent::GetPixelmap(NodeId id, const std::shared_ptr<Medi
 
 ErrCode RSRenderPipelineAgent::ReportJankStats()
 {
-    if (rsRenderPipeline_ == nullptr) {
-        return ERR_INVALID_VALUE;
+    if (rsRenderPipeline_ != nullptr) {
+        auto task = []() -> void { RSJankStats::GetInstance().ReportJankStats(); };
+        rsRenderPipeline_->PostUniRenderThreadTask(task);
+        return ERR_OK;
     }
-    auto task = []() -> void { RSJankStats::GetInstance().ReportJankStats(); };
-    rsRenderPipeline_->PostUniRenderThreadTask(task);
-    return ERR_OK;
+    return ERR_INVALID_VALUE;
 }
 
 ErrCode RSRenderPipelineAgent::ReportEventResponse(DataBaseRs info)
 {
-    if (rsRenderPipeline_ == nullptr) {
-        return ERR_INVALID_VALUE;
+    if (rsRenderPipeline_ != nullptr) {
+        auto task = [renderPipeline = rsRenderPipeline_, info]() -> void {
+            RSJankStats::GetInstance().SetReportEventResponse(info);
+            renderPipeline->GetMainThread()->SetForceRsDVsync(info.sceneId);
+        };
+        rsRenderPipeline_->PostUniRenderThreadTask(task);
+        RSUifirstManager::Instance().OnProcessEventResponse(info);
+        RSUifirstFrameRateControl::Instance().SetAnimationStartInfo(info);
+        UpdateAnimationOcclusionStatus(info.sceneId, true);
+        return ERR_OK;
     }
-    auto task = [renderPipeline = rsRenderPipeline_, info]() -> void {
-        RSJankStats::GetInstance().SetReportEventResponse(info);
-        renderPipeline->GetMainThread()->SetForceRsDVsync(info.sceneId);
-    };
-    rsRenderPipeline_->PostUniRenderThreadTask(task);
-    RSUifirstManager::Instance().OnProcessEventResponse(info);
-    RSUifirstFrameRateControl::Instance().SetAnimationStartInfo(info);
-    UpdateAnimationOcclusionStatus(info.sceneId, true);
-    return ERR_OK;
+    return ERR_INVALID_VALUE;
 }
 
 ErrCode RSRenderPipelineAgent::ReportEventComplete(DataBaseRs info)
 {
-    if (rsRenderPipeline_ == nullptr) {
-        return ERR_INVALID_VALUE;
+    if (rsRenderPipeline_ != nullptr) {
+        auto task = [info]() -> void { RSJankStats::GetInstance().SetReportEventComplete(info); };
+        rsRenderPipeline_->PostUniRenderThreadTask(task);
+        RSUifirstManager::Instance().OnProcessEventComplete(info);
+        return ERR_OK;
     }
-    auto task = [info]() -> void { RSJankStats::GetInstance().SetReportEventComplete(info); };
-    rsRenderPipeline_->PostUniRenderThreadTask(task);
-    RSUifirstManager::Instance().OnProcessEventComplete(info);
-    return ERR_OK;
+    return ERR_INVALID_VALUE;
 }
 
 ErrCode RSRenderPipelineAgent::ReportEventJankFrame(DataBaseRs info)
 {
-    if (rsRenderPipeline_ == nullptr) {
-        return ERR_INVALID_VALUE;
+    if (rsRenderPipeline_ != nullptr) {
+        bool isReportTaskDelayed = rsRenderPipeline_->GetUniRenderThread()->IsMainLooping();
+        auto task = [info, isReportTaskDelayed]() -> void {
+            RSJankStats::GetInstance().SetReportEventJankFrame(info, isReportTaskDelayed);
+        };
+        rsRenderPipeline_->PostUniRenderThreadTask(task);
+        RSUifirstFrameRateControl::Instance().SetAnimationEndInfo(info);
+        UpdateAnimationOcclusionStatus(info.sceneId, false);
+        return ERR_OK;
     }
-    bool isReportTaskDelayed = rsRenderPipeline_->GetUniRenderThread()->IsMainLooping();
-    auto task = [info, isReportTaskDelayed]() -> void {
-        RSJankStats::GetInstance().SetReportEventJankFrame(info, isReportTaskDelayed);
-    };
-    rsRenderPipeline_->PostUniRenderThreadTask(task);
-    RSUifirstFrameRateControl::Instance().SetAnimationEndInfo(info);
-    UpdateAnimationOcclusionStatus(info.sceneId, false);
-    return ERR_OK;
+    return ERR_INVALID_VALUE;
 }
 
 void RSRenderPipelineAgent::UpdateAnimationOcclusionStatus(const std::string& sceneId, bool isStart)
