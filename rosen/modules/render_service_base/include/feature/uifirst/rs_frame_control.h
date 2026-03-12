@@ -19,12 +19,15 @@
 #include <set>
 #include "common/rs_macros.h"
 #include "common/rs_common_def.h"
+#include "pipeline/rs_surface_render_node.h"
+
 namespace OHOS {
 namespace Rosen {
 class RS_EXPORT RSFrameControlTool {
 public:
     void SetAppWindowNodeId(NodeId id);
     bool CheckAppWindowNodeId(NodeId id);
+    void SetSurfaceNodeIsOnTheTree(RSSurfaceRenderNode& node);
     static RSFrameControlTool& Instance();
 private:
     // refreshAppWindowNodeId_ cannot be operated concurrently
