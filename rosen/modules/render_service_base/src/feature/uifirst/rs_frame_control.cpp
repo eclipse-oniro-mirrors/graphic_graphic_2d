@@ -13,6 +13,8 @@
 * limitations under the License.
 */
 
+#include "pipeline/rs_context.h"
+#include "platform/common/rs_system_properties.h"
 #include "feature/uifirst/rs_frame_control.h"
 
 namespace OHOS {
@@ -27,6 +29,22 @@ RSFrameControlTool& RSFrameControlTool::Instance()
 void RSFrameControlTool::SetAppWindowNodeId(NodeId id)
 {
     refreshAppWindowNodeId_ = id;
+}
+
+void FrameControlTool::SetSurfaceNodeIsOnTheTree(RSSurfaceRenderNode& node)
+{
+    if (!RSSystemProperties::GetSubThreadControlFrameRate()) {
+        return;
+    }
+    auto context = node.GetContext().lock();
+    if (!context) {
+        RS_LOGE("RSSurfaceRenderNode::SetClonedNodeInfo invalid context");
+        return;
+    }
+    auto surfaceNode = context->GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(node.GetFirstLevelNodeId());
+    if (surfaceNode) {
+        SetAppWindowNodeId(node.GetFirstLevelNodeId());
+    }
 }
 
 bool RSFrameControlTool::CheckAppWindowNodeId(NodeId id)
