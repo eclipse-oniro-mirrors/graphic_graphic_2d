@@ -1335,7 +1335,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScr
     auto [_, screenParams] = displayDrawable_->GetScreenParams(*params);
     ASSERT_NE(screenParams, nullptr);
     screenParams->screenProperty_.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>(
-        std::make_tuple(50, 100, screenParams->screenProperty_GetRefreshRate())); 
+        std::make_tuple(50, 100, screenParams->screenProperty_GetRefreshRate()));
 
     ASSERT_NE(mirroredDisplayDrawable_, nullptr);
     auto mirroredParams = mirroredDisplayDrawable_->GetRenderParams() ?
