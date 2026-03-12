@@ -100,7 +100,8 @@ void RSUniRenderProcessorTest::TearDownTestCase()
 {
     renderProcessor = nullptr;
 }
-void RSUniRenderProcessorTest::SetUp() {
+void RSUniRenderProcessorTest::SetUp()
+{
     if (renderProcessor != nullptr) {
         renderProcessor->layers_.clear();
     }
