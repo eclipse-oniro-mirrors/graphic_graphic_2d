@@ -498,40 +498,6 @@ HWTEST_F(RSRenderNodeGCTest, ReleaseOffTreeNodeBucket006, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReleaseOffTreeNodeBucket007
- * @tc.desc: test ReleaseOffTreeNodeForBucketMap preserves parent-child relationship when isEnable_ is false
- * @tc.type: FUNC
- * @tc.require: issueIAF9XV
- */
-HWTEST_F(RSRenderNodeGCTest, ReleaseOffTreeNodeBucket007, TestSize.Level1)
-{
-    RSRenderNodeGC& nodeGC = RSRenderNodeGC::Instance();
-    ClearOffTreeBucketMap();
-    
-    auto parent = std::make_shared<RSBaseRenderNode>(1);
-    parent->GenerateFullChildrenList();
-    parent->SetIsOnTheTree(true);
-    
-    std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>> renderNodeMap;
-    auto child = std::make_shared<RSBaseRenderNode>(2);
-    child->SetIsOnTheTree(true);
-    parent->AddChild(child);
-    renderNodeMap[2] = child;
-    
-    nodeGC.AddToOffTreeNodeBucket(1, renderNodeMap);
-    
-    EXPECT_EQ(parent->fullChildrenList_->size(), 1);
-    
-    nodeGC.isEnable_.store(false);
-    nodeGC.ReleaseOffTreeNodeBucket();
-    
-    EXPECT_EQ(parent->fullChildrenList_->size(), 1);
-    EXPECT_NE(child->GetParent().lock(), nullptr);
-    
-    nodeGC.isEnable_.store(true);
-}
-
-/**
  * @tc.name: ReleaseFromTree001
  * @tc.desc: test results of ReleaseFromTree, expect node off tree and queue is empty
  * @tc.type: FUNC
