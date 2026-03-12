@@ -7870,5 +7870,210 @@ HWTEST_F(RsRenderComposerTest, RecordTimestampForAS002, TestSize.Level1)
     ASSERT_FALSE(mgr->asStateForFps_.load());
 }
 
+/**
+ * @tc.name: ResetScreenRCDRedrawState_EmptyLayers
+ * @tc.desc: Test ResetScreenRCDRedrawState with empty layers vector
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_EmptyLayers, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    EXPECT_TRUE(layers.empty());
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_NullptrLayers
+ * @tc.desc: Test ResetScreenRCDRedrawState with nullptr layers
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_NullptrLayers, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    layers.push_back(nullptr);
+    layers.push_back(nullptr);
+    layers.push_back(nullptr);
+
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    EXPECT_EQ(layers.size(), 3u);
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_NonRCDLayers
+ * @tc.desc: Test ResetScreenRCDRedrawState with non-RCD layers
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_NonRCDLayers, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    std::shared_ptr<RSRenderSurfaceLayer> layer1 = std::make_shared<RSRenderSurfaceLayer>();
+    std::shared_ptr<RSRenderSurfaceLayer> layer2 = std::make_shared<RSRenderSurfaceLayer>();
+    layers.push_back(layer1);
+    layers.push_back(layer2);
+
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    EXPECT_EQ(layers.size(), 2u);
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_RCDLayer_RedrawStateTrue
+ * @tc.desc: Test ResetScreenRCDRedrawState with RCD layer where redraw state is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_RCDLayer_RedrawStateTrue, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    std::shared_ptr<RSRenderSurfaceRCDLayer> rcdLayer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    rcdLayer->SetRedrawState(true);
+    layers.push_back(rcdLayer);
+
+    EXPECT_TRUE(rcdLayer->GetRedrawState());
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    EXPECT_FALSE(rcdLayer->GetRedrawState());
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_RCDLayer_NoCacheImage
+ * @tc.desc: Test ResetScreenRCDRedrawState with RCD layer where redraw state is false and no cache image
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_RCDLayer_NoCacheImage, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    std::shared_ptr<RSRenderSurfaceRCDLayer> rcdLayer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    rcdLayer->SetRedrawState(false);
+    layers.push_back(rcdLayer);
+
+    EXPECT_FALSE(rcdLayer->GetRedrawState());
+    EXPECT_EQ(rcdLayer->GetCacheImage(), nullptr);
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    EXPECT_FALSE(rcdLayer->GetRedrawState());
+    EXPECT_EQ(rcdLayer->GetCacheImage(), nullptr);
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_RCDLayer_WithCacheImage
+ * @tc.desc: Test ResetScreenRCDRedrawState with RCD layer where redraw state is false and has cache image
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_RCDLayer_WithCacheImage, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    std::shared_ptr<RSRenderSurfaceRCDLayer> rcdLayer = std::make_shared<RSRenderSurfaceRCDLayer>();
+    rcdLayer->SetRedrawState(false);
+
+    auto image = std::make_shared<Drawing::Image>();
+    rcdLayer->CacheImageWithId(1, image);
+    
+    layers.push_back(rcdLayer);
+
+    EXPECT_FALSE(rcdLayer->GetRedrawState());
+    EXPECT_NE(rcdLayer->GetCacheImage(), nullptr);
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    EXPECT_FALSE(rcdLayer->GetRedrawState());
+    EXPECT_EQ(rcdLayer->GetCacheImage(), nullptr);
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_MixedLayers
+ * @tc.desc: Test ResetScreenRCDRedrawState with mixed layers (nullptr, non-RCD, RCD with various states)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_MixedLayers, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    
+    layers.push_back(nullptr);
+    
+    std::shared_ptr<RSRenderSurfaceLayer> nonRcdLayer = std::make_shared<RSRenderSurfaceLayer>();
+    layers.push_back(nonRcdLayer);
+    
+    std::shared_ptr<RSRenderSurfaceRCDLayer> rcdLayer1 = std::make_shared<RSRenderSurfaceRCDLayer>();
+    rcdLayer1->SetRedrawState(true);
+    layers.push_back(rcdLayer1);
+    
+    std::shared_ptr<RSRenderSurfaceRCDLayer> rcdLayer2 = std::make_shared<RSRenderSurfaceRCDLayer>();
+    rcdLayer2->SetRedrawState(false);
+    auto image = std::make_shared<Drawing::Image>();
+    rcdLayer2->CacheImageWithId(2, image);
+    layers.push_back(rcdLayer2);
+
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    
+    EXPECT_FALSE(rcdLayer1->GetRedrawState());
+    EXPECT_FALSE(rcdLayer2->GetRedrawState());
+    EXPECT_EQ(rcdLayer2->GetCacheImage(), nullptr);
+}
+
+/**
+ * @tc.name: ResetScreenRCDRedrawState_MultipleRCDLayers
+ * @tc.desc: Test ResetScreenRCDRedrawState with multiple RCD layers
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsRenderComposerTest, ResetScreenRCDRedrawState_MultipleRCDLayers, TestSize.Level1)
+{
+    auto output = std::make_shared<HdiOutput>(0u);
+    output->Init();
+    sptr<RSScreenProperty> property = new RSScreenProperty();
+    auto rsRenderComposerTmp = std::make_shared<RSRenderComposer>(output, property);
+
+    std::vector<std::shared_ptr<RSLayer>> layers;
+    
+    for (int i = 0; i < 5; i++) {
+        std::shared_ptr<RSRenderSurfaceRCDLayer> rcdLayer = std::make_shared<RSRenderSurfaceRCDLayer>();
+        rcdLayer->SetRedrawState(true);
+        layers.push_back(rcdLayer);
+    }
+
+    rsRenderComposerTmp->ResetScreenRCDRedrawState(layers);
+    
+    for (const auto& layer : layers) {
+        auto rcdLayer = std::static_pointer_cast<RSRenderSurfaceRCDLayer>(layer);
+        EXPECT_FALSE(rcdLayer->GetRedrawState());
+    }
+}
 } // namespace Rosen
 } // namespace OHOS

@@ -57,6 +57,7 @@
 #include "rs_trace.h"
 #include "rs_layer_cmd_type.h"
 #include "rs_render_surface_layer.h"
+#include "rs_render_surface_rcd_layer.h"
 #include "rs_surface_layer.h"
 #ifdef RS_ENABLE_EGLIMAGE
 #ifdef USE_M133_SKIA
@@ -292,6 +293,7 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         }
         lppLayerCollector_.AddLppLayerId(layers);
     }
+    ResetScreenRCDRedrawState(layers);
     bool doRepaint = hdiOutput_->IsDeviceValid() && !shouldDropFrame && !isHwcDead_;
     if (doRepaint) {
 #ifdef RS_ENABLE_TV_PQ_METADATA
@@ -863,6 +865,25 @@ void RSRenderComposer::RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::v
         }
     }
     RSRcdRenderManager::DrawRoundCorner(canvas, rcdLayerInfoList);
+}
+
+void RSRenderComposer::ResetScreenRCDRedrawState(std::vector<std::shared_ptr<RSLayer>>& layers)
+{
+    RS_TRACE_NAME_FMT("%s screenId : %" PRIu64, __func__, screenId_);
+    for (auto& layer : layers) {
+        if (layer == nullptr) {
+            continue;
+        }
+        if (layer->IsScreenRCDLayer()) {
+            auto rcdLayer = std::static_pointer_cast<RSRenderSurfaceRCDLayer>(layer);
+            if (!rcdLayer->GetRedrawState() && rcdLayer->GetCacheImage()) {
+                RS_TRACE_NAME_FMT("%s clear Rcd image : %d, %d", __func__, rcdLayer->GetCacheImage()->GetWidth(),
+                    rcdLayer->GetCacheImage()->GetHeight());
+                rcdLayer->ClearCacheImage();
+            }
+            rcdLayer->SetRedrawState(false);
+        }
+    }
 }
 
 void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<std::shared_ptr<RSLayer>>& layers)
