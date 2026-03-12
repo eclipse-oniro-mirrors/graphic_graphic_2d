@@ -16,6 +16,8 @@
 #include "gtest/gtest.h"
 
 #include "feature/uifirst/rs_frame_control.h"
+#include "pipeline/rs_test_util.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 
@@ -49,6 +51,25 @@ HWTEST_F(RSFrameControlToolTest, CheckAppWindowNodeId001, TestSize.Level1)
     NodeId id2 = 200;
     // case1
     RSFrameControlTool::Instance().SetAppWindowNodeId(id1);
+    EXPECT_EQ(RSFrameControlTool::Instance().CheckAppWindowNodeId(id1), true);
+    // case2
+    EXPECT_EQ(RSFrameControlTool::Instance().CheckAppWindowNodeId(id2), false);
+}
+
+/**
+* @tc.name: CheckAppWindowNodeId002
+* @tc.desc: test single frame modifier add to list
+* @tc.type: FUNC
+* @tc.require:
+*/
+HWTEST_F(RSFrameControlToolTest, CheckAppWindowNodeId002, TestSize.Level1)
+{
+    NodeId id1 = 100;
+    NodeId id2 = 200;
+    auto rsContext = std::make_shared<RSContext>();
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id1, rsContext);
+    // case1
+    RSFrameControlTool::Instance().SetNodeIdForFrameControl(*node);
     EXPECT_EQ(RSFrameControlTool::Instance().CheckAppWindowNodeId(id1), true);
     // case2
     EXPECT_EQ(RSFrameControlTool::Instance().CheckAppWindowNodeId(id2), false);
