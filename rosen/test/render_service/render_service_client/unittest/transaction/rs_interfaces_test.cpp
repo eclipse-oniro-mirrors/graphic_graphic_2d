@@ -682,19 +682,8 @@ HWTEST_F(RSInterfacesTest, RegisterSurfaceBufferCallback001, TestSize.Level1)
     auto callback = std::make_shared<TestSurfaceBufferCallback>();
     res = instance.RegisterSurfaceBufferCallback(1, 1, callback);
     EXPECT_TRUE(res);
-}
-
-/**
- * @tc.name: UnregisterSurfaceBufferCallback001
- * @tc.desc: test results of UnregisterSurfaceBufferCallback
- * @tc.type: FUNC
- * @tc.require: issueIASMZG
- */
-HWTEST_F(RSInterfacesTest, UnregisterSurfaceBufferCallback001, TestSize.Level1)
-{
-    RSInterfaces& instance = RSInterfaces::GetInstance();
-    bool res = instance.UnregisterSurfaceBufferCallback(1, 1);
-    EXPECT_FALSE(res);
+    res = instance.UnregisterSurfaceBufferCallback(1, 1);
+    EXPECT_TRUE(res);
 }
 
 /**

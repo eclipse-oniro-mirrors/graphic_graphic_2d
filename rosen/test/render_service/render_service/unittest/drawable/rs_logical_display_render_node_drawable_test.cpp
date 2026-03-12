@@ -1334,7 +1334,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScr
     ASSERT_NE(params, nullptr);
     auto [_, screenParams] = displayDrawable_->GetScreenParams(*params);
     ASSERT_NE(screenParams, nullptr);
-    screenParams->SetBoundsRect({0, 0, 50, 100});
+    screenParams->screenProperty_.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>(
+        std::make_tuple(50, 100, screenParams->screenProperty_GetRefreshRate())); 
 
     ASSERT_NE(mirroredDisplayDrawable_, nullptr);
     auto mirroredParams = mirroredDisplayDrawable_->GetRenderParams() ?
@@ -1346,7 +1347,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScr
     displayDrawable_->ScaleAndRotateMirrorForWiredScreen(*mirroredDisplayDrawable_);
     ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
     EXPECT_NEAR(displayDrawable_->curCanvas_->GetTotalMatrix().Get(Drawing::Matrix::SCALE_X),
-        screenParams->GetBounds().GetWidth() / mirroredParams->fixedWidth_, FLOAT_DATA_EPSILON);
+        screenParams->screenProperty_.GetPhyWidth() / mirroredParams->fixedWidth_, FLOAT_DATA_EPSILON);
 }
 
 /**
@@ -1364,7 +1365,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScr
     ASSERT_NE(params, nullptr);
     auto [_, screenParams] = displayDrawable_->GetScreenParams(*params);
     ASSERT_NE(screenParams, nullptr);
-    screenParams->SetBoundsRect({0, 0, 100, 50});
+    screenParams->screenProperty_.Set<ScreenPropertyType::PHYSICAL_RESOLUTION_REFRESHRATE>(
+        std::make_tuple(50, 100, screenParams->screenProperty_GetRefreshRate()));
 
     ASSERT_NE(mirroredDisplayDrawable_, nullptr);
     auto mirroredParams = mirroredDisplayDrawable_->GetRenderParams() ?
@@ -1376,7 +1378,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScr
     displayDrawable_->ScaleAndRotateMirrorForWiredScreen(*mirroredDisplayDrawable_);
     ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
     EXPECT_NEAR(displayDrawable_->curCanvas_->GetTotalMatrix().Get(Drawing::Matrix::SCALE_X),
-        screenParams->GetBounds().GetHeight() / mirroredParams->fixedHeight_, FLOAT_DATA_EPSILON);
+        screenParams->screenProperty_.GetHeight() / mirroredParams->fixedHeight_, FLOAT_DATA_EPSILON);
 }
 
 /**
