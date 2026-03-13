@@ -1555,9 +1555,9 @@ void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer,
 #ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (!surfaceParams->IsBufferSynced()) {
-        auto bufferOwnerCount = surfaceParams->GetBufferOwnerCount();
-        if (bufferOwnerCount) {
-            bufferOwnerCount->DecRef();
+        auto curBufferOwnerCount = surfaceParams->GetBufferOwnerCount();
+        if (curBufferOwnerCount) {
+            curBufferOwnerCount->DecRef();
         }
     } else {
         RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::UpdateBufferInfo SetPreBuffer %" PRIu64,
