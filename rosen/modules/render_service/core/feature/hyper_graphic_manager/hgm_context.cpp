@@ -238,7 +238,7 @@ void HgmContext::CleanAllWhenServiceConnectionDie(pid_t remotePid)
 
 void HgmContext::CreateFrameRateLinker(const std::string& name, FrameRateLinkerId id, NodeId windowNodeId)
 {
-    auto linker = std::make_shared<RSRenderFrameRateLinker>(id);
+    auto linker = std::make_shared<RSRenderFrameRateLinker>(id, [this] { hgmCore_.SetHgmTaskFlag(true); });
     linker->SetVsyncName(name);
     linker->SetWindowNodeId(windowNodeId);
     frameRateLinkerMap_.RegisterFrameRateLinker(linker);
