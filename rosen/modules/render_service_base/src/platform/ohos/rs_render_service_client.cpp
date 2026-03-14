@@ -987,7 +987,8 @@ int32_t RSRenderServiceClient::SetPixelFormat(ScreenId id, GraphicPixelFormat pi
 class CustomScreenSupportedHDRFormatsCallback : public RSScreenSupportedHDRFormatsCallbackStub
 {
 public:
-    explicit CustomScreenSupportedHDRFormatsCallback(const ScreenSupportedHDRFormatsCallback &callback) : cb_(callback) {}
+    explicit CustomScreenSupportedHDRFormatsCallback(
+        const ScreenSupportedHDRFormatsCallback &callback) : cb_(callback) {}
     ~CustomScreenSupportedHDRFormatsCallback() override {};
 
     void OnScreenSupportedHDRFormatsUpdate(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats) override
