@@ -36,12 +36,10 @@ public:
     static inline Mock::HdiDeviceMock* hdiDeviceMock_;
 };
 
-class CustomScreenSupportedHDRFormatsCallback : public RSScreenSupportedHDRFormatsCallbackStub
-{
+class CustomScreenSupportedHDRFormatsCallback : public RSScreenSupportedHDRFormatsCallbackStub {
 public:
     explicit CustomScreenSupportedHDRFormatsCallback(const std::function<void(ScreenId,
-        std::vector<ScreenHDRFormat>& specialHdrFormats)> &callback) :
-        cb_(callback) {}
+        std::vector<ScreenHDRFormat>& specialHdrFormats)> &callback) : cb_(callback) {}
     ~CustomScreenSupportedHDRFormatsCallback() override {};
 
     void OnScreenSupportedHDRFormatsUpdate(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats) override
