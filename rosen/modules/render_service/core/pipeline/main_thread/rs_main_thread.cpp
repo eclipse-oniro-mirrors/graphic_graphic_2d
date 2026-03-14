@@ -512,6 +512,9 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::DoComposition: " + std::to_string(curTime_));
         ConsumeAndUpdateAllNodes();
         ClearNeedDropframePidList();
+        if (renderThreadParams_) {
+            renderThreadParams_->ClearWhiteListRect();
+        }
         WaitUntilUnmarshallingTaskFinished();
         ProcessCommand();
         RsFrameBlurPredict::GetInstance().AdjustCurrentFrameDrawLargeAreaBlurFrequencyPredictively();
@@ -2141,6 +2144,14 @@ uint32_t RSMainThread::GetDynamicRefreshRate() const
         return STANDARD_REFRESH_RATE;
     }
     return refreshRate;
+}
+
+void RSMainThread::AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect)
+{
+    if (renderThreadParams_ == nullptr) {
+        return;
+    }
+    renderThreadParams_->AddWhiteListRect(screenIds, rect);
 }
 
 void RSMainThread::ClearMemoryCache(ClearMemoryMoment moment, bool deeply, pid_t pid)
