@@ -121,5 +121,37 @@ const std::vector<std::string> sdfPixelmapShapePath = {
     "/data/local/tmp/sdfImage8.png",
     "/data/local/tmp/sdfImage9.png",
 };
+
+// 三角形参数 - 不同大小和形状
+static const std::vector<std::tuple<Vector2f, Vector2f, Vector2f>> triangleParams = {
+    {Vector2f(100, 100), Vector2f(200, 100), Vector2f(150, 200)},  // 等边三角形
+    {Vector2f(50, 50), Vector2f(300, 50), Vector2f(175, 300)},   // 扁平三角形
+    {Vector2f(100, 50), Vector2f(400, 50), Vector2f(250, 400)},  // 宽三角形
+    {Vector2f(100, 100), Vector2f(150, 80), Vector2f(180, 150)},  // 不规则三角形
+};
+
+// 圆角参数
+static const std::vector<float> triangleRadiusParams = {
+    0.0f, 10.0f, 30.0f, 50.0f, 100.0f
+};
+
+// 退化三角形参数
+static const std::vector<std::tuple<Vector2f, Vector2f, Vector2f>> degenerateTriangleParams = {
+    {Vector2f(100, 100), Vector2f(200, 100), Vector2f(300, 100)},  // 三点共线水平
+    {Vector2f(100, 100), Vector2f(100, 200), Vector2f(100, 300)},  // 三点共线垂直
+    {Vector2f(100, 100), Vector2f(150, 150), Vector2f(200, 200)},  // 三点共线对角线
+};
+
+// 负坐标三角形参数
+static const std::vector<std::tuple<Vector2f, Vector2f, Vector2f>> negativeCoordTriangleParams = {
+    {Vector2f(-50, 100), Vector2f(100, -50), Vector2f(150, 200)},   // 包含负坐标
+    {Vector2f(-100, -100), Vector2f(100, -100), Vector2f(0, 100)},  // 多个负坐标
+};
+
+void InitSmoothUnionShapesByTriangle(
+    std::shared_ptr<RSNGShapeBase>& rootShape,
+    Vector2f v0, Vector2f v1, Vector2f v2, float radius1,
+    Vector2f v3, Vector2f v4, Vector2f v5, float radius2,
+    float spacing);
 }  // namespace OHOS::Rosen
 #endif // NG_SDF_TEST_UTILS_H
