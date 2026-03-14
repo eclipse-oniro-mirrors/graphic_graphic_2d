@@ -28,6 +28,7 @@
 #include <unordered_set>
 
 #include <ipc_callbacks/screen_change_callback.h>
+#include <ipc_callbacks/screen_supported_hdr_formats_callback.h>
 #include <ipc_callbacks/screen_switching_notify_callback.h>
 #include <refbase.h>
 #include <surface.h>
