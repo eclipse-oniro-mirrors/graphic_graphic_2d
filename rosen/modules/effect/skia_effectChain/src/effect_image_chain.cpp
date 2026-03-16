@@ -161,8 +161,10 @@ DrawingError EffectImageChain::Prepare(const std::shared_ptr<Media::PixelMap>& s
 }
 
 #ifdef RS_ENABLE_VK
-DrawingError EffectImageChain::PrepareNativeBuffer(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
-    std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer, bool forceCPU)
+DrawingError EffectImageChain::PrepareNativeBuffer(
+    const std::shared_ptr<Media::PixelMap>& srcPixelMap,
+    std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
+    bool forceCPU)
 {
     std::lock_guard<std::mutex> lock(apiMutex_);
     // CPU not supported
@@ -647,7 +649,7 @@ void EffectImageChain::DrawOnFilter()
     canvas_->ResetMatrix();
     canvas_->AttachPaint(paint);
     if (imageRec_.GetRight() != canvasRec_.GetRight() || imageRec_.GetBottom() != canvasRec_.GetBottom()) {
-        canvas_->DrawingImageRect(*image_, 
+        canvas_->DrawingImageRect(*image_,
             imageRec_,
             canvasRec_,
             Drawing::SamplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::LINEAR));
