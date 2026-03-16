@@ -161,8 +161,7 @@ DrawingError EffectImageChain::Prepare(const std::shared_ptr<Media::PixelMap>& s
 }
 
 #ifdef RS_ENABLE_VK
-DrawingError EffectImageChain::PrepareNativeBuffer(
-    const std::shared_ptr<Media::PixelMap>& srcPixelMap,
+DrawingError EffectImageChain::PrepareNativeBuffer(const std::shared_ptr<Media::PixelMap>& srcPixelMap,
     std::shared_ptr<OH_NativeBuffer>& dstNativeBuffer,
     bool forceCPU)
 {
@@ -203,19 +202,16 @@ DrawingError EffectImageChain::PrepareNativeBuffer(
     imageRec_ = Drawing::Rect{0, 0, image_->GetWidth(), image_->GetHeight()};
     surfaceRec_ = Drawing::Rect{0, 0, sbuffer->GetWidth(), sbuffer->GetHeight()};
     canvasRec_ = surfaceRec_;
-
     Drawing::ImageInfo info = Drawing::ImageInfo { sbuffer->GetWidth(), sbuffer->GetHeight(),
         ImageUtil::PixelFormatToDrawingColorType(srcPixelMap_->GetPixelFormat()),
         ImageUtil::AlphaTypeToDrawingAlphaType(srcPixelMap_->GetAlphaType()),
         RSPixelMapUtil::GetPixelmapColorSpace(srcPixelMap_)};
-
     surface_ = NativeBufferUtils::CreateSurfaceFromNativeBuffer(
         RsVulkanContext::GetSingleton(), info, dstNativeBuffer.get(), info.GetColorSpace());
     if (surface_ == nullptr) {
         EFFECT_LOG_E("EffectImageChain::Prepare: Failed to create surface %{public}d.", forceCPU_);
         return DrawingError::ERR_SURFACE;
     }
- 
     canvas_ = surface_->GetCanvas();
     if (canvasRec_.GetRight() != imageRec_.GetRight() || canvasRec_.GetBottom() != imageRec_.GetBottom()) {
         float scaleX = imageRec_.GetRight() / canvasRec_.GetRight();
