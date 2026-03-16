@@ -206,7 +206,7 @@ public:
 private:
     float scaleX_;
     float scaleY_;
-}
+};
 
 class EffectImageRender {
 public:
