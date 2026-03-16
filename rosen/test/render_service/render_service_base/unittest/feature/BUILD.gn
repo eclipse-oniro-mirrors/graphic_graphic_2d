@@ -239,7 +239,7 @@ ohos_unittest("RSColorPickerTest") {
   ]
 
   external_deps = [
-    "googletest:gmock_main"
+    "googletest:gmock_main",
     "ffrt:libffrt"
   ]
 
