@@ -47,6 +47,7 @@ constexpr uint32_t ENUM_RANGE_FIVE = 5;
 constexpr uint32_t ENUM_RANGE_TWENTY_EIGHT = 28;
 constexpr uint32_t WIDTH_FACTOR = 4;
 constexpr size_t DATA_MIN_SIZE = 2;
+constexpr uint32_t MAX_ARRAY = 500;
 
 namespace OHOS {
 namespace Rosen {
