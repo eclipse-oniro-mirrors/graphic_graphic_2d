@@ -7155,6 +7155,8 @@ HWTEST_F(RSNodeTest, AddChildTest002, TestSize.Level1)
     if (enable) {
         auto uiDirector1 = RSUIDirector::Create();
         auto uiDirector2 = RSUIDirector::Create();
+        uiDirector1->Init(true, true);
+        uiDirector2->Init(true, true);
         auto rsNode = RSCanvasNode::Create(false, false, uiDirector1->GetRSUIContext());
         rsNode->LoadRenderNodeIfNeed();
         auto childNode = RSCanvasNode::Create(false, false, uiDirector2->GetRSUIContext());
@@ -7189,6 +7191,7 @@ HWTEST_F(RSNodeTest, AddChildTest003, TestSize.Level1)
     auto enable = RSSystemProperties::GetRSClientMultiInstanceEnabled();
     if (enable) {
         auto uiDirector1 = RSUIDirector::Create();
+        uiDirector1->Init(true, true);
         auto rsUIContext = uiDirector1->GetRSUIContext();
         ASSERT_NE(rsUIContext, nullptr);
         auto rsNode = RSCanvasNode::Create(false, false, rsUIContext);
@@ -7921,6 +7924,7 @@ HWTEST_F(RSNodeTest, SetUIContextToken, TestSize.Level1)
         rsNode->SetUIContextToken();
         rsNode = nullptr;
         auto uiDirector = RSUIDirector::Create();
+        uiDirector->Init(true, true);
         auto uiContext = uiDirector->GetRSUIContext();
         rsNode = RSCanvasNode::Create(false, false, uiContext);
         rsNode->SetUIContextToken();
