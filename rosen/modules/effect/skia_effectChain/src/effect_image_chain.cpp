@@ -936,7 +936,7 @@ DrawingError EffectImageChain::ApplyReededGlass(
 
 DrawingError EffectImageChain::ApplyScale(float scaleX, float scaleY)
 {
-    if (scaleX < 0.0f || scaleY <0.0f) {
+    if (scaleX <= 0.0f || scaleY <= 0.0f) {
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
     if (!prepared_) {
