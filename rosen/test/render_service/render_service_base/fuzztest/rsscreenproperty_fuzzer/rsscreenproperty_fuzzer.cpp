@@ -29,7 +29,7 @@ namespace Rosen {
 
 namespace {
 constexpr uint8_t STRING_LEN = 10;
-constexpr uint8_t* g_data = nullptr;
+const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos = 0;
 } // namespace
