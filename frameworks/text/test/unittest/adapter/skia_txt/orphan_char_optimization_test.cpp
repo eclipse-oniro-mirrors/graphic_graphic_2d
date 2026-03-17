@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,11 +15,11 @@
 
 #include "adapter/skia/txt/paragraph_style.h"
 #include "gtest/gtest.h"
+#include "rosen_text/typography_style.h"
 #include "service/skia_txt/convert.h"
+#include "service/skia_txt/font_collection.h"
 #include "service/skia_txt/typography_create.h"
 #include "service/skia_txt/typography.h"
-#include "service/skia_txt/font_collection.h"
-#include "rosen_text/typography_style.h"
 
 #include <codecvt>
 #include <locale>
