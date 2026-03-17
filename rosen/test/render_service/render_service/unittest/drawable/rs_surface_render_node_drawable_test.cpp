@@ -2434,6 +2434,39 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, ClearRelatedSourceCacheTest, TestSize.
 }
 
 /**
+ * @tc.name: TryResumeLastBufferTest
+ * @tc.desc: Test TryResumeLastBufferTest
+ * @tc.type: FUNC
+ * @tc.require: issue#913
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, TryResumeLastBufferTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto buffer = OHOS::SurfaceBuffer::Create();
+    EXPECT_TRUE(buffer != nullptr);
+    BufferRequestConfig requestConfig = {
+        .width = 100,
+        .height = 100,
+        .strideAlignment = 0x8, // set 0x8 as default value to alloc SurfaceBufferImpl
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888, // PixelFormat
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_MEM_MMZ_CACHE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+        .transform = GraphicTransformType::GRAPHIC_ROTATE_NONE,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    EXPECT_EQ(ret, GSERROR_OK);
+    if (ret != GSERROR_OK) {
+        return;
+    }
+    EXPECT_EQ(buffer->TryReclaim(), GSERROR_OK);
+    EXPECT_TRUE(buffer->IsReclaimed());
+    // buffer is not reclaimed by RSBufferReclaim, TryResumeLastBuffer shouild fail
+    surfaceDrawable_->TryResumeLastBuffer(buffer);
+    EXPECT_TRUE(buffer->IsReclaimed());
+}
+
+/**
  * @tc.name: FilterCacheOcclusionSkip001
  * @tc.desc: Test OnDraw with shouldSkipForFilterCacheOcclusion = true (all conditions met)
  * @tc.type: FUNC

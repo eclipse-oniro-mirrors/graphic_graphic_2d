@@ -576,9 +576,6 @@ private:
 #endif
 
     void ProcessNeedAttachedNodes();
-    void AddUICaptureNode(NodeId nodeId);
-    void RemoveUICaptureNode(NodeId nodeId);
-    bool CheckUICaptureNode(NodeId nodeId);
     void PostTryReclaimLastBuffer(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         std::shared_ptr<RSSurfaceHandler> surfaceHandler);
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
@@ -823,8 +820,6 @@ private:
     std::shared_ptr<HgmRenderContext> hgmRenderContext_ = nullptr;
     std::shared_ptr<RSComposerClientManager> composerClientManager_ = nullptr;
     uint32_t curFrameBufferReclaimCount_ = 0;
-    std::mutex uiCaptureNodeMapMutex_;
-    std::map<uint32_t, std::map<NodeId, uint32_t>> uiCaptureNodeMap_;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

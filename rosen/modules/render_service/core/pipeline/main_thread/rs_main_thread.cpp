@@ -53,6 +53,7 @@
 #include "display_engine/rs_color_temperature.h"
 #include "display_engine/rs_luminance_control.h"
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
+#include "feature/buffer_reclaim/rs_buffer_reclaim.h"
 #include "feature/color_picker/rs_color_picker_thread.h"
 #include "feature/dirty/rs_uni_dirty_occlusion_util.h"
 #include "feature/drm/rs_drm_util.h"
@@ -1689,7 +1690,7 @@ void RSMainThread::PostTryReclaimLastBuffer(const std::shared_ptr<RSSurfaceRende
     }
 
     if (!surfaceNode->IsOnTheTree() && surfaceHandler->IsNeedSwapLastBuffer()) {
-        if (CheckUICaptureNode(surfaceNode->GetId())) {
+        if (RSBufferReclaim::GetInstance().CheckSameProcessUICaptureNode(surfaceNode->GetId())) {
             surfaceHandler->ResetLastBufferInfo();
             return;
         }
@@ -2250,57 +2251,6 @@ void RSMainThread::SetFrameIsRender(bool isRender)
     }
 }
 
-void RSMainThread::AddUICaptureNode(NodeId nodeId)
-{
-    std::lock_guard<std::mutex> lock(uiCaptureNodeMapMutex_);
-    pid_t pid = ExtractPid(nodeId);
-    auto iter1 = uiCaptureNodeMap_.find(pid);
-    if (iter1 == uiCaptureNodeMap_.end()) {
-        std::map<NodeId, uint32_t> nodeIdCountMap;
-        nodeIdCountMap[nodeId] = 1;
-        uiCaptureNodeMap_[pid] = nodeIdCountMap;
-        return;
-    }
-
-    auto& nodeIdCountMap = iter1->second;
-    auto iter2 = nodeIdCountMap.find(nodeId);
-    if (iter2 != nodeIdCountMap.end()) {
-        iter2->second++;
-    } else {
-        nodeIdCountMap[nodeId] = 1;
-    }
-}
-
-void RSMainThread::RemoveUICaptureNode(NodeId nodeId)
-{
-    std::lock_guard<std::mutex> lock(uiCaptureNodeMapMutex_);
-    pid_t pid = ExtractPid(nodeId);
-    auto iter1 = uiCaptureNodeMap_.find(pid);
-    if (iter1 == uiCaptureNodeMap_.end()) {
-        return;
-    }
-
-    auto& nodeIdCountMap = iter1->second;
-    auto iter2 = nodeIdCountMap.find(nodeId);
-    if (iter2 != nodeIdCountMap.end()) {
-        iter2->second--;
-        if (iter2->second == 0) {
-            nodeIdCountMap.erase(iter2);
-        }
-    }
-
-    if (nodeIdCountMap.empty()) {
-        uiCaptureNodeMap_.erase(iter1);
-    }
-}
-
-bool RSMainThread::CheckUICaptureNode(NodeId id)
-{
-    std::lock_guard<std::mutex> lock(uiCaptureNodeMapMutex_);
-    pid_t pid = ExtractPid(id);
-    return (uiCaptureNodeMap_.find(pid) != uiCaptureNodeMap_.end());
-}
-
 void RSMainThread::AddUiCaptureTask(NodeId id, std::function<void()> task)
 {
     pendingUiCaptureTasks_.emplace_back(id, task);
@@ -2316,8 +2266,8 @@ void RSMainThread::AddUiCaptureTask(NodeId id, std::function<void()> task)
             node->SetChildrenTreeStateChangeDirty();
             node->SetParentTreeStateChangeDirty(true);
         }
-        if (!node->IsOnTheTree()) {
-            AddUICaptureNode(id);
+        if (BufferReclaimParam::GetInstance().IsBufferReclaimEnable() && !node->IsOnTheTree()) {
+            RSBufferReclaim::GetInstance().AddUICaptureNode(id);
         }
     }
     if (!IsRequestedNextVSync()) {
@@ -2366,7 +2316,9 @@ void RSMainThread::ProcessUiCaptureTasks()
         auto captureTask = std::get<1>(uiCaptureTasks_.front());
         uiCaptureTasks_.pop();
         captureTask();
-        RemoveUICaptureNode(nodeId);
+        if (BufferReclaimParam::GetInstance().IsBufferReclaimEnable()) {
+            RSBufferReclaim::GetInstance().RemoveUICaptureNode(nodeId);
+        }
     }
 #endif
 }
