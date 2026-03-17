@@ -519,4 +519,76 @@ GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Fil
     }
 }
 
+/*
+ * @tc.name: Appearance_Alpha_Shadow_Radius_Zero_Test
+ * @tc.desc: Test shadow with radius=0 (no blur), Color type, offset(10, 10)
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Zero_Test)
+{
+    int nodePosX = ONE_HUNDRED_;
+    int nodePosY = ONE_HUNDRED_;
+    int nodeOffset = ONE_HUNDRED_;
+    int nodeSize = FOUR_HUNDRED_;
+
+    auto testNode = RSCanvasNode::Create();
+    testNode->SetAlpha(0.3f);
+    testNode->SetBounds({ nodePosX, nodePosY, nodeSize, nodeSize });
+    testNode->SetTranslate(nodeOffset, nodeOffset, 0);
+    testNode->SetBackgroundColor(0xffc0c0c0);
+    testNode->SetShadowColor(0xff000000);
+    testNode->SetShadowRadius(0.0f);
+    testNode->SetShadowOffset(TEN_, TEN_);
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+/*
+ * @tc.name: Appearance_Alpha_Shadow_Radius_Negative_Test
+ * @tc.desc: Test shadow with radius=-1 (no shadow), Color type, offset(10, 10)
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Negative_Test)
+{
+    int nodePosX = THREE_HUNDRED_;
+    int nodePosY = THREE_HUNDRED_;
+    int nodeOffset = ONE_HUNDRED_;
+    int nodeSize = FOUR_HUNDRED_;
+
+    auto testNode = RSCanvasNode::Create();
+    testNode->SetAlpha(0.6f);
+    testNode->SetBounds({ nodePosX, nodePosY, nodeSize, nodeSize });
+    testNode->SetTranslate(nodeOffset, nodeOffset, 0);
+    testNode->SetBackgroundColor(0xffc0c0c0);
+    testNode->SetShadowColor(0xff000000);
+    testNode->SetShadowRadius(-1.0f);
+    testNode->SetShadowOffset(TEN_, TEN_);
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+/*
+ * @tc.name: Appearance_Alpha_Shadow_Radius_Positive_Test
+ * @tc.desc: Test shadow with radius=10 (with blur), Color type, offset(10, 10)
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Positive_Test)
+{
+    int nodePosX = FIVE_HUNDRED_;
+    int nodePosY = FIVE_HUNDRED_;
+    int nodeOffset = ONE_HUNDRED_;
+    int nodeSize = FOUR_HUNDRED_;
+
+    auto testNode = RSCanvasNode::Create();
+    testNode->SetAlpha(0.9f);
+    testNode->SetBounds({ nodePosX, nodePosY, nodeSize, nodeSize });
+    testNode->SetTranslate(nodeOffset, nodeOffset, 0);
+    testNode->SetBackgroundColor(0xffc0c0c0);
+    testNode->SetShadowColor(0xff000000);
+    testNode->SetShadowRadius(10.0f);
+    testNode->SetShadowOffset(TEN_, TEN_);
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
 } // namespace OHOS::Rosen
