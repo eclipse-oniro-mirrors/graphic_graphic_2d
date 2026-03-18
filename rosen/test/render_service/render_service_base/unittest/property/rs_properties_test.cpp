@@ -420,7 +420,7 @@ HWTEST_F(RSPropertiesTest, Dump003, TestSize.Level1)
 
 /**
  * @tc.name: Dump004
- * @tc.desc: test results of Dump with negative ShadowRadius
+ * @tc.desc: test results of Dump with Default ShadowRadius
  * @tc.type:FUNC
  * @tc.require:
  */
@@ -430,6 +430,20 @@ HWTEST_F(RSPropertiesTest, Dump004, TestSize.Level1)
     properties.SetShadowRadius(-1.0f);
     std::string dumpInfo = properties.Dump();
     EXPECT_TRUE(dumpInfo.find("ShadowRadius[") == std::string::npos);
+}
+
+/**
+ * @tc.name: Dump005
+ * @tc.desc: test results of Dump with negative ShadowRadius
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, Dump005, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetShadowRadius(-2.0f);
+    std::string dumpInfo = properties.Dump();
+    EXPECT_TRUE(dumpInfo.find("ShadowRadius[-2.0]") != std::string::npos);
 }
 
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
