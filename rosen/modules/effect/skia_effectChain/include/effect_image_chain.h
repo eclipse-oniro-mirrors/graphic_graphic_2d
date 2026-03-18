@@ -80,7 +80,7 @@ public:
         bool isDirection = false, float angle = 0.0);
     DrawingError ApplyMapColorByBrightness(const std::vector<Vector4f>& colors, const std::vector<float>& positions);
     DrawingError ApplyGammaCorrection(float gamma);
-    DrawingError ApplyScale(float scaleX, float scaleY);
+    DrawingError ApplyScale(float scaleX, float scaleY, Drawing::FilterMode filterMode, Drawing::MipmapMode mipmapMode);
     DrawingError ApplyEllipticalGradientBlur(float blurRadius, float centerX, float centerY,
         float maskRadiusX, float maskRadiusY, const std::vector<float> &positions, const std::vector<float> &degrees);
     DrawingError ApplySDFCreation(int spreadFactor, bool generateDerivs);
@@ -127,6 +127,8 @@ private:
     Drawing::Rect imageRec_{};
     Drawing::Rect canvasRec_{};
     Drawing::Rect surfaceRec_{};
+    Drawing::FilterMode filterMode_ = Drawing::FilterMode::LINEAR;
+    Drawing::MipmapMode mipmapMode_ = Drawing::MipmapMode::LINEAR;
 };
 } // namespace OHOS::Rosen
 #endif // EFFECT_IMAGE_CHAIN_H
