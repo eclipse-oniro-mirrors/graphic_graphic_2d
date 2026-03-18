@@ -112,7 +112,7 @@ EffectErrorCode OH_Filter_Scale(
 {
     Drawing::FilterMode drawingFilterMode = static_cast<Drawing::FilterMode>(filterMode);
     Drawing::MipmapMode drawingMipmapMode = static_cast<Drawing::MipmapMode>(mipmapMode);
-    if (!filter || !(CastToFilter(filter)->Scale(scale_x, scale_y, drawingFilterMode, drawingMipmapMode))) {
+    if (!filter || !(CastToFilter(filter)->Scale(scaleX, scaleY, drawingFilterMode, drawingMipmapMode))) {
         return EFFECT_BAD_PARAMETER;
     }
     return EFFECT_SUCCESS;
