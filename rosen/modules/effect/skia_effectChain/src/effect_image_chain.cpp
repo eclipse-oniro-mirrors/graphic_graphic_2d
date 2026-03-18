@@ -126,7 +126,7 @@ void EffectImageChain::UpdateImage()
     Drawing::RectI rec = {0, 0, (int)canvasRec_.GetRight(), (int)canvasRec_.GetBottom()};
     image_ = surface_->GetImageSnapshot(rec, false);
     filters_ = nullptr; // clear filters_ to avoid applying again
-    image_rec_ = canvas_rec_;
+    imageRec_ = canvasRec_;
 }
 
 void EffectImageChain::ScaleCanvas(float scaleX, float scaleY)
@@ -934,7 +934,7 @@ DrawingError EffectImageChain::ApplyReededGlass(
     return DrawingError::ERR_OK;
 }
 
-DrawingError EffectImageChain::ApplyScale(float scaleX, float scaleY)
+DrawingError EffectImageChain::ApplyScale(float scaleX, float scaleY, Drawing::FilterMode filterMode, Drawing::MipmapMode mipmapMode)
 {
     if (scaleX <= 0.0f || scaleY <= 0.0f) {
         return DrawingError::ERR_ILLEGAL_INPUT;
@@ -951,6 +951,9 @@ DrawingError EffectImageChain::ApplyScale(float scaleX, float scaleY)
     if (filters_ != nullptr) {
         UpdateImage();
     }
+
+    filterMode_ = filterMode;
+    mipmapMode_ = mipmapMode;
     ScaleCanvas(scaleX, scaleY);
     UpdateImage();
     return DrawingError::ERR_OK;
