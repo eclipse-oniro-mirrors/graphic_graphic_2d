@@ -192,6 +192,7 @@ void ParagraphBuilderImpl::ParagraphStyleToSkParagraphStyle(const ParagraphStyle
     skStyle.setLineSpacing(txt.lineSpacing);
     skStyle.setIncludeFontPadding(txt.includeFontPadding);
     skStyle.setFallbackLineSpacing(txt.fallbackLineSpacing);
+    skStyle.setOrphanCharOptimization(txt.orphanCharOptimization);
 }
 
 skt::TextStyle ParagraphBuilderImpl::TextStyleToSkStyle(const TextStyle& txt)
