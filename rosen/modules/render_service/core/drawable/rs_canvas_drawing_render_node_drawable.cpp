@@ -344,7 +344,7 @@ void RSCanvasDrawingRenderNodeDrawable::PostPlaybackInCorrespondThread()
         auto surfaceParams = renderParams_->GetCanvasDrawingSurfaceParams();
         if (!surface_ || !canvas_) {
             if (!ResetSurfaceforPlayback(surfaceParams.width, surfaceParams.height)) {
-                RS_LOGE("PostPlaybackInCorrespondThread Reset Surface Error NodeId[%{public}" PRIu64
+                RS_LOGE_LIMIT("PostPlaybackInCorrespondThread Reset Surface Error NodeId[%{public}" PRIu64
                     "], width[%{public}d], height[%{public}d]", nodeId, surfaceParams.width, surfaceParams.height);
                 return;
             }
