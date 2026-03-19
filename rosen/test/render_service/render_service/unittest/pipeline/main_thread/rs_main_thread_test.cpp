@@ -291,7 +291,7 @@ std::shared_ptr<RSScreenRenderNode> RSMainThreadTest::GetAndInitScreenRenderNode
     std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
     RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
     screenNode->UpdateScreenProperty(ScreenPropertyType::STATE,
-        sptr<ScreenPropertyT<uint8_t>>::MakeSptr(static_cast<uint8_t>(ScreenState::HDI_OUTPUT_ENABLE)));
+        sptr<ScreenProperty<uint8_t>>::MakeSptr(static_cast<uint8_t>(ScreenState::HDI_OUTPUT_ENABLE)));
 
     auto rsScreen = std::make_shared<RSScreen>(screenId);
     if (rsScreen == nullptr) {
