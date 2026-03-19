@@ -1975,8 +1975,8 @@ HWTEST_F(NdkTypographyLayoutConstraintsTest, TypographyLayoutWithConstraintsTest
     CreateTypography();
     OH_Drawing_Array* rangeArray = nullptr;
     size_t rangeCount = 0;
-    OH_Drawing_RectSize result = CallLayoutWithConstraints(LAYOUT_WIDTH_LARGE, 20,
-                                                           &rangeArray, &rangeCount);
+    OH_Drawing_RectSize result = CallLayoutWithConstraints(
+        LAYOUT_WIDTH_LARGE, 20, &rangeArray, &rangeCount);
 
     ASSERT_NE(rangeArray, nullptr);
     EXPECT_EQ(rangeCount, 1);
