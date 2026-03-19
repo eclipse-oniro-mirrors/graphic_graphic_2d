@@ -1041,7 +1041,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     bool isOpDropped = isOpDropped_;
     isOpDropped_ = false;
     Drawing::AutoCanvasRestore arc(*cacheCanvas, true);
-    GetOpincDrawCache().LayerPartRenderClipDirtyRegion(params, &isOffScreenWithClipHole_, *cacheCanvas);
+    GetOpincDrawCache().LayerPartRenderClipDirtyRegion(params, *cacheCanvas);
     cacheCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
 
     GetOpincDrawCache().OpincCanvasUnionTranslate(*cacheCanvas);

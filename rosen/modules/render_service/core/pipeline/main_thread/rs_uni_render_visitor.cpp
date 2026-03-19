@@ -1249,7 +1249,8 @@ void RSUniRenderVisitor::QuickPrepareSurfaceRenderNode(RSSurfaceRenderNode& node
         ForcePrepareSubTree();
     prepareFilterClipRect_ = prepareClipRect_;
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
-        node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_);
+        node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_,
+            curLayerPartRenderDirtyManager_);
     if (curSurfaceDirtyManager_ == nullptr) {
         RS_LOGE("QuickPrepareSurfaceRenderNode %{public}s curSurfaceDirtyManager "
             "is set to nullptr by QuickPrepareChildren", node.GetName().c_str());
@@ -1380,7 +1381,8 @@ void RSUniRenderVisitor::QuickPrepareUnionRenderNode(RSUnionRenderNode& node)
     bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
         ForcePrepareSubTree() || isOpincSubTreeDirty;
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
-        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_);
+        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_,
+            curLayerPartRenderDirtyManager_);
 
     PostPrepare(node, !isSubTreeNeedPrepare);
     // the only difference between QuickPrepareUnionRenderNode and QuickPrepareCanvasRenderNode is to process SDFShape
@@ -1805,7 +1807,8 @@ void RSUniRenderVisitor::QuickPrepareEffectRenderNode(RSEffectRenderNode& node)
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
-        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_);
+        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_,
+            curLayerPartRenderDirtyManager_);
     node.UpdateChildHasVisibleEffectWithoutEmptyRect();
     PostPrepare(node, !isSubTreeNeedPrepare);
     prepareClipRect_ = prepareClipRect;
@@ -1975,11 +1978,14 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
         ForcePrepareSubTree() || isOpincSubTreeDirty;
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
-        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_);
+        node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_,
+            curLayerPartRenderDirtyManager_);
 
     PostPrepare(node, !isSubTreeNeedPrepare);
 
-    RSOpincManager::Instance().CalculateLayerPartRenderDirtyRegion(node, curLayerPartRenderDirtyManager_);
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(node, curLayerPartRenderDirtyManager_,
+        curLayerPartRenderDirtyManager_ != nullptr ?
+        RSUniFilterDirtyComputeUtil::GetVisibleFilterRect(node) : RectI(0, 0, 0, 0));
 
     prepareClipRect_ = prepareClipRect;
     prepareDirtyRegionClipRect_ = prepareDirtyRegionClipRect;
@@ -3771,7 +3777,8 @@ void RSUniRenderVisitor::PrepareRootRenderNode(RSRootRenderNode& node)
 
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
-        node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_);
+        node.SubTreeSkipPrepare(*curSurfaceDirtyManager_, curDirty_, dirtyFlag_, prepareDirtyRegionClipRect_,
+            curLayerPartRenderDirtyManager_);
     PostPrepare(node, !isSubTreeNeedPrepare);
 
     curAlpha_ = prevAlpha;
