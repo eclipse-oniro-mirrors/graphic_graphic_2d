@@ -442,38 +442,6 @@ void RSMainThread::SendColorPickerCallback(uint64_t nodeId, uint32_t color)
     });
 }
 
-void RSMainThread::ColorPickerStateTransition(
-    uint64_t nodeId, DrawableV2::ColorPickerState state, int64_t delayTime)
-{
-    auto task = [this, nodeId, state]() {
-        RS_OPTIONAL_TRACE_NAME_FMT("RSMainThread::ColorPickerStateTransition node %" PRIu64 " state=%u",
-            nodeId, static_cast<uint8_t>(state));
-        auto& nodeMap = GetContext().GetNodeMap();
-        auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
-        if (!node) {
-            RS_LOGE("RSMainThread::ColorPickerStateTransition: node %" PRIu64 " not found", nodeId);
-            return;
-        }
-        auto drawable = node->GetColorPickerDrawable();
-        if (!drawable) {
-            RS_LOGE("RSMainThread::ColorPickerStateTransition: drawable not found for node %" PRIu64, nodeId);
-            return;
-        }
-
-        // Update the state based on the parameter
-        if (state == DrawableV2::ColorPickerState::COLOR_PICK_THIS_FRAME) {
-            node->SetDirty();
-            SetForceUpdateUniRenderFlag(true);
-            if (!IsRequestedNextVSync()) {
-                RequestNextVSync();
-            }
-        }
-        drawable->SetState(state);
-    };
-    using Priority = AppExecFwk::EventQueue::Priority;
-    PostTask(task, "RSColorPickerStateTransition", delayTime, Priority::IMMEDIATE);
-}
-
 RSMainThread* RSMainThread::Instance()
 {
     static RSMainThread instance;
@@ -658,8 +626,6 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         std::bind(&RSMainThread::MarkNodeDirty, this, std::placeholders::_1));
     RSColorPickerThread::Instance().RegisterNotifyClientCallback(
         std::bind(&RSMainThread::SendColorPickerCallback, this, std::placeholders::_1, std::placeholders::_2));
-    RSColorPickerThread::Instance().RegisterStateTransitionCallback(std::bind(&RSMainThread::ColorPickerStateTransition,
-        this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     RSSystemProperties::WatchSystemProperty(HIDE_NOTCH_STATUS, OnHideNotchStatusCallback, nullptr);
     RSSystemProperties::WatchSystemProperty(DRAWING_CACHE_DFX, OnDrawingCacheDfxSwitchCallback, nullptr);
     rsVsyncManagerAgent_ = rsVsyncManagerAgent;
