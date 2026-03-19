@@ -3674,14 +3674,12 @@ bool RSMainThread::IsNeedProcessBySingleFrameComposer(std::unique_ptr<RSTransact
     }
 
     // animation node will call RequestNextVsync() in mainLoop_, here we simply ignore animation scenario
-    if (doWindowAnimate_)
-    {
+    if (doWindowAnimate_) {
         return false;
     }
 
     // ignore mult-window scenario
-    if (RSSingleFrameComposer::GetVisibleWinCount() >= MULTI_WINDOW_PERF_START_NUM)
-    {
+    if (RSSingleFrameComposer::GetVisibleWinCount() >= MULTI_WINDOW_PERF_START_NUM) {
         return false;
     }
 
