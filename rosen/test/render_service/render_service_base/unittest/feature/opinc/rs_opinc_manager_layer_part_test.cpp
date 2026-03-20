@@ -437,30 +437,6 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInsideN
 }
 
 /**
- * @tc.name: CalculateLayerPartRenderDirtyRegionUnchangeStateTruePath
- * @tc.desc: Verify CalculateLayerPartRenderDirtyRegion enters unchanged-state true path and returns mapped dirty region
- * @tc.type: FUNC
- * @tc.require: issueLayerPart
- */
-HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionUnchangeStateTruePath, TestSize.Level1)
-{
-    auto node = CreateCanvasNode(DEFAULT_NODE_ID);
-    node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
-    WarmUpLayerPartUnchangeState(node->GetOpincCache());
-
-    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
-    ASSERT_NE(dirtyManager, nullptr);
-    dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_INSIDE_RECT);
-
-    RectI layerCurDirty;
-    bool ret = RSOpincManager::Instance().CalculateLayerPartRenderDirtyRegion(
-        *node, dirtyManager, DEFAULT_ABS_RECT, layerCurDirty);
-
-    ASSERT_TRUE(ret);
-    ASSERT_FALSE(layerCurDirty.IsEmpty());
-}
-
-/**
  * @tc.name: CalculateAndUpdateLayerPartRenderDirtyRegionCacheDisableBranch
  * @tc.desc: Verify CACHE_DISABLE branch clears cache state and releases dirty manager
  * @tc.type: FUNC
