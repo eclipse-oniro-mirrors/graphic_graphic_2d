@@ -2486,7 +2486,8 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
 #ifdef HETERO_HDR_ENABLE
             !RSHeteroHDRManager::Instance().HasHdrHeteroNode() &&
 #endif
-            RSHpaeOfflineProcessor::GetOfflineProcessor().IsRSHpaeOfflineProcessorReady()) {
+            RSHpaeOfflineProcessor::GetOfflineProcessor().IsRSHpaeOfflineProcessorReady() &&
+            node->GetTunnelLayerId() == 0) {
             node->SetDeviceOfflineEnable(true);
             continue;
         }

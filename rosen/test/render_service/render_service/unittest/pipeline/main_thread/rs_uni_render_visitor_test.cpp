@@ -52,6 +52,7 @@
 #include "pipeline/hwc/rs_uni_hwc_visitor.h"
 #include "property/rs_point_light_manager.h"
 #include "screen_manager/rs_screen.h"
+#include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
 #include "feature/occlusion_culling/rs_occlusion_handler.h"
 #include "feature/opinc/rs_opinc_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display.h"
@@ -9183,6 +9184,45 @@ HWTEST_F(RSUniRenderVisitorTest, UpdateBlackListRecord_VirtualDisplayWithMirrorT
 
     rsUniRenderVisitor->UpdateBlackListRecord(*node);
     ASSERT_TRUE(screenManager->GetBlackListVirtualScreenByNode(node->GetId()).empty());
+}
+
+/*
+ * @tc.name: PrevalidateHwcNode004
+ * @tc.desc: Test PrevalidateHwcNode with OFFLINE_DEVICE and TunnelLayerId == 0
+ * @tc.type: FUNC
+ * @tc.require: issue22933
+ */
+HWTEST_F(RSUniRenderVisitorTest, PrevalidateHwcNode004, TestSize.Level2)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    EXPECT_NE(surfaceNode, nullptr);
+    surfaceNode->SetTunnelLayerId(0); // Set TunnelLayerId to 0 for the new branch
+
+    NodeId id = 1;
+    auto rsContext = std::make_shared<RSContext>();
+    auto displayNode = std::make_shared<RSScreenRenderNode>(id, 0, rsContext);
+    displayNode->GetAllMainAndLeashSurfaces().push_back(surfaceNode);
+
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    EXPECT_NE(rsUniRenderVisitor, nullptr);
+    RSUniHwcPrevalidateUtil::GetInstance().loadSuccess_ = true;
+    RSUniHwcPrevalidateUtil::GetInstance().preValidateFunc_ =
+        static_cast<OHOS::Rosen::PreValidateFunc>([](
+            uint32_t id, const std::vector<RequestLayerInfo> &infos, std::map<uint64_t,
+                RequestCompositionType> &strategy)
+            {
+                strategy[infos[0].id] = RequestCompositionType::OFFLINE_DEVICE;
+                return 0;
+            }
+        );
+
+    RSHpaeOfflineProcessor::GetOfflineProcessor().loadSuccess_ = true;
+
+    rsUniRenderVisitor->curScreenNode_ = displayNode;
+    rsUniRenderVisitor->PrevalidateHwcNode();
+    // When TunnelLayerId == 0 and other conditions are met, node->SetDeviceOfflineEnable(true) is called
+    // and the function continues, so isHardwareForcedDisabled_ should remain false
+    EXPECT_FALSE(surfaceNode->isHardwareForcedDisabled_);
 }
 } // namespace OHOS::Rosen
 #endif // RS_ENABLE_UNI_RENDER
