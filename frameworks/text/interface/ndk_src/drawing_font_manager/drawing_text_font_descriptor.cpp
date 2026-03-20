@@ -421,17 +421,11 @@ static OH_Drawing_Array* CreateVariationAxisArray(
         return nullptr;
     }
 
-    std::unique_ptr addr = std::make_unique<Drawing::FontParser::FontVariationAxis* []>(variationAxes.size());
-
-    size_t num = 0;
-    for (const auto& axis : variationAxes) {
-        addr[num] = new Drawing::FontParser::FontVariationAxis(axis);
-        num++;
-    }
     std::unique_ptr array = std::make_unique<ObjectArray>();
     array->type = ObjectType::FONT_VARIATION_AXIS;
-    array->addr = addr.release();
-    array->num = num;
+    array->addr = const_cast<Drawing::FontParser::FontVariationAxis*>(
+        reinterpret_cast<const Drawing::FontParser::FontVariationAxis*>(variationAxes.data()));
+    array->num = variationAxes.size();
     return reinterpret_cast<OH_Drawing_Array*>(array.release());
 }
 
@@ -443,17 +437,10 @@ static OH_Drawing_Array* CreateVariationInstanceArray(
     }
 
     std::unique_ptr array = std::make_unique<ObjectArray>();
-    std::unique_ptr addr = std::make_unique<Drawing::FontParser::FontVariationInstance* []>(
-        variationInstances.size());
     array->type = ObjectType::FONT_VARIATION_INSTANCE;
-
-    size_t num = 0;
-    for (const auto& instance : variationInstances) {
-        addr[num] = new Drawing::FontParser::FontVariationInstance(instance);
-        num++;
-    }
-    array->addr = addr.release();
-    array->num = num;
+    array->addr = const_cast<Drawing::FontParser::FontVariationInstance*>(
+        reinterpret_cast<const Drawing::FontParser::FontVariationInstance*>(variationInstances.data()));
+    array->num = variationInstances.size();
     return reinterpret_cast<OH_Drawing_Array*>(array.release());
 }
 
@@ -482,21 +469,6 @@ void OH_Drawing_DestroyFontVariationAxis(OH_Drawing_Array* array)
     }
 
     ObjectArray* axisArray = reinterpret_cast<ObjectArray*>(array);
-
-    Drawing::FontParser::FontVariationAxis** axes =
-        reinterpret_cast<Drawing::FontParser::FontVariationAxis**>(axisArray->addr);
-    if (axes == nullptr) {
-        return;
-    }
-
-    for (size_t i = 0; i < axisArray->num; ++i) {
-        if (axes[i] == nullptr) {
-            continue;
-        }
-        delete axes[i];
-        axes[i] = nullptr;
-    }
-    delete[] axes;
     axisArray->addr = nullptr;
     axisArray->num = 0;
     axisArray->type = ObjectType::INVALID;
@@ -510,12 +482,6 @@ static void FreeCachedCoordinates(Drawing::FontParser::FontVariationInstance* in
     }
     OH_Drawing_FontVariationInstanceCoordinate* coords =
         static_cast<OH_Drawing_FontVariationInstanceCoordinate*>(instance->cachedCoordinates);
-    for (size_t j = 0; j < instance->cachedCoordinatesLength; ++j) {
-        if (coords[j].axisKey != nullptr) {
-            free(coords[j].axisKey);
-            coords[j].axisKey = nullptr;
-        }
-    }
     delete[] coords;
     instance->cachedCoordinates = nullptr;
     instance->cachedCoordinatesLength = 0;
@@ -529,21 +495,13 @@ void OH_Drawing_DestroyFontVariationInstance(OH_Drawing_Array* array)
 
     ObjectArray* instanceArray = reinterpret_cast<ObjectArray*>(array);
 
-    Drawing::FontParser::FontVariationInstance** instances =
-        reinterpret_cast<Drawing::FontParser::FontVariationInstance**>(instanceArray->addr);
-    if (instances == nullptr) {
-        return;
-    }
-
-    for (size_t i = 0; i < instanceArray->num; ++i) {
-        if (instances[i] == nullptr) {
-            continue;
+    Drawing::FontParser::FontVariationInstance* instances =
+        static_cast<Drawing::FontParser::FontVariationInstance*>(instanceArray->addr);
+    if (instances != nullptr) {
+        for (size_t i = 0; i < instanceArray->num; ++i) {
+            FreeCachedCoordinates(&instances[i]);
         }
-        FreeCachedCoordinates(instances[i]);
-        delete instances[i];
-        instances[i] = nullptr;
     }
-    delete[] instances;
     instanceArray->addr = nullptr;
     instanceArray->num = 0;
     instanceArray->type = ObjectType::INVALID;
@@ -560,9 +518,9 @@ OH_Drawing_FontVariationAxis* OH_Drawing_GetFontVariationAxisByIndex(
     ObjectArray* axisArray = reinterpret_cast<ObjectArray*>(array);
     if (axisArray != nullptr && axisArray->addr != nullptr &&
         axisArray->type == ObjectType::FONT_VARIATION_AXIS && index < axisArray->num) {
-        Drawing::FontParser::FontVariationAxis** variationAxis =
-            reinterpret_cast<Drawing::FontParser::FontVariationAxis**>(axisArray->addr);
-        return reinterpret_cast<OH_Drawing_FontVariationAxis*>(variationAxis[index]);
+        Drawing::FontParser::FontVariationAxis* variationAxis =
+            static_cast<Drawing::FontParser::FontVariationAxis*>(axisArray->addr);
+        return reinterpret_cast<OH_Drawing_FontVariationAxis*>(&variationAxis[index]);
     }
 
     return nullptr;
@@ -578,9 +536,9 @@ OH_Drawing_FontVariationInstance* OH_Drawing_GetFontVariationInstanceByIndex(
     ObjectArray* instanceArray = reinterpret_cast<ObjectArray*>(array);
     if (instanceArray != nullptr && instanceArray->addr != nullptr &&
         instanceArray->type == ObjectType::FONT_VARIATION_INSTANCE && index < instanceArray->num) {
-        Drawing::FontParser::FontVariationInstance** variationInstance =
-            reinterpret_cast<Drawing::FontParser::FontVariationInstance**>(instanceArray->addr);
-        return reinterpret_cast<OH_Drawing_FontVariationInstance*>(variationInstance[index]);
+        Drawing::FontParser::FontVariationInstance* variationInstance =
+            static_cast<Drawing::FontParser::FontVariationInstance*>(instanceArray->addr);
+        return reinterpret_cast<OH_Drawing_FontVariationInstance*>(&variationInstance[index]);
     }
 
     return nullptr;
@@ -632,14 +590,7 @@ OH_Drawing_FontVariationInstanceCoordinate* OH_Drawing_GetFontVariationInstanceC
         new OH_Drawing_FontVariationInstanceCoordinate[*arrayLength];
 
     for (size_t i = 0; i < *arrayLength; ++i) {
-        coordinates[i].axisKey = strdup(instance.coordinates[i].axis.c_str());
-        if (coordinates[i].axisKey == nullptr) {
-            for (size_t j = 0; j < i; ++j) {
-                free(coordinates[j].axisKey);
-            }
-            delete[] coordinates;
-            return nullptr;
-        }
+        coordinates[i].axisKey = instance.coordinates[i].axis.data();
         coordinates[i].value = instance.coordinates[i].value;
     }
 
