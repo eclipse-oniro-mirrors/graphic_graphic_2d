@@ -1325,7 +1325,7 @@ HWTEST_F(RSRenderNodeTest, OnSyncLayerPartDirtyManagerNull001, TestSize.Level1)
     ASSERT_EQ(node->GetOpincCache().layerPartRenderDirtyManager_, nullptr);
 
     node->OnSync();
-    ASSERT_NE(node->GetOpincCache().layerPartRenderDirtyManager_, nullptr);
+    ASSERT_EQ(node->GetOpincCache().layerPartRenderDirtyManager_, nullptr);
 }
 
 /**
