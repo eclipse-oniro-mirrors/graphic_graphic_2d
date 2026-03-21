@@ -311,43 +311,13 @@ ani_object AniFilter::GetPixelMapAsync(ani_env* env, ani_object obj)
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
 
-    // Create a Promise object
-    ani_value promise = nullptr;
-    ani_value resolveFunc = nullptr;
-    ani_value rejectFunc = nullptr;
-    if (env->Promise_Create(&promise, &resolveFunc, &rejectFunc) != ANI_OK) {
-        EFFECT_LOG_E("[GetPixelMapAsync] Failed to create Promise");
-        return AniEffectKitUtils::CreateAniUndefined(env);
-    }
-
-    // Store the Promise functions
-    std::unique_ptr<ani_value> promiseHolder(&promise);
-    std::unique_ptr<ani_value> resolveFuncHolder(&resolveFunc);
-    std::unique_ptr<ani_value> rejectFuncHolder(&rejectFunc);
-
-    // For async implementation, we can use taskpool or similar mechanism
-    // For now, we'll implement synchronous rendering and resolve the promise
     bool forceCpu = false;
     if (thisFilter->Render(forceCpu) != DrawingError::ERR_OK) {
         EFFECT_LOG_E("[GetPixelMapAsync] Render error");
-        // Reject the promise on error
-        ani_value errorObj = nullptr;
-        if (env->CreateObject(&errorObj) == ANI_OK) {
-            ani_value errorMsg = nullptr;
-            env->CreateStringUTF8("Render error", &errorMsg);
-            env->Object_SetPropertyByName(errorObj, "message", errorMsg);
-            ani_value errorArgs[1] = { errorObj };
-            env->CallFunction(rejectFunc, nullptr, errorArgs, 1, nullptr);
-        }
-        return promise;
+        return AniEffectKitUtils::CreateAniUndefined(env);
     }
 
-    // Resolve the promise with the result
-    ani_value pixelMapObj = Media::PixelMapTaiheAni::CreateEtsPixelMap(env, thisFilter->GetDstPixelMap());
-    ani_value resolveArgs[1] = { pixelMapObj };
-    env->CallFunction(resolveFunc, nullptr, resolveArgs, 1, nullptr);
-
-    return promise;
+    return Media::PixelMapTaiheAni::CreateEtsPixelMap(env, thisFilter->GetDstPixelMap());
 }
 
 ani_object AniFilter::GetEffectPixelMapSync(ani_env* env, ani_object obj, ani_boolean useCpuRender)
