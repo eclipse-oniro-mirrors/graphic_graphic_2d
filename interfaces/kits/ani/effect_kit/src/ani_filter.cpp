@@ -303,38 +303,6 @@ ani_object AniFilter::GetPixelMap(ani_env* env, ani_object obj)
     return Media::PixelMapTaiheAni::CreateEtsPixelMap(env, thisFilter->GetDstPixelMap());
 }
 
-ani_object AniFilter::GetPixelMapAsync(ani_env* env, ani_object obj)
-{
-    AniFilter* thisFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
-    if (!thisFilter) {
-        EFFECT_LOG_E("[GetPixelMapAsync] thisFilter is null");
-        return AniEffectKitUtils::CreateAniUndefined(env);
-    }
-
-    bool forceCpu = false;
-    if (thisFilter->Render(forceCpu) != DrawingError::ERR_OK) {
-        EFFECT_LOG_E("[GetPixelMapAsync] Render error");
-        return AniEffectKitUtils::CreateAniUndefined(env);
-    }
-
-    return Media::PixelMapTaiheAni::CreateEtsPixelMap(env, thisFilter->GetDstPixelMap());
-}
-
-ani_object AniFilter::GetEffectPixelMapSync(ani_env* env, ani_object obj, ani_boolean useCpuRender)
-{
-    AniFilter* thisFilter = AniEffectKitUtils::GetFilterFromEnv(env, obj);
-    bool forceCpu = useCpuRender;
-    if (!thisFilter) {
-        EFFECT_LOG_E("[GetEffectPixelMapSync] thisFilter is null");
-        return AniEffectKitUtils::CreateAniUndefined(env);
-    }
-    if (thisFilter->Render(forceCpu) != DrawingError::ERR_OK) {
-        EFFECT_LOG_E("[GetEffectPixelMapSync] Render error");
-        return AniEffectKitUtils::CreateAniUndefined(env);
-    }
-    return Media::PixelMapTaiheAni::CreateEtsPixelMap(env, thisFilter->GetDstPixelMap());
-}
-
 ani_object AniFilter::CreateEffectFromPtr(ani_env* env, std::shared_ptr<Media::PixelMap> pixelMap)
 {
     if (!pixelMap) {
