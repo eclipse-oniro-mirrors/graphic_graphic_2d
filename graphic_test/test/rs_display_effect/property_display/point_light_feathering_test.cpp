@@ -194,7 +194,7 @@ GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Featheri
     }
 }
 
-GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathing_Matrix_BorderWidth_Z)
+GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathering_Matrix_BorderWidth_Z)
 {
     float borderWidthList[] = { 2.0f, 5.0f, 10.0f };
     float zList[] = { 0.0f, 0.5f, 1.0f };
@@ -240,7 +240,7 @@ GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Featheri
     RegisterNode(parentNode);
 }
 
-GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathing_Edge_Positions)
+GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathering_Edge_Positions)
 {
     auto testNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 100, 100, 600, 600 });
     testNode->SetClipToBounds(true);
@@ -265,7 +265,7 @@ GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathing
     RegisterNode(testNode);
 }
 
-GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathing_Zero_Intensity)
+GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathering_Zero_Intensity)
 {
     auto testNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 100, 100, 400, 400 });
     testNode->SetClipRRect({ 0, 0, 400, 400 }, { 200, 200, 200, 200 });
@@ -279,7 +279,7 @@ GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathing
     RegisterNode(testNode);
 }
 
-GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathing_Zero_BorderWidth)
+GRAPHIC_TEST(PointLightFeatheringTest, CONTENT_DISPLAY_TEST, PointLight_Feathering_Zero_BorderWidth)
 {
     auto testNode = SetUpNodeBgImage("/data/local/tmp/fg_test.jpg", { 100, 100, 400, 400 });
     testNode->SetClipRRect({ 0, 0, 400, 400 }, { 200, 200, 200, 200 });
