@@ -655,6 +655,35 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
 }
 
 /**
+ * @tc.name: CalculateAndUpdateLayerPartRenderDirtyRegionMaterialNodeDisableCache
+ * @tc.desc: Verify material-node branch disables cache strategy and skips dirty manager reset
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegionMaterialNodeDisableCache,
+    TestSize.Level1)
+{
+    auto node = CreateCanvasNode(THIRD_NODE_ID);
+    node->GetOpincCache().SetLayerPartRender(true);
+    node->GetOpincCache().MarkSuggestLayerPartRenderNode(true);
+    node->GetOpincCache().MarkMaterialNode(true);
+    node->GetOpincCache().SetLayerPartRenderNodeStrategyType(NodeStrategyType::NODE_GROUP);
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    auto& stagingRenderParams = node->GetStagingRenderParams();
+    ASSERT_NE(stagingRenderParams, nullptr);
+    stagingRenderParams->SetLayerPartRenderEnabled(false);
+
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
+
+    ASSERT_NE(dirtyManager, nullptr);
+    ASSERT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
+    ASSERT_FALSE(node->GetOpincCache().IsSuggestLayerPartRenderNode());
+    ASSERT_EQ(node->GetOpincCache().GetLayerPartRenderNodeStrategyType(), NodeStrategyType::CACHE_DISABLE);
+}
+
+/**
  * @tc.name: UpdateLayerPartRenderDirtyRegionNullManager
  * @tc.desc: Verify UpdateLayerPartRenderDirtyRegion returns false for null manager
  * @tc.type: FUNC

@@ -68,6 +68,8 @@ public:
 
     void MarkSuggestLayerPartRenderNode(bool isLayerPartRender);
     bool IsSuggestLayerPartRenderNode() const;
+    void MarkMaterialNode(bool isMaterialNode);
+    bool IsMaterialNode() const;
     void SetLayerPartRender(bool isLayerPartRender);
     bool IsLayerPartRender() const;
     void SetLayerPartRenderNodeStrategyType(NodeStrategyType type);
@@ -84,6 +86,7 @@ private:
     // opinc state
     NodeCacheState nodeCacheState_ = NodeCacheState::STATE_INIT;
     bool isSuggestOpincNode_ = false;
+    bool isMaterialNode_ = false;
     bool subTreeSupportFlag_ = true;
     bool curNodeTreeSupportFlag_ = false;
     bool isOpincRootFlag_ = false;

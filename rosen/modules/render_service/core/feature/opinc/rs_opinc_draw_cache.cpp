@@ -419,9 +419,6 @@ void RSOpincDrawCache::PushLayerPartRenderDirtyRegion(const RSRenderParams& para
     if (!params.GetLayerPartRenderEnabled()) {
         return;
     }
-    if (!RSSystemProperties::GetLayerPartRenderDirtyEnabled()) {
-        return;
-    }
     RectI currentFrameDirty = params.GetLayerPartRenderCurrentFrameDirtyRegion();
     layerPartRenderDirtyRegion_.SetRect(Drawing::RectI(currentFrameDirty.GetLeft(), currentFrameDirty.GetTop(),
         currentFrameDirty.GetRight(), currentFrameDirty.GetBottom()));
@@ -438,9 +435,6 @@ void RSOpincDrawCache::LayerPartRenderClipDirtyRegion(const RSRenderParams& para
     if (!params.GetLayerPartRenderEnabled()) {
         return;
     }
-    if (!RSSystemProperties::GetLayerPartRenderDirtyEnabled()) {
-        return;
-    }
     if (!layerPartRenderDirtyRegion_.IsEmpty()) {
         canvas.ClipRect(layerPartRenderDirtyRegion_.GetBounds());
     }
@@ -450,9 +444,6 @@ void RSOpincDrawCache::PopLayerPartRenderDirtyRegion(const RSRenderParams& param
     RSPaintFilterCanvas& canvas)
 {
     if (!params.GetLayerPartRenderEnabled()) {
-        return;
-    }
-    if (!RSSystemProperties::GetLayerPartRenderDirtyEnabled()) {
         return;
     }
     if (canvas.IsLayerPartRenderDirtyRegionStackEmpty()) {

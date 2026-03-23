@@ -193,6 +193,16 @@ bool RSOpincCache::IsSuggestLayerPartRenderNode() const
     return isSuggestLayerPartRenderNode_;
 }
 
+void RSOpincCache::MarkMaterialNode(bool isMaterialNode)
+{
+    isMaterialNode_ = isMaterialNode;
+}
+
+bool RSOpincCache::IsMaterialNode() const
+{
+    return isMaterialNode_;
+}
+
 void RSOpincCache::SetLayerPartRender(bool isLayerPartRender)
 {
     isLayerPartRender_ = isLayerPartRender;

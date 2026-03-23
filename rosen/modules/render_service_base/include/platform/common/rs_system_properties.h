@@ -324,7 +324,6 @@ public:
     static bool IsOpincRealDrawCacheEnable();
     static bool GetOpincCacheMemThresholdEnabled();
     static bool GetLayerPartRenderEnabled();
-    static bool GetLayerPartRenderDirtyEnabled();
     static bool GetLayerPartRenderDebugEnabled();
     static bool GetFilterCacheMemThresholdEnabled();
     static bool GetSkipDisplayIfScreenOffEnabled();

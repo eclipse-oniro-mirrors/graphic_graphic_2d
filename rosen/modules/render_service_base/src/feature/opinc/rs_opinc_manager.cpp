@@ -282,6 +282,14 @@ void RSOpincManager::CalculateAndUpdateLayerPartRenderDirtyRegion(RSRenderNode& 
     if (!node.GetOpincCache().IsLayerPartRender()) {
         return;
     }
+
+    if (node.GetOpincCache().IsMaterialNode()) {
+        RS_OPTIONAL_TRACE_FMT("id:%" PRIu64 ", has material node, suspend layer part render", node.GetId());
+        node.GetOpincCache().MarkSuggestLayerPartRenderNode(false);
+        node.GetOpincCache().SetLayerPartRenderNodeStrategyType(NodeStrategyType::CACHE_DISABLE);
+        return;
+    }
+
     RectI layerCurDirty;
     if (!CalculateLayerPartRenderDirtyRegion(node, layerPartRenderDirtyManager, visibleFilterRect, layerCurDirty)) {
         node.MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, false, false);

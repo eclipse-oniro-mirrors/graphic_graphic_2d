@@ -325,7 +325,6 @@ HWTEST(RSRenderNodeDrawableAdapterTest, QuickRejectLayerPartDirtySwitchEnabled00
     const std::string layerPartDirtyKey = "rosen.layerPartRenderDirty.enabled";
     const std::string oldLayerPartDirtyValue = system::GetParameter(layerPartDirtyKey, "0");
     (void)system::SetParameter(layerPartDirtyKey, "1");
-    ASSERT_TRUE(RSSystemProperties::GetLayerPartRenderDirtyEnabled());
 
     NodeId id = 16;
     auto node = std::make_shared<RSRenderNode>(id);

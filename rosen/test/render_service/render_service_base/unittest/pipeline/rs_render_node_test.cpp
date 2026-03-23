@@ -1306,6 +1306,54 @@ HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionDirtyFlagFalse001, Te
 }
 
 /**
+ * @tc.name: UpdateLayerPartRenderDirtyRegionMaterialFilterPropagatesToParent
+ * @tc.desc: Verify material filter marks current node and propagates material mark to parent
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionMaterialFilterPropagatesToParent, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 20);
+    auto child = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 21);
+    ASSERT_NE(parent, nullptr);
+    ASSERT_NE(child, nullptr);
+    child->SetParent(parent);
+
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    child->absDrawRect_ = RectI(6, 7, 8, 9);
+    child->GetMutableRenderProperties().GetEffect().materialFilter_ = std::make_shared<RSFilter>();
+
+    ASSERT_FALSE(child->GetOpincCache().IsMaterialNode());
+    ASSERT_FALSE(parent->GetOpincCache().IsMaterialNode());
+
+    ASSERT_TRUE(child->UpdateLayerPartRenderDirtyRegion(dirtyManager));
+    ASSERT_TRUE(child->GetOpincCache().IsMaterialNode());
+    ASSERT_TRUE(parent->GetOpincCache().IsMaterialNode());
+}
+
+/**
+ * @tc.name: UpdateLayerPartRenderDirtyRegionMaterialNodeWithoutParent
+ * @tc.desc: Verify material-node branch keeps running when parent is null
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionMaterialNodeWithoutParent, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 22);
+    ASSERT_NE(node, nullptr);
+    node->GetOpincCache().MarkMaterialNode(true);
+
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    node->absDrawRect_ = RectI(9, 10, 11, 12);
+    ASSERT_TRUE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
+    ASSERT_TRUE(node->GetOpincCache().IsMaterialNode());
+}
+
+/**
  * @tc.name: OnSyncLayerPartDirtyManagerNull001
  * @tc.desc: Verify RSRenderNode::OnSync handles null layer-part manager branch
  * @tc.type: FUNC
