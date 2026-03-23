@@ -37,6 +37,7 @@
 #endif
 #include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/drm/rs_drm_util.h"
+#include "feature/frame_stability/rs_frame_stability_manager.h"
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/round_corner_display/rs_rcd_render_manager.h"
@@ -396,6 +397,12 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     auto rcdInfo = std::make_unique<RcdInfo>();
     const auto& screenProperty = params.GetScreenProperty();
     DoScreenRcdTask(params.GetId(), processor, rcdInfo, screenProperty);
+
+    // record current frame refresh area to frame stability manager
+    std::vector<RectI> refreshRects({ syncDirtyManager_->GetHwcDirtyRegion() });
+    RSFrameStabilityManager::GetInstance().RecordCurrentFrameDirty(
+        params.GetScreenId(), refreshRects, screenProperty.GetWidth() * screenProperty.GetHeight());
+
     processor->PostProcess();
     return true;
 }
@@ -777,6 +784,13 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
                 std::vector<RectI> emptyRects = {};
                 expandProcessor->SetRoiRegionToCodec(emptyRects);
             }
+
+            // record current frame refresh area to frame stability manager
+            std::vector<RectI> refreshRects(damageRegionRects);
+            refreshRects.emplace_back(syncDirtyManager_->GetHwcDirtyRegion());
+            RSFrameStabilityManager::GetInstance().RecordCurrentFrameDirty(
+                paramScreenId, refreshRects, screenInfo.width * screenInfo.height);
+
             rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, screenInfo);
             curCanvas_ = expandProcessor->GetCanvas();
             curCanvas_->Save();
@@ -853,10 +867,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RSMainThread::Instance()->SetFrameIsRender(true);
 
     CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
-    bool isRGBA1010108Enabled = RSHdrUtil::GetRGBA1010108Enabled();
-    bool isNeed10bit = isHdrOn || (params->GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_BT2020 && isRGBA1010108Enabled);
-    if (isNeed10bit) {
-        params->SetNewPixelFormat(isRGBA1010108Enabled && params->GetExistHWCNode() ?
+    if (isHdrOn) {
+        params->SetNewPixelFormat(RSHdrUtil::GetRGBA1010108Enabled() && params->GetExistHWCNode() ?
             GRAPHIC_PIXEL_FMT_RGBA_1010108 : GRAPHIC_PIXEL_FMT_RGBA_1010102);
     }
     // hpae offline: post offline task
@@ -893,6 +905,12 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             renderFrame->SetDamageRegion(damageRegionrects);
         }
     }
+
+    // record current frame refresh area to frame stability manager
+    std::vector<RectI> refreshRects(damageRegionrects);
+    refreshRects.emplace_back(syncDirtyManager_->GetHwcDirtyRegion());
+    RSFrameStabilityManager::GetInstance().RecordCurrentFrameDirty(
+        paramScreenId, refreshRects, screenInfo.width * screenInfo.height);
 
     auto drSurface = renderFrame->GetFrame()->GetSurface();
     if (!drSurface) {
