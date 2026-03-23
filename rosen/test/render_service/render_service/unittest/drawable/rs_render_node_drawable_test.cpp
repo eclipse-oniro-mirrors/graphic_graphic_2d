@@ -18,6 +18,7 @@
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "params/rs_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "render/rs_blur_filter.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
@@ -1380,7 +1381,7 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithFilterTest, TestSize.Level
     paintFilterCanvas.canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
     ASSERT_NE(drawable->cachedSurface_, nullptr);
 
-    auto rsFilter = std::make_shared<RSFilter>();
+    auto rsFilter = std::make_shared<RSBlurFilter>(0.0f, 0.0f);
     params.SetForegroundFilterCache(rsFilter);
     drawable->DrawCachedImage(paintFilterCanvas, params);
 
