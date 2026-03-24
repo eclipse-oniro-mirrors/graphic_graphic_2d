@@ -90,6 +90,7 @@ public:
     {
         LayerPartUpdateCaseContext context;
         context.node = CreateCanvasNode(nodeId);
+        context.node->InitRenderParams();
         context.dirtyManager = std::make_shared<RSDirtyRegionManager>();
         if (context.node != nullptr) {
             context.stagingRenderParams = context.node->GetStagingRenderParams().get();
@@ -188,6 +189,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, InitLayerPartRenderNodeReturnWhenNotSugges
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNormalPath, TestSize.Level1)
 {
     auto node = CreateCanvasNode(THIRD_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     auto dirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     ASSERT_NE(dirtyManager, nullptr);
@@ -230,6 +232,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNullDir
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNullStagingParams, TestSize.Level1)
 {
     auto node = CreateCanvasNode(DEFAULT_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(dirtyManager, nullptr);
@@ -254,6 +257,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNullSta
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionLayerPartDisabled, TestSize.Level1)
 {
     auto node = CreateCanvasNode(DEFAULT_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRenderNodeStrategyType(NodeStrategyType::CACHE_DISABLE);
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
     auto dirtyManagerHold = dirtyManager;
@@ -279,6 +283,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionLayerPa
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionUsesNodeAbsRect, TestSize.Level1)
 {
     auto node = CreateCanvasNode(SECOND_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     auto dirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     ASSERT_NE(dirtyManager, nullptr);
@@ -305,6 +310,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionUsesNod
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionFallbackToNodeAbsRect, TestSize.Level1)
 {
     auto node = CreateCanvasNode(THIRD_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
     WarmUpLayerPartUnchangeState(node->GetOpincCache());
@@ -333,6 +339,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionFallbac
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNotLayerPartRender, TestSize.Level1)
 {
     auto node = CreateCanvasNode(DEFAULT_NODE_ID);
+    node->InitRenderParams();
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(dirtyManager, nullptr);
     auto& stagingRenderParams = node->GetStagingRenderParams();
@@ -355,6 +362,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionGeoNull
 {
     auto node = std::make_shared<RSCanvasRenderNode>(SECOND_NODE_ID);
     ASSERT_NE(node, nullptr);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     node->GetMutableRenderProperties().boundsGeo_ = nullptr;
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -379,6 +387,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionGeoNull
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInvertFailed, TestSize.Level1)
 {
     auto node = CreateCanvasNode(SECOND_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     auto& geo = node->GetMutableRenderProperties().boundsGeo_;
     ASSERT_NE(geo, nullptr);
@@ -407,6 +416,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInvertF
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionOutsideNodeAbsRect, TestSize.Level1)
 {
     auto node = CreateCanvasNode(THIRD_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
     WarmUpLayerPartUnchangeState(node->GetOpincCache());
@@ -435,6 +445,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionOutside
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInsideNodeAbsRect, TestSize.Level1)
 {
     auto node = CreateCanvasNode(THIRD_NODE_ID);
+    node->InitRenderParams();
     node->GetOpincCache().SetLayerPartRender(true);
     node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
     WarmUpLayerPartUnchangeState(node->GetOpincCache());
@@ -466,6 +477,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionGeoNull
 {
     auto node = std::make_shared<RSCanvasRenderNode>(DEFAULT_NODE_ID);
     ASSERT_NE(node, nullptr);
+    node->InitRenderParams();
     node->GetMutableRenderProperties().boundsGeo_ = nullptr;
 
     auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
@@ -487,6 +499,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionGeoNull
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInvertFailureReturnFalse, TestSize.Level1)
 {
     auto node = CreateCanvasNode(SECOND_NODE_ID);
+    node->InitRenderParams();
     auto& geo = node->GetMutableRenderProperties().boundsGeo_;
     ASSERT_NE(geo, nullptr);
     geo->absMatrix_->Set(Drawing::Matrix::SCALE_X, 0.0f);
@@ -511,6 +524,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInvertF
 HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionOutsideDirtyFallback, TestSize.Level1)
 {
     auto node = CreateCanvasNode(THIRD_NODE_ID);
+    node->InitRenderParams();
     node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
     WarmUpLayerPartUnchangeState(node->GetOpincCache());
 

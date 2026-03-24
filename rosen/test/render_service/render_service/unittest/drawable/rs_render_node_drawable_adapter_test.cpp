@@ -17,7 +17,6 @@
 #include "drawable/rs_misc_drawable.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "drawable/rs_render_node_drawable.h"
-#include "parameters.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_context.h"
@@ -27,7 +26,6 @@
 #include "pipeline/rs_surface_render_node.h"
 #include "utils/matrix.h"
 #include "utils/rect.h"
-#include "platform/common/rs_system_properties.h"
 
 using namespace testing;
 using namespace testing::ext;
