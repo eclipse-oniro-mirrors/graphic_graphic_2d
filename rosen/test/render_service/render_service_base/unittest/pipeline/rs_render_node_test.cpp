@@ -1274,7 +1274,7 @@ HWTEST_F(RSRenderNodeTest, OnSyncLayerPartDirtyManagerToDrawable001, TestSize.Le
  */
 HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionDirtyFlagFalse001, TestSize.Level1)
 {
-    const auto oldLayerPartRenderValue = system::GetParameter(LAYER_PART_RENDER_KEY, "0");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
     (void)system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID);
     ASSERT_NE(node, nullptr);
@@ -1300,7 +1300,7 @@ HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionDirtyFlagFalse001, Te
  */
 HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionNullManagerWithLayerPartEnabled, TestSize.Level1)
 {
-    const auto oldLayerPartRenderValue = system::GetParameter(LAYER_PART_RENDER_KEY, "0");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
     (void)system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 19);
     ASSERT_NE(node, nullptr);
@@ -1318,7 +1318,7 @@ HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionNullManagerWithLayerP
  */
 HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionDirtyFlagTrueMergesRects, TestSize.Level1)
 {
-    const auto oldLayerPartRenderValue = system::GetParameter(LAYER_PART_RENDER_KEY, "0");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
     (void)system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 20);
     ASSERT_NE(node, nullptr);
@@ -1345,7 +1345,7 @@ HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionDirtyFlagTrueMergesRe
  */
 HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionMaterialFilterPropagatesToParent, TestSize.Level1)
 {
-    const auto oldLayerPartRenderValue = system::GetParameter(LAYER_PART_RENDER_KEY, "0");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
     (void)system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     auto parent = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 21);
     auto child = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 22);
@@ -1376,7 +1376,7 @@ HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionMaterialFilterPropaga
  */
 HWTEST_F(RSRenderNodeTest, UpdateLayerPartRenderDirtyRegionMaterialNodeWithoutParent, TestSize.Level1)
 {
-    const auto oldLayerPartRenderValue = system::GetParameter(LAYER_PART_RENDER_KEY, "0");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
     (void)system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID + 23);
     ASSERT_NE(node, nullptr);
