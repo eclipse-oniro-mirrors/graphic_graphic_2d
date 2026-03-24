@@ -576,9 +576,9 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
 
-    ASSERT_EQ(node->GetNodeGroupType(), RSRenderNode::NodeGroupType::GROUPED_BY_USER);
-    ASSERT_TRUE(stagingRenderParams->GetLayerPartRenderEnabled());
-    ASSERT_EQ(dirtyManager, nullptr);
+    EXPECT_EQ(node->GetNodeGroupType(), RSRenderNode::NodeGroupType::GROUPED_BY_USER);
+    EXPECT_TRUE(stagingRenderParams->GetLayerPartRenderEnabled());
+    EXPECT_EQ(dirtyManager, nullptr);
 }
 
 /**
@@ -677,10 +677,116 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
 
+    EXPECT_NE(dirtyManager, nullptr);
+    EXPECT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
+    EXPECT_FALSE(node->GetOpincCache().IsSuggestLayerPartRenderNode());
+    EXPECT_EQ(node->GetOpincCache().GetLayerPartRenderNodeStrategyType(), NodeStrategyType::CACHE_DISABLE);
+}
+
+/**
+ * @tc.name: CalculateAndUpdateLayerPartRenderDirtyRegionCacheDisablePathHit
+ * @tc.desc: Verify cache-disable strategy path clears strategy to cache-none and releases dirty manager
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegionCacheDisablePathHit,
+    TestSize.Level1)
+{
+    auto node = CreateCanvasNode(DEFAULT_NODE_ID + 30);
+    node->GetOpincCache().SetLayerPartRenderNodeStrategyType(NodeStrategyType::CACHE_DISABLE);
+    node->GetOpincCache().SetLayerPartRender(true);
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
     ASSERT_NE(dirtyManager, nullptr);
-    ASSERT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
-    ASSERT_FALSE(node->GetOpincCache().IsSuggestLayerPartRenderNode());
-    ASSERT_EQ(node->GetOpincCache().GetLayerPartRenderNodeStrategyType(), NodeStrategyType::CACHE_DISABLE);
+
+    auto& stagingRenderParams = node->GetStagingRenderParams();
+    ASSERT_NE(stagingRenderParams, nullptr);
+    stagingRenderParams->SetLayerPartRenderEnabled(true);
+
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
+
+    EXPECT_EQ(dirtyManager, nullptr);
+    EXPECT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
+    EXPECT_EQ(node->GetOpincCache().GetLayerPartRenderNodeStrategyType(), NodeStrategyType::CACHE_NONE);
+}
+
+/**
+ * @tc.name: CalculateAndUpdateLayerPartRenderDirtyRegionMaterialNodePathHit
+ * @tc.desc: Verify material-node path updates strategy to cache-disable and keeps dirty manager alive
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegionMaterialNodePathHit,
+    TestSize.Level1)
+{
+    auto node = CreateCanvasNode(DEFAULT_NODE_ID + 31);
+    node->GetOpincCache().SetLayerPartRender(true);
+    node->GetOpincCache().MarkMaterialNode(true);
+    node->GetOpincCache().MarkSuggestLayerPartRenderNode(true);
+    node->GetOpincCache().SetLayerPartRenderNodeStrategyType(NodeStrategyType::NODE_GROUP);
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    auto& stagingRenderParams = node->GetStagingRenderParams();
+    ASSERT_NE(stagingRenderParams, nullptr);
+    stagingRenderParams->SetLayerPartRenderEnabled(false);
+
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
+
+    EXPECT_NE(dirtyManager, nullptr);
+    EXPECT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
+    EXPECT_FALSE(node->GetOpincCache().IsSuggestLayerPartRenderNode());
+    EXPECT_EQ(node->GetOpincCache().GetLayerPartRenderNodeStrategyType(), NodeStrategyType::CACHE_DISABLE);
+}
+
+/**
+ * @tc.name: CalculateAndUpdateLayerPartRenderDirtyRegionCalculateFailedPathHit
+ * @tc.desc: Verify calculate-failure path disables layer-part and keeps dirty manager for caller
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegionCalculateFailedPathHit,
+    TestSize.Level1)
+{
+    auto node = CreateCanvasNode(DEFAULT_NODE_ID + 32);
+    node->GetOpincCache().SetLayerPartRender(true);
+    node->GetMutableRenderProperties().boundsGeo_ = nullptr;
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    auto& stagingRenderParams = node->GetStagingRenderParams();
+    ASSERT_NE(stagingRenderParams, nullptr);
+    stagingRenderParams->SetLayerPartRenderEnabled(true);
+
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
+
+    EXPECT_NE(dirtyManager, nullptr);
+    EXPECT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
+}
+
+/**
+ * @tc.name: CalculateAndUpdateLayerPartRenderDirtyRegionKeepGroupedByUserPathHit
+ * @tc.desc: Verify grouped-by-user path bypasses regrouping and still enables layer-part render
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegionKeepGroupedByUserPathHit,
+    TestSize.Level1)
+{
+    auto node = CreateCanvasNode(DEFAULT_NODE_ID + 33);
+    node->GetOpincCache().SetLayerPartRender(true);
+    node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+
+    auto& stagingRenderParams = node->GetStagingRenderParams();
+    ASSERT_NE(stagingRenderParams, nullptr);
+    stagingRenderParams->SetLayerPartRenderEnabled(false);
+
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT);
+
+    EXPECT_EQ(node->GetNodeGroupType(), RSRenderNode::NodeGroupType::GROUPED_BY_USER);
+    EXPECT_TRUE(stagingRenderParams->GetLayerPartRenderEnabled());
+    EXPECT_EQ(dirtyManager, nullptr);
 }
 
 /**
@@ -694,7 +800,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionNullManage
     auto node = CreateCanvasNode(DEFAULT_NODE_ID);
     std::shared_ptr<RSDirtyRegionManager> dirtyManager = nullptr;
 
-    ASSERT_FALSE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
+    EXPECT_FALSE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
 }
 
 /**
@@ -710,9 +816,9 @@ HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionWithoutDir
     ASSERT_NE(dirtyManager, nullptr);
     node->GetOpincCache().SetLayerPartRenderDirtyFlag(false);
 
-    ASSERT_TRUE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
-    ASSERT_TRUE(dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty());
-    ASSERT_EQ(node->GetOpincCache().GetLayerPartRenderOldAbsDrawRect(), DEFAULT_ABS_RECT);
+    EXPECT_TRUE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
+    EXPECT_TRUE(dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty());
+    EXPECT_EQ(node->GetOpincCache().GetLayerPartRenderOldAbsDrawRect(), DEFAULT_ABS_RECT);
 }
 
 /**
@@ -731,9 +837,9 @@ HWTEST_F(RSOpincManagerLayerPartTest, UpdateLayerPartRenderDirtyRegionWithDirtyF
     node->GetOpincCache().SetLayerPartRenderOldAbsDrawRect(oldAbsRect);
     node->GetOpincCache().SetLayerPartRenderDirtyFlag(true);
 
-    ASSERT_TRUE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
-    ASSERT_FALSE(dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty());
-    ASSERT_EQ(node->GetOpincCache().GetLayerPartRenderOldAbsDrawRect(), DEFAULT_ABS_RECT);
+    EXPECT_TRUE(node->UpdateLayerPartRenderDirtyRegion(dirtyManager));
+    EXPECT_FALSE(dirtyManager->GetCurrentFrameDirtyRegion().IsEmpty());
+    EXPECT_EQ(node->GetOpincCache().GetLayerPartRenderOldAbsDrawRect(), DEFAULT_ABS_RECT);
 }
 
 /**

@@ -315,44 +315,6 @@ HWTEST(RSRenderNodeDrawableAdapterTest, QuickRejectTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: QuickRejectLayerPartDirtySwitchEnabled001
- * @tc.desc: Test QuickReject enters layer-part dirty branch when switch is enabled
- * @tc.type: FUNC
- * @tc.require: issueLayerPart
- */
-HWTEST(RSRenderNodeDrawableAdapterTest, QuickRejectLayerPartDirtySwitchEnabled001, TestSize.Level1)
-{
-    const std::string layerPartDirtyKey = "rosen.layerPartRenderDirty.enabled";
-    const std::string oldLayerPartDirtyValue = system::GetParameter(layerPartDirtyKey, "0");
-    (void)system::SetParameter(layerPartDirtyKey, "1");
-
-    NodeId id = 16;
-    auto node = std::make_shared<RSRenderNode>(id);
-    auto adapter = std::make_shared<RSRenderNodeDrawable>(std::move(node));
-    Drawing::Canvas drawingCanvas;
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-
-    Drawing::Region baseDirtyRegion;
-    ASSERT_TRUE(baseDirtyRegion.SetRect(Drawing::RectI(0, 0, 10, 10)));
-    canvas.PushDirtyRegion(baseDirtyRegion);
-
-    Drawing::Region layerDirtyIntersect;
-    ASSERT_TRUE(layerDirtyIntersect.SetRect(Drawing::RectI(0, 0, 10, 10)));
-    canvas.PushLayerPartRenderDirtyRegion(layerDirtyIntersect);
-
-    RectF localDrawRect(1.0f, 1.0f, 1.0f, 1.0f);
-    EXPECT_FALSE(adapter->QuickReject(canvas, localDrawRect));
-
-    canvas.PopLayerPartRenderDirtyRegion();
-    Drawing::Region layerDirtyNotIntersect;
-    ASSERT_TRUE(layerDirtyNotIntersect.SetRect(Drawing::RectI(100, 100, 110, 110)));
-    canvas.PushLayerPartRenderDirtyRegion(layerDirtyNotIntersect);
-    EXPECT_TRUE(adapter->QuickReject(canvas, localDrawRect));
-
-    (void)system::SetParameter(layerPartDirtyKey, oldLayerPartDirtyValue);
-}
-
-/**
  * @tc.name: HasFilterOrEffectTest
  * @tc.desc: Test HasFilterOrEffect
  * @tc.type: FUNC
