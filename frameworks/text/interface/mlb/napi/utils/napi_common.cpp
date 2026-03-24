@@ -919,7 +919,7 @@ napi_value CreateTypographyStyleJsValue(napi_env env, const TypographyStyle& typ
             CreateTextStyleJsValue(env, typographyStyle.GetTextStyle()));
         napi_set_named_property(env, objValue, "textDirection",
             CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.textDirection)));
-        napi_set_named_property(env, objValue, "textAlign",
+        napi_set_named_property(env, objValue, "align",
             CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.textAlign)));
         napi_set_named_property(env, objValue, "wordBreak",
             CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.wordBreakType)));
@@ -929,10 +929,6 @@ napi_value CreateTypographyStyleJsValue(napi_env env, const TypographyStyle& typ
             CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.breakStrategy)));
         napi_set_named_property(env, objValue, "strutStyle",
             CreateStrutStyleJsValue(env, typographyStyle));
-        napi_set_named_property(env, objValue, "ellipsis",
-            CreateStringJsValue(env, typographyStyle.ellipsis));
-        napi_set_named_property(env, objValue, "ellipsisMode",
-            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.ellipsisModal)));
         napi_set_named_property(env, objValue, "tab",
             CreateTextTabJsValue(env, typographyStyle.tab));
         napi_set_named_property(env, objValue, "textHeightBehavior",

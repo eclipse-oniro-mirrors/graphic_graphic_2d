@@ -119,7 +119,8 @@ ParagraphStyle SkParagraphStyleToParagraphStyle(const skt::ParagraphStyle& skSty
     paraStyle.locale = skStyle.getTextStyle().getLocale().c_str();
     paraStyle.textHeightBehavior = static_cast<TextHeightBehavior>(skStyle.getTextHeightBehavior());
     paraStyle.hintingIsOn = skStyle.hintingIsOn();
-    paraStyle.breakStrategy = BreakStrategy::GREEDY;
+    paraStyle.wordBreakType = static_cast<wordBreakType>(skStyle.getStrutStyle().getWordBreakType());
+    paraStyle.breakStrategy = static_cast<BreakStrategy>(skStyle.getStrutStyle().getLineBreakStrategy());
     paraStyle.paragraphSpacing = SkScalarToDouble(skStyle.getParagraphSpacing());
     paraStyle.halfLeading = skStyle.getTextStyle().getHalfLeading();
 

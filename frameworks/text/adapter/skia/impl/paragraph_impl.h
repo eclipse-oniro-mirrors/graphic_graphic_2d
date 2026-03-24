@@ -229,6 +229,8 @@ private:
     uint32_t id_ = 0;
     std::vector<std::shared_ptr<HMSymbolRun>> hmSymbols_;
     std::once_flag initSymbolRunsFlag_;
+private:
+    bool updateAttr{false};
 };
 } // namespace SPText
 } // namespace Rosen
