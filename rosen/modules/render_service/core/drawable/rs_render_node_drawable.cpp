@@ -1066,10 +1066,6 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     isOpDropped_ = isOpDropped;
 
     GetOpincDrawCache().PopLayerPartRenderDirtyRegion(params, *cacheCanvas);
-    // if (needDrawLayerCacheDFX_) {
-    //     auto tempRect = params.GetBounds();
-    //     LayerCacheRegionDfx(*cacheCanvas, tempRect);
-    // }
     // get image & backend
     {
         std::scoped_lock<std::recursive_mutex> lock(cacheMutex_);
