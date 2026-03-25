@@ -4223,4 +4223,408 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ATC_NotifyRefreshRateEvent, TestSi
     connectionStub_->NotifyRefreshRateEvent(eventInfo);
     ASSERT_EQ(eventInfo.eventName, "GPU_FREQ_PREF");
 }
+
+/**
+ * @tc.name: testnullptrCase001
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+
+    ASSERT_NE(connection, nullptr);
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test GetPixelMapByProcessId
+    std::vector<PixelMapInfo> pixelMapInfoVector = {};
+    int32_t repCode = 0;
+    connection->GetPixelMapByProcessId(pixelMapInfoVector, 0, repCode);
+    // test CreatePixelMapFromSurface
+    {
+        Rect srcRect;
+        std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
+        connection->CreatePixelMapFromSurface(nullptr, srcRect, false, pixelMap);
+    }
+    // test SetWatermark
+    std::string name("");
+    bool success = false;
+    connection->SetWatermark(name, nullptr, success);
+    auto screenManagerAgent = connection->screenManagerAgent_;
+    connection->screenManagerAgent_ = nullptr;
+    // test GetDefaultScreenId
+    uint64_t screenId = 0;
+    connection->GetDefaultScreenId(screenId);
+    // test GetAllScreenIds
+    connection->GetAllScreenIds();
+    // test SetVirtualScreenBlackList
+    std::vector<NodeId> blackList = {};
+    connection->SetVirtualScreenBlackList(INVALID_SCREEN_ID, blackList);
+    // test AddVirtualScreenBlackList
+    connection->AddVirtualScreenBlackList(INVALID_SCREEN_ID, blackList, repCode);
+    // test RemoveVirtualScreenBlackList
+    connection->RemoveVirtualScreenBlackList(INVALID_SCREEN_ID, blackList, repCode);
+    // test AddVirtualScreenWhiteList
+    std::vector<NodeId> whiteList = {};
+    connection->AddVirtualScreenWhiteList(INVALID_SCREEN_ID, whiteList, repCode);
+    // test RemoveVirtualScreenWhiteList
+    connection->RemoveVirtualScreenWhiteList(INVALID_SCREEN_ID, whiteList, repCode);
+    // test SetVirtualScreenSecurityExemptionList
+    std::vector<NodeId> securityExemptionList = {};
+    connection->SetVirtualScreenSecurityExemptionList(INVALID_SCREEN_ID, securityExemptionList);
+    // test SetScreenSecurityMask
+    connection->SetScreenSecurityMask(INVALID_SCREEN_ID, nullptr);
+    // test SetMirrorScreenVisibleRect
+    Rect mainScreenRect;
+    connection->SetMirrorScreenVisibleRect(INVALID_SCREEN_ID, mainScreenRect, false);
+    // test SetCastScreenEnableSkipWindow
+    connection->SetCastScreenEnableSkipWindow(INVALID_SCREEN_ID, false);
+    // test SetVirtualScreenSurface
+    connection->SetVirtualScreenSurface(INVALID_SCREEN_ID, nullptr);
+    // test RemoveVirtualScreen
+    connection->RemoveVirtualScreen(INVALID_SCREEN_ID);
+    // test SetScreenChangeCallback
+    connection->SetScreenChangeCallback(nullptr);
+    // test SetScreenSwitchingNotifyCallback
+    connection->SetScreenSwitchingNotifyCallback(nullptr);
+    // test SetBrightnessInfoChangeCallback
+    connection->SetBrightnessInfoChangeCallback(nullptr);
+    // test SetScreenActiveMode
+    connection->SetScreenActiveMode(INVALID_SCREEN_ID, 0);
+    // test SetScreenRefreshRate
+    auto hgmContext = connection->hgmContext_;
+    connection->hgmContext_ = nullptr;
+    connection->SetScreenRefreshRate(INVALID_SCREEN_ID, 0, 0);
+    // test SetRefreshRateMode
+    connection->SetRefreshRateMode(0);
+    // test SyncFrameRateRange
+    FrameRateLinkerId frameRateLinkerId = 0;
+    FrameRateRange range;
+    connection->SyncFrameRateRange(frameRateLinkerId, range, 0);
+    auto renderServiceAgent = connection->renderServiceAgent_;
+    connection->renderServiceAgent_ = nullptr;
+    connection->SyncFrameRateRange(frameRateLinkerId, range, 0);
+    connection->hgmContext_ = hgmContext;
+    connection->SyncFrameRateRange(frameRateLinkerId, range, 0);
+    connection->hgmContext_ = nullptr;
+    // test UnregisterFrameRateLinker
+    connection->UnregisterFrameRateLinker(frameRateLinkerId);
+    // test GetScreenCurrentRefreshRate
+    connection->GetScreenCurrentRefreshRate(INVALID_SCREEN_ID);
+    // test GetScreenSupportedRefreshRates
+    connection->GetScreenSupportedRefreshRates(INVALID_SCREEN_ID);
+    // test SetShowRefreshRateEnabled
+    connection->SetShowRefreshRateEnabled(false, 0);
+    // test GetRealtimeRefreshRate
+    connection->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    connection->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    connection->hgmContext_ = hgmContext;
+    connection->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    connection->screenManagerAgent_ = nullptr;
+    connection->GetRealtimeRefreshRate(INVALID_SCREEN_ID);
+    connection->renderProcessManagerAgent_ = nullptr;
+    connection->hgmContext_ = nullptr;
+    // test GetRefreshInfo
+    connection->GetRefreshInfo(0);
+    // test GetRefreshInfoToSP
+    connection->GetRefreshInfoToSP(INVALID_SCREEN_ID);
+    // test GetRefreshInfoByPidAndUniqueId
+    connection->GetRefreshInfoByPidAndUniqueId(0, 0);
+    // test GetCurrentRefreshRateMode
+    connection->GetCurrentRefreshRateMode();
+    // test SetPhysicalScreenResolution
+    connection->SetPhysicalScreenResolution(INVALID_SCREEN_ID, 0, 0);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->SetPhysicalScreenResolution(INVALID_SCREEN_ID, 0, 0);
+    connection->screenManagerAgent_ = nullptr;
+    // test SetRogScreenResolution
+    connection->SetRogScreenResolution(INVALID_SCREEN_ID, 0, 0);
+    // test GetRogScreenResolution
+    uint32_t width = 0;
+    uint32_t height = 0;
+    connection->GetRogScreenResolution(INVALID_SCREEN_ID, width, height);
+    // test MarkPowerOffNeedProcessOneFrame
+    connection->MarkPowerOffNeedProcessOneFrame();
+    // test RepaintEverything
+    connection->RepaintEverything();
+    // test ForceRefreshOneFrameWithNextVSync
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    connection->ForceRefreshOneFrameWithNextVSync();
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test DisablePowerOffRenderControl
+    connection->DisablePowerOffRenderControl(INVALID_SCREEN_ID);
+    // test SetScreenPowerStatus
+    connection->SetScreenPowerStatus(INVALID_SCREEN_ID, ScreenPowerStatus::INVALID_POWER_STATUS);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->SetScreenPowerStatus(INVALID_SCREEN_ID, ScreenPowerStatus::INVALID_POWER_STATUS);
+    connection->screenManagerAgent_ = nullptr;
+    connection->renderServiceAgent_ = renderServiceAgent;
+    connection->SetScreenPowerStatus(INVALID_SCREEN_ID, ScreenPowerStatus::INVALID_POWER_STATUS);
+    connection->renderServiceAgent_ = nullptr;
+    // test GetVirtualScreenResolution
+    connection->GetVirtualScreenResolution(INVALID_SCREEN_ID);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->GetVirtualScreenResolution(INVALID_SCREEN_ID);
+    connection->screenManagerAgent_ = nullptr;
+    // test GetTotalAppMemSize
+    float cpuMemSize = 0.0;
+    float gpuMemSize = 0.0;
+    connection->GetTotalAppMemSize(cpuMemSize, gpuMemSize);
+    // test GetMemoryGraphic
+    connection->GetMemoryGraphic(0);
+    // test GetMemoryGraphics
+    connection->GetMemoryGraphics();
+    // test GetScreenSupportedModes
+    connection->GetScreenSupportedModes(INVALID_SCREEN_ID);
+    // test GetScreenCapability
+    connection->GetScreenCapability(INVALID_SCREEN_ID);
+    // test GetScreenPowerStatus
+    uint32_t status = 0;
+    connection->GetScreenPowerStatus(INVALID_SCREEN_ID, status);
+    // test GetScreenData
+    connection->GetScreenData(INVALID_SCREEN_ID);
+    // test GetScreenBacklight
+    int32_t level = 0;
+    connection->GetScreenBacklight(INVALID_SCREEN_ID, level);
+    // test SetScreenBacklight
+    connection->SetScreenBacklight(INVALID_SCREEN_ID, level);
+    // test GetScreenSupportedColorGamuts
+    std::vector<ScreenColorGamut> gamutMode = {};
+    connection->GetScreenSupportedColorGamuts(INVALID_SCREEN_ID, gamutMode);
+    // test GetScreenSupportedMetaDataKeys
+    std::vector<ScreenHDRMetadataKey> keys = {};
+    connection->GetScreenSupportedMetaDataKeys(INVALID_SCREEN_ID, keys);
+    // test GetScreenColorGamut and SetScreenColorGamut
+    ScreenColorGamut screenColorGamut;
+    connection->SetScreenColorGamut(INVALID_SCREEN_ID, 0);
+    connection->GetScreenColorGamut(INVALID_SCREEN_ID, screenColorGamut);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->SetScreenColorGamut(INVALID_SCREEN_ID, 0);
+    connection->GetScreenColorGamut(INVALID_SCREEN_ID, screenColorGamut);
+    connection->screenManagerAgent_ = nullptr;
+    // test SetScreenGamutMap
+    ScreenGamutMap gamutMapMode = ScreenGamutMap::GAMUT_MAP_CONSTANT;
+    connection->SetScreenGamutMap(INVALID_SCREEN_ID, gamutMapMode);
+    // test SetScreenCorrection
+    ScreenRotation screenRotation = ScreenRotation::ROTATION_0;
+    connection->SetScreenCorrection(INVALID_SCREEN_ID, screenRotation);
+    // test SetVirtualMirrorScreenCanvasRotation and SetVirtualScreenAutoRotation
+    connection->SetVirtualMirrorScreenCanvasRotation(INVALID_SCREEN_ID, false);
+    connection->SetVirtualScreenAutoRotation(INVALID_SCREEN_ID, false);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->SetVirtualMirrorScreenCanvasRotation(INVALID_SCREEN_ID, false);
+    connection->SetVirtualScreenAutoRotation(INVALID_SCREEN_ID, false);
+    connection->screenManagerAgent_ = nullptr;
+    // test SetVirtualMirrorScreenScaleMode
+    ScreenScaleMode scaleMode = ScreenScaleMode::FILL_MODE;
+    connection->SetVirtualMirrorScreenScaleMode(INVALID_SCREEN_ID, scaleMode);
+    // test GetScreenGamutMap
+    connection->GetScreenGamutMap(INVALID_SCREEN_ID, gamutMapMode);
+    // test GetScreenHDRCapability
+    RSScreenHDRCapability screenHdrCapability;
+    connection->GetScreenHDRCapability(INVALID_SCREEN_ID, screenHdrCapability);
+    // test GetPixelFormat and SetPixelFormat
+    GraphicPixelFormat pixelFormat = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_CLUT8;
+    connection->SetPixelFormat(INVALID_SCREEN_ID, pixelFormat);
+    connection->GetPixelFormat(INVALID_SCREEN_ID, pixelFormat);
+    // test GetScreenSupportedHDRFormats
+    std::vector<ScreenHDRFormat> hdrFormats = {};
+    connection->GetScreenSupportedHDRFormats(INVALID_SCREEN_ID, hdrFormats);
+    // test GetScreenHDRFormat
+    ScreenHDRFormat hdrFormat;
+    connection->GetScreenHDRFormat(INVALID_SCREEN_ID, hdrFormat);
+    // test GetScreenSupportedColorSpaces
+    std::vector<GraphicCM_ColorSpaceType> colorSpaces;
+    connection->GetScreenSupportedColorSpaces(INVALID_SCREEN_ID, colorSpaces);
+    // test GetScreenColorSpace and SetScreenColorSpace
+    GraphicCM_ColorSpaceType colorSpace = GraphicCM_ColorSpaceType::GRAPHIC_CM_COLORSPACE_NONE;
+    connection->SetScreenColorSpace(INVALID_SCREEN_ID, colorSpace);
+    connection->GetScreenColorSpace(INVALID_SCREEN_ID, colorSpace);
+    // test GetScreenType
+    RSScreenType screenType;
+    connection->GetScreenType(INVALID_SCREEN_ID, screenType);
+    // test RegisterTypeface
+    std::shared_ptr<Drawing::Typeface> typeface = nullptr;
+    connection->RegisterTypeface(0, typeface);
+    // test UnRegisterTypeface
+    connection->UnRegisterTypeface(0);
+    // test GetDisplayIdentificationData
+    uint8_t outPort = 0;
+    std::vector<uint8_t> edidData = {};
+    connection->GetDisplayIdentificationData(INVALID_SCREEN_ID, outPort, edidData);
+    // test SetVirtualScreenRefreshRate and SetScreenActiveRect
+    int32_t resCode = 0;
+    uint32_t actualRefreshRate = 0;
+    connection->SetVirtualScreenRefreshRate(0, 0, resCode, actualRefreshRate);
+    Rect activeRect;
+    uint32_t setScreenActiveRectRepCode = 0;
+    connection->SetScreenActiveRect(INVALID_SCREEN_ID, activeRect, setScreenActiveRectRepCode);
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->SetVirtualScreenRefreshRate(0, 0, resCode, actualRefreshRate);
+    connection->SetScreenActiveRect(INVALID_SCREEN_ID, activeRect, setScreenActiveRectRepCode);
+    connection->screenManagerAgent_ = nullptr;
+    // teset SetScreenOffset
+    connection->SetScreenOffset(INVALID_SCREEN_ID, 0, 0);
+    // test SetScreenFrameGravity
+    connection->SetScreenFrameGravity(INVALID_SCREEN_ID, 0);
+    // test RegisterHgmConfigChangeCallback
+    connection->RegisterHgmConfigChangeCallback(nullptr);
+    // test RegisterHgmRefreshRateModeChangeCallback
+    connection->RegisterHgmRefreshRateModeChangeCallback(nullptr);
+    // test RegisterHgmRefreshRateUpdateCallback
+    connection->RegisterHgmRefreshRateUpdateCallback(nullptr);
+    // test RegisterFrameRateLinkerExpectedFpsUpdateCallback
+    connection->RegisterFrameRateLinkerExpectedFpsUpdateCallback(0, nullptr);
+    // test ShowWatermark
+    std::shared_ptr<Media::PixelMap> watermarkImg = nullptr;
+    connection->ShowWatermark(watermarkImg, false);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    connection->ShowWatermark(watermarkImg, false);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test ResizeVirtualScreen
+    connection->ResizeVirtualScreen(INVALID_SCREEN_ID, 0, 0);
+    // test ReportJankStats
+    connection->ReportJankStats();
+    // test NotifyLightFactorStatus
+    connection->NotifyLightFactorStatus(0);
+    // test NotifyAppStrategyConfigChangeEvent
+    const std::string pkgName = "";
+    const std::vector<std::pair<std::string, std::string>> newConfig = {};
+    connection->NotifyAppStrategyConfigChangeEvent(pkgName, 0, newConfig);
+    // test NotifyRefreshRateEvent
+    EventInfo eventInfo;
+    connection->NotifyRefreshRateEvent(eventInfo);
+    // tese SetWindowExpectedRefreshRate
+    const std::unordered_map<uint64_t, EventInfo> eventInfos = {};
+    connection->SetWindowExpectedRefreshRate(eventInfos);
+    // test SetWindowExpectedRefreshRate
+    std::unordered_map<std::string, EventInfo> refreshRateEventInfos = {};
+    connection->SetWindowExpectedRefreshRate(refreshRateEventInfos);
+    // test NotifySoftVsyncRateDiscountEvent
+    connection->NotifySoftVsyncRateDiscountEvent(0, pkgName, 0);
+    // test NotifyTouchEvent
+    auto vsyncManagerAgent = connection->vsyncManagerAgent_;
+    connection->vsyncManagerAgent_ = nullptr;
+    connection->NotifyTouchEvent(0, 0, 0);
+    connection->vsyncManagerAgent_ = vsyncManagerAgent;
+    // test NotifyDynamicModeEvent
+    connection->NotifyDynamicModeEvent(false);
+    // test NotifyHgmConfigEvent
+    connection->NotifyHgmConfigEvent(pkgName, false);
+    // test NotifyXComponentExpectedFrameRate
+    connection->NotifyXComponentExpectedFrameRate(pkgName, 0);
+    // test ReportEventResponse and ReportEventComplete and ReportEventJankFrame
+    DataBaseRs responseInfo;
+    connection->ReportEventResponse(responseInfo);
+    connection->ReportEventComplete(responseInfo);
+    connection->ReportEventJankFrame(responseInfo);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    connection->ReportEventResponse(responseInfo);
+    connection->ReportEventComplete(responseInfo);
+    connection->ReportEventJankFrame(responseInfo);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test ReportRsSceneJankStart and ReportRsSceneJankEnd
+    AppInfo jankInfo;
+    connection->ReportRsSceneJankStart(jankInfo);
+    connection->ReportRsSceneJankEnd(jankInfo);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    connection->ReportRsSceneJankStart(jankInfo);
+    connection->ReportRsSceneJankEnd(jankInfo);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test ReportGameStateData
+    GameStateData reportGameStateData;
+    connection->ReportGameStateData(reportGameStateData);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    connection->ReportGameStateData(reportGameStateData);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test SetCacheEnabledForRotation
+    connection->SetCacheEnabledForRotation(false);
+    // test GetActiveDirtyRegionInfo
+    connection->GetActiveDirtyRegionInfo();
+    // test GetHdrOnDuration and SetVmaCacheStatus and SetCurtainScreenUsingStatus
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    int64_t hdrOnDuration = 0;
+    connection->GetHdrOnDuration(hdrOnDuration);
+    connection->SetVmaCacheStatus(false);
+    connection->SetCurtainScreenUsingStatus(false);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test SetGpuCrcDirtyEnabledPidList and
+    std::vector<int32_t> pidList = {};
+    connection->SetGpuCrcDirtyEnabledPidList(pidList);
+    // test RegisterUIExtensionCallback
+    connection->RegisterUIExtensionCallback(0, nullptr);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    connection->RegisterUIExtensionCallback(0, nullptr);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test SetVirtualScreenStatus
+    bool setVirtualScreenStatusRet = false;
+    connection->SetVirtualScreenStatus(
+        INVALID_SCREEN_ID, VirtualScreenStatus::VIRTUAL_SCREEN_INVALID_STATUS, setVirtualScreenStatusRet);
+    // test SetLayerTop and SetForceRefresh
+    connection->SetLayerTop(pkgName, false);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    connection->SetLayerTop(pkgName, false);
+    connection->SetForceRefresh(pkgName, false);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test SetFreeMultiWindowStatus and SetColorFollow
+    connection->SetFreeMultiWindowStatus(false);
+    connection->SetColorFollow(pkgName, false);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    connection->SetFreeMultiWindowStatus(false);
+    connection->SetColorFollow(pkgName, false);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test NotifyScreenSwitched
+    connection->NotifyScreenSwitched();
+    connection->screenManagerAgent_ = screenManagerAgent;
+    ASSERT_NE(connection->screenManagerAgent_, nullptr);
+    connection->NotifyScreenSwitched();
+    connection->screenManagerAgent_ = nullptr;
+    // test RegisterSelfDrawingNodeRectChangeCallback and UnRegisterSelfDrawingNodeRectChangeCallback
+    RectConstraint constraint;
+    connection->RegisterSelfDrawingNodeRectChangeCallback(constraint, nullptr);
+    connection->UnRegisterSelfDrawingNodeRectChangeCallback();
+    // test NotifyPageName
+    connection->NotifyPageName(pkgName, pkgName, false);
+    connection->hgmContext_ = hgmContext;
+    ASSERT_NE(connection->hgmContext_, nullptr);
+    connection->NotifyPageName(pkgName, pkgName, false);
+    connection->hgmContext_ = nullptr;
+    // test AvcodecVideoStart and AvcodecVideoStop and AvcodecVideoGet and AvcodecVideoGetRecent
+    std::vector<uint64_t> uniqueIdList = {};
+    std::vector<std::string> surfaceNameList = {};
+    connection->AvcodecVideoStart(uniqueIdList, surfaceNameList, 0, 0);
+    connection->AvcodecVideoStop(uniqueIdList, surfaceNameList, 0);
+    connection->AvcodecVideoGet(0);
+    connection->AvcodecVideoGetRecent();
+    // test SetBehindWindowFilterEnabled and GetBehindWindowFilterEnabled
+    connection->SetBehindWindowFilterEnabled(false);
+    bool getBehindWindowFilterEnabledRet = false;
+    connection->GetBehindWindowFilterEnabled(getBehindWindowFilterEnabledRet);
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    connection->SetBehindWindowFilterEnabled(false);
+    connection->GetBehindWindowFilterEnabled(getBehindWindowFilterEnabledRet);
+    connection->renderProcessManagerAgent_ = nullptr;
+    // test GetPidGpuMemoryInMB
+    float gpuMemInMB = 0.0;
+    connection->GetPidGpuMemoryInMB(0, gpuMemInMB);
+
+    // restore
+    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
+    connection->hgmContext_ = hgmContext;
+    connection->screenManagerAgent_ = screenManagerAgent;
+    connection->vsyncManagerAgent_ = vsyncManagerAgent;
+    connection->renderServiceAgent_ = renderServiceAgent;
+}
 } // namespace OHOS::Rosen
