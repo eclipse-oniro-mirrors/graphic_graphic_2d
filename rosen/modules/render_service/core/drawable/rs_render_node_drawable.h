@@ -50,7 +50,7 @@ public:
 
     void Draw(Drawing::Canvas& canvas) override;
     virtual void OnDraw(Drawing::Canvas& canvas);
-    virtual void BeforeOnDraw(Drawing::Canvas& canvas) {}
+    virtual void TryPrepareLayerCache(Drawing::Canvas& canvas) {}
 
     virtual void OnCapture(Drawing::Canvas& canvas);
 
@@ -123,8 +123,8 @@ public:
     void SetDrawExcludedSubTreeForCache(bool value);
     bool IsDrawingExcludedSubTreeForCache();
 
-    inline static bool needHandledInBeforeOnDraw_ = false;
-    inline static std::vector<std::weak_ptr<RSRenderNodeDrawable>> markLayerNodesDrawable_;
+    inline static bool needHandledInTryPrepareLayerCache_ = false;
+    inline static std::vector<std::weak_ptr<RSRenderNodeDrawable>> layerNodesDrawable_;
 
 protected:
     explicit RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
@@ -137,7 +137,7 @@ protected:
     float boundsHeight_ = 0.0f;
 
     void GenerateCacheIfNeed(Drawing::Canvas& canvas, RSRenderParams& params);
-    bool isMarkLayerCachehandled_ = false;
+    bool isLayerCached = false;
     void CheckCacheTypeAndDraw(Drawing::Canvas& canvas, const RSRenderParams& params, bool isInCapture = false);
 
     static inline bool isDrawingCacheEnabled_ = false;

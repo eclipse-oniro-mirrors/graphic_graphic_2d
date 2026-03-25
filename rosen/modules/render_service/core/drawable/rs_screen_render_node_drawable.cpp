@@ -907,6 +907,18 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to create canvas");
         return;
     }
+
+    if (curCanvas_->GetGPUContext() && needHandledInTryPrepareLayerCache_) {
+        needHandledInTryPrepareLayerCache_ = false;
+
+        for (auto drawable : layerNodesDrawable_) {
+            auto drawablePtr = drawable.lock();
+            if (drawablePtr) {
+                drawablePtr->TryPrepareLayerCache(*curCanvas_);
+            }
+        }
+    }
+
     curCanvas_->SetDrawnRegion(params->GetDrawnRegion());
     curCanvas_->SetTargetColorGamut(params->GetNewColorSpace());
     curCanvas_->SetScreenId(paramScreenId);

@@ -25,7 +25,7 @@ public:
 
     static RSRenderNodeDrawable::Ptr OnGenerate(std::shared_ptr<const RSRenderNode> node);
     void OnDraw(Drawing::Canvas& canvas) override;
-    void BeforeOnDraw(Drawing::Canvas& canvas) override;
+    void TryPrepareLayerCache(Drawing::Canvas& canvas) override;
     void OnCapture(Drawing::Canvas& canvas) override;
     RSRenderNodeDrawableType GetDrawableType() const override
     {

@@ -305,42 +305,42 @@ HWTEST_F(RSUniRenderThreadTest, Render001, TestSize.Level1)
 }
 
 /**
- * @tc.name: AsyncMarkLayerNodeDrawableTest
- * @tc.desc: Test AsyncMarkLayerNodeDrawable
+ * @tc.name: FromLayerNodesGetDrawablesTest
+ * @tc.desc: Test FromLayerNodesGetDrawables
  * @tc.type: FUNC
  * @tc.require: issueIAE59W
  */
-HWTEST_F(RSUniRenderThreadTest, AsyncMarkLayerNodeDrawableTest, TestSize.Level1)
+HWTEST_F(RSUniRenderThreadTest, FromLayerNodesGetDrawablesTest, TestSize.Level1)
 {
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
-    EXPECT_TRUE(instance.markLayerNodes_.empty());
-    instance.AsyncMarkLayerNodeDrawable();
+    EXPECT_TRUE(instance.layerNodes_.empty());
+    instance.FromLayerNodesGetDrawables();
 
     auto node = std::make_shared<RSRenderNode>(100, true);
-    instance.markLayerNodes_.emplace_back(node);
-    EXPECT_FALSE(instance.markLayerNodes_.empty());
-    instance.AsyncMarkLayerNodeDrawable();
+    instance.layerNodes_.emplace_back(node);
+    EXPECT_FALSE(instance.layerNodes_.empty());
+    instance.FromLayerNodesGetDrawables();
 }
 
 /**
  * @tc.name: IfIsMarkLayerEnabledAddToListTest
- * @tc.desc: Test IfIsMarkLayerEnabledAddToList && ClearLastFrameMarkLayerNodes
+ * @tc.desc: Test IfIsMarkLayerEnabledAddToList && ClearLastFrameLayerNodes
  * @tc.type: FUNC
  * @tc.require: issueIAE59W
  */
 HWTEST_F(RSUniRenderThreadTest, IfIsMarkLayerEnabledAddToListTest, TestSize.Level1)
 {
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
-    EXPECT_TRUE(instance.markLayerNodes_.empty());
+    EXPECT_TRUE(instance.layerNodes_.empty());
 
     auto node = std::make_shared<RSRenderNode>(100, true);
     EXPECT_FALSE(node->renderHasMarkLayer_);
     node->renderHasMarkLayer_ = true;
     instance.IfIsMarkLayerEnabledAddToList(node);
-    EXPECT_FALSE(instance.markLayerNodes_.empty());
+    EXPECT_FALSE(instance.layerNodes_.empty());
 
-    instance.ClearLastFrameMarkLayerNodes();
-    EXPECT_TRUE(instance.markLayerNodes_.empty());
+    instance.ClearLastFrameLayerNodes();
+    EXPECT_TRUE(instance.layerNodes_.empty());
 }
 
 #ifdef RES_SCHED_ENABLE

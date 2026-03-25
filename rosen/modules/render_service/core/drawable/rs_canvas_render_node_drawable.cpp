@@ -73,7 +73,7 @@ bool RSCanvasRenderNodeDrawable::IsUiRangeCaptureEndNode()
     return (captureParam.endNodeId_ != INVALID_NODEID && GetId() == captureParam.endNodeId_);
 }
 
-void RSCanvasRenderNodeDrawable::BeforeOnDraw(Drawing::Canvas& canvas)
+void RSCanvasRenderNodeDrawable::TryPrepareLayerCache(Drawing::Canvas& canvas)
 {
 #ifdef RS_ENABLE_GPU
     if (UNLIKELY(!isDrawingCacheEnabled_)) {
@@ -111,7 +111,7 @@ void RSCanvasRenderNodeDrawable::BeforeOnDraw(Drawing::Canvas& canvas)
     }
 
     GenerateCacheIfNeed(canvas, *params);
-    isMarkLayerCachehandled_ = true;
+    isLayerCached = true;
     paintFilterCanvas->SetHDRBrightness(hdrBrightness);
 #endif
 }
@@ -122,16 +122,6 @@ void RSCanvasRenderNodeDrawable::BeforeOnDraw(Drawing::Canvas& canvas)
 void RSCanvasRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
 #ifdef RS_ENABLE_GPU
-    if (needHandledInBeforeOnDraw_) {
-        needHandledInBeforeOnDraw_ = false;
-
-        for (auto drawable : markLayerNodesDrawable_) {
-            auto drawablePtr = drawable.lock();
-            if (drawablePtr) {
-                drawablePtr->BeforeOnDraw(canvas);
-            }
-        }
-    }
     SetDrawSkipType(DrawSkipType::NONE);
     // Draw only when should paint is valid or when this node is the end node of the range ui-capture
     bool shouldPaint = ShouldPaint() || (canvas.GetUICapture() && IsUiRangeCaptureEndNode());
