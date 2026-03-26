@@ -4242,10 +4242,9 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level
     auto screenManagerAgent = connection->screenManagerAgent_;
     auto vsyncManagerAgent = connection->vsyncManagerAgent_;
     auto renderServiceAgent = connection->renderServiceAgent_;
-
     connection->renderProcessManagerAgent_ = nullptr;
     // test GetPixelMapByProcessId
-    std::vector<PixelMapInfo> pixelMapInfoVector = {};
+    std::vector<PixelMapInfo> pixelMapInfoVector = {}; 
     int32_t repCode = 0;
     connection->GetPixelMapByProcessId(pixelMapInfoVector, 0, repCode);
     // test CreatePixelMapFromSurface
@@ -4298,6 +4297,27 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level
     connection->SetBrightnessInfoChangeCallback(nullptr);
     // test SetScreenActiveMode
     connection->SetScreenActiveMode(INVALID_SCREEN_ID, 0);
+}	 
+	 
+/**
+ * @tc.name: testnullptrCase002
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+    ASSERT_NE(connection, nullptr);
+
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
+    auto hgmContext = connection->hgmContext_;
+    auto screenManagerAgent = connection->screenManagerAgent_;
+    auto vsyncManagerAgent = connection->vsyncManagerAgent_;
+    auto renderServiceAgent = connection->renderServiceAgent_;
+
     // test SetScreenRefreshRate
     connection->hgmContext_ = nullptr;
     connection->SetScreenRefreshRate(INVALID_SCREEN_ID, 0, 0);
@@ -4344,7 +4364,26 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level
     // test SetPhysicalScreenResolution
     connection->SetPhysicalScreenResolution(INVALID_SCREEN_ID, 0, 0);
     connection->screenManagerAgent_ = screenManagerAgent;
-    connection->SetPhysicalScreenResolution(INVALID_SCREEN_ID, 0, 0);
+    connection->SetPhysicalScreenResolution(INVALID_SCREEN_ID, 0, 0);	 
+}	 
+	 
+/**
+ * @tc.name: testnullptrCase003
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase003, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+    ASSERT_NE(connection, nullptr);
+
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
+    auto screenManagerAgent = connection->screenManagerAgent_;
+    auto renderServiceAgent = connection->renderServiceAgent_;
+
     connection->screenManagerAgent_ = nullptr;
     // test SetRogScreenResolution
     connection->SetRogScreenResolution(INVALID_SCREEN_ID, 0, 0);
@@ -4358,7 +4397,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level
     connection->RepaintEverything();
     // test ForceRefreshOneFrameWithNextVSync
     connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
-    ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
+    ASSERT_NE(connection->renderProcessManagerAgent_,  );
     connection->ForceRefreshOneFrameWithNextVSync();
     connection->renderProcessManagerAgent_ = nullptr;
     // test DisablePowerOffRenderControl
@@ -4405,27 +4444,16 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level
     connection->GetScreenSupportedColorGamuts(INVALID_SCREEN_ID, gamutMode);
     // test GetScreenSupportedMetaDataKeys
     std::vector<ScreenHDRMetadataKey> keys = {};
-    connection->GetScreenSupportedMetaDataKeys(INVALID_SCREEN_ID, keys);
-    // test GetScreenColorGamut and SetScreenColorGamut
-    ScreenColorGamut screenColorGamut;
-    connection->SetScreenColorGamut(INVALID_SCREEN_ID, 0);
-    connection->GetScreenColorGamut(INVALID_SCREEN_ID, screenColorGamut);
-
-    // restore
-    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
-    connection->hgmContext_ = hgmContext;
-    connection->screenManagerAgent_ = screenManagerAgent;
-    connection->vsyncManagerAgent_ = vsyncManagerAgent;
-    connection->renderServiceAgent_ = renderServiceAgent;
-}
+    connection->GetScreenSupportedMetaDataKeys(INVALID_SCREEN_ID, keys); 
+}	 
 
 /**
- * @tc.name: testnullptrCase002
+ * @tc.name: testnullptrCase004
  * @tc.desc: Test testnullptrCase
  * @tc.type: FUNC
  * @tc.require: issue20726
  */
-HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase004, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
             renderProcessManagerAgent_, screenManagerAgent_, nullptr,
@@ -4438,6 +4466,11 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     auto vsyncManagerAgent = connection->vsyncManagerAgent_;
     auto renderServiceAgent = connection->renderServiceAgent_;
 
+    connection->screenManagerAgent_ = nullptr;
+    // test GetScreenColorGamut and SetScreenColorGamut
+    ScreenColorGamut screenColorGamut;
+    connection->SetScreenColorGamut(INVALID_SCREEN_ID, 0);
+    connection->GetScreenColorGamut(INVALID_SCREEN_ID, screenColorGamut);
     connection->screenManagerAgent_ = screenManagerAgent;
     connection->SetScreenColorGamut(INVALID_SCREEN_ID, 0);
     connection->GetScreenColorGamut(INVALID_SCREEN_ID, screenColorGamut);
@@ -4483,7 +4516,29 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     // test GetScreenColorSpace and SetScreenColorSpace
     GraphicCM_ColorSpaceType colorSpace = GraphicCM_ColorSpaceType::GRAPHIC_CM_COLORSPACE_NONE;
     connection->SetScreenColorSpace(INVALID_SCREEN_ID, colorSpace, colorSpacesResCode);
-    connection->GetScreenColorSpace(INVALID_SCREEN_ID, colorSpace, colorSpacesResCode);
+    connection->GetScreenColorSpace(INVALID_SCREEN_ID, colorSpace, colorSpacesResCode); 
+}	
+	
+/**
+ * @tc.name: testnullptrCase005
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase005, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+    ASSERT_NE(connection, nullptr);
+
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
+    auto hgmContext = connection->hgmContext_;
+    auto screenManagerAgent = connection->screenManagerAgent_;
+    auto vsyncManagerAgent = connection->vsyncManagerAgent_;
+    auto renderServiceAgent = connection->renderServiceAgent_;
+
+    connection->screenManagerAgent_ = nullptr;
     // test GetScreenType
     RSScreenType screenType;
     connection->GetScreenType(INVALID_SCREEN_ID, screenType);
@@ -4524,6 +4579,27 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     connection->ShowWatermark(watermarkImg, false);
     connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
     connection->ShowWatermark(watermarkImg, false);
+}
+
+/**
+ * @tc.name: testnullptrCase006
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase006, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+    ASSERT_NE(connection, nullptr);
+
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
+    auto hgmContext = connection->hgmContext_;
+    auto screenManagerAgent = connection->screenManagerAgent_;
+    auto vsyncManagerAgent = connection->vsyncManagerAgent_;
+    auto renderServiceAgent = connection->renderServiceAgent_;
+
     connection->renderProcessManagerAgent_ = nullptr;
     // test ResizeVirtualScreen
     connection->ResizeVirtualScreen(INVALID_SCREEN_ID, 0, 0);
@@ -4547,7 +4623,6 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     // test NotifySoftVsyncRateDiscountEvent
     connection->NotifySoftVsyncRateDiscountEvent(0, pkgName, 0);
     // test NotifyTouchEvent
-
     connection->vsyncManagerAgent_ = nullptr;
     connection->NotifyTouchEvent(0, 0, 0);
     connection->vsyncManagerAgent_ = vsyncManagerAgent;
@@ -4580,6 +4655,22 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     connection->ReportGameStateData(reportGameStateData);
     connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
     connection->ReportGameStateData(reportGameStateData);
+}
+
+/**
+ * @tc.name: testnullptrCase006
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase006, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+    ASSERT_NE(connection, nullptr);
+
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
     connection->renderProcessManagerAgent_ = nullptr;
     // test SetCacheEnabledForRotation
     connection->SetCacheEnabledForRotation(false);
@@ -4619,7 +4710,26 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
     ASSERT_NE(connection->renderProcessManagerAgent_, nullptr);
     connection->SetFreeMultiWindowStatus(false);
-    connection->SetColorFollow(pkgName, false);
+    connection->SetColorFollow(pkgName, false);	 	 
+}	 
+	 
+/**
+ * @tc.name: testnullptrCase007
+ * @tc.desc: Test testnullptrCase
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase007, TestSize.Level1)
+{
+    auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
+            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+            renderService_.vsyncManager_->GetVsyncManagerAgent());
+    ASSERT_NE(connection, nullptr);
+
+    auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
+    auto hgmContext = connection->hgmContext_;
+    auto screenManagerAgent = connection->screenManagerAgent_;
+
     connection->renderProcessManagerAgent_ = nullptr;
     // test NotifyScreenSwitched
     connection->NotifyScreenSwitched();
@@ -4656,12 +4766,5 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
     // test GetPidGpuMemoryInMB
     float gpuMemInMB = 0.0;
     connection->GetPidGpuMemoryInMB(0, gpuMemInMB);
-
-    // restore
-    connection->renderProcessManagerAgent_ = renderProcessManagerAgent;
-    connection->hgmContext_ = hgmContext;
-    connection->screenManagerAgent_ = screenManagerAgent;
-    connection->vsyncManagerAgent_ = vsyncManagerAgent;
-    connection->renderServiceAgent_ = renderServiceAgent;
 }
 } // namespace OHOS::Rosen
