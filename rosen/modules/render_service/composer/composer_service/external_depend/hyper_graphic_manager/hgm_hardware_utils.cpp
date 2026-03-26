@@ -155,28 +155,19 @@ void HgmHardwareUtils::ReportRetryOverLimit(uint64_t vsyncId, uint32_t rate)
     }
 }
 
-void HgmHardwareUtils::TransactRefreshRateParam(uint32_t& currentRate,
-    uint32_t pendingScreenRefreshRate, uint64_t frameTimestamp, uint64_t pendingConstraintRelativeTime)
+void HgmHardwareUtils::SwitchRefreshRate(const std::shared_ptr<HdiOutput>& hdiOutput, int64_t timestamp,
+    const PipelineParam& pipelineParam);
 {
-    RS_TRACE_NAME_FMT("%s: rate:%u", __func__, pendingScreenRefreshRate);
-    refreshRateParam_ = {
-        .rate = pendingScreenRefreshRate,
-        .frameTimestamp = frameTimestamp,
-        .constraintRelativeTime = pendingConstraintRelativeTime,
-    };
-    currentRate = hgmCore_.GetScreenCurrentRefreshRate(hgmCore_.GetActiveScreenId());
-}
-
-void HgmHardwareUtils::SwitchRefreshRate(const std::shared_ptr<HdiOutput>& hdiOutput, int64_t timestamp)
-{
-    RS_TRACE_NAME_FMT("%s: rate:%u", __func__, refreshRateParam_.rate);
-    if (refreshRateParam_.rate == 0) {
+    RS_TRACE_NAME_FMT("%s: rate:%u", __func__, pipelineParam.pendingScreenRefreshRate);
+    if (pipelineParam.pendingScreenRefreshRate == 0) {
         return;
     }
     ScreenId screenId = hdiOutput->GetScreenId();
     if (auto screen = hgmCore_.GetScreen(screenId); !screen || !screen->GetSelfOwnedScreenFlag()) {
         return;
     }
+    refreshRateParam_.setParam(pipelineParam.pendingScreenRefreshRate,
+        pipelineParam.frameTimestamp, pipelineParam.pendingConstraintRelativeTime);
 
     if (RSSystemProperties::IsFoldDeviceOfOldDss()) {
         if (auto powerStatus = hgmCore_.GetScreenPowerStatus(screenId);
