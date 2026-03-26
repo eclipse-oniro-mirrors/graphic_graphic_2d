@@ -93,9 +93,7 @@ RSColor RSColor::operator*(float scale) const
     if (UNLIKELY(placeholder_ != 0)) {
         return *this;
     }
-    RSColor color = RSColor(round(red_ * scale), round(green_ * scale), round(blue_ * scale), round(alpha_ * scale));
-    color.SetHeadroom(rhs.headroom_);
-    return color;
+    return RSColor(round(red_ * scale), round(green_ * scale), round(blue_ * scale), round(alpha_ * scale));
 }
 
 RSColor& RSColor::operator*=(float scale)

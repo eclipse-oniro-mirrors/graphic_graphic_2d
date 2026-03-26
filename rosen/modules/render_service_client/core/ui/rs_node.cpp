@@ -2886,7 +2886,7 @@ void RSNode::SetHDRBrightnessFactor(float factor)
         factor);
 }
 
-void RSNode::SetHDRColorHeadroom(const float& headroom);
+void RSNode::SetHDRColorHeadroom(const float& headroom)
 {
     SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRColorHeadroom>(
         headroom);

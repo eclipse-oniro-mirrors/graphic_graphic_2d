@@ -1751,7 +1751,7 @@ HWTEST_F(PropertiesTest, SetHDRColorHeadroomTest, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSPropertiesHDRColorHeadroomTest, GetHDRColorMaxHeadroomTest, TestSize.Level1)
+HWTEST_F(PropertiesTest, GetHDRColorMaxHeadroomTest, TestSize.Level1)
 {
     RSProperties properties;
     properties.UpdateHDRColorMaxHeadroom(2.0f, 1.5f);
