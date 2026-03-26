@@ -72,6 +72,7 @@ public:
         CLIP_ROUND_RECT_OPITEM,
         CLIP_PATH_OPITEM,
         CLIP_REGION_OPITEM,
+        RESET_CLIP_OPITEM,
         SET_MATRIX_OPITEM,
         RESET_MATRIX_OPITEM,
         CONCAT_MATRIX_OPITEM,
@@ -1090,6 +1091,20 @@ public:
 private:
     ClipOp clipOp_;
     std::shared_ptr<Region> region_;
+};
+
+class ResetClipOpItem : public DrawOpItem {
+public:
+    struct ConstructorHandle : public OpItem {
+        ConstructorHandle() : OpItem(DrawOpItem::RESET_CLIP_OPITEM) {}
+        ~ConstructorHandle() override = default;
+    };
+    ResetClipOpItem();
+    ~ResetClipOpItem() override = default;
+
+    static std::shared_ptr<DrawOpItem> Unmarshalling(const DrawCmdList& cmdList, void* handle);
+    void Marshalling(DrawCmdList& cmdList) override;
+    void Playback(Canvas* canvas, const Rect* rect) override;
 };
 
 class SetMatrixOpItem : public DrawOpItem {

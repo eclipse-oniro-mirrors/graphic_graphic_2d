@@ -289,6 +289,8 @@ void RecordingCanvasFuzzTest006(const uint8_t* data, size_t size)
     recordcanvas1.SetMatrix(matrix);
     recordcanvas.ResetMatrix();
     recordcanvas1.ResetMatrix();
+    recordcanvas.ResetClip();
+    recordcanvas1.ResetClip();
     recordcanvas.ConcatMatrix(matrix);
     matrix.Reset();
     recordcanvas1.ConcatMatrix(matrix);

@@ -2276,6 +2276,27 @@ void ClipRegionOpItem::Dump(std::string& out) const
     out += "]";
 }
 
+/* ResetClipOpItem */
+UNMARSHALLING_REGISTER(ResetClip, DrawOpItem::RESET_CLIP_OPITEM,
+    ResetClipOpItem::Unmarshalling, sizeof(ResetClipOpItem::ConstructorHandle));
+
+ResetClipOpItem::ResetClipOpItem() : DrawOpItem(RESET_CLIP_OPITEM) {}
+
+std::shared_ptr<DrawOpItem> ResetClipOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
+{
+    return std::make_shared<ResetClipOpItem>();
+}
+
+void ResetClipOpItem::Marshalling(DrawCmdList& cmdList)
+{
+    cmdList.AddOp<ConstructorHandle>();
+}
+
+void ResetClipOpItem::Playback(Canvas* canvas, const Rect* rect)
+{
+    canvas->ResetClip();
+}
+
 /* SetMatrixOpItem */
 UNMARSHALLING_REGISTER(SetMatrix, DrawOpItem::SET_MATRIX_OPITEM,
     SetMatrixOpItem::Unmarshalling, sizeof(SetMatrixOpItem::ConstructorHandle));

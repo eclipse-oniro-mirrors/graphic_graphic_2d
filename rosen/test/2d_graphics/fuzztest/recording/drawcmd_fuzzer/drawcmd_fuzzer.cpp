@@ -2930,6 +2930,48 @@ bool DrawCmdFuzzTest082(const uint8_t* data, size_t size)
     return true;
 }
 
+bool DrawCmdFuzzTest083(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    size_t length = GetObject<size_t>() % MAX_SIZE + 1;
+    char* dataText = new char[length];
+    for (size_t i = 0; i < length; i++) {
+        dataText[i] = GetObject<char>();
+    }
+    std::pair<const void*, size_t> cmdListData;
+    cmdListData.first = static_cast<const void*>(dataText);
+    cmdListData.second = length;
+    bool isCopy = GetObject<bool>();
+    static std::shared_ptr<DrawCmdList> drawCmdList = DrawCmdList::CreateFromData(cmdListData, isCopy);
+    ResetClipOpItem::ConstructorHandle constructorHandle = ResetClipOpItem::ConstructorHandle();
+    ResetClipOpItem resetClipOpItem = ResetClipOpItem();
+    resetClipOpItem.Marshalling(*drawCmdList);
+    ResetClipOpItem::Unmarshalling(*drawCmdList, &constructorHandle);
+    if (dataText != nullptr) {
+        delete [] dataText;
+        dataText = nullptr;
+    }
+    return true;
+}
+
+bool DrawCmdFuzzTest084(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    ResetClipOpItem resetClipOpItem = ResetClipOpItem();
+    int32_t width = GetObject<int32_t>();
+    int32_t height = GetObject<int32_t>();
+    Canvas canvas = Canvas(width, height);
+    Rect rectT { GetObject<float>(), GetObject<float>(), GetObject<float>(), GetObject<float>() };
+    resetClipOpItem.Playback(&canvas, &rectT);
+    return true;
+}
+
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
@@ -3025,6 +3067,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::Drawing::DrawCmdFuzzTest080(data, size);
     OHOS::Rosen::Drawing::DrawCmdFuzzTest081(data, size);
     OHOS::Rosen::Drawing::DrawCmdFuzzTest082(data, size);
+    OHOS::Rosen::Drawing::DrawCmdFuzzTest083(data, size);
+    OHOS::Rosen::Drawing::DrawCmdFuzzTest084(data, size);
 
     return 0;
 }
