@@ -447,6 +447,7 @@ public:
 #endif
 
     virtual void OnSync(const std::unique_ptr<RSRenderParams>& target) override;
+    virtual void OnPartialSync(const std::unique_ptr<RSRenderParams>& target) override;
 
     void SetRoundedCornerRegion(const Occlusion::Region& roundedCornerRegion)
     {
@@ -827,6 +828,13 @@ public:
 
     void SetIsParticipateInOcclusion(bool isParticipateInOcclusion);
     bool GetIsParticipateInOcclusion() const;
+
+    void SetUIFirstLeashAllEnable(bool isEnable);
+    bool IsUIFirstLeashAllEnable() const override;
+    void SetUIFirstLeashAllEnableChange(bool isChanged);
+    bool IsUIFirstLeashAllEnableChange() const;
+
+    void SwapRelatedRenderParams(RSSurfaceRenderParams& relatedRenderParams);
 private:
     RSSurfaceNodeType rsSurfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
     SelfDrawingNodeType selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
@@ -968,6 +976,8 @@ private:
     bool isFrameGravityNewVersionEnabled_ = false;
     bool isSurfaceBufferOpaque_ = false;
     bool isParticipateInOcclusion_ = false;
+    bool isUIFirstLeashAllEnable_ = false;
+    bool isUIFirstLeashAllEnableChange_ = false;
 
     // only used for window capture
     sptr<RSISurfaceCaptureCallback> captureCallback_;

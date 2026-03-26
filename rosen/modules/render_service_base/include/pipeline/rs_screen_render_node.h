@@ -77,7 +77,8 @@ public:
 
         screenResolutionChanged_ = screenInfo_.phyWidth != info.phyWidth || screenInfo_.phyHeight != info.phyHeight ||
             screenInfo_.width != info.width || screenInfo_.height != info.height ||
-            std::fabs(screenInfo_.samplingScale - info.samplingScale) > FLT_EPSILON;
+            std::fabs(screenInfo_.samplingScale - info.samplingScale) > FLT_EPSILON ||
+            (screenInfo_.activeRefreshRate != info.activeRefreshRate && screenInfo_.id != 0);
         screenInfo_ = std::move(info);
     }
 

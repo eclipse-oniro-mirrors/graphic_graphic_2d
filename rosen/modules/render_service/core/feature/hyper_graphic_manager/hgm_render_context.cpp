@@ -29,7 +29,6 @@ namespace Rosen {
 namespace {
 constexpr const char* DEFAULT_SURFACE_NODE_NAME = "DefaultSurfaceNodeName";
 constexpr const char* FRAMEWORK_XWEB_NAME = "oh_xweb_";
-constexpr const char* HGM_CONFIG_PATH = "/sys_prod/etc/graphic/hgm_policy_config.xml";
 constexpr uint32_t MULTI_WINDOW_PERF_START_NUM = 2;
 }
 
@@ -47,7 +46,7 @@ int32_t HgmRenderContext::InitHgmConfig(std::unordered_map<std::string, std::str
     std::unordered_map<std::string, std::string>& solidLayerConfig, std::vector<std::string>& appBufferList)
 {
     auto parser = std::make_unique<RPHgmXMLParser>();
-    if (parser->LoadConfiguration(HGM_CONFIG_PATH) != EXEC_SUCCESS) {
+    if (parser->LoadConfiguration(GetHgmXmlPath().c_str()) != EXEC_SUCCESS) {
         HGM_LOGW("failed to load hgm xml configuration file");
         return XML_FILE_LOAD_FAIL;
     }
@@ -65,9 +64,7 @@ void HgmRenderContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_
         RSRealtimeRefreshRateManager::Instance().SetShowRefreshRateEnabled(enable, 1);
     }
 
-    HandleGameNode(rsContext->GetNodeMap());
-    isAdaptiveVsyncReaddy_.store(rsContext->GetNodeMap().GetVisibleLeashWindowCount() < MULTI_WINDOW_PERF_START_NUM &&
-                                 rsContext->GetAnimatingNodeList().empty());
+    HandleAdaptiveVsyncCondition(rsContext);
     auto info = sptr<HgmProcessToServiceInfo>::MakeSptr();
     info->isGameNodeOnTree = isGameNodeOnTree_.load();
     info->rsCurrRange = rsCurrRange_;
@@ -87,14 +84,16 @@ void HgmRenderContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_
         pipelineParam.pendingScreenRefreshRate, pipelineParam.pendingConstraintRelativeTime);
 }
 
-void HgmRenderContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
+void HgmRenderContext::HandleAdaptiveVsyncCondition(const std::shared_ptr<RSContext>& rsContext)
 {
     if (isAdaptive_.load() != SupportASStatus::SUPPORT_AS) {
         isGameNodeOnTree_.store(false);
+        isAdaptiveVsyncReady_.store(false);
         return;
     }
     bool isGameSelfNodeOnTree = false;
     bool isOtherSelfNodeOnTree = false;
+    auto& nodeMap = rsContext->GetNodeMap();
     nodeMap.TraverseSurfaceNodesBreakOnCondition(
         [this, &isGameSelfNodeOnTree, &isOtherSelfNodeOnTree, &nodeMap]
         (const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode) {
@@ -114,9 +113,15 @@ void HgmRenderContext::HandleGameNode(const RSRenderNodeMap& nodeMap)
         }
         return false;
     });
-    RS_TRACE_NAME_FMT(
-        "%s: game node on tree: %d, other node no tree: %d", __func__, isGameSelfNodeOnTree, isOtherSelfNodeOnTree);
     isGameNodeOnTree_.store(isGameSelfNodeOnTree && !isOtherSelfNodeOnTree);
+
+    uint32_t windowCount = nodeMap.GetVisibleLeashWindowCount();
+    bool isAnimateRunning = rsContext->IsRequestedNextVsyncAnimate();
+    isAdaptiveVsyncReady_.store(windowCount < MULTI_WINDOW_PERF_START_NUM && !isAnimateRunning);
+
+    RS_TRACE_NAME_FMT(
+        "%s: game: %d, other: %d, window count: %u, animate: %d",
+        __func__, isGameSelfNodeOnTree, isOtherSelfNodeOnTree, windowCount, isAnimateRunning);
 }
 
 void HgmRenderContext::SetServiceToProcessInfo(sptr<HgmServiceToProcessInfo> serviceToProcessInfo,

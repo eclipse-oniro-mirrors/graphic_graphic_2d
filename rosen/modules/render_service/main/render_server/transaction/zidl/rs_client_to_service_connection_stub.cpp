@@ -27,9 +27,9 @@
 #include "command/rs_command_factory.h"
 #include "command/rs_command_verify_helper.h"
 #include "common/rs_xcollie.h"
+#include "engine/rs_base_render_util.h"
 #include "hgm_frame_rate_manager.h"
 #include "memory/rs_memory_flow_control.h"
-#include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
@@ -1725,10 +1725,32 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
+            bool hasObj = false;
+            if (!data.ReadBool(hasObj)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_SCREEN_SUPPORTED_HDR_FORMATS Read bool failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            sptr<RSIScreenSupportedHdrFormatsCallback> cb = nullptr;
+            if (hasObj) {
+                auto remoteObject = data.ReadRemoteObject();
+                if (remoteObject == nullptr) {
+                    RS_LOGE("RSClientToServiceConnectionStub::GET_SCREEN_SUPPORTED_HDR_FORMATS"
+                        " remoteObject is nullptr");
+                    ret = ERR_NULL_OBJECT;
+                    break;
+                }
+                cb = iface_cast<RSIScreenSupportedHdrFormatsCallback>(remoteObject);
+                if (cb == nullptr) {
+                    RS_LOGE("RSClientToServiceConnectionStub::GET_SCREEN_SUPPORTED_HDR_FORMATS callback is nullptr");
+                    ret = ERR_NULL_OBJECT;
+                    break;
+                }
+            }
             std::vector<uint32_t> hdrFormatsSend;
             std::vector<ScreenHDRFormat> hdrFormats;
             int32_t resCode;
-            GetScreenSupportedHDRFormats(id, hdrFormats, resCode);
+            GetScreenSupportedHDRFormats(id, hdrFormats, resCode, cb);
             if (!reply.WriteInt32(resCode)) {
                 RS_LOGE("RSClientToServiceConnectionStub::GET_SCREEN_SUPPORTED_HDR_FORMATS Write result failed!");
                 ret = ERR_INVALID_REPLY;

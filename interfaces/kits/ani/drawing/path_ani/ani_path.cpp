@@ -171,7 +171,10 @@ ani_boolean AniPath::IsRect(ani_env* env, ani_object obj, ani_object aniRectObj)
         return false;
     }
     ani_boolean isNull = ANI_TRUE;
-    env->Reference_IsNull(aniRectObj, &isNull);
+    if (env->Reference_IsNull(aniRectObj, &isNull) != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect IsRect parameter0 type.");
+        return false;
+    }
     if (isNull) {
         return aniPath->GetPath()->IsRect(nullptr);
     }
@@ -763,7 +766,7 @@ ani_object AniPath::Approximate(ani_env* env, ani_object obj, ani_double accepta
         return CreateAniUndefined(env);
     }
     
-    for (int32_t i = 0; i < points.size(); ++i) {
+    for (int32_t i = 0; i < arrayLength; ++i) {
         ani_object aniObj = CreateAniObject(env, AniGlobalClass::GetInstance().doubleCls,
             AniGlobalMethod::GetInstance().doubleCtor, points[i]);
         if (IsUndefined(env, aniObj)) {

@@ -30,6 +30,7 @@
 #ifdef RS_MEMORY_INFO_MANAGER
 #include "feature/memory_info_manager/rs_memory_info_manager.h"
 #endif
+#include "feature/uifirst/rs_frame_control.h"
 #include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
 #include "monitor/self_drawing_node_monitor.h"
@@ -1554,9 +1555,9 @@ void RSSurfaceRenderNode::UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer,
 #ifdef RS_ENABLE_GPU
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (!surfaceParams->IsBufferSynced()) {
-        auto bufferOwnerCount = surfaceParams->GetBufferOwnerCount();
-        if (bufferOwnerCount) {
-            bufferOwnerCount->DecRef();
+        auto curBufferOwnerCount = surfaceParams->GetBufferOwnerCount();
+        if (curBufferOwnerCount) {
+            curBufferOwnerCount->DecRef();
         }
     } else {
         RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderNode::UpdateBufferInfo SetPreBuffer %" PRIu64,
@@ -2882,6 +2883,9 @@ void RSSurfaceRenderNode::SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId,
             firstLevelNodeId = parentNode->GetFirstLevelNodeId();
         }
     }
+    // set surfaceNode id to RSFrameControlTool for refalsh when frame control
+    RSFrameControlTool::Instance().SetNodeIdForFrameControl(*this);
+
     if (auto context = GetContext().lock(); context && onTree) {
         context->GetMutableNodeMap().ObtainLauncherNodeId(
             std::static_pointer_cast<RSSurfaceRenderNode>(shared_from_this())
@@ -3958,13 +3962,63 @@ bool RSSurfaceRenderNode::IsRelatedSourceNode() const
 
 void RSSurfaceRenderNode::SetIsParticipateInOcclusion(bool isParticipate)
 {
-    isParticipateInOcclusion_ = isParticipate;
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
     if (surfaceParams == nullptr) {
         return;
     }
-    surfaceParams->SetIsParticipateInOcclusion(isParticipateInOcclusion_);
-    AddToPendingSyncList();
+    surfaceParams->SetIsParticipateInOcclusion(isParticipate);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
+bool RSSurfaceRenderNode::GetIsParticipateInOcclusion() const
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return true;
+    }
+    return surfaceParams->GetIsParticipateInOcclusion();
+}
+
+void RSSurfaceRenderNode::EmplaceSameTypeModifier(
+    ModifierNGContainer& container, const std::shared_ptr<ModifierNG::RSRenderModifier>& modifier)
+{
+    // Deduplication is disabled by default. Only apply deduplication logic when:
+    // modifier supports it (BOUNDS/FRAME) AND IsDeduplicationEnabled() returns true
+    if (!modifier->IsDeduplicationEnabled()) {
+        // Default behavior: no deduplication, directly add modifier
+        RSRenderNode::EmplaceSameTypeModifier(container, modifier);
+        return;
+    }
+
+    // Apply deduplication: check if modifier with same ID exists
+    auto it = std::find_if(container.begin(), container.end(),
+        [modifier](const auto& m) -> bool { return m->GetId() == modifier->GetId(); });
+    if (it == container.end()) {
+        RSRenderNode::EmplaceSameTypeModifier(container, modifier);
+    } else {
+        switch (modifier->GetType()) {
+            case ModifierNG::RSModifierType::BOUNDS:
+                CopyModifierValue<Vector4f>(ModifierNG::RSPropertyType::BOUNDS, *it, modifier);
+                break;
+            case ModifierNG::RSModifierType::FRAME:
+                CopyModifierValue<Vector4f>(ModifierNG::RSPropertyType::FRAME, *it, modifier);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+template<typename T>
+void RSSurfaceRenderNode::CopyModifierValue(ModifierNG::RSPropertyType propertyType,
+    std::shared_ptr<ModifierNG::RSRenderModifier> oldModifier,
+    std::shared_ptr<ModifierNG::RSRenderModifier> newModifier)
+{
+    if (newModifier->HasProperty(propertyType) && oldModifier->HasProperty(propertyType)) {
+        oldModifier->Setter(propertyType, newModifier->Getter<T>(propertyType));
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

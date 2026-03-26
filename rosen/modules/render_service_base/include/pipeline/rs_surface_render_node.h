@@ -911,10 +911,7 @@ public:
     }
 
     void SetIsParticipateInOcclusion(bool isParticipate);
-    bool GetIsParticipateInOcclusion() const
-    {
-        return isParticipateInOcclusion_;
-    }
+    bool GetIsParticipateInOcclusion() const;
 
     const Occlusion::Region& GetVisibleRegion() const
     {
@@ -1841,6 +1838,14 @@ private:
     void UpdatePropertyFromConsumer();
 #endif
 
+    void EmplaceSameTypeModifier(
+        ModifierNGContainer& container, const std::shared_ptr<ModifierNG::RSRenderModifier>& modifier) override;
+
+    template<typename T>
+    void CopyModifierValue(ModifierNG::RSPropertyType propertyType,
+        std::shared_ptr<ModifierNG::RSRenderModifier> oldModifier,
+        std::shared_ptr<ModifierNG::RSRenderModifier> newModifier);
+
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
     bool isGlobalPositionEnabled_ = false;
@@ -1867,7 +1872,6 @@ private:
     bool isRefresh_ = false;
     bool isOcclusionVisible_ = true;
     bool isOcclusionVisibleWithoutFilter_ = true;
-    bool isParticipateInOcclusion_ = true;
     bool dstRectChanged_ = false;
     uint8_t abilityBgAlpha_ = 0;
     bool alphaChanged_ = false;

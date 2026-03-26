@@ -165,6 +165,17 @@ public:
     {
         return children_;
     }
+
+    /**
+     * @brief Gets the total count of all descendant nodes recursively.
+     *
+     * This method traverses the entire child tree recursively and returns
+     * the total number of all descendant nodes, including direct children,
+     * grandchildren, and all deeper levels.
+     *
+     * @return The total count of all descendant nodes.
+     */
+    size_t GetDescendantCount() const;
     // ONLY support index in [0, childrenTotal) or index = -1, otherwise return std::nullopt
     RSNode::SharedPtr GetChildByIndex(int index) const;
 
@@ -1447,7 +1458,7 @@ public:
     /**
      * @brief Sets the radius of the shadow.
      *
-     * @param radius Indicates the radius value to be set.
+     * @param radius Indicates the radius value to be set, whose effective value is non-negative.
      */
     void SetShadowRadius(float radius);
 
@@ -1932,6 +1943,8 @@ protected:
     explicit RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode = false,
         std::shared_ptr<RSUIContext> rsUIContext = nullptr, bool isOnTheTree = false);
 
+    virtual void DumpSubClass(std::string& out) const {}
+
     void DumpModifiers(std::string& out) const;
 
     mutable bool lazyLoad_ = false;
@@ -1967,7 +1980,7 @@ protected:
     void DoFlushModifier();
 
     std::vector<PropertyId> GetModifierIds() const;
-    bool IsAnyModifierDeduplicationEnabled() const;
+
     bool isCustomTextType_ = false;
     bool isCustomTypeface_ = false;
 
@@ -2280,6 +2293,7 @@ private:
     template<typename T>
     friend class RSAnimatableProperty;
     friend class RSInteractiveImplictAnimator;
+    friend class RSSurfaceNode;
 };
 // backward compatibility
 using RSBaseNode = RSNode;

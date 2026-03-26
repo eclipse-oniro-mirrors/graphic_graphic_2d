@@ -22,7 +22,7 @@
 #include <parameters.h>
 #include <set>
 
-#include "pipeline/render_thread/rs_base_render_engine.h"
+#include "engine/rs_base_render_engine.h"
 #include "system/rs_system_parameters.h"
 
 #include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
@@ -371,7 +371,11 @@ private:
 
     void DisableOccludedHwcNodeInSkippedSubTree(const RSRenderNode& node) const;
 
-    void PrepareColorPickerDrawable(RSRenderNode& node);
+    void HandleColorPickerHwcDisable(RSRenderNode& node);
+    /**
+     * @brief Prepare color pickers with dirty region intersection checking
+     */
+    void PrepareColorPickers();
 
     friend class RSUniHwcVisitor;
     std::unique_ptr<RSUniHwcVisitor> hwcVisitor_;

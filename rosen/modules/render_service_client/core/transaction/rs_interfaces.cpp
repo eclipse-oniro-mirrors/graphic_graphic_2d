@@ -642,9 +642,10 @@ int32_t RSInterfaces::SetPixelFormat(ScreenId id, GraphicPixelFormat pixelFormat
     return renderServiceClient_->SetPixelFormat(id, pixelFormat);
 }
 
-int32_t RSInterfaces::GetScreenSupportedHDRFormats(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats)
+int32_t RSInterfaces::GetScreenSupportedHDRFormats(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats,
+    const ScreenSupportedHDRFormatsCallback& callback)
 {
-    return renderServiceClient_->GetScreenSupportedHDRFormats(id, hdrFormats);
+    return renderServiceClient_->GetScreenSupportedHDRFormats(id, hdrFormats, callback);
 }
 
 int32_t RSInterfaces::GetScreenHDRFormat(ScreenId id, ScreenHDRFormat& hdrFormat)
@@ -1140,6 +1141,31 @@ bool RSInterfaces::AvcodecVideoGet(uint64_t uniqueId)
 bool RSInterfaces::AvcodecVideoGetRecent()
 {
     return renderServiceClient_->AvcodecVideoGetRecent();
+}
+
+int32_t RSInterfaces::RegisterFrameStabilityDetection(
+    const FrameStabilityTarget& target,
+    const FrameStabilityConfig& config,
+    const FrameStabilityCallback& callback)
+{
+    return renderInterface_->RegisterFrameStabilityDetection(target, config, callback);
+}
+
+int32_t RSInterfaces::UnregisterFrameStabilityDetection(const FrameStabilityTarget& target)
+{
+    return renderInterface_->UnregisterFrameStabilityDetection(target);
+}
+
+int32_t RSInterfaces::StartFrameStabilityCollection(
+    const FrameStabilityTarget& target,
+    const FrameStabilityConfig& config)
+{
+    return renderInterface_->StartFrameStabilityCollection(target, config);
+}
+
+int32_t RSInterfaces::GetFrameStabilityResult(const FrameStabilityTarget& target, bool& result)
+{
+    return renderInterface_->GetFrameStabilityResult(target, result);
 }
 
 int32_t RSInterfaces::SetLogicalCameraRotationCorrection(ScreenId id, ScreenRotation logicalCorrection)

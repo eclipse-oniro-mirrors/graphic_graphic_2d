@@ -322,11 +322,6 @@ public:
     {
         return isDrawingCacheChanged_;
     }
-    void SetForceDisableNodeGroup(bool forceDisable);
-    bool IsForceDisableNodeGroup() const
-    {
-        return isForceDisableNodeGroup_;
-    }
     void SetNeedUpdateCache(bool needUpdateCache)
     {
         isNeedUpdateCache_ = needUpdateCache;
@@ -350,6 +345,8 @@ public:
     bool IsRenderGroupSubTreeDirty() const;
     void SetChildHasTranslateOnSqueeze(bool val);
     bool ChildHasTranslateOnSqueeze() const;
+    void SetNeedClipHoleForFilter(bool val);
+    bool NeedClipHoleForFilter() const;
     void SetDrawingCacheIncludeProperty(bool includeProperty);
     bool GetDrawingCacheIncludeProperty() const
     {
@@ -466,6 +463,7 @@ public:
     RSRenderParams& operator=(RSRenderParams&&) = delete;
 
     virtual void OnSync(const std::unique_ptr<RSRenderParams>& target);
+    virtual void OnPartialSync(const std::unique_ptr<RSRenderParams>& target) {}
 
     // dfx
     virtual std::string ToString() const;
@@ -602,6 +600,13 @@ public:
     void SetIsOnTheTree(bool isOnTheTree);
     bool GetIsOnTheTree() const;
 
+    virtual bool IsUIFirstLeashAllEnable() const
+    {
+        return false;
+    }
+
+    void SwapRelatedRenderParams(RSRenderParams& relatedRenderParams);
+
 protected:
     bool needSync_ = false;
     std::bitset<RSRenderParamsDirtyType::MAX_DIRTY_TYPE> dirtyType_;
@@ -630,7 +635,6 @@ private:
     bool childHasVisibleFilter_ = false;
     bool hasSandBox_ = false;
     bool isDrawingCacheChanged_ = false;
-    bool isForceDisableNodeGroup_ = false;
     std::atomic_bool isNeedUpdateCache_ = false;
     bool drawingCacheIncludeProperty_ = false;
     bool isNodeGroupHasChildInBlacklist_ = false;

@@ -1687,6 +1687,13 @@ void RSNode::SetParticleParams(std::vector<ParticleParams>& particleParams, cons
     }
     auto animation =
         std::make_shared<RSRenderParticleAnimation>(animationId, propertyId, std::move(particlesRenderParams));
+    // set token to RSRenderParticleAnimation
+    if (rsUIContext_ != nullptr) {
+        animation->SetParticleAnimationToken(rsUIContext_->GetToken());
+    } else {
+        ROSEN_LOGE("multi-instance, RSNode [%{public}" PRIu64 "] without RSUIContext "
+            "when creating particle animation [%{public}" PRIu64 "]", GetId(), animationId);
+    }
     ModifierId modifierId = ModifierNG::RSModifier::GenerateModifierId();
     std::unique_ptr<RSCommand> command = std::make_unique<RSAnimationCreateParticleNG>(GetId(), modifierId, animation);
     AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
@@ -2744,13 +2751,15 @@ void RSNode::SetGreyCoef(const Vector2f greyCoef)
 
 void RSNode::SetCompositingNGFilter(const std::shared_ptr<RSNGFilterBase>& compositingFilter)
 {
-    auto filter = compositingFilter;
-    if (filter == nullptr) {
-        MaterialParam materialParam = { 0.0, 1.0, 1.0, RSColor(), false };
-        filter = RSNGFilterHelper::CreateNGMaterialBlurFilter(materialParam);
+    if (!compositingFilter) {
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::COMPOSITING_FILTER);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::COMPOSITING_NG_FILTER);
+        }
+        return;
     }
     SetPropertyNG<ModifierNG::RSCompositingFilterModifier,
-        &ModifierNG::RSCompositingFilterModifier::SetNGFilterBase>(filter);
+        &ModifierNG::RSCompositingFilterModifier::SetNGFilterBase>(compositingFilter);
 }
 
 void RSNode::SetShadowColor(uint32_t colorValue)
@@ -2782,7 +2791,7 @@ void RSNode::SetShadowAlpha(float alpha)
 
 void RSNode::SetShadowElevation(float elevation)
 {
-    SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowRadius>(0);
+    SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowRadius>(DEFAULT_SHADOW_RADIUS);
     SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowElevation>(elevation);
 }
 
@@ -3285,18 +3294,6 @@ void RSNode::DoFlushModifier()
             }
         }
     }
-}
-
-bool RSNode::IsAnyModifierDeduplicationEnabled() const
-{
-    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
-    // Check if any modifier on this node has deduplication enabled
-    for (const auto& [_, modifier] : modifiersNG_) {
-        if (modifier && modifier->IsDeduplicationEnabled()) {
-            return true;
-        }
-    }
-    return false;
 }
 
 const std::shared_ptr<RSPropertyBase> RSNode::GetProperty(const PropertyId& propertyId)
@@ -4299,6 +4296,18 @@ RSNode::SharedPtr RSNode::GetChildByIndex(int index) const
     return children_.at(index).lock();
 }
 
+size_t RSNode::GetDescendantCount() const
+{
+    size_t count = children_.size();
+    for (const auto& child : children_) {
+        auto childNode = child.lock();
+        if (childNode) {
+            count += childNode->GetDescendantCount();
+        }
+    }
+    return count;
+}
+
 void RSNode::SetParent(WeakPtr parent)
 {
     parent_ = parent;
@@ -4384,8 +4393,8 @@ void RSNode::Dump(std::string& out) const
         out += "null";
     }
     out += "], outOfParent[" + std::to_string(static_cast<int>(outOfParent_));
-    out += "], hybridRenderCanvas[";
-    out += hybridRenderCanvas_ ? "true" : "false";
+    out += "], hybridRenderCanvas[" + std::string(hybridRenderCanvas_ ? "true" : "false");
+    DumpSubClass(out);
     out += "], animations[";
     for (const auto& [id, anim] : animations_) {
         out += "{id:" + std::to_string(id);

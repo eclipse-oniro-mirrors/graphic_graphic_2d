@@ -35,7 +35,6 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr float DEFAULT_HDR_RATIO = 1.0f;
-constexpr float DEFAULT_SDR_NITS = 203.0f;
 constexpr float DEFAULT_SCALER = 1000.0f / 203.0f;
 constexpr float GAMMA2_2 = 2.2f;
 constexpr size_t MATRIX_SIZE = 9;
@@ -48,20 +47,6 @@ const std::vector<uint8_t> HDR_VIVID_METADATA = {
 };
 }
 
-inline HdrStatus CheckAIHDRType(uint8_t metadataType)
-{
-    switch (metadataType) {
-        case HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR:
-            return HdrStatus::AI_HDR_VIDEO_GTM;
-        case HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_HIGH_LIGHT:
-            return HdrStatus::AI_HDR_VIDEO_GAINMAP;
-        case HDI::Display::Graphic::Common::V2_2::CM_VIDEO_AI_HDR_COLOR_ENHANCE:
-            return HdrStatus::AI_HDR_VIDEO_GAINMAP;
-        default:
-            return HdrStatus::NO_HDR;
-    }
-}
-
 HdrStatus RSHdrUtil::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
 {
     if (!surfaceNode.IsOnTheTree()) {
@@ -70,69 +55,18 @@ HdrStatus RSHdrUtil::CheckIsHdrSurface(const RSSurfaceRenderNode& surfaceNode)
     if (!surfaceNode.GetRSSurfaceHandler()) {
         return HdrStatus::NO_HDR;
     }
-    return CheckIsHdrSurfaceBuffer(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
+    return RSBaseHdrUtil::CheckIsHdrSurfaceBuffer(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
 }
 
-HdrStatus RSHdrUtil::CheckIsHdrSurfaceBuffer(const sptr<SurfaceBuffer> surfaceBuffer)
+bool RSHdrUtil::CheckHasSurfaceWithAiHdrMetadata(const RSSurfaceRenderNode& surfaceNode)
 {
-    if (surfaceBuffer == nullptr) {
-        return HdrStatus::NO_HDR;
-    }
-    if (!RSSystemProperties::GetHdrVideoEnabled()) {
-        RS_LOGD("RSHdrUtil::CheckIsHdrSurfaceBuffer HDRVideoEnabled false");
-        return HdrStatus::NO_HDR;
-    }
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    std::vector<uint8_t> metadataType{};
-    if (surfaceBuffer->GetMetadata(ATTRKEY_HDR_METADATA_TYPE, metadataType) == GSERROR_OK && !metadataType.empty()) {
-        auto AIHDRStatus = CheckAIHDRType(metadataType[0]);
-        if (AIHDRStatus != HdrStatus::NO_HDR) {
-            return AIHDRStatus;
-        }
-    }
-#endif
-    using namespace HDI::Display::Graphic::Common::V1_0;
-    CM_ColorSpaceInfo colorSpaceInfo;
-    if (MetadataHelper::GetColorSpaceInfo(surfaceBuffer, colorSpaceInfo) == GSERROR_OK) {
-        if (colorSpaceInfo.transfunc == TRANSFUNC_PQ || colorSpaceInfo.transfunc == TRANSFUNC_HLG) {
-            return HdrStatus::HDR_VIDEO;
-        }
-    }
-    if (CheckIsHDRSelfProcessingBuffer(surfaceBuffer)) {
-        RS_TRACE_NAME_FMT("%s CheckIsHDRSelfProcessingBuffer is true", __func__);
-        return HdrStatus::HDR_VIDEO;
-    }
-    return HdrStatus::NO_HDR;
-}
-
-// HDR self-processing layer has HDR StaticMetadata and maxContentLightLevel > 203 and has no HDR MetadataType
-bool RSHdrUtil::CheckIsHDRSelfProcessingBuffer(const sptr<SurfaceBuffer>& surfaceBuffer)
-{
-    using namespace HDI::Display::Graphic::Common::V1_0;
-    std::vector<uint8_t> hdrStaticMetadataVec;
-    GSError ret = GSERROR_OK;
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    RSColorSpaceConvert::Instance().GetHDRStaticMetadata(surfaceBuffer, hdrStaticMetadataVec, ret);
-#endif
-    bool hdrStaticMetadataExist = hdrStaticMetadataVec.data() != nullptr &&
-        hdrStaticMetadataVec.size() == sizeof(HdrStaticMetadata);
-    if (!hdrStaticMetadataExist) {
+    if (!surfaceNode.IsOnTheTree()) {
         return false;
     }
-    CM_HDR_Metadata_Type hdrMetadataType = CM_METADATA_NONE;
-    ret = MetadataHelper::GetHDRMetadataType(surfaceBuffer, hdrMetadataType);
-    bool noneHDRMetadataType = ret != GSERROR_OK || hdrMetadataType == CM_METADATA_NONE;
-    if (!noneHDRMetadataType) {
+    if (!surfaceNode.GetRSSurfaceHandler()) {
         return false;
     }
-    CM_ColorSpaceInfo colorSpaceInfo;
-    bool isHDRVideo = MetadataHelper::GetColorSpaceInfo(surfaceBuffer, colorSpaceInfo) == GSERROR_OK &&
-        (colorSpaceInfo.transfunc == TRANSFUNC_PQ || colorSpaceInfo.transfunc == TRANSFUNC_HLG);
-    if (isHDRVideo) {
-        return false;
-    }
-    const auto& data = *reinterpret_cast<HdrStaticMetadata*>(hdrStaticMetadataVec.data());
-    return ROSEN_GNE(data.cta861.maxContentLightLevel, DEFAULT_SDR_NITS);
+    return RSBaseHdrUtil::CheckIsSurfaceBufferWithAiHdrMetadata(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
 }
 
 bool RSHdrUtil::CheckIsSurfaceWithMetadata(const RSSurfaceRenderNode& surfaceNode)
@@ -146,34 +80,7 @@ bool RSHdrUtil::CheckIsSurfaceWithMetadata(const RSSurfaceRenderNode& surfaceNod
     if (!surfaceNode.IsYUVBufferFormat()) {
         return false;
     }
-    return CheckIsSurfaceBufferWithMetadata(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
-}
-
-bool RSHdrUtil::CheckIsSurfaceBufferWithMetadata(const sptr<SurfaceBuffer> surfaceBuffer)
-{
-    if (surfaceBuffer == nullptr) {
-        return false;
-    }
-    using namespace HDI::Display::Graphic::Common::V1_0;
-    CM_ColorSpaceInfo colorSpaceInfo;
-    if (MetadataHelper::GetColorSpaceInfo(surfaceBuffer, colorSpaceInfo) != GSERROR_OK) {
-        RS_LOGD("RSHdrUtil::CheckIsSurfaceBufferWithMetadata failed to get ColorSpaceInfo");
-        return false;
-    }
-    // only primaries P3_D65 and BT2020 has metadata
-    if (colorSpaceInfo.primaries != CM_ColorPrimaries::COLORPRIMARIES_P3_D65 &&
-        colorSpaceInfo.primaries != CM_ColorPrimaries::COLORPRIMARIES_BT2020) {
-        RS_LOGD("RSHdrUtil::CheckIsSurfaceBufferWithMetadata colorSpaceInfo.primaries not satisfied");
-        return false;
-    }
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    std::vector<uint8_t> sdrDynamicMetadata{};
-    if (MetadataHelper::GetSDRDynamicMetadata(surfaceBuffer, sdrDynamicMetadata) ==
-        GSERROR_OK && sdrDynamicMetadata.size() > 0) {
-        return true;
-    }
-#endif
-    return false;
+    return RSBaseHdrUtil::CheckIsSurfaceBufferWithMetadata(surfaceNode.GetRSSurfaceHandler()->GetBuffer());
 }
 
 bool RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId screenId, float& scaler)
@@ -230,7 +137,7 @@ bool RSHdrUtil::UpdateSurfaceNodeNit(RSSurfaceRenderNode& surfaceNode, ScreenId 
     }
     if (hdrStaticMetadataVec.size() != sizeof(HdrStaticMetadata) || hdrStaticMetadataVec.data() == nullptr) {
         RS_LOGD("hdrStaticMetadataVec is invalid");
-        auto hdrStatus = CheckIsHdrSurfaceBuffer(surfaceBuffer);
+        auto hdrStatus = RSBaseHdrUtil::CheckIsHdrSurfaceBuffer(surfaceBuffer);
         if (hdrStatus == HdrStatus::AI_HDR_VIDEO_GAINMAP || hdrStatus == HdrStatus::AI_HDR_VIDEO_GTM) {
             scaler = rsLuminance.CalScaler(1.0f, std::vector<uint8_t>{},
                 surfaceNode.GetHDRBrightness() * brightnessFactor, hdrStatus);
@@ -407,14 +314,6 @@ void RSHdrUtil::CheckPixelFormatForHdrEffect(RSSurfaceRenderNode& surfaceNode,
         screenNode->CollectHdrStatus(HdrStatus::HDR_EFFECT);
         SetHDRParam(*screenNode, surfaceNode, true);
     }
-}
-
-bool RSHdrUtil::GetRGBA1010108Enabled()
-{
-    static bool isDDGR = Drawing::SystemProperties::GetSystemGraphicGpuType() == GpuApiType::DDGR;
-    static bool rgba1010108 = system::GetBoolParameter("const.graphics.rgba_1010108_supported", false);
-    static bool debugSwitch = system::GetBoolParameter("persist.sys.graphic.rgba_1010108.enabled", true);
-    return isDDGR && rgba1010108 && debugSwitch;
 }
 
 void RSHdrUtil::SetHDRParam(RSScreenRenderNode& screenNode, RSSurfaceRenderNode& node, bool isEDR)
@@ -683,7 +582,7 @@ GSError RSHdrUtil::EraseHDRMetadataKey(std::unique_ptr<RSRenderFrame>& renderFra
 }
 
 GSError RSHdrUtil::SetMetadata(const HDI::Display::Graphic::Common::V1_0::CM_ColorSpaceInfo& colorspaceInfo,
-    std::unique_ptr<RSRenderFrame>& renderFrame)
+    std::unique_ptr<RSRenderFrame>& renderFrame, bool isHDRCast)
 {
     RS_TRACE_NAME_FMT("RSHdrUtil::SetMetadata HDRCast");
     if (renderFrame == nullptr) {
@@ -702,8 +601,12 @@ GSError RSHdrUtil::SetMetadata(const HDI::Display::Graphic::Common::V1_0::CM_Col
     }
     using namespace HDI::Display::Graphic::Common::V1_0;
     HdrStaticMetadata staticMetadata;
-    staticMetadata.cta861.maxContentLightLevel = RSLuminanceConst::DEFAULT_CAST_HDR_NITS;
+    staticMetadata.cta861.maxContentLightLevel = isHDRCast ? RSLuminanceConst::DEFAULT_CAST_HDR_NITS : 0.0f;
     auto ret = MetadataHelper::SetHDRStaticMetadata(buffer, staticMetadata);
+    if (!isHDRCast) {
+        RS_LOGD("RSHdrUtil::SetMetadata isHDRCast: %{public}d, ret: %{public}d", isHDRCast, ret);
+        return ret;
+    }
     if (ret != GSERROR_OK) {
         RS_LOGD("RSHdrUtil::SetMetadata SetHDRStaticMetadata failed %{public}d", ret);
         return ret;

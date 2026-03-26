@@ -286,8 +286,7 @@ void RSClientToServiceConnectionStubTest::SetUpTestCase()
 
     renderService_.vsyncManager_ = sptr<RSVsyncManager>::MakeSptr();
     renderService_.vsyncManager_->init(screenManager_);
-    renderService_.rsRenderComposerManager_ = std::make_shared<RSRenderComposerManager>(renderService_.handler_,
-        renderService_.vsyncManager_->GetVsyncManagerAgent());
+    renderService_.rsRenderComposerManager_ = std::make_shared<RSRenderComposerManager>(renderService_.handler_);
     token_ = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
     connectionStub_ =
         sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
@@ -4208,5 +4207,20 @@ HWTEST_F(RSClientToServiceConnectionStubTest, GetConnectionTest, TestSize.Level1
             renderProcessManagerAgent_, nullptr, nullptr,
             renderService_.vsyncManager_->GetVsyncManagerAgent());
     EXPECT_EQ(connection != nullptr, true);
+}
+
+/**
+ * @tc.name: ATC_NotifyRefreshRateEvent
+ * @tc.desc: Test ATC_NotifyRefreshRateEvent
+ * @tc.type: FUNC
+ * @tc.require: issue20726
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, ATC_NotifyRefreshRateEvent, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    EventInfo eventInfo;
+    eventInfo.eventName = "GPU_FREQ_PREF";
+    connectionStub_->NotifyRefreshRateEvent(eventInfo);
+    ASSERT_EQ(eventInfo.eventName, "GPU_FREQ_PREF");
 }
 } // namespace OHOS::Rosen

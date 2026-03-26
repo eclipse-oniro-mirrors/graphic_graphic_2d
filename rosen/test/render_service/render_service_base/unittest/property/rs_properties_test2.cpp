@@ -27,6 +27,7 @@
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_point_light_manager.h"
+#include "render/rs_drawing_filter.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -91,6 +92,11 @@ HWTEST_F(PropertiesTest, SetShadowRadiusTest, TestSize.Level1)
     radius = -1.0f;
     properties.SetShadowRadius(radius);
     EXPECT_FALSE(properties.GetEffect().shadow_->IsValid());
+
+    properties.GetEffect().shadow_->elevation_ = -1.f;
+    radius = 0.0f;
+    properties.SetShadowRadius(radius);
+    EXPECT_TRUE(properties.GetEffect().shadow_->IsValid());
 }
 
 /**
@@ -1634,6 +1640,97 @@ HWTEST_F(PropertiesTest, GetRRectForSDFTest003, TestSize.Level1)
     properties.boundsGeo_->width_ = 10.f;
     properties.boundsGeo_->height_ = 10.f;
     ASSERT_FALSE(properties.GetRRectForSDF().rect_.IsEmpty());
+}
+
+/**
+ * @tc.name: GenerateMaterialFilter003
+ * @tc.desc: test GenerateMaterialFilter with FROSTED_GLASS type
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, GenerateMaterialFilter003, TestSize.Level1)
+{
+    RSProperties properties;
+    std::shared_ptr<RSNGRenderFilterBase> filter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
+    properties.GetEffect().mtNGRenderFilter_ = filter;
+    ASSERT_NE(properties.GetMaterialNGFilter(), nullptr);
+    properties.GenerateMaterialFilter();
+    ASSERT_NE(properties.GetEffect().materialFilter_, nullptr);
+    EXPECT_EQ(properties.GetEffect().materialFilter_->GetFilterType(), RSFilter::COMPOUND_EFFECT);
+}
+
+/**
+ * @tc.name: GenerateMaterialFilter004
+ * @tc.desc: test GenerateMaterialFilter with multiple calls
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, GenerateMaterialFilter004, TestSize.Level1)
+{
+    RSProperties properties;
+    std::shared_ptr<RSNGRenderFilterBase> filter1 = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
+    properties.GetEffect().mtNGRenderFilter_ = filter1;
+    properties.GenerateMaterialFilter();
+    ASSERT_NE(properties.GetEffect().materialFilter_, nullptr);
+    EXPECT_EQ(properties.GetEffect().materialFilter_->GetFilterType(), RSFilter::COMPOUND_EFFECT);
+
+    std::shared_ptr<RSNGRenderFilterBase> filter2 = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
+    properties.GetEffect().mtNGRenderFilter_ = filter2;
+    properties.GenerateMaterialFilter();
+    ASSERT_NE(properties.GetEffect().materialFilter_, nullptr);
+    EXPECT_EQ(properties.GetEffect().materialFilter_->GetFilterType(), RSFilter::COMPOUND_EFFECT);
+}
+
+/**
+ * @tc.name: ComposeNGRenderFilter001
+ * @tc.desc: test ComposeNGRenderFilter with FROSTED_GLASS_BLUR type (originFilter is null)
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, ComposeNGRenderFilter001, TestSize.Level1)
+{
+    RSProperties properties;
+    std::shared_ptr<RSNGRenderFilterBase> filter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS_BLUR);
+    std::shared_ptr<RSFilter> originFilter = nullptr;
+    properties.ComposeNGRenderFilter(originFilter, filter);
+    ASSERT_NE(originFilter, nullptr);
+    EXPECT_EQ(originFilter->GetFilterType(), RSFilter::COMPOUND_EFFECT);
+    auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(originFilter);
+    ASSERT_NE(drawingFilter, nullptr);
+    ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
+}
+
+/**
+ * @tc.name: ComposeNGRenderFilter002
+ * @tc.desc: test ComposeNGRenderFilter with FROSTED_GLASS_BLUR type (originFilter is not null)
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, ComposeNGRenderFilter002, TestSize.Level1)
+{
+    RSProperties properties;
+    std::shared_ptr<RSFilter> originFilter = std::make_shared<RSDrawingFilter>();
+    std::shared_ptr<RSNGRenderFilterBase> filter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS_BLUR);
+    properties.ComposeNGRenderFilter(originFilter, filter);
+    ASSERT_NE(originFilter, nullptr);
+    EXPECT_EQ(originFilter->GetFilterType(), RSFilter::COMPOUND_EFFECT);
+    auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(originFilter);
+    ASSERT_NE(drawingFilter, nullptr);
+    ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
+}
+
+/**
+ * @tc.name: NeedClipHoleForFilterTest
+ * @tc.desc: test NeedClipHoleForFilter with different filter configurations
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, NeedClipHoleForRenderGroupTest, TestSize.Level1)
+{
+    RSProperties properties;
+
+    std::shared_ptr<Drawing::ColorFilter> colorFilter = Drawing::ColorFilter::CreateLumaColorFilter();
+    properties.GetEffect().colorFilter_ = colorFilter;
+    EXPECT_TRUE(properties.NeedClipHoleForRenderGroup());
+
+    properties.GetEffect().colorFilter_ = nullptr;
+    EXPECT_FALSE(properties.NeedClipHoleForRenderGroup());
 }
 } // namespace Rosen
 } // namespace OHOS
