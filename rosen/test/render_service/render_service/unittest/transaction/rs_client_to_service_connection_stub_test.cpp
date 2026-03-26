@@ -4233,8 +4233,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, ATC_NotifyRefreshRateEvent, TestSi
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
@@ -4308,8 +4308,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase001, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
@@ -4376,8 +4376,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase002, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase003, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
     auto screenManagerAgent = connection->screenManagerAgent_;
@@ -4455,8 +4455,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase003, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase004, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
@@ -4527,8 +4527,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase004, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase005, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
@@ -4589,8 +4589,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase005, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase006, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
@@ -4662,8 +4662,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase006, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase007, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
@@ -4719,8 +4719,8 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase007, TestSize.Level
 HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase008, TestSize.Level1)
 {
     auto connection = sptr<RSClientToServiceConnection>::MakeSptr(0, renderServiceAgent_,
-            renderProcessManagerAgent_, screenManagerAgent_, nullptr,
-            renderService_.vsyncManager_->GetVsyncManagerAgent());
+        renderProcessManagerAgent_, screenManagerAgent_, nullptr,
+        renderService_.vsyncManager_->GetVsyncManagerAgent());
     ASSERT_NE(connection, nullptr);
 
     auto renderProcessManagerAgent = connection->renderProcessManagerAgent_;
