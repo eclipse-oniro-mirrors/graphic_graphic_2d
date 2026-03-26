@@ -833,6 +833,18 @@ void HgmFrameRateManager::HandleTouchTask(pid_t pid, int32_t touchStatus, int32_
         cleanPidCallback_[pid].insert(CleanPidCallbackType::TOUCH_EVENT);
     }
 
+    // if hover frame up switch is open, POINTER_ACTION_PROXIMITY_IN and
+    // POINTER_ACTION_PROXIMITY_OUT need to transform to TOUCH_DOWN and TOUCH_UP
+    auto configData = HgmCore::Instance().GetPolicyConfigData();
+    if (configData != nullptr && configData->hoverFrameUpSwitch_) {
+        if (touchStatus == POINTER_ACTION_PROXIMITY_IN) {
+            touchStatus = TOUCH_DOWN;
+        }
+        if (touchStatus == POINTER_ACTION_PROXIMITY_OUT) {
+            touchStatus = TOUCH_UP;
+        }
+    }
+
     if (touchStatus == TOUCH_DOWN || touchStatus == TOUCH_PULL_DOWN) {
         HGM_LOGD("[touch manager] down");
         PolicyConfigData::StrategyConfig strategyRes;
