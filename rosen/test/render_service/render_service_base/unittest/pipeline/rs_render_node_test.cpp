@@ -372,7 +372,7 @@ HWTEST_F(RSRenderNodeTest, MarkLayerTest, TestSize.Level1)
     node->MarkLayer(false);
     EXPECT_EQ(node->hasMarkLayer_, false);
 
-    node->isChildSupportUifirst_ = true;
+    node->GetOpincCache().MarkSuggestOpincNode(true, true);
     node->MarkLayer(true);
     EXPECT_EQ(node->hasMarkLayer_, false);
 }
