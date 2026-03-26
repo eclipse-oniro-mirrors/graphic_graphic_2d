@@ -911,8 +911,12 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (curCanvas_->GetGPUContext()) {
         for (auto drawable : layerNodesDrawable_) {
             auto drawablePtr = drawable.lock();
-            if (drawablePtr && drawablePtr->renderParams_->OpincIsSuggest() == false) {
-                drawablePtr->TryPrepareLayerCache(*curCanvas_);
+            if (drawablePtr) {
+                RS_TRACE_NAME_FMT("LayerDrawable TryPrepareLayerCache, isOpinc:%d, id: %" PRId64 "",
+                    drawablePtr->GetRenderParams()->OpincIsSuggest(), GetId());
+                if (drawablePtr->GetRenderParams()->OpincIsSuggest() == false) {
+                    drawablePtr->TryPrepareLayerCache(*curCanvas_);
+                }
             }
         }
         layerNodesDrawable_.clear();
