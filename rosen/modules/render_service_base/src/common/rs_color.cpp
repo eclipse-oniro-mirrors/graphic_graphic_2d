@@ -69,9 +69,23 @@ RSColor RSColor::operator+(const RSColor& rhs) const
     if (UNLIKELY(rhs.placeholder_ != 0)) {
         return rhs;
     }
-    RSColor color = RSColor(red_ + rhs.red_, green_ + rhs.green_, blue_ + rhs.blue_, alpha_ + rhs.alpha_);
-    color.SetHeadroom(Float16ToFloat32(rhs.headroom_));
-    return color;
+    float lhsHeadroom = GetHeadroom();
+    float rhsHeadroom = Float16ToFloat32(rhs.headroom_);
+    if (rhsHeadroom > lhsHeadroom) {
+        RSColor color = RSColor(red_ * lhsHeadroom / rhsHeadroom + rhs.red_,
+                                green_ * lhsHeadroom / rhsHeadroom + rhs.green_,
+                                blue_ * lhsHeadroom / rhsHeadroom + rhs.blue_,
+                                alpha_ * lhsHeadroom / rhsHeadroom + rhs.alpha_);
+        color.SetHeadroom(rhsHeadroom);
+        return color;
+    } else {
+        RSColor color = RSColor(red_ + rhs.red_ * rhsHeadroom / lhsHeadroom,
+                                green_ + rhs.green_ * rhsHeadroom / lhsHeadroom,
+                                blue_ + rhs.blue_ * rhsHeadroom / lhsHeadroom,
+                                alpha_ + rhs.alpha_ * rhsHeadroom / lhsHeadroom);
+        color.SetHeadroom(lhsHeadroom);
+        return color;
+    }
 }
 
 RSColor RSColor::operator-(const RSColor& rhs) const
@@ -82,10 +96,24 @@ RSColor RSColor::operator-(const RSColor& rhs) const
     if (UNLIKELY(rhs.placeholder_ != 0)) {
         return rhs;
     }
-    RSColor color = RSColor(red_ - rhs.red_, green_ - rhs.green_, blue_ - rhs.blue_, alpha_ - rhs.alpha_,
-        static_cast<GraphicColorGamut>(rhs.colorSpace_));
-    color.SetHeadroom(Float16ToFloat32(rhs.headroom_));
-    return color;
+    float lhsHeadroom = GetHeadroom();
+    float rhsHeadroom = Float16ToFloat32(rhs.headroom_);
+    if (rhsHeadroom > lhsHeadroom) {
+        RSColor color = RSColor(red_ * lhsHeadroom / rhsHeadroom - rhs.red_,
+                                green_ * lhsHeadroom / rhsHeadroom - rhs.green_,
+                                blue_ * lhsHeadroom / rhsHeadroom - rhs.blue_,
+                                alpha_ * lhsHeadroom / rhsHeadroom - rhs.alpha_,
+                                static_cast<GraphicColorGamut>(rhs.colorSpace_));
+        color.SetHeadroom(rhsHeadroom);
+        return color;
+    } else {
+        RSColor color = RSColor(red_ - rhs.red_ * rhsHeadroom / lhsHeadroom,
+                                green_ - rhs.green_ * rhsHeadroom / lhsHeadroom,
+                                blue_ - rhs.blue_ * rhsHeadroom / lhsHeadroom,
+                                alpha_ - rhs.alpha_ * rhsHeadroom / lhsHeadroom);
+        color.SetHeadroom(lhsHeadroom);
+        return color;
+    }
 }
 
 RSColor RSColor::operator*(float scale) const
@@ -332,6 +360,10 @@ float RSColor::GetHeadroom() const
 
 void RSColor::SetHeadroom(float headroom)
 {
+    if (headroom < 1.0f) {
+        headroom_ = Float32ToFloat16(1.0f);
+        return;
+    }
     headroom_ = Float32ToFloat16(headroom);
 }
 
