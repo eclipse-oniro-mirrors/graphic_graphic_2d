@@ -40,7 +40,7 @@ void RSFrameControlToolTest::TearDown() {}
 
 /**
 * @tc.name: CheckAppWindowNodeId001
-* @tc.desc: test single frame modifier add to list
+* @tc.desc: test set and check AppWindowNodeId
 * @tc.type: FUNC
 * @tc.require:
 */
@@ -57,7 +57,7 @@ HWTEST_F(RSFrameControlToolTest, CheckAppWindowNodeId001, TestSize.Level1)
 
 /**
 * @tc.name: CheckAppWindowNodeId002
-* @tc.desc: test single frame modifier add to list
+* @tc.desc: test SetNodeIdForFrameControl and check AppWindowNodeId
 * @tc.type: FUNC
 * @tc.require:
 */
