@@ -257,7 +257,7 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
 }
 
 std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
-    RSRenderService::CreateConnection(const sptr<RSIConnectionToken>& token)
+    RSRenderService::CreateConnection(const sptr<RSIConnectionToken>& token, bool needRefresh)
 {
     if (!token) {
         RS_LOGE("CreateConnection failed, mainThread or token is nullptr");
@@ -273,6 +273,9 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
         sptr<RSRenderProcessManagerAgent>::MakeSptr(renderProcessManager_);
     sptr<RSIClientToServiceConnection> newConn(new RSClientToServiceConnection(remotePid, renderServiceAgent,
         renderProcessManagerAgent, screenManagerAgent, tokenObj, vsyncManager_->GetVsyncManagerAgent()));
+    if (needRefresh) {
+        newConn->RegisterRemoteRefreshCallback();
+    }
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline_);
     sptr<RSIClientToRenderConnection> newRenderConn(
         new RSClientToRenderConnection(remotePid, renderPipelineAgent, tokenObj));

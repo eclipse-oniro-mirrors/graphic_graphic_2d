@@ -402,6 +402,8 @@ public:
     virtual ErrCode SetOverlayDisplayMode(int32_t mode) = 0;
 #endif
     virtual void RemoveToken() = 0;
+
+    virtual void RegisterRemoteRefreshCallback() {};
 };
 } // namespace Rosen
 } // namespace OHOS

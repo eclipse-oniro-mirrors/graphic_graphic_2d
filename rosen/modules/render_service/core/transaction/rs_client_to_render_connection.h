@@ -50,6 +50,8 @@ public:
         token_ = nullptr;
     }
 
+    void RegisterRemoteRefreshCallback() override;
+
 private:
     void CleanAll(bool toDelete = false) noexcept;
     void Clean() noexcept;

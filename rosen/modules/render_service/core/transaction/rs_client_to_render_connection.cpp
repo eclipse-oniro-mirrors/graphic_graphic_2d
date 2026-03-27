@@ -117,7 +117,6 @@ RSClientToRenderConnection::RSClientToRenderConnection(
       renderPipelineAgent_(renderPipelineAgent),
       token_(token),
       connDeathRecipient_(new RSConnectionDeathRecipient(this)),
-      connRefreshRecipient_(new RSConnectionRefreshRecipient(this)),
       applicationDeathRecipient_(new RSApplicationRenderThreadDeathRecipient(this))
 {
     if (token_ == nullptr || !token_->AddDeathRecipient(connDeathRecipient_)) {
@@ -139,6 +138,17 @@ RSClientToRenderConnection::~RSClientToRenderConnection() noexcept
         token_->RemoveDeathRecipient(connDeathRecipient_);
     }
     CleanAll();
+}
+
+void RSClientToRenderConnection::RegisterRemoteRefreshCallback()
+{
+    RS_LOGI("RSClientToRenderConnection::RegisterRemoteRefreshCallback");
+    if (!connRefreshRecipient_) {
+        connRefreshRecipient_ = new RSConnectionRefreshRecipient(this);
+    }
+    if (token_ == nullptr || !token_->AddRefreshRecipient(connRefreshRecipient_)) {
+        RS_LOGE("RSClientToRenderConnection: Failed to set refresh recipient");
+    }
 }
 
 void RSClientToRenderConnection::CleanAll(bool toDelete) noexcept
