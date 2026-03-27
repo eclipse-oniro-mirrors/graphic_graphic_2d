@@ -1452,8 +1452,8 @@ void RSRenderPipelineAgent::CollectSurfaceBuffersByProcessId(
         if (bufferB == nullptr) {
             return true;
         }
-        uint64_t areaA = static_cast<uint64_t>(widthA) * static_cast<uint64_t>(heightA);
-        uint64_t areaB = static_cast<uint64_t>(widthB) * static_cast<uint64_t>(heightB);
+        uint64_t areaA = static_cast<uint64_t>(bufferA->GetWidth()) * static_cast<uint64_t>(bufferA->GetHeight());
+        uint64_t areaB = static_cast<uint64_t>(bufferB->GetWidth()) * static_cast<uint64_t>(bufferB->GetHeight());
         return areaA > areaB;
     });
 
