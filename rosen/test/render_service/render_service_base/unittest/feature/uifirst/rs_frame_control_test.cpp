@@ -57,7 +57,7 @@ HWTEST_F(RSFrameControlToolTest, CheckAppWindowNodeId001, TestSize.Level1)
 
 /**
 * @tc.name: CheckAppWindowNodeId002
-* @tc.desc: test SetNodeIdForFrameControl and check AppWindowNodeId
+* @tc.desc: test SetNodeIdForFrameControl set AppWindowNodeId
 * @tc.type: FUNC
 * @tc.require:
 */
