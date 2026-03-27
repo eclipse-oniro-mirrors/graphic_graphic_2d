@@ -346,7 +346,7 @@ float RSColor::Float16ToFloat32(float16 half) const
     } else if (exponent == 31) { // 31:Max value for a 5-bit exponent in float16, representing infinity or NaN
         return mantissa ? std::numeric_limits<float>::quiet_NaN() : sign * std::numeric_limits<float>::infinity();
     } else {
-        return sign * std::ldexp(static_cast<float>(manissa | 0x0400), exponent -25); // 25:offset for float16 normal
+        return sign * std::ldexp(static_cast<float>(mantissa | 0x0400), exponent -25); // 25:offset for float16 normal
     }
 }
 
@@ -355,14 +355,14 @@ float16 RSColor::Float32ToFloat16(float value) const
     int f = *reinterpret_cast<int *>(&value);
     int sign = (f >> 16) & 0x8000;
     int exponent = ((f >> 23) & 0xFF) - (127 -15); //127:Bias for float32, 15:Bias for float16
-    int manissa = f & 0x007FFFFF;
+    int mantissa = f & 0x007FFFFF;
 
     if (exponent <= 0) {
         if (exponent < -10) { // 10:Smallest representable exponent in float16 subnormals
             return sign;
         }
         mantissa = (mantissa | 0x00800000) >> (1 - exponent);
-        return sign | (mantissa >> 13); // 13:Shift from 23-bit to 10-bit mantissa for flaot16
+        return sign | (mantissa >> 13); // 13:Shift from 23-bit to 10-bit mantissa for float16
     } else if (exponent == 0xFF - (127 -15)) { // 127:Bias for float32, 15:Bias for float16
         return sign | 0x7C00 | (mantissa ? 1 : 0);
     } else {
@@ -372,7 +372,5 @@ float16 RSColor::Float32ToFloat16(float value) const
         return sign | (exponent << 10) | (mantissa >> 13); // 10:Shift for exponent in float16, 13:23-bit to 10-bit
     }
 }
-
-
 } // namespace Rosen
 } // namespace OHOS
