@@ -43,6 +43,7 @@ enum HDRComponentType : uint32_t {
     IMAGE = 0,
     UICOMPONENT,
     EFFECT,
+    HDRCOLOR,
 };
 
 enum HdrStatus : uint32_t {
