@@ -53,6 +53,6 @@ void RSHDRBrightnessModifier::SetHDRColorHeadroom(float headroom)
 
 float RSHDRBrightnessModifier::GetHDRColorHeadroom() const
 {
-    return Getter(RSPropertyType::HDR_COLOR_HEADROOM, 1.f);
+    return Getter(RSPropertyType::HDR_COLOR_HEADROOM, 1.0f);
 }
 } // namespace OHOS::Rosen::ModifierNG

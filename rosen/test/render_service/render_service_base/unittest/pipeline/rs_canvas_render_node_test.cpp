@@ -265,7 +265,8 @@ HWTEST_F(RSCanvasRenderNodeTest, UpdateHDRNodeOnTreeState, TestSize.Level1)
 {
     NodeId nodeId = 1;
     std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
-    std::shared_ptr<RSCanvasRenderNode> rsCanvasRenderNode = std::make_shared<RSCanvasRenderNode>(nodeId, context, true);
+    std::shared_ptr<RSCanvasRenderNode> rsCanvasRenderNode =
+        std::make_shared<RSCanvasRenderNode>(nodeId, context, true);
     rsCanvasRenderNode->context_ = context;
     rsCanvasRenderNode->InitRenderParams();
     EXPECT_TRUE(rsCanvasRenderNode->GetContext().lock() != nullptr);

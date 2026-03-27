@@ -353,21 +353,21 @@ float RSColor::Float16ToFloat32(float16 half) const
 float16 RSColor::Float32ToFloat16(float value) const
 {
     int f = *reinterpret_cast<int *>(&value);
-    int sign = (f >> 16) & 0x8000;
+    int sign = (f >> 16) & 0x8000; //checking the most significant bit (MSB) of the half variable
     int exponent = ((f >> 23) & 0xFF) - (127 -15); //127:Bias for float32, 15:Bias for float16
-    int mantissa = f & 0x007FFFFF;
+    int mantissa = f & 0x007FFFFF;  // isolate the exponent bits
 
     if (exponent <= 0) {
         if (exponent < -10) { // 10:Smallest representable exponent in float16 subnormals
             return sign;
         }
-        mantissa = (mantissa | 0x00800000) >> (1 - exponent);
+        mantissa = (mantissa | 0x00800000) >> (1 - exponent);  // isolate the exponent bits
         return sign | (mantissa >> 13); // 13:Shift from 23-bit to 10-bit mantissa for float16
     } else if (exponent == 0xFF - (127 -15)) { // 127:Bias for float32, 15:Bias for float16
-        return sign | 0x7C00 | (mantissa ? 1 : 0);
+        return sign | 0x7C00 | (mantissa ? 1 : 0); // isolate the exponent bits
     } else {
         if (exponent > 30) { // 30:Max exponent value for float16
-            return sign | 0x7C00;
+            return sign | 0x7C00;  // isolate the exponent bits
         }
         return sign | (exponent << 10) | (mantissa >> 13); // 10:Shift for exponent in float16, 13:23-bit to 10-bit
     }

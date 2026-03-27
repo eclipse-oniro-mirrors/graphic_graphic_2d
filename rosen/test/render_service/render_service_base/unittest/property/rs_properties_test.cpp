@@ -388,8 +388,6 @@ HWTEST_F(RSPropertiesTest, Dump001, TestSize.Level1)
     EXPECT_EQ(properties.GetShadowElevation(), 1.f);
     properties.SetShadowRadius(1.f);
     EXPECT_EQ(properties.GetShadowRadius(), 1.f);
-    properties.SetHDRColorHeadroom(3.f);
-    EXPECT_EQ(properties.GetHDRColorHeadroom(), 3.f);
     properties.Dump();
 }
 
@@ -402,6 +400,8 @@ HWTEST_F(RSPropertiesTest, Dump001, TestSize.Level1)
 HWTEST_F(RSPropertiesTest, Dump002, TestSize.Level1)
 {
     RSProperties properties;
+    properties.SetHDRColorHeadroom(3.0f);
+    EXPECT_EQ(properties.GetHDRColorHeadroom(), 3.0f);
     properties.SetShadowRadius(5.5f);
     std::string dumpInfo = properties.Dump();
     EXPECT_TRUE(dumpInfo.find("ShadowRadius[5.5]") != std::string::npos);

@@ -1221,7 +1221,6 @@ void RSSurfaceRenderNode::SetHDRPresent(bool hasHdrPresent)
 
 void RSSurfaceRenderNode::IncreaseHDRNum(HDRComponentType hdrType)
 {
-    std::lock_guard<std::mutex> lockGuard(mutexHDR_);
     if (hdrType == HDRComponentType::IMAGE) {
         hdrPhotoNum_++;
         RS_LOGD("RSSurfaceRenderNode::IncreaseHDRNum HDRClient hdrPhotoNum_: %{public}d", hdrPhotoNum_);
@@ -1239,7 +1238,6 @@ void RSSurfaceRenderNode::IncreaseHDRNum(HDRComponentType hdrType)
 
 void RSSurfaceRenderNode::ReduceHDRNum(HDRComponentType hdrType)
 {
-    std::lock_guard<std::mutex> lockGuard(mutexHDR_);
     if (hdrType == HDRComponentType::IMAGE) {
         if (hdrPhotoNum_ == 0) {
             ROSEN_LOGE("RSSurfaceRenderNode::ReduceHDRNum error");
@@ -1325,7 +1323,6 @@ bool RSSurfaceRenderNode::IsHdrEffectColorGamut() const
 
 bool RSSurfaceRenderNode::HDRColorHeadroomEnabled()
 {
-    std::lock_guard<std::mutex> lockGuard(mutexHDR_);
     return hdrColorNum_ > 0;
 }
 

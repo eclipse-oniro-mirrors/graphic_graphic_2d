@@ -2058,7 +2058,6 @@ private:
     std::mutex mutexUI_;
     std::mutex mutexClear_;
     std::mutex mutex_;
-    std::mutex mutexHDR_;
     std::mutex parallelVisitMutex_;
     std::optional<Drawing::Matrix> contextMatrix_;
     std::optional<Drawing::Rect> contextClipRect_;
