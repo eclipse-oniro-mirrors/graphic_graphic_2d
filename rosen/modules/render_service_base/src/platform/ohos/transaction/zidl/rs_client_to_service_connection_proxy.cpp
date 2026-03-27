@@ -50,7 +50,7 @@ ErrCode RSClientToServiceConnectionProxy::GetUniRenderEnabled(bool& enable)
     MessageParcel reply;
     MessageOption option;
 
-    option.SetFlags(MessageOption::TF_SYNC);
+    option.SetFlags(MessageOption::TF_SYNC | MessageOption::TF_IMAGE);
     if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
         ROSEN_LOGE("GetUniRenderEnabled: WriteInterfaceToken RSIClientToServiceConnection::GetDescriptor() err.");
         return false;
