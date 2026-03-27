@@ -806,7 +806,7 @@ public:
 
     bool IsHdrEffectColorGamut() const;
 
-    bool HDRColorHeadroomEnabled() const;
+    bool HDRColorHeadroomEnabled();
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const
     {

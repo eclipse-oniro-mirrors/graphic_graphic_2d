@@ -702,7 +702,7 @@ public:
     bool IsHDRUIBrightnessValid() const;
     void CreateHDRUIBrightnessFilter();
 
-    void SetHDRColorHeadroom(float headrom);
+    void SetHDRColorHeadroom(float headroom);
     float GetHDRColorHeadroom() const;
     float GetHDRColorMaxHeadroom() const;
     bool HDRColorHeadroomEnabled() const;

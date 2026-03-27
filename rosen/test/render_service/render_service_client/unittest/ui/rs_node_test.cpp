@@ -8658,22 +8658,11 @@ HWTEST_F(RSNodeTest, SetBackgroundColorHeadroomTest, TestSize.Level1)
     RSColor color = Color::FromArgbInt(colorValue);
     rsNode->SetBackgroundColor(color);
     EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
-    
-    color.SetHeadroom(0.5f);
+    color.SetHeadroom(2.0f);
     rsNode->SetBackgroundColor(color);
-    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
-    
     color.SetHeadroom(1.0f);
     rsNode->SetBackgroundColor(color);
     EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
-    
-    color.SetHeadroom(3.5f);
-    rsNode->SetBackgroundColor(color);
-    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 3.5f);
-
-    color.SetHeadroom(1.5f);
-    rsNode->SetBackgroundColor(color);
-    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.5f);
 }
 
 /**

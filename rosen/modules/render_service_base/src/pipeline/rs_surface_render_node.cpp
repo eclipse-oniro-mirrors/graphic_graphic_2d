@@ -1323,8 +1323,9 @@ bool RSSurfaceRenderNode::IsHdrEffectColorGamut() const
     return hdrEffectNum_ > 0;
 }
 
-bool RSSurfaceRenderNode::HDRColorHeadroomEnabled() const
+bool RSSurfaceRenderNode::HDRColorHeadroomEnabled()
 {
+    std::lock_guard<std::mutex> lockGuard(mutexHDR_);
     return hdrColorNum_ > 0;
 }
 

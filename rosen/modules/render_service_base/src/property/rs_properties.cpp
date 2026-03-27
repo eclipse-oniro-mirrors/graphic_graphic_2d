@@ -2566,10 +2566,10 @@ void RSProperties::CreateHDRUIBrightnessFilter()
     }
 }
 
-void RSProperties::SetHDRColorHeadroom(float headrom)
+void RSProperties::SetHDRColorHeadroom(float headroom)
 {
-    UpdateHDRColorMaxHeadroom(headrom, GetBackgroundColor().GetHeadroom());
-    hdrColorHeadroom_ = headrom;
+    UpdateHDRColorMaxHeadroom(headroom, GetBackgroundColor().GetHeadroom());
+    hdrColorHeadroom_ = headroom;
     SetDirty();
 }
 
@@ -5060,25 +5060,15 @@ std::string RSProperties::Dump() const
     }
 
     // HDRColorHeadroom
-    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
-    if (ret != EOK) {
-        return "Failed to memset_s for HDRColorHeadroom, ret=" + std::to_string(ret);
-    }
     auto headroom = GetHDRColorHeadroom();
-    if (!ROSEN_EQ(headroom, 1.f) &&
-        sprintf_s(buffer, UINT8_MAX, ", HDRColorHeadroom[%.1f]", headroom) != -1) {
-        dumpInfo.append(buffer);
+    if (!ROSEN_EQ(headroom, 1.f)) {
+        dumpInfo.append(", HDRColorHeadroom[" + std::to_string(headroom) + "]");
     }
 
     // HDRColorMaxHeadroom
-    ret = memset_s(buffer, UINT8_MAX, 0, UINT8_MAX);
-    if (ret != EOK) {
-        return "Failed to memset_s for HDRColorMaxHeadroom, ret=" + std::to_string(ret);
-    }
     auto maxHeadroom = GetHDRColorMaxHeadroom();
-    if (!ROSEN_EQ(maxHeadroom, 1.f) &&
-        sprintf_s(buffer, UINT8_MAX, ", HDRColorMaxHeadroom[%.1f]", maxHeadroom) != -1) {
-        dumpInfo.append(buffer);
+    if (!ROSEN_EQ(maxHeadroom, 1.f)) {
+        dumpInfo.append(", HDRColorMaxHeadroom[" + std::to_string(headroom) + "]");
     }
 
     // Contrast

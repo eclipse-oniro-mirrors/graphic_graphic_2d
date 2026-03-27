@@ -373,6 +373,7 @@ HWTEST_F(RSPropertiesTest, Dump001, TestSize.Level1)
     Vector4f vec(1.f, 1.f, 0.f, 1.f);
     EXPECT_EQ(properties.GetPersp(), vec);
     Color color1;
+    color1.SetHeadroom(2.0f);
     properties.SetForegroundColor(color1);
     properties.SetBackgroundColor(color1);
     std::shared_ptr<RSImage> image = std::make_shared<RSImage>();
@@ -387,6 +388,8 @@ HWTEST_F(RSPropertiesTest, Dump001, TestSize.Level1)
     EXPECT_EQ(properties.GetShadowElevation(), 1.f);
     properties.SetShadowRadius(1.f);
     EXPECT_EQ(properties.GetShadowRadius(), 1.f);
+    properties.SetHDRColorHeadroom(3.f);
+    EXPECT_EQ(properties.GetHDRColorHeadroom(), 3.f);
     properties.Dump();
 }
 
