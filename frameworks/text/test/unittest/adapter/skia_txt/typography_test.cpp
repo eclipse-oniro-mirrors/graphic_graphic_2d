@@ -18,6 +18,7 @@
 #include "font_collection.h"
 #include "impl/paragraph_impl.h"
 #include "modules/skparagraph/include/TextStyle.h"
+#include "ohos/init_data.h"
 #include "paragraph.h"
 #include "src/ParagraphImpl.h"
 #include "typography.h"
@@ -35,7 +36,33 @@ const double DEFAULT_FONT_SIZE = 40;
 const size_t DEFAULT_MAXLINES = 2;
 const double DEFAULT_MAX_WIDTHS = 100;
 class OH_Drawing_TypographyTest : public testing::Test {
+public:
+    void SetUp() override;
+    void TearDown() override;
+
+protected:
+    std::shared_ptr<OHOS::Rosen::FontCollection> fontCollection_;
+    OHOS::Rosen::TypographyStyle typographyStyle_;
+    OHOS::Rosen::TextStyle textStyle_;
+    std::u16string text_;
+    std::unique_ptr<OHOS::Rosen::TypographyCreate> typographyCreate_;
+    std::unique_ptr<OHOS::Rosen::Typography> typography_;
 };
+
+void OH_Drawing_TypographyTest::SetUp()
+{
+    SetHwIcuDirectory();
+    fontCollection_ = OHOS::Rosen::FontCollection::From(std::make_shared<txt::FontCollection>());
+    textStyle_.fontSize = 50;
+    text_ = u"test text";
+}
+
+void OH_Drawing_TypographyTest::TearDown()
+{
+    fontCollection_ = nullptr;
+    typographyCreate_ = nullptr;
+    typography_ = nullptr;
+}
 
 namespace {
 std::string g_expectDumpInfo = "Paragraph dump:"
@@ -616,7 +643,7 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyTest015, TestSize.Level
     std::unique_ptr<OHOS::Rosen::Typography> typography0 = typographyCreate0->CreateTypography();
     double maxWidth = 500;
     typography0->Layout(maxWidth);
-    
+
     // Test paragraphSpacing is positive, there is no hard break within the paragraph, and isEndAddParagraphSpacing
     // is false: In this scenario, the paragraph spacing does not take effect.
     OHOS::Rosen::TypographyStyle typographyStyle1;
@@ -1526,6 +1553,233 @@ HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest, TestSize.Level0)
     EXPECT_EQ(typography->GetDumpInfo(), "");
     typographyImpl->paragraph_.swap(paragraphTemp);
     EXPECT_EQ(typography->GetDumpInfo(), g_expectDumpInfo);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetProcessState001
+ * @tc.desc: test for GetProcessState before layout
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState001, TestSize.Level0)
+{
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+
+    // Before layout, process state should be INDEXED
+    TextProcessState state = typography_->GetProcessState();
+    EXPECT_EQ(state, TextProcessState::INDEXED);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetProcessState002
+ * @tc.desc: test for GetProcessState after layout
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState002, TestSize.Level0)
+{
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 500;
+    typography_->Layout(maxWidth);
+
+    // After layout, process state should be FORMATTED
+    TextProcessState state = typography_->GetProcessState();
+    EXPECT_EQ(state, TextProcessState::FORMATTED);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetProcessState003
+ * @tc.desc: test for GetProcessState after paint
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState003, TestSize.Level0)
+{
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 500;
+    typography_->Layout(maxWidth);
+
+    OHOS::Rosen::Drawing::Canvas canvas;
+    typography_->Paint(&canvas, 0, 0);
+
+    // After paint, process state should be PAINT
+    TextProcessState state = typography_->GetProcessState();
+    EXPECT_EQ(state, TextProcessState::PAINT);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetTextDisplayState001
+ * @tc.desc: test for GetTextDisplayState before layout
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetTextDisplayState001, TestSize.Level0)
+{
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+
+    // Before layout, display state should be UNKNOWN
+    TextDisplayState state = typography_->GetTextDisplayState();
+    EXPECT_EQ(state, TextDisplayState::UNKNOWN);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetTextDisplayState002
+ * @tc.desc: test for GetTextDisplayState after layout without ellipsis
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetTextDisplayState002, TestSize.Level0)
+{
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    // Use a large width to ensure no ellipsis
+    double maxWidth = 1000;
+    typography_->Layout(maxWidth);
+
+    // After layout without ellipsis, display state should be ALL
+    TextDisplayState state = typography_->GetTextDisplayState();
+    EXPECT_EQ(state, TextDisplayState::ALL);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetTextDisplayState003
+ * @tc.desc: test for GetTextDisplayState after layout with ellipsis
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetTextDisplayState003, TestSize.Level0)
+{
+    typographyStyle_.maxLines = 1;
+    std::u16string ellipsisStr = TypographyStyle::ELLIPSIS;
+    typographyStyle_.ellipsis = ellipsisStr;
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    // Use a small width to trigger ellipsis
+    double maxWidth = 100;
+    typography_->Layout(maxWidth);
+
+    // After layout with ellipsis, display state should be OMITTED
+    TextDisplayState state = typography_->GetTextDisplayState();
+    EXPECT_EQ(state, TextDisplayState::OMITTED);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetTextDisplayState004
+ * @tc.desc: test for GetTextDisplayState after layout with clip (exceed max lines without ellipsis)
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetTextDisplayState004, TestSize.Level0)
+{
+    typographyStyle_.maxLines = 1;
+    // No ellipsis set, so it should be CLIP when exceeding max lines
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    // Use a small width to trigger exceeding max lines
+    double maxWidth = 100;
+    typography_->Layout(maxWidth);
+
+    // After layout exceeding max lines without ellipsis, display state should be CLIP
+    TextDisplayState state = typography_->GetTextDisplayState();
+    EXPECT_EQ(state, TextDisplayState::CLIP);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetParagraphStyle001
+ * @tc.desc: test for GetParagraphStyle getting typography style properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle001, TestSize.Level0)
+{
+    typographyStyle_.fontSize = 100;
+    typographyStyle_.maxLines = 5;
+    typographyStyle_.locale = "zh-Hans";
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 500;
+    typography_->Layout(maxWidth);
+
+    TypographyStyle resultStyle = typography_->GetParagraphStyle();
+    EXPECT_EQ(resultStyle.maxLines, typographyStyle_.maxLines);
+    EXPECT_EQ(resultStyle.locale, typographyStyle_.locale);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetParagraphStyle002
+ * @tc.desc: test for GetParagraphStyle with ellipsis settings
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle002, TestSize.Level0)
+{
+    typographyStyle_.maxLines = 3;
+    std::u16string ellipsisStr = u"...";
+    typographyStyle_.ellipsis = ellipsisStr;
+    typographyStyle_.ellipsisModal = OHOS::Rosen::EllipsisModal::MIDDLE;
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 100;
+    typography_->Layout(maxWidth);
+
+    TypographyStyle resultStyle = typography_->GetParagraphStyle();
+    EXPECT_EQ(resultStyle.maxLines, typographyStyle_.maxLines);
+    EXPECT_EQ(resultStyle.ellipsis, typographyStyle_.ellipsis);
+    EXPECT_EQ(resultStyle.ellipsisModal, typographyStyle_.ellipsisModal);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetParagraphStyle003
+ * @tc.desc: test for GetParagraphStyle with textAlign and textDirection
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle003, TestSize.Level0)
+{
+    typographyStyle_.textAlign = TextAlign::CENTER;
+    typographyStyle_.textDirection = TextDirection::RTL;
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 500;
+    typography_->Layout(maxWidth);
+
+    TypographyStyle resultStyle = typography_->GetParagraphStyle();
+    EXPECT_EQ(resultStyle.textAlign, typographyStyle_.textAlign);
+    EXPECT_EQ(resultStyle.textDirection, typographyStyle_.textDirection);
 }
 } // namespace Rosen
 } // namespace OHOS
