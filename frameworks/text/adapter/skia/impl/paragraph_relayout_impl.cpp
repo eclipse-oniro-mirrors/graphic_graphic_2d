@@ -564,7 +564,7 @@ void ParagraphImpl::UpdateSymbolRun(const HMSymbolTxt& symbolStyle, std::shared_
         }
         p.symbol = hmSymbolRun->GetSymbolTxt();
     }
-    updateAttr = true;
+    MARK_ATTRIBUTE_UPDATED();
 }
 
 void ParagraphImpl::SymbolStyleUpdater(const HMSymbolTxt& symbolStyle, std::vector<std::shared_ptr<HMSymbolRun>>&
@@ -638,7 +638,7 @@ void ParagraphImpl::Relayout(double width, const ParagraphStyle& paragrahStyle,
     ApplyParagraphStyleChanges(paragrahStyle);
     ApplyTextStyleChanges(textStyles);
     paragraph_->layout(width);
-    updateAttr = true;
+    MARK_ATTRIBUTE_UPDATED();
 }
 } // namespace SPText
 } // namespace Rosen

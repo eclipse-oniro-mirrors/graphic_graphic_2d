@@ -39,6 +39,9 @@
 namespace OHOS {
 namespace Rosen {
 namespace SPText {
+
+#define MARK_ATTRIBUTE_UPDATED() updateAttr = true
+
 namespace skt = skia::textlayout;
 class ParagraphImpl : public Paragraph {
 public:
