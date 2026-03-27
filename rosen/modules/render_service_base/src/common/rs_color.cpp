@@ -71,6 +71,9 @@ RSColor RSColor::operator+(const RSColor& rhs) const
     }
     float lhsHeadroom = GetHeadroom();
     float rhsHeadroom = Float16ToFloat32(rhs.headroom_);
+    if (lhsHeadroom < 1.0f || rhsHeadroom < 1.0f) {
+        return rhs;
+    }
     if (rhsHeadroom > lhsHeadroom) {
         RSColor color = RSColor(red_ * lhsHeadroom / rhsHeadroom + rhs.red_,
                                 green_ * lhsHeadroom / rhsHeadroom + rhs.green_,
@@ -98,6 +101,9 @@ RSColor RSColor::operator-(const RSColor& rhs) const
     }
     float lhsHeadroom = GetHeadroom();
     float rhsHeadroom = Float16ToFloat32(rhs.headroom_);
+    if (lhsHeadroom < 1.0f || rhsHeadroom < 1.0f) {
+        return rhs;
+    }
     if (rhsHeadroom > lhsHeadroom) {
         RSColor color = RSColor(red_ * lhsHeadroom / rhsHeadroom - rhs.red_,
                                 green_ * lhsHeadroom / rhsHeadroom - rhs.green_,
