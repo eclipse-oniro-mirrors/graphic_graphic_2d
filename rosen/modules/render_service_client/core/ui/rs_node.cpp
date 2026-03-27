@@ -2468,12 +2468,23 @@ void RSNode::SetBlender(const Blender* blender)
             SetShadowBlenderParams({ shadowBlender->GetCubicCoeff(), shadowBlender->GetQuadraticCoeff(),
                 shadowBlender->GetLinearCoeff(), shadowBlender->GetConstantTerm() });
         }
+    } else if (Blender::HDR_DARKEN_BLENDER == blender->GetBlenderType()) {
+        auto hdrDarkenBlender = static_cast<const HdrDarkenBlender*>(blender);
+        if (hdrDarkenBlender != nullptr) {
+            SetHdrDarkenBlenderParams({ hdrDarkenBlender->GetHdrBrightnessRatio(),
+                                        hdrDarkenBlender->GetGrayscaleFactor() });
+        }
     }
 }
 
 void RSNode::SetShadowBlenderParams(const RSShadowBlenderPara& params)
 {
     SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetShadowBlenderParams>(params);
+}
+
+void RSNode::SetHdrDarkenBlenderParams(const RSHdrDarkenBlenderPara& params)
+{
+    SetPropertyNG<ModifierNG::RSBlendModifier, &ModifierNG::RSBlendModifier::SetHdrDarkenBlenderParams>(params);
 }
 
 void RSNode::SetForegroundEffectRadius(const float blurRadius)

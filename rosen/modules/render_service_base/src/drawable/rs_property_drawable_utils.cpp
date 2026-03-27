@@ -56,6 +56,7 @@ std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicBrightne
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::dynamicBrightnessLinearBlenderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::lightUpShaderEffect_ = nullptr;
 std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::shadowBlenderEffect_ = nullptr;
+std::shared_ptr<Drawing::RuntimeEffect> RSPropertyDrawableUtils::hdrDarkenBlenderEffect_ = nullptr;
 
 void RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(
     Drawing::Canvas* canvas, const std::shared_ptr<RSDrawingFilter>& filter)
@@ -1018,6 +1019,55 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeShadowBlender(con
     builder->SetUniform("ubo_constant", params.constant_);
     RS_OPTIONAL_TRACE_FMT("RSPropertyDrawableUtils::MakeShadowBlender params[%f,%f,%f,%f]",
         params.cubic_, params.quadratic_, params.linear_, params.constant_);
+    return builder->MakeBlender();
+}
+
+std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeHdrDarkenBlender(const RSHdrDarkenBlenderPara& params)
+{
+    static constexpr char prog[] = R"(
+
+        uniform float hdrBrightnessRatio;
+        uniform float grayscaleFactors_r;
+        uniform float grayscaleFactors_g;
+        uniform float grayscaleFactors_b;
+
+        half4 main(half4 srcColor, half4 dstColor) {
+
+            // 1. calc darken result (a=1), original Darken algorithm
+            float3 darkenRGB = srcColor.rgb + dstColor.rgb - max(srcColor.rgb * dstColor.a, dstColor.rgb * srcColor.a);
+            // 2. calc hdr_extra, extracting colors from HDR layers
+            float uMaxVal = pow(1 / hdrBrightnessRatio, 1 / 2.2);
+            vec3 hdrExtraRGB = max(srcColor.rgb - uMaxVal * srcColor.a, vec3(0.0));
+            // 3. add darken_result and hdr_extra
+            vec3 grayscaleFactors = vec3(grayscaleFactors_r, grayscaleFactors_g, grayscaleFactors_b);
+            float s = dot(dstColor.rgb / uMaxVal, grayscaleFactors);
+
+            hdrExtraRGB *= s;
+            float alpha = srcColor.a + dstColor.a * (1 - srcColor.a);
+            return half4(darkenRGB + hdrExtraRGB , alpha);
+
+        }
+
+    )";
+    if (hdrDarkenBlenderEffect_ == nullptr) {
+        hdrDarkenBlenderEffect_ = Drawing::RuntimeEffect::CreateForBlender(prog);
+    }
+    std::shared_ptr<Drawing::RuntimeBlenderBuilder> builder =
+        std::make_shared<Drawing::RuntimeBlenderBuilder>(hdrDarkenBlenderEffect_);
+    if (!builder) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::MakeHdrDarkenBlender make builder fail");
+        return nullptr;
+    }
+    if (ROSEN_EQ(params.hdrBrightnessRatio_, 0.f, EPSILON)) {
+        ROSEN_LOGE("RSPropertyDrawableUtils::MakeHdrDarkenBlender hdrBrightnessRatio is 0");
+        return nullptr;
+    }
+    builder->SetUniform("hdrBrightnessRatio", params.hdrBrightnessRatio_);
+    builder->SetUniform("grayscaleFactors_r", params.grayscaleFactor_.x_);
+    builder->SetUniform("grayscaleFactors_g", params.grayscaleFactor_.y_);
+    builder->SetUniform("grayscaleFactors_b", params.grayscaleFactor_.z_);
+    RS_OPTIONAL_TRACE_FMT("RSPropertyDrawableUtils::MakeHdrDarkenBlender params[%f,%f,%f,%f]",
+        params.hdrBrightnessRatio_, params.grayscaleFactor_.x_, params.grayscaleFactor_.y_, params.grayscaleFactor_.z_);
     return builder->MakeBlender();
 }
 

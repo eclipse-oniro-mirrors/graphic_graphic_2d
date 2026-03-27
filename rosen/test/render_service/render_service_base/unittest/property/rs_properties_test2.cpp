@@ -1732,5 +1732,37 @@ HWTEST_F(PropertiesTest, NeedClipHoleForRenderGroupTest, TestSize.Level1)
     properties.GetEffect().colorFilter_ = nullptr;
     EXPECT_FALSE(properties.NeedClipHoleForRenderGroup());
 }
+
+/**
+ * @tc.name: HdrDarkenBlenderTest
+ * @tc.desc: test HdrDarkenBlender SetParams, GetParams, Invalid and Description.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PropertiesTest, HdrDarkenBlenderTest, TestSize.Level1)
+{
+    RSProperties properties;
+    std::optional<RSHdrDarkenBlenderPara> paramsNull = std::nullopt;
+    properties.SetHdrDarkenBlenderParams(paramsNull);
+    EXPECT_FALSE(properties.isDrawn_);
+    std::string description = "hdrDarkenBlenderParams is nullopt";
+    EXPECT_EQ(description, properties.GetHdrDarkenBlenderDescription());
+
+    float hdrBrightnessRatio = 1.0;
+    float grayscaleFactorR = 0.299;
+    float grayscaleFactorG = 0.587;
+    float grayscaleFactorB = 0.114;
+    auto params = std::optional<RSHdrDarkenBlenderPara>({ hdrBrightnessRatio, { grayscaleFactorR,
+                                                            grayscaleFactorG, grayscaleFactorB } });
+    properties.SetHdrDarkenBlenderParams(params);
+    EXPECT_TRUE(properties.isDrawn_);
+    EXPECT_TRUE(properties.GetHdrDarkenBlenderParams().has_value());
+    EXPECT_TRUE(properties.IsHdrDarkenBlenderValid());
+    description = "HdrDarkenBlender, hdrBrightnessRatio: " + std::to_string(hdrBrightnessRatio) +
+        ", grayscaleFactor.r: " + std::to_string(grayscaleFactorR) +
+        ", grayscaleFactor.g: " + std::to_string(grayscaleFactorG) +
+        ", grayscaleFactor.b: " + std::to_string(grayscaleFactorB);
+    EXPECT_EQ(description, properties.GetHdrDarkenBlenderDescription());
+}
+
 } // namespace Rosen
 } // namespace OHOS
