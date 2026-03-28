@@ -1716,24 +1716,6 @@ HWTEST_F(PropertiesTest, ComposeNGRenderFilter002, TestSize.Level1)
 }
 
 /**
- * @tc.name: NeedClipHoleForFilterTest
- * @tc.desc: test NeedClipHoleForFilter with different filter configurations
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(PropertiesTest, NeedClipHoleForRenderGroupTest, TestSize.Level1)
-{
-    RSProperties properties;
-
-    std::shared_ptr<Drawing::ColorFilter> colorFilter = Drawing::ColorFilter::CreateLumaColorFilter();
-    properties.GetEffect().colorFilter_ = colorFilter;
-    EXPECT_TRUE(properties.NeedClipHoleForRenderGroup());
-
-    properties.GetEffect().colorFilter_ = nullptr;
-    EXPECT_FALSE(properties.NeedClipHoleForRenderGroup());
-}
-
-/**
  * @tc.name: HdrDarkenBlenderTest
  * @tc.desc: test HdrDarkenBlender SetParams, GetParams, Invalid and Description.
  * @tc.type: FUNC
@@ -1764,5 +1746,22 @@ HWTEST_F(PropertiesTest, HdrDarkenBlenderTest, TestSize.Level1)
     EXPECT_EQ(description, properties.GetHdrDarkenBlenderDescription());
 }
 
+/**
+ * @tc.name: NeedClipHoleForFilterTest
+ * @tc.desc: test NeedClipHoleForFilter with different filter configurations
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, NeedClipHoleForRenderGroupTest, TestSize.Level1)
+{
+    RSProperties properties;
+
+    std::shared_ptr<Drawing::ColorFilter> colorFilter = Drawing::ColorFilter::CreateLumaColorFilter();
+    properties.GetEffect().colorFilter_ = colorFilter;
+    EXPECT_TRUE(properties.NeedClipHoleForRenderGroup());
+
+    properties.GetEffect().colorFilter_ = nullptr;
+    EXPECT_FALSE(properties.NeedClipHoleForRenderGroup());
+}
 } // namespace Rosen
 } // namespace OHOS
