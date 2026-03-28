@@ -272,6 +272,7 @@ void HgmFrameRateManager::RegisterUpTimeoutAndDownEvent()
     });
 }
 
+//
 void HgmFrameRateManager::ProcessPendingRefreshRate(
     uint64_t timestamp, int64_t vsyncId, uint32_t rsRate, bool isUiDvsyncOn)
 {
