@@ -123,8 +123,6 @@ public:
     void SetDrawExcludedSubTreeForCache(bool value);
     bool IsDrawingExcludedSubTreeForCache();
 
-    inline static std::vector<std::weak_ptr<RSRenderNodeDrawable>> layerNodesDrawable_;
-
 protected:
     explicit RSRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::RS_NODE, OnGenerate>;

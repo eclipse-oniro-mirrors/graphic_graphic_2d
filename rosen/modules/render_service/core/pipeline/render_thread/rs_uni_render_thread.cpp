@@ -391,15 +391,6 @@ void RSUniRenderThread::Sync(std::unique_ptr<RSRenderThreadParams>&& stagingRend
     RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(stagingRenderThreadParams));
 }
 
-void RSUniRenderThread::IfIsMarkLayerEnabledAddToDrawableList(std::shared_ptr<RSRenderNode> node)
-{
-    if (node->IsMarkLayerEnabled()) {
-        auto nodeDrawableAdapter = node->GetRenderDrawable();
-        auto nodeDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(nodeDrawableAdapter);
-        DrawableV2::RSRenderNodeDrawable::layerNodesDrawable_.emplace_back(nodeDrawable);
-    }
-}
-
 void RSUniRenderThread::Render()
 {
     if (!rootNodeDrawable_) {

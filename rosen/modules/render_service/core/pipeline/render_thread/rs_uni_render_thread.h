@@ -251,8 +251,6 @@ public:
 
     void CollectProcessNodeNum(int num);
 
-    void IfIsMarkLayerEnabledAddToDrawableList(std::shared_ptr<RSRenderNode> node);
-
     void DumpSurfaceInfo(std::string &dumpString);
     void DumpCurrentFrameLayers();
 

@@ -302,7 +302,6 @@ void RSDrawFrame::Sync()
             }
             if (!RSUifirstManager::Instance().CollectSkipSyncNode(node)) {
                 node->Sync();
-                unirenderInstance_.IfIsMarkLayerEnabledAddToDrawableList(node);
             } else {
                 node->SkipSync();
             }

@@ -303,23 +303,6 @@ HWTEST_F(RSUniRenderThreadTest, Render001, TestSize.Level1)
     instance.Render();
     EXPECT_FALSE(instance.screenPowerOnChanged_);
 }
-/**
- * @tc.name: IfIsMarkLayerEnabledAddToDrawableListTest
- * @tc.desc: Test IfIsMarkLayerEnabledAddToDrawableList
- * @tc.type: FUNC
- * @tc.require: issueIAE59W
- */
-HWTEST_F(RSUniRenderThreadTest, IfIsMarkLayerEnabledAddToDrawableListTest, TestSize.Level1)
-{
-    RSUniRenderThread& instance = RSUniRenderThread::Instance();
-    auto node = std::make_shared<RSRenderNode>(100, true);
-    EXPECT_FALSE(node->renderIsLayer_);
-    instance.IfIsMarkLayerEnabledAddToDrawableList(node);
-    EXPECT_TRUE(DrawableV2::RSRenderNodeDrawable::layerNodesDrawable_.empty());
-    node->renderIsLayer_ = true;
-    instance.IfIsMarkLayerEnabledAddToDrawableList(node);
-    EXPECT_FALSE(DrawableV2::RSRenderNodeDrawable::layerNodesDrawable_.empty());
-}
 
 #ifdef RES_SCHED_ENABLE
 /**

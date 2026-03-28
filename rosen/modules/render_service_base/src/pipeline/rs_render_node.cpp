@@ -4556,7 +4556,6 @@ void RSRenderNode::OnSync()
     addedToPendingSyncList_ = false;
     bool isLeashWindowPartialSkip = false;
 
-    renderIsLayer_ = isLayer_;
     if (renderDrawable_ == nullptr) {
         return;
     }
@@ -4578,6 +4577,10 @@ void RSRenderNode::OnSync()
         stagingDrawCmdList_.clear();
         renderDrawable_->drawCmdIndex_ = stagingDrawCmdIndex_;
         drawCmdListNeedSync_ = false;
+    }
+
+    if (isLayer_) {
+        DrawableV2::RSRenderNodeDrawableAdapter::layerNodesDrawable_.emplace_back(renderDrawable_);
     }
 
     if (drawableVecNeedClear_) {

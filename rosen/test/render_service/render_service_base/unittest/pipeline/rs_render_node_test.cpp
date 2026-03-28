@@ -374,22 +374,6 @@ HWTEST_F(RSRenderNodeTest, MarkLayerTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsMarkLayerEnabledTest
- * @tc.desc: TEST IsMarkLayerEnabled
- * @tc.type:FUNC
- * @tc.require:SR000HSUII
- */
-HWTEST_F(RSRenderNodeTest, IsMarkLayerEnabledTest, TestSize.Level1)
-{
-    auto node = std::make_shared<RSRenderNode>(100, true);
-    EXPECT_EQ(node->IsMarkLayerEnabled(), false);
-    node->MarkLayer(true);
-    EXPECT_EQ(node->IsMarkLayerEnabled(), false);
-    node->OnSync();
-    EXPECT_EQ(node->IsMarkLayerEnabled(), true);
-}
-
-/**
  * @tc.name: OnlyBasicGeoTransfromTest01
  * @tc.desc: Check node only contains BasicGeoTransfrom by default
  * @tc.type: FUNC

@@ -85,8 +85,6 @@ HWTEST_F(RSNodeCommandTest, MarkLayerTest, TestSize.Level1)
     RSNodeCommandHelper::MarkLayer(context, nodeId, isMarkLayer);
     auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
     ASSERT_NE(canvasNode, nullptr);
-    canvasNode->OnSync();
-    EXPECT_EQ(canvasNode->IsMarkLayerEnabled(), true);
 }
 
 /**

@@ -1063,10 +1063,6 @@ public:
     void ReleaseNodeMem();
     bool IsNodeMemClearEnable();
     void MarkLayer(bool isMarkLayer);
-    bool IsMarkLayerEnabled()
-    {
-        return renderIsLayer_;
-    }
     virtual void AfterTreeStatueChanged() {}
 
     RectI GetFilterDrawableSnapshotRegion() const;
@@ -1375,7 +1371,6 @@ private:
     void ShowSetIsOnetheTreeCntIfNeed(const std::string& funcName, NodeId nodeId, const std::string& nodeName);
 
     bool isLayer_ = false;
-    bool renderIsLayer_ = false;
 
     bool enableHdrEffect_ = false;
     static constexpr uint32_t DEFAULT_HEADROOM_VALUE = 0U;

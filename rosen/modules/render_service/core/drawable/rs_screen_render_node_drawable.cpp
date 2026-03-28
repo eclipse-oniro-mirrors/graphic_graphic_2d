@@ -910,8 +910,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     if (curCanvas_->GetGPUContext()) {
         for (auto drawable : layerNodesDrawable_) {
-            auto drawablePtr = drawable.lock();
-            if (drawablePtr) {
+            auto drawableAdapter = drawable.lock();
+            if (drawableAdapter) {
+                auto drawablePtr = std::static_pointer_cast<RSRenderNodeDrawable>(drawableAdapter);
                 RS_TRACE_NAME_FMT("LayerDrawable TryPrepareLayerCache, isOpinc:%d, id: %" PRId64 "",
                     drawablePtr->GetRenderParams()->OpincIsSuggest(), GetId());
                 if (drawablePtr->GetRenderParams()->OpincIsSuggest() == false) {
