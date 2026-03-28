@@ -719,7 +719,8 @@ HWTEST_F(RSOpincDrawCacheTest, PushLayerPartRenderDirtyRegion, TestSize.Level1)
     params.SetLayerPartRenderCurrentFrameDirtyRegion(dirtyRect);
     params.SetLayerPartRenderEnabled(true);
 
-    opincDrawCache.PushLayerPartRenderDirtyRegion(params, paintFilterCanvas, LAYER_PART_RENDER_NODE_COUNT);
+    opincDrawCache.PushLayerPartRenderDirtyRegion(params,
+        paintFilterCanvas, paintFilterCanvas, LAYER_PART_RENDER_NODE_COUNT);
     SUCCEED();
 }
 
@@ -766,7 +767,8 @@ HWTEST_F(RSOpincDrawCacheTest, PopLayerPartRenderDirtyRegion, TestSize.Level1)
     params.SetLayerPartRenderCurrentFrameDirtyRegion(RectI(0, 0, 10, 10));
     ASSERT_TRUE(params.GetLayerPartRenderEnabled());
 
-    opincDrawCache.PushLayerPartRenderDirtyRegion(params, paintFilterCanvas, LAYER_PART_RENDER_NODE_COUNT);
+    opincDrawCache.PushLayerPartRenderDirtyRegion(params,
+        paintFilterCanvas, paintFilterCanvas, LAYER_PART_RENDER_NODE_COUNT);
     opincDrawCache.PopLayerPartRenderDirtyRegion(params, paintFilterCanvas);
     SUCCEED();
 }

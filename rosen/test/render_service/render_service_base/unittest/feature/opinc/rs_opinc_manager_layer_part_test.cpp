@@ -302,6 +302,29 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionUsesNod
 }
 
 /**
+ * @tc.name: CalculateLayerPartRenderDirtyRegionChangeStateRefreshDirtyManager
+ * @tc.desc: Verify changed-state branch merges node abs rect into dirty manager before mapping
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionChangeStateRefreshDirtyManager,
+    TestSize.Level1)
+{
+    auto node = CreateCanvasNode(SECOND_NODE_ID);
+    node->InitRenderParams();
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    ASSERT_NE(dirtyManager, nullptr);
+    RectI layerCurDirty;
+
+    bool ret = RSOpincManager::Instance().CalculateLayerPartRenderDirtyRegion(
+        *node, dirtyManager, DEFAULT_OLD_RECT, layerCurDirty);
+
+    ASSERT_TRUE(ret);
+    EXPECT_EQ(layerCurDirty, DEFAULT_ABS_RECT);
+    EXPECT_EQ(dirtyManager->GetDirtyRegion(), DEFAULT_ABS_RECT);
+}
+
+/**
  * @tc.name: CalculateLayerPartRenderDirtyRegionFallbackToNodeAbsRect
  * @tc.desc: Verify unchanged node falls back to node abs rect when dirty region is not fully inside node abs rect
  * @tc.type: FUNC
