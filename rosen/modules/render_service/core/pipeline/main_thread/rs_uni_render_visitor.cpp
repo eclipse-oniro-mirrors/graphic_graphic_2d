@@ -805,7 +805,6 @@ void RSUniRenderVisitor::QuickPrepareScreenRenderNode(RSScreenRenderNode& node)
     curScreenNode_->UpdatePartialRenderParams();
     curScreenNode_->SetFingerprint(hasFingerprint_);
     curScreenNode_->UpdateScreenRenderParams();
-    curScreenNode_->SetCloneNodeMap(cloneNodeMap_);
     UpdateColorSpaceAfterHwcCalc(node);
     RSHdrUtil::UpdatePixelFormatAfterHwcCalc(node);
 
@@ -1470,11 +1469,13 @@ bool RSUniRenderVisitor::PrepareForCloneNode(RSSurfaceRenderNode& node)
 void RSUniRenderVisitor::UpdateInfoForClonedNode(RSSurfaceRenderNode& node)
 {
     NodeId sourceId = node.GetId();
-    if (auto it = cloneNodeMap_.find(sourceId); it != cloneNodeMap_.end()) {
-        node.UpdateInfoForClonedNode(true);
-        return;
+    bool isClonedNode = node.IsRelatedSourceNode() ||
+                        (cloneNodeMap_.find(sourceId) != cloneNodeMap_.end());
+    node.UpdateInfoForClonedNode(isClonedNode);
+
+    if (node.IsRelatedSourceNode()) {
+        node.ClearRelatedSourceCache();
     }
-    node.UpdateInfoForClonedNode(false);
 }
 
 void RSUniRenderVisitor::PrepareForCrossNode(RSSurfaceRenderNode& node)

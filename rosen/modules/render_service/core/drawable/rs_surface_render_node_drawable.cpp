@@ -1555,6 +1555,12 @@ bool RSSurfaceRenderNodeDrawable::DrawRelatedNode(RSPaintFilterCanvas& canvas,
 bool RSSurfaceRenderNodeDrawable::DrawRelatedSourceNode(RSPaintFilterCanvas& canvas,
     RSSurfaceRenderParams& surfaceParams)
 {
+    if (surfaceParams.IsNeedClearRelatedCache()) {
+        ClearRelatedSourceCache();
+        surfaceParams.SetNeedClearRelatedCache(false);
+        return false;
+    }
+
     if (!surfaceParams.ClonedSourceNode()) {
         return false;
     }
