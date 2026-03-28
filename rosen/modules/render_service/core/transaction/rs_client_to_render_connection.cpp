@@ -164,7 +164,7 @@ void RSClientToRenderConnection::CleanAll(bool toDelete) noexcept
         return;
     }
 
-    renderPipelineAgent_->CleanAll(remotePid_);
+    renderPipelineAgent_->Clean(remotePid_, false);
     {
         std::lock_guard<std::mutex> lock(mutex_);
         cleanDone_ = true;
@@ -176,7 +176,7 @@ void RSClientToRenderConnection::CleanAll(bool toDelete) noexcept
     }
 }
 
-void RSClientToRenderConnection::Clean() noexpect
+void RSClientToRenderConnection::CleanForRefresh() noexcept
 {
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -189,7 +189,7 @@ void RSClientToRenderConnection::Clean() noexpect
         return;
     }
 
-    renderPipelineAgent_->Clean(remotePid_);
+    renderPipelineAgent_->Clean(remotePid_, true);
 }
 
 RSClientToRenderConnection::RSConnectionDeathRecipient::RSConnectionDeathRecipient(
@@ -242,9 +242,9 @@ void RSClientToRenderConnection::RSConnectionRefreshRecipient::OnRemoteRefreshed
         RS_LOGI("RSConnectionRefreshRecipient::OnRemoteRefreshed: token  doesn't match, ignore it");
         return;
     }
-    RS_LOGI("RSConnectionRefreshRecipient::OnRemoteRefreshed: call clean");
+    RS_LOGI("RSConnectionRefreshRecipient::OnRemoteRefreshed: call CleanForRefresh");
 
-    rsConn->Clean();
+    rsConn->CleanForRefresh();
 }
 
 RSClientToRenderConnection::RSApplicationRenderThreadDeathRecipient::RSApplicationRenderThreadDeathRecipient(

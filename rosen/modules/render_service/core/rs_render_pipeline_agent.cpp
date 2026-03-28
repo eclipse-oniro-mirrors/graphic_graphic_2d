@@ -1746,47 +1746,27 @@ ErrCode RSRenderPipelineAgent::RepaintEverything()
     return ERR_OK;
 }
 
-void RSRenderPipelineAgent::CleanAll(pid_t pid)
+void RSRenderPipelineAgent::Clean(pid_t pid, bool forRefresh)
 {
     if (rsRenderPipeline_ == nullptr) {
         return;
     }
-    RS_LOGD("CleanAll() start.");
-    RS_TRACE_NAME("RSRenderPipelineAgent::CleanAll begin, remotePid: " + std::to_string(pid));
-    RsCommandVerifyHelper::GetInstance().RemoveCntWithPid(pid);
-    rsRenderPipeline_->ScheduleMainThreadTask(
-        [mainThread = rsRenderPipeline_->GetMainThread(), pid]() {
-            if (mainThread == nullptr) {
-                return;
-            }
-            mainThread->CleanResources(pid);
-        }).wait();
-    RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(pid);
-    RSTypefaceCache::Instance().RemoveDrawingTypefacesByPid(pid);
-    {
-        std::lock_guard<std::mutex> lock(pidToBundleMutex_);
-        pidToBundleName_.clear();
-    }
-    return;
-}
-
-void RSRenderPipelineAgent::Clean(pid_t pid)
-{
-    if (rsRenderPipeline_ == nullptr) {
-        return;
-    }
-    RS_LOGD("Clean() start, remotePid: %{public}s", std::to_string(pid).c_str());
+    RS_LOGD("Clean() start, remotePid: %{public}s, forRefresh: %{public}d", std::to_string(pid).c_str(), forRefresh);
     RS_TRACE_NAME("RSRenderPipelineAgent::Clean begin, remotePid: " + std::to_string(pid));
     RsCommandVerifyHelper::GetInstance().RemoveCntWithPid(pid);
     rsRenderPipeline_->ScheduleMainThreadTask(
-        [mainThread = rsRenderPipeline_->GetMainThread(), pid]() {
+        [mainThread = rsRenderPipeline_->GetMainThread(), pid, forRefresh]() {
             if (mainThread == nullptr) {
                 return;
             }
-            mainThread->ResetResources(pid);
+            mainThread->CleanResources(pid, forRefresh);
         }).wait();
     RSSurfaceBufferCallbackManager::Instance().UnregisterSurfaceBufferCallback(pid);
     RSTypefaceCache::Instance().RemoveDrawingTypefacesByPid(pid);
+    if (!forRefresh) {
+        std::lock_guard<std::mutex> lock(pidToBundleMutex_);
+        pidToBundleName_.clear();
+    }
     RS_TRACE_NAME("RSRenderPipelineAgent::Clean end, remotePid: " + std::to_string(pid));
 }
 

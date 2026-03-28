@@ -54,7 +54,7 @@ public:
 
 private:
     void CleanAll(bool toDelete = false) noexcept;
-    void Clean() noexcept;
+    void CleanForRefresh() noexcept;
 
     // IPC RSIRenderServiceConnection Interfaces
     ErrCode CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
