@@ -50,7 +50,7 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
     }
     if (!data.WriteBool(needRefresh)) {
         ROSEN_LOGE("CreateConnection(): WriteBool failed.");
-        return nullptr;
+        return std::make_pair(nullptr, nullptr);
     }
 
     uint32_t code = static_cast<uint32_t>(RSIRenderServiceInterfaceCode::CREATE_CONNECTION);

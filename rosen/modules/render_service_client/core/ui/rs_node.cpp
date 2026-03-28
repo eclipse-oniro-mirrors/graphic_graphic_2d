@@ -2886,6 +2886,12 @@ void RSNode::SetHDRBrightnessFactor(float factor)
         factor);
 }
 
+void RSNode::SetHDRColorHeadroom(const float& headroom)
+{
+    SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRColorHeadroom>(
+        headroom);
+}
+
 void RSNode::SetVisible(bool visible)
 {
     // kick off transition only if it's on tree(has valid parent) and visibility is changed.

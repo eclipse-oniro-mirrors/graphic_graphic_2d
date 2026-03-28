@@ -789,6 +789,7 @@ Color RSProperties::GetForegroundColor() const
 // background properties
 void RSProperties::SetBackgroundColor(Color color)
 {
+    UpdateHDRColorMaxHeadroom(GetHDRColorHeadroom(), color.GetHeadroom());
     if (!decoration_) {
         decoration_ = std::make_optional<Decoration>();
     }
@@ -2563,6 +2564,49 @@ void RSProperties::CreateHDRUIBrightnessFilter()
     } else {
         foregroundFilter_ = hdrUIBrightnessFilter;
     }
+}
+
+void RSProperties::SetHDRColorHeadroom(float headroom)
+{
+    UpdateHDRColorMaxHeadroom(headroom, GetBackgroundColor().GetHeadroom());
+    hdrColorHeadroom_ = headroom;
+    SetDirty();
+}
+
+float RSProperties::GetHDRColorHeadroom() const
+{
+    return hdrColorHeadroom_;
+}
+
+float RSProperties::GetHDRColorMaxHeadroom() const
+{
+    return hdrColorMaxHeadroom_;
+}
+
+bool RSProperties::HDRColorHeadroomEnabled() const
+{
+    return ROSEN_GNE(GetHDRColorMaxHeadroom(), 1.0f);
+}
+
+void RSProperties::UpdateHDRColorMaxHeadroom(float hdrColorHeadroom, float backgroundColorHeadroom)
+{
+    float maxHeadroom = hdrColorHeadroom;
+    if (ROSEN_GNE(backgroundColorHeadroom, hdrColorHeadroom)) {
+        maxHeadroom = backgroundColorHeadroom;
+    }
+    if (auto node = RSBaseRenderNode::ReinterpretCast<RSCanvasRenderNode>(backref_.lock())) {
+        bool oldHeadroomStatus = HDRColorHeadroomEnabled();
+        bool newHeadroomStatus = ROSEN_GNE(maxHeadroom, 1.0f);
+        if (oldHeadroomStatus != newHeadroomStatus) {
+            node->UpdateHDRStatus(HdrStatus::HDR_COLOR, newHeadroomStatus);
+            if (node->IsOnTheTree()) {
+                node->SetHdrNum(newHeadroomStatus,
+                    node->GetInstanceRootNodeId(), node->GetScreenNodeId(), HDRComponentType::HDRCOLOR);
+                node->UpdateDisplayHDRNodeMap(newHeadroomStatus, node->GetLogicalDisplayNodeId());
+            }
+        }
+    }
+    hdrColorMaxHeadroom_ = maxHeadroom;
 }
 
 void RSProperties::SetSpherize(float spherizeDegree)
@@ -5013,6 +5057,18 @@ std::string RSProperties::Dump() const
     if (brightness.has_value() && !ROSEN_EQ(*brightness, 1.f) &&
         sprintf_s(buffer, UINT8_MAX, ", Brightness[%.1f]", *brightness) != -1) {
         dumpInfo.append(buffer);
+    }
+
+    // HDRColorHeadroom
+    auto headroom = GetHDRColorHeadroom();
+    if (!ROSEN_EQ(headroom, 1.0f)) {
+        dumpInfo.append(", HDRColorHeadroom[" + std::to_string(headroom) + "]");
+    }
+
+    // HDRColorMaxHeadroom
+    auto maxHeadroom = GetHDRColorMaxHeadroom();
+    if (!ROSEN_EQ(maxHeadroom, 1.0f)) {
+        dumpInfo.append(", HDRColorMaxHeadroom[" + std::to_string(maxHeadroom) + "]");
     }
 
     // Contrast

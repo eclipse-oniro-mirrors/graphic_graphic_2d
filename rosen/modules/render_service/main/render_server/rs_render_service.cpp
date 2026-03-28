@@ -256,8 +256,8 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
     return iter->second;
 }
 
-std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
-    RSRenderService::CreateConnection(const sptr<RSIConnectionToken>& token, bool needRefresh)
+std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> RSRenderService::CreateConnection(
+    const sptr<RSIConnectionToken>& token, bool needRefresh)
 {
     if (!token) {
         RS_LOGE("CreateConnection failed, mainThread or token is nullptr");
@@ -273,12 +273,13 @@ std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>>
         sptr<RSRenderProcessManagerAgent>::MakeSptr(renderProcessManager_);
     sptr<RSIClientToServiceConnection> newConn(new RSClientToServiceConnection(remotePid, renderServiceAgent,
         renderProcessManagerAgent, screenManagerAgent, tokenObj, vsyncManager_->GetVsyncManagerAgent()));
-    if (needRefresh) {
-        newConn->RegisterRemoteRefreshCallback();
-    }
     sptr<RSRenderPipelineAgent> renderPipelineAgent = new RSRenderPipelineAgent(renderPipeline_);
     sptr<RSIClientToRenderConnection> newRenderConn(
         new RSClientToRenderConnection(remotePid, renderPipelineAgent, tokenObj));
+    if (needRefresh) {
+        newConn->RegisterRemoteRefreshCallback();
+        newRenderConn->RegisterRemoteRefreshCallback();
+    }
     std::pair<sptr<RSIClientToServiceConnection>, sptr<RSIClientToRenderConnection>> tmp;
     std::unique_lock<std::mutex> lock(mutex_);
     // if connections_ has the same token one, replace it.
@@ -355,7 +356,7 @@ sptr<IRemoteObject> RSRenderService::ScreenManagerListener::OnScreenConnected(Sc
         std::bind(&RSVsyncManagerAgent::SetTaskEndWithTime,
             renderService_.vsyncManager_->GetVsyncManagerAgent(), std::placeholders::_1),
         std::bind(&RSVsyncManagerAgent::GetRealTimeOffsetOfDvsync,
-            renderService_.vsyncManager_->GetVsyncManagerAgent(), std::placeholders::_1));
+            renderService_.vsyncManager_->GetVsyncManagerAgent(), std::placeholders::_1, std::placeholders::_2));
 #ifdef RS_CAR_FEATURES
     if (RSCarMultiDisplayFeatureParam::IsCrossDomainFeatureEnable() &&
         RSCarMultiDisplayFeatureParam::IsScreenInCrossDomain(screenId)) {

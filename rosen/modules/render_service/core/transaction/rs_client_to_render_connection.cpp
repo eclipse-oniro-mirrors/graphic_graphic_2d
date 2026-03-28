@@ -178,13 +178,6 @@ void RSClientToRenderConnection::CleanAll(bool toDelete) noexcept
 
 void RSClientToRenderConnection::CleanForRefresh() noexcept
 {
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (cleanDone_) {
-            return;
-        }
-    }
-
     if (renderPipelineAgent_ == nullptr) {
         return;
     }
@@ -228,13 +221,13 @@ void RSClientToRenderConnection::RSConnectionRefreshRecipient::OnRemoteRefreshed
 {
     auto tokenSptr = token.promote();
     if (tokenSptr == nullptr) {
-        RS_LOGW("RSRenderServiceConnection::RSConnectionRefreshRecipient: can't promote remote object");
+        RS_LOGW("RSClientToRenderConnection::RSConnectionRefreshRecipient: can't promote remote object");
         return;
     }
 
     auto rsConn = conn_.promote();
     if (rsConn == nullptr) {
-        RS_LOGW("RSConnectionRefreshRecipient::OnRemoteRefreshed: RSRenderServiceConnection was dead, do not hing");
+        RS_LOGW("RSConnectionRefreshRecipient::OnRemoteRefreshed: RSClientToRenderConnection was dead, do not hing");
         return;
     }
 

@@ -403,7 +403,7 @@ public:
 #endif
     virtual void RemoveToken() = 0;
 
-    virtual void RegisterRemoteRefreshCallback() {};
+    virtual void RegisterRemoteRefreshCallback() = 0;
 };
 } // namespace Rosen
 } // namespace OHOS
