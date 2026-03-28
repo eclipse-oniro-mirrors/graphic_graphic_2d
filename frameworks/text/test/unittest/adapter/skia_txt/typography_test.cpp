@@ -1560,38 +1560,10 @@ HWTEST_F(OH_Drawing_TypographyTest, TypographyGetDumpInfoTest, TestSize.Level0)
 
 /*
  * @tc.name: OH_Drawing_TypographyGetProcessState001
- * @tc.desc: test for GetProcessState when paragraph is nullptr
- * @tc.type: FUNC
- */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState001, TestSize.Level0)
-{
-    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
-    ASSERT_NE(typographyCreate_, nullptr);
-    typographyCreate_->PushStyle(textStyle_);
-    typographyCreate_->AppendText(text_);
-    typography_ = typographyCreate_->CreateTypography();
-    ASSERT_NE(typography_, nullptr);
-
-    // Swap paragraph to nullptr to simulate empty paragraph state
-    AdapterTxt::Typography* typographyImpl = static_cast<AdapterTxt::Typography*>(typography_.get());
-    ASSERT_NE(typographyImpl, nullptr);
-    std::unique_ptr<SPText::Paragraph> paragraphTemp = nullptr;
-    typographyImpl->paragraph_.swap(paragraphTemp);
-
-    // When paragraph is nullptr, process state should be INIT
-    TextProcessState state = typography_->GetProcessState();
-    EXPECT_EQ(state, TextProcessState::INIT);
-
-    // Restore paragraph
-    typographyImpl->paragraph_.swap(paragraphTemp);
-}
-
-/*
- * @tc.name: OH_Drawing_TypographyGetProcessState002
  * @tc.desc: test for GetProcessState before layout (INIT state)
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState002, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState001, TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1606,11 +1578,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState002, Tes
 }
 
 /*
- * @tc.name: OH_Drawing_TypographyGetProcessState003
+ * @tc.name: OH_Drawing_TypographyGetProcessState002
  * @tc.desc: test for GetProcessState in INDEXED state
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState003, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState002, TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1630,11 +1602,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState003, Tes
 
 
 /*
- * @tc.name: OH_Drawing_TypographyGetProcessState004
+ * @tc.name: OH_Drawing_TypographyGetProcessState003
  * @tc.desc: test for GetProcessState in SHAPED state
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState004, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState003, TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1653,11 +1625,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState004, Tes
 }
 
 /*
- * @tc.name: OH_Drawing_TypographyGetProcessState005
+ * @tc.name: OH_Drawing_TypographyGetProcessState004
  * @tc.desc: test for GetProcessState in LINE_BROKEN state
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState005, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState004, TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1666,21 +1638,21 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState005, Tes
     typography_ = typographyCreate_->CreateTypography();
     ASSERT_NE(typography_, nullptr);
 
-    // Set state to LINE_BROKEN (3)
+    // Set state to LINE_BROKEN (5)
     SPText::ParagraphImpl* paragraph = static_cast<SPText::ParagraphImpl*>(typography_->GetParagraph());
     ASSERT_NE(paragraph, nullptr);
-    paragraph->SetLayoutState(3);
+    paragraph->SetLayoutState(5);
 
     TextProcessState state = typography_->GetProcessState();
     EXPECT_EQ(state, TextProcessState::LINE_BROKEN);
 }
 
 /*
- * @tc.name: OH_Drawing_TypographyGetProcessState006
+ * @tc.name: OH_Drawing_TypographyGetProcessState05
  * @tc.desc: test for GetProcessState after layout (FORMATTED state)
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState006, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState005, TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1697,11 +1669,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState006, Tes
 }
 
 /*
- * @tc.name: OH_Drawing_TypographyGetProcessState007
+ * @tc.name: OH_Drawing_TypographyGetProcessState006
  * @tc.desc: test for GetProcessState after paint (PAINT state)
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState007 , TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState006 , TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1721,11 +1693,11 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState007 , Te
 }
 
 /*
- * @tc.name: OH_Drawing_TypographyGetProcessState008
+ * @tc.name: OH_Drawing_TypographyGetProcessState007
  * @tc.desc: test for GetProcessState after UpdateColor (UPDATE_ATTRIBUTE state)
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState008, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetProcessState007, TestSize.Level0)
 {
     typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
     ASSERT_NE(typographyCreate_, nullptr);
@@ -1837,83 +1809,10 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetTextDisplayState004,
 
 /*
  * @tc.name: OH_Drawing_TypographyGetParagraphStyle001
- * @tc.desc: test for GetParagraphStyle getting typography style properties
- * @tc.type: FUNC
- */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle001, TestSize.Level0)
-{
-    typographyStyle_.fontSize = 100;
-    typographyStyle_.maxLines = 5;
-    typographyStyle_.locale = "zh-Hans";
-    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
-    ASSERT_NE(typographyCreate_, nullptr);
-    typographyCreate_->PushStyle(textStyle_);
-    typographyCreate_->AppendText(text_);
-    typography_ = typographyCreate_->CreateTypography();
-    ASSERT_NE(typography_, nullptr);
-    double maxWidth = 500;
-    typography_->Layout(maxWidth);
-
-    TypographyStyle resultStyle = typography_->GetParagraphStyle();
-    EXPECT_EQ(resultStyle.maxLines, typographyStyle_.maxLines);
-    EXPECT_EQ(resultStyle.locale, typographyStyle_.locale);
-}
-
-/*
- * @tc.name: OH_Drawing_TypographyGetParagraphStyle002
- * @tc.desc: test for GetParagraphStyle with ellipsis settings
- * @tc.type: FUNC
- */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle002, TestSize.Level0)
-{
-    typographyStyle_.maxLines = 3;
-    std::u16string ellipsisStr = u"...";
-    typographyStyle_.ellipsis = ellipsisStr;
-    typographyStyle_.ellipsisModal = OHOS::Rosen::EllipsisModal::MIDDLE;
-    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
-    ASSERT_NE(typographyCreate_, nullptr);
-    typographyCreate_->PushStyle(textStyle_);
-    typographyCreate_->AppendText(text_);
-    typography_ = typographyCreate_->CreateTypography();
-    ASSERT_NE(typography_, nullptr);
-    double maxWidth = 100;
-    typography_->Layout(maxWidth);
-
-    TypographyStyle resultStyle = typography_->GetParagraphStyle();
-    EXPECT_EQ(resultStyle.maxLines, typographyStyle_.maxLines);
-    EXPECT_EQ(resultStyle.ellipsis, typographyStyle_.ellipsis);
-    EXPECT_EQ(resultStyle.ellipsisModal, typographyStyle_.ellipsisModal);
-}
-
-/*
- * @tc.name: OH_Drawing_TypographyGetParagraphStyle003
- * @tc.desc: test for GetParagraphStyle with textAlign and textDirection
- * @tc.type: FUNC
- */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle003, TestSize.Level0)
-{
-    typographyStyle_.textAlign = TextAlign::CENTER;
-    typographyStyle_.textDirection = TextDirection::RTL;
-    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
-    ASSERT_NE(typographyCreate_, nullptr);
-    typographyCreate_->PushStyle(textStyle_);
-    typographyCreate_->AppendText(text_);
-    typography_ = typographyCreate_->CreateTypography();
-    ASSERT_NE(typography_, nullptr);
-    double maxWidth = 500;
-    typography_->Layout(maxWidth);
-
-    TypographyStyle resultStyle = typography_->GetParagraphStyle();
-    EXPECT_EQ(resultStyle.textAlign, typographyStyle_.textAlign);
-    EXPECT_EQ(resultStyle.textDirection, typographyStyle_.textDirection);
-}
-
-/*
- * @tc.name: OH_Drawing_TypographyGetParagraphStyle004
  * @tc.desc: test for GetParagraphStyle with all typography style properties
  * @tc.type: FUNC
  */
-HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle004, TestSize.Level0)
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle001, TestSize.Level0)
 {
     // Set all typography style properties
     typographyStyle_.fontWeight = FontWeight::W700;
@@ -1928,11 +1827,12 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle004, T
 
     typographyStyle_.lineStyleFontWeight = FontWeight::W500;
     typographyStyle_.lineStyleFontWidth = FontWidth::SEMI_EXPANDED;
-    typographyStyle_.lineStyleFontStyle = FontStyle::OBLIQUE;
+    typographyStyle_.lineStyleFontStyle = FontStyle::ITALIC;
     typographyStyle_.lineStyleFontFamilies = {"Arial", "Helvetica"};
     typographyStyle_.lineStyleFontSize = 24.0;
     typographyStyle_.lineStyleHeightScale = 1.2;
     typographyStyle_.lineStyleHalfLeading = true;
+    typographyStyle_.lineStyleSpacingScale = 1;
     typographyStyle_.lineStyleOnly = true;
 
     typographyStyle_.textAlign = TextAlign::JUSTIFY;
@@ -1974,8 +1874,8 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle004, T
     EXPECT_EQ(resultStyle.fontWidth, typographyStyle_.fontWidth);
     EXPECT_EQ(resultStyle.fontStyle, typographyStyle_.fontStyle);
     EXPECT_EQ(resultStyle.fontFamily, typographyStyle_.fontFamily);
-    EXPECT_EQ(resultStyle.fontSize, typographyStyle_.fontSize);
-    EXPECT_EQ(resultStyle.heightScale, typographyStyle_.heightScale);
+    EXPECT_FLOAT_EQ(resultStyle.fontSize, typographyStyle_.fontSize);
+    EXPECT_FLOAT_EQ(resultStyle.heightScale, typographyStyle_.heightScale);
     EXPECT_EQ(resultStyle.halfLeading, typographyStyle_.halfLeading);
     EXPECT_EQ(resultStyle.heightOnly, typographyStyle_.heightOnly);
     EXPECT_EQ(resultStyle.useLineStyle, typographyStyle_.useLineStyle);
@@ -1985,9 +1885,10 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle004, T
     EXPECT_EQ(resultStyle.lineStyleFontWidth, typographyStyle_.lineStyleFontWidth);
     EXPECT_EQ(resultStyle.lineStyleFontStyle, typographyStyle_.lineStyleFontStyle);
     EXPECT_EQ(resultStyle.lineStyleFontFamilies, typographyStyle_.lineStyleFontFamilies);
-    EXPECT_EQ(resultStyle.lineStyleFontSize, typographyStyle_.lineStyleFontSize);
-    EXPECT_EQ(resultStyle.lineStyleHeightScale, typographyStyle_.lineStyleHeightScale);
+    EXPECT_FLOAT_EQ(resultStyle.lineStyleFontSize, typographyStyle_.lineStyleFontSize);
+    EXPECT_FLOAT_EQ(resultStyle.lineStyleHeightScale, typographyStyle_.lineStyleHeightScale);
     EXPECT_EQ(resultStyle.lineStyleHalfLeading, typographyStyle_.lineStyleHalfLeading);
+    EXPECT_EQ(resultStyle.lineStyleSpacingScale, typographyStyle_.lineStyleSpacingScale);
     EXPECT_EQ(resultStyle.lineStyleOnly, typographyStyle_.lineStyleOnly);
 
     // Verify text layout properties
@@ -2003,20 +1904,127 @@ HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle004, T
     EXPECT_EQ(resultStyle.ellipsisModal, typographyStyle_.ellipsisModal);
 
     // Verify spacing and alignment properties
-    EXPECT_EQ(resultStyle.paragraphSpacing, typographyStyle_.paragraphSpacing);
+    EXPECT_FLOAT_EQ(resultStyle.paragraphSpacing, typographyStyle_.paragraphSpacing);
     EXPECT_EQ(resultStyle.isEndAddParagraphSpacing, typographyStyle_.isEndAddParagraphSpacing);
     EXPECT_EQ(resultStyle.verticalAlignment, typographyStyle_.verticalAlignment);
 
     // Verify behavior flags
     EXPECT_EQ(resultStyle.textHeightBehavior, typographyStyle_.textHeightBehavior);
     EXPECT_EQ(resultStyle.hintingIsOn, typographyStyle_.hintingIsOn);
-    EXPECT_EQ(resultStyle.maxLineHeight, typographyStyle_.maxLineHeight);
-    EXPECT_EQ(resultStyle.minLineHeight, typographyStyle_.minLineHeight);
-    EXPECT_EQ(resultStyle.lineSpacing, typographyStyle_.lineSpacing);
+    EXPECT_FLOAT_EQ(resultStyle.maxLineHeight, typographyStyle_.maxLineHeight);
+    EXPECT_FLOAT_EQ(resultStyle.minLineHeight, typographyStyle_.minLineHeight);
+    EXPECT_FLOAT_EQ(resultStyle.lineSpacing, typographyStyle_.lineSpacing);
     EXPECT_EQ(resultStyle.lineHeightStyle, typographyStyle_.lineHeightStyle);
     EXPECT_EQ(resultStyle.includeFontPadding, typographyStyle_.includeFontPadding);
     EXPECT_EQ(resultStyle.fallbackLineSpacing, typographyStyle_.fallbackLineSpacing);
     EXPECT_EQ(resultStyle.orphanCharOptimization, typographyStyle_.orphanCharOptimization);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetParagraphStyle002
+ * @tc.desc: test for GetParagraphStyle with insideTextStyle property
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle002, TestSize.Level0)
+{
+    // Set insideTextStyle properties
+    typographyStyle_.customTextStyle = true;
+    typographyStyle_.ellipsis = u"...";
+    typographyStyle_.ellipsisModal = EllipsisModal::MIDDLE;
+    typographyStyle_.insideTextStyle.color = OHOS::Rosen::Drawing::Color::ColorQuadSetARGB(255, 100, 150, 200);
+    typographyStyle_.insideTextStyle.decoration = static_cast<TextDecoration>(TextDecoration::UNDERLINE | TextDecoration::LINE_THROUGH);
+    typographyStyle_.insideTextStyle.decorationColor = OHOS::Rosen::Drawing::Color::ColorQuadSetARGB(255, 50, 75, 100);
+    typographyStyle_.insideTextStyle.decorationStyle = TextDecorationStyle::DASHED;
+    typographyStyle_.insideTextStyle.decorationThicknessScale = 2.0;
+    typographyStyle_.insideTextStyle.fontWeight = FontWeight::W600;
+    typographyStyle_.insideTextStyle.fontWidth = FontWidth::EXPANDED;
+    typographyStyle_.insideTextStyle.fontStyle = FontStyle::ITALIC;
+    typographyStyle_.insideTextStyle.baseline = TextBaseline::IDEOGRAPHIC;
+    typographyStyle_.insideTextStyle.fontFamilies = {"TestFont", "Arial"};
+    typographyStyle_.insideTextStyle.fontSize = 40.0;
+    typographyStyle_.insideTextStyle.letterSpacing = 1.5;
+    typographyStyle_.insideTextStyle.wordSpacing = 2.0;
+    typographyStyle_.insideTextStyle.heightScale = 1.8;
+    typographyStyle_.insideTextStyle.halfLeading = true;
+    typographyStyle_.insideTextStyle.heightOnly = true;
+    typographyStyle_.insideTextStyle.ellipsis = u"...";
+    typographyStyle_.insideTextStyle.ellipsisModal = EllipsisModal::MIDDLE;
+    typographyStyle_.insideTextStyle.locale = "en-US";
+    typographyStyle_.insideTextStyle.baseLineShift = 5.0;
+    typographyStyle_.insideTextStyle.badgeType = TextBadgeType::SUPERSCRIPT;
+    typographyStyle_.insideTextStyle.maxLineHeight = 80.0;
+    typographyStyle_.insideTextStyle.minLineHeight = 20.0;
+    typographyStyle_.insideTextStyle.lineHeightStyle = LineHeightStyle::kFontHeight;
+    typographyStyle_.insideTextStyle.fontEdging = OHOS::Rosen::Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS;
+
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 500;
+    typography_->Layout(maxWidth);
+
+    TypographyStyle resultStyle = typography_->GetParagraphStyle();
+
+    // Verify insideTextStyle properties
+    EXPECT_EQ(resultStyle.customTextStyle, typographyStyle_.customTextStyle);
+    EXPECT_EQ(resultStyle.insideTextStyle.color, typographyStyle_.insideTextStyle.color);
+    EXPECT_EQ(resultStyle.insideTextStyle.decoration, typographyStyle_.insideTextStyle.decoration);
+    EXPECT_EQ(resultStyle.insideTextStyle.decorationColor, typographyStyle_.insideTextStyle.decorationColor);
+    EXPECT_EQ(resultStyle.insideTextStyle.decorationStyle, typographyStyle_.insideTextStyle.decorationStyle);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.decorationThicknessScale, typographyStyle_.insideTextStyle.decorationThicknessScale);
+    EXPECT_EQ(resultStyle.insideTextStyle.fontWeight, typographyStyle_.insideTextStyle.fontWeight);
+    EXPECT_EQ(resultStyle.insideTextStyle.fontWidth, typographyStyle_.insideTextStyle.fontWidth);
+    EXPECT_EQ(resultStyle.insideTextStyle.fontStyle, typographyStyle_.insideTextStyle.fontStyle);
+    EXPECT_EQ(resultStyle.insideTextStyle.baseline, typographyStyle_.insideTextStyle.baseline);
+    EXPECT_EQ(resultStyle.insideTextStyle.fontFamilies.size(), 3);
+    // The first is the system default font.
+    EXPECT_EQ(resultStyle.insideTextStyle.fontFamilies.at(1), typographyStyle_.insideTextStyle.fontFamilies.at(0));
+    EXPECT_EQ(resultStyle.insideTextStyle.fontFamilies.at(2), typographyStyle_.insideTextStyle.fontFamilies.at(1));
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.fontSize, typographyStyle_.insideTextStyle.fontSize);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.letterSpacing, typographyStyle_.insideTextStyle.letterSpacing);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.wordSpacing, typographyStyle_.insideTextStyle.wordSpacing);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.heightScale, typographyStyle_.insideTextStyle.heightScale);
+    EXPECT_EQ(resultStyle.insideTextStyle.halfLeading, typographyStyle_.insideTextStyle.halfLeading);
+    EXPECT_EQ(resultStyle.insideTextStyle.heightOnly, typographyStyle_.insideTextStyle.heightOnly);
+    EXPECT_EQ(resultStyle.insideTextStyle.ellipsis, typographyStyle_.insideTextStyle.ellipsis);
+    EXPECT_EQ(resultStyle.insideTextStyle.ellipsisModal, typographyStyle_.insideTextStyle.ellipsisModal);
+    EXPECT_EQ(resultStyle.insideTextStyle.locale, typographyStyle_.insideTextStyle.locale);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.baseLineShift, typographyStyle_.insideTextStyle.baseLineShift);
+    EXPECT_EQ(resultStyle.insideTextStyle.badgeType, typographyStyle_.insideTextStyle.badgeType);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.maxLineHeight, typographyStyle_.insideTextStyle.maxLineHeight);
+    EXPECT_FLOAT_EQ(resultStyle.insideTextStyle.minLineHeight, typographyStyle_.insideTextStyle.minLineHeight);
+    EXPECT_EQ(resultStyle.insideTextStyle.lineHeightStyle, typographyStyle_.insideTextStyle.lineHeightStyle);
+    EXPECT_EQ(resultStyle.insideTextStyle.fontEdging, typographyStyle_.insideTextStyle.fontEdging);
+}
+
+/*
+ * @tc.name: OH_Drawing_TypographyGetParagraphStyle003
+ * @tc.desc: test for GetParagraphStyle with tab property
+ * @tc.type: FUNC
+ */
+HWTEST_F(OH_Drawing_TypographyTest, OH_Drawing_TypographyGetParagraphStyle003, TestSize.Level0)
+{
+    // Set tab properties
+    typographyStyle_.tab.alignment = TextAlign::CENTER;
+    typographyStyle_.tab.location = 200.0f;
+
+    typographyCreate_ = OHOS::Rosen::TypographyCreate::Create(typographyStyle_, fontCollection_);
+    ASSERT_NE(typographyCreate_, nullptr);
+    typographyCreate_->PushStyle(textStyle_);
+    typographyCreate_->AppendText(text_);
+    typography_ = typographyCreate_->CreateTypography();
+    ASSERT_NE(typography_, nullptr);
+    double maxWidth = 500;
+    typography_->Layout(maxWidth);
+
+    TypographyStyle resultStyle = typography_->GetParagraphStyle();
+
+    // Verify tab properties
+    EXPECT_EQ(resultStyle.tab.alignment, typographyStyle_.tab.alignment);
+    EXPECT_FLOAT_EQ(resultStyle.tab.location, typographyStyle_.tab.location);
 }
 } // namespace Rosen
 } // namespace OHOS

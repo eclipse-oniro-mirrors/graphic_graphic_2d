@@ -36,8 +36,6 @@ public:
 
     static FontStyle GetTxtFontStyle(RSFontStyle::Slant slant);
 
-    static FontStyle GetRealTxtFontStyle(RSFontStyle::Slant slant);
-
     static RSFontStyle::Weight GetSkiaFontWeight(FontWeight spFontWeight);
 
     static RSFontStyle::Slant GetSkiaFontSlant(FontStyle spSlant);

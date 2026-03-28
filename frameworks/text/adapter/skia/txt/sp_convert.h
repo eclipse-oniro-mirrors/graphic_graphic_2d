@@ -33,7 +33,8 @@ void GetExtraTextStyleAttributes(const skia::textlayout::TextStyle& skStyle, Tex
 TextStyle SkStyleToSPTextStyle(const skia::textlayout::TextStyle& skStyle,
     const std::vector<PaintRecord>& paints);
 
-ParagraphStyle SkParagraphStyleToParagraphStyle(const skia::textlayout::ParagraphStyle& skStyle);
+ParagraphStyle SkParagraphStyleToParagraphStyle(
+    const skia::textlayout::ParagraphStyle& skStyle, const std::vector<PaintRecord>& paints);
 
 } // namespace SPText
 } // namespace Rosen

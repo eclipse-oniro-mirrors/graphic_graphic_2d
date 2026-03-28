@@ -554,7 +554,7 @@ std::string ParagraphImpl::GetDumpInfo() const
 
 ParagraphStyle ParagraphImpl::GetParagraphStyle() const
 {
-    return SkParagraphStyleToParagraphStyle(paragraph_->getParagraphStyle());
+    return SkParagraphStyleToParagraphStyle(paragraph_->getParagraphStyle(), paints_);
 }
 
 TextProcessState ParagraphImpl::GetProcessState() const
@@ -564,16 +564,22 @@ TextProcessState ParagraphImpl::GetProcessState() const
     switch (state) {
         case skt::InternalState::kUnknown:
             resultState = TextProcessState::INIT;
+            break;
         case skt::InternalState::kIndexed:
             resultState = TextProcessState::INDEXED;
+            break;
         case skt::InternalState::kShaped:
             resultState = TextProcessState::SHAPED;
+            break;
         case skt::InternalState::kLineBroken:
             resultState = TextProcessState::LINE_BROKEN;
+            break;
         case skt::InternalState::kFormatted:
             resultState = TextProcessState::FORMATTED;
+            break;
         case skt::InternalState::kDrawn:
             resultState = TextProcessState::PAINT;
+            break;
         default:
             resultState = TextProcessState::INIT;
     }

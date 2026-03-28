@@ -383,6 +383,7 @@ export default namespace text {
   }
 
   class ParagraphStyleInternal implements ParagraphStyle {
+    orphanCharOptimization?: boolean;
     fallbackLineSpacing?: boolean;
     includeFontPadding?: boolean;
     textStyle?: TextStyle;
@@ -400,6 +401,7 @@ export default namespace text {
     compressHeadPunctuation?: boolean;
     lineSpacing?: double;
     constructor(
+      orphanCharOptimization?: boolean,
       fallbackLineSpacing?: boolean,
       includeFontPadding?: boolean,
       textStyle?: TextStyle,
@@ -417,6 +419,7 @@ export default namespace text {
       compressHeadPunctuation?: boolean,
       lineSpacing?: double
     ) {
+      this.orphanCharOptimization = orphanCharOptimization;
       this.fallbackLineSpacing = fallbackLineSpacing;
       this.includeFontPadding = includeFontPadding;
       this.textStyle = textStyle;

@@ -947,6 +947,8 @@ napi_value CreateTypographyStyleJsValue(napi_env env, const TypographyStyle& typ
             CreateJsValue(env, typographyStyle.includeFontPadding));
         napi_set_named_property(env, objValue, "fallbackLineSpacing",
             CreateJsValue(env, typographyStyle.fallbackLineSpacing));
+        napi_set_named_property(env, objValue, "orphanCharOptimization",
+            CreateJsValue(env, typographyStyle.orphanCharOptimization));
     }
     return objValue;
 }

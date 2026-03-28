@@ -132,6 +132,16 @@ void ConvertBasicParagraphStyle(const skt::ParagraphStyle& skStyle, ParagraphSty
     paraStyle.enableAutoSpace = skStyle.getEnableAutoSpace();
     paraStyle.verticalAlignment = static_cast<TextVerticalAlign>(skStyle.getVerticalAlignment());
     paraStyle.lineSpacing = skStyle.getLineSpacing();
+    paraStyle.textSplitRatio = skStyle.getTextSplitRatio();
+    paraStyle.textOverflower = skStyle.getTextOverflower();
+    paraStyle.isEndAddParagraphSpacing = skStyle.getIsEndAddParagraphSpacing();
+    paraStyle.isTrailingSpaceOptimized = skStyle.getTrailingSpaceOptimized();
+    paraStyle.compressHeadPunctuation = skStyle.getCompressHeadPunctuation();
+    paraStyle.defaultTextStyleUid = skStyle.getTextStyle().getTextStyleUid();
+    paraStyle.maxLineHeight = skStyle.getTextStyle().getMaxLineHeight();
+    paraStyle.minLineHeight = skStyle.getTextStyle().getMinLineHeight();
+    paraStyle.lineHeightStyle = static_cast<LineHeightStyle>(skStyle.getTextStyle().getLineHeightStyle());
+    paraStyle.orphanCharOptimization = skStyle.getOrphanCharOptimization();
 }
 
 void ConvertStrutStyle(const skt::StrutStyle& strutStyle, ParagraphStyle& paraStyle)
@@ -139,7 +149,7 @@ void ConvertStrutStyle(const skt::StrutStyle& strutStyle, ParagraphStyle& paraSt
     paraStyle.strutEnabled = strutStyle.getStrutEnabled();
     paraStyle.strutFontWeight = TextFontUtils::GetTxtFontWeight(strutStyle.getFontStyle().GetWeight());
     paraStyle.strutFontWidth = static_cast<FontWidth>(strutStyle.getFontStyle().GetWidth());
-    paraStyle.strutFontStyle = TextFontUtils::GetRealTxtFontStyle(strutStyle.getFontStyle().GetSlant());
+    paraStyle.strutFontStyle = TextFontUtils::GetTxtFontStyle(strutStyle.getFontStyle().GetSlant());
     paraStyle.strutFontSize = SkScalarToDouble(strutStyle.getFontSize());
     paraStyle.strutHeight = SkScalarToDouble(strutStyle.getHeight());
     paraStyle.strutHeightOverride = strutStyle.getHeightOverride();
@@ -150,57 +160,15 @@ void ConvertStrutStyle(const skt::StrutStyle& strutStyle, ParagraphStyle& paraSt
     }
     paraStyle.forceStrutHeight = strutStyle.getForceStrutHeight();
 }
-
-void ConvertSPTextStyle(const skt::ParagraphStyle& skStyle, ParagraphStyle& paraStyle)
-{
-    const auto& skTextStyle = skStyle.getTextStyle();
-    paraStyle.spTextStyle.decoration = static_cast<TextDecoration>(skTextStyle.getDecorationType());
-    paraStyle.spTextStyle.decorationStyle = static_cast<TextDecorationStyle>(skTextStyle.getDecorationStyle());
-    paraStyle.spTextStyle.decorationColor = skTextStyle.getDecorationColor();
-    paraStyle.spTextStyle.decorationThicknessMultiplier = skTextStyle.getDecorationThicknessMultiplier();
-    paraStyle.spTextStyle.color = skTextStyle.getColor();
-    paraStyle.spTextStyle.fontWeight = TextFontUtils::GetTxtFontWeight(skTextStyle.getFontStyle().GetWeight());
-    paraStyle.spTextStyle.fontStyle = TextFontUtils::GetRealTxtFontStyle(skTextStyle.getFontStyle().GetSlant());
-    paraStyle.spTextStyle.baseline = static_cast<TextBaseline>(skTextStyle.getTextBaseline());
-    for (const SkString& fontFamily : skTextStyle.getFontFamilies()) {
-        paraStyle.spTextStyle.fontFamilies.emplace_back(fontFamily.c_str());
-    }
-    paraStyle.spTextStyle.fontSize = SkScalarToDouble(skTextStyle.getFontSize());
-    paraStyle.spTextStyle.letterSpacing = SkScalarToDouble(skTextStyle.getLetterSpacing());
-    paraStyle.spTextStyle.wordSpacing = SkScalarToDouble(skTextStyle.getWordSpacing());
-    paraStyle.spTextStyle.halfLeading = SkScalarToDouble(skTextStyle.getHalfLeading());
-    paraStyle.spTextStyle.height = SkScalarToDouble(skTextStyle.getHeight());
-    paraStyle.spTextStyle.heightOverride = skTextStyle.getHeightOverride();
-    paraStyle.spTextStyle.locale = skTextStyle.getLocale().c_str();
-    paraStyle.spTextStyle.baseLineShift = SkScalarToDouble(skTextStyle.getBaselineShift());
-    for (const auto& [tag, value] : skTextStyle.getFontFeatures()) {
-        paraStyle.spTextStyle.fontFeatures.SetFeature(tag.c_str(), value);
-    }
-    for (const skt::TextShadow& skShadow : skTextStyle.getShadows()) {
-        TextShadow shadow;
-        shadow.offset = skShadow.fOffset;
-        shadow.blurSigma = skShadow.fBlurSigma;
-        shadow.color = skShadow.fColor;
-        paraStyle.spTextStyle.textShadows.emplace_back(shadow);
-    }
-    paraStyle.spTextStyle.backgroundRect = {skTextStyle.getBackgroundRect().color,
-        skTextStyle.getBackgroundRect().leftTopRadius, skTextStyle.getBackgroundRect().rightTopRadius,
-        skTextStyle.getBackgroundRect().rightBottomRadius, skTextStyle.getBackgroundRect().leftBottomRadius};
-    paraStyle.spTextStyle.badgeType = static_cast<TextBadgeType>(skTextStyle.getTextBadgeType());
-    paraStyle.spTextStyle.maxLineHeight = SkScalarToDouble(skTextStyle.getMaxLineHeight());
-    paraStyle.spTextStyle.minLineHeight = SkScalarToDouble(skTextStyle.getMinLineHeight());
-    paraStyle.spTextStyle.lineHeightStyle = static_cast<LineHeightStyle>(skTextStyle.getLineHeightStyle());
-    paraStyle.spTextStyle.fontWidth = static_cast<FontWidth>(skTextStyle.getFontStyle().GetWidth());
-    paraStyle.spTextStyle.fontEdging = skTextStyle.getFontEdging();
-}
 } // namespace
 
-ParagraphStyle SkParagraphStyleToParagraphStyle(const skt::ParagraphStyle& skStyle)
+ParagraphStyle SkParagraphStyleToParagraphStyle(
+    const skt::ParagraphStyle& skStyle, const std::vector<PaintRecord>& paints)
 {
     ParagraphStyle paraStyle;
     ConvertBasicParagraphStyle(skStyle, paraStyle);
     ConvertStrutStyle(skStyle.getStrutStyle(), paraStyle);
-    ConvertSPTextStyle(skStyle, paraStyle);
+    paraStyle.spTextStyle = SkStyleToSPTextStyle(skStyle.getTextStyle(), paints);
     return paraStyle;
 }
 

@@ -214,6 +214,7 @@ void AniParagraphStyleConverter::ParseTypographyStyleToAni(
 
     obj = AniTextUtils::CreateAniObject(env, AniGlobalClass::GetInstance().paragraphStyleInternal,
         AniGlobalMethod::GetInstance().paragraphStyleInternalCtor,
+        AniTextUtils::CreateAniBooleanObj(env, style.orphanCharOptimization),
         AniTextUtils::CreateAniBooleanObj(env, style.fallbackLineSpacing),
         AniTextUtils::CreateAniBooleanObj(env, style.includeFontPadding),
         textStyleObj,
