@@ -238,4 +238,72 @@ GRAPHIC_TEST(RSCanvasNodeGetBitmapGetPixelmapTest, CONTENT_DISPLAY_TEST,
     RegisterNode(testNode);
 }
 
+/*
+ * @tc.name: RSCanvasNodeResetSurfaceTest_001
+ * @tc.desc: Test ResetSurface with different width and height
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(RSCanvasNodeGetBitmapGetPixelmapTest, CONTENT_DISPLAY_TEST,
+    RSCanvasNodeResetSurfaceTest_001)
+{
+    int width = 400;
+    int height = 400;
+    auto testNode = RSCanvasNode::Create();
+    testNode->SetBounds({ 50, 50, width, height });
+    testNode->SetBackgroundColor(0xff0000ff);
+    testNode->SetHybridRenderCanvas(true);
+    testNode->ResetSurface(width, height);
+
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+/*
+ * @tc.name: RSCanvasNodeResetSurfaceTest_002
+ * @tc.desc: Test ResetSurface with multiple sizes
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(RSCanvasNodeGetBitmapGetPixelmapTest, CONTENT_DISPLAY_TEST,
+    RSCanvasNodeResetSurfaceTest_002)
+{
+    std::vector<Vector4f> sizeList = {
+        { 50, 50, 100, 100 },
+        { 250, 50, 200, 150 },
+        { 550, 50, 300, 200 },
+        { 50, 350, 150, 250 },
+        { 300, 350, 250, 300 },
+    };
+
+    for (size_t i = 0; i < sizeList.size(); i++) {
+        int width = sizeList[i].z_;
+        int height = sizeList[i].w_;
+        auto testNode = RSCanvasNode::Create();
+        testNode->SetBounds(
+            { sizeList[i].x_, sizeList[i].y_, sizeList[i].z_, sizeList[i].w_ });
+        testNode->SetBackgroundColor(0xff00ff00);
+        testNode->SetHybridRenderCanvas(true);
+        testNode->ResetSurface(width, height);
+
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+/*
+ * @tc.name: RSCanvasNodeResetSurfaceTest_003
+ * @tc.desc: Test ResetSurface without enabling hybrid render
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(RSCanvasNodeGetBitmapGetPixelmapTest, CONTENT_DISPLAY_TEST,
+    RSCanvasNodeResetSurfaceTest_003)
+{
+    auto testNode = RSCanvasNode::Create();
+    testNode->SetBounds({ 50, 50, 400, 400 });
+    testNode->SetBackgroundColor(0xffff0000);
+    testNode->ResetSurface(400, 400);
+
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
 } // namespace OHOS::Rosen
