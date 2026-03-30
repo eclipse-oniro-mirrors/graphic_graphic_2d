@@ -38,7 +38,6 @@
 #include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "transaction/rs_render_to_service_connection.h"
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
-// #include "pipeline/render_thread/rs_uni_render_engine.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include <system_ability_definition.h>
 

@@ -2034,7 +2034,7 @@ void RSRenderNode::UpdateAbsDirtyRegion(RSDirtyRegionManager& dirtyManager, cons
 bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManager, bool accumGeoDirty,
     const RectI& clipRect, const Drawing::Matrix& parentSurfaceMatrix)
 {
-    layerPartRenderDirtyFlag_ = IsDirty() || IsContentDirty();
+    opincCache_.SetLayerPartRenderDirtyFlag(IsDirty() || IsContentDirty());
     auto& properties = GetMutableRenderProperties();
 #ifdef RS_ENABLE_PREFETCH
     // The 2 is the cache level.
@@ -3772,26 +3772,41 @@ void RSRenderNode::MarkSuggestLayerPartRenderNode(bool isLayerPartRender)
         auto groundParent = parent->GetParent().lock();
         if (groundParent != nullptr && groundParent->GetType() == RSRenderNodeType::CANVAS_NODE) {
             groundParent->opincCache_.MarkSuggestLayerPartRenderNode(isLayerPartRender);
+            groundParent->opincCache_.SetLayerPartRenderNodeStrategyType(
+                isLayerPartRender ? NodeStrategyType::NODE_GROUP : NodeStrategyType::CACHE_DISABLE);
             RS_TRACE_NAME_FMT("MarkSuggestLayerPartRender id:%" PRIu64 ", isLayerPartRender:%d",
                 groundParent->GetId(), isLayerPartRender);
-            if (!isLayerPartRender) {
-                groundParent->MarkNodeGroup(NodeGroupType::GROUPED_BY_USER, isLayerPartRender, false);
-            }
         }
     }
 }
 
 bool RSRenderNode::UpdateLayerPartRenderDirtyRegion(std::shared_ptr<RSDirtyRegionManager>& dirtyManager)
 {
+    if (!RSSystemProperties::GetLayerPartRenderEnabled()) {
+        return false;
+    }
+    if (GetRenderProperties().GetMaterialFilter() != nullptr) {
+        opincCache_.MarkMaterialNode(true);
+    }
+    if (opincCache_.IsMaterialNode()) {
+        auto parent = GetParent().lock();
+        if (parent != nullptr) {
+            parent->GetOpincCache().MarkMaterialNode(true);
+        }
+    }
     if (dirtyManager == nullptr) {
         return false;
     }
-    if (layerPartRenderDirtyFlag_) {
-        RS_OPTIONAL_TRACE_FMT("UpdateLayerPartRenderDirtyRegion id:%" PRIu64 ", absDrawRect_:[%d,%d,%d,%d]",
-            GetId(), absDrawRect_.GetLeft(), absDrawRect_.GetTop(), absDrawRect_.GetRight(), absDrawRect_.GetBottom());
+    if (opincCache_.GetLayerPartRenderDirtyFlag()) {
+        const auto& oldAbsDrawRect = opincCache_.GetLayerPartRenderOldAbsDrawRect();
+        RS_OPTIONAL_TRACE_FMT("UpdateLayerPartRenderDirtyRegion id:%" PRIu64 ", absDrawRect:[%d,%d,%d,%d],"
+            " oldAbsDrawRect:[%d,%d,%d,%d]", GetId(), absDrawRect_.GetLeft(), absDrawRect_.GetTop(),
+            absDrawRect_.GetWidth(), absDrawRect_.GetHeight(), oldAbsDrawRect.GetLeft(), oldAbsDrawRect.GetTop(),
+            oldAbsDrawRect.GetWidth(), oldAbsDrawRect.GetHeight());
         dirtyManager->MergeDirtyRect(absDrawRect_);
-        dirtyManager->UpdateDirty();
+        dirtyManager->MergeDirtyRect(oldAbsDrawRect);
     }
+    opincCache_.SetLayerPartRenderOldAbsDrawRect(absDrawRect_);
     return true;
 }
 
@@ -4586,7 +4601,6 @@ void RSRenderNode::OnSync()
         unobscuredUECChildrenNeedSync_ = false;
     }
     if (!uifirstSkipPartialSync_) {
-        stagingRenderParams_->OnPartialSync(renderDrawable_->renderParams_);
         if (!dirtySlots_.empty()) {
             for (const auto& slot : dirtySlots_) {
                 if (auto& drawable = findMapValueRef(GetDrawableVec(__func__), static_cast<int8_t>(slot))) {
@@ -4603,7 +4617,6 @@ void RSRenderNode::OnSync()
                                                         renderDrawable_->drawCmdList_.end());
             renderDrawable_->uifirstDrawCmdIndex_ = renderDrawable_->drawCmdIndex_;
             renderDrawable_->renderParams_->OnSync(renderDrawable_->uifirstRenderParams_);
-            renderDrawable_->renderParams_->OnPartialSync(renderDrawable_->uifirstRenderParams_);
             uifirstNeedSync_ = false;
         }
     } else {
@@ -5217,7 +5230,8 @@ bool RSRenderNode::GetNeedUseCmdlistDrawRegion()
 }
 
 void RSRenderNode::SubTreeSkipPrepare(
-    RSDirtyRegionManager& dirtyManager, bool isDirty, bool accumGeoDirty, const RectI& clipRect)
+    RSDirtyRegionManager& dirtyManager, bool isDirty, bool accumGeoDirty, const RectI& clipRect,
+    const std::shared_ptr<RSDirtyRegionManager>& layerPartRenderDirtyManager)
 {
     // [planning] Prev and current dirty rect need to be joined only when accumGeoDirty is true.
     if ((isDirty || accumGeoDirty) && (HasChildrenOutOfRect() || lastFrameHasChildrenOutOfRect_)) {
@@ -5232,6 +5246,9 @@ void RSRenderNode::SubTreeSkipPrepare(
         dirtyRectClip = dirtyRectClip.JoinRect(oldDirtyRectClip);
         IsFirstLevelCrossNode() ?
             dirtyManager.MergeDirtyRect(dirtyRect.JoinRect(oldDirtyRect)) : dirtyManager.MergeDirtyRect(dirtyRectClip);
+        if (layerPartRenderDirtyManager != nullptr) {
+            layerPartRenderDirtyManager->MergeDirtyRect(dirtyRect.JoinRect(oldDirtyRect));
+        }
         UpdateSubTreeSkipDirtyForDFX(dirtyManager, dirtyRectClip);
     }
     if (isDirty && GetChildrenCount() == 0) {

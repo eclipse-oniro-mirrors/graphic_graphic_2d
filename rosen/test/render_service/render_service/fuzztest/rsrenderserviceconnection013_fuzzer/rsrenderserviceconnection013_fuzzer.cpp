@@ -83,7 +83,7 @@ auto g_pid = getpid();
 /* Call once in the Fuzzer Initialize function */
 int Initialize()
 {
-OHOS::Rosen::g_pid = getpid();
+    OHOS::Rosen::g_pid = getpid();
     OHOS::sptr<OHOS::Rosen::RSIConnectionToken> token_ = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
     OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
     auto generator = OHOS::Rosen::CreateVSyncGenerator();

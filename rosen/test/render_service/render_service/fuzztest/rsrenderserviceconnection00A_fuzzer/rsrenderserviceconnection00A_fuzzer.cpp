@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
+* Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,6 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include "pipeline/main_thread/rs_main_thread.h"
-// #include "pipeline/render_thread/rs_uni_render_engine.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "transaction/rs_client_to_render_connection.h"
 #include "transaction/rs_render_to_service_connection.h"

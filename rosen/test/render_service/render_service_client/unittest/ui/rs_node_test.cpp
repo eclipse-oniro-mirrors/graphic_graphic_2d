@@ -67,6 +67,7 @@ constexpr static float FLOAT_DATA_POSITIVE = 485.44f;
 constexpr static float FLOAT_DATA_NEGATIVE = -34.4f;
 constexpr static float FLOAT_DATA_MAX = std::numeric_limits<float>::max();
 constexpr static float FLOAT_DATA_MIN = std::numeric_limits<float>::min();
+const std::string LAYER_PART_RENDER_KEY = "rosen.layerPartRender.enabled";
 
 class RSNodeTest : public testing::Test {
 public:
@@ -7011,14 +7012,15 @@ HWTEST_F(RSNodeTest, IsRenderServiceNode, TestSize.Level1)
 HWTEST_F(RSNodeTest, MarkLayerPartRender, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    system::SetParameter("rosen.layerPartRender.enabled", "1");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
+    system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     rsNode->MarkLayerPartRender(true);
     EXPECT_TRUE(rsNode->isLayerPartRender_);
 
     rsNode->MarkLayerPartRender(false);
     EXPECT_FALSE(rsNode->isLayerPartRender_);
 
-    system::SetParameter("rosen.layerPartRender.enabled", "0");
+    system::SetParameter(LAYER_PART_RENDER_KEY, oldLayerPartRenderValue);
     rsNode->MarkLayerPartRender(false);
     EXPECT_FALSE(rsNode->isLayerPartRender_);
 }
@@ -7053,7 +7055,8 @@ HWTEST_F(RSNodeTest, MarkLayerPartRenderWithParent, TestSize.Level1)
     auto childNode = RSCanvasNode::Create();
     ASSERT_NE(parentNode, nullptr);
     ASSERT_NE(childNode, nullptr);
-    system::SetParameter("rosen.layerPartRender.enabled", "1");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
+    system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     // Set parent relationship
     childNode->SetParent(parentNode);
 
@@ -7064,7 +7067,7 @@ HWTEST_F(RSNodeTest, MarkLayerPartRenderWithParent, TestSize.Level1)
     // Mark as non-layer part render
     childNode->MarkLayerPartRender(false);
     EXPECT_FALSE(childNode->isLayerPartRender_);
-    system::SetParameter("rosen.layerPartRender.enabled", "0");
+    system::SetParameter(LAYER_PART_RENDER_KEY, oldLayerPartRenderValue);
 }
 
 /**
@@ -7077,14 +7080,15 @@ HWTEST_F(RSNodeTest, MarkLayerPartRenderWithoutParent, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     ASSERT_NE(rsNode, nullptr);
-    system::SetParameter("rosen.layerPartRender.enabled", "1");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
+    system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     // Node has no parent - should only call SetDrawNode on itself
     rsNode->MarkLayerPartRender(true);
     EXPECT_TRUE(rsNode->isLayerPartRender_);
 
     rsNode->MarkLayerPartRender(false);
     EXPECT_FALSE(rsNode->isLayerPartRender_);
-    system::SetParameter("rosen.layerPartRender.enabled", "0");
+    system::SetParameter(LAYER_PART_RENDER_KEY, oldLayerPartRenderValue);
 }
 
 /**
@@ -8469,5 +8473,52 @@ HWTEST_F(RSNodeTest, GetDescendantCount006, TestSize.Level1)
     }
     
     EXPECT_EQ(rootNode->GetDescendantCount(), 0U);
+}
+
+/**
+ * @tc.name: SetBackgroundColorHeadroomTest
+ * @tc.desc: test SetBackgroundColor set headroom
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetBackgroundColorHeadroomTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+
+    constexpr uint32_t colorValue = 0x034123;
+    RSColor color = Color::FromArgbInt(colorValue);
+    color.ConvertToP3ColorSpace();
+    rsNode->SetBackgroundColor(color);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
+    color.SetHeadroom(2.0f);
+    rsNode->SetBackgroundColor(color);
+    color.SetHeadroom(1.0f);
+    rsNode->SetBackgroundColor(color);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
+}
+
+/**
+ * @tc.name: SetHDRColorHeadroomTest
+ * @tc.desc: test SetHDRColorHeadroom multiple calls
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetHDRColorHeadroomTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+    
+    rsNode->SetHDRColorHeadroom(0.5f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 0.5f);
+    
+    rsNode->SetHDRColorHeadroom(1.0f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 1.0f);
+    
+    rsNode->SetHDRColorHeadroom(3.5f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 3.5f);
+
+    rsNode->SetHDRColorHeadroom(1.0f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 1.0f);
 }
 } // namespace OHOS::Rosen

@@ -2791,7 +2791,7 @@ void RSNode::SetShadowAlpha(float alpha)
 
 void RSNode::SetShadowElevation(float elevation)
 {
-    SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowRadius>(0);
+    SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowRadius>(DEFAULT_SHADOW_RADIUS);
     SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowElevation>(elevation);
 }
 
@@ -2884,6 +2884,12 @@ void RSNode::SetHDRBrightnessFactor(float factor)
     }
     SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRBrightnessFactor>(
         factor);
+}
+
+void RSNode::SetHDRColorHeadroom(const float& headroom)
+{
+    SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRColorHeadroom>(
+        headroom);
 }
 
 void RSNode::SetVisible(bool visible)
