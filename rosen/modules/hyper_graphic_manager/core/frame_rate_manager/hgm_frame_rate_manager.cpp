@@ -943,17 +943,7 @@ void HgmFrameRateManager::HandleScreenPowerStatus(ScreenId id, ScreenPowerStatus
         return;
     }
 
-    auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
-    auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
-    std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
-
-    isLtpo_.store(isLtpo);
-    lastCurScreenId_.store(curScreenId_.load());
-    curScreenId_.store(id);
-    hgmCore.SetActiveScreenId(curScreenId_.load());
-    HGM_LOGD("curScreen change:%{public}d", static_cast<int>(curScreenId_.load()));
-
-    HandleScreenFrameRate(curScreenName);
+    HandleScreenEvent(id);
     HandlePageUrlEvent();
 }
 
@@ -964,15 +954,31 @@ void HgmFrameRateManager::HandleScreenRectFrameRate(ScreenId id, const Rect& act
     if (auto screen = HgmCore::Instance().GetScreen(id); !screen || !screen->GetSelfOwnedScreenFlag()) {
         return;
     }
+    if (hgmCore.GetPolicyConfigData() == nullptr) {
+        return;
+    }
+    activeRectScreenId_ = id;
+    activeRect_ = activeRect;
+    HandleScreenEvent(id);
+}
+
+void HgmFrameRateManager::HandleScreenEvent(ScreenId id)
+{
     auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
     auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
+    isLtpo_.store(isLtpo);
+    lastCurScreenId_.store(curScreenId_.load());
+    curScreenId_.store(id);
+    hgmCore.SetActiveScreenId(curScreenId_.load());
 
     std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
-    curScreenName += "_" + std::to_string(activeRect.x);
-    curScreenName += "_" + std::to_string(activeRect.y);
-    curScreenName += "_" + std::to_string(activeRect.w);
-    curScreenName += "_" + std::to_string(activeRect.h);
-
+    if (activeRectScreenId_ == id) {
+        curScreenName += "_" + std::to_string(activeRect_.x);
+        curScreenName += "_" + std::to_string(activeRect_.y);
+        curScreenName += "_" + std::to_string(activeRect_.w);
+        curScreenName += "_" + std::to_string(activeRect_.h);
+    }
+    HGM_LOGD("curScreen id:%{public}d name:%{public}s", static_cast<int>(curScreenId_.load()), curScreenName.c_str());
     HandleScreenFrameRate(curScreenName);
 }
 

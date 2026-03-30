@@ -330,6 +330,9 @@ private:
     bool isLowPowerSlide_ = false;
     bool slideModeChange_ = false;
 
+    ScreenId activeRectScreenId_ = { INVALID_SCREEN_ID };
+    Rect activeRect_ { x = 0, y = 0, w = 0, h = 0};
+
     std::function<void(std::shared_ptr<RPHgmConfigData>, bool, bool, int32_t)> hgmConfigUpdateCallback_ = nullptr;
 };
 } // namespace Rosen
