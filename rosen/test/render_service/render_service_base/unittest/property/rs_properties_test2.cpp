@@ -1732,5 +1732,104 @@ HWTEST_F(PropertiesTest, NeedClipHoleForRenderGroupTest, TestSize.Level1)
     properties.GetEffect().colorFilter_ = nullptr;
     EXPECT_FALSE(properties.NeedClipHoleForRenderGroup());
 }
+
+/**
+ * @tc.name: SetHDRColorHeadroomTest
+ * @tc.desc: test SetHDRColorHeadroom multiple calls
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, SetHDRColorHeadroomTest, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetHDRColorHeadroom(0.5f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorHeadroom(), 0.5f);
+    properties.SetHDRColorHeadroom(1.0f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorHeadroom(), 1.0f);
+    properties.SetHDRColorHeadroom(3.5f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorHeadroom(), 3.5f);
+}
+
+/**
+ * @tc.name: GetHDRColorMaxHeadroomTest
+ * @tc.desc: test GetHDRColorMaxHeadroom
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, GetHDRColorMaxHeadroomTest, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.UpdateHDRColorMaxHeadroom(2.0f, 1.5f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorMaxHeadroom(), 2.0f);
+    properties.UpdateHDRColorMaxHeadroom(3.0f, 2.5f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorMaxHeadroom(), 3.0f);
+}
+
+/**
+ * @tc.name: HDRColorHeadroomEnabledTest
+ * @tc.desc: test HDRColorHeadroomEnabled interaction
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, HDRColorHeadroomEnabledTest, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetHDRColorHeadroom(1.0f);
+    EXPECT_FALSE(properties.HDRColorHeadroomEnabled());
+    properties.SetHDRColorHeadroom(2.0f);
+    EXPECT_TRUE(properties.HDRColorHeadroomEnabled());
+    properties.SetHDRColorHeadroom(1.0f);
+    EXPECT_FALSE(properties.HDRColorHeadroomEnabled());
+}
+
+/**
+ * @tc.name: UpdateHDRColorMaxHeadroomTest
+ * @tc.desc: test UpdateHDRColorMaxHeadroom methods
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, UpdateHDRColorMaxHeadroomTest, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetHDRColorHeadroom(2.5f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorHeadroom(), 2.5f);
+    EXPECT_TRUE(properties.HDRColorHeadroomEnabled());
+
+    properties.UpdateHDRColorMaxHeadroom(3.0f, 2.0f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorMaxHeadroom(), 3.0f);
+
+    properties.SetHDRColorHeadroom(1.0f);
+    EXPECT_FLOAT_EQ(properties.GetHDRColorHeadroom(), 1.0f);
+    EXPECT_FALSE(properties.HDRColorHeadroomEnabled());
+}
+
+/**
+ * @tc.name: UpdateHDRColorMaxHeadroomTest1
+ * @tc.desc: test UpdateHDRColorMaxHeadroom methods
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(PropertiesTest, UpdateHDRColorMaxHeadroomTest1, TestSize.Level1)
+{
+    RSProperties properties;
+    auto canvasNode = std::make_shared<RSCanvasRenderNode>(1);
+    NodeId surfaceNodeId = 2; // surface node id
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    properties.backref_ = canvasNode;
+    auto stagingRenderParams = std::make_unique<RSRenderParams>(0);
+    canvasNode->stagingRenderParams_ = std::move(stagingRenderParams);
+    canvasNode->instanceRootNodeId_ = surfaceNodeId;
+
+    canvasNode->isOnTheTree_ = false;
+    properties.SetHDRColorHeadroom(1.0f);
+    EXPECT_EQ(properties.GetHDRColorHeadroom(), 1.0f);
+    float headroom = 2.0f;
+    properties.SetHDRColorHeadroom(headroom);
+    EXPECT_EQ(properties.GetHDRColorHeadroom(), headroom);
+
+    canvasNode->isOnTheTree_ = true;
+    properties.SetHDRColorHeadroom(2.0f);
+    EXPECT_TRUE(properties.HDRColorHeadroomEnabled());
+}
 } // namespace Rosen
 } // namespace OHOS

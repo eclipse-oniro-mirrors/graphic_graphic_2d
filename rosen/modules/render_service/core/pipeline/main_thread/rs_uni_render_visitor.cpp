@@ -1371,8 +1371,9 @@ void RSUniRenderVisitor::QuickPrepareUnionRenderNode(RSUnionRenderNode& node)
     // 1. Recursively traverse child nodes if above curSurfaceNode and subnode need draw
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
     bool isOpincSubTreeDirty = RSOpincManager::Instance().IsOpincSubTreeDirty(node, autoCacheEnable_);
-    bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
-        ForcePrepareSubTree() || isOpincSubTreeDirty;
+    bool isSubTreeNeedPrepare =
+        !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree() ||
+        (RSOpincManager::Instance().OpincSubTreeSkipPrepare(node, unchangeMarkEnable_), isOpincSubTreeDirty);
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
         node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareClipRect_,
             curLayerPartRenderDirtyManager_);
@@ -1963,8 +1964,9 @@ void RSUniRenderVisitor::QuickPrepareCanvasRenderNode(RSCanvasRenderNode& node)
     // 1. Recursively traverse child nodes if above curSurfaceNode and subnode need draw
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
     bool isOpincSubTreeDirty = RSOpincManager::Instance().IsOpincSubTreeDirty(node, autoCacheEnable_);
-    bool isSubTreeNeedPrepare = !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) ||
-        ForcePrepareSubTree() || isOpincSubTreeDirty;
+    bool isSubTreeNeedPrepare =
+        !curSurfaceNode_ || node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree() ||
+        (RSOpincManager::Instance().OpincSubTreeSkipPrepare(node, unchangeMarkEnable_), isOpincSubTreeDirty);
     isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
         node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareClipRect_,
             curLayerPartRenderDirtyManager_);
