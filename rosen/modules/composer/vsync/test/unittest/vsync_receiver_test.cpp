@@ -200,7 +200,7 @@ HWTEST_F(VsyncReceiverTest, RegisterFileDescriptorListener, Function | MediumTes
 {
     auto& rsClient = RSInterfaces::GetInstance();
     auto rsReceiver = rsClient.CreateVSyncReceiver("VsyncReceiverTest");
-    bool hasVsyncThread = ture;
+    bool hasVsyncThread = true;
     bool needAddFd = false;
     auto fd = rsReceiver->fd_;
     rsReceiver->fd_ = 10;
