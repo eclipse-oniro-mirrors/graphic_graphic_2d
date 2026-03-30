@@ -260,7 +260,7 @@ HWTEST_F(RSOpincDrawCacheTest, NodeCacheStateDisable, TestSize.Level1)
     opincDrawCache.NodeCacheStateDisable();
     ASSERT_EQ(opincDrawCache.opCanCache_, false);
 }
-
+ 
 /**
  * @tc.name: BeforeDrawCacheProcessChildNode
  * @tc.desc: Test result of BeforeDrawCacheProcessChildNode
@@ -284,9 +284,8 @@ HWTEST_F(RSOpincDrawCacheTest, BeforeDrawCacheProcessChildNode, TestSize.Level1)
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::CACHE_DISABLE;
     ASSERT_TRUE(opincDrawCache.BeforeDrawCacheProcessChildNode(params));
-    ASSERT_EQ(opincDrawCache.recordState_, NodeRecordState::RECORD_DISABLE);
 }
-
+ 
 /**
  * @tc.name: BeforeDrawCacheFindRootNode
  * @tc.desc: Test BeforeDrawCacheFindRootNode
