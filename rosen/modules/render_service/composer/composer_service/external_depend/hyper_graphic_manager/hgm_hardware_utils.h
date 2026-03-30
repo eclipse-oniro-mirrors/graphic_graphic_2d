@@ -96,6 +96,7 @@ public:
 
     void RefreshRateCounts(std::string& dumpString);
     void ClearRefreshRateCounts(std::string& dumpString);
+
 private:
     struct RefreshRateParam {
         uint32_t rate = 0;
