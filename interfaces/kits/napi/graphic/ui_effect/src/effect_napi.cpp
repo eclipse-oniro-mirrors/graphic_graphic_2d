@@ -721,14 +721,19 @@ bool EffectNapi::CheckHdrDarkenBlender(napi_env env, napi_value jsObject)
 bool EffectNapi::ParseHdrDarkenBlender(napi_env env, napi_value jsObject, HdrDarkenBlender* blender)
 {
     double val;
-    Vector3f tmpVector3;
+    bool result = true;
+    Vector3f tmpVector3 = {0.299, 0.587, 0.114}; // default value
     uint32_t parseTimes = 0;
 
     if (ParseJsDoubleValue(env, jsObject, "hdrBrightnessRatio", val)) {
         blender->SetHdrBrightnessRatio(static_cast<float>(val));
         parseTimes++;
     }
-    if (ParseJsVec3Value(env, jsObject, "grayscaleFactor", tmpVector3)) {
+    napi_status status = napi_has_named_property(env, jsObject, "grayscaleFactor", &result);
+    if ((status == napi_ok) && !result) { // grayscaleFactor is optional
+        blender->SetGrayscaleFactor(tmpVector3);
+        parseTimes++;
+    } else if (ParseJsVec3Value(env, jsObject, "grayscaleFactor", tmpVector3)) {
         blender->SetGrayscaleFactor(tmpVector3);
         parseTimes++;
     }

@@ -1056,10 +1056,6 @@ std::shared_ptr<Drawing::Blender> RSPropertyDrawableUtils::MakeHdrDarkenBlender(
         ROSEN_LOGE("RSPropertyDrawableUtils::MakeHdrDarkenBlender make builder fail");
         return nullptr;
     }
-    if (ROSEN_EQ(params.hdrBrightnessRatio_, 0.f, EPSILON)) {
-        ROSEN_LOGE("RSPropertyDrawableUtils::MakeHdrDarkenBlender hdrBrightnessRatio is 0");
-        return nullptr;
-    }
     builder->SetUniform("hdrBrightnessRatio", params.hdrBrightnessRatio_);
     builder->SetUniform("grayscaleFactors_r", params.grayscaleFactor_.x_);
     builder->SetUniform("grayscaleFactors_g", params.grayscaleFactor_.y_);

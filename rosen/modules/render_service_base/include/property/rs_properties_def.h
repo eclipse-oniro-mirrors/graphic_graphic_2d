@@ -210,13 +210,8 @@ struct RSHdrDarkenBlenderPara {
 
     RSHdrDarkenBlenderPara(float hdrBrightnessRatio, Vector3f grayscaleFactor = {0.299f, 0.587f, 0.114f})
     {
-        hdrBrightnessRatio_ = hdrBrightnessRatio;
-        if (ROSEN_EQ(grayscaleFactor.x_, 0.0f) && ROSEN_EQ(grayscaleFactor.y_, 0.0f) &&
-            ROSEN_EQ(grayscaleFactor.z_, 0.0f)) {
-            grayscaleFactor_ = {0.299f, 0.587f, 0.114f};
-        } else {
-            grayscaleFactor_ = grayscaleFactor;
-        }
+        hdrBrightnessRatio_ = ROSEN_GE(hdrBrightnessRatio, 1.0f) ? hdrBrightnessRatio : 1.0f;
+        grayscaleFactor_ = grayscaleFactor;
     }
 
     inline bool IsValid() const

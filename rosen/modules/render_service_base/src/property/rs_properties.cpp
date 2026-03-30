@@ -1798,7 +1798,7 @@ std::optional<RSHdrDarkenBlenderPara> RSProperties::GetHdrDarkenBlenderParams() 
 bool RSProperties::IsHdrDarkenBlenderValid() const
 {
     const auto& hdrDarkenBlenderParams = GetHdrDarkenBlenderParams();
-    return hdrDarkenBlenderParams.has_value() && hdrDarkenBlenderParams->IsValid();
+    return hdrDarkenBlenderParams.has_value();
 }
 
 std::string RSProperties::GetHdrDarkenBlenderDescription() const
