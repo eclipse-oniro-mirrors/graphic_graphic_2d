@@ -839,8 +839,7 @@ void HgmFrameRateManager::HandleTouchTask(pid_t pid, int32_t touchStatus, int32_
         configData != nullptr && configData->hoverFrameUpSwitch_) {
         if (touchStatus == POINTER_ACTION_PROXIMITY_IN) {
             touchStatus = TOUCH_DOWN;
-        }
-        if (touchStatus == POINTER_ACTION_PROXIMITY_OUT) {
+        } else if (touchStatus == POINTER_ACTION_PROXIMITY_OUT) {
             touchStatus = TOUCH_UP;
         }
     }
