@@ -21,7 +21,6 @@
 #include <optional>
 #include <securec.h>
 
-
 #include "feature/window_keyframe/rs_window_keyframe_node.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "ui/rs_ui_context.h"
