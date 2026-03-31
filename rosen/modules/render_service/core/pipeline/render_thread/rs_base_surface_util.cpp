@@ -32,6 +32,9 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace { 
+ const std::string SCREENNODE = "ScreenNode"; 
+}
 
 GSError RSBaseSurfaceUtil::DropFrameProcess(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen)
 {
