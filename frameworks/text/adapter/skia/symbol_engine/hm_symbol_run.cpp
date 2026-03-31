@@ -32,6 +32,25 @@ static const std::vector<RSEffectStrategy> COMMON_ANIMATION_TYPES = {
 
 static const float SHADOW_EPSILON = 0.0f; // if blur radius less than 0, do not need to draw
 
+// namespace {
+// // Helper for DrawPaths fallback: applies UIColor to brush/pen directly when
+// // gradient doesn't have UIColor but symbolTxt does (e.g., ArkUI gradient path).
+// std::shared_ptr<Drawing::ColorSpace> CreateColorSpaceFromEnum(SymbolColorSpace colorSpaceEnum)
+// {
+//     switch (colorSpaceEnum) {
+//         case SymbolColorSpace::DISPLAY_P3:
+//             return Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
+//                 Drawing::CMSMatrixType::DCIP3);
+//         case SymbolColorSpace::BT2020:
+//             return Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
+//                 Drawing::CMSMatrixType::REC2020);
+//         case SymbolColorSpace::SRGB:
+//         default:
+//             return Drawing::ColorSpace::CreateSRGB();
+//     }
+// }
+// } // anonymous namespace
+
 HMSymbolRun::HMSymbolRun(uint64_t symbolId,
     const HMSymbolTxt& symbolTxt,
     const std::shared_ptr<RSTextBlob>& textBlob,
@@ -121,7 +140,8 @@ void HMSymbolRun::SetGradientColor(const RSSymbolRenderingStrategy& renderMode, 
     }
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     if (renderMode == RSSymbolRenderingStrategy::SINGLE) {
-        gradients.push_back(symbolColor.gradients[0]);
+        auto gradient = symbolColor.gradients[0];
+        gradients.push_back(gradient);
         gradients_ = gradients;
         return;
     }
@@ -134,6 +154,7 @@ void HMSymbolRun::SetGradientColor(const RSSymbolRenderingStrategy& renderMode, 
             gradient = symbolColor.gradients[i];
             i++;
         } else {
+            // Gradient exhausted, copy last to fill.
             gradient = SymbolNodeBuild::CreateGradient(symbolColor.gradients[n]);
         }
         if (gradient != nullptr) {
@@ -150,7 +171,8 @@ void HMSymbolRun::SetGradientOrDefinedColor(const RSSymbolLayers& symbolInfo)
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     for (size_t i = 0; i < symbolInfo.renderGroups.size(); i++) {
         if (i < n && symbolColor.gradients[i]) {
-            gradients.push_back(symbolColor.gradients[i]);
+            auto gradient = symbolColor.gradients[i];
+            gradients.push_back(gradient);
         } else {
             auto gradient = std::make_shared<SymbolGradient>();
             Drawing::Color color;
@@ -367,6 +389,11 @@ void HMSymbolRun::DrawPaths(RSCanvas* canvas, const std::vector<RSPath>& multPat
     brush.SetAntiAlias(true);
     pen.SetAntiAlias(true);
 
+    // // Check UIColor for HDR color support
+    // auto uiColors = symbolTxt_.GetUIColors();
+    // auto colorSpaceEnums = symbolTxt_.GetColorSpaces();
+    // bool hasUIColor = !uiColors.empty();
+
     size_t n = gradients_.size();
     bool isSingle = symbolTxt_.GetRenderMode() == RSSymbolRenderingStrategy::SINGLE && n > 0 &&
         gradients_[0] != nullptr;
@@ -374,6 +401,13 @@ void HMSymbolRun::DrawPaths(RSCanvas* canvas, const std::vector<RSPath>& multPat
         gradients_[0]->Make(path.GetBounds());
         brush = gradients_[0]->CreateGradientBrush();
         pen = gradients_[0]->CreateGradientPen();
+        // // Apply UIColor if gradient doesn't have one but symbolTxt does
+        // if (hasUIColor && !gradients_[0]->HasUIColor()) {
+        //     auto csEnum = colorSpaceEnums.empty() ? SymbolColorSpace::SRGB : colorSpaceEnums[0];
+        //     auto colorSpace = CreateColorSpaceFromEnum(csEnum);
+        //     brush.SetUIColor(uiColors[0], colorSpace);
+        //     pen.SetUIColor(uiColors[0], colorSpace);
+        // }
     }
 
     size_t i = 0;
@@ -384,6 +418,14 @@ void HMSymbolRun::DrawPaths(RSCanvas* canvas, const std::vector<RSPath>& multPat
             gradients_[i]->Make(multPath.GetBounds());
             brush = gradients_[i]->CreateGradientBrush();
             pen = gradients_[i]->CreateGradientPen();
+            // // Apply UIColor if gradient doesn't have one but symbolTxt does
+            // if (hasUIColor && !gradients_[i]->HasUIColor()) {
+            //     size_t uiIdx = std::min(i, uiColors.size() - 1);
+            //     size_t csIdx = std::min(i, colorSpaceEnums.size() - 1);
+            //     auto colorSpace = CreateColorSpaceFromEnum(colorSpaceEnums[csIdx]);
+            //     brush.SetUIColor(uiColors[uiIdx], colorSpace);
+            //     pen.SetUIColor(uiColors[uiIdx], colorSpace);
+            // }
             i = i + 1 < n ? i + 1 : i;
         }
         canvas->AttachPen(pen);

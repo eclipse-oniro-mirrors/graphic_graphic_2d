@@ -97,6 +97,16 @@ public:
     void SetSymbolShadow(const std::optional<SymbolShadow>& symbolShadow);
 
     const std::optional<SymbolShadow>& GetSymbolShadow() const;
+    // 暂时不实现，后面再实现
+    void SetRenderColor(const std::vector<Drawing::Color>& colors,
+        const std::vector<SymbolColorSpace>& colorSpace);
+
+    void SetRenderUIColor(const std::vector<Drawing::UIColor>& uiColors,
+        const std::vector<SymbolColorSpace>& colorSpace);
+
+    std::vector<Drawing::UIColor> GetUIColors() const;
+
+    std::vector<SymbolColorSpace> GetColorSpaces() const;
 
     std::string familyName_;
 
