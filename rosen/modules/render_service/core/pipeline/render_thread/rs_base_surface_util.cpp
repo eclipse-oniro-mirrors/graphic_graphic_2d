@@ -32,9 +32,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace {
-const std::string SCREENNODE = "ScreenNode";
-}
 
 GSError RSBaseSurfaceUtil::DropFrameProcess(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen)
 {
@@ -203,7 +200,8 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     }
     RSJankStats::GetInstance().AvcodecVideoCollect(consumer->GetUniqueId(), surfaceBuffer->buffer->GetSeqNum());
     surfaceHandler.ConsumeAndUpdateBuffer(*surfaceBuffer);
-    if (consumer->GetName() != SCREENNODE) {
+    if (consumer->GetName() != RENDER_NODE_NAME) {
+        RS_TRACE_NAME_FMT("video node: %" PRIu64 "", surfaceHandler.GetNodeId());
         DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(surfaceHandler.GetNodeId(),
             consumer->GetSurfaceSourceType(), surfaceBuffer->buffer);
     }
