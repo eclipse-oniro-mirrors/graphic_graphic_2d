@@ -115,7 +115,9 @@ public:
 
     Range<size_t> GetActualTextRange(int lineNumber, bool includeSpaces) override;
 
-    Range<size_t> GetEllipsisTextRange() override;
+    Range<size_t> GetEllipsisTextRange() const override;
+
+    std::vector<TextRange> GetVisibleTextRanges() const override;
 
     std::vector<skt::LineMetrics> GetLineMetrics() override;
 
@@ -219,7 +221,7 @@ private:
     void UpdateSymbolRun(const HMSymbolTxt& symbolStyle, std::shared_ptr<HMSymbolRun>& hmSymbolRun,
         skt::InternalState& state, size_t index);
 
-    void BuildFitStrRange(std::vector<TextRange>& fitRanges);
+    void BuildFitStrRange(std::vector<TextRange>& fitRanges) const;
     void MarkAttributeUpdated()
     {
         updateAttr = true;

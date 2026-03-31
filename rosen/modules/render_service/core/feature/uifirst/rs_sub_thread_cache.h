@@ -25,8 +25,8 @@
 
 #include "common/rs_common_def.h"
 #include "drawable/rs_render_node_drawable.h"
+#include "engine/rs_base_render_engine.h"
 #include "params/rs_surface_render_params.h"
-#include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "feature/uifirst/rs_draw_window_cache.h"
 
@@ -251,6 +251,11 @@ public:
         cacheReuseCount_ = 0;
     }
 
+    bool IsContainShadow() const
+    {
+        return cacheCompletedSurfaceInfo_.isContainShadow;
+    }
+
     const std::unordered_set<NodeId>& GetAllDrawnSubSurfaceNodeIds() const
     {
         return cacheCompletedSurfaceInfo_.processedSubSurfaceNodeIds;
@@ -264,6 +269,7 @@ private:
         RSPaintFilterCanvas& rscanvas, NodeId startingWindowId);
     void DrawUIFirstDfx(RSPaintFilterCanvas& canvas, MultiThreadCacheType enableType,
         RSSurfaceRenderParams& surfaceParams, bool drawCacheSuccess);
+    bool IsCacheSizeMatchBound(const RectF& cacheSize, const Vector2f& boundSize);
 
     NodeId nodeId_ = 0;
     // Cache in RT

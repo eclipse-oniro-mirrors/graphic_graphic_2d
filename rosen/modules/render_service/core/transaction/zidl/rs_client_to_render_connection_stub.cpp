@@ -31,9 +31,9 @@
 #include "command/rs_command_factory.h"
 #include "command/rs_command_verify_helper.h"
 #include "common/rs_xcollie.h"
+#include "engine/rs_base_render_util.h"
 #include "hgm_frame_rate_manager.h"
 #include "memory/rs_memory_flow_control.h"
-#include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
@@ -60,10 +60,12 @@ static constexpr int MAX_SECURITY_EXEMPTION_LIST_NUMBER = 1024; // securityExemp
 const uint32_t MAX_VOTER_SIZE = 100;
 constexpr uint32_t MAX_PID_SIZE_NUMBER = 100000;
 constexpr uint32_t MAX_DROP_FRAME_PID_LIST_SIZE = 1024;
+
 #ifdef RES_SCHED_ENABLE
 const uint32_t RS_IPC_QOS_LEVEL = 7;
 constexpr const char* RS_BUNDLE_NAME = "client_to_render";
 #endif
+
 static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_FOCUS_APP_INFO),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BRIGHTNESS_INFO),
@@ -468,9 +470,11 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             uint64_t mirrorId{0};
             uint64_t screenId{0};
             bool isMirrored{false};
+            uint32_t mirrorSourceRotation{static_cast<uint32_t>(ScreenRotation::INVALID_SCREEN_ROTATION)};
             if (!data.ReadUint64(mirrorId) ||
                 !data.ReadUint64(screenId) ||
-                !data.ReadBool(isMirrored)) {
+                !data.ReadBool(isMirrored) ||
+                !data.ReadUint32(mirrorSourceRotation)) {
                 ret = ERR_INVALID_DATA;
                 break;
             }
@@ -479,6 +483,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                 .isMirrored = isMirrored,
                 .mirrorNodeId = mirrorId,
                 .isSync = true,
+                .mirrorSourceRotation = mirrorSourceRotation,
             };
             bool success;
             if (CreateNode(config, id, success) != ERR_OK || !reply.WriteBool(success)) {

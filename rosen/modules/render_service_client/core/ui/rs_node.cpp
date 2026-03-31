@@ -1497,14 +1497,14 @@ void RSNode::SetSkewZ(float skewZ)
     property->Set(skew);
 }
 
-bool RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext, bool moveCommands)
+void RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext)
 {
     if (rsUIContext == nullptr) {
-        return false;
+        return;
     }
     auto preUIContext = rsUIContext_;
     if ((preUIContext != nullptr) && (preUIContext == rsUIContext)) {
-        return true;
+        return;
     }
 
     // if have old rsContext, should remove nodeId from old nodeMap and travel child
@@ -1513,14 +1513,13 @@ bool RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext, bool moveC
             ROSEN_LOGE("When RSNode has animations, RSUIContext should not be modified! nodeId[%{public}" PRIu64 "], "
                        "preUIContext[%{public}" PRIu64 "], rsUIContext[%{public}" PRIu64 "]",
                         id_, preUIContext->GetToken(), rsUIContext->GetToken());
-            return false;
         }
         // step1 remove node from old context
         preUIContext->GetMutableNodeMap().UnregisterNode(id_);
         // sync child
         for (uint32_t index = 0; index < children_.size(); index++) {
             if (auto childPtr = children_[index].lock()) {
-                childPtr->SetRSUIContext(rsUIContext, false);
+                childPtr->SetRSUIContext(rsUIContext);
             }
         }
     }
@@ -1536,12 +1535,13 @@ bool RSNode::SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext, bool moveC
     RegisterNodeMap();
     if (preUIContext != nullptr) {
         preUIContext->MoveModifier(rsUIContext, GetId());
-        if (moveCommands && !preUIContext->MoveCommandsIfNeeded(rsUIContext)) {
-            return false;
+        auto preTransaction = preUIContext->GetRSTransaction();
+        auto curTransaction = rsUIContext->GetRSTransaction();
+        if (preTransaction && curTransaction) {
+            preTransaction->MoveCommandByNodeId(curTransaction, id_);
         }
     }
     SetUIContextToken();
-    return true;
 }
 
 void RSNode::SetPersp(float persp)
@@ -2751,13 +2751,15 @@ void RSNode::SetGreyCoef(const Vector2f greyCoef)
 
 void RSNode::SetCompositingNGFilter(const std::shared_ptr<RSNGFilterBase>& compositingFilter)
 {
-    auto filter = compositingFilter;
-    if (filter == nullptr) {
-        MaterialParam materialParam = { 0.0, 1.0, 1.0, RSColor(), false };
-        filter = RSNGFilterHelper::CreateNGMaterialBlurFilter(materialParam);
+    if (!compositingFilter) {
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::COMPOSITING_FILTER);
+        if (modifier != nullptr) {
+            modifier->DetachProperty(ModifierNG::RSPropertyType::COMPOSITING_NG_FILTER);
+        }
+        return;
     }
     SetPropertyNG<ModifierNG::RSCompositingFilterModifier,
-        &ModifierNG::RSCompositingFilterModifier::SetNGFilterBase>(filter);
+        &ModifierNG::RSCompositingFilterModifier::SetNGFilterBase>(compositingFilter);
 }
 
 void RSNode::SetShadowColor(uint32_t colorValue)
@@ -2789,7 +2791,7 @@ void RSNode::SetShadowAlpha(float alpha)
 
 void RSNode::SetShadowElevation(float elevation)
 {
-    SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowRadius>(0);
+    SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowRadius>(DEFAULT_SHADOW_RADIUS);
     SetPropertyNG<ModifierNG::RSShadowModifier, &ModifierNG::RSShadowModifier::SetShadowElevation>(elevation);
 }
 
@@ -2882,6 +2884,12 @@ void RSNode::SetHDRBrightnessFactor(float factor)
     }
     SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRBrightnessFactor>(
         factor);
+}
+
+void RSNode::SetHDRColorHeadroom(const float& headroom)
+{
+    SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRColorHeadroom>(
+        headroom);
 }
 
 void RSNode::SetVisible(bool visible)
@@ -4292,6 +4300,18 @@ RSNode::SharedPtr RSNode::GetChildByIndex(int index) const
         return children_.back().lock();
     }
     return children_.at(index).lock();
+}
+
+size_t RSNode::GetDescendantCount() const
+{
+    size_t count = children_.size();
+    for (const auto& child : children_) {
+        auto childNode = child.lock();
+        if (childNode) {
+            count += childNode->GetDescendantCount();
+        }
+    }
+    return count;
 }
 
 void RSNode::SetParent(WeakPtr parent)

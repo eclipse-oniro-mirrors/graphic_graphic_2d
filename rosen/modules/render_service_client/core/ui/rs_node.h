@@ -165,6 +165,17 @@ public:
     {
         return children_;
     }
+
+    /**
+     * @brief Gets the total count of all descendant nodes recursively.
+     *
+     * This method traverses the entire child tree recursively and returns
+     * the total number of all descendant nodes, including direct children,
+     * grandchildren, and all deeper levels.
+     *
+     * @return The total count of all descendant nodes.
+     */
+    size_t GetDescendantCount() const;
     // ONLY support index in [0, childrenTotal) or index = -1, otherwise return std::nullopt
     RSNode::SharedPtr GetChildByIndex(int index) const;
 
@@ -1447,7 +1458,7 @@ public:
     /**
      * @brief Sets the radius of the shadow.
      *
-     * @param radius Indicates the radius value to be set.
+     * @param radius Indicates the radius value to be set, whose effective value is non-negative.
      */
     void SetShadowRadius(float radius);
 
@@ -1559,6 +1570,13 @@ public:
      * @param factor The HDR brightness factor to set.
      */
     void SetHDRBrightnessFactor(float factor);
+
+    /**
+     * @brief Sets the headroom of HDR Color (High Dynamic Range).
+     *
+     * @param headroom The HDR headroom to set.
+     */
+    void SetHDRColorHeadroom(const float& headroom);
 
     /**
      * @brief Sets the visibility of the node.
@@ -1864,14 +1882,8 @@ public:
      * @brief Sets the context for the RSUI.
      *
      * @param rsUIContext A shared pointer to the RSUIContext object.
-     * @param moveCommands Whether to move commands from old context to new context.
-     *
-     * @return Returns true if no change is needed, or RSUIContext is successfully changed
-     *         and commands are correctly moved to the new RSUIContext. Returns false if
-     *         rsUIContext is nullptr, the node has animations (RSUIContext will not be changed),
-     *         or command movement fails.
      */
-    bool SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext, bool moveCommands = true);
+    void SetRSUIContext(std::shared_ptr<RSUIContext> rsUIContext);
 
     /**
      * @brief Sets whether to skip check in multi-instance.

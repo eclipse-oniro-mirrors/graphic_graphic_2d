@@ -367,37 +367,9 @@ void RSUifirstManager::ProcessDoneNodeInner()
             SetNodeNeedForceUpdateFlag(true);
             pendingForceUpdateNode_.push_back(id);
         }
-        UpdateLeashAllEnableChange(id);
         NotifyUIStartingWindow(id, false, drawable, true);
         subthreadProcessingNode_.erase(id);
     }
-}
-
-void RSUifirstManager::UpdateLeashAllEnableChange(NodeId id)
-{
-    auto surfaceNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(
-        mainThread_->GetContext().GetNodeMap().GetRenderNode(id));
-    if (!surfaceNode) {
-        RS_LOGE("UpdateLeashAllEnableChange surfaceNode is nullptr");
-        return;
-    }
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceNode->GetStagingRenderParams().get());
-    if (!surfaceParams) {
-        RS_LOGE("UpdateLeashAllEnableChange surfaceParams is nullptr");
-        return;
-    }
-    surfaceParams->SetUIFirstLeashAllEnableChange(false);
-    auto drawable = GetSurfaceDrawableByID(id);
-    if (!drawable) {
-        RS_LOGE("UpdateLeashAllEnableChange surfaceDrawable is nullptr");
-        return;
-    }
-    auto uifirstParams = static_cast<RSSurfaceRenderParams*>(drawable->GetUifirstRenderParams().get());
-    if (!uifirstParams) {
-        RS_LOGE("UpdateLeashAllEnableChange uifirstParams is nullptr");
-        return;
-    }
-    uifirstParams->SetUIFirstLeashAllEnableChange(false);
 }
 
 void RSUifirstManager::ProcessPurgedNode()
@@ -571,8 +543,12 @@ bool RSUifirstManager::CurSurfaceHasVisibleDirtyRegion(const std::shared_ptr<RSS
 
 bool RSUifirstManager::CheckVisibleDirtyRegionIsEmpty(const std::shared_ptr<RSSurfaceRenderNode>& node)
 {
-    if (GetUiFirstMode() != UiFirstModeType::MULTI_WINDOW_MODE) {
+    if (!node->IsLeashOrMainWindow()) {
         return false;
+    }
+    if (node->GetVisibleRegion().IsEmpty()) {
+        RS_TRACE_NAME_FMT("node[%s] has empty visible region", node->GetName().c_str());
+        return true;
     }
     if (ROSEN_EQ(node->GetGlobalAlpha(), 0.0f) &&
         RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::LOCKSCREEN_TO_LAUNCHER &&
@@ -770,6 +746,12 @@ bool RSUifirstManager::NeedPurgePendingPostNodesInner(
     PendingPostNodeMap::iterator& it, std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& drawable,
     bool cachedStaticContent)
 {
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
+    bool needUpdateCache = !surfaceParams->IsUIFirstLeashAllEnable() &&
+        drawable->GetRsSubThreadCache().IsContainShadow();
+    if (needUpdateCache) {
+        return false;
+    }
     auto& [id, node] = *it;
     auto& subThreadCache = drawable->GetRsSubThreadCache();
     bool needPurge = purgeEnable_ && subThreadCache.HasCachedTexture() &&

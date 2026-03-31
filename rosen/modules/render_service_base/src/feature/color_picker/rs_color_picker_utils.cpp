@@ -77,12 +77,10 @@ bool ExecColorPick(const std::weak_ptr<IColorPickerManager>& weakManager, ColorP
     }
 
     // Wait for GPU to finish writing to the texture before accessing it
-    if (info.fenceFd_ != -1) {
-        sptr<SyncFence> fence = new SyncFence(info.fenceFd_);
-        if (!WaitFence(fence)) {
-            RS_LOGE("ColorPicker: fence wait failed");
-            return false;
-        }
+    sptr<SyncFence> fence = new SyncFence(info.fenceFd_);
+    if (!WaitFence(fence)) {
+        RS_LOGE("ColorPicker: fence wait failed");
+        return false;
     }
 
     auto image = std::make_shared<Drawing::Image>();
@@ -132,8 +130,8 @@ float CalculateLuminance(Drawing::ColorQuad color)
     return red * RED_LUMINANCE_COEFF + green * GREEN_LUMINANCE_COEFF + blue * BLUE_LUMINANCE_COEFF;
 }
 
-void ScheduleColorPickWithSemaphore(
-    Drawing::Surface& surface, std::weak_ptr<IColorPickerManager> weakManager, std::unique_ptr<ColorPickerInfo> info)
+void ScheduleColorPickWithSemaphore(Drawing::Surface& surface, std::weak_ptr<IColorPickerManager> weakManager,
+    std::unique_ptr<ColorPickerInfo> info, Drawing::GPUContext& gpuCtx)
 {
     RS_OPTIONAL_TRACE_NAME("ColorPicker::ScheduleColorPickWithSemaphore");
     if (!info) {
@@ -156,8 +154,14 @@ void ScheduleColorPickWithSemaphore(
     flushInfo.finishedProc = [](void* context) { DestroySemaphoreInfo::DestroySemaphore(context); };
     flushInfo.finishedContext = destroyInfo;
     surface.Flush(&flushInfo);
+    gpuCtx.Submit();
     // Get fence fd from semaphore right after flush
     NativeBufferUtils::GetFenceFdFromSemaphore(semaphore, info->fenceFd_);
+    if (info->fenceFd_ == -1) {
+        RS_LOGE("ScheduleColorPickWithSemaphore: failed to get fence fd from semaphore");
+        DestroySemaphoreInfo::DestroySemaphore(destroyInfo);
+        return;
+    }
 
     // Post task directly to ColorPickerThread with fence for GPU synchronization
     auto infoPtr = info.release();
@@ -165,7 +169,7 @@ void ScheduleColorPickWithSemaphore(
         ExecColorPick(infoPtr->manager_, *infoPtr);
         DestroySemaphoreInfo::DestroySemaphore(destroyInfo); // semaphore inits with ref count = 2
         delete infoPtr;
-    });
+        }, false);
 #else
     return;
 #endif
@@ -239,9 +243,18 @@ bool ExtractSnapshotAndScheduleColorPick(
     }
 
     // Fall back to standard color picker with semaphore
+#ifdef RS_ENABLE_GPU
+    auto gpuCtx = canvas.GetGPUContext();
+#else
+    std::shared_ptr<Drawing::GPUContext> gpuCtx = nullptr;
+#endif
+    if (!gpuCtx) {
+        RS_LOGE("ExtractSnapshotAndScheduleColorPick: gpuContext is null");
+        return false;
+    }
     auto weakManager = std::weak_ptr<IColorPickerManager>(manager);
     auto colorPickerInfo = CreateColorPickerInfo(drawingSurface, snapshot, weakManager);
-    ScheduleColorPickWithSemaphore(*drawingSurface, weakManager, std::move(colorPickerInfo));
+    ScheduleColorPickWithSemaphore(*drawingSurface, weakManager, std::move(colorPickerInfo), *gpuCtx);
     return true;
 }
 
