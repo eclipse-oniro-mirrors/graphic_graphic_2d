@@ -113,6 +113,8 @@ HWTEST_F(RSRenderNodeDrawableTest, GenerateCacheIfNeedTest, TestSize.Level1)
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
     Drawing::Canvas canvas;
     RSRenderParams params(RSRenderNodeDrawableTest::id);
+    params.SetLayerCached(true);
+    drawable->GenerateCacheIfNeed(canvas, params);
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
     drawable->InitCachedSurface(paintFilterCanvas.GetGPUContext().get(), params.GetCacheSize(), 0xFF);
     drawable->GenerateCacheIfNeed(canvas, params);
