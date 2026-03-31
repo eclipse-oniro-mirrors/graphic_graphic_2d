@@ -73,7 +73,7 @@ enum class EquivalentDarkMode : uint8_t {
     INVALID = 0,
     LIGHT,
     DARK,
-}
+};
 
 struct ColorPickerParam {
     ColorPlaceholder placeholder = ColorPlaceholder::NONE;

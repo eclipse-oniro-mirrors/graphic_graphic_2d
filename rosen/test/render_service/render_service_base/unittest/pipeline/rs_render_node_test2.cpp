@@ -3664,12 +3664,12 @@ HWTEST_F(RSRenderNodeTest2, PrepareColorPicker001, TestSize.Level1)
 }
 
 /**
- * @tc.name: PrepareColorPicker003
+ * @tc.name: PrepareColorPicker002
  * @tc.desc: Test PrepareColorPicker keeps darkMode when lastEquivalentDarkMode is INVALID
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderNodeTest2, PrepareColorPicker003, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest2, PrepareColorPicker002, TestSize.Level1)
 {
     RSRenderNode node(1);
 
@@ -3692,12 +3692,12 @@ HWTEST_F(RSRenderNodeTest2, PrepareColorPicker003, TestSize.Level1)
 }
 
 /**
- * @tc.name: PrepareColorPicker005
+ * @tc.name: PrepareColorPicker003
  * @tc.desc: Test PrepareColorPicker keeps darkMode when GetColorPicker returns nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderNodeTest2, PrepareColorPicker005, TestSize.Level1)
+HWTEST_F(RSRenderNodeTest2, PrepareColorPicker003, TestSize.Level1)
 {
     RSRenderNode node(1);
 
