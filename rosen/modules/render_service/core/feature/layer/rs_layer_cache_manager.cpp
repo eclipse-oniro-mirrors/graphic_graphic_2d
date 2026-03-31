@@ -27,7 +27,7 @@ RSLayerCacheManager& RSLayerCacheManager::Instance()
     return instance;
 }
 
-void RSLayerCacheManager::IfIsLayerNodeAddToLayerNodeDrawables(std::shared_ptr<RSRenderNode> node)
+void RSLayerCacheManager::CollectLayerNodeDrawables(std::shared_ptr<RSRenderNode> node)
 {
     if (layerNodes_.empty()) {
         return;
@@ -59,15 +59,15 @@ void RSLayerCacheManager::TryPrepareLayerCache(std::shared_ptr<DrawableV2::RSCan
     float hdrBrightness = paintFilterCanvas->GetHDRBrightness();
     paintFilterCanvas->SetHDRBrightness(params->GetHDRBrightness());
 
-    // DrawableV2::RSRenderNodeSingleDrawableLocker singleLocker(drawable);
-    // if (UNLIKELY(!singleLocker.IsLocked())) {
-    //     singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
-    //     HILOG_COMM_ERROR("RSCanvasRenderNodeDrawable::OnDraw node %{public}" PRIu64 " onDraw!!!", Drawable->GetId());
-    //     if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
-    //         drawable->SetDrawSkipType(DrawableV2::DrawSkipType::MULTI_ACCESS);
-    //         return;
-    //     }
-    // }
+    DrawableV2::RSRenderNodeSingleDrawableLocker singleLocker(drawable.get());
+    if (UNLIKELY(!singleLocker.IsLocked())) {
+        singleLocker.DrawableOnDrawMultiAccessEventReport(__func__);
+        HILOG_COMM_ERROR("RSCanvasRenderNodeDrawable::OnDraw node %{public}" PRIu64 " onDraw!!!", Drawable->GetId());
+        if (RSSystemProperties::GetSingleDrawableLockerEnabled()) {
+            drawable->SetDrawSkipType(DrawableV2::DrawSkipType::MULTI_ACCESS);
+            return;
+        }
+    }
     if (params->GetHDRStatus() == HdrStatus::HDR_EFFECT) {
         paintFilterCanvas->ConvertToType(
             Drawing::ColorType::COLORTYPE_RGBA_F16, Drawing::ALPHATYPE_PREMUL, Drawing::ColorSpace::CreateSRGB());

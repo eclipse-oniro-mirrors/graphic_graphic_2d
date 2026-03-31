@@ -304,7 +304,7 @@ void RSDrawFrame::Sync()
             }
             if (!RSUifirstManager::Instance().CollectSkipSyncNode(node)) {
                 node->Sync();
-                layerCacheManager.IfIsLayerNodeAddToLayerNodeDrawables(node);
+                layerCacheManager.CollectLayerNodeDrawables(node);
             } else {
                 node->SkipSync();
             }
