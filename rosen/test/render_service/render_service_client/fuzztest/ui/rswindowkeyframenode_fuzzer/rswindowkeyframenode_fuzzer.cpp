@@ -102,16 +102,17 @@ extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    FuzzedDataProvider fdp(data, size);
+    if (data == nullptr) {
+        return -1;
+    }
+    static FuzzedDataProvider fdp(data, size);
     OHOS::Rosen::g_fdp = std::ref(fdp);
     bool isRenderServiceNode = fdp.ConsumeBool();
     bool isTextureExportNode = fdp.ConsumeBool();
     auto rsUIContext = std::make_shared<OHOS::Rosen::RSUIContext>();
     OHOS::Rosen::g_keyframeNode = OHOS::Rosen::RSWindowKeyFrameNode::Create(isRenderServiceNode,
         isTextureExportNode, rsUIContext);
-    if (data == nullptr) {
-        return -1;
-    }
+
     /* Run your code on data */
     uint8_t tarPos = fdp.ConsumeIntegral<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
