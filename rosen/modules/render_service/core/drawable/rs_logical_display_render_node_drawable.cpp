@@ -1166,7 +1166,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirror(RSLogicalDisplayRenderParams
     curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
     PrepareOffscreenRender(*mirroredDrawable, false, false);
     // Add this flag to disable color picking operations during mirror screen redrawing
-    curCanvas_->SetIsDrawingMirror(true);
+    curCanvas_->SetIsDrawingOffscreenMirror(true);
 #ifdef RS_PROFILER_ENABLED
     if (auto canvas = RSCaptureRecorder::GetInstance().TryInstantCapture(static_cast<float>(curCanvas_->GetWidth()),
         static_cast<float>(curCanvas_->GetHeight()), SkpCaptureType::ON_CAPTURE)) {
