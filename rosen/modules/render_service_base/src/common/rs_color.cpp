@@ -39,10 +39,21 @@ RSColor::RSColor(int16_t red, int16_t green, int16_t blue) noexcept : RSColor(re
 
 RSColor::RSColor(int16_t red, int16_t green, int16_t blue, int16_t alpha, GraphicColorGamut colorSpace) noexcept
 {
-    alpha_ = alpha;
-    red_ = red;
-    green_ = green;
-    blue_ = blue;
+    if (colorSpace == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        alphaF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(alpha) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+        redF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(red) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+        greenF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(green) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+        blueF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(blue) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+    } else {
+        alpha_ = alpha;
+        red_ = red;
+        green_ = green;
+        blue_ = blue;
+    }
     colorSpace_ = static_cast<int8_t>(colorSpace);
 }
 
@@ -189,7 +200,7 @@ RSColor& RSColor::operator*=(float scale)
 {
     if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
         redF_ = Float32ToFloat16(std::clamp<float>(GetRedF(), 0.0f, 1.0f));
-        greenF_ = Float32ToFloat16(std::clamp<float>( GetGreenF(), 0.0f, 1.0f));
+        greenF_ = Float32ToFloat16(std::clamp<float>(GetGreenF(), 0.0f, 1.0f));
         blueF_ = Float32ToFloat16(std::clamp<float>(GetBlueF(), 0.0f, 1.0f));
         alphaF_ = Float32ToFloat16(std::clamp<float>(GetAlphaF(), 0.0f, 1.0f));
     } else {
@@ -291,21 +302,37 @@ RSColor RSColor::FromBgraInt(uint32_t bgra)
 
 int16_t RSColor::GetBlue() const
 {
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        return std::clamp<int16_t>(
+                    static_cast<int16_t>(round(GetBlueF() * RGB_MAX_VALUE)), 0, UINT8_MAX);
+    }
     return blue_;
 }
 
 int16_t RSColor::GetGreen() const
 {
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        return std::clamp<int16_t>(
+                    static_cast<int16_t>(round(GetGreenF() * RGB_MAX_VALUE)), 0, UINT8_MAX);
+    }
     return green_;
 }
 
 int16_t RSColor::GetRed() const
 {
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        return std::clamp<int16_t>(
+                    static_cast<int16_t>(round(GetRedF() * RGB_MAX_VALUE)), 0, UINT8_MAX);
+    }
     return red_;
 }
 
 int16_t RSColor::GetAlpha() const
 {
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        return std::clamp<int16_t>(
+                    static_cast<int16_t>(round(GetAlphaF() * RGB_MAX_VALUE)), 0, UINT8_MAX);
+    }
     return alpha_;
 }
 
@@ -358,22 +385,42 @@ GraphicColorGamut RSColor::GetColorSpace() const
 
 void RSColor::SetBlue(int16_t blue)
 {
-    blue_ = blue;
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        blueF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(blue) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+    } else {
+        blue_ = blue;
+    }
 }
 
 void RSColor::SetGreen(int16_t green)
 {
-    green_ = green;
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        greenF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(green) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+    } else {
+        green_ = green;
+    }
 }
 
 void RSColor::SetRed(int16_t red)
 {
-    red_ = red;
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        redF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(red) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+    } else {
+        red_ = red;
+    }
 }
 
 void RSColor::SetAlpha(int16_t alpha)
 {
-    alpha_ = alpha;
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+        alphaF_ = Float32ToFloat16(std::clamp<float>(
+            static_cast<float>(alpha) / static_cast<float>(RGB_MAX_VALUE), 0.0f, 1.0f));
+    } else {
+        alpha_ = alpha;
+    }
 }
 
 void RSColor::SetColorSpace(const GraphicColorGamut colorSpace)
