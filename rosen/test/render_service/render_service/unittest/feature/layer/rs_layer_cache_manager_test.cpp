@@ -101,7 +101,7 @@ HWTEST_F(RSLayerCacheManagerTest, CollectLayerNodeDrawablesTest, TestSize.Level1
 HWTEST_F(RSLayerCacheManagerTest, HandleLayerDrawablesTest, TestSize.Level1)
 {
     auto& layerCacheManager = RSLayerCacheManager::Instance();
-    EXPECT_TRUE(layerCacheManager.layerNodeDrawables_.empty());
+    EXPECT_TRUE(layerCacheManager.layerDrawables_.empty());
     Drawing::Canvas canvas;
     layerCacheManager.HandleLayerDrawables(canvas);
     NodeId nodeId = 0;
@@ -109,26 +109,8 @@ HWTEST_F(RSLayerCacheManagerTest, HandleLayerDrawablesTest, TestSize.Level1)
     auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
 
     drawable->GetRenderParams()->isOpincSuggestFlag_ == false
-    layerCacheManager.layerNodeDrawables_.emplace_back(drawable);
+    layerCacheManager.layerDrawables_.emplace_back(drawable);
     layerCacheManager.HandleLayerDrawables(canvas);
-}
-
-/**
- * @tc.name: AddNodeToLayerNodesTest
- * @tc.desc: Test AddNodeToLayerNodes ClearLayerNodes
- * @tc.type: FUNC
- * @tc.require: issues/22969
- */
-HWTEST_F(RSLayerCacheManagerTest, AddNodeToLayerNodesTest, TestSize.Level1)
-{
-    auto& layerCacheManager = RSLayerCacheManager::Instance();
-    EXPECT_TRUE(layerCacheManager.layerNodes_.empty());
-
-    auto node = std::make_shared<RSRenderNode>(nodeId);
-    layerCacheManager.AddNodeToLayerNodes(node);
-    EXPECT_TRUE(!layerCacheManager.layerNodes_.empty());
-    layerCacheManager.ClearLayerNodes();
-    EXPECT_TRUE(layerCacheManager.layerNodes_.empty());
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,15 +21,10 @@
 
 namespace OHOS {
 namespace Rosen {
-// namespace DrawableV2 {
-// class RSRenderNodeDrawable;
-// }
-
+extern RSB_EXPORT std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> layerDrawables_;
 class RSLayerCacheManagerBase {
 public:
     virtual ~RSLayerCacheManagerBase() = default;
-    virtual void AddNodeToLayerNodes(std::shared_ptr<RSRenderNode> node) = 0;
-    inline static std::vector<std::shared_ptr<RSRenderNode>> layerNodes_;
 };
 } // namespace Rosen
 } // namespace OHOS

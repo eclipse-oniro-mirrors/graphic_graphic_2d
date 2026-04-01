@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,17 +43,6 @@ public:
     void HandleLayerDrawables(Drawing::Canvas& canvas);
     void TryPrepareLayerCache(
         std::shared_ptr<DrawableV2::RSCanvasRenderNodeDrawable> drawable, Drawing::Canvas& canvas);
-    void AddNodeToLayerNodes(std::shared_ptr<RSRenderNode> node) override
-    {
-        layerNodes_.emplace_back(node);
-    }
-
-    void ClearLayerNodes()
-    {
-        layerNodes_.clear();
-    }
-
-    std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> layerNodeDrawables_;
 private:
     RSLayerCacheManager() = default;
 };

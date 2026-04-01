@@ -27,16 +27,6 @@ RSLayerCacheManager& RSLayerCacheManager::Instance()
     return instance;
 }
 
-void RSLayerCacheManager::CollectLayerNodeDrawables(std::shared_ptr<RSRenderNode> node)
-{
-    if (layerNodes_.empty()) {
-        return;
-    }
-    if (std::find(layerNodes_.begin(), layerNodes_.end(), node) != layerNodes_.end()) {
-        layerNodeDrawables_.emplace_back(node->GetRenderDrawable());
-    }
-}
-
 void RSLayerCacheManager::TryPrepareLayerCache(
     std::shared_ptr<DrawableV2::RSCanvasRenderNodeDrawable> drawable, Drawing::Canvas& canvas)
 {
@@ -75,16 +65,12 @@ void RSLayerCacheManager::TryPrepareLayerCache(
     }
 
     drawable->GenerateCacheIfNeed(canvas, *params);
-    params->SetLayerCached(true);
     paintFilterCanvas->SetHDRBrightness(hdrBrightness);
 }
 
 void RSLayerCacheManager::HandleLayerDrawables(Drawing::Canvas& canvas)
 {
-    if (layerNodeDrawables_.empty()) {
-        return;
-    }
-    for (auto drawableAdapter : layerNodeDrawables_) {
+    for (auto drawableAdapter : layerDrawables_) {
         auto drawablePtr = std::static_pointer_cast<DrawableV2::RSCanvasRenderNodeDrawable>(drawableAdapter);
         RS_TRACE_NAME_FMT("LayerDrawable TryPrepareLayerCache, isOpinc:%d, id: %" PRId64 "",
             drawablePtr->GetRenderParams()->OpincIsSuggest(), drawablePtr->GetId());
@@ -92,7 +78,7 @@ void RSLayerCacheManager::HandleLayerDrawables(Drawing::Canvas& canvas)
             TryPrepareLayerCache(drawablePtr, canvas);
         }
     }
-    layerNodeDrawables_.clear();
+    layerDrawables_.clear();
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -295,7 +295,6 @@ void RSDrawFrame::Sync()
         pendingSyncNodes.emplace(id, weakPtr);
     }
     stagingSyncCanvasDrawingNodes_.clear();
-    auto& layerCacheManager = RSLayerCacheManager::Instance();
     for (auto& [id, weakPtr] : pendingSyncNodes) {
         if (auto node = weakPtr.lock()) {
             if (!CheckCanvasSkipSync(node)) {
@@ -304,13 +303,11 @@ void RSDrawFrame::Sync()
             }
             if (!RSUifirstManager::Instance().CollectSkipSyncNode(node)) {
                 node->Sync();
-                layerCacheManager.CollectLayerNodeDrawables(node);
             } else {
                 node->SkipSync();
             }
         }
     }
-    layerCacheManager.ClearLayerNodes();
     pendingSyncNodes.clear();
     HveFilter::GetHveFilter().ClearSurfaceNodeInfo();
 

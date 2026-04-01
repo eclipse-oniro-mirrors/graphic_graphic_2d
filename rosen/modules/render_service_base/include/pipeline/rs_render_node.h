@@ -1062,7 +1062,7 @@ public:
     bool GetNeedUseCmdlistDrawRegion();
     void ReleaseNodeMem();
     bool IsNodeMemClearEnable();
-    void MarkLayer(bool isMarkLayer);
+    void MarkLayer(bool isLayer);
     virtual void AfterTreeStatueChanged() {}
 
     RectI GetFilterDrawableSnapshotRegion() const;

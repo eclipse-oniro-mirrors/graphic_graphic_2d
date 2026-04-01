@@ -3592,17 +3592,16 @@ bool RSRenderNode::GetBootAnimation() const
     return isBootAnimation_;
 }
 
-void RSRenderNode::MarkLayer(bool isMarkLayer)
+void RSRenderNode::MarkLayer(bool isLayer)
 {
     // only support canvas node mark
     if (GetType() != RSRenderNodeType::CANVAS_NODE) {
         return;
     }
-    RS_OPTIONAL_TRACE_NAME_FMT("MarkLayer isMarkLayer:%d id:%llu", isMarkLayer, GetId());
-    RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::MarkLayer isMarkLayer:%{public}d id:%{public}" PRIu64,
-        isMarkLayer, GetId());
-    MarkNodeGroup(NodeGroupType::GROUPED_BY_LAYER, isMarkLayer, false);
-    RSLayerCacheManagerBase::layerNodes_.emplace_back(shared_from_this());
+    RS_OPTIONAL_TRACE_NAME_FMT("MarkLayer isLayer:%d id:%llu", isLayer, GetId());
+    RS_LOGI_IF(DEBUG_NODE, "RSRenderNode::MarkLayer isLayer:%{public}d id:%{public}" PRIu64,
+        isLayer, GetId());
+    MarkNodeGroup(NodeGroupType::GROUPED_BY_LAYER, isLayer, false);
 }
 
 bool RSRenderNode::GetGlobalPositionEnabled() const
@@ -4592,6 +4591,10 @@ void RSRenderNode::OnSync()
         stagingDrawCmdList_.clear();
         renderDrawable_->drawCmdIndex_ = stagingDrawCmdIndex_;
         drawCmdListNeedSync_ = false;
+    }
+
+    if (nodeGroupType_ & NodeGroupType::GROUPED_BY_LAYER) {
+        layerDrawables_.emplace_back(renderDrawable_);
     }
 
     if (drawableVecNeedClear_) {

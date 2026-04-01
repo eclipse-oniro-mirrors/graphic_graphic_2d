@@ -77,12 +77,12 @@ HWTEST_F(RSNodeCommandTest, MarkLayerTest, TestSize.Level1)
 {
     RSContext context;
     NodeId nodeId = static_cast<NodeId>(-1);
-    bool isMarkLayer = false;
-    RSNodeCommandHelper::MarkLayer(context, nodeId, isMarkLayer);
+    bool isLayer = false;
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
     nodeId = 1;
     RSCanvasNodeCommandHelper::Create(context, nodeId, false);
-    isMarkLayer = true;
-    RSNodeCommandHelper::MarkLayer(context, nodeId, isMarkLayer);
+    isLayer = true;
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
     auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
     ASSERT_NE(canvasNode, nullptr);
 }

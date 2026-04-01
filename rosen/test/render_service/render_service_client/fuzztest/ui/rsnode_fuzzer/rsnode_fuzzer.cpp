@@ -276,13 +276,13 @@ void RSNodeFuzzTestInner06(std::shared_ptr<RSSurfaceNode> surfaceNode)
     }
 
     /* Test MarkLayer with fuzzed data */
-    bool isMarkLayer = GetData<bool>();
-    surfaceNode->MarkLayer(isMarkLayer);
+    bool isLayer = GetData<bool>();
+    surfaceNode->MarkLayer(isLayer);
 
     /* Test with various boolean values */
     surfaceNode->MarkLayer(true);
     surfaceNode->MarkLayer(false);
-    surfaceNode->MarkLayer(isMarkLayer);
+    surfaceNode->MarkLayer(isLayer);
 }
 
 bool RSNodeFuzzTest()

@@ -359,8 +359,8 @@ HWTEST_F(RSRenderNodeTest, SetBootAnimationTest, TestSize.Level1)
 /**
  * @tc.name: MarkLayerTest
  * @tc.desc: TEST MarkLayer
- * @tc.type:FUNC
- * @tc.require:SR000HSUII
+ * @tc.type: FUNC
+ * @tc.require: SR000HSUII
  */
 HWTEST_F(RSRenderNodeTest, MarkLayerTest, TestSize.Level1)
 {
