@@ -127,6 +127,9 @@ void RSColorPickerDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
     if (!paintFilterCanvas) {
         return;
     }
+    if (paintFilterCanvas->GetIsDrawingOffscreenMirror()) {
+        return;
+    }
 
     auto maybeColor = colorPickerManager_->GetColorPick();
     if (maybeColor.has_value()) {
