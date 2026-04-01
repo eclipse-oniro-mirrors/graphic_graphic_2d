@@ -354,7 +354,7 @@ public:
         return isOverDrawEnabledOfCurFrame_ != isOverDrawEnabledOfLastFrame_;
     }
 
-    uint64_t GetRealTimeOffsetOfDvsync(int64_t time);
+    uint64_t GetRealTimeOffsetOfDvsync(int64_t time, int64_t& preTime);
 
     bool IsFoldScreenSwitching() const;
     bool IsMultiDisplay() const;
@@ -424,6 +424,7 @@ public:
     bool TransitionDataMutexLockIfNoCommands();
     void TransitionDataMutexUnlock();
     void CleanResources(pid_t pid);
+    bool GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight);
     
     const std::shared_ptr<RSHwcContext>& GetHwcContext() const { return hwcContext_; }
 
@@ -454,6 +455,8 @@ private:
     void DestroyScreenNode(ScreenId screenId);
     void HandleScreenPropertyRefreshOneFrame(ScreenId id, ScreenPropertyType type);
     void HandlePowerStatusChanged(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
+    void HandlePhysicalModeParamsChanged(
+        ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     void UpdateScreenProperty(ScreenId id, ScreenPropertyType type, const sptr<ScreenPropertyBase>& property);
     void UpdateSubSurfaceCnt();
     void HandleGameNode();

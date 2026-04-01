@@ -67,6 +67,7 @@ constexpr static float FLOAT_DATA_POSITIVE = 485.44f;
 constexpr static float FLOAT_DATA_NEGATIVE = -34.4f;
 constexpr static float FLOAT_DATA_MAX = std::numeric_limits<float>::max();
 constexpr static float FLOAT_DATA_MIN = std::numeric_limits<float>::min();
+const std::string LAYER_PART_RENDER_KEY = "rosen.layerPartRender.enabled";
 
 class RSNodeTest : public testing::Test {
 public:
@@ -7011,14 +7012,15 @@ HWTEST_F(RSNodeTest, IsRenderServiceNode, TestSize.Level1)
 HWTEST_F(RSNodeTest, MarkLayerPartRender, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
-    system::SetParameter("rosen.layerPartRender.enabled", "1");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
+    system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     rsNode->MarkLayerPartRender(true);
     EXPECT_TRUE(rsNode->isLayerPartRender_);
 
     rsNode->MarkLayerPartRender(false);
     EXPECT_FALSE(rsNode->isLayerPartRender_);
 
-    system::SetParameter("rosen.layerPartRender.enabled", "0");
+    system::SetParameter(LAYER_PART_RENDER_KEY, oldLayerPartRenderValue);
     rsNode->MarkLayerPartRender(false);
     EXPECT_FALSE(rsNode->isLayerPartRender_);
 }
@@ -7053,7 +7055,8 @@ HWTEST_F(RSNodeTest, MarkLayerPartRenderWithParent, TestSize.Level1)
     auto childNode = RSCanvasNode::Create();
     ASSERT_NE(parentNode, nullptr);
     ASSERT_NE(childNode, nullptr);
-    system::SetParameter("rosen.layerPartRender.enabled", "1");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
+    system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     // Set parent relationship
     childNode->SetParent(parentNode);
 
@@ -7064,7 +7067,7 @@ HWTEST_F(RSNodeTest, MarkLayerPartRenderWithParent, TestSize.Level1)
     // Mark as non-layer part render
     childNode->MarkLayerPartRender(false);
     EXPECT_FALSE(childNode->isLayerPartRender_);
-    system::SetParameter("rosen.layerPartRender.enabled", "0");
+    system::SetParameter(LAYER_PART_RENDER_KEY, oldLayerPartRenderValue);
 }
 
 /**
@@ -7077,14 +7080,15 @@ HWTEST_F(RSNodeTest, MarkLayerPartRenderWithoutParent, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
     ASSERT_NE(rsNode, nullptr);
-    system::SetParameter("rosen.layerPartRender.enabled", "1");
+    const auto oldLayerPartRenderValue = RSSystemProperties::GetLayerPartRenderEnabled() ? "1" : "0";
+    system::SetParameter(LAYER_PART_RENDER_KEY, "1");
     // Node has no parent - should only call SetDrawNode on itself
     rsNode->MarkLayerPartRender(true);
     EXPECT_TRUE(rsNode->isLayerPartRender_);
 
     rsNode->MarkLayerPartRender(false);
     EXPECT_FALSE(rsNode->isLayerPartRender_);
-    system::SetParameter("rosen.layerPartRender.enabled", "0");
+    system::SetParameter(LAYER_PART_RENDER_KEY, oldLayerPartRenderValue);
 }
 
 /**
@@ -8469,5 +8473,127 @@ HWTEST_F(RSNodeTest, GetDescendantCount006, TestSize.Level1)
     }
     
     EXPECT_EQ(rootNode->GetDescendantCount(), 0U);
+}
+
+/**
+ * @tc.name: SetBackgroundColorHeadroomTest
+ * @tc.desc: test SetBackgroundColor set headroom
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetBackgroundColorHeadroomTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+
+    constexpr uint32_t colorValue = 0x034123;
+    RSColor color = Color::FromArgbInt(colorValue);
+    color.ConvertToP3ColorSpace();
+    rsNode->SetBackgroundColor(color);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
+    color.SetHeadroom(2.0f);
+    rsNode->SetBackgroundColor(color);
+    color.SetHeadroom(1.0f);
+    rsNode->SetBackgroundColor(color);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetBackgroundColor().GetHeadroom(), 1.0f);
+}
+
+/**
+ * @tc.name: SetHDRColorHeadroomTest
+ * @tc.desc: test SetHDRColorHeadroom multiple calls
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetHDRColorHeadroomTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+    
+    rsNode->SetHDRColorHeadroom(0.5f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 0.5f);
+    
+    rsNode->SetHDRColorHeadroom(1.0f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 1.0f);
+    
+    rsNode->SetHDRColorHeadroom(3.5f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 3.5f);
+
+    rsNode->SetHDRColorHeadroom(1.0f);
+    EXPECT_FLOAT_EQ(rsNode->GetStagingProperties().GetHDRColorHeadroom(), 1.0f);
+}
+
+/**
+ * @tc.name: SetPositionZApplicableCamera3DTest
+ * @tc.desc: test results of SetPositionZApplicableCamera3D
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetPositionZApplicableCamera3DTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+    rsNode->SetPositionZApplicableCamera3D(true);
+    rsNode->SetPositionZApplicableCamera3D(false);
+}
+
+/**
+ * @tc.name: SetCornerApplyTypeTest
+ * @tc.desc: test results of SetCornerApplyType
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetCornerApplyTypeTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+    rsNode->SetCornerApplyType(RSCornerApplyType::FAST);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetCornerApplyType(),
+        static_cast<int>(RSCornerApplyType::FAST));
+    rsNode->SetCornerApplyType(RSCornerApplyType::OFFSCREEN);
+    EXPECT_EQ(rsNode->GetStagingProperties().GetCornerApplyType(),
+        static_cast<int>(RSCornerApplyType::OFFSCREEN));
+}
+
+/**
+ * @tc.name: SetBorderStyleVector4Test
+ * @tc.desc: test results of SetBorderStyle with Vector4<BorderStyle>
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, SetBorderStyleVector4Test, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+    constexpr uint32_t solidVal = static_cast<uint32_t>(BorderStyle::SOLID);
+    constexpr uint32_t dashedVal = static_cast<uint32_t>(BorderStyle::DASHED);
+    constexpr uint32_t dottedVal = static_cast<uint32_t>(BorderStyle::DOTTED);
+    constexpr uint32_t noneVal = static_cast<uint32_t>(BorderStyle::NONE);
+    Vector4<BorderStyle> style(BorderStyle::SOLID, BorderStyle::DASHED, BorderStyle::DOTTED, BorderStyle::NONE);
+    rsNode->SetBorderStyle(style);
+    auto result = rsNode->GetStagingProperties().GetBorderStyle();
+    EXPECT_EQ(result.x_, solidVal);
+    EXPECT_EQ(result.y_, dashedVal);
+    EXPECT_EQ(result.z_, dottedVal);
+    EXPECT_EQ(result.w_, noneVal);
+}
+
+/**
+ * @tc.name: GetPropertyByTypeTest
+ * @tc.desc: test results of GetPropertyByType
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSNodeTest, GetPropertyByTypeTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_TRUE(rsNode != nullptr);
+    auto property = rsNode->GetPropertyByType(ModifierNG::RSModifierType::BACKGROUND_COLOR,
+        ModifierNG::RSPropertyType::BACKGROUND_COLOR);
+    EXPECT_EQ(property, nullptr);
+    constexpr uint32_t colorValue = 0xffff0000;
+    rsNode->SetBackgroundColor(colorValue);
+    property = rsNode->GetPropertyByType(ModifierNG::RSModifierType::BACKGROUND_COLOR,
+        ModifierNG::RSPropertyType::BACKGROUND_COLOR);
+    EXPECT_NE(property, nullptr);
 }
 } // namespace OHOS::Rosen
