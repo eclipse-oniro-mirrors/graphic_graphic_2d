@@ -2713,6 +2713,11 @@ bool RSRenderNode::PrepareColorPicker(bool darkMode)
     if (!drawable) {
         return false;
     }
+    if (GetRenderProperties().GetColorPicker() &&
+        GetRenderProperties().GetColorPicker()->lastEquivalentDarkMode != EquivalentDarkMode::INVALID) {
+        auto equivalentDarkMode = GetRenderProperties().GetColorPicker()->lastEquivalentDarkMode;
+        darkMode = equivalentDarkMode == EquivalentDarkMode::LIGHT ? false : true;
+    }
     bool needSync = drawable->OnPrepare(darkMode);
     if (needSync) {
         UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::COLOR_PICKER);
@@ -3952,6 +3957,11 @@ void RSRenderNode::OnTreeStateChanged()
 
 void RSRenderNode::HandleNodeRemovedFromTree()
 {
+    // Reset color picker memory when node goes off the tree
+    if (auto colorPickerDrawable = GetColorPickerDrawable()) {
+        GetMutableRenderProperties().SetLastEquivalentDarkMode(colorPickerDrawable->GetLastEquivalentDarkMode());
+        colorPickerDrawable->ResetColorMemory();
+    }
     isFullChildrenListValid_ = false;
     std::atomic_store_explicit(&fullChildrenList_, EmptyChildrenList, std::memory_order_release);
     assignOrEraseOnAccess(GetDrawableVec(__func__),
@@ -3960,10 +3970,6 @@ void RSRenderNode::HandleNodeRemovedFromTree()
     RS_PROFILER_KEEP_DRAW_CMD(drawCmdListNeedSync_); // false only when used for debugging
     uifirstNeedSync_ = true;
     AddToPendingSyncList();
-    // Reset color picker memory when node goes off the tree
-    if (auto colorPickerDrawable = GetColorPickerDrawable()) {
-        colorPickerDrawable->ResetColorMemory();
-    }
 }
 
 bool RSRenderNode::HasDisappearingTransition(bool recursive) const
