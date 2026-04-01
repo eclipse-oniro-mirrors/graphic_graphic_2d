@@ -134,6 +134,10 @@ void RSColorPickerDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect*
     }
     RS_OPTIONAL_TRACE_NAME_FMT("ColorPicker: onDraw nodeId=%" PRIu64 " rect=[%s], need execute = %d", nodeId_,
         rect ? rect->ToString().c_str() : "null", needColorPick_);
+    // Disable color picking operations during mirror screen redrawing
+    if (paintFilterCanvas->GetIsDrawingOffscreenMirror()) {
+        return;
+    }
 
     if (needColorPick_) {
         colorPickerManager_->ScheduleColorPick(*paintFilterCanvas, rect, params_);
