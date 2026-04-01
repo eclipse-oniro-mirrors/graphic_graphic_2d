@@ -39,7 +39,6 @@ public:
     RSLayerCacheManager(RSLayerCacheManager&&) = delete;
     RSLayerCacheManager& operator=(RSLayerCacheManager&&) = delete;
 
-    void CollectLayerNodeDrawables(std::shared_ptr<RSRenderNode> node);
     void HandleLayerDrawables(Drawing::Canvas& canvas);
     void TryPrepareLayerCache(
         std::shared_ptr<DrawableV2::RSCanvasRenderNodeDrawable> drawable, Drawing::Canvas& canvas);
