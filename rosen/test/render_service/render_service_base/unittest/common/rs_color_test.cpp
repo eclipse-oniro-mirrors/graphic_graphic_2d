@@ -621,10 +621,6 @@ HWTEST_F(RSColorTest, BT2020Test3, TestSize.Level1)
     EXPECT_EQ(color2.GetGreen(), green);
     EXPECT_EQ(color2.GetBlue(), blue);
     EXPECT_EQ(color2.GetAlpha(), alpha);
-    int16_t red1 = 0;
-    int16_t green1 = 255;
-    int16_t blue1 = 255;
-    int16_t alpha1 = 0;
     color2.SetRed(red1);
     color2.SetGreen(green1);
     color2.SetBlue(blue1);
