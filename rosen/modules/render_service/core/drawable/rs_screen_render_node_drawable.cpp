@@ -1130,7 +1130,7 @@ bool RSScreenRenderNodeDrawable::CreateSurface(sptr<IBufferConsumerListener> lis
         RS_LOGI("RSScreenRenderNodeDrawable::CreateSurface already created, return");
         return true;
     }
-    consumer = IConsumerSurface::Create("ScreenNode");
+    consumer = IConsumerSurface::Create(RENDER_NODE_NAME);
     if (consumer == nullptr) {
         RS_LOGE("RSScreenRenderNodeDrawable::CreateSurface get consumer surface fail");
         return false;
