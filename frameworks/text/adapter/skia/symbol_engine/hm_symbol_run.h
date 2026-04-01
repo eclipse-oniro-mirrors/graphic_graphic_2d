@@ -43,6 +43,14 @@ public:
     static void SetSymbolRenderColor(const RSSymbolRenderingStrategy& renderMode,
         const std::vector<RSSColor>& colors, RSSymbolLayers& symbolInfo);
 
+    struct EffectiveUIColorResult {
+        std::vector<Drawing::UIColor> colors;
+        std::vector<SymbolColorSpace> colorSpaces;
+    };
+    static EffectiveUIColorResult GetUiColorByRenderMode(const RSSymbolRenderingStrategy& renderMode,
+        const std::vector<Drawing::UIColor>& uiColorList, const std::vector<SymbolColorSpace>& colorSpaces,
+        const std::vector<RSRenderGroup>& renderGroups);
+
     void DrawSymbol(RSCanvas* canvas, const RSPoint& offset);
 
     void SetRenderColor(const std::vector<RSSColor>& colorList);

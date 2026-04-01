@@ -100,61 +100,68 @@ void HMSymbolRun::SetRenderColor(const RSSymbolRenderingStrategy& renderMode, RS
     gradients_ = std::move(gradients);
 }
 
+auto HMSymbolRun::GetUiColorByRenderMode(const RSSymbolRenderingStrategy& renderMode,
+    const std::vector<Drawing::UIColor>& uiColorList, const std::vector<SymbolColorSpace>& colorSpaces,
+    const std::vector<RSRenderGroup>& renderGroups) -> EffectiveUIColorResult
+{
+    EffectiveUIColorResult result;
+    auto& effectiveUIColors = result.colors;
+    auto& effectiveColorSpaces = result.colorSpaces;
+
+    switch (renderMode) {
+        // SINGLE and HIERARCHICAL: Supports single uiColor setting
+        case RSSymbolRenderingStrategy::SINGLE:
+            for (size_t i = 0; i < renderGroups.size(); ++i) {
+                effectiveUIColors.push_back(uiColorList[0]);
+                effectiveColorSpaces.push_back(colorSpaces.empty() ? SymbolColorSpace::SRGB : colorSpaces[0]);
+            }
+            break;
+        // MULTIPLE_OPACITY: Supports rgb replace and alphia overlay setting by the first uiColor
+        case RSSymbolRenderingStrategy::MULTIPLE_OPACITY:
+            for (size_t i = 0; i < renderGroups.size(); ++i) {
+                float alpha = renderGroups[i].color.a * uiColorList[0].GetAlpha();
+                // the 0 indicates the the first color is used. Alpha: 0.0: min, 1.0: max
+                auto uiColor = Drawing::UIColor(uiColorList[0].GetRed(), uiColorList[0].GetGreen(),
+                    uiColorList[0].GetBlue(), std::clamp(alpha, 0.0f, 1.0f));
+                // the 0 indicates the the first color is used
+                uiColor.SetHeadroom(uiColorList[0].GetHeadroom());
+                effectiveUIColors.push_back(uiColor);
+                effectiveColorSpaces.push_back(colorSpaces.empty() ? SymbolColorSpace::SRGB : colorSpaces[0]);
+            }
+            break;
+        // MULTIPLE_COLOR: Supports mutiple uiColor setting
+        case RSSymbolRenderingStrategy::MULTIPLE_COLOR:
+            for (size_t i = 0; i < renderGroups.size(); ++i) {
+                if (i < uiColorList.size()) {
+                    effectiveUIColors.push_back(uiColorList[i]);
+                    effectiveColorSpaces.push_back((i < colorSpaces.size()) ? colorSpaces[i] :
+                        SymbolColorSpace::SRGB);
+                } else {
+                    // Use default symbol color
+                    auto uiColor = Drawing::UIColor(renderGroups[i].color.r, renderGroups[i].color.g,
+                        renderGroups[i].color.b, renderGroups[i].color.a);
+                    effectiveUIColors.push_back(uiColor);
+                    effectiveColorSpaces.push_back(SymbolColorSpace::SRGB);
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return result;
+}
+
 void HMSymbolRun::SetRenderUIColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
     std::vector<std::shared_ptr<SymbolGradient>>& gradients)
 {
     std::vector<Drawing::UIColor> uiColorList = symbolTxt_.GetUIColors();
     std::vector<SymbolColorSpace> colorSpaces = symbolTxt_.GetColorSpaces();
 
-    std::vector<Drawing::UIColor> effectiveUIColors;
-    std::vector<SymbolColorSpace> effectiveColorSpaces;
-    if (!uiColorList.empty()) {
-        switch (renderMode) {
-            // SINGLE and HIERARCHICAL: Supports single uiColor setting
-            case RSSymbolRenderingStrategy::SINGLE:
-                for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
-                    effectiveUIColors.push_back(uiColorList[0]);
-                    effectiveColorSpaces.push_back(colorSpaces.empty() ? SymbolColorSpace::SRGB : colorSpaces[0]);
-                }
-                break;
-            // MULTIPLE_OPACITY: Supports rgb replace and alphia overlay setting by the first uiColor
-            case RSSymbolRenderingStrategy::MULTIPLE_OPACITY:
-                for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
-                    float alpha = symbolInfo.renderGroups[i].color.a * uiColorList[0].GetAlpha();
-                    // the 0 indicates the the first color is used. Alpha: 0.0: min, 1.0: max
-                    auto uiColor = Drawing::UIColor(uiColorList[0].GetRed(), uiColorList[0].GetGreen(),
-                        uiColorList[0].GetBlue(), std::clamp(alpha, 0.0f, 1.0f));
-                    // the 0 indicates the the first color is used
-                    uiColor.SetHeadroom(uiColorList[0].GetHeadroom());
-                    effectiveUIColors.push_back(uiColor);
-                    effectiveColorSpaces.push_back(colorSpaces.empty() ? SymbolColorSpace::SRGB : colorSpaces[0]);
-                }
-                break;
-            // MULTIPLE_COLOR: Supports mutiple uiColor setting
-            case RSSymbolRenderingStrategy::MULTIPLE_COLOR:
-                for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
-                    if (i < uiColorList.size()) {
-                        effectiveUIColors.push_back(uiColorList[i]);
-                        effectiveColorSpaces.push_back((i < colorSpaces.size()) ? colorSpaces[i] :
-                            SymbolColorSpace::SRGB);
-                    } else {
-                        // Use default symbol color
-                        auto uiColor = Drawing::UIColor(symbolInfo.renderGroups[i].color.r,
-                            symbolInfo.renderGroups[i].color.g,symbolInfo.renderGroups[i].color.b,
-                            symbolInfo.renderGroups[i].color.a);
-                        effectiveUIColors.push_back(uiColor);
-                        effectiveColorSpaces.push_back(SymbolColorSpace::SRGB);
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-    }
+    auto uiColorAndSpaceResult = GetUiColorByRenderMode(renderMode, uiColorList, colorSpaces, symbolInfo.renderGroups);
 
     for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
         auto gradient = std::make_shared<SymbolGradient>();
-        gradient->SetUIColors({ effectiveUIColors[i] }, effectiveColorSpaces[i]);
+        gradient->SetUIColors({ uiColorAndSpaceResult.colors[i] }, uiColorAndSpaceResult.colorSpaces[i]);
         gradients.push_back(gradient);
     }
 }
