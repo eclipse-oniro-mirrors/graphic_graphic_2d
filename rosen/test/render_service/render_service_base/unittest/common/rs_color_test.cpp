@@ -509,7 +509,7 @@ HWTEST_F(RSColorTest, BT2020Test, TestSize.Level1)
     EXPECT_EQ(color2.AsRgbaInt(), 255);
     RSColor color3(0.0f, 0.0f, 1.0f, 0.0f, colorSpace, 2.0f);
     EXPECT_EQ(color3.AsArgbInt(), 255);
-    EXPECT_EQ(color3.AsBgraInt(), 255);
+    EXPECT_EQ(color2.AsBgraInt(), 255);
     color2.MultiplyAlpha(0.5f);
     EXPECT_FLOAT_EQ(color2.GetAlphaF(), 0.5f);
 }
@@ -543,9 +543,9 @@ HWTEST_F(RSColorTest, BT2020Test1, TestSize.Level1)
     EXPECT_TRUE(color1 == (color1 *= scale));
 
     RSColor color3(0.5f, 0.1f, 0.0f, 1.0f,
-        GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, 1.0f);
+        GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3, 2.0f);
     RSColor color4(0.0f, 0.0f, 0.0f, 0.0f,
-        GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB, 0.0f);
+        GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB, 1.0f);
     EXPECT_TRUE(color3 == (color3 + color4));
     EXPECT_TRUE(color3 == (color3 - color4));
 }

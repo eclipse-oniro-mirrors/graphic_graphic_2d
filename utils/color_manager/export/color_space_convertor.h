@@ -52,7 +52,7 @@ public:
         return ColorSpaceConvertor::p3toSRGBColorSpaceConvertor.Convert(p3ColorValue);
     }
 
-    static Vector3 ConvertSGBToBT2020ColorSpace(const Vector3& sRGBColorValue)
+    static Vector3 ConvertSRGBToBT2020ColorSpace(const Vector3& sRGBColorValue)
     {
         return ColorSpaceConvertor::sRGBtoBT2020ColorSpaceConvertor.Convert(sRGBColorValue);
     }

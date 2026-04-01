@@ -194,9 +194,9 @@ RSColor& RSColor::operator*=(float scale)
         alphaF_ = Float32ToFloat16(std::clamp<float>(GetAlphaF(), 0.0f, 1.0f));
     } else {
         red_ = std::clamp<int16_t>(round(red_ * scale), 0, UINT8_MAX);
-        green_ = std::clamp<int16_t>(round(red_ * scale), 0, UINT8_MAX);
-        blue_ = std::clamp<int16_t>(round(red_ * scale), 0, UINT8_MAX);
-        alpha_ = std::clamp<int16_t>(round(red_ * scale), 0, UINT8_MAX);
+        green_ = std::clamp<int16_t>(round(green_ * scale), 0, UINT8_MAX);
+        blue_ = std::clamp<int16_t>(round(blue_ * scale), 0, UINT8_MAX);
+        alpha_ = std::clamp<int16_t>(round(alpha_ * scale), 0, UINT8_MAX);
     }
     return *this;
 }
@@ -433,7 +433,7 @@ void RSColor::ConvertToSRGBColorSpace()
 void RSColor::ConvertToBT2020ColorSpace()
 {
 #ifndef ROSEN_CROSS_PLATFORM
-    if (colorSpace_ == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
+    if (GetColorSpace() == GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020) {
         return;
     }
     OHOS::ColorManager::Vector3 rgbF = {GetRedF(), GetGreenF(), GetBlueF()};

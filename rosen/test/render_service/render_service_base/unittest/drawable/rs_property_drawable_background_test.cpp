@@ -272,8 +272,7 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSBackgroundColorDrawable2, TestSize.Leve
     RSRenderNode node(id);
     std::shared_ptr<RSDrawable> drawable = DrawableV2::RSBackgroundColorDrawable::OnGenerate(node);
     ASSERT_EQ(drawable, nullptr);
-    Color color = Color(1.0f, 0.5f, 0.0f, 1.0f, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020, 2.0f);
-    color.SetHeadroom(2.5f);
+    Color color(1.0f, 0.5f, 0.0f, 1.0f, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020, 2.0f);
     node.GetMutableRenderProperties().SetBackgroundColor(color);
     ASSERT_NE(DrawableV2::RSBackgroundColorDrawable::OnGenerate(node), nullptr);
 }

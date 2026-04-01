@@ -65,7 +65,7 @@ ColorSpaceConvertor ColorSpaceConvertor::p3toBT2020ColorSpaceConvertor(ColorSpac
 ColorSpaceConvertor ColorSpaceConvertor::bt2020toP3ColorSpaceConvertor(ColorSpace(ColorSpaceName::DISPLAY_BT2020_SRGB),
     ColorSpace(ColorSpaceName::DISPLAY_P3), GamutMappingMode::GAMUT_MAP_CONSTANT);
 ColorSpaceConvertor ColorSpaceConvertor::bt2020toSRGBColorSpaceConvertor(
-    ColorSpace(ColorSpaceName::DISPLAY_BT2020_SRGB),
-    ColorSpace(ColorSpaceName::SRGB), GamutMappingMode::GAMUT_MAP_CONSTANT);
+    ColorSpace(ColorSpaceName::DISPLAY_BT2020_SRGB), ColorSpace(ColorSpaceName::SRGB),
+    GamutMappingMode::GAMUT_MAP_CONSTANT);
 }  // namespace ColorManager
 }  // namespace OHOS
