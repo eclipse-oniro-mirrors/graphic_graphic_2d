@@ -2512,6 +2512,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (readRemoteObject) {
                 remoteObject = data.ReadRemoteObject();
                 if (remoteObject == nullptr) {
+                    RS_LOGE("RSClientToServiceConnectionStub::REFRESH_RATE_UPDATE_CALLBACK Read remoteObject failed!");
                     ret = ERR_INVALID_DATA;
                     break;
                 }
@@ -2561,6 +2562,8 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             if (readRemoteObject) {
                 remoteObject = data.ReadRemoteObject();
                 if (remoteObject == nullptr) {
+                    RS_LOGE("RSClientToServiceConnectionStub::REGISTER_FRAME_RATE_LINKER_EXPECTED_FPS_CALLBACK "
+                        "Read remoteObject failed!");
                     ret = ERR_INVALID_DATA;
                     break;
                 }
