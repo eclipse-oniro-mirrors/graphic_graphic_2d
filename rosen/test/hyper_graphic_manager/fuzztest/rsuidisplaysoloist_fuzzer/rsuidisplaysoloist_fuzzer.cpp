@@ -15,6 +15,9 @@
 
 #include "rsuidisplaysoloist_fuzzer.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <securec.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include "feature/hyper_graphic_manager/rs_ui_display_soloist.h"
@@ -56,6 +59,7 @@ bool DoStart(const uint8_t* data, size_t size)
 
     SoloistIdType id = GetData<uint32_t>();
     RSDisplaySoloistManager::GetInstance().Start(id);
+    return true;
 }
 
 bool DoStop(const uint8_t* data, size_t size)
@@ -71,6 +75,7 @@ bool DoStop(const uint8_t* data, size_t size)
 
     SoloistIdType id = GetData<uint32_t>();
     RSDisplaySoloistManager::GetInstance().Stop(id);
+    return true;
 }
 
 bool DoRemoveSoloist(const uint8_t* data, size_t size)
@@ -86,6 +91,7 @@ bool DoRemoveSoloist(const uint8_t* data, size_t size)
 
     SoloistIdType id = GetData<uint32_t>();
     RSDisplaySoloistManager::GetInstance().RemoveSoloist(id);
+    return true;
 }
 
 bool DoInsertOnVsyncCallback(const uint8_t* data, size_t size)
@@ -186,6 +192,7 @@ bool DoSetMainFrameRateLinkerEnable(const uint8_t* data, size_t size)
 } // namespace Rosen
 } // namespace OHOS
 
+/* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */

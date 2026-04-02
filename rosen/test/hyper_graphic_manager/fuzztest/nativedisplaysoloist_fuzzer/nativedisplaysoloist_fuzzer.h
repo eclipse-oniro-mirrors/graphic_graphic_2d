@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
-#include <cstdint>
+#ifndef NATIVEDISPLAYSOLOIST_FUZZER_H
+#define NATIVEDISPLAYSOLOIST_FUZZER_H
 
 #define FUZZ_PROJECT_NAME "nativedisplaysoloist_fuzzer"
+
+#endif // NATIVEDISPLAYSOLOIST_FUZZER_H

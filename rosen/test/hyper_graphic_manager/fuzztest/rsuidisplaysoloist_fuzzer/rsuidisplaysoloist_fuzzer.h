@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
-#include <cstdint>
+#ifndef RSUIDISPLAYSOLOIST_FUZZER_H
+#define RSUIDISPLAYSOLOIST_FUZZER_H
 
 #define FUZZ_PROJECT_NAME "rsuidisplaysoloist_fuzzer"
+
+#endif // RSUIDISPLAYSOLOIST_FUZZER_H

@@ -15,6 +15,10 @@
 
 #include "nativedisplaysoloist_fuzzer.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <securec.h>
+
 #include "native_display_soloist.h"
 
 namespace OHOS {
@@ -97,10 +101,10 @@ bool DoStart(const uint8_t* data, size_t size)
     bool useNullCallback = GetData<bool>();
     OH_DisplaySoloist_FrameCallback callback = nullptr;
     if (!useNullCallback) {
-        callback = [](long long timestamp, long long targetTimestamp, void* data) {
+        callback = [](long long timestamp, long long targetTimestamp, void* data1) {
             (void)timestamp;
             (void)targetTimestamp;
-            (void)data;
+            (void)data1;
         };
     }
     OH_DisplaySoloist_Start(soloist, callback, nullptr);
@@ -154,6 +158,7 @@ bool DoSetExpectedFrameRateRange(const uint8_t* data, size_t size)
 } // namespace Rosen
 } // namespace OHOS
 
+/* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
     /* Run your code on data */
