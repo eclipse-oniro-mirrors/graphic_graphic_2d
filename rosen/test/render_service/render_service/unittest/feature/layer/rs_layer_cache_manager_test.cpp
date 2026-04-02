@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,9 +24,12 @@
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_property_drawable_foreground.h"
+#include "feature/opinc/rs_opinc_manager.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
 #include "params/rs_render_params.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_context.h"
 #include "pipeline/rs_dirty_region_manager.h"
@@ -70,26 +73,7 @@ void RSLayerCacheManagerTest::TearDown() {}
 HWTEST_F(RSLayerCacheManagerTest, InstanceTest, TestSize.Level1)
 {
     auto& layerCacheManager = RSLayerCacheManager::Instance();
-    EXPECT_TRUE(layerCacheManager.layerNodes_.empty());
-}
-
-/**
- * @tc.name: CollectLayerNodeDrawablesTest
- * @tc.desc: Test CollectLayerNodeDrawables
- * @tc.type: FUNC
- * @tc.require: issues/22969
- */
-HWTEST_F(RSLayerCacheManagerTest, CollectLayerNodeDrawablesTest, TestSize.Level1)
-{
-    auto& layerCacheManager = RSLayerCacheManager::Instance();
-    EXPECT_TRUE(layerCacheManager.layerNodes_.empty());
-
-    NodeId nodeId = 1;
-    auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    layerCacheManager.CollectLayerNodeDrawables(canvasNode);
-
-    layerCacheManager.layerNodes_.emplace_back(canvasNode);
-    layerCacheManager.CollectLayerNodeDrawables(canvasNode);
+    EXPECT_TRUE(layerCacheManager.layerDrawables_.empty());
 }
 
 /**
@@ -106,9 +90,9 @@ HWTEST_F(RSLayerCacheManagerTest, HandleLayerDrawablesTest, TestSize.Level1)
     layerCacheManager.HandleLayerDrawables(canvas);
     NodeId nodeId = 0;
     auto node = std::make_shared<RSRenderNode>(nodeId);
-    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
+    auto drawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(node));
 
-    drawable->GetRenderParams()->isOpincSuggestFlag_ == false
+    drawable->GetRenderParams()->isOpincSuggestFlag_ = false;
     layerCacheManager.layerDrawables_.emplace_back(drawable);
     layerCacheManager.HandleLayerDrawables(canvas);
 }
@@ -123,28 +107,29 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest, TestSize.Level1)
 {
     NodeId nodeId = 0;
     auto node = std::make_shared<RSRenderNode>(nodeId);
-    auto drawable = std::make_shared<RSCanvasRenderNodeDrawable>(std::move(node));
+    auto drawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(node));
     ASSERT_NE(drawable, nullptr);
     Drawing::Canvas canvas;
     drawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
-    drawable->TryPrepareLayerCache(canvas);
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.TryPrepareLayerCache(drawable, canvas);
     ASSERT_TRUE(drawable->GetRenderParams());
 
     DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(false);
     drawable->renderParams_->isOpincStateChanged_ = false;
     drawable->renderParams_->startingWindowFlag_ = false;
-    drawable->TryPrepareLayerCache(canvas);
+    layerCacheManager.TryPrepareLayerCache(drawable, canvas);
     ASSERT_TRUE(drawable->GetRenderParams());
 
     drawable->isOpDropped_ = false;
     drawable->isDrawingCacheEnabled_ = true;
     RSOpincManager::Instance().SetOPIncSwitch(false);
     drawable->SetDrawBlurForCache(false);
-    drawable->TryPrepareLayerCache(canvas);
+    layerCacheManager.TryPrepareLayerCache(drawable, canvas);
     ASSERT_TRUE(drawable->isDrawingCacheEnabled_);
 
     drawable->SetDrawBlurForCache(true);
-    drawable->TryPrepareLayerCache(canvas);
+    layerCacheManager.TryPrepareLayerCache(drawable, canvas);
     ASSERT_TRUE(drawable->isDrawingCacheEnabled_);
 }
 
@@ -157,8 +142,7 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest, TestSize.Level1)
 HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest001, TestSize.Level1)
 {
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(0);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(
-        RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    auto canvasDrawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(canvasNode));
     ASSERT_NE(canvasDrawable, nullptr);
     canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(1);
     canvasDrawable->renderParams_->shouldPaint_ = true;
@@ -169,10 +153,11 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest001, TestSize.Level1)
     ASSERT_TRUE(drawingCanvas);
     auto canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
     ASSERT_TRUE(canvas);
-    canvasDrawable->TryPrepareLayerCache(*canvas);
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.TryPrepareLayerCache(canvasDrawable, *canvas);
     ASSERT_NE(canvasDrawable->renderParams_, nullptr);
     canvas->SetSubTreeParallelState(RSPaintFilterCanvas::SubTreeStatus::SUBTREE_QUICK_DRAW_STATE);
-    canvasDrawable->TryPrepareLayerCache(*canvas);
+    layerCacheManager.TryPrepareLayerCache(canvasDrawable, *canvas);
     ASSERT_NE(canvasDrawable->renderParams_, nullptr);
 }
 
@@ -186,7 +171,7 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest002, TestSize.Level2)
 {
     NodeId nodeId = 0;
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    auto canvasDrawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(canvasNode));
     ASSERT_NE(canvasDrawable, nullptr);
 
     auto params = std::make_unique<RSRenderThreadParams>();
@@ -198,7 +183,8 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest002, TestSize.Level2)
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     AutoSpecialLayerStateRecover whiteListRecover(INVALID_NODEID);
-    canvasDrawable->TryPrepareLayerCache(canvas);
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.TryPrepareLayerCache(canvasDrawable, canvas);
 
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
@@ -214,7 +200,7 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest003, TestSize.Level2)
 {
     NodeId nodeId = 0;
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    auto canvasDrawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(canvasNode));
     ASSERT_NE(canvasDrawable, nullptr);
     canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
     canvasDrawable->renderParams_->shouldPaint_ = true;
@@ -228,7 +214,8 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest003, TestSize.Level2)
 
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
-    canvasDrawable->TryPrepareLayerCache(canvas);
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.TryPrepareLayerCache(canvasDrawable, canvas);
     ASSERT_FALSE(canvasDrawable->SkipDrawByWhiteList(canvas));
 
     // restore
@@ -245,7 +232,7 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest004, TestSize.Level2)
 {
     NodeId nodeId = 0;
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    auto canvasDrawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(canvasNode));
     ASSERT_NE(canvasDrawable, nullptr);
     canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
     canvasDrawable->renderParams_->shouldPaint_ = true;
@@ -258,7 +245,8 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest004, TestSize.Level2)
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     canvasDrawable->renderParams_->UpdateHDRStatus(HdrStatus::HDR_EFFECT, true);
-    canvasDrawable->TryPrepareLayerCache(canvas);
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.TryPrepareLayerCache(canvasDrawable, canvas);
     ASSERT_FALSE(canvasDrawable->SkipDrawByWhiteList(canvas));
 
     // restore
@@ -275,14 +263,14 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest005, TestSize.Level2)
 {
     NodeId nodeId = 0;
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(nodeId);
-    auto canvasDrawable = static_cast<RSCanvasRenderNodeDrawable*>(RSCanvasRenderNodeDrawable::OnGenerate(canvasNode));
+    auto canvasDrawable = std::make_shared<DrawableV2::RSCanvasRenderNodeDrawable>(std::move(canvasNode));
     ASSERT_NE(canvasDrawable, nullptr);
     canvasDrawable->renderParams_ = std::make_unique<RSRenderParams>(nodeId);
     canvasDrawable->renderParams_->shouldPaint_ = true;
     canvasDrawable->renderParams_->startingWindowFlag_ = false;
 
     canvasDrawable->SetOcclusionCullingEnabled(false);
-    RSRenderNodeDrawable::InitDfxForCacheInfo();
+    DrawableV2::RSRenderNodeDrawable::InitDfxForCacheInfo();
 
     // set render thread param
     auto uniParams = std::make_unique<RSRenderThreadParams>();
@@ -291,7 +279,8 @@ HWTEST(RSLayerCacheManagerTest, TryPrepareLayerCacheTest005, TestSize.Level2)
 
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
-    canvasDrawable->TryPrepareLayerCache(canvas);
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.TryPrepareLayerCache(canvasDrawable, canvas);
     EXPECT_EQ(canvasDrawable->GetOpincDrawCache().GetNodeCacheType(), NodeStrategyType::CACHE_NONE);
 
     // restore
