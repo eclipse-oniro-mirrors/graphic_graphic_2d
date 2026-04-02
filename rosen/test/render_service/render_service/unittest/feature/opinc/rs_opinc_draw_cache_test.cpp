@@ -17,6 +17,7 @@
 #include "feature/opinc/rs_opinc_draw_cache.h"
 #include "feature/opinc/rs_opinc_manager.h"
 #include "params/rs_render_params.h"
+#include "pipeline/rs_paint_filter_canvas.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -220,12 +221,12 @@ HWTEST_F(RSOpincDrawCacheTest, IsOpListDrawAreaEnable, TestSize.Level1)
 }
  
 /**
- * @tc.name: IsTranslate
+ * @tc.name: IsTranslate001
  * @tc.desc: Test whether matrix is translate matrix
  * @tc.type: FUNC
  * @tc.require: issueI9SPVO
  */
-HWTEST_F(RSOpincDrawCacheTest, IsTranslate, TestSize.Level1)
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate001, TestSize.Level1)
 {
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Matrix matrix;
@@ -237,7 +238,63 @@ HWTEST_F(RSOpincDrawCacheTest, IsTranslate, TestSize.Level1)
     matrix.SetScale(2, 2);
     ASSERT_FALSE(opincDrawCache.IsTranslate(matrix));
 }
- 
+
+/**
+ * @tc.name: IsTranslate002
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate002, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f + ColorManager::COLOR_EPSILON, 1.0f);
+    EXPECT_EQ(opincDrawCache.IsTranslate(matrix), false);
+}
+
+/**
+ * @tc.name: IsTranslate003
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate003, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f, 1.0f + ColorManager::COLOR_EPSILON);
+    EXPECT_EQ(opincDrawCache.IsTranslate(matrix), false);
+}
+
+/**
+ * @tc.name: IsTranslate004
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate004, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetSkew(1.0f + ColorManager::COLOR_EPSILON, 1.0f);
+    EXPECT_EQ(opincDrawCache.IsTranslate(matrix), false);
+}
+
+/**
+ * @tc.name: IsTranslate005
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate005, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetSkew(1.0f, 1.0f + ColorManager::COLOR_EPSILON);
+    EXPECT_EQ(opincDrawCache.IsTranslate(matrix), false);
+}
+
 /**
  * @tc.name: NodeCacheStateDisable
  * @tc.desc: Test drawable state after disable cache state
