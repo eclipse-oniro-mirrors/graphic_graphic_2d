@@ -33,7 +33,7 @@ void BootCompatibleDisplayStrategy::Display(int32_t duration, std::vector<BootAn
     for (auto& config : configs) {
         config.screenId = interface.GetDefaultScreenId();
         std::vector<Rosen::ScreenId> screenIds = interface.GetAllScreenIds();
-        LOGI("screenIds size: %{public}lu", screenIds.size());
+        LOGI("screenIds size: %{public}zu", screenIds.size());
         if (screenIds.empty()) {
             break;
         }
