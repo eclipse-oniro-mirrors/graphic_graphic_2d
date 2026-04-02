@@ -32,6 +32,13 @@ void BootCompatibleDisplayStrategy::Display(int32_t duration, std::vector<BootAn
     Rosen::RSInterfaces& interface = Rosen::RSInterfaces::GetInstance();
     for (auto& config : configs) {
         config.screenId = interface.GetDefaultScreenId();
+        LOGI("defaultScreenId : " BPUBU64 "", config.screenId);
+        std::vector<Rosen::ScreenId> screenIds = interface.GetAllScreenIds();
+        LOGI("screenIds size: %{public}lu", screenIds.size());
+        if (screenIds.empty()) {
+            LOGE("invalid screens");
+            break;
+        }
         if (config.rotateScreenId >= 0) {
             config.screenId = interface.GetActiveScreenId();
             if (config.screenId > 0) {
