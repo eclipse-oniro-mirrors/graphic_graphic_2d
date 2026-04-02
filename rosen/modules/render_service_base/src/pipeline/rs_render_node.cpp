@@ -4581,7 +4581,7 @@ void RSRenderNode::OnSync()
         drawCmdListNeedSync_ = false;
     }
 
-    if (nodeGroupType_ & NodeGroupType::GROUPED_BY_LAYER) {
+    if (nodeGroupType_ == NodeGroupType::GROUPED_BY_LAYER) {
         RSLayerCacheManagerBase::layerDrawables_.emplace_back(renderDrawable_);
     }
 
