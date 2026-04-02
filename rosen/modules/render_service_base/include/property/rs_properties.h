@@ -404,6 +404,7 @@ public:
     void SetColorPickerInterval(int interval);
     void SetColorPickerNotifyThreshold(int packedThresholds); // packed: lower 16 bits = dark, upper 16 bits = light
     void SetColorPickerRect(const Vector4f& rect); // [left, top, right, bottom]
+    void SetLastEquivalentDarkMode(EquivalentDarkMode darkMode);
     std::shared_ptr<ColorPickerParam> GetColorPicker() const;
 
     void SetFgBrightnessRates(const Vector4f& rates);
@@ -424,6 +425,8 @@ public:
 
     void SetShadowBlenderParams(const std::optional<RSShadowBlenderPara>& params);
     std::optional<RSShadowBlenderPara> GetShadowBlenderParams() const;
+    void SetHdrDarkenBlenderParams(const std::optional<RSHdrDarkenBlenderPara>& params);
+    std::optional<RSHdrDarkenBlenderPara> GetHdrDarkenBlenderParams() const;
 
     void SetWaterRippleParams(const std::optional<RSWaterRipplePara>& params);
     std::optional<RSWaterRipplePara> GetWaterRippleParams() const;
@@ -747,12 +750,14 @@ public:
     bool IsWaterRippleValid() const;
     bool IsFlyOutValid() const;
     bool IsDistortionKValid() const;
+    bool IsHdrDarkenBlenderValid() const;
     void SetDistortionDirty(bool distortionEffectDirty);
     bool GetDistortionDirty() const;
     bool GetMagnifierDirty() const;
     std::string GetFgBrightnessDescription() const;
     std::string GetBgBrightnessDescription() const;
     std::string GetShadowBlenderDescription() const;
+    std::string GetHdrDarkenBlenderDescription() const;
 
     // Image effect properties
     void SetGrayScale(const std::optional<float>& grayScale);
@@ -937,6 +942,7 @@ private:
         bool needDrawBehindWindow_ = false;
         int useEffectType_ = 0;
         std::optional<RSShadowBlenderPara> shadowBlenderParams_;
+        std::optional<RSHdrDarkenBlenderPara> hdrDarkenBlenderParams_;
         std::optional<std::vector<float>> complexShaderParam_;
         int pixelStretchTileMode_ = 0;
         std::optional<Vector4f> pixelStretch_;

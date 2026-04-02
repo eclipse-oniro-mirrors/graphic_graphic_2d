@@ -246,7 +246,10 @@ ohos_unittest("RSColorPickerTest") {
     "$graphic_2d_root/rosen/modules/render_service_base:render_service_base_src",
   ]
 
-  external_deps = [ "googletest:gmock_main" ]
+  external_deps = [
+    "googletest:gmock_main",
+    "ffrt:libffrt"
+  ]
 
   subsystem_name = "graphic"
 }

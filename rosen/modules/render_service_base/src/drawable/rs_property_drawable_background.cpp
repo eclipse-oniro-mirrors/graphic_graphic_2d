@@ -139,7 +139,8 @@ void RSShadowDrawable::OnSync()
 
 void RSShadowDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const
 {
-    if (geContainer_) {
+    bool isSdfShadow = geContainer_ && ROSEN_LE(elevation_, 0.f) && ROSEN_GE(radius_, 0.f);
+    if (isSdfShadow) {
         if (canvas && rect) {
             auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
             geRender->DrawShaderEffect(*canvas, *geContainer_, *rect);
