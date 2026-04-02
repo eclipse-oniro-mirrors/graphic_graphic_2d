@@ -149,7 +149,6 @@ void RSRenderNodeGC::ReleaseNodeBucket()
 void RSRenderNodeGC::ReleaseNodeMemory(bool highPriority)
 {
     RS_TRACE_FUNC();
-#ifdef RS_ENABLE_MEMORY_DOWNTREE
     if (mainTask_) {
         mainTask_([this]() {
             ReleaseNodeMemNotOnTree();
@@ -157,7 +156,6 @@ void RSRenderNodeGC::ReleaseNodeMemory(bool highPriority)
     } else {
         ReleaseNodeMemNotOnTree();
     }
-#endif
     uint32_t remainBucketSize;
     {
         std::lock_guard<std::mutex> lock(nodeMutex_);

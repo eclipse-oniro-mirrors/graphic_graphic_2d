@@ -51,7 +51,6 @@ declare_args() {
   graphic_2d_feature_enable_opengl_to_vulkan = false
   graphic_2d_feature_screenless_enable = false
   graphic_2d_feature_tv_metadata_enable = false
-  graphic_2d_modifier_ng_enable = true
   graphic_2d_feature_upgrade_skia = true
   graphic_2d_feature_enable_rdo = false
   graphic_2d_feature_enable_memory_info_manager = false
