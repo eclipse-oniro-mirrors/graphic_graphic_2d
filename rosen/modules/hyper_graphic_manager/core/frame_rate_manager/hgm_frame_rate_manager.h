@@ -332,7 +332,7 @@ private:
     bool slideModeChange_ = false;
 
     ScreenId activeRectScreenId_ = { INVALID_SCREEN_ID };
-    Rect activeRect_;
+    Rect activeRect_ { 0, 0, 0, 0 };
 
     std::function<void(std::shared_ptr<RPHgmConfigData>, bool, bool, int32_t)> hgmConfigUpdateCallback_ = nullptr;
 };
