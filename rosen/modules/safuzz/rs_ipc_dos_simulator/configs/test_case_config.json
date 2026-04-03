@@ -1652,6 +1652,15 @@
     "inputParams": "WriteRSTransactionData",
     "writeInterfaceToken": false,
     "messageOption": "TF_ASYNC",
+    "commandList": "RSUpdatePropertyHdrDarkenBlenderPara*100",
+    "commandListRepeat": 1
+  },
+  {
+    "testCaseDesc": "COMMIT_TRANSACTION_TEST_185",
+    "interfaceName": "COMMIT_TRANSACTION",
+    "inputParams": "WriteRSTransactionData",
+    "writeInterfaceToken": false,
+    "messageOption": "TF_ASYNC",
     "commandList": "RSMarkLayer*100",
     "commandListRepeat": 1
   },

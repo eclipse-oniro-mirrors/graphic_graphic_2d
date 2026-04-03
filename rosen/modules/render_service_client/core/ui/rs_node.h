@@ -1657,6 +1657,13 @@ public:
     void SetUseUnion(bool useUnion);
 
     /**
+     * @brief Sets the flag to indicate the center of gravity pull SDF Union.
+     *
+     * @param isGravityPullModeCenter Indicates whether the node is center of gravity pull.
+     */
+    void SetGravityPullCenterFlag(bool isGravityPullModeCenter);
+
+    /**
      * @brief Sets the SDF Shape.
      *
      * @param shape SDF Shape (SDF Union OP Shape, SDF Smooth Union OP Shape, SDF RRect Shape)
@@ -2165,6 +2172,7 @@ private:
     void SetFgBlurDisableSystemAdaptation(bool disableSystemAdaptation);
 
     void SetShadowBlenderParams(const RSShadowBlenderPara& params);
+    void SetHdrDarkenBlenderParams(const RSHdrDarkenBlenderPara& params);
 
     void NotifyPageNodeChanged() const;
     bool AnimationCallback(AnimationId animationId, AnimationCallbackEvent event);
@@ -2236,7 +2244,7 @@ private:
     bool isUifirstNode_ = true;
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
-    bool isP3Color_ = false;
+    bool notSRGBColor_ = false;
     bool isSkipCheckInMultiInstance_ = true;
     RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     std::shared_ptr<RSUIContext> rsUIContext_;
