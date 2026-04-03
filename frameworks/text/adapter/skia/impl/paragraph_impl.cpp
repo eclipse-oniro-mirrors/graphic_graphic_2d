@@ -644,6 +644,26 @@ std::shared_ptr<OHOS::Media::PixelMap> ParagraphImpl::GetTextPathImageByIndex(
     }
     return TextPixelMapUtil::CreatePixelMap(options, pathInfos);
 }
+
+std::vector<TextPathInfo> ParagraphImpl::GetTextPathsByIndex(size_t start, size_t end) const
+{
+    if (start >= end) {
+        TEXT_LOGW("Invalid range: [%{public}zu, %{public}zu)", start, end);
+        return {};
+    }
+    skt::SkRange<size_t> range { start, end };
+    auto [pathInfos, allSuccess] = paragraph_->getTextPathByClusterRange(range);
+    if (!allSuccess || pathInfos.empty()) {
+        TEXT_LOGD("No path info found for range: [%{public}zu, %{public}zu)", start, end);
+        return {};
+    }
+    std::vector<TextPathInfo> result;
+    result.reserve(pathInfos.size());
+    for (auto& pathInfo : pathInfos) {
+        result.push_back({ std::move(pathInfo.path), pathInfo.point });
+    }
+    return result;
+}
 #endif
 
 TextLayoutResult ParagraphImpl::LayoutWithConstraints(const TextRectSize& limitRect)
