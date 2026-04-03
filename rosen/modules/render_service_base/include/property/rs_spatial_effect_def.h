@@ -23,7 +23,7 @@ namespace OHOS {
 namespace Rosen {
 
 enum class DepthSpaceType : int16_t {
-    INSTANCE = 0;
+    INSTANCE = 0,
     GLOBAL = 1
 };
 
