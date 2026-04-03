@@ -236,6 +236,7 @@ public:
 #ifdef ENABLE_OHOS_ENHANCE
     virtual std::shared_ptr<OHOS::Media::PixelMap> GetTextPathImageByIndex(
         size_t start, size_t end, const ImageOptions& options, bool fill) const = 0;
+    virtual std::vector<TextPathInfo> GetTextPathsByIndex(size_t start = 0, size_t end = SIZE_MAX) const = 0;
 #endif
 };
 } // namespace SPText
