@@ -17,8 +17,6 @@
 #define RS_OPINC_MANAGER_H
 
 #include <mutex>
-#include <string>
-#include <vector>
 
 #include "pipeline/rs_render_node.h"
 
@@ -40,10 +38,6 @@ constexpr int64_t COLOR_CHANNEL = 4;
 constexpr int64_t SCREEN_RATIO = 2;
 class RSB_EXPORT RSOpincManager {
 public:
-    struct LayerPartRenderEventInfo {
-        std::string sceneId;
-    };
-
     static RSOpincManager& Instance();
 
     bool GetOPIncSwitch() const
@@ -74,7 +68,7 @@ public:
         std::shared_ptr<RSDirtyRegionManager>& layerPartRenderDirtyManager);
     void CalculateAndUpdateLayerPartRenderDirtyRegion(RSRenderNode& node,
         std::shared_ptr<RSDirtyRegionManager>& layerPartRenderDirtyManager, const RectI& visibleFilterRect,
-        const std::vector<LayerPartRenderEventInfo>& currentFrameEvent);
+        bool isDisableAnimation);
 
 private:
     RSOpincManager() = default;

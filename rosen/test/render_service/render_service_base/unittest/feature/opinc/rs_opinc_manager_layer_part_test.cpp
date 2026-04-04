@@ -95,15 +95,9 @@ public:
         }
     }
 
-    static std::vector<RSOpincManager::LayerPartRenderEventInfo> CreateCurrentFrameEvent(
-        const std::string& sceneId = "")
+    static bool CreateDisableAnimationFlag(const std::string& sceneId = "")
     {
-        if (sceneId.empty()) {
-            return {};
-        }
-        RSOpincManager::LayerPartRenderEventInfo eventInfo;
-        eventInfo.sceneId = sceneId;
-        return { eventInfo };
+        return sceneId == "APP_LIST_FLING" || sceneId == "WEB_LIST_FLING" || sceneId == "SCROLLER_ANIMATION";
     }
 
     static LayerPartUpdateCaseContext CreateLayerPartUpdateCaseContext(NodeId nodeId, bool layerPartRenderEnabled)
@@ -216,7 +210,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNormalP
     dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_OLD_RECT);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_OLD_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     auto& cachedDirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     auto& stagingRenderParams = node->GetStagingRenderParams();
@@ -240,7 +234,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNullDir
     std::shared_ptr<RSDirtyRegionManager> dirtyManager = nullptr;
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     ASSERT_EQ(dirtyManager, nullptr);
 }
@@ -265,7 +259,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNullSta
     ASSERT_EQ(node->GetStagingRenderParams(), nullptr);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     ASSERT_NE(dirtyManager, nullptr);
     ASSERT_EQ(node->GetStagingRenderParams(), nullptr);
@@ -290,7 +284,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionLayerPa
     stagingRenderParams->SetLayerPartRenderEnabled(true);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     ASSERT_NE(dirtyManagerHold, nullptr);
     ASSERT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
@@ -314,7 +308,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionUsesNod
     dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_OLD_RECT);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_OLD_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     auto& cachedDirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     auto& stagingRenderParams = node->GetStagingRenderParams();
@@ -368,7 +362,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInterse
     dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_PARTIAL_OUTSIDE_RECT);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *node, dirtyManager, DEFAULT_PARTIAL_OUTSIDE_RECT, CreateCurrentFrameEvent());
+        *node, dirtyManager, DEFAULT_PARTIAL_OUTSIDE_RECT, CreateDisableAnimationFlag());
 
     auto& cachedDirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     auto& stagingRenderParams = node->GetStagingRenderParams();
@@ -396,7 +390,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionNotLaye
     stagingRenderParams->SetLayerPartRenderEnabled(true);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     ASSERT_NE(dirtyManager, nullptr);
     ASSERT_TRUE(stagingRenderParams->GetLayerPartRenderEnabled());
@@ -422,7 +416,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionGeoNull
     stagingRenderParams->SetLayerPartRenderEnabled(true);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     ASSERT_NE(dirtyManager, nullptr);
     ASSERT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
@@ -452,7 +446,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInvertF
     stagingRenderParams->SetLayerPartRenderEnabled(true);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent());
+        CreateDisableAnimationFlag());
 
     ASSERT_NE(dirtyManager, nullptr);
     ASSERT_FALSE(stagingRenderParams->GetLayerPartRenderEnabled());
@@ -478,7 +472,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionOutside
     dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_OUTSIDE_RECT);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager,
-        DEFAULT_OUTSIDE_RECT, CreateCurrentFrameEvent());
+        DEFAULT_OUTSIDE_RECT, CreateDisableAnimationFlag());
 
     auto& cachedDirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     auto& stagingRenderParams = node->GetStagingRenderParams();
@@ -507,7 +501,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInsideN
     dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_INSIDE_RECT);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager,
-        DEFAULT_INSIDE_RECT, CreateCurrentFrameEvent());
+        DEFAULT_INSIDE_RECT, CreateDisableAnimationFlag());
 
     auto& cachedDirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     auto& stagingRenderParams = node->GetStagingRenderParams();
@@ -610,7 +604,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
     context.node->GetOpincCache().SetLayerPartRender(true);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateCurrentFrameEvent());
+        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateDisableAnimationFlag());
 
     EXPECT_EQ(context.dirtyManager, nullptr);
     EXPECT_FALSE(context.stagingRenderParams->GetLayerPartRenderEnabled());
@@ -636,7 +630,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
     context.dirtyManager->SetHasUifirstChild(true);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateCurrentFrameEvent());
+        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateDisableAnimationFlag());
 
     EXPECT_NE(context.dirtyManager, nullptr);
     EXPECT_FALSE(context.stagingRenderParams->GetLayerPartRenderEnabled());
@@ -661,7 +655,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
     context.node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateCurrentFrameEvent("APP_LIST_FLING"));
+        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateDisableAnimationFlag("APP_LIST_FLING"));
 
     EXPECT_NE(context.dirtyManager, nullptr);
     EXPECT_FALSE(context.stagingRenderParams->GetLayerPartRenderEnabled());
@@ -687,7 +681,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
         *context.node, context.dirtyManager, DEFAULT_ABS_RECT,
-        CreateCurrentFrameEvent("WINDOW_TITLE_BAR_MINIMIZED"));
+        CreateDisableAnimationFlag("WINDOW_TITLE_BAR_MINIMIZED"));
 
     EXPECT_EQ(context.node->GetNodeGroupType(), RSRenderNode::NodeGroupType::GROUPED_BY_USER);
     EXPECT_TRUE(context.stagingRenderParams->GetLayerPartRenderEnabled());
@@ -713,7 +707,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
     context.node->GetOpincCache().SetLayerPartRenderNodeStrategyType(NodeStrategyType::NODE_GROUP);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateCurrentFrameEvent());
+        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateDisableAnimationFlag());
 
     EXPECT_NE(context.dirtyManager, nullptr);
     EXPECT_FALSE(context.stagingRenderParams->GetLayerPartRenderEnabled());
@@ -738,7 +732,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
     context.node->GetMutableRenderProperties().boundsGeo_ = nullptr;
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateCurrentFrameEvent());
+        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateDisableAnimationFlag());
 
     EXPECT_NE(context.dirtyManager, nullptr);
     EXPECT_FALSE(context.stagingRenderParams->GetLayerPartRenderEnabled());
@@ -761,7 +755,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateAndUpdateLayerPartRenderDirtyRegi
     context.node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, true, false);
 
     RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
-        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateCurrentFrameEvent());
+        *context.node, context.dirtyManager, DEFAULT_ABS_RECT, CreateDisableAnimationFlag());
 
     EXPECT_EQ(context.node->GetNodeGroupType(), RSRenderNode::NodeGroupType::GROUPED_BY_USER);
     EXPECT_TRUE(context.stagingRenderParams->GetLayerPartRenderEnabled());

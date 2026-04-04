@@ -226,6 +226,7 @@ public:
     }
 
     bool IsOcclusionEnabled() const;
+    bool IsLayerPartRenderDisableAnimation() const;
 private:
     struct NodeDataBehindWindow {
         uint64_t curTime = 0;
