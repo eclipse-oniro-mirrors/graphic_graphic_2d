@@ -16,9 +16,8 @@
 #ifndef RS_OPINC_MANAGER_H
 #define RS_OPINC_MANAGER_H
 
-#include <mutex>
-
 #include "pipeline/rs_render_node.h"
+#include <mutex>
 
 namespace OHOS::Rosen {
 enum class OpincUnsupportType : uint8_t {

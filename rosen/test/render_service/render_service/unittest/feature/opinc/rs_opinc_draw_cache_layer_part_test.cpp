@@ -407,5 +407,4 @@ HWTEST_F(RSOpincDrawCacheLayerPartTest, ResetUpdateLayerPartRenderCacheResetsWar
     EXPECT_EQ(resetBounds.GetWidth(), FULL_CACHE_REGION_WIDTH);
     EXPECT_EQ(resetBounds.GetHeight(), FULL_CACHE_REGION_HEIGHT);
 }
-
 } // namespace OHOS::Rosen

@@ -3805,11 +3805,7 @@ bool RSRenderNode::UpdateLayerPartRenderDirtyRegion(std::shared_ptr<RSDirtyRegio
     if (!RSSystemProperties::GetLayerPartRenderEnabled()) {
         return false;
     }
-    bool hasMaterialFilter = GetRenderProperties().GetMaterialFilter() != nullptr ||
-        GetRenderProperties().IsBackgroundMaterialFilterValid() ||
-        GetRenderProperties().IsForegroundMaterialFilterValid();
-    bool hasShadowFilter = GetRenderProperties().IsShadowValid() && GetRenderProperties().NeedFilter();
-    if (hasMaterialFilter && hasShadowFilter) {
+    if (GetRenderProperties().GetMaterialFilter() != nullptr) {
         opincCache_.MarkMaterialNode(true);
     }
 

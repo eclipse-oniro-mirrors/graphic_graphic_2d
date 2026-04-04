@@ -34,7 +34,6 @@ namespace OHOS::Rosen {
 constexpr NodeId DEFAULT_ID = 0xFFFF;
 constexpr int DEFAULT_CANVAS_WIDTH = 100;
 constexpr int DEFAULT_CANVAS_HEIGHT = 100;
-constexpr int32_t WARMED_UP_LAYER_PART_COUNT = 4;
 class RSTestDrawableForLayerPart : public RSDrawable {
 public:
     bool OnUpdate(const RSRenderNode& content) override

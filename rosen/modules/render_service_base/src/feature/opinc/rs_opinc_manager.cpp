@@ -15,8 +15,6 @@
 
 #include "feature/opinc/rs_opinc_manager.h"
 
-#include <algorithm>
-
 #include "common/rs_optional_trace.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_canvas_render_node.h"

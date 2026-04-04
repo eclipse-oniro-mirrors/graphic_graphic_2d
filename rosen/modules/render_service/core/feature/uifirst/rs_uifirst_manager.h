@@ -220,10 +220,6 @@ public:
     {
         return GetUiFirstType() == UiFirstCcmType::MULTI && RSSystemProperties::GetUIFirstDirtyEnabled();
     }
-    const std::vector<EventInfo>& GetCurrentFrameEvent() const
-    {
-        return currentFrameEvent_;
-    }
 
     bool IsOcclusionEnabled() const;
     bool IsLayerPartRenderDisableAnimation() const;
