@@ -133,6 +133,7 @@ public:
 
     void PushLayerPartRenderDirtyRegion(const RSRenderParams& params, RSPaintFilterCanvas& curCanvas,
         RSPaintFilterCanvas& cacheCanvas, int nodeCount);
+    bool ShouldSkipLayerPartRenderCacheUpdate(const RSRenderParams& params) const;
     void LayerPartRenderClipDirtyRegion(const RSRenderParams& params,
         RSPaintFilterCanvas& canvas);
     void PopLayerPartRenderDirtyRegion(const RSRenderParams& params,

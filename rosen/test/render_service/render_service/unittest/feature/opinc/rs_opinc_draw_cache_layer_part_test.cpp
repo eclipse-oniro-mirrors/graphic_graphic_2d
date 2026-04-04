@@ -407,4 +407,31 @@ HWTEST_F(RSOpincDrawCacheLayerPartTest, ResetUpdateLayerPartRenderCacheResetsWar
     EXPECT_EQ(resetBounds.GetWidth(), FULL_CACHE_REGION_WIDTH);
     EXPECT_EQ(resetBounds.GetHeight(), FULL_CACHE_REGION_HEIGHT);
 }
+
+/**
+ * @tc.name: ShouldSkipLayerPartRenderCacheUpdateEmptyDirtyAfterWarmup
+ * @tc.desc: Verify layer-part cache update can be skipped after warmup when current-frame dirty is empty
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RSOpincDrawCacheLayerPartTest, ShouldSkipLayerPartRenderCacheUpdateEmptyDirtyAfterWarmup, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Canvas curCanvas;
+    Drawing::Canvas cacheCanvas;
+    RSPaintFilterCanvas curPaintFilterCanvas(&curCanvas);
+    RSPaintFilterCanvas cachePaintFilterCanvas(&cacheCanvas);
+    auto params = CreateRenderParams(true);
+
+    params->SetLayerPartRenderCurrentFrameDirtyRegion(RectI());
+    EXPECT_FALSE(opincDrawCache.ShouldSkipLayerPartRenderCacheUpdate(*params));
+
+    for (int32_t i = 0; i <= WARMUP_PUSH_COUNT; ++i) {
+        opincDrawCache.PushLayerPartRenderDirtyRegion(*params,
+            curPaintFilterCanvas, cachePaintFilterCanvas, TEST_NODE_COUNT);
+        opincDrawCache.PopLayerPartRenderDirtyRegion(*params, cachePaintFilterCanvas);
+    }
+
+    EXPECT_TRUE(opincDrawCache.ShouldSkipLayerPartRenderCacheUpdate(*params));
+}
 } // namespace OHOS::Rosen

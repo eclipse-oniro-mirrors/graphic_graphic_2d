@@ -264,8 +264,10 @@ bool RSOpincManager::CalculateLayerPartRenderDirtyRegion(RSRenderNode& node,
             nodeAbsRect.GetLeft(), nodeAbsRect.GetTop(), nodeAbsRect.GetWidth(), nodeAbsRect.GetHeight());
     }
     if (!layerCurDirty.IsInsideOf(nodeAbsRect)) {
-        RS_OPTIONAL_TRACE_FMT("id:%" PRIu64 ", layerCurDirty not inside of nodeAbsRect", node.GetId());
-        layerCurDirty = nodeAbsRect;
+        layerCurDirty = layerCurDirty.IntersectRect(nodeAbsRect);
+        RS_OPTIONAL_TRACE_FMT("id:%" PRIu64 ", clip layerCurDirty to intersect with nodeAbsRect:[%d,%d,%d,%d]",
+            node.GetId(), layerCurDirty.GetLeft(), layerCurDirty.GetTop(),
+            layerCurDirty.GetWidth(), layerCurDirty.GetHeight());
         layerPartRenderDirtyManager->MergeDirtyRect(layerCurDirty);
         layerPartRenderDirtyManager->UpdateDirty();
     }

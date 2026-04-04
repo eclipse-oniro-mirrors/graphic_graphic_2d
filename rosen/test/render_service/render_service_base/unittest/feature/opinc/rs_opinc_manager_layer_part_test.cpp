@@ -47,6 +47,10 @@ constexpr int32_t OUTSIDE_RECT_LEFT = 1000;
 constexpr int32_t OUTSIDE_RECT_TOP = 1000;
 constexpr int32_t OUTSIDE_RECT_WIDTH = 50;
 constexpr int32_t OUTSIDE_RECT_HEIGHT = 50;
+constexpr int32_t PARTIAL_OUTSIDE_RECT_LEFT = 90;
+constexpr int32_t PARTIAL_OUTSIDE_RECT_TOP = 90;
+constexpr int32_t PARTIAL_OUTSIDE_RECT_WIDTH = 40;
+constexpr int32_t PARTIAL_OUTSIDE_RECT_HEIGHT = 40;
 constexpr int32_t INSIDE_RECT_LEFT = 20;
 constexpr int32_t INSIDE_RECT_TOP = 20;
 constexpr int32_t INSIDE_RECT_WIDTH = 10;
@@ -55,6 +59,11 @@ const RectI DEFAULT_ABS_RECT = { ABS_RECT_LEFT, ABS_RECT_TOP, ABS_RECT_WIDTH, AB
 const RectI DEFAULT_OLD_RECT = { OLD_RECT_LEFT, OLD_RECT_TOP, OLD_RECT_WIDTH, OLD_RECT_HEIGHT };
 const RectI DEFAULT_CHILD_RECT = { CHILD_RECT_LEFT, CHILD_RECT_TOP, CHILD_RECT_WIDTH, CHILD_RECT_HEIGHT };
 const RectI DEFAULT_OUTSIDE_RECT = { OUTSIDE_RECT_LEFT, OUTSIDE_RECT_TOP, OUTSIDE_RECT_WIDTH, OUTSIDE_RECT_HEIGHT };
+const RectI DEFAULT_PARTIAL_OUTSIDE_RECT = {
+    PARTIAL_OUTSIDE_RECT_LEFT, PARTIAL_OUTSIDE_RECT_TOP,
+    PARTIAL_OUTSIDE_RECT_WIDTH, PARTIAL_OUTSIDE_RECT_HEIGHT
+};
+const RectI DEFAULT_INTERSECT_RECT = DEFAULT_PARTIAL_OUTSIDE_RECT.IntersectRect(DEFAULT_ABS_RECT);
 const RectI DEFAULT_INSIDE_RECT = { INSIDE_RECT_LEFT, INSIDE_RECT_TOP, INSIDE_RECT_WIDTH, INSIDE_RECT_HEIGHT };
 }
 
@@ -330,12 +339,12 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionChangeS
 }
 
 /**
- * @tc.name: CalculateLayerPartRenderDirtyRegionFallbackToNodeAbsRect
- * @tc.desc: Verify unchanged node falls back to node abs rect when dirty region is not fully inside node abs rect
+ * @tc.name: CalculateLayerPartRenderDirtyRegionIntersectNodeAbsRect
+ * @tc.desc: Verify unchanged node clips dirty region to the intersection with node abs rect
  * @tc.type: FUNC
  * @tc.require: issueLayerPart
  */
-HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionFallbackToNodeAbsRect, TestSize.Level1)
+HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionIntersectNodeAbsRect, TestSize.Level1)
 {
     auto node = CreateCanvasNode(THIRD_NODE_ID);
     node->InitRenderParams();
@@ -345,17 +354,17 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionFallbac
 
     auto dirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     ASSERT_NE(dirtyManager, nullptr);
-    dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_OLD_RECT);
+    dirtyManager->SetCurrentFrameDirtyRect(DEFAULT_PARTIAL_OUTSIDE_RECT);
 
-    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(*node, dirtyManager, DEFAULT_OLD_RECT,
-        false);
+    RSOpincManager::Instance().CalculateAndUpdateLayerPartRenderDirtyRegion(
+        *node, dirtyManager, DEFAULT_PARTIAL_OUTSIDE_RECT, false);
 
     auto& cachedDirtyManager = node->GetOpincCache().GetLayerPartRenderDirtyManager();
     auto& stagingRenderParams = node->GetStagingRenderParams();
     ASSERT_NE(cachedDirtyManager, nullptr);
     ASSERT_NE(stagingRenderParams, nullptr);
     ASSERT_TRUE(stagingRenderParams->GetLayerPartRenderEnabled());
-    ASSERT_EQ(stagingRenderParams->GetLayerPartRenderCurrentFrameDirtyRegion(), DEFAULT_ABS_RECT);
+    ASSERT_EQ(stagingRenderParams->GetLayerPartRenderCurrentFrameDirtyRegion(), DEFAULT_INTERSECT_RECT);
     ASSERT_EQ(dirtyManager, nullptr);
 }
 
@@ -441,7 +450,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionInvertF
 
 /**
  * @tc.name: CalculateLayerPartRenderDirtyRegionOutsideNodeAbsRect
- * @tc.desc: Verify out-of-range dirty region falls back to node abs rect
+ * @tc.desc: Verify out-of-range dirty region becomes empty after intersecting node abs rect
  * @tc.type: FUNC
  * @tc.require: issueLayerPart
  */
@@ -464,7 +473,7 @@ HWTEST_F(RSOpincManagerLayerPartTest, CalculateLayerPartRenderDirtyRegionOutside
     auto& stagingRenderParams = node->GetStagingRenderParams();
     ASSERT_NE(cachedDirtyManager, nullptr);
     ASSERT_NE(stagingRenderParams, nullptr);
-    ASSERT_EQ(stagingRenderParams->GetLayerPartRenderCurrentFrameDirtyRegion(), DEFAULT_ABS_RECT);
+    ASSERT_EQ(stagingRenderParams->GetLayerPartRenderCurrentFrameDirtyRegion(), RectI());
     ASSERT_EQ(dirtyManager, nullptr);
 }
 
