@@ -319,9 +319,8 @@ void RSOpincManager::CalculateAndUpdateLayerPartRenderDirtyRegion(RSRenderNode& 
     }
 
     RectI layerCurDirty;
-    if (isDisableAnimation ||
-        !CalculateLayerPartRenderDirtyRegion(node, layerPartRenderDirtyManager, visibleFilterRect, layerCurDirty) ||
-        layerPartRenderDirtyManager->HasUifirstChild()) {
+    if (!CalculateLayerPartRenderDirtyRegion(node, layerPartRenderDirtyManager, visibleFilterRect, layerCurDirty) ||
+        layerPartRenderDirtyManager->HasUifirstChild() || isDisableAnimation) {
         node.MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_USER, false, false);
         node.CheckDrawingCacheType();
         stagingRenderParams->SetDrawingCacheType(node.GetDrawingCacheType());
