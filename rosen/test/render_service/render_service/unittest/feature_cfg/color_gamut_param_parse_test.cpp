@@ -110,4 +110,32 @@ HWTEST_F(ColorGamutParamParseTest, ParseFeatureParamTest003, TestSize.Level1)
     EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
     EXPECT_EQ(ColorGamutParam::IsForceSRGBOutputEnabled(), false);
 }
+
+/**
+ * @tc.name: ParseForceSRGBOutput004
+ * @tc.desc: Verify ParseFeatureParam does not change ForceSRGBOutput when name is not matched
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(ColorGamutParamParseTest, ParseFeatureParamTest004, TestSize.Level1)
+{
+    ColorGamutParamParse paramParse;
+    FeatureParamMapType featureParam;
+    featureParam["ColorGamutConfig"] = std::make_shared<ColorGamutParam>();
+    xmlNode node;
+    xmlNode childNode;
+    childNode.type = xmlElementType::XML_ATTRIBUTE_NODE;
+    node.xmlChildrenNode = &childNode;
+    xmlNode nextNode;
+    nextNode.type = xmlElementType::XML_ELEMENT_NODE;
+    string name = "FeatureSwitch";
+    nextNode.name = reinterpret_cast<const xmlChar*>(name.c_str());
+    node.xmlChildrenNode->next = &nextNode;
+
+    xmlSetProp(&nextNode, (const xmlChar*)("name"), (const xmlChar*)("UnknownFeature"));
+    xmlSetProp(&nextNode, (const xmlChar*)("value"), (const xmlChar*)("true"));
+    auto res = paramParse.ParseFeatureParam(featureParam, node);
+    EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
+    EXPECT_EQ(ColorGamutParam::IsForceSRGBOutputEnabled(), false);
+}
 } // namespace OHOS::Rosen
