@@ -264,12 +264,21 @@ bool RSOpincManager::CalculateLayerPartRenderDirtyRegion(RSRenderNode& node,
             nodeAbsRect.GetLeft(), nodeAbsRect.GetTop(), nodeAbsRect.GetWidth(), nodeAbsRect.GetHeight());
     }
     if (!layerCurDirty.IsInsideOf(nodeAbsRect)) {
-        layerCurDirty = layerCurDirty.IntersectRect(nodeAbsRect);
-        RS_OPTIONAL_TRACE_FMT("id:%" PRIu64 ", clip layerCurDirty to intersect with nodeAbsRect:[%d,%d,%d,%d]",
-            node.GetId(), layerCurDirty.GetLeft(), layerCurDirty.GetTop(),
-            layerCurDirty.GetWidth(), layerCurDirty.GetHeight());
-        layerPartRenderDirtyManager->MergeDirtyRect(layerCurDirty);
-        layerPartRenderDirtyManager->UpdateDirty();
+        if (layerCurDirty.Intersect(nodeAbsRect)) {
+            layerCurDirty = layerCurDirty.IntersectRect(nodeAbsRect);
+            RS_OPTIONAL_TRACE_FMT("id:%" PRIu64 ", clip layerCurDirty to intersect with nodeAbsRect:[%d,%d,%d,%d]",
+                node.GetId(), layerCurDirty.GetLeft(), layerCurDirty.GetTop(), layerCurDirty.GetWidth(),
+                layerCurDirty.GetHeight());
+            layerPartRenderDirtyManager->MergeDirtyRect(layerCurDirty);
+            layerPartRenderDirtyManager->UpdateDirty();
+        } else {
+            layerCurDirty = nodeAbsRect;
+            RS_OPTIONAL_TRACE_FMT("id:%" PRIu64 ", layerCurDirty not intersect, use full nodeAbsRect:[%d,%d,%d,%d]",
+                node.GetId(), layerCurDirty.GetLeft(), layerCurDirty.GetTop(), layerCurDirty.GetWidth(),
+                layerCurDirty.GetHeight());
+            layerPartRenderDirtyManager->MergeDirtyRect(layerCurDirty);
+            layerPartRenderDirtyManager->UpdateDirty();
+        }
     }
     layerCurDirty = geoPtr->MapRect(layerCurDirty.ConvertTo<float>(), invertMatrix);
     [[maybe_unused]] auto nodeAbsRectMap = geoPtr->MapRect(nodeAbsRect.ConvertTo<float>(), invertMatrix);
