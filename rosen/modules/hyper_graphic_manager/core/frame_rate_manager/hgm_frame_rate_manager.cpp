@@ -966,16 +966,19 @@ void HgmFrameRateManager::HandleScreenRectFrameRate(ScreenId id, const Rect& act
 
 void HgmFrameRateManager::HandleScreenLtpoConfig(ScreenId id)
 {
-    auto& hgmCore = HgmCore::Instance();
-    auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
-    auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
-    isLtpo_.store(isLtpo);
-    lastCurScreenId_.store(curScreenId_.load());
-    curScreenId_.store(id);
-    hgmCore.SetActiveScreenId(curScreenId_.load());
+    if (curScreenId_.load() != id) {
+
+        auto& hgmScreenInfo = HgmScreenInfo::GetInstance();
+        auto isLtpo = hgmScreenInfo.IsLtpoType(hgmScreenInfo.GetScreenType(id));
+        isLtpo_.store(isLtpo);
+        lastCurScreenId_.store(curScreenId_.load());
+        curScreenId_.store(id);
+        auto& hgmCore = HgmCore::Instance();
+        hgmCore.SetActiveScreenId(curScreenId_.load());
+    }
 
     std::string curScreenName = "screen" + std::to_string(id) + "_" + (isLtpo ? "LTPO" : "LTPS");
-    if (activeRectScreenId_ == id) {
+    if (id == activeRectScreenId_) {
         curScreenName += "_" + std::to_string(activeRect_.x);
         curScreenName += "_" + std::to_string(activeRect_.y);
         curScreenName += "_" + std::to_string(activeRect_.w);

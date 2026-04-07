@@ -331,7 +331,7 @@ private:
     bool isLowPowerSlide_ = false;
     bool slideModeChange_ = false;
 
-    ScreenId activeRectScreenId_ = { INVALID_SCREEN_ID };
+    ScreenId activeRectScreenId_ = INVALID_SCREEN_ID;
     Rect activeRect_ { 0, 0, 0, 0 };
 
     std::function<void(std::shared_ptr<RPHgmConfigData>, bool, bool, int32_t)> hgmConfigUpdateCallback_ = nullptr;
