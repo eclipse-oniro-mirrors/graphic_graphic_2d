@@ -129,7 +129,7 @@ float RSBoundsModifier::GetUnionSpacing() const
 
 void RSBoundsModifier::SetUnionMode(int uniModeUC)
 {
-    Setter(RSPropertyType::SDF_UNION_MODE, uniModeUC);
+    Setter<RSProperty>(RSPropertyType::SDF_UNION_MODE, uniModeUC);
 }
 
 int RSBoundsModifier::GetUnionMode() const
@@ -139,7 +139,7 @@ int RSBoundsModifier::GetUnionMode() const
 
 void RSBoundsModifier::SetGravityPullCenterFlag(bool isGravityPullModeCenter)
 {
-    Setter(RSPropertyType::GRAVITY_CENTER_FLAG, isGravityPullModeCenter);
+    Setter<RSProperty>(RSPropertyType::GRAVITY_CENTER_FLAG, isGravityPullModeCenter);
 }
 
 bool RSBoundsModifier::GetGravityPullCenterFlag() const
