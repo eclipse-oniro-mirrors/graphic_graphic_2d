@@ -284,15 +284,12 @@ void HMSymbolTxt::SetRenderUIColor(const std::vector<Drawing::UIColor>& uiColors
     std::unique_lock<std::shared_mutex> writeLock(mutex_);
     symbolColor_.colorType = SymbolColorType::COLOR_TYPE;
     symbolColor_.gradients.clear();
-    std::vector<std::shared_ptr<SymbolGradient>> gradients;
     for (size_t i = 0; i < uiColors.size(); ++i) {
         SymbolColorSpace cs = (i < colorSpaces.size()) ? colorSpaces[i] : SymbolColorSpace::SRGB;
         auto gradient = std::make_shared<SymbolGradient>();
         gradient->SetUIColors({ uiColors[i] }, cs);
-        gradients.push_back(gradient);
+        symbolColor_.gradients.push_back(gradient);
     }
-
-    symbolColor_.gradients = gradients;
 }
 
 void HMSymbolTxt::CloneSelf(const HMSymbolTxt& other)

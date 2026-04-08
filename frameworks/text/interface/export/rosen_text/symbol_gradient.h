@@ -66,7 +66,7 @@ protected:
     std::vector<Drawing::Color> colors_;
     std::vector<float> positions_;
     std::vector<Drawing::UIColor> uiColors_;
-    SymbolColorSpace colorSpaceEnum_ = SymbolColorSpace::SRGB;
+    SymbolColorSpace colorSpace_{SymbolColorSpace::SRGB};
 };
 
 class RS_EXPORT SymbolLineGradient : public SymbolGradient {

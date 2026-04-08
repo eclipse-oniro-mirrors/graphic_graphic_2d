@@ -542,5 +542,157 @@ HWTEST_F(OHHmSymbolGradientTest, IsNearlyEqual_BothColorAndUIColor001, TestSize.
     gradient2->SetUIColors({ uiColor2 }, SymbolColorSpace::SRGB);
     EXPECT_FALSE(gradient1->IsNearlyEqual(gradient2));
 }
+
+/*
+ * @tc.name: UIColor_Headroom001
+ * @tc.desc: test UIColor headroom set and get with HDR values
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolGradientTest, UIColor_Headroom001, TestSize.Level0)
+{
+    SymbolGradient gradient;
+    // default headroom is 1.0
+    Drawing::UIColor uiColorDefault(1.0f, 0.5f, 0.3f, 1.0f);
+    EXPECT_FLOAT_EQ(uiColorDefault.GetHeadroom(), 1.0f);
+
+    // SetHeadroom sets HDR headroom > 1.0 (brighter)
+    Drawing::UIColor uiColorBright(1.0f, 0.5f, 0.3f, 1.0f);
+    uiColorBright.SetHeadroom(2.0f);
+    EXPECT_FLOAT_EQ(uiColorBright.GetHeadroom(), 2.0f);
+
+    // SetHeadroom sets HDR headroom = 4.0 (maximum)
+    Drawing::UIColor uiColor(1.0f, 0.5f, 0.3f, 1.0f);
+    uiColor.SetHeadroom(4.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetHeadroom(), 4.0f);
+
+    // Verify UIColor with headroom stored in gradient
+    gradient.SetUIColors({ uiColor }, SymbolColorSpace::BT2020);
+    auto uiColors = gradient.GetUIColors();
+    ASSERT_EQ(uiColors.size(), 1);
+    EXPECT_FLOAT_EQ(uiColors[0].GetHeadroom(), 4.0f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetRed(), 1.0f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetGreen(), 0.5f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetBlue(), 0.3f);
+}
+
+/*
+ * @tc.name: UIColor_ValuesAboveOne001
+ * @tc.desc: test UIColor with RGBA values > 1.0 (HDR range)
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolGradientTest, UIColor_ValuesAboveOne001, TestSize.Level0)
+{
+    // HDR color with RGBA > 1.0, headroom set via SetHeadroom
+    Drawing::UIColor uiColor(2.0f, 3.5f, 1.5f, 1.0f);
+    uiColor.SetHeadroom(4.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetRed(), 2.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetGreen(), 3.5f);
+    EXPECT_FLOAT_EQ(uiColor.GetBlue(), 1.5f);
+    EXPECT_FLOAT_EQ(uiColor.GetAlpha(), 1.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetHeadroom(), 4.0f);
+
+    SymbolGradient gradient;
+    gradient.SetUIColors({ uiColor }, SymbolColorSpace::DISPLAY_P3);
+    EXPECT_TRUE(gradient.HasUIColor());
+
+    auto uiColors = gradient.GetUIColors();
+    ASSERT_EQ(uiColors.size(), 1);
+    EXPECT_FLOAT_EQ(uiColors[0].GetRed(), 2.0f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetGreen(), 3.5f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetBlue(), 1.5f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetHeadroom(), 4.0f);
+}
+
+/*
+ * @tc.name: UIColor_ValuesBelowOne001
+ * @tc.desc: test UIColor with RGBA values < 1.0 (dim HDR)
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolGradientTest, UIColor_ValuesBelowOne001, TestSize.Level0)
+{
+    // Dim color with RGBA < 1.0, headroom default 1.0
+    Drawing::UIColor uiColor(0.1f, 0.2f, 0.05f, 0.3f);
+    EXPECT_FLOAT_EQ(uiColor.GetRed(), 0.1f);
+    EXPECT_FLOAT_EQ(uiColor.GetGreen(), 0.2f);
+    EXPECT_FLOAT_EQ(uiColor.GetBlue(), 0.05f);
+    EXPECT_FLOAT_EQ(uiColor.GetAlpha(), 0.3f);
+    EXPECT_FLOAT_EQ(uiColor.GetHeadroom(), 1.0f);
+
+    SymbolGradient gradient;
+    gradient.SetUIColors({ uiColor }, SymbolColorSpace::SRGB);
+
+    auto uiColors = gradient.GetUIColors();
+    ASSERT_EQ(uiColors.size(), 1);
+    EXPECT_FLOAT_EQ(uiColors[0].GetRed(), 0.1f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetGreen(), 0.2f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetBlue(), 0.05f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetAlpha(), 0.3f);
+    EXPECT_FLOAT_EQ(uiColors[0].GetHeadroom(), 1.0f);
+}
+
+/*
+ * @tc.name: UIColor_AlphaClamp001
+ * @tc.desc: test UIColor alpha is clamped to [0.0, 1.0] by Drawing layer
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolGradientTest, UIColor_AlphaClamp001, TestSize.Level0)
+{
+    // alpha > 1.0 clamped to 1.0
+    Drawing::UIColor uiColorOver(1.0f, 0.5f, 0.3f, 2.0f);
+    EXPECT_FLOAT_EQ(uiColorOver.GetAlpha(), 1.0f);
+
+    // alpha = 0.0 is valid
+    Drawing::UIColor uiColorZero(1.0f, 0.5f, 0.3f, 0.0f);
+    EXPECT_FLOAT_EQ(uiColorZero.GetAlpha(), 0.0f);
+    EXPECT_TRUE(uiColorZero.GetRed() > 0.0f);
+
+    // alpha < 0.0 clamped to 0.0
+    Drawing::UIColor uiColorNeg(1.0f, 0.5f, 0.3f, -1.0f);
+    EXPECT_FLOAT_EQ(uiColorNeg.GetAlpha(), 0.0f);
+}
+
+/*
+ * @tc.name: UIColor_RGBBelowZero001
+ * @tc.desc: test UIColor negative RGB values are clamped to 0.0 by Drawing layer
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolGradientTest, UIColor_RGBBelowZero001, TestSize.Level0)
+{
+    // Negative RGB values clamped to 0.0
+    Drawing::UIColor uiColor(-1.0f, -0.5f, -0.3f, 1.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetRed(), 0.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetGreen(), 0.0f);
+    EXPECT_FLOAT_EQ(uiColor.GetBlue(), 0.0f);
+}
+
+/*
+ * @tc.name: IsNearlyEqual_UIColor_Headroom001
+ * @tc.desc: test IsNearlyEqual with different headroom values
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolGradientTest, IsNearlyEqual_UIColor_Headroom001, TestSize.Level0)
+{
+    auto gradient1 = std::make_shared<SymbolGradient>();
+    auto gradient2 = std::make_shared<SymbolGradient>();
+
+    // Same UIColor with same headroom via SetHeadroom
+    Drawing::UIColor uiColor1(1.0f, 0.5f, 0.3f, 1.0f);
+    uiColor1.SetHeadroom(2.0f);
+    Drawing::UIColor uiColor2(1.0f, 0.5f, 0.3f, 1.0f);
+    uiColor2.SetHeadroom(2.0f);
+    gradient1->SetUIColors({ uiColor1 }, SymbolColorSpace::SRGB);
+    gradient2->SetUIColors({ uiColor2 }, SymbolColorSpace::SRGB);
+    EXPECT_TRUE(gradient1->IsNearlyEqual(gradient2));
+
+    // Same RGBA, different headroom
+    Drawing::UIColor uiColor3(1.0f, 0.5f, 0.3f, 1.0f);
+    uiColor3.SetHeadroom(4.0f);
+    gradient2->SetUIColors({ uiColor3 }, SymbolColorSpace::SRGB);
+    EXPECT_FALSE(gradient1->IsNearlyEqual(gradient2));
+
+    // Different uiColorSize
+    gradient2->SetUIColors({ uiColor3, uiColor3}, SymbolColorSpace::SRGB);
+    EXPECT_FALSE(gradient1->IsNearlyEqual(gradient2));
+}
 } // namespace Rosen
 } // namespace OHOS

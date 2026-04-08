@@ -96,10 +96,10 @@ private:
 
     void SetRenderColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo);
 
-    void SetRenderRSColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
+    void FillRSColorGradients(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
         std::vector<std::shared_ptr<SymbolGradient>>& gradients);
 
-    void SetRenderUIColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
+    void FillUIColorGradients(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
         std::vector<std::shared_ptr<SymbolGradient>>& gradients);
 
     void SetGradientColor(const RSSymbolRenderingStrategy& renderMode, const RSSymbolLayers& symbolInfo);

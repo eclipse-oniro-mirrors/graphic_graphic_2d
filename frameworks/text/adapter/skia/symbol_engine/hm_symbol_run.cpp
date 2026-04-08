@@ -92,23 +92,22 @@ void HMSymbolRun::SetRenderColor(const RSSymbolRenderingStrategy& renderMode, RS
 {
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     if (!symbolTxt_.GetUIColors().empty()) {
-        SetRenderUIColor(renderMode, symbolInfo, gradients);
+        FillUIColorGradients(renderMode, symbolInfo, gradients);
     } else {
-        SetRenderRSColor(renderMode, symbolInfo, gradients);
+        FillRSColorGradients(renderMode, symbolInfo, gradients);
     }
     gradients_ = std::move(gradients);
 }
 
-auto HMSymbolRun::GetUiColorByRenderMode(const RSSymbolRenderingStrategy& renderMode,
+HMSymbolRun::EffectiveUIColorResult HMSymbolRun::GetUiColorByRenderMode(const RSSymbolRenderingStrategy& renderMode,
     const std::vector<Drawing::UIColor>& uiColorList, const std::vector<SymbolColorSpace>& colorSpaces,
-    const std::vector<RSRenderGroup>& renderGroups) -> EffectiveUIColorResult
+    const std::vector<RSRenderGroup>& renderGroups)
 {
     EffectiveUIColorResult result;
     auto& effectiveUIColors = result.colors;
     auto& effectiveColorSpaces = result.colorSpaces;
 
     switch (renderMode) {
-        // SINGLE and HIERARCHICAL: Supports single uiColor setting
         case RSSymbolRenderingStrategy::SINGLE:
             for (size_t i = 0; i < renderGroups.size(); ++i) {
                 effectiveUIColors.push_back(uiColorList[0]);
@@ -128,7 +127,7 @@ auto HMSymbolRun::GetUiColorByRenderMode(const RSSymbolRenderingStrategy& render
                 effectiveColorSpaces.push_back(colorSpaces.empty() ? SymbolColorSpace::SRGB : colorSpaces[0]);
             }
             break;
-        // MULTIPLE_COLOR: Supports multiple uiColor setting
+        // MULTIPLE_COLOR: Supports multiple uiColor setting. Layers exceeding color count use default symbol colors.
         case RSSymbolRenderingStrategy::MULTIPLE_COLOR:
             for (size_t i = 0; i < renderGroups.size(); ++i) {
                 if (i < uiColorList.size()) {
@@ -136,7 +135,6 @@ auto HMSymbolRun::GetUiColorByRenderMode(const RSSymbolRenderingStrategy& render
                     effectiveColorSpaces.push_back((i < colorSpaces.size()) ? colorSpaces[i] :
                         SymbolColorSpace::SRGB);
                 } else {
-                    // Use default symbol color
                     constexpr static uint8_t RGB_MAX = 255;
                     float uiRed = static_cast<float>(renderGroups[i].color.r) / RGB_MAX;
                     float uiGreen = static_cast<float>(renderGroups[i].color.g) / RGB_MAX;
@@ -154,13 +152,11 @@ auto HMSymbolRun::GetUiColorByRenderMode(const RSSymbolRenderingStrategy& render
     return result;
 }
 
-void HMSymbolRun::SetRenderUIColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
+void HMSymbolRun::FillUIColorGradients(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
     std::vector<std::shared_ptr<SymbolGradient>>& gradients)
 {
-    std::vector<Drawing::UIColor> uiColorList = symbolTxt_.GetUIColors();
-    std::vector<SymbolColorSpace> colorSpaces = symbolTxt_.GetColorSpaces();
-
-    auto uiColorAndSpaceResult = GetUiColorByRenderMode(renderMode, uiColorList, colorSpaces, symbolInfo.renderGroups);
+    HMSymbolRun::EffectiveUIColorResult uiColorAndSpaceResult = GetUiColorByRenderMode(renderMode,
+        symbolTxt_.GetUIColors(), symbolTxt_.GetColorSpaces(), symbolInfo.renderGroups);
 
     for (size_t i = 0; i < symbolInfo.renderGroups.size(); ++i) {
         auto gradient = std::make_shared<SymbolGradient>();
@@ -169,7 +165,7 @@ void HMSymbolRun::SetRenderUIColor(const RSSymbolRenderingStrategy& renderMode, 
     }
 }
 
-void HMSymbolRun::SetRenderRSColor(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
+void HMSymbolRun::FillRSColorGradients(const RSSymbolRenderingStrategy& renderMode, RSSymbolLayers& symbolInfo,
     std::vector<std::shared_ptr<SymbolGradient>>& gradients)
 {
     std::vector<RSSColor> colorList = symbolTxt_.GetRenderColor();
@@ -232,8 +228,7 @@ void HMSymbolRun::SetGradientOrDefinedColor(const RSSymbolLayers& symbolInfo)
     std::vector<std::shared_ptr<SymbolGradient>> gradients;
     for (size_t i = 0; i < symbolInfo.renderGroups.size(); i++) {
         if (i < n && symbolColor.gradients[i]) {
-            auto gradient = symbolColor.gradients[i];
-            gradients.push_back(gradient);
+            gradients.push_back(symbolColor.gradients[i]);
         } else {
             auto gradient = std::make_shared<SymbolGradient>();
             Drawing::Color color;

@@ -699,6 +699,59 @@ HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColors001, TestSize.Level0)
 }
 
 /*
+ * @tc.name: SetRenderUIColorThenRenderColor001
+ * @tc.desc: test SetRenderUIColor then SetRenderColor, Color replaces UIColor
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColorThenRenderColor001, TestSize.Level0)
+{
+    OHOS::Rosen::HMSymbolTxt symbolTxt;
+    // First set UIColor
+    Drawing::UIColor uiColor(1.0f, 0.5f, 0.3f, 1.0f);
+    std::vector<SymbolColorSpace> colorSpaces = { SymbolColorSpace::BT2020 };
+    symbolTxt.SetRenderUIColor({ uiColor }, colorSpaces);
+
+    // Then set Drawing::Color
+    Drawing::Color color1 = Drawing::Color::COLOR_BLUE;
+    std::vector<Drawing::Color> colors = { color1 };
+    symbolTxt.SetRenderColor(colors);
+
+    // Verify Color replaced UIColor
+    auto symbolColor = symbolTxt.GetSymbolColor();
+    EXPECT_EQ(symbolColor.colorType, SymbolColorType::COLOR_TYPE);
+    EXPECT_EQ(symbolColor.gradients.size(), 1); // 1 is the size of gradients
+    ASSERT_TRUE(symbolColor.gradients[0] != nullptr);
+    EXPECT_FALSE(symbolColor.gradients[0]->HasUIColor());
+}
+
+/*
+ * @tc.name: SetRenderColorThenRenderUIColor001
+ * @tc.desc: test SetRenderColor then SetRenderUIColor, UIColor replaces Color
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, SetRenderColorThenRenderUIColor001, TestSize.Level0)
+{
+    OHOS::Rosen::HMSymbolTxt symbolTxt;
+    // First set Drawing::Color
+    Drawing::Color color1 = Drawing::Color::COLOR_BLUE;
+    std::vector<Drawing::Color> colors = { color1 };
+    symbolTxt.SetRenderColor(colors);
+
+    // Then set UIColor
+    Drawing::UIColor uiColor(1.0f, 0.5f, 0.3f, 1.0f);
+    std::vector<SymbolColorSpace> colorSpaces = { SymbolColorSpace::DISPLAY_P3 };
+    symbolTxt.SetRenderUIColor({ uiColor }, colorSpaces);
+
+    // Verify UIColor replaced Color
+    auto symbolColor = symbolTxt.GetSymbolColor();
+    EXPECT_EQ(symbolColor.colorType, SymbolColorType::COLOR_TYPE);
+    EXPECT_EQ(symbolColor.gradients.size(), 1); // 1 is the size of gradients
+    ASSERT_TRUE(symbolColor.gradients[0] != nullptr);
+    EXPECT_TRUE(symbolColor.gradients[0]->HasUIColor());
+    EXPECT_EQ(symbolColor.gradients[0]->GetColorSpace(), SymbolColorSpace::DISPLAY_P3);
+}
+
+/*
  * @tc.name: SetRenderUIColors002
  * @tc.desc: test SetRenderUIColors with multiple colors
  * @tc.type: FUNC
@@ -1031,6 +1084,101 @@ HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColors_MultipleColorSpaces001, TestSize.L
     EXPECT_EQ(csResults[0], SymbolColorSpace::DISPLAY_P3);
     EXPECT_EQ(csResults[1], SymbolColorSpace::BT2020);
     EXPECT_EQ(csResults[2], SymbolColorSpace::SRGB);
+}
+
+/*
+ * @tc.name: SetRenderUIColors_HDR_Headroom_Min001
+ * @tc.desc: test SetRenderUIColors with default headroom=1.0 (minimum)
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColors_HDR_Headroom_Min001, TestSize.Level0)
+{
+    SPText::HMSymbolTxt symbolTxt;
+    Drawing::UIColor uiColor(0.5f, 0.3f, 0.1f, 1.0f);
+    symbolTxt.SetRenderUIColor({ uiColor }, { SymbolColorSpace::SRGB });
+
+    auto result = symbolTxt.GetUIColors();
+    ASSERT_FALSE(result.empty());
+    EXPECT_FLOAT_EQ(result[0].GetHeadroom(), 1.0f);
+    EXPECT_FLOAT_EQ(result[0].GetRed(), 0.5f);
+    EXPECT_FLOAT_EQ(result[0].GetGreen(), 0.3f);
+    EXPECT_FLOAT_EQ(result[0].GetBlue(), 0.1f);
+}
+
+/*
+ * @tc.name: SetRenderUIColors_HDR_Headroom_Max001
+ * @tc.desc: test SetRenderUIColors with headroom=4.0 (maximum) via SetHeadroom
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColors_HDR_Headroom_Max001, TestSize.Level0)
+{
+    SPText::HMSymbolTxt symbolTxt;
+    Drawing::UIColor uiColor(3.0f, 2.5f, 1.8f, 1.0f);
+    uiColor.SetHeadroom(4.0f);
+    symbolTxt.SetRenderUIColor({ uiColor }, { SymbolColorSpace::BT2020 });
+
+    auto result = symbolTxt.GetUIColors();
+    ASSERT_FALSE(result.empty());
+    EXPECT_FLOAT_EQ(result[0].GetHeadroom(), 4.0f);
+    EXPECT_FLOAT_EQ(result[0].GetRed(), 3.0f);
+    EXPECT_FLOAT_EQ(result[0].GetGreen(), 2.5f);
+    EXPECT_FLOAT_EQ(result[0].GetBlue(), 1.8f);
+}
+
+/*
+ * @tc.name: SetRenderUIColors_HDR_MultiHeadroom001
+ * @tc.desc: test SetRenderUIColors with multiple HDR colors having different headroom
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColors_HDR_MultiHeadroom001, TestSize.Level0)
+{
+    SPText::HMSymbolTxt symbolTxt;
+    Drawing::UIColor uiColor1(1.5f, 0.8f, 0.5f, 1.0f);
+    uiColor1.SetHeadroom(-1.0f);
+    Drawing::UIColor uiColor2(2.0f, 1.0f, 0.3f, 1.0f);
+    uiColor2.SetHeadroom(0.0f);
+    std::vector<Drawing::UIColor> uiColors = { uiColor1, uiColor2 };
+    std::vector<SymbolColorSpace> colorSpaces = {
+        SymbolColorSpace::DISPLAY_P3,
+        SymbolColorSpace::BT2020
+    };
+    symbolTxt.SetRenderUIColor(uiColors, colorSpaces);
+
+    auto result = symbolTxt.GetUIColors();
+    ASSERT_EQ(result.size(), 2);
+    EXPECT_FLOAT_EQ(result[0].GetRed(), 1.5f);
+    EXPECT_FLOAT_EQ(result[0].GetHeadroom(), 1.0f);
+    EXPECT_FLOAT_EQ(result[1].GetRed(), 2.0f);
+    EXPECT_FLOAT_EQ(result[1].GetHeadroom(), 1.0f);
+
+    auto csResults = symbolTxt.GetColorSpaces();
+    ASSERT_EQ(csResults.size(), 2);
+    EXPECT_EQ(csResults[0], SymbolColorSpace::DISPLAY_P3);
+    EXPECT_EQ(csResults[1], SymbolColorSpace::BT2020);
+}
+
+/*
+ * @tc.name: SetRenderUIColors_Convert_HDR001
+ * @tc.desc: test HDR UIColor with headroom through Convert
+ * @tc.type: FUNC
+ */
+HWTEST_F(OHHmSymbolTxtTest, SetRenderUIColors_Convert_HDR001, TestSize.Level0)
+{
+    TextStyle style;
+    style.isSymbolGlyph = true;
+    Drawing::UIColor uiColor(-1.0f, -1.0f, -1.0f, 1.5f);
+    uiColor.SetHeadroom(0.9f);
+    std::vector<SymbolColorSpace> colorSpaces = { SymbolColorSpace::DISPLAY_P3 };
+    style.symbol.SetRenderUIColor({ uiColor }, colorSpaces);
+
+    SPText::TextStyle textStyle = AdapterTxt::Convert(style);
+    auto uiColorResults = textStyle.symbol.GetUIColors();
+    ASSERT_FALSE(uiColorResults.empty());
+    EXPECT_FLOAT_EQ(uiColorResults[0].GetRed(), 0.0f);
+    EXPECT_FLOAT_EQ(uiColorResults[0].GetGreen(), 0.0f);
+    EXPECT_FLOAT_EQ(uiColorResults[0].GetBlue(), 0.0f);
+    EXPECT_FLOAT_EQ(uiColorResults[0].GetAlpha(), 1.0f);
+    EXPECT_FLOAT_EQ(uiColorResults[0].GetHeadroom(), 1.0f);
 }
 } // namespace Rosen
 } // namespace OHOS
