@@ -79,7 +79,7 @@ bool DoStop(const uint8_t* data, size_t size)
 
 bool DoRemoveSoloist(const uint8_t* data, size_t size)
 {
-        if (data == nullptr) {
+    if (data == nullptr) {
         return false;
     }
 
