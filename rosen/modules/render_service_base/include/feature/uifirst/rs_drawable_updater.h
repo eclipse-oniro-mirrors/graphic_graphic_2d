@@ -38,13 +38,15 @@ static inline bool UpdateRSDrawable(std::shared_ptr<RSDrawable>& drawable, std::
 {
     if constexpr (std::is_constructible<T, std::shared_ptr<U>>::value) {
         static const T BENCHMARK(nullptr);
-        if (*(reinterpret_cast<const uintptr_t*>(&BENCHMARK)) != *(reinterpret_cast<const uintptr_t*>(drawable.get()))) {
+        if (*(reinterpret_cast<const uintptr_t*>(&BENCHMARK)) !=
+            *(reinterpret_cast<const uintptr_t*>(drawable.get()))) {
             return false;
         }
         drawable = std::make_shared<T>(content);
     } else {
         static const T BENCHMARK(nullptr, RSPaintFilterCanvas::SaveType::kNone);
-        if (*(reinterpret_cast<const uintptr_t*>(&BENCHMARK)) != *(reinterpret_cast<const uintptr_t*>(drawable.get()))) {
+        if (*(reinterpret_cast<const uintptr_t*>(&BENCHMARK)) !=
+            *(reinterpret_cast<const uintptr_t*>(drawable.get()))) {
             return false;
         }
         auto type = reinterpret_cast<RSDrawableHelper<U>*>(drawable.get())->type_;
