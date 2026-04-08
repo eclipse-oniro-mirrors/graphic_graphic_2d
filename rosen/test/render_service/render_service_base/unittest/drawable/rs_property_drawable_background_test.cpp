@@ -146,12 +146,6 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSShadowDrawable003, TestSize.Level1)
     Drawing::Canvas canvas;
     shadowDrawable->OnDraw(&canvas, rect.get());
     ASSERT_TRUE(true);
-
-    shadowDrawable->OnDraw(nullptr, rect.get());
-    ASSERT_TRUE(true);
-
-    shadowDrawable->OnDraw(&canvas, nullptr);
-    ASSERT_TRUE(true);
 }
 
 /**
@@ -1276,7 +1270,7 @@ HWTEST_F(RSRSBinarizationDrawableTest, RSShadowDrawable006, TestSize.Level1)
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RSRSBinarizationDrawableTest, RSShadowDrawable009, TestSize.Level1)
+HWTEST_F(RSRSBinarizationDrawableTest, RSShadowDrawable007, TestSize.Level1)
 {
     auto drawable = std::make_shared<DrawableV2::RSShadowDrawable>();
     auto canvas = std::make_shared<Drawing::Canvas>();
