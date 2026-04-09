@@ -1001,6 +1001,11 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
     }
     // Clean up the content of the previous frame
     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+
+    // If the self-drawing node is not fullscreen, need to re-adaptation curCanvas_ clear
+    if (RSUniRenderUtil::ProcessSingleSelfDrawingNode(*curCanvas_, *mirroredScreenParams, params)) {
+        return;
+    }
     virtualProcesser->CanvasClipRegionForUniscaleMode();
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
 
@@ -1162,6 +1167,11 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirror(RSLogicalDisplayRenderParams
     }
     // Clean up the content of the previous frame
     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+
+    // If the self-drawing node is not fullscreen, need to re-adaptation curCanvas_ clear
+    if (RSUniRenderUtil::ProcessSingleSelfDrawingNode(*curCanvas_, *mirroredScreenParams, params)) {
+        return;
+    }
     virtualProcesser->CanvasClipRegionForUniscaleMode(visibleClipRectMatrix_, mirroredScreenProperty.GetIsSamplingOn());
     curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
     PrepareOffscreenRender(*mirroredDrawable, false, false);
