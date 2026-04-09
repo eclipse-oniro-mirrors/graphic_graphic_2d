@@ -114,6 +114,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::UNREGISTER_FRAME_STABILITY_DETECTION),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::START_FRAME_STABILITY_COLLECTION),
     static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_FRAME_STABILITY_RESULT),
+    static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_MAX_GPU_BUFFER_SIZE),
 };
 
 void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
