@@ -16,13 +16,6 @@
 #ifndef TEST_FUZZTEST_BOOTANIMATION_FUZZER_H
 #define TEST_FUZZTEST_BOOTANIMATION_FUZZER_H
 
-#include <cstdint>
-#include <unistd.h>
-#include <climits>
-#include <cstdio>
-#include <cstdlib>
-#include <fcntl.h>
-
 #define FUZZ_PROJECT_NAME "bootanimation_fuzzer"
 
 #endif // TEST_FUZZTEST_BOOTANIMATION_FUZZER_H
