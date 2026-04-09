@@ -1234,5 +1234,7 @@ void RSSurfaceNode::DumpSubClass(std::string& out) const
         out += "], existsDuplicateModifier[true";
     }
 }
+
+void RSSurfaceNode::SetIsDepthResource(bool isDepthResource) {}
 } // namespace Rosen
 } // namespace OHOS
