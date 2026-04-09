@@ -1461,20 +1461,7 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
     }
 
     RSAutoCanvasRestore arc(&canvas);
-    surfaceParams.SetGlobalAlpha(1.0f);
-    uint32_t threadId = canvas.GetParallelThreadId();
-    auto params = RSUniRenderUtil::CreateBufferDrawParam(*this, false, threadId);
-    params.ignoreAlpha = surfaceParams.GetSurfaceBufferOpaque();
-    params.targetColorGamut = GetAncestorDisplayColorGamut(surfaceParams);
-#ifdef USE_VIDEO_PROCESSING_ENGINE
-    params.sdrNits = surfaceParams.GetSdrNit();
-    params.tmoNits = surfaceParams.GetDisplayNit();
-    params.displayNits = params.tmoNits / std::pow(surfaceParams.GetBrightnessRatio(), GAMMA2_2); // gamma 2.2
-    // color temperature
-    params.layerLinearMatrix = surfaceParams.GetLayerLinearMatrix();
-    params.hasMetadata = surfaceParams.GetSdrHasMetadata();
-#endif
-    params.colorFollow = surfaceParams.GetColorFollow(); // force the buffer to follow the colorspace of canvas
+    auto params = RSUniRenderUtil::DealWithBufferDrawParam(canvas, surfaceParams, *this);
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     if (IsHardwareEnabledTopSurface() && RSUniRenderThread::Instance().GetRSRenderThreadParams()->HasMirrorDisplay()) {
         RSMagicPointerRenderManager::GetInstance().SetCacheImgForPointer(canvas.GetSurface()->GetImageSnapshot());

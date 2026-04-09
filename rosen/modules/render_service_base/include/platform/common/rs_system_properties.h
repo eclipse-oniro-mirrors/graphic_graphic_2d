@@ -192,6 +192,7 @@ public:
     static StencilPixelOcclusionCullingType GetStencilPixelOcclusionCullingEnabled();
     static float GetClipRectThreshold();
     static bool GetAllSurfaceVisibleDebugEnabled();
+    static bool GetVirtualSelfDrawOptEnabled();
     static bool GetVirtualDirtyDebugEnabled();
     static bool GetVirtualDirtyEnabled();
     static bool GetVirtualExpandScreenDirtyEnabled();

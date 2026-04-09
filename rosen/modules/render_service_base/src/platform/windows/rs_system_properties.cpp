@@ -156,6 +156,11 @@ bool RSSystemProperties::GetAllSurfaceVisibleDebugEnabled()
     return false;
 }
 
+bool RSSystemProperties::GetVirtualSelfDrawOptEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetVirtualDirtyDebugEnabled()
 {
     return {};

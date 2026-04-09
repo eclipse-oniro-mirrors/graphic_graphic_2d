@@ -1632,5 +1632,109 @@ void RSUniRenderUtil::SwitchColorFilterWithP3(RSPaintFilterCanvas& canvas,
     canvas.ResetMatrix();
     canvas.DrawImage(*offscreenImage, 0.f, 0.f, Drawing::SamplingOptions());
 }
+
+bool RSUniRenderUtil::ProcessSingleSelfDrawingNode(RSPaintFilterCanvas& canvas,
+    RSScreenRenderParams& screenParams, RSLogicalDisplayRenderParams& displayParams)
+{
+    if (!RSSystemProperties::GetVirtualSelfDrawOptEnabled() ||
+        !screenParams.GetLayerSkipContext().screenLayerInvalid_) {
+        RS_LOGD(" %{public}s disabled or screenLayer is invalid", __func__);
+        return false;
+    }
+    const auto& fullScreenSelfDrawingSurface = screenParams.GetLayerSkipContext().relevantSurfaceNodeIds_;
+    // only handle a single self drawing node
+    if (fullScreenSelfDrawingSurface.size() != 1) {
+        RS_LOGD(" %{public}s more than one full-screen self drawing node exists", __func__);
+        return false;
+    }
+    auto surfaceId = fullScreenSelfDrawingSurface[0];
+    auto drawable = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(surfaceId);
+    if (drawable == nullptr || drawable->GetNodeType() != RSRenderNodeType::SURFACE_NODE) {
+        RS_LOGD(" %{public}s drawable is invalid", __func__);
+        return false;
+    }
+    auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(drawable);
+    if (DrawSingleSelfDrawingNode(canvas, surfaceDrawable, displayParams)) {
+        RS_TRACE_NAME_FMT("%s Draw single self drawing node: [%" PRIu64 "], name: %s",
+            __func__, surfaceDrawable->GetId(), surfaceDrawable->GetName().c_str());
+        return true;
+    }
+    return false;
+}
+
+bool RSUniRenderUtil::DrawSingleSelfDrawingNode(RSPaintFilterCanvas& canvas,
+    const std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& surfaceDrawable,
+    RSLogicalDisplayRenderParams& displayParams)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+    if (UNLIKELY(surfaceParams == nullptr)) {
+        RS_LOGD(" %{public}s surface Param is nullptr", __func__);
+        return false;
+    }
+
+    //Not enabled for special layer nodes
+    const auto& whiteList = RSUniRenderThread::Instance().GetWhiteList();
+    const auto& specialLayerMgr = surfaceParams->GetSpecialLayerMgr();
+    if (displayParams.IsSecurityDisplay() && (specialLayerMgr.Find(HAS_GENERAL_SPECIAL) ||
+        specialLayerMgr.FindWithScreen(displayParams.GetScreenId(), SpecialLayerType::HAS_BLACK_LIST) ||
+        !whiteList.empty())) {
+        return false;
+    }
+    auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine();
+    if (UNLIKELY(renderEngine == nullptr)) {
+        RS_LOGD(" %{public}s name:%{public}s nodeId:[%{public}" PRIu64 "],  renderEngine is nullptr",
+            __func__, surfaceParams->GetName().c_str(), surfaceParams->GetId());
+        return false;
+    }
+    RSAutoCanvasRestore arc(&canvas);
+    auto params = ProcessCanvasBySurfaceNode(canvas, *surfaceParams, *surfaceDrawable);
+
+    renderEngine->DrawSurfaceNodeWithParams(canvas, *surfaceDrawable, params);
+    RSUniRenderThread::Instance().OnDrawBuffer(
+        surfaceDrawable->GetConsumerOnDraw(), params.buffer, surfaceParams->GetBufferOwnerCount());
+    return true;
+}
+
+BufferDrawParam RSUniRenderUtil::DealWithBufferDrawParam(
+    RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams,
+    DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable)
+{
+    surfaceParams.SetGlobalAlpha(1.0f);
+    uint32_t threadId = canvas.GetParallelThreadId();
+    auto params = RSUniRenderUtil::CreateBufferDrawParam(surfaceDrawable, false, threadId);
+    params.ignoreAlpha = surfaceParams.GetSurfaceBufferOpaque();
+    params.targetColorGamut = surfaceDrawable.GetAncestorDisplayColorGamut(surfaceParams);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    params.sdrNits = surfaceParams.GetSdrNit();
+    params.tmoNits = surfaceParams.GetDisplayNit();
+    params.displayNits = params.tmoNits / std::pow(surfaceParams.GetBrightnessRatio(), GAMMA2_2); // gamma 2.2
+    // color temperature
+    params.layerLinearMatrix = surfaceParams.GetLayerLinearMatrix();
+    params.hasMetadata = surfaceParams.GetSdrHasMetadata();
+#endif
+    params.colorFollow = surfaceParams.GetColorFollow(); // force the buffer to follow the colorspace of canvas
+    return params;
+}
+
+BufferDrawParam RSUniRenderUtil::ProcessCanvasBySurfaceNode(
+    RSPaintFilterCanvas& canvas, RSSurfaceRenderParams& surfaceParams,
+    DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable)
+{
+    const auto& matrix = surfaceParams.GetLayerInfo().matrix;
+    canvas.ConcatMatrix(matrix);
+    auto params = DealWithBufferDrawParam(canvas, surfaceParams, surfaceDrawable);
+    auto bgColor = surfaceParams.GetBackgroundColor();
+    if (surfaceParams.GetHardwareEnabled() && surfaceParams.GetIsHwcEnabledBySolidLayer()) {
+        bgColor = surfaceParams.GetSolidLayerColor();
+        RS_LOGD("solidLayer enabled, %{public}s, name:%{public}s nodeId:[%{public}" PRIu64 "], brush set color: "
+            "%{public}08x", __func__, surfaceParams.GetName().c_str(), surfaceParams.GetId(), bgColor.AsArgbInt());
+    }
+    Drawing::Brush brush;
+    brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
+    canvas.AttachBrush(brush);
+    canvas.DrawRect(surfaceParams.GetBounds());
+    canvas.DetachBrush();
+    return params;
+}
 } // namespace Rosen
 } // namespace OHOS
