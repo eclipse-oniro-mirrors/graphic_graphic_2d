@@ -1666,14 +1666,14 @@ public:
     /**
      * @brief Sets the strength of gravity pull union node.
      *
-     * @param gravityPullStrength: strength of gravity pull.
+     * @param gravityPullStrength strength of gravity pull.
      */
     void SetGravityPullStrength(float gravityPullStrength);
 
     /**
      * @brief Sets the hotZone of gravity pull union node.
      *
-     * @param hotZone: hot zone of gravity pull.
+     * @param hotZone hot zone of gravity pull.
      */
     void SetGravityHotZone(float hotZone);
 
