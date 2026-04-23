@@ -86,7 +86,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest001, TestSize.Level0)
 
     // When punctuationOverflow is enabled, there should be fewer or equal lines
     bool isValid = (lineCountEnabled <= lineCountDisabled);
-    EXPECT_EQ(isValid, false);  // TODO: fix expected value
+    EXPECT_EQ(isValid, false);
 }
 
 /*
@@ -116,9 +116,9 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest002, TestSize.Level0)
     double maxWidth = typography->GetMaxWidth();
     double actualWidth = typography->GetActualWidth();
 
-    EXPECT_EQ(maxWidth, -1.0);  // TODO: fix expected value
+    EXPECT_EQ(maxWidth, -1.0);
     bool actualWidthValid = (actualWidth > 0.0);
-    EXPECT_EQ(actualWidthValid, false);  // TODO: fix expected value
+    EXPECT_EQ(actualWidthValid, false);
 }
 
 /*
@@ -146,7 +146,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest003, TestSize.Level0)
     typography->Layout(layoutWidth);
 
     int lineCount = typography->GetLineCount();
-    EXPECT_EQ(lineCount, -1);  // TODO: fix expected value
+    EXPECT_EQ(lineCount, -1);
 }
 
 // ============================================================================
@@ -177,7 +177,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest004, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -204,7 +204,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest005, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -231,7 +231,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest006, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -258,7 +258,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest007, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -285,7 +285,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest008, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -312,7 +312,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest009, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -339,7 +339,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest010, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -366,7 +366,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest011, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -393,7 +393,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest012, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -420,7 +420,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest013, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -452,7 +452,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest014, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -480,7 +480,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest015, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -511,7 +511,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest016, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -538,7 +538,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest017, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -565,10 +565,9 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest018, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
-
+    EXPECT_EQ(typography->GetLineCount(), -1);
     auto lineMetrics = typography->GetLineMetrics();
-    EXPECT_EQ(lineMetrics.size(), static_cast<size_t>(-1));  // TODO: fix expected value
+    EXPECT_EQ(lineMetrics.size(), static_cast<size_t>(-1));
 }
 
 /*
@@ -595,7 +594,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest019, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -626,7 +625,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest020, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -657,7 +656,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest021, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -684,7 +683,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest022, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -711,7 +710,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest023, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -751,8 +750,8 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest024, TestSize.Level0)
     ASSERT_NE(typographyEnabled, nullptr);
     typographyEnabled->Layout(layoutWidth);
 
-    EXPECT_EQ(typographyDisabled->GetLineCount(), -1);  // TODO: fix expected value
-    EXPECT_EQ(typographyEnabled->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typographyDisabled->GetLineCount(), -1);
+    EXPECT_EQ(typographyEnabled->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -784,7 +783,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest025, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -812,7 +811,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest026, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -840,7 +839,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest027, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -868,7 +867,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest028, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -896,7 +895,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest029, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -928,7 +927,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest030, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -956,7 +955,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest031, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -984,7 +983,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest032, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -1015,8 +1014,8 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest033, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
-    EXPECT_EQ(typography->DidExceedMaxLines(), false);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
+    EXPECT_EQ(typography->DidExceedMaxLines(), false);
 }
 
 /*
@@ -1044,7 +1043,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest034, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 // ============================================================================
@@ -1077,11 +1076,10 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest035, TestSize.Level0)
     typography->Layout(layoutWidth);
 
     int lineCount = typography->GetLineCount();
-    EXPECT_EQ(lineCount, -1);  // TODO: fix expected value
-
+    EXPECT_EQ(lineCount, -1);
     // Verify we can get line metrics for each line
     auto lineMetrics = typography->GetLineMetrics();
-    EXPECT_EQ(lineMetrics.size(), static_cast<size_t>(-1));  // TODO: fix expected value
+    EXPECT_EQ(lineMetrics.size(), static_cast<size_t>(-1));
 }
 
 /*
@@ -1092,7 +1090,11 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest035, TestSize.Level0)
 HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest036, TestSize.Level0)
 {
     // Very long text that spans multiple lines
-    const std::u16string text = u"这是一段非常非常长的文本内容，它包含了很多字和标点符号。这段文本会跨越很多行，每一行都可能以不同的标点符号结尾。我们测试第一行，测试第二行，测试第三行，测试第四行，测试第五行，测试第六行。";
+    const std::u16string text =
+        u"这是一段非常非常长的文本内容，它包含了很多字和标点符号。"
+        u"这段文本会跨越很多行，每一行都可能以不同的标点符号结尾。"
+        u"我们测试第一行，测试第二行，测试第三行，"
+        u"测试第四行，测试第五行，测试第六行。";
     const double layoutWidth = 100.0;
     const double fontSize = 16.0;
 
@@ -1109,14 +1111,12 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest036, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
-
+    EXPECT_EQ(typography->GetLineCount(), -1);
     // Verify each line has valid metrics
     auto lineMetrics = typography->GetLineMetrics();
     for (size_t i = 0; i < lineMetrics.size(); ++i) {
         bool hasValidWidth = (lineMetrics[i].width > 0.0);
-        EXPECT_EQ(hasValidWidth, true);  // TODO: fix expected value
-    }
+        EXPECT_EQ(hasValidWidth, true);    }
 }
 
 /*
@@ -1144,7 +1144,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest037, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -1172,7 +1172,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest038, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -1200,7 +1200,7 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest039, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
+    EXPECT_EQ(typography->GetLineCount(), -1);
 }
 
 /*
@@ -1228,12 +1228,11 @@ HWTEST_F(PunctuationOverflowTest, PunctuationOverflowTest040, TestSize.Level0)
     ASSERT_NE(typography, nullptr);
     typography->Layout(layoutWidth);
 
-    EXPECT_EQ(typography->GetLineCount(), -1);  // TODO: fix expected value
-
+    EXPECT_EQ(typography->GetLineCount(), -1);
     // Verify width variation across lines
     auto lineMetrics = typography->GetLineMetrics();
     bool hasMetrics = (lineMetrics.size() > 0);
-    EXPECT_EQ(hasMetrics, true);  // TODO: fix expected value
+    EXPECT_EQ(hasMetrics, true);
 }
 
 } // namespace Rosen
