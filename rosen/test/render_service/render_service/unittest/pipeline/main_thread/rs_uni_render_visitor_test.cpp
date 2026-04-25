@@ -9344,6 +9344,63 @@ HWTEST_F(RSUniRenderVisitorTest, HandleColorPickerHwcDisable004, TestSize.Level1
 }
 
 /**
+ * @tc.name: ScheduleColorPickIfCurrentSurfaceDirty001
+ * @tc.desc: Test ScheduleColorPickIfCurrentSurfaceDirty schedules when current surface dirty intersects
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVisitorTest, ScheduleColorPickIfCurrentSurfaceDirty001, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto surfaceNode = CreateColorPickerTestSurface(COLOR_PICKER_SURFACE_NODE_ID);
+    auto filterNode = CreateColorPickerTestNode(
+        COLOR_PICKER_FILTER_NODE_ID, COLOR_PICKER_FILTER_RECT, DrawableV2::ColorPickerState::PREPARING);
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_NE(filterNode, nullptr);
+
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    dirtyManager->MergeDirtyRect(COLOR_PICKER_CUSTOM_DIRTY_RECT);
+
+    rsUniRenderVisitor->ScheduleColorPickIfCurrentSurfaceDirty(*filterNode, *dirtyManager);
+
+    auto colorPickerDrawable = filterNode->GetColorPickerDrawable();
+    ASSERT_NE(colorPickerDrawable, nullptr);
+    EXPECT_EQ(colorPickerDrawable->stagingState_, DrawableV2::ColorPickerState::SCHEDULED);
+}
+
+/**
+ * @tc.name: ScheduleColorPickIfCurrentSurfaceDirty002
+ * @tc.desc: Test ScheduleColorPickIfCurrentSurfaceDirty skips null current surface and clean regions
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVisitorTest, ScheduleColorPickIfCurrentSurfaceDirty002, TestSize.Level1)
+{
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
+    ASSERT_NE(rsUniRenderVisitor, nullptr);
+    auto surfaceNode = CreateColorPickerTestSurface(COLOR_PICKER_SURFACE_NODE_ID);
+    auto filterNode = CreateColorPickerTestNode(
+        COLOR_PICKER_FILTER_NODE_ID, COLOR_PICKER_FILTER_RECT, DrawableV2::ColorPickerState::PREPARING);
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_NE(filterNode, nullptr);
+
+    auto dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    dirtyManager->MergeDirtyRect(COLOR_PICKER_CUSTOM_DIRTY_RECT);
+    rsUniRenderVisitor->ScheduleColorPickIfCurrentSurfaceDirty(*filterNode, *dirtyManager);
+
+    auto colorPickerDrawable = filterNode->GetColorPickerDrawable();
+    ASSERT_NE(colorPickerDrawable, nullptr);
+    EXPECT_EQ(colorPickerDrawable->stagingState_, DrawableV2::ColorPickerState::PREPARING);
+
+    rsUniRenderVisitor->curSurfaceNode_ = surfaceNode;
+    dirtyManager = std::make_shared<RSDirtyRegionManager>();
+    dirtyManager->MergeDirtyRect(COLOR_PICKER_OUTSIDE_DIRTY_RECT);
+    rsUniRenderVisitor->ScheduleColorPickIfCurrentSurfaceDirty(*filterNode, *dirtyManager);
+
+    EXPECT_EQ(colorPickerDrawable->stagingState_, DrawableV2::ColorPickerState::PREPARING);
+}
+
+/**
  * @tc.name: PrepareColorPickers003
  * @tc.desc: Test PrepareColorPickers with resetState branch (COLOR_PICK_THIS_FRAME)
  * @tc.type: FUNC
