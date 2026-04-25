@@ -219,7 +219,7 @@ void ScheduleColorPickWithSemaphore(Drawing::Surface& surface, std::weak_ptr<ICo
             DestroySemaphoreInfo::DestroySemaphore(destroyInfo); // semaphore inits with ref count = 2
             delete infoPtr;
         },
-        false);
+        0);
 #else
     return;
 #endif
@@ -356,8 +356,7 @@ bool DirtyInCurrentSurface(const RSRenderNode& filterNode, const RectI& dirtyRec
     return dirtyRect.Intersect(GetColorPickerRect(filterNode));
 }
 
-bool DirtyInSurfacesBelow(
-    const RSRenderNode& filterNode, const std::vector<std::shared_ptr<RSRenderNode>>& surfaces)
+bool DirtyInSurfacesBelow(const RSRenderNode& filterNode, const std::vector<std::shared_ptr<RSRenderNode>>& surfaces)
 {
     if (!InPrepareState(filterNode)) {
         return false;

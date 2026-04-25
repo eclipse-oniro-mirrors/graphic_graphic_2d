@@ -51,36 +51,11 @@ constexpr uint32_t ONE_SECOND = 1000;
 constexpr uint32_t MAX_TASKS_PER_SECOND = 20;
 } // namespace
 
-bool RSColorPickerThread::PostTask(const std::function<void()>& task, bool limited, int64_t delayTime)
+bool RSColorPickerThread::PostTask(const std::function<void()>& task, int64_t delayTime)
 {
     if (!handler_) {
         return false;
     }
-    if (!limited) {
-        handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-        return true;
-    }
-
-    const auto now =
-        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch())
-            .count();
-    int64_t lastReset = lastResetTime_.load(std::memory_order_relaxed);
-    // Reset counter if more than 1 second has passed
-    if (now - lastReset >= ONE_SECOND) {
-        // Try to update the reset time atomically
-        if (lastResetTime_.compare_exchange_strong(lastReset, now, std::memory_order_relaxed)) {
-            taskCount_.store(0, std::memory_order_relaxed);
-        }
-    }
-
-    // Check if we've exceeded the rate limit
-    uint32_t currentCount = taskCount_.fetch_add(1, std::memory_order_relaxed);
-    if (currentCount >= MAX_TASKS_PER_SECOND) {
-        RS_LOGD("RSColorPickerThread: Task dropped due to rate limit (count: %{public}u)", currentCount + 1);
-        RS_OPTIONAL_TRACE_NAME_FMT("RSColorPickerThread::PostTask rate limited (count: %u)", currentCount + 1);
-        return false;
-    }
-
     handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
     return true;
 }
@@ -125,7 +100,7 @@ void RSColorPickerThread::InitRenderContext(std::shared_ptr<RenderContext> conte
             return;
         }
         gpuContext_->RegisterPostFunc(
-            [](const std::function<void()>& task) { RSColorPickerThread::Instance().PostTask(task); });
+            [](const std::function<void()>& task) { RSColorPickerThread::Instance().PostTask(task, 0); });
         }, false);
 }
 
