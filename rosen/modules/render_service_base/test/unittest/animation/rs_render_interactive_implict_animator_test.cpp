@@ -71,7 +71,9 @@ HWTEST_F(RSRenderInteractiveImplictAnimatorTest, AddAnimations001, TestSize.Leve
     auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
     auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
         ANIMATION_ID, PROPERTY_ID, property, property1, property2);
-    renderNode->GetAnimationManager().AddAnimation(renderCurveAnimation);
+    auto animationManager = renderNode->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    animationManager->AddAnimation(renderCurveAnimation);
     std::vector<std::pair<NodeId, AnimationId>> animations3;
     animations3.emplace_back(NODE_ID, ANIMATION_ID);
     animator->AddAnimations(animations3);
@@ -1539,7 +1541,7 @@ HWTEST_F(RSRenderInteractiveImplictAnimatorTest, TimeDrivenGroupAnimator_FinishA
     auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
         ANIMATION_ID, PROPERTY_ID, property, property1, property2);
     renderCurveAnimation->targetId_ = NODE_ID;
-    renderNode->GetAnimationManager().AddAnimation(renderCurveAnimation);
+    renderNode->AddAnimation(renderCurveAnimation);
 
     animator->cachedAnimations_.emplace_back(renderCurveAnimation);
 

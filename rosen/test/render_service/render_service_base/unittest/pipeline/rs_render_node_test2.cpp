@@ -194,7 +194,6 @@ HWTEST_F(RSRenderNodeTest2, FallbackAnimationsToRoot, TestSize.Level1)
     RSRenderNode node(id, context);
     node.FallbackAnimationsToRoot();
     node.FallbackAnimationsToRoot();
-    node.animationManager_.animations_.clear();
     node.FallbackAnimationsToRoot();
     ASSERT_TRUE(true);
 }

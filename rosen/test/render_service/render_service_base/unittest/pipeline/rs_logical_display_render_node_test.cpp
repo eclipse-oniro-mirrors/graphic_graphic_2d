@@ -183,7 +183,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, IsOnlyHDRAnimationTest, TestSize.Level1
     displayNode->modifiersNG_.emplace(ModifierNG::RSModifierType::HDR_BRIGHTNESS, modifiers);
     auto animationProperty = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
     auto renderPropertyAnimation = std::make_shared<RSRenderPropertyAnimation>(0, 1, animationProperty);
-    displayNode->animationManager_.animations_[0] = renderPropertyAnimation;
+    displayNode->animationManager_ = std::make_shared<RSAnimationManager>();
+    displayNode->animationManager_->animations_[0] = renderPropertyAnimation;
     displayNode->IsOnlyHDRAnimation();
 
     auto modifier3 = ModifierNG::RSRenderModifier::MakeRenderModifier(
@@ -191,7 +192,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeTest, IsOnlyHDRAnimationTest, TestSize.Level1
     modifiers.emplace_back(modifier3);
     renderPropertyAnimation->propertyId_ = 2;
     std::shared_ptr<RSRenderAnimation> animation2;
-    displayNode->animationManager_.animations_[1] = animation2;
+    displayNode->animationManager_->animations_[1] = animation2;
     displayNode->IsOnlyHDRAnimation();
 }
 

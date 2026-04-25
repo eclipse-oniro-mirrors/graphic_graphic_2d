@@ -780,12 +780,14 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach003, TestSize.Level1)
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
     // test preDrawCmdListAnimationId_ is 0
-    target->GetAnimationManager().preDrawCmdListAnimationId_ = 0;
+    auto animationManager = target->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    animationManager->preDrawCmdListAnimationId_ = 0;
     renderCurveAnimation->OnAttach();
     // test preDrawCmdListAnimationId_ > 0
-    target->GetAnimationManager().preDrawCmdListAnimationId_ = ANIMATION_ID;
-    // test target->GetAnimationManager().GetAnimation(ANIMATION_ID) is null
-    EXPECT_EQ(target->GetAnimationManager().GetAnimation(ANIMATION_ID), nullptr);
+    animationManager->preDrawCmdListAnimationId_ = ANIMATION_ID;
+    // test animationManager->GetAnimation(ANIMATION_ID) is null
+    EXPECT_EQ(animationManager->GetAnimation(ANIMATION_ID), nullptr);
     renderCurveAnimation->OnAttach();
 }
 
@@ -814,9 +816,11 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach004, TestSize.Level1)
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
     // test preDrawCmdListAnimationId_ > 0
-    target->GetAnimationManager().preDrawCmdListAnimationId_ = ANIMATION_ID_2;
-    target->GetAnimationManager().AddAnimation(renderCurveAnimation2);
-    auto preAnimation = target->GetAnimationManager().GetAnimation(ANIMATION_ID_2);
+    auto animationManager = target->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    animationManager->preDrawCmdListAnimationId_ = ANIMATION_ID_2;
+    animationManager->AddAnimation(renderCurveAnimation2);
+    auto preAnimation = animationManager->GetAnimation(ANIMATION_ID_2);
     ASSERT_NE(preAnimation, nullptr);
     // test preAnimaton propertyId is not equal this propertyId
     EXPECT_NE(preAnimation->GetPropertyId(), renderCurveAnimation->property_->GetId());
@@ -846,9 +850,11 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach005, TestSize.Level1)
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
     // test preAnimaton is not nullptr
-    target->GetAnimationManager().preDrawCmdListAnimationId_ = ANIMATION_ID;
-    target->GetAnimationManager().AddAnimation(renderCurveAnimation);
-    auto preAnimation = target->GetAnimationManager().GetAnimation(ANIMATION_ID);
+    auto animationManager = target->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    animationManager->preDrawCmdListAnimationId_ = ANIMATION_ID;
+    animationManager->AddAnimation(renderCurveAnimation);
+    auto preAnimation = animationManager->GetAnimation(ANIMATION_ID);
     ASSERT_NE(preAnimation, nullptr);
     // test preAnimaton propertyId is equal this propertyId
     EXPECT_EQ(preAnimation->GetPropertyId(), renderCurveAnimation->property_->GetId());
