@@ -86,22 +86,22 @@ HWTEST_F(RSOpincDrawCacheTest, OpincCalculateBefore, TestSize.Level1)
     DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
     RSOpincManager::Instance().SetOPIncSwitch(true);
     opincDrawCache.OpincCalculateBefore(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
     opincDrawCache.OpincCalculateBefore(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
 
     RSOpincManager::Instance().SetOPIncSwitch(true);
     opincDrawCache.OpincCalculateBefore(canvas, params);
-    ASSERT_TRUE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_TRUE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
     opincDrawCache.OpincCalculateBefore(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 }
  
 /**
@@ -116,11 +116,11 @@ HWTEST_F(RSOpincDrawCacheTest, OpincCalculateAfter, TestSize.Level1)
     Drawing::Canvas canvas;
     DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
     opincDrawCache.OpincCalculateAfter(canvas);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
-    opincDrawCache.isOpincCaculateStart_ = true;
+    opincDrawCache.isOpincCalculateStart_ = true;
     opincDrawCache.OpincCalculateAfter(canvas);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 }
  
 /**
@@ -394,32 +394,32 @@ HWTEST_F(RSOpincDrawCacheTest, BeforeDrawCache, TestSize.Level1)
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
     opincDrawCache.nodeCacheType_ = NodeStrategyType::DDGR_OPINC_DYNAMIC;
     opincDrawCache.BeforeDrawCache(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.nodeCacheType_ =  NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.BeforeDrawCache(canvas, params);
-    ASSERT_TRUE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_TRUE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
-    opincDrawCache.isOpincCaculateStart_ = false;
+    opincDrawCache.isOpincCalculateStart_ = false;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
     opincDrawCache.nodeCacheType_ = NodeStrategyType::DDGR_OPINC_DYNAMIC;
     opincDrawCache.BeforeDrawCache(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     opincDrawCache.nodeCacheType_ = NodeStrategyType::CACHE_NONE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
     opincDrawCache.BeforeDrawCache(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(true);
     opincDrawCache.nodeCacheType_ = NodeStrategyType::CACHE_NONE;
     params.isOpincRootFlag_ = true;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
     opincDrawCache.BeforeDrawCache(canvas, params);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 }
 
 /**
@@ -530,7 +530,7 @@ HWTEST_F(RSOpincDrawCacheTest, AfterDrawCache, TestSize.Level1)
     opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
-    opincDrawCache.isOpincCaculateStart_ = false;
+    opincDrawCache.isOpincCalculateStart_ = false;
     DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 100, 200});
     absRect = {50, 50, 100, 100};
     params.SetAbsDrawRect(absRect);

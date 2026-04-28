@@ -67,10 +67,10 @@ void RSOpincDrawCache::OpincCalculateBefore(Drawing::Canvas& canvas, const RSRen
 {
 #ifdef RS_ENABLE_GPU
     opincBlockNodeSkipTemp_ = opincBlockNodeSkip_;
-    isOpincCaculateStart_ = false;
+    isOpincCalculateStart_ = false;
     if (IsAutoCacheEnable() && IsOpListDrawAreaEnable()) {
-        isOpincCaculateStart_ = canvas.OpCalculateBefore(params.GetMatrix());
-        RS_OPTIONAL_TRACE_NAME_FMT("canvas OpCalculateBefore return %d", isOpincCaculateStart_);
+        isOpincCalculateStart_ = canvas.OpCalculateBefore(params.GetMatrix());
+        RS_OPTIONAL_TRACE_NAME_FMT("canvas OpCalculateBefore return %d", isOpincCalculateStart_);
         opincBlockNodeSkip_ = false;
     }
 #endif
@@ -78,8 +78,8 @@ void RSOpincDrawCache::OpincCalculateBefore(Drawing::Canvas& canvas, const RSRen
 
 void RSOpincDrawCache::OpincCalculateAfter(Drawing::Canvas& canvas)
 {
-    if (isOpincCaculateStart_) {
-        isOpincCaculateStart_ = false;
+    if (isOpincCalculateStart_) {
+        isOpincCalculateStart_ = false;
         auto localBound = Drawing::Rect(0.f, 0.f, static_cast<float>(GetOpincCacheMaxWidth()),
             static_cast<float>(GetOpincCacheMaxHeight()));
         auto drawAreaTemp = canvas.OpCalculateAfter(localBound);
