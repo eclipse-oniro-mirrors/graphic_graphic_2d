@@ -42,6 +42,7 @@ public:
     {
         return solidLayerConfig_;
     }
+    bool IsHgmEnabled() const{ return enableHgm_; }
 
 private:
     int32_t Parse();
@@ -52,6 +53,7 @@ private:
     std::vector<std::string> appBufferList_;
     std::unordered_map<std::string, std::string> sourceTuningConfig_;
     std::unordered_map<std::string, std::string> solidLayerConfig_;
+    bool enableHgm_ = true;
 };
 } // namespace OHOS::Rosen
 

@@ -157,7 +157,7 @@ public:
     uint32_t SetScreenActiveMode(ScreenId id, uint32_t modeId);
     RSScreenManager* GetScreenManager() { return screenManager_; }
     void SetScreenManager(RSScreenManager* screenManager) { screenManager_ = screenManager; }
-
+    bool IsHgmPolicyEnabled() const { return hgmPolicyEnabled_; }
 private:
     HgmCore();
     ~HgmCore() noexcept = default;
@@ -177,6 +177,7 @@ private:
 
     bool IsEnabled() const;
 
+    bool hgmPolicyEnabled_ = true;
     std::unique_ptr<XMLParser> mParser_ = nullptr;
     std::shared_ptr<PolicyConfigData> mPolicyConfigData_ = nullptr;
     std::shared_ptr<PolicyConfigVisitor> mPolicyConfigVisitor_ = nullptr;

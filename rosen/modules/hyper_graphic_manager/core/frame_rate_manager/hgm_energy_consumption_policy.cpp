@@ -293,6 +293,9 @@ void HgmEnergyConsumptionPolicy::SetVideoCallSceneInfo(const EventInfo &eventInf
         videoCallPid_.store(DEFAULT_PID);
         videoCallMaxFrameRate_ = 0;
         isEnableVideoCall_.store(false);
+        if (HgmCore::Instance().IsHgmPolicyEnabled()) {
+            HgmTaskHandleThread::Instance().PostTask([this]() { VoterVideoCallFrameRate(); });
+        }
         HgmTaskHandleThread::Instance().PostTask([this]() { VoterVideoCallFrameRate(); });
     }
     if (eventInfo.eventStatus) {

@@ -159,6 +159,7 @@ int32_t HgmCore::InitXmlConfig()
     }
     if (mPolicyConfigData_ != nullptr) {
         mPolicyConfigVisitor_ = std::make_shared<PolicyConfigVisitorImpl>(*mPolicyConfigData_);
+        hgmPolicyEnabled_ = mPolicyConfigData_->hgmEnabled_;
     }
     return EXEC_SUCCESS;
 }

@@ -974,9 +974,11 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
 #ifdef RS_ENABLE_GPU
         screenManagerAgent_->SetScreenPowerStatus(id, status);
         renderServiceAgent_->HandlePowerStatus(id, status);
-        HgmTaskHandleThread::Instance().PostTask([id, status]() {
-            HgmCore::Instance().NotifyScreenPowerStatus(id, status);
-        });
+        if (hgmContext_ != nullptr) {
+            HgmTaskHandleThread::Instance().PostTask([id, status]() {
+                HgmCore::Instance().NotifyScreenPowerStatus(id, status);
+            });
+        }
 #endif
     } else {
         renderServiceAgent_->ScheduleTask(
@@ -1525,6 +1527,10 @@ ErrCode RSClientToServiceConnection::SetScreenActiveRect(ScreenId id, const Rect
         return ERR_INVALID_VALUE;
     }
     screenManagerAgent_->SetScreenActiveRect(id, activeRect);
+    if (hgmContext_ == nullptr) {
+        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        return StatusCode::INVALID_ARGUMENTS;
+    }
     HgmTaskHandleThread::Instance().PostTask([id, activeRect]() {
         HgmCore::Instance().NotifyScreenRectFrameRateChange(id, activeRect);
     });

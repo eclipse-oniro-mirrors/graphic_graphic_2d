@@ -48,6 +48,10 @@ void HgmContext::InitHgmTaskHandleThread(
     const sptr<VSyncController>& rsVSyncController, const sptr<VSyncController>& appVSyncController,
     const sptr<VSyncGenerator>& vsyncGenerator)
 {
+    if (!hgmCore_.IsHgmPolicyEnabled()) {
+        HGM_LOGD("hgm policy is not enabled.");
+        return;
+    }
     auto forceUpdateTask = [this](bool forceUpdate) {
         renderServiceHandler_->PostTask([this, forceUpdate] {
             RS_TRACE_NAME_FMT("HgmForceUpdateTask forceUpdateFlag: %d", forceUpdate);

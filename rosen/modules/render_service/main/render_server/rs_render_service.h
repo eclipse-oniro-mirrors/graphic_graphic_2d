@@ -19,6 +19,7 @@
 #include <event_handler.h>
 #include <map>
 
+#include "hgm_core.h"
 #include "rs_game_frame_handler.h"
 #include "rs_render_mode_config.h"
 #include "rs_render_multi_process_manager.h"
@@ -105,7 +106,13 @@ private:
     void FpsDump(std::string& dumpString, const std::string& arg);
 
     // Hgm related
-    const std::shared_ptr<HgmContext>& GetHgmContext() const { return hgmContext_; }
+    std::shared_ptr<HgmContext> GetHgmContext() const
+    {
+        if (!HgmCore::Instance().IsHgmPolicyEnabled()) {
+            return nullptr;
+        }
+        return hgmContext_;
+    }
     void HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status);
 
     // Game Scene Handler
