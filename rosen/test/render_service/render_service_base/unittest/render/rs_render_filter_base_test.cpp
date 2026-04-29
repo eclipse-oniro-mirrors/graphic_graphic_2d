@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "gtest/gtest.h"
-#include "ge_visual_effect_impl.h"
-#include "effect/rs_render_filter_base.h"
-#include "pipeline/rs_render_node.h"
-#include "render/rs_render_filter_base.h"
-#include "transaction/rs_marshalling_helper.h"
 #include "ge_visual_effect.h"
 #include "ge_visual_effect_container.h"
+#include "ge_visual_effect_impl.h"
+#include "gtest/gtest.h"
 #include "parcel.h"
+
+#include "effect/rs_render_filter_base.h"
+#include "effect/rs_render_mask_base.h"
+#include "pipeline/rs_render_node.h"
 #include "render/rs_path.h"
+#include "render/rs_render_filter_base.h"
+#include "transaction/rs_marshalling_helper.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -457,5 +459,901 @@ HWTEST_F(RSRenderFilterBaseTest, CalculatePropTagHashImplInt, TestSize.Level1)
     RSNGRenderEffectHelper::CalculatePropTagHashImpl(hash1, 1);
     RSNGRenderEffectHelper::CalculatePropTagHashImpl(hash2, 2);
     EXPECT_NE(hash1, hash2);
+}
+
+/**
+ * @tc.name: DispDistortFilterCreate001
+ * @tc.desc: Test creating DispDistort filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::DISPLACEMENT_DISTORT);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::DISPLACEMENT_DISTORT);
+}
+
+/**
+ * @tc.name: DispDistortFilterSetterGetter001
+ * @tc.desc: Test DispDistort filter Setter and Getter for Factor property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderDispDistortFilter>();
+    Vector2f factor { 1.5f, 2.0f };
+    filter->Setter<DispDistortFactorRenderTag>(factor);
+    auto val = filter->Getter<DispDistortFactorRenderTag>();
+    ASSERT_NE(val, nullptr);
+    EXPECT_FLOAT_EQ(val->Get().x_, factor.x_);
+    EXPECT_FLOAT_EQ(val->Get().y_, factor.y_);
+}
+
+/**
+ * @tc.name: DirectionLightFilterCreate001
+ * @tc.desc: Test creating DirectionLight filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::DIRECTION_LIGHT);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::DIRECTION_LIGHT);
+}
+
+/**
+ * @tc.name: DirectionLightFilterSetterGetter001
+ * @tc.desc: Test DirectionLight filter Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderDirectionLightFilter>();
+
+    float factor = 0.5f;
+    filter->Setter<DirectionLightFactorRenderTag>(factor);
+    auto factorVal = filter->Getter<DirectionLightFactorRenderTag>();
+    ASSERT_NE(factorVal, nullptr);
+    EXPECT_FLOAT_EQ(factorVal->Get(), factor);
+
+    Vector3f direction { 1.0f, 0.0f, 0.0f };
+    filter->Setter<DirectionLightDirectionRenderTag>(direction);
+    auto directionVal = filter->Getter<DirectionLightDirectionRenderTag>();
+    ASSERT_NE(directionVal, nullptr);
+    EXPECT_FLOAT_EQ(directionVal->Get().x_, direction.x_);
+
+    Vector4f color { 1.0f, 0.5f, 0.0f, 1.0f };
+    filter->Setter<DirectionLightColorRenderTag>(color);
+    auto colorVal = filter->Getter<DirectionLightColorRenderTag>();
+    ASSERT_NE(colorVal, nullptr);
+    EXPECT_FLOAT_EQ(colorVal->Get().x_, color.x_);
+
+    float intensity = 1.5f;
+    filter->Setter<DirectionLightIntensityRenderTag>(intensity);
+    auto intensityVal = filter->Getter<DirectionLightIntensityRenderTag>();
+    ASSERT_NE(intensityVal, nullptr);
+    EXPECT_FLOAT_EQ(intensityVal->Get(), intensity);
+}
+
+/**
+ * @tc.name: MaskTransitionFilterCreate001
+ * @tc.desc: Test creating MaskTransition filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::MASK_TRANSITION);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::MASK_TRANSITION);
+}
+
+/**
+ * @tc.name: MaskTransitionFilterSetterGetter001
+ * @tc.desc: Test MaskTransition filter Setter and Getter for Factor and Inverse properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderMaskTransitionFilter>();
+
+    float factor = 0.8f;
+    filter->Setter<MaskTransitionFactorRenderTag>(factor);
+    auto factorVal = filter->Getter<MaskTransitionFactorRenderTag>();
+    ASSERT_NE(factorVal, nullptr);
+    EXPECT_FLOAT_EQ(factorVal->Get(), factor);
+
+    bool inverse = true;
+    filter->Setter<MaskTransitionInverseRenderTag>(inverse);
+    auto inverseVal = filter->Getter<MaskTransitionInverseRenderTag>();
+    ASSERT_NE(inverseVal, nullptr);
+    EXPECT_EQ(inverseVal->Get(), inverse);
+}
+
+/**
+ * @tc.name: VariableRadiusBlurFilterCreate001
+ * @tc.desc: Test creating VariableRadiusBlur filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::VARIABLE_RADIUS_BLUR);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::VARIABLE_RADIUS_BLUR);
+}
+
+/**
+ * @tc.name: VariableRadiusBlurFilterSetterGetter001
+ * @tc.desc: Test VariableRadiusBlur filter Setter and Getter for Radius property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderVariableRadiusBlurFilter>();
+
+    float radius = 10.0f;
+    filter->Setter<VariableRadiusBlurRadiusRenderTag>(radius);
+    auto radiusVal = filter->Getter<VariableRadiusBlurRadiusRenderTag>();
+    ASSERT_NE(radiusVal, nullptr);
+    EXPECT_FLOAT_EQ(radiusVal->Get(), radius);
+}
+
+/**
+ * @tc.name: GridWarpFilterCreate001
+ * @tc.desc: Test creating GridWarp filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::GRID_WARP);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::GRID_WARP);
+}
+
+/**
+ * @tc.name: GridWarpFilterSetterGetter001
+ * @tc.desc: Test GridWarp filter Setter and Getter for GridPoint properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderGridWarpFilter>();
+
+    Vector2f gridPoint0 { 0.1f, 0.2f };
+    filter->Setter<GridWarpGridPoint0RenderTag>(gridPoint0);
+    auto gridPoint0Val = filter->Getter<GridWarpGridPoint0RenderTag>();
+    ASSERT_NE(gridPoint0Val, nullptr);
+    EXPECT_FLOAT_EQ(gridPoint0Val->Get().x_, gridPoint0.x_);
+    EXPECT_FLOAT_EQ(gridPoint0Val->Get().y_, gridPoint0.y_);
+
+    Vector2f gridPoint1 { 0.3f, 0.4f };
+    filter->Setter<GridWarpGridPoint1RenderTag>(gridPoint1);
+    auto gridPoint1Val = filter->Getter<GridWarpGridPoint1RenderTag>();
+    ASSERT_NE(gridPoint1Val, nullptr);
+    EXPECT_FLOAT_EQ(gridPoint1Val->Get().x_, gridPoint1.x_);
+
+    Vector2f rotationAngle0 { 1.0f, 0.0f };
+    filter->Setter<GridWarpRotationAngle0RenderTag>(rotationAngle0);
+    auto rotationAngle0Val = filter->Getter<GridWarpRotationAngle0RenderTag>();
+    ASSERT_NE(rotationAngle0Val, nullptr);
+    EXPECT_FLOAT_EQ(rotationAngle0Val->Get().x_, rotationAngle0.x_);
+}
+
+/**
+ * @tc.name: RadialGradientMaskCreate001
+ * @tc.desc: Test creating RadialGradientMask and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskCreate001, TestSize.Level1)
+{
+    auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::RADIAL_GRADIENT_MASK);
+    ASSERT_NE(mask, nullptr);
+    EXPECT_EQ(mask->GetType(), RSNGEffectType::RADIAL_GRADIENT_MASK);
+}
+
+/**
+ * @tc.name: RadialGradientMaskSetterGetter001
+ * @tc.desc: Test RadialGradientMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderRadialGradientMask>();
+
+    Vector2f center { 0.5f, 0.5f };
+    mask->Setter<RadialGradientMaskCenterRenderTag>(center);
+    auto centerVal = mask->Getter<RadialGradientMaskCenterRenderTag>();
+    ASSERT_NE(centerVal, nullptr);
+    EXPECT_FLOAT_EQ(centerVal->Get().x_, center.x_);
+    EXPECT_FLOAT_EQ(centerVal->Get().y_, center.y_);
+
+    float radiusX = 0.3f;
+    mask->Setter<RadialGradientMaskRadiusXRenderTag>(radiusX);
+    auto radiusXVal = mask->Getter<RadialGradientMaskRadiusXRenderTag>();
+    ASSERT_NE(radiusXVal, nullptr);
+    EXPECT_FLOAT_EQ(radiusXVal->Get(), radiusX);
+
+    float radiusY = 0.4f;
+    mask->Setter<RadialGradientMaskRadiusYRenderTag>(radiusY);
+    auto radiusYVal = mask->Getter<RadialGradientMaskRadiusYRenderTag>();
+    ASSERT_NE(radiusYVal, nullptr);
+    EXPECT_FLOAT_EQ(radiusYVal->Get(), radiusY);
+
+    std::vector<float> colors = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f };
+    mask->Setter<RadialGradientMaskColorsRenderTag>(colors);
+    auto colorsVal = mask->Getter<RadialGradientMaskColorsRenderTag>();
+    ASSERT_NE(colorsVal, nullptr);
+    EXPECT_EQ(colorsVal->Get().size(), colors.size());
+}
+
+/**
+ * @tc.name: WaveGradientMaskCreate001
+ * @tc.desc: Test creating WaveGradientMask and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskCreate001, TestSize.Level1)
+{
+    auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::WAVE_GRADIENT_MASK);
+    ASSERT_NE(mask, nullptr);
+    EXPECT_EQ(mask->GetType(), RSNGEffectType::WAVE_GRADIENT_MASK);
+}
+
+/**
+ * @tc.name: WaveGradientMaskSetterGetter001
+ * @tc.desc: Test WaveGradientMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderWaveGradientMask>();
+
+    Vector2f waveCenter { 0.5f, 0.5f };
+    mask->Setter<WaveGradientMaskWaveCenterRenderTag>(waveCenter);
+    auto waveCenterVal = mask->Getter<WaveGradientMaskWaveCenterRenderTag>();
+    ASSERT_NE(waveCenterVal, nullptr);
+    EXPECT_FLOAT_EQ(waveCenterVal->Get().x_, waveCenter.x_);
+    EXPECT_FLOAT_EQ(waveCenterVal->Get().y_, waveCenter.y_);
+
+    float waveWidth = 10.0f;
+    mask->Setter<WaveGradientMaskWaveWidthRenderTag>(waveWidth);
+    auto waveWidthVal = mask->Getter<WaveGradientMaskWaveWidthRenderTag>();
+    ASSERT_NE(waveWidthVal, nullptr);
+    EXPECT_FLOAT_EQ(waveWidthVal->Get(), waveWidth);
+
+    float propagationRadius = 50.0f;
+    mask->Setter<WaveGradientMaskPropagationRadiusRenderTag>(propagationRadius);
+    auto propagationRadiusVal = mask->Getter<WaveGradientMaskPropagationRadiusRenderTag>();
+    ASSERT_NE(propagationRadiusVal, nullptr);
+    EXPECT_FLOAT_EQ(propagationRadiusVal->Get(), propagationRadius);
+
+    float turbulenceStrength = 0.5f;
+    mask->Setter<WaveGradientMaskTurbulenceStrengthRenderTag>(turbulenceStrength);
+    auto turbulenceStrengthVal = mask->Getter<WaveGradientMaskTurbulenceStrengthRenderTag>();
+    ASSERT_NE(turbulenceStrengthVal, nullptr);
+    EXPECT_FLOAT_EQ(turbulenceStrengthVal->Get(), turbulenceStrength);
+}
+
+/**
+ * @tc.name: FrameGradientMaskCreate001
+ * @tc.desc: Test creating FrameGradientMask and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskCreate001, TestSize.Level1)
+{
+    auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::FRAME_GRADIENT_MASK);
+    ASSERT_NE(mask, nullptr);
+    EXPECT_EQ(mask->GetType(), RSNGEffectType::FRAME_GRADIENT_MASK);
+}
+
+/**
+ * @tc.name: FrameGradientMaskSetterGetter001
+ * @tc.desc: Test FrameGradientMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderFrameGradientMask>();
+
+    Vector4f innerBezier { 0.0f, 0.0f, 1.0f, 1.0f };
+    mask->Setter<FrameGradientMaskInnerBezierRenderTag>(innerBezier);
+    auto innerBezierVal = mask->Getter<FrameGradientMaskInnerBezierRenderTag>();
+    ASSERT_NE(innerBezierVal, nullptr);
+    EXPECT_FLOAT_EQ(innerBezierVal->Get().x_, innerBezier.x_);
+
+    Vector4f outerBezier { 0.0f, 1.0f, 0.0f, 1.0f };
+    mask->Setter<FrameGradientMaskOuterBezierRenderTag>(outerBezier);
+    auto outerBezierVal = mask->Getter<FrameGradientMaskOuterBezierRenderTag>();
+    ASSERT_NE(outerBezierVal, nullptr);
+    EXPECT_FLOAT_EQ(outerBezierVal->Get().x_, outerBezier.x_);
+
+    float cornerRadius = 20.0f;
+    mask->Setter<FrameGradientMaskCornerRadiusRenderTag>(cornerRadius);
+    auto cornerRadiusVal = mask->Getter<FrameGradientMaskCornerRadiusRenderTag>();
+    ASSERT_NE(cornerRadiusVal, nullptr);
+    EXPECT_FLOAT_EQ(cornerRadiusVal->Get(), cornerRadius);
+
+    float innerFrameWidth = 10.0f;
+    mask->Setter<FrameGradientMaskInnerFrameWidthRenderTag>(innerFrameWidth);
+    auto innerFrameWidthVal = mask->Getter<FrameGradientMaskInnerFrameWidthRenderTag>();
+    ASSERT_NE(innerFrameWidthVal, nullptr);
+    EXPECT_FLOAT_EQ(innerFrameWidthVal->Get(), innerFrameWidth);
+
+    float outerFrameWidth = 20.0f;
+    mask->Setter<FrameGradientMaskOuterFrameWidthRenderTag>(outerFrameWidth);
+    auto outerFrameWidthVal = mask->Getter<FrameGradientMaskOuterFrameWidthRenderTag>();
+    ASSERT_NE(outerFrameWidthVal, nullptr);
+    EXPECT_FLOAT_EQ(outerFrameWidthVal->Get(), outerFrameWidth);
+
+    Vector2f rectWH { 100.0f, 100.0f };
+    mask->Setter<FrameGradientMaskRectWHRenderTag>(rectWH);
+    auto rectWHVal = mask->Getter<FrameGradientMaskRectWHRenderTag>();
+    ASSERT_NE(rectWHVal, nullptr);
+    EXPECT_FLOAT_EQ(rectWHVal->Get().x_, rectWH.x_);
+
+    Vector2f rectPos { 0.0f, 0.0f };
+    mask->Setter<FrameGradientMaskRectPosRenderTag>(rectPos);
+    auto rectPosVal = mask->Getter<FrameGradientMaskRectPosRenderTag>();
+    ASSERT_NE(rectPosVal, nullptr);
+    EXPECT_FLOAT_EQ(rectPosVal->Get().x_, rectPos.x_);
+}
+
+/**
+ * @tc.name: DispDistortFilterContains001
+ * @tc.desc: Test DispDistort filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderDispDistortFilter>();
+    EXPECT_TRUE(filter->Contains<DispDistortFactorRenderTag>());
+}
+
+/**
+ * @tc.name: DirectionLightFilterContains001
+ * @tc.desc: Test DirectionLight filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderDirectionLightFilter>();
+    EXPECT_TRUE(filter->Contains<DirectionLightFactorRenderTag>());
+    EXPECT_TRUE(filter->Contains<DirectionLightDirectionRenderTag>());
+    EXPECT_TRUE(filter->Contains<DirectionLightColorRenderTag>());
+    EXPECT_TRUE(filter->Contains<DirectionLightIntensityRenderTag>());
+}
+
+/**
+ * @tc.name: MaskTransitionFilterContains001
+ * @tc.desc: Test MaskTransition filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderMaskTransitionFilter>();
+    EXPECT_TRUE(filter->Contains<MaskTransitionFactorRenderTag>());
+    EXPECT_TRUE(filter->Contains<MaskTransitionInverseRenderTag>());
+}
+
+/**
+ * @tc.name: VariableRadiusBlurFilterContains001
+ * @tc.desc: Test VariableRadiusBlur filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderVariableRadiusBlurFilter>();
+    EXPECT_TRUE(filter->Contains<VariableRadiusBlurRadiusRenderTag>());
+}
+
+/**
+ * @tc.name: GridWarpFilterContains001
+ * @tc.desc: Test GridWarp filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderGridWarpFilter>();
+    EXPECT_TRUE(filter->Contains<GridWarpGridPoint0RenderTag>());
+    EXPECT_TRUE(filter->Contains<GridWarpGridPoint1RenderTag>());
+    EXPECT_TRUE(filter->Contains<GridWarpRotationAngle0RenderTag>());
+}
+
+/**
+ * @tc.name: RadialGradientMaskContains001
+ * @tc.desc: Test RadialGradientMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderRadialGradientMask>();
+    EXPECT_TRUE(mask->Contains<RadialGradientMaskCenterRenderTag>());
+    EXPECT_TRUE(mask->Contains<RadialGradientMaskRadiusXRenderTag>());
+    EXPECT_TRUE(mask->Contains<RadialGradientMaskRadiusYRenderTag>());
+    EXPECT_TRUE(mask->Contains<RadialGradientMaskColorsRenderTag>());
+    EXPECT_TRUE(mask->Contains<RadialGradientMaskPositionsRenderTag>());
+}
+
+/**
+ * @tc.name: WaveGradientMaskContains001
+ * @tc.desc: Test WaveGradientMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderWaveGradientMask>();
+    EXPECT_TRUE(mask->Contains<WaveGradientMaskWaveCenterRenderTag>());
+    EXPECT_TRUE(mask->Contains<WaveGradientMaskWaveWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<WaveGradientMaskPropagationRadiusRenderTag>());
+    EXPECT_TRUE(mask->Contains<WaveGradientMaskTurbulenceStrengthRenderTag>());
+}
+
+/**
+ * @tc.name: FrameGradientMaskContains001
+ * @tc.desc: Test FrameGradientMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderFrameGradientMask>();
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskInnerBezierRenderTag>());
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskOuterBezierRenderTag>());
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskCornerRadiusRenderTag>());
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskInnerFrameWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskOuterFrameWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskRectWHRenderTag>());
+    EXPECT_TRUE(mask->Contains<FrameGradientMaskRectPosRenderTag>());
+}
+
+/**
+ * @tc.name: DupoliNoiseMaskCreate001
+ * @tc.desc: Test creating DupoliNoiseMask and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskCreate001, TestSize.Level1)
+{
+    auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::DUPOLI_NOISE_MASK);
+    ASSERT_NE(mask, nullptr);
+    EXPECT_EQ(mask->GetType(), RSNGEffectType::DUPOLI_NOISE_MASK);
+}
+
+/**
+ * @tc.name: DupoliNoiseMaskSetterGetter001
+ * @tc.desc: Test DupoliNoiseMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderDupoliNoiseMask>();
+
+    float progress = 0.5f;
+    mask->Setter<DupoliNoiseMaskProgressRenderTag>(progress);
+    auto progressVal = mask->Getter<DupoliNoiseMaskProgressRenderTag>();
+    ASSERT_NE(progressVal, nullptr);
+    EXPECT_FLOAT_EQ(progressVal->Get(), progress);
+
+    float granularity = 0.3f;
+    mask->Setter<DupoliNoiseMaskGranularityRenderTag>(granularity);
+    auto granularityVal = mask->Getter<DupoliNoiseMaskGranularityRenderTag>();
+    ASSERT_NE(granularityVal, nullptr);
+    EXPECT_FLOAT_EQ(granularityVal->Get(), granularity);
+
+    float verticalMoveDistance = 10.0f;
+    mask->Setter<DupoliNoiseMaskVerticalMoveDistanceRenderTag>(verticalMoveDistance);
+    auto verticalMoveDistanceVal = mask->Getter<DupoliNoiseMaskVerticalMoveDistanceRenderTag>();
+    ASSERT_NE(verticalMoveDistanceVal, nullptr);
+    EXPECT_FLOAT_EQ(verticalMoveDistanceVal->Get(), verticalMoveDistance);
+}
+
+/**
+ * @tc.name: DupoliNoiseMaskContains001
+ * @tc.desc: Test DupoliNoiseMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderDupoliNoiseMask>();
+    EXPECT_TRUE(mask->Contains<DupoliNoiseMaskProgressRenderTag>());
+    EXPECT_TRUE(mask->Contains<DupoliNoiseMaskGranularityRenderTag>());
+    EXPECT_TRUE(mask->Contains<DupoliNoiseMaskVerticalMoveDistanceRenderTag>());
+}
+
+/**
+ * @tc.name: NoisyFrameGradientMaskCreate001
+ * @tc.desc: Test creating NoisyFrameGradientMask and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskCreate001, TestSize.Level1)
+{
+    auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::NOISY_FRAME_GRADIENT_MASK);
+    ASSERT_NE(mask, nullptr);
+    EXPECT_EQ(mask->GetType(), RSNGEffectType::NOISY_FRAME_GRADIENT_MASK);
+}
+
+/**
+ * @tc.name: NoisyFrameGradientMaskSetterGetter001
+ * @tc.desc: Test NoisyFrameGradientMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderNoisyFrameGradientMask>();
+
+    Vector4f gradientBezierControlPoints { 0.0f, 0.0f, 1.0f, 1.0f };
+    mask->Setter<NoisyFrameGradientMaskGradientBezierControlPointsRenderTag>(gradientBezierControlPoints);
+    auto gradientBezierControlPointsVal = mask->Getter<NoisyFrameGradientMaskGradientBezierControlPointsRenderTag>();
+    ASSERT_NE(gradientBezierControlPointsVal, nullptr);
+    EXPECT_FLOAT_EQ(gradientBezierControlPointsVal->Get().x_, gradientBezierControlPoints.x_);
+
+    float cornerRadius = 20.0f;
+    mask->Setter<NoisyFrameGradientMaskCornerRadiusRenderTag>(cornerRadius);
+    auto cornerRadiusVal = mask->Getter<NoisyFrameGradientMaskCornerRadiusRenderTag>();
+    ASSERT_NE(cornerRadiusVal, nullptr);
+    EXPECT_FLOAT_EQ(cornerRadiusVal->Get(), cornerRadius);
+
+    Vector2f innerFrameWidth { 10.0f, 10.0f };
+    mask->Setter<NoisyFrameGradientMaskInnerFrameWidthRenderTag>(innerFrameWidth);
+    auto innerFrameWidthVal = mask->Getter<NoisyFrameGradientMaskInnerFrameWidthRenderTag>();
+    ASSERT_NE(innerFrameWidthVal, nullptr);
+    EXPECT_FLOAT_EQ(innerFrameWidthVal->Get().x_, innerFrameWidth.x_);
+
+    Vector2f rRectWH { 100.0f, 100.0f };
+    mask->Setter<NoisyFrameGradientMaskRRectWHRenderTag>(rRectWH);
+    auto rRectWHVal = mask->Getter<NoisyFrameGradientMaskRRectWHRenderTag>();
+    ASSERT_NE(rRectWHVal, nullptr);
+    EXPECT_FLOAT_EQ(rRectWHVal->Get().x_, rRectWH.x_);
+
+    float slope = 0.5f;
+    mask->Setter<NoisyFrameGradientMaskSlopeRenderTag>(slope);
+    auto slopeVal = mask->Getter<NoisyFrameGradientMaskSlopeRenderTag>();
+    ASSERT_NE(slopeVal, nullptr);
+    EXPECT_FLOAT_EQ(slopeVal->Get(), slope);
+
+    float progress = 0.5f;
+    mask->Setter<NoisyFrameGradientMaskProgressRenderTag>(progress);
+    auto progressVal = mask->Getter<NoisyFrameGradientMaskProgressRenderTag>();
+    ASSERT_NE(progressVal, nullptr);
+    EXPECT_FLOAT_EQ(progressVal->Get(), progress);
+}
+
+/**
+ * @tc.name: NoisyFrameGradientMaskContains001
+ * @tc.desc: Test NoisyFrameGradientMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderNoisyFrameGradientMask>();
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskGradientBezierControlPointsRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskCornerRadiusRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskInnerFrameWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskMiddleFrameWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskOutsideFrameWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskRRectWHRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskRRectPosRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskSlopeRenderTag>());
+    EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskProgressRenderTag>());
+}
+
+/**
+ * @tc.name: ContainsType001
+ * @tc.desc: Test ContainsType method for effect chain
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ContainsType001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderBlurFilter>();
+    EXPECT_TRUE(filter->ContainsType(RSNGEffectType::BLUR));
+    EXPECT_FALSE(filter->ContainsType(RSNGEffectType::DISPLACEMENT_DISTORT));
+    EXPECT_FALSE(filter->ContainsType(RSNGEffectType::SOUND_WAVE));
+}
+
+/**
+ * @tc.name: ContainsType002
+ * @tc.desc: Test ContainsType method for mask
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ContainsType002, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderRippleMask>();
+    EXPECT_TRUE(mask->ContainsType(RSNGEffectType::RIPPLE_MASK));
+    EXPECT_FALSE(mask->ContainsType(RSNGEffectType::BLUR));
+    EXPECT_FALSE(mask->ContainsType(RSNGEffectType::RADIAL_GRADIENT_MASK));
+}
+
+/**
+ * @tc.name: ContainsType003
+ * @tc.desc: Test ContainsType method for shape
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ContainsType003, TestSize.Level1)
+{
+    auto shape = std::make_shared<RSNGRenderSDFRRectShape>();
+    EXPECT_TRUE(shape->ContainsType(RSNGEffectType::SDF_RRECT_SHAPE));
+    EXPECT_FALSE(shape->ContainsType(RSNGEffectType::BLUR));
+    EXPECT_FALSE(shape->ContainsType(RSNGEffectType::SDF_TRIANGLE_SHAPE));
+}
+
+/**
+ * @tc.name: SoundWaveFilterCreate001
+ * @tc.desc: Test creating SoundWave filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::SOUND_WAVE);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::SOUND_WAVE);
+}
+
+/**
+ * @tc.name: SoundWaveFilterSetterGetter001
+ * @tc.desc: Test SoundWave filter Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderSoundWaveFilter>();
+
+    Vector4f colorA { 1.0f, 0.0f, 0.0f, 1.0f };
+    filter->Setter<SoundWaveColorARenderTag>(colorA);
+    auto colorAVal = filter->Getter<SoundWaveColorARenderTag>();
+    ASSERT_NE(colorAVal, nullptr);
+    EXPECT_FLOAT_EQ(colorAVal->Get().x_, colorA.x_);
+
+    Vector4f colorB { 0.0f, 1.0f, 0.0f, 1.0f };
+    filter->Setter<SoundWaveColorBRenderTag>(colorB);
+    auto colorBVal = filter->Getter<SoundWaveColorBRenderTag>();
+    ASSERT_NE(colorBVal, nullptr);
+    EXPECT_FLOAT_EQ(colorBVal->Get().y_, colorB.y_);
+
+    Vector4f colorC { 0.0f, 0.0f, 1.0f, 1.0f };
+    filter->Setter<SoundWaveColorCRenderTag>(colorC);
+    auto colorCVal = filter->Getter<SoundWaveColorCRenderTag>();
+    ASSERT_NE(colorCVal, nullptr);
+    EXPECT_FLOAT_EQ(colorCVal->Get().z_, colorC.z_);
+
+    float intensity = 0.8f;
+    filter->Setter<SoundWaveIntensityRenderTag>(intensity);
+    auto intensityVal = filter->Getter<SoundWaveIntensityRenderTag>();
+    ASSERT_NE(intensityVal, nullptr);
+    EXPECT_FLOAT_EQ(intensityVal->Get(), intensity);
+
+    float totalAlpha = 1.0f;
+    filter->Setter<SoundWaveTotalAlphaRenderTag>(totalAlpha);
+    auto totalAlphaVal = filter->Getter<SoundWaveTotalAlphaRenderTag>();
+    ASSERT_NE(totalAlphaVal, nullptr);
+    EXPECT_FLOAT_EQ(totalAlphaVal->Get(), totalAlpha);
+}
+
+/**
+ * @tc.name: SoundWaveFilterContains001
+ * @tc.desc: Test SoundWave filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderSoundWaveFilter>();
+    EXPECT_TRUE(filter->Contains<SoundWaveColorARenderTag>());
+    EXPECT_TRUE(filter->Contains<SoundWaveColorBRenderTag>());
+    EXPECT_TRUE(filter->Contains<SoundWaveColorCRenderTag>());
+    EXPECT_TRUE(filter->Contains<SoundWaveIntensityRenderTag>());
+    EXPECT_TRUE(filter->Contains<SoundWaveTotalAlphaRenderTag>());
+}
+
+/**
+ * @tc.name: DispersionFilterCreate001
+ * @tc.desc: Test creating Dispersion filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DispersionFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::DISPERSION);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::DISPERSION);
+}
+
+/**
+ * @tc.name: DispersionFilterSetterGetter001
+ * @tc.desc: Test Dispersion filter Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DispersionFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderDispersionFilter>();
+
+    float opacity = 0.8f;
+    filter->Setter<DispersionOpacityRenderTag>(opacity);
+    auto opacityVal = filter->Getter<DispersionOpacityRenderTag>();
+    ASSERT_NE(opacityVal, nullptr);
+    EXPECT_FLOAT_EQ(opacityVal->Get(), opacity);
+
+    Vector2f redOffset { 5.0f, 0.0f };
+    filter->Setter<DispersionRedOffsetRenderTag>(redOffset);
+    auto redOffsetVal = filter->Getter<DispersionRedOffsetRenderTag>();
+    ASSERT_NE(redOffsetVal, nullptr);
+    EXPECT_FLOAT_EQ(redOffsetVal->Get().x_, redOffset.x_);
+
+    Vector2f greenOffset { 0.0f, 5.0f };
+    filter->Setter<DispersionGreenOffsetRenderTag>(greenOffset);
+    auto greenOffsetVal = filter->Getter<DispersionGreenOffsetRenderTag>();
+    ASSERT_NE(greenOffsetVal, nullptr);
+    EXPECT_FLOAT_EQ(greenOffsetVal->Get().y_, greenOffset.y_);
+
+    Vector2f blueOffset { -5.0f, -5.0f };
+    filter->Setter<DispersionBlueOffsetRenderTag>(blueOffset);
+    auto blueOffsetVal = filter->Getter<DispersionBlueOffsetRenderTag>();
+    ASSERT_NE(blueOffsetVal, nullptr);
+    EXPECT_FLOAT_EQ(blueOffsetVal->Get().x_, blueOffset.x_);
+}
+
+/**
+ * @tc.name: DispersionFilterContains001
+ * @tc.desc: Test Dispersion filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, DispersionFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderDispersionFilter>();
+    EXPECT_TRUE(filter->Contains<DispersionOpacityRenderTag>());
+    EXPECT_TRUE(filter->Contains<DispersionRedOffsetRenderTag>());
+    EXPECT_TRUE(filter->Contains<DispersionGreenOffsetRenderTag>());
+    EXPECT_TRUE(filter->Contains<DispersionBlueOffsetRenderTag>());
+}
+
+/**
+ * @tc.name: RippleMaskSetterGetter001
+ * @tc.desc: Test RippleMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, RippleMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderRippleMask>();
+
+    Vector2f center { 0.5f, 0.5f };
+    mask->Setter<RippleMaskCenterRenderTag>(center);
+    auto centerVal = mask->Getter<RippleMaskCenterRenderTag>();
+    ASSERT_NE(centerVal, nullptr);
+    EXPECT_FLOAT_EQ(centerVal->Get().x_, center.x_);
+    EXPECT_FLOAT_EQ(centerVal->Get().y_, center.y_);
+
+    float radius = 50.0f;
+    mask->Setter<RippleMaskRadiusRenderTag>(radius);
+    auto radiusVal = mask->Getter<RippleMaskRadiusRenderTag>();
+    ASSERT_NE(radiusVal, nullptr);
+    EXPECT_FLOAT_EQ(radiusVal->Get(), radius);
+
+    float width = 10.0f;
+    mask->Setter<RippleMaskWidthRenderTag>(width);
+    auto widthVal = mask->Getter<RippleMaskWidthRenderTag>();
+    ASSERT_NE(widthVal, nullptr);
+    EXPECT_FLOAT_EQ(widthVal->Get(), width);
+
+    float offset = 0.0f;
+    mask->Setter<RippleMaskOffsetRenderTag>(offset);
+    auto offsetVal = mask->Getter<RippleMaskOffsetRenderTag>();
+    ASSERT_NE(offsetVal, nullptr);
+    EXPECT_FLOAT_EQ(offsetVal->Get(), offset);
+}
+
+/**
+ * @tc.name: RippleMaskContains001
+ * @tc.desc: Test RippleMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, RippleMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderRippleMask>();
+    EXPECT_TRUE(mask->Contains<RippleMaskCenterRenderTag>());
+    EXPECT_TRUE(mask->Contains<RippleMaskRadiusRenderTag>());
+    EXPECT_TRUE(mask->Contains<RippleMaskWidthRenderTag>());
+    EXPECT_TRUE(mask->Contains<RippleMaskOffsetRenderTag>());
+}
+
+/**
+ * @tc.name: PixelMapMaskCreate001
+ * @tc.desc: Test creating PixelMapMask and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskCreate001, TestSize.Level1)
+{
+    auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::PIXEL_MAP_MASK);
+    ASSERT_NE(mask, nullptr);
+    EXPECT_EQ(mask->GetType(), RSNGEffectType::PIXEL_MAP_MASK);
+}
+
+/**
+ * @tc.name: PixelMapMaskSetterGetter001
+ * @tc.desc: Test PixelMapMask Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskSetterGetter001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderPixelMapMask>();
+
+    Vector4f src { 0.0f, 0.0f, 1.0f, 1.0f };
+    mask->Setter<PixelMapMaskSrcRenderTag>(src);
+    auto srcVal = mask->Getter<PixelMapMaskSrcRenderTag>();
+    ASSERT_NE(srcVal, nullptr);
+    EXPECT_FLOAT_EQ(srcVal->Get().x_, src.x_);
+
+    Vector4f dst { 0.0f, 0.0f, 100.0f, 100.0f };
+    mask->Setter<PixelMapMaskDstRenderTag>(dst);
+    auto dstVal = mask->Getter<PixelMapMaskDstRenderTag>();
+    ASSERT_NE(dstVal, nullptr);
+    EXPECT_FLOAT_EQ(dstVal->Get().z_, dst.z_);
+
+    Vector4f fillColor { 1.0f, 1.0f, 1.0f, 1.0f };
+    mask->Setter<PixelMapMaskFillColorRenderTag>(fillColor);
+    auto fillColorVal = mask->Getter<PixelMapMaskFillColorRenderTag>();
+    ASSERT_NE(fillColorVal, nullptr);
+    EXPECT_FLOAT_EQ(fillColorVal->Get().x_, fillColor.x_);
+}
+
+/**
+ * @tc.name: PixelMapMaskContains001
+ * @tc.desc: Test PixelMapMask Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskContains001, TestSize.Level1)
+{
+    auto mask = std::make_shared<RSNGRenderPixelMapMask>();
+    EXPECT_TRUE(mask->Contains<PixelMapMaskSrcRenderTag>());
+    EXPECT_TRUE(mask->Contains<PixelMapMaskDstRenderTag>());
+    EXPECT_TRUE(mask->Contains<PixelMapMaskFillColorRenderTag>());
+}
+
+/**
+ * @tc.name: ColorGradientFilterCreate001
+ * @tc.desc: Test creating ColorGradient filter and verify type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterCreate001, TestSize.Level1)
+{
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::COLOR_GRADIENT);
+    ASSERT_NE(filter, nullptr);
+    EXPECT_EQ(filter->GetType(), RSNGEffectType::COLOR_GRADIENT);
+}
+
+/**
+ * @tc.name: ColorGradientFilterSetterGetter001
+ * @tc.desc: Test ColorGradient filter Setter and Getter for properties
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterSetterGetter001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderColorGradientFilter>();
+
+    std::vector<float> colors = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f };
+    filter->Setter<ColorGradientColorsRenderTag>(colors);
+    auto colorsVal = filter->Getter<ColorGradientColorsRenderTag>();
+    ASSERT_NE(colorsVal, nullptr);
+    EXPECT_EQ(colorsVal->Get().size(), colors.size());
+
+    std::vector<float> positions = { 0.0f, 1.0f };
+    filter->Setter<ColorGradientPositionsRenderTag>(positions);
+    auto positionsVal = filter->Getter<ColorGradientPositionsRenderTag>();
+    ASSERT_NE(positionsVal, nullptr);
+    EXPECT_EQ(positionsVal->Get().size(), positions.size());
+    EXPECT_FLOAT_EQ(positionsVal->Get()[0], positions[0]);
+
+    std::vector<float> strengths = { 0.5f, 0.8f };
+    filter->Setter<ColorGradientStrengthsRenderTag>(strengths);
+    auto strengthsVal = filter->Getter<ColorGradientStrengthsRenderTag>();
+    ASSERT_NE(strengthsVal, nullptr);
+    EXPECT_EQ(strengthsVal->Get().size(), strengths.size());
+    EXPECT_FLOAT_EQ(strengthsVal->Get()[0], strengths[0]);
+}
+
+/**
+ * @tc.name: ColorGradientFilterContains001
+ * @tc.desc: Test ColorGradient filter Contains template interface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterContains001, TestSize.Level1)
+{
+    auto filter = std::make_shared<RSNGRenderColorGradientFilter>();
+    EXPECT_TRUE(filter->Contains<ColorGradientColorsRenderTag>());
+    EXPECT_TRUE(filter->Contains<ColorGradientPositionsRenderTag>());
+    EXPECT_TRUE(filter->Contains<ColorGradientStrengthsRenderTag>());
+    EXPECT_TRUE(filter->Contains<ColorGradientMaskRenderTag>());
 }
 } // namespace OHOS::Rosen
