@@ -108,7 +108,7 @@ private:
     // Hgm related
     std::shared_ptr<HgmContext> GetHgmContext() const
     {
-        if (!HgmCore::Instance().IsHgmPolicyEnabled()) {
+        if (!HgmCore::Instance().HgmAbilityEnabled()) {
             return nullptr;
         }
         return hgmContext_;

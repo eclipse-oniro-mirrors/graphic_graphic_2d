@@ -241,7 +241,7 @@ public:
     std::unordered_map<std::string, std::string> videoFrameRateList_;
     // vrate <"minifps", "1">
     std::unordered_map<std::string, std::string> vRateControlList_;
-    bool hgmEnabled_ = true;
+    bool hgmAbilityEnabled_ = true;
 
     // hover status frame up switch
     bool hoverFrameUpSwitch_ = false;

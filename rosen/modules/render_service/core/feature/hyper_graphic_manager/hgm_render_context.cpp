@@ -53,7 +53,7 @@ int32_t HgmRenderContext::InitHgmConfig(std::unordered_map<std::string, std::str
     sourceTuningConfig = parser->GetSourceTuningConfig();
     solidLayerConfig = parser->GetSolidLayerConfig();
     appBufferList = parser->GetAppBufferList();
-    hgmEnabled = parser->IsHgmEnabled();
+    hgmAbilityEnabled_ = parser->HgmAbilityEnabled();
     return EXEC_SUCCESS;
 }
 
@@ -64,7 +64,7 @@ void HgmRenderContext::NotifyRpHgmFrameRate(uint64_t vsyncId, const std::shared_
     if (bool enable = RSSystemParameters::GetShowRefreshRateEnabled(&changed); changed != 0) {
         RSRealtimeRefreshRateManager::Instance().SetShowRefreshRateEnabled(enable, 1);
     }
-    if (!hgmEnabled) {
+    if (!hgmAbilityEnabled_) {
         HGM_LOGD("hgm is not enabled");
         return;
     }

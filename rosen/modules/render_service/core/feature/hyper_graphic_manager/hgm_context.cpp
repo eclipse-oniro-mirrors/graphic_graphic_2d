@@ -48,7 +48,7 @@ void HgmContext::InitHgmTaskHandleThread(
     const sptr<VSyncController>& rsVSyncController, const sptr<VSyncController>& appVSyncController,
     const sptr<VSyncGenerator>& vsyncGenerator)
 {
-    if (!hgmCore_.IsHgmPolicyEnabled()) {
+    if (!hgmCore_.HgmAbilityEnabled()) {
         HGM_LOGD("hgm policy is not enabled.");
         return;
     }

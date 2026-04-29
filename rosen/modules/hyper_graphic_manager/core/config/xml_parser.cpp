@@ -133,10 +133,9 @@ int32_t XMLParser::ParseParam(xmlNode& node)
 
         HGM_LOGD("HgmXMLParser ParseParam default_refreshrate_mode %{public}s",
                  mParsedData_->defaultRefreshRateMode_.c_str());
-    } else if (paraName == "enable_hgm_policy") {
-        std::string enable = ExtractPropertyValue("value", node);
-        mParsedData_->hgmEnabled_ = enable == "true" ? true : false;
-        HGM_LOGD("HgmXMLParser ParseParam enable_hgm_policy %{public}d", mParsedData_->hgmEnabled_);
+    } else if (paraName == "ability_enable") {
+        mParsedData_->hgmAbilityEnabled_ = ExtractPropertyValue("value", node) == "1";
+        HGM_LOGD("HgmXMLParser ParseParam ability_enable %{public}d", mParsedData_->hgmAbilityEnabled_);
     }
 
     return EXEC_SUCCESS;
