@@ -130,7 +130,7 @@ void DoSetVirtualScreenResolution(FuzzedDataProvider& fdp)
 /* Fuzzer environment initialization */
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::ROSEN::RSScreenManager>::MakeSptr();
+    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
     if (!OHOS::Rosen::g_screenManager) {
         return -1;
     }

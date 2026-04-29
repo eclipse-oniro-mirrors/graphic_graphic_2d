@@ -107,11 +107,11 @@ void DoSetVirtualScreenBlackList(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegral<ScreenId>();
     uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
-    std::vector<uint64_t> blackList;
+    std::vector<uint64_t> bList;
     for (uint8_t i = 0; i < count; i++) {
-        blackList.push_back(fdp.ConsumeIntegral<uint64_t>());
+        bList.push_back(fdp.ConsumeIntegral<uint64_t>());
     }
-    g_screenManager->SetVirtualScreenBlackList(id, blackList);
+    g_screenManager->SetVirtualScreenBlackList(id, bList);
 }
 
 void DoAddVirtualScreenWhiteList(FuzzedDataProvider& fdp)
@@ -146,7 +146,7 @@ void DoSetMirrorScreenVisibleRect(FuzzedDataProvider& fdp)
 /* Fuzzer environment initialization */
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::ROSEN::RSScreenManager>::MakeSptr();
+    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
     if (!OHOS::Rosen::g_screenManager) {
         return -1;
     }

@@ -55,33 +55,33 @@ void DoAddVirtualScreenBlackList(FuzzedDataProvider& fdp)
     fdp.ConsumeBool();
     ScreenId id = fdp.ConsumeIntegral<ScreenId>();
     uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
-    std::vector<uint64_t> blackList;
+    std::vector<uint64_t> bList;
     for (uint8_t i = 0; i < count; i++) {
-        blackList.push_back(fdp.ConsumeIntegral<uint64_t>());
+        bList.push_back(fdp.ConsumeIntegral<uint64_t>());
     }
-    g_screenManager->AddVirtualScreenBlackList(id, blackList);
+    g_screenManager->AddVirtualScreenBlackList(id, bList);
 }
 
 void DoRemoveVirtualScreenBlackList(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegral<ScreenId>();
     uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
-    std::vector<uint64_t> blackList;
+    std::vector<uint64_t> bList;
     for (uint8_t i = 0; i < count; i++) {
-        blackList.push_back(fdp.ConsumeIntegral<uint64_t>());
+        bList.push_back(fdp.ConsumeIntegral<uint64_t>());
     }
-    g_screenManager->RemoveVirtualScreenBlackList(id, blackList);
+    g_screenManager->RemoveVirtualScreenBlackList(id, bList);
 }
 
 void DoSetVirtualScreenTypeBlackList(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegralInRange<ScreenId>(0, 255);
     uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_TYPE_LIST_SIZE;
-    std::vector<uint8_t> typeBlackList;
+    std::vector<uint8_t> typeBList;
     for (uint8_t i = 0; i < count; i++) {
-        typeBlackList.push_back(fdp.ConsumeIntegral<uint8_t>());
+        typeBList.push_back(fdp.ConsumeIntegral<uint8_t>());
     }
-    g_screenManager->SetVirtualScreenTypeBlackList(id, typeBlackList);
+    g_screenManager->SetVirtualScreenTypeBlackList(id, typeBList);
 }
 
 void DoRemoveVirtualScreenWhiteList(FuzzedDataProvider& fdp)
@@ -144,7 +144,7 @@ void DoJudgeVSyncEnabledScreenWhilePowerStatusChanged(FuzzedDataProvider& fdp)
 
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::ROSEN::RSScreenManager>::MakeSptr();
+    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
     if (!OHOS::Rosen::g_screenManager) {
         return -1;
     }

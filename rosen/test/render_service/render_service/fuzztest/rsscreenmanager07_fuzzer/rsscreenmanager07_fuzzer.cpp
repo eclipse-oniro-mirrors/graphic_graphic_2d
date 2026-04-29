@@ -45,10 +45,10 @@ constexpr uint8_t TARGET_SIZE = 10;
 void DoGetDefaultScreenActiveMode(FuzzedDataProvider& fdp)
 {
     RSScreenModeInfo screenModeInfo;
-    screenModeInfo.SetScreenWidth(fdp.ConsumeIntegral<int32_t>());
     screenModeInfo.SetScreenHeight(fdp.ConsumeIntegral<int32_t>());
     screenModeInfo.SetScreenRefreshRate(fdp.ConsumeIntegral<uint32_t>());
-    screenModeInfo.SetScreenModeId(fdp.ConsumeIntegralInRange<int32_t>(0, 31));
+    int32_t maxModeId = 31;
+    screenModeInfo.SetScreenModeId(fdp.ConsumeIntegralInRange<int32_t>(0, maxModeId));
     g_screenManager->GetDefaultScreenActiveMode(screenModeInfo);
 }
 
@@ -73,8 +73,8 @@ void DoGetVirtualScreenResolution(FuzzedDataProvider& fdp)
     ScreenId id = fdp.ConsumeIntegral<ScreenId>();
     fdp.ConsumeBool();
     RSVirtualScreenResolution virtualScreenResolution;
-    virtualScreenResolution.SetWidth(fdp.ConsumeIntegral<uint32_t>());
-    virtualScreenResolution.SetHeight(fdp.ConsumeIntegral<uint32_t>());
+    virtualScreenResolution.SetVirtualScreenWidth(fdp.ConsumeIntegral<uint32_t>());
+    virtualScreenResolution.SetVirtualScreenHeight(fdp.ConsumeIntegral<uint32_t>());
     g_screenManager->GetVirtualScreenResolution(id, virtualScreenResolution);
 }
 
@@ -126,7 +126,7 @@ void DoDisplayDump(FuzzedDataProvider& fdp)
 
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::ROSEN::RSScreenManager>::MakeSptr();
+    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
     if (!OHOS::Rosen::g_screenManager) {
         return -1;
     }

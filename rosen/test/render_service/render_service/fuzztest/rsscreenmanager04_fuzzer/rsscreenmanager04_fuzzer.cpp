@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -109,7 +109,7 @@ void DoGetPanelPowerStatus(FuzzedDataProvider& fdp)
 
 void DoGetScreenData(FuzzedDataProvider& fdp)
 {
-    fdp.ConsumeIntegralInRange<uint8_t>(0, 7);
+    fdp.ConsumeIntegralInRange<uint8_t>(0, DO_GET_SCREEN_CONNECTION_TYPE);
     ScreenId id = fdp.ConsumeIntegral<ScreenId>();
     g_screenManager->GetScreenData(id);
 }
@@ -121,7 +121,7 @@ void DoGetScreenData(FuzzedDataProvider& fdp)
 
 extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
 {
-    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::ROSEN::RSScreenManager>::MakeSptr();
+    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
     if (!OHOS::Rosen::g_screenManager) {
         return -1;
     }
