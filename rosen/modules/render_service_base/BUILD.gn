@@ -49,11 +49,11 @@ if (enable_compiler_rust) {
       subsystem_name = "graphic"
     }
   } else {
-    ohos_rust_static_ffi("particle_cxx_rust") {	 
-      sources = [ "rust/src/lib.rs" ]	 
-      external_deps = [ "rust_cxx:lib" ]	 
-      part_name = "graphic_2d"	 
-      subsystem_name = "graphic"	 
+    ohos_rust_static_ffi("particle_cxx_rust") {
+      sources = [ "rust/src/lib.rs" ]
+      external_deps = [ "rust_cxx:lib" ]
+      part_name = "graphic_2d"
+      subsystem_name = "graphic"
     }
   }
 
