@@ -46,7 +46,7 @@ public:
     ~SymbolAutoRegister()
     {
         UnregisterSymbolConfigCallBack();
-        OHOS::Rosen::Drawing::DrawingHMSymbol::CleartGetGroupParametersCallback();
+        OHOS::Rosen::Drawing::DrawingHMSymbol::ClearGetGroupParametersCallback();
     }
 
 private:
@@ -63,7 +63,7 @@ private:
 
     void UnregisterSymbolConfigCallBack()
     {
-        skia::text::HmSymbolConfig_OHOS::ClearLoadSymbolConfig();        
+        skia::text::HmSymbolConfig_OHOS::ClearLoadSymbolConfig();
     }
 
     void RegisterGroupParametersCallback()

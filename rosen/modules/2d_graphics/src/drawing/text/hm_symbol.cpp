@@ -15,13 +15,15 @@
 
 #include "text/hm_symbol.h"
 
+#include <mutex>
+
 #include "static_factory.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 std::shared_ptr<DrawingHMSymbol::GetGroupParametersCallback> DrawingHMSymbol::groupParametersCallback_;
-std::mutex DrawingHMSymbol::fMutex;
+std::shared_mutex DrawingHMSymbol::fMutex;
 
 void DrawingHMSymbol::PathOutlineDecompose(const Path& path, std::vector<Path>& paths)
 {
@@ -36,19 +38,19 @@ void DrawingHMSymbol::MultilayerPath(const std::vector<std::vector<size_t>>& mul
 
 void DrawingHMSymbol::SetGetGroupParametersCallback(GetGroupParametersCallback callback)
 {
-    std::lock_guard<std::mutex> lock(fMutex);
+    std::unique_lock<std::shared_mutex> lock(fMutex);
     groupParametersCallback_ = std::make_shared<GetGroupParametersCallback>(std::move(callback));
 }
 
-void DrawingHMSymbol::CleartGetGroupParametersCallback()
+void DrawingHMSymbol::ClearGetGroupParametersCallback()
 {
-    std::lock_guard<std::mutex> lock(fMutex);
+    std::unique_lock<std::shared_mutex> lock(fMutex);
     groupParametersCallback_.reset();
 }
 
 std::shared_ptr<DrawingHMSymbol::GetGroupParametersCallback> DrawingHMSymbol::GetGetGroupParametersCallback()
 {
-    std::lock_guard<std::mutex> lock(fMutex);
+    std::shared_lock<std::shared_mutex> lock(fMutex);
     return groupParametersCallback_;
 }
 } // namespace Drawing

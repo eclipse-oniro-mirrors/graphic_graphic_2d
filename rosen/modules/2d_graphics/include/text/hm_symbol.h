@@ -20,7 +20,7 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <vector>
 
@@ -161,12 +161,12 @@ public:
         const std::vector<Path>& paths, std::vector<Path>& multPaths);
 
     static void SetGetGroupParametersCallback(GetGroupParametersCallback callback);
-    static void CleartGetGroupParametersCallback();
+    static void ClearGetGroupParametersCallback();
     static std::shared_ptr<GetGroupParametersCallback> GetGetGroupParametersCallback();
 
 private:
     static std::shared_ptr<GetGroupParametersCallback> groupParametersCallback_;
-    static std::mutex fMutex;
+    static std::shared_mutex fMutex;
 };
 } // namespace Drawing
 } // namespace Rosen

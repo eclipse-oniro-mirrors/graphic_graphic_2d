@@ -482,21 +482,21 @@ bool RSSymbolAnimation::GetAnimationGroupParameters(
     animationLevelNum = animationLevelNum + 1;
 
     auto callback = Drawing::DrawingHMSymbol::GetGetGroupParametersCallback();
-    if (callback && *callback) {
-        auto it = std::find(upAndDownSupportAnimations_.begin(), upAndDownSupportAnimations_.end(), effectStrategy);
-        if (it != upAndDownSupportAnimations_.end()) {
-            parameters =
-                (*callback)(Drawing::DrawingAnimationType(effectStrategy), static_cast<uint16_t>(animationLevelNum),
-                    symbolAnimationConfig->animationMode, symbolAnimationConfig->commonSubType);
-        } else {
-            parameters =
-                (*callback)(Drawing::DrawingAnimationType(effectStrategy), static_cast<uint16_t>(animationLevelNum),
-                    symbolAnimationConfig->animationMode, Drawing::DrawingCommonSubType::DOWN);
-        }
-    } else {
+    if (callback == nullptr || *callback == nullptr) {
         ROSEN_LOGD("[%{public}s] HmSymbol: failed to get symbol param callback func", __func__);
         return false;
     }
+    auto it = std::find(upAndDownSupportAnimations_.begin(), upAndDownSupportAnimations_.end(), effectStrategy);
+    if (it != upAndDownSupportAnimations_.end()) {
+        parameters =
+            (*callback)(Drawing::DrawingAnimationType(effectStrategy), static_cast<uint16_t>(animationLevelNum),
+                symbolAnimationConfig->animationMode, symbolAnimationConfig->commonSubType);
+    } else {
+        parameters =
+            (*callback)(Drawing::DrawingAnimationType(effectStrategy), static_cast<uint16_t>(animationLevelNum),
+                symbolAnimationConfig->animationMode, Drawing::DrawingCommonSubType::DOWN);
+    }
+
     if (parameters.empty()) {
         ROSEN_LOGD("[%{public}s] HmSymbol: GetGroupParameters failed", __func__);
         return false;
