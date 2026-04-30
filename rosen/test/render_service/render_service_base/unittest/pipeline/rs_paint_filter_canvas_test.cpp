@@ -2020,8 +2020,10 @@ HWTEST_F(RSPaintFilterCanvasTest, DrawOptimizationClipRRectTest, TestSize.Level1
     auto canvas = std::make_unique<Drawing::Canvas>();
     RSPaintFilterCanvas paintFilterCanvas(canvas.get());
     paintFilterCanvas.SaveClipRRect(nullptr);
-    auto data = paintFilterCanvas.customStack_.top();
-    paintFilterCanvas.customStack_.pop();
+    auto* stack = static_cast<std::stack<std::pair<uint32_t,
+        RSPaintFilterCanvasBase::DrawFunc>*>(paintFilterCanvas.getCustomSaveLayerStack());
+    auto data = stack->top();
+    stack->pop();
 
     auto canvasTest = std::make_unique<Drawing::Canvas>();
     paintFilterCanvas.DrawCustomFunc(canvasTest.get(), data.second);
@@ -2040,18 +2042,18 @@ HWTEST_F(RSPaintFilterCanvasTest, DrawOptimizationClipRRectTest, TestSize.Level1
     auto clipRRectData = std::make_shared<RSPaintFilterCanvasBase::ClipRRectData>(
         cornerDatas, roundRect, paintFilterCanvas.GetSaveCount());
     paintFilterCanvas.SaveClipRRect(clipRRectData);
-    data = paintFilterCanvas.customStack_.top();
-    paintFilterCanvas.customStack_.pop();
+    data = stack->top();
+    stack->pop();
     paintFilterCanvas.DrawCustomFunc(canvasTest.get(), data.second);
     paintFilterCanvas.DrawCustomFunc(nullptr, data.second);
 
     paintFilterCanvas.CustomRestore(1);
-    EXPECT_EQ(paintFilterCanvas.customStack_.size(), 0);
+    EXPECT_EQ(stack->size(), 0);
     paintFilterCanvas.SaveClipRRect(clipRRectData);
     paintFilterCanvas.CustomRestore(0);
-    EXPECT_EQ(paintFilterCanvas.customStack_.size(), 1);
+    EXPECT_EQ(stack->size(), 1);
     paintFilterCanvas.CustomRestore(1);
-    EXPECT_EQ(paintFilterCanvas.customStack_.size(), 0);
+    EXPECT_EQ(stack->size(), 0);
 }
 
 /**

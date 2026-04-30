@@ -111,6 +111,8 @@ public:
     {
         maxStencilVal_ = maxStencilVal;
     }
+
+    virtual void* getCustomSaveLayerStack() { return nullptr; }
 protected:
     std::vector<Canvas*> pCanvasList_;
     bool recordingState_ = false;

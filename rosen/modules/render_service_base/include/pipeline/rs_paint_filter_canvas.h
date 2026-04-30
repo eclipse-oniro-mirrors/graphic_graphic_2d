@@ -216,6 +216,8 @@ protected:
     void CustomRestore(uint32_t saveCount);
     void DrawCustomFunc(Drawing::Canvas* canvas, DrawFunc drawFunc);
 
+    void* getCustomSaveLayerStack() override { return &customStack_; }
+
     Drawing::Canvas* canvas_ = nullptr;
     std::stack<std::pair<uint32_t, DrawFunc>> customStack_;
 };
