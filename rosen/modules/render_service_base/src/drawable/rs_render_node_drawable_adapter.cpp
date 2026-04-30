@@ -527,6 +527,7 @@ void RSRenderNodeDrawableAdapter::SkipDrawSubtreeAndClipHole(
     curCanvas->ResetClip();
     curCanvas->ClipRect(filterRect, Drawing::ClipOp::INTERSECT, false);
     curCanvas->Clear(Drawing::Color::COLOR_TRANSPARENT);
+    SetShouldClipHole(true);
     UpdateFilterInfoForNodeGroup(curCanvas);
 }
 
@@ -804,4 +805,5 @@ void RSRenderNodeSingleDrawableLocker::DrawableOnDrawMultiAccessEventReport(cons
     RSBackgroundThread::Instance().PostTask(task);
 #endif
 }
+
 } // namespace OHOS::Rosen::DrawableV2

@@ -88,6 +88,7 @@ struct DrawCmdIndex {
     int8_t endIndex_                   = -1;
 };
 namespace DrawableV2 {
+
 enum class SkipType : uint8_t {
     NONE = 0,
     SKIP_SHADOW = 1,
@@ -243,6 +244,12 @@ public:
     NodeId GetLastDrawnFilterNodeId() const
     {
         return lastDrawnFilterNodeId_;
+    }
+
+    virtual void SetShouldClipHole(bool value) {}
+    virtual bool ShouldClipHole() const
+    {
+        return false;
     }
 
     virtual void SetUIExtensionNeedToDraw(bool needToDraw) {}
