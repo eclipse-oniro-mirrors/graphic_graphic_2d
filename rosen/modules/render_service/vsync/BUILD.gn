@@ -77,9 +77,9 @@ ohos_source_set("libvsync_manager") {
   ]
 
   if (!(is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path))) {
- 	  deps += [
- 	    "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
- 	  ]
+    deps += [
+      "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
+    ]
   }
 
   external_deps = [
