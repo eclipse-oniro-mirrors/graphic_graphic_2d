@@ -23,7 +23,7 @@
 
 namespace OHOS {
 #ifdef _WIN32
-pid_t GetRealPid(void)
+pid_t GetRealPidWin(void)
 {
     return GetCurrentProcessId();
 }
