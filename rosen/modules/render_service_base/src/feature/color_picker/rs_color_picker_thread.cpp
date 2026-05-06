@@ -15,8 +15,6 @@
 
 #include "feature/color_picker/rs_color_picker_thread.h"
 
-#include <chrono>
-
 #include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -45,11 +43,6 @@ RSColorPickerThread::RSColorPickerThread()
     runner_ = AppExecFwk::EventRunner::Create("RSColorPickerThread");
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
 }
-
-namespace {
-constexpr uint32_t ONE_SECOND = 1000;
-constexpr uint32_t MAX_TASKS_PER_SECOND = 20;
-} // namespace
 
 bool RSColorPickerThread::PostTask(const std::function<void()>& task, int64_t delayTime)
 {
@@ -94,14 +87,16 @@ void RSColorPickerThread::NotifyClient(uint64_t nodeId, uint32_t color)
 void RSColorPickerThread::InitRenderContext(std::shared_ptr<RenderContext> context)
 {
     renderContext_ = context;
-    PostTask([this]() {
-        gpuContext_ = CreateShareGPUContext();
-        if (gpuContext_ == nullptr) {
-            return;
-        }
-        gpuContext_->RegisterPostFunc(
-            [](const std::function<void()>& task) { RSColorPickerThread::Instance().PostTask(task, 0); });
-        }, false);
+    PostTask(
+        [this]() {
+            gpuContext_ = CreateShareGPUContext();
+            if (gpuContext_ == nullptr) {
+                return;
+            }
+            gpuContext_->RegisterPostFunc(
+                [](const std::function<void()>& task) { RSColorPickerThread::Instance().PostTask(task, 0); });
+        },
+        0);
 }
 
 std::shared_ptr<Drawing::GPUContext> RSColorPickerThread::GetShareGPUContext() const

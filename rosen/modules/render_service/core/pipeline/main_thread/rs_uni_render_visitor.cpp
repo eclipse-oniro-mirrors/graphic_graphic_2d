@@ -4252,8 +4252,33 @@ bool RSUniRenderVisitor::IsCurrentSubTreeForcePrepare(RSRenderNode& node)
 
 namespace {
 void PostColorPickerStateTask(RSRenderNode::WeakPtr weakNode, DrawableV2::ColorPickerState state,
-    int64_t delayTime);
+    int64_t delayTime)
+{
+    auto task = [weakNode, state]() {
+        auto node = weakNode.lock();
+        if (!node) {
+            RS_LOGE("ColorPickerStateTask: node expired");
+            return;
+        }
+        auto drawable = node->GetColorPickerDrawable();
+        if (!drawable) {
+            RS_LOGE("ColorPickerStateTask: drawable not found for node %" PRIu64, node->GetId());
+            return;
+        }
+        drawable->SetState(state);
+        if (state == DrawableV2::ColorPickerState::COLOR_PICK_THIS_FRAME) {
+            auto* ctx = RSMainThread::Instance();
+            node->SetDirty();
+            ctx->SetForceUpdateUniRenderFlag(true);
+            if (!ctx->IsRequestedNextVSync()) {
+                ctx->RequestNextVSync();
+            }
+        }
+    };
+    RSMainThread::Instance()->PostTask(
+        task, "ColorPickerStateTransition", delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
 }
+} // namespace
 
 void RSUniRenderVisitor::HandleColorPickerHwcDisable(RSRenderNode& node)
 {
@@ -4295,36 +4320,6 @@ void RSUniRenderVisitor::ScheduleColorPickIfCurrentSurfaceDirty(
             node.weak_from_this(), DrawableV2::ColorPickerState::COLOR_PICK_THIS_FRAME, delayTime);
     }
 }
-
-namespace {
-void PostColorPickerStateTask(RSRenderNode::WeakPtr weakNode, DrawableV2::ColorPickerState state,
-    int64_t delayTime)
-{
-    auto task = [weakNode, state]() {
-        auto node = weakNode.lock();
-        if (!node) {
-            RS_LOGE("ColorPickerStateTask: node expired");
-            return;
-        }
-        auto drawable = node->GetColorPickerDrawable();
-        if (!drawable) {
-            RS_LOGE("ColorPickerStateTask: drawable not found for node %" PRIu64, node->GetId());
-            return;
-        }
-        drawable->SetState(state);
-        if (state == DrawableV2::ColorPickerState::COLOR_PICK_THIS_FRAME) {
-            auto* ctx = RSMainThread::Instance();
-            node->SetDirty();
-            ctx->SetForceUpdateUniRenderFlag(true);
-            if (!ctx->IsRequestedNextVSync()) {
-                ctx->RequestNextVSync();
-            }
-        }
-    };
-    RSMainThread::Instance()->PostTask(
-        task, "ColorPickerStateTransition", delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-}
-} // namespace
 
 void RSUniRenderVisitor::PrepareColorPickers()
 {
