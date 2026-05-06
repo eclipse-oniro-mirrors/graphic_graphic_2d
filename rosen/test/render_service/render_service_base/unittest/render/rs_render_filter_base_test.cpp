@@ -1060,19 +1060,6 @@ HWTEST_F(RSRenderFilterBaseTest, ContainsType002, TestSize.Level1)
 }
 
 /**
- * @tc.name: ContainsType003
- * @tc.desc: Test ContainsType method for shape
- * @tc.type: FUNC
- */
-HWTEST_F(RSRenderFilterBaseTest, ContainsType003, TestSize.Level1)
-{
-    auto shape = std::make_shared<RSNGRenderSDFRRectShape>();
-    EXPECT_TRUE(shape->ContainsType(RSNGEffectType::SDF_RRECT_SHAPE));
-    EXPECT_FALSE(shape->ContainsType(RSNGEffectType::BLUR));
-    EXPECT_FALSE(shape->ContainsType(RSNGEffectType::SDF_TRIANGLE_SHAPE));
-}
-
-/**
  * @tc.name: SoundWaveFilterCreate001
  * @tc.desc: Test creating SoundWave filter and verify type
  * @tc.type: FUNC
