@@ -40,7 +40,7 @@ public:
     RSTestStyleModifier() = default;
     ~RSTestStyleModifier() override = default;
     static inline constexpr auto type = ModType;
-    ModifierNG::RSModifierType GetType() const override { return Type; }
+    ModifierNG::RSModifierType GetType() const override { return type; }
     Drawing::DrawCmdListPtr GetPropertyDrawCmdList() const override
     {
         if constexpr (isNull) {
@@ -56,7 +56,7 @@ public:
     }
 };
 
-using RSTestContentStyleModifier = RSTestSTyleModifier<ModifierNG::RSModifierType::CONTENT_STYLE, false, false>;
+using RSTestContentStyleModifier = RSTestStyleModifier<ModifierNG::RSModifierType::CONTENT_STYLE, false, false>;
 using RSTestBackgroundStyleModifier = RSTestStyleModifier<ModifierNG::RSModifierType::BACKGROUND_STYLE, false, true>;
 using RSTestTransitionStyleModifier = RSTestStyleModifier<ModifierNG::RSModifierType::TRANSITION_STYLE, true, false>;
 
@@ -76,7 +76,7 @@ private:
  */
 HWTEST_F(RSSolidLayerTest, HasValidDrawCmd001, TestSize.Level1)
 {
-    // Test 1: no modifier -> HasValidDrawCmd=false, IsPureBackgroundColor = true
+    // Test 1: no modifier -> HasValidDrawCmd=false, IsPureBackgroundColor=true
     auto node1 = std::make_shared<RSSurfaceRenderNode>(id_, rsContext_);
     EXPECT_FALSE(node1->HasValidDrawCmd());
     EXPECT_TRUE(node1->IsPureBackgroundColor());
@@ -89,7 +89,7 @@ HWTEST_F(RSSolidLayerTest, HasValidDrawCmd001, TestSize.Level1)
 
     // Test 3: ENV_FOREGROUND_COLOR -> HasValidDrawCmd=true, IsPureBackgroundColor=false
     auto node3 = std::make_shared<RSSurfaceRenderNode>(id_, rsContext_);
-    node3->AddModifier(std::make_shared<ModifierNG::RSEnvforegroundColorRenderModifier>());
+    node3->AddModifier(std::make_shared<ModifierNG::RSEnvForegroundColorRenderModifier>());
     EXPECT_TRUE(node3->HasValidDrawCmd());
     EXPECT_FALSE(node3->IsPureBackgroundColor());
 
