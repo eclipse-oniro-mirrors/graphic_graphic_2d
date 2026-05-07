@@ -301,10 +301,11 @@ void RSSurfaceNode::CreateNodeInRenderThread()
         command = std::make_unique<RSSurfaceNodeCreate>(GetId(), RSSurfaceNodeType::ABILITY_COMPONENT_NODE, false);
         AddCommand(command, false);
 
-        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(
-            GetId(), GetRSUIContext()->GetConnectToRender());
-        AddCommand(command, false);
-
+#ifdef ROSEN_OHOS
+    command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(
+        GetId(), GetRSUIContext()->GetConnectToRender());
+    AddCommand(command, false);
+#endif
         RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
         command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(GetId(), true);
         AddCommand(command, false);
