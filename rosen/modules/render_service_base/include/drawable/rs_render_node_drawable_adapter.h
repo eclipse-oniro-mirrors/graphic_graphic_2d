@@ -88,7 +88,6 @@ struct DrawCmdIndex {
     int8_t endIndex_                   = -1;
 };
 namespace DrawableV2 {
-
 enum class SkipType : uint8_t {
     NONE = 0,
     SKIP_SHADOW = 1,
