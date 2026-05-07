@@ -995,6 +995,132 @@ HWTEST_F(RSScreenManagerTest, GetScreenCapability_002, TestSize.Level1)
 }
 
 /*
+ * @tc.name: GetScreenCapability_003_DP
+ * @tc.desc: Test GetScreenCapability with DISP_INTF_DP type
+ * @tc.type: FUNC
+ * @tc.require: issueI7AABN
+ */
+HWTEST_F(RSScreenManagerTest, GetScreenCapability_003_DP, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId screenId = mockScreenId_;
+
+    // 构造 DP 类型的 capability
+    GraphicDisplayCapability dpCapability = {
+        .name = "DP_Screen",
+        .type = GRAPHIC_DISP_INTF_DP,
+        .phyWidth = 1920,
+        .phyHeight = 1080,
+        .supportLayers = 0,
+        .virtualDispCount = 0,
+        .supportWriteBack = true,
+        .propertyCount = 0
+    };
+
+    // Mock GetScreenCapability 返回 DP 类型的 capability
+    EXPECT_CALL(*hdiDeviceMock_, GetScreenCapability(screenId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(dpCapability), testing::Return(0)));
+
+    // 创建物理屏幕（构造函数会调用 PhysicalScreenInit -> GetScreenCapability）
+    auto rsScreen = std::make_shared<RSScreen>(screenId);
+    ASSERT_NE(rsScreen, nullptr);
+
+    // 将屏幕添加到 screen manager
+    screenManager_->screens_[screenId] = rsScreen;
+
+    // 调用 GetScreenCapability 并验证
+    RSScreenCapability screenCapability = screenManager_->GetScreenCapability(screenId);
+    ASSERT_EQ(screenCapability.GetType(), DISP_INTF_DP);
+
+    // 清理
+    screenManager_->screens_.erase(screenId);
+}
+
+/*
+ * @tc.name: GetScreenCapability_004_EDP
+ * @tc.desc: Test GetScreenCapability with DISP_INTF_EDP type
+ * @tc.type: FUNC
+ * @tc.require: issueI7AABN
+ */
+HWTEST_F(RSScreenManagerTest, GetScreenCapability_004_EDP, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId screenId = mockScreenId_;
+
+    // 构造 EDP 类型的 capability
+    GraphicDisplayCapability edpCapability = {
+        .name = "EDP_Screen",
+        .type = GRAPHIC_DISP_INTF_EDP,
+        .phyWidth = 1920,
+        .phyHeight = 1080,
+        .supportLayers = 0,
+        .virtualDispCount = 0,
+        .supportWriteBack = true,
+        .propertyCount = 0
+    };
+
+    // Mock GetScreenCapability 返回 EDP 类型的 capability
+    EXPECT_CALL(*hdiDeviceMock_, GetScreenCapability(screenId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(edpCapability), testing::Return(0)));
+
+    // 创建物理屏幕（构造函数会调用 PhysicalScreenInit -> GetScreenCapability）
+    auto rsScreen = std::make_shared<RSScreen>(screenId);
+    ASSERT_NE(rsScreen, nullptr);
+
+    // 将屏幕添加到 screen manager
+    screenManager_->screens_[screenId] = rsScreen;
+
+    // 调用 GetScreenCapability 并验证
+    RSScreenCapability screenCapability = screenManager_->GetScreenCapability(screenId);
+    ASSERT_EQ(screenCapability.GetType(), DISP_INTF_EDP);
+
+    // 清理
+    screenManager_->screens_.erase(screenId);
+}
+
+/*
+ * @tc.name: GetScreenCapability_005_GPMI
+ * @tc.desc: Test GetScreenCapability with DISP_INTF_GPMI type
+ * @tc.type: FUNC
+ * @tc.require: issueI7AABN
+ */
+HWTEST_F(RSScreenManagerTest, GetScreenCapability_005_GPMI, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId screenId = mockScreenId_;
+
+    // 构造 GPMI 类型的 capability
+    GraphicDisplayCapability gpmiCapability = {
+        .name = "GPMI_Screen",
+        .type = GRAPHIC_DISP_INTF_GPMI,
+        .phyWidth = 1920,
+        .phyHeight = 1080,
+        .supportLayers = 0,
+        .virtualDispCount = 0,
+        .supportWriteBack = true,
+        .propertyCount = 0
+    };
+
+    // Mock GetScreenCapability 返回 GPMI 类型的 capability
+    EXPECT_CALL(*hdiDeviceMock_, GetScreenCapability(screenId, _))
+        .WillOnce(DoAll(SetArgReferee<1>(gpmiCapability), testing::Return(0)));
+
+    // 创建物理屏幕（构造函数会调用 PhysicalScreenInit -> GetScreenCapability）
+    auto rsScreen = std::make_shared<RSScreen>(screenId);
+    ASSERT_NE(rsScreen, nullptr);
+
+    // 将屏幕添加到 screen manager
+    screenManager_->screens_[screenId] = rsScreen;
+
+    // 调用 GetScreenCapability 并验证
+    RSScreenCapability screenCapability = screenManager_->GetScreenCapability(screenId);
+    ASSERT_EQ(screenCapability.GetType(), DISP_INTF_GPMI);
+
+    // 清理
+    screenManager_->screens_.erase(screenId);
+}
+
+/*
  * @tc.name: SetVirtualScreenSurface_002
  * @tc.desc: Test SetVirtualScreenSurface
  * @tc.type: FUNC
