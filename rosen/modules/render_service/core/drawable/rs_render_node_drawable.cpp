@@ -338,23 +338,15 @@ bool RSRenderNodeDrawable::IsCurRenderGroupCacheRootExcludedStateChanged(const R
 
 void RSRenderNodeDrawable::SetShouldClipHole(bool value)
 {
-    if (curDrawingCacheRoot_ == nullptr) {
-        return;
-    }
-    auto* root = static_cast<RSRenderNodeDrawable*>(curDrawingCacheRoot_);
-    if (root->renderGroupCache_) {
-        root->renderGroupCache_->SetShouldClipHole(value);
+    if (renderGroupCache_) {
+        renderGroupCache_->SetShouldClipHole(value);
     }
 }
 
 bool RSRenderNodeDrawable::ShouldClipHole() const
 {
-    if (curDrawingCacheRoot_ == nullptr) {
-        return false;
-    }
-    auto* root = static_cast<const RSRenderNodeDrawable*>(curDrawingCacheRoot_);
-    if (root->renderGroupCache_) {
-        return root->renderGroupCache_->ShouldClipHole();
+    if (renderGroupCache_) {
+        return renderGroupCache_->ShouldClipHole();
     }
     return false;
 }
