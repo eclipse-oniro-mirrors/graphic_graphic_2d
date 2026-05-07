@@ -43,11 +43,11 @@ void RSRenderFilterBaseTest::SetUp() {}
 void RSRenderFilterBaseTest::TearDown() {}
 
 /**
- * @tc.name: UpdateVisualEffectParamImpl001
+ * @tc.name: UpdateVisualEffectParamImplWithRRect
  * @tc.desc: Test the UpdateVisualEffectParamImpl
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImpl001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImplWithRRect, TestSize.Level1)
 {
     auto testEffect = std::make_shared<Drawing::GEVisualEffect>(
         RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::SDF_RRECT_SHAPE));
@@ -59,11 +59,11 @@ HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImpl001, TestSize.Level1
 }
 
 /**
- * @tc.name: UpdateVisualEffectParamImpl002
+ * @tc.name: UpdateVisualEffectParamImplWithInt
  * @tc.desc: Test the UpdateVisualEffectParamImpl
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImpl002, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, UpdateVisualEffectParamImplWithInt, TestSize.Level1)
 {
     auto testEffect = std::make_shared<Drawing::GEVisualEffect>(Drawing::GE_FILTER_KAWASE_BLUR);
     EXPECT_NE(testEffect, nullptr);
@@ -89,11 +89,11 @@ HWTEST_F(RSRenderFilterBaseTest, GenerateGEVisualEffect, TestSize.Level1)
 }
 
 /**
- * @tc.name: CreateAndGetType001
+ * @tc.name: CreateAndGetType
  * @tc.desc: Test the factory method can create filter with correct type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, CreateAndGetType001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, CreateAndGetType, TestSize.Level1)
 {
     // normal filter types
     auto filterTypes = {
@@ -148,13 +148,13 @@ HWTEST_F(RSRenderFilterBaseTest, UpdateCacheData, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetEffectCount001
+ * @tc.name: GetEffectCount
  * @tc.desc: 1. Test the behavior of Append method, including appending self, appending valid filters,
  *           handling null filters, and ensuring filters already in the chain are not appended again
  *           2. Test GetEffectCount method to verify the number of filters in the chain
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, GetEffectCount001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, GetEffectCount, TestSize.Level1)
 {
     // Test single filter
     auto filter1 = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
@@ -184,11 +184,11 @@ HWTEST_F(RSRenderFilterBaseTest, GetEffectCount001, TestSize.Level1)
 }
 
 /**
- * @tc.name: Dump001
+ * @tc.name: DumpFilterInfo
  * @tc.desc: Test the Dump method outputs correct filter type information
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, Dump001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DumpFilterInfo, TestSize.Level1)
 {
     std::shared_ptr<RSNGRenderFilterBase> filter = std::make_shared<RSNGRenderBlurFilter>();
     std::string out;
@@ -202,11 +202,11 @@ HWTEST_F(RSRenderFilterBaseTest, Dump001, TestSize.Level1)
 }
 
 /**
- * @tc.name: TemplateContains001
+ * @tc.name: TemplateContains
  * @tc.desc: querify the RSNGRenderFilterTemplate's Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, TemplateContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, TemplateContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderBlurFilter>();
     EXPECT_TRUE(filter->Contains<BlurRadiusXRenderTag>());
@@ -214,11 +214,11 @@ HWTEST_F(RSRenderFilterBaseTest, TemplateContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: TemplateGetterSetter001
+ * @tc.name: TemplateGetterSetter
  * @tc.desc: querify the RSNGRenderFilterTemplate's Getter and Setter template interfaces
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, TemplateGetterSetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, TemplateGetterSetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderBlurFilter>();
     using TargetTag = BlurRadiusXRenderTag;
@@ -230,12 +230,12 @@ HWTEST_F(RSRenderFilterBaseTest, TemplateGetterSetter001, TestSize.Level1)
 }
 
 /**
- * @tc.name: MarshallingAndUnmarshalling001
+ * @tc.name: MarshallingAndUnmarshallingSingleFilter
  * @tc.desc: Test the Marshalling and Unmarshalling methods can
  *           serialize and deserialize a single filter correctly
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshalling001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshallingSingleFilter, TestSize.Level1)
 {
     // Test Marshalling and Unmarshalling of a single filter and chained filters
     Parcel parcel;
@@ -286,12 +286,12 @@ HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshalling001, TestSize.Level1
 }
 
 /**
- * @tc.name: MarshallingAndUnmarshalling002
+ * @tc.name: MarshallingAndUnmarshallingLongChain
  * @tc.desc: Test the Marshalling and Unmarshalling methods can handle
  *           a filter chain that exceeds the RSNGRenderFilterBase::EFFECT_COUNT_LIMIT
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshalling002, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, MarshallingAndUnmarshallingLongChain, TestSize.Level1)
 {
     // Test Marshalling long filter chain
     auto longFilter = std::make_shared<RSNGRenderBlurFilter>();
@@ -537,11 +537,11 @@ HWTEST_F(RSRenderFilterBaseTest, HasCustomRegion004, TestSize.Level1)
 }
 
 /*
- * @tc.name: DispDistortFilterCreate001
+ * @tc.name: DispDistortFilterCreate
  * @tc.desc: Test creating DispDistort filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::DISPLACEMENT_DISTORT);
     ASSERT_NE(filter, nullptr);
@@ -549,11 +549,11 @@ HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DispDistortFilterSetterGetter001
+ * @tc.name: DispDistortFilterSetterGetter
  * @tc.desc: Test DispDistort filter Setter and Getter for Factor property
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderDispDistortFilter>();
     Vector2f factor { 1.5f, 2.0f };
@@ -565,11 +565,11 @@ HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterSetterGetter001, TestSize.Leve
 }
 
 /**
- * @tc.name: DirectionLightFilterCreate001
+ * @tc.name: DirectionLightFilterCreate
  * @tc.desc: Test creating DirectionLight filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::DIRECTION_LIGHT);
     ASSERT_NE(filter, nullptr);
@@ -577,11 +577,11 @@ HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DirectionLightFilterSetterGetter001
+ * @tc.name: DirectionLightFilterSetterGetter
  * @tc.desc: Test DirectionLight filter Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderDirectionLightFilter>();
 
@@ -611,11 +611,11 @@ HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterSetterGetter001, TestSize.L
 }
 
 /**
- * @tc.name: MaskTransitionFilterCreate001
+ * @tc.name: MaskTransitionFilterCreate
  * @tc.desc: Test creating MaskTransition filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::MASK_TRANSITION);
     ASSERT_NE(filter, nullptr);
@@ -623,11 +623,11 @@ HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: MaskTransitionFilterSetterGetter001
+ * @tc.name: MaskTransitionFilterSetterGetter
  * @tc.desc: Test MaskTransition filter Setter and Getter for Factor and Inverse properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderMaskTransitionFilter>();
 
@@ -645,11 +645,11 @@ HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterSetterGetter001, TestSize.L
 }
 
 /**
- * @tc.name: VariableRadiusBlurFilterCreate001
+ * @tc.name: VariableRadiusBlurFilterCreate
  * @tc.desc: Test creating VariableRadiusBlur filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::VARIABLE_RADIUS_BLUR);
     ASSERT_NE(filter, nullptr);
@@ -657,11 +657,11 @@ HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterCreate001, TestSize.Lev
 }
 
 /**
- * @tc.name: VariableRadiusBlurFilterSetterGetter001
+ * @tc.name: VariableRadiusBlurFilterSetterGetter
  * @tc.desc: Test VariableRadiusBlur filter Setter and Getter for Radius property
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderVariableRadiusBlurFilter>();
 
@@ -673,11 +673,11 @@ HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterSetterGetter001, TestSi
 }
 
 /**
- * @tc.name: GridWarpFilterCreate001
+ * @tc.name: GridWarpFilterCreate
  * @tc.desc: Test creating GridWarp filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::GRID_WARP);
     ASSERT_NE(filter, nullptr);
@@ -685,11 +685,11 @@ HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: GridWarpFilterSetterGetter001
+ * @tc.name: GridWarpFilterSetterGetter
  * @tc.desc: Test GridWarp filter Setter and Getter for GridPoint properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderGridWarpFilter>();
 
@@ -714,11 +714,11 @@ HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterSetterGetter001, TestSize.Level1)
 }
 
 /**
- * @tc.name: RadialGradientMaskCreate001
+ * @tc.name: RadialGradientMaskCreate
  * @tc.desc: Test creating RadialGradientMask and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskCreate, TestSize.Level1)
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::RADIAL_GRADIENT_MASK);
     ASSERT_NE(mask, nullptr);
@@ -726,11 +726,11 @@ HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: RadialGradientMaskSetterGetter001
+ * @tc.name: RadialGradientMaskSetterGetter
  * @tc.desc: Test RadialGradientMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderRadialGradientMask>();
 
@@ -761,11 +761,11 @@ HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskSetterGetter001, TestSize.Lev
 }
 
 /**
- * @tc.name: WaveGradientMaskCreate001
+ * @tc.name: WaveGradientMaskCreate
  * @tc.desc: Test creating WaveGradientMask and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskCreate, TestSize.Level1)
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::WAVE_GRADIENT_MASK);
     ASSERT_NE(mask, nullptr);
@@ -773,11 +773,11 @@ HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: WaveGradientMaskSetterGetter001
+ * @tc.name: WaveGradientMaskSetterGetter
  * @tc.desc: Test WaveGradientMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderWaveGradientMask>();
 
@@ -808,11 +808,11 @@ HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskSetterGetter001, TestSize.Level
 }
 
 /**
- * @tc.name: FrameGradientMaskCreate001
+ * @tc.name: FrameGradientMaskCreate
  * @tc.desc: Test creating FrameGradientMask and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskCreate, TestSize.Level1)
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::FRAME_GRADIENT_MASK);
     ASSERT_NE(mask, nullptr);
@@ -820,11 +820,11 @@ HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: FrameGradientMaskSetterGetter001
+ * @tc.name: FrameGradientMaskSetterGetter
  * @tc.desc: Test FrameGradientMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderFrameGradientMask>();
 
@@ -872,22 +872,22 @@ HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskSetterGetter001, TestSize.Leve
 }
 
 /**
- * @tc.name: DispDistortFilterContains001
+ * @tc.name: DispDistortFilterContains
  * @tc.desc: Test DispDistort filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DispDistortFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderDispDistortFilter>();
     EXPECT_TRUE(filter->Contains<DispDistortFactorRenderTag>());
 }
 
 /**
- * @tc.name: DirectionLightFilterContains001
+ * @tc.name: DirectionLightFilterContains
  * @tc.desc: Test DirectionLight filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderDirectionLightFilter>();
     EXPECT_TRUE(filter->Contains<DirectionLightFactorRenderTag>());
@@ -897,11 +897,11 @@ HWTEST_F(RSRenderFilterBaseTest, DirectionLightFilterContains001, TestSize.Level
 }
 
 /**
- * @tc.name: MaskTransitionFilterContains001
+ * @tc.name: MaskTransitionFilterContains
  * @tc.desc: Test MaskTransition filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderMaskTransitionFilter>();
     EXPECT_TRUE(filter->Contains<MaskTransitionFactorRenderTag>());
@@ -909,22 +909,22 @@ HWTEST_F(RSRenderFilterBaseTest, MaskTransitionFilterContains001, TestSize.Level
 }
 
 /**
- * @tc.name: VariableRadiusBlurFilterContains001
+ * @tc.name: VariableRadiusBlurFilterContains
  * @tc.desc: Test VariableRadiusBlur filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, VariableRadiusBlurFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderVariableRadiusBlurFilter>();
     EXPECT_TRUE(filter->Contains<VariableRadiusBlurRadiusRenderTag>());
 }
 
 /**
- * @tc.name: GridWarpFilterContains001
+ * @tc.name: GridWarpFilterContains
  * @tc.desc: Test GridWarp filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderGridWarpFilter>();
     EXPECT_TRUE(filter->Contains<GridWarpGridPoint0RenderTag>());
@@ -933,11 +933,11 @@ HWTEST_F(RSRenderFilterBaseTest, GridWarpFilterContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: RadialGradientMaskContains001
+ * @tc.name: RadialGradientMaskContains
  * @tc.desc: Test RadialGradientMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderRadialGradientMask>();
     EXPECT_TRUE(mask->Contains<RadialGradientMaskCenterRenderTag>());
@@ -948,11 +948,11 @@ HWTEST_F(RSRenderFilterBaseTest, RadialGradientMaskContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: WaveGradientMaskContains001
+ * @tc.name: WaveGradientMaskContains
  * @tc.desc: Test WaveGradientMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderWaveGradientMask>();
     EXPECT_TRUE(mask->Contains<WaveGradientMaskWaveCenterRenderTag>());
@@ -962,11 +962,11 @@ HWTEST_F(RSRenderFilterBaseTest, WaveGradientMaskContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: FrameGradientMaskContains001
+ * @tc.name: FrameGradientMaskContains
  * @tc.desc: Test FrameGradientMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderFrameGradientMask>();
     EXPECT_TRUE(mask->Contains<FrameGradientMaskInnerBezierRenderTag>());
@@ -979,11 +979,11 @@ HWTEST_F(RSRenderFilterBaseTest, FrameGradientMaskContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DupoliNoiseMaskCreate001
+ * @tc.name: DupoliNoiseMaskCreate
  * @tc.desc: Test creating DupoliNoiseMask and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskCreate, TestSize.Level1)
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::DUPOLI_NOISE_MASK);
     ASSERT_NE(mask, nullptr);
@@ -991,11 +991,11 @@ HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DupoliNoiseMaskSetterGetter001
+ * @tc.name: DupoliNoiseMaskSetterGetter
  * @tc.desc: Test DupoliNoiseMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderDupoliNoiseMask>();
 
@@ -1019,11 +1019,11 @@ HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskSetterGetter001, TestSize.Level1
 }
 
 /**
- * @tc.name: DupoliNoiseMaskContains001
+ * @tc.name: DupoliNoiseMaskContains
  * @tc.desc: Test DupoliNoiseMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderDupoliNoiseMask>();
     EXPECT_TRUE(mask->Contains<DupoliNoiseMaskProgressRenderTag>());
@@ -1032,11 +1032,11 @@ HWTEST_F(RSRenderFilterBaseTest, DupoliNoiseMaskContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: NoisyFrameGradientMaskCreate001
+ * @tc.name: NoisyFrameGradientMaskCreate
  * @tc.desc: Test creating NoisyFrameGradientMask and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskCreate, TestSize.Level1)
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::NOISY_FRAME_GRADIENT_MASK);
     ASSERT_NE(mask, nullptr);
@@ -1044,11 +1044,11 @@ HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskCreate001, TestSize.Level
 }
 
 /**
- * @tc.name: NoisyFrameGradientMaskSetterGetter001
+ * @tc.name: NoisyFrameGradientMaskSetterGetter
  * @tc.desc: Test NoisyFrameGradientMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderNoisyFrameGradientMask>();
 
@@ -1090,11 +1090,11 @@ HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskSetterGetter001, TestSize
 }
 
 /**
- * @tc.name: NoisyFrameGradientMaskContains001
+ * @tc.name: NoisyFrameGradientMaskContains
  * @tc.desc: Test NoisyFrameGradientMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderNoisyFrameGradientMask>();
     EXPECT_TRUE(mask->Contains<NoisyFrameGradientMaskGradientBezierControlPointsRenderTag>());
@@ -1109,11 +1109,11 @@ HWTEST_F(RSRenderFilterBaseTest, NoisyFrameGradientMaskContains001, TestSize.Lev
 }
 
 /**
- * @tc.name: ContainsType001
+ * @tc.name: ContainsTypeForFilter
  * @tc.desc: Test ContainsType method for effect chain
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, ContainsType001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, ContainsTypeForFilter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderBlurFilter>();
     EXPECT_TRUE(filter->ContainsType(RSNGEffectType::BLUR));
@@ -1122,11 +1122,11 @@ HWTEST_F(RSRenderFilterBaseTest, ContainsType001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ContainsType002
+ * @tc.name: ContainsTypeForMask
  * @tc.desc: Test ContainsType method for mask
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, ContainsType002, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, ContainsTypeForMask, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderRippleMask>();
     EXPECT_TRUE(mask->ContainsType(RSNGEffectType::RIPPLE_MASK));
@@ -1135,11 +1135,11 @@ HWTEST_F(RSRenderFilterBaseTest, ContainsType002, TestSize.Level1)
 }
 
 /**
- * @tc.name: SoundWaveFilterCreate001
+ * @tc.name: SoundWaveFilterCreate
  * @tc.desc: Test creating SoundWave filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::SOUND_WAVE);
     ASSERT_NE(filter, nullptr);
@@ -1147,11 +1147,11 @@ HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SoundWaveFilterSetterGetter001
+ * @tc.name: SoundWaveFilterSetterGetter
  * @tc.desc: Test SoundWave filter Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderSoundWaveFilter>();
 
@@ -1187,11 +1187,11 @@ HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterSetterGetter001, TestSize.Level1
 }
 
 /**
- * @tc.name: SoundWaveFilterContains001
+ * @tc.name: SoundWaveFilterContains
  * @tc.desc: Test SoundWave filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderSoundWaveFilter>();
     EXPECT_TRUE(filter->Contains<SoundWaveColorARenderTag>());
@@ -1202,11 +1202,11 @@ HWTEST_F(RSRenderFilterBaseTest, SoundWaveFilterContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DispersionFilterCreate001
+ * @tc.name: DispersionFilterCreate
  * @tc.desc: Test creating Dispersion filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DispersionFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DispersionFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::DISPERSION);
     ASSERT_NE(filter, nullptr);
@@ -1214,11 +1214,11 @@ HWTEST_F(RSRenderFilterBaseTest, DispersionFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DispersionFilterSetterGetter001
+ * @tc.name: DispersionFilterSetterGetter
  * @tc.desc: Test Dispersion filter Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DispersionFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DispersionFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderDispersionFilter>();
 
@@ -1248,11 +1248,11 @@ HWTEST_F(RSRenderFilterBaseTest, DispersionFilterSetterGetter001, TestSize.Level
 }
 
 /**
- * @tc.name: DispersionFilterContains001
+ * @tc.name: DispersionFilterContains
  * @tc.desc: Test Dispersion filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, DispersionFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, DispersionFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderDispersionFilter>();
     EXPECT_TRUE(filter->Contains<DispersionOpacityRenderTag>());
@@ -1262,11 +1262,11 @@ HWTEST_F(RSRenderFilterBaseTest, DispersionFilterContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: RippleMaskSetterGetter001
+ * @tc.name: RippleMaskSetterGetter
  * @tc.desc: Test RippleMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, RippleMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, RippleMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderRippleMask>();
 
@@ -1297,11 +1297,11 @@ HWTEST_F(RSRenderFilterBaseTest, RippleMaskSetterGetter001, TestSize.Level1)
 }
 
 /**
- * @tc.name: RippleMaskContains001
+ * @tc.name: RippleMaskContains
  * @tc.desc: Test RippleMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, RippleMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, RippleMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderRippleMask>();
     EXPECT_TRUE(mask->Contains<RippleMaskCenterRenderTag>());
@@ -1311,11 +1311,11 @@ HWTEST_F(RSRenderFilterBaseTest, RippleMaskContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: PixelMapMaskCreate001
+ * @tc.name: PixelMapMaskCreate
  * @tc.desc: Test creating PixelMapMask and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskCreate, TestSize.Level1)
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::PIXEL_MAP_MASK);
     ASSERT_NE(mask, nullptr);
@@ -1323,11 +1323,11 @@ HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: PixelMapMaskSetterGetter001
+ * @tc.name: PixelMapMaskSetterGetter
  * @tc.desc: Test PixelMapMask Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskSetterGetter, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderPixelMapMask>();
 
@@ -1351,11 +1351,11 @@ HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskSetterGetter001, TestSize.Level1)
 }
 
 /**
- * @tc.name: PixelMapMaskContains001
+ * @tc.name: PixelMapMaskContains
  * @tc.desc: Test PixelMapMask Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskContains, TestSize.Level1)
 {
     auto mask = std::make_shared<RSNGRenderPixelMapMask>();
     EXPECT_TRUE(mask->Contains<PixelMapMaskSrcRenderTag>());
@@ -1364,11 +1364,11 @@ HWTEST_F(RSRenderFilterBaseTest, PixelMapMaskContains001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ColorGradientFilterCreate001
+ * @tc.name: ColorGradientFilterCreate
  * @tc.desc: Test creating ColorGradient filter and verify type
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterCreate001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterCreate, TestSize.Level1)
 {
     auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::COLOR_GRADIENT);
     ASSERT_NE(filter, nullptr);
@@ -1376,11 +1376,11 @@ HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterCreate001, TestSize.Level1)
 }
 
 /**
- * @tc.name: ColorGradientFilterSetterGetter001
+ * @tc.name: ColorGradientFilterSetterGetter
  * @tc.desc: Test ColorGradient filter Setter and Getter for properties
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterSetterGetter001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterSetterGetter, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderColorGradientFilter>();
 
@@ -1406,11 +1406,11 @@ HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterSetterGetter001, TestSize.Le
 }
 
 /**
- * @tc.name: ColorGradientFilterContains001
+ * @tc.name: ColorGradientFilterContains
  * @tc.desc: Test ColorGradient filter Contains template interface
  * @tc.type: FUNC
  */
-HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterContains001, TestSize.Level1)
+HWTEST_F(RSRenderFilterBaseTest, ColorGradientFilterContains, TestSize.Level1)
 {
     auto filter = std::make_shared<RSNGRenderColorGradientFilter>();
     EXPECT_TRUE(filter->Contains<ColorGradientColorsRenderTag>());
