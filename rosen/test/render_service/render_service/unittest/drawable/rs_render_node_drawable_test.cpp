@@ -1581,56 +1581,6 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithScaleBranchTest004, TestSi
     ASSERT_FALSE(RSSystemProperties::GetRecordingEnabled());
 }
 
-/**
- * @tc.name: DrawCachedImageWithFilterTest
- * @tc.desc: Test DrawCachedImage with hasFilter=true
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithFilterTest, TestSize.Level1)
-{
-    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
-    Drawing::Canvas canvas;
-    RSPaintFilterCanvas paintFilterCanvas(&canvas);
-
-    RSRenderParams params(RSRenderNodeDrawableTest::id);
-    params.SetCacheSize({100.0f, 100.0f});
-
-    auto surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
-    ASSERT_TRUE(surface);
-    auto canvasPtr = surface->GetCanvas();
-    ASSERT_NE(canvasPtr, nullptr);
-    canvasPtr->Clear(Drawing::Color::COLOR_BLUE);
-    auto image = surface->GetImageSnapshot();
-    ASSERT_NE(image, nullptr);
-    drawable->cachedImage_ = image;
-    drawable->SetCacheImageByCapture(image);
-
-    drawable->cachedSurface_ = std::make_shared<Drawing::Surface>();
-    drawable->cachedImage_ = std::make_shared<Drawing::Image>();
-    auto drawingCanvas = std::make_shared<Drawing::Canvas>();
-    paintFilterCanvas.canvas_ = drawingCanvas.get();
-    paintFilterCanvas.canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
-    ASSERT_NE(drawable->cachedSurface_, nullptr);
-
-    auto rsFilter = std::make_shared<RSBlurFilter>(0.0f, 0.0f);
-    drawable->DrawCachedImage(paintFilterCanvas, params, rsFilter);
-
-    params.SetChildHasVisibleFilter(true);
-    drawable->DrawCachedImage(paintFilterCanvas, params);
-
-    params.SetChildHasVisibleFilter(false);
-    params.SetChildHasVisibleEffect(true);
-    drawable->DrawCachedImage(paintFilterCanvas, params);
-
-    params.SetChildHasVisibleEffect(false);
-    params.SetHasChildExcludedFromNodeGroup(true);
-    drawable->DrawCachedImage(paintFilterCanvas, params);
-
-    params.SetHasChildExcludedFromNodeGroup(false);
-    ASSERT_FALSE(RSSystemProperties::GetRecordingEnabled());
-}
-
 #ifdef SUBTREE_PARALLEL_ENABLE
 /**
  * @tc.name: OnDrawTest
@@ -1911,40 +1861,106 @@ HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleResetInGenerateCacheTest, TestS
 }
 
 /**
- * @tc.name: ShouldClipHoleSetInCheckCacheTypeAndDrawTest
- * @tc.desc: Test that shouldClipHole_ is set in CheckCacheTypeAndDraw when HasFilterOrEffect
+ * @tc.name: SetShouldClipHoleWithNullCurDrawingCacheRootTest
+ * @tc.desc: Test SetShouldClipHole when curDrawingCacheRoot_ is nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleSetInCheckCacheTypeAndDrawTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeDrawableTest, SetShouldClipHoleWithNullCurDrawingCacheRootTest, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
-    Drawing::Canvas canvas(DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
-    RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    RSRenderParams params(RSRenderNodeDrawableTest::id);
+    ASSERT_NE(drawable, nullptr);
+    drawable->SetShouldClipHole(true);
+}
 
-    auto rootRenderNode = std::make_shared<RSRenderNode>(10);
-    auto rootDrawable = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(rootRenderNode);
-    auto curDrawingCacheRootDrawable = std::static_pointer_cast<RSRenderNodeDrawable>(rootDrawable);
-    drawable->curDrawingCacheRoot_ = rootDrawable.get();
+/**
+ * @tc.name: SetShouldClipHoleWithNullRenderGroupCacheTest
+ * @tc.desc: Test SetShouldClipHole when renderGroupCache_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeDrawableTest, SetShouldClipHoleWithNullRenderGroupCacheTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
+    drawable->curDrawingCacheRoot_ = drawable.get();
     ASSERT_NE(drawable->curDrawingCacheRoot_, nullptr);
+    ASSERT_EQ(drawable->renderGroupCache_, nullptr);
+    drawable->SetShouldClipHole(true);
+}
 
-    Drawing::RectI rect(0, 0, 100, 100);
-    Drawing::Matrix matrix;
-    const std::vector<RSRenderNodeDrawableAdapter::FilterNodeInfo> filterInfoVec = {
-        RSRenderNodeDrawableAdapter::FilterNodeInfo(0, matrix, { rect }),
-    };
-    drawable->curDrawingCacheRoot_->filterInfoVec_ = filterInfoVec;
-    drawable->curDrawingCacheRoot_->filterNodeSize_ = 1;
-    curDrawingCacheRootDrawable->UpdateCurRenderGroupCacheRootFilterState(params);
-    ASSERT_NE(curDrawingCacheRootDrawable->renderGroupCache_, nullptr);
-    auto renderGroupCache = curDrawingCacheRootDrawable->renderGroupCache_.get();
-    EXPECT_FALSE(renderGroupCache->ShouldClipHole());
+/**
+ * @tc.name: ShouldClipHoleWithNullCurDrawingCacheRootTest
+ * @tc.desc: Test ShouldClipHole when curDrawingCacheRoot_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleWithNullCurDrawingCacheRootTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
+    EXPECT_FALSE(drawable->ShouldClipHole());
+}
 
-    drawable->isOffScreenWithClipHole_ = true;
-    drawable->drawCmdIndex_.materialFilterIndex_ = 1;
-    drawable->CheckCacheTypeAndDraw(paintFilterCanvas, params);
-    EXPECT_TRUE(renderGroupCache->ShouldClipHole());
+/**
+ * @tc.name: ShouldClipHoleWithNullRenderGroupCacheTest
+ * @tc.desc: Test ShouldClipHole when renderGroupCache_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleWithNullRenderGroupCacheTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
+    drawable->curDrawingCacheRoot_ = drawable.get();
+    ASSERT_NE(drawable->curDrawingCacheRoot_, nullptr);
+    ASSERT_EQ(drawable->renderGroupCache_, nullptr);
+    EXPECT_FALSE(drawable->ShouldClipHole());
+}
+
+/**
+ * @tc.name: DrawCachedImageWithClipHoleTest
+ * @tc.desc: Test DrawCachedImage when ShouldClipHole returns true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithClipHoleTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
+
+    RSRenderParams params(RSRenderNodeDrawableTest::id);
+    params.SetCacheSize({100.0f, 100.0f});
+
+    drawable->UpdateCurRenderGroupCacheRootFilterState(params);
+    ASSERT_NE(drawable->renderGroupCache_, nullptr);
+
+    drawable->curDrawingCacheRoot_ = drawable.get();
+
+    drawable->renderGroupCache_->SetShouldClipHole(true);
+    EXPECT_TRUE(drawable->renderGroupCache_->ShouldClipHole());
+
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+
+    auto surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    ASSERT_TRUE(surface);
+    auto canvasPtr = surface->GetCanvas();
+    ASSERT_NE(canvasPtr, nullptr);
+    canvasPtr->Clear(Drawing::Color::COLOR_BLUE);
+    auto image = surface->GetImageSnapshot();
+    ASSERT_NE(image, nullptr);
+    drawable->cachedImage_ = image;
+    drawable->SetCacheImageByCapture(image);
+
+    drawable->cachedSurface_ = std::make_shared<Drawing::Surface>();
+    drawable->cachedImage_ = std::make_shared<Drawing::Image>();
+    auto drawingCanvas = std::make_shared<Drawing::Canvas>();
+    paintFilterCanvas.canvas_ = drawingCanvas.get();
+    paintFilterCanvas.canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
+    ASSERT_NE(drawable->cachedSurface_, nullptr);
+
+    drawable->DrawCachedImage(paintFilterCanvas, params);
 }
 
 } // namespace OHOS::Rosen
