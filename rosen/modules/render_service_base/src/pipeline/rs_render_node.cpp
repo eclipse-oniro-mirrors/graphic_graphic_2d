@@ -5223,7 +5223,7 @@ bool RSRenderNode::HasValidDrawCmd() const
                !GetModifiersNG(ModifierNG::RSModifierType::CHILDREN).empty();
     if (!ret) {
         const auto& clipToFrameModifiers = GetModifiersNG(ModifierNG::RSModifierType::CLIP_TO_FRAME);
-        for (auto modifier : clipToFrameModifiers) {
+        for (const auto& modifier : clipToFrameModifiers) {
             if (modifier->HasProperty(ModifierNG::RSPropertyType::CUSTOM_CLIP_TO_FRAME)) {
                 ret = true;
                 break;
@@ -5247,7 +5247,7 @@ bool RSRenderNode::HasDrawCmdModifiers() const
                !GetModifiersNG(ModifierNG::RSModifierType::CHILDREN).empty();
     if (!ret) {
         const auto& clipToFrameModifiers = GetModifiersNG(ModifierNG::RSModifierType::CLIP_TO_FRAME);
-        for (const auto& modifier : clipToFrameModifiers) {
+        for (auto modifier : clipToFrameModifiers) {
             if (modifier->HasProperty(ModifierNG::RSPropertyType::CUSTOM_CLIP_TO_FRAME)) {
                 ret = true;
                 break;
