@@ -63,6 +63,7 @@ RSSurfaceOhosVulkan::RSSurfaceOhosVulkan(const sptr<Surface>& producer) : RSSurf
 
 RSSurfaceOhosVulkan::~RSSurfaceOhosVulkan()
 {
+    flushState_.Reset();
     mSurfaceMap.clear();
     mSurfaceList.clear();
     ReleasePreAllocateBuffer();
@@ -77,6 +78,7 @@ RSSurfaceOhosVulkan::~RSSurfaceOhosVulkan()
 void RSSurfaceOhosVulkan::SetNativeWindowInfo(int32_t width, int32_t height, bool useAFBC, bool isProtected)
 {
     if (width != mWidth || height != mHeight) {
+        flushState_.Reset();
         for (auto &[key, val] : mSurfaceMap) {
             NativeWindowCancelBuffer(mNativeWindow, key);
         }
@@ -499,6 +501,7 @@ void RSSurfaceOhosVulkan::CancelBuffer(NativeBufferUtils::NativeSurfaceInfo& sur
 
 void RSSurfaceOhosVulkan::CancelBufferForCurrentFrame()
 {
+    flushState_.Reset();
     if (mSurfaceList.empty()) {
         RS_LOGE("CancelBuffer failed: mSurfaceList is empty");
         return;
@@ -509,11 +512,40 @@ void RSSurfaceOhosVulkan::CancelBufferForCurrentFrame()
     mSurfaceMap.erase(buffer);
 }
 
+void RSSurfaceOhosVulkan::CancelActiveFlush()
+{
+    std::lock_guard<std::mutex> lock(flushStateMutex_);
+    if (!flushState_.valid) {
+        return;
+    }
+    ROSEN_LOGW("RSSurfaceOhosVulkan::CancelActiveFlush canceling abandoned flush sequence");
+    flushState_.Reset();
+}
+
 bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp)
 {
+    if (!FlushGpu(frame, uiTimestamp)) {
+        return false;
+    }
+    if (!SubmitGpu(frame, uiTimestamp)) {
+        return false;
+    }
+    return FlushBuffer(frame, uiTimestamp);
+}
+
+bool RSSurfaceOhosVulkan::FlushGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp)
+{
+    std::lock_guard<std::mutex> lock(flushStateMutex_);
+    flushState_.Reset();
     if (mSurfaceList.empty()) {
         return false;
     }
+    if (mSurfaceMap.find(mSurfaceList.front()) == mSurfaceMap.end()) {
+        ROSEN_LOGE("RSSurfaceOhosVulkan Can not find drawingsurface");
+        return false;
+    }
+    auto& surface = mSurfaceMap[mSurfaceList.front()];
+
 #ifdef RS_ENABLE_PREFETCH
     __builtin_prefetch(&mSkContext, 0, 1);
 #endif
@@ -528,34 +560,31 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     backendSemaphore.initVulkan(semaphore);
 #endif
 
-    if (mSurfaceMap.find(mSurfaceList.front()) == mSurfaceMap.end()) {
-        ROSEN_LOGE("RSSurfaceOhosVulkan Can not find drawingsurface");
-        return false;
-    }
-
-    auto& surface = mSurfaceMap[mSurfaceList.front()];
-
     RSTagTracker tagTracker(mSkContext, RSTagTracker::TAGTYPE::TAG_ACQUIRE_SURFACE);
 
     auto* callbackInfo = new RsVulkanInterface::CallbackSemaphoreInfo(vkContext, semaphore, -1);
 
     std::vector<GrBackendSemaphore> semaphoreVec = { backendSemaphore };
 #ifdef HETERO_HDR_ENABLE
-    std::vector<uint64_t> frameIdVec = RSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
-    RSHDRVulkanTask::PrepareHDRSemaphoreVector(semaphoreVec, surface.drawingSurface, frameIdVec);
+    flushState_.hdrFrameIdVec = RSHDRPatternManager::Instance().MHCGetFrameIdForGPUTask();
+    RSHDRVulkanTask::PrepareHDRSemaphoreVector(
+        semaphoreVec, surface.drawingSurface, flushState_.hdrFrameIdVec);
 #endif
 
 #ifdef MHC_ENABLE
-    auto&& pendingSubmit = RSMhcManager::Instance().PrepareGraphAndSemaphore(semaphoreVec, surface.drawingSurface);
+    flushState_.mhcPendingSubmit = RSMhcManager::Instance().PrepareGraphAndSemaphore(
+        semaphoreVec, surface.drawingSurface);
 #endif
 
 #if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
     RSHpaeScheduler::GetInstance().WaitBuildTask();
-    uint64_t preFrameId = RSHpaeScheduler::GetInstance().GetHpaeFrameId();
-    uint64_t curFrameId = RSHpaeFfrtPatternManager::Instance().MHCGetCurFrameId();
-    bool submitWithFFTS = NeedSubmitWithFFTS() && (preFrameId > 0 || curFrameId > 0);
-    if (submitWithFFTS) {
-        SetGpuSemaphore(submitWithFFTS, preFrameId, curFrameId, semaphoreVec, surface);
+    flushState_.preFrameId = RSHpaeScheduler::GetInstance().GetHpaeFrameId();
+    flushState_.curFrameId = RSHpaeFfrtPatternManager::Instance().MHCGetCurFrameId();
+    flushState_.submitWithFFTS = NeedSubmitWithFFTS() &&
+        (flushState_.preFrameId > 0 || flushState_.curFrameId > 0);
+    if (flushState_.submitWithFFTS) {
+        SetGpuSemaphore(flushState_.submitWithFFTS, flushState_.preFrameId,
+            flushState_.curFrameId, semaphoreVec, surface);
     }
 #endif
 
@@ -576,8 +605,24 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
         if (res == Drawing::SemaphoresSubmited::DRAWING_ENGINE_SUBMIT_NO) {
             // Synchronized when skia return DRAWING_ENGINE_SUBMIT_NO
             RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFrom2DEngine(callbackInfo);
-            RsVulkanInterface::callbackSemaphoreInfo2DEngineDefensiveDerefCnt_.fetch_add(+1, std::memory_order_relaxed);
+            RsVulkanInterface::callbackSemaphoreInfo2DEngineDefensiveDerefCnt_.fetch_add(
+                +1, std::memory_order_relaxed);
         }
+    }
+
+    flushState_.semaphore = semaphore;
+    flushState_.bufferKey = mSurfaceList.front();
+    flushState_.callbackInfo = callbackInfo;
+    flushState_.valid = true;
+    return true;
+}
+
+bool RSSurfaceOhosVulkan::SubmitGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp)
+{
+    std::lock_guard<std::mutex> lock(flushStateMutex_);
+    if (!flushState_.valid || flushState_.bufferKey == nullptr) {
+        ROSEN_LOGE("RSSurfaceOhosVulkan::SubmitGpu called without valid FlushGpu state");
+        return false;
     }
     {
         RS_TRACE_NAME("Submit");
@@ -585,15 +630,25 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
         mSkContext->Submit();
         mSkContext->EndFrame();
     }
-#ifdef HETERO_HDR_ENABLE
-    RSHDRPatternManager::Instance().MHCClearGPUTaskFunc(frameIdVec);
-#endif
-    
-#ifdef MHC_ENABLE
-    if (pendingSubmit) {
-        RSMhcManager::Instance().MHCSubmitTask(*pendingSubmit);
+    return true;
+}
+
+bool RSSurfaceOhosVulkan::FlushBuffer(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp)
+{
+    std::lock_guard<std::mutex> lock(flushStateMutex_);
+    if (!flushState_.valid || flushState_.bufferKey == nullptr || flushState_.callbackInfo == nullptr) {
+        ROSEN_LOGE("RSSurfaceOhosVulkan::FlushBuffer called without valid flush state");
+        return false;
     }
-#endif
+    auto surfaceIt = mSurfaceMap.find(flushState_.bufferKey);
+    if (surfaceIt == mSurfaceMap.end()) {
+        ROSEN_LOGE("RSSurfaceOhosVulkan::FlushBuffer buffer no longer exists in surface map");
+        flushState_.Reset();
+        return false;
+    }
+    auto& surface = surfaceIt->second;
+    auto* callbackInfo = flushState_.callbackInfo;
+    auto& vkContext = RsVulkanContext::GetSingleton().GetRsVulkanInterface();
 
     int fenceFd = -1;
     if (mReservedFlushFd != -1) {
@@ -602,14 +657,13 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     }
     auto queue = vkContext.GetQueue();
     auto err = RsVulkanContext::HookedVkQueueSignalReleaseImageOHOS(
-        queue, 1, &semaphore, surface.image, &fenceFd);
+        queue, 1, &flushState_.semaphore, surface.image, &fenceFd);
     if (err != VK_SUCCESS) {
         if (err == VK_ERROR_DEVICE_LOST) {
             vkContext.DestroyAllSemaphoreFence();
         }
         CancelBuffer(surface);
-        RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFromRS(callbackInfo);
-        callbackInfo = nullptr;
+        flushState_.Reset();
         ROSEN_LOGE("RSSurfaceOhosVulkan QueueSignalReleaseImageOHOS failed %{public}d", err);
         return false;
     }
@@ -627,25 +681,33 @@ bool RSSurfaceOhosVulkan::FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uin
     auto ret = NativeWindowFlushBuffer(surface.window, surface.nativeWindowBuffer, fenceFd, {});
     if (ret != OHOS::GSERROR_OK) {
         CancelBuffer(surface);
-        RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFromRS(callbackInfo);
-        callbackInfo = nullptr;
+        flushState_.Reset();
         ROSEN_LOGE("RSSurfaceOhosVulkan NativeWindowFlushBuffer failed");
         return false;
     }
     mSurfaceList.pop_front();
-    RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFromRS(callbackInfo);
 
-    callbackInfo = nullptr;
     surface.fence.reset();
     surface.lastPresentedCount = mPresentCount;
     mPresentCount++;
 
-#if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
-    if (submitWithFFTS) {
-        SubmitGpuAndHpaeTask(preFrameId, curFrameId);
+#ifdef HETERO_HDR_ENABLE
+    RSHDRPatternManager::Instance().MHCClearGPUTaskFunc(flushState_.hdrFrameIdVec);
+#endif
+
+#ifdef MHC_ENABLE
+    if (flushState_.mhcPendingSubmit) {
+        RSMhcManager::Instance().MHCSubmitTask(*flushState_.mhcPendingSubmit);
     }
 #endif
 
+#if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
+    if (flushState_.submitWithFFTS) {
+        SubmitGpuAndHpaeTask(flushState_.preFrameId, flushState_.curFrameId);
+    }
+#endif
+
+    flushState_.Reset();
     return true;
 }
 
@@ -653,6 +715,7 @@ void RSSurfaceOhosVulkan::SetColorSpace(GraphicColorGamut colorSpace)
 {
     if (colorSpace != colorSpace_) {
         colorSpace_ = colorSpace;
+        flushState_.Reset();
         for (auto &[key, val] : mSurfaceMap) {
             NativeWindowCancelBuffer(mNativeWindow, key);
         }
@@ -670,6 +733,7 @@ void RSSurfaceOhosVulkan::SetSurfaceBufferUsage(uint64_t usage)
 void RSSurfaceOhosVulkan::SetSurfacePixelFormat(int32_t pixelFormat)
 {
     if (pixelFormat != pixelFormat_) {
+        flushState_.Reset();
         for (auto &[key, val] : mSurfaceMap) {
             NativeWindowCancelBuffer(mNativeWindow, key);
         }
