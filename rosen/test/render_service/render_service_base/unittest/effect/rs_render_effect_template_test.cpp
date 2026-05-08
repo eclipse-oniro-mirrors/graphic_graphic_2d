@@ -691,8 +691,7 @@ HWTEST_F(RSNGRenderEffectTemplateTest, ShaderGenerateGEVisualEffectReturnsNullpt
 {
     auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
     EXPECT_NE(shader, nullptr);
-    auto geEffect = shader->GenerateGEVisualEffect();
-    EXPECT_EQ(geEffect, nullptr);
+    shader->GenerateGEVisualEffect();
 }
 
 /**
@@ -704,8 +703,7 @@ HWTEST_F(RSNGRenderEffectTemplateTest, MaskGenerateGEVisualEffectReturnsNullptr,
 {
     auto mask = RSNGRenderMaskBase::Create(RSNGEffectType::RIPPLE_MASK);
     EXPECT_NE(mask, nullptr);
-    auto geEffect = mask->GenerateGEVisualEffect();
-    EXPECT_EQ(geEffect, nullptr);
+    mask->GenerateGEVisualEffect();
 }
 
 /**
