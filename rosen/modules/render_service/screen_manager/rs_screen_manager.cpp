@@ -778,56 +778,6 @@ int32_t RSScreenManager::SetCastScreenEnableSkipWindow(ScreenId id, bool enable)
     return SUCCESS;
 }
 
-int32_t RSScreenManager::SetVirtualScreenSurfaces(
-    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
-{
-    if (surfaceConfigs.empty()) {
-        RS_LOGW("%{public}s: screenId:%{public}" PRIu64 " surfaceConfigs is empty.", __func__, id);
-        return INVALID_ARGUMENTS;
-    }
-    auto screen = GetScreen(id);
-    if (screen == nullptr) {
-        RS_LOGW("%{public}s: There is no screen for id %{public}" PRIu64, __func__, id);
-        return SCREEN_NOT_FOUND;
-    }
-    if (!screen->IsVirtual()) {
-        RS_LOGW("%{public}s: The screen is not virtual, id %{public}" PRIu64, __func__, id);
-        return INVALID_ARGUMENTS;
-    }
-
-    std::vector<SurfaceRegionConfig> validConfigs;
-    std::unordered_set<uint64_t> seenIds;
-    for (const auto& config : surfaceConfigs) {
-        if (config.surface == nullptr) {
-            continue;
-        }
-        uint64_t surfaceId = config.surface->GetUniqueId();
-        if (!seenIds.insert(surfaceId).second) {
-            continue;
-        }
-        auto func = [id, surfaceId](const ScreenNode& node) -> bool {
-            return node.first != id && ScreenContainsSurfaceId(node.second, surfaceId);
-        };
-        if (AnyScreenFits(func)) {
-            RS_LOGE("%{public}s: Surface[%{public}" PRIu64 "] is used, set surface for virtualScreen[%{public}"
-                PRIu64 "] failed!", __func__, surfaceId, id);
-            return SURFACE_NOT_UNIQUE;
-        }
-        validConfigs.push_back(config);
-    }
-
-    if (validConfigs.empty()) {
-        RS_LOGW("%{public}s: No valid surfaces after filtering.", __func__);
-        return INVALID_ARGUMENTS;
-    }
-
-    screen->SetMultiSurfaceConfigs(validConfigs);
-    RS_LOGI("%{public}s: Set %{public}zu surfaces for virtualScreen[%{public}" PRIu64 "] success.",
-        __func__, validConfigs.size(), id);
-    return SUCCESS;
-}
-
-
 int32_t RSScreenManager::AddVirtualScreenSurface(
     ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
 {

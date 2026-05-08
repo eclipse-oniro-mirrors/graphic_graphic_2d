@@ -18,6 +18,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#ifndef ROSEN_CROSS_PLATFORM
+#include <surface.h>
+#include "screen_manager/rs_screen_info.h"
+#endif
 #include <message_parcel.h>
 #include <sys/mman.h>
 #include <unistd.h>

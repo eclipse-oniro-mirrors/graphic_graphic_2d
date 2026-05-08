@@ -18,6 +18,9 @@
 
 #include <string>
 #include <surface_type.h>
+#ifndef ROSEN_CROSS_PLATFORM
+#include <surface.h>
+#endif
 #include <unordered_set>
 #include "message_parcel.h"
 #include "common/rs_rect.h"
