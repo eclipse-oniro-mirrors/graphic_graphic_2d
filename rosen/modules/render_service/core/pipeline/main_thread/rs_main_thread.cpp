@@ -5321,7 +5321,7 @@ void RSMainThread::UpdateLuminanceAndColorTemp()
         auto screenId = screenNode->GetScreenId();
         if (rsLuminance.IsNeedUpdateLuminance(screenId)) {
             uint32_t newLevel = rsLuminance.GetNewHdrLuminance(screenId);
-            composerClientManager_->SetScreenBacklight(screenId, newLevel);
+            composerClientManager_->SetScreenBacklight(RsScreenBrightnessData(screenId, newLevel));
             rsLuminance.SetNowHdrLuminance(screenId, newLevel);
         }
         if (rsLuminance.IsDimmingOn(screenId)) {

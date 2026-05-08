@@ -4778,7 +4778,7 @@ HWTEST_F(RSClientToServiceConnectionStubTest, testnullptrCase003, TestSize.Level
     int32_t level = 0;
     connection->GetScreenBacklight(INVALID_SCREEN_ID, level);
     // test SetScreenBacklight
-    connection->SetScreenBacklight(INVALID_SCREEN_ID, level);
+    connection->SetScreenBacklight(RsScreenBrightnessData(INVALID_SCREEN_ID, level));
     // test GetScreenSupportedColorGamuts
     std::vector<ScreenColorGamut> gamutMode = {};
     connection->GetScreenSupportedColorGamuts(INVALID_SCREEN_ID, gamutMode);

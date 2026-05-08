@@ -2025,29 +2025,30 @@ ErrCode RSRenderPipelineAgent::SetOptimizeCanvasDirtyPidList(const std::vector<i
     return ERR_OK;
 }
 
-void RSRenderPipelineAgent::OnScreenBacklightChanged(ScreenId screenId, uint32_t level)
+void RSRenderPipelineAgent::OnScreenBacklightChanged(const RsScreenBrightnessData& brightnessData)
 {
     if (rsRenderPipeline_ == nullptr) {
         return;
     }
-    RSLuminanceControl::Get().SetSdrLuminance(screenId, level);
-    if (RSLuminanceControl::Get().IsHdrOn(screenId) && level > 0) {
-        rsRenderPipeline_->PostMainThreadTask([renderPipeline = rsRenderPipeline_, screenId]() {
+    RSLuminanceControl::Get().SetSdrLuminance(brightnessData);
+    if (RSLuminanceControl::Get().IsHdrOn(brightnessData.screenId) && brightnessData.level > 0) {
+        auto task = [renderPipeline = rsRenderPipeline_, screenId = brightnessData.screenId]() {
             renderPipeline->GetMainThread()->SetForceUpdateUniRenderFlag(true);
             renderPipeline->GetMainThread()->SetLuminanceChangingStatus(screenId, true);
             renderPipeline->GetMainThread()->SetDirtyFlag();
             renderPipeline->GetMainThread()->RequestNextVSync();
-        });
+        };
+        rsRenderPipeline_->PostMainThreadTask(task);
         return;
     }
     if (RSUniRenderJudgement::IsUniRender()) {
-        rsRenderPipeline_->GetComposerClientManager()->SetScreenBacklight(screenId, level);
+        rsRenderPipeline_->GetComposerClientManager()->SetScreenBacklight(brightnessData);
     } else {
-        auto composerClient = rsRenderPipeline_->GetComposerClientManager()->GetComposerClient(screenId);
+        auto composerClient = rsRenderPipeline_->GetComposerClientManager()->GetComposerClient(brightnessData.screenId);
         if (composerClient) {
             auto output = composerClient->GetOutput();
             if (output) {
-                output->SetScreenBacklight(level);
+                output->SetScreenBacklight(brightnessData.level);
             }
         }
     }

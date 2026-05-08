@@ -1108,7 +1108,8 @@ bool RSClientToRenderConnectionProxy::ReadBrightnessInfo(BrightnessInfo& brightn
 {
     if (!data.ReadFloat(brightnessInfo.currentHeadroom) ||
         !data.ReadFloat(brightnessInfo.maxHeadroom) ||
-        !data.ReadFloat(brightnessInfo.sdrNits)) {
+        !data.ReadFloat(brightnessInfo.sdrNits) ||
+        !data.ReadFloat(brightnessInfo.brightnessPosition)) {
         ROSEN_LOGE("RSClientToRenderConnectionProxy::ReadBrightnessInfo read parcel failed!");
         return false;
     }

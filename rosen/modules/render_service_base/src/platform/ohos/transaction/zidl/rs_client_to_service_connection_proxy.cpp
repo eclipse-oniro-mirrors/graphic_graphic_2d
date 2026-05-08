@@ -2039,7 +2039,7 @@ ErrCode RSClientToServiceConnectionProxy::GetScreenBacklight(uint64_t id, int32_
     return ERR_OK;
 }
 
-void RSClientToServiceConnectionProxy::SetScreenBacklight(ScreenId id, uint32_t level)
+void RSClientToServiceConnectionProxy::SetScreenBacklight(const RsScreenBrightnessData& brightnessData)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -2049,12 +2049,16 @@ void RSClientToServiceConnectionProxy::SetScreenBacklight(ScreenId id, uint32_t 
         return;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint64(id)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteUint64 id err.");
+    if (!data.WriteUint64(brightnessData.screenId)) {
+        ROSEN_LOGE("SetScreenBacklight: WriteUint64 screenId err.");
         return;
     }
-    if (!data.WriteUint32(level)) {
+    if (!data.WriteUint32(brightnessData.level)) {
         ROSEN_LOGE("SetScreenBacklight: WriteUint32 level err.");
+        return;
+    }
+    if (!data.WriteFloat(brightnessData.brightnessPosition)) {
+        ROSEN_LOGE("SetScreenBacklight: WriteFloat brightnessPosition err.");
         return;
     }
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT);

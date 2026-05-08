@@ -1339,14 +1339,14 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT): {
-            ScreenId id{INVALID_SCREEN_ID};
-            uint32_t level{0};
-            if (!data.ReadUint64(id) || !data.ReadUint32(level)) {
-                RS_LOGE("RSClientToServiceConnectionStub::SET_SCREEN_BACK_LIGHT Read parcel failed!");
+            RsScreenBrightnessData brightnessData;
+            if (!data.ReadUint64(brightnessData.screenId) || !data.ReadUint32(brightnessData.level) ||
+                !data.ReadFloat(brightnessData.brightnessPosition)) {
+                ROSEN_LOGE("RSClientToServiceConnectionStub::SET_SCREEN_BACK_LIGHT Read parcel failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            SetScreenBacklight(id, level);
+            SetScreenBacklight(brightnessData);
             break;
         }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_GAMUTS): {

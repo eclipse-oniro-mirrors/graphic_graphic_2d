@@ -1161,13 +1161,13 @@ ErrCode RSClientToServiceConnection::GetScreenBacklight(uint64_t screenId, int32
     return ERR_OK;
 }
 
-void RSClientToServiceConnection::SetScreenBacklight(ScreenId id, uint32_t level)
+void RSClientToServiceConnection::SetScreenBacklight(const RsScreenBrightnessData& brightnessData)
 {
     if (!screenManagerAgent_) {
         RS_LOGE("%{public}s screenManagerAgent_ is nullptr.", __func__);
         return;
     }
-    screenManagerAgent_->SetScreenBacklight(id, level);
+    screenManagerAgent_->SetScreenBacklight(brightnessData);
 }
 
 ErrCode RSClientToServiceConnection::GetPanelPowerStatus(ScreenId screenId, PanelPowerStatus& status)

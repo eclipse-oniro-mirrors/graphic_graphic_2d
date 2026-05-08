@@ -2948,7 +2948,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, OnScreenBacklightChanged_Normal_S
 
     ScreenId screenId = 1;
     uint32_t level = 100;
-    mockProxy->OnScreenBacklightChanged(screenId, level);
+    mockProxy->OnScreenBacklightChanged(RsScreenBrightnessData(screenId, level));
 }
 
 /**
@@ -2967,7 +2967,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, OnScreenBacklightChanged_SendRequ
 
     ScreenId screenId = 1;
     uint32_t level = 100;
-    mockProxy->OnScreenBacklightChanged(screenId, level);
+    mockProxy->OnScreenBacklightChanged(RsScreenBrightnessData(screenId, level));
 }
 
 /**
@@ -2986,7 +2986,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, OnScreenBacklightChanged_ZeroLeve
 
     ScreenId screenId = 1;
     uint32_t level = 0;
-    mockProxy->OnScreenBacklightChanged(screenId, level);
+    mockProxy->OnScreenBacklightChanged(RsScreenBrightnessData(screenId, level));
 }
 
 /**
@@ -3005,7 +3005,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, OnScreenBacklightChanged_MaxLevel
 
     ScreenId screenId = 1;
     uint32_t level = std::numeric_limits<uint32_t>::max();
-    mockProxy->OnScreenBacklightChanged(screenId, level);
+    mockProxy->OnScreenBacklightChanged(RsScreenBrightnessData(screenId, level));
 }
 
 // ==================== Additional Read Fail Tests ====================

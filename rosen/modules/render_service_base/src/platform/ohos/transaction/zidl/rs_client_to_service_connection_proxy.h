@@ -165,7 +165,7 @@ public:
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
     ErrCode GetScreenBacklight(uint64_t id, int32_t& level) override;
 
-    void SetScreenBacklight(ScreenId id, uint32_t level) override;
+    void SetScreenBacklight(const RsScreenBrightnessData& brightnessData) override;
 
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) override;
 

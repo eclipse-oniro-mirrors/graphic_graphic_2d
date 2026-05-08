@@ -1717,7 +1717,8 @@ bool RSClientToRenderConnectionStub::WriteBrightnessInfo(const BrightnessInfo& b
 {
     if (!data.WriteFloat(brightnessInfo.currentHeadroom) ||
         !data.WriteFloat(brightnessInfo.maxHeadroom) ||
-        !data.WriteFloat(brightnessInfo.sdrNits)) {
+        !data.WriteFloat(brightnessInfo.sdrNits) ||
+        !data.WriteFloat(brightnessInfo.brightnessPosition)) {
         RS_LOGE("RSClientToRenderConnectionStub::WriteBrightnessInfo write brightnessInfo failed!");
         return false;
     }

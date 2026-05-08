@@ -4086,7 +4086,7 @@ HWTEST_F(RSClientToRenderConnectionStubTest, RenderPipelineAgentNullptrTest012, 
     // Should return without crash
 
     // Test OnScreenBacklightChanged
-    agent->OnScreenBacklightChanged(0, 100);
+    agent->OnScreenBacklightChanged(RsScreenBrightnessData(0, 100));
     // Should return without crash
 
     // Test OnGlobalBlacklistChanged
