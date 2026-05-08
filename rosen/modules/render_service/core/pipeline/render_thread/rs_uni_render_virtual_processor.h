@@ -96,7 +96,6 @@ public:
     GSError SetRoiRegionToCodec(const std::vector<RectI>& damageRegion);
     void CalculateTransform(ScreenRotation rotation);
     void ScaleMirrorIfNeed(const ScreenRotation angle, RSPaintFilterCanvas& canvas);
-    void ScaleExpandIfNeed(RSPaintFilterCanvas* canvas);
     void CanvasClipRegionForUniscaleMode(const Drawing::Matrix& visibleClipRectMatrix = Drawing::Matrix(),
         bool isSamplingOn = false);
     void ProcessCacheImage(Drawing::Image& cacheImage);
@@ -116,10 +115,6 @@ public:
     {
         return displaySkipInMirror_;
     }
-    bool IsVirtualExpandScale() const
-    {
-        return isVirtualExpandScale_;
-    }
     void CanvasInit(DrawableV2::RSLogicalDisplayRenderNodeDrawable& displayDrawable);
     void CancelCurrentFrame();
     sptr<SyncFence> GetFrameAcquireFence();
@@ -129,6 +124,7 @@ public:
     const std::vector<SurfaceFrameConfig>& GetSurfaceFrames() const { return surfaceFrames_; }
     void BlitRegionsToSurfaces(const std::shared_ptr<Drawing::Image>& offscreenImage);
 
+    bool SetCropRectForMetadata(const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion);
 private:
     void MergeMirrorFenceToHardwareEnabledDrawables();
     void SetVirtualScreenSize(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable);
@@ -174,10 +170,6 @@ private:
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     bool drawMirrorCopy_ = false;
     bool displaySkipInMirror_ = false;
-
-    bool isVirtualExpandScale_ = false;
-    float virtualExpandScaleX_ = 0.0f;
-    float virtualExpandScaleY_ = 0.0f;
     
     // Multi-surface support
     std::vector<SurfaceFrameConfig> surfaceFrames_;

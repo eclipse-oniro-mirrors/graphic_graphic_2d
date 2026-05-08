@@ -88,12 +88,18 @@ public:
     MOCK_METHOD(bool, HasSkipTextBlobDrawing, (), (const, override));
     MOCK_METHOD(void, SetTextEffectAssociation, (bool association), (override));
     MOCK_METHOD(bool, GetTextEffectAssociation, (), (const, override));
+    MOCK_METHOD(void, SetForceReuseRasterResult, (bool flag), (override));
+    MOCK_METHOD(bool, GetForceReuseRasterResult, (), (const, override));
     MOCK_METHOD(std::vector<TextBlobRecordInfo>, GetTextBlobRecordInfo, (), (const, override));
     MOCK_METHOD(bool, CanPaintAllText, (), (const, override));
     MOCK_METHOD(std::string, GetDumpInfo, (), (const, override));
     MOCK_METHOD(std::shared_ptr<OHOS::Media::PixelMap>, GetTextPathImageByIndex,
         (size_t start, size_t end, const ImageOptions& options, bool fill), (const, override));
+    MOCK_METHOD((std::vector<TextPathInfo>), GetTextPathsByIndex, (size_t start, size_t end), (const, override));
     MOCK_METHOD(TextLayoutResult, LayoutWithConstraints, (const TextRectSize& constraint));
+    MOCK_METHOD(TextProcessState, GetProcessState, (), (const, override));
+    MOCK_METHOD(TextDisplayState, GetTextDisplayState, (), (const, override));
+    MOCK_METHOD(TypographyStyle, GetParagraphStyle, (), (const, override));
 };
 } // namespace OHOS::Rosen
 #endif

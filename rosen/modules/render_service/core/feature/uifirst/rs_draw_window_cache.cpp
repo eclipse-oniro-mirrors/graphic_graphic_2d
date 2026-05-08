@@ -16,6 +16,7 @@
 #include "rs_draw_window_cache.h"
 
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "feature/watermark/rs_surface_watermark.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "rs_trace.h"
@@ -52,15 +53,7 @@ void RSDrawWindowCache::DrawAndCacheWindowContent(DrawableV2::RSSurfaceRenderNod
     paint.SetAntiAlias(true);
     canvas.AttachBrush(paint);
     auto samplingOptions = Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
-    auto& subCache = surfaceDrawable->GetRsSubThreadCache();
-    std::vector<Drawing::RectI> opaqueRects;
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
-    if (surfaceParams && !surfaceParams->ClonedSourceNode()) {
-        Drawing::Rect imgDrawRect = { 0, 0, cacheImage->GetWidth(), cacheImage->GetHeight() };
-        subCache.InsertOpaqueRegion(canvas, surfaceDrawable, opaqueRects, imgDrawRect);
-    }
     canvas.DrawImage(*cacheImage, 0, 0, samplingOptions);
-    subCache.DrawOpaqueRegionDfx(canvas, opaqueRects);
     canvas.DetachBrush();
 }
 
@@ -228,11 +221,6 @@ void RSDrawWindowCache::DrawCache(DrawableV2::RSSurfaceRenderNodeDrawable* surfa
     auto translateX = gravityMatrix.Get(Drawing::Matrix::TRANS_X);
     auto translateY = gravityMatrix.Get(Drawing::Matrix::TRANS_Y);
     auto& subCache = surfaceDrawable->GetRsSubThreadCache();
-    std::vector<Drawing::RectI> opaqueRects;
-    if (!surfaceParams.ClonedSourceNode()) {
-        Drawing::Rect imgDrawRect = { translateX, translateY, cacheImage->GetWidth(), cacheImage->GetHeight() };
-        subCache.InsertOpaqueRegion(canvas, surfaceDrawable, opaqueRects, imgDrawRect);
-    }
     // draw BehindWindowFilter
     subCache.DrawBehindWindowBeforeCache(canvas, translateX, translateY);
     // draw content/children
@@ -241,8 +229,7 @@ void RSDrawWindowCache::DrawCache(DrawableV2::RSSurfaceRenderNodeDrawable* surfa
     // draw foreground
     surfaceDrawable->DrawForeground(canvas, boundSize);
     // draw watermark
-    surfaceDrawable->DrawCommSurfaceWatermark(canvas, surfaceParams);
-    subCache.DrawOpaqueRegionDfx(canvas, opaqueRects);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(canvas, surfaceParams);
 }
 #endif
 

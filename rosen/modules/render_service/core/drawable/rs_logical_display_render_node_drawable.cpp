@@ -201,7 +201,7 @@ void RSLogicalDisplayRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             RSUniRenderThread::Instance().SetWhiteList(screenProperty.GetWhiteList());
             curSecExemption_ = params->GetSecurityExemption();
             uniParam->SetSecExemption(curSecExemption_);
-            DrawExpandDisplay(*params, processor);
+            DrawExpandDisplay(*params);
             lastSecExemption_ = curSecExemption_;
         }
         uniParam->SetSecurityDisplay(false);
@@ -403,8 +403,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawHardwareEnabledNodes(Drawing::Canva
     RSUniRenderUtil::AdjustZOrderAndDrawSurfaceNode(hwcTopNodes, canvas, *screenParams);
 }
 
-void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRenderParams& params,
-    std::shared_ptr<RSProcessor> processor)
+void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRenderParams& params)
 {
     RS_TRACE_FUNC();
     auto [_, screenParam] = GetScreenParams(params);
@@ -412,15 +411,10 @@ void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRende
         RS_LOGE("%{public}s screenParam is nullptr", __func__);
         return;
     }
-    auto virtualProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
-    if (!virtualProcessor) {
-        RS_LOGE("RSScreenRenderNodeDrawable::DrawExpandDisplay virtualProcessor is null");
-        return;
-    }
     const auto& screenProperty = screenParam->GetScreenProperty();
 
     RSAutoCanvasRestore acr(curCanvas_);
-    virtualProcessor->ScaleExpandIfNeed(curCanvas_);
+    params.ApplyAlphaAndMatrixToCanvas(*curCanvas_);
 
     // Check for multi-surface extend mode (only when surfaces have specified regions)
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
@@ -448,8 +442,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRende
         FinishOffscreenRender(Drawing::SamplingOptions(Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE),
             screenProperty.GetIsSamplingOn());
     } else {
+        curCanvas_->SetOnMultipleScreen(true); // use for hdr content tmo to fixed sdr nits
         RSRenderNodeDrawable::OnDraw(*curCanvas_);
-        curCanvas_->SetOnMultipleScreen(true); // for HDR
     }
 }
 
@@ -565,7 +559,7 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirty(
         uniParam->GetForceMirrorScreenDirty() || uniParam->GetVirtualDirtyRefresh() || virtualDirtyNeedRefresh_ ||
         curScreenParams->GetHasMirroredScreenChanged() || specialLayerChange ||
         !curScreenDrawable.GetSyncDirtyManager()->GetCurrentFrameDirtyRegion().IsEmpty() ||
-        lastEnableVisibleRect_ != enableVisibleRect_;
+        lastEnableVisibleRect_ != enableVisibleRect_ || !curScreenParams->IsEqualVsyncPeriod();
     if (needRefresh) {
         curScreenDrawable.GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
         virtualDirtyNeedRefresh_ = false;
@@ -580,11 +574,6 @@ std::vector<RectI> RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirty(
         return mappedDamageRegion.GetRegionRectIs();
     }
     curScreenDrawable.SetAccumulateDirtyInSkipFrame(false);
-    if (!curScreenParams->IsEqualVsyncPeriod()) {
-        RS_LOGD("RSLogicalDisplayRenderNodeDrawable::CalculateVirtualDirty frame rate is irregular");
-        virtualProcesser->SetRoiRegionToCodec(mappedDamageRegion.GetRegionRectIs());
-        return mappedDamageRegion.GetRegionRectIs();
-    }
     const auto& mainScreenInfo = mirrorParams->GetScreenInfo();
     int32_t bufferAge = virtualProcesser->GetBufferAge();
     std::vector<RectI> damageRegionRects = RSUniRenderUtil::MergeDirtyHistoryInVirtual(
@@ -772,6 +761,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawWiredMirrorCopy(RSLogicalDisplayRen
     }
 
     curCanvas_->Save();
+    curCanvas_->SetOnMultipleScreen(true); // use for hdr content tmo to fixed sdr nits
     ScaleAndRotateMirrorForWiredScreen(mirroredDrawable);
     RSDirtyRectsDfx rsDirtyRectsDfx(*curScreenDrawable);
     auto matrix = isMirrorSLRCopy_ ? scaleManager_->GetScaleMatrix() : curCanvas_->GetTotalMatrix();
@@ -1015,6 +1005,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
         RS_LOGE("RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy failed to get canvas.");
         return;
     }
+    curCanvas_->SetOnMultipleScreen(true); // use for hdr content tmo to fixed sdr nits
     /*
      * If Top and Left in curVisibleRect_ are not zero,that means the regional screen mirror position may be offset,
      * and the dirty area location may be incorrect. Need to disable the dirty area.
@@ -1035,6 +1026,11 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirrorCopy(RSLogicalDisplayRenderPa
     }
     // Clean up the content of the previous frame
     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+
+    // If the self-drawing node is not fullscreen, need to re-adaptation curCanvas_ clear
+    if (RSUniRenderUtil::ProcessSingleSelfDrawingNode(*curCanvas_, *mirroredScreenParams, params)) {
+        return;
+    }
     virtualProcesser->CanvasClipRegionForUniscaleMode();
     RSUniRenderThread::SetCaptureParam(CaptureParam(false, false, true));
 
@@ -1196,7 +1192,15 @@ void RSLogicalDisplayRenderNodeDrawable::DrawMirror(RSLogicalDisplayRenderParams
     }
     // Clean up the content of the previous frame
     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
+
+    // If the self-drawing node is not fullscreen, need to re-adaptation curCanvas_ clear
+    if (RSUniRenderUtil::ProcessSingleSelfDrawingNode(*curCanvas_, *mirroredScreenParams, params)) {
+        return;
+    }
     virtualProcesser->CanvasClipRegionForUniscaleMode(visibleClipRectMatrix_, mirroredScreenProperty.GetIsSamplingOn());
+    // Set whitelist rect to meta data before concat matrix
+    RSSpecialLayerUtils::SetWhiteListRectToMetaData(
+        *curCanvas_, uniParam, curScreenParams->GetScreenProperty(), *mirroredParams);
     curCanvas_->ConcatMatrix(mirroredParams->GetMatrix());
     PrepareOffscreenRender(*mirroredDrawable, false, false);
     // Add this flag to disable color picking operations during mirror screen redrawing

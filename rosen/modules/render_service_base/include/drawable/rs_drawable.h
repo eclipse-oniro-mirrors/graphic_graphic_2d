@@ -43,6 +43,7 @@ enum class RSDrawableSlot : int8_t {
     SHADOW,
     FOREGROUND_FILTER,
     OUTLINE,
+    MATERIAL_SHADER,
 
     // BG properties in Bounds Clip
     BG_SAVE_BOUNDS,
@@ -82,7 +83,7 @@ enum class RSDrawableSlot : int8_t {
     FG_RESTORE_BOUNDS,
 
     // No clip (unless ClipToBounds is set)
-    POINT_LIGHT,
+    OVERLAY_NG_SHADER,
     BORDER,
     OVERLAY,
     PARTICLE_EFFECT,
@@ -96,7 +97,7 @@ enum class RSDrawableSlot : int8_t {
     // Annotations: Please remember to update this when new slots are added.
     // properties before Background, not clipped
     TRANSITION_PROPERTIES_BEGIN = MASK,
-    TRANSITION_PROPERTIES_END   = OUTLINE,
+    TRANSITION_PROPERTIES_END   = MATERIAL_SHADER,
     // background properties, clipped by bounds by default
     BG_PROPERTIES_BEGIN         = BLENDER,
     BG_PROPERTIES_END           = ENV_FOREGROUND_COLOR_STRATEGY,
@@ -107,7 +108,7 @@ enum class RSDrawableSlot : int8_t {
     FG_PROPERTIES_BEGIN         = BINARIZATION,
     FG_PROPERTIES_END           = FG_RESTORE_BOUNDS - 1,
     // post-foreground properties, can be clipped by ClipToBounds
-    EXTRA_PROPERTIES_BEGIN      = POINT_LIGHT,
+    EXTRA_PROPERTIES_BEGIN      = OVERLAY_NG_SHADER,
     EXTRA_PROPERTIES_END        = PIXEL_STRETCH,
 
     MAX = RESTORE_ALL + 1,

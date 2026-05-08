@@ -27,12 +27,6 @@ std::shared_ptr<RSIRenderClient> RSIRenderClient::CreateRenderServiceClient()
     return client;
 }
 
-std::shared_ptr<RSIRenderClient> RSIRenderClient::CreateRenderPiplineClient()
-{
-    static std::shared_ptr<RSIRenderClient> client = std::make_shared<RSRenderPipelineClient>();
-    return client;
-}
-
 void RSRenderServiceClient::CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData)
 {
 }
@@ -54,7 +48,8 @@ std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
     return {};
 }
 
-bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+    uint32_t rowCount, uint32_t colCount)
 {
     return false;
 }
@@ -112,6 +107,11 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     return std::make_shared<VSyncReceiverWindows>();
 }
 
+sptr<IRemoteObject> RSRenderServiceClient::GetConnectToRenderToken(ScreenId screenId)
+{
+    return nullptr;
+}
+
 int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid)
 {
     return 0;
@@ -148,6 +148,11 @@ int32_t RSRenderServiceClient::SetScreenChangeCallback(const ScreenChangeCallbac
 }
 
 int32_t RSRenderServiceClient::SetScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback &callback)
+{
+    return 0;
+}
+
+int32_t RSRenderServiceClient::SetActiveScreenIdChangedCallback(const ActiveScreenIdChangedCallback& callback)
 {
     return 0;
 }
@@ -267,6 +272,16 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
 int32_t RSRenderServiceClient::SetDualScreenState(ScreenId id, DualScreenStatus status)
 {
     return StatusCode::RS_CONNECTION_ERROR;
+}
+
+int32_t RSRenderServiceClient::SetAsMainScreen(ScreenId screenId, bool isMainScreen)
+{
+    return StatusCode::RS_CONNECTION_ERROR;
+}
+
+ScreenId RSRenderServiceClient::GetMainScreenId()
+{
+    return INVALID_SCREEN_ID;
 }
 
 RSScreenModeInfo RSRenderServiceClient::GetScreenActiveMode(ScreenId id)
@@ -506,6 +521,12 @@ int32_t RSRenderServiceClient::RegisterFirstFrameCommitCallback(
     return {};
 }
 
+int32_t RSRenderServiceClient::RegisterExposedEventCallback(
+    const RSExposedEventType type, const RSExposedEventCallback& callback)
+{
+    return {};
+}
+
 int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
     int32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
 {
@@ -664,10 +685,6 @@ void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop
 }
 
 void RSRenderServiceClient::SetForceRefresh(const std::string &nodeIdStr, bool isForceRefresh)
-{
-}
-
-void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
 {
 }
 

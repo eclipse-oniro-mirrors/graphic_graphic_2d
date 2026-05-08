@@ -28,6 +28,7 @@
 #include <utility>
 #endif
 
+#include "common/rs_event_def.h"
 #include "common/rs_self_draw_rect_change_callback_constraint.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/iapplication_agent.h"
@@ -64,9 +65,10 @@
 namespace OHOS {
 namespace Rosen {
 // normal callback functor for client users.
-using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent, ScreenChangeReason)>;
+using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent, ScreenChangeReason, sptr<IRemoteObject>)>;
 using BrightnessInfoChangeCallback = std::function<void(ScreenId, BrightnessInfo)>;
 using ScreenSwitchingNotifyCallback = std::function<void(bool)>;
+using ActiveScreenIdChangedCallback = std::function<void(ScreenId)>;
 using ScreenSupportedHDRFormatsCallback = std::function<void(ScreenId,
     std::vector<ScreenHDRFormat>& specialHdrFormats)>;
 using BufferAvailableCallback = std::function<void()>;
@@ -93,6 +95,8 @@ public:
     void ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
 
     bool GetUniRenderEnabled();
+
+    sptr<IRemoteObject> GetConnectToRenderToken(ScreenId screenId);
 
     std::shared_ptr<VSyncReceiver> CreateVSyncReceiver(
         const std::string& name,
@@ -163,13 +167,16 @@ public:
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable);
 
-    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark);
+    bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+        uint32_t rowCount = 0, uint32_t colCount = 0);
 
     void RemoveVirtualScreen(ScreenId id);
 
     int32_t SetScreenChangeCallback(const ScreenChangeCallback& callback);
 
     int32_t SetScreenSwitchingNotifyCallback(const ScreenSwitchingNotifyCallback& callback);
+
+    int32_t SetActiveScreenIdChangedCallback(const ActiveScreenIdChangedCallback& callback);
 
 #ifndef ROSEN_ARKUI_X
     uint32_t SetScreenActiveMode(ScreenId id, uint32_t modeId);
@@ -222,6 +229,10 @@ public:
     void SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status);
 
     int32_t SetDualScreenState(ScreenId id, DualScreenStatus status);
+
+    int32_t SetAsMainScreen(ScreenId screenId, bool isMainScreen);
+
+    ScreenId GetMainScreenId();
 
     RSScreenModeInfo GetScreenActiveMode(ScreenId id);
 
@@ -310,6 +321,8 @@ public:
 
     int32_t RegisterFirstFrameCommitCallback(const FirstFrameCommitCallback& callback);
 
+    int32_t RegisterExposedEventCallback(const RSExposedEventType type, const RSExposedEventCallback& callback);
+
     int32_t RegisterFrameRateLinkerExpectedFpsUpdateCallback(int32_t dstPid,
         const FrameRateLinkerExpectedFpsUpdateCallback& callback);
 
@@ -390,8 +403,6 @@ public:
     void SetCurtainScreenUsingStatus(bool isCurtainScreenOn);
     
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
-
-    void SetFreeMultiWindowStatus(bool enable);
 
     void NotifyScreenSwitched();
 

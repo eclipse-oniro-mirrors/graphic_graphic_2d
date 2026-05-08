@@ -71,6 +71,7 @@ public:
 #ifndef ROSEN_CROSS_PLATFORM
     ResType SetMultiSurfaceConfigs(const std::vector<SurfaceRegionConfig>& configs);
 #endif
+    ResType SetAsMainScreen(bool isMainScreen);
 
     ScreenId GetId() const;
     bool IsVirtual() const;
@@ -121,6 +122,7 @@ public:
     // Multi-surface: Get surface configs directly
     std::vector<SurfaceRegionConfig> GetMultiSurfaceConfigs() const;
 #endif
+    bool IsMainScreen() const;
 
     ScreenInfo GetScreenInfo() const;
 

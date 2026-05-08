@@ -17,6 +17,7 @@
 #include "parcel.h" // Assumed definition of Parcel
 #include "ge_visual_effect_container.h"
 #include "effect/rs_render_shader_base.h"
+#include "effect/rs_render_shape_base.h"
 using namespace testing;
 using namespace testing::ext;
 namespace OHOS::Rosen {
@@ -256,7 +257,7 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetRotationAngle001, TestSize.Level1)
         }
     }
 }
- 
+
 /**
  * @tc.name: SetCornerRadius
  * @tc.desc: test SetCornerRadius
@@ -305,4 +306,176 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetCornerRadius001, TestSize.Level1)
     }
 }
 
+/**
+ * @tc.name: CalcRect001
+ * @tc.desc: test CalcRect with null shader
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect001, TestSize.Level1)
+{
+    std::shared_ptr<RSNGRenderShaderBase> shader = nullptr;
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RectF result = RSNGRenderShaderHelper::CalcRect(shader, bound);
+    EXPECT_TRUE(result.IsEmpty());
+}
+/**
+ * @tc.name: CalcRect002
+ * @tc.desc: test CalcRect with non SDF_EDGE_LIGHT_EFFECT shader
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect002, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    ASSERT_NE(shader, nullptr);
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RectF result = RSNGRenderShaderHelper::CalcRect(shader, bound);
+    EXPECT_TRUE(result == bound);
+}
+/**
+ * @tc.name: CalcRect003
+ * @tc.desc: test CalcRect with SDF_EDGE_LIGHT_EFFECT, maxBorderWidth > outerBorderBloomWidth
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect003, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    ASSERT_NE(shader, nullptr);
+    auto sdfEdgeLightEffect = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    constexpr float maxBorderWidth = 10.0f;
+    constexpr float outerBorderBloomWidth = 5.0f;
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectMaxBorderWidthRenderTag>(maxBorderWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectOuterBorderBloomWidthRenderTag>(outerBorderBloomWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RectF result = RSNGRenderShaderHelper::CalcRect(shader, bound);
+    RectF expected(-maxBorderWidth, -maxBorderWidth, 100.0f + maxBorderWidth * 2.0f,
+        100.0f + maxBorderWidth * 2.0f);
+    EXPECT_TRUE(result == expected);
+}
+/**
+ * @tc.name: CalcRect004
+ * @tc.desc: test CalcRect with SDF_EDGE_LIGHT_EFFECT, maxBorderWidth < outerBorderBloomWidth
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect004, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    ASSERT_NE(shader, nullptr);
+    auto sdfEdgeLightEffect = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    constexpr float maxBorderWidth = 5.0f;
+    constexpr float outerBorderBloomWidth = 10.0f;
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectMaxBorderWidthRenderTag>(maxBorderWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectOuterBorderBloomWidthRenderTag>(outerBorderBloomWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RectF result = RSNGRenderShaderHelper::CalcRect(shader, bound);
+    RectF expected(-outerBorderBloomWidth, -outerBorderBloomWidth,
+        100.0f + outerBorderBloomWidth * 2.0f, 100.0f + outerBorderBloomWidth * 2.0f);
+    EXPECT_TRUE(result == expected);
+}
+/**
+ * @tc.name: CalcRect005
+ * @tc.desc: test CalcRect with chained shaders
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect005, TestSize.Level1)
+{
+    auto head = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    auto next = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    ASSERT_NE(head, nullptr);
+    ASSERT_NE(next, nullptr);
+    head->nextEffect_ = next;
+    auto sdfEdgeLightEffect = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(next);
+    constexpr float maxBorderWidth = 8.0f;
+    constexpr float outerBorderBloomWidth = 12.0f;
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectMaxBorderWidthRenderTag>(maxBorderWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectOuterBorderBloomWidthRenderTag>(outerBorderBloomWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RectF result = RSNGRenderShaderHelper::CalcRect(head, bound);
+    RectF expected(-outerBorderBloomWidth, -outerBorderBloomWidth,
+        100.0f + outerBorderBloomWidth * 2.0f, 100.0f + outerBorderBloomWidth * 2.0f);
+    EXPECT_TRUE(result == expected);
+}
+/**
+ * @tc.name: CalcRect006
+ * @tc.desc: test CalcRect with zero border widths
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect006, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    ASSERT_NE(shader, nullptr);
+    auto sdfEdgeLightEffect = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    constexpr float maxBorderWidth = 0.0f;
+    constexpr float outerBorderBloomWidth = 0.0f;
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectMaxBorderWidthRenderTag>(maxBorderWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectOuterBorderBloomWidthRenderTag>(outerBorderBloomWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RectF result = RSNGRenderShaderHelper::CalcRect(shader, bound);
+    EXPECT_TRUE(result == bound);
+}
+
+/**
+ * @tc.name: CalcRect007
+ * @tc.desc: test CalcRect with sdfShape, transformDrawRect differs from bound
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CalcRect007, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    ASSERT_NE(shader, nullptr);
+    auto sdfEdgeLightEffect = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    constexpr float maxBorderWidth = 8.0f;
+    constexpr float outerBorderBloomWidth = 12.0f;
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectMaxBorderWidthRenderTag>(maxBorderWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectOuterBorderBloomWidthRenderTag>(outerBorderBloomWidth,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+
+    auto sdfShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    ASSERT_NE(sdfShape, nullptr);
+    EXPECT_TRUE(sdfShape->GetTransformDrawRect().IsEmpty());
+    sdfEdgeLightEffect->Setter<SDFEdgeLightEffectSDFShapeRenderTag>(sdfShape,
+        PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    RectF bound(0.0f, 0.0f, 100.0f, 100.0f);
+    RSNGRenderShaderHelper::CalcRect(shader, bound);
+
+    sdfShape->transformDrawRect_ = RectF(10.0f, 10.0f, 80.0f, 80.0f);
+    EXPECT_FALSE(sdfShape->GetTransformDrawRect().IsEmpty());
+    constexpr float shapeLeft = 10.0f;
+    constexpr float shapeTop = 15.0f;
+    constexpr float shapeWidth = 80.0f;
+    constexpr float shapeHeight = 70.0f;
+    RectF shapeBound(shapeLeft, shapeTop, shapeWidth, shapeHeight);
+    RSNGRenderShapeHelper::CalcRect(sdfShape, shapeBound);
+    RectF result = RSNGRenderShaderHelper::CalcRect(shader, bound);
+    RectF expected(-outerBorderBloomWidth + shapeLeft, -outerBorderBloomWidth + shapeTop,
+        shapeWidth + outerBorderBloomWidth * 2.0f, shapeHeight + outerBorderBloomWidth * 2.0f);
+    EXPECT_TRUE(result == expected);
+}
+
+/**
+ * @tc.name: CreateBorderSDFShader001
+ * @tc.desc: Verify that Create returns a non-null instance for BORDER_SDF_SHADER type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CreateBorderSDFShader001, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    EXPECT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::BORDER_SDF_SHADER);
+}
 } // namespace OHOS::Rosen

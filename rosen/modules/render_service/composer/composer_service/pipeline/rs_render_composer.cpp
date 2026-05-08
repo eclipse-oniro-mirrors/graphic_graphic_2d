@@ -245,26 +245,24 @@ void RSRenderComposer::ComposerPrepare(uint32_t& currentRate, int64_t& delayTime
 
 void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const PipelineParam& pipelineParam)
 {
-    RS_TRACE_NAME_FMT("%s screenId:%{public}" PRIu64, __func__, screenId_);
+    RS_TRACE_NAME_FMT("%s screenId:%" PRIu64, __func__, screenId_);
     std::string threadName = "CompThread_" + std::to_string(screenId_);
     RSTimer timer(threadName.c_str(), COMPOSER_TIMEOUT);
     auto layers = rsRenderComposerContext_->GetNeedCompositionLayersVec();
     AddSolidColorLayer(layers);
     PrintHiperfSurfaceLog("counter3", static_cast<uint64_t>(layers.size()));
     int64_t startTime = GetCurTimeCount();
-    std::string surfaceName = GetSurfaceNameInLayers(layers);
-    RS_LOGD("CommitAndReleaseLayers task execute, %{public}s", surfaceName.c_str());
     RSFirstFrameNotifier::GetInstance().ExecIfFirstFrameCommit(screenId_);
 
     RS_LOGI_IF(DEBUG_COMPOSER, "CommitAndReleaseData hasGameScene is %{public}d %{public}s",
-        pipelineParam.hasGameScene, surfaceName.c_str());
+        pipelineParam.hasGameScene, GetSurfaceNameInLayers(layers).c_str());
 
     int64_t startTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count();
-    RS_TRACE_NAME_FMT("CommitLayers rate:%u,now:%" PRIu64 ",vsyncId:%" PRIu64 ",size:%zu,%s",
-        currentRate, pipelineParam.frameTimestamp, pipelineParam.vsyncId, layers.size(),
-        GetSurfaceNameInLayersForTrace(layers).c_str());
-    RS_LOGD("CommitLayers rate:%{public}u, now:%{public}" PRIu64 ",vsyncId:%{public}" PRIu64 ", \
+    RS_TRACE_NAME_FMT("CommitLayers rate:%u,now:%" PRIu64 ",vsyncId:%" PRIu64 ",size:%zu",
+        currentRate, pipelineParam.frameTimestamp, pipelineParam.vsyncId, layers.size());
+    RS_OPTIONAL_TRACE_NAME_FMT("Layers info: %s", GetSurfaceNameInLayersForTrace(layers).c_str());
+    RS_LOGD_IF(DEBUG_COMPOSER, "CommitLayers rate:%{public}u, now:%{public}" PRIu64 ",vsyncId:%{public}" PRIu64 ", \
         size:%{public}zu, %{public}s", currentRate, pipelineParam.frameTimestamp, pipelineParam.vsyncId, layers.size(),
         GetSurfaceNameInLayersForTrace(layers).c_str());
 
@@ -318,7 +316,7 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
         endTime - intervalTimePoints_ > REPORT_LOAD_WARNING_INTERVAL_TIME) {
         RS_LOGI("CommitAndReleaseLayers report load event frameTime: %{public}" PRIu64
             " missedFrame: %{public}" PRIu32 " frameRate:%{public}" PRIu16 " %{public}s",
-            frameTime, missedFrames, frameRate, surfaceName.c_str());
+            frameTime, missedFrames, frameRate, GetSurfaceNameInLayers(layers).c_str());
         intervalTimePoints_ = endTime;
         RS_TRACE_NAME("RSRenderComposer::CommitAndReleaseLayers HiSysEventWrite in RSRenderComposer");
         RSHiSysEvent::EventWrite(RSEventName::RS_HARDWARE_THREAD_LOAD_WARNING, RSEventType::RS_STATISTIC,
@@ -841,9 +839,10 @@ std::shared_ptr<RSSurfaceOhos> RSRenderComposer::CreateFrameBufferSurfaceOhos(co
     return rsSurface;
 }
 
-void RSRenderComposer::RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::vector<std::shared_ptr<RSLayer>>& layers)
+void RSRenderComposer::RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::vector<std::shared_ptr<RSLayer>>& layers,
+    const Vector2f& rogRatio)
 {
-    RS_TRACE_NAME_FMT("%s screenId : %" PRIu64, __func__, screenId_);
+    RS_TRACE_NAME_FMT("%s screenId : %" PRIu64 " rog: %f %f", __func__, screenId_, rogRatio.x_, rogRatio.y_);
     std::vector<std::shared_ptr<RSLayer>> rcdLayerInfoList;
     for (const auto& layer : layers) {
         if (layer == nullptr) {
@@ -859,7 +858,7 @@ void RSRenderComposer::RedrawScreenRCD(RSPaintFilterCanvas& canvas, const std::v
             continue;
         }
     }
-    RSRenderRcdDraw::DrawRoundCorner(canvas, rcdLayerInfoList);
+    RSRenderRcdDraw::DrawRoundCorner(canvas, rcdLayerInfoList, rogRatio);
 }
 
 void RSRenderComposer::ResetScreenRCDRedrawState(std::vector<std::shared_ptr<RSLayer>>& layers)
@@ -968,7 +967,8 @@ void RSRenderComposer::Redraw(const sptr<Surface>& surface, const std::vector<st
 #else
     uniRenderEngine_->DrawLayers(*canvas, layers, false, composerScreenInfo_);
 #endif
-    RedrawScreenRCD(*canvas, layers);
+    RedrawScreenRCD(*canvas, layers, Vector2f(composerScreenInfo_.GetRogWidthRatio(),
+        composerScreenInfo_.GetRogHeightRatio()));
 #ifdef RS_ENABLE_TV_PQ_METADATA
     auto rsSurface = renderFrame->GetSurface();
     RSTvMetadataUtil::CopyFromLayersToSurface(layers, rsSurface);
@@ -1011,7 +1011,8 @@ GraphicColorGamut RSRenderComposer::ComputeTargetColorGamut(const std::vector<st
             RS_LOGE("%{public}s layer is nullptr", __func__);
             continue;
         }
-        auto buffer = layer->GetBuffer();
+        auto buffer = layer->GetUseDeviceOffline() ?
+            layer->GetHpaeOriginalInfo().originalBuffer : layer->GetBuffer();
         if (buffer == nullptr) {
             RS_LOGW("%{public}s The buffer of layer is nullptr", __func__);
             continue;

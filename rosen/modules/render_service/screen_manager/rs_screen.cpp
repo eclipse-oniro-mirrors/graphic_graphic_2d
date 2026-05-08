@@ -657,6 +657,19 @@ uint64_t GetSurfaceId(const sptr<Surface>& surface)
 }
 }
 
+int32_t RSScreen::SetAsMainScreen(bool isMainScreen)
+{
+    RS_LOGI("RSScreen::SetAsMainScreen screenId:%{public}" PRIu64 " isMainScreen:%{public}d",
+            property_.GetId(), isMainScreen);
+    UPDATE_PROPERTY(AsMainScreen, isMainScreen);
+    return StatusCode::SUCCESS;
+}
+
+bool RSScreen::IsMainScreen() const
+{
+    return property_.IsMainScreen();
+}
+
 void RSScreen::SetMultiSurfaceConfigs(const MultiSurfaceConfigs& configs)
 {
     UPDATE_PROPERTY(MultiSurfaceConfigs, configs);
@@ -825,6 +838,18 @@ void RSScreen::CapabilityTypeDump(GraphicInterfaceType capabilityType, std::stri
         }
         case GRAPHIC_DISP_INTF_BT656: {
             dumpString += "DISP_INTF_BT656, ";
+            break;
+        }
+        case GRAPHIC_DISP_INTF_DP: {
+            dumpString += "DISP_INTF_DP, ";
+            break;
+        }
+        case GRAPHIC_DISP_INTF_EDP: {
+            dumpString += "DISP_INTF_EDP, ";
+            break;
+        }
+        case GRAPHIC_DISP_INTF_GPMI: {
+            dumpString += "DISP_INTF_GPMI, ";
             break;
         }
         default:
@@ -1302,9 +1327,13 @@ int32_t RSScreen::GetScreenSupportedHDRFormats(std::vector<ScreenHDRFormat>& hdr
         hdrFormats = supportedVirtualHDRFormats_;
     } else {
         hdrFormats = supportedPhysicalHDRFormats_;
-        if (callback && !specialHDRFormatsInit_) {
-            RSBackgroundThread::Instance().PostTask([this, callback]() {
-                GetScreenSupportedHDRFormatsCallBack(callback);
+        if (callback &&
+            GetConnectionType() == ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL && !specialHDRFormatsInit_) {
+            RSBackgroundThread::Instance().PostTask([weakThis = weak_from_this(), callback]() {
+                auto rsScreen = weakThis.lock();
+                if (rsScreen) {
+                    rsScreen->GetScreenSupportedHDRFormatsCallBack(callback);
+                }
             });
         }
     }

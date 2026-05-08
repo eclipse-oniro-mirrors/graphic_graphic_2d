@@ -199,7 +199,7 @@ ErrCode RSClientToRenderConnectionProxy::ExecuteSynchronousTask(const std::share
     return ERR_OK;
 }
 
-ErrCode RSClientToRenderConnectionProxy::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
+ErrCode RSClientToRenderConnectionProxy::CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId,
     bool& success)
 {
     MessageParcel data;
@@ -662,24 +662,6 @@ ErrCode RSClientToRenderConnectionProxy::SetHidePrivacyContent(NodeId id,
     return ERR_OK;
 }
 
-bool RSClientToRenderConnectionProxy::GetHighContrastTextState()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
-        ROSEN_LOGE("RSClientToRenderConnectionProxy::GetHighContrastTextState: WriteInterfaceToken err.");
-        return false;
-    }
-    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_HIGH_CONTRAST_TEXT_STATE);
-    int32_t err = SendRequest(code, data, reply, option);
-    if (err != NO_ERROR) {
-        ROSEN_LOGE("RSClientToRenderConnectionProxy::GetHighContrastTextState: Send Request err.");
-        return false;
-    }
-    return reply.ReadBool();
-}
-
 ErrCode RSClientToRenderConnectionProxy::SetFocusAppInfo(const FocusAppInfo& info, int32_t& repCode)
 {
     MessageParcel data;
@@ -725,7 +707,7 @@ ErrCode RSClientToRenderConnectionProxy::SetFocusAppInfo(const FocusAppInfo& inf
         repCode = RS_CONNECTION_ERROR;
         return ERR_INVALID_VALUE;
     }
-    repCode = reply.ReadInt32();
+    repCode = SUCCESS;
     return ERR_OK;
 }
 
@@ -784,7 +766,7 @@ RSClientToRenderConnectionProxy::TakeSurfaceCaptureSoloNode(
     MessageParcel reply;
     MessageOption option;
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> pixelMapIdPairVector;
-    option.SetFlags(MessageOption::TF_SYNC);
+    option.SetFlags(MessageOption::TF_SYNC | MessageOption::TF_IMAGE);
     if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
         ROSEN_LOGE("RSClientToRenderConnectionProxy::TakeSurfaceCaptureSoloNode: WriteInterfaceToken err.");
         return pixelMapIdPairVector;
@@ -1014,6 +996,7 @@ bool RSClientToRenderConnectionProxy::WriteSurfaceCaptureConfig(
         !data.WriteBool(captureConfig.useDma) || !data.WriteBool(captureConfig.useCurWindow) ||
         !data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType)) || !data.WriteBool(captureConfig.isSync) ||
         !data.WriteBool(captureConfig.isHdrCapture) ||
+        !data.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent)) ||
         !data.WriteBool(captureConfig.needF16WindowCaptureForScRGB) ||
         !data.WriteBool(captureConfig.needErrorCode) ||
         !data.WriteFloat(captureConfig.mainScreenRect.left_) ||
@@ -1032,7 +1015,8 @@ bool RSClientToRenderConnectionProxy::WriteSurfaceCaptureConfig(
         !data.WriteBool(captureConfig.colorSpace.second) ||
         !data.WriteUint32(captureConfig.dynamicRangeMode.first) ||
         !data.WriteBool(captureConfig.dynamicRangeMode.second) ||
-        !data.WriteBool(captureConfig.isSyncRender)) {
+        !data.WriteBool(captureConfig.isSyncRender) ||
+        !data.WriteBool(captureConfig.windowSync)) {
         ROSEN_LOGE("WriteSurfaceCaptureConfig: WriteSurfaceCaptureConfig captureConfig err.");
         return false;
     }
@@ -1060,7 +1044,7 @@ bool RSClientToRenderConnectionProxy::WriteSurfaceCaptureAreaRect(
     return true;
 }
 
-ErrCode RSClientToRenderConnectionProxy::SetHwcNodeBounds(int64_t rsNodeId, float positionX, float positionY,
+ErrCode RSClientToRenderConnectionProxy::SetHwcNodeBounds(NodeId rsNodeId, float positionX, float positionY,
     float positionZ, float positionW)
 {
     MessageParcel data;
@@ -1212,7 +1196,11 @@ ErrCode RSClientToRenderConnectionProxy::SetAncoForceDoDirect(bool direct, bool&
             res = false;
             return ERR_INVALID_VALUE;
         }
-        res = reply.ReadBool();
+        if (!reply.ReadBool(res)) {
+            ROSEN_LOGE("SetAncoForceDoDirect ReadBool direct failed!");
+            res = false;
+            return READ_PARCEL_ERR;
+        }
         return ERR_OK;
     } else {
         ROSEN_LOGE("SetAncoForceDoDirect: WriteBool direct err.");
@@ -1480,7 +1468,8 @@ int32_t RSClientToRenderConnectionProxy::SubmitCanvasPreAllocatedBuffer(
 
 uint32_t RSClientToRenderConnectionProxy::SetSurfaceWatermark(pid_t pid, const std::string &name,
     const std::shared_ptr<Media::PixelMap> &watermark,
-    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType)
+    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType,
+    uint32_t rowCount, uint32_t colCount)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1519,6 +1508,14 @@ uint32_t RSClientToRenderConnectionProxy::SetSurfaceWatermark(pid_t pid, const s
     }
     if (!data.WriteUint8(static_cast<uint8_t>(watermarkType))) {
         ROSEN_LOGE("RSClientToRenderConnectionProxy::SetSurfaceWatermark: write watermarkType error.");
+        return WATER_MARK_WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint32(rowCount)) {
+        ROSEN_LOGE("RSClientToRenderConnectionProxy::SetSurfaceWatermark: write rowCount error.");
+        return WATER_MARK_WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteUint32(colCount)) {
+        ROSEN_LOGE("RSClientToRenderConnectionProxy::SetSurfaceWatermark: write colCount error.");
         return WATER_MARK_WRITE_PARCEL_ERR;
     }
 
@@ -1897,5 +1894,29 @@ int32_t RSClientToRenderConnectionProxy::GetFrameStabilityResult(
     }
     return repCode;
 }
+
+void RSClientToRenderConnectionProxy::SetFreeMultiWindowStatus(bool enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetFreeMultiWindowStatus: WriteInterfaceToken GetDescriptor err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteBool(enable)) {
+        ROSEN_LOGE("SetFreeMultiWindowStatus: WriteBool enable err.");
+        return;
+    }
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToRenderConnectionInterfaceCode::SET_FREE_MULTI_WINDOW_STATUS);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("SetFreeMultiWindowStatus: Send Request err.");
+        return;
+    }
+}
+
 } // namespace Rosen
 } // namespace OHOS

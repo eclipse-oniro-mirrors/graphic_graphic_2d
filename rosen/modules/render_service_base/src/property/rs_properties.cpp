@@ -27,6 +27,7 @@
 
 #include "src/core/SkOpts.h"
 
+#include "animation/rs_particle_field_collection.h"
 #include "animation/rs_particle_ripple_field.h"
 #include "animation/rs_particle_velocity_field.h"
 #include "animation/rs_render_particle_animation.h"
@@ -68,7 +69,6 @@
 #include "render/rs_render_kawase_blur_filter.h"
 #include "render/rs_render_light_blur_filter.h"
 #include "render/rs_render_linear_gradient_blur_filter.h"
-#include "render/rs_render_magnifier_filter.h"
 #include "render/rs_render_maskcolor_filter.h"
 #include "render/rs_render_mesa_blur_filter.h"
 #include "render/rs_render_water_ripple_filter.h"
@@ -1009,6 +1009,16 @@ void RSProperties::SetBorderDashGap(const Vector4f& dashGap)
     contentDirty_ = true;
 }
 
+void RSProperties::SetBorderSDFShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader)
+{
+    if (!border_) {
+        border_ = std::make_shared<RSBorder>();
+    }
+    border_->SetSDFShader(renderShader);
+    SetDirty();
+    contentDirty_ = true;
+}
+
 Vector4<Color> RSProperties::GetBorderColor() const
 {
     return border_ ? border_->GetColorFour() : Vector4<Color>(RgbPalette::Transparent());
@@ -1032,6 +1042,11 @@ Vector4f RSProperties::GetBorderDashWidth() const
 Vector4f RSProperties::GetBorderDashGap() const
 {
     return border_ ? border_->GetDashGapFour() : Vector4f(0.f);
+}
+
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetBorderSDFShader() const
+{
+    return border_ ? border_->GetSDFShader() : nullptr;
 }
 
 const std::shared_ptr<RSBorder>& RSProperties::GetBorder() const
@@ -1106,6 +1121,16 @@ void RSProperties::SetOutlineRadius(Vector4f radius)
     contentDirty_ = true;
 }
 
+void RSProperties::SetOutlineSDFShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader)
+{
+    if (!outline_) {
+        outline_ = std::make_shared<RSBorder>(true);
+    }
+    outline_->SetSDFShader(renderShader);
+    SetDirty();
+    contentDirty_ = true;
+}
+
 Vector4<Color> RSProperties::GetOutlineColor() const
 {
     return outline_ ? outline_->GetColorFour() : Vector4<Color>(RgbPalette::Transparent());
@@ -1134,6 +1159,11 @@ Vector4f RSProperties::GetOutlineDashGap() const
 Vector4f RSProperties::GetOutlineRadius() const
 {
     return outline_ ? outline_->GetRadiusFour() : Vector4fZero;
+}
+
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetOutlineSDFShader() const
+{
+    return outline_ ? outline_->GetSDFShader() : nullptr;
 }
 
 void RSProperties::SetForegroundEffectRadius(const float foregroundEffectRadius)
@@ -1200,7 +1230,11 @@ void RSProperties::SetEmitterUpdater(const std::vector<std::shared_ptr<EmitterUp
         if (renderNode == nullptr) {
             return;
         }
-        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        auto animationManager = renderNode->GetAnimationManager();
+        if (!animationManager) {
+            return;
+        }
+        auto animation = animationManager->GetParticleAnimation();
         if (animation == nullptr) {
             return;
         }
@@ -1223,7 +1257,11 @@ void RSProperties::SetParticleNoiseFields(const std::shared_ptr<ParticleNoiseFie
         if (renderNode == nullptr) {
             return;
         }
-        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        auto animationManager = renderNode->GetAnimationManager();
+        if (!animationManager) {
+            return;
+        }
+        auto animation = animationManager->GetParticleAnimation();
         if (animation == nullptr) {
             return;
         }
@@ -1246,7 +1284,11 @@ void RSProperties::SetParticleRippleFields(const std::shared_ptr<ParticleRippleF
         if (renderNode == nullptr) {
             return;
         }
-        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        auto animationManager = renderNode->GetAnimationManager();
+        if (!animationManager) {
+            return;
+        }
+        auto animation = animationManager->GetParticleAnimation();
         if (animation == nullptr) {
             return;
         }
@@ -1269,7 +1311,11 @@ void RSProperties::SetParticleVelocityFields(const std::shared_ptr<ParticleVeloc
         if (renderNode == nullptr) {
             return;
         }
-        auto animation = renderNode->GetAnimationManager().GetParticleAnimation();
+        auto animationManager = renderNode->GetAnimationManager();
+        if (!animationManager) {
+            return;
+        }
+        auto animation = animationManager->GetParticleAnimation();
         if (animation == nullptr) {
             return;
         }
@@ -1281,6 +1327,38 @@ void RSProperties::SetParticleVelocityFields(const std::shared_ptr<ParticleVeloc
     filterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
+}
+
+void RSProperties::SetParticleFields(const std::shared_ptr<ParticleFieldCollection>& para)
+{
+    particleFields_ = para;
+    if (para) {
+        isDrawn_ = true;
+        auto renderNode = backref_.lock();
+        if (renderNode == nullptr) {
+            return;
+        }
+        auto animationManager = renderNode->GetAnimationManager();
+        if (!animationManager) {
+            return;
+        }
+        auto animation = animationManager->GetParticleAnimation();
+        if (animation == nullptr) {
+            return;
+        }
+        auto particleAnimation = std::static_pointer_cast<RSRenderParticleAnimation>(animation);
+        if (particleAnimation) {
+            particleAnimation->UpdateFields(para);
+        }
+    }
+    filterNeedUpdate_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+const std::shared_ptr<ParticleFieldCollection>& RSProperties::GetParticleFields() const
+{
+    return particleFields_;
 }
 
 void RSProperties::SetColorPickerPlaceholder(int placeholder)
@@ -1875,33 +1953,6 @@ void RSProperties::SetMotionBlurPara(const std::shared_ptr<MotionBlurParam>& par
     contentDirty_ = true;
 }
 
-void RSProperties::SetMagnifierParams(const std::shared_ptr<RSMagnifierParams>& para)
-{
-    GetEffect().magnifierPara_ = para;
-
-    if (para) {
-        isDrawn_ = true;
-    }
-    SetDirty();
-    filterNeedUpdate_ = true;
-    contentDirty_ = true;
-}
-
-bool RSProperties::GetMagnifierDirty() const
-{
-    const auto& magnifierPara = GetMagnifierPara();
-    return magnifierPara && ROSEN_GNE(magnifierPara->factor_, 0.f);
-}
-
-const std::shared_ptr<RSMagnifierParams>& RSProperties::GetMagnifierPara() const
-{
-    static const std::shared_ptr<RSMagnifierParams> defaultValue = nullptr;
-    if (effect_) {
-        return effect_->magnifierPara_;
-    }
-    return defaultValue;
-}
-
 const std::shared_ptr<RSLinearGradientBlurPara>& RSProperties::GetLinearGradientBlurPara() const
 {
     static const std::shared_ptr<RSLinearGradientBlurPara> defaultValue = nullptr;
@@ -2300,6 +2351,21 @@ void RSProperties::SetClipToFrame(bool clipToFrame)
     }
 }
 
+void RSProperties::SetDoubleSidedEnabled(bool isDoubleSided)
+{
+    if (isDoubleSided_ != isDoubleSided) {
+        isDoubleSided_ = isDoubleSided;
+        SetDirty();
+        contentDirty_ = true;
+        subTreeAllDirty_ = true;
+    }
+}
+
+bool RSProperties::GetDoubleSidedEnabled() const
+{
+    return isDoubleSided_;
+}
+
 RectF RSProperties::GetLocalBoundsAndFramesRect() const
 {
     auto rect = GetBoundsRect();
@@ -2322,6 +2388,15 @@ RectF RSProperties::GetBoundsRect() const
         }
     }
     return rect;
+}
+
+NodeId RSProperties::GetRenderNodeId() const
+{
+    auto renderNode = backref_.lock();
+    if (renderNode != nullptr) {
+        return renderNode->GetId();
+    }
+    return INVALID_NODEID;
 }
 
 RectF RSProperties::GetFrameRect() const
@@ -2374,6 +2449,14 @@ RRect RSProperties::GetInnerRRect() const
 bool RSProperties::NeedFilter() const
 {
     return needFilter_;
+}
+
+bool RSProperties::NeedDisabledPartialRender() const
+{
+    // enable frostedGlassEffect and harmonium by magnifying the child nodes are within the EC range
+    return GetShadowColorStrategy() != SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE ||
+           localMagnificationCap_ || GetForegroundFilter() != nullptr ||
+           GetForegroundFilterCache() != nullptr;
 }
 
 bool RSProperties::NeedHwcFilter() const
@@ -2689,6 +2772,24 @@ void RSProperties::CreateFlyOutShaderFilter()
     uint32_t flyMode = GetFlyOutParams() ? GetFlyOutParams()->flyMode : 0;
     auto flyOutShaderFilter = std::make_shared<RSFlyOutShaderFilter>(GetFlyOutDegree(), flyMode);
     foregroundFilter_ = flyOutShaderFilter;
+}
+
+const std::optional<float>& RSProperties::GetDistortionK() const
+{
+    static const std::optional<float> defaultValue = std::nullopt;
+    if (effect_) {
+        return effect_->distortionK_;
+    }
+    return defaultValue;
+}
+
+const std::shared_ptr<RSFilter>& RSProperties::GetMaterialFilter() const
+{
+    static const std::shared_ptr<RSFilter> defaultValue = nullptr;
+    if (effect_) {
+        return effect_->materialFilter_;
+    }
+    return defaultValue;
 }
 
 void RSProperties::CreateSphereEffectFilter()
@@ -3633,15 +3734,6 @@ void RSProperties::GenerateLinearGradientBlurFilter()
     GetFilter()->SetFilterType(RSFilter::LINEAR_GRADIENT_BLUR);
 }
 
-void RSProperties::GenerateMagnifierFilter()
-{
-    auto magnifierFilter = std::make_shared<RSMagnifierShaderFilter>(GetMagnifierPara());
-
-    std::shared_ptr<RSDrawingFilter> originalFilter = std::make_shared<RSDrawingFilter>(magnifierFilter);
-    backgroundFilter_ = originalFilter;
-    backgroundFilter_->SetFilterType(RSFilter::MAGNIFIER);
-}
-
 void RSProperties::GenerateWaterRippleFilter()
 {
     const auto& waterRippleParams = GetWaterRippleParams();
@@ -3874,9 +3966,6 @@ void RSProperties::StatBackgroundFilter()
     if (GetAiInvert().has_value() || GetSystemBarEffect()) {
         params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::AIBAR)]++;
     }
-    if (GetMagnifierPara() && ROSEN_GNE(GetMagnifierPara()->factor_, 0.f)) {
-        params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::MAGNIFIER)]++;
-    }
     if (IsBackgroundMaterialFilterValid()) {
         params.paramCounts[static_cast<size_t>(ServerXXFilterCascadeType::BG_MATERIALBLUR)]++;
     }
@@ -3974,8 +4063,6 @@ void RSProperties::GenerateBackgroundFilter()
     }
     if (GetAiInvert().has_value() || GetSystemBarEffect()) {
         GenerateAIBarFilter();
-    } else if (GetMagnifierPara() && ROSEN_GNE(GetMagnifierPara()->factor_, 0.f)) {
-        GenerateMagnifierFilter();
     } else if (IsBackgroundMaterialFilterValid()) {
         GenerateBackgroundMaterialBlurFilter();
     } else if (IsBackgroundBlurRadiusXValid() && IsBackgroundBlurRadiusYValid()) {
@@ -4081,6 +4168,11 @@ bool RSProperties::HasHarmonium() const
     return hasHarmonium_;
 }
 
+bool RSProperties::HasSpatialGlassEffect() const
+{
+    return hasSpatialGlassEffect_;
+}
+
 void RSProperties::SetNeedDrawBehindWindow(bool needDrawBehindWindow)
 {
     GetEffect().needDrawBehindWindow_ = needDrawBehindWindow;
@@ -4103,6 +4195,70 @@ void RSProperties::SetUseUnion(bool useUnion)
 bool RSProperties::GetUseUnion() const
 {
     return useUnion_;
+}
+
+void RSProperties::SetSDFUnionMode(int uniModeUC)
+{
+    if (ROSEN_EQ(uniModeUC_, uniModeUC)) {
+        return;
+    }
+    uniModeUC_ = uniModeUC;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+}
+
+int RSProperties::GetSDFUnionMode() const
+{
+    return uniModeUC_;
+}
+
+void RSProperties::SetGravityPullCenterFlag(bool isGravityPullModeCenter)
+{
+    if (ROSEN_EQ(isGravityPullModeCenter_, isGravityPullModeCenter)) {
+        return;
+    }
+    isGravityPullModeCenter_ = isGravityPullModeCenter;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+}
+
+bool RSProperties::GetGravityPullCenterFlag() const
+{
+    return isGravityPullModeCenter_;
+}
+
+void RSProperties::SetGravityPullStrength(float gravityPullStrength)
+{
+    if (ROSEN_EQ(gravityPullStrength_, gravityPullStrength)) {
+        return;
+    }
+    gravityPullStrength_ = gravityPullStrength;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+}
+
+float RSProperties::GetGravityPullStrength() const
+{
+    return gravityPullStrength_;
+}
+
+void RSProperties::SetGravityHotZone(float hotZone)
+{
+    if (ROSEN_EQ(gravityHotZone_, hotZone)) {
+        return;
+    }
+    gravityHotZone_ = hotZone;
+    isDrawn_ = true;
+    filterNeedUpdate_ = true;
+    SetDirty();
+}
+
+float RSProperties::GetGravityHotZone() const
+{
+    return gravityHotZone_;
 }
 
 void RSProperties::SetUnionSpacing(float spacing)
@@ -4141,6 +4297,15 @@ void RSProperties::SetPixelStretch(const std::optional<Vector4f>& stretchSize)
     if (GetPixelStretch().has_value() && GetPixelStretch()->IsZero()) {
         WITH_EFFECT(pixelStretch_ = std::nullopt);
     }
+}
+
+const std::optional<Vector4f>& RSProperties::GetPixelStretch() const
+{
+    static const std::optional<Vector4f> defaultValue = std::nullopt;
+    if (effect_) {
+        return effect_->pixelStretch_;
+    }
+    return defaultValue;
 }
 
 RectI RSProperties::GetPixelStretchDirtyRect() const
@@ -4194,6 +4359,15 @@ void RSProperties::SetGrayScale(const std::optional<float>& grayScale)
     colorFilterNeedUpdate_ = true;
     SetDirty();
     contentDirty_ = true;
+}
+
+const std::optional<float>& RSProperties::GetGrayScale() const
+{
+    const RS_HIDDEN std::optional<float> defaultValue = std::nullopt;
+    if (effect_) {
+        return effect_->grayScale_;
+    }
+    return defaultValue;
 }
 
 void RSProperties::SetLightIntensity(float lightIntensity)
@@ -4294,6 +4468,14 @@ void RSProperties::SetBloom(float bloomIntensity)
     contentDirty_ = true;
 }
 
+void RSProperties::SetOverlayNGShader(const std::shared_ptr<RSNGRenderShaderBase>& overlayShader)
+{
+    GetEffect().olRenderShader_ = overlayShader;
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
 float RSProperties::GetLightIntensity() const
 {
     const auto& lightSourcePtr = GetLightSource();
@@ -4315,6 +4497,14 @@ Vector4f RSProperties::GetLightPosition() const
 int RSProperties::GetIlluminatedType() const
 {
     return GetIlluminated() ? static_cast<int>(GetIlluminated()->GetIlluminatedType()) : 0;
+}
+
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetOverlayNGShader() const
+{
+    if (effect_) {
+        return effect_->olRenderShader_;
+    }
+    return nullptr;
 }
 
 void RSProperties::SetBrightness(const std::optional<float>& brightness)
@@ -5335,6 +5525,8 @@ void RSProperties::UpdateFilter()
         UpdateForegroundFilter();
     }
 
+    // If new effects are added, it is necessary to assess whether they can partial render,
+    // and update NeedDisabledPartialRender.
     needFilter_ = GetBackgroundFilter() != nullptr || GetFilter() != nullptr || GetUseEffect() || HasHarmonium() ||
                   IsLightUpEffectValid() || IsDynamicLightUpValid() || GetGreyCoef().has_value() ||
                   GetLinearGradientBlurPara() != nullptr || IsDynamicDimValid() ||
@@ -5342,7 +5534,7 @@ void RSProperties::UpdateFilter()
                   GetForegroundFilter() != nullptr || IsFgBrightnessValid() || IsBgBrightnessValid() ||
                   GetForegroundFilterCache() != nullptr || IsWaterRippleValid() || GetNeedDrawBehindWindow() ||
                   GetMask() || GetColorFilter() != nullptr || localMagnificationCap_ || GetPixelStretch().has_value() ||
-                  GetMaterialFilter() != nullptr;
+                  GetMaterialFilter() != nullptr || HasSpatialGlassEffect();
 
     needHwcFilter_ = GetBackgroundFilter() != nullptr || GetFilter() != nullptr || IsLightUpEffectValid() ||
                      IsDynamicLightUpValid() || GetLinearGradientBlurPara() != nullptr ||
@@ -5371,7 +5563,8 @@ bool RSProperties::DisableHWCForFilter() const
         (GetForegroundFilterCache() != nullptr &&
         GetForegroundFilterCache()->GetFilterType() != RSFilter::HDR_UI_BRIGHTNESS) ||
         IsWaterRippleValid() || GetNeedDrawBehindWindow() || GetMask() || GetColorFilter() != nullptr ||
-        localMagnificationCap_ || GetPixelStretch().has_value() || HasHarmonium() || GetMaterialFilter() != nullptr;
+        localMagnificationCap_ || GetPixelStretch().has_value() || HasHarmonium() || HasSpatialGlassEffect() ||
+        GetMaterialFilter() != nullptr;
 }
 
 bool RSProperties::NeedClipHoleForRenderGroup() const
@@ -5427,6 +5620,7 @@ void RSProperties::UpdateForegroundFilter()
     } else if (IsHDRUIBrightnessValid()) {
         CreateHDRUIBrightnessFilter();
     } else if (GetForegroundNGFilter()) {
+        RSNGRenderFilterHelper::PrepareForForeground(GetEffect().fgNGRenderFilter_);
         ComposeNGRenderFilter(foregroundFilter_, GetForegroundNGFilter());
     } else if (GetColorAdaptive()) {
         foregroundFilterCache_ = std::make_shared<RSColorAdaptiveFilter>();
@@ -5595,6 +5789,12 @@ void RSProperties::SetBackgroundNGShader(const std::shared_ptr<RSNGRenderShaderB
     if (renderShader != nullptr && renderShader->ContainsType(RSNGEffectType::FROSTED_GLASS_EFFECT)) {
         filterNeedUpdate_ = true;
     }
+    if (renderShader != nullptr) {
+        hasSpatialGlassEffect_ = renderShader->ContainsType(RSNGEffectType::SPATIAL_GLASS_EFFECT);
+    }
+    if (hasSpatialGlassEffect_) {
+        filterNeedUpdate_ = true;
+    }
 }
 
 std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetBackgroundNGShader() const
@@ -5663,15 +5863,29 @@ std::shared_ptr<RSNGRenderFilterBase> RSProperties::GetMaterialNGFilter() const
     return nullptr;
 }
 
+void RSProperties::SetMaterialShader(const std::shared_ptr<RSNGRenderShaderBase>& renderShader)
+{
+    GetEffect().mtRenderShader_ = renderShader;
+    isDrawn_ = true;
+    SetDirty();
+    contentDirty_ = true;
+}
+
+std::shared_ptr<RSNGRenderShaderBase> RSProperties::GetMaterialShader() const
+{
+    if (effect_) {
+        return effect_->mtRenderShader_;
+    }
+    return nullptr;
+}
+
 RRect RSProperties::GetRRectForSDF() const
 {
     RRect sdfRRect;
     if (GetClipToRRect()) {
-        auto rrect = GetClipRRect();
-        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
+        sdfRRect = GetClipRRect();
     } else if (!GetCornerRadius().IsZero()) {
-        auto rrect = GetRRect();
-        sdfRRect = RRect(rrect.rect_, rrect.radius_[0].x_, rrect.radius_[0].y_);
+        sdfRRect = GetRRect();
     } else {
         sdfRRect.rect_ = GetBoundsRect();
     }
@@ -5684,6 +5898,15 @@ bool RSProperties::GetColorAdaptive() const
         return effect_->colorAdaptive_;
     }
     return false;
+}
+
+const std::shared_ptr<Drawing::ColorFilter>& RSProperties::GetColorFilter() const
+{
+    static const std::shared_ptr<Drawing::ColorFilter> defaultValue = nullptr;
+    if (effect_) {
+        return effect_->colorFilter_;
+    }
+    return defaultValue;
 }
 
 void RSProperties::SetAdaptive(bool value)

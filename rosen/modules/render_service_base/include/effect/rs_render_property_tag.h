@@ -18,6 +18,7 @@
 
 #include "modifier/rs_render_property.h"
 #include "pixel_map.h"
+#include "render/rs_path.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -85,6 +86,9 @@ enum class RSNGEffectType : int16_t {
     VARIABLE_RADIUS_BLUR,
     CONTENT_LIGHT,
     GRID_WARP,
+    DISTORTION_COLLAPSE,
+    HEAT_DISTORTION,
+    BLUR_BUBBLES_RISE,
     // mask type
     RIPPLE_MASK,
     DOUBLE_RIPPLE_MASK,
@@ -102,9 +106,11 @@ enum class RSNGEffectType : int16_t {
     SDF_SMOOTH_UNION_OP_SHAPE,
     SDF_RRECT_SHAPE,
     SDF_TRIANGLE_SHAPE,
+    SDF_PATH_SHAPE,
     SDF_PIXELMAP_SHAPE,
     SDF_TRANSFORM_SHAPE,
     SDF_EMPTY_SHAPE,
+    SDF_DISTORT_OP_SHAPE,
     // shader type
     CONTOUR_DIAGONAL_FLOW_LIGHT,
     DOT_MATRIX_SHADER,
@@ -118,6 +124,7 @@ enum class RSNGEffectType : int16_t {
     GASIFY_SCALE_TWIST,
     GASIFY_BLUR,
     GASIFY,
+    PARTICLE_ABLATION,
     AIBAR_GLOW,
     AIBAR_RECT_HALO,
     ROUNDED_RECT_FLOWLIGHT,
@@ -128,6 +135,11 @@ enum class RSNGEffectType : int16_t {
     FROSTED_GLASS_BLUR,
     DISTORT_CHROMA,
     SDF_EDGE_LIGHT,
+    SDF_EDGE_LIGHT_EFFECT,
+    BORDER_SDF_SHADER,
+    SPATIAL_POINT_LIGHT,
+    SPATIAL_GLASS_EFFECT,
+    MOTION_BLUR,
 };
 
 using RSNGEffectTypeUnderlying = std::underlying_type<RSNGEffectType>::type;

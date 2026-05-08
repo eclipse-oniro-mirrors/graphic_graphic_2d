@@ -1700,6 +1700,74 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetVmaCacheStatus_SendRequestFail
     mockProxy->SetVmaCacheStatus(true);
 }
 
+// ==================== SetCacheEnabledForRotation Tests ====================
+
+/**
+ * @tc.name: SetCacheEnabledForRotation_True_Success
+ * @tc.desc: Test SetCacheEnabledForRotation with enabled = true
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetCacheEnabledForRotation_True_Success, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
+
+    mockProxy->SetCacheEnabledForRotation(true);
+}
+
+/**
+ * @tc.name: SetCacheEnabledForRotation_False_Success
+ * @tc.desc: Test SetCacheEnabledForRotation with enabled = false
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetCacheEnabledForRotation_False_Success, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
+
+    mockProxy->SetCacheEnabledForRotation(false);
+}
+
+/**
+ * @tc.name: SetCacheEnabledForRotation_SendRequestFail
+ * @tc.desc: Test SetCacheEnabledForRotation when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetCacheEnabledForRotation_SendRequestFail, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    mockProxy->SetCacheEnabledForRotation(true);
+}
+
+/**
+ * @tc.name: SetCacheEnabledForRotationTest001
+ * @tc.desc: Test SetCacheEnabledForRotationStatus
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, SetCacheEnabledForRotationTest001, TestSize.Level1)
+{
+    ASSERT_NE(proxy, nullptr);
+
+    proxy->SetCacheEnabledForRotation(false);
+    proxy->SetCacheEnabledForRotation(true);
+
+    proxy->SetCacheEnabledForRotation(true);
+    proxy->SetCacheEnabledForRotation(false);
+    ASSERT_NE(proxy, nullptr);
+}
+
 // ==================== NotifyPackageEvent Tests ====================
 
 /**
@@ -2052,62 +2120,6 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetColorFollow_SendRequestFail, T
     bool isColorFollow = true;
     ErrCode ret = mockProxy->SetColorFollow(nodeIdStr, isColorFollow);
     EXPECT_EQ(ret, RS_CONNECTION_ERROR);
-}
-
-// ==================== SetFreeMultiWindowStatus Tests ====================
-
-/**
- * @tc.name: SetFreeMultiWindowStatus_Enable_Success
- * @tc.desc: Test SetFreeMultiWindowStatus with enabled
- *
- * @tc.type: FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSServiceToRenderConnectionProxyTest, SetFreeMultiWindowStatus_Enable_Success, TestSize.Level1)
-{
-    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
-    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
-
-    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
-
-    bool enable = true;
-    mockProxy->SetFreeMultiWindowStatus(enable);
-}
-
-/**
- * @tc.name: SetFreeMultiWindowStatus_Disable_Success
- * @tc.desc: Test SetFreeMultiWindowStatus with disabled
- *
- * @tc.type: FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSServiceToRenderConnectionProxyTest, SetFreeMultiWindowStatus_Disable_Success, TestSize.Level1)
-{
-    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
-    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
-
-    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(NO_ERROR));
-
-    bool enable = false;
-    mockProxy->SetFreeMultiWindowStatus(enable);
-}
-
-/**
- * @tc.name: SetFreeMultiWindowStatus_SendRequestFail
- * @tc.desc: Test SetFreeMultiWindowStatus when SendRequest
- * fails
- * @tc.type: FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSServiceToRenderConnectionProxyTest, SetFreeMultiWindowStatus_SendRequestFail, TestSize.Level1)
-{
-    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
-    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
-
-    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
-
-    bool enable = true;
-    mockProxy->SetFreeMultiWindowStatus(enable);
 }
 
 /**
@@ -3418,5 +3430,74 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, ReportGameStateDataTest, TestSize
     uint32_t gameEventCode = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::REPORT_EVENT_GAMESTATE);
     EXPECT_CALL(*remoteObject, SendRequest(gameEventCode, _, _, _)).Times(1);
     mockProxy->ReportGameStateData(info);
+}
+
+// ==================== RegisterSharedTypeface Tests ====================
+
+/**
+ * @tc.name: RegisterSharedTypeface_Normal_Success
+ * @tc.desc: Test RegisterTypeface(SharedTypeface&, bool) with SendRequest success
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, RegisterSharedTypeface_Normal_Success, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(true);
+                return NO_ERROR;
+            }));
+
+    Drawing::SharedTypeface sharedTypeface;
+    sharedTypeface.originId_ = 100;
+    sharedTypeface.hasFontArgs_ = false;
+    bool ret = mockProxy->RegisterTypeface(sharedTypeface, false);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name: RegisterSharedTypeface_SendRequestFail
+ * @tc.desc: Test RegisterTypeface(SharedTypeface&, bool) when SendRequest fails
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, RegisterSharedTypeface_SendRequestFail, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    Drawing::SharedTypeface sharedTypeface;
+    sharedTypeface.originId_ = 100;
+    sharedTypeface.hasFontArgs_ = false;
+    bool ret = mockProxy->RegisterTypeface(sharedTypeface, false);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: RegisterSharedTypeface_ReadResultFail
+ * @tc.desc: Test RegisterTypeface(SharedTypeface&, bool) when ReadBool fails
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceToRenderConnectionProxyTest, RegisterSharedTypeface_ReadResultFail, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockProxy = std::make_shared<RSServiceToRenderConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                // Not writing bool to reply, causing ReadBool to fail
+                return NO_ERROR;
+            }));
+
+    Drawing::SharedTypeface sharedTypeface;
+    sharedTypeface.originId_ = 100;
+    sharedTypeface.hasFontArgs_ = false;
+    bool ret = mockProxy->RegisterTypeface(sharedTypeface, false);
+    EXPECT_FALSE(ret);
 }
 } // namespace OHOS::Rosen

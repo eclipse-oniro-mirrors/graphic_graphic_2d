@@ -54,6 +54,18 @@ bool IsSystemApp()
 #endif
 }
 
+bool CheckPermission(const std::string& permission)
+{
+#ifdef ENABLE_IPC_SECURITY
+    auto tokenID = OHOS::IPCSkeleton::GetCallingTokenID();
+    int result = OHOS::Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        tokenID, permission, false);
+    return result == OHOS::Security::AccessToken::PERMISSION_GRANTED;
+#else
+    return true;
+#endif
+}
+
 void ClampVector4f(OHOS::Rosen::Vector4f& v, float minx, float maxn)
 {
     for (auto& data : v.data_) {
@@ -478,26 +490,27 @@ bool ConvertVector4fFromAniTuple(OHOS::Rosen::Vector4f& vector4f, uintptr_t opaq
 // without OHOS::Rosen::BrightnessBlender SetHdr
 bool ParseBrightnessBlender(OHOS::Rosen::BrightnessBlender& blender, const BrightnessBlender& brightnessBlender)
 {
-    blender.SetCubicRate(brightnessBlender.cubicRate);
-    blender.SetQuadRate(brightnessBlender.quadraticRate);
-    blender.SetLinearRate(brightnessBlender.linearRate);
-    blender.SetDegree(brightnessBlender.degree);
-    blender.SetSaturation(brightnessBlender.saturation);
+    blender.SetCubicRate(static_cast<float>(brightnessBlender->getCubicRate()));
+    blender.SetQuadRate(static_cast<float>(brightnessBlender->getQuadraticRate()));
+    blender.SetLinearRate(static_cast<float>(brightnessBlender->getLinearRate()));
+    blender.SetDegree(static_cast<float>(brightnessBlender->getDegree()));
+    blender.SetSaturation(static_cast<float>(brightnessBlender->getSaturation()));
 
-    OHOS::Rosen::Vector3f vector3f;
-    if (!ConvertVector3fFromAniTuple(vector3f, brightnessBlender.positiveCoefficient)) {
-        UIEFFECT_LOG_E("ParseBrightnessBlender parse positiveCoefficient failed");
-        return false;
-    }
-    blender.SetPositiveCoeff(vector3f);
+    auto posCoeff = brightnessBlender->getPositiveCoefficient();
+    OHOS::Rosen::Vector3f posVector3f(
+        static_cast<float>(posCoeff.x),
+        static_cast<float>(posCoeff.y),
+        static_cast<float>(posCoeff.z));
+    blender.SetPositiveCoeff(posVector3f);
 
-    if (!ConvertVector3fFromAniTuple(vector3f, brightnessBlender.negativeCoefficient)) {
-        UIEFFECT_LOG_E("ParseBrightnessBlender parse negativeCoefficient failed");
-        return false;
-    }
-    blender.SetNegativeCoeff(vector3f);
+    auto negCoeff = brightnessBlender->getNegativeCoefficient();
+    OHOS::Rosen::Vector3f negVector3f(
+        static_cast<float>(negCoeff.x),
+        static_cast<float>(negCoeff.y),
+        static_cast<float>(negCoeff.z));
+    blender.SetNegativeCoeff(negVector3f);
 
-    blender.SetFraction(brightnessBlender.fraction);
+    blender.SetFraction(static_cast<float>(brightnessBlender->getFraction()));
     return true;
 }
 

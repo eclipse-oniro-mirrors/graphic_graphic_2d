@@ -1954,38 +1954,6 @@ HWTEST_F(RSPropertiesTest, SetMotionBlurPara001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetMagnifierParams001
- * @tc.desc: test results of SetMagnifierParams
- * @tc.type: FUNC
- * @tc.require: issueI9QKVM
- */
-HWTEST_F(RSPropertiesTest, SetMagnifierParams001, TestSize.Level1)
-{
-    RSProperties properties;
-    auto para = std::make_shared<RSMagnifierParams>();
-    properties.SetMagnifierParams(para);
-    EXPECT_NE(properties.GetMagnifierPara(), nullptr);
-
-    para->factor_ = 1.f;
-    properties.SetMagnifierParams(para);
-    EXPECT_NE(para, nullptr);
-}
-
-/**
- * @tc.name: SetMagnifierParams002
- * @tc.desc: test results of SetMagnifierParams
- * @tc.type: FUNC
- * @tc.require: issueI9QKVM
- */
-HWTEST_F(RSPropertiesTest, SetMagnifierParams002, TestSize.Level1)
-{
-    RSProperties properties;
-    std::shared_ptr<RSMagnifierParams> para;
-    properties.SetMagnifierParams(para);
-    EXPECT_EQ(properties.GetMagnifierPara(), nullptr);
-}
-
-/**
  * @tc.name: SetForegroundFilter001
  * @tc.desc: test results of SetForegroundFilter
  * @tc.type: FUNC
@@ -2221,6 +2189,24 @@ HWTEST_F(RSPropertiesTest, GetFrameRect001, TestSize.Level1)
     RSProperties properties;
     RectF rect = properties.GetFrameRect();
     EXPECT_TRUE(rect.IsEmpty());
+}
+
+/**
+ * @tc.name: GetRenderNodeId001
+ * @tc.desc: test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, GetRenderNodeId001, TestSize.Level1)
+{
+    RSProperties properties;
+    NodeId id = properties.GetRenderNodeId();
+    EXPECT_TRUE(id == INVALID_NODEID);
+
+    auto node = std::make_shared<RSRenderNode>(10);
+    properties.backref_ = node;
+    id = properties.GetRenderNodeId();
+    EXPECT_TRUE(id == 10);
 }
 
 /**
@@ -3744,7 +3730,6 @@ HWTEST_F(RSPropertiesTest, StatBackground_Variants, TestSize.Level1)
     props.backref_ = node;
     props.hasReportedServerXXFilterCascade_.reset();
     props.SetAiInvert(Vector4f(0.1f, 0.1f, 0.1f, 0.1f));
-    props.SetMagnifierParams(std::make_shared<RSMagnifierParams>());
     props.SetAlwaysSnapshot(true);
     props.SetBackgroundNGFilter(RSNGRenderFilterBase::Create(RSNGEffectType::BLUR));
     props.SetSystemBarEffect(true);
@@ -3758,19 +3743,6 @@ HWTEST_F(RSPropertiesTest, StatBackground_Variants, TestSize.Level1)
     props.GenerateBackgroundFilter();
     EXPECT_TRUE(props.hasReportedServerXXFilterCascade_.test(0));
     props.GenerateBackgroundFilter();
-
-    auto node1 = std::make_shared<RSRenderNode>(1);
-    RSProperties props1;
-    props1.backref_ = node1;
-    props1.hasReportedServerXXFilterCascade_.reset();
-    props1.SetSystemBarEffect(true);
-    auto magnifierPara = std::make_shared<RSMagnifierParams>();
-    magnifierPara->factor_ = 1.0f;
-    props1.SetMagnifierParams(magnifierPara);
-    props1.GenerateBackgroundMaterialBlurFilter();
-    props1.SetBackgroundBlurRadiusX(1.5f);
-    props1.GenerateBackgroundFilter();
-    EXPECT_TRUE(props1.hasReportedServerXXFilterCascade_.test(0));
 
     auto node2 = std::make_shared<RSRenderNode>(2);
     RSProperties props2;
@@ -3931,6 +3903,146 @@ HWTEST_F(RSPropertiesTest, SetAndGetCompositingNGFilter, TestSize.Level1)
     properties.SetCompositingNGFilter(blurFilter);  // for coverage
     auto testFilter = properties.GetCompositingNGFilter();
     EXPECT_EQ(blurFilter, testFilter);
+}
+
+/**
+ * @tc.name: SetOverlayNGShader001
+ * @tc.desc: test results of SetOverlayNGShader with nullptr
+ * @tc.type:FUNC
+ * @tc.require: issueNumber
+ */
+HWTEST_F(RSPropertiesTest, SetOverlayNGShader001, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetOverlayNGShader(nullptr);
+    EXPECT_EQ(properties.GetOverlayNGShader(), nullptr);
+}
+
+/**
+ * @tc.name: SetOverlayNGShader002
+ * @tc.desc: test results of SetOverlayNGShader with multiple shader types
+ * @tc.type:FUNC
+ * @tc.require: issueNumber
+ */
+HWTEST_F(RSPropertiesTest, SetOverlayNGShader002, TestSize.Level1)
+{
+    RSProperties properties;
+    
+    auto overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_LIGHT);
+    properties.SetOverlayNGShader(overlayShader);
+    EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
+    
+    overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::HARMONIUM_EFFECT);
+    properties.SetOverlayNGShader(overlayShader);
+    EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
+    
+    overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    properties.SetOverlayNGShader(overlayShader);
+    EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
+    
+    overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::FROSTED_GLASS_EFFECT);
+    properties.SetOverlayNGShader(overlayShader);
+    EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
+}
+
+/**
+ * @tc.name: SetAndGetBorderSDFShader001
+ * @tc.desc: Test SetBorderSDFShader lazy-creates border_ and GetBorderSDFShader returns shader
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetAndGetBorderSDFShader001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetBorderSDFShader(), nullptr);
+
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    ASSERT_NE(shader, nullptr);
+    properties.SetBorderSDFShader(shader);
+    EXPECT_EQ(properties.GetBorderSDFShader(), shader);
+    EXPECT_NE(properties.border_, nullptr);
+}
+
+/**
+ * @tc.name: SetBorderSDFShaderWithExistingBorder001
+ * @tc.desc: Test SetBorderSDFShader when border_ already exists
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetBorderSDFShaderWithExistingBorder001, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.border_ = std::make_shared<RSBorder>();
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    ASSERT_NE(shader, nullptr);
+    properties.SetBorderSDFShader(shader);
+    EXPECT_EQ(properties.GetBorderSDFShader(), shader);
+}
+
+/**
+ * @tc.name: GetBorderSDFShaderNullBorder001
+ * @tc.desc: Test GetBorderSDFShader returns nullptr when border_ is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GetBorderSDFShaderNullBorder001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.border_, nullptr);
+    EXPECT_EQ(properties.GetBorderSDFShader(), nullptr);
+}
+
+/**
+ * @tc.name: SetAndGetOutlineSDFShader001
+ * @tc.desc: Test SetOutlineSDFShader lazy-creates outline_ and GetOutlineSDFShader returns shader
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetAndGetOutlineSDFShader001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetOutlineSDFShader(), nullptr);
+
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    ASSERT_NE(shader, nullptr);
+    properties.SetOutlineSDFShader(shader);
+    EXPECT_EQ(properties.GetOutlineSDFShader(), shader);
+    EXPECT_NE(properties.outline_, nullptr);
+}
+
+/**
+ * @tc.name: SetOutlineSDFShaderWithExistingOutline001
+ * @tc.desc: Test SetOutlineSDFShader when outline_ already exists
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetOutlineSDFShaderWithExistingOutline001, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.outline_ = std::make_shared<RSBorder>(true);
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    ASSERT_NE(shader, nullptr);
+    properties.SetOutlineSDFShader(shader);
+    EXPECT_EQ(properties.GetOutlineSDFShader(), shader);
+}
+
+/**
+ * @tc.name: GetOutlineSDFShaderNullOutline001
+ * @tc.desc: Test GetOutlineSDFShader returns nullptr when outline_ is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, GetOutlineSDFShaderNullOutline001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.outline_, nullptr);
+    EXPECT_EQ(properties.GetOutlineSDFShader(), nullptr);
+}
+
+/**
+ * @tc.name: GetMaterialShader001
+ * @tc.desc: test GetMaterialShader when effect_ is nullptr
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertiesTest, GetMaterialShader001, TestSize.Level1)
+{
+    RSProperties properties;
+
+    EXPECT_EQ(properties.GetMaterialShader(), nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS

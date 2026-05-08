@@ -63,6 +63,7 @@ enum class ScreenPropertyType : uint32_t {
     SCREEN_SWITCH_STATUS,
     SCREEN_FRAME_GRAVITY,
     MULTI_SURFACE_CONFIGS,  // Multi-surface virtual screen: vector of SurfaceRegionConfig
+    IS_MAIN_SCREEN,
 };
 
 template<ScreenPropertyType T>
@@ -137,11 +138,14 @@ DECLARE_PROPERTY_TYPE(ScreenPropertyType::MULTI_SURFACE_CONFIGS, MultiSurfaceCon
 #else
 DECLARE_PROPERTY_TYPE(ScreenPropertyType::MULTI_SURFACE_CONFIGS, void*, nullptr);
 #endif
+DECLARE_PROPERTY_TYPE(ScreenPropertyType::IS_MAIN_SCREEN, bool, false);
 
 class ScreenPropertyBase : public Parcelable {
 public:
     ScreenPropertyBase() = default;
     virtual ~ScreenPropertyBase() = default;
+
+    RSB_EXPORT static bool Unmarshalling(Parcel& data, ScreenPropertyType type, sptr<ScreenPropertyBase>& property);
 };
 
 template<typename T>
@@ -234,6 +238,7 @@ public:
     bool GetDisablePowerOffRenderControl() const;
     bool IsScreenSwitching() const;
     Gravity GetFrameGravity() const;
+    bool IsMainScreen() const;
 
     ScreenInfo GetScreenInfo() const;
 

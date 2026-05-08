@@ -97,7 +97,6 @@ enum class RSPropertyType : uint8_t {
     GRAVITY,
     HRP_PLACEHOLDER_2, // HRP: delete it
     LINEAR_GRADIENT_BLUR_PARA,
-    MAGNIFIER_PARAMS,
     MOTION_BLUR_PARAM,
     VECTOR_EMITTER_UPDATER,
     PARTICLE_NOISE_FIELD,
@@ -122,6 +121,7 @@ enum class RSPropertyType : uint8_t {
     SHADOW_BLENDER_PARAMS,
     RS_NG_RENDER_SHAPE_BASE,
     HDR_DARKEN_BLENDER_PARAMS,
+    PARTICLE_FIELDS,
 };
 
 enum class RSPropertyUnit : uint8_t {
@@ -168,7 +168,7 @@ public:
     RSRenderPropertyBase(const RSRenderPropertyBase&&) = delete;
     RSRenderPropertyBase& operator=(const RSRenderPropertyBase&) = delete;
     RSRenderPropertyBase& operator=(const RSRenderPropertyBase&&) = delete;
-    virtual ~RSRenderPropertyBase() = default;
+    virtual ~RSRenderPropertyBase();
 
     PropertyId GetId() const
     {
@@ -242,7 +242,7 @@ protected:
     std::weak_ptr<ModifierNG::RSRenderModifier> modifier_;
 
     using UnmarshallingFunc = std::function<bool (Parcel&, std::shared_ptr<RSRenderPropertyBase>&)>;
-    inline static std::unordered_map<uint16_t, UnmarshallingFunc> UnmarshallingFuncs_;
+    inline static RS_HIDDEN std::unordered_map<uint16_t, UnmarshallingFunc> UnmarshallingFuncs_;
 
     class RSPropertyUnmarshallingFuncRegister {
     public:

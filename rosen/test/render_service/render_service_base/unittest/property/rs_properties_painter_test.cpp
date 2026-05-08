@@ -21,16 +21,17 @@
 #include "skia_runtime_effect.h"
 
 #include "common/rs_obj_abs_geometry.h"
+#include "effect/rs_render_shape_base.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_colorful_shadow_filter.h"
+#include "render/rs_drawing_filter.h"
 #include "render/rs_foreground_effect_filter.h"
 #include "render/rs_render_kawase_blur_filter.h"
 #include "render/rs_render_linear_gradient_blur_filter.h"
-#include "render/rs_render_magnifier_filter.h"
 #include "render/rs_shadow.h"
 #include "render/rs_skia_filter.h"
 
@@ -805,31 +806,6 @@ HWTEST_F(RSPropertiesPainterTest, DrawFilter003, TestSize.Level1)
     EXPECT_NE(res, 0);
 }
 
-/**
- * @tc.name: DrawFilter004
- * @tc.desc: test results of DrawFilter
- * @tc.type:FUNC
- * @tc.require:issuesICBIDA
- */
-HWTEST_F(RSPropertiesPainterTest, DrawFilter004, TestSize.Level1)
-{
-    RSProperties properties;
-    auto magnifierPara = std::make_shared<RSMagnifierParams>();
-    auto magnifierFilter = std::make_shared<RSMagnifierShaderFilter>(magnifierPara);
-    properties.backgroundFilter_ = std::make_shared<RSDrawingFilter>(magnifierFilter);
-    Drawing::Canvas drawingCanvas(100, 100);
-    RSPaintFilterCanvas canvas(&drawingCanvas);
-    Drawing::RectI srcRect { 0, 0, 100, 100 };
-    Drawing::RectI dstRect { 0, 0, 100, 100 };
-    int width = 100;
-    int height = 100;
-    Drawing::ImageInfo imageInfo { width, height, Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
-    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRaster(imageInfo);
-    canvas.surface_ = surface.get();
-    EXPECT_NE(canvas.GetSurface(), nullptr);
-    RSPropertiesPainter::DrawFilter(properties, canvas, FilterType::BACKGROUND_FILTER);
-    EXPECT_NE(magnifierFilter, nullptr);
-}
 
 /**
  * @tc.name: DrawBackgroundImageAsEffect001
@@ -1324,50 +1300,74 @@ HWTEST_F(RSPropertiesPainterTest, GetDistortionEffectDirtyRect, TestSize.Level1)
 {
     RectI localDistortionEffectRect(0, 0, 0, 0);
     RSProperties properties;
-    float width = 200.0f; // set width 200
-    float height = 200.0f; // set height 200
+    float width = 200.0f;
+    float height = 200.0f;
     Vector4f bounds(0.0, 0.0, width, height);
     properties.SetBounds(bounds);
 
-    // the distortionK is nullptr
     RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect, properties);
     EXPECT_FALSE(localDistortionEffectRect.width_ > static_cast<int>(width));
 
-    // the distortionK < 0
     properties.SetDistortionK(-0.2f);
     RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect, properties);
     EXPECT_FALSE(localDistortionEffectRect.width_ > static_cast<int>(width));
 
-    // the distortionK > 0
     properties.SetDistortionK(0.2f);
     RSPropertiesPainter::GetDistortionEffectDirtyRect(localDistortionEffectRect, properties);
     EXPECT_TRUE(localDistortionEffectRect.width_ > static_cast<int>(width));
 }
 
 /**
- * @tc.name: GetMagnifierEffectDirtyRectTest
- * @tc.desc: GetMagnifierEffectDirtyRect
- * @tc.type: FUNC
+ * @tc.name: GetShadowDirtyRect010
+ * @tc.desc: test GetShadowDirtyRect with SDFShape set (true branch)
+ * @tc.type:FUNC
  */
-HWTEST_F(RSPropertiesPainterTest, GetMagnifierEffectDirtyRectTest, TestSize.Level1)
+HWTEST_F(RSPropertiesPainterTest, GetShadowDirtyRect010, TestSize.Level1)
 {
-    RectI localDistortionEffectRect(0, 0, 0, 0);
+    RectI dirtyShadow;
     RSProperties properties;
-    float width = 200.0f; // set width 200
-    float height = 200.0f; // set height 200
+    properties.SetShadowRadius(10.f);
+    Color color(255, 255, 255, 255);
+    properties.SetShadowColor(color);
+    
+    auto sdfShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_UNION_OP_SHAPE);
+    EXPECT_NE(sdfShape, nullptr);
+    properties.SetSDFShape(sdfShape);
+    
+    RectF rect;
+    rect.SetAll(10.f, 10.f, 100.f, 100.f);
+    RRect rrect(rect, 0.f, 0.f);
+    RSPropertiesPainter::GetShadowDirtyRect(dirtyShadow, properties, &rrect);
+    EXPECT_TRUE(properties.IsShadowValid());
+    EXPECT_TRUE(properties.GetSDFShape() != nullptr);
+}
+
+/**
+ * @tc.name: GetForegroundNGFilterDirtyRect001
+ * @tc.desc: test GetForegroundNGFilterDirtyRect with HasCustomRegion false
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSPropertiesPainterTest, GetForegroundNGFilterDirtyRect001, TestSize.Level1)
+{
+    RectI dirtyForegroundNGFilter;
+    RSProperties properties;
+    float width = 100.0f;
+    float height = 100.0f;
     Vector4f bounds(0.0, 0.0, width, height);
     properties.SetBounds(bounds);
-
-    RSPropertiesPainter::GetMagnifierEffectDirtyRect(localDistortionEffectRect, properties);
-    EXPECT_EQ(localDistortionEffectRect.left_, 0);
-
-    std::shared_ptr<RSMagnifierParams> para = std::make_shared<RSMagnifierParams>();
-    para->offsetX_ = 50.f; // set offset 50 of X
-    para->offsetY_ = 100.f; // set offset 100 of Y
-    para->factor_ = 0.5f; // set factor 0.5
-    properties.SetMagnifierParams(para);
-    RSPropertiesPainter::GetMagnifierEffectDirtyRect(localDistortionEffectRect, properties);
-    EXPECT_NE(localDistortionEffectRect.left_, 0);
+    
+    auto imageFilter = std::make_shared<Drawing::ImageFilter>();
+    auto filterPtr = std::make_shared<RSRenderFilterParaBase>();
+    std::vector<std::shared_ptr<RSRenderFilterParaBase>> shaderFilters;
+    shaderFilters.push_back(filterPtr);
+    uint32_t hash = 1;
+    auto drawingFilter = std::make_shared<RSDrawingFilter>(imageFilter, shaderFilters, hash);
+    drawingFilter->SetHasCustomRegion(false);
+    
+    properties.SetForegroundFilter(drawingFilter);
+    RSPropertiesPainter::GetForegroundNGFilterDirtyRect(dirtyForegroundNGFilter, properties);
+    EXPECT_TRUE(properties.GetForegroundFilter() != nullptr);
+    EXPECT_FALSE(drawingFilter->HasCustomRegion());
 }
 } // namespace Rosen
 } // namespace OHOS

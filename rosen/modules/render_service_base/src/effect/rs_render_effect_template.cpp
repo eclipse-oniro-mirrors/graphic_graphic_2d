@@ -111,8 +111,10 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
     const std::string& desc, const RRect& value)
 {
     OHOS::Rosen::Drawing::GERRect geRRect{value.rect_.left_, value.rect_.top_,
-                                          value.rect_.width_, value.rect_.height_,
-                                          value.radius_->x_, value.radius_->y_};
+                                          value.rect_.width_, value.rect_.height_};
+    for (uint32_t i = 0; i < OHOS::Rosen::Drawing::GERRect::CORNER_COUNT; i++) {
+        geRRect.radius_[i] = value.radius_[i];
+    }
 
     geFilter.SetParam(desc, geRRect);
 }
@@ -128,6 +130,13 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
                             matrixData[Matrix3f::Index::PERSP_0], matrixData[Matrix3f::Index::PERSP_1],
                             matrixData[Matrix3f::Index::PERSP_2]);
     geFilter.SetParam(desc, drawingMatrix);
+}
+
+void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+    const std::string& desc, std::shared_ptr<RSPath> value)
+{
+    Drawing::Path path = value ? value->GetDrawingPath() : Drawing::Path();
+    geFilter.SetParam(desc, path);
 }
 
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
@@ -244,6 +253,15 @@ void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const RSCo
 {
     uint32_t color = value.AsRgbaInt();
     hash = hashFunc_(&color, sizeof(color), hash);
+}
+
+void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<RSPath> value)
+{
+    if (!value) {
+        return;
+    }
+    uint32_t pathDistance = value->GetDistance();
+    hash = hashFunc_(&pathDistance, sizeof(pathDistance), hash);
 }
 
 std::shared_ptr<Drawing::GEVisualEffect> RSNGRenderEffectHelper::CreateGEVisualEffect(RSNGEffectType type)

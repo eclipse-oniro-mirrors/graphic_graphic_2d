@@ -57,6 +57,9 @@
 #include "render_server/transaction/rs_render_to_service_connection.h"
 #include "render_service/composer/composer_client/connection/rs_composer_to_render_connection.h"
 #include "transaction/rs_connect_to_render_process.h"
+#include "animation/rs_animation_timing_protocol.h"
+#include "animation/rs_render_curve_animation.h"
+#include "animation/rs_render_interactive_implict_animator.h"
 #if defined(ACCESSIBILITY_ENABLE)
 #include "accessibility_config.h"
 #endif
@@ -603,6 +606,63 @@ HWTEST_F(RSMainThreadTest, Animate002, TestSize.Level1)
     ASSERT_NE(mainThread, nullptr);
     mainThread->doWindowAnimate_ = true;
     mainThread->Animate(0);
+}
+
+/**
+ * @tc.name: AnimateBranch001
+ * @tc.desc: Cover branch: animatingNodeList_.empty() && !hasRunningGroupAnimators (return early)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, AnimateBranch001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSMainThreadTest AnimateBranch001 start";
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    EXPECT_TRUE(mainThread->context_->animatingNodeList_.empty());
+
+    int64_t minLeftDelayTime = 0;
+    bool hasRunningGroupAnimators = mainThread->context_->UpdateGroupAnimators(0, minLeftDelayTime);
+    EXPECT_FALSE(hasRunningGroupAnimators);
+
+    mainThread->Animate(0);
+
+    GTEST_LOG_(INFO) << "RSMainThreadTest AnimateBranch001 end";
+}
+
+/**
+ * @tc.name: AnimateBranch002
+ * @tc.desc: Cover branch: hasRunningGroupAnimators = true (RS_TRACE_NAME_FMT branch)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, AnimateBranch002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSMainThreadTest AnimateBranch002 start";
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    RSAnimationTimingProtocol timingProtocol;
+    timingProtocol.SetDuration(1000);
+    timingProtocol.SetStartDelay(0);
+    timingProtocol.SetRepeatCount(1);
+    timingProtocol.SetSpeed(1.0f);
+    timingProtocol.SetAutoReverse(false);
+
+    auto groupAnimator = std::make_shared<RSRenderTimeDrivenGroupAnimator>(
+        10001, mainThread->context_->weak_from_this(), timingProtocol);
+
+    mainThread->context_->GetInteractiveImplictAnimatorMap().RegisterInteractiveImplictAnimator(groupAnimator);
+
+    groupAnimator->StartAnimator();
+
+    int64_t minLeftDelayTime = 0;
+    bool hasRunningGroupAnimators = mainThread->context_->UpdateGroupAnimators(0, minLeftDelayTime);
+    EXPECT_TRUE(hasRunningGroupAnimators);
+
+    mainThread->Animate(0);
+
+    mainThread->context_->GetInteractiveImplictAnimatorMap().UnregisterInteractiveImplictAnimator(10001);
+    GTEST_LOG_(INFO) << "RSMainThreadTest AnimateBranch002 end";
 }
 
 /**
@@ -1308,6 +1368,59 @@ HWTEST_F(RSMainThreadTest, ShowWatermark05, TestSize.Level1)
     mainThread->watermarkFlag_ = false;
     mainThread->ShowWatermark(nullptr, true);
     ASSERT_EQ(mainThread->GetWatermarkFlag(), true);
+}
+
+/**
+ * @tc.name: SetWatermarkGrid001
+ * @tc.desc: Test SetWatermark with rowCount and colCount
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetWatermarkGrid001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    std::string watermarkName = "gridWatermark";
+    Media::InitializationOptions opts;
+    opts.size.width = DEFAULT_SCREEN_WIDTH;
+    opts.size.height = DEFAULT_SCREEN_HEIGHT;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+
+    mainThread->SetWatermark(100, watermarkName, pixelMap, 2, 3);
+    EXPECT_TRUE(mainThread->watermarkFlag_);
+
+    mainThread->SetWatermark(100, watermarkName, nullptr, 0, 0);
+    EXPECT_FALSE(mainThread->watermarkFlag_);
+}
+
+/**
+ * @tc.name: SetSurfaceWatermarkGrid001
+ * @tc.desc: Test SetSurfaceWatermark with rowCount and colCount
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, SetSurfaceWatermarkGrid001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    std::string watermarkName = "surfaceGridWatermark";
+    Media::InitializationOptions opts;
+    opts.size.width = DEFAULT_SCREEN_WIDTH;
+    opts.size.height = DEFAULT_SCREEN_HEIGHT;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(pixelMap, nullptr);
+
+    NodeId surfaceNodeId = 0XFFFFFFFFFFFF1234;
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(surfaceNodeId);
+    mainThread->context_->nodeMap.RegisterRenderNode(surfaceNode);
+    surfaceNode->GetMutableRenderProperties().SetBoundsWidth(DEFAULT_SCREEN_WIDTH);
+    surfaceNode->GetMutableRenderProperties().SetBoundsHeight(DEFAULT_SCREEN_HEIGHT);
+
+    auto res = mainThread->SetSurfaceWatermark(ExtractPid(surfaceNodeId), watermarkName,
+        pixelMap, {surfaceNodeId}, SurfaceWatermarkType::CUSTOM_WATER_MARK, true, 2, 2);
+    EXPECT_EQ(res, SurfaceWatermarkStatusCode::WATER_MARK_SUCCESS);
+
+    mainThread->ClearSurfaceWatermark(ExtractPid(surfaceNodeId), watermarkName, true);
+    mainThread->context_->nodeMap.UnregisterRenderNode(surfaceNodeId);
 }
 
 /**
@@ -3677,6 +3790,125 @@ HWTEST_F(RSMainThreadTest, ClearTransactionDataPidInfo002, TestSize.Level1)
     ASSERT_NE(mainThread, nullptr);
     int remotePid = 1;
     mainThread->ClearTransactionDataPidInfo(remotePid);
+}
+
+/**
+ * @tc.name: ClearTransactionDataPidInfo003
+ * @tc.desc: ClearTransactionDataPidInfo Test with forRefresh=true, verify counter reset
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, ClearTransactionDataPidInfo003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = true;
+    pid_t remotePid = 12345;
+
+    // Setup: Add entry to effectiveTransactionDataIndexMap_
+    mainThread->effectiveTransactionDataIndexMap_[remotePid] =
+        std::make_pair(100, std::vector<std::unique_ptr<RSTransactionData>>());
+    mainThread->transactionDataLastWaitTime_[remotePid] = 12345678;
+
+    // Execute: forRefresh=true
+    mainThread->ClearTransactionDataPidInfo(remotePid, true);
+
+    // Verify: Counter reset to 0, map entry preserved
+    auto it = mainThread->effectiveTransactionDataIndexMap_.find(remotePid);
+    ASSERT_NE(it, mainThread->effectiveTransactionDataIndexMap_.end());
+    EXPECT_EQ(it->second.first, 0);
+    // transactionDataLastWaitTime_ should still be erased
+    EXPECT_EQ(mainThread->transactionDataLastWaitTime_.find(remotePid),
+        mainThread->transactionDataLastWaitTime_.end());
+
+    // Cleanup
+    mainThread->effectiveTransactionDataIndexMap_.erase(remotePid);
+    mainThread->isUniRender_ = isUniRender;
+}
+
+/**
+ * @tc.name: ClearTransactionDataPidInfo004
+ * @tc.desc: ClearTransactionDataPidInfo Test with forRefresh=true and non-existent pid
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, ClearTransactionDataPidInfo004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = true;
+    pid_t remotePid = 99999;
+
+    // Ensure pid doesn't exist in map
+    mainThread->effectiveTransactionDataIndexMap_.erase(remotePid);
+
+    // Execute: forRefresh=true with non-existent pid, should not crash
+    mainThread->ClearTransactionDataPidInfo(remotePid, true);
+
+    // Verify: Map still doesn't contain the pid
+    EXPECT_EQ(mainThread->effectiveTransactionDataIndexMap_.find(remotePid),
+        mainThread->effectiveTransactionDataIndexMap_.end());
+
+    mainThread->isUniRender_ = isUniRender;
+}
+
+/**
+ * @tc.name: ClearTransactionDataPidInfo005
+ * @tc.desc: ClearTransactionDataPidInfo Test with forRefresh=false and !isUniRender_
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, ClearTransactionDataPidInfo005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = false;
+    pid_t remotePid = 12345;
+
+    // Setup: Add entry to map
+    mainThread->effectiveTransactionDataIndexMap_[remotePid] =
+        std::make_pair(100, std::vector<std::unique_ptr<RSTransactionData>>());
+
+    // Execute: forRefresh=false but !isUniRender_, should return early
+    mainThread->ClearTransactionDataPidInfo(remotePid, false);
+
+    // Verify: Map entry should still exist (early return)
+    EXPECT_NE(mainThread->effectiveTransactionDataIndexMap_.find(remotePid),
+        mainThread->effectiveTransactionDataIndexMap_.end());
+
+    // Cleanup
+    mainThread->effectiveTransactionDataIndexMap_.erase(remotePid);
+    mainThread->isUniRender_ = isUniRender;
+}
+
+/**
+ * @tc.name: CleanResourcesForRefreshTest
+ * @tc.desc: CleanResources Test with forRefresh=true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, CleanResourcesForRefreshTest, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    auto isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = true;
+    pid_t remotePid = 12345;
+
+    // Setup: Add entry to effectiveTransactionDataIndexMap_
+    mainThread->effectiveTransactionDataIndexMap_[remotePid] =
+        std::make_pair(100, std::vector<std::unique_ptr<RSTransactionData>>());
+
+    // Execute: CleanResources with forRefresh=true
+    mainThread->CleanResources(remotePid, true);
+
+    // Verify: Counter reset to 0, map entry preserved
+    auto it = mainThread->effectiveTransactionDataIndexMap_.find(remotePid);
+    ASSERT_NE(it, mainThread->effectiveTransactionDataIndexMap_.end());
+    EXPECT_EQ(it->second.first, 0);
+
+    // Cleanup
+    mainThread->effectiveTransactionDataIndexMap_.erase(remotePid);
+    mainThread->isUniRender_ = isUniRender;
 }
 
 /**
@@ -6340,6 +6572,373 @@ HWTEST_F(RSMainThreadTest, CheckUiCaptureNodeTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: AddWindowCapTask001
+ * @tc.desc: Test Func AddWindowCapTask with basic functionality
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, AddWindowCapTask001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    mainThread->pendingWindowCapTasks_.clear();
+    NodeId nodeId = 1;
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+
+    mainThread->AddWindowCapTask(nodeId, task);
+
+    ASSERT_EQ(mainThread->pendingWindowCapTasks_.size(), 1u);
+    auto& item = mainThread->pendingWindowCapTasks_[0];
+    ASSERT_EQ(std::get<0>(item), nodeId);
+    mainThread->pendingWindowCapTasks_.clear();
+}
+
+/**
+ * @tc.name: AddWindowCapTask002
+ * @tc.desc: Test Func AddWindowCapTask when node is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, AddWindowCapTask002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    mainThread->pendingWindowCapTasks_.clear();
+    NodeId nodeId = 99999;
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+
+    mainThread->AddWindowCapTask(nodeId, task);
+
+    ASSERT_EQ(mainThread->pendingWindowCapTasks_.size(), 1u);
+    mainThread->pendingWindowCapTasks_.clear();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks001
+ * @tc.desc: Test CheckWindowCapTasks with empty pending list
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    mainThread->CheckWindowCapTasks();
+
+    ASSERT_TRUE(mainThread->pendingWindowCapTasks_.empty());
+    ASSERT_TRUE(mainThread->windowCapTasks_.empty());
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks002
+ * @tc.desc: Test CheckWindowCapTasks when node is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    NodeId nodeId = 99999;
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs();
+
+    mainThread->pendingWindowCapTasks_.emplace_back(nodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    ASSERT_EQ(mainThread->windowCapTasks_.size(), 1u);
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks003
+ * @tc.desc: Test CheckWindowCapTasks when node is not leash window
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks003, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+
+    NodeId nodeId = surfaceNode->GetId();
+    pid_t pid = ExtractPid(nodeId);
+    mainThread->context_->nodeMap.renderNodeMap_[pid][nodeId] = surfaceNode;
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs();
+
+    mainThread->pendingWindowCapTasks_.emplace_back(nodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    ASSERT_EQ(mainThread->windowCapTasks_.size(), 1u);
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->context_->nodeMap.renderNodeMap_[pid].clear();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks004
+ * @tc.desc: Test CheckWindowCapTasks when currentVsync is 0
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks004, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::BACKGROUND);
+
+    NodeId nodeId = surfaceNode->GetId();
+    pid_t pid = ExtractPid(nodeId);
+    mainThread->context_->nodeMap.renderNodeMap_[pid][nodeId] = surfaceNode;
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs();
+
+    mainThread->pendingWindowCapTasks_.emplace_back(nodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    ASSERT_EQ(mainThread->windowCapTasks_.size(), 1u);
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->context_->nodeMap.renderNodeMap_[pid].clear();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks005
+ * @tc.desc: Test CheckWindowCapTasks when task timeout (duration >= 166ms)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks005, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    NodeId nodeId = surfaceNode->GetId();
+    pid_t pid = ExtractPid(nodeId);
+    mainThread->context_->nodeMap.renderNodeMap_[pid][nodeId] = surfaceNode;
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs() - 200;
+
+    mainThread->pendingWindowCapTasks_.emplace_back(nodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    ASSERT_EQ(mainThread->windowCapTasks_.size(), 1u);
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->context_->nodeMap.renderNodeMap_[pid].clear();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks006
+ * @tc.desc: Test CheckWindowCapTasks when parent node is leash window
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks006, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    auto appWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(appWindowNode, nullptr);
+    appWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+
+    auto leashWindowNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(leashWindowNode, nullptr);
+    leashWindowNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+
+    leashWindowNode->AddChild(appWindowNode);
+    appWindowNode->SetParent(leashWindowNode);
+
+    NodeId appNodeId = appWindowNode->GetId();
+    NodeId leashNodeId = leashWindowNode->GetId();
+    pid_t pid = ExtractPid(appNodeId);
+    mainThread->context_->nodeMap.renderNodeMap_[pid][appNodeId] = appWindowNode;
+    mainThread->context_->nodeMap.renderNodeMap_[pid][leashNodeId] = leashWindowNode;
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs();
+
+    mainThread->pendingWindowCapTasks_.emplace_back(appNodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->context_->nodeMap.renderNodeMap_[pid].clear();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks007
+ * @tc.desc: Test CheckWindowCapTasks when node is in BACKGROUND state
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks007, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::BACKGROUND);
+
+    NodeId nodeId = surfaceNode->GetId();
+    pid_t pid = ExtractPid(nodeId);
+    mainThread->context_->nodeMap.renderNodeMap_[pid][nodeId] = surfaceNode;
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs();
+
+    mainThread->pendingWindowCapTasks_.emplace_back(nodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->context_->nodeMap.renderNodeMap_[pid].clear();
+}
+
+/**
+ * @tc.name: CheckWindowCapTasks008
+ * @tc.desc: Test CheckWindowCapTasks when node is in FOREGROUND state and stays in pending
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, CheckWindowCapTasks008, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    ASSERT_NE(mainThread->context_, nullptr);
+
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    surfaceNode->SetAbilityState(RSSurfaceNodeAbilityState::FOREGROUND);
+
+    NodeId nodeId = surfaceNode->GetId();
+    pid_t pid = ExtractPid(nodeId);
+    mainThread->context_->nodeMap.renderNodeMap_[pid][nodeId] = surfaceNode;
+
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+    uint64_t startTime = mainThread->context_->GetUiCaptureHelper().GetCurrentSteadyTimeMs();
+
+    mainThread->pendingWindowCapTasks_.emplace_back(nodeId, task, startTime, 0, false);
+
+    mainThread->CheckWindowCapTasks();
+
+    ASSERT_EQ(mainThread->pendingWindowCapTasks_.size(), 1u);
+    ASSERT_TRUE(mainThread->windowCapTasks_.empty());
+    mainThread->pendingWindowCapTasks_.clear();
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->context_->nodeMap.renderNodeMap_[pid].clear();
+}
+
+/**
+ * @tc.name: ProcessWindowCapTasks001
+ * @tc.desc: Test ProcessWindowCapTasks with empty queue
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, ProcessWindowCapTasks001, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+    mainThread->ProcessWindowCapTasks();
+    ASSERT_TRUE(mainThread->windowCapTasks_.empty());
+}
+
+/**
+ * @tc.name: ProcessWindowCapTasks002
+ * @tc.desc: Test ProcessWindowCapTasks with task in queue
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMainThreadTest, ProcessWindowCapTasks002, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    mainThread->windowCapTasks_ = std::queue<std::tuple<NodeId, std::function<void()>>>();
+
+    NodeId nodeId = 1;
+    bool taskExecuted = false;
+    std::function<void()> task = [&taskExecuted]() { taskExecuted = true; };
+
+    mainThread->windowCapTasks_.emplace(nodeId, task);
+    ASSERT_EQ(mainThread->windowCapTasks_.size(), 1u);
+    mainThread->ProcessWindowCapTasks();
+    ASSERT_TRUE(mainThread->windowCapTasks_.empty());
+}
+
+/**
  * @tc.name: AddSurfaceFpsOpTest
  * @tc.desc: Test Func AddSurfaceFpsOp
  * @tc.type: FUNC
@@ -6349,7 +6948,9 @@ HWTEST_F(RSMainThreadTest, AddSurfaceFpsOpTest, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    
+    mainThread->addSurfaceFpsOpMap_.clear();
+    mainThread->rmvSurfaceFpsOpMap_.clear();
+
     SurfaceFpsOp addOp {static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_ADD), 1, "test_surface", 100};
     SurfaceFpsOp removeOp {static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_REMOVE), 2, "test_surface2", 200};
     SurfaceFpsOp otherOp {static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_DEFAULT), 3, "test_surface3", 300};
@@ -6377,6 +6978,8 @@ HWTEST_F(RSMainThreadTest, AddSurfaceFpsOpTest, TestSize.Level1)
     }
     EXPECT_TRUE(foundAdd);
     EXPECT_TRUE(foundRemove);
+    mainThread->addSurfaceFpsOpMap_.clear();
+    mainThread->rmvSurfaceFpsOpMap_.clear();
 }
 
 /**
@@ -6389,7 +6992,9 @@ HWTEST_F(RSMainThreadTest, RmvSurfaceFpsOpTest, TestSize.Level1)
 {
     auto mainThread = RSMainThread::Instance();
     ASSERT_NE(mainThread, nullptr);
-    
+    mainThread->addSurfaceFpsOpMap_.clear();
+    mainThread->rmvSurfaceFpsOpMap_.clear();
+
     SurfaceFpsOp addOp1 {static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_ADD), 1, "test_surface", 100};
     SurfaceFpsOp addOp2 {static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_ADD), 2, "test_surface2", 200};
     SurfaceFpsOp removeOp {static_cast<uint32_t>(SurfaceFpsOpType::SURFACE_FPS_REMOVE), 3, "test_surface3", 300};
@@ -6428,5 +7033,34 @@ HWTEST_F(RSMainThreadTest, RmvSurfaceFpsOpTest, TestSize.Level1)
     mainThread->RmvSurfaceFpsOp(rmvList);
     surfaceFpsOpList = mainThread->GetSurfaceFpsOpList();
     EXPECT_EQ(surfaceFpsOpList.size(), 0u);
+}
+
+/**
+ * @tc.name: AnimateWithAnimationManager
+ * @tc.desc: Cover branch: animationManager is non-null in RSMainThread::Animate loop
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSMainThreadTest, AnimateWithAnimationManager, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSMainThreadTest AnimateWithAnimationManager start";
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+
+    NodeId id = 9999;
+    auto node = std::make_shared<RSRenderNode>(id, mainThread->context_);
+    ASSERT_NE(node, nullptr);
+
+    // Make animationManager_ non-null by adding an animation
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    node->AddAnimation(animation);
+    ASSERT_NE(node->GetAnimationManager(), nullptr);
+
+    mainThread->context_->RegisterAnimatingRenderNode(node);
+    mainThread->Animate(1);
+
+    GTEST_LOG_(INFO) << "RSMainThreadTest AnimateWithAnimationManager end";
 }
 } // namespace OHOS::Rosen

@@ -48,7 +48,7 @@ struct VirtualScreenConfigs {
 #endif
 };
 
-class RSScreen {
+class RSScreen : public std::enable_shared_from_this<RSScreen> {
 public:
     explicit RSScreen(ScreenId id);
     explicit RSScreen(const VirtualScreenConfigs& configs);
@@ -97,6 +97,8 @@ public:
     PanelPowerStatus GetPanelPowerStatus() const;
 
     int32_t SetDualScreenState(DualScreenStatus status);
+    int32_t SetAsMainScreen(bool isMainScreen);
+    bool IsMainScreen() const;
 
     void SetScreenBacklight(uint32_t level);
     int32_t GetScreenBacklight() const;

@@ -46,12 +46,21 @@ static thread_local std::unordered_map<RSNGEffectType, ShapeCreator> creatorLUT 
             return std::make_shared<RSNGSDFTransformShape>();
         }
     },
+    {RSNGEffectType::SDF_PATH_SHAPE, [] {
+            return std::make_shared<RSNGSDFPathShape>();
+        }
+    },
     {RSNGEffectType::SDF_PIXELMAP_SHAPE, [] {
             return std::make_shared<RSNGSDFPixelmapShape>();
         }
     },
     {RSNGEffectType::SDF_EMPTY_SHAPE, [] {
             return std::make_shared<RSNGSDFEmptyShape>();
+        }
+    },
+    {RSNGEffectType::SDF_DISTORT_OP_SHAPE, [] {
+            ROSEN_LOGE("RSNGSDFDistortOpShape Created");
+            return std::make_shared<RSNGSDFDistortOpShape>();
         }
     },
 };

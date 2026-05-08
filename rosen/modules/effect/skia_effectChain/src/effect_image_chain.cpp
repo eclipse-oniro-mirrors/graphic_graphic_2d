@@ -32,9 +32,11 @@
 #include "surface_buffer.h"
 
 #ifdef RS_ENABLE_VK
-#include "effect_vulkan_context.h"
 #ifndef ROSEN_ARKUI_X
+#include "platform/ohos/backend/rs_vulkan_context.h"
 #include "platform/ohos/backend/native_buffer_utils.h"
+#else
+#include "rs_vulkan_context.h"
 #endif
 #endif
 
@@ -801,7 +803,11 @@ std::shared_ptr<Drawing::Surface> EffectImageChain::CreateSurface(bool forceCPU)
         EFFECT_COMM_LOG_E("EffectImageChain::CreateGPUSurface: create gpuContext failed.");
         return nullptr;
     }
-    return Drawing::Surface::MakeRenderTarget(gpuContext_.get(), false, imageInfo_);
+    
+    RS_TRACE_NAME_FMT("EffectImageChain::CreateGPUSurface Imageinfo:Image_Width:%d, Imageinfo_Height:%d",
+        imageInfo_.GetWidth(), imageInfo_.GetHeight());
+    auto surface = Drawing::Surface::MakeRenderTarget(gpuContext_.get(), false, imageInfo_);
+    return surface;
 #else
     EFFECT_LOG_W("EffectImageChain::CreateGPUSurface: GPU rendering is not supported.");
     return nullptr;

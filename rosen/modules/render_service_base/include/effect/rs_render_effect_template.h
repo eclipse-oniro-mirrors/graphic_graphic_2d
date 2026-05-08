@@ -83,19 +83,24 @@ public:
             case RSNGEffectType::VARIABLE_RADIUS_BLUR: return "VariableRadiusBlur";
             case RSNGEffectType::LIGHT_CAVE: return "LightCave";
             case RSNGEffectType::CONTENT_LIGHT: return "ContentLight";
+            case RSNGEffectType::HEAT_DISTORTION: return "HeatDistortion";
+            case RSNGEffectType::BLUR_BUBBLES_RISE: return "BlurBubblesRise";
             case RSNGEffectType::BORDER_LIGHT: return "BorderLight";
             case RSNGEffectType::GASIFY_SCALE_TWIST: return "GasifyScaleTwist";
             case RSNGEffectType::GASIFY_BLUR: return "GasifyBlur";
             case RSNGEffectType::GASIFY: return "Gasify";
+            case RSNGEffectType::PARTICLE_ABLATION: return "ParticleAblation";
             case RSNGEffectType::COLOR_GRADIENT_EFFECT: return "ColorGradientEffect";
             case RSNGEffectType::HARMONIUM_EFFECT: return "HarmoniumEffect";
             case RSNGEffectType::SDF_UNION_OP_SHAPE: return "SDFUnionOpShape";
             case RSNGEffectType::SDF_SMOOTH_UNION_OP_SHAPE: return "SDFSmoothUnionOpShape";
             case RSNGEffectType::SDF_RRECT_SHAPE: return "SDFRRectShape";
             case RSNGEffectType::SDF_TRIANGLE_SHAPE: return "SDFTriangleShape";
+            case RSNGEffectType::SDF_PATH_SHAPE: return "SDFPathShape";
             case RSNGEffectType::SDF_PIXELMAP_SHAPE: return "SDFPixelmapShape";
             case RSNGEffectType::SDF_TRANSFORM_SHAPE: return "SDFTransformShape";
             case RSNGEffectType::SDF_EMPTY_SHAPE: return "SDFEmptyShape";
+            case RSNGEffectType::SDF_DISTORT_OP_SHAPE: return "SDFDistortOpShape";
             case RSNGEffectType::IMAGE_MASK: return "ImageMask";
             case RSNGEffectType::USE_EFFECT_MASK: return "UseEffectMask";
             case RSNGEffectType::AIBAR_GLOW: return "AIBarGlow";
@@ -112,7 +117,13 @@ public:
             case RSNGEffectType::DUPOLI_NOISE_MASK : return "DupoliNoiseMask";
             case RSNGEffectType::NOISY_FRAME_GRADIENT_MASK: return "NoisyFrameGradientMask";
             case RSNGEffectType::SDF_EDGE_LIGHT: return "SDFEdgeLight";
+            case RSNGEffectType::SDF_EDGE_LIGHT_EFFECT: return "SDFEdgeLightEffect";
             case RSNGEffectType::MAGNIFIER: return "Magnifier";
+            case RSNGEffectType::DISTORTION_COLLAPSE: return "DistortionCollapse";
+            case RSNGEffectType::BORDER_SDF_SHADER: return "BorderSDFShader";
+            case RSNGEffectType::SPATIAL_POINT_LIGHT: return "SpatialPointLight";
+            case RSNGEffectType::SPATIAL_GLASS_EFFECT: return "SpatialGlassEffect";
+            case RSNGEffectType::MOTION_BLUR: return "MotionBlur";
             default: return "UNKNOWN";
         }
     }
@@ -169,6 +180,9 @@ private:
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, const RSColor& value);
+    
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, std::shared_ptr<RSPath> value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, int value);
 
@@ -201,6 +215,8 @@ private:
     static void CalculatePropTagHashImpl(uint32_t& hash, const RRect& value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, const RSColor& value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<RSPath> value);
 
 #ifdef USE_M133_SKIA
     static constexpr auto hashFunc_ = SkChecksum::Hash32;
@@ -259,7 +275,7 @@ protected:
     template <typename U, typename R>
     friend class RSNGEffectBase;
 
-    template <typename U, RSNGEffectType T, typename... Tags>
+    template <typename U, typename RenderEffectTemplate, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 
@@ -470,7 +486,7 @@ protected:
 
     std::tuple<PropertyTags...> properties_;
 
-    template <typename U, RSNGEffectType T, typename... Tags>
+    template <typename U, typename RenderEffectTemplate, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 } // namespace Rosen

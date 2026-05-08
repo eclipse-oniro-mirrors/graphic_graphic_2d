@@ -50,7 +50,6 @@ const std::map<int, std::string> FILTER_TYPE_MAP {
     { RSFilter::MATERIAL, "RSMaterialFilterBlur" },
     { RSFilter::AIBAR, "RSAIBarFilterBlur" },
     { RSFilter::LINEAR_GRADIENT_BLUR, "RSLinearGradientBlurFilterBlur" },
-    { RSFilter::MAGNIFIER, "RSMagnifierFilter" },
     { RSFilter::WATER_RIPPLE, "RSWaterRippleFilter" },
     { RSFilter::COMPOUND_EFFECT, "CompoundEffect" },
     { RSFilter::FLY_OUT, "FlyOut" },
@@ -246,6 +245,13 @@ void RSDrawingFilter::SetDisplayHeadroom(float headroom)
     }
 }
 
+void RSDrawingFilter::SetDisableFilterCache(bool disableFilterCache)
+{
+    if (visualEffectContainer_) {
+        visualEffectContainer_->SetDisableFilterCache(disableFilterCache);
+    }
+}
+
 bool RSDrawingFilter::CanSkipFrame(float radius)
 {
     constexpr float HEAVY_BLUR_THRESHOLD = 25.0f;
@@ -256,6 +262,7 @@ void RSDrawingFilter::OnSync()
 {
     if (renderFilter_) {
         renderFilter_->OnSync();
+        SetHasCustomRegion(RSNGRenderFilterHelper::HasCustomRegion(renderFilter_));
     }
     GenerateAndUpdateGEVisualEffect();
 }
@@ -569,9 +576,15 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
     // RemoveFilterWithType because KAWASE_BLUR will excute in HPS 1.0 separately.
     visualEffectContainer->RemoveFilterWithType(
         static_cast<int32_t>(Drawing::GEVisualEffectImpl::FilterType::KAWASE_BLUR));
+    auto isFrostedGlassFilter = geRender->IsFrostedGlassFilter(*visualEffectContainer);
     if (outImage == nullptr) {
-        outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer,
-            {image, attr.src, attr.src, attr.geCacheProvider}, Drawing::SamplingOptions());
+        if (isFrostedGlassFilter || HasCustomRegion()) {
+            outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer,
+                {image, attr.src, attr.dst, attr.geCacheProvider}, Drawing::SamplingOptions());
+        } else {
+            outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer,
+                {image, attr.src, attr.src, attr.geCacheProvider}, Drawing::SamplingOptions());
+        }
         ProfilerLogImageEffect(visualEffectContainer, image, attr.src, outImage);
         if (outImage == nullptr) {
             ROSEN_LOGE("RSDrawingFilter::DrawImageRect outImage is null");
@@ -598,7 +611,7 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
         }
         return;
     }
-    if (geRender->IsGasifyFilter()) {
+    if (geRender->IsNeedExpansionFilter()) {
         Drawing::Rect rect;
         rect.SetTop(attr.dst.GetTop());
         rect.SetLeft(attr.dst.GetLeft());
@@ -606,6 +619,11 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
         rect.SetBottom(attr.src.GetHeight() + rect.GetTop());
         canvas.AttachBrush(brush);
         canvas.DrawImageRect(*outImage, attr.src, rect, Drawing::SamplingOptions());
+        canvas.DetachBrush();
+    } else if (isFrostedGlassFilter || HasCustomRegion()) {
+        Drawing::Rect rect(0, 0, outImage->GetWidth(), outImage->GetHeight());
+        canvas.AttachBrush(brush);
+        canvas.DrawImageRect(*outImage, rect, attr.dst, Drawing::SamplingOptions());
         canvas.DetachBrush();
     } else {
         canvas.AttachBrush(brush);

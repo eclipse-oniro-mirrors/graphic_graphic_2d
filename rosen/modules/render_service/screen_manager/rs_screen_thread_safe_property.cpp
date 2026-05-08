@@ -341,6 +341,12 @@ RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetMultiSurfaceC
     return { ScreenPropertyType::MULTI_SURFACE_CONFIGS, prop };
 }
 #endif
+RSScreenThreadSafeProperty::ResType RSScreenThreadSafeProperty::SetAsMainScreen(bool isMainScreen)
+{
+    UniqueLock lock(propertyMutex_);
+    auto prop = property_->Set<ScreenPropertyType::IS_MAIN_SCREEN>(isMainScreen);
+    return { ScreenPropertyType::IS_MAIN_SCREEN, prop };
+}
 
 ScreenId RSScreenThreadSafeProperty::GetId() const
 {
@@ -612,6 +618,11 @@ std::vector<SurfaceRegionConfig> RSScreenThreadSafeProperty::GetMultiSurfaceConf
     return property_->GetMultiSurfaceConfigs();
 }
 #endif
+bool RSScreenThreadSafeProperty::IsMainScreen() const
+{
+    SharedLock lock(propertyMutex_);
+    return property_->IsMainScreen();
+}
 
 ScreenInfo RSScreenThreadSafeProperty::GetScreenInfo() const
 {

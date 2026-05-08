@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <vector>
+#include "common/rs_common_def.h"
 #include "common/rs_occlusion_region.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_screen_render_node.h"
@@ -177,16 +178,6 @@ public:
         return isUIFirstDebugEnable_;
     }
 
-    void SetUIFirstCurrentFrameCanSkipFirstWait(bool canSkip)
-    {
-        isUIFirstCurrentFrameCanSkipFirstWait_ = canSkip;
-    }
-
-    bool GetUIFirstCurrentFrameCanSkipFirstWait() const
-    {
-        return isUIFirstCurrentFrameCanSkipFirstWait_;
-    }
-
     void SetTimestamp(uint64_t timestamp)
     {
         timestamp_ = timestamp;
@@ -325,13 +316,30 @@ public:
         return watermarkImg_;
     }
 
-    void SetWatermark(bool watermarkFlag, const std::shared_ptr<Drawing::Image>& watermarkImg)
+    void SetWatermark(bool watermarkFlag, const std::shared_ptr<Drawing::Image>& watermarkImg,
+        uint32_t rowCount = 0, uint32_t colCount = 0)
     {
         watermarkFlag_ = watermarkFlag;
         watermarkImg_ = watermarkImg;
+        watermarkRowCount_ = rowCount;
+        watermarkColCount_ = colCount;
     }
 
-    void SetWatermarks(std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>>& watermarks);
+    uint32_t GetWatermarkRowCount() const
+    {
+        return watermarkRowCount_;
+    }
+
+    uint32_t GetWatermarkColCount() const
+    {
+        return watermarkColCount_;
+    }
+
+    uint32_t GetWatermarkRowCount(const std::string& name) const;
+    uint32_t GetWatermarkColCount(const std::string& name) const;
+
+    void SetWatermarks(std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>>& watermarks,
+        std::unordered_map<std::string, std::pair<uint32_t, uint32_t>>& gridCounts);
 
     void SetOcclusionEnabled(bool isOcclusionEnabled)
     {
@@ -483,6 +491,26 @@ public:
         return isSecurityExemption_;
     }
 
+    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect)
+    {
+        for (auto screenId : screenIds) {
+            whiteListRect_[screenId].push_back(rect);
+        }
+    }
+
+    std::vector<RectI> GetWhiteListRectByScreenId(ScreenId screenId) const
+    {
+        if (auto iter = whiteListRect_.find(screenId); iter != whiteListRect_.end()) {
+            return iter->second;
+        }
+        return {};
+    }
+
+    void ClearWhiteListRect()
+    {
+        whiteListRect_.clear();
+    }
+
     bool IsOverDrawEnabled() const
     {
         return isOverDrawEnabled_;
@@ -606,6 +634,16 @@ public:
     }
 #endif
 
+    void SetDrawRelated(bool value)
+    {
+        isDrawRelated_ = value;
+    }
+
+    bool IsDrawRelated()
+    {
+        return isDrawRelated_;
+    }
+
 private:
     bool virtualDirtyRefresh_ = false;
     // Used by hardware thred
@@ -639,7 +677,6 @@ private:
     bool isOcclusionEnabled_ = false;
     CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;
     bool isUIFirstDebugEnable_ = false;
-    bool isUIFirstCurrentFrameCanSkipFirstWait_ = false;
     bool isVirtualDirtyDfxEnabled_ = false;
     bool isVirtualDirtyEnabled_ = false;
     bool isVirtualExpandScreenDirtyEnabled_ = false;
@@ -657,7 +694,10 @@ private:
     Occlusion::Region accumulatedDirtyRegion_;
     bool watermarkFlag_ = false;
     std::shared_ptr<Drawing::Image> watermarkImg_ = nullptr;
+    uint32_t watermarkRowCount_ = 0;
+    uint32_t watermarkColCount_ = 0;
     std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>> surfaceWatermarks_;
+    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> surfaceWatermarkGridCounts_;
     std::shared_ptr<RSSLRScaleFunction> slrManager_ = nullptr;
     RSPowerOffRenderController powerOffRenderController_;
     bool isOverDrawEnabled_ = false;
@@ -682,6 +722,7 @@ private:
     bool isImplicitAnimationEnd_ = false;
     bool discardJankFrames_ = false;
 
+    std::map<ScreenId, std::vector<RectI>> whiteListRect_;
     bool isSecurityExemption_ = false;
     // use to mark security display
     bool isSecurityDisplay_ = false;
@@ -692,6 +733,7 @@ private:
     bool cachedSurfaceNodeOnTheTree_{false};
     NodeId cachedSurfaceNodeId_{0};
 #endif
+    bool isDrawRelated_ = false;
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;
@@ -707,7 +749,11 @@ public:
     void SetRSRenderThreadParams(std::unique_ptr<RSRenderThreadParams>&& renderThreadParams);
     const std::unique_ptr<RSRenderThreadParams>& GetRSRenderThreadParams() const;
 private:
+#ifdef _WIN32
     static inline thread_local std::unique_ptr<RSRenderThreadParams> renderThreadParams_ = nullptr;
+#else
+    static thread_local std::unique_ptr<RSRenderThreadParams> renderThreadParams_;
+#endif
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_THREAD_PARAMS_H
