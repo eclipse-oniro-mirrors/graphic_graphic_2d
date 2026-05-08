@@ -651,5 +651,53 @@ HWTEST_F(RSComposerClientManagerTest, GetComposerClient_MultiThreadConcurrency_1
     EXPECT_EQ(foundCount.load(), threadCount * loopCount);
 }
 
+/**
+ * Function: PreAllocProtectedFrameBuffers_MultiThreadConcurrency_100Loops
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. create RSComposerClientManager and pre-add multiple clients
+ *                  2. create multiple threads to concurrently call PreAllocProtectedFrameBuffers 100 times each
+ *                  3. verify no crash or data race occurs during concurrent execution
+ */
+HWTEST_F(RSComposerClientManagerTest, PreAllocProtectedFrameBuffers_MultiThreadConcurrency_100Loops, TestSize.Level1)
+{
+    constexpr uint32_t threadCount = 4u;
+    constexpr uint32_t loopCount = 100u;
+    constexpr ScreenId baseScreenId = 1200u;
+
+    RSComposerClientManager mgr;
+
+    // Pre-add clients to ensure they exist in the map
+    std::vector<ScreenId> addedScreenIds;
+    for (uint32_t threadIdx = 0u; threadIdx < threadCount; threadIdx++) {
+        for (uint32_t loopIdx = 0u; loopIdx < loopCount; loopIdx++) {
+            ScreenId screenId = baseScreenId + threadIdx * loopCount + loopIdx;
+            mgr.AddComposerClient(screenId, MakeClient());
+            addedScreenIds.push_back(screenId);
+        }
+    }
+
+    std::vector<std::thread> threads;
+    std::atomic<uint32_t> successCount { 0u };
+
+    for (uint32_t threadIdx = 0u; threadIdx < threadCount; threadIdx++) {
+        threads.emplace_back([&, threadIdx]() {
+            for (uint32_t loopIdx = 0u; loopIdx < loopCount; loopIdx++) {
+                ScreenId screenId = addedScreenIds[threadIdx * loopCount + loopIdx];
+                sptr<SurfaceBuffer> buffer = nullptr;
+                mgr.PreAllocProtectedFrameBuffers(screenId, buffer);
+                successCount.fetch_add(1u);
+            }
+        });
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    EXPECT_EQ(successCount.load(), threadCount * loopCount);
+}
+
 } // namespace OHOS::Rosen
 
