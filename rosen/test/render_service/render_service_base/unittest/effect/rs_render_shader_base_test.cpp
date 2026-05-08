@@ -224,7 +224,7 @@ HWTEST_F(RSNGRenderShaderBaseTest, CheckEnableEDR001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetRotationAngle001
+ * @tc.name: SetRotationAngle
  * @tc.desc: test SetRotationAngle
  * @tc.type: FUNC
  */
@@ -259,7 +259,7 @@ HWTEST_F(RSNGRenderShaderBaseTest, SetRotationAngle001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetCornerRadius001
+ * @tc.name: SetCornerRadius
  * @tc.desc: test SetCornerRadius
  * @tc.type: FUNC
  */
