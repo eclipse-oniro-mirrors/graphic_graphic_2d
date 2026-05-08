@@ -22,30 +22,30 @@
 using namespace OHOS::Rosen;
 
 namespace OHOS::Rosen::Text {
-    typedef OH_Drawing_ErrorCode (*TypographyBoolSetter)(Typography*, bool);
-    typedef OH_Drawing_ErrorCode (*TypographyBoolGetter)(const Typography*, bool*);
+typedef OH_Drawing_ErrorCode (*TypographyBoolSetter)(Typography*, bool);
+typedef OH_Drawing_ErrorCode (*TypographyBoolGetter)(const Typography*, bool*);
 
-    OH_Drawing_ErrorCode SetForceReuseRasterResult(Typography* typography, bool value)
-    {
-        typography->SetForceReuseRasterResult(value);
-        return OH_DRAWING_SUCCESS;
-    }
+OH_Drawing_ErrorCode SetForceReuseRasterResult(Typography* typography, bool value)
+{
+    typography->SetForceReuseRasterResult(value);
+    return OH_DRAWING_SUCCESS;
+}
 
-    OH_Drawing_ErrorCode GetForceReuseRasterResult(const Typography* typography, bool* value)
-    {
-        *value = typography->GetForceReuseRasterResult();
-        return OH_DRAWING_SUCCESS;
-    }
+OH_Drawing_ErrorCode GetForceReuseRasterResult(const Typography* typography, bool* value)
+{
+    *value = typography->GetForceReuseRasterResult();
+    return OH_DRAWING_SUCCESS;
+}
 
-    static std::unordered_map<OH_Drawing_TypographyAttributeId, TypographyBoolSetter>
-        g_typographyBoolSetters = {
-            { TYPOGRAPH_ATTR_B_FORCE_REUSE_RASTER_RESULT, SetForceReuseRasterResult },
-        };
+static std::unordered_map<OH_Drawing_TypographyAttributeId, TypographyBoolSetter>
+    g_typographyBoolSetters = {
+        { TYPOGRAPH_ATTR_B_FORCE_REUSE_RASTER_RESULT, SetForceReuseRasterResult },
+    };
 
-    static std::unordered_map<OH_Drawing_TypographyAttributeId, TypographyBoolGetter>
-        g_typographyBoolGetters = {
-            { TYPOGRAPH_ATTR_B_FORCE_REUSE_RASTER_RESULT, GetForceReuseRasterResult },
-        };
+static std::unordered_map<OH_Drawing_TypographyAttributeId, TypographyBoolGetter>
+    g_typographyBoolGetters = {
+        { TYPOGRAPH_ATTR_B_FORCE_REUSE_RASTER_RESULT, GetForceReuseRasterResult },
+    };
 }
 
 OH_Drawing_ErrorCode OH_Drawing_SetTypographyAttributeBool(OH_Drawing_Typography* typography,

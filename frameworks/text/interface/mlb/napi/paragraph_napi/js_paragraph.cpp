@@ -1280,8 +1280,9 @@ napi_value JsParagraph::ForceReuseRasterResult(napi_env env, napi_callback_info 
 
 napi_value JsParagraph::OnForceReuseRasterResult(napi_env env, napi_callback_info info)
 {
-    NAPI_CHECK_AND_THROW_ERROR(paragraph_ != nullptr, TextErrorCode::ERROR_INVALID_PARAM, "Paragraph is null");
-
+    if (paragraph_ == nullptr) {
+        TEXT_LOGE("Null paragraph");
+    }
     size_t argc = ARGC_ONE;
     napi_value argv[ARGC_ONE] = {nullptr};
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);

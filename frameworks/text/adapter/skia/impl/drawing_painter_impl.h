@@ -78,7 +78,7 @@ private:
     std::function<bool(
         const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc_ = nullptr;
     std::vector<std::shared_ptr<HMSymbolRun>> hmSymbols_;
-    bool forceReuseRasterResult_ = false;
+    bool forceReuseRasterResult_{false};
 };
 } // namespace SPText
 } // namespace Rosen
