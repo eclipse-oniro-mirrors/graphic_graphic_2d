@@ -21,7 +21,7 @@
 
 using namespace OHOS::Rosen;
 
-// 辅助函数：将 ScreenInterfaceType 转换为字符串
+// ScreenInterfaceType to string
 const char* ScreenInterfaceTypeToString(ScreenInterfaceType type)
 {
     switch (type) {
@@ -64,25 +64,22 @@ const char* ScreenInterfaceTypeToString(ScreenInterfaceType type)
 
 int main()
 {
-    // 获取 RSInterfaces 实例
     RSInterfaces& rsIf = RSInterfaces::GetInstance();
 
-    // 1. 获取所有屏幕 ID
+    // 1. get all screen ID
     std::vector<ScreenId> screenIds = rsIf.GetAllScreenIds();
     std::cout << "GetAllScreenIds count: " << screenIds.size() << std::endl;
 
-    // 2. 手动追加 INVALID_SCREEN_ID
+    // 2. add INVALID_SCREEN_ID
     screenIds.push_back(INVALID_SCREEN_ID);
     std::cout << "After appending INVALID_SCREEN_ID, count: " << screenIds.size() << std::endl;
 
-    // 3. 对每个 screenId 进行 GetScreenCapability 测试并打印信息
+    // 3. tet screenId GetScreenCapability and print result
     for (ScreenId id : screenIds) {
         std::cout << "\n===== Screen ID: " << id << " =====" << std::endl;
 
-        // 调用 GetScreenCapability
         RSScreenCapability capability = rsIf.GetScreenCapability(id);
 
-        // 打印返回信息
         std::cout << "Name: " << capability.GetName() << std::endl;
         std::cout << "Type: " << ScreenInterfaceTypeToString(capability.GetType())
                   << " (" << static_cast<int>(capability.GetType()) << ")" << std::endl;
