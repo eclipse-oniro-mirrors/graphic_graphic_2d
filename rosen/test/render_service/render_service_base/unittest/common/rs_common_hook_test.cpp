@@ -251,4 +251,38 @@ HWTEST_F(RsCommonHookTest, IsImageEnhanceParamsValidTest, TestSize.Level1)
     RsCommonHook::Instance().imageEnhanceParams_ = { .isValid = false };
     EXPECT_FALSE(RsCommonHook::Instance().IsImageEnhanceParamsValid());
 }
+
+/**
+ * @tc.name: SetAndGetLayerPartRenderWhiteListTest
+ * @tc.desc: test results of SetLayerPartRenderWhiteList and GetLayerPartRenderWhiteList
+ * @tc.type: FUNC
+ * @tc.require: issueLayerPart
+ */
+HWTEST_F(RsCommonHookTest, SetAndGetLayerPartRenderWhiteListTest, TestSize.Level1)
+{
+    std::unordered_set<std::string> testWhiteList = {};
+    RsCommonHook::Instance().SetLayerPartRenderWhiteList(testWhiteList);
+    auto result1 = RsCommonHook::Instance().GetLayerPartRenderWhiteList();
+    EXPECT_EQ(result1.size(), 0u);
+
+    testWhiteList.insert("com.example.app1");
+    RsCommonHook::Instance().SetLayerPartRenderWhiteList(testWhiteList);
+    auto result2 = RsCommonHook::Instance().GetLayerPartRenderWhiteList();
+    EXPECT_EQ(result2.size(), 1u);
+    EXPECT_TRUE(result2.find("com.example.app1") != result2.end());
+
+    testWhiteList.insert("com.example.app2");
+    testWhiteList.insert("com.example.app3");
+    RsCommonHook::Instance().SetLayerPartRenderWhiteList(testWhiteList);
+    auto result3 = RsCommonHook::Instance().GetLayerPartRenderWhiteList();
+    EXPECT_EQ(result3.size(), 3u);
+    EXPECT_TRUE(result3.find("com.example.app1") != result3.end());
+    EXPECT_TRUE(result3.find("com.example.app2") != result3.end());
+    EXPECT_TRUE(result3.find("com.example.app3") != result3.end());
+
+    testWhiteList.clear();
+    RsCommonHook::Instance().SetLayerPartRenderWhiteList(testWhiteList);
+    auto result4 = RsCommonHook::Instance().GetLayerPartRenderWhiteList();
+    EXPECT_EQ(result4.size(), 0u);
+}
 } // namespace OHOS::Rosen

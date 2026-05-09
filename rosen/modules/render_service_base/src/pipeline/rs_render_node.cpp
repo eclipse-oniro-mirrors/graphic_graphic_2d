@@ -3795,6 +3795,20 @@ void RSRenderNode::MarkSuggestLayerPartRenderNode(bool isLayerPartRender)
     if (GetType() != RSRenderNodeType::SURFACE_NODE) {
         return;
     }
+    // Get bundleName from surface node for white list check
+    auto surfaceNode = ReinterpretCastTo<RSSurfaceRenderNode>();
+    std::string bundleName;
+    if (surfaceNode) {
+        bundleName = surfaceNode->GetBundleName();
+    }
+    // Check white list (cached static reference)
+    static const auto& whiteList = RsCommonHook::Instance().GetLayerPartRenderWhiteList();
+    bool isInWhiteList = whiteList.empty() || whiteList.find(bundleName) != whiteList.end();
+    if (!isInWhiteList) {
+        RS_LOGD("RSRenderNode::MarkSuggestLayerPartRenderNode bundleName:%{public}s not in white list, skip",
+            bundleName.c_str());
+        return;
+    }
     auto parent = GetParent().lock();
     if (parent != nullptr && parent->GetType() == RSRenderNodeType::SURFACE_NODE) {
         auto groundParent = parent->GetParent().lock();
@@ -3802,8 +3816,8 @@ void RSRenderNode::MarkSuggestLayerPartRenderNode(bool isLayerPartRender)
             groundParent->opincCache_.MarkSuggestLayerPartRenderNode(isLayerPartRender);
             groundParent->opincCache_.SetLayerPartRenderNodeStrategyType(
                 isLayerPartRender ? NodeStrategyType::NODE_GROUP : NodeStrategyType::CACHE_DISABLE);
-            RS_TRACE_NAME_FMT("MarkSuggestLayerPartRender id:%" PRIu64 ", isLayerPartRender:%d",
-                groundParent->GetId(), isLayerPartRender);
+            RS_TRACE_NAME_FMT("MarkSuggestLayerPartRender id:%" PRIu64 ", isLayerPartRender:%d, bundleName:%s",
+                groundParent->GetId(), isLayerPartRender, bundleName.c_str());
         }
     }
 }

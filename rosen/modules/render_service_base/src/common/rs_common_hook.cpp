@@ -221,4 +221,16 @@ std::string RsCommonHook::GetOverlappedHwcNodeInAppEnabledConfig(const std::stri
     }
     return "";
 }
+
+void RsCommonHook::SetLayerPartRenderWhiteList(const std::unordered_set<std::string>& whiteList)
+{
+    std::lock_guard<std::mutex> setMutex(mutexLock_);
+    layerPartRenderWhiteList_ = whiteList;
+}
+
+const std::unordered_set<std::string>& RsCommonHook::GetLayerPartRenderWhiteList() const
+{
+    std::lock_guard<std::mutex> setMutex(mutexLock_);
+    return layerPartRenderWhiteList_;
+}
 } // namespace OHOS::Rosen
