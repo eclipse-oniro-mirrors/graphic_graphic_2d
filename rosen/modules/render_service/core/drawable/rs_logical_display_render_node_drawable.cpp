@@ -404,7 +404,7 @@ void RSLogicalDisplayRenderNodeDrawable::DrawHardwareEnabledNodes(Drawing::Canva
 }
 
 void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRenderParams& params,
-    std::shared_ptr<RSUniRenderVirtualProcessor> processor)
+    std::shared_ptr<RSProcessor> processor)
 {
     RS_TRACE_FUNC();
     auto [_, screenParam] = GetScreenParams(params);

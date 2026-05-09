@@ -44,7 +44,6 @@ struct SurfaceFrameConfig {
     std::unique_ptr<RSRenderFrame> frame;
     std::shared_ptr<RSPaintFilterCanvas> canvas;
     RectI region;  // x, y, width, height in virtual screen coordinates
-    bool isValid = false;
 };
 
 class RSUniRenderVirtualProcessor : public RSUniRenderProcessor {
@@ -126,24 +125,26 @@ public:
 
     bool SetCropRectForMetadata(const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion);
 private:
-    void MergeMirrorFenceToHardwareEnabledDrawables();
+    void MergeMirrorFenceToHardwareEnabledDrawables(const sptr<SyncFence>& acquireFence);
     void SetVirtualScreenSize(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable);
     bool CheckIfBufferSizeNeedChange(ScreenRotation firstBufferRotation, ScreenRotation curBufferRotation);
     void OriginScreenRotation(ScreenRotation screenRotation, float width, float height);
     bool EnableSlrScale();
     GSError SetColorSpaceForMetadata(GraphicColorGamut colorSpace);
+    GDError SetColorSapceVecForMetadata(const std::vector<uint8_t>& colorSpaceVec);
 
     // Multi-surface private methods
     void RequestFramesForAllSurfaces(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable);
     void CopyToSecondarySurfaces();
     void FlushAllSurfaces();
+    void FlushGpu();
+    void FlushBuffer(sptr<SyncFence>& fence);
 
     static inline const std::map<GraphicColorGamut,
         HDI::Display::Graphic::Common::V1_0::CM_ColorSpaceType> COLORSPACE_TYPE {
             { GRAPHIC_COLOR_GAMUT_SRGB, HDI::Display::Graphic::Common::V1_0::CM_SRGB_LIMIT },
             { GRAPHIC_COLOR_GAMUT_DISPLAY_P3, HDI::Display::Graphic::Common::V1_0::CM_P3_LIMIT }
     };
-    std::unique_ptr<RSRenderFrame> renderFrame_;
     std::shared_ptr<RSPaintFilterCanvas> canvas_;
     bool forceCPU_ = false;
     float originalVirtualScreenWidth_ = 0.f; // used for recording the original virtual screen width

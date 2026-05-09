@@ -101,12 +101,12 @@ public:
     }
     void SetVirtualSurface(std::shared_ptr<RSSurface>& virtualSurface, uint64_t pSurfaceUniqueId)
     {
-        virtualSurface_ = virtualSurface;
-        virtualSurfaceUniqueId_ = pSurfaceUniqueId;
+        virtualSurfaces_[pSurfaceUniqueId] = virtualSurface;
     }
     std::shared_ptr<RSSurface> GetVirtualSurface(uint64_t pSurfaceUniqueId)
     {
-        return virtualSurfaceUniqueId_ != pSurfaceUniqueId ? nullptr : virtualSurface_;
+        auto it = virtualSurfaces_.find(pSurfaceUniqueId);
+        return it != virtualSurfaces_.end() ? it->second : nullptr;
     }
     bool SkipFrame(uint32_t refreshRate, const RSScreenProperty& screenProperty);
     bool IsRenderSkipIfScreenOff() const
@@ -186,7 +186,6 @@ private:
     bool isScreenNodeSkip_ = false;
     bool isScreenNodeSkipStatusChanged_ = false;
     bool useFixedOffscreenSurfaceSize_ = false;
-    uint64_t virtualSurfaceUniqueId_ = 0;
     // dirty manager
     std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
     std::vector<RectI> dirtyRects_;
@@ -195,7 +194,7 @@ private:
     static constexpr uint32_t BUFFER_SIZE = 4;
     bool surfaceCreated_ = false;
     std::shared_ptr<RSSurface> surface_ = nullptr;
-    std::shared_ptr<RSSurface> virtualSurface_ = nullptr;
+    std::map<uint64_t, std::shared_ptr<RSSurface>> virtualSurfaces_ = {};
     ScreenRotation firstBufferRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
 
     bool isMirrorSLRCopy_ = false;
