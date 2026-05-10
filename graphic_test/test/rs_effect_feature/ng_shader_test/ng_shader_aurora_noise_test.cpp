@@ -48,10 +48,10 @@ std::shared_ptr<RSCanvasNode> CreateEffectChildNode(const int i, const int colum
 {
     auto sizeX = (columnCount != 0) ? (SCREEN_WIDTH / columnCount) : SCREEN_WIDTH;
     auto sizeY = (rowCount != 0) ? (SCREEN_HEIGHT * columnCount / rowCount) : SCREEN_HEIGHT;
- 
+
     int x = (columnCount != 0) ? (i % columnCount) * sizeX : 0;
     int y = (columnCount != 0) ? (i / columnCount) * sizeY : 0;
- 
+
     auto effectChildNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     effectChildNode->SetBounds(x, y, sizeX, sizeY);
     effectChildNode->SetFrame(x, y, sizeX, sizeY);
