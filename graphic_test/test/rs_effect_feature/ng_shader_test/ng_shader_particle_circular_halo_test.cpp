@@ -32,7 +32,7 @@ void InitParticleCircularHalo(std::shared_ptr<RSNGParticleCircularHalo>& particl
     // Center
     particleCircularHalo->Setter<ParticleCircularHaloCenterTag>(Vector2f{0.5f, 0.5f});
     // Radius
-    particleCircularHalo->Setter<ParticleCircularHaloRadiusTag>(50.0f);
+    particleCircularHalo->Setter<ParticleCircularHaloRadiusTag>(0.5f);
     // Noise
     particleCircularHalo->Setter<ParticleCircularHaloNoiseTag>(0.5f);
 }
@@ -45,15 +45,17 @@ const int SCREEN_HEIGHT = 2000;
 // Center positions
 const std::vector<Vector2f> centers = {
     Vector2f{0.0f, 0.0f},
-    Vector2f{600.0f, 1000.0f},
-    Vector2f{1200.0f, 2000.0f}
+    Vector2f{0.5f, 0.5f},
+    Vector2f{1.0f, 1.0f}
 };
 
 // Radius values
-const std::vector<float> radii = {0.0f, 50.0f, 200.0f, 500.0f};
+const std::vector<float> radii = {0.1f, 0.2f, 0.5f};
 
 // Noise values
 const std::vector<float> noises = {0.0f, 0.3f, 0.5f, 1.0f};
+
+const std::vector<float> noiseValues = {0.0f, 0.3f, 0.5f, 0.7f, 1.0f};
 
 std::shared_ptr<RSCanvasNode> CreateEffectChildNode(const int i, const int columnCount, const int rowCount,
     std::shared_ptr<RSEffectNode>& effectNode, std::shared_ptr<RSNGParticleCircularHalo>& particleCircularHalo)
@@ -127,6 +129,7 @@ GRAPHIC_TEST(NGShaderParticleCircularHaloTest, EFFECT_TEST, Set_Particle_Circula
 {
     const size_t columnCount = 1;
     const size_t rowCount = 1;
+    auto effectNode = SetUpEffectNode();
 
     for (size_t i = 0; i < radii.size(); i++) {
         auto particleHalo = std::make_shared<RSNGParticleCircularHalo>();
@@ -143,6 +146,7 @@ GRAPHIC_TEST(NGShaderParticleCircularHaloTest, EFFECT_TEST, Set_Particle_Circula
 {
     const size_t columnCount = 1;
     const size_t rowCount = 1;
+    auto effectNode = SetUpEffectNode();
 
     for (size_t i = 0; i < noises.size(); i++) {
         auto particleHalo = std::make_shared<RSNGParticleCircularHalo>();
@@ -160,6 +164,8 @@ GRAPHIC_TEST(NGShaderParticleCircularHaloTest, EFFECT_TEST, Set_Particle_Circula
     const size_t columnCount = 4;
     const size_t rowCount = 1;
     const std::vector<float> extremeValues = {-1.0f, -10.0f, 9999.0f, 1e10f};
+    auto effectNode = SetUpEffectNode();
+    
     for (size_t i = 0; i < extremeValues.size(); i++) {
         auto particleHalo = std::make_shared<RSNGParticleCircularHalo>();
         InitParticleCircularHalo(particleHalo);
