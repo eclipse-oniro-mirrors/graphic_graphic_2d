@@ -16,6 +16,8 @@
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
 #include "ui_effect/property/include/rs_ui_shader_base.h"
+#include "ui/rs_effect_node.h"
+#include "rs_graphic_test_director.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -53,9 +55,8 @@ const std::vector<float> radii = {0.0f, 50.0f, 200.0f, 500.0f};
 // Noise values
 const std::vector<float> noises = {0.0f, 0.3f, 0.5f, 1.0f};
 
-std::shared_ptr<RSCanvasNode> CreateEffectChildNode(const int i, const int columnCount,
-    const int rowCount, std::shared_ptr<RSEffectNode>& effectNode,
-    std::shared_ptr<RSNGParticleCircularHalo>& particleCircularHalo)
+std::shared_ptr<RSCanvasNode> CreateEffectChildNode(const int i, const int columnCount, const int rowCount,
+    std::shared_ptr<RSEffectNode>& effectNode, std::shared_ptr<RSNGParticleCircularHalo>& particleCircularHalo)
 {
     auto sizeX = (columnCount != 0) ? (SCREEN_WIDTH / columnCount) : SCREEN_WIDTH;
     auto sizeY = (rowCount != 0) ? (SCREEN_HEIGHT * columnCount / rowCount) : SCREEN_HEIGHT;
@@ -63,11 +64,10 @@ std::shared_ptr<RSCanvasNode> CreateEffectChildNode(const int i, const int colum
     int x = (columnCount != 0) ? (i % columnCount) * sizeX : 0;
     int y = (columnCount != 0) ? (i / columnCount) * sizeY : 0;
 
-    auto effectChildNode = RSCanvasNode::Create();
+    auto effectChildNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     effectChildNode->SetBounds(x, y, sizeX, sizeY);
     effectChildNode->SetFrame(x, y, sizeX, sizeY);
-    effectChildNode->SetCornerRadius(0.f);
-    effectChildNode->SetBackgroundNGShader(particleCircularHalo);
+    effectChildNode->SetOverlayNGShader(particleCircularHalo);
     effectNode->AddChild(effectChildNode);
     return effectChildNode;
 }
@@ -89,14 +89,14 @@ public:
 
     std::shared_ptr<RSEffectNode> SetUpEffectNode()
     {
-        auto backgroundTestNode = SetUpNodeBgImage(BACKGROUND_IMAGE_PATH, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
-        auto effectNode = RSEffectNode::Create();
+        auto backgroundTestNode = SetUpNodeBgImage(TEST_IMAGE_PATH, {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
+        auto effectNode = RSEffectNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         effectNode->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
         effectNode->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
-        std::shared_ptr<Rosen::RSFilter> backFilter = Rosen::RSFilter::CreateMaterialFilter(BLUR_RADIUS, 1, 1, 0,
+        std::shared_ptr<Rosen::RSFilter> backFilter = Rosen::RSFilter::CreateMaterialFilter(10.f, 1, 1, 0,
             BLUR_COLOR_MODE::DEFAULT, true);
         effectNode->SetBackgroundFilter(backFilter);
-        effectNode->SetClipToBounds(true);
+        effectNode->SetClipToBounds(false);
         GetRootNode()->AddChild(backgroundTestNode);
         backgroundTestNode->AddChild(effectNode);
         RegisterNode(effectNode);
