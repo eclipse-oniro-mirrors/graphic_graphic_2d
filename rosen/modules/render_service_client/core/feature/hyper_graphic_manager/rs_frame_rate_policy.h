@@ -16,9 +16,10 @@
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_FRAME_RATE_POLICY_H
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
-#include <memory>
+
 #include "transaction/rs_hgm_config_data.h"
 
 namespace OHOS {
@@ -59,7 +60,7 @@ public:
     int32_t GetExpectedFrameRate(const RSPropertyUnit unit, float velocity);
     bool GetTouchOrPointerAction(int32_t pointerAction);
 
-    std::unordered_set<std::string> GetPageNameList() const;
+std::unordered_set<std::string> GetPageNameList() const;
 
 private:
     RSFrameRatePolicy() = default;
