@@ -150,7 +150,7 @@ public:
 
     int64_t GetVSyncPeriod() const;
     bool SetVSyncRate(int32_t vsyncRate);
-int32_t GetVSyncRate() const;
+    int32_t GetVSyncRate() const;
 
 private:
     RSDisplaySoloistManager() = default;
