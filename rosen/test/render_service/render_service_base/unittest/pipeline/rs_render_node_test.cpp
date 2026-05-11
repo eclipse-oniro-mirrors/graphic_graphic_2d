@@ -16,6 +16,7 @@
 #include "gmock/gmock.h"
 #include <gtest/gtest.h>
 
+#include "animation/rs_render_curve_animation.h"
 #include "common/rs_common_def.h"
 #include "common/rs_common_hook.h"
 #include "common/rs_obj_abs_geometry.h"
@@ -51,12 +52,28 @@ const std::string OUT_STR1 =
     "DISPLAY_NODERS_NODESURFACE_NODECANVAS_NODEROOT_NODEPROXY_NODECANVAS_DRAWING_NODEEFFECT_NODEUNKNOWN_NODE";
 const std::string OUT_STR2 =
     "| RS_NODE[0], instanceRootNodeId[0], SharedTransitionParam: [0 -> 0], [nodeGroup1], uifirstRootNodeId_: 1, "
-    "Properties: Bounds[-inf -inf -inf -inf] Frame[-inf -inf -inf -inf], NodeColorSpace: 4, "
+    "Properties: Bounds[-inf -inf -inf -inf] Frame[-inf -inf -inf -inf]"
+    ", hasDecoration: 0, hasClipRRect: 0, hasGeoTrans: 0"
+    ", rrect[-inf -inf -inf -inf rx:0.0 ry:0.0]"
+    ", NodeColorSpace: 4, "
     "RSUIContextToken: NO_RSUIContext, "
-    "GetBootAnimation: true, isContainBootAnimation: true, isNodeDirty: 1, isPropertyDirty: true, "
+    "GetBootAnimation: true, isContainBootAnimation: true, "
+    "isNewOnTree: 0, isSelfDrawingNode: 0, selfAddForSubSurfaceCnt: 0, "
+    "visitedForSubSurfaceCnt: 0, isNodeSingleFrameComposer: 0, singleFrameComposer: 0, "
+    "appPid: 0, renderNodeSaveCount: [-1,-1,-1], globalAlpha: 1.000000, isPurgeable: 0, "
+    "isAccessibilityConfigChanged: 0, drawableVecNeedClear: 0, subSurfaceCnt: 0, nodeName: [], "
+    "isNodeDirty: 1, isPropertyDirty: true, "
     "isSubTreeDirty: true, IsPureContainer: true, Children list needs update, current count: 0 expected count: 0, "
     "disappearingChildren: 1(0 )\n  | RS_NODE[0], instanceRootNodeId[0], Properties: Bounds[-inf -inf -inf -inf] "
-    "Frame[-inf -inf -inf -inf], NodeColorSpace: 4, RSUIContextToken: NO_RSUIContext, IsPureContainer: true\n";
+    "Frame[-inf -inf -inf -inf]"
+    ", hasDecoration: 0, hasClipRRect: 0, hasGeoTrans: 0"
+    ", rrect[-inf -inf -inf -inf rx:0.0 ry:0.0]"
+    ", NodeColorSpace: 4, RSUIContextToken: NO_RSUIContext, "
+    "isNewOnTree: 0, isSelfDrawingNode: 0, selfAddForSubSurfaceCnt: 0, "
+    "visitedForSubSurfaceCnt: 0, isNodeSingleFrameComposer: 0, singleFrameComposer: 0, "
+    "appPid: 0, renderNodeSaveCount: [-1,-1,-1], globalAlpha: 1.000000, isPurgeable: 0, "
+    "isAccessibilityConfigChanged: 0, drawableVecNeedClear: 0, subSurfaceCnt: 0, nodeName: [], "
+    "IsPureContainer: true\n";
 const int DEFAULT_BOUNDS_SIZE = 10;
 const int DEFAULT_NODE_ID = 1;
 const NodeId TARGET_NODE_ID = 9999999999;
@@ -135,6 +152,9 @@ HWTEST_F(RSRenderNodeTest, UpdateRenderStatus001, TestSize.Level1)
     RectI dirtyRegion;
     bool isPartialRenderEnabled = false;
     node.UpdateRenderStatus(dirtyRegion, isPartialRenderEnabled);
+
+    isPartialRenderEnabled = true;
+    ASSERT_TRUE(node.UpdateRenderStatus(dirtyRegion, isPartialRenderEnabled));
 }
 
 /**
@@ -3534,7 +3554,6 @@ HWTEST_F(RSRenderNodeTest, UpdateDirtyRegionInfoForDFX001, TestSize.Level1)
     auto canvasNode = std::make_shared<RSCanvasRenderNode>(DEFAULT_NODE_ID, context);
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     canvasNode->lastFrameSubTreeSkipped_ = true;
-    canvasNode->subTreeDirtyRegion_ = RectI(0, 0, DEFAULT_BOUNDS_SIZE, DEFAULT_BOUNDS_SIZE);
     // 'resize' added to avoid segmentation fault crash in
     // the RSDirtyRegionManager::UpdateDirtyRegionInfoForDfx() in line
     // dirtyCanvasNodeInfo_[dirtyType].emplace(std::make_pair(id, rect))
@@ -3921,9 +3940,6 @@ HWTEST_F(RSRenderNodeTest, SyncWhiteListInfoToParent, TestSize.Level1)
     parent = std::make_shared<RSRenderNode>(id + 1);
     node->SetParent(parent);
     ASSERT_NE(node->parent_.lock(), nullptr);
-    ScreenId screenId = 1;
-    node->screensWithSubTreeWhitelist_.insert(screenId);
-    node->SyncWhiteListInfoToParent();
 }
 
 /*
@@ -4395,6 +4411,79 @@ HWTEST_F(RSRenderNodeTest, GetNodeColorSpaceForceSRGBTest, TestSize.Level1)
 
     RsCommonHook::Instance().SetForceSRGBOutput(false);
     EXPECT_EQ(nodeTest->GetNodeColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+}
+
+/**
+ * @tc.name: HasAnimation001
+ * @tc.desc: Verify HasAnimation returns false when animationManager is null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, HasAnimation001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(id, context);
+    // Fresh node, animationManager_ is nullptr
+    EXPECT_FALSE(node->HasAnimation());
+}
+
+/**
+ * @tc.name: HasAnimation002
+ * @tc.desc: Verify HasAnimation returns true when animationManager has animations
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, HasAnimation002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasRenderNode>(id, context);
+    // Add animation to make animationManager_ non-null and non-empty
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    node->AddAnimation(animation);
+    EXPECT_TRUE(node->HasAnimation());
+}
+
+/**
+ * @tc.name: DumpTreeWithAnimationManager001
+ * @tc.desc: Verify DumpTree with non-null animationManager
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, DumpTreeWithAnimationManager001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasRenderNode>(id, context);
+    // Add animation to make animationManager_ non-null
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    node->AddAnimation(animation);
+    ASSERT_NE(node->GetAnimationManager(), nullptr);
+
+    std::string out;
+    node->DumpTree(0, out);
+    EXPECT_FALSE(out.empty());
+}
+
+/**
+ * @tc.name: ApplyModifiersWithAnimationManager001
+ * @tc.desc: Verify ApplyModifiers with non-null animationManager
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, ApplyModifiersWithAnimationManager001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasRenderNode>(id, context);
+    // Add animation to make animationManager_ non-null
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    node->AddAnimation(animation);
+    ASSERT_NE(node->GetAnimationManager(), nullptr);
+
+    node->ApplyModifiers();
 }
 
 /**

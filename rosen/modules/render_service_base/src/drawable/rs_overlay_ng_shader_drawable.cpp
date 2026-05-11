@@ -256,6 +256,8 @@ void RSOverlayNGShaderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::R
     RSTagTracker tagTracker(canvas ? canvas->GetGPUContext() : nullptr,
         RSTagTracker::SOURCETYPE::SOURCE_RSPOINTLIGHTDRAWABLE);
 #endif
+    canvas->Save();
+    canvas->ResetClip();
     if (visualEffectContainer_ != nullptr && rect != nullptr) {
         auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
 
@@ -267,6 +269,7 @@ void RSOverlayNGShaderDrawable::OnDraw(Drawing::Canvas* canvas, const Drawing::R
     } else {
         DrawLight(canvas);
     }
+    canvas->Restore();
 }
 
 bool RSOverlayNGShaderDrawable::OnUpdate(const RSRenderNode& node)
@@ -303,7 +306,7 @@ bool RSOverlayNGShaderDrawable::OnUpdate(const RSRenderNode& node)
     stagingRRect_ = RRect(properties.GetRRect());
     stagingNodeId_ = node.GetId();
     stagingScreenNodeId_ = node.GetScreenNodeId();
-    auto sdfShape = properties.GetSDFShape();
+    auto sdfShape = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
     if (sdfShape) {
         std::shared_ptr<Drawing::GEVisualEffect> geVisualEffect = sdfShape->GenerateGEVisualEffect();
         std::shared_ptr<Drawing::GEShaderShape> geShape =

@@ -56,6 +56,8 @@ declare_args() {
   graphic_2d_feature_enable_memory_info_manager = false
   graphic_2d_feature_enable_dvsync = false
   graphic_2d_feature_enable_memory_downtree = false
+  graphic_2d_feature_enable_drm = false
+  graphic_2d_feature_enable_mediacommon = false
   graphic_2d_feature_enable_image_detail_enhancer = false
   graphic_2d_feature_rs_modifiers_draw_enable = false
 
@@ -87,6 +89,7 @@ if (is_ios && is_arkui_x) {
 }
 
 if (graphic_2d_feature_product == "phone" ||
+    graphic_2d_feature_product == "pc" ||
     graphic_2d_feature_product == "tablet" ||
     graphic_2d_feature_product == "wearable") {
   graphic_2d_feature_enable_opinc = true

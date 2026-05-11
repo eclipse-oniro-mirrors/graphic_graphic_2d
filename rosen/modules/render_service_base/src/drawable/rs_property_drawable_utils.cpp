@@ -490,7 +490,7 @@ void RSPropertyDrawableUtils::BeginForegroundFilter(RSPaintFilterCanvas& canvas,
 }
 
 void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
-    const std::shared_ptr<RSFilter>& rsFilter)
+    const std::shared_ptr<RSFilter>& rsFilter, std::optional<RectF> drawRect)
 {
     RS_OPTIONAL_TRACE_NAME("DrawForegroundFilter restore");
     auto surface = canvas.GetSurface();
@@ -514,10 +514,14 @@ void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
         return;
     }
 
+    Drawing::Rect dst = drawRect.has_value() ? Rect2DrawingRect(drawRect.value()) :
+        Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight());
+
     if (rsFilter->IsDrawingFilter()) {
         auto rsDrawingFilter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
+        rsDrawingFilter->SetDisableFilterCache(canvas.GetDisableFilterCache());
         rsDrawingFilter->DrawImageRect(canvas, imageSnapshot, Drawing::Rect(0, 0, imageSnapshot->GetWidth(),
-            imageSnapshot->GetHeight()), Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight()));
+            imageSnapshot->GetHeight()), dst);
         return;
     }
 
@@ -531,7 +535,7 @@ void RSPropertyDrawableUtils::DrawForegroundFilter(RSPaintFilterCanvas& canvas,
     }
 
     foregroundFilter->DrawImageRect(canvas, imageSnapshot, Drawing::Rect(0, 0, imageSnapshot->GetWidth(),
-        imageSnapshot->GetHeight()), Drawing::Rect(0, 0, imageSnapshot->GetWidth(), imageSnapshot->GetHeight()));
+        imageSnapshot->GetHeight()), dst);
 }
 
 int RSPropertyDrawableUtils::GetAndResetBlurCnt()
@@ -1845,7 +1849,7 @@ void RSPropertyDrawableUtils::ApplySDFShapeToEffect(const RSProperties& properti
     if (!shader) {
         return;
     }
-    auto sdfShape = properties.GetSDFShape();
+    auto sdfShape = GetResolvedSDFShape(properties);
     if (shader->GetType() == RSNGEffectType::SDF_EDGE_LIGHT_EFFECT) {
         const auto& effectShader = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
         if (sdfShape) {
@@ -1863,6 +1867,26 @@ void RSPropertyDrawableUtils::ApplySDFShapeToEffect(const RSProperties& properti
             RSNGRenderShapeHelper::CalcRect(sdfRRectShape, properties.GetBoundsRect());
         }
     }
+}
+
+std::shared_ptr<RSNGRenderShapeBase> RSPropertyDrawableUtils::GetResolvedSDFShape(const RSProperties& properties)
+{
+    auto sdfShape = properties.GetSDFShape();
+    if (!sdfShape || sdfShape->GetType() != RSNGEffectType::SDF_DISTORT_OP_SHAPE) {
+        return sdfShape;
+    }
+    auto foregroundFilter = properties.GetForegroundFilter();
+    if (!foregroundFilter || !foregroundFilter->IsDrawingFilter()) {
+        return sdfShape;
+    }
+    auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(foregroundFilter);
+    auto renderFilter = drawingFilter->GetNGRenderFilter();
+    if (!renderFilter || renderFilter->GetType() != RSNGEffectType::DISTORTION_COLLAPSE) {
+        return sdfShape;
+    }
+    auto distortOpShape = std::static_pointer_cast<RSNGRenderSDFDistortOpShape>(sdfShape);
+    auto innerShape = distortOpShape->Getter<SDFDistortOpShapeShapeRenderTag>()->Get();
+    return innerShape ? innerShape : sdfShape;
 }
 
 void RSPropertyDrawableUtils::ApplySDFShapeToMagnifier(

@@ -41,11 +41,20 @@ if (enable_compiler_rust) {
     sources = [ "rust/src/lib.rs" ]
   }
 
-  ohos_rust_static_ffi("particle_cxx_rust") {
-    sources = [ "rust/src/lib.rs" ]
-    external_deps = [ "rust_cxx:lib" ]
-    part_name = "graphic_2d"
-    subsystem_name = "graphic"
+  if (is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path)) {
+    ohos_rust_shared_ffi("particle_cxx_rust") {
+      sources = [ "rust/src/lib.rs" ]
+      external_deps = [ "rust_cxx:lib" ]
+      part_name = "graphic_2d"
+      subsystem_name = "graphic"
+    }
+  } else {
+    ohos_rust_static_ffi("particle_cxx_rust") {
+      sources = [ "rust/src/lib.rs" ]
+      external_deps = [ "rust_cxx:lib" ]
+      part_name = "graphic_2d"
+      subsystem_name = "graphic"
+    }
   }
 
   ohos_static_library("particle_cxx_cppdeps") {
@@ -135,6 +144,7 @@ ohos_source_set("render_service_base_src") {
     "src/modifier_ng/appearance/rs_hdr_brightness_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_mask_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_material_filter_render_modifier.cpp",
+    "src/modifier_ng/appearance/rs_material_shader_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_outline_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_particle_effect_render_modifier.cpp",
     "src/modifier_ng/appearance/rs_pixel_stretch_render_modifier.cpp",
@@ -415,6 +425,7 @@ ohos_source_set("render_service_base_src") {
     "src/feature/buffer_reclaim/rs_buffer_reclaim.cpp",
     "src/feature/uifirst/rs_frame_control.cpp",
     "src/feature/uifirst/rs_drawable_updater.cpp",
+    "src/feature/behind_window_filter/rs_behind_window_filter_manager.cpp",
 
     #dirty_region
     "src/dirty_region/rs_filter_dirty_collector.cpp",
@@ -427,6 +438,7 @@ ohos_source_set("render_service_base_src") {
       #drawable
       "src/drawable/rs_color_picker_drawable.cpp",
       "src/drawable/rs_drawable.cpp",
+      "src/drawable/rs_material_shader_drawable.cpp",
       "src/drawable/rs_misc_drawable.cpp",
       "src/drawable/rs_property_drawable.cpp",
       "src/drawable/rs_property_drawable_background.cpp",
@@ -575,7 +587,7 @@ ohos_source_set("render_service_base_src") {
     }
   }
 
-  if (graphic_2d_feature_product != "wearable") {
+  if (graphic_2d_feature_enable_drm) {
     defines += [ "IS_ENABLE_DRM" ]
   }
 
@@ -636,6 +648,13 @@ ohos_source_set("render_service_base_src") {
     "$rosen_root/modules/platform:ipc_core",
   ]
 
+  if (is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path)) {
+    deps += [
+      "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
+    ]
+  }
+
+
   if (is_arkui_x) {
     deps += [ "//foundation/graphic/graphics_effect:libgraphics_effect" ]
   }
@@ -695,6 +714,10 @@ ohos_source_set("render_service_base_src") {
   if (graphic_2d_feature_mhc_enable) {
     include_dirs += graphic_2d_mhc_configs.librender_service_mhc_include
     sources += graphic_2d_mhc_configs.librender_service_mhc_sources
+  }
+
+  if (graphic_2d_feature_enable_mediacommon) {
+    defines += [ "RS_GRAPHIC_MEDIACOMMON_ENABLE" ]
   }
 
   if (use_video_processing_engine) {
@@ -861,10 +884,17 @@ config("render_service_base_link_config") {
       }
     }
     if (target_cpu == "arm64" && defined(build_ext_path)) {
-      ldflags += [ 
+      render_service_base_version_script =
+        rebase_path("//foundation/graphic/graphic_2d/rosen/modules/render_service_base/librender_service_base.versionscript",
+                    root_build_dir)
+      ldflags += [
+        "-Wl,--version-script=${render_service_base_version_script}",
         "-Wl,--emit-relocs",
-        "-Wl,--no-relax", 
-        "-mno-fix-cortex-a53-843419" 
+        "-Wl,--no-relax",
+        "-mno-fix-cortex-a53-843419",
+        "-Wl,--exclude-libs=libunwind.a",
+        "-Wl,--exclude-libs=libunwind_llvm.a",
+        "-Wl,--exclude-libs=libc++_static.a"
       ]
     }
   }

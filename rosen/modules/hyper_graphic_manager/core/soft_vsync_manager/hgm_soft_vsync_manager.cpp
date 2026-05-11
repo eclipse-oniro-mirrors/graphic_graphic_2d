@@ -141,6 +141,7 @@ void HgmSoftVSyncManager::SetWindowExpectedRefreshRate(pid_t pid,
                 vsyncName.c_str(), eventInfo.eventStatus);
             HGM_LOGI("disable frame split update, vsyncName:%{public}s, status:%{public}d",
                 vsyncName.c_str(), eventInfo.eventStatus);
+            continue;
         }
 
         if (auto vsyncLinker = vsyncLinkerMap_.find(vsyncName); vsyncLinker != vsyncLinkerMap_.end()) {
@@ -364,7 +365,7 @@ void HgmSoftVSyncManager::SetQosVSyncRate(const uint32_t currRefreshRate,
     for (const auto& data : appChangeData_) {
         auto linkerId = data.first;
         auto prefer = data.second;
-        
+
         auto linker = appFrameRateLinkers.find(linkerId);
         if (linker != appFrameRateLinkers.end()  && appDistributor_ != nullptr && linker->second != nullptr) {
             // perfer equals 0 means keeping the original rhythm without skipping, just pass 1

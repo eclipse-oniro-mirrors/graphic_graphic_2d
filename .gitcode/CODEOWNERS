@@ -126,6 +126,8 @@ rosen/modules/render_service_base/include/drawable/ @xiaojianfeng_jeffery
 rosen/modules/render_service_base/src/drawable/ @xiaojianfeng_jeffery
 rosen/modules/render_service_base/include/drawable/rs_color_picker_drawable.h @hanamaru
 rosen/modules/render_service_base/src/drawable/rs_color_picker_drawable.cpp @hanamaru
+rosen/modules/render_service_base/include/drawable/rs_overlay_ng_shader_drawable.h @hanamaru
+rosen/modules/render_service_base/src/drawable/rs_overlay_ng_shader_drawable.cpp @hanamaru
 
 [effect]
 rosen/modules/render_service_client/core/ui_effect/ @hanamaru
@@ -218,10 +220,10 @@ rosen/modules/render_service_base/include/common/rs_common_def.h @huang_kaixing
 rosen/modules/render_service_base/include/platform/ohos/rs_iclient_to_service_connection_ipc_interface_code.h @huang_kaixing
 
 [HWC]
-rosen/modules/render_service/core/pipeline/hwc/ @wh_qwe
-rosen/modules/render_service/core/feature/hwc/ @wh_qwe
-rosen/modules/render_service_base/include/hwc/ @wh_qwe
-rosen/modules/render_service_base/src/hwc/ @wh_qwe
+rosen/modules/render_service/core/pipeline/hwc/ @xiaojianfeng_jeffery
+rosen/modules/render_service/core/feature/hwc/ @xiaojianfeng_jeffery
+rosen/modules/render_service_base/include/hwc/ @xiaojianfeng_jeffery
+rosen/modules/render_service_base/src/hwc/ @xiaojianfeng_jeffery
 
 [LTPO]
 interfaces/inner_api/hyper_graphic_manager/ @wh_qwe

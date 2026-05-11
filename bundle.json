@@ -64,6 +64,8 @@
         "graphic_2d_feature_enable_rdo",
         "graphic_2d_feature_enable_memory_info_manager",
         "graphic_2d_feature_enable_memory_downtree",
+        "graphic_2d_feature_enable_drm",
+        "graphic_2d_feature_enable_mediacommon",
         "graphic_2d_feature_enable_image_detail_enhancer"
       ],
       "rom": "10000KB",
@@ -75,6 +77,7 @@
         "components": [
           "window_manager",
           "resource_management",
+          "api_metrics",
           "napi",
           "samgr",
           "hdf_core",

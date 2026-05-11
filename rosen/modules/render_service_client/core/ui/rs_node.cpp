@@ -75,6 +75,7 @@
 #include "modifier_ng/appearance/rs_overlay_ng_shader_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 #include "modifier_ng/appearance/rs_material_filter_modifier.h"
+#include "modifier_ng/appearance/rs_material_shader_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_modifier.h"
 #include "modifier_ng/background/rs_background_color_modifier.h"
@@ -1821,6 +1822,21 @@ void RSNode::SetBorderDashGap(const Vector4f& dashGap)
     SetPropertyNG<ModifierNG::RSBorderModifier, &ModifierNG::RSBorderModifier::SetBorderDashGap>(dashGap);
 }
 
+void RSNode::SetBorderSDFShader(const std::shared_ptr<RSNGShaderBase>& shader)
+{
+    if (!shader) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::BORDER);
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::BORDER_SDF_SHADER)) {
+            return;
+        }
+        modifier->DetachProperty(ModifierNG::RSPropertyType::BORDER_SDF_SHADER);
+        return;
+    }
+    SetPropertyNG<ModifierNG::RSBorderModifier, &ModifierNG::RSBorderModifier::SetBorderSDFShader>(shader);
+}
+
 void RSNode::SetOuterBorderColor(const Vector4<Color>& color)
 {
     SetOutlineColor(color);
@@ -1871,6 +1887,21 @@ void RSNode::SetOutlineDashGap(const Vector4f& dashGap)
 void RSNode::SetOutlineRadius(const Vector4f& radius)
 {
     SetPropertyNG<ModifierNG::RSOutlineModifier, &ModifierNG::RSOutlineModifier::SetOutlineRadius>(radius);
+}
+
+void RSNode::SetOutlineSDFShader(const std::shared_ptr<RSNGShaderBase>& shader)
+{
+    if (!shader) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::OUTLINE);
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::OUTLINE_SDF_SHADER)) {
+            return;
+        }
+        modifier->DetachProperty(ModifierNG::RSPropertyType::OUTLINE_SDF_SHADER);
+        return;
+    }
+    SetPropertyNG<ModifierNG::RSOutlineModifier, &ModifierNG::RSOutlineModifier::SetOutlineSDFShader>(shader);
 }
 
 bool RSNode::RegisterColorPickerCallback(uint64_t interval, ColorPickerCallback callback, uint32_t notifyThreshold)
@@ -2203,10 +2234,18 @@ void RSNode::SetUIForegroundFilter(const OHOS::Rosen::Filter* foregroundFilter)
             continue;
         }
         if (filterPara->GetParaType() == FilterPara::BLUR) {
-            paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::FG_BLUR)]++;
             auto filterBlurPara = std::static_pointer_cast<FilterBlurPara>(filterPara);
             auto blurRadius = filterBlurPara->GetRadius();
-            SetForegroundEffectRadius(blurRadius);
+            auto filter = RSNGFilterHelper::CreateNGBlurFilter(blurRadius, blurRadius);
+            if (filter == nullptr) {
+                ROSEN_LOGE("CreateNGBlurFilter filter is nullptr");
+                continue;
+            }
+            if (headFilter) {
+                headFilter->Append(filter);
+            } else {
+                headFilter = filter;
+            }
         }
         if (filterPara->GetParaType() == FilterPara::FLY_OUT) {
             paramCounts[static_cast<size_t>(SetUIXXFilterCascadeType::FLY_OUT)]++;
@@ -2460,6 +2499,22 @@ void RSNode::SetForegroundShader(const std::shared_ptr<RSNGShaderBase>& foregrou
     }
     SetPropertyNG<ModifierNG::RSForegroundShaderModifier,
         &ModifierNG::RSForegroundShaderModifier::SetForegroundShader>(foregroundShader);
+}
+
+void RSNode::SetMaterialShader(const std::shared_ptr<RSNGShaderBase>& materialShader)
+{
+    if (!materialShader) {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+        auto modifier = GetModifierCreatedBySetter(ModifierNG::RSModifierType::MATERIAL_SHADER);
+        if (modifier == nullptr || !modifier->HasProperty(ModifierNG::RSPropertyType::MATERIAL_SHADER)) {
+            return;
+        }
+        modifier->DetachProperty(ModifierNG::RSPropertyType::MATERIAL_SHADER);
+        return;
+    }
+    SetPropertyNG<ModifierNG::RSMaterialShaderModifier,
+        &ModifierNG::RSMaterialShaderModifier::SetMaterialShader>(materialShader);
 }
 
 void RSNode::SetMaterialNGFilter(const std::shared_ptr<RSNGFilterBase>& materialFilter)

@@ -63,6 +63,7 @@ struct DrawCmdIndex {
     int8_t transitionIndex_            = -1;
     int8_t envForeGroundColorIndex_    = -1;
     int8_t materialFilterIndex_        = -1;
+    int8_t materialShaderIndex_        = -1;
     int8_t shadowIndex_                = -1;
     int8_t renderGroupBeginIndex_      = -1;
     int8_t foregroundFilterBeginIndex_ = -1;
@@ -245,6 +246,12 @@ public:
         return lastDrawnFilterNodeId_;
     }
 
+    virtual void SetShouldClipHole(bool value) {}
+    virtual bool ShouldClipHole() const
+    {
+        return false;
+    }
+
     virtual void SetUIExtensionNeedToDraw(bool needToDraw) {}
 
     virtual bool UIExtensionNeedToDraw() const
@@ -390,7 +397,7 @@ private:
                             std::shared_ptr<RSRenderNodeDrawableAdapter>& sharedPtr);
     static std::map<RSRenderNodeType, Generator> GeneratorMap;
     static std::map<NodeId, WeakPtr> RenderNodeDrawableCache_;
-    static inline std::mutex cacheMapMutex_;
+    static inline RS_HIDDEN std::mutex cacheMapMutex_;
     static DrawableVec toClearDrawableVec_;
     static CmdListVec toClearCmdListVec_;
     std::atomic<DrawSkipType> drawSkipType_ = DrawSkipType::NONE;

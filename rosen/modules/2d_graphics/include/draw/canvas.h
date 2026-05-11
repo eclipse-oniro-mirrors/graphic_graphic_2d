@@ -134,7 +134,8 @@ public:
     {
         BuildOverDraw(canvas);
     }
-    virtual ~OverDrawCanvas() {}
+    virtual ~OverDrawCanvas();
+
     virtual DrawingType GetDrawingType() const override
     {
         return DrawingType::OVER_DRAW;
