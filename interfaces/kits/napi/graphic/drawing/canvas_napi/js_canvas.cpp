@@ -1164,8 +1164,8 @@ napi_value JsCanvas::OnDrawGlyphs(napi_env env, napi_callback_info info)
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect array size.");
     }
     if (glyphCount <= 0 || glyphIdOffSet < 0 || positionOffSet < 0 ||
-        (glyphIdsSize < static_cast<uint32_t>(GlyphSafeAdd(glyphIdOffSet + glyphCount))) ||
-        (positionsSize < static_cast<uint32_t>(GlyphSafeAdd(positionOffSet + glyphCount)))) {
+        (glyphIdsSize < static_cast<uint32_t>(GlyphSafeAdd(glyphIdOffSet, glyphCount))) ||
+        (positionsSize < static_cast<uint32_t>(GlyphSafeAdd(positionOffSet, glyphCount)))) {
         return NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Input out of range.");
     }
     std::unique_ptr<uint16_t[]> glyphIds = std::make_unique<uint16_t[]>(glyphIdsSize);

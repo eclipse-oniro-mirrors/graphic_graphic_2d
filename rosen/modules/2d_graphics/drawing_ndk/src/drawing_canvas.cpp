@@ -871,8 +871,8 @@ OH_Drawing_ErrorCode OH_Drawing_CanvasDrawGlyphs(const OH_Drawing_Canvas* cCanva
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
     }
     if ((glyphCount <= 0) || (glyphIdOffset < 0) || (positionOffset < 0) ||
-        (glyphIdCount < GlyphSafeAdd(glyphCount + glyphIdOffset)) ||
-        (positionCount < GlyphSafeAdd(glyphCount + positionOffset))) {
+        (glyphIdCount < GlyphSafeAdd(glyphCount, glyphIdOffset)) ||
+        (positionCount < GlyphSafeAdd(glyphCount, positionOffset))) {
         return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
     }
     const Point* glyphPositions = reinterpret_cast<const Point*>(positions);

@@ -1764,8 +1764,8 @@ void AniCanvas::DrawGlyphs(ani_env* env, ani_object obj,
                            "AniCanvas::DrawGlyphs array offset is out of range.");
         return;
     }
-    if (!GetGlyphIds(env, GlyphSafeAdd(glyphIdOffset + glyphCount), glyphIdsObj, glyphIds) ||
-        !GetGlyphPositions(env, GlyphSafeAdd(positionOffset + glyphCount), positionsObj, positions)) {
+    if (!GetGlyphIds(env, GlyphSafeAdd(glyphIdOffset, glyphCount), glyphIdsObj, glyphIds) ||
+        !GetGlyphPositions(env, GlyphSafeAdd(positionOffset, glyphCount), positionsObj, positions)) {
         return;
     }
     auto aniFont = GetNativeFromObj<AniFont>(env, fontObj, AniGlobalField::GetInstance().fontNativeObj);
