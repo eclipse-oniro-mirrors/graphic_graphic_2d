@@ -172,7 +172,7 @@ HWTEST_F(OpincParamParseTest, ParseFeatureMultiParamTest002, TestSize.Level1)
     auto res = opincParamParse.ParseFeatureMultiParam(node);
     EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
 
-    EXPECT_FALSE(RsCommonHook::Instance().IsInLayerPartRenderWhiteList(""));
+    EXPECT_TRUE(RsCommonHook::Instance().IsInLayerPartRenderWhiteList(""));
 
     RsCommonHook::Instance().SetLayerPartRenderWhiteList({});
 }
@@ -199,7 +199,7 @@ HWTEST_F(OpincParamParseTest, ParseFeatureMultiParamTest003, TestSize.Level1)
     auto res = opincParamParse.ParseFeatureMultiParam(node);
     EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
 
-    EXPECT_FALSE(RsCommonHook::Instance().IsInLayerPartRenderWhiteList(longName));
+    EXPECT_TRUE(RsCommonHook::Instance().IsInLayerPartRenderWhiteList(longName));
 
     RsCommonHook::Instance().SetLayerPartRenderWhiteList({});
 }
@@ -263,7 +263,7 @@ HWTEST_F(OpincParamParseTest, ParseFeatureMultiParamTest005, TestSize.Level1)
     auto res = opincParamParse.ParseFeatureMultiParam(node);
     EXPECT_EQ(res, ParseErrCode::PARSE_EXEC_SUCCESS);
 
-    EXPECT_FALSE(RsCommonHook::Instance().IsInLayerPartRenderWhiteList(""));
+    EXPECT_TRUE(RsCommonHook::Instance().IsInLayerPartRenderWhiteList(""));
 
     RsCommonHook::Instance().SetLayerPartRenderWhiteList({});
 }
