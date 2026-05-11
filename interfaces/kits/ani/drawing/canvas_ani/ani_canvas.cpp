@@ -1760,8 +1760,8 @@ void AniCanvas::DrawGlyphs(ani_env* env, ani_object obj,
         return;
     }
     if (glyphIdOffset < 0 || positionOffset < 0) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
-                           "AniCanvas::DrawGlyphs array offset is invalid.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+                           "AniCanvas::DrawGlyphs array offset is out of range.");
         return;
     }
     if (!GetGlyphIds(env, GlyphSafeAdd(glyphIdOffset + glyphCount), glyphIdsObj, glyphIds) ||

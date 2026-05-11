@@ -1151,11 +1151,11 @@ napi_value JsCanvas::OnDrawGlyphs(napi_env env, napi_callback_info info)
     napi_value argv[ARGC_SIX] = {nullptr};
     CHECK_PARAM_NUMBER_WITHOUT_OPTIONAL_PARAMS(argv, ARGC_SIX);
     int32_t glyphIdOffSet = 0;
-    GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_ONE, glyphIdOffSet);
+    GET_INT32_PARAM(ARGC_ONE, glyphIdOffSet);
     int32_t positionOffSet = 0;
-    GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_THREE, positionOffSet);
+    GET_INT32_PARAM(ARGC_THREE, positionOffSet);
     int32_t glyphCount = 0;
-    GET_INT32_CHECK_GE_ZERO_PARAM(ARGC_FOUR, glyphCount);
+    GET_INT32_PARAM(ARGC_FOUR, glyphCount);
     napi_value jsGlyphIds = argv[ARGC_ZERO];
     napi_value jsPosition = argv[ARGC_TWO];
     uint32_t glyphIdsSize = 0;
@@ -1164,7 +1164,7 @@ napi_value JsCanvas::OnDrawGlyphs(napi_env env, napi_callback_info info)
         napi_get_array_length(env, jsPosition, &positionsSize) != napi_ok || (positionsSize == 0)) {
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect array size.");
     }
-    if (glyphCount <= 0 ||
+    if (glyphCount <= 0 || glyphIdOffSet < 0 || positionOffSet < 0 ||
         (glyphIdsSize < static_cast<uint32_t>(GlyphSafeAdd(glyphIdOffSet + glyphCount))) ||
         (positionsSize < static_cast<uint32_t>(GlyphSafeAdd(positionOffSet + glyphCount)))) {
         return NapiThrowError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Input out of range.");
