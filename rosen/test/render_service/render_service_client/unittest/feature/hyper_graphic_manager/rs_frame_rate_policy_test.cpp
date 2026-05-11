@@ -116,6 +116,7 @@ HWTEST_F(RSFrameRatePolicyTest, HgmConfigChangeCallback_002, TestSize.Level1)
     std::shared_ptr<RSHgmConfigData> configData = std::make_shared<RSHgmConfigData>();
  
     // Branch 1: both animType and animName are empty
+    instance->animAttributes_.clear();
     AnimDynamicItem item1;
     configData->AddAnimDynamicItem(item1);
     instance->HgmConfigChangeCallback(configData);
@@ -123,6 +124,7 @@ HWTEST_F(RSFrameRatePolicyTest, HgmConfigChangeCallback_002, TestSize.Level1)
     EXPECT_TRUE(instance->animAttributes_.empty());
  
     // Branch 2: animType is empty, animName is not empty
+    instance->animAttributes_.clear();
     configData = std::make_shared<RSHgmConfigData>();
     AnimDynamicItem item2;
     item2.animName = "testAnim";
@@ -132,6 +134,7 @@ HWTEST_F(RSFrameRatePolicyTest, HgmConfigChangeCallback_002, TestSize.Level1)
     EXPECT_TRUE(instance->animAttributes_.empty());
  
     // Branch 3: animType is not empty, animName is empty
+    instance->animAttributes_.clear();
     configData = std::make_shared<RSHgmConfigData>();
     AnimDynamicItem item3;
     item3.animType = "testType";
@@ -141,6 +144,7 @@ HWTEST_F(RSFrameRatePolicyTest, HgmConfigChangeCallback_002, TestSize.Level1)
     EXPECT_TRUE(instance->animAttributes_.empty());
  
     // Branch 4: both animType and animName are not empty
+    instance->animAttributes_.clear();
     configData = std::make_shared<RSHgmConfigData>();
     AnimDynamicItem item4;
     item4.animType = "testType";
