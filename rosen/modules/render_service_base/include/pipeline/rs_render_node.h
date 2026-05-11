@@ -265,14 +265,13 @@ public:
     bool GetAbsMatrixReverse(const RSRenderNode& rootNode, Drawing::Matrix& absMatrix);
 
     // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
-    // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
+    // firstLevelNodeId: surfacenode for uiFirst to assign task
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
-        NodeId logicalDisplayNodeId = INVALID_NODEID);
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId uifirstRootNodeId = INVALID_NODEID,
+        NodeId screenNodeId = INVALID_NODEID, NodeId logicalDisplayNodeId = INVALID_NODEID);
     void SetIsOntheTreeOnlyFlag(bool flag)
     {
-        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
+        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_,
             uifirstRootNodeId_, screenNodeId_, logicalDisplayNodeId_);
     }
     inline bool IsOnTheTree() const
@@ -734,7 +733,10 @@ public:
     NodeGroupType GetNodeGroupType() const;
     void SetChildHasTranslateOnSqueeze(bool val);
     void SetNodeGroupHasChildInBlacklist(bool inBlacklist);
-    bool IsNodeGroupIncludeProperty() const;
+    void SetNeedClearRenderGroupCache(bool needClear);
+    bool NeedClearRenderGroupCache() const;
+    void SetRenderGroupIncludeProperty(bool includeProperty);
+    bool IsRenderGroupIncludeProperty() const;
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation, bool isOnExcludedSubTree);
     void UpdateDrawingCacheInfoAfterChildren(const std::unordered_set<NodeId>& childHasProtectedNodeSet = {});
     // !used for renderGroup
@@ -1128,7 +1130,6 @@ protected:
     // if true, it means currently it's in partial render mode and this node is intersect with dirtyRegion
     bool isShadowValidLastFrame_ = false;
     bool IsSelfDrawingNode() const;
-    bool needClearSurface_ = false;
     bool isBootAnimation_ = false;
     bool lastFrameHasVisibleEffectWithoutEmptyRect_ = false;
     mutable bool isFullChildrenListValid_ = true;
@@ -1145,7 +1146,6 @@ protected:
     std::atomic<bool> isStaticCached_ = false;
     NodeDirty dirtyStatus_ = NodeDirty::CLEAN;
     NodeDirty curDirtyStatus_ = NodeDirty::CLEAN;
-    NodeId drawingCacheRootId_ = INVALID_NODEID;
     mutable std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter> renderDrawable_;
     std::shared_ptr<RSSingleFrameComposer> singleFrameComposer_ = nullptr;
     std::unique_ptr<RSRenderParams> stagingRenderParams_;
@@ -1199,7 +1199,6 @@ private:
     bool isSubTreeDirty_ = false;
     bool isTreeStateChangeDirty_ = false;
     bool isContentDirty_ = false;
-    bool nodeGroupIncludeProperty_ = false;
     bool isNewOnTree_ = false;
     bool geometryChangeNotPerceived_ = false;
     // node region, only used in selfdrawing node dirty
@@ -1316,8 +1315,6 @@ private:
     friend class RSRenderPropertyBase;
     friend class RSRenderTransition;
     std::string nodeName_ = "";
-    std::unordered_set<NodeId> curCacheFilterRects_ = {};
-    std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
     RSProperties renderProperties_;
 
