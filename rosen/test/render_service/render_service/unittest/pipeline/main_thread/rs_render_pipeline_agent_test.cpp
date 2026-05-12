@@ -15,7 +15,9 @@
 
 #include "gtest/gtest.h"
 
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #include "node_mem_release_param.h"
+#endif
 
 #include "feature/capture/rs_surface_capture_task_parallel.h"
 #include "ipc_callbacks/rs_frame_stability_callback_stub.h"
