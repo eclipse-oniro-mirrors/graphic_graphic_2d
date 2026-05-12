@@ -187,6 +187,7 @@ void RSClipToBoundsDrawable::OnSync()
     isClipRRectOptimization_ = stagingIsClipRRectOptimization_;
     geContainer_ = std::move(stagingGeContainer_);
     needSync_ = false;
+    sdfDrawRect_ = stagingSdfDrawRect_;
 }
 
 void RSClipToBoundsDrawable::OnDraw(Drawing::Canvas *canvas, const Drawing::Rect *rect) const
