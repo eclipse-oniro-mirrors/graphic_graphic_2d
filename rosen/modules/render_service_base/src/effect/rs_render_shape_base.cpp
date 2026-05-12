@@ -108,7 +108,7 @@ static std::unordered_map<RSNGEffectType, ShapeGetTransformRect> getTransformRec
                 bottom += rect.GetHeight() *
                     (halfUV - distortScale * (tuneNum + distortion[3]) / (tuneDenomBase + distortion[3]));
             }
-            return RectF(floor(left), floot(top), ceil(right) - floor(left), ceil(bottom) - floor(top));
+            return RectF(floor(left), floor(top), ceil(right) - floor(left), ceil(bottom) - floor(top));
         },
     },
 };
