@@ -1519,7 +1519,7 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
                                                        surfaceParams.GetBufferOwnerCount());
 
             // Use to adapt to AIBar DSS solution
-            Color solidLayerColor = RgbPalette::Black();
+            Color solidLayerColor = RgbPalette::Transparent();
             if (surfaceParams.GetIsHwcEnabledBySolidLayer()) {
                 solidLayerColor = surfaceParams.GetSolidLayerColor();
                 RS_TRACE_NAME_FMT("solidLayer enabled, color:%08x", solidLayerColor.AsArgbInt());
@@ -1543,11 +1543,6 @@ void RSSurfaceRenderNodeDrawable::DealWithSelfDrawingNodeBuffer(
 
     RSAutoCanvasRestore arc(&canvas);
     auto params = RSUniRenderUtil::DealWithBufferDrawParam(canvas, surfaceParams, *this);
-#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
-    if (IsHardwareEnabledTopSurface() && RSUniRenderThread::Instance().GetRSRenderThreadParams()->HasMirrorDisplay()) {
-        RSMagicPointerRenderManager::GetInstance().SetCacheImgForPointer(canvas.GetSurface()->GetImageSnapshot());
-    }
-#endif
 
     DrawSelfDrawingNodeBuffer(canvas, surfaceParams, params);
 }
