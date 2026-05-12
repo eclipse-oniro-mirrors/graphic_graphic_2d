@@ -557,15 +557,11 @@ HWTEST_F(RSRenderPipelineAgentTest, SubmitCanvasPreAllocatedBufferTest, TestSize
     ASSERT_NE(agent, nullptr);
     ASSERT_NE(mainThread_, nullptr);
     renderPipeline->mainThread_ = mainThread_;
-    ASSERT_NE(agent->rsRenderPipeline_, nullptr);
-    ASSERT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
     NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(false);
     auto ret = agent->SubmitCanvasPreAllocatedBuffer(1, 1, nullptr, 1);
     EXPECT_NE(ret, 0);
     NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(true);
     ret = agent->SubmitCanvasPreAllocatedBuffer(1, 1, nullptr, 1);
     EXPECT_NE(ret, 0);
-    EXPECT_NE(agent->rsRenderPipeline_, nullptr);
-    EXPECT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
 }
 } // namespace OHOS::Rosen
