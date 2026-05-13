@@ -936,8 +936,6 @@ public:
               origin(origin), font(font), globalUniqueId(globalUniqueId),
               paintHandle(paintHandle) {}
         ~ConstructorHandle() override = default;
-        static bool GenerateCachedOpItem(DrawCmdList& cmdList, const DrawTextArgs& args, Paint& p);
-        bool GenerateCachedOpItem(DrawCmdList& cmdList, Canvas* canvas);
 
         std::pair<size_t, size_t> glyphs;
         std::pair<size_t, size_t> positions;
@@ -956,8 +954,6 @@ public:
     static std::shared_ptr<DrawOpItem> Unmarshalling(const DrawCmdList& cmdList, void* handle);
     void Marshalling(DrawCmdList& cmdList) override;
     void Playback(Canvas* canvas, const Rect* rect) override;
-
-    std::shared_ptr<DrawImageRectOpItem> GenerateCachedOpItem(Canvas* canvas);
 
 private:
     std::vector<uint16_t> glyphs_;
