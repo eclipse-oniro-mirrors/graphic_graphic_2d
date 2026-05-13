@@ -872,6 +872,26 @@ HWTEST_F(RSScreenRenderNodeDrawableTest, OnDrawTest015, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetDamageRegionTest001
+ * @tc.desc: Test SetDamageRegion
+ * @tc.type: FUNC
+ * @tc.require: #ICQ74B
+ */
+HWTEST_F(RSScreenRenderNodeDrawableTest, SetDamageRegionTest001, TestSize.Level1)
+{
+    ASSERT_NE(screenDrawable_, nullptr);
+    EXPECT_EQ(screenDrawable_->wiredMirrorRenderFrame_, nullptr);
+    std::vector<RectI> rects;
+    screenDrawable_->SetDamageRegion(rects);
+
+    auto wiredMirrorRenderFrame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    screenDrawable_->wiredMirrorRenderFrame_ = std::move(wiredMirrorRenderFrame);
+    EXPECT_NE(screenDrawable_->wiredMirrorRenderFrame_, nullptr);
+    screenDrawable_->SetDamageRegion(rects);
+    ASSERT_NE(screenDrawable_, nullptr);
+}
+
+/**
  * @tc.name: CheckScreenFreezeSkip
  * @tc.desc: Test CheckScreenFreezeSkip
  * @tc.type: FUNC
