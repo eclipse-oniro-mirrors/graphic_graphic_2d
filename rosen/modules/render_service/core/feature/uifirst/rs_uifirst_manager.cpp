@@ -763,6 +763,11 @@ bool RSUifirstManager::NeedPurgePendingPostNodesInner(
         return false;
     }
     auto& [id, node] = *it;
+    // Check if the node and its parent should be painted
+    if (!node->GetSelfAndParentShouldPaint()) {
+        return true;
+    }
+
     auto& subThreadCache = drawable->GetRsSubThreadCache();
     bool needPurge = purgeEnable_ && subThreadCache.HasCachedTexture() &&
         (cachedStaticContent || CheckVisibleDirtyRegionIsEmpty(node)) &&
