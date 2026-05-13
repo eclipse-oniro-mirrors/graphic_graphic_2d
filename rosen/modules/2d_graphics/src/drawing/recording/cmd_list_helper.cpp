@@ -464,7 +464,7 @@ OpFontHandle CmdListHelper::AddFontToCmdList(CmdList& cmdList, const Font* font)
             font->IsForceAutoHinting(), font->IsEmbeddedBitmaps(), font->IsSubpixel(),
             font->IsLinearMetrics(), font->IsEmbolden(), font->IsBaselineSnap(),
             font->GetEdging(), font->GetHinting(), font->IsThemeFontFollowed(),
-            typeface->IsCustomTypeface(), typeface->isThemeTypeface()};
+            typeface->IsCustomTypeface(), typeface->IsThemeTypeface()};
 }
 
 std::shared_ptr<Font> CmdListHelper::GetFontFromCmdList(const CmdList& cmdList, const OpFontHandle& fontHandle,
