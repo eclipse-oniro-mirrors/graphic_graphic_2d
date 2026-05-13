@@ -437,8 +437,6 @@ void RecordingCanvas::DrawGlyphs(int count, const uint16_t glyphs[], const Point
     if (count <= 0) {
         return;
     }
-    std::vector<uint16_t> glyphIDs(glyphs, glyphs + count);
-    std::vector<Point> positions(pts, pts + count);
 #ifdef ROSEN_OHOS
     if (IsCustomTextType()) {
         LOGD("RecordingCanvas::DrawGlyphs replace drawOpItem with cached one");
@@ -446,6 +444,8 @@ void RecordingCanvas::DrawGlyphs(int count, const uint16_t glyphs[], const Point
         return;
     }
 #endif
+    std::vector<uint16_t> glyphIDs(glyphs, glyphs + count);
+    std::vector<Point> positions(pts, pts + count);
     if (!addDrawOpImmediate_) {
         AddDrawOpDeferred<DrawGlyphsOpItem>(glyphIDs, positions, origin, font);
         return;
@@ -918,7 +918,9 @@ void RecordingCanvas::GenerateCachedOpForTextblob(const TextBlob* blob, const sc
 void RecordingCanvas::GenerateCachedOpForGlyphs(const DrawTextArgs& args, Paint& paint)
 {
     if (!addDrawOpImmediate_) {
-        std::shared_ptr<DrawGlyphsOpItem> op = std::make_shared<DrawGlyphsOpItem>(count, glyphs, pts, origin, font, paint);
+        std::vector<uint16_t> glyphIDs(args.glyphs, args.glyphs + args.count);
+        std::vector<Point> positions(args.pts, args.pts + args.count);
+        std::shared_ptr<DrawGlyphsOpItem> op = std::make_shared<DrawGlyphsOpItem>(glyphIDs, positions, origin, font);
         cmdList_->AddDrawOp(op->GenerateCachedOpItem(nullptr));
     } else {
         DrawGlyphsOpItem::ConstructorHandle::GenerateCachedOpItem(*cmdList_, args, paint);
