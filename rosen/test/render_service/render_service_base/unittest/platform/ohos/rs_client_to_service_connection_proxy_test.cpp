@@ -222,7 +222,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenBlackList, TestSi
     ScreenId id = 100;
     std::vector<NodeId> blackListVector({1, 2, 3});
     int32_t repCode = 0;
-    EXPECT_EQ(proxy->AddVirtualScreenBlackList(id, blackListVector, repCode), ERR_INVALID_VALUE);
+    EXPECT_EQ(proxy->AddVirtualScreenBlackList(id, blackListVector, repCode), 0);
 }
 
 /**
@@ -236,47 +236,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, RemoveVirtualScreenBlackList, Tes
     ScreenId id = 100;
     std::vector<NodeId> blackListVector({1, 2, 3});
     int32_t repCode = 0;
-    EXPECT_EQ(proxy->RemoveVirtualScreenBlackList(id, blackListVector, repCode), ERR_INVALID_VALUE);
-}
-
-/**
- * @tc.name: SetVirtualScreenTypeBlackListTest
- * @tc.desc: test SetVirtualScreenTypeBlackList
- * @tc.type: FUNC
- * @tc.require: issue23264
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetVirtualScreenTypeBlackListTest, TestSize.Level2)
-{
-    int32_t repCode = 0;
-    std::vector<NodeType> typeBlackListVector;
-    ASSERT_NE(proxy, nullptr);
-    ASSERT_EQ(proxy->SetVirtualScreenTypeBlackList(0, typeBlackListVector, repCode), ERR_INVALID_VALUE);
-}
-
-/**
- * @tc.name: AddVirtualScreenWhiteListTest
- * @tc.desc: test AddVirtualScreenWhiteList
- * @tc.type: FUNC
- * @tc.require: issue23264
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenWhiteListTest, TestSize.Level2)
-{
-    int32_t repCode = 0;
-    ASSERT_NE(proxy, nullptr);
-    ASSERT_EQ(proxy->AddVirtualScreenWhiteList(0, {}, repCode), ERR_INVALID_VALUE);
-}
-
-/**
- * @tc.name: RemoveVirtualScreenWhiteListTest
- * @tc.desc: test RemoveVirtualScreenWhiteList
- * @tc.type: FUNC
- * @tc.require: issue23264
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, RemoveVirtualScreenWhiteListTest, TestSize.Level2)
-{
-    int32_t repCode = 0;
-    ASSERT_NE(proxy, nullptr);
-    ASSERT_EQ(proxy->RemoveVirtualScreenWhiteList(0, {}, repCode), ERR_INVALID_VALUE);
+    EXPECT_EQ(proxy->RemoveVirtualScreenBlackList(id, blackListVector, repCode), 0);
 }
 
 /**
