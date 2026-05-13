@@ -176,7 +176,6 @@ private:
     bool isEmoji = false;
     TextBlobRenderOption options_ = TextBlobRenderOption();
 };
-
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS
