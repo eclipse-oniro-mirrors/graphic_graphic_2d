@@ -420,9 +420,9 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Register_Same_Node_As_Pair_
     node->SetFrame(boundsNode);
     node->SetBackgroundColor(0xFF0000FF);
 
-    RSNode::RegisterTransitionPair(GetRSUIContext(), node->GetId(), node->GetId(), true);
-
     rootNode->AddChild(node);
+
+    RSNode::RegisterTransitionPair(GetRSUIContext(), node->GetId(), node->GetId(), true);
     RegisterNode(rootNode);
     RegisterNode(node);
     GetRootNode()->AddChild(rootNode);
@@ -441,12 +441,13 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Register_NonExistent_Node_T
     existNode->SetFrame(boundsExist);
     existNode->SetBackgroundColor(0xFF0000FF);
 
+    rootNode->AddChild(existNode);
+
     constexpr NodeId nonExistentId = 99999999;
     RSNode::RegisterTransitionPair(GetRSUIContext(), existNode->GetId(), nonExistentId, true);
     RSNode::RegisterTransitionPair(GetRSUIContext(), nonExistentId, existNode->GetId(), true);
     RSNode::RegisterTransitionPair(GetRSUIContext(), nonExistentId, nonExistentId, true);
 
-    rootNode->AddChild(existNode);
     RegisterNode(rootNode);
     RegisterNode(existNode);
     GetRootNode()->AddChild(rootNode);
@@ -475,12 +476,13 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Unregister_Normal_Pair_Test
     idleNode->SetFrame(boundsIdle);
     idleNode->SetBackgroundColor(0xFFFF0000);
 
-    RSNode::RegisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId(), true);
-    RSNode::UnregisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId());
-
     rootNode->AddChild(inNode);
     rootNode->AddChild(idleNode);
     rootNode->AddChild(outNode);
+
+    RSNode::RegisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId(), true);
+    RSNode::UnregisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId());
+
     RegisterNode(rootNode);
     RegisterNode(inNode);
     RegisterNode(idleNode);
@@ -511,12 +513,13 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Unregister_Reversed_Order_T
     idleNode->SetFrame(boundsIdle);
     idleNode->SetBackgroundColor(0xFFFF0000);
 
-    RSNode::RegisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId(), true);
-    RSNode::UnregisterTransitionPair(GetRSUIContext(), outNode->GetId(), inNode->GetId());
-
     rootNode->AddChild(inNode);
     rootNode->AddChild(idleNode);
     rootNode->AddChild(outNode);
+
+    RSNode::RegisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId(), true);
+    RSNode::UnregisterTransitionPair(GetRSUIContext(), outNode->GetId(), inNode->GetId());
+
     RegisterNode(rootNode);
     RegisterNode(inNode);
     RegisterNode(idleNode);
@@ -547,15 +550,16 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Unregister_NonExistent_Node
     idleNode->SetFrame(boundsIdle);
     idleNode->SetBackgroundColor(0xFFFF0000);
 
+    rootNode->AddChild(inNode);
+    rootNode->AddChild(idleNode);
+    rootNode->AddChild(outNode);
+
     RSNode::RegisterTransitionPair(GetRSUIContext(), inNode->GetId(), outNode->GetId(), true);
     constexpr NodeId nonExistentId = 88888888;
     RSNode::UnregisterTransitionPair(GetRSUIContext(), inNode->GetId(), nonExistentId);
     RSNode::UnregisterTransitionPair(GetRSUIContext(), nonExistentId, outNode->GetId());
     RSNode::UnregisterTransitionPair(GetRSUIContext(), nonExistentId, nonExistentId);
 
-    rootNode->AddChild(inNode);
-    rootNode->AddChild(idleNode);
-    rootNode->AddChild(outNode);
     RegisterNode(rootNode);
     RegisterNode(inNode);
     RegisterNode(idleNode);
@@ -586,11 +590,12 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Unregister_Without_Register
     idleNode->SetFrame(boundsIdle);
     idleNode->SetBackgroundColor(0xFFFF0000);
 
-    RSNode::UnregisterTransitionPair(GetRSUIContext(), nodeA->GetId(), nodeB->GetId());
-
     rootNode->AddChild(nodeA);
     rootNode->AddChild(idleNode);
     rootNode->AddChild(nodeB);
+
+    RSNode::UnregisterTransitionPair(GetRSUIContext(), nodeA->GetId(), nodeB->GetId());
+
     RegisterNode(rootNode);
     RegisterNode(nodeA);
     RegisterNode(idleNode);
@@ -621,12 +626,13 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Unregister_Id_Mismatch_Test
     nodeC->SetFrame(boundsC);
     nodeC->SetBackgroundColor(0xFFFF0000);
 
-    RSNode::RegisterTransitionPair(GetRSUIContext(), nodeA->GetId(), nodeC->GetId(), true);
-    RSNode::UnregisterTransitionPair(GetRSUIContext(), nodeA->GetId(), nodeB->GetId());
-
     rootNode->AddChild(nodeA);
     rootNode->AddChild(nodeB);
     rootNode->AddChild(nodeC);
+
+    RSNode::RegisterTransitionPair(GetRSUIContext(), nodeA->GetId(), nodeC->GetId(), true);
+    RSNode::UnregisterTransitionPair(GetRSUIContext(), nodeA->GetId(), nodeB->GetId());
+
     RegisterNode(rootNode);
     RegisterNode(nodeA);
     RegisterNode(nodeB);
@@ -672,10 +678,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Nullptr_Test)
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::nullopt);
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -698,10 +705,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_0_0_Test)
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(0, 0)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -724,10 +732,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_100_100_Test)
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(100, 100)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -750,10 +759,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_200_200_Test)
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(200, 200)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -776,10 +786,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Negative_Test)
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(-100, -100)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -820,9 +831,6 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Multiple_Nodes_
     childNode1->SetSandBox(std::make_optional(Rosen::Vector2f(0, 0)));
     childNode2->SetSandBox(std::make_optional(Rosen::Vector2f(150, 50)));
     childNode3->SetSandBox(std::make_optional(Rosen::Vector2f(100, 300)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode1->GetId(), siblingNode1->GetId(), true);
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode2->GetId(), siblingNode2->GetId(), true);
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode3->GetId(), siblingNode3->GetId(), true);
 
     parentNode->AddChild(siblingNode1);
     parentNode->AddChild(childNode1);
@@ -830,6 +838,10 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Multiple_Nodes_
     parentNode->AddChild(childNode2);
     parentNode->AddChild(siblingNode3);
     parentNode->AddChild(childNode3);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode1->GetId(), siblingNode1->GetId(), true);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode2->GetId(), siblingNode2->GetId(), true);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode3->GetId(), siblingNode3->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode1);
     RegisterNode(childNode2);
@@ -857,10 +869,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Extremely_Large
 
     constexpr float largeVal = 1e10f;
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(largeVal, -largeVal)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -884,10 +897,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Extremely_Small
 
     constexpr float smallVal = 1e-10f;
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(smallVal, -smallVal)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -926,10 +940,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Foreground_Filt
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(100, 100)));
     childNode->SetForegroundNGFilter(bezierWarpFilter);
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -969,10 +984,11 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Parent_Foregrou
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(100, 100)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(siblingNode);
     parentNode->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(childNode);
     RegisterNode(siblingNode);
@@ -1019,11 +1035,12 @@ GRAPHIC_TEST(GeometryTransitionTest, ANIMATION_TEST, Set_Sandbox_Parent_Two_Fore
     auto siblingNode = CreateCanvasNode();
 
     childNode->SetSandBox(std::make_optional(Rosen::Vector2f(100, 100)));
-    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
 
     parentNode->AddChild(parentNode2);
     parentNode2->AddChild(siblingNode);
     parentNode2->AddChild(childNode);
+    RSNode::RegisterTransitionPair(GetRSUIContext(), childNode->GetId(), siblingNode->GetId(), true);
+
     RegisterNode(parentNode);
     RegisterNode(parentNode2);
     RegisterNode(childNode);
