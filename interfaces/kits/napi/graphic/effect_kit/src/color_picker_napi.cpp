@@ -21,7 +21,6 @@
 #include "hilog/log.h"
 #include "effect_utils.h"
 #include "color_picker_napi.h"
-#include "histogram_plugin_macros.h"
 
 using OHOS::HiviewDFX::HiLog;
 namespace {
