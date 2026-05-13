@@ -186,6 +186,10 @@ HWTEST_F(RSUifirstManagerTest2, NeedPurgePendingPostNodesInner, TestSize.Level1)
     ret = uifirstManager_.NeedPurgePendingPostNodesInner(iter, drawable, true);
     EXPECT_TRUE(ret);
 
+    surfaceRenderNode->SetSelfAndParentShouldPaint(false);
+    ret = uifirstManager_.NeedPurgePendingPostNodesInner(iter, drawable, true);
+    EXPECT_TRUE(ret);
+
     subThreadCache.cacheCompletedSurfaceInfo_.isContainShadow = true;
     ret = uifirstManager_.NeedPurgePendingPostNodesInner(iter, drawable, true);
     EXPECT_FALSE(ret);
