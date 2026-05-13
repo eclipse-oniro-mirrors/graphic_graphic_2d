@@ -870,6 +870,10 @@ OH_Drawing_ErrorCode OH_Drawing_CanvasDrawGlyphs(const OH_Drawing_Canvas* cCanva
     if (canvas == nullptr || font == nullptr || glyphIds == nullptr || positions == nullptr) {
         return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
     }
+    std::shared_ptr<Font> themeFont = DrawingFontUtils::GetThemeFont(font);
+    if (themeFont != nullptr) {
+        font = themeFont.get();
+    }
     if ((glyphCount <= 0) || (glyphIdOffset < 0) || (positionOffset < 0) ||
         (glyphIdCount < GlyphSafeAdd(glyphCount, glyphIdOffset)) ||
         (positionCount < GlyphSafeAdd(glyphCount, positionOffset))) {
