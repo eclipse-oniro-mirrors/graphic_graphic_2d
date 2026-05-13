@@ -93,11 +93,6 @@ if (is_arkui_x) {
       deps += [ "//plugins/libs/napi:napi_${target_os}" ]
     }
 
-    if (defined(arkgraphic2d_api_metrics) && arkgraphic2d_api_metrics) {
-      external_deps = [ "api_metrics:histogrammanager" ]
-      defines += [ "HISTOGRAM_MANAGEMENT_ENABLE=1" ]
-    }
-
     cflags_cc = [ "-std=c++17" ]
     part_name = "graphic_2d"
     subsystem_name = "graphic"
@@ -131,6 +126,11 @@ if (is_arkui_x) {
       "image_framework:image_native",
       "napi:ace_napi",
     ]
+
+    if (defined(arkgraphic2d_api_metrics) && arkgraphic2d_api_metrics) {
+      external_deps += [ "api_metrics:histogrammanager" ]
+      defines += [ "HISTOGRAM_MANAGEMENT_ENABLE=1" ]
+    }
 
     cflags_cc = [ "-std=c++17" ]
 
