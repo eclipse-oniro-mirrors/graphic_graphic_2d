@@ -2154,7 +2154,7 @@ HWTEST_F(RSPaintFilterCanvasTest, CustomSaveLayerWithCanvasTest, TestSize.Level1
     paintFilterCanvas.canvas_ = nullptr;
 
     RSPaintFilterCanvasBase::DrawFunc drawFunc = [](Drawing::Canvas& c) {};
-    auto result = paintFilterCanvas->CustomSaveLayer(drawFunc);
+    auto result = paintFilterCanvas.CustomSaveLayer(drawFunc);
     EXPECT_GE(result, 0);
 }
 
