@@ -383,4 +383,74 @@ HWTEST_F(RSScreenPreprocessorTest, ScheduleTaskTest001, TestSize.Level1)
     preprocessor_->mainHandler_ = handler;
     preprocessor_->ScheduleTask(task);
 }
+
+/*
+ * @tc.name: OnPhysicalScreenProcessDisconnectedTest001
+ * @tc.desc: Test OnPhysicalScreenProcessDisconnected with null output
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenPreprocessorTest, OnPhysicalScreenProcessDisconnectedTest001, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    std::shared_ptr<HdiOutput> output = nullptr;
+    preprocessor_->OnPhysicalScreenProcessDisconnected(output);
+}
+
+/*
+ * @tc.name: OnPhysicalScreenProcessDisconnectedTest002
+ * @tc.desc: Test OnPhysicalScreenProcessDisconnected with valid output
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenPreprocessorTest, OnPhysicalScreenProcessDisconnectedTest002, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    uint32_t screenId = 1000;
+    auto output = std::make_shared<HdiOutput>(screenId);
+    preprocessor_->OnPhysicalScreenProcessDisconnected(output);
+    usleep(50000);
+}
+
+/*
+ * @tc.name: OnVirtualScreenProcessDisconnectedTest001
+ * @tc.desc: Test OnVirtualScreenProcessDisconnected with valid screenId
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenPreprocessorTest, OnVirtualScreenProcessDisconnectedTest001, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    ScreenId screenId = 1000;
+    preprocessor_->OnVirtualScreenProcessDisconnected(screenId);
+    usleep(50000);
+}
+
+/*
+ * @tc.name: ReconnectProcessTest001
+ * @tc.desc: Test ReconnectProcess with null output
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenPreprocessorTest, ReconnectProcessTest001, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    std::shared_ptr<HdiOutput> output = nullptr;
+    preprocessor_->ReconnectProcess(output);
+}
+
+/*
+ * @tc.name: ReconnectProcessTest002
+ * @tc.desc: Test ReconnectProcess with valid output
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenPreprocessorTest, ReconnectProcessTest002, TestSize.Level1)
+{
+    ASSERT_NE(preprocessor_, nullptr);
+    uint32_t screenId = 1000;
+    auto output = std::make_shared<HdiOutput>(screenId);
+    preprocessor_->ReconnectProcess(output);
+    usleep(50000);
+}
 } // namespace OHOS::Rosen
