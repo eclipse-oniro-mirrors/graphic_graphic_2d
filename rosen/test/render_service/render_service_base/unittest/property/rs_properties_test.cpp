@@ -3956,5 +3956,53 @@ HWTEST_F(RSPropertiesTest, GetMaterialShader001, TestSize.Level1)
 
     EXPECT_EQ(properties.GetMaterialShader(), nullptr);
 }
+
+/**
+ * @tc.name: SetDoubleSidedEnabled001
+ * @tc.desc: test SetDoubleSidedEnabled with different value (if branch taken)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetDoubleSidedEnabled001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_TRUE(properties.GetDoubleSidedEnabled());
+
+    properties.SetDoubleSidedEnabled(false);
+    EXPECT_FALSE(properties.GetDoubleSidedEnabled());
+}
+
+/**
+ * @tc.name: SetDoubleSidedEnabled002
+ * @tc.desc: test SetDoubleSidedEnabled with same value (if branch not taken)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetDoubleSidedEnabled002, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_TRUE(properties.GetDoubleSidedEnabled());
+
+    properties.SetDoubleSidedEnabled(true);
+    EXPECT_TRUE(properties.GetDoubleSidedEnabled());
+}
+
+/**
+ * @tc.name: SetDoubleSidedEnabled003
+ * @tc.desc: test SetDoubleSidedEnabled toggle false then true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertiesTest, SetDoubleSidedEnabled003, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_TRUE(properties.GetDoubleSidedEnabled());
+
+    properties.SetDoubleSidedEnabled(false);
+    EXPECT_FALSE(properties.GetDoubleSidedEnabled());
+
+    properties.SetDoubleSidedEnabled(true);
+    EXPECT_TRUE(properties.GetDoubleSidedEnabled());
+
+    properties.SetDoubleSidedEnabled(true);
+    EXPECT_TRUE(properties.GetDoubleSidedEnabled());
+}
 } // namespace Rosen
 } // namespace OHOS

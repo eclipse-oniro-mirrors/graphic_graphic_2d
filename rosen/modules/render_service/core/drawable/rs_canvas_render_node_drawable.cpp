@@ -194,6 +194,11 @@ void RSCanvasRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
     RSAutoCanvasRestore acr(paintFilterCanvas, RSPaintFilterCanvas::SaveType::kCanvasAndAlpha);
     params->ApplyAlphaAndMatrixToCanvas(*paintFilterCanvas);
+    if (!params->GetDoubleSidedEnabled() && IsBackFace(paintFilterCanvas->GetTotalMatrix())) {
+        SetDrawSkipType(DrawSkipType::BACKFACE_SKIP);
+        RS_TRACE_NAME_FMT("RSCanvasRenderNodeDrawable::OnCapture backface skip, id:%" PRIu64, nodeId_);
+        return;
+    }
     if (!RSUiFirstProcessStateCheckerHelper::CheckMatchAndWaitNotify(*params, false)) {
         SetDrawSkipType(DrawSkipType::CHECK_MATCH_AND_WAIT_NOTIFY_FAIL);
         RS_LOGE("RSCanvasRenderNodeDrawable::OnCapture CheckMatchAndWaitNotify failed");
