@@ -18,6 +18,16 @@ import(
 import("//foundation/graphic/graphic_2d/rosen/modules/platform/config.gni")
 
 config("export_config") {
+  include_dirs = [
+    "../include",
+    "${graphic_2d_root}/utils/log",
+    "$graphic_2d_root/rosen/modules/2d_graphics/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src/drawing/engine_adapter",
+    "$graphic_2d_root/interfaces/inner_api/composer",
+    "$graphic_2d_root/rosen/modules/composer/vsync/include",
+  ]
+
   cflags_cc = [ "-std=c++17" ]
 
   defines = rs_common_define
@@ -151,12 +161,6 @@ ohos_source_set("render_service_proxy_src") {
   subsystem_name = "graphic"
 }
 
-config("render_service_proxy_all_deps_config") {
-  if (graphic_2d_feature_enable_rs_proxy) {
-    defines = [ "ENABLE_RS_PROXY" ]
-  }
-}
-
 ohos_shared_library("librender_service_proxy") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -165,7 +169,7 @@ ohos_shared_library("librender_service_proxy") {
     debug = false
   }
 
-  public_configs = [ ":render_service_proxy_all_deps_config" ]
+  public_configs = [ ":export_config" ]
 
   deps = [
     ":render_service_proxy_src",
