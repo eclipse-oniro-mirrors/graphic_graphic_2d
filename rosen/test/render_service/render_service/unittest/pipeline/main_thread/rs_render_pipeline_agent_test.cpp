@@ -15,6 +15,10 @@
 
 #include "gtest/gtest.h"
 
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+#include "node_mem_release_param.h"
+#endif
+
 #include "feature/capture/rs_surface_capture_task_parallel.h"
 #include "ipc_callbacks/rs_frame_stability_callback_stub.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -596,4 +600,26 @@ HWTEST_F(RSRenderPipelineAgentTest, SetHdrForceHwcEnabled_NormalCase, TestSize.L
     ErrCode ret = agent->SetHdrForceHwcEnabled(nodeIdStr, true);
     EXPECT_EQ(ret, ERR_OK);
 }
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+/**
+ * @tc.name: SubmitCanvasPreAllocatedBufferTest
+ * @tc.desc: SubmitCanvasPreAllocatedBuffer Test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SubmitCanvasPreAllocatedBufferTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+    ASSERT_NE(mainThread_, nullptr);
+    renderPipeline->mainThread_ = mainThread_;
+    NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(false);
+    auto ret = agent->SubmitCanvasPreAllocatedBuffer(1, 1, nullptr, 1);
+    EXPECT_NE(ret, 0);
+    NodeMemReleaseParam::SetCanvasDrawingNodeDMAMemEnabled(true);
+    ret = agent->SubmitCanvasPreAllocatedBuffer(1, 1, nullptr, 1);
+    EXPECT_NE(ret, 0);
+}
+#endif
 } // namespace OHOS::Rosen
