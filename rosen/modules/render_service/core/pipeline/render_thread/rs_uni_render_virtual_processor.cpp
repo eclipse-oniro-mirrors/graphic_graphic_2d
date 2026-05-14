@@ -140,7 +140,7 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
         auto rsSurface = surfaceFrames_[primarySurfaceIndex_].frame->GetSurface();
         if (rsSurface) {
             if (SetColorSpaceForMetadata(rsSurface->GetColorSpace()) != GSERROR_OK) {
-                RS_LOGE("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata failed");
+                RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata failed.");
             }
         }
     }
@@ -151,7 +151,7 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
     for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
         auto& frame = surfaceFrames_[i].frame;
         if (frame) {
-            RSHdrUtil::EraseHdrMetadataKey(frame);
+            RSHdrUtil::EraseHDRMetadataKey(frame);
             if (RSHdrUtil::SetMetadata(RSHDRUtilConst::HDR_CAST_OUT_COLORSPACE, frame, isHDRCast) != GSERROR_OK) {
                 RS_LOGD("RSUniRenderVirtualProcessor::Init SetMeadata failed");
             }
@@ -881,8 +881,8 @@ void RSUniRenderVirtualProcessor::CopyToSecondarySurfaces()
         return;
     }
 
-    if (!surfaceFrames_[primarySurfaceIndex_].frame) {
-        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: Primary surface frame is null", __func__);
+    if (!surfaceFrames_[primarySurfaceIndex_].canvas) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: Primary surface canvas is null", __func__);
         return;
     }
 
@@ -899,6 +899,7 @@ void RSUniRenderVirtualProcessor::CopyToSecondarySurfaces()
         return;
     }
 
+    Drawing::SamplingOptions sampling(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
     // Copy to secondary surfaces
     for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
         if (i == primarySurfaceIndex_) {
@@ -913,7 +914,7 @@ void RSUniRenderVirtualProcessor::CopyToSecondarySurfaces()
             continue;
         }
         canvas->Save();
-        canvas->DrawImage(*snapshot, 0, 0);
+        canvas->DrawImage(*snapshot, 0, 0, sampling);
         canvas->Restore();
 
         RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Copied to surface index %{public}zu", __func__, i);
@@ -1017,10 +1018,11 @@ void RSUniRenderVirtualProcessor::BlitRegionsToSurfaces(const std::shared_ptr<Dr
         // Destination rect on this surface (full surface)
         Drawing::Rect dstRect(0, 0, region.width_, region.height_);
 
-        canvas->DrawImageRect(*offscreenImage, srcRect, dstRect, sampling);
+        canvas->DrawImageRect(*offscreenImage, srcRect, dstRect, sampling,
+            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
 
         RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Blitted region [%d,%d,%d,%d] to surface index %{public}zu",
-            __func__, region.left_, region.top_, region.width_, region.height_, i);
+            __func__, region.left_, region.top_, renderFrameConfig_.width_, renderFrameConfig_.height_, i);
     }
 
     RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Blitted regions to all surfaces", __func__);

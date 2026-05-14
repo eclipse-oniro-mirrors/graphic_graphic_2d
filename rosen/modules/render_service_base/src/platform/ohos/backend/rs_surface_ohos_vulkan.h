@@ -31,9 +31,6 @@
 #include "rs_surface_frame_ohos_vulkan.h"
 #include "rs_trace.h"
 #include <surface.h>
-#ifdef MHC_ENABLE
-#include "hpae_base/rs_hpae_ffrt_pattern_manager.h"
-#endif
 
 #if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
 typedef enum VkSemaphoreExtTypeHUAWEI {
@@ -147,7 +144,7 @@ private:
             valid = false;
         }
 #ifdef MHC_ENABLE
-        std::optional<std::pair<uint64_t, MHC_PatternTaskName>> mhcPendingSubmit;
+        std::optional<uint64_t> mhcPendingSubmit;
 #endif
     };
     FlushState flushState_;

@@ -673,6 +673,11 @@ bool RSScreen::IsMainScreen() const
 void RSScreen::SetMultiSurfaceConfigs(const MultiSurfaceConfigs& configs)
 {
     UPDATE_PROPERTY(MultiSurfaceConfigs, configs);
+    if (configs.empty()) {
+        UPDATE_PROPERTY(State, ScreenState::DISABLED);
+    } else {
+        UPDATE_PROPERTY(State, ScreenState::PRODUCER_SURFACE_ENABLE);
+    }
 }
 
 MultiSurfaceConfigs RSScreen::GetMultiSurfaceConfigs() const

@@ -671,6 +671,7 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
 
             SetVirtualScreenSurfaces(id, surfaceConfigs);
+            break;
         }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST): {
             // read the parcel data.

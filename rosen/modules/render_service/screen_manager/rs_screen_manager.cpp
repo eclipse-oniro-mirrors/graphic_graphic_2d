@@ -44,22 +44,18 @@ constexpr uint32_t MAX_VIRTUAL_SCREEN_REFRESH_RATE = 120;
 constexpr uint32_t ORIGINAL_FOLD_SCREEN_AMOUNT = 2;
 
 #ifndef ROSEN_CROSS_PLATFORM
-bool ContainsSurfaceId(const std::vector<SurfaceRegionConfig>& surfaceConfigs, uint64_t surfaceId)
+bool ScreenContainsSurfaceId(const std::shared_ptr<RSScreen>& screen, uint64_t surfaceId)
 {
+    if (screen == nullptr || !screen->IsVirtual()) {
+        return false;
+    }
+    auto surfaceConfigs = screen->GetMultiSurfaceConfigs();
     for (const auto& config : surfaceConfigs) {
         if (config.surface != nullptr && config.surface->GetUniqueId() == surfaceId) {
             return true;
         }
     }
     return false;
-}
-
-bool ScreenContainsSurfaceId(const std::shared_ptr<RSScreen>& screen, uint64_t surfaceId)
-{
-    if (screen == nullptr || !screen->IsVirtual()) {
-        return false;
-    }
-    return ContainsSurfaceId(screen->GetMultiSurfaceConfigs(), surfaceId);
 }
 #endif
 } // namespace

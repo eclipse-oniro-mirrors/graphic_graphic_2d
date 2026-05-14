@@ -839,6 +839,10 @@ int32_t RSClientToServiceConnectionProxy::AddVirtualScreenSurface(
 
     for (const auto& config : validConfigs) {
         auto producer = config.surface->GetProducer();
+        if (producer == nullptr) {
+            ROSEN_LOGE("AddVirtualScreenSurface: producer is nullptr!");
+            return WRITE_PARCEL_ERR;
+        }
         if (!data.WriteRemoteObject(producer->AsObject())) {
             ROSEN_LOGE("AddVirtualScreenSurface: WriteRemoteObject producer err.");
             return WRITE_PARCEL_ERR;

@@ -619,13 +619,7 @@ bool RSSurfaceOhosVulkan::FlushGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint6
         if (res == Drawing::SemaphoresSubmited::DRAWING_ENGINE_SUBMIT_NO) {
             // Synchronized when skia return DRAWING_ENGINE_SUBMIT_NO
             RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFrom2DEngine(callbackInfo);
-            RsVulkanInterface::callbackSemaphoreInfo2DEngineDefensiveDerefCnt_.fetch_add(
-                +1, std::memory_order_relaxed);
-        } else if (res != Drawing::SemaphoresSubmited::DRAWING_ENGINE_SUBMIT_SUCCESS) {
-            ROSEN_LOGE("RSSurfaceOhosVulkan surface flush failed");
-            RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFromRS(callbackInfo);
-            CancelBuffer(mSurfaceList.front());
-            return false;
+            RsVulkanInterface::callbackSemaphoreInfo2DEngineDefensiveDerefCnt_.fetch_add(+1, std::memory_order_relaxed);
         }
     }
 

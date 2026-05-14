@@ -50,6 +50,7 @@
 namespace OHOS {
 namespace Rosen {
 class RSScreen;
+struct VirtualScreenConfigs;
 // This class can be only created by RSRenderService to manager screen.
 class RSScreenManager : public RefBase {
 public:

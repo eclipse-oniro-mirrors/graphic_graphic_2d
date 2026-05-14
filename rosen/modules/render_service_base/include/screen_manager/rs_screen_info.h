@@ -33,6 +33,14 @@ namespace OHOS::Rosen {
 struct SurfaceRegionConfig {
     sptr<Surface> surface = nullptr;
     RectI region;  // x, y, width, height
+
+    bool operator==(const SurfaceRegionConfig& config) const
+    {
+        if (surface == nullptr || config.surface == nullptr) {
+            return surface == config.surface && region == config.region;
+        }
+        return surface->GetUniqueId() == config.surface->GetUniqueId() && region == config.region;
+    }
 };
 #endif
 
