@@ -202,7 +202,9 @@ HWTEST_F(EglWrapperCustomTest, EglSetEngineNameImplTest005, Level1)
     auto tempGetProcAddr = gWrapperHook.egl.eglGetProcAddress;
 
     gWrapperHook.isLoad = true;
-    gWrapperHook.egl.eglGetProcAddress = +[](const char*) -> __eglMustCastToProperFunctionPointerType { return nullptr; };
+    gWrapperHook.egl.eglGetProcAddress = +[](const char*) -> __eglMustCastToProperFunctionPointerType {
+        return nullptr;
+    };
 
     auto result = func(dpy, "test_engine");
     EXPECT_EQ(result, EGL_FALSE);
