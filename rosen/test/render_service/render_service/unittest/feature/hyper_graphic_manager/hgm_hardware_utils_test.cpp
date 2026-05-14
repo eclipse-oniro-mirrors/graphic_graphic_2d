@@ -160,7 +160,8 @@ HWTEST_F(HgmHardwareUtilsTest, PerformSetActiveModeTest, TestSize.Level1)
         std::bind(&RSScreenManager::SetScreenConstraint,
             screenManager.GetRefPtr(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
         std::bind(&RSScreenManager::SetScreenActiveMode,
-            screenManager.GetRefPtr(), std::placeholders::_1, std::placeholders::_2)
+            screenManager.GetRefPtr(), std::placeholders::_1, std::placeholders::_2),
+        std::bind(&RSScreenManager::GetScreenActiveRefreshRate, screenManager.GetRefPtr(), std::placeholders::_1)
     );
 
     auto rsScreen = std::make_shared<RSScreen>(SCREEN_ID);
@@ -225,7 +226,8 @@ HWTEST_F(HgmHardwareUtilsTest, SwitchRefreshRateTest, TestSize.Level1)
         std::bind(&RSScreenManager::SetScreenConstraint,
             screenManager.GetRefPtr(), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
         std::bind(&RSScreenManager::SetScreenActiveMode,
-            screenManager.GetRefPtr(), std::placeholders::_1, std::placeholders::_2)
+            screenManager.GetRefPtr(), std::placeholders::_1, std::placeholders::_2),
+        std::bind(&RSScreenManager::GetScreenActiveRefreshRate, screenManager.GetRefPtr(), std::placeholders::_1)
     );
 
     PipelineParam pipelineParam =

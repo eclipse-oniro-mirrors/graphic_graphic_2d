@@ -86,6 +86,11 @@ HWTEST_F(HgmContextTest, InitHgmTaskHandleThreadTest001, TestSize.Level1)
         ASSERT_EQ(frameRateMgr->hgmConfigUpdateCallback_, nullptr);
         ASSERT_EQ(frameRateMgr->adaptiveVsyncUpdateCallback_, nullptr);
 
+        hgmCore.hgmAbilityEnabled_ = false;
+        hgmContext->InitHgmTaskHandleThread(nullptr, nullptr, nullptr);
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
+        hgmCore.hgmAbilityEnabled_ = true;
+
         hgmContext->InitHgmTaskHandleThread(nullptr, nullptr, nullptr);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
@@ -133,6 +138,45 @@ HWTEST_F(HgmContextTest, InitHgmTaskHandleThreadTest001, TestSize.Level1)
 
         frameRateMgr->hgmConfigUpdateCallback_ = orgHgmConfigUpdateCallback;
         frameRateMgr->adaptiveVsyncUpdateCallback_ = orgAdaptiveVsyncUpdateCallback;
+    } else {
+        EXPECT_EQ(hgmCore.mPolicyConfigData_, nullptr);
+    }
+}
+
+/**
+ * @tc.name: InitHgmTaskHandleThreadTest002
+ * @tc.desc: test InitHgmTaskHandleThread when hgmPolicyEnabled is false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmContextTest, InitHgmTaskHandleThreadTest002, TestSize.Level1)
+{
+    if (frameRateMgr) {
+        auto runner = AppExecFwk::EventRunner::Create(true);
+        auto handler = std::make_shared<AppExecFwk::EventHandler>(runner);
+        auto hgmContext = std::make_shared<HgmContext>(handler, frameRateMgr, nullptr, nullptr, nullptr);
+        ASSERT_NE(hgmContext, nullptr);
+ 
+        auto orgHgmConfigUpdateCallback = frameRateMgr->hgmConfigUpdateCallback_;
+        auto orgAdaptiveVsyncUpdateCallback = frameRateMgr->adaptiveVsyncUpdateCallback_;
+        auto orgHgmPolicyEnabled = hgmCore.hgmAbilityEnabled_;
+ 
+        frameRateMgr->hgmConfigUpdateCallback_ = nullptr;
+        frameRateMgr->adaptiveVsyncUpdateCallback_ = nullptr;
+        hgmCore.hgmAbilityEnabled_ = false;
+ 
+        // When hgmPolicyEnabled is false, InitHgmTaskHandleThread should return early
+        hgmContext->InitHgmTaskHandleThread(nullptr, nullptr, nullptr);
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay_110Ms));
+ 
+        // Callbacks should still be nullptr since InitHgmTaskHandleThread returned early
+        EXPECT_EQ(frameRateMgr->hgmConfigUpdateCallback_, nullptr);
+        EXPECT_EQ(frameRateMgr->adaptiveVsyncUpdateCallback_, nullptr);
+ 
+        // Restore original values
+        frameRateMgr->hgmConfigUpdateCallback_ = orgHgmConfigUpdateCallback;
+        frameRateMgr->adaptiveVsyncUpdateCallback_ = orgAdaptiveVsyncUpdateCallback;
+        hgmCore.hgmAbilityEnabled_ = orgHgmPolicyEnabled;
     } else {
         EXPECT_EQ(hgmCore.mPolicyConfigData_, nullptr);
     }
@@ -1273,6 +1317,7 @@ HWTEST_F(HgmContextTest, RegisterScreenManagerCallbacksAndInvokeAllMethods, Test
     std::atomic<bool> getScreenSupportedModesCalled{false};
     std::atomic<bool> setScreenConstraintCalled{false};
     std::atomic<bool> setScreenActiveModeCalled{false};
+    std::atomic<bool> getScreenActiveRefreshRateCalled{false};
 
     // Define test screen ID
     constexpr ScreenId testScreenId = 100;
@@ -1321,6 +1366,14 @@ HWTEST_F(HgmContextTest, RegisterScreenManagerCallbacksAndInvokeAllMethods, Test
                 return ERR_OK;
             }
             return StatusCode::SCREEN_NOT_FOUND;
+        },
+        // GetScreenActiveRefreshRateCallback
+        [&getScreenActiveRefreshRateCalled](ScreenId id) -> uint32_t {
+            if (id == testScreenId) {
+                getScreenActiveRefreshRateCalled.store(true);
+                return 60u;
+            }
+            return 0u;
         }
     );
 
@@ -1353,5 +1406,10 @@ HWTEST_F(HgmContextTest, RegisterScreenManagerCallbacksAndInvokeAllMethods, Test
     uint32_t activeModeResult = hgmCore.SetScreenActiveMode(testScreenId, 1);
     EXPECT_TRUE(setScreenActiveModeCalled.load());
     EXPECT_EQ(activeModeResult, ERR_OK);
+
+    // Test 6: Call GetScreenActiveRefreshRate
+    uint32_t activeRefreshRate = hgmCore.GetScreenActiveRefreshRate(testScreenId);
+    EXPECT_TRUE(getScreenActiveRefreshRateCalled.load());
+    EXPECT_EQ(activeRefreshRate, 60u);
 }
 } // namespace OHOS::Rosen
