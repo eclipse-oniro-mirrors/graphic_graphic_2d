@@ -2362,7 +2362,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, RegisterTypeface_ReadResultFail, 
     auto typeface = Drawing::Typeface::MakeDefault();
 
     bool ret = mockProxy->RegisterTypeface(globalUniqueId, typeface);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 // ==================== ReportJankStats Tests ====================

@@ -933,8 +933,12 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
     uint32_t colorsSize = 0;
     float* verticesMesh = args.verticesSize ? (args.vertices + args.vertOffset * 2) : nullptr;
     if (!IsNull(env, colorsObj)) {
-        ani_size aniLength;
-        env->Array_GetLength(reinterpret_cast<ani_array>(colorsObj), &aniLength);
+        ani_size aniLength = 0;
+        if (env->Array_GetLength(reinterpret_cast<ani_array>(colorsObj), &aniLength) != ANI_OK) {
+            ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors Array_GetLength failed");
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid colors params.");
+            return;
+        }
         colorsSize = static_cast<uint32_t>(aniLength);
         int64_t tempColorsSize = (args.column + 1) * (args.row + 1) + colorOffset;
         if (colorsSize != 0 && colorsSize != tempColorsSize) {
