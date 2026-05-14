@@ -47,6 +47,13 @@ void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& textS
     textStyle.lineHeightStyle = static_cast<OHOS::Rosen::LineHeightStyle>(skStyle.getLineHeightStyle());
     textStyle.fontEdging = skStyle.getFontEdging();
     textStyle.isFakeBoldEnabled = skStyle.isFakeBoldEnabled();
+    textStyle.fontTypefaces = skStyle.getFontTypefaces();
+    const auto& fontArgs = skStyle.getFontArguments();
+    if (fontArgs.has_value()) {
+        for (const auto& coord : fontArgs->getCoordinates()) {
+            textStyle.fontVariations.SetAxisValue(SkFourByteTagToString(coord.axis), coord.value);
+        }
+    }
 }
 
 TextStyle SkStyleToSPTextStyle(const skia::textlayout::TextStyle& skStyle,
@@ -137,6 +144,7 @@ void ConvertBasicParagraphStyle(const skt::ParagraphStyle& skStyle, ParagraphSty
     paraStyle.isEndAddParagraphSpacing = skStyle.getIsEndAddParagraphSpacing();
     paraStyle.isTrailingSpaceOptimized = skStyle.getTrailingSpaceOptimized();
     paraStyle.compressHeadPunctuation = skStyle.getCompressHeadPunctuation();
+    paraStyle.punctuationOverflow = skStyle.getPunctuationOverflow();
     paraStyle.defaultTextStyleUid = skStyle.getTextStyle().getTextStyleUid();
     paraStyle.maxLineHeight = skStyle.getTextStyle().getMaxLineHeight();
     paraStyle.minLineHeight = skStyle.getTextStyle().getMinLineHeight();

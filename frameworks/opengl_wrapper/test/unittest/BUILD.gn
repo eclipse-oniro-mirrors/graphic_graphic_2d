@@ -71,6 +71,8 @@ config("opengl_wrapper_public_config") {
     "$graphic_2d_root/frameworks/opengl_wrapper/src/EGL",
   ]
 
+  defines = [ "USE_IGRAPHICS_EXTENDS_HOOKS=1" ]
+
   cflags = [
     "-Wall",
     "-Werror",
