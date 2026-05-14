@@ -434,6 +434,9 @@ void RecordingCanvas::DrawPicture(const Picture& picture)
 void RecordingCanvas::DrawGlyphs(int count, const uint16_t glyphs[], const Point pts[],
                                  Point origin, const Font* font)
 {
+    if (!font) {
+        return;
+    }
     auto builder = TextBlobBuilder();
     auto buffer = builder.AllocRunPos(*font, count);
     int pointSize = 2; // x, y occupies 2 unit
