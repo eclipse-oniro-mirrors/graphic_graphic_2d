@@ -1421,7 +1421,7 @@ HWTEST_F(RSScreenManagerTest, SetScreenBacklight_001, TestSize.Level1)
 {
     ASSERT_NE(screenManager_, nullptr);
     ScreenId screenId = INVALID_SCREEN_ID;
-    screenManager_->SetScreenBacklight(screenId, LIGHT_LEVEL);
+    screenManager_->SetScreenBacklight(RsScreenBrightnessData(screenId, LIGHT_LEVEL));
 }
 
 /*
@@ -1440,7 +1440,7 @@ HWTEST_F(RSScreenManagerTest, SetScreenBacklight_002, TestSize.Level1)
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
     screenManager_->MockHdiScreenConnected(rsScreen);
 
-    screenManager_->SetScreenBacklight(screenId, LIGHT_LEVEL);
+    screenManager_->SetScreenBacklight(RsScreenBrightnessData(screenId, LIGHT_LEVEL));
     auto ret = screenManager_->GetScreenBacklight(screenId);
     ASSERT_EQ(ret, LIGHT_LEVEL);
 

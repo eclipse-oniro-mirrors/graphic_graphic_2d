@@ -199,9 +199,9 @@ HWTEST_F(RSComposerClientManagerTest, CleanLayerBufferBySurfaceId_WithLayer_Forw
 HWTEST_F(RSComposerClientManagerTest, SetScreenBacklight_WithClientAndNoClient_NoCrash, TestSize.Level1)
 {
     RSComposerClientManager mgr;
-    mgr.SetScreenBacklight(9999, 80); // no client path
+    mgr.SetScreenBacklight(RsScreenBrightnessData(9999, 80)); // no client path
     mgr.AddComposerClient(1, MakeClient());
-    mgr.SetScreenBacklight(1, 90); // with client path
+    mgr.SetScreenBacklight(RsScreenBrightnessData(1, 90)); // with client path
     EXPECT_EQ(mgr.GetComposerClient(9999), nullptr);
     EXPECT_NE(mgr.GetComposerClient(1), nullptr);
 }
