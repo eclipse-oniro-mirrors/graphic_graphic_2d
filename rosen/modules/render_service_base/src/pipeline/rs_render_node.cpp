@@ -4720,7 +4720,11 @@ void RSRenderNode::OnSync()
     }
 
     if (nodeGroupType_ == NodeGroupType::GROUPED_BY_LAYER) {
-        RSLayerCacheManagerBase::layerDrawables_.emplace_back(renderDrawable_);
+        if (GetRenderProperties().GetBgBrightnessPaRams().has_value()) {
+            stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
+        } else {
+            RSLayerCacheManagerBase::layerDrawables_.emplace_back(renderDrawable_);
+        }
     }
 
     if (drawableVecNeedClear_) {
