@@ -4566,5 +4566,95 @@ HWTEST_F(RSRenderNodeTest, UpdateFilterChildRelevantFlagsToParams003, TestSize.L
     ASSERT_FALSE(node->stagingRenderParams_->ChildHasVisibleFilter());
     ASSERT_TRUE(node->stagingRenderParams_->ChildHasVisibleEffect());
 }
+
+/**
+ * @tc.name: AccumulateParentGeoDirty001
+ * @tc.desc: test AccumulateParentGeoDirty with no parent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(id, context);
+    node->GetMutableRenderProperties().SetParentGeoDirty(false);
+    node->AccumulateParentGeoDirty();
+    EXPECT_FALSE(node->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty002
+ * @tc.desc: test AccumulateParentGeoDirty when parent geoDirty_ is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty002, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto child = std::make_shared<RSRenderNode>(id + 2, context);
+    child->SetParent(parent);
+    parent->GetMutableRenderProperties().geoDirty_ = true;
+    parent->GetMutableRenderProperties().SetParentGeoDirty(false);
+    child->AccumulateParentGeoDirty();
+    EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty003
+ * @tc.desc: test AccumulateParentGeoDirty when parent parentGeoDirty_ is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty003, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto child = std::make_shared<RSRenderNode>(id + 2, context);
+    child->SetParent(parent);
+    parent->GetMutableRenderProperties().geoDirty_ = false;
+    parent->GetMutableRenderProperties().SetParentGeoDirty(true);
+    child->AccumulateParentGeoDirty();
+    EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty004
+ * @tc.desc: test AccumulateParentGeoDirty when parent has no dirty flags
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty004, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto child = std::make_shared<RSRenderNode>(id + 2, context);
+    child->SetParent(parent);
+    parent->GetMutableRenderProperties().geoDirty_ = false;
+    parent->GetMutableRenderProperties().SetParentGeoDirty(false);
+    child->AccumulateParentGeoDirty();
+    EXPECT_FALSE(child->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty005
+ * @tc.desc: test AccumulateParentGeoDirty chain propagation from grandparent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty005, TestSize.Level1)
+{
+    auto grandparent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto parent = std::make_shared<RSRenderNode>(id + 2, context);
+    auto child = std::make_shared<RSRenderNode>(id + 3, context);
+    parent->SetParent(grandparent);
+    child->SetParent(parent);
+
+    grandparent->GetMutableRenderProperties().geoDirty_ = true;
+    grandparent->GetMutableRenderProperties().SetParentGeoDirty(false);
+
+    parent->AccumulateParentGeoDirty();
+    EXPECT_TRUE(parent->GetRenderProperties().IsParentGeoDirty());
+
+    parent->GetMutableRenderProperties().geoDirty_ = false;
+    child->AccumulateParentGeoDirty();
+    EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
+}
 } // namespace Rosen
 } // namespace OHOS

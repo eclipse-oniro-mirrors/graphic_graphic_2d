@@ -4044,5 +4044,63 @@ HWTEST_F(RSPropertiesTest, GetMaterialShader001, TestSize.Level1)
 
     EXPECT_EQ(properties.GetMaterialShader(), nullptr);
 }
+
+/**
+ * @tc.name: ParentGeoDirty001
+ * @tc.desc: test IsParentGeoDirty and SetParentGeoDirty
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, ParentGeoDirty001, TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_FALSE(properties.IsParentGeoDirty());
+    properties.SetParentGeoDirty(true);
+    EXPECT_TRUE(properties.IsParentGeoDirty());
+    properties.SetParentGeoDirty(false);
+    EXPECT_FALSE(properties.IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: ParentGeoDirty002
+ * @tc.desc: test ResetDirty clears parentGeoDirty_
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, ParentGeoDirty002, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetParentGeoDirty(true);
+    EXPECT_TRUE(properties.IsParentGeoDirty());
+    properties.ResetDirty();
+    EXPECT_FALSE(properties.IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: ParentGeoDirty003
+ * @tc.desc: test ResetDirty clears parentGeoDirty_ together with other dirty flags
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertiesTest, ParentGeoDirty003, TestSize.Level1)
+{
+    RSProperties properties;
+    properties.SetDirty();
+    properties.geoDirty_ = true;
+    properties.SetParentGeoDirty(true);
+    properties.contentDirty_ = true;
+    properties.subTreeAllDirty_ = true;
+    EXPECT_TRUE(properties.IsDirty());
+    EXPECT_TRUE(properties.IsGeoDirty());
+    EXPECT_TRUE(properties.IsParentGeoDirty());
+    EXPECT_TRUE(properties.IsContentDirty());
+    EXPECT_TRUE(properties.IsSubTreeAllDirty());
+    properties.ResetDirty();
+    EXPECT_FALSE(properties.IsDirty());
+    EXPECT_FALSE(properties.IsGeoDirty());
+    EXPECT_FALSE(properties.IsParentGeoDirty());
+    EXPECT_FALSE(properties.IsContentDirty());
+    EXPECT_FALSE(properties.IsSubTreeAllDirty());
+}
 } // namespace Rosen
 } // namespace OHOS
