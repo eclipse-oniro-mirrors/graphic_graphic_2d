@@ -45,7 +45,11 @@ bool CreateTestXml(const std::string &path, const char *content)
     if (fp == nullptr) {
         return false;
     }
-    fprintf(fp, "%s", content);
+    int written = fprintf(fp, "%s", content);
+    if (written < 0) {
+        fclose(fp);
+        return false;
+    }
     if (fclose(fp) != 0) {
         return false;
     }
