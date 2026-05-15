@@ -59,6 +59,7 @@ rs_display_effect_sources = [
   "rs_display_effect/property_display/appearance_border_test.cpp",
   "rs_display_effect/property_display/appearance_clip_test.cpp",
   "rs_display_effect/property_display/appearance_compositing_filter_test.cpp",
+  "rs_display_effect/property_display/appearance_double_sided_test.cpp",
   "rs_display_effect/property_display/appearance_g2cornerradius_test.cpp",
   "rs_display_effect/property_display/appearance_hdr_brightness_test.cpp",
   "rs_display_effect/property_display/appearance_material_filter_test.cpp",
