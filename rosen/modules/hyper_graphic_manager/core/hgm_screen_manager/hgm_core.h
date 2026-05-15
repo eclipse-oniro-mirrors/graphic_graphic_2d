@@ -46,7 +46,7 @@ public:
     using SetScreenConstraintCallback = std::function<int32_t(ScreenId, uint64_t, ScreenConstraintType)>;
     using SetScreenActiveModeCallback = std::function<uint32_t(ScreenId, uint32_t)>;
     using GetScreenActiveRefreshRateCallback = std::function<uint32_t(ScreenId)>;
-    struct ScreenManagerCallbacks{
+    struct ScreenManagerCallbacks {
         const GetDefaultScreenIdCallback getDefaultScreenIdCb;
         const GetScreenPowerStatusCallback getScreenPowerStatusCb;
         const GetScreenSupportedModesCallback getScreenSupportedModesCb;
