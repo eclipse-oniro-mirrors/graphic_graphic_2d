@@ -79,6 +79,7 @@ RSMultiRenderProcessManager::RSMultiRenderProcessManager(RSRenderService& render
     renderProcessDeathCallback_ = [&screenManager = renderService_.screenManager_](
         std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>>& screenOutputs) {
         if (screenManager != nullptr) {
+            screenManager->OnProcessDisconnected(screenOutputs);
         }
     };
 }
