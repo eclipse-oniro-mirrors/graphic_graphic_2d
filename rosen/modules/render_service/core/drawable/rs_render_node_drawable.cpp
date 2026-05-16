@@ -1031,13 +1031,13 @@ std::shared_ptr<Drawing::Image> RSRenderNodeDrawable::GetImageAlias(
 }
 
 bool RSRenderNodeDrawable::BufferNeedUpdate(std::shared_ptr<Drawing::Surface>& cacheSurface,
-    const RSRenderParams& params, bool isNeedFP16) const
+    bool isNeedFP16, GraphicColorGamut colorGamut) const
 {
     if (RSHdrUtil::BufferFormatNeedUpdate(cacheSurface, isNeedFP16)) {
         return true;
     }
 #ifdef RS_ENABLE_VK
-    auto newColorSpace = RSBaseRenderEngine::ConvertColorGamutToDrawingColorSpace(params.GetNodeColorSpace());
+    auto newColorSpace = RSBaseRenderEngine::ConvertColorGamutToDrawingColorSpace(colorGamut);
     if (cacheSurface && newColorSpace) {
         return !newColorSpace->Equals(cacheSurface->GetImageInfo().GetColorSpace());
     }
@@ -1062,9 +1062,18 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     bool isHdrOn = params.SelfOrChildHasHDR();
     bool isScRGBEnable = RSSystemParameters::IsNeedScRGBForP3(curCanvas->GetTargetColorGamut()) &&
         RSUifirstManager::Instance().GetUiFirstSwitch();
+    // look up per-node color gamut from the params map collected by CheckColorSpace
+    GraphicColorGamut windowGamut = params.GetNodeColorSpace();
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (uniParam) {
+        auto it = uniParam->GetSurfaceColorGamutMap().find(params.GetFirstLevelNodeId());
+        if (it != uniParam->GetSurfaceColorGamutMap().end()) {
+            windowGamut = it->second;
+        }
+    }
     bool isNeedFP16 = isHdrOn || isScRGBEnable;
     auto cacheSurface = GetCachedSurface(threadId);
-    if (BufferNeedUpdate(cacheSurface, params, isNeedFP16)) {
+    if (BufferNeedUpdate(cacheSurface, isNeedFP16, windowGamut)) {
         // renderGroup memory tagTracer
         std::optional<RSTagTracker> tagTracer;
         if (RSOpincDrawCacheHelper::GetOpincCachedMark(*this)) {
@@ -1075,8 +1084,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         }
         RS_TRACE_NAME_FMT("InitCachedSurface size:[%.2f, %.2f], isFP16:%d, HdrStatus:%d, isScRGBEnable:%d",
             params.GetCacheSize().x_, params.GetCacheSize().y_, isNeedFP16, params.GetHDRStatus(), isScRGBEnable);
-        InitCachedSurface(curCanvas->GetGPUContext().get(), params.GetCacheSize(), threadId, isNeedFP16,
-            params.GetNodeColorSpace());
+        InitCachedSurface(curCanvas->GetGPUContext().get(), params.GetCacheSize(), threadId, isNeedFP16, windowGamut);
         RSLayerPartDrawCacheHelper::ResetUpdateLayerPartRenderCache(*this);
         cacheSurface = GetCachedSurface(threadId);
         if (cacheSurface == nullptr) {

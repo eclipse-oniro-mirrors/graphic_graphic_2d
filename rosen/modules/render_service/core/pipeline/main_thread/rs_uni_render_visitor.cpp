@@ -35,6 +35,7 @@
 #include "display_engine/rs_luminance_control.h"
 #include "feature/color_picker/rs_color_picker_utils.h"
 #include "feature/drm/rs_drm_util.h"
+#include "feature/hdr/rs_colorspace_util.h"
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/opinc/rs_opinc_root_cache.h"
 #include "feature/opinc/rs_opinc_manager.h"
@@ -262,6 +263,11 @@ void RSUniRenderVisitor::CheckColorSpace(RSSurfaceRenderNode& node)
         return;
     }
     GraphicColorGamut gamut = node.GetColorSpace();
+    auto firstLevelNodeId = node.GetFirstLevelNodeId();
+    auto [it, inserted] = surfaceColorGamutMap_.try_emplace(firstLevelNodeId, gamut);
+    if (!inserted) {
+        it->second = RSColorSpaceUtil::SelectBigGamut(it->second, gamut);
+    }
     if (gamut != GRAPHIC_COLOR_GAMUT_SRGB) {
         curScreenNode_->UpdateColorSpace(gamut);
         RS_LOGD("CheckColorSpace: node(%{public}s) set new colorgamut %{public}d",
@@ -351,25 +357,12 @@ bool RSUniRenderVisitor::IsWiredMirrorScreen(RSScreenRenderNode& node)
 void RSUniRenderVisitor::HandleWiredMirrorScreenColorGamut(RSScreenRenderNode& node)
 {
     std::vector<ScreenColorGamut> mode = node.GetScreenProperty().GetScreenSupportedColorGamuts();
-    if (!MultiScreenParam::IsMirrorDisplayCloseP3()) {
-        std::shared_ptr<RSScreenRenderNode> mirrorNode = node.GetMirrorSource().lock();
-        if (!mirrorNode) {
-            return;
-        }
-        bool isSupportedDisplayP3 =
-            std::any_of(mode.begin(), mode.end(), [](const auto gamut) { return gamut == COLOR_GAMUT_DISPLAY_P3; });
-        if (isSupportedDisplayP3) {
-            // wired mirror and mirror support P3, mirror gamut = main gamut
-            node.SetColorSpace(mirrorNode->GetColorSpace());
-        }
-    } else {
-        node.SelectBestGamut(mode);
+    std::shared_ptr<RSScreenRenderNode> mirrorNode = node.GetMirrorSource().lock();
+    if (!mirrorNode) {
+        return;
     }
-
-    ScreenColorGamut screenColorGamut = node.GetScreenProperty().GetScreenColorGamut();
-    if (static_cast<GraphicColorGamut>(screenColorGamut) == GRAPHIC_COLOR_GAMUT_SRGB) {
-        node.SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    }
+    node.SetColorSpace(mirrorNode->GetColorSpace());
+    node.SelectBestGamut(mode);
 }
 
 bool RSUniRenderVisitor::IsWiredExtendedScreen(RSScreenRenderNode& node)
@@ -3954,6 +3947,7 @@ void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadP
     if (RSPointerWindowManager::Instance().IsNeedForceCommitByPointer()) {
         renderThreadParams->forceCommitReason_ |= ForceCommitReason::FORCED_BY_POINTER_WINDOW;
     }
+    renderThreadParams->surfaceColorGamutMap_ = std::move(surfaceColorGamutMap_);
 }
 
 void RSUniRenderVisitor::SendRcdMessage(RSScreenRenderNode& node)

@@ -1780,6 +1780,7 @@ HWTEST_F(RSUniRenderVisitorTest, CheckColorSpace001, TestSize.Level2)
     rsUniRenderVisitor->curScreenNode_->stagingRenderParams_ = std::make_unique<RSScreenRenderParams>(id);
     rsUniRenderVisitor->CheckColorSpace(*appWindowNode);
     ASSERT_EQ(rsUniRenderVisitor->curScreenNode_->GetColorSpace(), appWindowNode->GetColorSpace());
+    rsUniRenderVisitor->CheckColorSpace(*appWindowNode);
 }
 
 /**
@@ -8919,28 +8920,24 @@ HWTEST_F(RSUniRenderVisitorTest, IsWiredMirrorScreen001, TestSize.Level2)
 
 /**
  * @tc.name: HandleWiredMirrorScreenColorGamut001
- * @tc.desc: Test HandleWiredMirrorScreenColorGamut with P3 disabled
+ * @tc.desc: Test HandleWiredMirrorScreenColorGamut without mirror source
  * @tc.type: FUNC
  * @tc.require: issueIAJJ43
  */
 HWTEST_F(RSUniRenderVisitorTest, HandleWiredMirrorScreenColorGamut001, TestSize.Level2)
 {
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(screenManager, nullptr);
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
     auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
-    screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
 
     rsUniRenderVisitor->HandleWiredMirrorScreenColorGamut(*screenNode);
-    ScreenColorGamut screenColorGamut;
-    screenManager->GetScreenColorGamut(screenNode->GetScreenId(), screenColorGamut);
-    ASSERT_EQ(screenNode->GetColorSpace(), static_cast<GraphicColorGamut>(screenColorGamut));
+    EXPECT_EQ(screenNode->GetColorSpace(), GRAPHIC_COLOR_GAMUT_SRGB);
 }
 
 /**
  * @tc.name: HandleWiredMirrorScreenColorGamut002
- * @tc.desc: Test HandleWiredMirrorScreenColorGamut without mirror source
+ * @tc.desc: Test HandleWiredMirrorScreenColorGamut with mirror source
  * @tc.type: FUNC
  * @tc.require: issueIAJJ43
  */
@@ -8948,107 +8945,14 @@ HWTEST_F(RSUniRenderVisitorTest, HandleWiredMirrorScreenColorGamut002, TestSize.
 {
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
-    screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-
-    MultiScreenParam::SetMirrorDisplayCloseP3(false);
-    rsUniRenderVisitor->HandleWiredMirrorScreenColorGamut(*screenNode);
-    EXPECT_EQ(screenNode->GetColorSpace(), GRAPHIC_COLOR_GAMUT_SRGB);
-}
-
-/**
- * @tc.name: HandleWiredMirrorScreenColorGamut003
- * @tc.desc: Test HandleWiredMirrorScreenColorGamut with mirror source
- * @tc.type: FUNC
- * @tc.require: issueIAJJ43
- */
-HWTEST_F(RSUniRenderVisitorTest, HandleWiredMirrorScreenColorGamut003, TestSize.Level2)
-{
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(screenManager, nullptr);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
     auto rsContext = std::make_shared<RSContext>();
     ScreenId screenId = 1;
     auto displayNode = std::make_shared<RSScreenRenderNode>(TestSrc::limitNumber::Uint64[6], screenId, rsContext);
     ASSERT_NE(displayNode, nullptr);
     auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
-    screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    MultiScreenParam::SetMirrorDisplayCloseP3(false);
-
-    screenNode->mirrorSource_ = displayNode;
-    rsUniRenderVisitor->HandleWiredMirrorScreenColorGamut(*screenNode);
-    EXPECT_EQ(screenNode->GetColorSpace(), GRAPHIC_COLOR_GAMUT_SRGB);
-}
-
-/**
- * @tc.name: HandleWiredMirrorScreenColorGamut004
- * @tc.desc: Test HandleWiredMirrorScreenColorGamut with mirror source
- * @tc.type: FUNC
- * @tc.require: issueIAJJ43
- */
-HWTEST_F(RSUniRenderVisitorTest, HandleWiredMirrorScreenColorGamut004, TestSize.Level2)
-{
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    ASSERT_NE(screenManager, nullptr);
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto rsContext = std::make_shared<RSContext>();
-    ScreenId screenId = 1;
-    auto displayNode = std::make_shared<RSScreenRenderNode>(TestSrc::limitNumber::Uint64[6], screenId, rsContext);
-    ASSERT_NE(displayNode, nullptr);
-    auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
-    screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    MultiScreenParam::SetMirrorDisplayCloseP3(false);
-
-    screenNode->mirrorSource_ = displayNode;
-    screenNode->screenId_ = -1;
-    rsUniRenderVisitor->HandleWiredMirrorScreenColorGamut(*screenNode);
-    EXPECT_EQ(screenNode->GetColorSpace(), GRAPHIC_COLOR_GAMUT_SRGB);
-}
-
-/**
- * @tc.name: HandleWiredMirrorScreenColorGamut005
- * @tc.desc: Test HandleWiredMirrorScreenColorGamut with mirror source
- * @tc.type: FUNC
- * @tc.require: issueIAJJ43
- */
-HWTEST_F(RSUniRenderVisitorTest, HandleWiredMirrorScreenColorGamut005, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto rsContext = std::make_shared<RSContext>();
-    ScreenId screenId = 1;
-    auto displayNode = std::make_shared<RSScreenRenderNode>(TestSrc::limitNumber::Uint64[6], screenId, rsContext);
-    ASSERT_NE(displayNode, nullptr);
-    auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
-    screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-
-    MultiScreenParam::SetMirrorDisplayCloseP3(true);
-    screenNode->mirrorSource_ = displayNode;
-    screenNode->screenId_ = -1;
-    rsUniRenderVisitor->HandleWiredMirrorScreenColorGamut(*screenNode);
-    EXPECT_EQ(screenNode->GetColorSpace(), GRAPHIC_COLOR_GAMUT_SRGB);
-}
-
-/**
- * @tc.name: HandleWiredMirrorScreenColorGamut006
- * @tc.desc: Test HandleWiredMirrorScreenColorGamut with invalid screen id
- * @tc.type: FUNC
- * @tc.require: issueIAJJ43
- */
-HWTEST_F(RSUniRenderVisitorTest, HandleWiredMirrorScreenColorGamut006, TestSize.Level2)
-{
-    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    auto rsContext = std::make_shared<RSContext>();
-    ScreenId screenId = 1;
-    auto displayNode = std::make_shared<RSScreenRenderNode>(TestSrc::limitNumber::Uint64[6], screenId, rsContext);
-    ASSERT_NE(displayNode, nullptr);
-    auto screenNode = std::make_shared<RSScreenRenderNode>(0, 0);
+    screenNode->SetIsMirrorScreen(true);
     screenNode->SetMirrorSource(displayNode);
     screenNode->SetColorSpace(GRAPHIC_COLOR_GAMUT_SRGB);
-    screenNode->screenId_ = -1;
 
     rsUniRenderVisitor->HandleWiredMirrorScreenColorGamut(*screenNode);
     EXPECT_EQ(screenNode->GetColorSpace(), GRAPHIC_COLOR_GAMUT_SRGB);
