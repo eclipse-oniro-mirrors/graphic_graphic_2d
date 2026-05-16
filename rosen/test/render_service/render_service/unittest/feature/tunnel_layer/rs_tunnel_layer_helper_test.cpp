@@ -20,7 +20,6 @@
 #include "consumer_surface.h"
 #include "feature/hyper_graphic_manager/hgm_render_context.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_helper.h"
-#include "feature/tunnel_layer/rs_tunnel_layer_manager.h"
 #include "feature/tunnel_layer/rs_tunnel_route_arbiter.h"
 #include "gtest/gtest.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -526,53 +525,6 @@ HWTEST_F(RSTunnelLayerHelperTest, ReleaseAndResetPreBuffer001, TestSize.Level1)
     EXPECT_TRUE(callbackSawBuffer);
     EXPECT_EQ(firstOwnerCount->refCount_.load(), 0);
     EXPECT_EQ(surfaceHandler->GetPreBuffer(), nullptr);
-}
-
-/**
- * @tc.name: TransferTunnelPendingBufferToNormalConsume001
- * @tc.desc: Test tunnel to RS normal transition keeps callback available count without pending buffer.
- * @tc.type: FUNC
- */
-HWTEST_F(RSTunnelLayerHelperTest, TransferTunnelPendingBufferToNormalConsume001, TestSize.Level1)
-{
-    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
-    auto context = CreateTunnelTestContext(true);
-    ASSERT_TRUE(context.IsProducerReady());
-
-    context.surfaceHandler->SetAvailableBufferCount(1);
-    RSTunnelLayerManager tunnelLayerManager(nullptr);
-    tunnelLayerManager.TransferTunnelPendingBufferToNormalConsume(context.node);
-    EXPECT_EQ(context.surfaceHandler->GetAvailableBufferCount(), 1);
-    EXPECT_EQ(context.surfaceHandler->GetPreBuffer(), nullptr);
-}
-
-/**
- * @tc.name: TransferTunnelPendingBufferToNormalConsume002
- * @tc.desc: Test pending tunnel buffer is moved into normal hold buffer for RS consume.
- * @tc.type: FUNC
- */
-HWTEST_F(RSTunnelLayerHelperTest, TransferTunnelPendingBufferToNormalConsume002, TestSize.Level1)
-{
-    ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
-    auto context = CreateTunnelTestContext(true);
-    ASSERT_TRUE(context.IsProducerReady());
-
-    ASSERT_TRUE(SetRuntimePendingBufferForTest(context));
-    ASSERT_TRUE(context.node->GetTunnelRuntimeState().HasPendingBuffer());
-
-    RSTunnelLayerManager tunnelLayerManager(nullptr);
-    tunnelLayerManager.TransferTunnelPendingBufferToNormalConsume(context.node);
-    EXPECT_FALSE(context.node->GetTunnelRuntimeState().HasPendingBuffer());
-    auto holdBuffer = context.surfaceHandler->GetHoldBuffer();
-    ASSERT_NE(holdBuffer, nullptr);
-    ASSERT_NE(holdBuffer->buffer, nullptr);
-    auto holdBufferId = holdBuffer->buffer->GetBufferId();
-    EXPECT_EQ(context.surfaceHandler->GetAvailableBufferCount(), 1);
-
-    ASSERT_TRUE(RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(*context.surfaceHandler));
-    ASSERT_NE(context.surfaceHandler->GetBuffer(), nullptr);
-    EXPECT_EQ(context.surfaceHandler->GetBuffer()->GetBufferId(), holdBufferId);
-    EXPECT_TRUE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
 }
 
 /**

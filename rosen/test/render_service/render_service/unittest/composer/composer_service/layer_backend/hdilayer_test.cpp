@@ -338,6 +338,7 @@ HWTEST_F(HdiLayerTest, ClearBufferCache001, Function | MediumTest| Level1)
  */
 HWTEST_F(HdiLayerTest, SetLayerBuffer_TunnelDeviceCommitFirstFrame001, Function | MediumTest| Level1)
 {
+    NiceMock<Mock::HdiDeviceMock> hdiDeviceMock;
     auto hdiLayer = HdiLayer::CreateHdiLayer(0);
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     ASSERT_NE(hdiLayer, nullptr);
@@ -359,11 +360,11 @@ HWTEST_F(HdiLayerTest, SetLayerBuffer_TunnelDeviceCommitFirstFrame001, Function 
     rsLayer->SetTunnelLayerId(100);
     rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_BUFFER_ADDR | TUNNEL_PROP_DEVICE_COMMIT | TUNNEL_PROP_RS_FORCE);
 
-    ASSERT_EQ(hdiLayer->SetHdiDeviceMock(hdiDeviceMock_), GRAPHIC_DISPLAY_SUCCESS);
+    ASSERT_EQ(hdiLayer->SetHdiDeviceMock(&hdiDeviceMock), GRAPHIC_DISPLAY_SUCCESS);
     hdiLayer->rsLayer_ = rsLayer;
 
-    EXPECT_CALL(*hdiDeviceMock_, SetLayerBuffer(_, _, _)).Times(1);
-    EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerBuffer(_, _, _, _)).Times(0);
+    EXPECT_CALL(hdiDeviceMock, SetLayerBuffer(_, _, _)).WillOnce(testing::Return(0));
+    EXPECT_CALL(hdiDeviceMock, SetTunnelLayerBuffer(_, _, _, _)).Times(0);
 
     auto ret = hdiLayer->SetLayerBuffer();
     EXPECT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
@@ -900,15 +901,19 @@ HWTEST_F(HdiLayerTest, SetTunnelLayerParametersTest003, Function | MediumTest| L
  */
 HWTEST_F(HdiLayerTest, SetTunnelLayerParametersTest004, Function | MediumTest| Level1)
 {
-    ASSERT_NE(hdiLayer_, nullptr);
+    NiceMock<Mock::HdiDeviceMock> hdiDeviceMock;
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    ASSERT_EQ(hdiLayer->SetHdiDeviceMock(&hdiDeviceMock), GRAPHIC_DISPLAY_SUCCESS);
+
     auto rsLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     rsLayer->SetTunnelLayerId(0);
     rsLayer->SetTunnelLayerProperty(TUNNEL_PROP_INVALID);
-    hdiLayer_->rsLayer_ = rsLayer;
+    hdiLayer->rsLayer_ = rsLayer;
 
-    EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerId(_, _, 0)).Times(0);
-    EXPECT_CALL(*hdiDeviceMock_, SetTunnelLayerProperty(_, _, TUNNEL_PROP_INVALID)).Times(0);
-    auto ret = hdiLayer_->SetTunnelLayerParameters();
+    EXPECT_CALL(hdiDeviceMock, SetTunnelLayerId(_, _, 0)).Times(0);
+    EXPECT_CALL(hdiDeviceMock, SetTunnelLayerProperty(_, _, TUNNEL_PROP_INVALID)).Times(0);
+    auto ret = hdiLayer->SetTunnelLayerParameters();
     EXPECT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
