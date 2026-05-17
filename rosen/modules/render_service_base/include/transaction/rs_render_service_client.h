@@ -22,6 +22,8 @@
 #include <mutex>
 #include <shared_mutex>
 #include <refbase.h>
+#include "common/rs_common_def.h"
+#ifndef ENABLE_RS_PROXY
 #include <surface_type.h>
 #ifndef ROSEN_CROSS_PLATFORM
 #include <surface.h>
@@ -40,16 +42,16 @@
 #include "ipc_callbacks/screen_switching_notify_callback.h"
 #include "ipc_callbacks/rs_transaction_data_callback.h"
 #include "memory/rs_memory_graphic.h"
+#endif
 #include "rs_render_service_client_info.h"
-#include "rs_hrp_service.h"
 #ifndef ENABLE_RS_PROXY
+#include "rs_hrp_service.h"
 #include "rs_irender_client.h"
 #include "platform/drawing/rs_surface.h"
 #include "rs_self_drawing_node_rect_data.h"
 #include "rs_uiextension_data.h"
 #include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "utils/scalar.h"
-#endif
 #include "variable_frame_rate/rs_variable_frame_rate.h"
 #include "screen_manager/rs_screen_capability.h"
 #include "screen_manager/rs_screen_data.h"
@@ -64,8 +66,10 @@
 #include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "info_collection/rs_layer_compose_collection.h"
 #include "rs_client_render_comm_def_info.h"
+#endif
 namespace OHOS {
 namespace Rosen {
+#ifndef ENABLE_RS_PROXY
 // normal callback functor for client users.
 using ScreenChangeCallback = std::function<void(ScreenId, ScreenEvent, ScreenChangeReason, sptr<IRemoteObject>)>;
 using BrightnessInfoChangeCallback = std::function<void(ScreenId, BrightnessInfo)>;
@@ -81,12 +85,10 @@ using HgmConfigChangeCallback = std::function<void(std::shared_ptr<RSHgmConfigDa
 using HgmRefreshRateModeChangeCallback = std::function<void(int32_t)>;
 using HgmRefreshRateUpdateCallback = std::function<void(int32_t)>;
 using FrameRateLinkerExpectedFpsUpdateCallback = std::function<void(int32_t, const std::string&, int32_t)>;
-#ifndef ENABLE_RS_PROXY
 using UIExtensionCallback = std::function<void(std::shared_ptr<RSUIExtensionData>, uint64_t)>;
 using SelfDrawingNodeRectChangeCallback = std::function<void(std::shared_ptr<RSSelfDrawingNodeRectData>)>;
-#endif
 using FirstFrameCommitCallback = std::function<void(uint64_t, int64_t)>;
-
+#endif
 class RSB_EXPORT RSRenderServiceClient
 #ifndef ENABLE_RS_PROXY
  : public RSIRenderClient
@@ -105,7 +107,7 @@ public:
 #else
     static std::shared_ptr<RSRenderServiceClient> CreateRenderServiceClient();
 #endif
-
+#ifndef ENABLE_RS_PROXY
     bool GetUniRenderEnabled();
 
     sptr<IRemoteObject> GetConnectToRenderToken(ScreenId screenId);
@@ -347,9 +349,9 @@ public:
     void SetWindowExpectedRefreshRate(const std::unordered_map<std::string, EventInfo>& eventInfos);
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount);
-
+#endif
     void NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType);
-
+#ifndef ENABLE_RS_PROXY
     void NotifyDynamicModeEvent(bool enableDynamicMode);
 
     void NotifyHgmConfigEvent(const std::string &eventName, bool state);
@@ -369,9 +371,9 @@ public:
     void ReportGameStateData(GameStateData info);
 
     void SetCacheEnabledForRotation(bool isEnabled);
-
+#endif
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
-
+#ifndef ENABLE_RS_PROXY
     LayerComposeInfo GetLayerComposeInfo();
 
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo();
@@ -428,7 +430,9 @@ public:
     bool AvcodecVideoGetRecent();
 
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
+#endif
 private:
+#ifndef ENABLE_RS_PROXY
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
     void TriggerTransactionDataCallbackAndErase(uint64_t token, uint64_t timeStamp);
 
@@ -446,6 +450,7 @@ private:
 
     friend class SurfaceBufferCallbackDirector;
     friend class TransactionDataCallbackDirector;
+#endif
 };
 } // namespace Rosen
 } // namespace OHOS

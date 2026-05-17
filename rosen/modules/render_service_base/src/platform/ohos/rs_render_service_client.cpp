@@ -14,26 +14,19 @@
  */
 
 #include "transaction/rs_render_service_client.h"
+#ifndef ENABLE_RS_PROXY
 #include "surface_type.h"
 #include "rs_trace.h"
 #include "surface_utils.h"
 #ifdef RS_ENABLE_GL
-#ifndef ENABLE_RS_PROXY
 #include "backend/rs_surface_ohos_gl.h"
 #endif
-#endif
-#ifndef ENABLE_RS_PROXY
 #include "backend/rs_surface_ohos_raster.h"
-#endif
 #ifdef RS_ENABLE_VK
-#ifndef ENABLE_RS_PROXY
 #include "backend/rs_surface_ohos_vulkan.h"
 #endif
-#endif
-#ifndef ENABLE_RS_PROXY
 #include "command/rs_command.h"
 #include "command/rs_node_showing_command.h"
-#endif
 #include "common/rs_xcollie.h"
 #include "ipc_callbacks/active_screen_id_changed_callback_stub.h"
 #include "ipc_callbacks/screen_supported_hdr_formats_callback_stub.h"
@@ -52,6 +45,7 @@
 #include "ipc_callbacks/rs_exposed_event_callback_stub.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
+#endif
 #include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
 #ifdef ENABLE_RS_PROXY
 #include "rs_client_to_service_connect_hub.h"
@@ -61,8 +55,8 @@
 #include "ipc_callbacks/rs_self_drawing_node_rect_change_callback_stub.h"
 #include "render/rs_typeface_cache.h"
 #include "rs_surface_ohos.h"
-#endif
 #include "vsync_iconnection_token.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -98,7 +92,7 @@ std::shared_ptr<RSRenderServiceClient> RSRenderServiceClient::CreateRenderServic
     return instance;
 }
 #endif
-
+#ifndef ENABLE_RS_PROXY
 bool RSRenderServiceClient::GetUniRenderEnabled()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -140,8 +134,6 @@ bool RSRenderServiceClient::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemS
     return clientToService->GetTotalAppMemSize(cpuMemSize, gpuMemSize) == ERR_OK;
 }
 
-
-#ifndef ENABLE_RS_PROXY
 std::shared_ptr<RSSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Surface> &surface)
 {
     std::shared_ptr<RSSurface> producer = nullptr;
@@ -163,7 +155,6 @@ std::shared_ptr<RSSurface> RSRenderServiceClient::CreateRSSurface(const sptr<Sur
     producer = std::make_shared<RSSurfaceOhosRaster>(surface);
     return producer;
 }
-#endif
 
 std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     const std::string& name,
@@ -196,7 +187,7 @@ sptr<IRemoteObject> RSRenderServiceClient::GetConnectToRenderToken(ScreenId scre
     }
     return clientToService->GetConnectToRenderToken(screenId);
 }
-#ifndef ENABLE_RS_PROXY
+
 int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -223,7 +214,7 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfac
     return clientToService->CreatePixelMapFromSurface(surface, srcRect, pixelMap,
         transformEnabled) == ERR_OK ? pixelMap : nullptr;
 }
-#endif
+
 void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -268,7 +259,7 @@ std::vector<ScreenId> RSRenderServiceClient::GetAllScreenIds()
 
     return clientToService->GetAllScreenIds();
 }
-#ifndef ENABLE_RS_PROXY
+
 ScreenId RSRenderServiceClient::CreateVirtualScreen(
     const std::string &name,
     uint32_t width,
@@ -286,7 +277,7 @@ ScreenId RSRenderServiceClient::CreateVirtualScreen(
 
     return clientToService->CreateVirtualScreen(name, width, height, surface, associatedScreenId, flags, whiteList);
 }
-#endif
+
 int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -414,7 +405,7 @@ int32_t RSRenderServiceClient::SetCastScreenEnableSkipWindow(ScreenId id, bool e
 
     return clientToService->SetCastScreenEnableSkipWindow(id, enable);
 }
-#ifndef ENABLE_RS_PROXY
+
 int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -424,7 +415,7 @@ int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface
 
     return clientToService->SetVirtualScreenSurface(id, surface);
 }
-#endif
+
 void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1654,7 +1645,7 @@ void RSRenderServiceClient::NotifyXComponentExpectedFrameRate(const std::string&
         clientToService->NotifyXComponentExpectedFrameRate(id, expectedFrameRate);
     }
 }
-
+#endif
 void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1662,7 +1653,7 @@ void RSRenderServiceClient::NotifyTouchEvent(int32_t touchStatus, int32_t touchC
         clientToService->NotifyTouchEvent(touchStatus, touchCnt, sourceType);
     }
 }
-
+#ifndef ENABLE_RS_PROXY
 void RSRenderServiceClient::NotifyDynamicModeEvent(bool enableDynamicMode)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1678,7 +1669,7 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
         clientToService->SetCacheEnabledForRotation(isEnabled);
     }
 }
-
+#endif
 void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1704,7 +1695,7 @@ GlobalDirtyRegionInfo RSRenderServiceClient::GetGlobalDirtyRegionInfo()
     }
     return clientToService->GetGlobalDirtyRegionInfo();
 }
-#endif
+
 LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1773,7 +1764,7 @@ void RSRenderServiceClient::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
         clientToService->SetCurtainScreenUsingStatus(isCurtainScreenOn);
     }
 }
-#ifndef ENABLE_RS_PROXY
+
 class CustomUIExtensionCallback : public RSUIExtensionCallbackStub
 {
 public:
@@ -1802,7 +1793,7 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
     sptr<CustomUIExtensionCallback> cb = new CustomUIExtensionCallback(callback);
     return clientToService->RegisterUIExtensionCallback(userId, cb, unobscured);
 }
-#endif
+
 bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1868,7 +1859,7 @@ void RSRenderServiceClient::NotifyScreenSwitched()
     }
     clientToService->NotifyScreenSwitched();
 }
-#ifndef ENABLE_RS_PROXY
+
 class CustomSelfDrawingNodeRectChangeCallback : public RSSelfDrawingNodeRectChangeCallbackStub
 {
 public:
@@ -1917,7 +1908,7 @@ int32_t RSRenderServiceClient::UnRegisterSelfDrawingNodeRectChangeCallback()
     }
     return clientToService->UnRegisterSelfDrawingNodeRectChangeCallback();
 }
-#endif
+
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 int32_t RSRenderServiceClient::SetOverlayDisplayMode(int32_t mode)
 {
@@ -2069,5 +2060,6 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
     }
     return true;
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS

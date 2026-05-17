@@ -20,8 +20,9 @@
 #include <memory>
 #include <platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h>
 #include <platform/ohos/transaction/rs_iclient_to_service_connection_ipc_interface_code.h>
+#ifndef ENABLE_RS_PROXY
 #include "sandbox_utils.h"
-
+#endif
 namespace OHOS {
 namespace Rosen {
 class RSClientToServiceConnectionProxy : public IRemoteProxy<RSIClientToServiceConnection> {
@@ -31,7 +32,6 @@ public:
 #ifndef ENABLE_RS_PROXY
     ErrCode CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
-#endif
     ErrCode GetUniRenderEnabled(bool& enable) override;
 
     virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
@@ -39,20 +39,17 @@ public:
                                           const sptr<VSyncIConnectionToken>& token,
                                           VSyncConnParam vsyncConnParam = {0, 0, false}) override;
 
-#ifndef ENABLE_RS_PROXY
     ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
         int32_t& repCode) override;
     
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
         std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) override;
-#endif
 
     ErrCode GetDefaultScreenId(uint64_t& screenId) override;
     ErrCode GetActiveScreenId(uint64_t& screenId) override;
 
     std::vector<ScreenId> GetAllScreenIds() override;
 
-#ifndef ENABLE_RS_PROXY
     ScreenId CreateVirtualScreen(
         const std::string &name,
         uint32_t width,
@@ -61,7 +58,6 @@ public:
         ScreenId associatedScreenId = 0,
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) override;
-#endif
 
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
@@ -89,9 +85,7 @@ public:
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
 
-#ifndef ENABLE_RS_PROXY
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) override;
-#endif
     void RemoveVirtualScreen(ScreenId id) override;
 
     int32_t SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback) override;
@@ -214,11 +208,9 @@ public:
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;
 
-#ifndef ENABLE_RS_PROXY
     bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) override;
     int32_t RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate) override;
     bool UnRegisterTypeface(uint64_t globalUniqueId) override;
-#endif
 
     ErrCode SetScreenSkipFrameInterval(uint64_t id, uint32_t skipFrameInterval, int32_t& resCode) override;
 
@@ -267,9 +259,9 @@ public:
     ErrCode NotifySoftVsyncEvent(uint32_t pid, uint32_t rateDiscount) override;
 
     bool NotifySoftVsyncRateDiscountEvent(uint32_t pid, const std::string &name, uint32_t rateDiscount) override;
-
+#endif
     ErrCode NotifyTouchEvent(int32_t touchStatus, int32_t touchCnt, int32_t sourceType) override;
-
+#ifndef ENABLE_RS_PROXY
     void NotifyDynamicModeEvent(bool enableDynamicMode) override;
 
     ErrCode NotifyHgmConfigEvent(const std::string &eventName, bool state) override;
@@ -288,18 +280,16 @@ public:
     ErrCode ReportRsSceneJankEnd(AppInfo info) override;
 
     ErrCode SetCacheEnabledForRotation(bool isEnabled) override;
-
+#endif
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
 
     void RunOnRemoteDiedCallback() override;
-
+#ifndef ENABLE_RS_PROXY
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) override;
     ErrCode SetCurtainScreenUsingStatus(bool isCurtainScreenOn) override;
-#ifndef ENABLE_RS_PROXY
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo() override;
 
     GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo() override;
-#endif
 
     LayerComposeInfo GetLayerComposeInfo() override;
 
@@ -309,10 +299,8 @@ public:
 
     ErrCode SetVmaCacheStatus(bool flag) override;
 
-#ifndef ENABLE_RS_PROXY
     int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
         bool unobscured = false) override;
-#endif
 
     ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) override;
 
@@ -324,12 +312,10 @@ public:
 
     ErrCode NotifyScreenSwitched() override;
 
-#ifndef ENABLE_RS_PROXY
     int32_t RegisterSelfDrawingNodeRectChangeCallback(
         const RectConstraint& constraint, sptr<RSISelfDrawingNodeRectChangeCallback> callback) override;
 
     int32_t UnRegisterSelfDrawingNodeRectChangeCallback() override;
-#endif
 
     ErrCode NotifyPageName(const std::string& packageName, const std::string& pageName, bool isEnter) override;
 
@@ -359,6 +345,11 @@ public:
 
     ErrCode SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList) override;
 
+    bool WriteSurfaceCaptureConfig(const RSSurfaceCaptureConfig& captureConfig, MessageParcel& data);
+
+    bool WriteSurfaceCaptureBlurParam(const RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data);
+
+    bool WriteSurfaceCaptureAreaRect(const Drawing::Rect& specifiedAreaRect, MessageParcel& data);
 private:
 
     void ReportDataBaseRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, DataBaseRs info);
@@ -366,9 +357,9 @@ private:
     void WriteAppInfo(MessageParcel& data, MessageParcel& reply, MessageOption& option, AppInfo info);
 
     void ReportGameStateDataRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, GameStateData info);
-
+#endif
     int32_t SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
-
+#ifndef ENABLE_RS_PROXY
     ErrCode SetLayerTop(const std::string &nodeIdStr, bool isTop) override;
 
     ErrCode SetHdrForceHwcEnabled(const std::string& nodeIdStr, bool isHdrForceHwcEnabled) override;
@@ -389,6 +380,7 @@ private:
 
     pid_t pid_ = GetRealPid();
     std::atomic<uint32_t> transactionDataIndex_ = 0;
+#endif
     OnRemoteDiedCallback OnRemoteDiedCallback_;
 };
 } // namespace Rosen

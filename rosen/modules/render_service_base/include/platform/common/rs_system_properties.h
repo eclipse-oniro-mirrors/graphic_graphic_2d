@@ -23,9 +23,8 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
-#ifndef ENABLE_RS_PROXY
 #include "utils/system_properties.h"
-#endif
+
 namespace OHOS {
 namespace Rosen {
 
@@ -340,19 +339,17 @@ public:
 
     static bool GetTransactionTerminateEnabled();
     static bool GetTextBlobAsPixelMap();
-#ifndef ENABLE_RS_PROXY
     static inline GpuApiType GetGpuApiType()
     {
         return RSSystemProperties::systemGpuApiType_;
     }
 
-
+    static int GetRSNodeLimit();
     static inline bool IsUseVulkan()
     {
         return RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL;
     }
-#endif
-    static int GetRSNodeLimit();
+
     static bool GetJankLoadOptimizeEnabled();
     static bool GetHwcDirtyRegionEnabled();
     static std::string GetVersionType();
@@ -432,9 +429,7 @@ private:
     static inline bool isBehindWindowFilterEnabled_ = true;
     static inline bool isTypicalResidentProcess_ = false;
     static bool isEnableEarlyZ_;
-#ifndef ENABLE_RS_PROXY
     static const GpuApiType systemGpuApiType_;
-#endif
     static const DdgrOpincType ddgrOpincType_;
     static const DdgrOpincDfxType ddgrOpincDfxType_;
 };
