@@ -32,6 +32,7 @@ public:
     bool CheckObjectLegality() const override { return true; }
     bool AddDeathRecipient(const sptr<DeathRecipient>&) override { return true; }
     bool RemoveDeathRecipient(const sptr<DeathRecipient>&) override { return true; }
+    int Dump(int fd, const std::vector<std::u16string>&) override { return 0; }
 };
 
 class RSClientToServiceConnectHubTest : public testing::Test {
