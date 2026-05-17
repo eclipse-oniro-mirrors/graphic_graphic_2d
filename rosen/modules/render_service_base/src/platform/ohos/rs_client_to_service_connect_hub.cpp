@@ -25,8 +25,7 @@
 #include "ipc_callbacks/rs_ipc_callbacks_check.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/transaction/rs_irender_connection_token.h"
-#include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
-#include "platform/ohos/transaction/zidl/rs_irender_service.h"
+#include "transaction/zidl/rs_client_to_service_connection_proxy.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -174,12 +173,12 @@ bool RSClientToServiceConnectHub::Connect()
     }
 
     auto remoteToService = reply.ReadRemoteObject();
-    if (remoteToService == nullptr) {
+    if (remoteToService == nullptr || !remoteToService->IsProxyObject()) {
         ROSEN_LOGE("RS CreateConnection(): Reply remoteToService is null.");
         return false;
     }
 
-    auto conn = iface_cast<RSIClientToServiceConnection>(remoteToService);
+    auto conn = sptr<RSClientToServiceConnectionProxy>::MakeSptr(remoteToService);
     if (conn == nullptr) {
         ROSEN_LOGE("RSClientToServiceConnectHub::Connect, failed to iface_cast.");
         return false;
