@@ -197,10 +197,12 @@ std::shared_ptr<MessageParcel> CopyParcelIfNeed(MessageParcel& old, pid_t callin
     int32_t data{0};
     if (!parcelCopied->ReadInt32(data)) {
         RS_LOGE("RSClientToRenderConnectionStub::CopyParcelIfNeed parcel data Read failed");
+        free(base);
         return nullptr;
     }
     if (data != 0) {
         RS_LOGE("RSClientToRenderConnectionStub::CopyParcelIfNeed parcel data not match");
+        free(base);
         return nullptr;
     }
     return parcelCopied;
@@ -1722,7 +1724,8 @@ bool RSClientToRenderConnectionStub::WriteBrightnessInfo(const BrightnessInfo& b
 {
     if (!data.WriteFloat(brightnessInfo.currentHeadroom) ||
         !data.WriteFloat(brightnessInfo.maxHeadroom) ||
-        !data.WriteFloat(brightnessInfo.sdrNits)) {
+        !data.WriteFloat(brightnessInfo.sdrNits) ||
+        !data.WriteFloat(brightnessInfo.brightnessPosition)) {
         RS_LOGE("RSClientToRenderConnectionStub::WriteBrightnessInfo write brightnessInfo failed!");
         return false;
     }

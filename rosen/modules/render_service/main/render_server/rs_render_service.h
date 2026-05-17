@@ -72,8 +72,10 @@ private:
         void OnVirtualScreenDisconnected(ScreenId id) override;
         void OnHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData) override;
         void OnActiveScreenIdChanged(ScreenId activeScreenId) override;
-        void OnScreenBacklightChanged(ScreenId id, uint32_t level) override;
+        void OnScreenBacklightChanged(const RsScreenBrightnessData& brightnessData) override;
         void OnGlobalBlacklistChanged(const std::unordered_set<NodeId>& globalBlackList) override;
+
+        void OnProcessDisconnected(ScreenId id) override {}
 
     private:
         RSRenderService& renderService_;

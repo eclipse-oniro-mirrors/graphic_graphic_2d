@@ -213,7 +213,7 @@ public:
 
     virtual ErrCode GetScreenBacklight(uint64_t id, int32_t& level) = 0;
 
-    virtual void SetScreenBacklight(ScreenId id, uint32_t level) = 0;
+    virtual void SetScreenBacklight(const RsScreenBrightnessData& brightnessData) = 0;
 
     virtual int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) = 0;
 
