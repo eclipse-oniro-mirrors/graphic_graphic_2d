@@ -30,10 +30,8 @@
 #include <utility>
 #endif
 
-#include "animation/rs_frame_rate_range.h"
 #include "common/rs_event_def.h"
 #include "common/rs_self_draw_rect_change_callback_constraint.h"
-#include "ipc_callbacks/brightness_info_change_callback.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/iapplication_agent.h"
 #include "ipc_callbacks/rs_surface_buffer_callback.h"
