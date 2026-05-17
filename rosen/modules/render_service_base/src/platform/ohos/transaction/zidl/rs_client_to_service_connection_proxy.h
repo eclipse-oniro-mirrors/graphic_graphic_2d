@@ -28,9 +28,10 @@ class RSClientToServiceConnectionProxy : public IRemoteProxy<RSIClientToServiceC
 public:
     explicit RSClientToServiceConnectionProxy(const sptr<IRemoteObject>& impl);
     virtual ~RSClientToServiceConnectionProxy() noexcept = default;
-
+#ifndef ENABLE_RS_PROXY
     ErrCode CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
+#endif
     ErrCode GetUniRenderEnabled(bool& enable) override;
 
     virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
@@ -38,17 +39,20 @@ public:
                                           const sptr<VSyncIConnectionToken>& token,
                                           VSyncConnParam vsyncConnParam = {0, 0, false}) override;
 
+#ifndef ENABLE_RS_PROXY
     ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
         int32_t& repCode) override;
     
     ErrCode CreatePixelMapFromSurface(sptr<Surface> surface, const Rect &srcRect,
         std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) override;
+#endif
 
     ErrCode GetDefaultScreenId(uint64_t& screenId) override;
     ErrCode GetActiveScreenId(uint64_t& screenId) override;
 
     std::vector<ScreenId> GetAllScreenIds() override;
 
+#ifndef ENABLE_RS_PROXY
     ScreenId CreateVirtualScreen(
         const std::string &name,
         uint32_t width,
@@ -57,6 +61,7 @@ public:
         ScreenId associatedScreenId = 0,
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) override;
+#endif
 
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
@@ -84,7 +89,9 @@ public:
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
 
+#ifndef ENABLE_RS_PROXY
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) override;
+#endif
     void RemoveVirtualScreen(ScreenId id) override;
 
     int32_t SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback) override;
@@ -207,9 +214,11 @@ public:
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType) override;
 
+#ifndef ENABLE_RS_PROXY
     bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) override;
     int32_t RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate) override;
     bool UnRegisterTypeface(uint64_t globalUniqueId) override;
+#endif
 
     ErrCode SetScreenSkipFrameInterval(uint64_t id, uint32_t skipFrameInterval, int32_t& resCode) override;
 
@@ -286,9 +295,11 @@ public:
 
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) override;
     ErrCode SetCurtainScreenUsingStatus(bool isCurtainScreenOn) override;
+#ifndef ENABLE_RS_PROXY
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo() override;
 
     GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo() override;
+#endif
 
     LayerComposeInfo GetLayerComposeInfo() override;
 
@@ -298,8 +309,10 @@ public:
 
     ErrCode SetVmaCacheStatus(bool flag) override;
 
+#ifndef ENABLE_RS_PROXY
     int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
         bool unobscured = false) override;
+#endif
 
     ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) override;
 
@@ -311,10 +324,12 @@ public:
 
     ErrCode NotifyScreenSwitched() override;
 
+#ifndef ENABLE_RS_PROXY
     int32_t RegisterSelfDrawingNodeRectChangeCallback(
         const RectConstraint& constraint, sptr<RSISelfDrawingNodeRectChangeCallback> callback) override;
 
     int32_t UnRegisterSelfDrawingNodeRectChangeCallback() override;
+#endif
 
     ErrCode NotifyPageName(const std::string& packageName, const std::string& pageName, bool isEnter) override;
 
@@ -344,11 +359,6 @@ public:
 
     ErrCode SetOptimizeCanvasDirtyPidList(const std::vector<int32_t>& pidList) override;
 
-    bool WriteSurfaceCaptureConfig(const RSSurfaceCaptureConfig& captureConfig, MessageParcel& data);
-
-    bool WriteSurfaceCaptureBlurParam(const RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data);
-
-    bool WriteSurfaceCaptureAreaRect(const Drawing::Rect& specifiedAreaRect, MessageParcel& data);
 private:
 
     void ReportDataBaseRs(MessageParcel& data, MessageParcel& reply, MessageOption& option, DataBaseRs info);

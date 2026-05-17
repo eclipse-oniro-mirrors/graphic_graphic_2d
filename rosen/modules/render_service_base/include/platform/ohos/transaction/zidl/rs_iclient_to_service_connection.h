@@ -21,7 +21,9 @@
 #include <surface.h>
 
 #include "feature/capture/rs_ui_capture.h"
+#ifndef ENABLE_RS_PROXY
 #include "info_collection/rs_gpu_dirty_region_collection.h"
+#endif
 #include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "info_collection/rs_layer_compose_collection.h"
 #include "ivsync_connection.h"
@@ -32,10 +34,10 @@
 #include "common/rs_event_def.h"
 #include "ipc_callbacks/active_screen_id_changed_callback.h"
 #include "ipc_callbacks/brightness_info_change_callback.h"
-#include "ipc_callbacks/buffer_available_callback.h"
-#include "ipc_callbacks/buffer_clear_callback.h"
 #include "ipc_callbacks/iapplication_agent.h"
+#ifndef ENABLE_RS_PROXY
 #include "ipc_callbacks/rs_iself_drawing_node_rect_change_callback.h"
+#endif
 #include "ipc_callbacks/rs_isurface_occlusion_change_callback.h"
 #include "ipc_callbacks/rs_surface_buffer_callback.h"
 #include "ipc_callbacks/rs_iframe_rate_linker_expected_fps_update_callback.h"
@@ -50,14 +52,18 @@
 #include "screen_manager/rs_screen_mode_info.h"
 #include "screen_manager/screen_types.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
+#ifndef ENABLE_RS_PROXY
 #include "transaction/rs_transaction_data.h"
+#endif
 #include "transaction/rs_render_service_client_info.h"
 #include "ivsync_connection.h"
 #include "ipc_callbacks/rs_iexposed_event_callback.h"
 #include "ipc_callbacks/rs_ihgm_config_change_callback.h"
 #include "ipc_callbacks/rs_ifirst_frame_commit_callback.h"
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
+#ifndef ENABLE_RS_PROXY
 #include "ipc_callbacks/rs_iuiextension_callback.h"
+#endif
 #include "vsync_iconnection_token.h"
 
 namespace OHOS {
@@ -68,29 +74,10 @@ public:
 
     RSIClientToServiceConnection() = default;
     virtual ~RSIClientToServiceConnection() noexcept = default;
-
+#ifndef ENABLE_RS_PROXY
     virtual ErrCode CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) = 0;
 
     virtual ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) = 0;
-
-    virtual ErrCode GetUniRenderEnabled(bool& enable) = 0;
-
-    virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
-                                          const std::string& name,
-                                          const sptr<VSyncIConnectionToken>& token = nullptr,
-                                          VSyncConnParam vsyncConnParam = {0, 0, false}) = 0;
-
-    virtual ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
-        int32_t& repCode) = 0;
-
-    virtual ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
-        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) = 0;
-
-    virtual ErrCode GetDefaultScreenId(uint64_t& screenId) = 0;
-
-    virtual ErrCode GetActiveScreenId(uint64_t& screenId) = 0;
-
-    virtual std::vector<ScreenId> GetAllScreenIds() = 0;
 
     virtual ScreenId CreateVirtualScreen(
         const std::string &name,
@@ -100,6 +87,27 @@ public:
         ScreenId associatedScreenId = 0,
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) = 0;
+
+    virtual ErrCode GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid,
+        int32_t& repCode) = 0;
+
+    virtual ErrCode CreatePixelMapFromSurface(sptr<Surface> surface,
+        const Rect &srcRect, std::shared_ptr<Media::PixelMap> &pixelMap, bool transformEnabled = false) = 0;
+
+    virtual int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) = 0;
+#endif
+    virtual ErrCode GetUniRenderEnabled(bool& enable) = 0;
+
+    virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
+                                          const std::string& name,
+                                          const sptr<VSyncIConnectionToken>& token = nullptr,
+                                          VSyncConnParam vsyncConnParam = {0, 0, false}) = 0;
+
+    virtual ErrCode GetDefaultScreenId(uint64_t& screenId) = 0;
+
+    virtual ErrCode GetActiveScreenId(uint64_t& screenId) = 0;
+
+    virtual std::vector<ScreenId> GetAllScreenIds() = 0;
 
     // blacklist
     virtual int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) = 0;
@@ -128,8 +136,6 @@ public:
         bool supportRotation = false) = 0;
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
-
-    virtual int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) = 0;
 
     virtual void RemoveVirtualScreen(ScreenId id) = 0;
 
@@ -255,11 +261,11 @@ public:
     virtual int32_t SetScreenColorSpace(ScreenId id, GraphicCM_ColorSpaceType colorSpace) = 0;
 
     virtual int32_t GetScreenType(ScreenId id, RSScreenType& screenType) = 0;
-
+#ifndef ENABLE_RS_PROXY
     virtual bool RegisterTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface>& typeface) = 0;
     virtual int32_t RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate) = 0;
     virtual bool UnRegisterTypeface(uint64_t globalUniqueId) = 0;
-
+#endif
     virtual ErrCode SetScreenSkipFrameInterval(uint64_t id, uint32_t skipFrameInterval, int32_t& resCode) = 0;
 
     virtual ErrCode SetVirtualScreenRefreshRate(
@@ -339,11 +345,11 @@ public:
     virtual void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) = 0;
 
     virtual ErrCode SetCurtainScreenUsingStatus(bool isCurtainScreenOn) = 0;
-
+#ifndef ENABLE_RS_PROXY
     virtual std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo() = 0;
 
     virtual GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo() = 0;
-
+#endif
     virtual LayerComposeInfo GetLayerComposeInfo() = 0;
 
     virtual HwcDisabledReasonInfos GetHwcDisabledReasonInfo() = 0;
@@ -351,10 +357,10 @@ public:
     virtual ErrCode GetHdrOnDuration(int64_t& hdrOnDuration) = 0;
 
     virtual ErrCode SetVmaCacheStatus(bool flag) = 0;
-
+#ifndef ENABLE_RS_PROXY
     virtual int32_t RegisterUIExtensionCallback(uint64_t userId, sptr<RSIUIExtensionCallback> callback,
         bool unobscured = false) = 0;
-
+#endif
     virtual ErrCode SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus, bool& success) = 0;
 
     virtual int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData) = 0;
@@ -365,12 +371,12 @@ public:
 #endif
 
     virtual ErrCode NotifyScreenSwitched() = 0;
-
+#ifndef ENABLE_RS_PROXY
     virtual int32_t RegisterSelfDrawingNodeRectChangeCallback(
         const RectConstraint& constraint, sptr<RSISelfDrawingNodeRectChangeCallback> callback) = 0;
     
     virtual int32_t UnRegisterSelfDrawingNodeRectChangeCallback() = 0;
-
+#endif
     virtual ErrCode NotifyPageName(const std::string& packageName, const std::string& pageName, bool isEnter) = 0;
 
     virtual ErrCode AvcodecVideoStart(const std::vector<uint64_t>& uniqueIdList,

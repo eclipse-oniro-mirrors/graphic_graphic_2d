@@ -42,27 +42,26 @@
 #include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/screen_change_callback_stub.h"
 #include "ipc_callbacks/screen_switching_notify_callback_stub.h"
-#include "ipc_callbacks/surface_capture_callback_stub.h"
 #include "ipc_callbacks/buffer_available_callback_stub.h"
 #include "ipc_callbacks/buffer_clear_callback_stub.h"
 #include "ipc_callbacks/hgm_config_change_callback_stub.h"
 #include "ipc_callbacks/rs_first_frame_commit_callback_stub.h"
 #include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
-#include "ipc_callbacks/rs_self_drawing_node_rect_change_callback_stub.h"
 #include "ipc_callbacks/rs_transaction_data_callback_stub.h"
 #include "ipc_callbacks/rs_frame_rate_linker_expected_fps_update_callback_stub.h"
-#include "ipc_callbacks/rs_uiextension_callback_stub.h"
 #include "ipc_callbacks/rs_exposed_event_callback_stub.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
-#include "render/rs_typeface_cache.h"
 #ifdef ENABLE_RS_PROXY
 #include "rs_client_to_service_connect_hub.h"
 #else
 #include "rs_render_service_connect_hub.h"
-#endif
+#include "ipc_callbacks/rs_uiextension_callback_stub.h"
+#include "ipc_callbacks/rs_self_drawing_node_rect_change_callback_stub.h"
+#include "render/rs_typeface_cache.h"
 #include "rs_surface_ohos.h"
+#endif
 #include "vsync_iconnection_token.h"
 
 namespace OHOS {
@@ -197,7 +196,7 @@ sptr<IRemoteObject> RSRenderServiceClient::GetConnectToRenderToken(ScreenId scre
     }
     return clientToService->GetConnectToRenderToken(screenId);
 }
-
+#ifndef ENABLE_RS_PROXY
 int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -224,7 +223,7 @@ std::shared_ptr<Media::PixelMap> RSRenderServiceClient::CreatePixelMapFromSurfac
     return clientToService->CreatePixelMapFromSurface(surface, srcRect, pixelMap,
         transformEnabled) == ERR_OK ? pixelMap : nullptr;
 }
-
+#endif
 void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -269,7 +268,7 @@ std::vector<ScreenId> RSRenderServiceClient::GetAllScreenIds()
 
     return clientToService->GetAllScreenIds();
 }
-
+#ifndef ENABLE_RS_PROXY
 ScreenId RSRenderServiceClient::CreateVirtualScreen(
     const std::string &name,
     uint32_t width,
@@ -287,7 +286,7 @@ ScreenId RSRenderServiceClient::CreateVirtualScreen(
 
     return clientToService->CreateVirtualScreen(name, width, height, surface, associatedScreenId, flags, whiteList);
 }
-
+#endif
 int32_t RSRenderServiceClient::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -415,7 +414,7 @@ int32_t RSRenderServiceClient::SetCastScreenEnableSkipWindow(ScreenId id, bool e
 
     return clientToService->SetCastScreenEnableSkipWindow(id, enable);
 }
-
+#ifndef ENABLE_RS_PROXY
 int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -425,7 +424,7 @@ int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface
 
     return clientToService->SetVirtualScreenSurface(id, surface);
 }
-
+#endif
 void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1157,7 +1156,7 @@ int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenTy
     return clientToService->GetScreenType(id, screenType);
 }
 
-
+#ifndef ENABLE_RS_PROXY
 bool RSRenderServiceClient::RegisterTypeface(std::shared_ptr<Drawing::Typeface>& typeface)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1218,7 +1217,7 @@ bool RSRenderServiceClient::UnRegisterTypeface(uint32_t uniqueId)
         RSTypefaceCache::GetTypefacePid(globalUniqueId), RSTypefaceCache::GetTypefaceId(globalUniqueId));
     return clientToService->UnRegisterTypeface(globalUniqueId);
 }
-
+#endif
 int32_t RSRenderServiceClient::GetDisplayIdentificationData(ScreenId id, uint8_t& outPort,
     std::vector<uint8_t>& edidData)
 {
@@ -1687,7 +1686,7 @@ void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& 
         clientToService->SetOnRemoteDiedCallback(callback);
     }
 }
-
+#ifndef ENABLE_RS_PROXY
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1705,7 +1704,7 @@ GlobalDirtyRegionInfo RSRenderServiceClient::GetGlobalDirtyRegionInfo()
     }
     return clientToService->GetGlobalDirtyRegionInfo();
 }
-
+#endif
 LayerComposeInfo RSRenderServiceClient::GetLayerComposeInfo()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1774,7 +1773,7 @@ void RSRenderServiceClient::SetCurtainScreenUsingStatus(bool isCurtainScreenOn)
         clientToService->SetCurtainScreenUsingStatus(isCurtainScreenOn);
     }
 }
-
+#ifndef ENABLE_RS_PROXY
 class CustomUIExtensionCallback : public RSUIExtensionCallbackStub
 {
 public:
@@ -1803,7 +1802,7 @@ int32_t RSRenderServiceClient::RegisterUIExtensionCallback(uint64_t userId, cons
     sptr<CustomUIExtensionCallback> cb = new CustomUIExtensionCallback(callback);
     return clientToService->RegisterUIExtensionCallback(userId, cb, unobscured);
 }
-
+#endif
 bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
@@ -1869,7 +1868,7 @@ void RSRenderServiceClient::NotifyScreenSwitched()
     }
     clientToService->NotifyScreenSwitched();
 }
-
+#ifndef ENABLE_RS_PROXY
 class CustomSelfDrawingNodeRectChangeCallback : public RSSelfDrawingNodeRectChangeCallbackStub
 {
 public:
@@ -1918,7 +1917,7 @@ int32_t RSRenderServiceClient::UnRegisterSelfDrawingNodeRectChangeCallback()
     }
     return clientToService->UnRegisterSelfDrawingNodeRectChangeCallback();
 }
-
+#endif
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 int32_t RSRenderServiceClient::SetOverlayDisplayMode(int32_t mode)
 {

@@ -22,17 +22,21 @@
 #include <vector>
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
+#ifndef ENABLE_RS_PROXY
 #include "transaction/rs_ashmem_helper.h"
-#include "transaction/rs_hrp_service.h"
 #include "transaction/rs_marshalling_helper.h"
+#endif
+#include "transaction/rs_hrp_service.h"
 #include "rs_trace.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
+#ifndef ENABLE_RS_PROXY
 static constexpr size_t ASHMEM_SIZE_THRESHOLD = 200 * 1024; // cannot > 500K in TF_ASYNC mode
 static constexpr int MAX_RETRY_COUNT = 30;
 static constexpr int RETRY_WAIT_TIME_US = 5000; // wait 5ms before retry SendRequest
+#endif
 static constexpr int MAX_SECURITY_EXEMPTION_LIST_NUMBER = 1024; // securityExemptionList size not exceed 1024
 static constexpr uint32_t EDID_DATA_MAX_SIZE = 64 * 1024;
 static constexpr int MAX_VOTER_SIZE = 100; // SetWindowExpectedRefreshRate map size not exceed 100
@@ -125,7 +129,7 @@ ErrCode RSClientToServiceConnectionProxy::CreateVSyncConnection(sptr<IVSyncConne
     vsyncConn = iface_cast<IVSyncConnection>(rObj);
     return ERR_OK;
 }
-
+#ifndef ENABLE_RS_PROXY
 ErrCode RSClientToServiceConnectionProxy::GetPixelMapByProcessId(
     std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid, int32_t& repCode)
 {
@@ -217,7 +221,7 @@ ErrCode RSClientToServiceConnectionProxy::CreatePixelMapFromSurface(sptr<Surface
     }
     return ERR_OK;
 }
-
+#endif
 ErrCode RSClientToServiceConnectionProxy::GetDefaultScreenId(uint64_t& screenId)
 {
     MessageParcel data;
@@ -317,7 +321,7 @@ std::vector<ScreenId> RSClientToServiceConnectionProxy::GetAllScreenIds()
 
     return screenIds;
 }
-
+#ifndef ENABLE_RS_PROXY
 ScreenId RSClientToServiceConnectionProxy::CreateVirtualScreen(
     const std::string &name,
     uint32_t width,
@@ -398,7 +402,7 @@ ScreenId RSClientToServiceConnectionProxy::CreateVirtualScreen(
     }
     return id;
 }
-
+#endif
 int32_t RSClientToServiceConnectionProxy::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
     MessageParcel data;
@@ -758,7 +762,7 @@ int32_t RSClientToServiceConnectionProxy::SetCastScreenEnableSkipWindow(ScreenId
     }
     return ERR_OK;
 }
-
+#ifndef ENABLE_RS_PROXY
 int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)
 {
     if (surface == nullptr) {
@@ -794,7 +798,7 @@ int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSurface(ScreenId id, s
 
     return ERR_OK;
 }
-
+#endif
 void RSClientToServiceConnectionProxy::RemoveVirtualScreen(ScreenId id)
 {
     MessageParcel data;
@@ -1647,59 +1651,6 @@ void RSClientToServiceConnectionProxy::SetScreenPowerStatus(ScreenId id, ScreenP
         ROSEN_LOGE("SetScreenPowerStatus: SendRequest failed %{public}d", err);
         return;
     }
-}
-
-bool RSClientToServiceConnectionProxy::WriteSurfaceCaptureConfig(
-    const RSSurfaceCaptureConfig& captureConfig, MessageParcel& data)
-{
-    if (!data.WriteFloat(captureConfig.scaleX) || !data.WriteFloat(captureConfig.scaleY) ||
-        !data.WriteBool(captureConfig.useDma) || !data.WriteBool(captureConfig.useCurWindow) ||
-        !data.WriteUint8(static_cast<uint8_t>(captureConfig.captureType)) || !data.WriteBool(captureConfig.isSync) ||
-        !data.WriteBool(captureConfig.isHdrCapture) ||
-        !data.WriteUint32(static_cast<uint32_t>(captureConfig.displayIntent)) ||
-        !data.WriteBool(captureConfig.needF16WindowCaptureForScRGB) ||
-        !data.WriteBool(captureConfig.needErrorCode) ||
-        !data.WriteFloat(captureConfig.mainScreenRect.left_) ||
-        !data.WriteFloat(captureConfig.mainScreenRect.top_) ||
-        !data.WriteFloat(captureConfig.mainScreenRect.right_) ||
-        !data.WriteFloat(captureConfig.mainScreenRect.bottom_) ||
-        !data.WriteUint64(captureConfig.uiCaptureInRangeParam.endNodeId) ||
-        !data.WriteBool(captureConfig.uiCaptureInRangeParam.useBeginNodeSize) ||
-        !data.WriteFloat(captureConfig.specifiedAreaRect.left_) ||
-        !data.WriteFloat(captureConfig.specifiedAreaRect.top_) ||
-        !data.WriteFloat(captureConfig.specifiedAreaRect.right_) ||
-        !data.WriteFloat(captureConfig.specifiedAreaRect.bottom_) ||
-        !data.WriteUInt64Vector(captureConfig.blackList) ||
-        !data.WriteUint32(captureConfig.backGroundColor) ||
-        !data.WriteUint32(captureConfig.colorSpace.first) ||
-        !data.WriteBool(captureConfig.colorSpace.second) ||
-        !data.WriteUint32(captureConfig.dynamicRangeMode.first) ||
-        !data.WriteBool(captureConfig.dynamicRangeMode.second)) {
-        ROSEN_LOGE("WriteSurfaceCaptureConfig: WriteSurfaceCaptureConfig captureConfig err.");
-        return false;
-    }
-    return true;
-}
-
-bool RSClientToServiceConnectionProxy::WriteSurfaceCaptureBlurParam(
-    const RSSurfaceCaptureBlurParam& blurParam, MessageParcel& data)
-{
-    if (!data.WriteBool(blurParam.isNeedBlur) || !data.WriteFloat(blurParam.blurRadius)) {
-        ROSEN_LOGE("WriteSurfaceCaptureBlurParam: WriteBool OR WriteFloat [blurParam] err.");
-        return false;
-    }
-    return true;
-}
-
-bool RSClientToServiceConnectionProxy::WriteSurfaceCaptureAreaRect(
-    const Drawing::Rect& specifiedAreaRect, MessageParcel& data)
-{
-    if (!data.WriteFloat(specifiedAreaRect.left_) || !data.WriteFloat(specifiedAreaRect.top_) ||
-        !data.WriteFloat(specifiedAreaRect.right_) || !data.WriteFloat(specifiedAreaRect.bottom_)) {
-        ROSEN_LOGE("WriteSurfaceCaptureAreaRect: WriteFloat specifiedAreaRect err.");
-        return false;
-    }
-    return true;
 }
 
 RSVirtualScreenResolution RSClientToServiceConnectionProxy::GetVirtualScreenResolution(ScreenId id)
@@ -2851,7 +2802,7 @@ bool RSClientToServiceConnectionProxy::SetVirtualMirrorScreenScaleMode(ScreenId 
     }
     return result;
 }
-
+#ifndef ENABLE_RS_PROXY
 void WaitNeedRegisterTypefaceReply(uint8_t rspRpc, int& retryCount)
 {
     RS_LOGD("Check need register state:%{public}hhu", rspRpc);
@@ -2928,25 +2879,6 @@ bool RSClientToServiceConnectionProxy::RegisterTypeface(uint64_t globalUniqueId,
     return result;
 }
 
-void RSClientToServiceConnectionProxy::ForceRefreshOneFrameWithNextVSync()
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
-        ROSEN_LOGE("RSClientToServiceConnectionProxy::ForceRefreshOneFrameWithNextVSync: Send Request err.");
-        return;
-    }
-    option.SetFlags(MessageOption::TF_SYNC);
-    uint32_t code =
-        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC);
-    int32_t err = SendRequest(code, data, reply, option);
-    if (err != NO_ERROR) {
-        return;
-    }
-}
-
 int32_t RSClientToServiceConnectionProxy::RegisterTypeface(Drawing::SharedTypeface& sharedTypeface, int32_t& needUpdate)
 {
     MessageParcel data;
@@ -2998,6 +2930,26 @@ bool RSClientToServiceConnectionProxy::UnRegisterTypeface(uint64_t globalUniqueI
     }
 
     return true;
+}
+#endif
+
+void RSClientToServiceConnectionProxy::ForceRefreshOneFrameWithNextVSync()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::ForceRefreshOneFrameWithNextVSync: Send Request err.");
+        return;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code =
+        static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::FORCE_REFRESH_ONE_FRAME_WITH_NEXT_VSYNC);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return;
+    }
 }
 
 int32_t RSClientToServiceConnectionProxy::GetDisplayIdentificationData(ScreenId id, uint8_t& outPort,
@@ -4357,7 +4309,7 @@ void RSClientToServiceConnectionProxy::RunOnRemoteDiedCallback()
         OnRemoteDiedCallback_();
     }
 }
-
+#ifndef ENABLE_RS_PROXY
 std::vector<ActiveDirtyRegionInfo> RSClientToServiceConnectionProxy::GetActiveDirtyRegionInfo()
 {
     MessageParcel data;
@@ -4432,7 +4384,7 @@ GlobalDirtyRegionInfo RSClientToServiceConnectionProxy::GetGlobalDirtyRegionInfo
         globalDirtyRegionAreas, globalFramesNumber, skipProcessFramesNumber, commandCount,
         consumeBufferSize, frameAnimationCount, mostSendingPidWhenDisplayNodeSkip);
 }
-
+#endif
 
 LayerComposeInfo RSClientToServiceConnectionProxy::GetLayerComposeInfo()
 {
@@ -4651,7 +4603,7 @@ ErrCode RSClientToServiceConnectionProxy::SetCurtainScreenUsingStatus(bool isCur
     }
     return ERR_OK;
 }
-
+#ifndef ENABLE_RS_PROXY
 int32_t RSClientToServiceConnectionProxy::RegisterUIExtensionCallback(
     uint64_t userId, sptr<RSIUIExtensionCallback> callback, bool unobscured)
 {
@@ -4684,7 +4636,7 @@ int32_t RSClientToServiceConnectionProxy::RegisterUIExtensionCallback(
         return RS_CONNECTION_ERROR;
     }
 }
-
+#endif
 ErrCode RSClientToServiceConnectionProxy::SetVirtualScreenStatus(ScreenId id,
     VirtualScreenStatus screenStatus, bool& success)
 {
@@ -4808,7 +4760,7 @@ void RSClientToServiceConnectionProxy::SetColorFollow(const std::string &nodeIdS
         }
     }
 }
-
+#ifndef ENABLE_RS_PROXY
 int32_t RSClientToServiceConnectionProxy::RegisterSelfDrawingNodeRectChangeCallback(
     const RectConstraint& constraint, sptr<RSISelfDrawingNodeRectChangeCallback> callback)
 {
@@ -4888,7 +4840,7 @@ int32_t RSClientToServiceConnectionProxy::UnRegisterSelfDrawingNodeRectChangeCal
     }
     return result;
 }
-
+#endif
 int32_t RSClientToServiceConnectionProxy::SendRequest(uint32_t code, MessageParcel &data,
     MessageParcel &reply, MessageOption &option)
 {

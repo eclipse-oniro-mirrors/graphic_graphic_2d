@@ -14,6 +14,8 @@
  */
 
 #include <gtest/gtest.h>
+#include <iremote_stub.h>
+#include "platform/ohos/transaction/rs_irender_connection_token.h"
 #include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
 #include "rs_client_to_service_connect_hub.h"
 #include "platform/common/rs_log.h"
@@ -113,6 +115,82 @@ HWTEST_F(RSClientToServiceConnectHubTest, ConnectDied002, TestSize.Level1)
     instance->ConnectDied();
     auto tokenAfter = instance->GetToken();
     EXPECT_EQ(tokenAfter, nullptr);
+}
+
+/**
+ * @tc.name: OnRemoteDied001
+ * @tc.desc: Verify OnRemoteDied with null remote, remote.promote() returns null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectHubTest, OnRemoteDied001, TestSize.Level1)
+{
+    auto instance = RSClientToServiceConnectHub::GetInstance();
+    ASSERT_NE(instance, nullptr);
+    wptr<RSClientToServiceConnectHub> hub = instance;
+    auto recipient = new RSClientToServiceConnectHub::RenderServiceDeathRecipient(hub);
+    wptr<IRemoteObject> nullRemote;
+    recipient->OnRemoteDied(nullRemote);
+    EXPECT_NE(instance, nullptr);
+}
+
+/**
+ * @tc.name: OnRemoteDied002
+ * @tc.desc: Verify OnRemoteDied when hub was already dead, hub_.promote() returns null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectHubTest, OnRemoteDied002, TestSize.Level1)
+{
+    wptr<RSClientToServiceConnectHub> weakHub;
+    {
+        sptr<RSClientToServiceConnectHub> tempHub = new RSClientToServiceConnectHub();
+        weakHub = tempHub;
+    }
+    auto recipient = new RSClientToServiceConnectHub::RenderServiceDeathRecipient(weakHub);
+    sptr<IRemoteObject> mockRemote = new IRemoteStub<RSIConnectionToken>();
+    recipient->OnRemoteDied(mockRemote);
+}
+
+/**
+ * @tc.name: OnRemoteDied003
+ * @tc.desc: Verify OnRemoteDied normal path triggers ConnectDied
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectHubTest, OnRemoteDied003, TestSize.Level1)
+{
+    auto conn = RSClientToServiceConnectHub::GetClientToServiceConnection();
+    auto instance = RSClientToServiceConnectHub::GetInstance();
+    ASSERT_NE(instance, nullptr);
+    ASSERT_NE(instance->renderService_, nullptr);
+
+    wptr<RSClientToServiceConnectHub> hub = instance;
+    auto recipient = new RSClientToServiceConnectHub::RenderServiceDeathRecipient(hub);
+    sptr<IRemoteObject> remote = instance->renderService_;
+    recipient->OnRemoteDied(remote);
+
+    EXPECT_EQ(instance->renderService_, nullptr);
+    EXPECT_EQ(instance->conn_, nullptr);
+    EXPECT_EQ(instance->token_, nullptr);
+    EXPECT_EQ(instance->deathRecipient_, nullptr);
+}
+
+/**
+ * @tc.name: ConnectDied003
+ * @tc.desc: Verify ConnectDied with valid conn_ triggers RunOnRemoteDiedCallback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectHubTest, ConnectDied003, TestSize.Level1)
+{
+    auto conn = RSClientToServiceConnectHub::GetClientToServiceConnection();
+    auto instance = RSClientToServiceConnectHub::GetInstance();
+    ASSERT_NE(instance, nullptr);
+    ASSERT_NE(instance->conn_, nullptr);
+
+    instance->ConnectDied();
+
+    EXPECT_EQ(instance->conn_, nullptr);
+    EXPECT_EQ(instance->renderService_, nullptr);
+    EXPECT_EQ(instance->token_, nullptr);
+    EXPECT_EQ(instance->deathRecipient_, nullptr);
 }
 } // namespace Rosen
 } // namespace OHOS

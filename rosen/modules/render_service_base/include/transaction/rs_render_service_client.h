@@ -40,11 +40,15 @@
 #include "ipc_callbacks/screen_switching_notify_callback.h"
 #include "ipc_callbacks/rs_transaction_data_callback.h"
 #include "memory/rs_memory_graphic.h"
-#include "platform/drawing/rs_surface.h"
 #include "rs_render_service_client_info.h"
 #include "rs_hrp_service.h"
 #ifndef ENABLE_RS_PROXY
 #include "rs_irender_client.h"
+#include "platform/drawing/rs_surface.h"
+#include "rs_self_drawing_node_rect_data.h"
+#include "rs_uiextension_data.h"
+#include "info_collection/rs_gpu_dirty_region_collection.h"
+#include "utils/scalar.h"
 #endif
 #include "variable_frame_rate/rs_variable_frame_rate.h"
 #include "screen_manager/rs_screen_capability.h"
@@ -57,12 +61,8 @@
 #include "ipc_callbacks/rs_iocclusion_change_callback.h"
 #include "rs_hgm_config_data.h"
 #include "rs_occlusion_data.h"
-#include "rs_self_drawing_node_rect_data.h"
-#include "rs_uiextension_data.h"
-#include "info_collection/rs_gpu_dirty_region_collection.h"
 #include "info_collection/rs_hardware_compose_disabled_reason_collection.h"
 #include "info_collection/rs_layer_compose_collection.h"
-#include "utils/scalar.h"
 #include "rs_client_render_comm_def_info.h"
 namespace OHOS {
 namespace Rosen {
@@ -81,8 +81,10 @@ using HgmConfigChangeCallback = std::function<void(std::shared_ptr<RSHgmConfigDa
 using HgmRefreshRateModeChangeCallback = std::function<void(int32_t)>;
 using HgmRefreshRateUpdateCallback = std::function<void(int32_t)>;
 using FrameRateLinkerExpectedFpsUpdateCallback = std::function<void(int32_t, const std::string&, int32_t)>;
+#ifndef ENABLE_RS_PROXY
 using UIExtensionCallback = std::function<void(std::shared_ptr<RSUIExtensionData>, uint64_t)>;
 using SelfDrawingNodeRectChangeCallback = std::function<void(std::shared_ptr<RSSelfDrawingNodeRectData>)>;
+#endif
 using FirstFrameCommitCallback = std::function<void(uint64_t, int64_t)>;
 
 class RSB_EXPORT RSRenderServiceClient
@@ -115,11 +117,6 @@ public:
         NodeId windowNodeId = 0,
         bool fromXcomponent = false);
 
-    int32_t GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid);
-
-    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid,
-        const Rect &srcRect, bool transformEnabled = false);
-
     ScreenId GetDefaultScreenId();
     ScreenId GetActiveScreenId();
 
@@ -128,11 +125,12 @@ public:
 #ifndef ROSEN_CROSS_PLATFORM
 #ifndef ENABLE_RS_PROXY
     std::shared_ptr<RSSurface> CreateRSSurface(const sptr<Surface> &surface);
-#endif
+
     ScreenId CreateVirtualScreen(const std::string& name, uint32_t width, uint32_t height, sptr<Surface> surface,
         ScreenId associatedScreenId = 0, int32_t flags = 0, std::vector<NodeId> whiteList = {});
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
+#endif
 
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
@@ -283,11 +281,27 @@ public:
     int32_t SetScreenColorSpace(ScreenId id, GraphicCM_ColorSpaceType colorSpace);
 
     int32_t GetScreenType(ScreenId id, RSScreenType& screenType);
-
+#ifndef ENABLE_RS_PROXY
     bool RegisterTypeface(std::shared_ptr<Drawing::Typeface>& typeface);
     int32_t RegisterTypeface(std::shared_ptr<Drawing::Typeface>& typeface, uint32_t index);
     bool UnRegisterTypeface(uint32_t uniqueId);
 
+    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured = false);
+
+    int32_t RegisterSelfDrawingNodeRectChangeCallback(
+        const RectConstraint& constraint, const SelfDrawingNodeRectChangeCallback& callback);
+
+    int32_t UnRegisterSelfDrawingNodeRectChangeCallback();
+
+    int32_t GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid);
+
+    std::shared_ptr<Media::PixelMap> CreatePixelMapFromSurfaceId(uint64_t surfaceid,
+        const Rect &srcRect, bool transformEnabled = false);
+
+    std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo();
+ 
+    GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo();
+#endif
     int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData);
 
     int32_t SetScreenSkipFrameInterval(ScreenId id, uint32_t skipFrameInterval);
@@ -358,10 +372,6 @@ public:
 
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
 
-    std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo();
- 
-    GlobalDirtyRegionInfo GetGlobalDirtyRegionInfo();
-
     LayerComposeInfo GetLayerComposeInfo();
 
     HwcDisabledReasonInfos GetHwcDisabledReasonInfo();
@@ -369,8 +379,6 @@ public:
     int64_t GetHdrOnDuration();
 
     void SetVmaCacheStatus(bool flag);
-
-    int32_t RegisterUIExtensionCallback(uint64_t userId, const UIExtensionCallback& callback, bool unobscured = false);
 
     void SetLayerTop(const std::string &nodeIdStr, bool isTop);
 
@@ -394,11 +402,6 @@ public:
     bool SetVirtualScreenStatus(ScreenId id, VirtualScreenStatus screenStatus);
 
     void NotifyScreenSwitched();
-
-    int32_t RegisterSelfDrawingNodeRectChangeCallback(
-        const RectConstraint& constraint, const SelfDrawingNodeRectChangeCallback& callback);
-
-    int32_t UnRegisterSelfDrawingNodeRectChangeCallback();
 
     void NotifyPageName(const std::string& packageName, const std::string& pageName, bool isEnter);
 
@@ -428,35 +431,6 @@ public:
 private:
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;
     void TriggerTransactionDataCallbackAndErase(uint64_t token, uint64_t timeStamp);
-
-    struct RectHash {
-        std::size_t operator()(const Drawing::Rect& rect) const {
-            std::size_t h1 = std::hash<Drawing::scalar>()(rect.left_);
-            std::size_t h2 = std::hash<Drawing::scalar>()(rect.top_);
-            std::size_t h3 = std::hash<Drawing::scalar>()(rect.right_);
-            std::size_t h4 = std::hash<Drawing::scalar>()(rect.bottom_);
-            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
-        }
-    };
-
-    // Hash for solo node capture
-    struct UICaptureParamHash {
-        std::size_t operator()(const RSUICaptureInRangeParam& param) const {
-            std::size_t h1 = std::hash<NodeId>()(param.endNodeId);
-            std::size_t h2 = std::hash<bool>()(param.useBeginNodeSize);
-            return h1 ^ (h2 << 1);
-        }
-    };
-
-    struct PairHash {
-        std::size_t operator()(const std::pair<NodeId, RSSurfaceCaptureConfig>& p) const {
-            std::size_t h1 = std::hash<NodeId>()(p.first);
-            std::size_t h2 = RectHash()(p.second.mainScreenRect);
-            std::size_t h3 = UICaptureParamHash()(p.second.uiCaptureInRangeParam);
-            std::size_t h4 = RectHash()(p.second.specifiedAreaRect);
-            return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
-        }
-    };
 
     std::mutex mutex_;
     std::mutex mapMutex_;

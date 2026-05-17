@@ -21,8 +21,9 @@
 #include <securec.h>
 #include <hilog/log.h>
 #ifdef NOT_BUILD_FOR_OHOS_SDK
+#ifndef ENABLE_RS_PROXY
 #include "rs_profiler.h"
-
+#endif
 #include <parameters.h>
 #endif
 
@@ -68,7 +69,9 @@ void RSLogEOutput(const char* format, ...)
 #ifdef NOT_BUILD_FOR_OHOS_SDK
     va_list argptr;
     va_start(argptr, format);
+#ifndef ENABLE_RS_PROXY
     RS_PROFILER_RSLOGEOUTPUT(format, argptr);
+#endif
     va_end(argptr);
 #endif
 }
@@ -78,7 +81,9 @@ void RSLogWOutput(const char* format, ...)
 #if defined(NOT_BUILD_FOR_OHOS_SDK)
     va_list argptr;
     va_start(argptr, format);
+#ifndef ENABLE_RS_PROXY
     RS_PROFILER_RSLOGWOUTPUT(format, argptr);
+#endif
     va_end(argptr);
 #endif
 }
@@ -88,7 +93,9 @@ void RSLogDOutput(const char* format, ...)
 #if defined(NOT_BUILD_FOR_OHOS_SDK) && defined(RSPROFILER_RSLOGD_ENABLED)
     va_list argptr;
     va_start(argptr, format);
+#ifndef ENABLE_RS_PROXY
     RS_PROFILER_RSLOGDOUTPUT(format, argptr);
+#endif
     va_end(argptr);
 #endif
 }
