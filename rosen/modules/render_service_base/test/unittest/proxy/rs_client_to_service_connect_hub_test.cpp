@@ -14,8 +14,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <iremote_stub.h>
-#include "platform/ohos/transaction/rs_irender_connection_token.h"
 #include "platform/ohos/transaction/zidl/rs_iclient_to_service_connection.h"
 #include "rs_client_to_service_connect_hub.h"
 #include "platform/common/rs_log.h"
@@ -25,6 +23,17 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
+class MockRemoteObject : public IRemoteObject {
+public:
+    MockRemoteObject() : IRemoteObject(u"MockRemoteObject") {}
+    int32_t GetObjectRefCount() override { return 0; }
+    int SendRequest(uint32_t, MessageParcel&, MessageParcel&, MessageOption&) override { return 0; }
+    bool IsProxyObject() const override { return false; }
+    bool CheckObjectLegality() const override { return true; }
+    bool AddDeathRecipient(const sptr<DeathRecipient>&) override { return true; }
+    bool RemoveDeathRecipient(const sptr<DeathRecipient>&) override { return true; }
+};
+
 class RSClientToServiceConnectHubTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -146,7 +155,7 @@ HWTEST_F(RSClientToServiceConnectHubTest, OnRemoteDied002, TestSize.Level1)
         weakHub = tempHub;
     }
     auto recipient = new RSClientToServiceConnectHub::RenderServiceDeathRecipient(weakHub);
-    sptr<IRemoteObject> mockRemote = new IRemoteStub<RSIConnectionToken>();
+    sptr<IRemoteObject> mockRemote = new MockRemoteObject();
     recipient->OnRemoteDied(mockRemote);
 }
 
