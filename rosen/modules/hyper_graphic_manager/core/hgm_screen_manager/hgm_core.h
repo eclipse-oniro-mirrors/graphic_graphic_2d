@@ -47,12 +47,12 @@ public:
     using SetScreenActiveModeCallback = std::function<uint32_t(ScreenId, uint32_t)>;
     using GetScreenActiveRefreshRateCallback = std::function<uint32_t(ScreenId)>;
     struct ScreenManagerCallbacks {
-        const GetDefaultScreenIdCallback getDefaultScreenIdCb;
-        const GetScreenPowerStatusCallback getScreenPowerStatusCb;
-        const GetScreenSupportedModesCallback getScreenSupportedModesCb;
-        const SetScreenConstraintCallback setScreenConstraintCb;
-        const SetScreenActiveModeCallback setScreenActiveModeCb;
-        const GetScreenActiveRefreshRateCallback getScreenActiveRefreshRateCb;
+        GetDefaultScreenIdCallback getDefaultScreenIdCb;
+        GetScreenPowerStatusCallback getScreenPowerStatusCb;
+        GetScreenSupportedModesCallback getScreenSupportedModesCb;
+        SetScreenConstraintCallback setScreenConstraintCb;
+        SetScreenActiveModeCallback setScreenActiveModeCb;
+        GetScreenActiveRefreshRateCallback getScreenActiveRefreshRateCb;
     };
     static void SysModeChangeProcess(const char* key, const char* value, void* context);
     static HgmCore& Instance();
