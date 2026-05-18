@@ -222,11 +222,6 @@ check_broker_ext_file_args = [
   rebase_path(
       "//foundation/graphic/graphic_2d_ext/ohcore/build/broker_config.gni"),
 ]
-check_dynamic_layer_skip_args = [
-  "--filename",
-  rebase_path(
-      "//foundation/graphic/graphic_2d_ext/dynamic_layer_skip/build/dynamic_layer_skip.gni"),
-]
 check_math_tools_ext_file_args = [
   "--filename",
   rebase_path(
@@ -322,15 +317,6 @@ if (path_exists("//foundation/graphic/graphic_2d_ext/frame_stability/build/frame
   graphic_2d_frame_stability_configs = {
     import(
         "//foundation/graphic/graphic_2d_ext/frame_stability/build/frame_stability_config.gni")
-  }
-}
-
-graphic_2d_dynamic_layer_skip_configs = {
-}
-if (path_exists("//foundation/graphic/graphic_2d_ext/dynamic_layer_skip/build/dynamic_layer_skip.gni")) {
-  graphic_2d_dynamic_layer_skip_configs = {
-    import(
-      "//foundation/graphic/graphic_2d_ext/dynamic_layer_skip/build/dynamic_layer_skip.gni")
   }
 }
 
