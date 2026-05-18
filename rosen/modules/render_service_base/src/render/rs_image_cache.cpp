@@ -356,7 +356,7 @@ void RSImageCache::ReserveImageInfo(std::shared_ptr<RSImage> rsImage,
             auto existingCmdShared = existingCmd.lock();
             if (existingImgShared && existingCmdShared &&
                 rsImage.get() == existingImgShared.get() &&
-                drawCmd.lock() && drawCmd.lock().get() == existingCmdShared.get()) {
+                drawCmdShared.get() == existingCmdShared.get()) {
                 return;
             }
         }
