@@ -163,7 +163,8 @@ RSSurfaceRenderNode::RSSurfaceRenderNode(
       dirtyManager_(std::make_shared<RSDirtyRegionManager>()),
       cacheSurfaceDirtyManager_(std::make_shared<RSDirtyRegionManager>()),
       surfaceHandler_(std::make_shared<RSSurfaceHandler>(config.id)), name_(config.name),
-      bundleName_(config.bundleName)
+      bundleName_(config.bundleName),
+      tunnelRuntimeState_(std::make_unique<RSTunnelRuntimeState>())
 {
 #ifndef ROSEN_ARKUI_X
     MemoryInfo info = {sizeof(*this), ExtractPid(config.id), config.id, MEMORY_TYPE::MEM_RENDER_NODE};
@@ -198,7 +199,14 @@ RSSurfaceRenderNode::~RSSurfaceRenderNode()
 #ifndef ROSEN_CROSS_PLATFORM
 void RSSurfaceRenderNode::SetConsumer(const sptr<IConsumerSurface>& consumer)
 {
-    GetMutableRSSurfaceHandler()->SetConsumer(consumer);
+    auto surfaceHandler = GetMutableRSSurfaceHandler();
+    if (surfaceHandler == nullptr) {
+        return;
+    }
+    if (surfaceHandler->GetConsumer() != consumer && tunnelRuntimeState_ != nullptr) {
+        tunnelRuntimeState_->Clear();
+    }
+    surfaceHandler->SetConsumer(consumer);
 }
 #endif
 
@@ -760,7 +768,7 @@ void RSSurfaceRenderNode::ProcessAnimatePropertyAfterChildren(RSPaintFilterCanva
 void RSSurfaceRenderNode::SetContextBounds(const Vector4f bounds)
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetBounds>(GetId(), bounds);
-    SendCommandFromRT(command, GetId());
+    SendCommandFromRT(command, GetId(), uiContextToken_);
 }
 
 std::shared_ptr<RSDirtyRegionManager> RSSurfaceRenderNode::GetCacheSurfaceDirtyManager() const
@@ -819,7 +827,7 @@ void RSSurfaceRenderNode::SetContextMatrix(const std::optional<Drawing::Matrix>&
     }
     // send a Command
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetContextMatrix>(GetId(), matrix);
-    SendCommandFromRT(command, GetId());
+    SendCommandFromRT(command, GetId(), uiContextToken_);
 }
 
 void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
@@ -835,7 +843,7 @@ void RSSurfaceRenderNode::SetContextAlpha(float alpha, bool sendMsg)
     }
     // send a Command
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetContextAlpha>(GetId(), alpha);
-    SendCommandFromRT(command, GetId());
+    SendCommandFromRT(command, GetId(), uiContextToken_);
 }
 
 void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect>& clipRegion, bool sendMsg)
@@ -851,7 +859,7 @@ void RSSurfaceRenderNode::SetContextClipRegion(const std::optional<Drawing::Rect
     }
     // send a Command
     std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetContextClipRegion>(GetId(), clipRegion);
-    SendCommandFromRT(command, GetId());
+    SendCommandFromRT(command, GetId(), uiContextToken_);
 }
 void RSSurfaceRenderNode::SetBootAnimation(bool isBootAnimation)
 {

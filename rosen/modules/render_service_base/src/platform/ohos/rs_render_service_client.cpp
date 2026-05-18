@@ -893,7 +893,7 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
     return backLightLevel;
 }
 
-void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
+void RSRenderServiceClient::SetScreenBacklight(const RsScreenBrightnessData& brightnessData)
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
@@ -901,7 +901,7 @@ void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
         return;
     }
 
-    clientToService->SetScreenBacklight(id, level);
+    clientToService->SetScreenBacklight(brightnessData);
 }
 
 PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)

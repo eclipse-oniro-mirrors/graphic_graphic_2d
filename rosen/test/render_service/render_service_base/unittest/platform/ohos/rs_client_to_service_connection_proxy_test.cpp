@@ -930,7 +930,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenBacklight, TestSize.Leve
 {
     ScreenId id = 1;
     uint32_t level = 1;
-    proxy->SetScreenBacklight(id, level);
+    proxy->SetScreenBacklight(RsScreenBrightnessData(id, level));
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
