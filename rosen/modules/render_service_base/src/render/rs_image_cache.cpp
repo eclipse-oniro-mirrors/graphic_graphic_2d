@@ -340,6 +340,11 @@ void RSImageCache::ReserveImageInfo(std::shared_ptr<RSImage> rsImage,
     if (!RSSystemProperties::GetDefaultMemClearEnabled()) {
         return;
     }
+
+    auto drawCmdShared = drawCmd.lock();
+    if (!drawCmdShared) {
+        return;
+    }
     if (rsImage != nullptr) {
         auto drawableAdapter = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(nodeId);
         if (drawableAdapter == nullptr) {
