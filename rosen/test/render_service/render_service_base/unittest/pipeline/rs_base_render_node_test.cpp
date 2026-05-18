@@ -847,7 +847,7 @@ HWTEST_F(RSBaseRenderNodeTest, SendCommandFromRT, TestSize.Level1)
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     std::unique_ptr<RSCommand> command;
     NodeId nodeId = 0;
-    node->SendCommandFromRT(command, nodeId);
+    node->SendCommandFromRT(command, nodeId, 0);
     ASSERT_TRUE(true);
 }
 
@@ -1133,8 +1133,8 @@ HWTEST_F(RSBaseRenderNodeTest, MarkSuggestOpincNode, TestSize.Level1)
     bool isOpincNode = true;
     bool isNeedCalculate = true;
     node->MarkSuggestOpincNode(isOpincNode, isNeedCalculate);
-    ASSERT_TRUE(node->GetOpincCache().IsSuggestOpincNode());
-    ASSERT_TRUE(node->GetOpincCache().isNeedCalculate_);
+    ASSERT_TRUE(node->GetOpincRootCache().IsSuggestOpincNode());
+    ASSERT_TRUE(node->GetOpincRootCache().isNeedCalculate_);
     ASSERT_TRUE(node->IsDirty());
 }
 } // namespace OHOS::Rosen
