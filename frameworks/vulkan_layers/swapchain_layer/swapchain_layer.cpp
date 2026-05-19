@@ -2192,8 +2192,8 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL GetInstanceProcAddr(VkInstance instance
     }
     if (strcmp("vkGetPhysicalDeviceFeatures2", funcName) == 0 ||
  	    strcmp("vkGetPhysicalDeviceFeatures2KHR", funcName) == 0) {
- 	    return reinterpret_cast<PFN_vkVoidFunction>(GetPhysicalDeviceFeatures2);
- 	}
+        return reinterpret_cast<PFN_vkVoidFunction>(GetPhysicalDeviceFeatures2);
+    }
 
     if (instance == VK_NULL_HANDLE) {
         SWLOGE("SwapchainLayer GetInstanceProcAddr(func name %{public}s) instance is null", funcName);
