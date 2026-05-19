@@ -42,10 +42,8 @@ public:
     {
         return solidLayerConfig_;
     }
-    bool HgmAbilityEnabled() const
-    {
-        return hgmAbilityEnabled_;
-    }
+    bool HgmAbilityEnabled() const { return hgmAbilityEnabled_; }
+
 private:
     int32_t Parse();
     int32_t ParseNode(xmlNode& node, std::vector<std::string>& data);

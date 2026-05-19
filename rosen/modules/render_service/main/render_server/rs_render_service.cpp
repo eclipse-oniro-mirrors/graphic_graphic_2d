@@ -385,6 +385,14 @@ void RSRenderService::FpsDump(std::string& dumpString, const std::string& arg)
     rsRenderComposerManager_->FpsDump(dumpString, arg);
 }
 
+std::shared_ptr<HgmContext> RSRenderService::GetHgmContext() const
+{
+    if (!HgmCore::Instance().HgmAbilityEnabled()) {
+        return nullptr;
+    }
+    return hgmContext_;
+}
+
 void RSRenderService::HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status)
 {
     rsRenderComposerManager_->HandlePowerStatus(screenId, status);

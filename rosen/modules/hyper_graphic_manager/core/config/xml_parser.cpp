@@ -135,7 +135,7 @@ int32_t XMLParser::ParseParam(xmlNode& node)
                  mParsedData_->defaultRefreshRateMode_.c_str());
     } else if (paraName == "ability_enable") {
         mParsedData_->hgmAbilityEnabled_ = ExtractPropertyValue("value", node) == "1";
-        HGM_LOGD("HgmXMLParser ParseParam ability_enable %{public}d", mParsedData_->hgmAbilityEnabled_);
+        HGM_LOGD("ability_enable %{public}d", mParsedData_->hgmAbilityEnabled_);
     }
 
     return EXEC_SUCCESS;

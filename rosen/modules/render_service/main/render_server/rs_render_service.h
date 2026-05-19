@@ -106,13 +106,7 @@ private:
     void FpsDump(std::string& dumpString, const std::string& arg);
 
     // Hgm related
-    std::shared_ptr<HgmContext> GetHgmContext() const
-    {
-        if (!HgmCore::Instance().HgmAbilityEnabled()) {
-            return nullptr;
-        }
-        return hgmContext_;
-    }
+    std::shared_ptr<HgmContext> GetHgmContext() const;
     void HandlePowerStatus(ScreenId screenId, ScreenPowerStatus status);
 
     // Game Scene Handler
