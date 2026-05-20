@@ -1,12 +1,18 @@
-//
-// Copyright (c) Huawei Technologies Co., Ltd. 2023-2024. All rights reserved.
-//
+/*
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-//
-// Desc: Trace3D Core API
-//
-// Author: Dmitry Zhuk Z00858759 <zhuk.dmitry@huawei.com>
-//
 
 #ifndef __TRACE3D_API_CORE_H__
 #define __TRACE3D_API_CORE_H__
@@ -348,7 +354,7 @@ typedef trace3d::api::RetCode (*pTRACE3D_CoreDebugTraceGroupSetWithParam)(const 
     const Trace3DCoreDebugTagParamValue *param);
 typedef trace3d::api::RetCode (*pTRACE3D_CoreDebugTraceGlobalGroupSetWithParam)(
     const char *groupTagName, const Trace3DCoreDebugTagParamValue *param);
-typedef trace3d::api::RetCode (*pTRACE3D_CoreDebugTracePoolGroupSetWithParam)( uint32_t tagPool,
+typedef trace3d::api::RetCode (*pTRACE3D_CoreDebugTracePoolGroupSetWithParam)(uint32_t tagPool,
     const char *groupTagName, const Trace3DCoreDebugTagParamValue *param);
 typedef trace3d::api::RetCode (*pTRACE3D_CoreDebugTracePoolGlobalGroupSetWithParam)(uint32_t tagPool,
     const char *groupTagName, const Trace3DCoreDebugTagParamValue *param);
@@ -643,6 +649,9 @@ typedef uint32_t (* pTRACE3D_CoreGetAPI)(struct TRACE3D_CORE_API_TABLE *apiTable
 
 #define TRACE3D_CORE_GET_API_ENTRY_NAME "TRACE3D_CoreGetAPI"
 
+// Base for converting string to uint64_t
+constexpr uint32_t STR_TO_UINT_BASE = 10;
+
 static inline const TRACE3D_CORE_API_TABLE* TRACE3D_CoreInitImpl()
 {
     static bool initDone = false;
@@ -655,7 +664,7 @@ static inline const TRACE3D_CORE_API_TABLE* TRACE3D_CoreInitImpl()
 
     if (env) {
         char *end = nullptr;
-        procAddrUInt = std::strtoull(env, &end, 10);
+        procAddrUInt = std::strtoull(env, &end, STR_TO_UINT_BASE);
     }
     pTRACE3D_CoreGetAPI coreGetAPI = (pTRACE3D_CoreGetAPI)(uintptr_t)procAddrUInt;
 
@@ -690,7 +699,9 @@ static inline const char *CustomStringParamTypeNames[(size_t)CustomStringParamTy
 class DebugScope final {
 public:
     DebugScope(const TRACE3D_CORE_API_TABLE *coreAPI, uint32_t tagPool = TRACE3D_DEBUG_TAG_POOL_DEFAULT)
-            : coreAPI_(nullptr), tagPool_(TRACE3D_DEBUG_TAG_POOL_DEFAULT), pushed_(false) {
+        : coreAPI_(nullptr),
+          tagPool_(TRACE3D_DEBUG_TAG_POOL_DEFAULT),
+          pushed_(false) {
         if (tagPool < TRACE3D_DEBUG_TAG_POOL_MAX_NUMBER
                 && coreAPI
                 && coreAPI->DebugTracePoolGroupPushWithParam
@@ -706,7 +717,7 @@ public:
     }
     DebugScope(const TRACE3D_CORE_API_TABLE *coreAPI, const std::string_view tagName,
             uint32_t tagPool = TRACE3D_DEBUG_TAG_POOL_DEFAULT, const Trace3DCoreDebugTagParamValue tagParam = {})
-            : DebugScope(coreAPI, tagPool) {
+        : DebugScope(coreAPI, tagPool) {
         if (coreAPI_) {
             pushed_ = coreAPI_->DebugTracePoolGroupPushWithParam(
                           tagPool_, tagName.data(), &tagParam) >=
@@ -862,8 +873,8 @@ public:
         if (coreAPI_) {
             auto retCode = trace3d::api::RET_ERR_UNKNOWN;
             if (codeContext) {
-                retCode = coreAPI_->GPUTimeTraceGroupPopWithNameCb(cbHandle_, zoneName, TInfo::API_TYPE, 
-                    "\"%s\":\"%s\"", CustomStringParamTypeNames[(size_t)CustomStringParamType::CODE_CONTEXT], \
+                retCode = coreAPI_->GPUTimeTraceGroupPopWithNameCb(cbHandle_, zoneName, TInfo::API_TYPE,
+                    "\"%s\":\"%s\"", CustomStringParamTypeNames[(size_t)CustomStringParamType::CODE_CONTEXT],
                     codeContext);
             } else {
                 retCode = coreAPI_->GPUTimeTraceGroupPopWithNameCb(
