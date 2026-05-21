@@ -78,6 +78,21 @@ const TRACE3D_CORE_API_TABLE* Trace3DCoreInitRS()
     return apiTablePtr;
 }
 
+auto Trace3DDebugScopeCreate(const TRACE3D_CORE_API_TABLE *trace3dApi, uint64_t rsNodeId)
+{
+    auto rsFrame = RS_PROFILER_GET_RENDER_FRAME_NUMBER();
+
+    Trace3DCoreDebugTagParamValue dbgParam[2] = {};
+    dbgParam[0].type = TRACE3D_CORE_DEBUG_TAG_PARAM_WM_NODE;
+    dbgParam[0].wmNode.id = rsNodeId;
+    dbgParam[1].type = TRACE3D_CORE_DEBUG_TAG_PARAM_WM_FRAME;
+    dbgParam[1].wmFrame.number = (uint64_t)rsFrame;
+
+    auto dbgScope =
+        std::make_shared<::trace3d::api::DebugScope>(trace3dApi, "", TRACE3D_DEBUG_TAG_POOL_GPU_ZONE, dbgParam[0]);
+    dbgScope->SetTagParam(dbgParam[1]);
+    return dbgScope;
+}
 
 #include "transaction/rs_client_to_render_connection.h"
 #include "transaction/rs_service_to_render_connection.h"

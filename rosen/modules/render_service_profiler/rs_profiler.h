@@ -37,8 +37,11 @@
 #include "params/rs_screen_render_params.h"
 
 #include "rs_profiler_utils.h"
+
 struct TRACE3D_CORE_API_TABLE;
 RSB_EXPORT const TRACE3D_CORE_API_TABLE* Trace3DCoreInitRS();
+RS_EXPORT std::shared_ptr<::trace3d::api::DebugScope> Trace3DDebugScopeCreate(
+    const TRACE3D_CORE_API_TABLE* trace3dApi, uint64_t rsNodeId);
 
 #define RS_PROFILER_INIT(renderPipeline, serviceToRenderConnection) \
     RSProfiler::Init(renderPipeline, serviceToRenderConnection)
@@ -113,6 +116,8 @@ RSB_EXPORT const TRACE3D_CORE_API_TABLE* Trace3DCoreInitRS();
 #define RS_PROFILER_ANIMATION_DURATION_START(id, timestamp_ns) RSProfiler::AddAnimationStart(id, timestamp_ns)
 #define RS_PROFILER_ANIMATION_DURATION_STOP(id, timestamp_ns) RSProfiler::AddAnimationFinish(id, timestamp_ns)
 #else
+#define Trace3DCoreInitRS() nullptr
+#define Trace3DDebugScopeCreate(trace3dApi, rsNodeId) nullptr
 #define RS_PROFILER_INIT(renderPipeline, serviceToRenderConnection)
 #define RS_PROFILER_ON_FRAME_BEGIN(syncTime)
 #define RS_PROFILER_ON_FRAME_END()
