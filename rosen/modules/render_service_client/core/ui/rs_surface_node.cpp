@@ -587,7 +587,7 @@ void RSSurfaceNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
     boundsChangedCallback_ = callback;
 }
 
-void RSSurfaceNode::SetAlphaChangedCallback(AlphaChangedCallback callback)
+void RSSurfaceNode::SetAlphaChangedCallback(AlphaChangedCallback&& callback)
 {
     ROSEN_LOGI("RSSurfaceNode::SetAlphaChangedCallback, node=[%{public}" PRIu64 ", %{public}s]",
         GetId(), GetName().c_str());

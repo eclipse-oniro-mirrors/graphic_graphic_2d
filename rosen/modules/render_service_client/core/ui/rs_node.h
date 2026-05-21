@@ -1816,7 +1816,7 @@ public:
 
     virtual void SetBoundsChangedCallback(BoundsChangedCallback callback) {}
 
-    virtual void SetAlphaChangedCallback(AlphaChangedCallback callback) {}
+    virtual void SetAlphaChangedCallback(AlphaChangedCallback&& callback) {}
 
     bool IsTextureExportNode() const
     {

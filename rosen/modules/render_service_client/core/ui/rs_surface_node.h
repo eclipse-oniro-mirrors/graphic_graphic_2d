@@ -196,7 +196,7 @@ public:
     bool IsBufferAvailable() const;
     void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
     void SetAnimationFinished();
-    void SetAlphaChangedCallback(AlphaChangedCallback callback) override;
+    void SetAlphaChangedCallback(AlphaChangedCallback&& callback) override;
 
     /**
      * @brief Serializes the RSSurfaceNode into a parcel.
