@@ -881,7 +881,7 @@ HWTEST_F(HgmFrameRateMgrTest, FrameRateReportTest, Function | SmallTest | Level0
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(HgmFrameRateMgrTest, FrameRateReportTest2, Function | SmallTest | Level)
+HWTEST_F(HgmFrameRateMgrTest, FrameRateReportTest2, Function | SmallTest | Level1)
 {
     HgmFrameRateManager mgr;
     // Test: schedulePreferredFps_ <= OLED_60_HZ && currRefreshRate_ <= OLED_60_HZ
