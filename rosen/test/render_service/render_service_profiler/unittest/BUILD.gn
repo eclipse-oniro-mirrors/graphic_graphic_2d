@@ -23,7 +23,6 @@ group("unittest") {
     ":RSProfilerCaptureDataTest",
     ":RSProfilerCapturingTest",
     ":RSProfilerCommandTest",
-    ":RSProfilerDumpTest",
     ":RSProfilerNetworkTest",
     ":RSProfilerPacketTest",
     ":RSProfilerPixelMapTest",
