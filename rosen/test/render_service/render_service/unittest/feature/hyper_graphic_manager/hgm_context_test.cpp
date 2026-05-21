@@ -1456,8 +1456,6 @@ HWTEST_F(HgmContextTest, ScreenManagerListenerOnScreenConnectedTest, TestSize.Le
     // Cleanup
     HgmCore::Instance().hgmAbilityEnabled_ = true;
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    RSColorPickerThread::Instance().renderContext_ = nullptr;
-    RSBackgroundThread::Instance().renderContext_ = nullptr;
     HianimationManager::GetInstance().hianimationDevice_.closeDevice = nullptr;
 }
 
@@ -1495,8 +1493,6 @@ HWTEST_F(HgmContextTest, ScreenManagerListenerOnScreenDisconnectedTest, TestSize
     // Cleanup
     HgmCore::Instance().hgmAbilityEnabled_ = true;
     RSUniRenderThread::Instance().uniRenderEngine_ = nullptr;
-    RSColorPickerThread::Instance().renderContext_ = nullptr;
-    RSBackgroundThread::Instance().renderContext_ = nullptr;
     HianimationManager::GetInstance().hianimationDevice_.closeDevice = nullptr;
 }
 } // namespace OHOS::Rosen
