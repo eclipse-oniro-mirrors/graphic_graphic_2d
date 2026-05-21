@@ -96,9 +96,13 @@ HWTEST_F(RSMarshallingHelperReliabilityTest, ConsistencyWithSmallDataWithoutProf
     // data should be std::shared_ptr<Drawing::Data>
     // because Marshalling working for std::shared_ptr<Drawing::Data>
     auto data = std::make_shared<Drawing::Data>();
+    const size_t length = 100; 
+    const size_t position = 108; 
 
-    void* allocated = malloc(length);
-    EXPECT_TRUE(data->BuildFromMalloc(allocated, length));
+    void* allocated = malloc(length);	 
+    EXPECT_TRUE(data->BuildFromMalloc(allocated, length));	 
+
+    EXPECT_TRUE(CheckConsistencyWithData(data, position));
 }
 
 /**
@@ -113,9 +117,13 @@ HWTEST_F(RSMarshallingHelperReliabilityTest, ConsistencyWithMediumDataWithoutPro
     // data should be std::shared_ptr<Drawing::Data>
     // because Marshalling working for std::shared_ptr<Drawing::Data>
     auto data = std::make_shared<Drawing::Data>();
+    const size_t length = 40'000; 
+    const size_t position = 36; 
 
-    void* allocated = malloc(length);
-    EXPECT_TRUE(data->BuildFromMalloc(allocated, length));
+    void* allocated = malloc(length);	 
+    EXPECT_TRUE(data->BuildFromMalloc(allocated, length));	 
+
+    EXPECT_TRUE(CheckConsistencyWithData(data, position));
 }
 
 /**
@@ -212,9 +220,12 @@ HWTEST_F(RSMarshallingHelperReliabilityTest, ConsistencyWithMediumDataWithProfil
     // because Marshalling working for std::shared_ptr<Drawing::Data>
     auto data = std::make_shared<Drawing::Data>();
     const size_t length = 40'000;
+    const size_t position = 44;
 
     void* allocated = malloc(length);
     EXPECT_TRUE(data->BuildFromMalloc(allocated, length));
+
+    EXPECT_TRUE(CheckConsistencyWithData(data, position));
 }
 
 /**
