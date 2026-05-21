@@ -78,7 +78,8 @@ const TRACE3D_CORE_API_TABLE* Trace3DCoreInitRS()
     return apiTablePtr;
 }
 
-auto Trace3DDebugScopeCreate(const TRACE3D_CORE_API_TABLE *trace3dApi, uint64_t rsNodeId)
+std::shared_ptr<trace3d::api::DebugScope> Trace3DDebugScopeCreate(
+    const TRACE3D_CORE_API_TABLE *trace3dApi, uint64_t rsNodeId)
 {
     auto rsFrame = RS_PROFILER_GET_RENDER_FRAME_NUMBER();
 

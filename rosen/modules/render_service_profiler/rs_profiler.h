@@ -45,7 +45,7 @@ namespace trace3d::api {
 }
 
 RSB_EXPORT const TRACE3D_CORE_API_TABLE* Trace3DCoreInitRS();
-RS_EXPORT std::shared_ptr<::trace3d::api::DebugScope> Trace3DDebugScopeCreate(
+RS_EXPORT std::shared_ptr<trace3d::api::DebugScope> Trace3DDebugScopeCreate(
     const TRACE3D_CORE_API_TABLE* trace3dApi, uint64_t rsNodeId);
 
 #define RS_PROFILER_INIT(renderPipeline, serviceToRenderConnection) \
