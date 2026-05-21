@@ -196,6 +196,7 @@ public:
     bool IsBufferAvailable() const;
     void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
     void SetAnimationFinished();
+    void SetAlphaChangedCallback(AlphaChangedCallback callback) override;
 
     /**
      * @brief Serializes the RSSurfaceNode into a parcel.
@@ -405,6 +406,8 @@ private:
     void SetIsTextureExportNode(bool isTextureExportNode);
     void RegisterNodeMap() override;
 
+    void OnAlphaValueChanged() const override;
+
     bool InitShadowModifiers(SharedPtr shadowNode, const std::set<ShadowPropertyType>& shadowPropertyTypes = {});
 
     template<typename Modifier, typename ValueType>
@@ -421,6 +424,7 @@ private:
     BufferAvailableCallback callback_;
     bool bufferAvailable_ = false;
     BoundsChangedCallback boundsChangedCallback_;
+    AlphaChangedCallback alphaChangedCallback_;
     // If has shadow node or itself is a shadow node, existsDuplicateModifier_ may be true.
     bool existsDuplicateModifier_ = false;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;

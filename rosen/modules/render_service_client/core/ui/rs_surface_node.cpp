@@ -389,6 +389,17 @@ void RSSurfaceNode::OnBoundsSizeChanged() const
     }
 }
 
+void RSSurfaceNode::OnAlphaValueChanged() const
+{
+    auto alpha = GetStagingProperties().GetAlpha();
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (alphaChangedCallback_) {
+        ROSEN_LOGI("RSSurfaceNode::OnAlphaValueChanged, node=[%{public}" PRIu64 ", %{public}s], alpha=%{public}f",
+            GetId(), GetName().c_str(), alpha);
+        alphaChangedCallback_(alpha);
+    }
+}
+
 void RSSurfaceNode::SetLeashPersistentId(LeashPersistentId leashPersistentId)
 {
     leashPersistentId_ = leashPersistentId;
@@ -574,6 +585,14 @@ void RSSurfaceNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     boundsChangedCallback_ = callback;
+}
+
+void RSSurfaceNode::SetAlphaChangedCallback(AlphaChangedCallback callback)
+{
+    ROSEN_LOGI("RSSurfaceNode::SetAlphaChangedCallback, node=[%{public}" PRIu64 ", %{public}s]",
+        GetId(), GetName().c_str());
+    std::lock_guard<std::mutex> lock(mutex_);
+    alphaChangedCallback_ = callback;
 }
 
 void RSSurfaceNode::SetAnimationFinished()
