@@ -2477,7 +2477,6 @@ void RSProperties::ResetDirty()
 {
     isDirty_ = false;
     geoDirty_ = false;
-    parentGeoDirty_ = false;
     contentDirty_ = false;
     subTreeAllDirty_ = false;
 }

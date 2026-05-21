@@ -5001,7 +5001,7 @@ HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty002, TestSize.Level1)
     auto parent = std::make_shared<RSRenderNode>(id + 1, context);
     auto child = std::make_shared<RSRenderNode>(id + 2, context);
     child->SetParent(parent);
-    parent->GetMutableRenderProperties().geoDirty_ = true;
+    parent->GetMutableRenderProperties().curGeoDirty_ = true;
     parent->GetMutableRenderProperties().SetParentGeoDirty(false);
     child->AccumulateParentGeoDirty();
     EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
@@ -5018,7 +5018,7 @@ HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty003, TestSize.Level1)
     auto parent = std::make_shared<RSRenderNode>(id + 1, context);
     auto child = std::make_shared<RSRenderNode>(id + 2, context);
     child->SetParent(parent);
-    parent->GetMutableRenderProperties().geoDirty_ = false;
+    parent->GetMutableRenderProperties().curGeoDirty_ = false;
     parent->GetMutableRenderProperties().SetParentGeoDirty(true);
     child->AccumulateParentGeoDirty();
     EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
@@ -5035,7 +5035,7 @@ HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty004, TestSize.Level1)
     auto parent = std::make_shared<RSRenderNode>(id + 1, context);
     auto child = std::make_shared<RSRenderNode>(id + 2, context);
     child->SetParent(parent);
-    parent->GetMutableRenderProperties().geoDirty_ = false;
+    parent->GetMutableRenderProperties().curGeoDirty_ = false;
     parent->GetMutableRenderProperties().SetParentGeoDirty(false);
     child->AccumulateParentGeoDirty();
     EXPECT_FALSE(child->GetRenderProperties().IsParentGeoDirty());
@@ -5055,13 +5055,13 @@ HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty005, TestSize.Level1)
     parent->SetParent(grandparent);
     child->SetParent(parent);
 
-    grandparent->GetMutableRenderProperties().geoDirty_ = true;
+    grandparent->GetMutableRenderProperties().curGeoDirty_ = true;
     grandparent->GetMutableRenderProperties().SetParentGeoDirty(false);
 
     parent->AccumulateParentGeoDirty();
     EXPECT_TRUE(parent->GetRenderProperties().IsParentGeoDirty());
 
-    parent->GetMutableRenderProperties().geoDirty_ = false;
+    parent->GetMutableRenderProperties().curGeoDirty_ = false;
     child->AccumulateParentGeoDirty();
     EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
 }
