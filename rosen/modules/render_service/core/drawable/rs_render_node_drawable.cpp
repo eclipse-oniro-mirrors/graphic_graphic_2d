@@ -1046,7 +1046,8 @@ void RSRenderNodeDrawable::ClearCachedSurface()
     }
     RS_OPTIONAL_TRACE_NAME_FMT("ClearCachedSurface id:%llu", GetId());
     RSOpincDrawCacheHelper::ReduceOpincCacheMem(*this,
-        static_cast<int64_t>(GetRenderGroupCachedSurface()->Width()) * static_cast<int64_t>(GetRenderGroupCachedSurface()->Height()));
+        static_cast<int64_t>(GetRenderGroupCachedSurface()->Width()) *
+        static_cast<int64_t>(GetRenderGroupCachedSurface()->Height()));
 
     auto clearTask = [surface = GetRenderGroupCachedSurface()]() mutable { surface = nullptr; };
     ClearRenderGroupResource();
