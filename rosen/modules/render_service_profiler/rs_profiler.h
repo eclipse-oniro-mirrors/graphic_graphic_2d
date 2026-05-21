@@ -82,7 +82,7 @@ RS_EXPORT std::shared_ptr<trace3d::api::DebugScope> Trace3DDebugScopeCreate(
 #define RS_PROFILER_WRITE_SHARED_TYPEFACE(parcel, typeface) RSProfiler::WriteSharedTypeface(parcel, typeface)
 #define RS_PROFILER_READ_SHARED_TYPEFACE(parcel, typeface) RSProfiler::ReadSharedTypeface(parcel, typeface)
 #define RS_PROFILER_GET_FRAME_NUMBER() RSProfiler::GetFrameNumber()
-#define RS_PROFILER_GET_RENDER_FRAME_NUMBER() RSProfiler::GetRenderFrameNumber()
+#define RS_PROFILER_GET_RENDER_FRAME_NUMBER() OHOS::Rosen::RSProfiler::GetRenderFrameNumber()
 #define RS_PROFILER_GET_TRACE3D_API() RSProfiler::GetTrace3DApi()
 #define RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber) RSProfiler::OnParallelRenderBegin(renderFrameNumber)
 #define RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber) RSProfiler::OnParallelRenderEnd(renderFrameNumber)
