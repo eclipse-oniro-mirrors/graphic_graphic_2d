@@ -884,34 +884,28 @@ HWTEST_F(HgmFrameRateMgrTest, FrameRateReportTest, Function | SmallTest | Level0
 HWTEST_F(HgmFrameRateMgrTest, FrameRateReportTest2, Function | SmallTest | Level0)
 {
     HgmFrameRateManager mgr;
-    // Test: schedulePreferredFps_ < OLED_60_HZ && currRefreshRate_ <= OLED_60_HZ
+    // Test: schedulePreferredFps_ <= OLED_60_HZ && currRefreshRate_ <= OLED_60_HZ
     // When both are <= 60Hz, UNI_APP_PID should be set to OLED_60_HZ
     mgr.schedulePreferredFpsChange_ = true;
     mgr.curRefreshRateMode_ = HGM_REFRESHRATE_MODE_AUTO;
-    mgr.schedulePreferredFps_ = OLED_50_HZ;  // < 60HZ
-    mgr.currRefreshRate_ = OLED_60_HZ;
+    mgr.schedulePreferredFps_ = OLED_60_HZ;  // <= 60HZ
+    mgr.currRefreshRate_ = OLED_60_HZ; // <= 60HZ
     mgr.FrameRateReport();
     EXPECT_EQ(mgr.schedulePreferredFpsChange_, false);
 
-    // Test: schedulePreferredFps_ <= OLED_60_HZ && currRefreshRate_ < OLED_60_HZ
-    mgr.schedulePreferredFpsChange_ = true;
-    mgr.schedulePreferredFps_ = OLED_60_HZ;
-    mgr.currRefreshRate_ = OLED_30_HZ;  // < 60HZ
-    mgr.FrameRateReport();
-    EXPECT_EQ(mgr.schedulePreferredFpsChange_, false);
-
-    // Test: Both < 60Hz case
-    mgr.schedulePreferredFpsChange_ = true;
-    mgr.schedulePreferredFps_ = OLED_30_HZ;
-    mgr.currRefreshRate_ = OLED_30_HZ;
-    mgr.FrameRateReport();
-    EXPECT_EQ(mgr.schedulePreferredFpsChange_, false);
-
-    // Test: schedulePreferredFps_ > OLED_60_HZ || currRefreshRate_ > OLED_60_HZ
+    // Test: schedulePreferredFps_ > OLED_60_HZ || currRefreshRate_ <= OLED_60_HZ
     // Should set UNI_APP_PID to OLED_120_HZ
     mgr.schedulePreferredFpsChange_ = true;
     mgr.schedulePreferredFps_ = OLED_90_HZ;
     mgr.currRefreshRate_ = OLED_60_HZ;
+    mgr.FrameRateReport();
+    EXPECT_EQ(mgr.schedulePreferredFpsChange_, false);
+
+    // Test: schedulePreferredFps_ <= OLED_60_HZ || currRefreshRate_ > OLED_60_HZ
+    // Should set UNI_APP_PID to OLED_120_HZ
+    mgr.schedulePreferredFpsChange_ = true;
+    mgr.schedulePreferredFps_ = OLED_60_HZ;
+    mgr.currRefreshRate_ = OLED_90_HZ;
     mgr.FrameRateReport();
     EXPECT_EQ(mgr.schedulePreferredFpsChange_, false);
 
