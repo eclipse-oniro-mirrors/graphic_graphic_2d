@@ -174,6 +174,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
 {
     // check if drawing cache enabled
     if (params.GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE) {
+        InitRenderGroupCache();
         RS_OPTIONAL_TRACE_NAME_FMT("RSCanvasRenderNodeDrawable::OnDraw id:%llu cacheType:%d cacheChanged:%d"
                                    " size:[%.2f, %.2f] ChildHasVisibleFilter:%d ChildHasVisibleEffect:%d"
                                    " shadowRect:[%.2f, %.2f, %.2f, %.2f] HasFilterOrEffect:%d",
@@ -204,7 +205,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
     }
 
     {
-        auto cacheLock = RenderGroupCacheScopedLock();
+        auto cacheLock = RenderGroupCacheLock();
         if (GetRenderGroupCachedSurface() == nullptr) {
             // Remove node id in update time map to avoid update time exceeds DRAWING_CACHE_MAX_UPDATE_TIME
             // (If cache disabled for node not on the tree, we clear cache in OnSync func, but we can't clear node
@@ -463,7 +464,7 @@ void RSRenderNodeDrawable::DrawWithNodeGroupCache(Drawing::Canvas& canvas, const
 {
 #ifdef RS_ENABLE_PREFETCH
     {
-        auto lock = RenderGroupCacheScopedLock();
+        auto lock = RenderGroupCacheLock();
         auto& cachedImage = GetRenderGroupCachedImage();
         __builtin_prefetch(&cachedImage, 0, 1);
     }
@@ -613,6 +614,16 @@ bool RSRenderNodeDrawable::IsDrawingExcludedSubTreeForCache()
     return RSRenderGroupCacheDrawable::IsDrawingExcludedSubTreeForCache();
 }
 
+void RSRenderNodeDrawable::InitRenderGroupCache()
+{
+    if (!renderGroupCacheDrawable_) {
+        renderGroupCacheDrawable_ = std::make_unique<RSRenderGroupCacheDrawable>();
+    }
+    if (!renderGroupCacheAdapter_) {
+        renderGroupCacheAdapter_ = std::make_unique<RSRenderGroupCacheAdapter>();
+    }
+}
+
 void RSRenderNodeDrawable::UpdateCacheInfoForDfx(Drawing::Canvas& canvas, const Drawing::Rect& rect, NodeId id)
 {
     if (!isDrawingCacheDfxEnabled_) {
@@ -752,13 +763,18 @@ void RSRenderNodeDrawable::ClearRenderGroupResource()
     }
 }
 
-std::scoped_lock<std::recursive_mutex> RSRenderNodeDrawable::RenderGroupCacheScopedLock() const
+std::unique_lock<std::recursive_mutex> RSRenderNodeDrawable::RenderGroupCacheLock() const
 {
-    if (renderGroupCacheDrawable_) {
-        return renderGroupCacheDrawable_->RenderGroupCacheScopedLock();
+    if (renderGroupCacheDrawable_ != nullptr) {
+        return renderGroupCacheDrawable_->RenderGroupCacheLock();
+    } else {
+        return std::unique_lock<std::recursive_mutex> {};
     }
-    static std::recursive_mutex nullDummyMutex;
-    return std::scoped_lock<std::recursive_mutex>(nullDummyMutex);
+}
+
+std::unique_lock<std::recursive_mutex> RSRenderNodeDrawable::RenderGroupCacheLock()
+{
+    return std::as_const(*this).RenderGroupCacheLock();
 }
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
@@ -782,7 +798,7 @@ const Drawing::BackendTexture& RSRenderNodeDrawable::GetCachedBackendTexture() c
 
 std::shared_ptr<Drawing::Surface> RSRenderNodeDrawable::GetCachedSurface(pid_t threadId) const
 {
-    auto lock = RenderGroupCacheScopedLock();
+    auto lock = RenderGroupCacheLock();
     if (threadId != GetRenderGroupCacheThreadId() || !renderGroupCacheDrawable_) {
         return nullptr;
     }
@@ -792,7 +808,7 @@ std::shared_ptr<Drawing::Surface> RSRenderNodeDrawable::GetCachedSurface(pid_t t
 void RSRenderNodeDrawable::InitCachedSurface(Drawing::GPUContext* gpuContext, const Vector2f& cacheSize,
     pid_t threadId, bool isNeedFP16, GraphicColorGamut colorGamut)
 {
-    auto lock = RenderGroupCacheScopedLock();
+    auto lock = RenderGroupCacheLock();
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
     if (gpuContext == nullptr) {
         return;
@@ -862,7 +878,7 @@ bool RSRenderNodeDrawable::NeedInitCachedSurface(const Vector2f& newSize)
         width = static_cast<int32_t>(unionRect.GetWidth());
         height = static_cast<int32_t>(unionRect.GetHeight());
     }
-    auto lock = RenderGroupCacheScopedLock();
+    auto lock = RenderGroupCacheLock();
     if (GetRenderGroupCachedSurface() == nullptr) {
         return true;
     }
@@ -893,7 +909,7 @@ static void DeleteSharedTextureContext(void* context)
 
 std::shared_ptr<Drawing::Image> RSRenderNodeDrawable::GetCachedImage(RSPaintFilterCanvas& canvas)
 {
-    auto lock = RenderGroupCacheScopedLock();
+    auto lock = RenderGroupCacheLock();
     auto cachedImg = GetRenderGroupCachedImage();
     if (!GetRenderGroupCachedSurface() || !cachedImg) {
         RS_LOGE("RSRenderNodeDrawable::GetRenderGroupCachedImage invalid cached surface");
@@ -1024,7 +1040,7 @@ void RSRenderNodeDrawable::DrawCachedImage(
 void RSRenderNodeDrawable::ClearCachedSurface()
 {
     SetRenderGroupDrawableCacheType(DrawableCacheType::NONE);
-    auto lock = RenderGroupCacheScopedLock();
+    auto lock = RenderGroupCacheLock();
     if (GetRenderGroupCachedSurface() == nullptr) {
         return;
     }
@@ -1238,7 +1254,7 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
     layerCacheManager.LayerCacheRegionDfx(shared_from_this(), *cacheCanvas);
     // get image & backend
     {
-        auto lock = RenderGroupCacheScopedLock();
+        auto lock = RenderGroupCacheLock();
         std::optional<RSTagTracker> tagTracer;
         if (RSOpincDrawCacheHelper::GetOpincCachedMark(*this)) {
             tagTracer.emplace(curCanvas->GetGPUContext(), RSTagTracker::TAGTYPE::TAG_OPINC);

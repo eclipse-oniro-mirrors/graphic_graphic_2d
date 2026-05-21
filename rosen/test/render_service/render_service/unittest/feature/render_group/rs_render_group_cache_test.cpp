@@ -224,30 +224,30 @@ HWTEST_F(RSRenderGroupCacheTest, SetNeedClipHoleForFilterTest002, TestSize.Level
 }
 
 /**
- * @tc.name: SetRenderGroupHasChildInBlacklistTest
- * @tc.desc: Test SetRenderGroupHasChildInBlacklist
+ * @tc.name: SetNodeGroupHasChildInBlacklistTest
+ * @tc.desc: Test SetNodeGroupHasChildInBlacklist
  * @tc.type: FUNC
- * @tc.require: issues/20738
+ * @tc.require:
  */
-HWTEST_F(RSRenderGroupCacheTest, SetRenderGroupHasChildInBlacklistTest, TestSize.Level1)
+HWTEST_F(RSRenderGroupCacheTest, SetNodeGroupHasChildInBlacklistTest, TestSize.Level1)
 {
     auto renderGroupCache = std::make_unique<RSRenderGroupCache>();
     ASSERT_NE(renderGroupCache, nullptr);
 
-    bool rst = renderGroupCache->SetRenderGroupHasChildInBlacklist(false);
-    EXPECT_FALSE(renderGroupCache->IsRenderGroupHasChildInBlacklist());
+    bool rst = renderGroupCache->SetNodeGroupHasChildInBlacklist(false);
+    EXPECT_FALSE(renderGroupCache->NodeGroupHasChildInBlacklist());
     EXPECT_FALSE(rst);
 
-    rst = renderGroupCache->SetRenderGroupHasChildInBlacklist(true);
-    EXPECT_TRUE(renderGroupCache->IsRenderGroupHasChildInBlacklist());
+    rst = renderGroupCache->SetNodeGroupHasChildInBlacklist(true);
+    EXPECT_TRUE(renderGroupCache->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(rst);
 
-    rst = renderGroupCache->SetRenderGroupHasChildInBlacklist(false);
-    EXPECT_FALSE(renderGroupCache->IsRenderGroupHasChildInBlacklist());
+    rst = renderGroupCache->SetNodeGroupHasChildInBlacklist(false);
+    EXPECT_FALSE(renderGroupCache->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(rst);
 
-    rst = renderGroupCache->SetRenderGroupHasChildInBlacklist(true);
-    EXPECT_TRUE(renderGroupCache->IsRenderGroupHasChildInBlacklist());
+    rst = renderGroupCache->SetNodeGroupHasChildInBlacklist(true);
+    EXPECT_TRUE(renderGroupCache->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(rst);
 }
 } // namespace Rosen

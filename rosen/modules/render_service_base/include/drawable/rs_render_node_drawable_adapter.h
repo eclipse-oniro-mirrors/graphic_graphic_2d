@@ -29,6 +29,7 @@
 #include "drawable/rs_property_drawable.h"
 #include "feature/render_group/rs_render_group_cache_adapter.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_simple_draw_cmd_list.h"
 #include "recording/recording_canvas.h"
 #include "screen_manager/screen_types.h"
 #include "utils/rect.h"
@@ -167,7 +168,7 @@ public:
     static void ClearResource();
     using DrawableVec = std::vector<std::shared_ptr<RSRenderNodeDrawableAdapter>>;
     static void AddToClearDrawables(DrawableVec &vec);
-    using CmdListVec = std::vector<std::shared_ptr<Drawing::DrawCmdList>>;
+    using CmdListVec = std::vector<SimpleDrawCmdListPtr>;
     static void AddToClearCmdList(CmdListVec &vec);
     inline const std::unique_ptr<RSRenderParams>& GetRenderParams() const
     {
@@ -178,10 +179,7 @@ public:
     {
         return nodeId_;
     }
-    inline RSRenderNodeType GetNodeType() const
-    {
-        return nodeType_;
-    }
+    RSRenderNodeType GetNodeType() const;
     virtual std::shared_ptr<RSDirtyRegionManager> GetSyncDirtyManager() const
     {
         return nullptr;

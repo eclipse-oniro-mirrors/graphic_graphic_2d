@@ -91,9 +91,9 @@ DrawableCacheType RSRenderGroupCacheDrawable::GetRenderGroupDrawableCacheType() 
     return drawableCacheType_;
 }
 
-std::scoped_lock<std::recursive_mutex> RSRenderGroupCacheDrawable::RenderGroupCacheScopedLock() const
+std::unique_lock<std::recursive_mutex> RSRenderGroupCacheDrawable::RenderGroupCacheLock() const
 {
-    return std::scoped_lock<std::recursive_mutex>(cacheMutex_);
+    return std::unique_lock<std::recursive_mutex>(cacheMutex_);
 }
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)

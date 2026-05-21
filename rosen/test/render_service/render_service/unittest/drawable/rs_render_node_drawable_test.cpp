@@ -287,8 +287,8 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckCacheTypeAndDrawTest004, TestSize.Level1
     RSRenderParams params(RSRenderNodeDrawableTest::id);
 
     // Test when cache type is not NONE, NodeGroupHasChildInBlacklist is true, and in capture process
-    drawable->SetCacheType(DrawableCacheType::CONTENT);
-    ASSERT_EQ(drawable->GetCacheType(), DrawableCacheType::CONTENT);
+    drawable->SetRenderGroupDrawableCacheType(DrawableCacheType::CONTENT);
+    ASSERT_EQ(drawable->GetRenderGroupDrawableCacheType(), DrawableCacheType::CONTENT);
 
     // Set NodeGroupHasChildInBlacklist to true
     params.SetNodeGroupHasChildInBlacklist(true);
@@ -302,28 +302,28 @@ HWTEST_F(RSRenderNodeDrawableTest, CheckCacheTypeAndDrawTest004, TestSize.Level1
 
     // CheckCacheTypeAndDraw should set cache type to NONE when all conditions are met
     drawable->CheckCacheTypeAndDraw(canvas, params, true);
-    EXPECT_EQ(drawable->GetCacheType(), DrawableCacheType::NONE);
+    EXPECT_EQ(drawable->GetRenderGroupDrawableCacheType(), DrawableCacheType::NONE);
 
     // Reset capture state
     RSUniRenderThread::SetCaptureParam(CaptureParam());
 
     // Reset for next test
-    drawable->SetCacheType(DrawableCacheType::CONTENT);
+    drawable->SetRenderGroupDrawableCacheType(DrawableCacheType::CONTENT);
     params.SetNodeGroupHasChildInBlacklist(false);
 
     // Test when cache type is NONE - should not change
-    ASSERT_EQ(drawable->GetCacheType(), DrawableCacheType::CONTENT);
+    ASSERT_EQ(drawable->GetRenderGroupDrawableCacheType(), DrawableCacheType::CONTENT);
     params.SetNodeGroupHasChildInBlacklist(true);
-    drawable->SetCacheType(DrawableCacheType::NONE);
+    drawable->SetRenderGroupDrawableCacheType(DrawableCacheType::NONE);
     drawable->CheckCacheTypeAndDraw(canvas, params, true);
-    EXPECT_EQ(drawable->GetCacheType(), DrawableCacheType::NONE);
+    EXPECT_EQ(drawable->GetRenderGroupDrawableCacheType(), DrawableCacheType::NONE);
 
     // Test when not in capture process - should not change cache type
-    drawable->SetCacheType(DrawableCacheType::CONTENT);
-    ASSERT_EQ(drawable->GetCacheType(), DrawableCacheType::CONTENT);
+    drawable->SetRenderGroupDrawableCacheType(DrawableCacheType::CONTENT);
+    ASSERT_EQ(drawable->GetRenderGroupDrawableCacheType(), DrawableCacheType::CONTENT);
     RSUniRenderThread::SetCaptureParam(CaptureParam());
     drawable->CheckCacheTypeAndDraw(canvas, params, false);
-    EXPECT_EQ(drawable->GetCacheType(), DrawableCacheType::CONTENT);
+    EXPECT_EQ(drawable->GetRenderGroupDrawableCacheType(), DrawableCacheType::CONTENT);
 }
 
 /**
@@ -540,8 +540,8 @@ HWTEST_F(RSRenderNodeDrawableTest, NeedInitCachedSurfaceEmptyUnionRectBranchTest
     ASSERT_NE(drawable, nullptr);
 
     drawable->GetOpincDrawCache().isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
-    drawable->cachedSurface_ = std::make_shared<Drawing::Surface>();
-    drawable->cachedSurface_->cachedCanvas_ = std::make_shared<Drawing::Canvas>(32, 16);
+    auto surface = std::make_shared<Drawing::Surface>();
+    drawable->SetRenderGroupCachedSurface(surface);
 
     const bool needInit = drawable->NeedInitCachedSurface(Vector2f(32.f, 16.f));
     EXPECT_FALSE(needInit);
@@ -1991,8 +1991,8 @@ HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleTest, TestSize.Level1)
 
     RSRenderParams params(RSRenderNodeDrawableTest::id);
     drawable->UpdateCurRenderGroupCacheRootFilterState(params);
-    ASSERT_NE(drawable->renderGroupCache_, nullptr);
-    auto renderGroupCache = drawable->renderGroupCache_.get();
+    ASSERT_NE(drawable->renderGroupCacheDrawable_, nullptr);
+    auto renderGroupCache = drawable->renderGroupCacheDrawable_.get();
     ASSERT_NE(renderGroupCache, nullptr);
 
     EXPECT_FALSE(renderGroupCache->ShouldClipHole());
@@ -2018,8 +2018,8 @@ HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleResetInGenerateCacheTest, TestS
     RSRenderParams params(RSRenderNodeDrawableTest::id);
 
     drawable->UpdateCurRenderGroupCacheRootFilterState(params);
-    ASSERT_NE(drawable->renderGroupCache_, nullptr);
-    auto renderGroupCache = drawable->renderGroupCache_.get();
+    ASSERT_NE(drawable->renderGroupCacheDrawable_, nullptr);
+    auto renderGroupCache = drawable->renderGroupCacheDrawable_.get();
 
     renderGroupCache->SetShouldClipHole(true);
     EXPECT_TRUE(renderGroupCache->ShouldClipHole());
@@ -2058,7 +2058,7 @@ HWTEST_F(RSRenderNodeDrawableTest, SetShouldClipHoleWithNullRenderGroupCacheTest
     ASSERT_NE(drawable, nullptr);
     drawable->curDrawingCacheRoot_ = drawable.get();
     ASSERT_NE(drawable->curDrawingCacheRoot_, nullptr);
-    ASSERT_EQ(drawable->renderGroupCache_, nullptr);
+    ASSERT_EQ(drawable->renderGroupCacheDrawable_, nullptr);
     drawable->SetShouldClipHole(true);
 }
 
@@ -2087,8 +2087,27 @@ HWTEST_F(RSRenderNodeDrawableTest, ShouldClipHoleWithNullRenderGroupCacheTest, T
     ASSERT_NE(drawable, nullptr);
     drawable->curDrawingCacheRoot_ = drawable.get();
     ASSERT_NE(drawable->curDrawingCacheRoot_, nullptr);
-    ASSERT_EQ(drawable->renderGroupCache_, nullptr);
+    ASSERT_EQ(drawable->renderGroupCacheDrawable_, nullptr);
     EXPECT_FALSE(drawable->ShouldClipHole());
+}
+
+/**
+ * @tc.name: InitRenderGroupCacheTest
+ * @tc.desc: Test InitRenderGroupCache creates renderGroupCacheDrawable and renderGroupCacheAdapter
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeDrawableTest, InitRenderGroupCacheTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    ASSERT_NE(drawable, nullptr);
+
+    ASSERT_EQ(drawable->renderGroupCacheDrawable_, nullptr);
+    drawable->InitRenderGroupCache();
+    ASSERT_NE(drawable->renderGroupCacheDrawable_, nullptr);
+
+    drawable->InitRenderGroupCache();
+    ASSERT_NE(drawable->renderGroupCacheDrawable_, nullptr);
 }
 
 /**
@@ -2106,12 +2125,12 @@ HWTEST_F(RSRenderNodeDrawableTest, DrawCachedImageWithClipHoleTest, TestSize.Lev
     params.SetCacheSize({100.0f, 100.0f});
 
     drawable->UpdateCurRenderGroupCacheRootFilterState(params);
-    ASSERT_NE(drawable->renderGroupCache_, nullptr);
+    ASSERT_NE(drawable->renderGroupCacheDrawable_, nullptr);
 
     drawable->curDrawingCacheRoot_ = drawable.get();
 
-    drawable->renderGroupCache_->SetShouldClipHole(true);
-    EXPECT_TRUE(drawable->renderGroupCache_->ShouldClipHole());
+    drawable->renderGroupCacheDrawable_->SetShouldClipHole(true);
+    EXPECT_TRUE(drawable->renderGroupCacheDrawable_->ShouldClipHole());
 
     Drawing::Canvas canvas;
     RSPaintFilterCanvas paintFilterCanvas(&canvas);

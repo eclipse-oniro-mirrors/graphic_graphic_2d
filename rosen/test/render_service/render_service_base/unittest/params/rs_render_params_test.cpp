@@ -602,82 +602,37 @@ HWTEST_F(RSRenderParamsTest, SetChildHasTranslateOnSqueezeTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetIsRenderGroupHasChildInBlacklistTest
- * @tc.desc: Test SetIsRenderGroupHasChildInBlacklist
+ * @tc.name: SetNodeGroupHasChildInBlacklistTest
+ * @tc.desc: Test SetNodeGroupHasChildInBlacklist
  * @tc.type: FUNC
  * @tc.require: issues/20738
  */
-HWTEST_F(RSRenderParamsTest, SetIsRenderGroupHasChildInBlacklistTest, TestSize.Level1)
+HWTEST_F(RSRenderParamsTest, SetNodeGroupHasChildInBlacklistTest, TestSize.Level1)
 {
     constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
     std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
     RSRenderParams params(id);
     auto renderParams = static_cast<RSRenderParams*>(target.get());
 
-    // Test initial state
-    EXPECT_FALSE(renderParams->IsRenderGroupHasChildInBlacklist());
+    EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     ASSERT_EQ(renderParams->renderGroupCache_, nullptr);
 
-    // Test setting to true
-    renderParams->SetIsRenderGroupHasChildInBlacklist(true);
-    EXPECT_TRUE(renderParams->IsRenderGroupHasChildInBlacklist());
+    renderParams->SetNodeGroupHasChildInBlacklist(true);
+    EXPECT_TRUE(renderParams->NodeGroupHasChildInBlacklist());
     ASSERT_NE(renderParams->renderGroupCache_, nullptr);
     EXPECT_TRUE(renderParams->needSync_);
 
-    // Test setting to false
-    renderParams->SetIsRenderGroupHasChildInBlacklist(false);
-    EXPECT_FALSE(renderParams->IsRenderGroupHasChildInBlacklist());
+    renderParams->SetNodeGroupHasChildInBlacklist(false);
+    EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(renderParams->needSync_);
 
-    // Test setting same value (should not need sync)
     renderParams->needSync_ = false;
-    renderParams->SetIsRenderGroupHasChildInBlacklist(false);
-    EXPECT_FALSE(renderParams->IsRenderGroupHasChildInBlacklist());
+    renderParams->SetNodeGroupHasChildInBlacklist(false);
+    EXPECT_FALSE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_FALSE(renderParams->needSync_);
 
-    // Test setting to true again
-    renderParams->SetIsRenderGroupHasChildInBlacklist(true);
-    EXPECT_TRUE(renderParams->IsRenderGroupHasChildInBlacklist());
-    EXPECT_TRUE(renderParams->needSync_);
-}
-
-/**
- * @tc.name: SetRenderGroupIncludeProperty_001
- * @tc.desc: Test function SetRenderGroupIncludeProperty
- * @tc.type: FUNC
- * @tc.require: issues/20738
- */
-HWTEST_F(RSRenderParamsTest, SetIsRenderGroupHasChildInBlacklistTest, TestSize.Level1)
-{
-    constexpr NodeId id = TestSrc::limitNumber::Uint64[4];
-    std::unique_ptr<RSRenderParams> target = std::make_unique<RSRenderParams>(id);
-    RSRenderParams params(id);
-    auto renderParams = static_cast<RSRenderParams*>(target.get());
-
-    // Test initial state
-    EXPECT_FALSE(renderParams->IsRenderGroupHasChildInBlacklist());
-    ASSERT_EQ(renderParams->renderGroupCache_, nullptr);
-
-    // Test setting to true
-    renderParams->SetIsRenderGroupHasChildInBlacklist(true);
-    EXPECT_TRUE(renderParams->IsRenderGroupHasChildInBlacklist());
-    ASSERT_NE(renderParams->renderGroupCache_, nullptr);
-    EXPECT_TRUE(renderParams->needSync_);
-
-    // Test setting to false
-    renderParams->SetIsRenderGroupHasChildInBlacklist(false);
-    EXPECT_FALSE(renderParams->IsRenderGroupHasChildInBlacklist());
-    EXPECT_TRUE(renderParams->needSync_);
-
-    // Test setting same value (should not need sync)
-    renderParams->needSync_ = false;
-    renderParams->SetIsRenderGroupHasChildInBlacklist(false);
-    EXPECT_FALSE(renderParams->IsRenderGroupHasChildInBlacklist());
-    EXPECT_FALSE(renderParams->needSync_);
-
-    // Test setting to true again
-    renderParams->SetIsRenderGroupHasChildInBlacklist(true);
-    EXPECT_TRUE(renderParams->IsRenderGroupHasChildInBlacklist());
+    renderParams->SetNodeGroupHasChildInBlacklist(true);
+    EXPECT_TRUE(renderParams->NodeGroupHasChildInBlacklist());
     EXPECT_TRUE(renderParams->needSync_);
 }
 

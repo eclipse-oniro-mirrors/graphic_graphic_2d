@@ -54,12 +54,6 @@ public:
     virtual void OnDraw(Drawing::Canvas& canvas);
     virtual void OnCapture(Drawing::Canvas& canvas);
 
-    // deprecated
-    inline std::shared_ptr<const RSRenderNode> GetRenderNode()
-    {
-        return renderNode_.lock();
-    }
-
     inline bool GetOpDropped() const
     {
         return isOpDropped_;
@@ -179,8 +173,10 @@ protected:
     pid_t GetRenderGroupCacheThreadId() const;
     std::atomic<pid_t>& GetMutableRenderGroupCacheThreadId();
     void ClearRenderGroupResource();
-    std::scoped_lock<std::recursive_mutex> RenderGroupCacheScopedLock() const;
+    std::unique_lock<std::recursive_mutex> RenderGroupCacheLock() const;
+    std::unique_lock<std::recursive_mutex> RenderGroupCacheLock();
     void UpdateCacheInfoForDfx(Drawing::Canvas& canvas, const Drawing::Rect& rect, NodeId id);
+    void InitRenderGroupCache();
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     void SetCachedBackendTexture(const Drawing::BackendTexture& texture);

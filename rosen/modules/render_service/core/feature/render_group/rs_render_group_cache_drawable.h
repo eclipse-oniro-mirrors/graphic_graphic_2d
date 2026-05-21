@@ -72,7 +72,7 @@ public:
     void SetRenderGroupDrawableCacheType(DrawableCacheType drawableCacheType);
     DrawableCacheType GetRenderGroupDrawableCacheType() const;
 
-    std::scoped_lock<std::recursive_mutex> RenderGroupCacheScopedLock() const;
+    std::unique_lock<std::recursive_mutex> RenderGroupCacheLock() const;
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     void SetCachedBackendTexture(const Drawing::BackendTexture& texture);
