@@ -1990,6 +1990,8 @@ public:
 
     void ReSortChildrenByZIndex();
 
+    static NodeId GenerateId();
+
 protected:
     explicit RSNode(
         bool isRenderServiceNode, bool isTextureExportNode = false, std::shared_ptr<RSUIContext> rsUIContext = nullptr,
@@ -2160,7 +2162,6 @@ protected:
     }
 
 private:
-    static NodeId GenerateId();
     static void InitUniRenderEnabled();
 
     static const std::array<std::pair<uint16_t, uint16_t>, 3> lazyLoadCommandTypes_; // <CommandType, CommandSubType>
