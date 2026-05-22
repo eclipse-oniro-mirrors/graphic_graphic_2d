@@ -804,31 +804,24 @@ void RSProfiler::OnParallelRenderEnd(uint32_t frameNumber)
     }
 }
 
-std::shared_ptr<trace3d::api::DebugScope> RSProfiler::CreateTrace3DDebugScope(uint64_t nodeId)
+std::shared_ptr<trace3d::api::DebugScope> RSProfiler::Trace3DDebugScopeCreate(uint64_t rsNodeId)
 {
     if (!trace3dApi_) {
-        RS_LOGE("RSProfiler::CreateTrace3DDebugScope trace3dApi_ is nullptr!");
         return nullptr;
     }
 
-    auto rsFrame = GetRenderFrameNumber();
+    auto rsFrame = g_renderFrameNumber;
 
     Trace3DCoreDebugTagParamValue dbgParam[2] = {};
     dbgParam[0].type = TRACE3D_CORE_DEBUG_TAG_PARAM_WM_NODE;
-    dbgParam[0].wmNode.id = nodeId;
+    dbgParam[0].wmNode.id = rsNodeId;
     dbgParam[1].type = TRACE3D_CORE_DEBUG_TAG_PARAM_WM_FRAME;
-    dbgParam[1].wmFrame.number = static_cast<uint64_t>(rsFrame);
+    dbgParam[1].wmFrame.number = (uint64_t)rsFrame;
 
-    auto dbgScope = std::make_shared<trace3d::api::DebugScope>(
-        trace3dApi_, "", TRACE3D_DEBUG_TAG_POOL_GPU_ZONE, dbgParam[0]);
-
-    if (dbgScope->SetTagParam(dbgParam[1]) >= trace3d::api::RET_SUCCESS) {
-        return dbgScope;
-    } else {
-        RS_LOGE("RSProfiler::CreateTrace3DDebugScope Failed to set debug scope parameter for node %{public}llu",
-            static_cast<unsigned long long>(nodeId));
-        return nullptr;
-    }
+    auto dbgScope =
+        std::make_shared<trace3d::api::DebugScope>(trace3dApi, "", TRACE3D_DEBUG_TAG_POOL_GPU_ZONE, dbgParam[0]);
+    dbgScope->SetTagParam(dbgParam[1]);
+    return dbgScope;
 }
 
 bool RSProfiler::ShouldBlockHWCNode()
