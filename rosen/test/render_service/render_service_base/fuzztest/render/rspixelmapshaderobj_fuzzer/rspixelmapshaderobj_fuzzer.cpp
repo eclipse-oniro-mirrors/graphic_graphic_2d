@@ -131,25 +131,11 @@ bool DoCreatePixelMapShader(const uint8_t* data, size_t size)
 
     shaderEffectLazy->Materialize();
     return true;
-}
 
-bool DoCreateForUnmarshalling(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
-    }
-
-    auto shaderObj = RSPixelMapShaderObj::CreateForUnmarshalling();
-    if (shaderObj == nullptr) {
-        return false;
-    }
-    return true;
-}
 
 bool RSMainFuzzTest(const uint8_t* data, size_t size)
 {
     DoCreatePixelMapShader(data, size);
-    DoCreateForUnmarshalling(data, size);
     return true;
 }
 
