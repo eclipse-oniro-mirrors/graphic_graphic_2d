@@ -960,24 +960,6 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 }
 
 /*
- * @tc.name: RSNodeComprehensive_Surface_SetAnimationFinished_001
- * @tc.desc: Test SetAnimationFinished
- * @tc.type: FUNC
- */
-GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Surface_SetAnimationFinished_001)
-{
-    RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
-    surfaceNode->SetBounds({ 50, 50, 400, 400 });
-    surfaceNode->SetBackgroundColor(0xffff0000);
-
-    surfaceNode->SetAnimationFinished();
-
-    GetRootNode()->AddChild(surfaceNode);
-    RegisterNode(surfaceNode);
-}
-
-/*
  * @tc.name: RSNodeComprehensive_Surface_IsSelfDrawingNode_001
  * @tc.desc: Test IsSelfDrawingNode
  * @tc.type: FUNC

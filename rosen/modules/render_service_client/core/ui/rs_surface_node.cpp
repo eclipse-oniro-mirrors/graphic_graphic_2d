@@ -577,22 +577,6 @@ void RSSurfaceNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
     boundsChangedCallback_ = callback;
 }
 
-void RSSurfaceNode::SetAnimationFinished()
-{
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetAnimationFinished>(GetId());
-    auto transaction = GetRSTransaction();
-    if (transaction != nullptr) {
-        transaction->AddCommand(command, true);
-        transaction->FlushImplicitTransaction();
-    } else {
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->AddCommand(command, true);
-            transactionProxy->FlushImplicitTransaction();
-        }
-    }
-}
-
 bool RSSurfaceNode::Marshalling(Parcel& parcel) const
 {
     bool flag = parcel.WriteUint64(GetId()) && parcel.WriteString(name_) && parcel.WriteBool(IsRenderServiceNode());
@@ -1133,14 +1117,6 @@ void RSSurfaceNode::SetAncoFlags(uint32_t flags)
 {
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSSurfaceNodeSetAncoFlags>(GetId(), flags);
-    AddCommand(command, true);
-}
-
-void RSSurfaceNode::SetHDRPresent(bool hdrPresent, NodeId id)
-{
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetHDRPresent>(id, hdrPresent);
-    ROSEN_LOGD("SetHDRPresent  RSSurfaceNode");
     AddCommand(command, true);
 }
 

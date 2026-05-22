@@ -563,11 +563,6 @@ void RSScreenRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mo
     }
 }
 
-void RSScreenRenderNode::SetForceCloseHdr(bool isForceCloseHdr)
-{
-    isForceCloseHdr_ = isForceCloseHdr;
-}
-
 // ScreeNode disable HDR only when all children displayNode disable HDR
 bool RSScreenRenderNode::GetForceCloseHdr() const
 {

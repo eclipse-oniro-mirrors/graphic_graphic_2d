@@ -55,7 +55,6 @@ declare_args() {
   graphic_2d_feature_enable_rdo = false
   graphic_2d_feature_enable_memory_info_manager = false
   graphic_2d_feature_enable_dvsync = false
-  graphic_2d_feature_enable_memory_downtree = false
   graphic_2d_feature_enable_drm = false
   graphic_2d_feature_enable_mediacommon = false
   graphic_2d_feature_enable_image_detail_enhancer = false
@@ -102,12 +101,6 @@ if (graphic_2d_feature_product == "tablet") {
 
 gpu_defines = []
 accessibility_defines = []
-
-if (graphic_2d_feature_product == "phone" ||
-    graphic_2d_feature_product == "pc" ||
-    graphic_2d_feature_enable_memory_downtree) {
-  gpu_defines += ["RS_ENABLE_MEMORY_DOWNTREE"]
-}
 
 if (graphic_2d_feature_screenless_enable) {
   gpu_defines += ["SCREENLESS_DEVICE"]

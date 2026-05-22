@@ -1814,17 +1814,6 @@ bool RSSurfaceRenderNode::NeedSetCallbackForRenderThreadRefresh()
     return !isRefresh_;
 }
 
-bool RSSurfaceRenderNode::IsStartAnimationFinished() const
-{
-    return startAnimationFinished_;
-}
-
-void RSSurfaceRenderNode::SetStartAnimationFinished()
-{
-    RS_LOGD("RSSurfaceRenderNode::SetStartAnimationFinished");
-    startAnimationFinished_ = true;
-}
-
 bool RSSurfaceRenderNode::UpdateDirtyIfFrameBufferConsumed()
 {
     if (surfaceHandler_ && surfaceHandler_->IsCurrentFrameBufferConsumed()) {

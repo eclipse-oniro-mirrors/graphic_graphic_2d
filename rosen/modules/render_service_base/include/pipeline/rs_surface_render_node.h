@@ -1288,8 +1288,6 @@ public:
         const bool isFocusWindow, const Vector4<int>& cornerRadius);
     void DealWithDrawBehindWindowTransparentRegion();
 
-    bool IsStartAnimationFinished() const;
-    void SetStartAnimationFinished();
     // if surfacenode's buffer has been consumed, it should be set dirty
     bool UpdateDirtyIfFrameBufferConsumed();
 
@@ -2031,7 +2029,6 @@ private:
     bool isOccludedByFilterCache_ = false;
     bool isFilterCacheStatusChanged_ = false;
     bool isTreatedAsTransparent_ = false;
-    bool startAnimationFinished_ = false;
     bool isContainerWindowTransparent_ = false;
     // only used in hardware enabled pointer window, when gpu -> hardware composer
     bool isNodeDirtyInLastFrame_ = true;

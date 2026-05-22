@@ -78,27 +78,6 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetForeground_Ma
     }
 }
 
-/* SetHDRPresent: normal values - 1x2 matrix */
-GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetHDRPresent_Matrix_1x2)
-{
-    std::vector<bool> hdrPresentList = {false, true};
-
-    for (size_t i = 0; i < hdrPresentList.size(); i++) {
-        RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
-        surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
-                                400, 400});
-        surfaceNode->SetHDRPresent(hdrPresentList[i], 0);
-        GetRootNode()->AddChild(surfaceNode);
-        RegisterNode(surfaceNode);
-
-        auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
-            {static_cast<float>(i * 500 + 50), 50, 400, 400});
-        GetRootNode()->AddChild(canvasNode);
-        RegisterNode(canvasNode);
-    }
-}
-
 /* SetForceUIFirst: normal values - 1x2 matrix */
 GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetForceUIFirst_Matrix_1x2)
 {
@@ -379,60 +358,6 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetWindowId)
         GetRootNode()->AddChild(canvasNode);
         RegisterNode(canvasNode);
     }
-}
-
-/* Combined: multiple properties - matrix 2x2x2 */
-GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_Combined_Properties_Matrix_2x2x2)
-{
-    std::vector<bool> boolValues = {false, true};
-
-    for (size_t i = 0; i < 2; i++) {
-        for (size_t j = 0; j < 2; j++) {
-            for (size_t k = 0; k < 2; k++) {
-        RSSurfaceNodeConfig surfaceNodeConfig;
-                auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
-                float x = static_cast<float>(((i + j) % 2) * 300 + 50);
-                float y = static_cast<float>((k + (i / 2)) * 300 + 50);
-                surfaceNode->SetBounds({x, y, 200, 200});
-                surfaceNode->SetSkipDraw(boolValues[i]);
-                surfaceNode->SetHDRPresent(boolValues[j], 0);
-                surfaceNode->SetForceUIFirst(boolValues[k]);
-                GetRootNode()->AddChild(surfaceNode);
-                RegisterNode(surfaceNode);
-
-                auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {x, y, 200, 200});
-                GetRootNode()->AddChild(canvasNode);
-                RegisterNode(canvasNode);
-            }
-        }
-    }
-}
-
-/* Rapid state changes */
-GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_Rapid_State_Changes)
-{
-        RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
-    surfaceNode->SetBounds({100, 100, 400, 400});
-    GetRootNode()->AddChild(surfaceNode);
-    RegisterNode(surfaceNode);
-
-    auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg", {100, 100, 400, 400});
-    GetRootNode()->AddChild(canvasNode);
-    RegisterNode(canvasNode);
-
-    // Rapid state changes
-    surfaceNode->SetSkipDraw(false);
-    surfaceNode->SetHDRPresent(false, 0);
-    surfaceNode->SetForceUIFirst(false);
-
-    surfaceNode->SetSkipDraw(true);
-    surfaceNode->SetHDRPresent(true, 0);
-    surfaceNode->SetForceUIFirst(true);
-
-    surfaceNode->SetSkipDraw(false);
-    surfaceNode->SetHDRPresent(false, 0);
-    surfaceNode->SetForceUIFirst(false);
 }
 
 /* SetContainerWindow: normal values */
