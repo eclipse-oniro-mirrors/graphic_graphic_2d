@@ -45,13 +45,6 @@
 
 #include "rs_profiler.h"
 
-#ifndef TRACE3D_CORE_API_NO_NAMESPACE
-#define TRACE3D_CORE_API_NO_NAMESPACE
-#endif
-
-#define TRACE3D_CORE_API_INIT() Trace3DCoreInitRS()
-#include "trace3d/api_core/trace3d_api_core.h"
-
 namespace OHOS::Rosen::DrawableV2 {
 #ifdef RS_ENABLE_VK
 #ifdef USE_M133_SKIA
@@ -138,10 +131,8 @@ void RSRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
-    std::shared_ptr<::trace3d::api::DebugScope> dbgScope;
-    if (const TRACE3D_CORE_API_TABLE* trace3dApi = RS_PROFILER_GET_TRACE3D_API(); trace3dApi) {
-        dbgScope = Trace3DDebugScopeCreate(trace3dApi, static_cast<uint64_t>(GetId()));
-    }
+    // 创建Trace3D性能分析作用域，如果失败则继续正常渲染流程
+    auto dbgScope = RSProfiler::CreateTrace3DDebugScope(static_cast<uint64_t>(GetId()));
 
 #ifdef SUBTREE_PARALLEL_ENABLE
     if (RSParallelManager::Singleton().OnDrawNodeDrawable(canvas, bounds, this)) {
