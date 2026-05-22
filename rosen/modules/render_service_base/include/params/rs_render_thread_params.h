@@ -484,14 +484,14 @@ public:
         return isSecurityExemption_;
     }
 
-    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect)
+    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, const Drawing::Rect& rect)
     {
         for (auto screenId : screenIds) {
             whiteListRect_[screenId].push_back(rect);
         }
     }
 
-    std::vector<RectI> GetWhiteListRectByScreenId(ScreenId screenId) const
+    std::vector<Drawing::Rect> GetWhiteListRectByScreenId(ScreenId screenId) const
     {
         if (auto iter = whiteListRect_.find(screenId); iter != whiteListRect_.end()) {
             return iter->second;
@@ -720,7 +720,7 @@ private:
     bool isImplicitAnimationEnd_ = false;
     bool discardJankFrames_ = false;
 
-    std::map<ScreenId, std::vector<RectI>> whiteListRect_;
+    std::map<ScreenId, std::vector<Drawing::Rect>> whiteListRect_;
     bool isSecurityExemption_ = false;
     // use to mark security display
     bool isSecurityDisplay_ = false;

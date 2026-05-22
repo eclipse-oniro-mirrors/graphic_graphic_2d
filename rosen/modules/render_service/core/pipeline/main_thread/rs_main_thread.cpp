@@ -2185,7 +2185,7 @@ uint32_t RSMainThread::GetDynamicRefreshRate() const
     return refreshRate;
 }
 
-void RSMainThread::AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect)
+void RSMainThread::AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, const Drawing::Rect& rect)
 {
     if (renderThreadParams_ == nullptr) {
         return;
