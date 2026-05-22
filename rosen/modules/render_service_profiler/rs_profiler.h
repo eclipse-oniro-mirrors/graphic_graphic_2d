@@ -82,6 +82,7 @@ RSB_EXPORT const TRACE3D_CORE_API_TABLE* Trace3DCoreInitRS();
 #define RS_PROFILER_GET_FRAME_NUMBER() RSProfiler::GetFrameNumber()
 #define RS_PROFILER_GET_RENDER_FRAME_NUMBER() RSProfiler::GetRenderFrameNumber()
 #define RS_PROFILER_GET_TRACE3D_API() RSProfiler::GetTrace3DApi()
+#define RS_PROFILER_CREATE_TRACE3D_DEBUG_SCOPE(nodeId) RSProfiler::CreateTrace3DDebugScope(nodeId)
 #define RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber) RSProfiler::OnParallelRenderBegin(renderFrameNumber)
 #define RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber) RSProfiler::OnParallelRenderEnd(renderFrameNumber)
 #define RS_PROFILER_SHOULD_BLOCK_HWCNODE() RSProfiler::ShouldBlockHWCNode()

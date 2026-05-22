@@ -826,7 +826,7 @@ std::shared_ptr<trace3d::api::DebugScope> RSProfiler::CreateTrace3DDebugScope(ui
         return dbgScope;
     } else {
         RS_LOGE("RSProfiler::CreateTrace3DDebugScope Failed to set debug scope parameter for node %{public}llu",
-                 static_cast<unsigned long long>(nodeId));
+            static_cast<unsigned long long>(nodeId));
         return nullptr;
     }
 }
