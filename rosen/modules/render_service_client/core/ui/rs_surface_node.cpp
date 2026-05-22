@@ -392,10 +392,10 @@ void RSSurfaceNode::OnBoundsSizeChanged() const
 void RSSurfaceNode::OnAlphaValueChanged() const
 {
     auto alpha = GetStagingProperties().GetAlpha();
+    ROSEN_LOGI("RSSurfaceNode::OnAlphaValueChanged, node=[%{public}" PRIu64 ", %{public}s], alpha=%{public}f",
+        GetId(), GetName().c_str(), alpha);
     std::lock_guard<std::mutex> lock(mutex_);
     if (alphaChangedCallback_) {
-        ROSEN_LOGI("RSSurfaceNode::OnAlphaValueChanged, node=[%{public}" PRIu64 ", %{public}s], alpha=%{public}f",
-            GetId(), GetName().c_str(), alpha);
         alphaChangedCallback_(alpha);
     }
 }
