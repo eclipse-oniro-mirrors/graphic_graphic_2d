@@ -593,6 +593,7 @@ void RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(const std::shared_ptr<RSSurfaceR
         if (surfaceParams == nullptr) {
             RS_LOGE("node[%{public}s] id[%{public}" PRIu64 "] GetStagingRenderParams is null.",
                 hwcNode->GetName().c_str(), hwcNode->GetId());
+            return;
         }
         RRect vcldRoundRect = RRect({0, 0, std::round(hwcGeo->GetWidth()), std::round(hwcGeo->GetHeight())},
             {maxCornerRadius, maxCornerRadius, maxCornerRadius, maxCornerRadius});
