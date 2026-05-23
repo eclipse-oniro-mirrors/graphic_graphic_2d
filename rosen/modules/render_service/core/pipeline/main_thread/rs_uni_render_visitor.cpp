@@ -957,7 +957,12 @@ void RSUniRenderVisitor::PrepareForSkippedCrossNode(RSSurfaceRenderNode& surface
             .IntersectRect(curScreenNode_->GetScreenRect());
     curScreenNode_->UpdateSurfaceNodePos(nodeRef.GetId(), surfaceRect);
     curScreenNode_->AddSurfaceNodePosByDescZOrder(nodeRef.GetId(), surfaceRect);
-    // 5. record all children surface nodes and their position on second display, for global dirty region conversion.
+    // 5. collect white list rect for cross node with conversion matrix
+    bool isRotatingForWhiteList = displayNodeRotationChanged_ || isScreenRotationAnimating_ ||
+        RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION;
+    RSSpecialLayerUtils::CollectWhiteListRect(nodeRef, hasMirrorUsedInSpecialLayer_,
+        isRotatingForWhiteList, *curScreenNode_, true);
+    // 6. record all children surface nodes and their position on second display, for global dirty region conversion.
     std::vector<std::pair<NodeId, std::weak_ptr<RSSurfaceRenderNode>>> allSubSurfaceNodes;
     nodeRef.GetAllSubSurfaceNodes(allSubSurfaceNodes);
     for (auto& [_, subSurfaceNode] : allSubSurfaceNodes) {
@@ -2425,8 +2430,7 @@ CM_INLINE bool RSUniRenderVisitor::AfterUpdateSurfaceDirtyCalc(RSSurfaceRenderNo
     // 5. collect white list rect
     bool isRotating = displayNodeRotationChanged_ || isScreenRotationAnimating_ ||
         RSMainThread::Instance()->GetSystemAnimatedScenes() == SystemAnimatedScenes::SNAPSHOT_ROTATION;
-    RSSpecialLayerUtils::CollectWhiteListRect(node, hasMirrorUsedInSpecialLayer_, isRotating,
-        curScreenNode_ ? curScreenNode_->GetScreenId() : INVALID_SCREEN_ID);
+    RSSpecialLayerUtils::CollectWhiteListRect(node, hasMirrorUsedInSpecialLayer_, isRotating, *curScreenNode_);
     return true;
 }
 

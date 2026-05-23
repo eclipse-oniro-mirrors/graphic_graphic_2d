@@ -62,8 +62,8 @@ public:
     static void SetWhiteListRectToMetaData(RSPaintFilterCanvas& canvas, const RSRenderThreadParams& uniParam,
         const RSScreenProperty& mirrorScreenProperty, const RSLogicalDisplayRenderParams& sourceLogicalParam,
         const std::shared_ptr<RSSLRScaleFunction>& scaleManager);
-    static void CollectWhiteListRect(
-        const RSSurfaceRenderNode& node, bool hasMirrorDisplay, bool isRotating, ScreenId ancestorScreenId);
+    static void CollectWhiteListRect(RSSurfaceRenderNode& node, bool hasMirrorDisplay,
+        bool isRotating, RSScreenRenderNode& ancestorScreenNode, bool needConvertMatrix = false);
 private:
     static bool CheckCurrentTypeIntersectVisibleRect(const std::unordered_set<NodeId>& nodeIds,
         uint32_t currentType, const RectI& visibleRect);
