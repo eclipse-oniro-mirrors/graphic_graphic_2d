@@ -761,7 +761,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoStartTest001, TestSize.Level1)
     RSJankStats::GetInstance().AvcodecVideoStart({2222}, {"surfaceName"}, 60, 20);
     RSJankStats::GetInstance().AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
     RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60);
-    EXPECT_NO_THROW(RSJankStats::GetInstance().AvcodecVideoStop({2222}, {"surfaceName"}, 60));
+    RSJankStats::GetInstance().AvcodecVideoStop({2222}, {"surfaceName"}, 60);
 }
 
 /**
@@ -777,7 +777,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoCollectFinishTest001, TestSize.Level1)
     for (int i = 0; i < 10; i++) {
         RSJankStats::GetInstance().AvcodecVideoCollectFinish();
     }
-    EXPECT_NO_THROW(RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60));
+    RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
 
 /**
@@ -797,7 +797,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoCollectTest001, TestSize.Level1)
     usleep(60 * 1000);
     RSJankStats::GetInstance().AvcodecVideoCollect(1111, 0113);
 
-    EXPECT_NO_THROW(RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60));
+    RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
 
 /**
@@ -811,7 +811,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoGet001, TestSize.Level1)
     auto& inst = RSJankStats::GetInstance();
     inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
     inst.AvcodecVideoGet(1111);
-    EXPECT_NO_THROW(inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60));
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
  
 /**
@@ -825,7 +825,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoGet002, TestSize.Level1)
     auto& inst = RSJankStats::GetInstance();
     inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
     inst.AvcodecVideoGet(2222);
-    EXPECT_NO_THROW(inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60));
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
  
 /**
@@ -839,7 +839,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoGetRecent001, TestSize.Level1)
     auto& inst = RSJankStats::GetInstance();
     inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
     inst.AvcodecVideoGetRecent();
-    EXPECT_NO_THROW(inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60));
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
  
 /**
@@ -854,7 +854,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoGetRecent002, TestSize.Level1)
     inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
     inst.AvcodecVideoCollect(1111, 0111);
     inst.AvcodecVideoGetRecent();
-    EXPECT_NO_THROW(inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60));
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
 
 /**
