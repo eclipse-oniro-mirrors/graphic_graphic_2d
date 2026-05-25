@@ -144,6 +144,7 @@ int32_t UIFirstParamParse::ParseUIFirstSingleParam(const std::string& name, cons
             UIFirstParam::SetSubThreadFrameRateControlByScene(num);
             RS_LOGI("UIFirstParamParse parse SubThreadFrameRateControlByScene %{public}u",
                 UIFirstParam::GetSubThreadFrameRateControlByScene());
+        }
     }
     return PARSE_EXEC_SUCCESS;
 }
