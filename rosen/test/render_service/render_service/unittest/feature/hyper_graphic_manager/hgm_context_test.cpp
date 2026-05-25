@@ -15,9 +15,13 @@
 
 #include "gtest/gtest.h"
 
+#include <iservice_registry.h>
+#include <system_ability_definition.h>
+
 #include "feature/hyper_graphic_manager/hgm_context.h"
 #include "feature/vrate/rs_vsync_rate_reduce_manager.h"
 #include "hgm_core.h"
+#include "ipc_callbacks/hgm_config_change_callback_stub.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/screen_types.h"
 
