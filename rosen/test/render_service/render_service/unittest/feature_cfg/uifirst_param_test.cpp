@@ -163,7 +163,6 @@ HWTEST_F(UIFirstParamTest, SetOcclusionEnabled, Function | SmallTest | Level1)
  */
 HWTEST_F(UIFirstParamTest, SetSubThreadFrameRateControlByScene, Function | SmallTest | Level1)
 {
-    UIFirstParam uifirstParam;
     UIFirstParam::SetSubThreadFrameRateControlByScene(0);
     EXPECT_EQ(UIFirstParam::GetSubThreadFrameRateControlByScene(), 0u);
  
