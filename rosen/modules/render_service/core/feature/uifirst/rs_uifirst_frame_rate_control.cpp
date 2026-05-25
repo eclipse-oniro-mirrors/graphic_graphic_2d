@@ -140,6 +140,8 @@ uint32_t RSUifirstFrameRateControl::GetSceneIdBit(SceneId sceneId)
             return SCENE_AOD_TO_LAUNCHER;
         case SceneId::LOCKSCREEN_TO_LAUNCHER:
             return SCENE_LOCKSCREEN_TO_LAUNCHER;
+        case SceneId::LAUNCHER_APP_LAUNCH_FROM_RECENT:
+            return 0;
         default:
             return 0;
     }
