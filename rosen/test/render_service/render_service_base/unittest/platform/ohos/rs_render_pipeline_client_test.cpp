@@ -838,7 +838,6 @@ HWTEST_F(RSPipelineClientTest, UpdateFrameStabilityDetection002, TestSize.Level1
 
     RSRenderServiceConnectHub::instance_ = renderServiceConnectHub;
 }
-#endif
 
 /**
  * @tc.name: TriggerOnFinish001
@@ -914,5 +913,6 @@ HWTEST_F(RSPipelineClientTest, TriggerOnAfterAcquireBuffer002, TestSize.Level1)
     ret.isUniRender = false;
     rsRenderPipelineClient->TriggerOnAfterAcquireBuffer(ret);
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS
