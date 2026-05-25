@@ -728,7 +728,7 @@ uint32_t RSClientToServiceConnection::SetScreenActiveMode(ScreenId id, uint32_t 
 void RSClientToServiceConnection::SetScreenRefreshRate(ScreenId id, int32_t sceneId, int32_t rate)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     hgmContext_->SetScreenRefreshRate(id, sceneId, rate);
@@ -737,7 +737,7 @@ void RSClientToServiceConnection::SetScreenRefreshRate(ScreenId id, int32_t scen
 void RSClientToServiceConnection::SetRefreshRateMode(int32_t refreshRateMode)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     hgmContext_->SetRefreshRateMode(refreshRateMode);
@@ -758,7 +758,7 @@ void RSClientToServiceConnection::SyncFrameRateRange(FrameRateLinkerId id,
 void RSClientToServiceConnection::UnregisterFrameRateLinker(FrameRateLinkerId id)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     renderServiceAgent_->ScheduleTask([hgmContext = hgmContext_, id] {
@@ -769,7 +769,7 @@ void RSClientToServiceConnection::UnregisterFrameRateLinker(FrameRateLinkerId id
 uint32_t RSClientToServiceConnection::GetScreenCurrentRefreshRate(ScreenId id)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return 0;
     }
     return hgmContext_->GetScreenCurrentRefreshRate(id);
@@ -778,7 +778,7 @@ uint32_t RSClientToServiceConnection::GetScreenCurrentRefreshRate(ScreenId id)
 std::vector<int32_t> RSClientToServiceConnection::GetScreenSupportedRefreshRates(ScreenId id)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return {};
     }
     return hgmContext_->GetScreenSupportedRefreshRates(id);
@@ -894,7 +894,7 @@ ErrCode RSClientToServiceConnection::GetRefreshInfoByPidAndUniqueId(pid_t pid, u
 int32_t RSClientToServiceConnection::GetCurrentRefreshRateMode()
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return HGM_REFRESHRATE_MODE_AUTO;
     }
     return hgmContext_->GetCurrentRefreshRateMode();
@@ -995,9 +995,11 @@ void RSClientToServiceConnection::SetScreenPowerStatus(ScreenId id, ScreenPowerS
 #ifdef RS_ENABLE_GPU
         screenManagerAgent_->SetScreenPowerStatus(id, status);
         renderServiceAgent_->HandlePowerStatus(id, status);
-        HgmTaskHandleThread::Instance().PostTask([id, status]() {
-            HgmCore::Instance().NotifyScreenPowerStatus(id, status);
-        });
+        if (hgmContext_ != nullptr) {
+            HgmTaskHandleThread::Instance().PostTask([id, status]() {
+                HgmCore::Instance().NotifyScreenPowerStatus(id, status);
+            });
+        }
 #endif
     } else {
         renderServiceAgent_->ScheduleTask(
@@ -1546,9 +1548,11 @@ ErrCode RSClientToServiceConnection::SetScreenActiveRect(ScreenId id, const Rect
         return ERR_INVALID_VALUE;
     }
     screenManagerAgent_->SetScreenActiveRect(id, activeRect);
-    HgmTaskHandleThread::Instance().PostTask([id, activeRect]() {
-        HgmCore::Instance().NotifyScreenRectFrameRateChange(id, activeRect);
-    });
+    if (hgmContext_ != nullptr) {
+        HgmTaskHandleThread::Instance().PostTask([id, activeRect]() {
+            HgmCore::Instance().NotifyScreenRectFrameRateChange(id, activeRect);
+        });
+    }
     repCode = StatusCode::SUCCESS;
     return ERR_OK;
 }
@@ -1572,7 +1576,7 @@ void RSClientToServiceConnection::SetScreenFrameGravity(ScreenId id, int32_t gra
 int32_t RSClientToServiceConnection::RegisterHgmConfigChangeCallback(sptr<RSIHgmConfigChangeCallback> callback)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return StatusCode::INVALID_ARGUMENTS;
     }
     return hgmContext_->RegisterHgmConfigChangeCallback(remotePid_, callback);
@@ -1582,7 +1586,7 @@ int32_t RSClientToServiceConnection::RegisterHgmRefreshRateModeChangeCallback(
     sptr<RSIHgmConfigChangeCallback> callback)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return StatusCode::INVALID_ARGUMENTS;
     }
     return hgmContext_->RegisterHgmRefreshRateModeChangeCallback(remotePid_, callback);
@@ -1592,7 +1596,7 @@ int32_t RSClientToServiceConnection::RegisterHgmRefreshRateUpdateCallback(
     sptr<RSIHgmConfigChangeCallback> callback)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return StatusCode::INVALID_ARGUMENTS;
     }
     return hgmContext_->RegisterHgmRefreshRateUpdateCallback(remotePid_, callback);
@@ -1621,7 +1625,7 @@ int32_t RSClientToServiceConnection::RegisterFrameRateLinkerExpectedFpsUpdateCal
     sptr<RSIFrameRateLinkerExpectedFpsUpdateCallback> callback)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return StatusCode::INVALID_ARGUMENTS;
     }
     return hgmContext_->RegisterFrameRateLinkerExpectedFpsUpdateCallback(remotePid_, dstPid, callback);
@@ -1677,7 +1681,7 @@ ErrCode RSClientToServiceConnection::ReportJankStats()
 ErrCode RSClientToServiceConnection::NotifyLightFactorStatus(int32_t lightFactorStatus)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return ERR_INVALID_VALUE;
     }
     return hgmContext_->NotifyLightFactorStatus(remotePid_, lightFactorStatus);
@@ -1700,7 +1704,7 @@ ErrCode RSClientToServiceConnection::NotifyAppStrategyConfigChangeEvent(const st
     const std::vector<std::pair<std::string, std::string>>& newConfig)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return ERR_INVALID_VALUE;
     }
     return hgmContext_->NotifyAppStrategyConfigChangeEvent(remotePid_, pkgName, newConfig);
@@ -1725,7 +1729,7 @@ void RSClientToServiceConnection::NotifyRefreshRateEvent(const EventInfo& eventI
     }
 #endif
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     hgmContext_->NotifyRefreshRateEvent(remotePid_, eventInfo);
@@ -1741,7 +1745,7 @@ void RSClientToServiceConnection::SetWindowExpectedRefreshRate(
     const std::unordered_map<uint64_t, EventInfo>& eventInfos)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     hgmContext_->SetWindowExpectedRefreshRate(remotePid_, eventInfos);
@@ -1751,7 +1755,7 @@ void RSClientToServiceConnection::SetWindowExpectedRefreshRate(
     const std::unordered_map<std::string, EventInfo>& eventInfos)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     hgmContext_->SetWindowExpectedRefreshRate(remotePid_, eventInfos);
@@ -1769,7 +1773,7 @@ bool RSClientToServiceConnection::NotifySoftVsyncRateDiscountEvent(uint32_t pid,
     const std::string &name, uint32_t rateDiscount)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return false;
     }
     return hgmContext_->NotifySoftVsyncRateDiscountEvent(pid, name, rateDiscount);
@@ -1791,7 +1795,7 @@ ErrCode RSClientToServiceConnection::NotifyTouchEvent(int32_t touchStatus, int32
 void RSClientToServiceConnection::NotifyDynamicModeEvent(bool enableDynamicModeEvent)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return;
     }
     hgmContext_->NotifyDynamicModeEvent(enableDynamicModeEvent);
@@ -1800,7 +1804,7 @@ void RSClientToServiceConnection::NotifyDynamicModeEvent(bool enableDynamicModeE
 ErrCode RSClientToServiceConnection::NotifyHgmConfigEvent(const std::string& eventName, bool state)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return ERR_INVALID_VALUE;
     }
     hgmContext_->NotifyHgmConfigEvent(eventName, state);
@@ -1810,7 +1814,7 @@ ErrCode RSClientToServiceConnection::NotifyHgmConfigEvent(const std::string& eve
 ErrCode RSClientToServiceConnection::NotifyXComponentExpectedFrameRate(const std::string& id, int32_t expectedFrameRate)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return ERR_INVALID_VALUE;
     }
     
@@ -2329,7 +2333,7 @@ ErrCode RSClientToServiceConnection::NotifyPageName(const std::string& packageNa
     const std::string& pageName, bool isEnter)
 {
     if (hgmContext_ == nullptr) {
-        RS_LOGE("%{public}s hgmContext is nullptr", __func__);
+        RS_LOGD("%{public}s hgmContext is nullptr", __func__);
         return StatusCode::INVALID_ARGUMENTS;
     }
     hgmContext_->NotifyPageName(remotePid_, packageName, pageName, isEnter);

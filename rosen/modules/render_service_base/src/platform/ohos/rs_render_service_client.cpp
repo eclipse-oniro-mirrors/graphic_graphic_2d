@@ -183,6 +183,7 @@ sptr<IRemoteObject> RSRenderServiceClient::GetConnectToRenderToken(ScreenId scre
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
     if (clientToService == nullptr) {
+        ROSEN_LOGE("RSRenderServiceClient::GetConnectToRenderToken clientToService is nullptr");
         return nullptr;
     }
     return clientToService->GetConnectToRenderToken(screenId);

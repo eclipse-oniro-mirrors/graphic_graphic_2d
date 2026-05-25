@@ -52,8 +52,7 @@ public:
     explicit RSScreenRenderNode(
         NodeId id, ScreenId screenId, const std::weak_ptr<RSContext>& context = {});
     ~RSScreenRenderNode() override;
-    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
+    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID, NodeId firstLevelNodeId = INVALID_NODEID,
         NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
         NodeId logicalDisplayNodeId = INVALID_NODEID) override;
 
@@ -526,6 +525,7 @@ public:
     void SetScreenDirtyFlag(bool flag) { screenDirtyFlag_ = flag; }
     bool GetAndResetScreenDirtyFlag() { return std::exchange(screenDirtyFlag_, false); }
     void SetVirtualSurfaceChanged(bool isChanged);
+    void SetActiveRectChanged(bool isChanged);
 
     using HeadroomMap = std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
     const HeadroomMap& GetHeadroomMap() const {
