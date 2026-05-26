@@ -565,11 +565,15 @@ DrawingError EffectImageChain::ApplyMaskTransitionFilter(const std::shared_ptr<M
     auto maskTransitionFilter = std::make_shared<GEMaskTransitionShaderFilter>(filterParams);
     
     Drawing::CanvasInfo canvasInfo;
+    if (!image_) {
+        EFFECT_LOG_E("EffectImageChain::ApplyMaskTransitionFilter: input image is null or invalid.");
+        return DrawingError::ERR_ILLEGAL_INPUT;
+    }
     canvasInfo.geoWidth = srcPixelMap_->GetWidth();
     canvasInfo.geoHeight = srcPixelMap_->GetHeight();
 
     auto topLayer = ConvertPixelMapToDrawingImage(topLayerMap);
-    if (!topLayer || !image_ || canvasInfo.geoHeight <= 0 || canvasInfo.geoWidth <= 0) {
+    if (!topLayer || canvasInfo.geoHeight <= 0 || canvasInfo.geoWidth <= 0) {
         EFFECT_LOG_E("EffectImageChain::ApplyMaskTransitionFilter: input image is null or invalid.");
         return DrawingError::ERR_ILLEGAL_INPUT;
     }
