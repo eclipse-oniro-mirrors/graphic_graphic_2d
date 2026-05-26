@@ -155,7 +155,6 @@ void RSUniRenderVirtualProcessorTest::TearDown()
     }
     virtualProcessor_->surfaceFrames_.clear();
     // Clean up per-test resources to prevent crash
-    virtualProcessor_->renderFrame_ = nullptr;
     virtualProcessor_ = nullptr;
     processor_ = nullptr;
     drawingCanvas_ = nullptr;
@@ -255,11 +254,11 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, MergeMirrorFenceToHardwareEnabledDrawa
     auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_MIRROR_COMPOSITE, 0);
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     ASSERT_NE(virtualProcessor, nullptr);
-    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables();
+    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables(SyncFence::InvalidFence());
     std::unique_ptr<RSRenderThreadParams> newUniParam = std::make_unique<RSRenderThreadParams>();
     RSUniRenderThread::Instance().Sync(std::move(newUniParam));
-    ASSERT_EQ(virtualProcessor->renderFrame_, nullptr);
-    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables();
+    ASSERT_TRUE(virtualProcessor->surfaceFrames_.empty());
+    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables(SyncFence::InvalidFence());
 }
 
 #ifdef RS_ENABLE_VK
@@ -282,20 +281,25 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, MergeMirrorFenceToHardwareEnabledDrawa
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     std::shared_ptr<RSSurfaceOhosVulkan> rsSurface1 = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
     auto tmpSurface = std::make_shared<Drawing::Surface>();
-    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, 100, 100, 10);
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
-    ASSERT_NE(virtualProcessor->renderFrame_, nullptr);
-    ASSERT_NE(virtualProcessor->renderFrame_->surfaceFrame_, nullptr);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, TEST_FRAME_DIM, TEST_FRAME_DIM,
+        DEFAULT_BUFFER_AGE);
+    SurfaceFrameConfig config;
+    config.surface = pSurface;
+    config.frame = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
+    ASSERT_NE(config.frame, nullptr);
+    ASSERT_NE(config.frame->surfaceFrame_, nullptr);
+    virtualProcessor->surfaceFrames_.push_back(std::move(config));
 
-    ASSERT_FALSE(virtualProcessor->renderFrame_->acquireFence_->IsValid());
-    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables();
-    virtualProcessor->renderFrame_->acquireFence_ = nullptr;
-    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables();
-
+    // Test with invalid fence -> early return
+    ASSERT_FALSE(virtualProcessor->surfaceFrames_[0].frame->acquireFence_->IsValid());
+    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables(SyncFence::InvalidFence());
+    // Test with null fence -> early return
+    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables(nullptr);
+    // Test with valid fence
     int fenceFd = open("/data/local/tmpfile", O_RDONLY | O_CREAT);
-    virtualProcessor->renderFrame_->acquireFence_ = sptr<SyncFence>(new SyncFence(::dup(fenceFd)));
-    ASSERT_TRUE(virtualProcessor->renderFrame_->acquireFence_->IsValid());
-    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables();
+    sptr<SyncFence> validFence = sptr<SyncFence>(new SyncFence(::dup(fenceFd)));
+    ASSERT_TRUE(validFence->IsValid());
+    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables(validFence);
     close(fenceFd);
 }
 
@@ -318,13 +322,17 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, MergeMirrorFenceToHardwareEnabledDrawa
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     std::shared_ptr<RSSurfaceOhosVulkan> rsSurface1 = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
     auto tmpSurface = std::make_shared<Drawing::Surface>();
-    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, 100, 100, 10);
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
-    ASSERT_NE(virtualProcessor->renderFrame_, nullptr);
-    ASSERT_NE(virtualProcessor->renderFrame_->surfaceFrame_, nullptr);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, TEST_FRAME_DIM, TEST_FRAME_DIM,
+        DEFAULT_BUFFER_AGE);
+    SurfaceFrameConfig config;
+    config.surface = pSurface;
+    config.frame = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
+    ASSERT_NE(config.frame, nullptr);
+    ASSERT_NE(config.frame->surfaceFrame_, nullptr);
     int fenceFd = open("/data/local/tmpfile", O_RDONLY | O_CREAT);
-    virtualProcessor->renderFrame_->acquireFence_ = sptr<SyncFence>(new SyncFence(::dup(fenceFd)));
-    ASSERT_TRUE(virtualProcessor->renderFrame_->acquireFence_->IsValid());
+    sptr<SyncFence> validFence = sptr<SyncFence>(new SyncFence(::dup(fenceFd)));
+    ASSERT_TRUE(validFence->IsValid());
+    virtualProcessor->surfaceFrames_.push_back(std::move(config));
 
     auto newUniParam = std::make_unique<RSRenderThreadParams>();
     NodeId displayNodeId = 1000;
@@ -361,7 +369,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, MergeMirrorFenceToHardwareEnabledDrawa
     newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(mirroredScreenId, displayNodeId, drawable2));
     newUniParam->hardwareEnabledTypeDrawables_.push_back(std::make_tuple(mirroredScreenId, displayNodeId, drawable3));
     RSUniRenderThread::Instance().Sync(std::move(newUniParam));
-    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables();
+    virtualProcessor->MergeMirrorFenceToHardwareEnabledDrawables(validFence);
 
     newUniParam = std::make_unique<RSRenderThreadParams>();
     RSUniRenderThread::Instance().Sync(std::move(newUniParam));
@@ -437,10 +445,14 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread003, TestSize.Level
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     std::shared_ptr<RSSurfaceOhosVulkan> rsSurface1 = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
     auto tmpSurface = std::make_shared<Drawing::Surface>();
-    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, 100, 100, 10);
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
-    ASSERT_NE(virtualProcessor->renderFrame_, nullptr);
-    ASSERT_NE(virtualProcessor->renderFrame_->surfaceFrame_, nullptr);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, TEST_FRAME_DIM, TEST_FRAME_DIM,
+        DEFAULT_BUFFER_AGE);
+    SurfaceFrameConfig sfc;
+    sfc.surface = pSurface;
+    sfc.frame = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
+    ASSERT_NE(sfc.frame, nullptr);
+    ASSERT_NE(sfc.frame->surfaceFrame_, nullptr);
+    virtualProcessor->surfaceFrames_.push_back(std::move(sfc));
     virtualProcessor->InitForRenderThread(*virtualRenderDrawable, renderEngine);
 
     virtualRenderParams->newColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2100_HLG;
@@ -460,7 +472,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, InitForRenderThread003, TestSize.Level
     ASSERT_NE(nativeWindowBuffer, nullptr);
     rsSurface1->mSurfaceList.emplace_back(nativeWindowBuffer);
     virtualProcessor->InitForRenderThread(*virtualRenderDrawable, renderEngine);
-    auto res = RSHdrUtil::SetMetadata(RSHDRUtilConst::HDR_CAST_OUT_COLORSPACE, virtualProcessor->renderFrame_, true);
+    auto res = RSHdrUtil::SetMetadata(RSHDRUtilConst::HDR_CAST_OUT_COLORSPACE,
+        virtualProcessor->surfaceFrames_[0].frame, true);
     EXPECT_EQ(GSERROR_OK, res);
 }
 #endif
@@ -738,14 +751,16 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CheckIfBufferSizeNeedChangeTest, TestS
 
 /**
  * @tc.name: GetBufferAge_001
- * @tc.desc: GetBufferAge Test, renderFrame_ not null, expect 0 when targetSurface_ and surfaceFrame_ are both null
+ * @tc.desc: GetBufferAge Test, surfaceFrames_ with null surface/frame, expect 0
  * @tc.type:FUNC
  * @tc.require:issuesIAJ4FW
  */
 HWTEST_F(RSUniRenderVirtualProcessorTest, GetBufferAge_001, TestSize.Level2)
 {
-    virtualProcessor_->renderFrame_ = std::make_unique<RSRenderFrame>(nullptr, nullptr);
-    ASSERT_NE(virtualProcessor_->renderFrame_, nullptr);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    ASSERT_NE(config.frame, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
 
     auto ret = virtualProcessor_->GetBufferAge();
     ASSERT_EQ(ret, 0);
@@ -753,47 +768,49 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, GetBufferAge_001, TestSize.Level2)
 
 /**
  * @tc.name: SetDirtyInfo_001
- * @tc.desc: SetDirtyInfo Test, renderFrame_ is null
+ * @tc.desc: SetDirtyInfo Test, surfaceFrames_ is empty
  * @tc.type:FUNC
  * @tc.require:issuesIAJ4FW
  */
 HWTEST_F(RSUniRenderVirtualProcessorTest, SetDirtyInfo_001, TestSize.Level2)
 {
     ASSERT_NE(virtualProcessor_, nullptr);
-    virtualProcessor_->renderFrame_ = nullptr;
+    ASSERT_TRUE(virtualProcessor_->surfaceFrames_.empty());
     std::vector<RectI> damageRegion {};
     virtualProcessor_->SetDirtyInfo(damageRegion);
 }
 
 /**
  * @tc.name: SetDirtyInfo_002
- * @tc.desc: SetDirtyInfo Test, renderFrame_ not nul, SetRoiRegionToCodec(damageRegion) != GSERROR_OK
+ * @tc.desc: SetDirtyInfo Test, surfaceFrames_ with null surface/frame
  * @tc.type:FUNC
  * @tc.require:issuesIAJ4FW
  */
 HWTEST_F(RSUniRenderVirtualProcessorTest, SetDirtyInfo_002, TestSize.Level2)
 {
-    virtualProcessor_->renderFrame_ = std::make_unique<RSRenderFrame>(nullptr, nullptr);
-    ASSERT_NE(virtualProcessor_->renderFrame_, nullptr);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    ASSERT_NE(config.frame, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
     std::vector<RectI> damageRegion {};
-    ASSERT_EQ(virtualProcessor_->SetRoiRegionToCodec(damageRegion), GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(virtualProcessor_->SetRoiRegionToCodec(damageRegion), GSERROR_OK);
 
     virtualProcessor_->SetDirtyInfo(damageRegion);
 }
 
 /**
  * @tc.name: SetRoiRegionToCodec_001
- * @tc.desc: test SetRoiRegionToCodec while renderFrame_ is nullptr
+ * @tc.desc: test SetRoiRegionToCodec while surfaceFrames_ is empty
  * @tc.type:FUNC
  * @tc.require:issuesIBHR8N
  */
 HWTEST_F(RSUniRenderVirtualProcessorTest, SetRoiRegionToCodec001, TestSize.Level2)
 {
     ASSERT_NE(virtualProcessor_, nullptr);
-    virtualProcessor_->renderFrame_ = nullptr;
+    ASSERT_TRUE(virtualProcessor_->surfaceFrames_.empty());
 
     std::vector<RectI> damageRegion {};
-    ASSERT_EQ(virtualProcessor_->SetRoiRegionToCodec(damageRegion), GSERROR_INVALID_ARGUMENTS);
+    ASSERT_EQ(virtualProcessor_->SetRoiRegionToCodec(damageRegion), GSERROR_OK);
 }
 
 /**
@@ -1144,13 +1161,15 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetColorSpaceForMetadata, TestSize.Lev
 
     GraphicColorGamut validColorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
 
-    // Test 1: renderFrame_ is nullptr -> GSERROR_INVALID_ARGUMENTS
-    virtualProcessor->renderFrame_ = nullptr;
+    // Test 1: empty surfaceFrames_ -> GSERROR_OK (loop doesn't execute)
+    ASSERT_TRUE(virtualProcessor->surfaceFrames_.empty());
     auto res = virtualProcessor->SetColorSpaceForMetadata(validColorGamut);
-    EXPECT_EQ(GSERROR_INVALID_ARGUMENTS, res);
+    EXPECT_EQ(GSERROR_OK, res);
 
-    // Test 2: renderFrame_ exists but surface is nullptr -> GSERROR_INVALID_ARGUMENTS
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    // Test 2: surfaceFrames_ with null frame -> GSERROR_INVALID_ARGUMENTS
+    SurfaceFrameConfig nullFrameConfig;
+    nullFrameConfig.frame = nullptr;
+    virtualProcessor->surfaceFrames_.push_back(std::move(nullFrameConfig));
     res = virtualProcessor->SetColorSpaceForMetadata(validColorGamut);
     EXPECT_EQ(GSERROR_INVALID_ARGUMENTS, res);
 
@@ -1160,8 +1179,10 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetColorSpaceForMetadata, TestSize.Lev
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     std::shared_ptr<RSSurfaceOhos> rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
     EXPECT_NE(nullptr, rsSurface);
-
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
+    virtualProcessor->surfaceFrames_.clear();
+    SurfaceFrameConfig surfaceConfig;
+    surfaceConfig.frame = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
+    virtualProcessor->surfaceFrames_.push_back(std::move(surfaceConfig));
     res = virtualProcessor->SetColorSpaceForMetadata(validColorGamut);
     EXPECT_EQ(GSERROR_NO_BUFFER, res);
 
@@ -1183,15 +1204,17 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetRoiRegionToCodec002, TestSize.Level
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     EXPECT_NE(nullptr, virtualProcessor);
 
-    // Test 1: renderFrame_ is nullptr -> GSERROR_INVALID_ARGUMENTS
-    virtualProcessor->renderFrame_ = nullptr;
+    // Test 1: empty surfaceFrames_ -> GSERROR_OK (loop doesn't execute)
+    ASSERT_TRUE(virtualProcessor->surfaceFrames_.empty());
     RectI rect(1, 2, 3, 4);
     std::vector<RectI> vRect = { rect };
     auto res = virtualProcessor->SetRoiRegionToCodec(vRect);
-    EXPECT_EQ(GSERROR_INVALID_ARGUMENTS, res);
+    EXPECT_EQ(GSERROR_OK, res);
 
-    // Test 2: renderFrame_ exists but surface is nullptr -> GSERROR_INVALID_ARGUMENTS
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    // Test 2: surfaceFrames_ with null frame -> GSERROR_INVALID_ARGUMENTS
+    SurfaceFrameConfig nullFrameConfig;
+    nullFrameConfig.frame = nullptr;
+    virtualProcessor->surfaceFrames_.push_back(std::move(nullFrameConfig));
     res = virtualProcessor->SetRoiRegionToCodec(vRect);
     EXPECT_EQ(GSERROR_INVALID_ARGUMENTS, res);
 
@@ -1202,7 +1225,10 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetRoiRegionToCodec002, TestSize.Level
     std::shared_ptr<RSSurfaceOhos> rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
     EXPECT_NE(nullptr, rsSurface);
 
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
+    virtualProcessor->surfaceFrames_.clear();
+    SurfaceFrameConfig surfaceConfig;
+    surfaceConfig.frame = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
+    virtualProcessor->surfaceFrames_.push_back(std::move(surfaceConfig));
     res = virtualProcessor->SetRoiRegionToCodec(vRect);
     EXPECT_EQ(GSERROR_NO_BUFFER, res);
 
@@ -1502,17 +1528,21 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, CancelCurrentFrame, TestSize.Level1)
     auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_MIRROR_COMPOSITE, 0);
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
     virtualProcessor->CancelCurrentFrame();
-    ASSERT_EQ(virtualProcessor->renderFrame_, nullptr);
+    ASSERT_TRUE(virtualProcessor->surfaceFrames_.empty());
 
     auto csurf = IConsumerSurface::Create();
     auto producer = csurf->GetProducer();
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
     auto rsSurface = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
     ASSERT_NE(nullptr, rsSurface);
-    virtualProcessor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
-    virtualProcessor->renderFrame_->targetSurface_ = nullptr;
+    SurfaceFrameConfig config;
+    config.surface = pSurface;
+    config.frame = std::make_unique<RSRenderFrame>(rsSurface, nullptr);
+    config.frame->targetSurface_ = nullptr;
+    virtualProcessor->surfaceFrames_.push_back(std::move(config));
     virtualProcessor->CancelCurrentFrame();
-    ASSERT_NE(virtualProcessor->renderFrame_, nullptr);
+    ASSERT_EQ(virtualProcessor->surfaceFrames_.size(), 1u);
+    ASSERT_NE(virtualProcessor->surfaceFrames_[0].frame, nullptr);
 }
 #endif // RS_ENABLE_VK
 
@@ -1528,7 +1558,7 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetVirtualScreenSizeTest, TestSize.Lev
     RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
     auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_MIRROR_COMPOSITE, 0);
     auto virtualProcessor = std::static_pointer_cast<RSUniRenderVirtualProcessor>(processor);
-    ASSERT_EQ(virtualProcessor->renderFrame_, nullptr);
+    ASSERT_TRUE(virtualProcessor->surfaceFrames_.empty());
 
     auto screenNode = std::make_shared<RSScreenRenderNode>(10, 20);
     screenNode->InitRenderParams();
@@ -1542,8 +1572,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetVirtualScreenSizeTest, TestSize.Lev
 
 /**
  * @tc.name: GetFrameAcquireFence_RenderFrameNullTest001
- * @tc.desc: Test GetFrameAcquireFence when renderFrame_ is nullptr
- *           The if (!renderFrame_) branch at line 187 should be true
+ * @tc.desc: Test GetFrameAcquireFence when surfaceFrames_ is empty
+ *           Should return SyncFence::InvalidFence()
  *           Should return SyncFence::InvalidFence()
  * @tc.type: FUNC
  * @tc.require: issue41
@@ -1552,10 +1582,9 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, GetFrameAcquireFence_RenderFrameNullTe
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
-    // Set renderFrame_ to nullptr
-    virtualProcessor_->renderFrame_ = nullptr;
+    // Empty surfaceFrames_ -> returns InvalidFence
+    ASSERT_TRUE(virtualProcessor_->surfaceFrames_.empty());
 
-    // Should return InvalidFence when renderFrame_ is nullptr
     auto fence = virtualProcessor_->GetFrameAcquireFence();
     ASSERT_NE(fence, nullptr);
     EXPECT_FALSE(fence->IsValid());
@@ -1564,9 +1593,8 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, GetFrameAcquireFence_RenderFrameNullTe
 
 /**
  * @tc.name: GetFrameAcquireFence_RenderFrameValidTest001
- * @tc.desc: Test GetFrameAcquireFence when renderFrame_ is valid
- *           The if (!renderFrame_) branch at line 187 should be false
- *           Should return renderFrame_->GetAcquireFence()
+ * @tc.desc: Test GetFrameAcquireFence when surfaceFrames_ has valid frame
+ *           Should return fence from surfaceFrames_ frame
  * @tc.type: FUNC
  * @tc.require: issue41
  */
@@ -1574,8 +1602,6 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, GetFrameAcquireFence_RenderFrameValidT
 {
     ASSERT_NE(virtualProcessor_, nullptr);
 
-    // Create a mock RSRenderFrame to test GetFrameAcquireFence
-    // In unit test environment, surface RequestBuffer may fail, so we create a mock frame
     auto consumer = IConsumerSurface::Create("test_acquire_fence");
     ASSERT_NE(consumer, nullptr);
     auto producer = consumer->GetProducer();
@@ -1585,23 +1611,19 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, GetFrameAcquireFence_RenderFrameValidT
     auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
     ASSERT_NE(rsSurface, nullptr);
 
-    // Create a mock RSSurfaceFrameOhosRaster
-    auto mockFrame = std::make_unique<RSSurfaceFrameOhosRaster>(100, 100);
+    auto mockFrame = std::make_unique<RSSurfaceFrameOhosRaster>(TEST_FRAME_DIM, TEST_FRAME_DIM);
 
-    // Create RSRenderFrame with the mock surface and frame
-    virtualProcessor_->renderFrame_ = std::make_unique<RSRenderFrame>(
+    SurfaceFrameConfig config;
+    config.surface = pSurface;
+    config.frame = std::make_unique<RSRenderFrame>(
         std::static_pointer_cast<RSSurfaceOhos>(rsSurface),
         std::move(mockFrame));
 
-    ASSERT_NE(virtualProcessor_->renderFrame_, nullptr);
+    ASSERT_NE(config.frame, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
 
-    // Should return acquire fence from renderFrame (might be invalid but should not be nullptr)
     auto fence = virtualProcessor_->GetFrameAcquireFence();
     ASSERT_NE(fence, nullptr);
-    // Fence might be invalid if frame wasn't flushed yet, but function should not crash
-
-    // Clean up renderFrame_ to prevent crash on test teardown
-    virtualProcessor_->renderFrame_ = nullptr;
 }
 
 // ==================== CanvasClipRegionForUniscaleMode ====================
@@ -1843,8 +1865,10 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetCropRectForMetadata002, TestSize.Le
 {
     auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
     
-    // Set up renderFrame with null surface
-    processor->renderFrame_ = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    // Set up surfaceFrames_ with null surface frame
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    processor->surfaceFrames_.push_back(std::move(config));
     
     // Test with null surface - should return false
     ASSERT_FALSE(processor->SetCropRectForMetadata(DEFAULT_META_REGION));
@@ -1871,11 +1895,14 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetCropRectForMetadata003, TestSize.Le
     ASSERT_NE(pSurface, nullptr);
     auto processor = std::make_shared<RSUniRenderVirtualProcessor>();
     
-    // Set up renderFrame with surface but null buffer
+    // Set up surfaceFrames_ with surface but null buffer
     std::shared_ptr<RSSurfaceOhosVulkan> rsSurface = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
     auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(
         std::make_shared<Drawing::Surface>(), DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, DEFAULT_BUFFER_AGE);
-    processor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    SurfaceFrameConfig config;
+    config.surface = pSurface;
+    config.frame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    processor->surfaceFrames_.push_back(std::move(config));
     
     // Test with null buffer - should return false
     ASSERT_FALSE(processor->SetCropRectForMetadata(DEFAULT_META_REGION));
@@ -1912,12 +1939,15 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, SetCropRectForMetadata004, TestSize.Le
     pSurface->RequestBuffer(buffer, fence, requestConfig);
     NativeWindowBuffer* nativeWindowBuffer = OH_NativeWindow_CreateNativeWindowBufferFromSurfaceBuffer(&buffer);
     
-    // Set up renderFrame with surface which has buffer
+    // Set up surfaceFrames_ with surface which has buffer
     std::shared_ptr<RSSurfaceOhosVulkan> rsSurface = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
     rsSurface->mSurfaceList.emplace_back(nativeWindowBuffer);
     auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(
         std::make_shared<Drawing::Surface>(), DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT, DEFAULT_BUFFER_AGE);
-    processor->renderFrame_ = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    SurfaceFrameConfig config;
+    config.surface = pSurface;
+    config.frame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    processor->surfaceFrames_.push_back(std::move(config));
     
     // Test with valid buffer - should return true
     ASSERT_TRUE(processor->SetCropRectForMetadata(DEFAULT_META_REGION));
@@ -2213,6 +2243,403 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, RequestFramesForAllSurfaces_NullSurfac
     nullConfig.region = RectI(0, 0, TEST_FRAME_DIM, TEST_FRAME_DIM);
     screenParams->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>({nullConfig});
 
+    virtualProcessor_->surfaceFrames_.clear();
+    virtualProcessor_->RequestFramesForAllSurfaces(*screenDrawable_);
+    EXPECT_TRUE(virtualProcessor_->surfaceFrames_.empty());
+}
+
+/**
+ * @tc.name: CopyToSecondarySurfaces_NullPrimaryCanvas
+ * @tc.desc: Test CopyToSecondarySurfaces returns early when primary canvas is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, CopyToSecondarySurfaces_NullPrimaryCanvas, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    constexpr size_t expectedSize = 2;
+    SurfaceFrameConfig primary;
+    primary.canvas = nullptr;
+    primary.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    SurfaceFrameConfig secondary;
+    secondary.canvas = nullptr;
+    secondary.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(primary));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(secondary));
+    ASSERT_EQ(virtualProcessor_->surfaceFrames_.size(), expectedSize);
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->CopyToSecondarySurfaces());
+}
+
+/**
+ * @tc.name: CopyToSecondarySurfaces_NullPrimarySurface
+ * @tc.desc: Test CopyToSecondarySurfaces returns early when canvas GetSurface is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, CopyToSecondarySurfaces_NullPrimarySurface, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    Drawing::Canvas drawCanvas;
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(&drawCanvas);
+    SurfaceFrameConfig primary;
+    primary.canvas = canvas;
+    primary.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    SurfaceFrameConfig secondary;
+    secondary.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(primary));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(secondary));
+    ASSERT_NE(virtualProcessor_->surfaceFrames_[0].canvas, nullptr);
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->CopyToSecondarySurfaces());
+}
+
+/**
+ * @tc.name: CopyToSecondarySurfaces_NullSecondaryCanvas
+ * @tc.desc: Test CopyToSecondarySurfaces skips secondary surfaces with null canvas
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, CopyToSecondarySurfaces_NullSecondaryCanvas, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    Drawing::Canvas drawCanvas;
+    auto canvas = std::make_shared<RSPaintFilterCanvas>(&drawCanvas);
+    SurfaceFrameConfig primary;
+    primary.canvas = canvas;
+    primary.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    SurfaceFrameConfig secondary;
+    secondary.canvas = nullptr;
+    secondary.frame = std::make_unique<RSRenderFrame>(nullptr, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(primary));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(secondary));
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->CopyToSecondarySurfaces());
+}
+
+/**
+ * @tc.name: FlushGpu_NullFrame
+ * @tc.desc: Test FlushGpu with null frame in surfaceFrames
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushGpu_NullFrame, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    SurfaceFrameConfig config;
+    config.frame = nullptr;
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushGpu());
+}
+
+/**
+ * @tc.name: FlushGpu_ValidFrame
+ * @tc.desc: Test FlushGpu with valid RSRenderFrame in surfaceFrames
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushGpu_ValidFrame, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(pSurface, nullptr);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    ASSERT_NE(rsSurface, nullptr);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    ASSERT_NE(config.frame, nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushGpu());
+}
+
+/**
+ * @tc.name: FlushGpu_MixedFrames
+ * @tc.desc: Test FlushGpu with mix of null and valid frames
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushGpu_MixedFrames, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    SurfaceFrameConfig nullConfig;
+    nullConfig.frame = nullptr;
+    virtualProcessor_->surfaceFrames_.push_back(std::move(nullConfig));
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig validConfig;
+    validConfig.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(validConfig));
+    constexpr size_t expectedSize = 2;
+    ASSERT_EQ(virtualProcessor_->surfaceFrames_.size(), expectedSize);
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushGpu());
+}
+
+/**
+ * @tc.name: FlushBuffer_NullFrame
+ * @tc.desc: Test FlushBuffer with null frame skips iteration
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushBuffer_NullFrame, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    SurfaceFrameConfig config;
+    config.frame = nullptr;
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
+    std::vector<sptr<SyncFence>> fences;
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushBuffer(fences));
+    EXPECT_TRUE(fences.empty());
+}
+
+/**
+ * @tc.name: FlushBuffer_ValidFrame
+ * @tc.desc: Test FlushBuffer with valid frame processes flush and fence
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushBuffer_ValidFrame, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
+    std::vector<sptr<SyncFence>> fences;
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushBuffer(fences));
+}
+
+/**
+ * @tc.name: FlushBuffer_MixedFrames
+ * @tc.desc: Test FlushBuffer with mix of null and valid frames
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushBuffer_MixedFrames, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    SurfaceFrameConfig nullConfig;
+    nullConfig.frame = nullptr;
+    virtualProcessor_->surfaceFrames_.push_back(std::move(nullConfig));
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig validConfig;
+    validConfig.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(validConfig));
+    std::vector<sptr<SyncFence>> fences;
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushBuffer(fences));
+}
+
+/**
+ * @tc.name: FlushAllSurfaces_CopyMode
+ * @tc.desc: Test FlushAllSurfaces with needsOffscreenRender_ false calls CopyToSecondarySurfaces
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushAllSurfaces_CopyMode, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config1;
+    config1.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    SurfaceFrameConfig config2;
+    config2.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config1));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
+    virtualProcessor_->needsOffscreenRender_ = false;
+    virtualProcessor_->isMirror_ = false;
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushAllSurfaces());
+}
+
+/**
+ * @tc.name: FlushAllSurfaces_OffscreenMode
+ * @tc.desc: Test FlushAllSurfaces with needsOffscreenRender_ true skips CopyToSecondarySurfaces
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushAllSurfaces_OffscreenMode, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config1;
+    config1.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    SurfaceFrameConfig config2;
+    config2.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config1));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
+    virtualProcessor_->needsOffscreenRender_ = true;
+    virtualProcessor_->isMirror_ = false;
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushAllSurfaces());
+}
+
+/**
+ * @tc.name: FlushAllSurfaces_MirrorMode
+ * @tc.desc: Test FlushAllSurfaces with isMirror_ true merges fences
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, FlushAllSurfaces_MirrorMode, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config1;
+    config1.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    SurfaceFrameConfig config2;
+    config2.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config1));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
+    virtualProcessor_->needsOffscreenRender_ = false;
+    virtualProcessor_->isMirror_ = true;
+    auto newUniParam = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(newUniParam));
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->FlushAllSurfaces());
+}
+
+/**
+ * @tc.name: PostProcess_SingleSurface
+ * @tc.desc: Test PostProcess with single surface calls Flush on the frame
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, PostProcess_SingleSurface, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    virtualProcessor_->renderEngine_ = RSUniRenderThread::Instance().GetRenderEngine();
+    ASSERT_NE(virtualProcessor_->renderEngine_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
+    virtualProcessor_->isMirror_ = false;
+    ASSERT_EQ(virtualProcessor_->surfaceFrames_.size(), 1u);
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->PostProcess());
+}
+
+/**
+ * @tc.name: PostProcess_SingleSurfaceMirror
+ * @tc.desc: Test PostProcess single surface with isMirror_ true merges fence
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, PostProcess_SingleSurfaceMirror, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    virtualProcessor_->renderEngine_ = RSUniRenderThread::Instance().GetRenderEngine();
+    ASSERT_NE(virtualProcessor_->renderEngine_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config;
+    config.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config));
+    virtualProcessor_->isMirror_ = true;
+    auto newUniParam = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(newUniParam));
+    ASSERT_EQ(virtualProcessor_->surfaceFrames_.size(), 1u);
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->PostProcess());
+}
+
+/**
+ * @tc.name: PostProcess_MultiSurface
+ * @tc.desc: Test PostProcess with multiple surfaces calls FlushAllSurfaces
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, PostProcess_MultiSurface, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    virtualProcessor_->renderEngine_ = RSUniRenderThread::Instance().GetRenderEngine();
+    ASSERT_NE(virtualProcessor_->renderEngine_, nullptr);
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    SurfaceFrameConfig config1;
+    config1.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    SurfaceFrameConfig config2;
+    config2.frame = std::make_unique<RSRenderFrame>(
+        std::static_pointer_cast<RSSurfaceOhos>(rsSurface), nullptr);
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config1));
+    virtualProcessor_->surfaceFrames_.push_back(std::move(config2));
+    virtualProcessor_->isMirror_ = false;
+    ASSERT_EQ(virtualProcessor_->surfaceFrames_.size(), 2u);
+    EXPECT_NO_FATAL_FAILURE(virtualProcessor_->PostProcess());
+}
+
+/**
+ * @tc.name: RequestFramesForAllSurfaces_NullParams
+ * @tc.desc: Test RequestFramesForAllSurfaces returns early when screenParams is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, RequestFramesForAllSurfaces_NullParams, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    screenDrawable_->renderParams_ = nullptr;
+    virtualProcessor_->surfaceFrames_.clear();
+    virtualProcessor_->RequestFramesForAllSurfaces(*screenDrawable_);
+    EXPECT_TRUE(virtualProcessor_->surfaceFrames_.empty());
+}
+
+/**
+ * @tc.name: RequestFramesForAllSurfaces_EmptyConfigs
+ * @tc.desc: Test RequestFramesForAllSurfaces returns early when multi surface configs are empty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, RequestFramesForAllSurfaces_EmptyConfigs, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    screenDrawable_->renderParams_ = std::make_unique<RSScreenRenderParams>(nodeId_);
+    auto* screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    screenParams->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>({});
+    virtualProcessor_->surfaceFrames_.clear();
+    virtualProcessor_->RequestFramesForAllSurfaces(*screenDrawable_);
+    EXPECT_TRUE(virtualProcessor_->surfaceFrames_.empty());
+}
+
+/**
+ * @tc.name: RequestFramesForAllSurfaces_VirtualSurfaceChanged
+ * @tc.desc: Test RequestFramesForAllSurfaces calls ClearVirtualSurfaces when IsVirtualSurfaceChanged
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUniRenderVirtualProcessorTest, RequestFramesForAllSurfaces_VirtualSurfaceChanged, TestSize.Level2)
+{
+    ASSERT_NE(virtualProcessor_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+    screenDrawable_->renderParams_ = std::make_unique<RSScreenRenderParams>(nodeId_);
+    auto* screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    SurfaceRegionConfig nullConfig;
+    nullConfig.surface = nullptr;
+    nullConfig.region = RectI(0, 0, TEST_FRAME_DIM, TEST_FRAME_DIM);
+    screenParams->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>({nullConfig});
+    screenParams->SetVirtualSurfaceChanged(true);
+    ASSERT_TRUE(screenParams->IsVirtualSurfaceChanged());
     virtualProcessor_->surfaceFrames_.clear();
     virtualProcessor_->RequestFramesForAllSurfaces(*screenDrawable_);
     EXPECT_TRUE(virtualProcessor_->surfaceFrames_.empty());
