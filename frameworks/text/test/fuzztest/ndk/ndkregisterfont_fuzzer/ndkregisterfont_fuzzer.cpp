@@ -39,7 +39,7 @@ void UseCustomFontToLayout(OH_Drawing_FontCollection* fc, std::string familyName
 void OHDrawingRegisterFontTest(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider fdp(data, size);
-    OH_Drawing_FontCollection* fc = OH_Drawing_GetFontCollectionGlobalInstance();
+    OH_Drawing_FontCollection* fc = OH_Drawing_CreateSharedFontCollection();
     std::string familyName = fdp.ConsumeRandomLengthString();
     uint32_t index = fdp.ConsumeIntegral<uint8_t>();
 
@@ -78,6 +78,7 @@ void OHDrawingRegisterFontTest(const uint8_t* data, size_t size)
     OH_Drawing_UnregisterFont(nullptr, familyName.c_str());
     OH_Drawing_UnregisterFont(fc, nullptr);
     OH_Drawing_UnregisterFont(fc, "");
+    OH_Drawing_DestroyFontCollection(fc);
 }
 
 void OHDrawingIsFontSupportedTest(const uint8_t* data, size_t size)
