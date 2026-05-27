@@ -1721,6 +1721,22 @@ HWTEST_F(RSSurfaceNodeTest, OnBoundsSizeChanged, TestSize.Level1)
 }
 
 /**
+ * @tc.name: OnAlphaValueChanged Test
+ * @tc.desc: OnAlphaValueChanged
+ * @tc.type: FUNC
+ * @tc.require:SR000HSUII
+ */
+HWTEST_F(RSSurfaceNodeTest, OnAlphaValueChanged, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetAlphaChangedCallback([](float alpha) {});
+    surfaceNode->SetAlpha(0.1f);
+    surfaceNode->OnAlphaValueChanged();
+}
+
+/**
  * @tc.name: SetSurfaceIdToRenderNode Test
  * @tc.desc: SetSurfaceIdToRenderNode
  * @tc.type: FUNC
