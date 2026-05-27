@@ -32,8 +32,6 @@ namespace {
 constexpr int SCREEN_WIDTH = 1200;
 constexpr int SCREEN_HEIGHT = 2000;
 constexpr int COLUMN_COUNT = 2;
-constexpr float DEFAULT_NODE_WIDTH = 600.0f;
-constexpr float DEFAULT_NODE_HEIGHT = 400.0f;
 constexpr float SMOOTH_SPACING_SMALL = 1.0f;
 constexpr float SMOOTH_SPACING_MEDIUM = 24.0f;
 constexpr float SMOOTH_SPACING_LARGE = 120.0f;
@@ -190,6 +188,9 @@ static void SetUpSDFSubOpNode(
 static void AddCaseNode(RSGraphicTest* test, const std::shared_ptr<RSNGShapeBase>& shape, int index, int rowCount)
 {
     auto sizeX = SCREEN_WIDTH / COLUMN_COUNT;
+    if (rowCount == 0) {
+        return;
+    }
     auto sizeY = SCREEN_HEIGHT * COLUMN_COUNT / rowCount;
     int x = (index % COLUMN_COUNT) * sizeX;
     int y = (index / COLUMN_COUNT) * sizeY;
