@@ -64,7 +64,7 @@ bool VpeVideo::IsSupported(uint32_t type, [[maybe_unused]] const Format& paramet
     (void) type;
     return IsSupportReset;
 }
-bool VpeVideo::IsSurfaceSupported(uint32_t type, const sptr<Surface>& surface))
+bool VpeVideo::IsSurfaceSupported(uint32_t type, const sptr<Surface>& surface)
 {
     (void) type;
     return g_isSurfaceSupport;
