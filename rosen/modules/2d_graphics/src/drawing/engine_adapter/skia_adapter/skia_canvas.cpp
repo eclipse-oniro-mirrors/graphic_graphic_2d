@@ -548,7 +548,13 @@ void SkiaCanvas::DrawColor(ColorQuad color, BlendMode mode)
 
 void SkiaCanvas::DrawUIColor(UIColor color, BlendMode mode)
 {
-    LOGD("SKIA does not support HDR color. %{public}d", __LINE__);
+    if (!skCanvas_) {
+        LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    Color generalColor;
+    generalColor.SetRgbF(color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha());
+    skCanvas_->drawColor(static_cast<SkColor>(generalColor.CastToColorQuad()), static_cast<SkBlendMode>(mode));
 }
 
 void SkiaCanvas::DrawParticle(std::shared_ptr<ParticleEffect> particle)
