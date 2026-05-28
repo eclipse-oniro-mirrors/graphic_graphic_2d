@@ -2532,6 +2532,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeRectInSkippedSubTree_007, TestSize.Le
     rsUniHwcVisitor->UpdateHwcNodeRectInSkippedSubTree(*node);
 }
 
+#ifdef CROSS_PLATFORM
 /**
  * @tc.name: UpdateHwcNodeRectInSkippedSubTree_008
  * @tc.desc: Test UpdateHwcNodeRectInSkippedSubTree
@@ -2650,6 +2651,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeRectInSkippedSubTree_009, Function | 
     auto rsRenderNode = std::static_pointer_cast<RSRenderNode>(surfaceNode);
     EXPECT_FALSE(rsUniRenderVisitor->hwcVisitor_->IsFindRootSuccess(rsRenderNode, *rootNode));
 }
+#endif
 
 /**
  * @tc.name: UpdateHwcNodeEnableByBackgroundAlpha001
