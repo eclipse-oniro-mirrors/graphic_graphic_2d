@@ -35,7 +35,7 @@ private:
 
     void RegisterTestNode(std::shared_ptr<Modifier> modifier)
     {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ 0, 0, screenWidth, screenHeight });
         testNode->AddModifier(modifier);
         GetRootNode()->AddChild(testNode);
