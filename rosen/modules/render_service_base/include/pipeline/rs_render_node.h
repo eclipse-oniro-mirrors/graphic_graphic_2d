@@ -688,15 +688,6 @@ public:
         commandExecuted_ = commandExecuted;
     }
 
-    bool IsScale() const
-    {
-        return isScale_;
-    }
-    void SetIsScale(bool isScale)
-    {
-        isScale_ = isScale;
-    }
-
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
     void SetOutOfParent(OutOfParentType outOfParent);
     OutOfParentType GetOutOfParent() const;
@@ -1287,7 +1278,6 @@ private:
     bool lastFrameHasChildrenOutOfRect_ = false;
     CacheType cacheType_ = CacheType::NONE;
     bool isDrawingCacheChanged_ = false;
-    bool isScale_ = false;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;
     // for UIExtension info collection

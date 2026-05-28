@@ -369,6 +369,16 @@ public:
         isRotating_ = false;
     }
 
+    bool IsScale() const
+    {
+        return isScale_;
+    }
+
+    void SetIsScale(bool isScale)
+    {
+        isScale_ = isScale;
+    }
+
     void ResetCurrentFrameHardwareEnabledState()
     {
         isLastFrameHardwareEnabled_ = isCurrentFrameHardwareEnabled_;
@@ -2069,6 +2079,7 @@ private:
     bool existTransparentHardwareEnabledNode_ = false;
     bool animateState_ = false;
     bool isRotating_ = false;
+    bool isScale_ = false;
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
