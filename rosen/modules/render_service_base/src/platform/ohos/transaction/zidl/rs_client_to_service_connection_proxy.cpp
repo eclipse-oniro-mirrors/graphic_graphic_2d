@@ -2045,6 +2045,71 @@ void RSClientToServiceConnectionProxy::SetScreenBacklight(const RsScreenBrightne
     }
 }
 
+ErrCode RSClientToServiceConnectionProxy::GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("GetDisplayVCPFeature: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("GetDisplayVCPFeature: WriteUint64 id err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint8(vcpCode)) {
+        ROSEN_LOGE("GetDisplayVCPFeature: WriteUint8 vcpCode err.");
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_DISPLAY_VCP_FEATURE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("GetDisplayVCPFeature: SendRequest failed");
+        return ERR_INVALID_VALUE;
+    }
+    if (!reply.ReadUint16(currentValue) || !reply.ReadUint16(maximumValue) ||
+        !reply.ReadInt32(errorCode)) {
+        ROSEN_LOGE("GetDisplayVCPFeature: Read values failed");
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnectionProxy::SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t currentValue)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetDisplayVCPFeature: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("SetDisplayVCPFeature: WriteUint64 id err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint8(vcpCode)) {
+        ROSEN_LOGE("SetDisplayVCPFeature: WriteUint8 vcpCode err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint16(currentValue)) {
+        ROSEN_LOGE("SetDisplayVCPFeature: WriteUint16 currentValue err.");
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_DISPLAY_VCP_FEATURE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("SetDisplayVCPFeature: SendRequest failed");
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
 ErrCode RSClientToServiceConnectionProxy::GetPanelPowerStatus(uint64_t screenId, PanelPowerStatus& status)
 {
     MessageParcel data;

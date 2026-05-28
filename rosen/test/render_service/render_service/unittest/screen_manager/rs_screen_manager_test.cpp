@@ -541,6 +541,56 @@ HWTEST_F(RSScreenManagerTest, GetScreenBacklight_001, TestSize.Level1)
 }
 
 /*
+ * @tc.name: GetDisplayVCPFeature_001
+ * @tc.desc: Test GetDisplayVCPFeature
+ * @tc.type: FUNC
+ * @tc.require: issueI5ZK2I
+ */
+HWTEST_F(RSScreenManagerTest, GetDisplayVCPFeature_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId id = 10;
+    screenManager_->screens_[id] = nullptr;
+
+    uint16_t currentValue = 0;
+    uint16_t maximumValue = 0;
+    int32_t errorCode = 0;
+    auto result = screenManager_->GetDisplayVCPFeature(id, 0x10, currentValue, maximumValue, errorCode);
+    ASSERT_NE(result, 0);
+
+    auto rsScreen = std::make_shared<RSScreen>(id);
+    rsScreen->hdiScreen_ = nullptr;
+    screenManager_->screens_[id] = rsScreen;
+    result = screenManager_->GetDisplayVCPFeature(id, 0x10, currentValue, maximumValue, errorCode);
+    ASSERT_NE(result, 0);
+    screenManager_->screens_[id] = nullptr;
+}
+
+/*
+ * @tc.name: SetDisplayVCPFeature_001
+ * @tc.desc: Test SetDisplayVCPFeature
+ * @tc.type: FUNC
+ * @tc.require: issueI5ZK2I
+ */
+HWTEST_F(RSScreenManagerTest, SetDisplayVCPFeature_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId id = 10;
+    screenManager_->screens_[id] = nullptr;
+
+    uint16_t currentValue = 0;
+    auto result = screenManager_->SetDisplayVCPFeature(id, 0x10, currentValue);
+    ASSERT_NE(result, 0);
+
+    auto rsScreen = std::make_shared<RSScreen>(id);
+    rsScreen->hdiScreen_ = nullptr;
+    screenManager_->screens_[id] = rsScreen;
+    result = screenManager_->SetDisplayVCPFeature(id, 0x10, currentValue);
+    ASSERT_NE(result, 0);
+    screenManager_->screens_[id] = nullptr;
+}
+
+/*
  * @tc.name: GetScreenSupportedColorGamuts_001
  * @tc.desc: Test GetScreenSupportedColorGamuts false.
  * @tc.type: FUNC
