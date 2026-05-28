@@ -132,35 +132,35 @@ private:
 
 static void InitSpatialGlassEffect(std::shared_ptr<RSNGSpatialGlassEffect>& spatialGlassEffect)
 {
-    spatialglasseffect->Setter<SpatialGlassEffectLeftTopTag>(Vector3f(-0.8f, 1.5f, -1.2f));
-    spatialglasseffect->Setter<SpatialGlassEffectRightTopTag>(Vector3f(1.4f, 1.5f, -1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectLeftBotTag>(Vector3f(-0.8f, -1.5f, -1.2f));
-    spatialglasseffect->Setter<SpatialGlassEffectRightBotTag>(Vector3f(1.4f, -1.5f, -1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectCameraPositionTag>(Vector3f(0.0f, 0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectCameraIntrinsicsTag>(Vector2<float>(0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectLightDirTag>(Vector3f(1.0f, 1.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectLightColorTag>(Vector3f(1.0f, 1.0f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectLightIntensityTag>(1.0f);
-    spatialglasseffect->Setter<SpatialGlassEffectThickParamsTag>(Vector2f(0.01f, 0.01f));
-    spatialglasseffect->Setter<SpatialGlassEffectGlassBaseColorTag>(Vector4f(0.0f, 0.0f, 0.0f, 0.2f));
-    spatialglasseffect->Setter<SpatialGlassEffectFresnelEnvColorTag>(Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectFresnelEnvParamsTag>(Vector2f(0.05f, 0.5f));
-    spatialglasseffect->Setter<SpatialGlassEffectBgRatesTag>(Vector2f(0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectBgKBSTag>(Vector3f(0.97f, 0.23f, 1.2f));
-    spatialglasseffect->Setter<SpatialGlassEffectBgPosTag>(Vector3f(0.5f, 0.5f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectBgNegTag>(Vector3f(2.0f, 5.0f, 4.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectRefractParamsTag>(Vector3f(0.2f, 0.1f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectWeightsEdlTag>(Vector2f(1.0f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectEnvLightParamsTag>(Vector3f(0.0f, 0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectEnvLightRatesTag>(Vector2f(0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectEnvLightKBSTag>(Vector3f(0.010834f, 0.007349f, 1.2f));
-    spatialglasseffect->Setter<SpatialGlassEffectEnvLightPosTag>(Vector3f(0.3f, 0.5f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectEnvLightNegTag>(Vector3f(0.5f, 0.5f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectSdParamsTag>(Vector3f(0.0f, 0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectSdRatesTag>(Vector2f(0.0f, 0.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectSdKBSTag>(Vector3f(0.010834f, 0.007349f, 1.2f));
-    spatialglasseffect->Setter<SpatialGlassEffectSdPosTag>(Vector3f(0.3f, 0.5f, 1.0f));
-    spatialglasseffect->Setter<SpatialGlassEffectSdNegTag>(Vector3f(0.5f, 0.5f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectLeftTopTag>(Vector3f(-0.8f, 1.5f, -1.2f));
+    spatialGlassEffect->Setter<SpatialGlassEffectRightTopTag>(Vector3f(1.4f, 1.5f, -1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectLeftBotTag>(Vector3f(-0.8f, -1.5f, -1.2f));
+    spatialGlassEffect->Setter<SpatialGlassEffectRightBotTag>(Vector3f(1.4f, -1.5f, -1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectCameraPositionTag>(Vector3f(0.0f, 0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectCameraIntrinsicsTag>(Vector2<float>(0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectLightDirTag>(Vector3f(1.0f, 1.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectLightColorTag>(Vector3f(1.0f, 1.0f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectLightIntensityTag>(1.0f);
+    spatialGlassEffect->Setter<SpatialGlassEffectThickParamsTag>(Vector2f(0.01f, 0.01f));
+    spatialGlassEffect->Setter<SpatialGlassEffectGlassBaseColorTag>(Vector4f(0.0f, 0.0f, 0.0f, 0.2f));
+    spatialGlassEffect->Setter<SpatialGlassEffectFresnelEnvColorTag>(Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectFresnelEnvParamsTag>(Vector2f(0.05f, 0.5f));
+    spatialGlassEffect->Setter<SpatialGlassEffectBgRatesTag>(Vector2f(0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectBgKBSTag>(Vector3f(0.97f, 0.23f, 1.2f));
+    spatialGlassEffect->Setter<SpatialGlassEffectBgPosTag>(Vector3f(0.5f, 0.5f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectBgNegTag>(Vector3f(2.0f, 5.0f, 4.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectRefractParamsTag>(Vector3f(0.2f, 0.1f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectWeightsEdlTag>(Vector2f(1.0f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectEnvLightParamsTag>(Vector3f(0.0f, 0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectEnvLightRatesTag>(Vector2f(0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectEnvLightKBSTag>(Vector3f(0.010834f, 0.007349f, 1.2f));
+    spatialGlassEffect->Setter<SpatialGlassEffectEnvLightPosTag>(Vector3f(0.3f, 0.5f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectEnvLightNegTag>(Vector3f(0.5f, 0.5f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectSdParamsTag>(Vector3f(0.0f, 0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectSdRatesTag>(Vector2f(0.0f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectSdKBSTag>(Vector3f(0.010834f, 0.007349f, 1.2f));
+    spatialGlassEffect->Setter<SpatialGlassEffectSdPosTag>(Vector3f(0.3f, 0.5f, 1.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectSdNegTag>(Vector3f(0.5f, 0.5f, 1.0f));
 }
 
 GRAPHIC_TEST(SpatialGlassEffectTest, EFFECT_TEST, Set_SpatialGlassEffect_ThickParams_Test)
