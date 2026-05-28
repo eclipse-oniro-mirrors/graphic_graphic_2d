@@ -2237,8 +2237,6 @@ private:
     void ResetExtendModifierDirty();
     void SetParticleDrawRegion(std::vector<ParticleParams>& particleParams);
 
-    void DetachUIFilterProperties(const std::shared_ptr<ModifierNG::RSModifier>& modifier);
-
     std::shared_ptr<ModifierNG::RSModifier> GetModifierCreatedBySetter(ModifierNG::RSModifierType modifierType);
 
     /**

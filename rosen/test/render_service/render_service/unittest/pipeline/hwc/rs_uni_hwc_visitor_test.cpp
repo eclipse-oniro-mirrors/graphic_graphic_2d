@@ -829,7 +829,6 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByHwcNodeBelowSelf_001, TestSiz
     rsUniHwcVisitor->UpdateHwcNodeEnableByHwcNodeBelowSelf(hwcRects, surfaceNode, true);
     EXPECT_EQ(hwcRects.size(), 0);
     rsUniRenderVisitor->curScreenNode_->InitRenderParams();
-    rsUniRenderVisitor->curScreenNode_->SetForceCloseHdr(false);
     surfaceNode->SetVideoHdrStatus(HdrStatus::HDR_VIDEO);
     EXPECT_EQ(rsUniRenderVisitor->curScreenNode_->GetHasUniRenderHdrSurface(), false);
 }

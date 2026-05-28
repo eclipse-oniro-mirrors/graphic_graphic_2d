@@ -195,7 +195,6 @@ public:
     bool SetBufferAvailableCallback(BufferAvailableCallback callback);
     bool IsBufferAvailable() const;
     void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
-    void SetAnimationFinished();
     void SetAlphaChangedCallback(AlphaChangedCallback&& callback) override;
 
     /**
@@ -332,7 +331,6 @@ public:
     // Force enable UIFirst when set TRUE
     void SetForceUIFirst(bool forceUIFirst);
     void SetAncoFlags(uint32_t flags);
-    void SetHDRPresent(bool hdrPresent, NodeId id);
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
     void SetDarkColorMode(bool isDark);
