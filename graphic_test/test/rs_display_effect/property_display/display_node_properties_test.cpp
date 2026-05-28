@@ -47,7 +47,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_SetScreenId)
 
     for (size_t i = 0; i < screenIds.size(); i++) {
         RSDisplayNodeConfig config;
-        auto displayNode = RSDisplayNode::Create(config);
+        auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
         displayNode->SetScreenId(screenIds[i]);
 
         // Create a child node to visualize the display
@@ -73,7 +73,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_SetScreenId_Boun
 
     for (size_t i = 0; i < boundaryIds.size(); i++) {
         RSDisplayNodeConfig config;
-        auto displayNode = RSDisplayNode::Create(config);
+        auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
         displayNode->SetScreenId(boundaryIds[i]);
 
         auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
@@ -93,7 +93,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_SetVirtualScreen
 
     for (size_t i = 0; i < muteStatusList.size(); i++) {
         RSDisplayNodeConfig config;
-        auto displayNode = RSDisplayNode::Create(config);
+        auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
         displayNode->SetVirtualScreenMuteStatus(muteStatusList[i]);
 
         auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
@@ -114,7 +114,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_Combined_Propert
         for (size_t j = 0; j < boolValues.size(); j++) {
             for (size_t k = 0; k < screenIds.size(); k++) {
                 RSDisplayNodeConfig config;
-                auto displayNode = RSDisplayNode::Create(config);
+                auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
                 displayNode->SetScreenId(screenIds[k]);
                 displayNode->SetVirtualScreenMuteStatus(boolValues[j]);
 
@@ -136,7 +136,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_Multiple_Screens
     // Create multiple display nodes with different screen IDs
     for (size_t i = 0; i < 3; i++) {
         RSDisplayNodeConfig config;
-        auto displayNode = RSDisplayNode::Create(config);
+        auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
         displayNode->SetScreenId(i);
 
         auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
@@ -154,7 +154,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_ClearModifierByP
 
     for (size_t i = 0; i < pids.size(); i++) {
         RSDisplayNodeConfig config;
-        auto displayNode = RSDisplayNode::Create(config);
+        auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
         displayNode->ClearModifierByPid(pids[i]);
 
         auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
@@ -169,7 +169,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_ClearModifierByP
 GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_Rapid_State_Changes)
 {
     RSDisplayNodeConfig config;
-    auto displayNode = RSDisplayNode::Create(config);
+    auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
 
     auto canvasNode = SetUpNodeBgImage("/data/local/tmp/geom_test.jpg",
         {100.0f, 100.0f, 400.0f, 400.0f});
@@ -204,7 +204,7 @@ GRAPHIC_TEST(DisplayNodeTest, CONTENT_DISPLAY_TEST, DisplayNode_ScreenId_Rotatio
 
     for (size_t i = 0; i < testCases.size(); i++) {
         RSDisplayNodeConfig config;
-        auto displayNode = RSDisplayNode::Create(config);
+        auto displayNode = RSDisplayNode::Create(config, RSGraphicTestDirector::Instance().GetRSUIContext());
         displayNode->SetScreenId(testCases[i].screenId);
         displayNode->SetScreenRotation(testCases[i].rotation);
 
