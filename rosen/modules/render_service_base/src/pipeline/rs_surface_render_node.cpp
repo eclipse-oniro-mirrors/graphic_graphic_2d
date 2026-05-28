@@ -412,7 +412,7 @@ void RSSurfaceRenderNode::CollectSelfDrawingChild(
     }
 }
 
-    void RSSurfaceRenderNode::ClearChildrenCache()
+void RSSurfaceRenderNode::ClearChildrenCache()
 {
     for (auto& child : *GetChildren()) {
         auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
@@ -2525,8 +2525,8 @@ bool RSSurfaceRenderNode::CheckParticipateInOcclusion(bool isAnimationOcclusionS
 {
     // planning: Need consider others situation
     isParentScaling_ = false;
-    auto nodeParent = GetParent().lock();
-    if (nodeParent && nodeParent->IsScale()) {
+    auto surfaceParent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
+    if (surfaceParent && surfaceParent->IsScale()) {
         isParentScaling_ = true;
         if (GetDstRectChanged() && !isAnimationOcclusionScenes) {
             return false;
