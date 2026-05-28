@@ -100,6 +100,12 @@ public:
     using SharedPtr = std::shared_ptr<RSRenderNode>;
     using ModifierNGContainer = std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>>;
     using ModifiersNGMap = std::map<ModifierNG::RSModifierType, ModifierNGContainer>;
+
+    enum class NodeDirty : int8_t {
+        CLEAN = 0,
+        DIRTY,
+    };
+
     static inline constexpr RSRenderNodeType Type = RSRenderNodeType::RS_NODE;
     virtual RSRenderNodeType GetType() const
     {
@@ -198,7 +204,16 @@ public:
     {
         return isAccumulatedClipFlagChanged_;
     }
-    bool IsDirty() const;
+
+    NodeDirty GetDirtyStatus() const noexcept
+    {
+        return dirtyStatus_;
+    }
+
+    bool IsDirty() const
+    {
+        return GetDirtyStatus() != NodeDirty::CLEAN || renderProperties_.IsDirty();
+    }
 
     bool IsSubTreeDirty() const
     {
@@ -272,14 +287,13 @@ public:
     bool GetAbsMatrixReverse(const RSRenderNode& rootNode, Drawing::Matrix& absMatrix);
 
     // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
-    // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
+    // firstLevelNodeId: surfacenode for uiFirst to assign task
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
-        NodeId logicalDisplayNodeId = INVALID_NODEID);
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId uifirstRootNodeId = INVALID_NODEID,
+        NodeId screenNodeId = INVALID_NODEID, NodeId logicalDisplayNodeId = INVALID_NODEID);
     void SetIsOntheTreeOnlyFlag(bool flag)
     {
-        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
+        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_,
             uifirstRootNodeId_, screenNodeId_, logicalDisplayNodeId_);
     }
     inline bool IsOnTheTree() const
@@ -757,7 +771,10 @@ public:
     NodeGroupType GetNodeGroupType() const;
     void SetChildHasTranslateOnSqueeze(bool val);
     void SetNodeGroupHasChildInBlacklist(bool inBlacklist);
-    bool IsNodeGroupIncludeProperty() const;
+    void SetNeedClearRenderGroupCache(bool needClear);
+    bool NeedClearRenderGroupCache() const;
+    void SetRenderGroupIncludeProperty(bool includeProperty);
+    bool IsRenderGroupIncludeProperty() const;
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation, bool isOnExcludedSubTree);
     void UpdateDrawingCacheInfoAfterChildren(const std::unordered_set<NodeId>& childHasProtectedNodeSet = {});
     // !used for renderGroup
@@ -1109,6 +1126,8 @@ public:
     bool IsColorPickerOnlyNode() const;
 
     void ReSortChildrenByZIndex();
+
+    void AccumulateParentGeoDirty();
 protected:
     void ResetDirtyStatus();
 
@@ -1120,10 +1139,6 @@ protected:
 
     virtual void OnApplyModifiers() {}
 
-    enum class NodeDirty {
-        CLEAN = 0,
-        DIRTY,
-    };
     virtual void SetClean()
     {
         isContentDirty_ = false;
@@ -1202,8 +1217,6 @@ protected:
     }
     // if true, it means currently it's in partial render mode and this node is intersect with dirtyRegion
     bool isShadowValidLastFrame_ = false;
-    bool needClearSurface_ = false;
-
     bool lastFrameHasVisibleEffectWithoutEmptyRect_ = false;
     mutable bool isFullChildrenListValid_ = true;
     mutable bool isChildrenSorted_ = true;
@@ -1218,7 +1231,6 @@ protected:
     std::atomic<bool> isStaticCached_ = false;
     NodeDirty dirtyStatus_ = NodeDirty::CLEAN;
     NodeDirty curDirtyStatus_ = NodeDirty::CLEAN;
-    NodeId drawingCacheRootId_ = INVALID_NODEID;
     mutable std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter> renderDrawable_;
     std::unique_ptr<RSRenderParams> stagingRenderParams_;
 
@@ -1266,7 +1278,6 @@ private:
     bool isSubTreeDirty_ = false;
     bool isTreeStateChangeDirty_ = false;
     bool isContentDirty_ = false;
-    bool nodeGroupIncludeProperty_ = false;
     bool geometryChangeNotPerceived_ = false;
     bool isDirtyRegionUpdated_ = false;
     bool isLastVisible_ = false;
@@ -1380,8 +1391,6 @@ private:
     friend class RSRenderPropertyBase;
     friend class RSRenderTransition;
     std::unique_ptr<std::string> nodeName_;
-    std::unordered_set<NodeId> curCacheFilterRects_ = {};
-    std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
     RSProperties renderProperties_;
 

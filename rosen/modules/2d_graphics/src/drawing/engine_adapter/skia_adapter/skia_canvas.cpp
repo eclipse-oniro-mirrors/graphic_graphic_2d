@@ -1523,6 +1523,23 @@ bool SkiaCanvas::IsOpaque()
     }
     return skCanvas_->isOpaque();
 }
+
+void SkiaCanvas::BeginPrimListCollecting(const Rect& bounds)
+{
+    LOGD("SkiaCanvas does not support BeginPrimListCollecting");
+}
+
+std::shared_ptr<PrimList> SkiaCanvas::EndPrimListCollecting()
+{
+    LOGD("SkiaCanvas does not support EndPrimListCollecting");
+    return nullptr;
+}
+
+bool SkiaCanvas::DrawPrimList(const PrimList& primList)
+{
+    LOGD("SkiaCanvas does not support DrawPrimList");
+    return false;
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

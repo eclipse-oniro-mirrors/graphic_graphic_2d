@@ -151,6 +151,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 static bool g_isUniRenderEnabled = false;
+static bool g_isSceneBoardEnable = false;
 static const std::unordered_map<RSUINodeType, std::string> RSUINodeTypeStrs = {
     {RSUINodeType::UNKNOW,              "UNKNOW"},
     {RSUINodeType::DISPLAY_NODE,        "DisplayNode"},
@@ -245,7 +246,7 @@ RSNode::~RSNode()
     }
     if (rsUIContext != nullptr) {
         // tell RT/RS to destroy related render node
-        if (!isShadowNode_ || g_isUniRenderEnabled) {
+        if (!isShadowNode_ || (g_isUniRenderEnabled && g_isSceneBoardEnable)) {
             rsUIContext->GetMutableNodeMap().UnregisterNode(id_);
         }
         auto transaction = rsUIContext->GetRSTransaction();
@@ -830,6 +831,7 @@ void RSNode::SetAlpha(float alpha)
         SetDrawNode();
         SetDrawNodeType(DrawNodeType::DrawPropertyType);
     }
+    OnAlphaValueChanged();
 }
 
 void RSNode::SetAlphaOffscreen(bool alphaOffscreen)
@@ -3825,6 +3827,7 @@ void RSNode::InitUniRenderEnabled()
     if (!inited) {
         inited = true;
         g_isUniRenderEnabled = RSSystemProperties::GetUniRenderEnabled();
+        g_isSceneBoardEnable = RSSystemProperties::IsSceneBoardEnabled();
         ROSEN_LOGD("RSNode::InitUniRenderEnabled:%{public}d", g_isUniRenderEnabled);
     }
 }

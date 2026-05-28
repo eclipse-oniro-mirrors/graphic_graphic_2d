@@ -208,6 +208,7 @@ HWTEST_F(RSUifirstManagerTest2, DoPurgePendingPostNodes000, TestSize.Level1)
     auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeId);
     auto adapter = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceRenderNode));
+    adapter->renderParams_->renderNodeType_ = surfaceRenderNode->GetType();
     uifirstManager_.subthreadProcessingNode_.clear();
     pendingNode.insert(std::make_pair(nodeId, surfaceRenderNode));
     surfaceRenderNode->isOnTheTree_ = true;
@@ -696,12 +697,12 @@ HWTEST_F(RSUifirstManagerTest2, UpdateCompletedSurface, TestSize.Level1)
 }
 
 /**
- * @tc.name: PostUifistSubTasks
+ * @tc.name: PostUifirstSubTasks
  * @tc.desc: Test post task to subthread
  * @tc.type: FUNC
  * @tc.require: issueIBVHE7
  */
-HWTEST_F(RSUifirstManagerTest2, PostUifistSubTasks, TestSize.Level1)
+HWTEST_F(RSUifirstManagerTest2, PostUifirstSubTasks, TestSize.Level1)
 {
     uifirstManager_.sortedSubThreadNodeIds_.clear();
     uifirstManager_.pendingPostNodes_.clear();
@@ -717,7 +718,7 @@ HWTEST_F(RSUifirstManagerTest2, PostUifistSubTasks, TestSize.Level1)
     uifirstManager_.pendingPostNodes_.insert(std::make_pair(surfaceNode3->GetId(), surfaceNode3));
     auto surfaceNode4 = RSTestUtil::CreateSurfaceNode();
     uifirstManager_.pendingPostNodes_.insert(std::make_pair(surfaceNode4->GetId(), surfaceNode4));
-    uifirstManager_.PostUifistSubTasks();
+    uifirstManager_.PostUifirstSubTasks();
     ASSERT_TRUE(uifirstManager_.sortedSubThreadNodeIds_.empty());
 }
 
@@ -1339,6 +1340,7 @@ HWTEST_F(RSUifirstManagerTest2, GetCacheSurfaceProcessedStatusTest, TestSize.Lev
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(nodeId);
     auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    surfaceDrawable->renderParams_->renderNodeType_ = surfaceNode->GetType();
     surfaceDrawable->GetRsSubThreadCache().SetCacheSurfaceProcessedStatus(CacheProcessStatus::DOING);
     ASSERT_EQ(uifirstManager_.GetCacheSurfaceProcessedStatus(surfaceParams), CacheProcessStatus::DOING);
 
@@ -1801,6 +1803,7 @@ HWTEST_F(RSUifirstManagerTest2, ProcessMarkedNodeSubThreadCacheTest, TestSize.Le
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(nodeId);
     auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    surfaceDrawable->renderParams_->renderNodeType_ = surfaceNode->GetType();
     auto& rsSubThreadCache = surfaceDrawable->GetRsSubThreadCache();
     rsSubThreadCache.cacheSurface_ = std::make_shared<Drawing::Surface>();
     uifirstManager_.pendingPostNodes_.insert({nodeId, nullptr});

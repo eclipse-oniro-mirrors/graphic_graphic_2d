@@ -875,9 +875,10 @@ sptr<IRemoteObject> RSClientToServiceConnectionProxy::GetConnectToRenderToken(Sc
     }
     sptr<IRemoteObject> rObj = reply.ReadRemoteObject();
     if (rObj == nullptr) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetConnectToRenderToken clientToService is nullptr");
         return nullptr;
     }
-    return nullptr;
+    return rObj;
 }
 
 int32_t RSClientToServiceConnectionProxy::SetScreenSwitchingNotifyCallback(
@@ -2032,16 +2033,8 @@ void RSClientToServiceConnectionProxy::SetScreenBacklight(const RsScreenBrightne
         return;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint64(brightnessData.screenId)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteUint64 screenId err.");
-        return;
-    }
-    if (!data.WriteUint32(brightnessData.level)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteUint32 level err.");
-        return;
-    }
-    if (!data.WriteFloat(brightnessData.brightnessPosition)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteFloat brightnessPosition err.");
+    if (!RSMarshallingHelper::Marshalling(data, brightnessData)) {
+        ROSEN_LOGE("SetScreenBacklight: Marshalling brightnessData err.");
         return;
     }
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT);
