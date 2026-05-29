@@ -475,7 +475,7 @@ bool RSHdrUtil::HDRColorHeadroomMapping(const Drawing::UIColor& srcColor, Drawin
 #ifdef USE_VIDEO_PROCESSING_ENGINE
      auto aiHDREnhancer = OHOS::Media::VideoProcessingEngine::AihdrEnhancer::Create();
     if (aiHDREnhancer == nullptr) {
-        RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer is null")
+        RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer is null");
         return false;
     }
     float displayHeadroom = 1.0f;
@@ -497,7 +497,7 @@ bool RSHdrUtil::HDRColorHeadroomMapping(const Drawing::UIColor& srcColor, Drawin
     aihdrParameter.PutFloatValue("actualHeadroom", displayHeadroom);
     aiHDREnhancer->SetParameter(aihdrParameter);
     if (aiHDREnhancer->ProcessHDRColor(inputRgb, outputRgb) != Media::VideoProcessingEngine::VPE_ALGO_ERR_OK) {
-        RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer ProcessHDRColor failed")
+        RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer ProcessHDRColor failed");
         return false;
     }
     dstColor.SetRgba(outputRgb.r, outputRgb.g, outputRgb.b, srcColor.GetAlpha());
