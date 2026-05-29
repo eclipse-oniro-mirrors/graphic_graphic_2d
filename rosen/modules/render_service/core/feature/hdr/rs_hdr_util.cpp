@@ -490,11 +490,11 @@ bool RSHdrUtil::HDRColorHeadroomMapping(const Drawing::UIColor& srcColor, Drawin
             RSLuminanceControl::Get().GetDisplayNits(screenId) / RSLuminanceControl::Get().GetSdrDisplayNits(screenId);
     }
     Media::VideoProcessingEngine::NonLinearRGB inputRgb =
-        { srcColor.GetRed(), srcColor.GetGreen(), srcColor.GetBlue()};
+        {srcColor.GetRed(), srcColor.GetGreen(), srcColor.GetBlue()};
     Media::VideoProcessingEngine::NonLinearRGB outputRgb = {0.0f, 0.0f, 0.0f};
     Media::Format aihdrParameter {};
-    aihdrParameter.PutFloatValue("expectedHeadroom", displayHeadroom);
-    aihdrParameter.PutFloatValue("actualHeadroom", srcColor.GetHeadroom());
+    aihdrParameter.PutFloatValue("expectedHeadroom", srcColor.GetHeadroom());
+    aihdrParameter.PutFloatValue("actualHeadroom", displayHeadroom);
     aiHDREnhancer->SetParameter(aihdrParameter);
     if (aiHDREnhancer->ProcessHDRColor(inputRgb, outputRgb) != Media::VideoProcessingEngine::VPE_ALGO_ERR_OK) {
         RS_LOGE("RSHdrUtil::HDRColorHeadroomMapping aiHDREnhancer ProcessHDRColor failed")

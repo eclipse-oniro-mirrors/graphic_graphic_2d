@@ -28,7 +28,7 @@ namespace Rosen {
 namespace Drawing {
 
 class UIColor;
-using UIColorRegisterCallback = std::function<bool(const UIColor& srcColor, UIColor& dstColor);
+using UIColorRegisterCallback = std::function<bool(const UIColor& srcColor, UIColor& dstColor)>;
 
 class DRAWING_API UIColor {
 public:
