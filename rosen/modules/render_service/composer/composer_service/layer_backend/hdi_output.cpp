@@ -1096,6 +1096,9 @@ std::vector<LayerCreatedInfo> HdiOutput::CollectPendingLayerCreatedInfosLocked()
         if (rsLayer == nullptr || !IsTunnelLayerRequestedLocked(rsLayer)) {
             continue;
         }
+        if (rsLayer->GetHdiCompositionType() != GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE) {
+            continue;
+        }
         invalidTunnelSurfaceIds_.erase(rsLayer->GetSurfaceUniqueId());
         LayerCreatedInfo layerCreatedInfo;
         layerCreatedInfo.nodeId = rsLayer->GetNodeId();
