@@ -57,6 +57,7 @@ constexpr uint32_t TEST_SCREEN_ID = 0;
 constexpr uint32_t TEST_LAYER_ID = 7001;
 constexpr uint32_t TEST_LAYER_ID_GRAPHIC = 7002;
 constexpr uint32_t TEST_LAYER_ID_TUNNEL = 7003;
+constexpr uint32_t TEST_LAYER_ID_NON_DEVICE = 7004;
 constexpr uint64_t TEST_SURFACE_ID = 7101;
 constexpr uint64_t TEST_SURFACE_ID_SECOND = 7102;
 constexpr uint64_t TEST_SURFACE_ID_THIRD = 7103;
@@ -4829,22 +4830,36 @@ HWTEST_F(HdiOutputTest, TunnelCallbacksAndPendingCreatedBranches, Function | Med
     tunnelRsLayer->SetTunnelLayerProperty(TUNNEL_PROP_BUFFER_ADDR);
     tunnelRsLayer->SetTunnelLayerGeneration(TEST_TUNNEL_LAYER_ID);
     tunnelRsLayer->SetHdiCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
+    auto nonDeviceRsLayer = std::make_shared<RSRenderSurfaceLayer>();
+    nonDeviceRsLayer->SetSurfaceUniqueId(TEST_SURFACE_ID_THIRD);
+    nonDeviceRsLayer->SetNodeId(TEST_NODE_ID);
+    nonDeviceRsLayer->SetType(GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
+    nonDeviceRsLayer->SetTunnelLayerId(TEST_TUNNEL_LAYER_ID);
+    nonDeviceRsLayer->SetTunnelLayerProperty(TUNNEL_PROP_BUFFER_ADDR);
+    nonDeviceRsLayer->SetTunnelLayerGeneration(TEST_TUNNEL_LAYER_ID);
+    nonDeviceRsLayer->SetHdiCompositionType(GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT);
     auto graphicLayer = CreateHdiOutputHdiLayer(graphicRsLayer);
     auto tunnelLayer = CreateHdiOutputHdiLayer(tunnelRsLayer, GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
+    auto nonDeviceLayer = CreateHdiOutputHdiLayer(nonDeviceRsLayer, GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
     ASSERT_NE(graphicLayer, nullptr);
     ASSERT_NE(tunnelLayer, nullptr);
+    ASSERT_NE(nonDeviceLayer, nullptr);
     graphicLayer->MarkPendingTunnelLayerCreated(TEST_TUNNEL_LAYER_ID);
     tunnelLayer->MarkPendingTunnelLayerCreated(TEST_TUNNEL_LAYER_ID_SECOND);
+    nonDeviceLayer->MarkPendingTunnelLayerCreated(TEST_TUNNEL_LAYER_ID);
     output->layerIdMap_[TEST_LAYER_ID] = nullptr;
     output->layerIdMap_[TEST_LAYER_ID_GRAPHIC] = graphicLayer;
     output->layerIdMap_[TEST_LAYER_ID_TUNNEL] = tunnelLayer;
+    output->layerIdMap_[TEST_LAYER_ID_NON_DEVICE] = nonDeviceLayer;
     output->invalidTunnelSurfaceIds_.insert(TEST_SURFACE_ID_SECOND);
+    output->invalidTunnelSurfaceIds_.insert(TEST_SURFACE_ID_THIRD);
 
     auto createdInfos = output->CollectPendingLayerCreatedInfosLocked();
     ASSERT_EQ(createdInfos.size(), 1u);
     EXPECT_EQ(createdInfos.front().nodeId, TEST_NODE_ID_SECOND);
     EXPECT_EQ(createdInfos.front().tunnelLayerGeneration, TEST_TUNNEL_LAYER_ID_SECOND);
-    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.empty());
+    ASSERT_EQ(output->invalidTunnelSurfaceIds_.size(), 1u);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(TEST_SURFACE_ID_THIRD) > 0);
 }
 
 HWTEST_F(HdiOutputTest, TunnelToGraphicUpdateNotifiesUnavailable, Function | MediumTest | Level1)
