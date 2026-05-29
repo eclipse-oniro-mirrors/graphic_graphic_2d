@@ -27,6 +27,7 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "engine/rs_uni_render_engine.h"
+#include "feature/hdr/rs_hdr_util.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
@@ -198,6 +199,8 @@ void RSUniRenderThread::InitGrContext()
     if (RSSystemProperties::GetDrawOpLimitEnabled()) {
         InitDrawOpOverCallback(grContext);
     }
+    Drawing::UIColor::RegisterHdrCallbackFunc(
+        std::bind(&RSHdrUtil::HDRColorHeadroomMapping, std::placeholders::_1, std::placeholders::_2));
     MemoryManager::SetGpuCacheSuppressWindowSwitch(
         grContext, RSSystemProperties::GetGpuCacheSuppressWindowEnabled());
     MemoryManager::SetGpuMemoryAsyncReclaimerSwitch(

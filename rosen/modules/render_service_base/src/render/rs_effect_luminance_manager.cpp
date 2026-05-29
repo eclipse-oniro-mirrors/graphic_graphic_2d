@@ -207,5 +207,35 @@ bool RSEffectLuminanceManager::GetEnableHdrEffect(std::shared_ptr<RSNGRenderShad
     auto it = edrShaderCheckerLUT.find(renderShader->GetType());
     return it != edrShaderCheckerLUT.end() ? it->second(renderShader) : false;
 }
+
+void RSEffectLuminanceManager::SetCurrentScreenId(ScreenId id)
+{
+    currentScreenId_ = id;
+}
+
+ScreenId RSEffectLuminanceManager::GetCurrentScreenId()
+{
+    return currentScreenId_;
+}
+
+void RSEffectLuminanceManager::SetCurrentScreenshotType(RSPaintFilterCanvas::ScreenshotType type)
+{
+    currentScreenshotType_ = type;
+}
+
+RSPaintFilterCanvas::ScreenshotType RSEffectLuminanceManager::GetCurrentScreenshotType()
+{
+    return currentScreenshotType_;
+}
+
+void RSEffectLuminanceManager::SetHdrPipelineStatus(bool isHdrOn)
+{
+    isHdrPipelineOn_ = isHdrOn;
+}
+
+bool RSEffectLuminanceManager::GetHdrPipelineStatus()
+{
+    return isHdrPipelineOn_;
+}
 }  // Rosen
 } // OHOS
