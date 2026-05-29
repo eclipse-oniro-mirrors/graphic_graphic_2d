@@ -5544,5 +5544,5 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetHdrForceHwcEnabledStubTest003, 
     EXPECT_EQ(ret, ERR_INVALID_DATA);
     setuid(0);
 }
-#endif
 } // namespace OHOS::Rosen
+#endif
