@@ -321,7 +321,6 @@ private:
     void UpdateSubSurfaceNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void CollectOcclusionInfoForWMS(RSSurfaceRenderNode& node);
     void CollectEffectInfo(RSRenderNode& node);
-    void CollectLayerInfo(RSRenderNode& node);
 
     void UpdateVirtualDisplayInfo(RSLogicalDisplayRenderNode& node);
     void UpdateVirtualDisplaySecurityExemption(

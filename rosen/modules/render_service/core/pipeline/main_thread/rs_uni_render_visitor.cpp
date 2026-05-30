@@ -3382,8 +3382,12 @@ void RSUniRenderVisitor::ProcessFilterNodeObscured(std::shared_ptr<RSSurfaceRend
     }
 }
 
-void RSUniRenderVisitor::CollectLayerInfo(RSRenderNode& node)
+void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
 {
+    auto nodeParent = node.GetParent().lock();
+    if (nodeParent == nullptr) {
+        return;
+    }
     bool isUnSupportLayer =
         RSLayerCacheManagerBase::isLayerSuggested_ &&
         (RSLayerCacheManagerBase::isNodeUnSupportLayer(node) || node.GetOpincRootCache().IsSuggestOpincNode() ||
@@ -3393,16 +3397,6 @@ void RSUniRenderVisitor::CollectLayerInfo(RSRenderNode& node)
     if (isUnSupportLayer) {
         RSLayerCacheManagerBase::unSupportLayerNodeMap_[nodeParent->GetId()] = true;
     }
-}
-
-void RSUniRenderVisitor::CollectEffectInfo(RSRenderNode& node)
-{
-    auto nodeParent = node.GetParent().lock();
-    if (nodeParent == nullptr) {
-        return;
-    }
-
-    CollectLayerInfo(node);
     // Handle ColorPickerDrawable - MERGE into filter handling
     if (RSUniHwcComputeUtil::IsBlendNeedFilter(node) || node.ChildHasVisibleFilter() ||
         node.GetColorPickerDrawable()) {
