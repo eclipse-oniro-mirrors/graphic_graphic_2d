@@ -34,8 +34,6 @@ public:
     static std::unordered_map<NodeId, bool> unSupportLayerNodeMap_;
     static bool isLayerSuggested_;
     static std::vector<std::weak_ptr<RSRenderNode>> suggestedLayerNodes_;
-
-private:
     static int layerFrameCount_;
 };
 } // namespace Rosen

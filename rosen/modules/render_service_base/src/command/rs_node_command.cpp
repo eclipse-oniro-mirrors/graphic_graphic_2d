@@ -399,6 +399,11 @@ void RSNodeCommandHelper::SetColorPickerCallbackProcessor(ColorPickerCallbackPro
 
 void RSNodeCommandHelper::MarkLayer(RSContext& context, NodeId nodeId, bool isLayer)
 {
+    if (!RSSystemProperties::GetLayerEnabled()) {
+        RS_OPTIONAL_TRACE_NAME_FMT("Layer Disabled.");
+        return;
+    }
+
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
     // only support canvas node mark
@@ -419,7 +424,8 @@ void RSNodeCommandHelper::MarkLayer(RSContext& context, NodeId nodeId, bool isLa
         }
     }
 
-    if (!isLayer) {
+    bool isCancelLayer = node && (!isLayer);
+    if (isCancelLayer) {
         RSLayerCacheManagerBase::isLayerSuggested_ = isLayer;
         RSLayerCacheManagerBase::suggestedLayerNodes_.clear();
         node->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_LAYER, false, false);

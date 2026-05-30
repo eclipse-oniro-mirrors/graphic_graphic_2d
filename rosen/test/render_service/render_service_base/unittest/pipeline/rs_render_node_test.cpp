@@ -26,6 +26,7 @@
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_property_drawable_foreground.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
@@ -1203,9 +1204,15 @@ HWTEST_F(RSRenderNodeTest, OnSyncTest, TestSize.Level1)
     node->SetNeedClearRenderGroupCache(true);
     std::function<void()> clearTask = []() { printf("ClearSurfaceTask CallBack\n"); };
     node->GetOpincRootCache().isOpincRootFlag_ = true;
+
     node->nodeGroupType_ = RSRenderNode::NodeGroupType::GROUPED_BY_LAYER;
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    node->renderProperties_.SetBgBrightnessRates(value);
+    node->stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    RSLayerCacheManagerBase::unSupportLayerNodeMap_[node->GetId()] = true;
+    node->stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    bool isLayerNode = node->nodeGroupType_ == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
+ 	                        node->stagingRenderParams_->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE;
+    EXPECT_TRUE(isLayerNode);
+    EXPECT_TRUE(RSLayerCacheManagerBase::isNodeUnSupportLayer(node));
     node->OnSync();
     EXPECT_TRUE(node->dirtySlots_.empty());
     EXPECT_FALSE(node->drawCmdListNeedSync_);
@@ -1250,6 +1257,11 @@ HWTEST_F(RSRenderNodeTest, OnSyncTest1, TestSize.Level1)
     std::function<void()> clearTask = []() { printf("ClearSurfaceTask CallBack\n"); };
     node->GetOpincRootCache().isOpincRootFlag_ = true;
     node->nodeGroupType_ = RSRenderNode::NodeGroupType::GROUPED_BY_LAYER;
+    node->stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    bool isLayerNode = node->nodeGroupType_ == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
+ 	                        node->stagingRenderParams_->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE;
+    EXPECT_TRUE(isLayerNode);
+    EXPECT_FALSE(RSLayerCacheManagerBase::isNodeUnSupportLayer(node));
     node->OnSync();
     EXPECT_TRUE(node->dirtySlots_.empty());
     EXPECT_FALSE(node->drawCmdListNeedSync_);

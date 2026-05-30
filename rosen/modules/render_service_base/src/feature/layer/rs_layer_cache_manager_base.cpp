@@ -36,7 +36,8 @@ namespace Rosen {
         if (layerFrameCount_ == ENABLE_LAYER_FRAME_NUM) {
             for (auto node : suggestedLayerNodes_) {
                 auto nodePtr = node.lock();
-                if (!isNodeUnSupportLayer(nodePtr)) {
+                bool isSupportLayer = nodePtr && (!isNodeUnSupportLayer(nodePtr));
+                if (isSupportLayer) {
                     nodePtr->MarkNodeGroup(RSRenderNode::NodeGroupType::GROUPED_BY_LAYER, true, false);
                 }
             }
