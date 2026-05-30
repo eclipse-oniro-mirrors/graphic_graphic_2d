@@ -1601,4 +1601,218 @@ HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeByScalingMode_003, Function | Sma
     ASSERT_EQ(node1.GetDstRect().GetLeft(), 0);
     ASSERT_EQ(node1.GetSrcRect().GetLeft(), 0);
 }
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_VcldDisabled
+ * @tc.desc: Test UpdateHwcNodeVcldInfo when Vcld is disabled
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_VcldDisabled, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({10.0f, 10.0f, 10.0f, 10.0f});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FALSE(hwcNode->GetVcldInfo().enable);
+    ASSERT_FLOAT_EQ(hwcNode->GetVcldInfo().radius, 0.0f);
+
+    uniHwcPrevalidateUtil.loadSuccess_ = true;
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_ProtectedLayer
+ * @tc.desc: Test UpdateHwcNodeVcldInfo when layer is protected
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_ProtectedLayer, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+    hwcNode->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({10.0f, 10.0f, 10.0f, 10.0f});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FALSE(hwcNode->GetVcldInfo().enable);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_ZeroCornerRadius
+ * @tc.desc: Test UpdateHwcNodeVcldInfo when corner radius is zero
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_ZeroCornerRadius, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({0.0f, 0.0f, 0.0f, 0.0f});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FALSE(hwcNode->GetVcldInfo().enable);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_RectNotMatch
+ * @tc.desc: Test UpdateHwcNodeVcldInfo when parent and hwc node rectangle not match
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_RectNotMatchTest001, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({10.0f, 10.0f, 10.0f, 10.0f});
+
+    parentNode->GetMutableRenderProperties().GetBoundsGeometry()->absRect_ = {0, 0, 100, 100};
+    hwcNode->selfDrawRect_ = {10, 10, 80, 80};
+    hwcNode->SetDstRect({0, 0, 100, 100});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FALSE(hwcNode->GetVcldInfo().enable);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_RectNotMatch
+ * @tc.desc: Test UpdateHwcNodeVcldInfo when parent and hwc node rectangle not match
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_RectNotMatchTest002, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({10.0f, 10.0f, 10.0f, 10.0f});
+
+    parentNode->GetMutableRenderProperties().GetBoundsGeometry()->absRect_ = {0, 0, 100, 100};
+    hwcNode->selfDrawRect_ = {0, 0, 100, 100};
+    hwcNode->SetDstRect({10, 10, 80, 80});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FALSE(hwcNode->GetVcldInfo().enable);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_RadiusTooSmall
+ * @tc.desc: Test UpdateHwcNodeVcldInfo when calculated radius is smaller than current
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_RadiusTooSmall, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+    hwcNode->InitRenderParams();
+    RSVcldParam preVcldInfo;
+    preVcldInfo.enable = true;
+    preVcldInfo.radius = 100.0f;
+    hwcNode->SetVcldInfo(preVcldInfo);
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({2.0f, 2.0f, 2.0f, 2.0f});
+
+    parentNode->GetMutableRenderProperties().GetBoundsGeometry()->absRect_ = {0, 0, 1000, 1000};
+    hwcNode->selfDrawRect_ = {0, 0, 1000, 1000};
+    hwcNode->SetDstRect({0, 0, 1000, 1000});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FLOAT_EQ(hwcNode->GetVcldInfo().radius, 100.0f);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_SuccessWithSurfaceParam
+ * @tc.desc: Test UpdateHwcNodeVcldInfo with surfaceParam not null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_SuccessWithSurfaceParam, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+    hwcNode->InitRenderParams();
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({10.0f, 10.0f, 10.0f, 10.0f});
+
+    parentNode->GetMutableRenderProperties().GetBoundsGeometry()->absRect_ = {0, 0, 100, 100};
+    hwcNode->selfDrawRect_ = {0, 0, 100, 100};
+    hwcNode->SetDstRect({0, 0, 100, 100});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FLOAT_EQ(hwcNode->GetVcldInfo().radius, 10.0f);
+}
+
+/**
+ * @tc.name: UpdateHwcNodeVcldInfo_SuccessWithoutSurfaceParam
+ * @tc.desc: Test UpdateHwcNodeVcldInfo with surfaceParam is null
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniHwcComputeUtilTest, UpdateHwcNodeVcldInfo_SuccessWithoutSurfaceParam, Function | SmallTest | Level2)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+
+    NodeId hwcNodeId = 0;
+    auto hwcNode = std::make_shared<RSSurfaceRenderNode>(hwcNodeId);
+    hwcNode->stagingRenderParams_ = nullptr;
+
+    NodeId parentId = 1;
+    auto parentNode = std::make_shared<RSRenderNode>(parentId);
+    parentNode->GetMutableRenderProperties().SetCornerRadius({10.0f, 10.0f, 10.0f, 10.0f});
+
+    parentNode->GetMutableRenderProperties().GetBoundsGeometry()->absRect_ = {0, 0, 100, 100};
+    hwcNode->selfDrawRect_ = {0, 0, 100, 100};
+    hwcNode->SetDstRect({0, 0, 100, 100});
+
+    RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(hwcNode, parentNode);
+
+    ASSERT_FALSE(hwcNode->GetVcldInfo().enable);
+}
 } // namespace OHOS::Rosen

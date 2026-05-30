@@ -1180,6 +1180,30 @@ HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_CornerRadiusInfoForDRM_Success,
 }
 
 /**
+ * Function: Marshall_Unmarshall_VcldInfo_Success
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: Round-trip bool command for CORNER_RADIUS_INFO_FOR_VCLD
+ */
+HWTEST(RSRenderLayerCmdTest, Marshall_Unmarshall_VcldInfo_Success, TestSize.Level1)
+{
+    RSVcldParam vcldInfo;
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<RSVcldParam>>(vcldInfo);
+    auto cmd = std::make_shared<RSRenderLayerVcldInfoCmd>(prop);
+
+    MessageParcel parcel;
+    ASSERT_TRUE(cmd->Marshalling(parcel));
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    ASSERT_NE(out, nullptr);
+    EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::VCLD_INFO);
+    auto outProp =
+        std::static_pointer_cast<RSRenderLayerCmdProperty<RSVcldParam>>(out->GetRSRenderLayerProperty());
+    ASSERT_NE(outProp, nullptr);
+    EXPECT_EQ(out->GetRSRenderLayerCmdType(), RSLayerCmdType::VCLD_INFO);
+}
+
+/**
  * Function: Unmarshall_Fail_MetaDataSet_PayloadMissing
  * Type: Function
  * Rank: Important(2)
@@ -1798,6 +1822,21 @@ HWTEST(RSRenderLayerCmdTest, Unmarshall_Fail_CornerRadiusInfoForDRM_PartialVecto
     MessageParcel parcel;
     ASSERT_TRUE(parcel.WriteUint16(static_cast<uint16_t>(RSLayerCmdType::CORNER_RADIUS_INFO_FOR_DRM)));
     ASSERT_TRUE(parcel.WriteUint32(1));
+    auto out = RSRenderLayerCmd::Unmarshalling(parcel);
+    EXPECT_EQ(out, nullptr);
+}
+
+/**
+ * Function: Unmarshall_Fail_VcldInfo_PartialVector
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: Write float vector length then omit values; expect nullptr.
+ */
+HWTEST(RSRenderLayerCmdTest, Unmarshall_Fail_VcldInfo_PartialVector, TestSize.Level1)
+{
+    MessageParcel parcel;
+    ASSERT_TRUE(parcel.WriteUint16(static_cast<uint16_t>(RSLayerCmdType::VCLD_INFO)));
     auto out = RSRenderLayerCmd::Unmarshalling(parcel);
     EXPECT_EQ(out, nullptr);
 }
@@ -2544,6 +2583,23 @@ HWTEST(RSRenderLayerCmdTest, Marshall_CornerRadiusInfoForDRM_Fail, TestSize.Leve
     std::vector<float> v{};
     auto prop = std::make_shared<RSRenderLayerCmdProperty<std::vector<float>>>(v);
     auto cmd = std::make_shared<RSRenderLayerCornerRadiusInfoForDRMCmd>(prop);
+    MessageParcel parcel;
+    cmd->rsRenderLayerProperty_ = nullptr;
+    ASSERT_FALSE(cmd->Marshalling(parcel));
+}
+
+/**
+ * Function: Marshall_VcldInfo_Fail
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: VcldInfo command with null property; expect Marshalling returns false.
+ */
+HWTEST(RSRenderLayerCmdTest, Marshall_VcldInfo_Fail, TestSize.Level1)
+{
+    RSVcldParam vcldInfo;
+    auto prop = std::make_shared<RSRenderLayerCmdProperty<RSVcldParam>>(vcldInfo);
+    auto cmd = std::make_shared<RSRenderLayerVcldInfoCmd>(prop);
     MessageParcel parcel;
     cmd->rsRenderLayerProperty_ = nullptr;
     ASSERT_FALSE(cmd->Marshalling(parcel));

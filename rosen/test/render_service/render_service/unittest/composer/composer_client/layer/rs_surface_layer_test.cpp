@@ -299,6 +299,12 @@ HWTEST_F(RSSurfaceLayerTest, LayerPropertiesChangeTest2, Function | SmallTest | 
     layer->SetCornerRadiusInfoForDRM(drmCornerRadiusInfo);
     EXPECT_EQ(layer->GetCornerRadiusInfoForDRM(), drmCornerRadiusInfo);
 
+    RSVcldParam vcldInfo;
+    vcldInfo.enable = true;
+    vcldInfo.radius = 25;
+    layer->SetVcldInfo(vcldInfo);
+    EXPECT_EQ(layer->GetVcldInfo(), vcldInfo);
+
     std::vector<float> matrix;
     layer->SetColorTransform(matrix);
     EXPECT_EQ(layer->GetColorTransform(), matrix);

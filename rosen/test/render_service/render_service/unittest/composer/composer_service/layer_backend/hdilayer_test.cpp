@@ -4868,6 +4868,115 @@ HWTEST_F(HdiLayerTest, SetPerFrameParameterBrightnessRatio_RatiosDifferZeroToPos
     ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
 }
 
+/**
+ * Function: SetPerFrameLayerVcldParamTest
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ *                  2. check ret
+ */
+ HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest001, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    RSVcldParam preLayerVcldInfo;
+    prevRSLayer->SetVcldInfo(preLayerVcldInfo);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "VcldParam", _))
+        .Times(1)
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerVcldParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerVcldParamTest
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ *                  2. check ret
+ */
+ HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest002, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    auto prevRSLayer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    RSVcldParam preLayerVcldInfo;
+    preLayerVcldInfo.enable = true;
+    preLayerVcldInfo.radius = 20;
+    prevRSLayer->SetVcldInfo(preLayerVcldInfo);
+    hdiLayer_->prevRSLayer_ = prevRSLayer;
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "VcldParam", _))
+        .Times(1)
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerVcldParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerVcldParamTest
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ *                  2. check ret
+ */
+ HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest003, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->prevRSLayer_ = nullptr;
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "VcldParam", _))
+        .Times(1)
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerVcldParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerVcldParamTest
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ *                  2. check ret
+ */
+ HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest004, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->prevRSLayer_ = nullptr;
+    RSVcldParam curVcldParam;
+    curVcldParam.enable = true;
+    hdiLayer_->rsLayer_->SetVcldInfo(curVcldParam);
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "VcldParam", _))
+        .Times(1)
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerVcldParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
+
+/**
+ * Function: SetPerFrameLayerVcldParamTest
+ * Type: Function
+ * Rank: Important(1)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Call SetPerFrameLayerVcldParam()
+ *                  2. check ret
+ */
+ HWTEST_F(HdiLayerTest, SetPerFrameLayerVcldParamTest005, Function | MediumTest| Level1)
+{
+    ASSERT_NE(hdiLayer_, nullptr);
+    hdiLayer_->prevRSLayer_ = nullptr;
+    RSVcldParam curVcldParam;
+    curVcldParam.enable = false;
+    curVcldParam.radius = 20;
+    hdiLayer_->rsLayer_->SetVcldInfo(curVcldParam);
+    EXPECT_CALL(*hdiDeviceMock_, SetLayerPerFrameParameterSmq(_, _, "VcldParam", _))
+        .Times(1)
+        .WillOnce(testing::Return(GRAPHIC_DISPLAY_SUCCESS));
+    auto ret = hdiLayer_->SetPerFrameLayerVcldParam();
+    ASSERT_EQ(ret, GRAPHIC_DISPLAY_SUCCESS);
+}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

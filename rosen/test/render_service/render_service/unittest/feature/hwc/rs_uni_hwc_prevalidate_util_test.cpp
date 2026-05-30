@@ -131,6 +131,34 @@ HWTEST_F(RSUniHwcPrevalidateUtilTest, CreateSurfaceNodeLayerInfoLayerLinearMatri
 }
 
 /**
+ * @tc.name: CreateSurfaceNodeLayerInfoVcldInfo
+ * @tc.desc: CreateSurfaceNodeLayerInfo, input surfaceNode with vcldInfo
+ * @tc.type: FUNC
+ * @tc.require: issueIBQDHZ
+ */
+HWTEST_F(RSUniHwcPrevalidateUtilTest, CreateSurfaceNodeLayerInfoVcldInfo, TestSize.Level1)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    uniHwcPrevalidateUtil.isVcldEnabled_ = true;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    auto stagingSurfaceParams = static_cast<RSSurfaceRenderParams *>(surfaceNode->GetStagingRenderParams().get());
+    ASSERT_NE(stagingSurfaceParams, nullptr);
+    RequestLayerInfo info;
+    bool ret = uniHwcPrevalidateUtil.CreateSurfaceNodeLayerInfo(
+        DEFAULT_Z_ORDER, surfaceNode, GraphicTransformType::GRAPHIC_ROTATE_180, DEFAULT_FPS, info);
+    ASSERT_EQ(ret, true);
+
+    auto surfaceNode1 = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode1, nullptr);
+    surfaceNode1->stagingRenderParams_ = nullptr;
+    RequestLayerInfo info1;
+    bool ret1 = uniHwcPrevalidateUtil.CreateSurfaceNodeLayerInfo(
+        DEFAULT_Z_ORDER, surfaceNode1, GraphicTransformType::GRAPHIC_ROTATE_180, DEFAULT_FPS, info1);
+    ASSERT_EQ(ret1, false);
+}
+
+/**
  * @tc.name: IsYUVBufferFormat001
  * @tc.desc: IsYUVBufferFormat, buffer is nullptr && format is invalid
  * @tc.type: FUNC
@@ -685,5 +713,59 @@ HWTEST_F(RSUniHwcPrevalidateUtilTest, CollectSurfaceNodeLayerInfo004, TestSize.L
     uint32_t zOrder = DEFAULT_Z_ORDER;
     uniHwcPrevalidateUtil.CollectSurfaceNodeLayerInfo(prevalidLayers, surfaceNodes, DEFAULT_FPS, zOrder);
     ASSERT_EQ(prevalidLayers.size(), 1);
+}
+
+/**
+ * @tc.name: UpdateLayerUsage
+ * @tc.desc: UpdateLayerUsage
+ * @tc.type: FUNC
+ * @tc.require: issueIAZAWR
+ */
+HWTEST_F(RSUniHwcPrevalidateUtilTest, UpdateLayerUsage, TestSize.Level1)
+{
+    auto& uniHwcPrevalidateUtil = RSUniHwcPrevalidateUtil::GetInstance();
+    auto surfaceNode1 = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    surfaceNode1->nodeType_ = RSSurfaceNodeType::CURSOR_NODE;
+    surfaceNode1->isHardCursor_ = true;
+    surfaceNode1->blendType_ = GraphicBlendType::GRAPHIC_BLEND_NONE;
+    RequestLayerInfo info;
+    ASSERT_EQ(surfaceNode1->GetBlendType(), 0);
+    uniHwcPrevalidateUtil.UpdateLayerUsage(surfaceNode1, info, true);
+}
+
+/**
+ * @tc.name: SetVcldInfoTest
+ * @tc.desc: Test SetVcldInfoTest
+ * @tc.type: FUNC
+ * @tc.require: issueIAZAWR
+ */
+HWTEST_F(RSUniHwcPrevalidateUtilTest, SetVcldInfoTest, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    node->InitRenderParams();
+    ASSERT_NE(node, nullptr);
+    RSVcldParam vcldInfo0;
+    node->SetVcldInfo(vcldInfo0);
+    ASSERT_FALSE(node->GetVcldInfo().enable);
+    RSVcldParam vcldInfo1;
+    vcldInfo1.enable = true;
+    vcldInfo1.radius = 20;
+    node->SetVcldInfo(vcldInfo1);
+    ASSERT_TRUE(node->GetVcldInfo().enable);
+}
+
+/**
+ * @tc.name: ResetVcldInfoTest
+ * @tc.desc: Test ResetVcldInfoTest
+ * @tc.type: FUNC
+ * @tc.require: issueIAZAWR
+ */
+HWTEST_F(RSUniHwcPrevalidateUtilTest, ResetVcldInfoTest, TestSize.Level1)
+{
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    node->stagingRenderParams_ = nullptr;
+    ASSERT_EQ(node->stagingRenderParams_, nullptr);
+    node->ResetVcldInfo();
 }
 }
