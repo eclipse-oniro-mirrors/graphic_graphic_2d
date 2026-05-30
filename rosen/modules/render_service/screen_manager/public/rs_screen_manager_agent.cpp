@@ -305,23 +305,23 @@ void RSScreenManagerAgent::SetScreenBacklight(const RsScreenBrightnessData& brig
     screenManager_->SetScreenBacklight(brightnessData);
 }
 
-int32_t RSScreenManagerAgent::GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+int32_t RSScreenManagerAgent::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
     uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const
 {
     if (!screenManager_) {
         RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManager_->GetDisplayVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
+    return screenManager_->GetScreenVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
 }
 
-int32_t RSScreenManagerAgent::SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+int32_t RSScreenManagerAgent::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
 {
     if (!screenManager_) {
         RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
         return StatusCode::SCREEN_NOT_FOUND;
     }
-    return screenManager_->SetDisplayVCPFeature(id, vcpCode, currentValue);
+    return screenManager_->SetScreenVCPFeature(id, vcpCode, currentValue);
 }
 
 void RSScreenManagerAgent::DisablePowerOffRenderControl(ScreenId id)

@@ -790,38 +790,38 @@ HWTEST_F(RSInterfacesTest, GetScreenBacklight002, Function | SmallTest | Level2)
 }
 
 /*
- * Function: GetDisplayVCPFeature
+ * Function: GetScreenVCPFeature
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
- * CaseDescription: 1. call GetDisplayVCPFeature
+ * CaseDescription: 1. call GetScreenVCPFeature
  *                  2. check return value
  */
-HWTEST_F(RSInterfacesTest, GetDisplayVCPFeature001, Function | SmallTest | Level2)
+HWTEST_F(RSInterfacesTest, GetScreenVCPFeature001, Function | SmallTest | Level2)
 {
     ASSERT_NE(rsInterfaces, nullptr);
     uint16_t currentValue = 0;
     uint16_t maximumValue = 0;
     int32_t errorCode = 0;
-    auto ret = rsInterfaces->GetDisplayVCPFeature(INVALID_SCREEN_ID, 0x10,
+    auto ret = rsInterfaces->GetScreenVCPFeature(INVALID_SCREEN_ID, 0x10,
         currentValue, maximumValue, errorCode);
     ASSERT_NE(ret, 0);
 }
 
 /*
- * Function: SetDisplayVCPFeature
+ * Function: SetScreenVCPFeature
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
- * CaseDescription: 1. call SetDisplayVCPFeature
+ * CaseDescription: 1. call SetScreenVCPFeature
  *                  2. check return value
  */
-HWTEST_F(RSInterfacesTest, SetDisplayVCPFeature001, Function | SmallTest | Level2)
+HWTEST_F(RSInterfacesTest, SetScreenVCPFeature001, Function | SmallTest | Level2)
 {
     ASSERT_NE(rsInterfaces, nullptr);
     uint16_t currentValue = 50;
     ScreenId id = INVALID_SCREEN_ID;
-    auto ret = rsInterfaces->SetDisplayVCPFeature(id, 0x10, currentValue);
+    auto ret = rsInterfaces->SetScreenVCPFeature(id, 0x10, currentValue);
     ASSERT_NE(ret, 0);
 }
 

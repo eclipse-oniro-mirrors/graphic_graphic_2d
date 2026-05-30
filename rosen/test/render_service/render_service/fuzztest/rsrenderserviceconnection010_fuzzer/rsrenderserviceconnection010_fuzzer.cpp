@@ -81,8 +81,8 @@ const uint8_t DO_NOTIFY_XCOMPONENT_EXPECTED_FRAME_RATE = 3;
 const uint8_t DO_SET_OPTIMIZE_CANVAS_DRITY_PIDLIST = 4;
 const uint8_t DO_SET_GPU_CRCDIRTY_ENABLE_PIDLIST = 5;
 const uint8_t DO_SET_VIRTUAL_SCREEN_AUTO_ROTATION = 6;
-const uint8_t DO_GET_DISPLAY_VCP_FEATURE = 7;
-const uint8_t DO_SET_DISPLAY_VCP_FEATURE = 8;
+const uint8_t DO_GET_SCREEN_VCP_FEATURE = 7;
+const uint8_t DO_SET_SCREEN_VCP_FEATURE = 8;
 const uint8_t TARGET_SIZE = 9;
 
 const uint8_t* DATA = nullptr;
@@ -312,9 +312,9 @@ bool DoSetVirtualScreenAutoRotation()
     return true;
 }
 
-void DoGetDisplayVCPFeature()
+void DoGetScreenVCPFeature()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_DISPLAY_VCP_FEATURE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_VCP_FEATURE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -335,9 +335,9 @@ void DoGetDisplayVCPFeature()
     g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
-void DoSetDisplayVCPFeature()
+void DoSetScreenVCPFeature()
 {
-    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_DISPLAY_VCP_FEATURE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_VCP_FEATURE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -585,11 +585,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_AUTO_ROTATION:
             OHOS::Rosen::DoSetVirtualScreenAutoRotation();
             break;
-        case OHOS::Rosen::DO_GET_DISPLAY_VCP_FEATURE:
-            OHOS::Rosen::DoGetDisplayVCPFeature();
+        case OHOS::Rosen::DO_GET_SCREEN_VCP_FEATURE:
+            OHOS::Rosen::DoGetScreenVCPFeature();
             break;
-        case OHOS::Rosen::DO_SET_DISPLAY_VCP_FEATURE:
-            OHOS::Rosen::DoSetDisplayVCPFeature();
+        case OHOS::Rosen::DO_SET_SCREEN_VCP_FEATURE:
+            OHOS::Rosen::DoSetScreenVCPFeature();
             break;
         default:
             return -1;

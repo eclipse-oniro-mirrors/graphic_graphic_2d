@@ -597,15 +597,15 @@ void RSInterfaces::SetScreenBacklight(const RsScreenBrightnessData& brightnessDa
     renderServiceClient_->SetScreenBacklight(brightnessData);
 }
 
-int32_t RSInterfaces::GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+int32_t RSInterfaces::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
     uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
 {
-    return renderServiceClient_->GetDisplayVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
+    return renderServiceClient_->GetScreenVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
 }
 
-int32_t RSInterfaces::SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+int32_t RSInterfaces::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
 {
-    return renderServiceClient_->SetDisplayVCPFeature(id, vcpCode, currentValue);
+    return renderServiceClient_->SetScreenVCPFeature(id, vcpCode, currentValue);
 }
 
 int32_t RSInterfaces::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)

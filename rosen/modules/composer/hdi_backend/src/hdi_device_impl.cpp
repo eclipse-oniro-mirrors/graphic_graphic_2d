@@ -276,14 +276,14 @@ int32_t HdiDeviceImpl::SetScreenBacklight(uint32_t screenId, uint32_t level)
     return g_composer->SetDisplayBacklight(screenId, level);
 }
 
-int32_t HdiDeviceImpl::GetDisplayVCPFeature(uint32_t screenId, uint8_t vcpCode,
+int32_t HdiDeviceImpl::GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
     uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
 {
     CHECK_FUNC(g_composer);
     return g_composer->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
 }
 
-int32_t HdiDeviceImpl::SetDisplayVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
+int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
 {
     CHECK_FUNC(g_composer);
     return g_composer->SetDisplayVCPFeature(screenId, vcpCode, currentValue);

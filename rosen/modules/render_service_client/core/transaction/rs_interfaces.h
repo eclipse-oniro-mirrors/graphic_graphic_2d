@@ -742,7 +742,7 @@ public:
      * @param errorCode Output parameter for error code.
      * @return 0 success, others failed.
      */
-    int32_t GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+    int32_t GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
         uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode);
 
     /**
@@ -752,7 +752,7 @@ public:
      * @param currentValue Input parameter for current value.
      * @return 0 success, others failed.
      */
-    int32_t SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
+    int32_t SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
 
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode);
 

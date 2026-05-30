@@ -28,26 +28,26 @@ namespace Rosen {
 sptr<RSScreenManager> g_screenManager;
 
 namespace {
-constexpr uint8_t DO_GET_DISPLAY_VCP_FEATURE = 0;
-constexpr uint8_t DO_SET_DISPLAY_VCP_FEATURE = 1;
+constexpr uint8_t DO_GET_SCREEN_VCP_FEATURE = 0;
+constexpr uint8_t DO_SET_SCREEN_VCP_FEATURE = 1;
 constexpr uint8_t TARGET_SIZE = 2;
 
-void DoGetDisplayVCPFeature(FuzzedDataProvider& fdp)
+void DoGetScreenVCPFeature(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegralInRange<ScreenId>(0, 255);
     uint8_t vcpCode = fdp.ConsumeIntegral<uint8_t>();
     uint16_t currentValue = fdp.ConsumeIntegral<uint16_t>();
     uint16_t maximumValue = fdp.ConsumeIntegral<uint16_t>();
     int32_t errorCode = fdp.ConsumeIntegral<int32_t>();
-    g_screenManager->GetDisplayVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
+    g_screenManager->GetScreenVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
 }
 
-void DoSetDisplayVCPFeature(FuzzedDataProvider& fdp)
+void DoSetScreenVCPFeature(FuzzedDataProvider& fdp)
 {
     ScreenId id = fdp.ConsumeIntegralInRange<ScreenId>(0, 255);
     uint8_t vcpCode = fdp.ConsumeIntegral<uint8_t>();
     uint16_t currentValue = fdp.ConsumeIntegral<uint16_t>();
-    g_screenManager->SetDisplayVCPFeature(id, vcpCode, currentValue);
+    g_screenManager->SetScreenVCPFeature(id, vcpCode, currentValue);
 }
 
 } // namespace
@@ -80,11 +80,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     uint8_t tarPos = fdp.ConsumeIntegral<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
-        case OHOS::Rosen::DO_GET_DISPLAY_VCP_FEATURE:
-            OHOS::Rosen::DoGetDisplayVCPFeature(fdp);
+        case OHOS::Rosen::DO_GET_SCREEN_VCP_FEATURE:
+            OHOS::Rosen::DoGetScreenVCPFeature(fdp);
             break;
-        case OHOS::Rosen::DO_SET_DISPLAY_VCP_FEATURE:
-            OHOS::Rosen::DoSetDisplayVCPFeature(fdp);
+        case OHOS::Rosen::DO_SET_SCREEN_VCP_FEATURE:
+            OHOS::Rosen::DoSetScreenVCPFeature(fdp);
             break;
         default:
             return -1;

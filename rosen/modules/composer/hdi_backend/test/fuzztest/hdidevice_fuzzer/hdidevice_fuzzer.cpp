@@ -87,8 +87,8 @@ namespace OHOS {
         std::string validKey = "ArsrDoEnhance";
         device->SetLayerPerFrameParameter(screenId, layerId, validKey, valueBlob);
 
-        device->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
-        device->SetDisplayVCPFeature(screenId, vcpCode, currentValue);
+        device->GetScreenVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
+        device->SetScreenVCPFeature(screenId, vcpCode, currentValue);
     }
 
     void HdiDeviceFuzzTest2()

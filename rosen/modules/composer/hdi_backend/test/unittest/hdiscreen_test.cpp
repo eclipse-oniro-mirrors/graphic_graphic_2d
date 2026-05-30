@@ -48,8 +48,8 @@ void HdiScreenTest::SetUpTestCase()
     EXPECT_CALL(*mockDevice_, SetScreenPowerStatus(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, GetScreenBacklight(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, SetScreenBacklight(_, _)).WillRepeatedly(testing::Return(0));
-    EXPECT_CALL(*mockDevice_, GetDisplayVCPFeature(_, _, _, _, _)).WillRepeatedly(testing::Return(0));
-    EXPECT_CALL(*mockDevice_, SetDisplayVCPFeature(_, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetScreenVCPFeature(_, _, _, _, _)).WillRepeatedly(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, SetScreenVCPFeature(_, _, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, GetScreenSupportedColorGamuts(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, SetScreenColorGamut(_, _)).WillRepeatedly(testing::Return(0));
     EXPECT_CALL(*mockDevice_, GetScreenColorGamut(_, _)).WillRepeatedly(testing::Return(0));
@@ -432,14 +432,14 @@ HWTEST_F(HdiScreenTest, GetDisplayPropertyForHardCursor001, Function | MediumTes
 }
 
 /*
- * Function: GetDisplayVCPFeature001
+ * Function: GetScreenVCPFeature001
  * Type: Function
  * Rank: Important(3)
  * EnvConditions: N/A
- * CaseDescription: 1. call GetDisplayVCPFeature when device is null
+ * CaseDescription: 1. call GetScreenVCPFeature when device is null
  *                  2. check ret
  */
-HWTEST_F(HdiScreenTest, GetDisplayVCPFeature001, Function | MediumTest | Level3)
+HWTEST_F(HdiScreenTest, GetScreenVCPFeature001, Function | MediumTest | Level3)
 {
     ASSERT_NE(hdiScreen_, nullptr);
     uint16_t currentValue = 0;
@@ -447,65 +447,65 @@ HWTEST_F(HdiScreenTest, GetDisplayVCPFeature001, Function | MediumTest | Level3)
     int32_t errorCode = 0;
     auto device = hdiScreen_->device_;
     hdiScreen_->device_ = nullptr;
-    auto ret = hdiScreen_->GetDisplayVCPFeature(0x10, currentValue, maximumValue, errorCode);
+    auto ret = hdiScreen_->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode);
     ASSERT_NE(ret, 0);
     hdiScreen_->device_ = device;
 }
 
 /*
- * Function: GetDisplayVCPFeature002
+ * Function: GetScreenVCPFeature002
  * Type: Function
  * Rank: Important(3)
  * EnvConditions: N/A
- * CaseDescription: 1. call GetDisplayVCPFeature when device returns Ok
+ * CaseDescription: 1. call GetScreenVCPFeature when device returns Ok
  *                  2. check ret
  */
-HWTEST_F(HdiScreenTest, GetDisplayVCPFeature002, Function | MediumTest | Level3)
+HWTEST_F(HdiScreenTest, GetScreenVCPFeature002, Function | MediumTest | Level3)
 {
     ASSERT_NE(hdiScreen_, nullptr);
     uint16_t currentValue = 0;
     uint16_t maximumValue = 0;
     int32_t errorCode = 0;
-    EXPECT_CALL(*mockDevice_, GetDisplayVCPFeature).WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, GetScreenVCPFeature).WillOnce(testing::Return(0));
     hdiScreen_->device_ = mockDevice_;
-    auto ret = hdiScreen_->GetDisplayVCPFeature(0x10, currentValue, maximumValue, errorCode);
+    auto ret = hdiScreen_->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode);
     ASSERT_EQ(ret, 0);
 }
 
 /*
- * Function: SetDisplayVCPFeature001
+ * Function: SetScreenVCPFeature001
  * Type: Function
  * Rank: Important(3)
  * EnvConditions: N/A
- * CaseDescription: 1. call SetDisplayVCPFeature when device is null
+ * CaseDescription: 1. call SetScreenVCPFeature when device is null
  *                  2. check ret
  */
-HWTEST_F(HdiScreenTest, SetDisplayVCPFeature001, Function | MediumTest | Level3)
+HWTEST_F(HdiScreenTest, SetScreenVCPFeature001, Function | MediumTest | Level3)
 {
     ASSERT_NE(hdiScreen_, nullptr);
     uint16_t currentValue = 50;
     auto device = hdiScreen_->device_;
     hdiScreen_->device_ = nullptr;
-    auto ret = hdiScreen_->SetDisplayVCPFeature(0x10, currentValue);
+    auto ret = hdiScreen_->SetScreenVCPFeature(0x10, currentValue);
     ASSERT_NE(ret, 0);
     hdiScreen_->device_ = device;
 }
 
 /*
- * Function: SetDisplayVCPFeature002
+ * Function: SetScreenVCPFeature002
  * Type: Function
  * Rank: Important(3)
  * EnvConditions: N/A
- * CaseDescription: 1. call SetDisplayVCPFeature when device returns Ok
+ * CaseDescription: 1. call SetScreenVCPFeature when device returns Ok
  *                  2. check ret
  */
-HWTEST_F(HdiScreenTest, SetDisplayVCPFeature002, Function | MediumTest | Level3)
+HWTEST_F(HdiScreenTest, SetScreenVCPFeature002, Function | MediumTest | Level3)
 {
     ASSERT_NE(hdiScreen_, nullptr);
     uint16_t currentValue = 50;
-    EXPECT_CALL(*mockDevice_, SetDisplayVCPFeature).WillOnce(testing::Return(0));
+    EXPECT_CALL(*mockDevice_, SetScreenVCPFeature).WillOnce(testing::Return(0));
     hdiScreen_->device_ = mockDevice_;
-    auto ret = hdiScreen_->SetDisplayVCPFeature(0x10, currentValue);
+    auto ret = hdiScreen_->SetScreenVCPFeature(0x10, currentValue);
     ASSERT_EQ(ret, 0);
 }
 } // namespace

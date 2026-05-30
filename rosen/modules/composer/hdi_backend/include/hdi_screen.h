@@ -47,9 +47,9 @@ public:
     int32_t GetScreenBacklight(uint32_t &level) const;
     int32_t SetScreenVsyncEnabled(bool enabled) const;
 
-    int32_t GetDisplayVCPFeature(uint8_t vcpCode,
+    int32_t GetScreenVCPFeature(uint8_t vcpCode,
         uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const;
-    int32_t SetDisplayVCPFeature(uint8_t vcpCode, uint16_t currentValue);
+    int32_t SetScreenVCPFeature(uint8_t vcpCode, uint16_t currentValue);
 
     int32_t GetScreenSupportedColorGamuts(std::vector<GraphicColorGamut> &gamuts) const;
     int32_t SetScreenColorGamut(GraphicColorGamut gamut) const;

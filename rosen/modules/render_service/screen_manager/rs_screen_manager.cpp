@@ -1092,7 +1092,7 @@ void RSScreenManager::SetScreenBacklight(const RsScreenBrightnessData& brightnes
     screenBacklight_[brightnessData.screenId] = brightnessData.level;
 }
 
-int32_t RSScreenManager::GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+int32_t RSScreenManager::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
     uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const
 {
     auto screen = GetScreen(id);
@@ -1101,10 +1101,10 @@ int32_t RSScreenManager::GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
         return StatusCode::SCREEN_NOT_FOUND;
     }
     RS_OPTIONAL_TRACE_NAME_FMT("RSScreenManager::%s, id:[%" PRIu64 "]. vcpCode:%" PRIu8, __func__, id, vcpCode);
-    return screen->GetDisplayVCPFeature(vcpCode, currentValue, maximumValue, errorCode);
+    return screen->GetScreenVCPFeature(vcpCode, currentValue, maximumValue, errorCode);
 }
 
-int32_t RSScreenManager::SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+int32_t RSScreenManager::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
 {
     auto screen = GetScreen(id);
     if (screen == nullptr) {
@@ -1114,7 +1114,7 @@ int32_t RSScreenManager::SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode, uint
     }
     RS_OPTIONAL_TRACE_NAME_FMT("RSScreenManager::%s, id:[%" PRIu64 "]. vcpCode:%" PRIu8
         " value:%" PRIu16, __func__, id, vcpCode, currentValue);
-    return screen->SetDisplayVCPFeature(vcpCode, currentValue);
+    return screen->SetScreenVCPFeature(vcpCode, currentValue);
 }
 
 PanelPowerStatus RSScreenManager::GetPanelPowerStatus(ScreenId id) const

@@ -1469,12 +1469,12 @@ HWTEST_F(RSScreenTest, GetScreenBacklight_002, testing::ext::TestSize.Level1)
 }
 
 /*
- * @tc.name: GetDisplayVCPFeature_001
- * @tc.desc: GetDisplayVCPFeature Test, hdiScreen_->GetDisplayVCPFeature fails
+ * @tc.name: GetScreenVCPFeature_001
+ * @tc.desc: GetScreenVCPFeature Test, hdiScreen_->GetScreenVCPFeature fails
  * @tc.type: FUNC
  * @tc.require: issueIAIRAN
  */
-HWTEST_F(RSScreenTest, GetDisplayVCPFeature_001, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, GetScreenVCPFeature_001, testing::ext::TestSize.Level1)
 {
     auto rsScreen = std::make_shared<RSScreen>(0);
     ASSERT_NE(nullptr, rsScreen);
@@ -1484,20 +1484,20 @@ HWTEST_F(RSScreenTest, GetDisplayVCPFeature_001, testing::ext::TestSize.Level1)
     uint16_t currentValue = 0;
     uint16_t maximumValue = 0;
     int32_t errorCode = 0;
-    EXPECT_CALL(*hdiDeviceMock_, GetDisplayVCPFeature).Times(1).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock_, GetScreenVCPFeature).Times(1).WillOnce(testing::Return(0));
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
 
-    auto result = rsScreen->GetDisplayVCPFeature(0x10, currentValue, maximumValue, errorCode);
+    auto result = rsScreen->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode);
     ASSERT_EQ(result, 0);
 }
 
 /*
- * @tc.name: GetDisplayVCPFeature_002
- * @tc.desc: Test GetDisplayVCPFeature with null hdiScreen
+ * @tc.name: GetScreenVCPFeature_002
+ * @tc.desc: Test GetScreenVCPFeature with null hdiScreen
  * @tc.type: FUNC
  * @tc.require: issueIAIRAN
  */
-HWTEST_F(RSScreenTest, GetDisplayVCPFeature_002, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, GetScreenVCPFeature_002, testing::ext::TestSize.Level1)
 {
     auto rsScreen = std::make_shared<RSScreen>(0);
     ASSERT_NE(nullptr, rsScreen);
@@ -1509,17 +1509,17 @@ HWTEST_F(RSScreenTest, GetDisplayVCPFeature_002, testing::ext::TestSize.Level1)
     uint16_t currentValue = 0;
     uint16_t maximumValue = 0;
     int32_t errorCode = 0;
-    ASSERT_NE(rsScreen->GetDisplayVCPFeature(0x10, currentValue, maximumValue, errorCode), 0);
-    ASSERT_NE(virtualScreen->GetDisplayVCPFeature(0x10, currentValue, maximumValue, errorCode), 0);
+    ASSERT_NE(rsScreen->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode), 0);
+    ASSERT_NE(virtualScreen->GetScreenVCPFeature(0x10, currentValue, maximumValue, errorCode), 0);
 }
 
 /*
- * @tc.name: SetDisplayVCPFeature_001
- * @tc.desc: SetDisplayVCPFeature Test, hdiScreen_->SetDisplayVCPFeature success
+ * @tc.name: SetScreenVCPFeature_001
+ * @tc.desc: SetScreenVCPFeature Test, hdiScreen_->SetScreenVCPFeature success
  * @tc.type: FUNC
  * @tc.require: issueIAIRAN
  */
-HWTEST_F(RSScreenTest, SetDisplayVCPFeature_001, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, SetScreenVCPFeature_001, testing::ext::TestSize.Level1)
 {
     auto rsScreen = std::make_shared<RSScreen>(0);
     ASSERT_NE(nullptr, rsScreen);
@@ -1528,19 +1528,19 @@ HWTEST_F(RSScreenTest, SetDisplayVCPFeature_001, testing::ext::TestSize.Level1)
     rsScreen->hdiScreen_->device_ = hdiDeviceMock_;
 
     uint16_t currentValue = 50;
-    EXPECT_CALL(*hdiDeviceMock_, SetDisplayVCPFeature).Times(1).WillOnce(testing::Return(0));
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenVCPFeature).Times(1).WillOnce(testing::Return(0));
 
-    auto result = rsScreen->SetDisplayVCPFeature(0x10, currentValue);
+    auto result = rsScreen->SetScreenVCPFeature(0x10, currentValue);
     ASSERT_EQ(result, 0);
 }
 
 /*
- * @tc.name: SetDisplayVCPFeature_002
- * @tc.desc: Test SetDisplayVCPFeature with null hdiScreen and virtualScreen
+ * @tc.name: SetScreenVCPFeature_002
+ * @tc.desc: Test SetScreenVCPFeature with null hdiScreen and virtualScreen
  * @tc.type: FUNC
  * @tc.require: issueIAIRAN
  */
-HWTEST_F(RSScreenTest, GetDisplayVCPFeature_002, testing::ext::TestSize.Level1)
+HWTEST_F(RSScreenTest, GetScreenVCPFeature_002, testing::ext::TestSize.Level1)
 {
     auto rsScreen = std::make_shared<RSScreen>(0);
     ASSERT_NE(nullptr, rsScreen);
@@ -1550,8 +1550,8 @@ HWTEST_F(RSScreenTest, GetDisplayVCPFeature_002, testing::ext::TestSize.Level1)
     ASSERT_NE(nullptr, virtualScreen);
 
     uint16_t currentValue = 0;
-    ASSERT_NE(rsScreen->SetDisplayVCPFeature(0x10, currentValue), 0);
-    ASSERT_NE(virtualScreen->SetDisplayVCPFeature(0x10, currentValue), 0);
+    ASSERT_NE(rsScreen->SetScreenVCPFeature(0x10, currentValue), 0);
+    ASSERT_NE(virtualScreen->SetScreenVCPFeature(0x10, currentValue), 0);
 }
 
 /*

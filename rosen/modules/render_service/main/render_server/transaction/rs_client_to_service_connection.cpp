@@ -1173,25 +1173,25 @@ void RSClientToServiceConnection::SetScreenBacklight(const RsScreenBrightnessDat
     screenManagerAgent_->SetScreenBacklight(brightnessData);
 }
 
-ErrCode RSClientToServiceConnection::GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+ErrCode RSClientToServiceConnection::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
     uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
 {
     if (!screenManagerAgent_) {
         RS_LOGE("%{public}s screenManagerAgent_ is nullptr.", __func__);
         return ERR_INVALID_VALUE;
     }
-    return screenManagerAgent_->GetDisplayVCPFeature(id, vcpCode,
+    return screenManagerAgent_->GetScreenVCPFeature(id, vcpCode,
         currentValue, maximumValue, errorCode);
 }
 
-ErrCode RSClientToServiceConnection::SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+ErrCode RSClientToServiceConnection::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
     uint16_t currentValue)
 {
     if (!screenManagerAgent_) {
         RS_LOGE("%{public}s screenManagerAgent_ is nullptr.", __func__);
         return ERR_INVALID_VALUE;
     }
-    return screenManagerAgent_->SetDisplayVCPFeature(id, vcpCode, currentValue);
+    return screenManagerAgent_->SetScreenVCPFeature(id, vcpCode, currentValue);
 }
 
 ErrCode RSClientToServiceConnection::GetPanelPowerStatus(ScreenId screenId, PanelPowerStatus& status)

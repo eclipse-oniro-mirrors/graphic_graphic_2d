@@ -420,12 +420,12 @@ HWTEST_F(RSScreenManagerAgentTest, GetScreenBacklight001, TestSize.Level1)
 }
 
 /*
- * @tc.name: GetDisplayVCPFeature001
- * @tc.desc: Test GetDisplayVCPFeature
+ * @tc.name: GetScreenVCPFeature001
+ * @tc.desc: Test GetScreenVCPFeature
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSScreenManagerAgentTest, GetDisplayVCPFeature001, TestSize.Level1)
+HWTEST_F(RSScreenManagerAgentTest, GetScreenVCPFeature001, TestSize.Level1)
 {
     ScreenId screenId = GenerateScreenId();
     uint16_t currentValue = 0;
@@ -433,31 +433,31 @@ HWTEST_F(RSScreenManagerAgentTest, GetDisplayVCPFeature001, TestSize.Level1)
     int32_t errorCode = 0;
     auto screenManager = screenManagerAgent_->screenManager_;
     screenManagerAgent_->screenManager_ = nullptr;
-    auto result = screenManagerAgent_->GetDisplayVCPFeature(
+    auto result = screenManagerAgent_->GetScreenVCPFeature(
         screenId, 0x10, currentValue, maximumValue, errorCode);
     ASSERT_NE(result, 0);
 
     screenManagerAgent_->screenManager_ = screenManager;
-    screenManagerAgent_->GetDisplayVCPFeature(screenId, 0x10, currentValue, maximumValue, errorCode);
+    screenManagerAgent_->GetScreenVCPFeature(screenId, 0x10, currentValue, maximumValue, errorCode);
 }
 
 /*
- * @tc.name: SetDisplayVCPFeature001
- * @tc.desc: Test SetDisplayVCPFeature
+ * @tc.name: SetScreenVCPFeature001
+ * @tc.desc: Test SetScreenVCPFeature
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSScreenManagerAgentTest, SetDisplayVCPFeature001, TestSize.Level1)
+HWTEST_F(RSScreenManagerAgentTest, SetScreenVCPFeature001, TestSize.Level1)
 {
     ScreenId screenId = GenerateScreenId();
     uint16_t currentValue = 50;
     auto screenManager = screenManagerAgent_->screenManager_;
     screenManagerAgent_->screenManager_ = nullptr;
-    auto result = screenManagerAgent_->SetDisplayVCPFeature(screenId, 0x10, currentValue);
+    auto result = screenManagerAgent_->SetScreenVCPFeature(screenId, 0x10, currentValue);
     ASSERT_NE(result, 0);
 
     screenManagerAgent_->screenManager_ = screenManager;
-    screenManagerAgent_->SetDisplayVCPFeature(screenId, 0x10, currentValue);
+    screenManagerAgent_->SetScreenVCPFeature(screenId, 0x10, currentValue);
 }
 
 /*

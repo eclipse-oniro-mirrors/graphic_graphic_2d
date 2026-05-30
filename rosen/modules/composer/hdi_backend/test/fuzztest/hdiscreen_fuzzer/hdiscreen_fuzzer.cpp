@@ -93,8 +93,8 @@ namespace OHOS {
         g_hdiScreen->GetSupportedMetaDataKey(keys);
         g_hdiScreen->SetScreenConstraint(frameId, timestamp, type);
 
-        g_hdiScreen->GetDisplayVCPFeature(vcpCode, currentValue, maximumValue, errorCode);
-        g_hdiScreen->SetDisplayVCPFeature(vcpCode, currentValue);
+        g_hdiScreen->GetScreenVCPFeature(vcpCode, currentValue, maximumValue, errorCode);
+        g_hdiScreen->SetScreenVCPFeature(vcpCode, currentValue);
         g_hdiScreen = nullptr;
     }
 

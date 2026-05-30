@@ -106,9 +106,9 @@ public:
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData);
     int32_t GetScreenBacklight(ScreenId id) const;
 
-    int32_t GetDisplayVCPFeature(ScreenId id, uint8_t vcpCode,
+    int32_t GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
         uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const;
-    int32_t SetDisplayVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
+    int32_t SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
 
     int32_t SetScreenConstraint(ScreenId id, uint64_t timestamp, ScreenConstraintType type);
 
