@@ -25,6 +25,7 @@
 #include "utils/object_helper.h"
 #endif
 #include "transaction/rs_marshalling_helper.h"
+#include "effect_test_utils.h"
 
 using namespace testing;
 using namespace testing::ext;
