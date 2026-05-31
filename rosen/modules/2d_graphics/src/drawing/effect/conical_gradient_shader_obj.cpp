@@ -65,7 +65,7 @@ std::shared_ptr<void> ConicalGradientShaderObj::GenerateBaseObject()
         return nullptr;
     }
 
-    auto gradientShader = ShaderEffect::CreateTwoPointConical(startPt_, startRadius_, endPt_, endRadius_,
+    auto gradientShader = ShaderEffect::CreateTwoPointConicalNotLazy(startPt_, startRadius_, endPt_, endRadius_,
         colors_, colorSpace_, pos_, mode_, matrix_.get());
     return std::static_pointer_cast<void>(gradientShader);
 }
@@ -111,7 +111,8 @@ bool ConicalGradientShaderObj::Unmarshalling(Parcel& parcel, bool& isValid, int3
     }
 
     // Read start point
-    scalar startX, startY;
+    scalar startX;
+    scalar startY;
     if (!parcel.ReadFloat(startX) || !parcel.ReadFloat(startY)) {
         LOGE("ConicalGradientShaderObj::Unmarshalling, failed to read start point");
         return false;
@@ -125,7 +126,8 @@ bool ConicalGradientShaderObj::Unmarshalling(Parcel& parcel, bool& isValid, int3
     }
 
     // Read end point
-    scalar endX, endY;
+    scalar endX;
+    scalar endY;
     if (!parcel.ReadFloat(endX) || !parcel.ReadFloat(endY)) {
         LOGE("ConicalGradientShaderObj::Unmarshalling, failed to read end point");
         return false;
