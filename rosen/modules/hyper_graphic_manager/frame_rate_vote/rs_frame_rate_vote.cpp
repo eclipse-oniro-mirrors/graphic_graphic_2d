@@ -289,8 +289,8 @@ bool RSFrameRateVote::CheckSurfaceNodeIdChange(uint64_t surfaceNodeId)
 
     const uint64_t lastId = lastSurfaceNodeId_.load();
     if (surfaceNodeId != lastId && static_cast<uint64_t>(duration) < DANMU_MAX_INTERVAL_TIME) {
-        RS_LOGI("sId changed, curId: %{public}" PRIu64 ", lastId: %{public}" PRIu64 ", duration: %{public}lld",
-            surfaceNodeId, lastId, duration);
+        RS_LOGI("sId changed, curId: %{public}" PRIu64 ", lastId: %{public}" PRIu64 "",
+            surfaceNodeId, lastId);
         return true;
     }
     return false;
