@@ -83,12 +83,35 @@ bool GradientShaderObjBase::MarshalCommonData(Parcel& parcel) const
 
     // Write matrix if present
     if (hasMatrix) {
-        const scalar* matrixData = matrix_->GetData();
-        for (int i = 0; i < 9; i++) {
-            if (!parcel.WriteFloat(matrixData[i])) {
+        Matrix::Buffer buffer;
+        matrix_->GetAll(buffer);
+        for (int i = 0; i < Matrix::MATRIX_SIZE; i++) {
+            if (!parcel.WriteFloat(buffer[i])) {
                 LOGE("GradientShaderObjBase::MarshalCommonData, failed to write matrix data");
                 return false;
             }
+        }
+    }
+
+    // Write colorSpace
+    auto colorSpaceData = colorSpace_ ? colorSpace_->Serialize() : nullptr;
+    if (colorSpaceData && colorSpaceData->GetSize() > 0) {
+        if (!parcel.WriteBool(true)) {
+            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace flag");
+            return false;
+        }
+        if (!parcel.WriteUint32(colorSpaceData->GetSize())) {
+            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace size");
+            return false;
+        }
+        if (!parcel.WriteBuffer(colorSpaceData->GetData(), colorSpaceData->GetSize())) {
+            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace data");
+            return false;
+        }
+    } else {
+        if (!parcel.WriteBool(false)) {
+            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace flag");
+            return false;
         }
     }
 
@@ -108,7 +131,11 @@ bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
     colors_.clear();
     colors_.reserve(colorCount);
     for (uint32_t i = 0; i < colorCount; i++) {
-        float r, g, b, a, h;
+        float r;
+        float g;
+        float b;
+        float a;
+        float h;
         if (!parcel.ReadFloat(r) || !parcel.ReadFloat(g) || !parcel.ReadFloat(b) ||
             !parcel.ReadFloat(a) || !parcel.ReadFloat(h)) {
             LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read color");
@@ -154,7 +181,7 @@ bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
     // Read matrix if present
     if (hasMatrix) {
         Matrix::Buffer buffer;
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < Matrix::MATRIX_SIZE; i++) {
             if (!parcel.ReadFloat(buffer[i])) {
                 LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read matrix data");
                 return false;
@@ -166,8 +193,36 @@ bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
         matrix_ = nullptr;
     }
 
-    // Note: colorSpace_ is not marshalled for now (requires complex handling)
-    colorSpace_ = nullptr;
+    // Read colorSpace
+    bool hasColorSpace;
+    if (!parcel.ReadBool(hasColorSpace)) {
+        LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read colorSpace flag");
+        return false;
+    }
+    if (hasColorSpace) {
+        uint32_t colorSpaceSize;
+        if (!parcel.ReadUint32(colorSpaceSize)) {
+            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read colorSpace size");
+            return false;
+        }
+        const uint8_t* colorSpaceBuffer = parcel.ReadBuffer(colorSpaceSize);
+        if (!colorSpaceBuffer) {
+            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read colorSpace data");
+            return false;
+        }
+        auto colorSpaceData = std::make_shared<Data>();
+        if (!colorSpaceData->BuildWithCopy(colorSpaceBuffer, colorSpaceSize)) {
+            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to create colorSpace data");
+            return false;
+        }
+        colorSpace_ = ColorSpace::CreateSRGB();
+        if (!colorSpace_->Deserialize(colorSpaceData)) {
+            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to deserialize colorSpace");
+            return false;
+        }
+    } else {
+        colorSpace_ = nullptr;
+    }
 
     return true;
 }
