@@ -112,9 +112,6 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
     SetVirtualScreenSize(screenDrawable);
 
     renderFrameConfig_.usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_MEM_DMA;
-    FrameContextConfig frameContextConfig = FrameContextConfig(false);
-    frameContextConfig.isVirtual = true;
-    frameContextConfig.timeOut = 0;
 
     RequestFramesForAllSurfaces(screenDrawable);
     // surfaceFrames_[0] is always the primary surface (the first successfully created frame).
@@ -314,6 +311,10 @@ GSError RSUniRenderVirtualProcessor::SetColorSpaceForMetadata(GraphicColorGamut 
 GSError RSUniRenderVirtualProcessor::SetMetadataForAllSurfaces(uint32_t key, const std::vector<uint8_t>& data)
 {
     GSError finalResult = GSERROR_OK;
+    if (surfaceFrames_.empty()) {
+        RS_LOGD("%{public}s: No surface frames available to set metadata.", __func__);
+        return GSERROR_INVALID_ARGUMENTS;
+    }
     for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
         auto& frame = surfaceFrames_[i].frame;
         if (!frame) {

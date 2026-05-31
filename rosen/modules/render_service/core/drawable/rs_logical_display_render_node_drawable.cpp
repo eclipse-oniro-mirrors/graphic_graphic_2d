@@ -386,7 +386,6 @@ void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRende
     // Check for multi-surface extend mode (only when surfaces have specified regions)
     auto virtualProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
     bool isMultiSurfaceExtend = virtualProcessor && virtualProcessor->IsMultiSurfaceExtendMode();
-
     if (isMultiSurfaceExtend) {
         if (screenParam->GetHDRPresent()) {
             curCanvas_->SetHDREnabledVirtualScreen(true);

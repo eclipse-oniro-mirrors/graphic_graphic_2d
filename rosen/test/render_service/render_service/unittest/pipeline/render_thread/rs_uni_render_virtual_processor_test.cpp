@@ -2818,22 +2818,11 @@ HWTEST_F(RSUniRenderVirtualProcessorTest, FlushBuffer_ValidFrame, TestSize.Level
     ASSERT_NE(csurf, nullptr);
     auto producer = csurf->GetProducer();
     auto pSurface = Surface::CreateSurfaceAsProducer(producer);
-    ASSERT_NE(pSurface, nullptr);
-    BufferRequestConfig config = {
-        .width = DEFAULT_CANVAS_WIDTH,
-        .height = DEFAULT_CANVAS_HEIGHT,
-        .strideAlignment = 0x8,
-        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
-        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
-        .timeout = 0,
-    };
-    FrameContextConfig frameCtx;
-    frameCtx.isVirtual = true;
-    frameCtx.timeOut = 0;
-    auto frame = virtualProcessor_->renderEngine_->RequestFrame(pSurface, config, false, false, frameCtx);
-    ASSERT_NE(frame, nullptr);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto rasterFrame = std::make_unique<RSSurfaceFrameOhosRaster>(
+        DEFAULT_CANVAS_WIDTH, DEFAULT_CANVAS_HEIGHT);
     SurfaceFrameConfig sfConfig;
-    sfConfig.frame = std::move(frame);
+    sfConfig.frame = std::make_unique<RSRenderFrame>(rsSurface, std::move(rasterFrame));
     virtualProcessor_->surfaceFrames_.push_back(std::move(sfConfig));
     std::vector<sptr<SyncFence>> fences;
     virtualProcessor_->FlushBuffer(fences);
