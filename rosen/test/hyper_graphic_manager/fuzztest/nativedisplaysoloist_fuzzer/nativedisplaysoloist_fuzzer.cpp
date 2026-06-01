@@ -44,7 +44,7 @@ OH_DisplaySoloist* OH_DisplaySoloist_Create_1()
     soloistManager.InsertUseExclusiveThreadFlag(soloistId->GetId(), false);
 
     OH_DisplaySoloistLayout* displaySoloist = new OH_DisplaySoloistLayout({ soloistId });
-    g_displaySoloist_1 = reinterpret_cast<OH_DisplaySoloist*>(layout);
+    g_displaySoloist_1 = reinterpret_cast<OH_DisplaySoloist*>(displaySoloist);
     return g_displaySoloist_1;
 }
 
@@ -59,7 +59,7 @@ void DoCreate(FuzzedDataProvider& fdp)
     g_displaySoloist = OH_DisplaySoloist_Create(useExclusiveThread);
     RSDisplaySoloistManager::GetInstance().idToSoloistMap_.clear();
     OH_DisplaySoloist_Destroy(g_displaySoloist);
-    g_displaySoloist - nullptr;
+    g_displaySoloist = nullptr;
 }
 
 void DoDestroy(FuzzedDataProvider& fdp)
