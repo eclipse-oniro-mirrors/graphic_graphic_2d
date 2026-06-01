@@ -120,9 +120,12 @@ void RSFrameRateVote::VideoFrameRateVote(uint64_t surfaceNodeId, OHSurfaceSource
 
     uint32_t videoRate = 0;
     pid_t curPid = ExtractPid(surfaceNodeId);
-    auto rateIt = videoRateInfo_.find(curPid);
-    if (rateIt != videoRateInfo_.end()) {
-        videoRate = rateIt->second;
+    {
+        std::lock_guard<ffrt::mutex> autoLock(ffrtMutex_);
+        auto rateIt = videoRateInfo_.find(curPid);
+        if (rateIt != videoRateInfo_.end()) {
+            videoRate = rateIt->second;
+        }
     }
 
     auto initTask = [this, surfaceNodeId, videoRate]() {
@@ -264,28 +267,31 @@ void RSFrameRateVote::SetVideoRateInfo(const std::unordered_map<std::string, std
     }
     uint32_t decRate = 0;
     auto resultRate = std::from_chars(rateIt->second.data(), rateIt->second.data() + rateIt->second.size(), decRate);
-    if (resultRate.ec != std::errc()) {
-        RS_LOGE("SetVideoRateInfo read decRate fail");
+    if (resultPid.ec != std::errc() || pid <= 0) {
+        RS_LOGE("SetVideoRateInfo read pid fail or invalid pid value");
         return;
     }
 
-    if (decRate == 0) {
-        auto it = videoRateInfo_.find(pid);
-        if (it != videoRateInfo_.end()) {
-            videoRateInfo_.erase(it);
+    {
+        std::lock_guard<ffrt::mutex> autoLock(ffrtMutex_);
+        if (decRate == 0) {
+            auto it = videoRateInfo_.find(pid);
+            if (it != videoRateInfo_.end()) {
+                videoRateInfo_.erase(it);
+            }
+            return;
         }
-        return;
+        videoRateInfo_[pid] = decRate;
     }
-    videoRateInfo_[pid] = decRate;
 }
 
 bool RSFrameRateVote::CheckSurfaceNodeIdChange(uint64_t surfaceNodeId)
 {
-    const auto lastUpdateTime = lastSurfaceNodeIdUpdateTime_;
-    lastSurfaceNodeIdUpdateTime_ = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()).count());
-    const auto duration = (lastSurfaceNodeIdUpdateTime_ > lastUpdateTime) ?
-        (lastSurfaceNodeIdUpdateTime_ - lastUpdateTime) : 0;
+    const auto lastUpdateTime = lastSurfaceNodeIdUpdateTime_.load(std::memory_order_relaxed);
+    lastSurfaceNodeIdUpdateTime_.store(static_cast<int64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count()), std::memory_order_relaxed);
+    const auto duration = (lastSurfaceNodeIdUpdateTime_.load(std::memory_order_relaxed) > lastUpdateTime) ?
+        (lastSurfaceNodeIdUpdateTime_.load(std::memory_order_relaxed) - lastUpdateTime) : 0;
 
     const uint64_t lastId = lastSurfaceNodeId_.load();
     if (surfaceNodeId != lastId && static_cast<uint64_t>(duration) < DANMU_MAX_INTERVAL_TIME) {
@@ -299,16 +305,16 @@ bool RSFrameRateVote::CheckSurfaceNodeIdChange(uint64_t surfaceNodeId)
 bool RSFrameRateVote::CheckAvailableBufferCount(int32_t bufferCount)
 {
     if (bufferCount > 0) {
-        availableBufferCount_.fetch_add(1, std::memory_order_relaxed);
-        if (availableBufferCount_.load(std::memory_order_relaxed) >= MAX_BUFFER_COUNT) {
-            RS_LOGI("bufferCount > 0 for 3 times");
-            availableBufferCount_.store(0, std::memory_order_relaxed);
-            return true;
-        }
-    } else {
-        availableBufferCount_.store(0, std::memory_order_relaxed);
-    }
-    return false;
+       int32_t prevCount = availableBufferCount_.fetch_add(1, std::memory_order_relaxed);
+       if (prevCount + 1 >= MAX_BUFFER_COUNT) {
+           RS_LOGI("bufferCount > 0 for 3 times");
+           availableBufferCount_.store(0, std::memory_order_relaxed);
+           return true;
+       }
+   } else {
+       availableBufferCount_.store(0, std::memory_order_relaxed);
+   }
+   return false;
 }
 } // namespace Rosen
 } // namespace OHOS
