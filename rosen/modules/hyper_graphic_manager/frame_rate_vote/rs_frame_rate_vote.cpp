@@ -32,7 +32,7 @@ const std::string VIDEO_VOTE_FLAG = "VOTER_VIDEO";
 constexpr uint64_t FFRT_QOS_INHERIT = 4;
 constexpr uint64_t DANMU_MAX_INTERVAL_TIME = 50;
 constexpr int32_t VIDEO_VOTE_DELAYS_TIME = 1000 * 1000;
-constexpr int32_t MAX_BUFFER_COUNT = 3;
+constexpr int32_t NORMAL_BUFFER_COUNT = 1;
 }
 std::atomic<bool> RSFrameRateVote::isVideoApp_{false};
 
@@ -251,6 +251,7 @@ void RSFrameRateVote::SetVideoRateInfo(const std::unordered_map<std::string, std
     auto pidIt = videoRateInfo.find("pid");
     if (pidIt == videoRateInfo.end()) {
         RS_LOGD("SetVideoRateInfo can not find pid");
+        RS_TRACE_NAME("SetVideoRateInfo can not find pid");
         return;
     }
     pid_t pid = 0;
@@ -267,7 +268,7 @@ void RSFrameRateVote::SetVideoRateInfo(const std::unordered_map<std::string, std
     }
     uint32_t decRate = 0;
     auto resultRate = std::from_chars(rateIt->second.data(), rateIt->second.data() + rateIt->second.size(), decRate);
-    if (resultPid.ec != std::errc()) {
+    if (resultRate.ec != std::errc()) {
         RS_LOGE("SetVideoRateInfo read decRate fail");
         return;
     }
@@ -295,8 +296,9 @@ bool RSFrameRateVote::CheckSurfaceNodeIdChange(uint64_t surfaceNodeId)
 
     const uint64_t lastId = lastSurfaceNodeId_.load();
     if (surfaceNodeId != lastId && static_cast<uint64_t>(duration) < DANMU_MAX_INTERVAL_TIME) {
-        RS_LOGI("sId changed, curId: %{public}" PRIu64 ", lastId: %{public}" PRIu64 "",
+        RS_LOGD("sId changed, curId: %{public}" PRIu64 ", lastId: %{public}" PRIu64 "",
             surfaceNodeId, lastId);
+        RS_TRACE_NAME_FMT("sId changed, curId: %" PRIu64 ", lastId: %" PRIu64 "", surfaceNodeId, lastId);
         return true;
     }
     return false;
@@ -304,15 +306,21 @@ bool RSFrameRateVote::CheckSurfaceNodeIdChange(uint64_t surfaceNodeId)
 
 bool RSFrameRateVote::CheckAvailableBufferCount(int32_t bufferCount)
 {
-    if (bufferCount > 0) {
-        int32_t prevCount = availableBufferCount_.fetch_add(1, std::memory_order_relaxed);
-        if (prevCount + 1 >= MAX_BUFFER_COUNT) {
-            RS_LOGI("bufferCount > 0 for 3 times");
-            availableBufferCount_.store(0, std::memory_order_relaxed);
-            return true;
+    std::lock_guard<ffrt::mutex> autoLock(ffrtMutex_);
+    bufferCountHistory_[bufferCountIndex_] = bufferCount;
+    bufferCountIndex_ = (bufferCountIndex_ + 1) % BUFFER_COUNT_HISTORY_SIZE;
+
+    int32_t count = 0;
+    for (int32_t i = 0; i < BUFFER_COUNT_HISTORY_SIZE; i++) {
+        if (bufferCountHistory_[i] > NORMAL_BUFFER_COUNT) {
+            count++;
         }
-    } else {
-        availableBufferCount_.store(0, std::memory_order_relaxed);
+    }
+
+    if (count >= BUFFER_COUNT_THRESHOLD) {
+        RS_LOGD("bufferCount > 1 for 4 times");
+        RS_TRACE_NAME("bufferCount > 1 for 4 times");
+        return true;
     }
     return false;
 }
