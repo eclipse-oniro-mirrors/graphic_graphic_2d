@@ -73,8 +73,8 @@ private:
     static std::atomic<bool> isVideoApp_;
     std::unordered_map<pid_t, uint32_t> videoRateInfo_;
     std::atomic<int64_t> lastSurfaceNodeIdUpdateTime_{ 0 };
-    static constexpr uint32_t BUFFER_COUNT_HISTORY_SIZE = 7;
-    std::array<int32_t, BUFFER_COUNT_HISTORY_SIZE> bufferCountHistory_{};
+    static constexpr uint32_t bufferCountHistorySize = 7;
+    std::array<int32_t, bufferCountHistorySize> bufferCountHistory_{};
     int32_t bufferCountIndex_{ 0 };
 
     friend class HgmEnergyConsumptionPolicy;
