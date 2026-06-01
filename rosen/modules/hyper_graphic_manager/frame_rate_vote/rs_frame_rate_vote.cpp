@@ -33,6 +33,7 @@ constexpr uint64_t FFRT_QOS_INHERIT = 4;
 constexpr uint64_t DANMU_MAX_INTERVAL_TIME = 50;
 constexpr int32_t VIDEO_VOTE_DELAYS_TIME = 1000 * 1000;
 constexpr int32_t NORMAL_BUFFER_COUNT = 1;
+constexpr int32_t BUFFER_COUNT_THRESHOLD = 4;
 }
 std::atomic<bool> RSFrameRateVote::isVideoApp_{false};
 
@@ -308,10 +309,10 @@ bool RSFrameRateVote::CheckAvailableBufferCount(int32_t bufferCount)
 {
     std::lock_guard<ffrt::mutex> autoLock(ffrtMutex_);
     bufferCountHistory_[bufferCountIndex_] = bufferCount;
-    bufferCountIndex_ = (bufferCountIndex_ + 1) % BUFFER_COUNT_HISTORY_SIZE;
+    bufferCountIndex_ = (bufferCountIndex_ + 1) % BufferCountHistorySize;
 
     int32_t count = 0;
-    for (int32_t i = 0; i < BUFFER_COUNT_HISTORY_SIZE; i++) {
+    for (int32_t i = 0; i < BufferCountHistorySize; i++) {
         if (bufferCountHistory_[i] > NORMAL_BUFFER_COUNT) {
             count++;
         }
