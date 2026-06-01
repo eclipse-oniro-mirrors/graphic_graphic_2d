@@ -28,7 +28,7 @@ RSRenderPipelineClient::RSRenderPipelineClient(sptr<IRemoteObject>& connectToRen
 {
 }
 
-void RSRenderPipelineClient::SetOnRenderProcessDiedCallback(const OnRenderProcessDiedCallback& callback)
+void RSRenderPipelineClient::SetOnRenderProcessDiedCallback(const std::function<void()>& callback)
 {
 }
 

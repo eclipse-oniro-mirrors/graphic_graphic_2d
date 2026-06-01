@@ -466,7 +466,7 @@ public:
      * @brief Set callback for render process died event.
      * @param callback Callback function triggered when render process dies.
      */
-    void SetOnRenderProcessDiedCallback(const OnRenderProcessDiedCallback& callback);
+    void SetOnRenderProcessDiedCallback(const std::function<void()>& callback);
 
 private:
     RSRenderInterface();

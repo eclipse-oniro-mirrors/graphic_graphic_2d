@@ -22,7 +22,6 @@
 
 namespace OHOS {
 namespace Rosen {
-using OnRenderProcessDiedCallback = std::function<void()>;
 constexpr uint64_t INVALID_TOKEN_MASK_ID = 0;
 class RSIConnectToRenderProcess : public IRemoteBroker {
 public:
