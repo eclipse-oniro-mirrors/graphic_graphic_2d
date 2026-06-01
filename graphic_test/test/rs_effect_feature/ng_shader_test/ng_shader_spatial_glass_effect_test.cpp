@@ -29,37 +29,6 @@ namespace OHOS::Rosen {
 namespace {
 const std::string g_foregroundImagePath = "/data/local/tmp/fg_test.jpg";
 const std::string g_backgroundImagePath = "/data/local/tmp/Images/backGroundImage.jpg";
-// Frosted Glass Default values
-const Vector2f DEFAULT_WEIGHTS_EMBOSS = Vector2f(1.0f, 0.5f);
-const Vector2f DEFAULT_WEIGHTS_EDL = Vector2f(1.0f, 1.0f);
-// Background darken parameters
-const Vector2f DEFAULT_BG_RATES = Vector2f(0.0f, 0.0f);
-const Vector3f DEFAULT_BG_KBS = Vector3f(0.641f, 0.4966f, 1.5f);
-const Vector3f DEFAULT_BG_POS = Vector3f(1.0f, 1.0f, 1.0f);
-const Vector3f DEFAULT_BG_NEG = Vector3f(2.f, 3.0f, 1.0f);
-// Refraction parameters
-const Vector3f DEFAULT_REFRACT_PARAMS = Vector3f(1.0f, 0.3f, 0.3f);
-// Inner shadow parameters
-const Vector3f DEFAULT_SD_PARAMS = Vector3f(-50.0f, 6.0f, 6.62f);
-const Vector2f DEFAULT_SD_RATES = Vector2f(0.0f, 0.0f);
-const Vector3f DEFAULT_SD_KBS = Vector3f(0.9f, 0.0f, 1.0f);
-const Vector3f DEFAULT_SD_POS = Vector3f(1.0f, 1.7f, 1.5f);
-const Vector3f DEFAULT_SD_NEG = Vector3f(3.0f, 2.0f, 1.0f);
-// Env refraction parameters
-const Vector2f DEFAULT_ENV_LIGHT_PARAMS = Vector2f(20.0f, 5.0f); // envB, envS
-const Vector2f DEFAULT_ENV_LIGHT_RATES = Vector2f(0.0f, 0.0f);
-const Vector3f DEFAULT_ENV_LIGHT_KBS = Vector3f(0.8f, 0.27451f, 2.0f);
-const Vector3f DEFAULT_ENV_LIGHT_POS = Vector3f(1.0f, 1.7f, 1.5f);
-const Vector3f DEFAULT_ENV_LIGHT_NEG = Vector3f(3.0f, 2.0f, 1.0f);
-// Edge highlights parameters
-const Vector2f DEFAULT_ED_LIGHT_PARAMS = Vector2f(2.0f, 2.0f);
-const Vector2f DEFAULT_ED_LIGHT_ANGLES = Vector2f(40.0f, 20.0f);
-const Vector2f DEFAULT_ED_LIGHT_DIR = Vector2f(2.5f, 2.5f);
-const Vector2f DEFAULT_ED_LIGHT_RATES = Vector2f(0.0f, 0.0f);
-const Vector3f DEFAULT_ED_LIGHT_KBS = Vector3f(0.6027f, 0.627451f, 2.0f);
-const Vector3f DEFAULT_ED_LIGHT_POS = Vector3f(1.0f, 1.7f, 1.5f);
-const Vector3f DEFAULT_ED_LIGHT_NEG = Vector3f(3.2f, 2.0f, 1.0f);
-const Vector4f DEFAULT_MATERIAL_COLOR = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
 // Blur parameters
 const float DEFAULT_BLUR_RADIUS = 2.0f;
 const float DEFAULT_BLUR_PARAMS = 0.5f; // K times downsample
@@ -147,7 +116,7 @@ static void InitSpatialGlassEffect(std::shared_ptr<RSNGSpatialGlassEffect>& spat
     spatialGlassEffect->Setter<SpatialGlassEffectBgKBSTag>(Vector3f(0.97f, 0.23f, 1.2f));
     spatialGlassEffect->Setter<SpatialGlassEffectBgPosTag>(Vector3f(0.5f, 0.5f, 1.0f));
     spatialGlassEffect->Setter<SpatialGlassEffectBgNegTag>(Vector3f(2.0f, 5.0f, 4.0f));
-    spatialGlassEffect->Setter<SpatialGlassEffectRefractParamsTag>(Vector3f(0.2f, 0.1f, 0.0f));
+    spatialGlassEffect->Setter<SpatialGlassEffectRefractParamsTag>(Vector2f(0.2f, 0.1f));
     spatialGlassEffect->Setter<SpatialGlassEffectWeightsEdlTag>(Vector2f(1.0f, 1.0f));
     spatialGlassEffect->Setter<SpatialGlassEffectEnvLightParamsTag>(Vector3f(0.0f, 0.0f, 0.0f));
     spatialGlassEffect->Setter<SpatialGlassEffectEnvLightRatesTag>(Vector2f(0.0f, 0.0f));
@@ -197,9 +166,9 @@ GRAPHIC_TEST(SpatialGlassEffectTest, EFFECT_TEST, Set_SpatialGlassEffect_Refract
     const int rowCount = 2;
     auto backgroundTestNode = SetCommonBackgroundNode();
     auto effectNode = SetDefaultFrostedGlassBlurEffectNode();
-    const std::vector<Vector3f> RefractParams = {
-        Vector3f(30.0f, 1.0f, 0.0f),
-        Vector3f(-30.0f, 1.0f, 0.0f)
+    const std::vector<Vector2f> RefractParams = {
+        Vector2f(30.0f, 1.0f),
+        Vector2f(-30.0f, 1.0f)
     };
     for (int i = 0; i < rowCount; i++) {
         auto spatialGlassEffect = std::make_shared<RSNGSpatialGlassEffect>();
