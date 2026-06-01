@@ -126,8 +126,10 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     }
 
     std::shared_ptr<RSSurfaceHandler::SurfaceBufferEntry> surfaceBuffer;
+    int32_t availableBufferCount = 0;
     if (surfaceHandler.GetHoldBuffer() == nullptr) {
         IConsumerSurface::AcquireBufferReturnValue returnValue;
+        availableBufferCount = consumer->GetAvailableBufferCount();
         int32_t ret = consumer->AcquireBuffer(returnValue, static_cast<int64_t>(acquireTimeStamp), false);
         if (returnValue.buffer == nullptr || ret != SURFACE_ERROR_OK) {
             auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
@@ -209,7 +211,7 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     if (consumer->GetName() != RENDER_NODE_NAME) {
         RS_TRACE_NAME_FMT("video node: %" PRIu64 "", surfaceHandler.GetNodeId());
         DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(surfaceHandler.GetNodeId(),
-            consumer->GetSurfaceSourceType(), surfaceBuffer->buffer, consumer->GetAvailableBufferCount());
+            consumer->GetSurfaceSourceType(), surfaceBuffer->buffer, availableBufferCount);
     }
     OHSurfaceSource sourceType =  consumer->GetSurfaceSourceType();
     surfaceHandler.SetSourceType(static_cast<uint32_t>(sourceType));
