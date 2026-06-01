@@ -855,35 +855,6 @@ HWTEST_F(RSLayerCacheManagerTest, ProcessLayerNodesTest, TestSize.Level1)
     RSLayerCacheManagerBase::isLayerSuggested_ = true;
     RSLayerCacheManagerBase::layerFrameCount_ = 2;
 
-    constexpr NodeId nodeId = 1;
-    constexpr NodeId parentNodeId = 2;
-    auto node = std::make_shared<RSRenderNode>(nodeId);
-    ASSERT_NE(node, nullptr);
-    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
-    ASSERT_NE(parent, nullptr);
-    node->InitRenderParams();
-    parent->InitRenderParams();
-    parent->AddChild(node);
-    RSLayerCacheManagerBase::suggestedLayerNodes_.emplace_back(node);
-    EXPECT_TRUE(!RSLayerCacheManagerBase::isNodeUnSupportLayer(node));
-    RSLayerCacheManagerBase::ProcessLayerNodes();
-    EXPECT_TRUE(RSLayerCacheManagerBase::layerFrameCount_ == 3);
-}
-
-/**
- * @tc.name: ProcessLayerNodesTest001
- * @tc.desc: Test ProcessLayerNodes & isNodeUnSupportLayer
- * @tc.type: FUNC
- */
-HWTEST_F(RSLayerCacheManagerTest, ProcessLayerNodesTest, TestSize.Level1)
-{
-    RSLayerCacheManagerBase::isLayerSuggested_ = false;
-    RSLayerCacheManagerBase::ProcessLayerNodes();
-    EXPECT_FALSE(RSLayerCacheManagerBase::isLayerSuggested_);
-
-    RSLayerCacheManagerBase::isLayerSuggested_ = true;
-    RSLayerCacheManagerBase::layerFrameCount_ = 2;
-
     {
         constexpr NodeId nodeId = 1;
         constexpr NodeId parentNodeId = 2;
@@ -914,6 +885,54 @@ HWTEST_F(RSLayerCacheManagerTest, ProcessLayerNodesTest, TestSize.Level1)
         EXPECT_TRUE(!RSLayerCacheManagerBase::isNodeUnSupportLayer(node));
         RSLayerCacheManagerBase::ProcessLayerNodes();
         EXPECT_TRUE(RSLayerCacheManagerBase::layerFrameCount_ == 6);
+    }
+}
+
+/**
+ * @tc.name: ProcessLayerNodesTest001
+ * @tc.desc: Test ProcessLayerNodes & isNodeUnSupportLayer
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLayerCacheManagerTest, ProcessLayerNodesTest001, TestSize.Level1)
+{
+    RSLayerCacheManagerBase::isLayerSuggested_ = false;
+    RSLayerCacheManagerBase::ProcessLayerNodes();
+    EXPECT_FALSE(RSLayerCacheManagerBase::isLayerSuggested_);
+
+    RSLayerCacheManagerBase::isLayerSuggested_ = true;
+    RSLayerCacheManagerBase::layerFrameCount_ = 2;
+
+    {
+        constexpr NodeId nodeId = 1;
+        constexpr NodeId parentNodeId = 2;
+        auto node = std::make_shared<RSRenderNode>(nodeId);
+        ASSERT_NE(node, nullptr);
+        auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+        ASSERT_NE(parent, nullptr);
+        node->InitRenderParams();
+        parent->InitRenderParams();
+        parent->AddChild(node);
+        RSLayerCacheManagerBase::suggestedLayerNodes_.emplace_back(node);
+        EXPECT_TRUE(!RSLayerCacheManagerBase::isNodeUnSupportLayer(node));
+        RSLayerCacheManagerBase::ProcessLayerNodes();
+        EXPECT_TRUE(RSLayerCacheManagerBase::layerFrameCount_ == 3);
+    }
+    {
+        RSLayerCacheManagerBase::layerFrameCount_ = 2;
+        constexpr NodeId nodeId = 1;
+        constexpr NodeId parentNodeId = 2;
+        auto node = std::make_shared<RSRenderNode>(nodeId);
+        ASSERT_NE(node, nullptr);
+        auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+        ASSERT_NE(parent, nullptr);
+        node->InitRenderParams();
+        parent->InitRenderParams();
+        parent->AddChild(node);
+        RSLayerCacheManagerBase::suggestedLayerNodes_.emplace_back(node);
+        RSLayerCacheManagerBase::unSupportLayerNodeMap_[node->GetId()] = true;
+        EXPECT_FALSE(!RSLayerCacheManagerBase::isNodeUnSupportLayer(node));
+        RSLayerCacheManagerBase::ProcessLayerNodes();
+        EXPECT_TRUE(RSLayerCacheManagerBase::layerFrameCount_ == 3);
     }
 }
 
