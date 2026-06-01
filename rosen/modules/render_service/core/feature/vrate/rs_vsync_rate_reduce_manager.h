@@ -48,7 +48,6 @@ public:
 
     void SetFocusedNodeId(NodeId focusedNodeId);
     void PushWindowNodeId(NodeId nodeId);
-    void ClearLastVisMapForVsyncRate();
     bool CheckNeedNotify();
     bool GetVRateReduceEnabled() const
     {
@@ -59,7 +58,6 @@ public:
     void FrameDurationEnd();
     void SyncOneFramePeriod();
 
-    void SetIsReduceBySystemAnimatedScenes(bool isReduceBySystemAnimatedScenes);
     void Init();
     void ResetFrameValues(uint32_t rsRefreshRate);
     void CollectSurfaceVsyncInfo(const ScreenInfo& screenInfo, RSSurfaceRenderNode& node);
@@ -96,8 +94,6 @@ private:
     std::unordered_map<NodeId, int> lastVSyncRateMap_;
     std::vector<NodeId> curAllMainAndLeashWindowNodesIds_;
     std::vector<NodeId> lastAllMainAndLeashWindowNodesIds_;
-    std::map<NodeId, RSVisibleLevel> visMapForVSyncVisLevel_;
-    std::map<NodeId, RSVisibleLevel> lastVisMapForVSyncVisLevel_;
 
     NodeId focusedNodeId_ = 0;
     NodeId lastFocusedNodeId_ = 0;
@@ -112,7 +108,6 @@ private:
     std::deque<float> frameDurations_;
 
     bool isSystemAnimatedScenes_ = false;
-    bool isReduceBySystemAnimatedScenes_ = false;
 
     bool isDeviceSupprotVRate_ = false;
     std::map<NodeId, SurfaceVRateInfo> surfaceVRateMap_;

@@ -94,14 +94,6 @@ void RSVsyncRateReduceManager::PushWindowNodeId(NodeId nodeId)
     curAllMainAndLeashWindowNodesIds_.emplace_back(nodeId);
 }
 
-void RSVsyncRateReduceManager::ClearLastVisMapForVsyncRate()
-{
-    if (!vRateReduceEnabled_) {
-        return;
-    }
-    lastVisMapForVSyncVisLevel_.clear();
-}
-
 void RSVsyncRateReduceManager::FrameDurationBegin()
 {
     if (!vRateConditionQualified_.load()) {
@@ -125,14 +117,6 @@ void RSVsyncRateReduceManager::FrameDurationEnd()
 void RSVsyncRateReduceManager::SyncOneFramePeriod()
 {
     oneFramePeriod_ = stagingOneFramePeriod_;
-}
-
-void RSVsyncRateReduceManager::SetIsReduceBySystemAnimatedScenes(bool isReduceBySystemAnimatedScenes)
-{
-    if (!vRateReduceEnabled_) {
-        return;
-    }
-    isReduceBySystemAnimatedScenes_ = isReduceBySystemAnimatedScenes;
 }
 
 void RSVsyncRateReduceManager::EnqueueFrameDuration(float duration)
@@ -428,18 +412,12 @@ bool RSVsyncRateReduceManager::CheckNeedNotify()
     if (focusChanged) {
         lastFocusedNodeId_ = focusedNodeId_;
     }
-    if (needRefresh) {
-        isReduceBySystemAnimatedScenes_ = false;
-    }
     if (surfaceIdsChanged || needRefresh) {
         for (const auto& [nodeId, rate]: lastVSyncRateMap_) {
             if (vSyncRateMap_.find(nodeId) == vSyncRateMap_.end()) {
                 vSyncRateMap_.emplace(nodeId, DEFAULT_RATE);
             }
         }
-    }
-    if (isSystemAnimatedScenes_) {
-        isReduceBySystemAnimatedScenes_ = true;
     }
     return true;
 }
@@ -463,7 +441,6 @@ void RSVsyncRateReduceManager::ResetFrameValues(uint32_t rsRefreshRate)
     vSyncRatesChanged_ = false;
     vSyncRateMap_.clear();
     curAllMainAndLeashWindowNodesIds_.clear();
-    visMapForVSyncVisLevel_.clear();
     vRateConditionQualified_ = rsRefreshRate > 0;
     if (!vRateConditionQualified_) {
         return;
