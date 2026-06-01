@@ -139,8 +139,6 @@ static void InitSpatialGlassEffect(std::shared_ptr<RSNGSpatialGlassEffect>& spat
     spatialGlassEffect->Setter<SpatialGlassEffectCameraPositionTag>(Vector3f(0.0f, 0.0f, 0.0f));
     spatialGlassEffect->Setter<SpatialGlassEffectCameraIntrinsicsTag>(Vector2<float>(0.0f, 0.0f));
     spatialGlassEffect->Setter<SpatialGlassEffectLightDirTag>(Vector3f(1.0f, 1.0f, 0.0f));
-    spatialGlassEffect->Setter<SpatialGlassEffectLightColorTag>(Vector3f(1.0f, 1.0f, 1.0f));
-    spatialGlassEffect->Setter<SpatialGlassEffectLightIntensityTag>(1.0f);
     spatialGlassEffect->Setter<SpatialGlassEffectThickParamsTag>(Vector2f(0.01f, 0.01f));
     spatialGlassEffect->Setter<SpatialGlassEffectGlassBaseColorTag>(Vector4f(0.0f, 0.0f, 0.0f, 0.2f));
     spatialGlassEffect->Setter<SpatialGlassEffectFresnelEnvColorTag>(Vector4f(1.0f, 1.0f, 1.0f, 1.0f));
