@@ -41,7 +41,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetSkipDraw_Matr
 
     for (size_t i = 0; i < skipDrawList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetSkipDraw(skipDrawList[i]);
@@ -62,14 +63,15 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetForeground_Ma
 
     for (size_t i = 0; i < foregroundList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetForeground(foregroundList[i]);
         GetRootNode()->AddChild(surfaceNode);
         RegisterNode(surfaceNode);
 
-        auto canvasNode = RSCanvasNode::Create();
+        auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         canvasNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                400, 400});
         canvasNode->SetBackgroundColor(0xffff0000);
@@ -85,7 +87,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetForceUIFirst_
 
     for (size_t i = 0; i < forceUIFirstList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetForceUIFirst(forceUIFirstList[i]);
@@ -106,7 +109,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetSurfaceBuffer
 
     for (size_t i = 0; i < opaqueList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetSurfaceBufferOpaque(opaqueList[i]);
@@ -127,7 +131,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetGlobalPositio
 
     for (size_t i = 0; i < enabledList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetGlobalPositionEnabled(enabledList[i]);
@@ -148,7 +153,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetFrameGravityN
 
     for (size_t i = 0; i < enabledList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetFrameGravityNewVersionEnabled(enabledList[i]);
@@ -171,7 +177,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetAbilityState_
     for (size_t row = 0; row < states.size(); row++) {
         for (size_t col = 0; col < actives.size(); col++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-            auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+            auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
             float x = static_cast<float>(col * 300 + 50);
             float y = static_cast<float>(row * 300 + 50);
             surfaceNode->SetBounds({x, y, 200, 200});
@@ -193,7 +200,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetHidePrivacyCo
 
     for (size_t i = 0; i < hideList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetHidePrivacyContent(hideList[i]);
@@ -219,7 +227,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetApiCompatible
 
     for (size_t i = 0; i < versions.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>((i % 2) * 500 + 50),
                                 static_cast<float>((i / 2) * 300 + 50),
                                 300, 300});
@@ -243,7 +252,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetHardwareEnabl
     for (size_t row = 0; row < hardwareEnabled.size(); row++) {
         for (size_t col = 0; col < check.size(); col++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-            auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+            auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
             float x = static_cast<float>(col * 300 + 50);
             float y = static_cast<float>(row * 300 + 50);
             surfaceNode->SetBounds({x, y, 200, 200});
@@ -270,7 +280,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetFingerprint)
 
     for (size_t i = 0; i < fingerprints.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>((i % 2) * 500 + 50),
                                 static_cast<float>((i / 2) * 300 + 50),
                                 300, 300});
@@ -292,7 +303,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetIsNotifyUIBuf
 
     for (size_t i = 0; i < notifyList.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>(i * 500 + 50), 50,
                                 400, 400});
         surfaceNode->SetIsNotifyUIBufferAvailable(notifyList[i]);
@@ -318,7 +330,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetAncoFlags)
 
     for (size_t i = 0; i < flags.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>((i % 2) * 500 + 50),
                                 static_cast<float>((i / 2) * 300 + 50),
                                 300, 300});
@@ -345,7 +358,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetWindowId)
 
     for (size_t i = 0; i < windowIds.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>((i % 2) * 500 + 50),
                                 static_cast<float>((i / 2) * 300 + 50),
                                 300, 300});
@@ -379,7 +393,8 @@ GRAPHIC_TEST(SurfaceNodeTest, CONTENT_DISPLAY_TEST, SurfaceNode_SetContainerWind
 
     for (size_t i = 0; i < windowInfos.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({static_cast<float>((i % 2) * 400 + 100),
                                 static_cast<float>((i / 2) * 400 + 100),
                                 300, 300});

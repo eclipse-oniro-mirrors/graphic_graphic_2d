@@ -412,7 +412,7 @@ void RSSurfaceRenderNode::CollectSelfDrawingChild(
     }
 }
 
-    void RSSurfaceRenderNode::ClearChildrenCache()
+void RSSurfaceRenderNode::ClearChildrenCache()
 {
     for (auto& child : *GetChildren()) {
         auto surfaceNode = child->ReinterpretCastTo<RSSurfaceRenderNode>();
@@ -2514,8 +2514,8 @@ bool RSSurfaceRenderNode::CheckParticipateInOcclusion(bool isAnimationOcclusionS
 {
     // planning: Need consider others situation
     isParentScaling_ = false;
-    auto nodeParent = GetParent().lock();
-    if (nodeParent && nodeParent->IsScale()) {
+    auto surfaceParent = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(GetParent().lock());
+    if (surfaceParent && surfaceParent->IsScale()) {
         isParentScaling_ = true;
         if (GetDstRectChanged() && !isAnimationOcclusionScenes) {
             return false;
@@ -2986,8 +2986,8 @@ void RSSurfaceRenderNode::SendSurfaceNodeBoundChange()
         prevSelfDrawHeight_ = properties.GetBoundHeight();
         prevSelfDrawWidth_ = properties.GetBoundsWidth();
         std::shared_ptr<ApsMonitorImpl> apsMonitor_ = std::make_shared<ApsMonitorImpl>();
-        apsMonitor_->SetApsSurfaceBoundChange(std::to_string(prevSelfDrawHeight_), std::to_string(prevSelfDrawWidth_),
-            std::to_string((uint64_t)GetId()));
+        apsMonitor_->SetApsSurfaceBoundChange(name_, std::to_string(prevSelfDrawHeight_),
+            std::to_string(prevSelfDrawWidth_), std::to_string((uint64_t)GetId()));
     }
 }
 #endif

@@ -60,7 +60,6 @@ declare_args() {
   graphic_2d_feature_enable_mediacommon = false
   graphic_2d_feature_enable_image_detail_enhancer = false
   graphic_2d_feature_rs_modifiers_draw_enable = false
-  graphic_2d_feature_enable_rs_proxy = true
 
   if (defined(is_arkui_x) && is_arkui_x) {
     is_cross_platform = true
@@ -71,6 +70,7 @@ declare_args() {
   graphic_2d_feature_subtree_parallel_enable = false
   graphic_2d_feature_hetero_hdr_enable = false
   graphic_2d_feature_mhc_enable = false
+  graphic_2d_feature_enable_primitive = false
 }
 
 declare_args() {
@@ -481,4 +481,16 @@ if (defined(graphic_2d_feature_enable_prefetch)) {
 if (defined(global_parts_info) &&
     !defined(global_parts_info.security_access_token)) {
   graphic_2d_support_access_token = false
+}
+
+if (defined(graphic_2d_feature_enable_primitive) && graphic_2d_feature_enable_primitive) {
+  graphic_2d_enable_primitive_profiler = false
+  gpu_defines += [
+    "USE_PRIMITIVE",
+  ]
+  if (graphic_2d_enable_primitive_profiler) {
+    gpu_defines += [
+      "PRIMITIVE_PROFILER",
+    ]
+  }
 }
