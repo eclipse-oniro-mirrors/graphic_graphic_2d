@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the **graphic_graphic_2d** repository, part of the OpenHarmony graphics subsystem. It provides the Rosen rendering framework, 2D graphics capabilities, and graphics stack implementation for OpenHarmony OS.
 
+## Knowledge Index
+
+When working on a scenario listed below, you **MUST** read the corresponding document before making any changes. These documents contain critical domain knowledge and implementation details that are essential for correct modifications.
+
+| Scenario | Document Path |
+|---|---|
+| LTPO, LTPS, fps, frame rate, frame rate switching, frame rate splitting, display refresh rate, voting | `rosen/modules/hyper_graphic_manager/AGENTS.md` |
+
 ## Build System
 
 This project uses the **GN (Generate Ninja)** build system, which is part of OpenHarmony's build infrastructure.

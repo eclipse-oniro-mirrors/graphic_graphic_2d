@@ -18,6 +18,72 @@ hyper_graphic_manager/
 └── frame_rate_vote/            # RSFrameRateVote, RSVideoFrameRateVote (surface buffer voting)
 ```
 
+## OPERATIONAL FLOW
+
+This section describes how HGM operates within the Render Service (RS). Before proposing any HGM-related changes:
+- **Reference this flow** to identify the **optimal approach**
+- Changes must be **necessary and correct**
+- Do **not** modify existing member variables or functions unless explicitly stated
+
+### Server-Side Initialization
+
+RS initialization starts at `RSRenderService::Init()` (runs once at startup), which calls `RSRenderService::HgmInit()`:
+
+1. **HgmCore initialization**: `HgmCore` is a singleton — first call to `HgmCore::Instance()` triggers the constructor:
+   - `InitXmlConfig()` reads HGM XML configuration
+   - Creates `hgmFrameRateMgr_` (constructor sets up timers, callbacks)
+   - Registers a listener on `persist.sys.mode` system property for refresh-rate mode changes
+   - `SetLtpoConfig()` applies XML config values to member variables
+
+2. **HgmContext initialization**:
+   - `hgmContext_` is created with required parameters and callbacks
+   - `InitHgmTaskHandleThread()` starts `HgmTaskHandleThread`, which posts tasks:
+     - `SetForceUpdateCallback` on `frameRateManager`
+     - `frameRateManager->Init()` initializes all HGM-related sub-modules
+     - `SetHgmConfigUpdateCallback` and `SetAdaptiveVsyncUpdateCallback` on `frameRateManager`
+       - These callbacks only transmit data to the render side when values actually change (tracked by `hgmDataChangeTypes_` bit flags), via `SetServiceToProcessInfo`; flags are reset after transmission
+
+Later, during process manager init (`RSRenderService::RenderProcessManagerInit()`), HGM passes the server-side frame-rate decision callback (`HgmContext::ProcessHgmFrameRate()`) to `renderProcessManager_` via `RSRenderProcessManager::Create()`:
+- Only in **single-process** mode is the callback wired up; in multi-process mode, frame-rate decision callbacks are not executed
+  - Single-process: `RSSingleRenderProcessManager` constructor sets the callback on `RSRenderServiceAgent::hgmProcessCallback_`
+  - Each frame's IPC from render side (`NotifyRpHgmFrameRate()`) ultimately invokes this server-side callback
+
+### Render-Side Initialization
+
+During process manager init (`RSRenderService::RenderProcessManagerInit()`), `RSMainThread::Init()` handles render-side setup:
+1. Initializes the per-frame render-side callback (`mainLoop_`)
+2. Creates `hgmRenderContext_`, passing the render-to-server connection (in single-process mode, this is `RSRenderToServiceConnection` — a same-process direct callback)
+3. Calls `hgmRenderContext_->InitHgmConfig()` to populate member variables
+   - **Note**: `InitHgmConfig()` calls `RPHgmXMLParser` to read HGM config independently, similar to the server-side `InitXmlConfig()`. So initialization config is read independently by both sides, but runtime config data flows server→render via IPC every frame
+
+### Per-Frame Runtime
+
+> In single-process mode, the render-to-server connection is a direct in-process call (no cross-process IPC). In multi-process mode, the connection returns immediately — the relevant IPC is not implemented due to a spec-level disable, which is intentional.
+
+Each VSync triggers `mainLoop_()`, which calls `hgmRenderContext_->NotifyRpHgmFrameRate()`:
+
+1. **Render side** populates render-side-only data into `HgmProcessToServiceInfo`
+2. **Cross-side call**: `renderToServiceConnection_->NotifyRpHgmFrameRate()` sends `HgmProcessToServiceInfo` to server and executes `HgmContext::ProcessHgmFrameRate()`:
+   a. Receives `HgmProcessToServiceInfo` from render side
+   b. Populates `HgmServiceToProcessInfo` for return
+   c. Determines whether frame rate should be refreshed this frame
+   d. Posts task to `HgmTaskHandleThread` → `frameRateManager->UniProcessDataForLtpo()` for LTPO frame-rate decision
+   e. Combines external info to compute next-frame rate and sends to hardware layer (details TBD)
+3. **Return data**: After server-side callback completes, `HgmServiceToProcessInfo` is returned via the same connection
+4. **Render side sync**: Render side calls `SetServiceToProcessInfo()` to sync returned data to member variables
+   - `rpHgmConfigData` in `HgmServiceToProcessInfo` triggers the render-side config update callback (`rpFrameRatePolicy_->HgmConfigUpdateCallback()`) only when `hgmDataChangeTypes.test(HGM_CONFIG_DATA)` is true
+
+### External Input
+
+Beyond per-frame flow, HGM receives external IPC input for frame-rate decisions:
+
+1. `rs_interfaces.cpp` receives external calls
+2. Dispatched to `rs_render_service_client.cpp` (same-name function)
+3. Dispatched to `rs_client_to_service_connection.cpp` (same-name function)
+   - Any call that ultimately reaches `hgmContext_` is HGM-related external IPC (e.g., `SetRefreshRateMode`)
+   - `hgmContext_` is obtained from `renderServiceAgent_->GetHgmContext()`, which returns a pointer to `renderService_`'s `hgmContext_`
+4. Dispatched to `hgm_context.cpp` (same-name function) — most function bodies post tasks via `HgmTaskHandleThread`, ensuring all HGM execution (including frame-rate decisions) is **serial**, avoiding multi-thread concurrency issues
+
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
@@ -68,6 +134,7 @@ hyper_graphic_manager/
 
 - **DO NOT** access `PolicyConfigData` fields directly from frame_rate_manager/ — use `PolicyConfigVisitor`
 - **DO NOT** call `HgmFrameRateManager` directly from render_service — use `HgmContext` (service) or `HgmRenderContext` (render process) facades
+- **DO NOT** access the opposite side's objects directly — the server side (HgmCore, HgmContext, HgmFrameRateManager) and the render side (HgmRenderContext) must interact exclusively through the IPC connection (`renderToServiceConnection_` / `RSRenderToServiceConnection`). Neither side may call the other's singletons, members, or functions directly; runtime data flows server→render via `HgmServiceToProcessInfo` IPC every frame, and render→server via `HgmProcessToServiceInfo` IPC
 - **DO NOT** modify `currRefreshRate_` without `pendingMutex_` lock
 - **DO NOT** skip `HGM_LOGE` before error returns
 
