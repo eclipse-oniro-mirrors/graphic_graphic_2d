@@ -28,8 +28,7 @@ namespace OHOS {
 namespace Rosen {
 using VideoVoterFunc = std::function<void(const std::string& key, const std::string& value)>;
 class RSFrameRateVote {
-    constexpr int32_t BUFFER_COUNT_HISTORY_SIZE = 7;
-    constexpr int32_t BUFFER_COUNT_THRESHOLD = 4;
+    static constexpr int32_t BufferCountHistorySize = 7;
     DECLARE_DELAYED_SINGLETON(RSFrameRateVote);
 
 public:
@@ -75,7 +74,7 @@ private:
     static std::atomic<bool> isVideoApp_;
     std::unordered_map<pid_t, uint32_t> videoRateInfo_;
     std::atomic<int64_t> lastSurfaceNodeIdUpdateTime_{ 0 };
-    std::array<int32_t, BUFFER_COUNT_HISTORY_SIZE> bufferCountHistory_{};
+    std::array<int32_t, BufferCountHistorySize> bufferCountHistory_{};
     int32_t bufferCountIndex_{ 0 };
 
     friend class HgmEnergyConsumptionPolicy;
