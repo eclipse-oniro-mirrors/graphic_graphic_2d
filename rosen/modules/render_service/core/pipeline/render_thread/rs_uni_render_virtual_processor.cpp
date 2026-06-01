@@ -275,11 +275,11 @@ void RSUniRenderVirtualProcessor::CanvasInit(DrawableV2::RSLogicalDisplayRenderN
 
 int32_t RSUniRenderVirtualProcessor::GetBufferAge() const
 {
-    int32_t minAge = 0;
+    int32_t minAge = -1;
     for (const auto& sf : surfaceFrames_) {
         if (sf.frame) {
             int32_t age = sf.frame->GetBufferAge();
-            if (minAge == 0 || (age > 0 && age < minAge)) {
+            if (minAge < 0 || age < minAge) {
                 minAge = age;
             }
         }
