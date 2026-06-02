@@ -84,7 +84,11 @@ public:
     }
     ~RSRenderFrame() noexcept
     {
-        Flush();
+        if (flushPhaseActive_) {
+            CancelActiveFlush();
+        } else {
+            Flush();
+        }
     }
 
     // noncopyable
@@ -105,7 +109,16 @@ public:
             targetSurface_ = nullptr;
             surfaceFrame_ = nullptr;
         }
+        flushPhaseActive_ = false;
     }
+
+    // 3-phase flush: allows splitting Flush into discrete steps for pipeline parallelism.
+    // Must be called in order: FlushGpu -> SubmitGpu -> FlushBuffer.
+    // Do not mix with Flush(). If you start a 3-phase sequence, complete it with FlushBuffer().
+    bool FlushGpu() noexcept;
+    bool SubmitGpu() noexcept;
+    bool FlushBuffer() noexcept;
+    void CancelActiveFlush() noexcept;
 
     void CancelCurrentFrame()
     {
@@ -119,6 +132,9 @@ public:
             }
 #endif
         }
+        flushPhaseActive_ = false;
+        targetSurface_ = nullptr;
+        surfaceFrame_ = nullptr;
     }
 
     const std::shared_ptr<RSSurfaceOhos>& GetSurface() const
@@ -159,6 +175,7 @@ public:
     {
         targetSurface_ = nullptr;
         surfaceFrame_ = nullptr;
+        flushPhaseActive_ = false;
     }
 
 protected:
@@ -169,6 +186,7 @@ private:
     std::shared_ptr<RSSurfaceOhos> targetSurface_;
     std::unique_ptr<RSSurfaceFrame> surfaceFrame_;
     sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
+    bool flushPhaseActive_ = false;
 };
 
 // function that will be called before drawing Buffer / Image.

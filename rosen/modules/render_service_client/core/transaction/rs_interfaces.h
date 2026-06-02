@@ -26,6 +26,7 @@
 
 #include "common/rs_event_def.h"
 #include "memory/rs_memory_graphic.h"
+#include "screen_manager/rs_surface_region_config.h"
 #include "transaction/rs_render_service_client.h"
 #include "ui/rs_display_node.h"
 #include "ui/rs_surface_node.h"
@@ -86,6 +87,29 @@ public:
         ScreenId associatedScreenId = 0,
         int flags = 0,
         std::vector<NodeId> whiteList = {});
+
+    // ========== Multi-Surface Virtual Screen Dynamic Surface Management ==========
+    // These methods are for managing surfaces on virtual screens.
+    // For single-surface virtual screens, use SetVirtualScreenSurface.
+    // For multi-surface virtual screens,
+    // use AddVirtualScreenSurface / RemoveVirtualScreenSurface.
+
+    /**
+     * @brief Add surfaces to existing multi-surface virtual screen.
+     * @param id Virtual screen id.
+     * @param surfaceConfigs Vector of surface-region configurations to add.
+     * @return 0 means success, others failed.
+     */
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs);
+
+    /**
+     * @brief Remove surfaces from virtual screen.
+     * @param id Virtual screen id.
+     * @param surfaces Producer surfaces to remove.
+     * @return 0 means success, others failed.
+     */
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces);
 
     /**
      * @brief Set list of surface node id, these nodes will be excluded from this screen.

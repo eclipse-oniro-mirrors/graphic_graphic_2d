@@ -91,6 +91,17 @@ ScreenId RSInterfaces::CreateVirtualScreen(
         name, width, height, surface, associatedScreenId, flags, whiteList);
 }
 
+int32_t RSInterfaces::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    return renderServiceClient_->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSInterfaces::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    return renderServiceClient_->RemoveVirtualScreenSurface(id, surfaces);
+}
+
 int32_t RSInterfaces::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList)
 {
     return renderServiceClient_->SetVirtualScreenBlackList(id, blackList);

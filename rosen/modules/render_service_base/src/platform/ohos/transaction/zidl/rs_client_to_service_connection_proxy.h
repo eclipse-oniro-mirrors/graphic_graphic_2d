@@ -59,6 +59,10 @@ public:
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) override;
 
+    // Multi-surface virtual screen: dynamic surface management
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs) override;
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces) override;
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
     ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;

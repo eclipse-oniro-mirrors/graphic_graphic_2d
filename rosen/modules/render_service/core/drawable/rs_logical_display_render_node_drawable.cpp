@@ -282,14 +282,21 @@ void RSLogicalDisplayRenderNodeDrawable::OnCapture(Drawing::Canvas& canvas)
     sptr<SyncFence> virtualFence = nullptr;
     const auto& screenProperty = screenParam->GetScreenProperty();
     bool virtualHasBuffer = false;
-    if (auto producerSurface = screenProperty.GetProducerSurface()) {
-        float matrix[16];
-        bool isUseNewMatrix = false;
-        GSError sRet = producerSurface->GetLastFlushedBuffer(virtualBuffer, virtualFence, matrix, isUseNewMatrix);
-        if (sRet == GSERROR_OK) {
-            virtualHasBuffer = true;
-            RS_TRACE_NAME_FMT("RSLogicalDisplayRenderNodeDrawable::OnCapture Using buffer from virtual screen");
+    auto surfaceConfigs = screenProperty.GetMultiSurfaceConfigs();
+    if (!surfaceConfigs.empty()) {
+        auto producerSurface = surfaceConfigs[0].surface;
+        if (producerSurface) {
+            float matrix[16];
+            bool isUseNewMatrix = false;
+            GSError sRet = producerSurface->GetLastFlushedBuffer(virtualBuffer, virtualFence, matrix, isUseNewMatrix);
+            if (sRet == GSERROR_OK) {
+                virtualHasBuffer = true;
+                RS_TRACE_NAME_FMT("RSLogicalDisplayRenderNodeDrawable::OnCapture Using buffer from virtual screen");
+            }
         }
+    } else {
+        RS_LOGD("RSLogicalDisplayRenderNodeDrawable::%{public}s: no surface configs for virtual screen",
+            __func__);
     }
     bool noBuffer = (RSUniRenderThread::GetCaptureParam().isSnapshot_ &&
         screenDrawable->GetRSSurfaceHandlerOnDraw()->GetBuffer() == nullptr) && !virtualHasBuffer;
@@ -363,7 +370,8 @@ void RSLogicalDisplayRenderNodeDrawable::DrawHardwareEnabledNodes(Drawing::Canva
     RSUniRenderUtil::AdjustZOrderAndDrawSurfaceNode(hwcTopNodes, canvas, *screenParams);
 }
 
-void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRenderParams& params)
+void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRenderParams& params,
+    std::shared_ptr<RSProcessor> processor)
 {
     RS_TRACE_FUNC();
     auto [_, screenParam] = GetScreenParams(params);
@@ -372,9 +380,32 @@ void RSLogicalDisplayRenderNodeDrawable::DrawExpandDisplay(RSLogicalDisplayRende
         return;
     }
     const auto& screenProperty = screenParam->GetScreenProperty();
+
     RSAutoCanvasRestore acr(curCanvas_);
     params.ApplyAlphaAndMatrixToCanvas(*curCanvas_);
-    if (screenParam->GetHDRPresent()) {
+
+    // Check for multi-surface extend mode (only when surfaces have specified regions)
+    auto virtualProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
+    bool isMultiSurfaceExtend = virtualProcessor && virtualProcessor->IsMultiSurfaceExtendMode();
+    if (isMultiSurfaceExtend) {
+        if (screenParam->GetHDRPresent()) {
+            curCanvas_->SetHDREnabledVirtualScreen(true);
+            curCanvas_->SetHdrOn(true);
+        }
+        // Multi-surface with regions: render to offscreen, then blit regions to each surface
+        PrepareOffscreenRender(*this, false, false);
+        RSRenderNodeDrawable::OnDraw(*curCanvas_);
+
+        // Get offscreen image and blit to each surface
+        auto offscreenImage = GetOffscreenImage();
+        if (offscreenImage) {
+            virtualProcessor->BlitRegionsToSurfaces(offscreenImage);
+        } else {
+            RS_LOGE("%{public}s: Failed to get offscreen image for multi-surface extend mode", __func__);
+        }
+        // Note: FinishOffscreenRender is not needed here since we're not drawing back to a single canvas
+        canvasBackup_ = nullptr;
+    } else if (screenParam->GetHDRPresent()) {
         RS_LOGD("%{public}s HDRCast isHDREnabledVirtualScreen true", __func__);
         curCanvas_->SetHDREnabledVirtualScreen(true);
         curCanvas_->SetHdrOn(true);

@@ -21,6 +21,7 @@
 #include <list>
 #include <unordered_map>
 #include <mutex>
+#include <optional>
 #include "native_window.h"
 #include "vulkan/vulkan_core.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
@@ -61,6 +62,9 @@ public:
     std::unique_ptr<RSSurfaceFrame> RequestFrame(
         int32_t width, int32_t height, uint64_t uiTimestamp, bool useAFBC = true, bool isProtected = false) override;
     bool FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp) override;
+    bool FlushGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp) override;
+    bool SubmitGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp) override;
+    bool FlushBuffer(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp) override;
     void SetColorSpace(GraphicColorGamut colorSpace) override;
     void SetSurfaceBufferUsage(uint64_t usage) override;
     void SetSurfacePixelFormat(int32_t pixelFormat) override;
@@ -74,11 +78,13 @@ public:
         if (mSkContext) {
             mSkContext->FlushAndSubmit(true);
         }
+        flushState_.Reset();
         mSurfaceMap.clear();
     }
     int DupReservedFlushFd();
 
     void CancelBufferForCurrentFrame();
+    void CancelActiveFlush();
     int32_t RequestNativeWindowBuffer(NativeWindowBuffer** nativeWindowBuffer, int32_t width, int32_t height,
         int& fenceFd, bool useAFBC, bool isProtected = false);
     bool PreAllocateProtectedBuffer(int32_t width, int32_t height);
@@ -101,6 +107,48 @@ private:
     std::list<std::pair<NativeWindowBuffer*, int>> hpaeSurfaceBufferList_;
     std::mutex hpaeSurfaceBufferListMutex_;
     std::unordered_map<NativeWindowBuffer*, NativeBufferUtils::NativeSurfaceInfo> mSurfaceMap;
+    // Intermediate state for 3-phase flush.
+    struct FlushState {
+        VkSemaphore semaphore = VK_NULL_HANDLE;
+        // Store buffer key instead of raw pointer into mSurfaceMap to avoid dangling pointer
+        // if the map entry is erased between FlushGpu and FlushBuffer.
+        NativeWindowBuffer* bufferKey = nullptr;
+        RsVulkanInterface::CallbackSemaphoreInfo* callbackInfo = nullptr;
+        bool submitWithFFTS = false;
+#if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
+        uint64_t preFrameId = 0;
+        uint64_t curFrameId = 0;
+#endif
+#ifdef HETERO_HDR_ENABLE
+        std::vector<uint64_t> hdrFrameIdVec;
+#endif
+        bool valid = false;
+        void Reset()
+        {
+            if (callbackInfo != nullptr) {
+                RsVulkanInterface::CallbackSemaphoreInfo::DestroyCallbackRefsFromRS(callbackInfo);
+            }
+            semaphore = VK_NULL_HANDLE;
+            bufferKey = nullptr;
+            callbackInfo = nullptr;
+            submitWithFFTS = false;
+#if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
+            preFrameId = 0;
+            curFrameId = 0;
+#endif
+#ifdef HETERO_HDR_ENABLE
+            hdrFrameIdVec.clear();
+#endif
+#ifdef MHC_ENABLE
+            mhcPendingSubmit.reset();
+#endif
+            valid = false;
+        }
+#ifdef MHC_ENABLE
+        std::optional<uint64_t> mhcPendingSubmit;
+#endif
+    };
+    FlushState flushState_;
     void CreateVkSemaphore(VkSemaphore& semaphore,
         RsVulkanContext& vkContext, NativeBufferUtils::NativeSurfaceInfo& nativeSurface);
 #if defined(ROSEN_OHOS) && defined(RS_GRAPHIC_MEDIACOMMON_ENABLE)
@@ -112,7 +160,7 @@ private:
     void SubmitGpuAndHpaeTask(const uint64_t& preFrameId, const uint64_t& curFrameId);
     void SubmitHapeTask(const uint64_t& curFrameId);
 #endif
-    void CancelBuffer(NativeBufferUtils::NativeSurfaceInfo& surface);
+    void CancelBuffer(NativeWindowBuffer* buffer);
     void ReleasePreAllocateBuffer();
 };
 

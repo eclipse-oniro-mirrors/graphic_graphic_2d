@@ -114,39 +114,20 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
     SetVirtualScreenSize(screenDrawable);
 
     renderFrameConfig_.usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_MEM_DMA;
-    FrameContextConfig frameContextConfig = FrameContextConfig(false);
-    frameContextConfig.isVirtual = true;
-    frameContextConfig.timeOut = 0;
 
-    producerSurface_ = screenProperty.GetProducerSurface();
-    if (producerSurface_ == nullptr) {
-        RS_LOGE("RSUniRenderVirtualProcessor::Init for Screen(id %{public}" PRIu64 "): ProducerSurface is null!",
+    RequestFramesForAllSurfaces(screenDrawable);
+    // surfaceFrames_[0] is always the primary surface (the first successfully created frame).
+    if (surfaceFrames_.empty()) {
+        RS_LOGE("RSUniRenderVirtualProcessor::Init for Screen(id %{public}" PRIu64 "): "
+            "No valid surfaces in multi-surface configs!",
             virtualScreenId_);
         return false;
     }
-#ifdef RS_ENABLE_GL
-    if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
-        renderFrame_ = renderEngine_->RequestFrame(producerSurface_, renderFrameConfig_, forceCPU_, false,
-            frameContextConfig);
-    }
-#endif
-    if (renderFrame_ == nullptr) {
-        uint64_t pSurfaceUniqueId = producerSurface_->GetUniqueId();
-        auto rsSurface = screenDrawable.GetVirtualSurface(pSurfaceUniqueId);
-        if (rsSurface == nullptr || params->IsVirtualSurfaceChanged()) {
-            RS_LOGD("RSUniRenderVirtualProcessor::Init Make rssurface from producer Screen(id %{public}" PRIu64 ")",
-                virtualScreenId_);
-            RS_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::Init Make rssurface from producer Screen(id %" PRIu64 ")",
-                virtualScreenId_);
-            rsSurface = renderEngine_->MakeRSSurface(producerSurface_, forceCPU_);
-            screenDrawable.SetVirtualSurface(rsSurface, pSurfaceUniqueId);
-        }
-        renderFrame_ = renderEngine_->RequestFrame(
-            std::static_pointer_cast<RSSurfaceOhos>(rsSurface), renderFrameConfig_, forceCPU_, false,
-            frameContextConfig);
-    }
-    if (renderFrame_ == nullptr) {
-        RS_LOGE("RSUniRenderVirtualProcessor::Init for Screen(id %{public}" PRIu64 "): RenderFrame is null!",
+    needsOffscreenRender_ = !params->IsMirrorScreen() &&surfaceFrames_.size() > 1;
+    
+    canvas_ = surfaceFrames_[0].canvas;
+    if (canvas_ == nullptr) {
+        RS_LOGE("RSUniRenderVirtualProcessor::Init for Screen(id %{public}" PRIu64 "): Canvas is null!",
             virtualScreenId_);
         return false;
     }
@@ -154,42 +135,62 @@ bool RSUniRenderVirtualProcessor::InitForRenderThread(DrawableV2::RSScreenRender
     RS_LOGD("RSUniRenderVirtualProcessor::Init, RequestFrame succeed.");
     RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::Init, RequestFrame succeed, colorSpace: %d.",
         renderFrameConfig_.colorGamut);
-    uint64_t pSurfaceUniqueId = producerSurface_->GetUniqueId();
-    auto rsSurface = screenDrawable.GetVirtualSurface(pSurfaceUniqueId);
-    if (rsSurface != nullptr && SetColorSpaceForMetadata(rsSurface->GetColorSpace()) != GSERROR_OK) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata failed.");
+    // Apply color space to all surfaces
+    if (surfaceFrames_[0].frame) {
+        auto rsSurface = surfaceFrames_[0].frame->GetSurface();
+        if (rsSurface) {
+            if (SetColorSpaceForMetadata(rsSurface->GetColorSpace()) != GSERROR_OK) {
+                RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata failed.");
+            }
+        }
     }
 #ifdef USE_VIDEO_PROCESSING_ENGINE
-    RSHdrUtil::EraseHDRMetadataKey(renderFrame_);
+    // Apply HDR metadata to all surfaces
     bool isHDRCast = mirrorScreenHDR || expandScreenHDR;
-    if (RSHdrUtil::SetMetadata(RSHDRUtilConst::HDR_CAST_OUT_COLORSPACE, renderFrame_, isHDRCast) != GSERROR_OK) {
-        RS_LOGD("RSUniRenderVirtualProcessor::Init SetMetadata failed");
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        auto& frame = surfaceFrames_[i].frame;
+        if (frame) {
+            RSHdrUtil::EraseHDRMetadataKey(frame);
+            if (RSHdrUtil::SetMetadata(RSHDRUtilConst::HDR_CAST_OUT_COLORSPACE, frame, isHDRCast) != GSERROR_OK) {
+                RS_LOGD("RSUniRenderVirtualProcessor::Init SetMeadata failed");
+            }
+        }
+        auto& canvas = surfaceFrames_[i].canvas;
+        if (canvas) {
+            if (isHDRCast) {
+                canvas->SetHDREnabledVirtualScreen(true);
+                canvas->SetHdrOn(true);
+            } else {
+                canvas->SetOnMultipleScreen(true);
+            }
+        }
     }
 #endif
-    canvas_ = renderFrame_->GetCanvas();
-    if (canvas_ == nullptr) {
-        RS_LOGE("RSUniRenderVirtualProcessor::Init for Screen(id %{public}" PRIu64 "): Canvas is null!",
-            virtualScreenId_);
-        return false;
-    }
 
     return true;
 }
 
 void RSUniRenderVirtualProcessor::CancelCurrentFrame()
 {
-    if (renderFrame_ != nullptr) {
-        renderFrame_->CancelCurrentFrame();
+    for (auto& surfaceFrame : surfaceFrames_) {
+        if (surfaceFrame.frame) {
+            surfaceFrame.frame->CancelCurrentFrame();
+        }
     }
 }
 
 sptr<SyncFence> RSUniRenderVirtualProcessor::GetFrameAcquireFence()
 {
-    if (!renderFrame_) {
-        RS_LOGE("RSUniRenderVirtualProcessor::GetFrameAcquireFence renderFrame_ is null");
-        return SyncFence::InvalidFence();
+    std::vector<sptr<SyncFence>> fences;
+    for (auto& sf : surfaceFrames_) {
+        if (sf.frame) {
+            auto fence = sf.frame->GetAcquireFence();
+            if (fence && fence->IsValid()) {
+                fences.emplace_back(fence);
+            }
+        }
     }
-    return renderFrame_->GetAcquireFence();
+    return MergeAcquireFences(fences);
 }
 
 bool RSUniRenderVirtualProcessor::UpdateMirrorInfo(DrawableV2::RSLogicalDisplayRenderNodeDrawable& displayDrawable)
@@ -276,29 +277,20 @@ void RSUniRenderVirtualProcessor::CanvasInit(DrawableV2::RSLogicalDisplayRenderN
 
 int32_t RSUniRenderVirtualProcessor::GetBufferAge() const
 {
-    if (renderFrame_ == nullptr) {
-        RS_LOGE("RSUniRenderVirtualProcessor::GetBufferAge renderFrame_ is null.");
-        return 0;
+    int32_t minAge = -1;
+    for (const auto& sf : surfaceFrames_) {
+        if (sf.frame) {
+            int32_t age = sf.frame->GetBufferAge();
+            if (minAge < 0 || age < minAge) {
+                minAge = age;
+            }
+        }
     }
-    return renderFrame_->GetBufferAge();
+    return minAge;
 }
 
 GSError RSUniRenderVirtualProcessor::SetColorSpaceForMetadata(GraphicColorGamut colorSpace)
 {
-    if (renderFrame_ == nullptr) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata renderFrame is null.");
-        return GSERROR_INVALID_ARGUMENTS;
-    }
-    auto rsSurface = renderFrame_->GetSurface();
-    if (rsSurface == nullptr) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata surface is null.");
-        return GSERROR_INVALID_ARGUMENTS;
-    }
-    auto buffer = rsSurface->GetCurrentBuffer();
-    if (buffer == nullptr) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata buffer is null.");
-        return GSERROR_NO_BUFFER;
-    }
     using namespace HDI::Display::Graphic::Common::V1_0;
     auto iter = COLORSPACE_TYPE.find(colorSpace);
     if (iter == COLORSPACE_TYPE.end()) {
@@ -315,45 +307,64 @@ GSError RSUniRenderVirtualProcessor::SetColorSpaceForMetadata(GraphicColorGamut 
         RS_LOGD("RSUniRenderVirtualProcessor::SetColorSpaceForMetadata ConvertMetadataToVec failed.");
         return GSERROR_API_FAILED;
     }
-    return buffer->SetMetadata(ATTRKEY_COLORSPACE_INFO, colorSpaceVec);
+    return SetMetadataForAllSurfaces(ATTRKEY_COLORSPACE_INFO, colorSpaceVec);
+}
+
+GSError RSUniRenderVirtualProcessor::SetMetadataForAllSurfaces(uint32_t key, const std::vector<uint8_t>& data)
+{
+    GSError finalResult = GSERROR_OK;
+    if (surfaceFrames_.empty()) {
+        RS_LOGD("%{public}s: No surface frames available to set metadata.", __func__);
+        return GSERROR_INVALID_ARGUMENTS;
+    }
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        auto& frame = surfaceFrames_[i].frame;
+        if (!frame) {
+            RS_LOGD("%{public}s: surfaceFrames_[%zu] frame is null.", __func__, i);
+            finalResult = GSERROR_INVALID_ARGUMENTS;
+            continue;
+        }
+        auto rsSurface = frame->GetSurface();
+        if (!rsSurface) {
+            RS_LOGD("%{public}s: surfaceFrames_[%zu] rsSurface is null.", __func__, i);
+            finalResult = GSERROR_INVALID_ARGUMENTS;
+            continue;
+        }
+        auto buffer = rsSurface->GetCurrentBuffer();
+        if (!buffer) {
+            RS_LOGD("%{public}s: surfaceFrames_[%zu] buffer is null.", __func__, i);
+            finalResult = GSERROR_NO_BUFFER;
+            continue;
+        }
+        if (buffer->SetMetadata(key, data) != GSERROR_OK) {
+            RS_LOGD("%{public}s: surfaceFrames_[%zu] SetMetadata failed.", __func__, i);
+            finalResult = GSERROR_API_FAILED;
+        }
+    }
+    return finalResult;
 }
 
 bool RSUniRenderVirtualProcessor::SetCropRectForMetadata(
     const HDI::Display::Graphic::Common::V1_0::BufferHandleMetaRegion& metaRegion)
 {
-    if (renderFrame_ == nullptr) {
-        RS_LOGD("%{public}s : renderFrame is nullptr.", __func__);
-        return false;
-    }
-    auto rsSurface = renderFrame_->GetSurface();
-    if (rsSurface == nullptr) {
-        RS_LOGD("%{public}s : surface is nullptr.", __func__);
-        return false;
-    }
-    auto buffer = rsSurface->GetCurrentBuffer();
-    if (buffer == nullptr) {
-        RS_LOGD("%{public}s : buffer is nullptr.", __func__);
-        return false;
-    }
     std::vector<uint8_t> data;
     if (MetadataHelper::ConvertMetadataToVec(metaRegion, data) != GSERROR_OK) {
         RS_LOGD("%{public}s : ConvertMetadataToVec failed.", __func__);
         return false;
     }
-    if (buffer->SetMetadata(HDI::Display::Graphic::Common::V1_0::ATTRKEY_CROP_REGION, data) != GSERROR_OK) {
-        RS_LOGD("%{public}s : SetMetadata failed.", __func__);
-        return false;
-    }
-    return true;
+    return SetMetadataForAllSurfaces(HDI::Display::Graphic::Common::V1_0::ATTRKEY_CROP_REGION, data) == GSERROR_OK;
 }
 
 void RSUniRenderVirtualProcessor::SetDirtyInfo(const std::vector<RectI>& damageRegion)
 {
-    if (renderFrame_ == nullptr) {
-        RS_LOGW("RSUniRenderVirtualProcessor::SetDirtyInfo renderFrame_ is null.");
-        return;
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        auto& frame = surfaceFrames_[i].frame;
+        if (frame) {
+            frame->SetDamageRegion(damageRegion);
+        } else {
+            RS_LOGW("%{public}s: surfaceFrames_[%zu] frame is null.", __func__, i);
+        }
     }
-    renderFrame_->SetDamageRegion(damageRegion);
     if (SetRoiRegionToCodec(damageRegion) != GSERROR_OK) {
         RS_LOGD("RSUniRenderVirtualProcessor::SetDirtyInfo SetRoiRegionToCodec failed.");
     }
@@ -361,23 +372,6 @@ void RSUniRenderVirtualProcessor::SetDirtyInfo(const std::vector<RectI>& damageR
 
 GSError RSUniRenderVirtualProcessor::SetRoiRegionToCodec(const std::vector<RectI>& damageRegion)
 {
-    if (renderFrame_ == nullptr) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetRoiRegionToCodec renderFrame is null.");
-        return GSERROR_INVALID_ARGUMENTS;
-    }
-
-    auto& rsSurface = renderFrame_->GetSurface();
-    if (rsSurface == nullptr) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetRoiRegionToCodec surface is null.");
-        return GSERROR_INVALID_ARGUMENTS;
-    }
-
-    auto buffer = rsSurface->GetCurrentBuffer();
-    if (buffer == nullptr) {
-        RS_LOGD("RSUniRenderVirtualProcessor::SetRoiRegionToCodec buffer is null, not support get surfacebuffer.");
-        return GSERROR_NO_BUFFER;
-    }
-
     RoiRegions roiRegions;
     const RectI screenRect{0, 0, originalVirtualScreenWidth_, originalVirtualScreenHeight_};
     if (damageRegion.size() <= ROI_REGIONS_MAX_CNT) {
@@ -407,7 +401,8 @@ GSError RSUniRenderVirtualProcessor::SetRoiRegionToCodec(const std::vector<RectI
         RS_LOGD("RSUniRenderVirtualProcessor::SetRoiRegionToCodec ConvertMetadataToVec failed.");
         return ret;
     }
-    return buffer->SetMetadata(GrallocBufferAttr::GRALLOC_BUFFER_ATTR_BUFFER_ROI_INFO, roiRegionsVec);
+
+    return SetMetadataForAllSurfaces(GrallocBufferAttr::GRALLOC_BUFFER_ATTR_BUFFER_ROI_INFO, roiRegionsVec);
 }
 
 void RSUniRenderVirtualProcessor::OriginScreenRotation(ScreenRotation screenRotation, float width, float height)
@@ -488,20 +483,15 @@ void RSUniRenderVirtualProcessor::ScaleMirrorIfNeed(const ScreenRotation angle, 
     }
 }
 
-void RSUniRenderVirtualProcessor::MergeMirrorFenceToHardwareEnabledDrawables()
+void RSUniRenderVirtualProcessor::MergeMirrorFenceToHardwareEnabledDrawables(const sptr<SyncFence>& acquireFence)
 {
+    if (!acquireFence || !acquireFence->IsValid()) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s acquireFence not valid!", __func__);
+        return;
+    }
     auto& renderThreadParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (!renderThreadParams) {
         RS_LOGE("RSUniRenderVirtualProcessor::%{public}s renderThreadParams null!", __func__);
-        return;
-    }
-    if (renderFrame_ == nullptr) {
-        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s renderFrame_ null!", __func__);
-        return;
-    }
-    auto acquireFence = renderFrame_->GetAcquireFence();
-    if (!acquireFence || !acquireFence->IsValid()) {
-        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s acquireFence not valid!", __func__);
         return;
     }
     for (const auto& [screenNodeId, _, drawable] : renderThreadParams->GetHardwareEnabledTypeDrawables()) {
@@ -537,19 +527,25 @@ void RSUniRenderVirtualProcessor::MergeMirrorFenceToHardwareEnabledDrawables()
 
 void RSUniRenderVirtualProcessor::PostProcess()
 {
-    if (renderFrame_ == nullptr || renderEngine_ == nullptr) {
-        RS_LOGE("RSUniRenderVirtualProcessor::PostProcess renderFrame or renderEngine is nullptr");
+    if (renderEngine_ == nullptr) {
+        RS_LOGE("RSUniRenderVirtualProcessor::PostProcess renderEngine is nullptr");
         return;
     }
-    auto surfaceOhos = renderFrame_->GetSurface();
-    RSBaseRenderEngine::SetUiTimeStamp(renderFrame_, surfaceOhos);
-    renderFrame_->Flush();
-    // Merge virtual mirror screen fence to hardware drawables, preventing buffer from being released too early.
-    if (isMirror_) {
-        MergeMirrorFenceToHardwareEnabledDrawables();
+
+    if (surfaceFrames_.size() == 1) {
+        auto& frame = surfaceFrames_[0].frame;
+        auto surfaceOhos = frame->GetSurface();
+        RSBaseRenderEngine::SetUiTimeStamp(frame, surfaceOhos);
+        frame->Flush();
+        if (isMirror_) {
+            MergeMirrorFenceToHardwareEnabledDrawables(frame->GetAcquireFence());
+        }
+        RS_LOGD("RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
+        RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
+        return;
     }
-    RS_LOGD("RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
-    RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::PostProcess, FlushFrame succeed.");
+
+    FlushAllSurfaces();
 }
 
 void RSUniRenderVirtualProcessor::ProcessSurface(RSSurfaceRenderNode& node)
@@ -735,6 +731,221 @@ void RSUniRenderVirtualProcessor::SetVirtualScreenSize(DrawableV2::RSScreenRende
 
     originalVirtualScreenWidth_ = virtualScreenWidth_;
     originalVirtualScreenHeight_ = virtualScreenHeight_;
+}
+
+void RSUniRenderVirtualProcessor::RequestFramesForAllSurfaces(
+    DrawableV2::RSScreenRenderNodeDrawable& screenDrawable)
+{
+    RS_TRACE_FUNC();
+    surfaceFrames_.clear();
+
+    auto params = static_cast<RSScreenRenderParams*>(screenDrawable.GetRenderParams().get());
+    if (!params) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: ScreenParams is nullptr", __func__);
+        return;
+    }
+    const auto& screenProperty = params->GetScreenProperty();
+    const auto& surfaces = screenProperty.GetMultiSurfaceConfigs();
+    if (surfaces.empty()) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: No surface configs", __func__);
+        return;
+    }
+    if (params->IsVirtualSurfaceChanged()) {
+        screenDrawable.ClearVirtualSurfaces();
+    }
+
+    FrameContextConfig frameContextConfig(false);
+    frameContextConfig.isVirtual = true;
+    frameContextConfig.timeOut = 0;
+
+    for (size_t i = 0; i < surfaces.size(); ++i) {
+        const auto& surfaceRegion = surfaces[i];
+        SurfaceFrameConfig config;
+        config.surface = surfaceRegion.surface;
+        config.region = surfaceRegion.region;
+
+        if (!config.surface) {
+            RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: surface at index %{public}zu is null",
+                __func__, i);
+            continue;
+        }
+
+        std::unique_ptr<RSRenderFrame> frame;
+#ifdef RS_ENABLE_GL
+        if (RSSystemProperties::GetGpuApiType() == GpuApiType::OPENGL) {
+            frame = renderEngine_->RequestFrame(config.surface, renderFrameConfig_, forceCPU_, false,
+                frameContextConfig);
+        }
+#endif
+        if (frame == nullptr) {
+            uint64_t pSurfaceUniqueId = config.surface->GetUniqueId();
+            auto rsSurface = screenDrawable.GetVirtualSurface(pSurfaceUniqueId);
+            if (rsSurface == nullptr) {
+                RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Make rssurface for surface index %{public}zu",
+                    __func__, i);
+                rsSurface = renderEngine_->MakeRSSurface(config.surface, forceCPU_);
+                screenDrawable.SetVirtualSurface(rsSurface, pSurfaceUniqueId);
+            }
+            frame = renderEngine_->RequestFrame(
+                std::static_pointer_cast<RSSurfaceOhos>(rsSurface), renderFrameConfig_, forceCPU_, false,
+                frameContextConfig);
+        }
+
+        if (frame == nullptr) {
+            RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: RequestFrame failed for surface index %{public}zu",
+                __func__, i);
+            continue;
+        }
+
+        config.frame = std::move(frame);
+        config.canvas = config.frame->GetCanvas();
+
+        if (!config.canvas) {
+            RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Canvas is null for surface index %{public}zu",
+                __func__, i);
+            continue;
+        }
+
+        surfaceFrames_.push_back(std::move(config));
+    }
+
+    RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: surface count=%{public}zu",
+        __func__, surfaceFrames_.size());
+}
+
+void RSUniRenderVirtualProcessor::CopyToSecondarySurfaces()
+{
+    if (!surfaceFrames_[0].canvas) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: Primary surface canvas is null", __func__);
+        return;
+    }
+
+    auto primarySurface = surfaceFrames_[0].canvas->GetSurface();
+    if (!primarySurface) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: Primary surface is null", __func__);
+        return;
+    }
+
+    auto snapshot = primarySurface->GetImageSnapshot();
+    if (!snapshot) {
+        RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: Failed to get snapshot from primary surface", __func__);
+        return;
+    }
+
+    Drawing::SamplingOptions sampling(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    // Copy to secondary surfaces
+    for (size_t i = 1; i < surfaceFrames_.size(); ++i) {
+        RS_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::%s: Copying to surface index %zu", __func__, i);
+
+        auto& canvas = surfaceFrames_[i].canvas;
+        if (!canvas) {
+            RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: Canvas is null for surface index %{public}zu",
+                __func__, i);
+            continue;
+        }
+        canvas->DrawImage(*snapshot, 0, 0, sampling);
+
+        RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Copied to surface index %{public}zu", __func__, i);
+        RS_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::%s: Copied to surface index %zu", __func__, i);
+    }
+}
+
+void RSUniRenderVirtualProcessor::FlushAllSurfaces()
+{
+    if (!needsOffscreenRender_) {
+        CopyToSecondarySurfaces();
+    }
+
+    FlushGpu();
+    surfaceFrames_[0].frame->SubmitGpu();
+
+    std::vector<sptr<SyncFence>> fences;
+    FlushBuffer(fences);
+
+    if (isMirror_) {
+        MergeMirrorFenceToHardwareEnabledDrawables(MergeAcquireFences(fences));
+    }
+}
+
+void RSUniRenderVirtualProcessor::FlushGpu()
+{
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        auto& frame = surfaceFrames_[i].frame;
+        if (frame) {
+            frame->FlushGpu();
+        } else {
+            RS_LOGW("%{public}s: surfaceFrames_[%zu] frame is null.", __func__, i);
+        }
+    }
+}
+
+void RSUniRenderVirtualProcessor::FlushBuffer(std::vector<sptr<SyncFence>>& fences)
+{
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        auto& frame = surfaceFrames_[i].frame;
+        if (!frame) {
+            continue;
+        }
+        auto surfaceOhos = frame->GetSurface();
+        RSBaseRenderEngine::SetUiTimeStamp(frame, surfaceOhos);
+        if (!frame->FlushBuffer()) {
+            RS_LOGE("RSUniRenderVirtualProcessor::%{public}s: FlushBuffer failed for surface index %{public}zu",
+                __func__, i);
+            continue;
+        }
+        auto fence = frame->GetAcquireFence();
+        if (fence && fence->IsValid()) {
+            fences.emplace_back(fence);
+        }
+        RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: FlushBuffer succeed for surface index %{public}zu, "
+            "fence is %{public}s", __func__, i, fence && fence->IsValid() ? "valid" : "invalid");
+    }
+}
+
+sptr<SyncFence> RSUniRenderVirtualProcessor::MergeAcquireFences(const std::vector<sptr<SyncFence>>& fences) const
+{
+    sptr<SyncFence> mergedFence = SyncFence::InvalidFence();
+    for (const auto& fence : fences) {
+        if (!fence || !fence->IsValid()) {
+            continue;
+        }
+        if (!mergedFence || !mergedFence->IsValid()) {
+            mergedFence = fence;
+            continue;
+        }
+        mergedFence = SyncFence::MergeFence("VirtualScreenFence", mergedFence, fence);
+    }
+    return mergedFence;
+}
+
+void RSUniRenderVirtualProcessor::BlitRegionsToSurfaces(const std::shared_ptr<Drawing::Image>& offscreenImage)
+{
+    if (surfaceFrames_.size() <= 1 || !offscreenImage) {
+        RS_LOGW("RSUniRenderVirtualProcessor::%{public}s: Not in multi-surface mode or no offscreen image", __func__);
+        return;
+    }
+
+    Drawing::SamplingOptions sampling(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+
+    for (size_t i = 0; i < surfaceFrames_.size(); ++i) {
+        auto& config = surfaceFrames_[i];
+        auto& canvas = config.canvas;
+        const auto& region = config.region;
+
+        // Source rect from offscreen image (in virtual screen coordinates)
+        Drawing::Rect srcRect(region.left_, region.top_,
+            region.left_ + region.width_, region.top_ + region.height_);
+        // Destination rect on this surface (full surface)
+        Drawing::Rect dstRect(0, 0, renderFrameConfig_.width, renderFrameConfig_.height);
+
+        canvas->DrawImageRect(*offscreenImage, srcRect, dstRect, sampling,
+            Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+
+        RS_LOGD("RSUniRenderVirtualProcessor::%{public}s: Blitted region [%{public}d,%{public}d,%{public}d,%{public}d]"
+             " to surface index %{public}zu", __func__, region.left_, region.top_, region.width_, region.height_, i);
+        RS_TRACE_NAME_FMT("RSUniRenderVirtualProcessor::%s: Blitted region [%d,%d,%d,%d]"
+             " to surface index %zu", __func__, region.left_, region.top_, region.width_, region.height_, i);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -821,6 +821,125 @@ void RSClientToServiceConnectionProxy::RemoveVirtualScreen(ScreenId id)
     }
 }
 
+int32_t RSClientToServiceConnectionProxy::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("AddVirtualScreenSurface: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("AddVirtualScreenSurface: WriteUint64 id err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    // Filter valid configs
+    std::vector<SurfaceRegionConfig> validConfigs;
+    validConfigs.reserve(surfaceConfigs.size());
+    for (const auto& config : surfaceConfigs) {
+        if (config.surface != nullptr && config.surface->GetProducer() != nullptr) {
+            validConfigs.push_back(config);
+        }
+    }
+
+    if (!data.WriteUint32(static_cast<uint32_t>(validConfigs.size()))) {
+        ROSEN_LOGE("AddVirtualScreenSurface: WriteUint32 configCount err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    for (const auto& config : validConfigs) {
+        auto producer = config.surface->GetProducer();
+        if (producer == nullptr) {
+            ROSEN_LOGE("AddVirtualScreenSurface: producer is nullptr!");
+            return WRITE_PARCEL_ERR;
+        }
+        if (!data.WriteRemoteObject(producer->AsObject())) {
+            ROSEN_LOGE("AddVirtualScreenSurface: WriteRemoteObject producer err.");
+            return WRITE_PARCEL_ERR;
+        }
+        if (!data.WriteInt32(config.region.left_) || !data.WriteInt32(config.region.top_) ||
+            !data.WriteInt32(config.region.width_) || !data.WriteInt32(config.region.height_)) {
+            ROSEN_LOGE("AddVirtualScreenSurface: WriteInt32 region err.");
+            return WRITE_PARCEL_ERR;
+        }
+    }
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_SURFACE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::AddVirtualScreenSurface: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+
+    int32_t status = reply.ReadInt32();
+    return status;
+}
+
+int32_t RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface(
+    ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    if (surfaces.empty()) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface: surfaces is empty!");
+        return INVALID_ARGUMENTS;
+    }
+    for (const auto& surface : surfaces) {
+        if (surface == nullptr) {
+            ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface: surface is nullptr!");
+            return INVALID_ARGUMENTS;
+        }
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RemoveVirtualScreenSurface: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("RemoveVirtualScreenSurface: WriteUint64 id err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    if (!data.WriteUint32(static_cast<uint32_t>(surfaces.size()))) {
+        ROSEN_LOGE("RemoveVirtualScreenSurface: WriteUint32 surfaceCount err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    for (const auto& surface : surfaces) {
+        auto producer = surface->GetProducer();
+        if (producer == nullptr) {
+            ROSEN_LOGE("RemoveVirtualScreenSurface: producer is nullptr!");
+            return WRITE_PARCEL_ERR;
+        }
+        if (!data.WriteRemoteObject(producer->AsObject())) {
+            ROSEN_LOGE("RemoveVirtualScreenSurface: WriteRemoteObject producer err.");
+            return WRITE_PARCEL_ERR;
+        }
+    }
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_SURFACE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+
+    int32_t status = reply.ReadInt32();
+    return status;
+}
+
 int32_t RSClientToServiceConnectionProxy::SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback)
 {
     if (callback == nullptr) {

@@ -845,5 +845,23 @@ PanelPowerStatus RSScreenManagerAgent::GetPanelPowerStatus(ScreenId id) const
     return screenManager_->GetPanelPowerStatus(id);
 }
 
+int32_t RSScreenManagerAgent::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSScreenManagerAgent::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->RemoveVirtualScreenSurface(id, surfaces);
+}
 } // namespace Rosen
 } // namespace OHOS

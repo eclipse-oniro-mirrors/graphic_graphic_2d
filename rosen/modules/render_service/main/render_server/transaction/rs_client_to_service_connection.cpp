@@ -508,17 +508,14 @@ ScreenId RSClientToServiceConnection::CreateVirtualScreen(
         RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
         return INVALID_SCREEN_ID;
     }
-    auto res = screenManagerAgent_->CreateVirtualScreen(
+    auto screenId = screenManagerAgent_->CreateVirtualScreen(
         name, width, height, surface, associatedScreenId, flags, whiteList);
-    if (res == INVALID_SCREEN_ID) {
-        return res;
+    if (screenId != INVALID_SCREEN_ID && surface != nullptr) {
+            EventInfo event = { "VOTER_VIRTUALDISPLAY", ADD_VOTE, OLED_60_HZ, OLED_60_HZ, name };
+            NotifyRefreshRateEvent(event);
+            ROSEN_LOGI("%{public}s vote 60hz", __func__);
     }
-    if (surface != nullptr) {
-        EventInfo event = { "VOTER_VIRTUALDISPLAY", ADD_VOTE, OLED_60_HZ, OLED_60_HZ, name };
-        NotifyRefreshRateEvent(event);
-        ROSEN_LOGI("%{public}s vote 60hz", __func__);
-    }
-    return res;
+    return screenId;
 }
 
 int32_t RSClientToServiceConnection::SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blacklist)
@@ -625,6 +622,25 @@ int32_t RSClientToServiceConnection::SetCastScreenEnableSkipWindow(ScreenId id, 
         return StatusCode::SCREEN_NOT_FOUND;
     }
     return screenManagerAgent_->SetCastScreenEnableSkipWindow(id, enable);
+}
+
+int32_t RSClientToServiceConnection::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManagerAgent_->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSClientToServiceConnection::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    if (!screenManagerAgent_) {
+        RS_LOGW("%{public}s screenManagerAgent_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManagerAgent_->RemoveVirtualScreenSurface(id, surfaces);
 }
 
 int32_t RSClientToServiceConnection::SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface)

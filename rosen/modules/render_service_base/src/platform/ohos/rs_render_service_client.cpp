@@ -417,6 +417,33 @@ int32_t RSRenderServiceClient::SetVirtualScreenSurface(ScreenId id, sptr<Surface
     return clientToService->SetVirtualScreenSurface(id, surface);
 }
 
+int32_t RSRenderServiceClient::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    if (surfaceConfigs.empty()) {
+        RS_LOGW("RSRenderServiceClient::%{public}s: surfaceConfigs is empty.", __func__);
+        return INVALID_ARGUMENTS;
+    }
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
+        return RENDER_SERVICE_NULL;
+    }
+
+    return clientToService->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSRenderServiceClient::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        RS_LOGE("RSRenderServiceClient::%{public}s clientToService is null!", __func__);
+        return RENDER_SERVICE_NULL;
+    }
+
+    return clientToService->RemoveVirtualScreenSurface(id, surfaces);
+}
+
 void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();

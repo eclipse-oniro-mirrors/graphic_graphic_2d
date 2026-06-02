@@ -133,7 +133,7 @@ void RSMultiScreenUtil::HandleVirtualExtendDisplay(
     drawable.curSecExemption_ = params.GetSecurityExemption();
     uniParam->SetSecExemption(drawable.curSecExemption_);
 
-    drawable.DrawExpandDisplay(params);
+    drawable.DrawExpandDisplay(params, processor);
 
     drawable.lastSecExemption_ = drawable.curSecExemption_;
     uniParam->SetSecurityDisplay(false);
@@ -270,7 +270,8 @@ void RSMultiScreenUtil::HandleVirtualExtendScreen(
     damageRegionRects = RSUniRenderUtil::MergeDirtyHistory(
         drawable, bufferAge, screenInfo, rsDirtyRectsDfx, params);
     uniParam->Reset();
-    if (uniParam->IsVirtualExpandScreenDirtyEnabled() && !uniParam->IsVirtualDirtyDfxEnabled()) {
+    if (uniParam->IsVirtualExpandScreenDirtyEnabled() && !uniParam->IsVirtualDirtyDfxEnabled() &&
+        !expandProcessor->IsMultiSurfaceExtendMode()) {
         expandProcessor->SetDirtyInfo(damageRegionRects);
     } else {
         std::vector<RectI> emptyRects = {};

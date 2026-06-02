@@ -51,6 +51,7 @@
 #include "screen_manager/rs_screen_data.h"
 #include "screen_manager/rs_screen_hdr_capability.h"
 #include "screen_manager/rs_screen_mode_info.h"
+#include "screen_manager/rs_surface_region_config.h"
 #include "screen_manager/screen_types.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "vsync_receiver.h"
@@ -135,6 +136,11 @@ public:
         ScreenId associatedScreenId = 0, int32_t flags = 0, std::vector<NodeId> whiteList = {});
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
+
+    // Multi-surface virtual screen APIs
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs);
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces);
 
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
