@@ -75,7 +75,8 @@ private:
     const int screenHeight_ = screenHeight;
 };
 
-void SetWavyRippleLightParams(const std::shared_ptr<RSNGWavyRippleLight>& shader, const WavyRippleLightParams& params)
+void SetWavyRippleLightParams(const std::shared_ptr<RSNGWavyRippleLight>& shader,
+    const WavyRippleLightParams& params)
 {
     if (!shader) {
         return;
