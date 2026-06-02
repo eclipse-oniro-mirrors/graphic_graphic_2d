@@ -166,7 +166,7 @@ public:
         // set effect child node
         auto effectChildNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         if (!effectChildNode || !effectNode) {
-            return nullptr;
+            return;
         }
         effectChildNode->SetBounds(x, y, sizeX, sizeY);
         effectChildNode->SetFrame(x, y, sizeX, sizeY);
