@@ -1220,6 +1220,24 @@ HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_CycleBuffersNum_And_Ids_Bounda
 }
 
 /**
+ * Function: UpdateRSLayerCmd_VcldInfo_Applied
+ * Type: Function
+ * Rank: Important(2)
+ * CaseDescription: apply VcldInfo and verify
+ */
+HWTEST(RSRenderSurfaceLayerTest, UpdateRSLayerCmd_VcldInfo_Applied, TestSize.Level1)
+{
+    auto layer = std::make_shared<RSRenderSurfaceLayer>();
+    RSVcldParam vcldInfo;
+    vcldInfo.enable = true;
+    vcldInfo.radius = 25;
+    auto propInfo = std::make_shared<RSRenderLayerCmdProperty<RSVcldParam>>(vcldInfo);
+    auto cmdInfo = std::make_shared<RSRenderLayerVcldInfoCmd>(propInfo);
+    layer->UpdateRSLayerCmd(cmdInfo);
+    EXPECT_FLOAT_EQ(layer->GetVcldInfo().radius, 25.0f);
+}
+
+/**
  * Function: SetPresentTimestamp_UnsupportedType_TrueBranch
  * Type: Function
  * Rank: Important(2)

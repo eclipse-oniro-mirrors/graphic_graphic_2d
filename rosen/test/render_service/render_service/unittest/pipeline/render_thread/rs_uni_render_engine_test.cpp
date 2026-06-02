@@ -605,4 +605,76 @@ HWTEST_F(RSUniRenderEngineTest, DrawLayerPreProcess_NullLayerTest001, TestSize.L
     // This test is primarily for documentation of expected behavior
     // Note: In production code, null layer should be checked before calling this function
 }
+
+/**
+ * @tc.name: DrawLayerPreProcess_VcldInfoTest001
+ * @tc.desc: Test DrawLayerPreProcess when vcldInfo.enable is true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderEngineTest, DrawLayerPreProcess_VcldInfoTest001, TestSize.Level2)
+{
+    auto uniRenderEngine = std::make_shared<RSUniRenderEngine>();
+    std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    auto ctx = std::make_shared<RSComposerContext>(nullptr);
+    RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+    ASSERT_NE(layer, nullptr);
+
+    // Set layer size
+    GraphicIRect layerSize = {0, 0, 100, 100};
+    layer->SetLayerSize(layerSize);
+
+    // Set VcldInfo
+    RSVcldParam vcldInfo;
+    vcldInfo.enable = true;
+    vcldInfo.radius = 10;
+    layer->SetVcldInfo(vcldInfo);
+
+    // Set non-transparent background color
+    GraphicLayerColor backgroundColor = { .r = 255, .g = 0, .b = 0, .a = 255 };
+    layer->SetBackgroundColor(backgroundColor);
+
+    ComposerScreenInfo screenInfo;
+    // Should clip round rect and draw background color, then return early
+    EXPECT_NO_FATAL_FAILURE(uniRenderEngine->DrawLayerPreProcess(*canvas, layer, screenInfo));
+}
+
+/**
+ * @tc.name: DrawLayerPreProcess_VcldInfoTransparentTest001
+ * @tc.desc: Test DrawLayerPreProcess when vcldInfo.enable is true but background is transparent
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderEngineTest, DrawLayerPreProcess_VcldInfoTransparentTest001, TestSize.Level2)
+{
+    auto uniRenderEngine = std::make_shared<RSUniRenderEngine>();
+    std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    auto ctx = std::make_shared<RSComposerContext>(nullptr);
+    RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+    ASSERT_NE(layer, nullptr);
+
+    // Set layer size
+    GraphicIRect layerSize = {0, 0, 100, 100};
+    layer->SetLayerSize(layerSize);
+
+    // Set VcldInfo
+    RSVcldParam vcldInfo;
+    vcldInfo.enable = true;
+    vcldInfo.radius = 10;
+    layer->SetVcldInfo(vcldInfo);
+
+    // Set transparent background color
+    GraphicLayerColor transparentColor = { .r = 0, .g = 0, .b = 0, .a = 0 };
+    layer->SetBackgroundColor(transparentColor);
+
+    ComposerScreenInfo screenInfo;
+    // Should clip round rect but not draw background color(transparent)
+    EXPECT_NO_FATAL_FAILURE(uniRenderEngine->DrawLayerPreProcess(*canvas, layer, screenInfo));
+}
 } // namespace OHOS::Rosen

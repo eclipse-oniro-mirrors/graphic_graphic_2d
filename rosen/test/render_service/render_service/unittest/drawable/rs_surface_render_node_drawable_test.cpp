@@ -1527,6 +1527,33 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, 
 }
 
 /**
+ * @tc.name: DrawSelfDrawingNodeBuffer
+ * @tc.desc: Test DrawSelfDrawingNodeBuffer
+ * @tc.type: FUNC
+ * @tc.require: issueIAOJHQ
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSelfDrawingNodeBufferTest001, TestSize.Level1)
+{
+    ASSERT_NE(drawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    BufferDrawParam params;
+    surfaceParams->selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
+    surfaceParams->backgroundColor_ = Color(0xFF000000);
+    surfaceParams->vcldInfo_.enable = true;
+    surfaceParams->vcldInfo_.radius = 25;
+    surfaceParams->vcldRoundRect_ = RRect({0, 0, 500, 500}, {25, 25, 25, 25});
+    surfaceDrawable_->DrawSelfDrawingNodeBuffer(canvas, *surfaceParams, params);
+
+    surfaceParams->vcldInfo_.enable = false;
+    surfaceParams->vcldInfo_.radius = 0;
+    surfaceParams->vcldRoundRect_ = RRect({0, 0, 500, 500}, {0, 0, 0, 0});
+    surfaceDrawable_->DrawSelfDrawingNodeBuffer(canvas, *surfaceParams, params);
+}
+
+/**
  * @tc.name: DrawCloneNode
  * @tc.desc: Test DrawCloneNode while node is not clone
  * @tc.type: FUNC
