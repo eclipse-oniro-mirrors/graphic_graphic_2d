@@ -28,7 +28,7 @@ void InitContourDiagonalFlowLight(std::shared_ptr<RSNGContourDiagonalFlowLight>&
     if (!contourDiagonalFlowLight) {
         return;
     }
-    // Contour (vector of Vector2f points)
+    
     std::vector<Vector2f> contour = {
         Vector2f{0.436198, 0.122504}, Vector2f{0.418602, 0.126364}, Vector2f{0.401042, 0.128906},
         Vector2f{0.367740, 0.129354}, Vector2f{0.333333, 0.126953}, Vector2f{0.320173, 0.127114},
@@ -80,9 +80,9 @@ void InitContourDiagonalFlowLight(std::shared_ptr<RSNGContourDiagonalFlowLight>&
         Vector2f{0.784427, 0.586662}, Vector2f{0.779518, 0.582031}, Vector2f{0.769707, 0.573498},
         Vector2f{0.758250, 0.566298}, Vector2f{0.733814, 0.551521}, Vector2f{0.705733, 0.541233},
         Vector2f{0.678167, 0.534987}, Vector2f{0.653650, 0.523872}, Vector2f{0.647171, 0.520723},
-        Vector2f{0.642221, 0.516276}, Vector2f{0.636389, 0.512502}, Vector2f{0.637157, 0.506836},
-        Vector2f{0.647536, 0.496735}, Vector2f{0.647139, 0.484375},
-        Vector2f{0.653820, 0.465012}, Vector2f{0.651046, 0.445312}, Vector2f{0.651211, 0.440331},
+        Vector2f{0.642221, 0.516276}, Vector2f{0.636389, 0.512502},
+        Vector2f{0.637157, 0.506836}, Vector2f{0.647536, 0.496735}, Vector2f{0.647139, 0.484375},
+        Vector2f{0.653280, 0.465012}, Vector2f{0.651046, 0.445312}, Vector2f{0.651211, 0.440331},
         Vector2f{0.653071, 0.435547}, Vector2f{0.657028, 0.431839}, Vector2f{0.663777, 0.435113},
         Vector2f{0.664935, 0.432888}, Vector2f{0.666092, 0.430664}, Vector2f{0.667197, 0.423164},
         Vector2f{0.663488, 0.416016}, Vector2f{0.662186, 0.411152}, Vector2f{0.663198, 0.406250},
