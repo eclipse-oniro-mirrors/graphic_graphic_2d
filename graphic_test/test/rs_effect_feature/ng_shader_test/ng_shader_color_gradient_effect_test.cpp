@@ -91,7 +91,6 @@ const std::vector<float> blendValues = {0.0f, 0.5f, 1.0f};
 
 // Color number values
 const std::vector<float> colorNumberValues = {2.0f, 4.0f, 6.0f, 8.0f};
-}
 
 // Extreme values
 const std::vector<float> extremeValues = {-1.0f, -10.0f, 9999.0f, 1e10f};
@@ -111,6 +110,7 @@ std::shared_ptr<RSCanvasNode> CreateEffectChildNode(const size_t i, const size_t
     effectChildNode->SetOverlayNGShader(colorGradient);
     effectNode->AddChild(effectChildNode);
     return effectChildNode;
+}
 }
 
 class NGShaderColorGradientEffectTest : public RSGraphicTest {
