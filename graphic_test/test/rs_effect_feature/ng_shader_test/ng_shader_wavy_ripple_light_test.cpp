@@ -31,9 +31,9 @@ struct WavyRippleLightParams {
     Vector2f center;
     float radius;
     float thickness;
-}
+};
 
-const std::vector<WavyRippleLightParams> wavyRippleLightParamsCenter = {
+std::vector<WavyRippleLightParams> wavyRippleLightParamsCenter = {
     // Test different center positions
     {{0.2f, 0.2f}, 0.3f, 0.05f},
     {{0.8f, 0.2f}, 0.3f, 0.05f},
@@ -41,21 +41,21 @@ const std::vector<WavyRippleLightParams> wavyRippleLightParamsCenter = {
     {{0.8f, 0.8f}, 0.3f, 0.05f},
 };
 
-const std::vector<WavyRippleLightParams> wavyRippleLightParamsRadius = {
+std::vector<WavyRippleLightParams> wavyRippleLightParamsRadius = {
     // Test different radius
     {{0.5f, 0.5f}, 0.1f, 0.03f},
     {{0.5f, 0.5f}, 0.5f, 0.04f},
     {{0.5f, 0.5f}, 0.8f, 0.06f},
 };
 
-const std::vector<WavyRippleLightParams> wavyRippleLightParamsThickness = {
+std::vector<WavyRippleLightParams> wavyRippleLightParamsThickness = {
     // Test different thickness
     {{0.5f, 0.5f}, 0.3f, 0.01f},
     {{0.5f, 0.5f}, 0.3f, 0.1f},
     {{0.5f, 0.5f}, 0.3f, 0.2f},
 };
 
-const std::vector<WavyRippleLightParams> wavyRippleLightParamsInvalidValues = {
+std::vector<WavyRippleLightParams> wavyRippleLightParamsInvalidValues = {
     // Test invalid values
     {{-0.1f, 0.5f}, -0.1f, -0.01f},
     {{1.5f, 0.5f}, 2.0f, 0.5f},
@@ -98,7 +98,10 @@ GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_Cen
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         
-        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext()); 
+        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        if (!node) {
+            return;
+        }
         node->SetBounds({x, y, sizeX, sizeY});
         node->SetFrame({x, y, sizeX, sizeY});
         node->SetBackgroundColor(0xff000000);
@@ -121,7 +124,10 @@ GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_Rad
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         
-        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext()); 
+        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        if (!node) {
+            return;
+        }
         node->SetBounds({x, y, sizeX, sizeY});
         node->SetFrame({x, y, sizeX, sizeY});
         node->SetBackgroundColor(0xff000000);
@@ -144,7 +150,10 @@ GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_Thi
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         
-        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext()); 
+        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        if (!node) {
+            return;
+        }
         node->SetBounds({x, y, sizeX, sizeY});
         node->SetFrame({x, y, sizeX, sizeY});
         node->SetBackgroundColor(0xff000000);
@@ -154,7 +163,7 @@ GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_Thi
     }
 }
 
-GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_Radius_Thickness_Combination_Test)
+GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_InvalidValues_Test)
 {
     const size_t columnCount = 2;
     const size_t rowCount = wavyRippleLightParamsInvalidValues.size();
@@ -167,7 +176,10 @@ GRAPHIC_TEST(NGShaderWavyRippleLightTest, EFFECT_TEST, Set_Wavy_Ripple_Light_Rad
         int x = (i % columnCount) * sizeX;
         int y = (i / columnCount) * sizeY;
         
-        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext()); 
+        auto node = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        if (!node) {
+            return;
+        }
         node->SetBounds({x, y, sizeX, sizeY});
         node->SetFrame({x, y, sizeX, sizeY});
         node->SetBackgroundColor(0xff000000);
