@@ -164,7 +164,7 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
         colorGradient->Setter<ColorGradientEffectColor2Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
         colorGradient->Setter<ColorGradientEffectColor3Tag>(Vector4f{1.0f, 1.0f, 0.0f, 1.0f});
 
-        SetUpTestNode(static_cast<size_t>(i), columnCount, rowCount, colorGradient);
+        SetEffectChildNode(i, columnCount, rowCount, effectNode, colorGradient);
     }
 }
 
@@ -188,7 +188,7 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
         colorGradient->Setter<ColorGradientEffectColor2Tag>(Vector4f{0.0f, 0.0f, 1.0f, 1.0f});
         colorGradient->Setter<ColorGradientEffectColor3Tag>(Vector4f{1.0f, 1.0f, 0.0f, 1.0f});
 
-        SetUpTestNode(static_cast<size_t>(i), columnCount, rowCount, colorGradient);
+        SetEffectChildNode(i, columnCount, rowCount, effectNode, colorGradient);
     }
 }
 
@@ -206,7 +206,8 @@ GRAPHIC_TEST(NGShaderColorGradientEffectTest, EFFECT_TEST, Set_Color_Gradient_Ef
         InitColorGradientEffect(colorGradient);
         colorGradient->Setter<ColorGradientEffectBrightnessTag>(extremeValues[i]);
         colorGradient->Setter<ColorGradientEffectColorNumberTag>(4.0f);
-        SetUpTestNode(static_cast<size_t>(i), columnCount, rowCount, colorGradient);
+        
+        SetEffectChildNode(i, columnCount, rowCount, effectNode, colorGradient);
     }
 }
 
