@@ -137,6 +137,9 @@ public:
         auto effectNode = RSEffectNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         effectNode->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
         effectNode->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
+        if (!effectNode) {
+            return nullptr;
+        }
  
         auto frostedGlassBlurFilter = std::make_shared<RSNGFrostedGlassBlurFilter>();
         frostedGlassBlurFilter->Setter<FrostedGlassBlurRadiusTag>(40.0f);
@@ -162,6 +165,9 @@ public:
 
         // set effect child node
         auto effectChildNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        if (!effectChildNode) {
+            return;
+        }
         effectChildNode->SetBounds(x, y, sizeX, sizeY);
         effectChildNode->SetFrame(x, y, sizeX, sizeY);
 
@@ -187,6 +193,9 @@ GRAPHIC_TEST(NGShaderFrostedGlassEffectTest, EFFECT_TEST, Set_Frosted_Glass_Effe
     const size_t rowCount = static_cast<size_t>(materialColors.size());
     auto backgroundTestNode = SetCommonBackgroundNode();
     auto effectNode = SetDefaultFrostedGlassBlurEffectNode();
+    if (!backgroundTestNode || !effectNode) {
+        return;
+    }
 
     for (size_t i = 0; i < materialColors.size(); i++) {
         auto frostedGlass = std::make_shared<RSNGFrostedGlassEffect>();
@@ -203,6 +212,9 @@ GRAPHIC_TEST(NGShaderFrostedGlassEffectTest, EFFECT_TEST, Set_Frosted_Glass_Effe
     const size_t rowCount = static_cast<size_t>(shapeValues.size());
     auto backgroundTestNode = SetCommonBackgroundNode();
     auto effectNode = SetDefaultFrostedGlassBlurEffectNode();
+    if (!backgroundTestNode || !effectNode) {
+        return;
+    }
 
     for (size_t i = 0; i < shapeValues.size(); i++) {
         auto frostedGlass = std::make_shared<RSNGFrostedGlassEffect>();
@@ -224,6 +236,9 @@ GRAPHIC_TEST(NGShaderFrostedGlassEffectTest, EFFECT_TEST, Set_Frosted_Glass_Effe
     const size_t rowCount = static_cast<size_t>(extremeColors.size());
     auto backgroundTestNode = SetCommonBackgroundNode();
     auto effectNode = SetDefaultFrostedGlassBlurEffectNode();
+    if (!backgroundTestNode || !effectNode) {
+        return;
+    }
 
     for (size_t i = 0; i < extremeColors.size(); i++) {
         auto frostedGlass = std::make_shared<RSNGFrostedGlassEffect>();
