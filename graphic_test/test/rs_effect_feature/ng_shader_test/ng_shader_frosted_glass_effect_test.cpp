@@ -180,6 +180,9 @@ public:
         };
         std::shared_ptr<RSNGShapeBase> sdfShape;
         InitSmoothUnionShapes(sdfShape, defaultRectParam, defaultRectParam, 0.0);
+        if (!sdfShape) {
+            return;
+        }
         effectChildNode->SetSDFShape(sdfShape);
 
         effectNode->AddChild(effectChildNode);
