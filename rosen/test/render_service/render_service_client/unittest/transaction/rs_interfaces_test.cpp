@@ -735,7 +735,7 @@ HWTEST_F(RSInterfacesTest, SetOverlayDisplayMode001, TestSize.Level1)
  * @tc.name: SetVideoRateInfo001
  * @tc.desc: test results of SendVideoRateInfo
  * @tc.type: FUNC
- * @tc.require: issueIBHTL0
+ * @tc.require:
  */
 HWTEST_F(RSInterfacesTest, SetVideoRateInfo001, TestSize.Level1)
 {
