@@ -1453,7 +1453,6 @@ HWTEST_F(RSServiceClientTest, RemoveVirtualScreenSurface002, TestSize.Level1)
         StatusCode::RENDER_SERVICE_NULL);
 }
 
- 
 /**
  * @tc.name: SendVideoRateInfo
  * @tc.desc: Test SendVideoRateInfo
