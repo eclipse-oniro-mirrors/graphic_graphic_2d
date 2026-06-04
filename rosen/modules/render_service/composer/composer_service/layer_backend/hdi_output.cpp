@@ -261,7 +261,8 @@ void HdiOutput::UpdateRSLayerLocked(const std::shared_ptr<RSLayer>& rsLayer, uin
     }
     if (iter != surfaceIdMap_.end()) {
         const std::shared_ptr<HdiLayer>& hdiLayer = iter->second;
-        if (hdiLayer != nullptr && hdiLayer->GetCreatedLayerType() != rsLayer->GetType()) {
+        if (hdiLayer != nullptr && (hdiLayer->GetCreatedLayerType() != rsLayer->GetType() ||
+            rsLayer->GetTunnelLayerProperty() != hdiLayer->GetTunnelLayerProperty())) {
             auto previousRsLayer = GetReplacedTunnelRSLayer(hdiLayer, fallbackRequested);
             if (previousRsLayer != nullptr) {
                 OnLayerCreated(previousRsLayer->GetNodeId(), false, previousRsLayer->GetTunnelLayerGeneration());

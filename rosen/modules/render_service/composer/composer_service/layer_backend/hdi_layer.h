@@ -73,6 +73,7 @@ public:
     int32_t SetHdiDeviceMock(HdiDevice* hdiDeviceMock);
     void ClearBufferCache();
     void ResetBufferCache();
+    uint32_t GetTunnelLayerProperty() const;
 
 private:
     // layer buffer & fence
@@ -107,6 +108,7 @@ private:
     sptr<SurfaceBuffer> currBuffer_ = nullptr;
     bool bufferCleared_ = false;
     std::atomic<uint64_t> pendingTunnelLayerCreatedGeneration_ = 0;
+    uint32_t tunnelLayerProperty_ = 0;
 
     int32_t CreateLayer(const std::shared_ptr<RSLayer> &rsLayer);
     void CloseLayer();
