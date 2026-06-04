@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -68,7 +68,7 @@ HWTEST_F(SweepGradientShaderObjTest, Constructor001, TestSize.Level1)
 {
     // Test 1: CreateForUnmarshalling
     auto shaderObj = SweepGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
     EXPECT_EQ(shaderObj->GetType(), static_cast<int32_t>(Drawing::Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(shaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::SWEEP_GRADIENT));
 
@@ -88,7 +88,7 @@ HWTEST_F(SweepGradientShaderObjTest, Constructor001, TestSize.Level1)
 
     auto validShaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle,
         endAngle, &matrix);
-    EXPECT_TRUE(validShaderObj != nullptr);
+    ASSERT_TRUE(validShaderObj != nullptr);
     EXPECT_EQ(validShaderObj->GetType(), static_cast<int32_t>(Drawing::Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(validShaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::SWEEP_GRADIENT));
 
@@ -124,7 +124,7 @@ HWTEST_F(SweepGradientShaderObjTest, GenerateBaseObject001, TestSize.Level1)
     auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle,
         &matrix);
     auto baseObject = shaderObj->GenerateBaseObject();
-    EXPECT_TRUE(baseObject != nullptr);
+    ASSERT_TRUE(baseObject != nullptr);
 
     // Try to cast to ShaderEffect
     auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
@@ -191,10 +191,10 @@ HWTEST_F(SweepGradientShaderObjTest, GenerateBaseObject003, TestSize.Level1)
         auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode,
             startAngle, endAngle, nullptr);
         auto baseObject = shaderObj->GenerateBaseObject();
-        EXPECT_TRUE(baseObject != nullptr);
+        ASSERT_TRUE(baseObject != nullptr);
 
         auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-        EXPECT_TRUE(generatedShader != nullptr);
+        ASSERT_TRUE(generatedShader != nullptr);
         if (generatedShader) {
             EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::SWEEP_GRADIENT);
         }
@@ -234,10 +234,10 @@ HWTEST_F(SweepGradientShaderObjTest, GenerateBaseObject004, TestSize.Level1)
         auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle,
             nullptr);
         auto baseObject = shaderObj->GenerateBaseObject();
-        EXPECT_TRUE(baseObject != nullptr);
+        ASSERT_TRUE(baseObject != nullptr);
 
         auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-        EXPECT_TRUE(generatedShader != nullptr);
+        ASSERT_TRUE(generatedShader != nullptr);
         if (generatedShader) {
             EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::SWEEP_GRADIENT);
         }
@@ -270,7 +270,7 @@ HWTEST_F(SweepGradientShaderObjTest, Marshalling001, TestSize.Level1)
 
     auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle,
         &matrix);
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     MessageParcel parcel;
     bool result = shaderObj->Marshalling(parcel);
@@ -300,7 +300,7 @@ HWTEST_F(SweepGradientShaderObjTest, Marshalling002, TestSize.Level1)
 
     auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle,
         nullptr);
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     MessageParcel parcel;
     bool result = shaderObj->Marshalling(parcel);
@@ -324,23 +324,26 @@ HWTEST_F(SweepGradientShaderObjTest, Marshalling003, TestSize.Level1)
     std::vector<scalar> pos;
     pos.push_back(0.0f);
     pos.push_back(1.0f);
-    TileMode mode = TileMode::CLAMP;
     scalar startAngle = 0.0f;
     scalar endAngle = 360.0f;
 
-    auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle,
-        nullptr);
-    EXPECT_TRUE(shaderObj != nullptr);
+    // Test different tile modes
+    std::vector<TileMode> tileModes = {
+        TileMode::CLAMP,
+        TileMode::REPEAT,
+        TileMode::MIRROR,
+        TileMode::DECAL
+    };
 
-    // Clear DataMarshallingCallback
-    ObjectHelper::Instance().SetDataMarshallingCallback(nullptr);
+    for (const auto& mode : tileModes) {
+        auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle,
+            endAngle, nullptr);
+        ASSERT_TRUE(shaderObj != nullptr);
 
-    MessageParcel parcel;
-    bool result = shaderObj->Marshalling(parcel);
-    EXPECT_FALSE(result); // Should fail without DataMarshallingCallback
-
-    // Restore callback
-    EffectTestUtils::SetupMarshallingCallbacks();
+        MessageParcel parcel;
+        bool result = shaderObj->Marshalling(parcel);
+        EXPECT_TRUE(result); // Should succeed for all tile modes
+    }
 }
 
 /*
@@ -367,7 +370,7 @@ HWTEST_F(SweepGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
 
     auto originalShaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle,
         endAngle, nullptr);
-    EXPECT_TRUE(originalShaderObj != nullptr);
+    ASSERT_TRUE(originalShaderObj != nullptr);
 
     MessageParcel parcel;
     // Write type and subType externally
@@ -378,7 +381,7 @@ HWTEST_F(SweepGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
 
     // Unmarshal
     auto newShaderObj = SweepGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(newShaderObj != nullptr);
+    ASSERT_TRUE(newShaderObj != nullptr);
 
     // Read type and subType
     int32_t type = parcel.ReadInt32();
@@ -398,8 +401,8 @@ HWTEST_F(SweepGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
     // Test that both can generate base objects
     auto originalBaseObject = originalShaderObj->GenerateBaseObject();
     auto newBaseObject = newShaderObj->GenerateBaseObject();
-    EXPECT_TRUE(originalBaseObject != nullptr);
-    EXPECT_TRUE(newBaseObject != nullptr);
+    ASSERT_TRUE(originalBaseObject != nullptr);
+    ASSERT_TRUE(newBaseObject != nullptr);
 }
 
 /*
@@ -412,7 +415,7 @@ HWTEST_F(SweepGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
 HWTEST_F(SweepGradientShaderObjTest, Unmarshalling002, TestSize.Level1)
 {
     auto shaderObj = SweepGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     MessageParcel parcel;
     // Test with depth at MAX_NESTING_DEPTH limit
@@ -432,7 +435,7 @@ HWTEST_F(SweepGradientShaderObjTest, Unmarshalling002, TestSize.Level1)
 HWTEST_F(SweepGradientShaderObjTest, Unmarshalling003, TestSize.Level1)
 {
     auto shaderObj = SweepGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     // Write valid gradient data
     Point centerPt(50.0f, 50.0f);
@@ -475,7 +478,7 @@ HWTEST_F(SweepGradientShaderObjTest, Unmarshalling003, TestSize.Level1)
 HWTEST_F(SweepGradientShaderObjTest, Unmarshalling004, TestSize.Level1)
 {
     auto shaderObj = SweepGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     // Test 1: Empty parcel - ReadFloat(centerX) should fail
     MessageParcel emptyParcel;
@@ -543,7 +546,7 @@ HWTEST_F(SweepGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, TestS
 
     auto originalShaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle,
         endAngle, &matrix);
-    EXPECT_TRUE(originalShaderObj != nullptr);
+    ASSERT_TRUE(originalShaderObj != nullptr);
 
     // Marshal
     MessageParcel parcel;
@@ -554,7 +557,7 @@ HWTEST_F(SweepGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, TestS
 
     // Unmarshal
     auto newShaderObj = SweepGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(newShaderObj != nullptr);
+    ASSERT_TRUE(newShaderObj != nullptr);
 
     int32_t type = parcel.ReadInt32();
     int32_t subType = parcel.ReadInt32();
@@ -569,23 +572,23 @@ HWTEST_F(SweepGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, TestS
     // Verify consistency through serialization
     auto originalBaseObject = originalShaderObj->GenerateBaseObject();
     auto newBaseObject = newShaderObj->GenerateBaseObject();
-    EXPECT_TRUE(originalBaseObject != nullptr);
-    EXPECT_TRUE(newBaseObject != nullptr);
+    ASSERT_TRUE(originalBaseObject != nullptr);
+    ASSERT_TRUE(newBaseObject != nullptr);
 
     auto originalShader = std::static_pointer_cast<ShaderEffect>(originalBaseObject);
     auto newShader = std::static_pointer_cast<ShaderEffect>(newBaseObject);
 
     auto originalData = originalShader->Serialize();
     auto newData = newShader->Serialize();
-    EXPECT_TRUE(originalData != nullptr);
-    EXPECT_TRUE(newData != nullptr);
+    ASSERT_TRUE(originalData != nullptr);
+    ASSERT_TRUE(newData != nullptr);
     EXPECT_EQ(originalData->GetSize(), newData->GetSize());
 
     // Compare serialized memory content
     const void* originalMemory = originalData->GetData();
     const void* newMemory = newData->GetData();
-    EXPECT_TRUE(originalMemory != nullptr);
-    EXPECT_TRUE(newMemory != nullptr);
+    ASSERT_TRUE(originalMemory != nullptr);
+    ASSERT_TRUE(newMemory != nullptr);
     int memResult = memcmp(originalMemory, newMemory, originalData->GetSize());
     EXPECT_EQ(memResult, 0);
 }
@@ -622,13 +625,13 @@ HWTEST_F(SweepGradientShaderObjTest, CreateWithDifferentCenters001, TestSize.Lev
     for (const auto& center : centers) {
         auto shaderObj = SweepGradientShaderObj::Create(center, colors, colorSpace, pos, mode, startAngle, endAngle,
             nullptr);
-        EXPECT_TRUE(shaderObj != nullptr);
+        ASSERT_TRUE(shaderObj != nullptr);
 
         auto baseObject = shaderObj->GenerateBaseObject();
-        EXPECT_TRUE(baseObject != nullptr);
+        ASSERT_TRUE(baseObject != nullptr);
 
         auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-        EXPECT_TRUE(generatedShader != nullptr);
+        ASSERT_TRUE(generatedShader != nullptr);
         if (generatedShader) {
             EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::SWEEP_GRADIENT);
         }
@@ -664,13 +667,13 @@ HWTEST_F(SweepGradientShaderObjTest, CreateWithMultipleColorStops001, TestSize.L
 
     auto shaderObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle,
         nullptr);
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     auto baseObject = shaderObj->GenerateBaseObject();
-    EXPECT_TRUE(baseObject != nullptr);
+    ASSERT_TRUE(baseObject != nullptr);
 
     auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-    EXPECT_TRUE(generatedShader != nullptr);
+    ASSERT_TRUE(generatedShader != nullptr);
     if (generatedShader) {
         EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::SWEEP_GRADIENT);
     }

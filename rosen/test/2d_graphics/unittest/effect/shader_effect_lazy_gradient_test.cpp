@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -81,13 +81,13 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateLinearGradient001, TestSize.Level1)
     TileMode mode = TileMode::CLAMP;
 
     auto lazyGradient = ShaderEffectLazy::CreateLinearGradient(startPt, endPt, colors, colorSpace, pos, mode, nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
     EXPECT_EQ(lazyGradient->GetType(), ShaderEffect::ShaderEffectType::LAZY_SHADER);
 
     // Verify the underlying object
     auto shaderObj = lazyGradient->GetShaderEffectObj();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
     EXPECT_EQ(shaderObj->GetType(), static_cast<int32_t>(Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(shaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::LINEAR_GRADIENT));
 }
@@ -134,12 +134,12 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateLinearGradient003, TestSize.Level1)
     TileMode mode = TileMode::REPEAT;
 
     auto lazyGradient = ShaderEffectLazy::CreateLinearGradient(startPt, endPt, colors, colorSpace, pos, mode, nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
 
     // Materialize the lazy gradient
     auto materializedShader = lazyGradient->Materialize();
-    EXPECT_TRUE(materializedShader != nullptr);
+    ASSERT_TRUE(materializedShader != nullptr);
     EXPECT_FALSE(materializedShader->IsLazy());
     EXPECT_EQ(materializedShader->GetType(), ShaderEffect::ShaderEffectType::LINEAR_GRADIENT);
 }
@@ -166,13 +166,13 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateRadialGradient001, TestSize.Level1)
 
     auto lazyGradient = ShaderEffectLazy::CreateRadialGradient(centerPt, radius, colors, colorSpace, pos, mode,
         nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
     EXPECT_EQ(lazyGradient->GetType(), ShaderEffect::ShaderEffectType::LAZY_SHADER);
 
     // Verify the underlying object
     auto shaderObj = lazyGradient->GetShaderEffectObj();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
     EXPECT_EQ(shaderObj->GetType(), static_cast<int32_t>(Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(shaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::RADIAL_GRADIENT));
 }
@@ -220,12 +220,12 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateRadialGradient003, TestSize.Level1)
 
     auto lazyGradient = ShaderEffectLazy::CreateRadialGradient(centerPt, radius, colors, colorSpace, pos, mode,
         nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
 
     // Materialize the lazy gradient
     auto materializedShader = lazyGradient->Materialize();
-    EXPECT_TRUE(materializedShader != nullptr);
+    ASSERT_TRUE(materializedShader != nullptr);
     EXPECT_FALSE(materializedShader->IsLazy());
     EXPECT_EQ(materializedShader->GetType(), ShaderEffect::ShaderEffectType::RADIAL_GRADIENT);
 }
@@ -254,13 +254,13 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateTwoPointConical001, TestSize.Level1
 
     auto lazyGradient = ShaderEffectLazy::CreateTwoPointConical(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
     EXPECT_EQ(lazyGradient->GetType(), ShaderEffect::ShaderEffectType::LAZY_SHADER);
 
     // Verify the underlying object
     auto shaderObj = lazyGradient->GetShaderEffectObj();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
     EXPECT_EQ(shaderObj->GetType(), static_cast<int32_t>(Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(shaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::CONICAL_GRADIENT));
 }
@@ -312,12 +312,12 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateTwoPointConical003, TestSize.Level1
 
     auto lazyGradient = ShaderEffectLazy::CreateTwoPointConical(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
 
     // Materialize the lazy gradient
     auto materializedShader = lazyGradient->Materialize();
-    EXPECT_TRUE(materializedShader != nullptr);
+    ASSERT_TRUE(materializedShader != nullptr);
     EXPECT_FALSE(materializedShader->IsLazy());
     EXPECT_EQ(materializedShader->GetType(), ShaderEffect::ShaderEffectType::CONICAL_GRADIENT);
 }
@@ -345,13 +345,13 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateSweepGradient001, TestSize.Level1)
 
     auto lazyGradient = ShaderEffectLazy::CreateSweepGradient(centerPt, colors, colorSpace, pos, mode, startAngle,
         endAngle, nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
     EXPECT_EQ(lazyGradient->GetType(), ShaderEffect::ShaderEffectType::LAZY_SHADER);
 
     // Verify the underlying object
     auto shaderObj = lazyGradient->GetShaderEffectObj();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
     EXPECT_EQ(shaderObj->GetType(), static_cast<int32_t>(Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(shaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::SWEEP_GRADIENT));
 }
@@ -401,12 +401,12 @@ HWTEST_F(ShaderEffectLazyGradientTest, CreateSweepGradient003, TestSize.Level1)
 
     auto lazyGradient = ShaderEffectLazy::CreateSweepGradient(centerPt, colors, colorSpace, pos, mode, startAngle,
         endAngle, nullptr);
-    EXPECT_TRUE(lazyGradient != nullptr);
+    ASSERT_TRUE(lazyGradient != nullptr);
     EXPECT_TRUE(lazyGradient->IsLazy());
 
     // Materialize the lazy gradient
     auto materializedShader = lazyGradient->Materialize();
-    EXPECT_TRUE(materializedShader != nullptr);
+    ASSERT_TRUE(materializedShader != nullptr);
     EXPECT_FALSE(materializedShader->IsLazy());
     EXPECT_EQ(materializedShader->GetType(), ShaderEffect::ShaderEffectType::SWEEP_GRADIENT);
 }
@@ -434,7 +434,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, LinearGradientMarshallingRoundTrip001, Te
 
     auto originalLazyGradient = ShaderEffectLazy::CreateLinearGradient(startPt, endPt, colors, colorSpace, pos, mode,
         nullptr);
-    EXPECT_TRUE(originalLazyGradient != nullptr);
+    ASSERT_TRUE(originalLazyGradient != nullptr);
 
     // Marshal
     MessageParcel parcel;
@@ -446,7 +446,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, LinearGradientMarshallingRoundTrip001, Te
     bool isValid = true;
     auto unmarshalledLazyGradient = ShaderEffectLazy::Unmarshalling(parcel, isValid);
     EXPECT_TRUE(isValid);
-    EXPECT_TRUE(unmarshalledLazyGradient != nullptr);
+    ASSERT_TRUE(unmarshalledLazyGradient != nullptr);
     EXPECT_TRUE(unmarshalledLazyGradient->IsLazy());
 
     // Verify types
@@ -458,14 +458,14 @@ HWTEST_F(ShaderEffectLazyGradientTest, LinearGradientMarshallingRoundTrip001, Te
     // Materialize both and compare
     auto originalMaterialized = originalLazyGradient->Materialize();
     auto unmarshalledMaterialized = unmarshalledLazyGradient->Materialize();
-    EXPECT_TRUE(originalMaterialized != nullptr);
-    EXPECT_TRUE(unmarshalledMaterialized != nullptr);
+    ASSERT_TRUE(originalMaterialized != nullptr);
+    ASSERT_TRUE(unmarshalledMaterialized != nullptr);
 
     // Compare serialized data
     auto originalData = originalMaterialized->Serialize();
     auto unmarshalledData = unmarshalledMaterialized->Serialize();
-    EXPECT_TRUE(originalData != nullptr);
-    EXPECT_TRUE(unmarshalledData != nullptr);
+    ASSERT_TRUE(originalData != nullptr);
+    ASSERT_TRUE(unmarshalledData != nullptr);
     EXPECT_EQ(originalData->GetSize(), unmarshalledData->GetSize());
 
     const uint8_t* originalBytes = static_cast<const uint8_t*>(originalData->GetData());
@@ -496,7 +496,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, RadialGradientMarshallingRoundTrip001, Te
 
     auto originalLazyGradient = ShaderEffectLazy::CreateRadialGradient(centerPt, radius, colors, colorSpace, pos, mode,
         nullptr);
-    EXPECT_TRUE(originalLazyGradient != nullptr);
+    ASSERT_TRUE(originalLazyGradient != nullptr);
 
     // Marshal
     MessageParcel parcel;
@@ -508,7 +508,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, RadialGradientMarshallingRoundTrip001, Te
     bool isValid = true;
     auto unmarshalledLazyGradient = ShaderEffectLazy::Unmarshalling(parcel, isValid);
     EXPECT_TRUE(isValid);
-    EXPECT_TRUE(unmarshalledLazyGradient != nullptr);
+    ASSERT_TRUE(unmarshalledLazyGradient != nullptr);
     EXPECT_TRUE(unmarshalledLazyGradient->IsLazy());
 
     // Verify types
@@ -520,14 +520,14 @@ HWTEST_F(ShaderEffectLazyGradientTest, RadialGradientMarshallingRoundTrip001, Te
     // Materialize both and compare
     auto originalMaterialized = originalLazyGradient->Materialize();
     auto unmarshalledMaterialized = unmarshalledLazyGradient->Materialize();
-    EXPECT_TRUE(originalMaterialized != nullptr);
-    EXPECT_TRUE(unmarshalledMaterialized != nullptr);
+    ASSERT_TRUE(originalMaterialized != nullptr);
+    ASSERT_TRUE(unmarshalledMaterialized != nullptr);
 
     // Compare serialized data
     auto originalData = originalMaterialized->Serialize();
     auto unmarshalledData = unmarshalledMaterialized->Serialize();
-    EXPECT_TRUE(originalData != nullptr);
-    EXPECT_TRUE(unmarshalledData != nullptr);
+    ASSERT_TRUE(originalData != nullptr);
+    ASSERT_TRUE(unmarshalledData != nullptr);
     EXPECT_EQ(originalData->GetSize(), unmarshalledData->GetSize());
 
     const uint8_t* originalBytes = static_cast<const uint8_t*>(originalData->GetData());
@@ -560,7 +560,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, ConicalGradientMarshallingRoundTrip001, T
 
     auto originalLazyGradient = ShaderEffectLazy::CreateTwoPointConical(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, nullptr);
-    EXPECT_TRUE(originalLazyGradient != nullptr);
+    ASSERT_TRUE(originalLazyGradient != nullptr);
 
     // Marshal
     MessageParcel parcel;
@@ -572,7 +572,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, ConicalGradientMarshallingRoundTrip001, T
     bool isValid = true;
     auto unmarshalledLazyGradient = ShaderEffectLazy::Unmarshalling(parcel, isValid);
     EXPECT_TRUE(isValid);
-    EXPECT_TRUE(unmarshalledLazyGradient != nullptr);
+    ASSERT_TRUE(unmarshalledLazyGradient != nullptr);
     EXPECT_TRUE(unmarshalledLazyGradient->IsLazy());
 
     // Verify types
@@ -584,14 +584,14 @@ HWTEST_F(ShaderEffectLazyGradientTest, ConicalGradientMarshallingRoundTrip001, T
     // Materialize both and compare
     auto originalMaterialized = originalLazyGradient->Materialize();
     auto unmarshalledMaterialized = unmarshalledLazyGradient->Materialize();
-    EXPECT_TRUE(originalMaterialized != nullptr);
-    EXPECT_TRUE(unmarshalledMaterialized != nullptr);
+    ASSERT_TRUE(originalMaterialized != nullptr);
+    ASSERT_TRUE(unmarshalledMaterialized != nullptr);
 
     // Compare serialized data
     auto originalData = originalMaterialized->Serialize();
     auto unmarshalledData = unmarshalledMaterialized->Serialize();
-    EXPECT_TRUE(originalData != nullptr);
-    EXPECT_TRUE(unmarshalledData != nullptr);
+    ASSERT_TRUE(originalData != nullptr);
+    ASSERT_TRUE(unmarshalledData != nullptr);
     EXPECT_EQ(originalData->GetSize(), unmarshalledData->GetSize());
 
     const uint8_t* originalBytes = static_cast<const uint8_t*>(originalData->GetData());
@@ -623,7 +623,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, SweepGradientMarshallingRoundTrip001, Tes
 
     auto originalLazyGradient = ShaderEffectLazy::CreateSweepGradient(centerPt, colors, colorSpace, pos, mode,
         startAngle, endAngle, nullptr);
-    EXPECT_TRUE(originalLazyGradient != nullptr);
+    ASSERT_TRUE(originalLazyGradient != nullptr);
 
     // Marshal
     MessageParcel parcel;
@@ -635,7 +635,7 @@ HWTEST_F(ShaderEffectLazyGradientTest, SweepGradientMarshallingRoundTrip001, Tes
     bool isValid = true;
     auto unmarshalledLazyGradient = ShaderEffectLazy::Unmarshalling(parcel, isValid);
     EXPECT_TRUE(isValid);
-    EXPECT_TRUE(unmarshalledLazyGradient != nullptr);
+    ASSERT_TRUE(unmarshalledLazyGradient != nullptr);
     EXPECT_TRUE(unmarshalledLazyGradient->IsLazy());
 
     // Verify types
@@ -647,20 +647,79 @@ HWTEST_F(ShaderEffectLazyGradientTest, SweepGradientMarshallingRoundTrip001, Tes
     // Materialize both and compare
     auto originalMaterialized = originalLazyGradient->Materialize();
     auto unmarshalledMaterialized = unmarshalledLazyGradient->Materialize();
-    EXPECT_TRUE(originalMaterialized != nullptr);
-    EXPECT_TRUE(unmarshalledMaterialized != nullptr);
+    ASSERT_TRUE(originalMaterialized != nullptr);
+    ASSERT_TRUE(unmarshalledMaterialized != nullptr);
 
     // Compare serialized data
     auto originalData = originalMaterialized->Serialize();
     auto unmarshalledData = unmarshalledMaterialized->Serialize();
-    EXPECT_TRUE(originalData != nullptr);
-    EXPECT_TRUE(unmarshalledData != nullptr);
+    ASSERT_TRUE(originalData != nullptr);
+    ASSERT_TRUE(unmarshalledData != nullptr);
     EXPECT_EQ(originalData->GetSize(), unmarshalledData->GetSize());
 
     const uint8_t* originalBytes = static_cast<const uint8_t*>(originalData->GetData());
     const uint8_t* unmarshalledBytes = static_cast<const uint8_t*>(unmarshalledData->GetData());
     int memResult = memcmp(originalBytes, unmarshalledBytes, originalData->GetSize());
     EXPECT_EQ(memResult, 0);
+}
+
+/*
+ * @tc.name: IsGradientShader001
+ * @tc.desc: Test ShaderEffectLazy::IsGradientShader for all gradient types
+ * @tc.type: FUNC
+ * @tc.require: AR000GGNV3
+ * @tc.author:
+ */
+HWTEST_F(ShaderEffectLazyGradientTest, IsGradientShader001, TestSize.Level1)
+{
+    // Test LinearGradient
+    auto linearLazy = ShaderEffectLazy::CreateLinearGradient(
+        Point(0.0f, 0.0f), Point(100.0f, 100.0f),
+        {UIColor(1.0f, 0.0f, 0.0f, 1.0f, 0.0f), UIColor(0.0f, 1.0f, 0.0f, 1.0f, 0.0f)},
+        std::make_shared<ColorSpace>(), {0.0f, 1.0f}, TileMode::CLAMP, nullptr);
+    ASSERT_TRUE(linearLazy != nullptr);
+    EXPECT_TRUE(linearLazy->IsGradientShader());
+
+    // Test RadialGradient
+    auto radialLazy = ShaderEffectLazy::CreateRadialGradient(
+        Point(50.0f, 50.0f), 25.0f,
+        {UIColor(1.0f, 0.0f, 0.0f, 1.0f, 0.0f), UIColor(0.0f, 1.0f, 0.0f, 1.0f, 0.0f)},
+        std::make_shared<ColorSpace>(), {0.0f, 1.0f}, TileMode::CLAMP, nullptr);
+    ASSERT_TRUE(radialLazy != nullptr);
+    EXPECT_TRUE(radialLazy->IsGradientShader());
+
+    // Test TwoPointConical
+    auto conicalLazy = ShaderEffectLazy::CreateTwoPointConical(
+        Point(0.0f, 0.0f), 0.0f, Point(100.0f, 100.0f), 50.0f,
+        {UIColor(1.0f, 0.0f, 0.0f, 1.0f, 0.0f), UIColor(0.0f, 1.0f, 0.0f, 1.0f, 0.0f)},
+        std::make_shared<ColorSpace>(), {0.0f, 1.0f}, TileMode::CLAMP, nullptr);
+    ASSERT_TRUE(conicalLazy != nullptr);
+    EXPECT_TRUE(conicalLazy->IsGradientShader());
+
+    // Test SweepGradient
+    auto sweepLazy = ShaderEffectLazy::CreateSweepGradient(
+        Point(50.0f, 50.0f),
+        {UIColor(1.0f, 0.0f, 0.0f, 1.0f, 0.0f), UIColor(0.0f, 1.0f, 0.0f, 1.0f, 0.0f)},
+        std::make_shared<ColorSpace>(), {0.0f, 1.0f}, TileMode::CLAMP, 0.0f, 360.0f, nullptr);
+    ASSERT_TRUE(sweepLazy != nullptr);
+    EXPECT_TRUE(sweepLazy->IsGradientShader());
+}
+
+/*
+ * @tc.name: IsGradientShader002
+ * @tc.desc: Test ShaderEffectLazy::IsGradientShader for non-gradient shader
+ * @tc.type: FUNC
+ * @tc.require: AR000GGNV3
+ * @tc.author:
+ */
+HWTEST_F(ShaderEffectLazyGradientTest, IsGradientShader002, TestSize.Level1)
+{
+    // Test BlendShader (non-gradient)
+    auto dstShader = ShaderEffect::CreateColorShader(0xFFFF0000);
+    auto srcShader = ShaderEffect::CreateColorShader(0xFF00FF00);
+    auto blendLazy = ShaderEffectLazy::CreateBlendShader(dstShader, srcShader, BlendMode::SRC_OVER);
+    ASSERT_TRUE(blendLazy != nullptr);
+    EXPECT_FALSE(blendLazy->IsGradientShader());
 }
 #endif
 

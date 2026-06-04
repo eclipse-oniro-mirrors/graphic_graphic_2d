@@ -29,6 +29,7 @@ ohos_unittest("2d_graphics_effect_test") {
     "conical_gradient_shader_obj_test.cpp",
     "effect_test_utils.cpp",
     "filter_test.cpp",
+    "gradient_shader_obj_base_test.cpp",
     "image_filter_lazy_test.cpp",
     "image_filter_test.cpp",
     "linear_gradient_shader_obj_test.cpp",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -68,7 +68,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Constructor001, TestSize.Level1)
 {
     // Test 1: CreateForUnmarshalling
     auto shaderObj = ConicalGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
     EXPECT_EQ(shaderObj->GetType(), static_cast<int32_t>(Drawing::Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(shaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::CONICAL_GRADIENT));
 
@@ -89,7 +89,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Constructor001, TestSize.Level1)
 
     auto validShaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, &matrix);
-    EXPECT_TRUE(validShaderObj != nullptr);
+    ASSERT_TRUE(validShaderObj != nullptr);
     EXPECT_EQ(validShaderObj->GetType(), static_cast<int32_t>(Drawing::Object::ObjectType::SHADER_EFFECT));
     EXPECT_EQ(validShaderObj->GetSubType(), static_cast<int32_t>(ShaderEffect::ShaderEffectType::CONICAL_GRADIENT));
 
@@ -126,7 +126,7 @@ HWTEST_F(ConicalGradientShaderObjTest, GenerateBaseObject001, TestSize.Level1)
     auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
         pos, mode, &matrix);
     auto baseObject = shaderObj->GenerateBaseObject();
-    EXPECT_TRUE(baseObject != nullptr);
+    ASSERT_TRUE(baseObject != nullptr);
 
     // Try to cast to ShaderEffect
     auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
@@ -195,10 +195,10 @@ HWTEST_F(ConicalGradientShaderObjTest, GenerateBaseObject003, TestSize.Level1)
         auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
         pos, mode, nullptr);
         auto baseObject = shaderObj->GenerateBaseObject();
-        EXPECT_TRUE(baseObject != nullptr);
+        ASSERT_TRUE(baseObject != nullptr);
 
         auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-        EXPECT_TRUE(generatedShader != nullptr);
+        ASSERT_TRUE(generatedShader != nullptr);
         if (generatedShader) {
             EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::CONICAL_GRADIENT);
         }
@@ -240,10 +240,10 @@ HWTEST_F(ConicalGradientShaderObjTest, GenerateBaseObject004, TestSize.Level1)
         auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
         pos, mode, nullptr);
         auto baseObject = shaderObj->GenerateBaseObject();
-        EXPECT_TRUE(baseObject != nullptr);
+        ASSERT_TRUE(baseObject != nullptr);
 
         auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-        EXPECT_TRUE(generatedShader != nullptr);
+        ASSERT_TRUE(generatedShader != nullptr);
         if (generatedShader) {
             EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::CONICAL_GRADIENT);
         }
@@ -277,7 +277,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Marshalling001, TestSize.Level1)
 
     auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
         pos, mode, &matrix);
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     MessageParcel parcel;
     bool result = shaderObj->Marshalling(parcel);
@@ -308,7 +308,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Marshalling002, TestSize.Level1)
 
     auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
         pos, mode, nullptr);
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     MessageParcel parcel;
     bool result = shaderObj->Marshalling(parcel);
@@ -317,7 +317,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Marshalling002, TestSize.Level1)
 
 /*
  * @tc.name: Marshalling003
- * @tc.desc: Test ConicalGradientShaderObj::Marshalling without DataMarshallingCallback
+ * @tc.desc: Test ConicalGradientShaderObj::Marshalling with different tile modes
  * @tc.type: FUNC
  * @tc.require: AR000GGNV3
  * @tc.author:
@@ -335,21 +335,24 @@ HWTEST_F(ConicalGradientShaderObjTest, Marshalling003, TestSize.Level1)
     std::vector<scalar> pos;
     pos.push_back(0.0f);
     pos.push_back(1.0f);
-    TileMode mode = TileMode::CLAMP;
 
-    auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
-        pos, mode, nullptr);
-    EXPECT_TRUE(shaderObj != nullptr);
+    // Test different tile modes
+    std::vector<TileMode> tileModes = {
+        TileMode::CLAMP,
+        TileMode::REPEAT,
+        TileMode::MIRROR,
+        TileMode::DECAL
+    };
 
-    // Clear DataMarshallingCallback
-    ObjectHelper::Instance().SetDataMarshallingCallback(nullptr);
+    for (const auto& mode : tileModes) {
+        auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors,
+            colorSpace, pos, mode, nullptr);
+        ASSERT_TRUE(shaderObj != nullptr);
 
-    MessageParcel parcel;
-    bool result = shaderObj->Marshalling(parcel);
-    EXPECT_FALSE(result); // Should fail without DataMarshallingCallback
-
-    // Restore callback
-    EffectTestUtils::SetupMarshallingCallbacks();
+        MessageParcel parcel;
+        bool result = shaderObj->Marshalling(parcel);
+        EXPECT_TRUE(result); // Should succeed for all tile modes
+    }
 }
 
 /*
@@ -377,7 +380,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
 
     auto originalShaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, nullptr);
-    EXPECT_TRUE(originalShaderObj != nullptr);
+    ASSERT_TRUE(originalShaderObj != nullptr);
 
     MessageParcel parcel;
     // Write type and subType externally
@@ -388,7 +391,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
 
     // Unmarshal
     auto newShaderObj = ConicalGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(newShaderObj != nullptr);
+    ASSERT_TRUE(newShaderObj != nullptr);
 
     // Read type and subType
     int32_t type = parcel.ReadInt32();
@@ -408,8 +411,8 @@ HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
     // Test that both can generate base objects
     auto originalBaseObject = originalShaderObj->GenerateBaseObject();
     auto newBaseObject = newShaderObj->GenerateBaseObject();
-    EXPECT_TRUE(originalBaseObject != nullptr);
-    EXPECT_TRUE(newBaseObject != nullptr);
+    ASSERT_TRUE(originalBaseObject != nullptr);
+    ASSERT_TRUE(newBaseObject != nullptr);
 }
 
 /*
@@ -422,7 +425,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling001, TestSize.Level1)
 HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling002, TestSize.Level1)
 {
     auto shaderObj = ConicalGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     MessageParcel parcel;
     // Test with depth at MAX_NESTING_DEPTH limit
@@ -442,7 +445,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling002, TestSize.Level1)
 HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling003, TestSize.Level1)
 {
     auto shaderObj = ConicalGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     // Write valid gradient data
     Point startPt(0.0f, 0.0f);
@@ -488,7 +491,7 @@ HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling003, TestSize.Level1)
 HWTEST_F(ConicalGradientShaderObjTest, Unmarshalling004, TestSize.Level1)
 {
     auto shaderObj = ConicalGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     // Test 1: Empty parcel - ReadFloat(startX) should fail
     MessageParcel emptyParcel;
@@ -566,7 +569,7 @@ HWTEST_F(ConicalGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, Tes
 
     auto originalShaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, &matrix);
-    EXPECT_TRUE(originalShaderObj != nullptr);
+    ASSERT_TRUE(originalShaderObj != nullptr);
 
     // Marshal
     MessageParcel parcel;
@@ -577,7 +580,7 @@ HWTEST_F(ConicalGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, Tes
 
     // Unmarshal
     auto newShaderObj = ConicalGradientShaderObj::CreateForUnmarshalling();
-    EXPECT_TRUE(newShaderObj != nullptr);
+    ASSERT_TRUE(newShaderObj != nullptr);
 
     int32_t type = parcel.ReadInt32();
     int32_t subType = parcel.ReadInt32();
@@ -592,23 +595,23 @@ HWTEST_F(ConicalGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, Tes
     // Verify consistency through serialization
     auto originalBaseObject = originalShaderObj->GenerateBaseObject();
     auto newBaseObject = newShaderObj->GenerateBaseObject();
-    EXPECT_TRUE(originalBaseObject != nullptr);
-    EXPECT_TRUE(newBaseObject != nullptr);
+    ASSERT_TRUE(originalBaseObject != nullptr);
+    ASSERT_TRUE(newBaseObject != nullptr);
 
     auto originalShader = std::static_pointer_cast<ShaderEffect>(originalBaseObject);
     auto newShader = std::static_pointer_cast<ShaderEffect>(newBaseObject);
 
     auto originalData = originalShader->Serialize();
     auto newData = newShader->Serialize();
-    EXPECT_TRUE(originalData != nullptr);
-    EXPECT_TRUE(newData != nullptr);
+    ASSERT_TRUE(originalData != nullptr);
+    ASSERT_TRUE(newData != nullptr);
     EXPECT_EQ(originalData->GetSize(), newData->GetSize());
 
     // Compare serialized memory content
     const void* originalMemory = originalData->GetData();
     const void* newMemory = newData->GetData();
-    EXPECT_TRUE(originalMemory != nullptr);
-    EXPECT_TRUE(newMemory != nullptr);
+    ASSERT_TRUE(originalMemory != nullptr);
+    ASSERT_TRUE(newMemory != nullptr);
     int memResult = memcmp(originalMemory, newMemory, originalData->GetSize());
     EXPECT_EQ(memResult, 0);
 }
@@ -645,13 +648,13 @@ HWTEST_F(ConicalGradientShaderObjTest, CreateWithDifferentPoints001, TestSize.Le
     for (const auto& [start, end] : pointConfigs) {
         auto shaderObj = ConicalGradientShaderObj::Create(start, startRadius, end, endRadius, colors, colorSpace,
             pos, mode, nullptr);
-        EXPECT_TRUE(shaderObj != nullptr);
+        ASSERT_TRUE(shaderObj != nullptr);
 
         auto baseObject = shaderObj->GenerateBaseObject();
-        EXPECT_TRUE(baseObject != nullptr);
+        ASSERT_TRUE(baseObject != nullptr);
 
         auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-        EXPECT_TRUE(generatedShader != nullptr);
+        ASSERT_TRUE(generatedShader != nullptr);
         if (generatedShader) {
             EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::CONICAL_GRADIENT);
         }
@@ -688,13 +691,13 @@ HWTEST_F(ConicalGradientShaderObjTest, CreateWithMultipleColorStops001, TestSize
 
     auto shaderObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors, colorSpace,
         pos, mode, nullptr);
-    EXPECT_TRUE(shaderObj != nullptr);
+    ASSERT_TRUE(shaderObj != nullptr);
 
     auto baseObject = shaderObj->GenerateBaseObject();
-    EXPECT_TRUE(baseObject != nullptr);
+    ASSERT_TRUE(baseObject != nullptr);
 
     auto generatedShader = std::static_pointer_cast<ShaderEffect>(baseObject);
-    EXPECT_TRUE(generatedShader != nullptr);
+    ASSERT_TRUE(generatedShader != nullptr);
     if (generatedShader) {
         EXPECT_EQ(generatedShader->GetType(), ShaderEffect::ShaderEffectType::CONICAL_GRADIENT);
     }
