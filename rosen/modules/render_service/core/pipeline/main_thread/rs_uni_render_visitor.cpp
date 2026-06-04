@@ -180,7 +180,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
     partialRenderType_ = RSSystemProperties::GetUniPartialRenderEnabled();
     isPartialRenderEnabled_ &= (partialRenderType_ > PartialRenderType::DISABLED);
 
-    isCompleteRenderEnabled_ = (partialRenderType_ == PartialRenderType::SET_DAMAGE_BUT_COMPLETE_RENDER);
+    isCompleteRenderEnabled_ = (partialRenderType_ == PartialRenderType::FORCE_FULL_SCREEN_DIRTY_REGION);
     dirtyRegionDebugType_ = RSSystemProperties::GetDirtyRegionDebugType();
     surfaceRegionDebugType_ = RSSystemProperties::GetSurfaceRegionDfxType();
     isTargetDirtyRegionDfxEnabled_ = RSSystemProperties::GetTargetDirtyRegionDfxEnabled(dfxTargetSurfaceNames_) &&
@@ -198,7 +198,7 @@ void RSUniRenderVisitor::PartialRenderOptionInit()
     isMergedDirtyRegionDfxEnabled_ = !isTargetDirtyRegionDfxEnabled_ &&
         (dirtyRegionDebugType_ == DirtyRegionDebugType::MERGED_DIRTY);
     isOpDropped_ = isPartialRenderEnabled_ &&
-        (partialRenderType_ != PartialRenderType::SET_DAMAGE) && !isRegionDebugEnabled_;
+        (partialRenderType_ >= PartialRenderType::CLIP_AND_DROP_OP) && !isRegionDebugEnabled_;
     isVirtualDirtyDfxEnabled_ = RSSystemProperties::GetVirtualDirtyDebugEnabled();
     isVirtualDirtyEnabled_ = RSSystemProperties::GetVirtualDirtyEnabled() &&
         (RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL) && !isRegionDebugEnabled_;
@@ -3964,6 +3964,7 @@ void RSUniRenderVisitor::SetUniRenderThreadParam(std::unique_ptr<RSRenderThreadP
         return;
     }
     renderThreadParams->isPartialRenderEnabled_ = isPartialRenderEnabled_;
+    renderThreadParams->partialRenderType_ = partialRenderType_;
     renderThreadParams->isRegionDebugEnabled_ = isRegionDebugEnabled_;
     renderThreadParams->isDirtyRegionDfxEnabled_ = isDirtyRegionDfxEnabled_;
     renderThreadParams->isDisplayDirtyDfxEnabled_ = isDisplayDirtyDfxEnabled_;
