@@ -205,6 +205,15 @@ template("render_service_client_source_set") {
 
       #command_modifier
       "core/command_modifier/rs_command_modifier.cpp",
+      "core/command_modifier/rs_root_node_command_modifier.cpp",
+      "core/command_modifier/rs_canvas_node_command_modifier.cpp",
+      "core/command_modifier/rs_surface_node_command_modifier.cpp",
+      "core/command_modifier/rs_canvas_drawing_node_command_modifier.cpp",
+      "core/command_modifier/rs_effect_node_command_modifier.cpp",
+      "core/command_modifier/rs_window_keyframe_node_command_modifier.cpp",
+      "core/command_modifier/rs_node_command_modifier.cpp",
+      "core/command_modifier/rs_depth_node_command_modifier.cpp",
+
       #ui_effect
       "core/ui_effect/effect/src/visual_effect_para.cpp",
       "core/ui_effect/effect/src/visual_effect_unmarshalling_singleton.cpp",
