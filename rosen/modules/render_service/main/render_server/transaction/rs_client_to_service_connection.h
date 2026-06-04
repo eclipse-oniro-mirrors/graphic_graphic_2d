@@ -417,6 +417,8 @@ private:
         uint32_t firstFileIndex, std::vector<HrpServiceFileInfo>& outFiles) override;
     bool ProfilerIsSecureScreen() override;
 
+    ErrCode SetUifirstScale(bool isScale) override;
+
     pid_t remotePid_;
     sptr<RSRenderServiceAgent> renderServiceAgent_;
     sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent_ = nullptr;

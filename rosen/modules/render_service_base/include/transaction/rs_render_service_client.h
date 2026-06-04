@@ -439,6 +439,8 @@ public:
 
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
 #endif
+    ErrCode SetUifirstScale(bool isScale);
+
 private:
 #ifndef ENABLE_RS_PROXY
     void TriggerOnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) const;

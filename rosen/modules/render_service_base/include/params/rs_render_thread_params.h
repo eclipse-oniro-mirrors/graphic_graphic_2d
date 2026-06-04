@@ -654,6 +654,16 @@ public:
         return isDrawRelated_;
     }
 
+    void SetUifirstScale(bool value)
+    {
+        isUifirstScale_ = value;
+    }
+
+    bool IsUifirstScale()
+    {
+        return isUifirstScale_;
+    }
+
 private:
     bool virtualDirtyRefresh_ = false;
     // Used by hardware thred
@@ -745,6 +755,7 @@ private:
     NodeId cachedSurfaceNodeId_{0};
 #endif
     bool isDrawRelated_ = false;
+    bool isUifirstScale_ = false;
 
     friend class RSMainThread;
     friend class RSUniRenderVisitor;

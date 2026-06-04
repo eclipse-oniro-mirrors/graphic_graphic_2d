@@ -271,6 +271,16 @@ public:
         return cacheCompletedSurfaceInfo_.processedSubSurfaceNodeIds;
     }
 
+    void SetCacheUifirstScale(bool isScale)
+    {
+        cacheCompletedSurfaceInfo_.isScale = isScale;
+    }
+
+    void SetCacheUifirstScale(bool isScale)
+    {
+        cacheSurfaceInfo_.isScale = isScale;
+    }
+
 private:
     void ClearCacheSurface(bool isClearCompletedCacheSurface = true);
     bool DrawUIFirstCache(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable, RSPaintFilterCanvas& rscanvas,
@@ -305,6 +315,7 @@ private:
         Occlusion::Region opaqueRegion;
         RectI absDrawRect;
         uint64_t vsyncId = 0;
+        bool isScale = false;
 
         void Reset()
         {
@@ -313,10 +324,12 @@ private:
             alpha = -1.f;
             isContainShadow = false;
             colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE;
+            isScale = false;
             processedSubSurfaceNodeIds.clear();
             opaqueRegion.Reset();
             absDrawRect = {};
             vsyncId = 0;
+            isScale = false;
         }
     };
     CacheSurfaceInfo cacheSurfaceInfo_;
@@ -360,6 +373,7 @@ private:
 
     uint32_t cacheReuseCount_ = 0;
     bool isOcclusionEnabled_ = false;
+    bool lastScale_ = false;
 };
 } // DrawableV2
 } // OHOS::Rosen

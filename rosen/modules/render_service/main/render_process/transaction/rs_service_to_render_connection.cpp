@@ -345,5 +345,12 @@ void RSServiceToRenderConnection::SetCacheEnabledForRotation(bool enabled)
 {
     renderPipelineAgent_->SetCacheEnabledForRotation(enabled);
 }
+
+ErrCode RSServiceToRenderConnection::SetUifirstScale(bool isScale)
+{
+    RS_LOGD("RSServiceToRenderConnection::SetUifirstScale isScale:%{public}d", isScale);
+    return renderPipelineAgent_->SetUifirstScale(isScale);
+}
+
 } // namespace Rosen
 } // namespace OHOS

@@ -139,6 +139,9 @@ public:
         bool unobscured = false) = 0;
     virtual void ForceRefreshOneFrameWithNextVSync() = 0;
     virtual void SetCacheEnabledForRotation(bool enabled) = 0;
+
+    // uifirst
+    virtual ErrCode SetUifirstScale(bool isScale) = 0;
 };
 
 } // namespace Rosen

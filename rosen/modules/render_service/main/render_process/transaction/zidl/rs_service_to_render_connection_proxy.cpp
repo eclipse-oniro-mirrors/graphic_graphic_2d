@@ -1382,6 +1382,30 @@ ErrCode RSServiceToRenderConnectionProxy::SetColorFollow(const std::string& node
     return ERR_OK;
 }
 
+ErrCode RSServiceToRenderConnectionProxy::SetUifirstScale(bool isScale)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+    if (!data.WriteBool(isScale)) {
+        ROSEN_LOGE("SetUifirstScale: WriteBool err.");
+        return WRITE_PARCEL_ERR;
+    }
+    RS_LOGI("RSServiceToRenderConnectionProxy::SetUifirstScale isScale:%{public}d", isScale);
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_UIFIRST_SCALE);
+    int32_t err = Remote()->SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        RS_LOGE("RSServiceToRenderConnectionProxy::SetUifirstScale: send request err.");
+        return RS_CONNECTION_ERROR;
+    }
+    return ERR_OK;
+}
+
 int32_t RSServiceToRenderConnectionProxy::RegisterSelfDrawingNodeRectChangeCallback(
     pid_t remotePid, const RectConstraint& constraint, sptr<RSISelfDrawingNodeRectChangeCallback> callback)
 {
