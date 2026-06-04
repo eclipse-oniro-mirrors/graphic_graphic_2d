@@ -2110,5 +2110,21 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
     return true;
 }
 #endif
+
+ErrCode RSRenderServiceClient::SetUifirstScale(bool isScale)
+{
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    if (!clientToService) {
+        ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale clientToService == nullptr!");
+        return ERR_INVALID_DATA;
+    }
+    ROSEN_LOGD("RSRenderServiceClient::SetUifirstScale isScale:%{public}d", isScale);
+    auto ret = clientToService->SetUifirstScale(isScale);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale fail, ret[%{public}d]", ret);
+    }
+    return ret;
+}
+
 } // namespace Rosen
 } // namespace OHOS

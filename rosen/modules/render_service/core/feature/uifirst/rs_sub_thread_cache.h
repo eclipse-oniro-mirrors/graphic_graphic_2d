@@ -305,6 +305,7 @@ private:
         Occlusion::Region opaqueRegion;
         RectI absDrawRect;
         uint64_t vsyncId = 0;
+        bool isScale = false;
 
         void Reset()
         {
@@ -317,6 +318,7 @@ private:
             opaqueRegion.Reset();
             absDrawRect = {};
             vsyncId = 0;
+            isScale = false;
         }
     };
     CacheSurfaceInfo cacheSurfaceInfo_;
@@ -360,6 +362,7 @@ private:
 
     uint32_t cacheReuseCount_ = 0;
     bool isOcclusionEnabled_ = false;
+    bool lastScale_ = false;
 };
 } // DrawableV2
 } // OHOS::Rosen

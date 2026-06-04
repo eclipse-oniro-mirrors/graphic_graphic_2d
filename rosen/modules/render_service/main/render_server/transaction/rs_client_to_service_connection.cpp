@@ -2565,5 +2565,23 @@ bool RSClientToServiceConnection::ProfilerIsSecureScreen()
 #endif
 }
 
+ErrCode RSClientToServiceConnection::SetUifirstScale(bool isScale)
+{
+    RS_LOGD("RSClientToServiceConnection::SetUifirstScale isScale:%{public}d", isScale);
+    if (renderProcessManagerAgent_ == nullptr) {
+        RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    auto serviceToRenderConns = renderProcessManagerAgent_->GetServiceToRenderConns();
+    if (serviceToRenderConns.size() == 0) {
+        RS_LOGE("%{public}s serviceToRenderConns is empty", __func__);
+        return ERR_INVALID_VALUE;
+    }
+    for (auto conn : serviceToRenderConns) {
+        conn->SetUifirstScale(isScale);
+    }
+    return ERR_OK;
+}
+
 } // namespace Rosen
 } // namespace OHOS

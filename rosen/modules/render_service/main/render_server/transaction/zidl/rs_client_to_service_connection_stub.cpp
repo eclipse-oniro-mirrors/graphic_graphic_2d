@@ -218,6 +218,7 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_UNI_RENDER_ENABLED),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_VSYNC_CONNECTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_PIXELMAP_BY_PROCESSID),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE),
 };
 
 void CopyFileDescriptor(MessageParcel& old, MessageParcel& copied)
@@ -3253,6 +3254,22 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             }
             RS_LOGI("RSClientToServiceConnectionStub::GET_PID_GPU_MEMORY_IN_MB,"
                 "ret: %{public}d, gpuMemInMB: %{public}f", ret, gpuMemInMB);
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE): {
+            bool isScale {false};
+            if (!data.ReadBool(isScale)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SetUifirstScale read isScale failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            ROSEN_LOGD("RSClientToServiceConnectionStub::SetUifirstScale isScale:%{public}d", isScale);
+            ret = SetUifirstScale(isScale);
+            if (ret != ERR_OK) {
+                RS_LOGE("RSClientToServiceConnectionStub::SetUifirstScale SetUifirstScale failed!");
+                ret = ERR_INVALID_REPLY;
+                break;
+            }
             break;
         }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::AVCODEC_VIDEO_START): {

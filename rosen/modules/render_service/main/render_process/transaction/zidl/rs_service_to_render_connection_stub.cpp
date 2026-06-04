@@ -776,6 +776,17 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             SetColorFollow(nodeIdStr, isColorFollow);
             break;
         }
+        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_UIFIRST_SCALE): {
+            bool isScale { false };
+            if (!data.ReadBool(isScale)) {
+                RS_LOGE("RSServiceToRenderStub::SetUifirstScale read uniqueId failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            RS_LOGD("RSServiceToRenderStub::SetUifirstScale isScale:%{public}d", isScale);
+            SetUifirstScale(isScale);
+            break;
+        }
         case static_cast<uint32_t>(
             RSIServiceToRenderConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK): {
             pid_t remotePid;

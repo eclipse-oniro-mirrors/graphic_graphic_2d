@@ -248,6 +248,10 @@ bool RsSubThreadCache::DrawCacheSurface(DrawableV2::RSSurfaceRenderNodeDrawable*
     float scaleY = boundSize.y_ / static_cast<float>(cacheImage->GetHeight());
     // Use user's gravity
     canvas.Scale(gravityMatrix.Get(Drawing::Matrix::SCALE_X), gravityMatrix.Get(Drawing::Matrix::SCALE_Y));
+    if (cacheCompletedSurfaceInfo_.isScale) {
+        canvas.Scale(RSUifirstManager::UI_FIRST_INVERSE_SCALE_FACTOR,
+            RSUifirstManager::UI_FIRST_INVERSE_SCALE_FACTOR);
+    }
     RS_OPTIONAL_TRACE_NAME_FMT("DrawCacheSurface bound[%f %f] cache[%d %d] scale[%f %f]", boundSize.x_, boundSize.y_,
         cacheImage->GetWidth(), cacheImage->GetHeight(), scaleX, scaleY);
     if (RSSystemProperties::GetRecordingEnabled()) {
@@ -331,6 +335,14 @@ void RsSubThreadCache::InitCacheSurface(Drawing::GPUContext* gpuContext,
             params->GetLocalDrawRect().GetHeight() : size.y_;
     } else {
         RS_LOGE("uifirst cannot get cachesize");
+    }
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    bool uifirstScale = uniParam->IsUifirstScale();
+    if (uifirstScale) {
+        RS_OPTIONAL_TRACE_NAME_FMT("%s uifirstScale called", __func__);
+        RS_LOGD("%{public}s, uifirstScale called", __func__);
+        width = width / RSUifirstManager::UI_FIRST_INVERSE_SCALE_FACTOR;
+        height = height / RSUifirstManager::UI_FIRST_INVERSE_SCALE_FACTOR;
     }
 
     auto params = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
@@ -420,6 +432,13 @@ bool RsSubThreadCache::IsCacheValid() const
 
 bool RsSubThreadCache::NeedInitCacheSurface(RSSurfaceRenderParams* surfaceParams)
 {
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    bool uifirstScale = uniParam->IsUifirstScale();
+    if (lastScale_ != uifirstScale) {
+        RS_OPTIONAL_TRACE_NAME_FMT("%s lastScale_:%d uifirstScale:%d", __func__, lastScale_, uifirstScale);
+        lastScale_ = uifirstScale;
+        return true;
+    }
     int width = 0;
     int height = 0;
 
@@ -995,6 +1014,8 @@ void RsSubThreadCache::UpdateCacheSurfaceInfo(RSSurfaceRenderNodeDrawable* surfa
     cacheSurfaceInfo_.processedSubSurfaceNodeIds = surfaceParams->GetAllSubSurfaceNodeIds();
     if (const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams()) {
         cacheSurfaceInfo_.vsyncId = uniParam->GetVsyncId();
+        // uifirstScale
+        cacheSurfaceInfo_.isScale = uniParam->IsUifirstScale();
     }
     if (isOcclusionEnabled_) {
         CalculateSurfaceOpaqueRegion(surfaceDrawable, surfaceParams, cacheSurfaceInfo_.opaqueRegion,

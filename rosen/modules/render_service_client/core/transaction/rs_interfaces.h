@@ -1522,6 +1522,14 @@ public:
      * @return 0 means success, others failed.
      */
     int32_t GetFrameStabilityResult(const FrameStabilityTarget& target, bool& result);
+
+    /**
+     * @brief Frames can be scaled when uifirst
+     * @param isScale it is scalable
+     * @return true means success, others failed.
+     */
+    bool SetUifirstScale(bool isScale);
+
 private:
     RSInterfaces();
     ~RSInterfaces() noexcept;

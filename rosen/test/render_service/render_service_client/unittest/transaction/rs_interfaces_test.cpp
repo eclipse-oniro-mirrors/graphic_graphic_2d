@@ -1122,4 +1122,42 @@ HWTEST_F(RSInterfacesTest, SetSurfaceWatermarkGrid001, TestSize.Level1)
 #endif
 }
 
+/**
+ * @tc.name: SetUifirstScale001
+ * @tc.desc: test results of SetUifirstScale
+ * @tc.type: FUNC
+ * @tc.require: issue24300
+ */
+HWTEST_F(RSInterfacesTest, SetUifirstScale001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = nullptr;
+    bool res = instance.SetUifirstScale(true);
+    EXPECT_FALSE(res);
+
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    res = instance.SetUifirstScale(true);
+    EXPECT_FALSE(res);
+
+    res = instance.SetUifirstScale(false);
+    EXPECT_FALSE(res);
+}
+
+/**
+ * @tc.name: SetUifirstScale002
+ * @tc.desc: test results of SetUifirstScale with different parameters
+ * @tc.type: FUNC
+ * @tc.require: issue24300
+ */
+HWTEST_F(RSInterfacesTest, SetUifirstScale002, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    bool res = instance.SetUifirstScale(true);
+    EXPECT_FALSE(res);
+
+    res = instance.SetUifirstScale(false);
+    EXPECT_FALSE(res);
+}
+
 } // namespace OHOS::Rosen

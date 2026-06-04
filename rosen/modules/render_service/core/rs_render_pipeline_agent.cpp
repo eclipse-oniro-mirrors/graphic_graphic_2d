@@ -2323,5 +2323,19 @@ int32_t RSRenderPipelineAgent::UpdateFrameStabilityDetection(
     return repCode;
 }
 
+ErrCode RSRenderPipelineAgent::SetUifirstScale(bool isScale)
+{
+    RS_LOGD("RSRenderPipelineAgent::SetUifirstScale isScale:%{public}d", isScale);
+    auto pipeline = rsRenderPipeline_.lock();
+    if (!pipeline) {
+        return ERR_INVALID_VALUE;
+    }
+    auto task = [renderPipeline = pipeline, isScale]() -> void {
+        renderPipeline->GetMainThread()->SetUifirstScale(isScale);
+    };
+    pipeline->PostMainThreadTask(task);
+    return ERR_OK;
+}
+
 } // namespace Rosen
 } // namespace OHOS

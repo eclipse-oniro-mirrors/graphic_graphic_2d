@@ -227,6 +227,10 @@ public:
         return subthreadProcessingNode_.count(id) > 0;
     }
     bool IsLayerPartRenderDisableAnimation() const;
+
+    static constexpr float UI_FIRST_SCALE_FACTOR = 0.5f;
+    static constexpr float UI_FIRST_INVERSE_SCALE_FACTOR = 2.0f;
+
 private:
     struct NodeDataBehindWindow {
         uint64_t curTime = 0;

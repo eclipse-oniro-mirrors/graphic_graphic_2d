@@ -1235,5 +1235,13 @@ int32_t RSInterfaces::SetLogicalCameraRotationCorrection(ScreenId id, ScreenRota
 {
     return 0;
 }
+
+bool RSInterfaces::SetUifirstScale(bool isScale)
+{
+    ROSEN_LOGI("RSInterfaces::SetUifirstScale called, isScale:%{public}d", isScale);
+    auto ret = renderServiceClient_->SetUifirstScale(isScale);
+    return (ret == ERR_OK);
+}
+
 } // namespace Rosen
 } // namespace OHOS

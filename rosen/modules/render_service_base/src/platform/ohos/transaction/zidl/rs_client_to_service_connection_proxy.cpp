@@ -5354,5 +5354,30 @@ ErrCode RSClientToServiceConnectionProxy::SetOptimizeCanvasDirtyPidList(const st
     return ERR_INVALID_VALUE;
 }
 #endif
+
+ErrCode RSClientToServiceConnectionProxy::SetUifirstScale(bool isScale)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteBool(isScale)) {
+        ROSEN_LOGE("SetUifirstScale: WriteBool count err.");
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE);
+    ROSEN_LOGD("RSClientToServiceConnectionProxy::SetUifirstScale isScale:%{public}d", isScale);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
 } // namespace Rosen
 } // namespace OHOS

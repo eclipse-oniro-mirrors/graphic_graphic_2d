@@ -459,6 +459,17 @@ public:
     std::vector<SurfaceFpsOp> GetSurfaceFpsOpList();
     void RmvSurfaceFpsOp(const std::vector<SurfaceFpsOp>& rmvList);
 
+    // for uifirstscale
+    void SetUifirstScale(bool value)
+    {
+        isUifirstScale_ = value;
+    }
+
+    bool IsUifirstScale()
+    {
+        return isUifirstScale_;
+    }
+
 private:
     // TransactionDataIndexMap is Pid to {index of RSTransactionData, vector of std::unique_ptr<RSTransactionData>}
     using TransactionDataIndexMap = std::unordered_map<pid_t,
@@ -660,6 +671,7 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     bool isImplicitAnimationEnd_ = false;
+    bool isUifirstScale_ = false;
 
     pid_t lastCleanCachePid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;
