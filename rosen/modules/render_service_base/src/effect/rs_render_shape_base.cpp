@@ -175,7 +175,7 @@ RectF RSNGRenderShapeHelper::CalcRect(
     auto iter = getTransformRectLUT.find(shape->GetType());
     auto result = iter == getTransformRectLUT.end() ? bound : iter->second(shape, bound);
     if (needUpdate) {
-        shape->transformDrawRect_ = bound.JoinRect(result);
+        shape->transformDrawRect_ = result;
     }
     return result;
 }
