@@ -42,6 +42,18 @@ protected:
     // Helper methods for marshalling common gradient data
     bool MarshalCommonData(Parcel& parcel) const;
     bool UnmarshalCommonData(Parcel& parcel);
+
+private:
+    // Helper methods for marshalling specific data types
+    bool MarshalColors(Parcel& parcel) const;
+    bool MarshalPositions(Parcel& parcel) const;
+    bool MarshalMatrix(Parcel& parcel) const;
+    bool MarshalColorSpace(Parcel& parcel) const;
+
+    bool UnmarshalColors(Parcel& parcel);
+    bool UnmarshalPositions(Parcel& parcel);
+    bool UnmarshalMatrix(Parcel& parcel);
+    bool UnmarshalColorSpace(Parcel& parcel);
 #endif
 
     // Common gradient data

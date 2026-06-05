@@ -34,12 +34,12 @@ GradientShaderObjBase::GradientShaderObjBase(int32_t subType, const std::vector<
 }
 
 #ifdef ROSEN_OHOS
-bool GradientShaderObjBase::MarshalCommonData(Parcel& parcel) const
+bool GradientShaderObjBase::MarshalColors(Parcel& parcel) const
 {
     // Write color count
     uint32_t colorCount = colors_.size();
     if (!parcel.WriteUint32(colorCount)) {
-        LOGE("GradientShaderObjBase::MarshalCommonData, failed to write color count");
+        LOGE("GradientShaderObjBase::MarshalColors, failed to write color count");
         return false;
     }
 
@@ -48,36 +48,40 @@ bool GradientShaderObjBase::MarshalCommonData(Parcel& parcel) const
         if (!parcel.WriteFloat(color.GetRed()) || !parcel.WriteFloat(color.GetGreen()) ||
             !parcel.WriteFloat(color.GetBlue()) || !parcel.WriteFloat(color.GetAlpha()) ||
             !parcel.WriteFloat(color.GetHeadroom())) {
-            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write color");
+            LOGE("GradientShaderObjBase::MarshalColors, failed to write color");
             return false;
         }
     }
 
+    return true;
+}
+
+bool GradientShaderObjBase::MarshalPositions(Parcel& parcel) const
+{
     // Write position count
     uint32_t posCount = pos_.size();
     if (!parcel.WriteUint32(posCount)) {
-        LOGE("GradientShaderObjBase::MarshalCommonData, failed to write position count");
+        LOGE("GradientShaderObjBase::MarshalPositions, failed to write position count");
         return false;
     }
 
     // Write positions
     for (const auto& p : pos_) {
         if (!parcel.WriteFloat(p)) {
-            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write position");
+            LOGE("GradientShaderObjBase::MarshalPositions, failed to write position");
             return false;
         }
     }
 
-    // Write tile mode
-    if (!parcel.WriteInt32(static_cast<int32_t>(mode_))) {
-        LOGE("GradientShaderObjBase::MarshalCommonData, failed to write tile mode");
-        return false;
-    }
+    return true;
+}
 
+bool GradientShaderObjBase::MarshalMatrix(Parcel& parcel) const
+{
     // Write hasMatrix flag
     bool hasMatrix = (matrix_ != nullptr);
     if (!parcel.WriteBool(hasMatrix)) {
-        LOGE("GradientShaderObjBase::MarshalCommonData, failed to write hasMatrix flag");
+        LOGE("GradientShaderObjBase::MarshalMatrix, failed to write hasMatrix flag");
         return false;
     }
 
@@ -87,30 +91,35 @@ bool GradientShaderObjBase::MarshalCommonData(Parcel& parcel) const
         matrix_->GetAll(buffer);
         for (int i = 0; i < Matrix::MATRIX_SIZE; i++) {
             if (!parcel.WriteFloat(buffer[i])) {
-                LOGE("GradientShaderObjBase::MarshalCommonData, failed to write matrix data");
+                LOGE("GradientShaderObjBase::MarshalMatrix, failed to write matrix data");
                 return false;
             }
         }
     }
 
+    return true;
+}
+
+bool GradientShaderObjBase::MarshalColorSpace(Parcel& parcel) const
+{
     // Write colorSpace
     auto colorSpaceData = colorSpace_ ? colorSpace_->Serialize() : nullptr;
     if (colorSpaceData && colorSpaceData->GetSize() > 0) {
         if (!parcel.WriteBool(true)) {
-            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace flag");
+            LOGE("GradientShaderObjBase::MarshalColorSpace, failed to write colorSpace flag");
             return false;
         }
         if (!parcel.WriteUint32(colorSpaceData->GetSize())) {
-            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace size");
+            LOGE("GradientShaderObjBase::MarshalColorSpace, failed to write colorSpace size");
             return false;
         }
         if (!parcel.WriteBuffer(colorSpaceData->GetData(), colorSpaceData->GetSize())) {
-            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace data");
+            LOGE("GradientShaderObjBase::MarshalColorSpace, failed to write colorSpace data");
             return false;
         }
     } else {
         if (!parcel.WriteBool(false)) {
-            LOGE("GradientShaderObjBase::MarshalCommonData, failed to write colorSpace flag");
+            LOGE("GradientShaderObjBase::MarshalColorSpace, failed to write colorSpace flag");
             return false;
         }
     }
@@ -118,12 +127,33 @@ bool GradientShaderObjBase::MarshalCommonData(Parcel& parcel) const
     return true;
 }
 
-bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
+bool GradientShaderObjBase::MarshalCommonData(Parcel& parcel) const
+{
+    // Write colors, positions, tile mode, matrix, and colorSpace in original order
+    if (!MarshalColors(parcel) || !MarshalPositions(parcel)) {
+        return false;
+    }
+
+    // Write tile mode
+    if (!parcel.WriteInt32(static_cast<int32_t>(mode_))) {
+        LOGE("GradientShaderObjBase::MarshalCommonData, failed to write tile mode");
+        return false;
+    }
+
+    // Write matrix and colorSpace
+    if (!MarshalMatrix(parcel) || !MarshalColorSpace(parcel)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool GradientShaderObjBase::UnmarshalColors(Parcel& parcel)
 {
     // Read color count
     uint32_t colorCount;
     if (!parcel.ReadUint32(colorCount)) {
-        LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read color count");
+        LOGE("GradientShaderObjBase::UnmarshalColors, failed to read color count");
         return false;
     }
 
@@ -138,16 +168,21 @@ bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
         float h;
         if (!parcel.ReadFloat(r) || !parcel.ReadFloat(g) || !parcel.ReadFloat(b) ||
             !parcel.ReadFloat(a) || !parcel.ReadFloat(h)) {
-            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read color");
+            LOGE("GradientShaderObjBase::UnmarshalColors, failed to read color");
             return false;
         }
         colors_.emplace_back(r, g, b, a, h);
     }
 
+    return true;
+}
+
+bool GradientShaderObjBase::UnmarshalPositions(Parcel& parcel)
+{
     // Read position count
     uint32_t posCount;
     if (!parcel.ReadUint32(posCount)) {
-        LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read position count");
+        LOGE("GradientShaderObjBase::UnmarshalPositions, failed to read position count");
         return false;
     }
 
@@ -157,10 +192,84 @@ bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
     for (uint32_t i = 0; i < posCount; i++) {
         scalar p;
         if (!parcel.ReadFloat(p)) {
-            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read position");
+            LOGE("GradientShaderObjBase::UnmarshalPositions, failed to read position");
             return false;
         }
         pos_.push_back(p);
+    }
+
+    return true;
+}
+
+bool GradientShaderObjBase::UnmarshalMatrix(Parcel& parcel)
+{
+    // Read hasMatrix flag
+    bool hasMatrix;
+    if (!parcel.ReadBool(hasMatrix)) {
+        LOGE("GradientShaderObjBase::UnmarshalMatrix, failed to read hasMatrix flag");
+        return false;
+    }
+
+    // Read matrix if present
+    if (hasMatrix) {
+        Matrix::Buffer buffer;
+        for (int i = 0; i < Matrix::MATRIX_SIZE; i++) {
+            if (!parcel.ReadFloat(buffer[i])) {
+                LOGE("GradientShaderObjBase::UnmarshalMatrix, failed to read matrix data");
+                return false;
+            }
+        }
+        matrix_ = std::make_shared<Matrix>();
+        matrix_->SetAll(buffer);
+    } else {
+        matrix_ = nullptr;
+    }
+
+    return true;
+}
+
+bool GradientShaderObjBase::UnmarshalColorSpace(Parcel& parcel)
+{
+    // Read colorSpace flag
+    bool hasColorSpace;
+    if (!parcel.ReadBool(hasColorSpace)) {
+        LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to read colorSpace flag");
+        return false;
+    }
+
+    if (hasColorSpace) {
+        uint32_t colorSpaceSize;
+        if (!parcel.ReadUint32(colorSpaceSize)) {
+            LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to read colorSpace size");
+            return false;
+        }
+        const uint8_t* colorSpaceBuffer = parcel.ReadBuffer(colorSpaceSize);
+        if (!colorSpaceBuffer) {
+            LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to read colorSpace data");
+            return false;
+        }
+        auto colorSpaceData = std::make_shared<Data>();
+        if (!colorSpaceData->BuildWithCopy(colorSpaceBuffer, colorSpaceSize)) {
+            LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to create colorSpace data");
+            return false;
+        }
+        colorSpace_ = ColorSpace::CreateSRGB();
+        if (!colorSpace_->Deserialize(colorSpaceData)) {
+            LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to deserialize colorSpace");
+            return false;
+        }
+    } else {
+        colorSpace_ = nullptr;
+    }
+
+    return true;
+}
+
+bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
+{
+    // Read colors, positions, tile mode, matrix, and colorSpace in original order
+    if (!UnmarshalColors(parcel) || !UnmarshalPositions(parcel)) {
+        return false;
     }
 
     // Read tile mode
@@ -171,57 +280,9 @@ bool GradientShaderObjBase::UnmarshalCommonData(Parcel& parcel)
     }
     mode_ = static_cast<TileMode>(modeValue);
 
-    // Read hasMatrix flag
-    bool hasMatrix;
-    if (!parcel.ReadBool(hasMatrix)) {
-        LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read hasMatrix flag");
+    // Read matrix and colorSpace
+    if (!UnmarshalMatrix(parcel) || !UnmarshalColorSpace(parcel)) {
         return false;
-    }
-
-    // Read matrix if present
-    if (hasMatrix) {
-        Matrix::Buffer buffer;
-        for (int i = 0; i < Matrix::MATRIX_SIZE; i++) {
-            if (!parcel.ReadFloat(buffer[i])) {
-                LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read matrix data");
-                return false;
-            }
-        }
-        matrix_ = std::make_shared<Matrix>();
-        matrix_->SetAll(buffer);
-    } else {
-        matrix_ = nullptr;
-    }
-
-    // Read colorSpace
-    bool hasColorSpace;
-    if (!parcel.ReadBool(hasColorSpace)) {
-        LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read colorSpace flag");
-        return false;
-    }
-    if (hasColorSpace) {
-        uint32_t colorSpaceSize;
-        if (!parcel.ReadUint32(colorSpaceSize)) {
-            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read colorSpace size");
-            return false;
-        }
-        const uint8_t* colorSpaceBuffer = parcel.ReadBuffer(colorSpaceSize);
-        if (!colorSpaceBuffer) {
-            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to read colorSpace data");
-            return false;
-        }
-        auto colorSpaceData = std::make_shared<Data>();
-        if (!colorSpaceData->BuildWithCopy(colorSpaceBuffer, colorSpaceSize)) {
-            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to create colorSpace data");
-            return false;
-        }
-        colorSpace_ = ColorSpace::CreateSRGB();
-        if (!colorSpace_->Deserialize(colorSpaceData)) {
-            LOGE("GradientShaderObjBase::UnmarshalCommonData, failed to deserialize colorSpace");
-            return false;
-        }
-    } else {
-        colorSpace_ = nullptr;
     }
 
     return true;
