@@ -1839,7 +1839,7 @@ bool RSRenderPipelineAgent::UnRegisterTypeface(uint64_t globalUniqueId)
     };
     RSUniRenderThread::Instance().PostTask(task);
 
-    RSTypefaceCache::Instance().RemoveDrawingTypefaceByGlobalUniqueId(globalUniqueId);
+    RSTypefaceCache::Instance().AddDelayDestroyQueue(globalUniqueId);
     return true;
 }
 
