@@ -3017,7 +3017,7 @@ void RSMainThread::Render()
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
     }
     if (focusAppBundleName_.find(DESKTOP_NAME_FOR_ROTATION) != std::string::npos) {
-        desktopPidForRotationScene_ = focusAppPid_;
+        desktopPidForRotationScene_.store(focusAppPid_.load());
     }
     int dumpTreeCount = RSSystemParameters::GetDumpRSTreeCount();
     if (UNLIKELY(dumpTreeCount)) {
