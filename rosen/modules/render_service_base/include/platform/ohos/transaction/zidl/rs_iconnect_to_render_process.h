@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
-
+constexpr uint64_t INVALID_TOKEN_MASK_ID = 0;
 class RSIConnectToRenderProcess : public IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.rosen.ConnectToRenderProcess");
