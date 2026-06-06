@@ -42,8 +42,17 @@ protected:
     // Helper methods for marshalling common gradient data
     bool MarshalCommonData(Parcel& parcel) const;
     bool UnmarshalCommonData(Parcel& parcel);
+#endif
+
+    // Common gradient data
+    std::vector<UIColor> colors_;
+    std::shared_ptr<ColorSpace> colorSpace_;
+    std::vector<scalar> pos_;
+    TileMode mode_;
+    std::shared_ptr<Matrix> matrix_;
 
 private:
+#ifdef ROSEN_OHOS
     // Helper methods for marshalling specific data types
     bool MarshalColors(Parcel& parcel) const;
     bool MarshalPositions(Parcel& parcel) const;
@@ -55,13 +64,6 @@ private:
     bool UnmarshalMatrix(Parcel& parcel);
     bool UnmarshalColorSpace(Parcel& parcel);
 #endif
-
-    // Common gradient data
-    std::vector<UIColor> colors_;
-    std::shared_ptr<ColorSpace> colorSpace_;
-    std::vector<scalar> pos_;
-    TileMode mode_;
-    std::shared_ptr<Matrix> matrix_;
 };
 
 } // namespace Drawing

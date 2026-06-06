@@ -37,16 +37,6 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-
-private:
-#ifdef ROSEN_OHOS
-    static bool TestSingleRoundTripCombo(Point startPt, Point endPt, const std::vector<UIColor>& colors,
-        std::shared_ptr<ColorSpace> colorSpace, const std::vector<scalar>& pos, TileMode mode, Matrix* matrix);
-    static void TestCombination1(TileMode mode);
-    static void TestCombination2(TileMode mode);
-    static void TestCombination3(TileMode mode);
-    static void TestCombination4(TileMode mode);
-#endif
 };
 
 void GradientShaderObjBaseTest::SetUpTestCase()
@@ -66,7 +56,8 @@ void GradientShaderObjBaseTest::SetUp() {}
 void GradientShaderObjBaseTest::TearDown() {}
 
 #ifdef ROSEN_OHOS
-bool GradientShaderObjBaseTest::TestSingleRoundTripCombo(Point startPt, Point endPt,
+namespace {
+bool TestSingleRoundTripCombo(Point startPt, Point endPt,
     const std::vector<UIColor>& colors, std::shared_ptr<ColorSpace> colorSpace,
     const std::vector<scalar>& pos, TileMode mode, Matrix* matrix)
 {
@@ -96,7 +87,7 @@ bool GradientShaderObjBaseTest::TestSingleRoundTripCombo(Point startPt, Point en
     return isValid;
 }
 
-void GradientShaderObjBaseTest::TestCombination1(TileMode mode)
+void TestCombination1(TileMode mode)
 {
     Point startPt(10.0f, 20.0f);
     Point endPt(110.0f, 120.0f);
@@ -108,7 +99,7 @@ void GradientShaderObjBaseTest::TestCombination1(TileMode mode)
     EXPECT_TRUE(TestSingleRoundTripCombo(startPt, endPt, colors, nullptr, pos, mode, nullptr));
 }
 
-void GradientShaderObjBaseTest::TestCombination2(TileMode mode)
+void TestCombination2(TileMode mode)
 {
     Point startPt(10.0f, 20.0f);
     Point endPt(110.0f, 120.0f);
@@ -122,7 +113,7 @@ void GradientShaderObjBaseTest::TestCombination2(TileMode mode)
     EXPECT_TRUE(TestSingleRoundTripCombo(startPt, endPt, colors, nullptr, pos, mode, &matrix));
 }
 
-void GradientShaderObjBaseTest::TestCombination3(TileMode mode)
+void TestCombination3(TileMode mode)
 {
     Point startPt(10.0f, 20.0f);
     Point endPt(110.0f, 120.0f);
@@ -135,7 +126,7 @@ void GradientShaderObjBaseTest::TestCombination3(TileMode mode)
     EXPECT_TRUE(TestSingleRoundTripCombo(startPt, endPt, colors, colorSpace, pos, mode, nullptr));
 }
 
-void GradientShaderObjBaseTest::TestCombination4(TileMode mode)
+void TestCombination4(TileMode mode)
 {
     Point startPt(10.0f, 20.0f);
     Point endPt(110.0f, 120.0f);
@@ -152,6 +143,7 @@ void GradientShaderObjBaseTest::TestCombination4(TileMode mode)
     EXPECT_TRUE(TestSingleRoundTripCombo(startPt, endPt, colors, colorSpace, pos, mode, &matrix));
 }
 #endif
+} // namespace
 
 #ifdef ROSEN_OHOS
 

@@ -37,17 +37,6 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-
-private:
-#ifdef ROSEN_OHOS
-    static std::shared_ptr<RadialGradientShaderObj> CreateTestShader(Point centerPt, scalar radius,
-        const std::vector<UIColor>& colors, std::shared_ptr<ColorSpace> colorSpace,
-        const std::vector<scalar>& pos, TileMode mode, Matrix* matrix);
-    static MessageParcel MarshalShader(std::shared_ptr<RadialGradientShaderObj> shader);
-    static std::shared_ptr<RadialGradientShaderObj> UnmarshalShader(MessageParcel& parcel);
-    static void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
-        std::shared_ptr<ShaderEffect> newShader);
-#endif
 };
 
 void RadialGradientShaderObjTest::SetUpTestCase()
@@ -67,7 +56,8 @@ void RadialGradientShaderObjTest::SetUp() {}
 void RadialGradientShaderObjTest::TearDown() {}
 
 #ifdef ROSEN_OHOS
-std::shared_ptr<RadialGradientShaderObj> RadialGradientShaderObjTest::CreateTestShader(
+namespace {
+std::shared_ptr<RadialGradientShaderObj> CreateTestShader(
     Point centerPt, scalar radius, const std::vector<UIColor>& colors,
     std::shared_ptr<ColorSpace> colorSpace, const std::vector<scalar>& pos,
     TileMode mode, Matrix* matrix)
@@ -75,16 +65,14 @@ std::shared_ptr<RadialGradientShaderObj> RadialGradientShaderObjTest::CreateTest
     return RadialGradientShaderObj::Create(centerPt, radius, colors, colorSpace, pos, mode, matrix);
 }
 
-MessageParcel RadialGradientShaderObjTest::MarshalShader(std::shared_ptr<RadialGradientShaderObj> shader)
+void MarshalShader(MessageParcel& parcel, std::shared_ptr<RadialGradientShaderObj> shader)
 {
-    MessageParcel parcel;
     parcel.WriteInt32(shader->GetType());
     parcel.WriteInt32(shader->GetSubType());
     shader->Marshalling(parcel);
-    return parcel;
 }
 
-std::shared_ptr<RadialGradientShaderObj> RadialGradientShaderObjTest::UnmarshalShader(MessageParcel& parcel)
+std::shared_ptr<RadialGradientShaderObj> UnmarshalShader(MessageParcel& parcel)
 {
     auto newShader = RadialGradientShaderObj::CreateForUnmarshalling();
     parcel.ReadInt32(); // type
@@ -94,7 +82,7 @@ std::shared_ptr<RadialGradientShaderObj> RadialGradientShaderObjTest::UnmarshalS
     return newShader;
 }
 
-void RadialGradientShaderObjTest::VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
+void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
     std::shared_ptr<ShaderEffect> newShader)
 {
     auto originalData = originalShader->Serialize();
@@ -111,6 +99,7 @@ void RadialGradientShaderObjTest::VerifySerializationMatch(std::shared_ptr<Shade
     EXPECT_EQ(memResult, 0);
 }
 #endif
+} // namespace
 
 /*
  * @tc.name: Constructor001
@@ -569,7 +558,8 @@ HWTEST_F(RadialGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, Test
     ASSERT_TRUE(originalShaderObj != nullptr);
 
     // Marshal and unmarshal
-    MessageParcel parcel = MarshalShader(originalShaderObj);
+    MessageParcel parcel;
+    MarshalShader(parcel, originalShaderObj);
     auto newShaderObj = UnmarshalShader(parcel);
     ASSERT_TRUE(newShaderObj != nullptr);
 
