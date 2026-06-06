@@ -37,18 +37,6 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-
-private:
-#ifdef ROSEN_OHOS
-    static std::shared_ptr<ConicalGradientShaderObj> CreateTestShader(Point startPt, scalar startRadius,
-        Point endPt, scalar endRadius, const std::vector<UIColor>& colors,
-        std::shared_ptr<ColorSpace> colorSpace, const std::vector<scalar>& pos,
-        TileMode mode, Matrix* matrix);
-    static MessageParcel MarshalShader(std::shared_ptr<ConicalGradientShaderObj> shader);
-    static std::shared_ptr<ConicalGradientShaderObj> UnmarshalShader(MessageParcel& parcel);
-    static void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
-        std::shared_ptr<ShaderEffect> newShader);
-#endif
 };
 
 void ConicalGradientShaderObjTest::SetUpTestCase()
@@ -68,7 +56,8 @@ void ConicalGradientShaderObjTest::SetUp() {}
 void ConicalGradientShaderObjTest::TearDown() {}
 
 #ifdef ROSEN_OHOS
-std::shared_ptr<ConicalGradientShaderObj> ConicalGradientShaderObjTest::CreateTestShader(
+namespace {
+std::shared_ptr<ConicalGradientShaderObj> CreateTestShader(
     Point startPt, scalar startRadius, Point endPt, scalar endRadius,
     const std::vector<UIColor>& colors, std::shared_ptr<ColorSpace> colorSpace,
     const std::vector<scalar>& pos, TileMode mode, Matrix* matrix)
@@ -77,16 +66,14 @@ std::shared_ptr<ConicalGradientShaderObj> ConicalGradientShaderObjTest::CreateTe
         colorSpace, pos, mode, matrix);
 }
 
-MessageParcel ConicalGradientShaderObjTest::MarshalShader(std::shared_ptr<ConicalGradientShaderObj> shader)
+void MarshalShader(MessageParcel& parcel, std::shared_ptr<ConicalGradientShaderObj> shader)
 {
-    MessageParcel parcel;
     parcel.WriteInt32(shader->GetType());
     parcel.WriteInt32(shader->GetSubType());
     shader->Marshalling(parcel);
-    return parcel;
 }
 
-std::shared_ptr<ConicalGradientShaderObj> ConicalGradientShaderObjTest::UnmarshalShader(MessageParcel& parcel)
+std::shared_ptr<ConicalGradientShaderObj> UnmarshalShader(MessageParcel& parcel)
 {
     auto newShader = ConicalGradientShaderObj::CreateForUnmarshalling();
     parcel.ReadInt32(); // type
@@ -96,7 +83,7 @@ std::shared_ptr<ConicalGradientShaderObj> ConicalGradientShaderObjTest::Unmarsha
     return newShader;
 }
 
-void ConicalGradientShaderObjTest::VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
+void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
     std::shared_ptr<ShaderEffect> newShader)
 {
     auto originalData = originalShader->Serialize();
@@ -113,6 +100,7 @@ void ConicalGradientShaderObjTest::VerifySerializationMatch(std::shared_ptr<Shad
     EXPECT_EQ(memResult, 0);
 }
 #endif
+} // namespace
 
 /*
  * @tc.name: Constructor001
@@ -629,7 +617,8 @@ HWTEST_F(ConicalGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, Tes
     ASSERT_TRUE(originalShaderObj != nullptr);
 
     // Marshal and unmarshal
-    MessageParcel parcel = MarshalShader(originalShaderObj);
+    MessageParcel parcel;
+    MarshalShader(parcel, originalShaderObj);
     auto newShaderObj = UnmarshalShader(parcel);
     ASSERT_TRUE(newShaderObj != nullptr);
 

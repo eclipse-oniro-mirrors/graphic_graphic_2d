@@ -37,17 +37,6 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-
-private:
-#ifdef ROSEN_OHOS
-    static std::shared_ptr<SweepGradientShaderObj> CreateTestShader(Point centerPt,
-        const std::vector<UIColor>& colors, std::shared_ptr<ColorSpace> colorSpace,
-        const std::vector<scalar>& pos, TileMode mode, scalar startAngle, scalar endAngle, Matrix* matrix);
-    static MessageParcel MarshalShader(std::shared_ptr<SweepGradientShaderObj> shader);
-    static std::shared_ptr<SweepGradientShaderObj> UnmarshalShader(MessageParcel& parcel);
-    static void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
-        std::shared_ptr<ShaderEffect> newShader);
-#endif
 };
 
 void SweepGradientShaderObjTest::SetUpTestCase()
@@ -67,23 +56,22 @@ void SweepGradientShaderObjTest::SetUp() {}
 void SweepGradientShaderObjTest::TearDown() {}
 
 #ifdef ROSEN_OHOS
-std::shared_ptr<SweepGradientShaderObj> SweepGradientShaderObjTest::CreateTestShader(
+namespace {
+std::shared_ptr<SweepGradientShaderObj> CreateTestShader(
     Point centerPt, const std::vector<UIColor>& colors, std::shared_ptr<ColorSpace> colorSpace,
     const std::vector<scalar>& pos, TileMode mode, scalar startAngle, scalar endAngle, Matrix* matrix)
 {
     return SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode, startAngle, endAngle, matrix);
 }
 
-MessageParcel SweepGradientShaderObjTest::MarshalShader(std::shared_ptr<SweepGradientShaderObj> shader)
+void MarshalShader(MessageParcel& parcel, std::shared_ptr<SweepGradientShaderObj> shader)
 {
-    MessageParcel parcel;
     parcel.WriteInt32(shader->GetType());
     parcel.WriteInt32(shader->GetSubType());
     shader->Marshalling(parcel);
-    return parcel;
 }
 
-std::shared_ptr<SweepGradientShaderObj> SweepGradientShaderObjTest::UnmarshalShader(MessageParcel& parcel)
+std::shared_ptr<SweepGradientShaderObj> UnmarshalShader(MessageParcel& parcel)
 {
     auto newShader = SweepGradientShaderObj::CreateForUnmarshalling();
     parcel.ReadInt32(); // type
@@ -93,7 +81,7 @@ std::shared_ptr<SweepGradientShaderObj> SweepGradientShaderObjTest::UnmarshalSha
     return newShader;
 }
 
-void SweepGradientShaderObjTest::VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
+void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
     std::shared_ptr<ShaderEffect> newShader)
 {
     auto originalData = originalShader->Serialize();
@@ -110,6 +98,7 @@ void SweepGradientShaderObjTest::VerifySerializationMatch(std::shared_ptr<Shader
     EXPECT_EQ(memResult, 0);
 }
 #endif
+} // namespace
 
 /*
  * @tc.name: Constructor001
@@ -602,7 +591,8 @@ HWTEST_F(SweepGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, TestS
     ASSERT_TRUE(originalShaderObj != nullptr);
 
     // Marshal and unmarshal
-    MessageParcel parcel = MarshalShader(originalShaderObj);
+    MessageParcel parcel;
+    MarshalShader(parcel, originalShaderObj);
     auto newShaderObj = UnmarshalShader(parcel);
     ASSERT_TRUE(newShaderObj != nullptr);
 
