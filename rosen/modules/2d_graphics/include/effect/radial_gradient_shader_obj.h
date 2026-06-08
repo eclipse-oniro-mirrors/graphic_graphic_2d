@@ -44,7 +44,7 @@ private:
         const std::vector<scalar>& pos, TileMode mode, const Matrix* matrix);
 
     Point centerPt_;
-    scalar radius_;
+    scalar radius_ = 0.0f;
 };
 } // namespace Drawing
 } // namespace Rosen

@@ -46,9 +46,9 @@ private:
         TileMode mode, const Matrix* matrix);
 
     Point startPt_;
-    scalar startRadius_;
+    scalar startRadius_ = 0.0f;
     Point endPt_;
-    scalar endRadius_;
+    scalar endRadius_ = 0.0f;
 };
 } // namespace Drawing
 } // namespace Rosen

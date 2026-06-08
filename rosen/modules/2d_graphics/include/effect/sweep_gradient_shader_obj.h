@@ -46,8 +46,8 @@ private:
         scalar endAngle, const Matrix* matrix);
 
     Point centerPt_;
-    scalar startAngle_;
-    scalar endAngle_;
+    scalar startAngle_ = 0.0f;
+    scalar endAngle_ = 0.0f;
 };
 } // namespace Drawing
 } // namespace Rosen

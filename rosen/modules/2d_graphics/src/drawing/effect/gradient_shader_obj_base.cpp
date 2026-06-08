@@ -19,6 +19,9 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+constexpr uint32_t MAX_COLOR_COUNT = 256;
+constexpr uint32_t MAX_POS_COUNT = 256;
+constexpr uint32_t MAX_COLORSPACE_SIZE = 1024 * 1024; // 1MB
 
 GradientShaderObjBase::GradientShaderObjBase(int32_t subType)
     : ShaderEffectObj(subType), colorSpace_(nullptr), mode_(TileMode::CLAMP), matrix_(nullptr)
@@ -89,7 +92,7 @@ bool GradientShaderObjBase::MarshalMatrix(Parcel& parcel) const
     if (hasMatrix) {
         Matrix::Buffer buffer;
         matrix_->GetAll(buffer);
-        for (int32_t i = 0; i < Matrix::MATRIX_SIZE; i++) {
+        for (size_t i = 0; i < Matrix::MATRIX_SIZE; i++) {
             if (!parcel.WriteFloat(buffer[i])) {
                 LOGE("GradientShaderObjBase::MarshalMatrix, failed to write matrix data");
                 return false;
@@ -156,11 +159,15 @@ bool GradientShaderObjBase::UnmarshalColors(Parcel& parcel)
         LOGE("GradientShaderObjBase::UnmarshalColors, failed to read color count");
         return false;
     }
-
+    // Validate color count to prevent memory exhaustion
+    if (colorCount > MAX_COLOR_COUNT) {
+        LOGE("GradientShaderObjBase::UnmarshalColors, colorCount exceeds maximum value");
+        return false;
+    }
     // Read colors
     colors_.clear();
     colors_.reserve(colorCount);
-    for (uint32_t i = 0; i < colorCount; i++) {
+    for (size_t i = 0; i < colorCount; i++) {
         float r;
         float g;
         float b;
@@ -185,11 +192,15 @@ bool GradientShaderObjBase::UnmarshalPositions(Parcel& parcel)
         LOGE("GradientShaderObjBase::UnmarshalPositions, failed to read position count");
         return false;
     }
-
+    // Validate position count to prevent memory exhaustion
+    if (posCount > MAX_POS_COUNT) {
+        LOGE("GradientShaderObjBase::UnmarshalPositions, posCount exceeds maximum value");
+        return false;
+    }
     // Read positions
     pos_.clear();
     pos_.reserve(posCount);
-    for (uint32_t i = 0; i < posCount; i++) {
+    for (size_t i = 0; i < posCount; i++) {
         scalar p;
         if (!parcel.ReadFloat(p)) {
             LOGE("GradientShaderObjBase::UnmarshalPositions, failed to read position");
@@ -213,7 +224,7 @@ bool GradientShaderObjBase::UnmarshalMatrix(Parcel& parcel)
     // Read matrix if present
     if (hasMatrix) {
         Matrix::Buffer buffer;
-        for (int32_t i = 0; i < Matrix::MATRIX_SIZE; i++) {
+        for (size_t i = 0; i < Matrix::MATRIX_SIZE; i++) {
             if (!parcel.ReadFloat(buffer[i])) {
                 LOGE("GradientShaderObjBase::UnmarshalMatrix, failed to read matrix data");
                 return false;
@@ -248,16 +259,17 @@ bool GradientShaderObjBase::UnmarshalColorSpace(Parcel& parcel)
             LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to read colorSpace data");
             return false;
         }
+        // Validate colorSpace size to prevent memory exhaustion
+        if (colorSpaceSize > MAX_COLORSPACE_SIZE) {
+            LOGE("GradientShaderObjBase::UnmarshalColorSpace, colorSpaceSize exceeds maximum value");
+            return false;
+        }
         auto colorSpaceData = std::make_shared<Data>();
         if (!colorSpaceData->BuildWithCopy(colorSpaceBuffer, colorSpaceSize)) {
             LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to create colorSpace data");
             return false;
         }
-        colorSpace_ = ColorSpace::CreateSRGB();
-        if (!colorSpace_) {
-            LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to create ColorSpace");
-            return false;
-        }
+        colorSpace_ = std::make_shared<ColorSpace>();
         if (!colorSpace_->Deserialize(colorSpaceData)) {
             LOGE("GradientShaderObjBase::UnmarshalColorSpace, failed to deserialize colorSpace");
             return false;

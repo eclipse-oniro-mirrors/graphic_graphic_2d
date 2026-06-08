@@ -37,7 +37,7 @@ std::shared_ptr<ShaderEffectLazy> ShaderEffectLazy::CreateLinearGradient(const P
 {
     auto linearGradientObj = LinearGradientShaderObj::Create(startPt, endPt, colors, colorSpace, pos, mode, matrix);
     if (!linearGradientObj) {
-        LOGD("ShaderEffectLazy::CreateLinearGradient, failed to create LinearGradientShaderObj");
+        LOGE("ShaderEffectLazy::CreateLinearGradient, failed to create LinearGradientShaderObj");
         return nullptr;
     }
     return std::shared_ptr<ShaderEffectLazy>(new ShaderEffectLazy(linearGradientObj));
@@ -49,7 +49,7 @@ std::shared_ptr<ShaderEffectLazy> ShaderEffectLazy::CreateRadialGradient(const P
 {
     auto radialGradientObj = RadialGradientShaderObj::Create(centerPt, radius, colors, colorSpace, pos, mode, matrix);
     if (!radialGradientObj) {
-        LOGD("ShaderEffectLazy::CreateRadialGradient, failed to create RadialGradientShaderObj");
+        LOGE("ShaderEffectLazy::CreateRadialGradient, failed to create RadialGradientShaderObj");
         return nullptr;
     }
     return std::shared_ptr<ShaderEffectLazy>(new ShaderEffectLazy(radialGradientObj));
@@ -63,7 +63,7 @@ std::shared_ptr<ShaderEffectLazy> ShaderEffectLazy::CreateTwoPointConical(const 
     auto conicalGradientObj = ConicalGradientShaderObj::Create(startPt, startRadius, endPt, endRadius, colors,
         colorSpace, pos, mode, matrix);
     if (!conicalGradientObj) {
-        LOGD("ShaderEffectLazy::CreateTwoPointConical, failed to create ConicalGradientShaderObj");
+        LOGE("ShaderEffectLazy::CreateTwoPointConical, failed to create ConicalGradientShaderObj");
         return nullptr;
     }
     return std::shared_ptr<ShaderEffectLazy>(new ShaderEffectLazy(conicalGradientObj));
@@ -77,7 +77,7 @@ std::shared_ptr<ShaderEffectLazy> ShaderEffectLazy::CreateSweepGradient(const Po
     auto sweepGradientObj = SweepGradientShaderObj::Create(centerPt, colors, colorSpace, pos, mode,
         startAngle, endAngle, matrix);
     if (!sweepGradientObj) {
-        LOGD("ShaderEffectLazy::CreateSweepGradient, failed to create SweepGradientShaderObj");
+        LOGE("ShaderEffectLazy::CreateSweepGradient, failed to create SweepGradientShaderObj");
         return nullptr;
     }
     return std::shared_ptr<ShaderEffectLazy>(new ShaderEffectLazy(sweepGradientObj));

@@ -82,23 +82,6 @@ std::shared_ptr<ConicalGradientShaderObj> UnmarshalShader(MessageParcel& parcel)
     newShader->Unmarshalling(parcel, isValid);
     return newShader;
 }
-
-void VerifySerializationMatch(std::shared_ptr<ShaderEffect> originalShader,
-    std::shared_ptr<ShaderEffect> newShader)
-{
-    auto originalData = originalShader->Serialize();
-    auto newData = newShader->Serialize();
-    ASSERT_TRUE(originalData != nullptr);
-    ASSERT_TRUE(newData != nullptr);
-    EXPECT_EQ(originalData->GetSize(), newData->GetSize());
-
-    const void* originalMemory = originalData->GetData();
-    const void* newMemory = newData->GetData();
-    ASSERT_TRUE(originalMemory != nullptr);
-    ASSERT_TRUE(newMemory != nullptr);
-    int memResult = memcmp(originalMemory, newMemory, originalData->GetSize());
-    EXPECT_EQ(memResult, 0);
-}
 #endif
 } // namespace
 
@@ -631,7 +614,7 @@ HWTEST_F(ConicalGradientShaderObjTest, MarshallingUnmarshallingRoundTrip001, Tes
     auto originalShader = std::static_pointer_cast<ShaderEffect>(originalBaseObject);
     auto newShader = std::static_pointer_cast<ShaderEffect>(newBaseObject);
 
-    VerifySerializationMatch(originalShader, newShader);
+    EffectTestUtils::VerifySerializationMatch(originalShader, newShader);
 }
 
 /*
