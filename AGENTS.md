@@ -19,7 +19,7 @@
 | --- | --- |
 | build、GN、bundle、产品裁剪、preview、adapter | 构建/平台/接口 |
 | main_thread、render_thread、drawable、modifier、animation | RS 管线/节点 |
-| IPC、Parcel、Command、Stub、Proxy、fuzz、安全输入 | IPC/安全 |
+| IPC、Parcel、Command、Stub、Proxy、fuzz、安全输入、client | IPC/安全 |
 | HWC、VSync、屏幕、dirty、HDR、UIFirst、layer、capture | RS 特性/设备 |
 | LTPO、fps、DVSync、soft VSync、投票 | HGM |
 | Canvas、Path、Bitmap、NDK Drawing、Texgine、WebGL | 2D/API/framework |
