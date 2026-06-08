@@ -169,7 +169,6 @@ sptr<RSIClientToRenderConnection> RSRenderServiceConnectHub::FindClientToRenderC
 
 sptr<RSIClientToRenderConnection> RSRenderServiceConnectHub::GetClientToRenderConnection(uint64_t tokenMaskId)
 {
-
     static bool isUniRender = RSSystemProperties::GetUniRenderEnabled();
     auto connHub = RSRenderServiceConnectHub::GetInstance();
     if (connHub == nullptr) {
@@ -183,8 +182,6 @@ sptr<RSIClientToRenderConnection> RSRenderServiceConnectHub::GetClientToRenderCo
     ROSEN_LOGI("RSRenderServiceConnectHub::GetClientToRenderConnection Trigger Guarantee mechanism");
     return GetRenderService().second;
 }
-
-
 
 uint64_t RSRenderServiceConnectHub::FindTokenMaskIdByRenderRemote(sptr<IRemoteObject>& connectToRenderRemote)
 {
