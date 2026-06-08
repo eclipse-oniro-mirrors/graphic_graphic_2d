@@ -134,8 +134,7 @@
           "runtime_core",
           "hiview",
           "i18n",
-          "api_metrics",
-          "selinux_adapter"
+          "api_metrics"
         ],
         "third_party": [
           "skia"
