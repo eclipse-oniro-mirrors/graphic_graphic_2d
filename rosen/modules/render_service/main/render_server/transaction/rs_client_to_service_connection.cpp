@@ -1522,7 +1522,7 @@ bool RSClientToServiceConnection::UnRegisterTypeface(uint64_t globalUniqueId)
     };
     RSUniRenderThread::Instance().PostTask(task);
 
-    RSTypefaceCache::Instance().RemoveDrawingTypefaceByGlobalUniqueId(globalUniqueId);
+    RSTypefaceCache::Instance().AddDelayDestroyQueue(globalUniqueId);
     return ForwardToRenderServers([&](sptr<RSIServiceToRenderConnection>& conn) -> bool {
         return conn->UnRegisterTypeface(globalUniqueId);
     });
