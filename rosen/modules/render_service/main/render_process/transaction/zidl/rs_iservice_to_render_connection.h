@@ -141,7 +141,7 @@ public:
     virtual void SetCacheEnabledForRotation(bool enabled) = 0;
 
     // uifirst
-    virtual ErrCode SetUifirstScale(bool isScale) = 0;
+    virtual ErrCode SetUifirstScale(float scaleFactor) = 0;
 };
 
 } // namespace Rosen

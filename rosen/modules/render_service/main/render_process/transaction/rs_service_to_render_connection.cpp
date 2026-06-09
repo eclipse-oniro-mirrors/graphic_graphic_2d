@@ -346,10 +346,10 @@ void RSServiceToRenderConnection::SetCacheEnabledForRotation(bool enabled)
     renderPipelineAgent_->SetCacheEnabledForRotation(enabled);
 }
 
-ErrCode RSServiceToRenderConnection::SetUifirstScale(bool isScale)
+ErrCode RSServiceToRenderConnection::SetUifirstScale(float scaleFactor)
 {
-    RS_LOGD("RSServiceToRenderConnection::SetUifirstScale isScale:%{public}d", isScale);
-    return renderPipelineAgent_->SetUifirstScale(isScale);
+    RS_LOGD("RSServiceToRenderConnection::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+    return renderPipelineAgent_->SetUifirstScale(scaleFactor);
 }
 
 } // namespace Rosen

@@ -2323,15 +2323,15 @@ int32_t RSRenderPipelineAgent::UpdateFrameStabilityDetection(
     return repCode;
 }
 
-ErrCode RSRenderPipelineAgent::SetUifirstScale(bool isScale)
+ErrCode RSRenderPipelineAgent::SetUifirstScale(float scaleFactor)
 {
-    RS_LOGD("RSRenderPipelineAgent::SetUifirstScale isScale:%{public}d", isScale);
+    RS_LOGD("RSRenderPipelineAgent::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
     auto pipeline = rsRenderPipeline_.lock();
     if (!pipeline) {
         return ERR_INVALID_VALUE;
     }
-    auto task = [renderPipeline = pipeline, isScale]() -> void {
-        renderPipeline->GetMainThread()->SetUifirstScale(isScale);
+    auto task = [renderPipeline = pipeline, scaleFactor]() -> void {
+        renderPipeline->GetMainThread()->SetUifirstScale(scaleFactor);
     };
     pipeline->PostMainThreadTask(task);
     return ERR_OK;

@@ -1382,7 +1382,7 @@ ErrCode RSServiceToRenderConnectionProxy::SetColorFollow(const std::string& node
     return ERR_OK;
 }
 
-ErrCode RSServiceToRenderConnectionProxy::SetUifirstScale(bool isScale)
+ErrCode RSServiceToRenderConnectionProxy::SetUifirstScale(float scaleFactor)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1392,11 +1392,11 @@ ErrCode RSServiceToRenderConnectionProxy::SetUifirstScale(bool isScale)
         ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
         return WRITE_PARCEL_ERR;
     }
-    if (!data.WriteBool(isScale)) {
-        ROSEN_LOGE("SetUifirstScale: WriteBool err.");
+    if (!data.WriteFloat(scaleFactor)) {
+        ROSEN_LOGE("SetUifirstScale: WriteFloat scaleFactor err.");
         return WRITE_PARCEL_ERR;
     }
-    RS_LOGI("RSServiceToRenderConnectionProxy::SetUifirstScale isScale:%{public}d", isScale);
+    RS_LOGD("RSServiceToRenderConnectionProxy::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
     uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_UIFIRST_SCALE);
     int32_t err = Remote()->SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {

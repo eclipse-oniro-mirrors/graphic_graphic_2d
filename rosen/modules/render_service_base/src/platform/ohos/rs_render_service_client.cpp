@@ -2111,15 +2111,15 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
 }
 #endif
 
-ErrCode RSRenderServiceClient::SetUifirstScale(bool isScale)
+ErrCode RSRenderServiceClient::SetUifirstScale(float scaleFactor)
 {
     auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     if (!clientToService) {
         ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale clientToService == nullptr!");
         return ERR_INVALID_DATA;
     }
-    ROSEN_LOGD("RSRenderServiceClient::SetUifirstScale isScale:%{public}d", isScale);
-    auto ret = clientToService->SetUifirstScale(isScale);
+    ROSEN_LOGD("RSRenderServiceClient::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+    auto ret = clientToService->SetUifirstScale(scaleFactor);
     if (ret != ERR_OK) {
         ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale fail, ret[%{public}d]", ret);
     }

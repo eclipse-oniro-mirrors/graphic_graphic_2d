@@ -1132,14 +1132,14 @@ HWTEST_F(RSInterfacesTest, SetUifirstScale001, TestSize.Level1)
 {
     RSInterfaces& instance = RSInterfaces::GetInstance();
     instance.renderServiceClient_ = nullptr;
-    bool res = instance.SetUifirstScale(true);
+    bool res = instance.SetUifirstScale(0.5f);
     EXPECT_FALSE(res);
 
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
-    res = instance.SetUifirstScale(true);
+    res = instance.SetUifirstScale(0.5f);
     EXPECT_FALSE(res);
 
-    res = instance.SetUifirstScale(false);
+    res = instance.SetUifirstScale(1.0f);
     EXPECT_FALSE(res);
 }
 
@@ -1153,10 +1153,10 @@ HWTEST_F(RSInterfacesTest, SetUifirstScale002, TestSize.Level1)
 {
     RSInterfaces& instance = RSInterfaces::GetInstance();
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
-    bool res = instance.SetUifirstScale(true);
+    bool res = instance.SetUifirstScale(0.5f);
     EXPECT_FALSE(res);
 
-    res = instance.SetUifirstScale(false);
+    res = instance.SetUifirstScale(1.0f);
     EXPECT_FALSE(res);
 }
 

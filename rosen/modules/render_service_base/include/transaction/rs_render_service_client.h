@@ -439,7 +439,8 @@ public:
 
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
 #endif
-    ErrCode SetUifirstScale(bool isScale);
+
+    ErrCode SetUifirstScale(float scaleFactor);
 
 private:
 #ifndef ENABLE_RS_PROXY

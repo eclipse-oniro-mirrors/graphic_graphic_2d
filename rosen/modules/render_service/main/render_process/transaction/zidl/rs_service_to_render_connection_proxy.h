@@ -128,7 +128,7 @@ public:
         bool unobscured = false) override;
     void SetCacheEnabledForRotation(bool enabled) override;
     void SetVmaCacheStatus(bool flag) override;
-    ErrCode SetUifirstScale(bool isScale) override;
+    ErrCode SetUifirstScale(float scaleFactor) override;
 
 private:
     static inline BrokerDelegator<RSServiceToRenderConnectionProxy> delegator_;

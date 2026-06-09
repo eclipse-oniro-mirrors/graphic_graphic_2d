@@ -1528,7 +1528,7 @@ public:
      * @param isScale it is scalable
      * @return true means success, others failed.
      */
-    bool SetUifirstScale(bool isScale);
+    bool SetUifirstScale(float scaleFactor);
 
 private:
     RSInterfaces();

@@ -5355,7 +5355,7 @@ ErrCode RSClientToServiceConnectionProxy::SetOptimizeCanvasDirtyPidList(const st
 }
 #endif
 
-ErrCode RSClientToServiceConnectionProxy::SetUifirstScale(bool isScale)
+ErrCode RSClientToServiceConnectionProxy::SetUifirstScale(float scaleFactor)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -5364,14 +5364,14 @@ ErrCode RSClientToServiceConnectionProxy::SetUifirstScale(bool isScale)
         ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
         return ERR_INVALID_VALUE;
     }
-    if (!data.WriteBool(isScale)) {
-        ROSEN_LOGE("SetUifirstScale: WriteBool count err.");
+    if (!data.WriteFloat(scaleFactor)) {
+        ROSEN_LOGE("SetUifirstScale: WriteFloat scaleFactor err.");
         return ERR_INVALID_VALUE;
     }
     option.SetFlags(MessageOption::TF_SYNC);
     uint32_t code = static_cast<uint32_t>(
         RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE);
-    ROSEN_LOGD("RSClientToServiceConnectionProxy::SetUifirstScale isScale:%{public}d", isScale);
+    ROSEN_LOGD("RSClientToServiceConnectionProxy::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
     int32_t err = SendRequest(code, data, reply, option);
     if (err != NO_ERROR) {
         return ERR_INVALID_VALUE;

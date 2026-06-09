@@ -16,6 +16,8 @@
 #include "rs_profiler.h"
 #include "rs_client_to_service_connection.h"
 
+#include "acquire_fence_manager.h"
+
 #include "frame_report.h"
 #include "hgm_command.h"
 #include "hgm_core.h"
@@ -2565,9 +2567,9 @@ bool RSClientToServiceConnection::ProfilerIsSecureScreen()
 #endif
 }
 
-ErrCode RSClientToServiceConnection::SetUifirstScale(bool isScale)
+ErrCode RSClientToServiceConnection::SetUifirstScale(float scaleFactor)
 {
-    RS_LOGD("RSClientToServiceConnection::SetUifirstScale isScale:%{public}d", isScale);
+    RS_LOGD("RSClientToServiceConnection::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
     if (renderProcessManagerAgent_ == nullptr) {
         RS_LOGE("%{public}s renderProcessManagerAgent_ is nullptr", __func__);
         return ERR_INVALID_VALUE;
@@ -2578,7 +2580,7 @@ ErrCode RSClientToServiceConnection::SetUifirstScale(bool isScale)
         return ERR_INVALID_VALUE;
     }
     for (auto conn : serviceToRenderConns) {
-        conn->SetUifirstScale(isScale);
+        conn->SetUifirstScale(scaleFactor);
     }
     return ERR_OK;
 }

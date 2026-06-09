@@ -225,7 +225,7 @@ public:
         const FrameStabilityTarget& oldTarget,
         const FrameStabilityTarget& newTarget
     );
-    ErrCode SetUifirstScale(bool isScale);
+    ErrCode SetUifirstScale(float scaleFactor);
 
 private:
     std::shared_ptr<RSRenderPipeline>& rsRenderPipeline_;

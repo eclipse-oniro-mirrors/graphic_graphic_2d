@@ -360,7 +360,7 @@ public:
 
     bool WriteSurfaceCaptureAreaRect(const Drawing::Rect& specifiedAreaRect, MessageParcel& data);
 
-    ErrCode SetUifirstScale(bool isScale) override;
+    ErrCode SetUifirstScale(float scaleFactor) override;
 
 private:
 

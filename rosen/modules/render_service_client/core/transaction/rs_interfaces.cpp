@@ -1236,10 +1236,15 @@ int32_t RSInterfaces::SetLogicalCameraRotationCorrection(ScreenId id, ScreenRota
     return 0;
 }
 
-bool RSInterfaces::SetUifirstScale(bool isScale)
+bool RSInterfaces::SetUifirstScale(float scaleFactor)
 {
-    ROSEN_LOGI("RSInterfaces::SetUifirstScale called, isScale:%{public}d", isScale);
-    auto ret = renderServiceClient_->SetUifirstScale(isScale);
+    scaleFactor = std::round(scaleFactor * 100.0f) / 100.0f;
+    if (scaleFactor <= 0.0f || scaleFactor > 1.0f) {
+        ROSEN_LOGE("RSInterfaces::SetUifirstScale invalid scaleFactor:%{public}f", scaleFactor);
+        return false;
+    }
+    ROSEN_LOGI("RSInterfaces::SetUifirstScale called, scaleFactor:%{public}f", scaleFactor);
+    auto ret = renderServiceClient_->SetUifirstScale(scaleFactor);
     return (ret == ERR_OK);
 }
 

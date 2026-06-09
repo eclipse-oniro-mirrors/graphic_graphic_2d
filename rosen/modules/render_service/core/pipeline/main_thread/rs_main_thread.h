@@ -459,15 +459,15 @@ public:
     std::vector<SurfaceFpsOp> GetSurfaceFpsOpList();
     void RmvSurfaceFpsOp(const std::vector<SurfaceFpsOp>& rmvList);
 
-    // for uifirstscale
-    void SetUifirstScale(bool value)
+    // for uifirst
+    void SetUifirstScale(float scaleFactor)
     {
-        isUifirstScale_ = value;
+        uifirstScale_ = scaleFactor;
     }
 
-    bool IsUifirstScale()
+    float GetUiFirstScale() const
     {
-        return isUifirstScale_;
+        return uifirstScale_;
     }
 
 private:
@@ -671,7 +671,7 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     bool isImplicitAnimationEnd_ = false;
-    bool isUifirstScale_ = false;
+    float uifirstScale_ = 1.0f;
 
     pid_t lastCleanCachePid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;

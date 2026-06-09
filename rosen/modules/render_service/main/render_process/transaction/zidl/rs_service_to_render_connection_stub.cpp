@@ -777,14 +777,14 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
             break;
         }
         case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_UIFIRST_SCALE): {
-            bool isScale { false };
-            if (!data.ReadBool(isScale)) {
-                RS_LOGE("RSServiceToRenderStub::SetUifirstScale read uniqueId failed!");
+            float scaleFactor { 1.0f };
+            if (!data.ReadFloat(scaleFactor)) {
+                RS_LOGE("RSServiceToRenderStub::SetUifirstScale read scaleFactor failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            RS_LOGD("RSServiceToRenderStub::SetUifirstScale isScale:%{public}d", isScale);
-            SetUifirstScale(isScale);
+            RS_LOGD("RSServiceToRenderStub::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+            SetUifirstScale(scaleFactor);
             break;
         }
         case static_cast<uint32_t>(

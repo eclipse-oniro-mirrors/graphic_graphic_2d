@@ -654,14 +654,19 @@ public:
         return isDrawRelated_;
     }
 
-    void SetUifirstScale(bool value)
+    void SetUifirstScale(float scaleFactor)
     {
-        isUifirstScale_ = value;
+        uifirstScale_ = scaleFactor;
     }
 
-    bool IsUifirstScale()
+    bool IsUifirstScale() const
     {
-        return isUifirstScale_;
+        return uifirstScale_ > 0 && uifirstScale_ != 1.0f;
+    }
+
+    float GetUiFirstScale() const
+    {
+        return uifirstScale_ > 0 ? uifirstScale_ : 1.0f;
     }
 
 private:
@@ -703,6 +708,7 @@ private:
     bool isVirtualExpandScreenDirtyEnabled_ = false;
     bool isMirrorScreenDirty_ = false;
     bool cacheEnabledForRotation_ = false;
+    float uifirstScale_ = 1.0f;
     NodeId currentVisitDisplayDrawableId_ = INVALID_NODEID;
     AdvancedDirtyRegionType advancedDirtyType_ = AdvancedDirtyRegionType::DISABLED;
     DirtyRegionDebugType dirtyRegionDebugType_ = DirtyRegionDebugType::DISABLED;
