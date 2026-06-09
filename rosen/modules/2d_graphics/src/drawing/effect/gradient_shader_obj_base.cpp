@@ -19,9 +19,11 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+#ifdef ROSEN_OHOS
 constexpr uint32_t MAX_COLOR_COUNT = 256;
 constexpr uint32_t MAX_POS_COUNT = 256;
 constexpr uint32_t MAX_COLORSPACE_SIZE = 1024 * 1024; // 1MB
+#endif
 
 GradientShaderObjBase::GradientShaderObjBase(int32_t subType)
     : ShaderEffectObj(subType), colorSpace_(nullptr), mode_(TileMode::CLAMP), matrix_(nullptr)
