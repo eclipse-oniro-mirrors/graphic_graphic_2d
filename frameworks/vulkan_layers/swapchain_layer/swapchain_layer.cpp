@@ -1936,7 +1936,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(
 }
 
 VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(
- 	     VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures)
+ 	VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2* pFeatures)
 {
     DispatchKey key = GetDispatchKey(physicalDevice);
     LayerData* curLayerData = GetLayerDataPtr(key);
@@ -1946,6 +1946,7 @@ VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceFeatures2(
         curLayerData->instanceDispatchTable->GetPhysicalDeviceFeatures2KHR(physicalDevice, pFeatures);
     } else {
         SWLOGE("Func vkGetPhysicalDeviceFeatures2 and vkGetPhysicalDeviceFeatures2KHR are both null.");
+        return;
     }
 
     VkBaseOutStructure* featureStruct = reinterpret_cast<VkBaseOutStructure*>(pFeatures->pNext);
