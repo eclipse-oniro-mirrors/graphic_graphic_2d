@@ -2111,19 +2111,20 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
 }
 #endif
 
-ErrCode RSRenderServiceClient::SetUifirstScale(float scaleFactor)
+bool RSRenderServiceClient::SetUifirstScale(float scaleFactor)
 {
-    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
     if (!clientToService) {
         ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale clientToService == nullptr!");
-        return ERR_INVALID_DATA;
+        return false;
     }
     ROSEN_LOGD("RSRenderServiceClient::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
     auto ret = clientToService->SetUifirstScale(scaleFactor);
     if (ret != ERR_OK) {
         ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale fail, ret[%{public}d]", ret);
+        return false;
     }
-    return ret;
+    return true;
 }
 
 } // namespace Rosen
