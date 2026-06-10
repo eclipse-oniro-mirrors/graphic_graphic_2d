@@ -227,7 +227,6 @@ public:
         return subthreadProcessingNode_.count(id) > 0;
     }
     bool IsLayerPartRenderDisableAnimation() const;
-
 private:
     struct NodeDataBehindWindow {
         uint64_t curTime = 0;
