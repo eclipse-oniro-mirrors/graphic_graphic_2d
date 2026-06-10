@@ -110,10 +110,10 @@ void BootCompileProgress::Init(const std::string& configPath, const BootAnimatio
     windowHeight_ = modeInfo.GetScreenHeight();
 
     uint32_t width = 0;
-    uint32_t height= 0;
+    uint32_t height = 0;
     interface.GetRogScreenResolution(config.screenId, width, height);
-    rogWidth_ = width;
-    rogHeight_ = height;
+    rogWidth_ = static_cast<int32_t>width;
+    rogHeight_ = static_cast<int32_t>height;
 
     fontSize_ = isWearable_ ? FONT_SIZE_WEARABLE :
         TranslateVp2Pixel(std::min(windowWidth_, windowHeight_), isOther_ ? FONT_SIZE_OTHER : FONT_SIZE_PHONE);
