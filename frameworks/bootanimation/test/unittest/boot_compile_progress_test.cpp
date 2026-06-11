@@ -537,4 +537,5 @@ HWTEST_F(BootCompileProgressTest, SetFrameForRog_Normal, TestSize.Level1)
     progress->SetFrameForRog();
     EXPECT_TRUE(true);
 }
+
 }
