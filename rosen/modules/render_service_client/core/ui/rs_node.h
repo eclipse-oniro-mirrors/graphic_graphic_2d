@@ -113,6 +113,13 @@ public:
      */
     virtual ~RSNode();
 
+    /**
+     * @brief Dumps all RSCmdModifiers to the output string.
+     *
+     * @param out The string to which the dump information will be appended.
+     */
+    void DumpRSCmdModifiers(std::string& out) const;
+
     /*
     * <important>
     * If you want to add a draw interface to RSNode, decide whether to set the draw node type, otherwise,
@@ -1993,6 +2000,57 @@ public:
 
     void ReSortChildrenByZIndex();
 
+    // Set RSCmdModifier property (reuse existing modifier or create new one)
+    template<typename ModifierType, typename ParamType>
+    void SetRSCmdProperty(const ParamType& param)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+
+        auto modifier = GetRSCmdModifier(ModifierType::Type);
+
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>(weak_from_this(), param);
+            rsCmdModifiers_.emplace(modifier->GetType(), modifier);
+            // Newly created modifier is dirty and needs update
+            if (GetNodeState() != RSNodeState::INACTIVE) {
+                modifier->UpdateToRender();
+            }
+        } else {
+            auto typedModifier = std::static_pointer_cast<ModifierType>(modifier);
+            bool paramChanged = typedModifier->SetParam(param);
+            // Only update when parameter changed
+            if (paramChanged && GetNodeState() != RSNodeState::INACTIVE) {
+                modifier->UpdateToRender();
+            }
+        }
+    }
+
+    // Set RSCmdModifier property (with return value)
+    template<typename ModifierType, typename ParamType>
+    RSCmdModifier::UpdateResult SetRSCmdPropertyWithResult(const ParamType& param)
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+
+        auto modifier = GetRSCmdModifier(ModifierType::Type);
+
+        if (modifier == nullptr) {
+            modifier = std::make_shared<ModifierType>(weak_from_this(), param);
+            rsCmdModifiers_.emplace(modifier->GetType(), modifier);
+            // Newly created modifier is dirty and needs update
+            if (GetNodeState() != RSNodeState::INACTIVE) {
+                return modifier->UpdateToRenderWithResult();
+            }
+        } else {
+            auto typedModifier = std::static_pointer_cast<ModifierType>(modifier);
+            bool paramChanged = typedModifier->SetParam(param);
+            // Only update when parameter changed
+            if (paramChanged && GetNodeState() != RSNodeState::INACTIVE) {
+                return modifier->UpdateToRenderWithResult();
+            }
+        }
+        return false;
+    }
+
 protected:
     explicit RSNode(
         bool isRenderServiceNode, bool isTextureExportNode = false, std::shared_ptr<RSUIContext> rsUIContext = nullptr,
@@ -2020,6 +2078,7 @@ protected:
 
     bool hybridRenderCanvas_ = false;
 
+    mutable std::map<RSCmdModifierType, std::shared_ptr<RSCmdModifier>> rsCmdModifiers_;
     /**
      * @brief Called when child nodes are added to this node.
      */
@@ -2038,6 +2097,15 @@ protected:
     }
 
     void DoFlushModifier();
+
+    std::shared_ptr<RSCmdModifier> GetRSCmdModifier(RSCmdModifierType modifierType) const
+    {
+        auto it = rsCmdModifiers_.find(modifierType);
+        if (it != rsCmdModifiers_.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
 
     std::vector<PropertyId> GetModifierIds() const;
 
