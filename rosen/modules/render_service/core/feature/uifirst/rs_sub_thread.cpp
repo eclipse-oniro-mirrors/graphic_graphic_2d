@@ -328,7 +328,7 @@ void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurface
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (LIKELY(uniParam) && uniParam->IsUifirstScale()) {
         float uifirstScale = uniParam->GetUiFirstScale();
-        RS_TRACE_NAME_FMT("%s uifirstScale called scaleRatio is %f", __func__, uifirstScale);        
+        RS_TRACE_NAME_FMT("%s uifirstScale called scaleRatio is %f", __func__, uifirstScale);
         rscanvas->Scale(uifirstScale, uifirstScale);
     }
     RSUniRenderThread::BufferManagerGuard bufferGuard;

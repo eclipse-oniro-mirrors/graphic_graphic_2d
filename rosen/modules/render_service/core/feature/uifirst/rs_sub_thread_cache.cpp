@@ -340,7 +340,7 @@ void RsSubThreadCache::InitCacheSurface(Drawing::GPUContext* gpuContext,
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
     if (LIKELY(uniParam) && uniParam->IsUifirstScale()) {
         float uifirstScale = uniParam->GetUiFirstScale();
-        RS_TRACE_NAME_FMT("%s uifirstScale called scaleRatio is %f", __func__, uifirstScale);        
+        RS_TRACE_NAME_FMT("%s uifirstScale called scaleRatio is %f", __func__, uifirstScale);     
         width = width * uifirstScale;
         height = height * uifirstScale;
     }
