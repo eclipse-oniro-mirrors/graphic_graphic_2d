@@ -3793,6 +3793,30 @@ ErrCode RSClientToServiceConnectionProxy::SetWatermark(const std::string& name,
     return ERR_OK;
 }
 
+ErrCode RSClientToServiceConnectionProxy::SetUifirstScale(float scaleFactor)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteFloat(scaleFactor)) {
+        ROSEN_LOGE("SetUifirstScale: WriteFloat scaleFactor err.");
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE);
+    ROSEN_LOGD("RSClientToServiceConnectionProxy::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
 void RSClientToServiceConnectionProxy::ShowWatermark(const std::shared_ptr<Media::PixelMap> &watermarkImg, bool isShow)
 {
     if (watermarkImg == nullptr) {
@@ -5354,30 +5378,6 @@ ErrCode RSClientToServiceConnectionProxy::SetOptimizeCanvasDirtyPidList(const st
     return ERR_INVALID_VALUE;
 }
 #endif
-
-ErrCode RSClientToServiceConnectionProxy::SetUifirstScale(float scaleFactor)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
-        ROSEN_LOGE("SetUifirstScale: WriteInterfaceToken GetDescriptor err.");
-        return ERR_INVALID_VALUE;
-    }
-    if (!data.WriteFloat(scaleFactor)) {
-        ROSEN_LOGE("SetUifirstScale: WriteFloat scaleFactor err.");
-        return ERR_INVALID_VALUE;
-    }
-    option.SetFlags(MessageOption::TF_SYNC);
-    uint32_t code = static_cast<uint32_t>(
-        RSIClientToServiceConnectionInterfaceCode::SET_UIFIRST_SCALE);
-    ROSEN_LOGD("RSClientToServiceConnectionProxy::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
-    int32_t err = SendRequest(code, data, reply, option);
-    if (err != NO_ERROR) {
-        return ERR_INVALID_VALUE;
-    }
-    return ERR_OK;
-}
 
 } // namespace Rosen
 } // namespace OHOS

@@ -361,6 +361,22 @@ bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_pt
     return success;
 }
 
+bool RSRenderServiceClient::SetUifirstScale(float scaleFactor)
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (!clientToService) {
+        ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale clientToService == nullptr!");
+        return false;
+    }
+    ROSEN_LOGD("RSRenderServiceClient::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
+    auto ret = clientToService->SetUifirstScale(scaleFactor);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale fail, ret[%{public}d]", ret);
+        return false;
+    }
+    return true;
+}
+
 int32_t RSRenderServiceClient::SetVirtualScreenSecurityExemptionList(
     ScreenId id,
     const std::vector<NodeId>& securityExemptionList)
@@ -2110,22 +2126,6 @@ bool RSRenderServiceClient::AvcodecVideoGetRecent()
     return true;
 }
 #endif
-
-bool RSRenderServiceClient::SetUifirstScale(float scaleFactor)
-{
-    auto clientToService = RSConnectHub::GetClientToServiceConnection();
-    if (!clientToService) {
-        ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale clientToService == nullptr!");
-        return false;
-    }
-    ROSEN_LOGD("RSRenderServiceClient::SetUifirstScale scaleFactor:%{public}f", scaleFactor);
-    auto ret = clientToService->SetUifirstScale(scaleFactor);
-    if (ret != ERR_OK) {
-        ROSEN_LOGE("RSRenderServiceClient::SetUifirstScale fail, ret[%{public}d]", ret);
-        return false;
-    }
-    return true;
-}
 
 } // namespace Rosen
 } // namespace OHOS

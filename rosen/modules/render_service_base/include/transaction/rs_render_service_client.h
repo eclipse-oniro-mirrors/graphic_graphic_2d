@@ -165,6 +165,8 @@ public:
     bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         uint32_t rowCount = 0, uint32_t colCount = 0);
 
+    bool SetUifirstScale(float scaleFactor);
+
     void RemoveVirtualScreen(ScreenId id);
 
     int32_t SetScreenChangeCallback(const ScreenChangeCallback& callback);
@@ -439,8 +441,6 @@ public:
 
     void TriggerOnFinish(const FinishCallbackRet& ret) const;
 #endif
-
-    bool SetUifirstScale(float scaleFactor);
 
 private:
 #ifndef ENABLE_RS_PROXY

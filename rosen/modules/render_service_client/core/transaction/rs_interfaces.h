@@ -266,6 +266,13 @@ public:
         uint32_t rowCount = 0, uint32_t colCount = 0);
 
     /**
+     * @brief Frames can be scaled when uifirst
+     * @param scaleFactor scaler ratio
+     * @return true means success, others failed.
+     */
+    bool SetUifirstScale(float scaleFactor);
+
+    /**
      * @brief Set watermark for surfaceNode.
      * @param pid pid of process.
      * @param name Watermark name. Note: ensure watermark name is unique.
@@ -1522,13 +1529,6 @@ public:
      * @return 0 means success, others failed.
      */
     int32_t GetFrameStabilityResult(const FrameStabilityTarget& target, bool& result);
-
-    /**
-     * @brief Frames can be scaled when uifirst
-     * @param isScale it is scalable
-     * @return true means success, others failed.
-     */
-    bool SetUifirstScale(float scaleFactor);
 
 private:
     RSInterfaces();
