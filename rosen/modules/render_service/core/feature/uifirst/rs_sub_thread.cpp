@@ -325,14 +325,12 @@ void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurface
     rscanvas->SetHdrOn(rsSubThreadCache.GetHDRPresent());
     rscanvas->SetIsDrawingCache(true);
     rscanvas->Save();
-    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    bool isUifirstScale = uniParam->IsUifirstScale();
-    if (isUifirstScale) {
+    const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    if (LIKELY(uniParam) && uniParam->IsUifirstScale()) {
         float uifirstScale = uniParam->GetUiFirstScale();
         RS_TRACE_NAME_FMT("%s uifirstScale called scaleRatio is %f", __func__, uifirstScale);        
         rscanvas->Scale(uifirstScale, uifirstScale);
     }
-
     RSUniRenderThread::BufferManagerGuard bufferGuard;
     rsSubThreadCache.SubDraw(nodeDrawable.get(), *rscanvas);
     rscanvas->Restore();
