@@ -248,7 +248,9 @@ bool RsSubThreadCache::DrawCacheSurface(DrawableV2::RSSurfaceRenderNodeDrawable*
     float scaleY = boundSize.y_ / static_cast<float>(cacheImage->GetHeight());
     // Use user's gravity
     canvas.Scale(gravityMatrix.Get(Drawing::Matrix::SCALE_X), gravityMatrix.Get(Drawing::Matrix::SCALE_Y));
-    // uifrstScale
+    // Apply inverse uifirst scale to resotre canvas to original size brefor drawing
+    // Since cache surface was scaled up during uifirst scaling, we need to apply 
+    // inverse scale to draw the correct original size
     if (cacheCompletedSurfaceInfo_.IsUifirstScale()) {
         float inverseScale = 1.0f / cacheCompletedSurfaceInfo_.scaleRatio;
         canvas.Scale(inverseScale, inverseScale);
@@ -337,7 +339,9 @@ void RsSubThreadCache::InitCacheSurface(Drawing::GPUContext* gpuContext,
     } else {
         RS_LOGE("uifirst cannot get cachesize");
     }
+    // Get uifirst scaling parameter and apply scaling to cache size if enabled
     const auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    // Apply uifirst scale ratio to cache widht/height when IsUifirstScale is enabled
     if (LIKELY(uniParam) && uniParam->IsUifirstScale()) {
         float uifirstScale = uniParam->GetUiFirstScale();
         RS_TRACE_NAME_FMT("%s uifirstScale called scaleRatio is %f", __func__, uifirstScale);
@@ -433,11 +437,14 @@ bool RsSubThreadCache::IsCacheValid() const
 bool RsSubThreadCache::NeedInitCacheSurface(RSSurfaceRenderParams* surfaceParams)
 {
     auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
-    float uifirstScale = uniParam->GetUiFirstScale();
-    if (ROSEN_NE(lastScale_, uifirstScale)) {
-        RS_TRACE_NAME_FMT("%s lastScale_:%f uifirstScale:%f", __func__, lastScale_, uifirstScale);
-        lastScale_ = uifirstScale;
-        return true;
+    if (LIKELY(uniParam)) {
+        float uifirstScale = uniParam->GetUiFirstScale();
+        // if uifirst scale ratio changed, update cache and return true to InitCacheSurface
+        if (ROSEN_NE(lastScale_, uifirstScale)) {
+            RS_TRACE_NAME_FMT("%s lastScale_:%f uifirstScale:%f", __func__, lastScale_, uifirstScale);
+            lastScale_ = uifirstScale;
+            return true;
+        }
     }
     int width = 0;
     int height = 0;
