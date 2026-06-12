@@ -1394,7 +1394,8 @@ napi_value JsCanvas::OnDrawPixelMapMesh(napi_env env, napi_callback_info info)
     }
     int64_t tempVerticesSize =
         (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1) + static_cast<int64_t>(vertOffset);
-    tempVerticesSize *= 2;
+    constexpr int32_t coordinateDim = 2;
+    tempVerticesSize *= coordinateDim;
     if (verticesSize != tempVerticesSize) {
         ROSEN_LOGE("JsCanvas::OnDrawPixelMapMesh vertices are invalid");
         return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter3 type.");
