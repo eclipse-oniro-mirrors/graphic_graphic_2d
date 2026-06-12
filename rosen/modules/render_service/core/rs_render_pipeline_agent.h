@@ -26,7 +26,7 @@ class SurfaceUtils;
 namespace Rosen {
 class RSRenderPipelineAgent : public RefBase {
 public:
-    explicit RSRenderPipelineAgent(std::shared_ptr<RSRenderPipeline>& rsRenderPipeline);
+    explicit RSRenderPipelineAgent(std::shared_ptr<RSRenderPipeline> rsRenderPipeline);
     ~RSRenderPipelineAgent() = default;
 
     ErrCode CommitTransaction(pid_t callingPid, bool isTokenTypeValid, bool isNonSystemAppCalling,
@@ -238,7 +238,7 @@ private:
     void ConfigureForceTunnelLayer(
         const RSSurfaceRenderNodeConfig& config, const sptr<IConsumerSurface>& surface, SurfaceUtils* utils);
 
-    std::shared_ptr<RSRenderPipeline>& rsRenderPipeline_;
+    std::weak_ptr<RSRenderPipeline> rsRenderPipeline_;
     std::unordered_map<pid_t, std::string> pidToBundleName_;
     mutable std::mutex pidToBundleMutex_;
     mutable std::mutex mutex_;
