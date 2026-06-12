@@ -669,8 +669,7 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_ForRefreshFalse, TestSize.Level1)
     // Execute Clean with forRefresh=false
     agent->Clean(testPid, false);
     // Verify agent and pipeline remain valid after Clean
-    EXPECT_NE(agent->
-        .lock(), nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock(), nullptr);
     EXPECT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 }
 
