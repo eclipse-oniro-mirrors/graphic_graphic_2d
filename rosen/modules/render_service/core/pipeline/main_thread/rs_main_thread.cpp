@@ -4977,7 +4977,7 @@ bool RSMainThread::CheckAdaptiveCompose()
         return false;
     }
     auto adaptiveStatus = hgmRenderContext_->AdaptiveStatus();
-    if (adaptiveStatus != SupportASStatus::SUPPORT_AS) {
+    if (!IsSupportSoftVsyncAS(adaptiveStatus)) {
         return false;
     }
     // in game adaptive sync mode and ignore animation scenario and mult-window scenario
