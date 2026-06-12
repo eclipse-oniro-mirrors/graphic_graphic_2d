@@ -24,7 +24,7 @@ namespace OHOS {
 namespace Rosen {
 
 typedef struct LayerParams {
-    bool isUnSupportLayer = false;
+    bool isUnSupportLayer = false; // default support layer
 } LayerParams;
 
 class RSB_EXPORT RSLayerCacheManagerBase {
@@ -32,6 +32,7 @@ public:
     virtual ~RSLayerCacheManagerBase() = default;
     static bool IsNodeUnSupportLayer(std::shared_ptr<RSRenderNode> node);
     static bool IsNodeUnSupportLayer(RSRenderNode& node);
+    static void SetLayerParamsIsUnSupportLayer(RSRenderNode& node, bool isUnSupportLayer);
 
     static std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> layerDrawables_;
 };
