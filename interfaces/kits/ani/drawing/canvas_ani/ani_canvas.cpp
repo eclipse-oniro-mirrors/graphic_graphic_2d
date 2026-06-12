@@ -181,13 +181,13 @@ void DrawingPixelMapMesh(std::shared_ptr<Media::PixelMap> pixelMap, int column, 
         return;
     }
     int64_t tempVertCounts = (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1);
-    if (tempVertCounts > INT_MAX || tempVertCounts > UINT16_MAX) {
+    if (tempVertCounts > INT_MAX || tempVertCounts - 1 > UINT16_MAX) {
         ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh vertCounts overflow");
         return;
     }
     const int vertCounts = static_cast<int>(tempVertCounts);
     int64_t tempIndexCount = static_cast<int64_t>(column) * static_cast<int64_t>(row) * 6;
-    if (tempIndexCount > INT_MAX || tempIndexCount > UINT16_MAX) {
+    if (tempIndexCount > INT_MAX) {
         ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh indexCount overflow");
         return;
     }
