@@ -36,17 +36,6 @@ int RSConnectToRenderProcessStub::OnRemoteRequest(
         RS_LOGE("%{public}s: Read interfaceToken failed!", __func__);
         return ERR_INVALID_STATE;
     }
-    bool isTokenTypeValid = true;
-    bool isNonSystemAppCalling = false;
-    RSInterfaceCodeAccessVerifierBase::GetAccessType(isTokenTypeValid, isNonSystemAppCalling);
-    if (!isTokenTypeValid) {
-        RS_LOGE("%{public}s: invalid token type", __func__);
-        return ERR_INVALID_STATE;
-    }
-    if (isNonSystemAppCalling) {
-        RS_LOGE("%{public}s: isNonSystemAppCalling", __func__);
-        return ERR_INVALID_STATE;
-    }
     switch (code) {
         case static_cast<uint32_t>(RSIConnectToRenderProcessInterfaceCode::CREATE_CONNECTION) : {
             uint64_t tokenMaskId = INVALID_TOKEN_MASK_ID;
