@@ -47,7 +47,7 @@ bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(RSRenderNode& node)
 void RSLayerCacheManagerBase::SetLayerParamsIsUnSupportLayer(RSRenderNode& node, bool isUnSupportLayer)
 {
     if (node.GetStagingRenderParams()) {
-        node.GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(true);
+        node.GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(isUnSupportLayer);
     }
 }
 } // namespace Rosen
