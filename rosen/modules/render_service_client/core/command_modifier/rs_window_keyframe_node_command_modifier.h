@@ -45,8 +45,7 @@ public:
     bool SetParam(const WkfIsFreezeCmdParam& param)
     {
         if (param_.isFreeze_ == param.isFreeze_ &&
-            param_.isMarkedByUI_ == param.isMarkedByUI_)
-        {
+            param_.isMarkedByUI_ == param.isMarkedByUI_) {
             return true;
         }
         param_ = param;
@@ -86,8 +85,7 @@ public:
 
     bool SetParam(const WkfLinkedNodeIdCmdParam& param)
     {
-        if (param_.linkedNodeId_ == param.linkedNodeId_)
-        {
+        if (param_.linkedNodeId_ == param.linkedNodeId_) {
             return true;
         }
         param_ = param;

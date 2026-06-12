@@ -83,6 +83,18 @@ class RSForegroundFilterModifier;
 class RSBackgroundFilterModifier;
 enum class RSModifierType : uint16_t;
 }
+
+/**
+ * @enum RSNodeState
+ *
+ * @brief Defines the state of RSNode.
+ */
+enum class RSNodeState : uint8_t {
+    ACTIVE = 0,    // renderNode has been created on the render side, default value
+    INACTIVE,      // only client node exists, render side node has been destroyed (was created)
+    LAZY_LOAD      // only client node exists, service side node has not been created
+};
+
 /**
  * @class RSNode
  *
@@ -1917,6 +1929,17 @@ public:
     {
         return rsUIContext_;
     }
+
+    /**
+     * @brief Gets the current state of the node.
+     *
+     * @return The current RSNodeState.
+     */
+    RSNodeState GetNodeState() const
+    {
+        return nodeState_;
+    }
+
     void SetUIContextToken();
 
     /**
@@ -2063,6 +2086,7 @@ protected:
     void DumpModifiers(std::string& out) const;
 
     mutable bool lazyLoad_ = false;
+    mutable RSNodeState nodeState_ = RSNodeState::ACTIVE;
     bool shadowNodeFlag_ = false;
     bool isRenderServiceNode_;
     bool isTextureExportNode_ = false;
@@ -2232,6 +2256,7 @@ protected:
         }
     }
 
+    virtual bool SetNodeState(RSNodeState state);
 private:
     static NodeId GenerateId();
     static void InitUniRenderEnabled();

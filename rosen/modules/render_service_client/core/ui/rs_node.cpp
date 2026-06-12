@@ -3866,6 +3866,26 @@ void RSNode::SetIsOnTheTree(bool flag)
     }
 }
 
+bool RSNode::SetNodeState(RSNodeState state)
+{
+    RSNodeState oldState = nodeState_;
+    if (oldState == state) {
+        return true;
+    }
+    bool isValidTransition = (oldState == RSNodeState::ACTIVE && state == RSNodeState::INACTIVE) ||
+                            (oldState == RSNodeState::INACTIVE && state == RSNodeState::ACTIVE) ||
+                            (oldState == RSNodeState::LAZY_LOAD && state == RSNodeState::ACTIVE);
+    
+    if (isValidTransition) {
+        nodeState_ = state;
+        return true;
+    } else {
+        ROSEN_LOGE("RSNode::SetNodeState: invalid state transition nodeid %{public}lu,from %{public}d to %{public}d",
+            GetId(), static_cast<int>(oldState), static_cast<int>(state));
+        return false;
+    }
+}
+
 void RSNode::AddChild(SharedPtr child, int index)
 {
     if (child == nullptr) {

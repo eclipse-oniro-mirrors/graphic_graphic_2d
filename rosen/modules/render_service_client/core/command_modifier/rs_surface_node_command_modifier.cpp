@@ -539,7 +539,8 @@ void StaticCachedCmdModifier::DumpParam(std::string& out) const
 
 void FrameGravityNewVersionEnabledCmdModifier::DumpParam(std::string& out) const
 {
-    out += "{isFrameGravityNewVersionEnabled:" + std::string(param_.isFrameGravityNewVersionEnabled_ ? "true" : "false") + "}";
+    out += "{isFrameGravityNewVersionEnabled:" +
+        std::string(param_.isFrameGravityNewVersionEnabled_ ? "true" : "false") + "}";
 }
 
 void SurfaceBufferOpaqueCmdModifier::DumpParam(std::string& out) const
@@ -549,7 +550,8 @@ void SurfaceBufferOpaqueCmdModifier::DumpParam(std::string& out) const
 
 void ContainerWindowTransparentCmdModifier::DumpParam(std::string& out) const
 {
-    out += "{isContainerWindowTransparent:" + std::string(param_.isContainerWindowTransparent_ ? "true" : "false") + "}";
+    out += "{isContainerWindowTransparent:" +
+        std::string(param_.isContainerWindowTransparent_ ? "true" : "false") + "}";
 }
 
 void BufferAvailableCallbackCmdModifier::DumpParam(std::string& out) const

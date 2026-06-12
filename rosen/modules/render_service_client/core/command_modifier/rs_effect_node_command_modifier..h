@@ -44,8 +44,7 @@ public:
     bool SetParam(const PreFreezeCmdParam& param)
     {
         if (param_.preFreeze_ == param.preFreeze_ &&
-            param_.preMarkedByUI_ == param.preMarkedByUI_)
-        {
+            param_.preMarkedByUI_ == param.preMarkedByUI_) {
             return true;
         }
         param_ = param;

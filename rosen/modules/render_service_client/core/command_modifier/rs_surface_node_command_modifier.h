@@ -36,8 +36,7 @@ public:
 
     void OnBufferAvailable() override
     {
-        if (callback_)
-        {
+        if (callback_) {
             callback_();
         }
     }
@@ -72,8 +71,7 @@ public:
 
     bool SetParam(const LeashPersistentIdCmdParam& param)
     {
-        if (param_.leashPersistentId_ == param.leashPersistentId_)
-        {
+        if (param_.leashPersistentId_ == param.leashPersistentId_) {
             return true;
         }
         param_ = param;
@@ -113,8 +111,7 @@ public:
 
     bool SetParam(const SecurityLayerCmdParam& param)
     {
-        if (param_.isSecurityLayer_ == param.isSecurityLayer_)
-        {
+        if (param_.isSecurityLayer_ == param.isSecurityLayer_) {
             return true;
         }
         param_ = param;
@@ -154,8 +151,7 @@ public:
 
     bool SetParam(const SkipLayerCmdParam& param)
     {
-        if (param_.isSkipLayer_ == param.isSkipLayer_)
-        {
+        if (param_.isSkipLayer_ == param.isSkipLayer_) {
             return true;
         }
         param_ = param;
@@ -195,8 +191,7 @@ public:
 
     bool SetParam(const SnapshotSkipLayerCmdParam& param)
     {
-        if (param_.isSnapshotSkipLayer_ == param.isSnapshotSkipLayer_)
-        {
+        if (param_.isSnapshotSkipLayer_ == param.isSnapshotSkipLayer_) {
             return true;
         }
         param_ = param;
@@ -236,8 +231,7 @@ public:
 
     bool SetParam(const HasFingerprintCmdParam& param)
     {
-        if (param_.hasFingerprint_ == param.hasFingerprint_)
-        {
+        if (param_.hasFingerprint_ == param.hasFingerprint_) {
             return true;
         }
         param_ = param;
@@ -277,8 +271,7 @@ public:
 
     bool SetParam(const ColorSpaceCmdParam& param)
     {
-        if (param_.colorSpace_ == param.colorSpace_)
-        {
+        if (param_.colorSpace_ == param.colorSpace_) {
             return true;
         }
         param_ = param;
@@ -318,8 +311,7 @@ public:
 
     bool SetParam(const AbilityBGAlphaCmdParam& param)
     {
-        if (param_.abilityBGAlpha_ == param.abilityBGAlpha_)
-        {
+        if (param_.abilityBGAlpha_ == param.abilityBGAlpha_) {
             return true;
         }
         param_ = param;
@@ -359,8 +351,7 @@ public:
 
     bool SetParam(const NotifyUIBufferAvailableCmdParam& param)
     {
-        if (param_.notifyUIBufferAvailable_ == param.notifyUIBufferAvailable_)
-        {
+        if (param_.notifyUIBufferAvailable_ == param.notifyUIBufferAvailable_) {
             return true;
         }
         param_ = param;
@@ -402,8 +393,7 @@ public:
     bool SetParam(const ContainerWindowCmdParam& param)
     {
         if (param_.hasContainerWindow_ == param.hasContainerWindow_ &&
-            param_.containerWindowRrect_ == param.containerWindowRrect_)
-        {
+            param_.containerWindowRrect_ == param.containerWindowRrect_) {
             return true;
         }
         param_ = param;
@@ -445,8 +435,7 @@ public:
     bool SetParam(const FreezeCmdParam& param)
     {
         if (param_.isFreeze_ == param.isFreeze_ &&
-            param_.isMarkedByUI_ == param.isMarkedByUI_)
-        {
+            param_.isMarkedByUI_ == param.isMarkedByUI_) {
             return true;
         }
         param_ = param;
@@ -486,8 +475,7 @@ public:
 
     bool SetParam(const HardwareEnableHintCmdParam& param)
     {
-        if (param_.isHardwareEnabled_ == param.isHardwareEnabled_)
-        {
+        if (param_.isHardwareEnabled_ == param.isHardwareEnabled_) {
             return true;
         }
         param_ = param;
@@ -531,8 +519,7 @@ public:
     {
         if (param_.isHardwareEnabled_ == param.isHardwareEnabled_ &&
             param_.isSelfDrawingNodeType_ == param.isSelfDrawingNodeType_ &&
-            param_.isDynamicHardwareEnable_ == param.isDynamicHardwareEnable_)
-        {
+            param_.isDynamicHardwareEnable_ == param.isDynamicHardwareEnable_) {
             return true;
         }
         param_ = param;
@@ -574,8 +561,7 @@ public:
 
     bool SetParam(const BootAnimationCmdParam& param)
     {
-        if (param_.isBootAnimation_ == param.isBootAnimation_)
-        {
+        if (param_.isBootAnimation_ == param.isBootAnimation_) {
             return true;
         }
         param_ = param;
@@ -615,8 +601,7 @@ public:
 
     bool SetParam(const GlobalPositionEnabledCmdParam& param)
     {
-        if (param_.isGlobalPositionEnabled_ == param.isGlobalPositionEnabled_)
-        {
+        if (param_.isGlobalPositionEnabled_ == param.isGlobalPositionEnabled_) {
             return true;
         }
         param_ = param;
@@ -660,8 +645,7 @@ public:
     {
         if (param_.clonedNodeId_ == param.clonedNodeId_ &&
             param_.clonedNeedOffscreen_ == param.clonedNeedOffscreen_ &&
-            param_.clonedIsRelated_ == param.clonedIsRelated_)
-        {
+            param_.clonedIsRelated_ == param.clonedIsRelated_) {
             return true;
         }
         param_ = param;
@@ -701,8 +685,7 @@ public:
 
     bool SetParam(const ForceUIFirstCmdParam& param)
     {
-        if (param_.forceUIFirst_ == param.forceUIFirst_)
-        {
+        if (param_.forceUIFirst_ == param.forceUIFirst_) {
             return true;
         }
         param_ = param;
@@ -742,8 +725,7 @@ public:
 
     bool SetParam(const AncoFlagsCmdParam& param)
     {
-        if (param_.ancoFlags_ == param.ancoFlags_)
-        {
+        if (param_.ancoFlags_ == param.ancoFlags_) {
             return true;
         }
         param_ = param;
@@ -783,8 +765,7 @@ public:
 
     bool SetParam(const SkipDrawCmdParam& param)
     {
-        if (param_.skipDraw_ == param.skipDraw_)
-        {
+        if (param_.skipDraw_ == param.skipDraw_) {
             return true;
         }
         param_ = param;
@@ -826,8 +807,7 @@ public:
     bool SetParam(const WatermarkEnabledCmdParam& param)
     {
         if (param_.watermarkName_ == param.watermarkName_ &&
-            param_.watermarkEnabled_ == param.watermarkEnabled_)
-        {
+            param_.watermarkEnabled_ == param.watermarkEnabled_) {
             return true;
         }
         param_ = param;
@@ -867,8 +847,7 @@ public:
 
     bool SetParam(const AbilityStateCmdParam& param)
     {
-        if (param_.abilityState_ == param.abilityState_)
-        {
+        if (param_.abilityState_ == param.abilityState_) {
             return true;
         }
         param_ = param;
@@ -908,8 +887,7 @@ public:
 
     bool SetParam(const HidePrivacyContentCmdParam& param)
     {
-        if (param_.hidePrivacyContent_ == param.hidePrivacyContent_)
-        {
+        if (param_.hidePrivacyContent_ == param.hidePrivacyContent_) {
             return true;
         }
         param_ = param;
@@ -950,8 +928,7 @@ public:
 
     bool SetParam(const ApiCompatibleVersionCmdParam& param)
     {
-        if (param_.apiCompatibleVersion_ == param.apiCompatibleVersion_)
-        {
+        if (param_.apiCompatibleVersion_ == param.apiCompatibleVersion_) {
             return true;
         }
         param_ = param;
@@ -991,8 +968,7 @@ public:
 
     bool SetParam(const VirtualDisplayIdCmdParam& param)
     {
-        if (param_.virtualDisplayId_ == param.virtualDisplayId_)
-        {
+        if (param_.virtualDisplayId_ == param.virtualDisplayId_) {
             return true;
         }
         param_ = param;
@@ -1032,8 +1008,7 @@ public:
 
     bool SetParam(const AttachToWindowContainerCmdParam& param)
     {
-        if (param_.attachToWindowContainer_ == param.attachToWindowContainer_)
-        {
+        if (param_.attachToWindowContainer_ == param.attachToWindowContainer_) {
             return true;
         }
         param_ = param;
@@ -1073,8 +1048,7 @@ public:
 
     bool SetParam(const RegionToBeMagnifiedCmdParam& param)
     {
-        if (param_.regionToBeMagnified_ == param.regionToBeMagnified_)
-        {
+        if (param_.regionToBeMagnified_ == param.regionToBeMagnified_) {
             return true;
         }
         param_ = param;
@@ -1114,8 +1088,7 @@ public:
 
     bool SetParam(const DetachFromWindowContainerCmdParam& param)
     {
-        if (param_.detachFromWindowContainer_ == param.detachFromWindowContainer_)
-        {
+        if (param_.detachFromWindowContainer_ == param.detachFromWindowContainer_) {
             return true;
         }
         param_ = param;
@@ -1157,8 +1130,7 @@ public:
     bool SetParam(const CompositeLayerCmdParam& param)
     {
         if (param_.isCompositeLayer_ == param.isCompositeLayer_ &&
-            param_.isMarkedByUI_ == param.isMarkedByUI_)
-        {
+            param_.isMarkedByUI_ == param.isMarkedByUI_) {
             return true;
         }
         param_ = param;
@@ -1199,8 +1171,7 @@ public:
 
     bool SetParam(const StaticCachedCmdParam& param)
     {
-        if (param_.isStaticCached_ == param.isStaticCached_)
-        {
+        if (param_.isStaticCached_ == param.isStaticCached_) {
             return true;
         }
         param_ = param;
@@ -1228,7 +1199,8 @@ class FrameGravityNewVersionEnabledCmdModifier : public RSCmdModifier {
 public:
     static inline constexpr auto Type = RSCmdModifierType::IS_FRAME_GRAVITY_NEW_VER_ENABLED;
 
-    FrameGravityNewVersionEnabledCmdModifier(std::weak_ptr<RSNode> node, const FrameGravityNewVersionEnabledCmdParam& param)
+    FrameGravityNewVersionEnabledCmdModifier(std::weak_ptr<RSNode> node,
+        const FrameGravityNewVersionEnabledCmdParam& param)
         : RSCmdModifier(std::move(node)), param_(param)
     {
     }
@@ -1240,8 +1212,7 @@ public:
 
     bool SetParam(const FrameGravityNewVersionEnabledCmdParam& param)
     {
-        if (param_.isFrameGravityNewVersionEnabled_ == param.isFrameGravityNewVersionEnabled_)
-        {
+        if (param_.isFrameGravityNewVersionEnabled_ == param.isFrameGravityNewVersionEnabled_) {
             return true;
         }
         param_ = param;
@@ -1281,8 +1252,7 @@ public:
 
     bool SetParam(const SurfaceBufferOpaqueCmdParam& param)
     {
-        if (param_.isSurfaceBufferOpaque_ == param.isSurfaceBufferOpaque_)
-        {
+        if (param_.isSurfaceBufferOpaque_ == param.isSurfaceBufferOpaque_) {
             return true;
         }
         param_ = param;
@@ -1322,8 +1292,7 @@ public:
 
     bool SetParam(const ContainerWindowTransparentCmdParam& param)
     {
-        if (param_.isContainerWindowTransparent_ == param.isContainerWindowTransparent_)
-        {
+        if (param_.isContainerWindowTransparent_ == param.isContainerWindowTransparent_) {
             return true;
         }
         param_ = param;
@@ -1404,8 +1373,7 @@ public:
     bool SetParam(const SurfaceDefaultSizeCmdParam& param)
     {
         if (param_.width_ == param.width_ &&
-            param_.height_ == param.height_)
-        {
+            param_.height_ == param.height_) {
             return true;
         }
         param_ = param;

@@ -50,8 +50,7 @@ public:
     bool SetParam(const OcclusionCullingStatusCmdParam& param)
     {
         if (param_.enablekeyOcclusion_ == param.enablekeyOcclusion_ &&
-            param_.keyOcclusionNodeId_ == param.keyOcclusionNodeId_)
-        {
+            param_.keyOcclusionNodeId_ == param.keyOcclusionNodeId_) {
             return true;
         }
         param_ = param;
@@ -91,8 +90,7 @@ public:
 
     bool SetParam(const NodeNameCmdParam& param)
     {
-        if (param_.nodeName_ == param.nodeName_)
-        {
+        if (param_.nodeName_ == param.nodeName_) {
             return true;
         }
         param_ = param;
@@ -132,8 +130,7 @@ public:
 
     bool SetParam(const IsP3ColorCmdParam& param)
     {
-        if (param_.collectColorSpace_ == param.collectColorSpace_)
-        {
+        if (param_.collectColorSpace_ == param.collectColorSpace_) {
             return true;
         }
         param_ = param;
@@ -173,8 +170,7 @@ public:
 
     bool SetParam(const DrawRegionCmdParam& param)
     {
-        if (param_.drawRegion_ == param.drawRegion_)
-        {
+        if (param_.drawRegion_ == param.drawRegion_) {
             return true;
         }
         param_ = param;
@@ -214,8 +210,7 @@ public:
 
     bool SetParam(const UseCmdlistDrawRegionCmdParam& param)
     {
-        if (param_.needUseCmdlistDrawRegion_ == param.needUseCmdlistDrawRegion_)
-        {
+        if (param_.needUseCmdlistDrawRegion_ == param.needUseCmdlistDrawRegion_) {
             return true;
         }
         param_ = param;
@@ -255,8 +250,7 @@ public:
 
     bool SetParam(const ExcludeNodeGroupCmdParam& param)
     {
-        if (param_.isExcludedFromNodeGroup_ == param.isExcludedFromNodeGroup_)
-        {
+        if (param_.isExcludedFromNodeGroup_ == param.isExcludedFromNodeGroup_) {
             return true;
         }
         param_ = param;
@@ -298,8 +292,7 @@ public:
     bool SetParam(const MarkNodeSingleFrameComposerCmdParam& param)
     {
         if (param_.isNodeSingleFrameComposer_ == param.isNodeSingleFrameComposer_ &&
-            param_.realPid_ == param.realPid_)
-        {
+            param_.realPid_ == param.realPid_) {
             return true;
         }
         param_ = param;
@@ -339,8 +332,7 @@ public:
 
     bool SetParam(const IsRepaintBoundaryCmdParam& param)
     {
-        if (param_.isRepaintBoundary_ == param.isRepaintBoundary_)
-        {
+        if (param_.isRepaintBoundary_ == param.isRepaintBoundary_) {
             return true;
         }
         param_ = param;
@@ -382,8 +374,7 @@ public:
     bool SetParam(const MarkOpincNodeCmdParam& param)
     {
         if (param_.isSuggestOpincNode_ == param.isSuggestOpincNode_ &&
-            param_.isOpincNeedCalculate_ == param.isOpincNeedCalculate_)
-        {
+            param_.isOpincNeedCalculate_ == param.isOpincNeedCalculate_) {
             return true;
         }
         param_ = param;
@@ -423,8 +414,7 @@ public:
 
     bool SetParam(const IsUifirstNodeCmdParam& param)
     {
-        if (param_.isUifirstNode_ == param.isUifirstNode_)
-        {
+        if (param_.isUifirstNode_ == param.isUifirstNode_) {
             return true;
         }
         param_ = param;
@@ -466,8 +456,7 @@ public:
     bool SetParam(const IsForceUifirstNodeCmdParam& param)
     {
         if (param_.isForceFlag_ == param.isForceFlag_ &&
-            param_.isUifirstEnable_ == param.isUifirstEnable_)
-        {
+            param_.isUifirstEnable_ == param.isUifirstEnable_) {
             return true;
         }
         param_ = param;
@@ -507,8 +496,7 @@ public:
 
     bool SetParam(const SyncDrawNodeTypeCmdParam& param)
     {
-        if (param_.nodeType_ == param.nodeType_)
-        {
+        if (param_.nodeType_ == param.nodeType_) {
             return true;
         }
         param_ = param;
@@ -548,8 +536,7 @@ public:
 
     bool SetParam(const UIFirstSwitchCmdParam& param)
     {
-        if (param_.uifirstSwitch_ == param.uifirstSwitch_)
-        {
+        if (param_.uifirstSwitch_ == param.uifirstSwitch_) {
             return true;
         }
         param_ = param;
@@ -589,8 +576,7 @@ public:
 
     bool SetParam(const OutOfParentCmdParam& param)
     {
-        if (param_.outOfParent_ == param.outOfParent_)
-        {
+        if (param_.outOfParent_ == param.outOfParent_) {
             return true;
         }
         param_ = param;
@@ -630,8 +616,7 @@ public:
 
     bool SetParam(const IsCrossNodeCmdParam& param)
     {
-        if (param_.isCrossNode_ == param.isCrossNode_)
-        {
+        if (param_.isCrossNode_ == param.isCrossNode_) {
             return true;
         }
         param_ = param;
@@ -675,8 +660,7 @@ public:
     {
         if (param_.isNodeGroup_ == param.isNodeGroup_ &&
             param_.nodeGroupIsForced_ == param.nodeGroupIsForced_ &&
-            param_.nodeGroupIncludeProperty_ == param.nodeGroupIncludeProperty_)
-        {
+            param_.nodeGroupIncludeProperty_ == param.nodeGroupIncludeProperty_) {
             return true;
         }
         param_ = param;

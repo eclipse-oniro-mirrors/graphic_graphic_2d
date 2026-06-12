@@ -41,7 +41,7 @@ void RSCommandModifierTest::TearDown() {}
 
 class TestableCmdModifier : public RSCmdModifier {
 public:
-    TestableCmdModifier(std::weak_ptr<RSNode> node) : RSCmdModifier(std::move(node)) {}
+    explicit TestableCmdModifier(std::weak_ptr<RSNode> node) : RSCmdModifier(std::move(node)) {}
 
     void UpdateToRender() override {}
 

@@ -46,8 +46,7 @@ public:
     {
         if (param_.width_ == param.width_ &&
             param_.height_ == param.height_ &&
-            param_.resetSurfaceIndex_ == param.resetSurfaceIndex_)
-        {
+            param_.resetSurfaceIndex_ == param.resetSurfaceIndex_) {
             return true;
         }
         param_ = param;
