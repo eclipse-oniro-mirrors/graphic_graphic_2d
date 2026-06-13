@@ -1057,7 +1057,6 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
         return;
     }
     if (!GetVertices(env, verticesObj, vertices, verticesSize)) {
-        delete []vertices;
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "Incorrect DrawPixelMapMesh parameter vertex type.");
         return;
