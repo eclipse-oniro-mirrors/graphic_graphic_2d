@@ -9301,5 +9301,67 @@ HWTEST_F(RsRenderComposerTest, HandleTunnelCommitFailure_AllBranches, TestSize.L
 
     composer->uniRenderEngine_ = nullptr;
 }
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_NullHdiOutput_NoCrash
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with null hdiOutput_ returns early.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerTest, MarkTunnelSurfaceInvalid_NullHdiOutput_NoCrash, TestSize.Level1)
+{
+    constexpr uint32_t screenId = 0;
+    auto output = std::make_shared<HdiOutput>(screenId);
+    output->Init();
+    sptr<RSScreenProperty> screenProperty = new RSScreenProperty();
+    auto composer = std::make_shared<RSRenderComposer>(output, screenProperty);
+
+    constexpr uint64_t surfaceId = 90001;
+    composer->hdiOutput_ = nullptr;
+    EXPECT_NO_FATAL_FAILURE(composer->MarkTunnelSurfaceInvalid(surfaceId));
+
+    composer->uniRenderEngine_ = nullptr;
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_ZeroSurfaceId_NoOp
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with surfaceId=0 does not mark anything.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerTest, MarkTunnelSurfaceInvalid_ZeroSurfaceId_NoOp, TestSize.Level1)
+{
+    constexpr uint32_t screenId = 0;
+    auto output = std::make_shared<HdiOutput>(screenId);
+    output->Init();
+    sptr<RSScreenProperty> screenProperty = new RSScreenProperty();
+    auto composer = std::make_shared<RSRenderComposer>(output, screenProperty);
+
+    composer->MarkTunnelSurfaceInvalid(0);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.empty());
+
+    composer->uniRenderEngine_ = nullptr;
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_ValidSurfaceId_ForwardsToHdiOutput
+ * @tc.desc: Test MarkTunnelSurfaceInvalid forwards valid surfaceId to hdiOutput_.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerTest, MarkTunnelSurfaceInvalid_ValidSurfaceId_ForwardsToHdiOutput, TestSize.Level1)
+{
+    constexpr uint32_t screenId = 0;
+    auto output = std::make_shared<HdiOutput>(screenId);
+    output->Init();
+    sptr<RSScreenProperty> screenProperty = new RSScreenProperty();
+    auto composer = std::make_shared<RSRenderComposer>(output, screenProperty);
+
+    constexpr uint64_t surfaceId = 90002;
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.empty());
+
+    composer->MarkTunnelSurfaceInvalid(surfaceId);
+    EXPECT_EQ(output->invalidTunnelSurfaceIds_.size(), 1u);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId) > 0);
+
+    composer->uniRenderEngine_ = nullptr;
+}
 } // namespace Rosen
 } // namespace OHOS
