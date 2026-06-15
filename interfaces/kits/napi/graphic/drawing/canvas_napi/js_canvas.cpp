@@ -1430,11 +1430,7 @@ napi_value JsCanvas::OnDrawPixelMapMesh(napi_env env, napi_callback_info info)
 
     napi_value colorsArray = argv[ARGC_FIVE];
     uint32_t colorsSize = 0;
-    if (napi_get_array_length(env, colorsArray, &colorsSize) != napi_ok) {
-        ROSEN_LOGE("JsCanvas::OnDrawPixelMapMesh colorsArray is invalid");
-        delete []vertices;
-        return NapiThrowError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter5 type.");
-    }
+    napi_get_array_length(env, colorsArray, &colorsSize);
     int64_t tempColorsSize =
         (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1) + static_cast<int64_t>(colorOffset);
 
