@@ -5544,7 +5544,8 @@ void RSMainThread::SetFrameInfo(uint64_t frameCount, bool forceRefreshFlag)
     pipelineParam_.vsyncId = frameCount;
     pipelineParam_.hasGameScene = FrameReport::GetInstance().HasGameScene();
     auto &frameDeadline = RsFrameDeadlinePredict::GetInstance();
-    uint32_t currentRate = pipelineParam_.pendingScreenRefreshRate;
+    uint32_t currentRate = pipelineParam_.pendingScreenRefreshRate ? pipelineParam_.pendingScreenRefreshRate :
+        GetRefreshRate();
     int64_t idealPeriod = IDEAL_PERIOD.count(currentRate) ? IDEAL_PERIOD[currentRate] : 0;
     bool ltpoEnabled = hgmRenderContext_->GetLtpoEnabled();
     frameDeadline.ReportRsFrameDeadline(currentRate, idealPeriod, ltpoEnabled, forceRefreshFlag);
