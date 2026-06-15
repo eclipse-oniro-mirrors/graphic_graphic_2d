@@ -486,6 +486,8 @@ void RSSurfaceRenderNodeDrawable::FinishOffscreenRender(const Drawing::SamplingO
     auto image = offscreenRotationInfo_->offscreenSurface_->GetImageSnapshot();
     if (image == nullptr) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::FinishOffscreenRender, Surface::GetImageSnapshot is nullptr");
+        offscreenRotationInfo_->arc_ = nullptr;
+        curCanvas_ = offscreenRotationInfo_->canvasBackup_;
         return;
     }
 #ifdef RS_ENABLE_GPU
@@ -927,6 +929,17 @@ void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         surfaceParams->GetNeedOffscreen() && !rscanvas->GetTotalMatrix().IsIdentity() &&
         surfaceParams->IsAppWindow() && GetName().substr(0, 3) != "SCB" && !IsHardwareEnabled() &&
         !surfaceParams->IsTransparent();
+
+    // In single-app cast scenario, skip offscreen rotation.
+    auto screenDrawable =
+        std::static_pointer_cast<RSScreenRenderNodeDrawable>(surfaceParams->GetAncestorScreenDrawable().lock());
+    auto screenParams = screenDrawable ?
+        static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get()) : nullptr;
+    bool isSingleAppCast = screenParams &&
+        screenParams->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE &&
+        screenParams->HasMirrorScreen();
+    needOffscreen = needOffscreen && !isSingleAppCast;
+
     needOffscreen = needOffscreen || (captureConfig ? captureConfig->isSyncRender : false);
     if (captureConfig && captureConfig->isSyncRender) {
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw, NeedSyncCaptureWindow: [%d], NodeId:%" PRIu64 ", "
@@ -1690,7 +1703,7 @@ void RSSurfaceRenderNodeDrawable::ClipHoleForSelfDrawingNode(RSPaintFilterCanvas
     canvas.ClipRect({std::round(bounds.GetLeft()), std::round(bounds.GetTop()),
         std::round(bounds.GetRight()), std::round(bounds.GetBottom())});
     canvas.Clear(Drawing::Color::COLOR_TRANSPARENT);
-    if (RSSystemProperties::GetDebugTraceEnabled()) {
+    {
         Drawing::RectF absRect;
         canvas.GetTotalMatrix().MapRect(absRect, bounds);
         RS_TRACE_NAME_FMT("hwc debug: clipHole: [%f,%f,%f,%f], absRect: [%s]", bounds.GetLeft(), bounds.GetTop(),
@@ -1736,13 +1749,15 @@ void RSSurfaceRenderNodeDrawable::DrawSelfDrawingNodeBuffer(
         (bgColor != RgbPalette::Transparent())) {
         Drawing::Brush brush;
         brush.SetColor(Drawing::Color(bgColor.AsArgbInt()));
-        if (HasCornerRadius(surfaceParams)) {
+        if (surfaceParams.GetVcldInfo().enable) {
+            auto rrect = surfaceParams.GetRRectForVCLD();
+            canvas.ClipRoundRect(RSPropertiesPainter::RRect2DrawingRRect(rrect), Drawing::ClipOp::INTERSECT, true);
             auto bounds = RSPropertiesPainter::Rect2DrawingRect({ 0, 0,
                 std::round(surfaceParams.GetBounds().GetWidth()), std::round(surfaceParams.GetBounds().GetHeight()) });
             Drawing::SaveLayerOps layerOps(&bounds, nullptr);
             canvas.SaveLayer(layerOps);
             canvas.AttachBrush(brush);
-            canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRect(surfaceParams.GetRRect()));
+            canvas.DrawRoundRect(RSPropertiesPainter::RRect2DrawingRRect(surfaceParams.GetRRectForVCLD()));
             canvas.DetachBrush();
             renderEngine->DrawSurfaceNodeWithParams(canvas, *this, params);
             canvas.Restore();

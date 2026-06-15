@@ -21,6 +21,7 @@
 #include "rs_profiler.h"
 #include "common/rs_xcollie.h"
 #include "platform/common/rs_log.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "gfx/dump/rs_dump_manager.h"
 #include "rs_profiler.h"
 
@@ -32,6 +33,9 @@ namespace Rosen {
 namespace {
 constexpr uint32_t MAX_PID_SIZE_NUMBER = 100000;
 constexpr uint32_t MAX_LIST_SIZE = 50;
+#ifdef RS_ENABLE_TV_PQ_METADATA
+static constexpr uint32_t MAX_VIDEO_INFO_SIZE = 32; // video rate info max map size
+#endif
 } // namespace
 
 static void TypefaceXcollieCallback(void* arg)
@@ -152,13 +156,22 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_DATA;
                 break;
             }
-            auto remoteObject = data.ReadRemoteObject();
-            if (remoteObject == nullptr) {
-                RS_LOGE("RSServiceToRenderStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK ReadRemoteObject failed!");
-                ret = ERR_NULL_OBJECT;
+            bool hasCallback = false;
+            if (!data.ReadBool(hasCallback)) {
+                RS_LOGE("RSServiceToRenderStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK ReadBool failed!");
+                ret = ERR_INVALID_DATA;
                 break;
             }
-            sptr<RSIBrightnessInfoChangeCallback> callback = iface_cast<RSIBrightnessInfoChangeCallback>(remoteObject);
+            sptr<RSIBrightnessInfoChangeCallback> callback = nullptr;
+            if (hasCallback) {
+                if (auto remoteObject = data.ReadRemoteObject()) {
+                    callback = iface_cast<RSIBrightnessInfoChangeCallback>(remoteObject);
+                } else {
+                    RS_LOGE("RSServiceToRenderStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK ReadRemoteObject failed!");
+                    ret = ERR_NULL_OBJECT;
+                    break;
+                }
+            }
             int32_t status = SetBrightnessInfoChangeCallback(pid, callback);
             if (!reply.WriteInt32(status)) {
                 RS_LOGE("RSServiceToRenderStub::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK Write status failed!");
@@ -496,6 +509,40 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
                 break;
             }
             if (SetOverlayDisplayMode(mode) != ERR_OK) {
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+#endif
+#ifdef RS_ENABLE_TV_PQ_METADATA
+        case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_VIDEO_RATE_INFO) : {
+            uint32_t mapSize;
+            if (!data.ReadUint32(mapSize)) {
+                RS_LOGE(" read map size failed");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (mapSize <= 0 || mapSize > MAX_VIDEO_INFO_SIZE) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            std::unordered_map<std::string, std::string> videoRateInfo;
+            bool shouldBreak = false;
+            for (uint32_t i = 0; i < mapSize; i++) {
+                std::string key;
+                std::string value;
+                if (!data.ReadString(key) || !data.ReadString(value)) {
+                    shouldBreak = true;
+                    ret = ERR_INVALID_DATA;
+                    break;
+                }
+                videoRateInfo[key] = value;
+            }
+            if (shouldBreak) {
+                break;
+            }
+            if (SendVideoRateInfo(videoRateInfo) != ERR_OK) {
+                RS_LOGE("RSServiceToRenderConnectionStub::SET_VIDEO_RATE_INFO failed");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -1022,18 +1069,8 @@ int RSServiceToRenderConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_BACKLIGHT_LEVEL): {
             RsScreenBrightnessData brightnessData;
-            if (!data.ReadUint64(brightnessData.screenId)) {
-                RS_LOGE("RSServiceToRenderStub::SET_BACKLIGHT_LEVEL Read ScreenId failed!");
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            if (!data.ReadUint32(brightnessData.level)) {
-                RS_LOGE("RSServiceToRenderStub::SET_BACKLIGHT_LEVEL Read level failed!");
-                ret = ERR_INVALID_DATA;
-                break;
-            }
-            if (!data.ReadFloat(brightnessData.brightnessPosition)) {
-                RS_LOGE("RSServiceToRenderStub::SET_BACKLIGHT_LEVEL Read brightnessPosition failed!");
+            if (!RSMarshallingHelper::Unmarshalling(data, brightnessData)) {
+                RS_LOGE("RSServiceToRenderStub::SET_BACKLIGHT_LEVEL Unmarshalling failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }

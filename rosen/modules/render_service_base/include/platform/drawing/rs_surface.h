@@ -42,6 +42,22 @@ public:
 
     virtual bool FlushFrame(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp = 0) = 0;
 
+    // 3-phase flush: allows callers to split FlushFrame into discrete steps for pipeline parallelism.
+    // Vulkan overrides all three for true 3-phase. Other surfaces inherit the defaults which
+    // collapse back to FlushFrame() on the first phase and treat the remaining phases as no-ops.
+    virtual bool FlushGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp = 0)
+    {
+        return FlushFrame(frame, uiTimestamp);
+    }
+    virtual bool SubmitGpu(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp = 0)
+    {
+        return true;
+    }
+    virtual bool FlushBuffer(std::unique_ptr<RSSurfaceFrame>& frame, uint64_t uiTimestamp = 0)
+    {
+        return true;
+    }
+
     virtual std::shared_ptr<RenderContext> GetRenderContext() = 0;
     virtual void SetRenderContext(std::shared_ptr<RenderContext> context) = 0;
     virtual GraphicColorGamut GetColorSpace() const = 0;

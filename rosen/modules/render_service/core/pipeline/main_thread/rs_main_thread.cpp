@@ -61,6 +61,7 @@
 #include "feature/drm/rs_drm_util.h"
 #include "feature/frame_stability/rs_frame_stability_manager.h"
 #include "feature/hdr/rs_hdr_util.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
 #include "feature/pointer_window_manager/rs_pointer_window_manager.h"
 #include "feature/power_off_render_skip/rs_power_off_render_controller.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
@@ -105,6 +106,7 @@
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_surface_render_node_utils.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "pipeline/rs_unmarshal_task_manager.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -1803,23 +1805,27 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
             bool goNormal = outcome != RSTunnelRouteArbiter::MainThreadOutcome::KEEP_DIRECT;
             bool comsumeResult = false;
             if (goNormal) {
-                tunnelLayerManager_->TransferTunnelPendingBufferToNormalConsume(surfaceNode);
+                if (RSTunnelRuntimeStore::HasPendingBuffer(surfaceNode->GetId())) {
+                    tunnelLayerManager_->TransferTunnelPendingBufferToNormalConsume(surfaceNode);
+                }
                 comsumeResult = RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(
                     *surfaceHandler, timestamp_, dropFrameConfig,
                     parentNode ? parentNode->GetId() : 0, surfaceNode->IsAncestorScreenFrozen());
-                if (comsumeResult && outcome == RSTunnelRouteArbiter::MainThreadOutcome::GO_NORMAL) {
-                    tunnelLayerManager_->MarkTunnelBufferConsumedForNormal(surfaceNode);
+                if (comsumeResult) {
+                    tunnelLayerManager_->MarkTunnelBufferConsumedForNormal(surfaceNode, composerClientManager_);
                 }
                 if (!comsumeResult) {
                     tunnelRouteArbiter_->AbandonNormalClaim(surfaceNode);
                 }
+            } else if (outcome == RSTunnelRouteArbiter::MainThreadOutcome::KEEP_DIRECT) {
+                comsumeResult = true;
             }
             if (surfaceHandler->GetSourceType() ==
                 static_cast<uint32_t>(OHSurfaceSource::OH_SURFACE_SOURCE_LOWPOWERVIDEO)) {
                 lppVideoHandler_.ConsumeAndUpdateLppBuffer(vsyncId_, surfaceNode);
             }
-            tunnelLayerManager_->UpdateTunnelLayerState(surfaceNode);
             if (comsumeResult) {
+                tunnelLayerManager_->UpdateTunnelLayerState(surfaceNode->GetId(), surfaceHandler);
                 if (!isUniRender_) {
                     this->dividedRenderbufferTimestamps_[surfaceNode->GetId()] =
                         static_cast<uint64_t>(surfaceHandler->GetTimestamp());
@@ -1836,6 +1842,11 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                     RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name %s, id %" PRIu64 " disable directComposition by "
                         "buffer consumed and not HardwareEnabledType",
                         surfaceNode->GetName().c_str(), surfaceNode->GetId());
+                }
+                if (surfaceHandler->GetSourceTypeChanged()) {
+                    doDirectComposition_ = false;
+                    RS_OPTIONAL_TRACE_NAME_FMT("hwc debug: name %s, id %" PRIu64 " disable directComposition by "
+                        "sourceType changed", surfaceNode->GetName().c_str(), surfaceNode->GetId());
                 }
                 if (isUniRender_ && surfaceHandler->IsCurrentFrameBufferConsumed()) {
 #ifdef RS_ENABLE_GPU
@@ -2185,7 +2196,7 @@ uint32_t RSMainThread::GetDynamicRefreshRate() const
     return refreshRate;
 }
 
-void RSMainThread::AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect)
+void RSMainThread::AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, const Drawing::Rect& rect)
 {
     if (renderThreadParams_ == nullptr) {
         return;
@@ -2559,7 +2570,7 @@ void RSMainThread::ProcessWindowCapTasks()
         auto windowCapTask = std::get<1>(windowCapTasks_.front());
         windowCapTasks_.pop();
         RS_TRACE_NAME_FMT("RSMainThread::ProcessWindowCapTasks doing windowCapTask");
-        RSUniRenderThread::Instance().PostTask(windowCapTask);
+        RSMainThread::Instance()->PostTask(windowCapTask);
     }
 }
 
@@ -2625,6 +2636,9 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
             RS_TRACE_NAME("RSMainThread::UniRender nothing to update");
             RSMainThread::Instance()->SetFrameIsRender(false);
             RSMainThread::Instance()->SetSkipJankAnimatorFrame(true);
+            // "Nothing to update" — no composition happened, no HdiOutput conflict.
+            directComposeHelper_.lastFrameDidGpuRender_ = false;
+            RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
             for (auto& node: hardwareEnabledNodes_) {
                 if (!node->IsHardwareForcedDisabled()) {
                     node->MarkCurrentFrameHardwareEnabled();
@@ -2643,6 +2657,9 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
     if (needTraverseNodeTree) {
         // Once exiting DoDirectComposition, clear the nodes collected for DoDirectComposition
         aibarNodes_.clear();
+        directComposeHelper_.lastFrameDidGpuRender_ = true;
+        RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
+        ResetConsecutiveDoCompSuccessCount();
         if (RSUniRenderThread::Instance().IsPostedReclaimMemoryTask()) {
             SetIfStatusBarDirtyOnly(IfStatusBarDirtyOnly());
         }
@@ -2706,11 +2723,15 @@ void RSMainThread::UniRender(std::shared_ptr<RSBaseRenderNode> rootNode)
         isCurtainScreenUsingStatusChanged_ = false;
         systemAnimatedScenesEnabled_ = RSSystemParameters::GetSystemAnimatedScenesEnabled();
         lastWatermarkFlag_ = watermarkFlag_;
+        lastWatermarkImg_ = watermarkImg_;
         isOverDrawEnabledOfLastFrame_ = isOverDrawEnabledOfCurFrame_;
         isDrawingCacheDfxEnabledOfLastFrame_ = isDrawingCacheDfxEnabledOfCurFrame_;
         // set params used in render thread
         uniVisitor->SetUniRenderThreadParam(renderThreadParams_);
     } else {
+        directComposeHelper_.lastFrameDidGpuRender_ = false;
+        directComposeHelper_.consecutiveDoCompSuccessCount_.fetch_add(1, std::memory_order_acq_rel);
+        RSTunnelRouteArbiter::RefreshGlobalTriggerSnapshot();
         RsFrameReport::DirectRenderEnd();
     }
 
@@ -2912,7 +2933,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                         surfaceNode->GetInstanceRootNodeId(), tempRefreshRects,
                         screenNode->GetScreenProperty().GetWidth() * screenNode->GetScreenProperty().GetHeight());
                 }
-                tunnelLayerManager_->UpdateTunnelLayerState(surfaceNode);
+                tunnelLayerManager_->UpdateTunnelLayerState(surfaceNode->GetId(), surfaceHandler);
                 if (!isCurrentFrameBufferConsumed && params->GetPreBuffer() != nullptr) {
                     params->SetPreBuffer(nullptr, nullptr);
                     surfaceNode->AddToPendingSyncList();
@@ -2926,6 +2947,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 processor->CreateLayer(*surfaceNode, *params);
                 // buffer is synced to directComposition
                 params->SetBufferSynced(true);
+                RSTunnelRuntimeStore::GetOrCreate(surfaceNode->GetId()).OnRenderCommitDone();
             }
         }
         rsLuminance.SetHdrStatus(screenId,
@@ -2951,7 +2973,7 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
 
 pid_t RSMainThread::GetDesktopPidForRotationScene() const
 {
-    return desktopPidForRotationScene_;
+    return desktopPidForRotationScene_.load();
 }
 
 uint32_t RSMainThread::GetForceCommitReason() const
@@ -3009,7 +3031,7 @@ void RSMainThread::Render()
         RSPropertyTrace::GetInstance().RefreshNodeTraceInfo();
     }
     if (focusAppBundleName_.find(DESKTOP_NAME_FOR_ROTATION) != std::string::npos) {
-        desktopPidForRotationScene_ = focusAppPid_;
+        desktopPidForRotationScene_.store(focusAppPid_.load());
     }
     int dumpTreeCount = RSSystemParameters::GetDumpRSTreeCount();
     if (UNLIKELY(dumpTreeCount)) {
@@ -4049,6 +4071,17 @@ void RSMainThread::UnRegisterApplicationAgent(sptr<IApplicationAgent> app)
 
     EraseIf(applicationAgentMap_,
         [&app](const auto& iter) { return iter.second && app && iter.second->AsObject() == app->AsObject(); });
+}
+
+sptr<IApplicationAgent> RSMainThread::UnRegisterApplicationAgent(uint32_t pid)
+{
+    auto iter = applicationAgentMap_.find(pid);
+    if (iter == applicationAgentMap_.end()) {
+        return nullptr;
+    }
+    auto app = iter->second;
+    applicationAgentMap_.erase(iter);
+    return app;
 }
 
 void RSMainThread::RegisterOcclusionChangeCallback(pid_t pid, sptr<RSIOcclusionChangeCallback> callback)
@@ -5591,7 +5624,7 @@ static bool NeedForceRefreshOneFrame(ScreenPropertyType type)
     switch (type) {
         case ScreenPropertyType::ACTIVE_RECT_OPTION:
         case ScreenPropertyType::GAMUT_MAP:
-        case ScreenPropertyType::PRODUCER_SURFACE:
+        case ScreenPropertyType::MULTI_SURFACE_CONFIGS:
         case ScreenPropertyType::RENDER_RESOLUTION:
         case ScreenPropertyType::SAMPLING_OPTION:
         case ScreenPropertyType::SCREEN_STATUS:
@@ -5614,7 +5647,7 @@ void RSMainThread::HandleScreenPropertyRefreshOneFrame(ScreenId id, ScreenProper
                 return;
             }
             node->SetScreenDirtyFlag(true);
-            if (type == ScreenPropertyType::PRODUCER_SURFACE) {
+            if (type == ScreenPropertyType::MULTI_SURFACE_CONFIGS) {
                 node->SetVirtualSurfaceChanged(true);
             }
             if (type == ScreenPropertyType::ACTIVE_RECT_OPTION) {

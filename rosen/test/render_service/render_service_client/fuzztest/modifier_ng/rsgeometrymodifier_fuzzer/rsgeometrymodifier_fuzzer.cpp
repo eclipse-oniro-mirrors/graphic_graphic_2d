@@ -43,7 +43,6 @@ void DoRSBoundsClipModifierFuzzTest(FuzzedDataProvider& fdp)
     modifier->MarkNodeDirty();
     Vector4f randomVec4F{fdp.ConsumeFloatingPoint<float>(), fdp.ConsumeFloatingPoint<float>(),
         fdp.ConsumeFloatingPoint<float>(), fdp.ConsumeFloatingPoint<float>()};
-    modifier->SetClipRectWithRadius(randomVec4F, randomVec4F);
     auto rrect = std::make_shared<RRect>();
     modifier->SetClipRRect(rrect);
     auto clipToBounds = std::make_shared<RSPath>();
@@ -78,6 +77,24 @@ void DoRSBoundsModifierFuzzTest(FuzzedDataProvider& fdp)
     modifier->GetBoundsPosition();
     modifier->GetBoundsPositionX();
     modifier->GetBoundsPositionY();
+    bool useUnion = fdp.ConsumeBool();
+    modifier->SetUseUnion(useUnion);
+    modifier->GetUseUnion();
+    float unionSpacing = fdp.ConsumeFloatingPoint<float>();
+    modifier->SetUnionSpacing(unionSpacing);
+    modifier->GetUnionSpacing();
+    int unionMode = fdp.ConsumeIntegral<int>();
+    modifier->SetUnionMode(unionMode);
+    modifier->GetUnionMode();
+    bool gravityPullCenterFlag = fdp.ConsumeBool();
+    modifier->SetGravityPullCenterFlag(gravityPullCenterFlag);
+    modifier->GetGravityPullCenterFlag();
+    float gravityPullStrength = fdp.ConsumeFloatingPoint<float>();
+    modifier->SetGravityPullStrength(gravityPullStrength);
+    modifier->GetGravityPullStrength();
+    float gravityHotZone = fdp.ConsumeFloatingPoint<float>();
+    modifier->SetGravityHotZone(gravityHotZone);
+    modifier->GetGravityHotZone();
 }
 
 void DoRSFrameClipModifierFuzzTest(FuzzedDataProvider& fdp)

@@ -224,6 +224,8 @@ private:
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes,
         bool& hasVisibleHwcNodes, bool& needForceUpdateHwcNodes);
     void PrevalidateHwcNode();
+    void UpdateHwcNodeEnableByPrevalidate(std::map<uint64_t, RequestCompositionType> &strategy,
+        const RSRenderNodeMap& nodeMap);
     bool PrepareForCloneNode(RSSurfaceRenderNode& node);
     void UpdateInfoForClonedNode(RSSurfaceRenderNode& node);
     bool IsSourceNodeDirty(RSSurfaceRenderNode& node);
@@ -414,6 +416,7 @@ private:
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, Rect>>> transparntHwcCleanFilter_;
     // map of surface node color gamut collected in CheckColorSpace
     std::unordered_map<NodeId, GraphicColorGamut> surfaceColorGamutMap_;
+    RSRenderThreadParams::TunnelLayerSnapshotMap tunnelLayerSnapshots_;
     // record nodes which ......
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, Rect>>> transparntHwcDirtyFilter_;
     // record DRM nodes
@@ -507,7 +510,7 @@ private:
     std::stack<std::shared_ptr<RSDirtyRegionManager>> surfaceDirtyManager_;
     int32_t offsetX_ { 0 };
     int32_t offsetY_ { 0 };
-    PartialRenderType partialRenderType_;
+    PartialRenderType partialRenderType_ = PartialRenderType::DISABLED;
     SurfaceRegionDebugType surfaceRegionDebugType_;
     // vector of Appwindow nodes ids not contain subAppWindow nodes ids in last frame
     static inline std::queue<NodeId> preMainAndLeashWindowNodesIds_;
@@ -561,7 +564,8 @@ public:
     /**
      * @brief Constructor with force-prepare state reference and trigger condition
      * @param isCurSubTreeForcePrepare
-     *        Reference of the RSUniRenderVisitor::isCurSubTreeForcePrepare_, depends current subtree need force-prepare
+     *        Reference of the RSUniRenderVisitor::isCurSubTreeForcePrepare_,
+     *        depends current subtree need force-prepare
      * @param condition Trigger condition for enabling force-prepare
      */
     RSSubTreePrepareController(bool& isCurSubTreeForcePrepare, bool condition);

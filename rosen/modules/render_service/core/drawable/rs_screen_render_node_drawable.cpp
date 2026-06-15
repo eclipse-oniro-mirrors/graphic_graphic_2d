@@ -88,6 +88,10 @@
 #include "rs_parallel_manager.h"
 #endif
 
+#ifdef USE_PRIMITIVE
+#include "primitive/primitive_adapter.h"
+#endif
+
 namespace OHOS::Rosen::DrawableV2 {
 namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
@@ -290,7 +294,8 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
         return false;
     }
     if (GetSyncDirtyManager()->IsCurrentFrameDirty() ||
-        (params.GetMainAndLeashSurfaceDirty() || RSUifirstManager::Instance().HasForceUpdateNode()) ||
+        (params.GetMainAndLeashSurfaceDirty() ||
+        RSUifirstManager::Instance().HasForceUpdateNode(params.GetScreenId())) ||
         RSMainThread::Instance()->GetDirtyFlag()) {
         return false;
     }
@@ -606,7 +611,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     if (isVirtualExpandComposite) {
         RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params,
             syncDirtyManager->IsCurrentFrameDirty());
-        if (RSUniDirtyComputeUtil::CheckVirtualExpandScreenSkip(*params, *this)) {
+        bool isMultiSurfaceExpand = screenProperty.GetMultiSurfaceConfigs().size() > 1;
+        if (!isMultiSurfaceExpand &&
+            RSUniDirtyComputeUtil::CheckVirtualExpandScreenSkip(*params, *this)) {
             RS_TRACE_NAME("VirtualExpandScreenNode skip");
             return;
         }
@@ -707,7 +714,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
     if (isHdrOn) {
-        auto nonRGBA1010108Fmt = !RSBaseHdrUtil::GetRGBA1010108Enabled() && params->GetHasForceHwcHdrSurface() ?
+        auto nonRGBA1010108Fmt = RSSystemProperties::GetXcomponentEdrEnabled() &&
+            !RSBaseHdrUtil::GetRGBA1010108Enabled() && params->GetHasForceHwcHdrSurface() ?
             GRAPHIC_PIXEL_FMT_RGBA_8888 : GRAPHIC_PIXEL_FMT_RGBA_1010102;
         params->SetNewPixelFormat(RSBaseHdrUtil::GetRGBA1010108Enabled() && params->GetExistHWCNode() ?
             GRAPHIC_PIXEL_FMT_RGBA_1010108 : nonRGBA1010108Fmt);
@@ -747,7 +755,8 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     std::vector<RectI> damageRegionrects;
     std::vector<RectI> curFrameVisibleRegionRects;
     Drawing::Region clipRegion;
-    if (uniParam->IsPartialRenderEnabled()) {
+    bool needSetDamageForPartialRender = uniParam->NeedSetDamageForPartialRender();
+    if (LIKELY(uniParam->IsPartialRenderEnabled())) {
         damageRegionrects = RSUniRenderUtil::MergeDirtyHistory(
             *this, renderFrame->GetBufferAge(), screenInfo, rsDirtyRectsDfx, *params);
         curFrameVisibleRegionRects = RSUniDirtyComputeUtil::GetCurrentFrameVisibleDirty(*this, screenInfo, *params);
@@ -757,7 +766,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_TRACE_NAME_FMT("SetDamageRegion damageRegionrects num: %zu, info: %s",
             damageRegionrects.size(),
             RectVectorToString(damageRegionrects).substr(0, MAX_DAMAGE_REGION_INFO).c_str());
-        if (!uniParam->IsRegionDebugEnabled()) {
+        if (LIKELY(needSetDamageForPartialRender && !uniParam->IsRegionDebugEnabled())) {
             renderFrame->SetDamageRegion(damageRegionrects);
         }
     }
@@ -774,6 +783,12 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to create canvas");
         return;
     }
+
+#ifdef USE_PRIMITIVE
+    auto primListAdapter = std::make_shared<PrimListAdapter>();
+    curCanvas_->primListAdapter_ = primListAdapter;
+    AutoDirtyTypesRestore autoDirtyTypesRestore(primListAdapter, *this);
+#endif
 
     auto& layerCacheManager = RSLayerCacheManager::Instance();
     layerCacheManager.HandleLayerDrawables(*curCanvas_);
@@ -795,6 +810,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RSFilterCacheMemoryController::Instance().SetScreenRectInfo({0, 0, screenInfo.width, screenInfo.height});
     UpdateSurfaceDrawRegion(curCanvas_, params);
 
+#ifdef USE_PRIMITIVE
+    primListAdapter->PrimDrawResume();
+#endif
+
     // canvas draw
     {
         {
@@ -804,8 +823,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 #ifdef SUBTREE_PARALLEL_ENABLE
             RSParallelManager::Singleton().Reset(curCanvas_, uniParam, params, vsyncRefreshRate);
 #endif
-            if (uniParam->IsOpDropped()) {
-                if (uniParam->IsDirtyAlignEnabled() && RSUniDirtyComputeUtil::IsDamageRegionGpuTileValid() &&
+            if (LIKELY(uniParam->NeedClipForPartialRender() && !uniParam->IsRegionDebugEnabled())) {
+                if (needSetDamageForPartialRender && uniParam->IsDirtyAlignEnabled() &&
+                    RSUniDirtyComputeUtil::IsDamageRegionGpuTileValid() &&
                     damageRegionrects.size() > RSUniDirtyComputeUtil::DIRTY_REGION_COUNT_THRESHOLD) {
                     RS_TRACE_NAME("dirty align enabled and no clip operation");
                     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
@@ -815,6 +835,17 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             } else {
                 curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
             }
+#ifdef USE_PRIMITIVE
+            bool isRegionClipped = uniParam->IsOpDropped() && !uniParam->IsDirtyAlignEnabled();
+            primListAdapter->ClipDirtyProcess(isRegionClipped, lastIsRegionClipped_, damageRegionrects,
+                lastDamageRegionrects_);
+            if (isRegionClipped) {
+                lastDamageRegionrects_ = damageRegionrects;
+            } else {
+                lastDamageRegionrects_.clear();
+            }
+            lastIsRegionClipped_ = isRegionClipped;
+#endif
             // just used in SubTree, used for check whether a new Surface needs to be created in the SubTree thread.
             curCanvas_->SetWeakSurface(drSurface);
 
@@ -873,6 +904,10 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     RS_TRACE_BEGIN("RSScreenRenderNodeDrawable Flush");
     RsFrameReport::CheckBeginFlushPoint();
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
+
+#ifdef USE_PRIMITIVE
+    primListAdapter->PrimDrawSuspend();
+#endif
 
     renderFrame->Flush();
     bufferGuard.SetAcquireFence(renderFrame->GetAcquireFence());

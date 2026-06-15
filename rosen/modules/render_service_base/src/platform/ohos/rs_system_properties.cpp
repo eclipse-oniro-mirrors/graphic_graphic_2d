@@ -31,7 +31,7 @@ namespace Rosen {
 namespace {
 constexpr int DEFAULT_CACHE_WIDTH = 1250;
 constexpr int DEFAULT_CACHE_HEIGHT = 2710;
-constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 2;
+constexpr int DEFAULT_PARTIAL_RENDER_ENABLED_VALUE = 4;
 constexpr int DEFAULT_UNI_PARTIAL_RENDER_ENABLED_VALUE = 4;
 constexpr int DEFAULT_ADVANCED_DIRTY_REGION_ENABLED_VALUE = 1;
 constexpr int DEFAULT_CORRECTION_MODE_VALUE = 999;
@@ -293,7 +293,7 @@ DirtyRegionDebugType RSSystemProperties::GetDirtyRegionDebugType()
 
 PartialRenderType RSSystemProperties::GetPartialRenderEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.partialrender.enabled", "2");
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.partialrender.enabled", "4");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return static_cast<PartialRenderType>(ConvertToInt(enable, DEFAULT_PARTIAL_RENDER_ENABLED_VALUE));
@@ -459,7 +459,7 @@ bool RSSystemProperties::GetDoDirectCompositionEnabled()
 bool RSSystemProperties::GetDumpRsTreeDetailEnabled()
 {
     static bool dumpRsTreeDetailEnabled = system::GetParameter(
-        "persist.rosen.dumpRsTreeDetail.enabled", "0") != "0";
+        "persist.rosen.dumpRsTreeDetail.enabled", "1") != "0";
     return dumpRsTreeDetailEnabled;
 }
 
@@ -967,6 +967,14 @@ bool RSSystemProperties::GetHeterogeneousHDREnabled()
     return flag;
 }
 
+bool RSSystemProperties::GetXcomponentEdrEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("const.display.xcomponent_edr_support", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
 bool RSSystemProperties::GetSurfaceOffscreenEnadbled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("persist.sys.graphic.surfaceOffscreenEnabled", "1");
@@ -1163,6 +1171,11 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
     return WatchParameter(name, func, context);
 }
 
+int RSSystemProperties::RemoveWatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context)
+{
+    return RemoveParameterWatcher(name, func, context);
+}
+
 bool RSSystemProperties::IsSuperFoldDisplay()
 {
     static const std::string foldScreenType = system::GetParameter("const.window.foldscreen.type", "0,0,0,0");
@@ -1281,6 +1294,14 @@ bool RSSystemProperties::GetLayerPartRenderDebugEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetLayerEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.graphic.layerEnabled", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
 }
 
 bool RSSystemProperties::GetLayerDebugEnabled()
@@ -1885,6 +1906,12 @@ bool RSSystemProperties::GetReleaseImageOneByOneFlag()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::GetUsePrimList()
+{
+    static bool usePrimList = OHOS::system::GetBoolParameter("persist.sys.graphic.useprimlist", true);
+    return usePrimList;
 }
 } // namespace Rosen
 } // namespace OHOS

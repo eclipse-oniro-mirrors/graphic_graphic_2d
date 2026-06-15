@@ -43,6 +43,7 @@
 #include "platform/drawing/rs_surface.h"
 #endif
 #include "rs_render_service_client_info.h"
+#include "screen_manager/screen_types.h"
 #ifndef ENABLE_RS_PROXY
 #include "rs_hrp_service.h"
 #include "rs_irender_client.h"
@@ -51,6 +52,7 @@
 #include "screen_manager/rs_screen_data.h"
 #include "screen_manager/rs_screen_hdr_capability.h"
 #include "screen_manager/rs_screen_mode_info.h"
+#include "screen_manager/rs_surface_region_config.h"
 #include "screen_manager/screen_types.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "vsync_receiver.h"
@@ -135,6 +137,11 @@ public:
         ScreenId associatedScreenId = 0, int32_t flags = 0, std::vector<NodeId> whiteList = {});
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
+
+    // Multi-surface virtual screen APIs
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs);
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces);
 
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
@@ -244,6 +251,11 @@ public:
     int32_t GetScreenBacklight(ScreenId id);
 
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData);
+
+    int32_t GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode);
+
+    int32_t SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
 
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode);
 
@@ -359,6 +371,9 @@ public:
     void SetCacheEnabledForRotation(bool isEnabled);
 #endif
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
+
+    int32_t SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo);
+
 #ifndef ENABLE_RS_PROXY
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo();
  

@@ -37,7 +37,6 @@
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
-#include "pipeline/rs_tunnel_runtime_state.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_surface_ext.h"
 #include "platform/common/rs_system_properties.h"
@@ -54,6 +53,7 @@
 #include "monitor/aps_monitor_impl.h"
 #endif
 #include "transaction/rs_render_pipeline_client.h"
+#include "feature/vcld/rs_vcld_param.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -142,9 +142,8 @@ public:
     }
 
     void SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
-        NodeId logicalDisplayNodeId = INVALID_NODEID) override;
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId uifirstRootNodeId = INVALID_NODEID,
+        NodeId screenNodeId = INVALID_NODEID, NodeId logicalDisplayNodeId = INVALID_NODEID) override;
     bool IsAppWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
@@ -367,6 +366,16 @@ public:
     void ResetRotateState()
     {
         isRotating_ = false;
+    }
+
+    bool IsScale() const
+    {
+        return isScale_;
+    }
+
+    void SetIsScale(bool isScale)
+    {
+        isScale_ = isScale;
     }
 
     void ResetCurrentFrameHardwareEnabledState()
@@ -714,7 +723,7 @@ public:
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
     void SetScreenSpecialLayerStatus(ScreenId screenId, uint32_t type, bool isSpecialLayer);
-    void UpdateVirtualScreenWhiteListInfo();
+    void UpdateVirtualScreenWhiteListInfo(const std::unordered_set<ScreenId>& screenIds);
 
     // get whether it is a security/skip layer itself
     LeashPersistentId GetLeashPersistentId() const
@@ -799,12 +808,12 @@ public:
         uifirstState_.forceUpdate = b;
     }
 
-    RSUIFirstSwitch GetUIFirstSwitch() const override
+    RSUIFirstSwitch GetUIFirstSwitch() const
     {
         return uifirstState_.switchMode;
     }
 
-    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch) override
+    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
     {
         uifirstState_.switchMode = uiFirstSwitch;
     }
@@ -1288,8 +1297,6 @@ public:
         const bool isFocusWindow, const Vector4<int>& cornerRadius);
     void DealWithDrawBehindWindowTransparentRegion();
 
-    bool IsStartAnimationFinished() const;
-    void SetStartAnimationFinished();
     // if surfacenode's buffer has been consumed, it should be set dirty
     bool UpdateDirtyIfFrameBufferConsumed();
 
@@ -1706,6 +1713,13 @@ public:
         return drmCornerRadiusInfo_;
     }
 
+    void SetVcldInfo(const RSVcldParam& vcldInfo);
+    void ResetVcldInfo();
+    const RSVcldParam& GetVcldInfo() const
+    {
+        return vcldInfo_;
+    }
+
     // [Attention] The function only used for unlocking screen for PC currently
     NodeId GetClonedNodeId() const
     {
@@ -1797,6 +1811,43 @@ public:
     {
         crossNodeSkipDisplayConversionMatrices_.clear();
     }
+
+    void ClearCloneCrossNode();
+    void SetCrossNodeVisitedStatus(bool hasVisited);
+    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn);
+    void RecordCloneCrossNode(std::shared_ptr<RSSurfaceRenderNode> node)
+    {
+        cloneCrossNodeVec_.emplace_back(node);
+    }
+
+    void SetIsCrossNode(bool isCrossNode)
+    {
+        if (!isCrossNode) {
+            ClearCloneCrossNode();
+        }
+        isCrossNode_ = isCrossNode;
+    }
+
+    bool IsCrossNode() const override
+    {
+        return isCrossNode_ || isCloneCrossNode_;
+    }
+
+    bool IsCloneCrossNode() const
+    {
+        return isCloneCrossNode_;
+    }
+
+    bool HasVisitedCrossNode() const
+    {
+        return hasVisitedCrossNode_;
+    }
+
+    std::weak_ptr<RSSurfaceRenderNode> GetSourceCrossNode() const
+    {
+        return sourceCrossNode_;
+    }
+
     HdrStatus GetVideoHdrStatus() const
     {
         return hdrVideoSurface_;
@@ -1922,28 +1973,6 @@ public:
     void SetHDRType(uint32_t hdrType);
     uint32_t GetHDRType() const;
 
-    void GetTunnelLayerInfo(uint64_t& tunnelLayerId, uint32_t& property)
-    {
-        tunnelRuntimeState_->GetLayerInfo(tunnelLayerId, property);
-    }
-
-    void SetTunnelLayerInfo(uint64_t tunnelLayerId, uint32_t property)
-    {
-        if (tunnelLayerId == 0) {
-            property = TUNNEL_PROP_INVALID;
-        }
-        tunnelRuntimeState_->SetLayerInfo(tunnelLayerId, property);
-    }
-
-    RSTunnelRuntimeState& GetTunnelRuntimeState()
-    {
-        return *tunnelRuntimeState_;
-    }
-
-    const RSTunnelRuntimeState& GetTunnelRuntimeState() const
-    {
-        return *tunnelRuntimeState_;
-    }
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -2033,7 +2062,6 @@ private:
     bool isOccludedByFilterCache_ = false;
     bool isFilterCacheStatusChanged_ = false;
     bool isTreatedAsTransparent_ = false;
-    bool startAnimationFinished_ = false;
     bool isContainerWindowTransparent_ = false;
     // only used in hardware enabled pointer window, when gpu -> hardware composer
     bool isNodeDirtyInLastFrame_ = true;
@@ -2065,6 +2093,7 @@ private:
     bool existTransparentHardwareEnabledNode_ = false;
     bool animateState_ = false;
     bool isRotating_ = false;
+    bool isScale_ = false;
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
@@ -2092,6 +2121,14 @@ private:
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
     bool copybitTag_ = false;
+
+    // cross node
+    bool isCrossNode_ = false;
+    bool isCloneCrossNode_ = false;
+    bool autoClearCloneNode_ = false;
+    bool hasVisitedCrossNode_ = false;
+    std::weak_ptr<RSSurfaceRenderNode> sourceCrossNode_;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> cloneCrossNodeVec_;
 
     // hpae offline
     bool deviceOfflineEnable_ = false;
@@ -2207,10 +2244,10 @@ private:
     Drawing::Matrix totalMatrix_;
     std::vector<RectI> intersectedRoundCornerAABBs_;
     std::vector<float> drmCornerRadiusInfo_;
+    RSVcldParam vcldInfo_;
 
     std::string name_;
     std::string bundleName_;
-    std::unique_ptr<RSTunnelRuntimeState> tunnelRuntimeState_ = nullptr;
     std::vector<NodeId> childSurfaceNodeIds_;
     std::shared_ptr<RSRenderPipelineClient> rsRenderPipelineClient_;
     friend class RSRenderThreadVisitor;

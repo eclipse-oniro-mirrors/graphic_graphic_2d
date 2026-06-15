@@ -63,7 +63,7 @@
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
 using namespace testing;
 using namespace testing::ext;
-
+#if defined(RS_ENABLE_UNI_RENDER)
 namespace {
 constexpr const int WAIT_HANDLER_TIME = 1; // 1s
 constexpr const int WAIT_HANDLER_TIME_COUNT = 5;
@@ -615,49 +615,6 @@ HWTEST_F(RSClientToRenderConnectionStubTest, GetBrightnessInfoTest, TestSize.Lev
         auto interfaceCode = RSIClientToRenderConnectionInterfaceCode::GET_BRIGHTNESS_INFO;
         auto res = connectionStub->OnRemoteRequest(static_cast<uint32_t>(interfaceCode), data, reply, option);
         EXPECT_EQ(res, ERR_NONE);
-    }
-}
-
-/**
- * @tc.name: WriteBrightnessInfoTest
- * @tc.desc: Test WriteBrightnessInfo
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSClientToRenderConnectionStubTest, WriteBrightnessInfoTest, TestSize.Level2)
-{
-    // case 1: normal write
-    {
-        BrightnessInfo brightnessInfo;
-        MessageParcel data;
-        ASSERT_TRUE(connectionStub_->WriteBrightnessInfo(brightnessInfo, data));
-    }
-
-    // case 2: can't write any data
-    {
-        BrightnessInfo brightnessInfo;
-        MessageParcel data;
-        size_t desireCapacity = sizeof(float) * 0;
-        data.writeCursor_ = data.GetMaxCapacity() - desireCapacity;
-        ASSERT_FALSE(connectionStub_->WriteBrightnessInfo(brightnessInfo, data));
-    }
-
-    // case 3: can write one float
-    {
-        BrightnessInfo brightnessInfo;
-        MessageParcel data;
-        size_t desireCapacity = sizeof(float) * 1;
-        data.writeCursor_ = data.GetMaxCapacity() - desireCapacity;
-        ASSERT_FALSE(connectionStub_->WriteBrightnessInfo(brightnessInfo, data));
-    }
-
-    // case 4: can write two float
-    {
-        BrightnessInfo brightnessInfo;
-        MessageParcel data;
-        size_t desireCapacity = sizeof(float) * 2;
-        data.writeCursor_ = data.GetMaxCapacity() - desireCapacity;
-        ASSERT_FALSE(connectionStub_->WriteBrightnessInfo(brightnessInfo, data));
     }
 }
 
@@ -4276,11 +4233,11 @@ HWTEST_F(RSClientToRenderConnectionStubTest, RenderPipelineAgentNullptrTest016, 
     // Test AddConnection
     sptr<IRemoteObject> remoteObj = token_->AsObject();
     sptr<RSIClientToRenderConnection> connection = nullptr;
-    agent->AddConnection(remoteObj, connection);
+    agent->AddConnection(getpid(), 0, remoteObj, connection);
     // Should return without crash
 
     // Test FindClientToRenderConnection
-    sptr<RSIClientToRenderConnection> foundConnection = agent->FindClientToRenderConnection(token_->AsObject());
+    sptr<RSIClientToRenderConnection> foundConnection = agent->FindClientToRenderConnection(getpid());
     EXPECT_EQ(foundConnection, nullptr);
 }
 
@@ -4809,3 +4766,4 @@ HWTEST_F(RSClientToRenderConnectionStubTest, UpdateFrameStabilityDetectionTest00
     EXPECT_EQ(res, ERR_INVALID_REPLY);
 }
 } // namespace OHOS::Rosen
+#endif

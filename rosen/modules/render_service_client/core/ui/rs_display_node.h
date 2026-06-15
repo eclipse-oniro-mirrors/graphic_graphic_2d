@@ -153,13 +153,6 @@ public:
     bool GetSecurityDisplay() const;
 
     /**
-     * @brief Set whether to forcibly close HDR.
-     *
-     * @param isForceCloseHdr true if HDR should be forcibly closed; false otherwise.
-     */
-    void SetForceCloseHdr(bool isForceCloseHdr);
-
-    /**
      * @brief Gets whether the screen mode is mirroring.
      *
      * @return true if the screen mode is mirroring; false otherwise.
@@ -199,7 +192,7 @@ protected:
 
 private:
     bool CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
-    void OnBoundsSizeChanged() const override;
+    void OnBoundsSizeChanged() override;
     void RegisterNodeMap() override;
     uint64_t screenId_;
     bool isSecurityDisplay_ = false;

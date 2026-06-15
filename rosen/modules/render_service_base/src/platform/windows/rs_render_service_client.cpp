@@ -318,6 +318,17 @@ void RSRenderServiceClient::SetScreenBacklight(const RsScreenBrightnessData& bri
 {
 }
 
+int32_t RSRenderServiceClient::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    return {};
+}
+
+int32_t RSRenderServiceClient::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+{
+    return {};
+}
+
 PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
 {
     return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
@@ -623,6 +634,11 @@ void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
 
 void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
+}
+
+int32_t RSRenderServiceClient::SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    return {};
 }
 
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()

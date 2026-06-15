@@ -47,7 +47,7 @@ namespace Rosen {
 const std::string OUT_STR1 =
     "DISPLAY_NODERS_NODESURFACE_NODECANVAS_NODEROOT_NODEPROXY_NODECANVAS_DRAWING_NODEEFFECT_NODEUNKNOWN_NODE";
 const std::string OUT_STR2 =
-    "| RS_NODE[0], instanceRootNodeId[0], SharedTransitionParam: [0 -> 0], [nodeGroup1], uifirstRootNodeId_: 1, "
+    "| RS_NODE[0], instanceRootNodeId[0], SharedTransitionParam: [0 -> 0], nodeGroup: 1, uifirstRootNodeId_: 1, "
     "Properties: Bounds[-inf -inf -inf -inf] Frame[-inf -inf -inf -inf]"
     ", hasDecoration: 0, hasClipRRect: 0, hasGeoTrans: 0"
     ", rrect[-inf -inf -inf -inf rx:0.0 ry:0.0]"
@@ -762,8 +762,9 @@ HWTEST_F(RSRenderNodeUnitTest, IsSubTreeNeedPrepareTest001, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeUnitTest, IsSubTreeNeedPrepareTest002, TestSize.Level1)
 {
-    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(0);
+    std::shared_ptr<RSSurfaceRenderNode> parent = std::make_shared<RSSurfaceRenderNode>(0);
     EXPECT_NE(parent, nullptr);
+    parent->InitRenderParams();
 
     system::SetParameter("persist.sys.graphic.SubTreePrepareCheckType.type", "1");
     auto checkType = RSSystemProperties::GetSubTreePrepareCheckType();

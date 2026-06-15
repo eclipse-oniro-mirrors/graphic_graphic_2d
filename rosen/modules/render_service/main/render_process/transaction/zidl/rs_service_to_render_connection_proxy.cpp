@@ -33,6 +33,11 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+#ifdef RS_ENABLE_TV_PQ_METADATA
+static constexpr uint32_t MAX_VIDEO_INFO_SIZE = 32; // video rate info max map size
+#endif
+}
 RSServiceToRenderConnectionProxy::RSServiceToRenderConnectionProxy(const sptr<IRemoteObject>& impl)
     : IRemoteProxy<RSIServiceToRenderConnection>(impl) {}
 
@@ -762,7 +767,7 @@ int32_t RSServiceToRenderConnectionProxy::SetBrightnessInfoChangeCallback(pid_t 
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    option.SetFlags(MessageOption::TF_ASYNC);
+    option.SetFlags(MessageOption::TF_SYNC);
     if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
         ROSEN_LOGE("%{public}s WriteInterfaceToken GetDescriptor err.", __func__);
         return RS_CONNECTION_ERROR;
@@ -771,9 +776,16 @@ int32_t RSServiceToRenderConnectionProxy::SetBrightnessInfoChangeCallback(pid_t 
         ROSEN_LOGE("%{public}s WriteInt32 failed.", __func__);
         return INVALID_ARGUMENTS;
     }
-    if (!data.WriteRemoteObject(callback->AsObject())) {
-        ROSEN_LOGE("%{public}s WriteRemoteObject callback->AsObject() err.", __func__);
-        return WRITE_PARCEL_ERR;
+    if (callback) {
+        if (!data.WriteBool(true) || !data.WriteRemoteObject(callback->AsObject())) {
+            ROSEN_LOGE("%{public}s: WriteBool or WriteObject failed.", __func__);
+            return WRITE_PARCEL_ERR;
+        }
+    } else {
+        if (!data.WriteBool(false)) {
+            ROSEN_LOGE("%{public}s: WriteBool failed.", __func__);
+            return WRITE_PARCEL_ERR;
+        }
     }
     uint32_t code = static_cast<uint32_t>(
         RSIServiceToRenderConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK);
@@ -781,7 +793,12 @@ int32_t RSServiceToRenderConnectionProxy::SetBrightnessInfoChangeCallback(pid_t 
     if (err != NO_ERROR) {
         return RS_CONNECTION_ERROR;
     }
-    return SUCCESS;
+    int32_t result = 0;
+    if (!reply.ReadInt32(result)) {
+        ROSEN_LOGE("%{public}s Read result failed", __func__);
+        return RS_CONNECTION_ERROR;
+    }
+    return result;
 }
 
 ErrCode RSServiceToRenderConnectionProxy::GetPixelMapByProcessId(
@@ -1026,6 +1043,45 @@ ErrCode RSServiceToRenderConnectionProxy::SetOverlayDisplayMode(int32_t mode)
         return ERR_INVALID_VALUE;
     }
     ROSEN_LOGI("%{public}s: mode:%{public}d", __func__, mode);
+    return ERR_OK;
+}
+#endif
+
+#ifdef RS_ENABLE_TV_PQ_METADATA
+ErrCode RSServiceToRenderConnectionProxy::SendVideoRateInfo(
+    const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    auto mapSize = videoRateInfo.size();
+    if (mapSize <= 0 || mapSize > MAX_VIDEO_INFO_SIZE) {
+        ROSEN_LOGE("SendVideoRateInfo: map size err.");
+        return ERR_INVALID_VALUE;
+    }
+ 
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("%{public}s: Write InterfaceToken val err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+ 
+    if (!data.WriteUint32(mapSize)) {
+        ROSEN_LOGE("%{public}s: Write UInt32 val err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+ 
+    for (auto const &it : videoRateInfo) {
+        if (!data.WriteString(it.first) || !data.WriteString(it.second)) {
+            ROSEN_LOGE("%{public}s: write key value failed!", __func__);
+            return ERR_INVALID_VALUE;
+        }
+    }
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_VIDEO_RATE_INFO);
+    int ret = Remote()->SendRequest(code, data, reply, option);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("%{public}s: SendRequest failed. err:%{public}d.", __func__, ret);
+        return ERR_INVALID_VALUE;
+    }
     return ERR_OK;
 }
 #endif
@@ -1801,16 +1857,8 @@ void RSServiceToRenderConnectionProxy::OnScreenBacklightChanged(const RsScreenBr
         ROSEN_LOGE("RSServiceToRenderConnectionProxy failed to get descriptor");
         return;
     }
-    if (!data.WriteUint64(brightnessData.screenId)) {
-        ROSEN_LOGE("RSServiceToRenderConnectionProxy::OnScreenBacklightChanged WriteUint64 screenId failed");
-        return;
-    }
-    if (!data.WriteUint32(brightnessData.level)) {
-        ROSEN_LOGE("RSServiceToRenderConnectionProxy::OnScreenBacklightChanged WriteUint32 level failed");
-        return;
-    }
-    if (!data.WriteFloat(brightnessData.brightnessPosition)) {
-        ROSEN_LOGE("RSServiceToRenderConnectionProxy::OnScreenBacklightChanged WriteFloat brightnessPosition failed");
+    if (!RSMarshallingHelper::Marshalling(data, brightnessData)) {
+        ROSEN_LOGE("RSServiceToRenderConnectionProxy::OnScreenBacklightChanged Marshalling failed");
         return;
     }
     uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_BACKLIGHT_LEVEL);

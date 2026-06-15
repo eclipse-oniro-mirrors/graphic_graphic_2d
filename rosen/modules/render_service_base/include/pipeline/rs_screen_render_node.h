@@ -52,8 +52,7 @@ public:
     explicit RSScreenRenderNode(
         NodeId id, ScreenId screenId, const std::weak_ptr<RSContext>& context = {});
     ~RSScreenRenderNode() override;
-    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
+    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID, NodeId firstLevelNodeId = INVALID_NODEID,
         NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
         NodeId logicalDisplayNodeId = INVALID_NODEID) override;
 
@@ -315,8 +314,6 @@ public:
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
 
-    void SetForceCloseHdr(bool isForceCloseHdr);
-
     bool GetForceCloseHdr() const;
 
     void SetHDRPresent(bool hdrPresent);
@@ -464,7 +461,7 @@ public:
 
     void CollectHdrStatus(NodeId id, HdrStatus hdrStatus);
 
-    const std::unordered_map<NodeId, HdrStatus>& GetDisplayHdrStatusMap() const;
+    const std::unordered_map<NodeId, uint32_t>& GetDisplayHdrStatusMap() const;
 
     void ResetDisplayHdrStatus();
 
@@ -547,6 +544,7 @@ protected:
     void OnSync() override;
 private:
     void InitRenderParams() override;
+    void CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus);
 
     bool hasChildCrossNode_ = false;
     bool isFirstVisitCrossNodeDisplay_ = false;
@@ -554,7 +552,6 @@ private:
     bool isMirroredScreen_ = false;
     bool hasMirroredScreenChanged_ = false;
     bool isSecurityDisplay_ = false;
-    bool isForceCloseHdr_ = false;
     bool isFirstFrameVirtualScreenInit_ = true;
     bool isFixVirtualBuffer10Bit_ = false;
     bool existHWCNode_ = false;
@@ -627,6 +624,7 @@ private:
     // Enable HWCompose
     RSHwcDisplayRecorder hwcDisplayRecorder_;
 
+    std::unordered_map<NodeId, uint32_t> displayHDRStatusMap_ = {};
     bool hasForceHwcHdrSurface_ = false;
 };
 } // namespace Rosen

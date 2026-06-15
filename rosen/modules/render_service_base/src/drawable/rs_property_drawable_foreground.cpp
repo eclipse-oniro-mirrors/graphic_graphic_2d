@@ -491,31 +491,65 @@ bool RSBorderDrawable::OnUpdate(const RSRenderNode& node)
     }
     // regenerate stagingDrawCmdList_
     RSPropertyDrawCmdListUpdater updater(0, 0, this);
+#ifdef USE_PRIMITIVE
+    stagingIsSDFBorder_ = IsSDFBorder(properties, border);
+#endif
     DrawBorder(properties, *updater.GetRecordingCanvas(), border, false);
     return true;
 }
+
+bool RSBorderDrawable::IsSDFBorder(const RSProperties& properties,
+    const std::shared_ptr<RSBorder>& border)
+{
+    return properties.GetSDFShape() && border->GetSDFShader() ? true : false;
+}
+ 
+#ifdef USE_PRIMITIVE
+void RSBorderDrawable::OnSync()
+{
+    if (!needSync_) {
+        return;
+    }
+    std::swap(drawCmdList_, stagingDrawCmdList_);
+    propertyDescription_ = stagingPropertyDescription_;
+    stagingPropertyDescription_.clear();
+    isSDFBorder_ = stagingIsSDFBorder_;
+    needSync_ = false;
+}
+#endif
 
 namespace {
 bool PreprocessBorderSDFShader(Drawing::Rect& rect, bool isOutline, std::shared_ptr<RSNGRenderShapeBase> shape,
     std::shared_ptr<RSNGRenderShaderBase> shader)
 {
     switch (shader->GetType()) {
-        case RSNGEffectType::BORDER_SDF_SHADER:
-            std::static_pointer_cast<RSNGRenderBorderSDFShader>(shader)->
-                Setter<BorderSDFShaderShapeRenderTag>(shape, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
-            std::static_pointer_cast<RSNGRenderBorderSDFShader>(shader)->
-                Setter<BorderSDFShaderIsOutlineRenderTag>(isOutline);
-            if (isOutline) {
-                float width = std::static_pointer_cast<RSNGRenderBorderSDFShader>(shader)->
-                    Getter<BorderSDFShaderWidthRenderTag>()->Get();
-                rect.MakeOutset(width, width);
-            }
+        case RSNGEffectType::BORDER_SDF_SHADER: {
+            auto borderSdfShader = std::static_pointer_cast<RSNGRenderBorderSDFShader>(shader);
+            borderSdfShader->Setter<BorderSDFShaderShapeRenderTag>(shape, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+            borderSdfShader->Setter<BorderSDFShaderIsOutlineRenderTag>(isOutline);
             return true;
+        }
+        case RSNGEffectType::BORDER_SDF_LG_COLOR: {
+            auto borderSdfLGColor = std::static_pointer_cast<RSNGRenderBorderSDFLGColor>(shader);
+            borderSdfLGColor->Setter<BorderSDFLGColorShapeRenderTag>(shape, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+            borderSdfLGColor->Setter<BorderSDFLGColorIsOutlineRenderTag>(isOutline);
+            return true;
+        }
         default:
             return false;
     }
 }
 }
+
+#ifdef USE_PRIMITIVE
+    bool RSBorderDrawable::UsePrimList() const
+    {
+        if (isSDFBorder_) {
+            return false;
+        }
+        return true;
+    }
+#endif
 
 void RSBorderDrawable::DrawBorderSDFShader(Drawing::Canvas& canvas, Drawing::Rect& rect, const bool& isOutline,
     std::shared_ptr<RSNGRenderShapeBase> shape, std::shared_ptr<RSNGRenderShaderBase> shader)
@@ -526,14 +560,17 @@ void RSBorderDrawable::DrawBorderSDFShader(Drawing::Canvas& canvas, Drawing::Rec
     }
     auto visualEffectContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
     shader->AppendToGEContainer(visualEffectContainer);
+    visualEffectContainer->SetGeometry(canvas.GetTotalMatrix(), rect, rect, rect.GetWidth(), rect.GetHeight());
+    auto sdfTransformRect = shape->GetTransformDrawRect();
+    auto drawRect = sdfTransformRect.IsEmpty() ? rect : RSPropertyDrawableUtils::Rect2DrawingRect(sdfTransformRect);
     auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
-    geRender->DrawShaderEffect(canvas, *visualEffectContainer, rect);
+    geRender->DrawShaderEffect(canvas, *visualEffectContainer, drawRect);
 }
 
 void RSBorderDrawable::DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas,
     const std::shared_ptr<RSBorder>& border, const bool& isOutline)
 {
-    if (properties.GetSDFShape() && border->GetSDFShader()) {
+    if (IsSDFBorder(properties, border)) {
         Drawing::Rect sdfShaderRect(0.f, 0.f, properties.GetFrameWidth(), properties.GetFrameHeight());
         RSBorderDrawable::DrawBorderSDFShader(canvas, sdfShaderRect, isOutline,
             properties.GetSDFShape(), border->GetSDFShader());
@@ -606,9 +643,35 @@ bool RSOutlineDrawable::OnUpdate(const RSRenderNode& node)
     }
     // regenerate stagingDrawCmdList_
     RSPropertyDrawCmdListUpdater updater(0, 0, this);
+#ifdef USE_PRIMITIVE
+    stagingIsSDFOutline_ = RSBorderDrawable::IsSDFBorder(properties, outline);
+#endif
     RSBorderDrawable::DrawBorder(properties, *updater.GetRecordingCanvas(), outline, true);
     return true;
 }
+
+#ifdef USE_PRIMITIVE
+void RSOutlineDrawable::OnSync()
+{
+    if (!needSync_) {
+        return;
+    }
+    std::swap(drawCmdList_, stagingDrawCmdList_);
+    propertyDescription_ = stagingPropertyDescription_;
+    stagingPropertyDescription_.clear();
+    isSDFOutline_ = stagingIsSDFOutline_;
+    needSync_ = false;
+}
+ 
+ 
+bool RSOutlineDrawable::UsePrimList() const
+{
+    if (isSDFOutline_) {
+        return false;
+    }
+    return true;
+}
+#endif
 
 RSDrawable::Ptr RSParticleDrawable::OnGenerate(const RSRenderNode& node)
 {

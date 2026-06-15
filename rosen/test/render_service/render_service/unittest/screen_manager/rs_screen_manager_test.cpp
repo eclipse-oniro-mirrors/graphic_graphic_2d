@@ -23,6 +23,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "rs_screen_manager.h"
 #include "rs_screen.h"
+#include "screen_manager/public/rs_screen_manager_agent.h"
 #include "hdi_output.h"
 #include "transaction/rs_interfaces.h"
 #include "mock_hdi_device.h"
@@ -537,6 +538,56 @@ HWTEST_F(RSScreenManagerTest, GetScreenBacklight_001, TestSize.Level1)
 
     screenManager_->RemoveVirtualScreen(id);
     sleep(1);
+}
+
+/*
+ * @tc.name: GetScreenVCPFeature_001
+ * @tc.desc: Test GetScreenVCPFeature
+ * @tc.type: FUNC
+ * @tc.require: issueI5ZK2I
+ */
+HWTEST_F(RSScreenManagerTest, GetScreenVCPFeature_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId id = 10;
+    screenManager_->screens_[id] = nullptr;
+
+    uint16_t currentValue = 0;
+    uint16_t maximumValue = 0;
+    int32_t errorCode = 0;
+    auto result = screenManager_->GetScreenVCPFeature(id, 0x10, currentValue, maximumValue, errorCode);
+    ASSERT_NE(result, 0);
+
+    auto rsScreen = std::make_shared<RSScreen>(id);
+    rsScreen->hdiScreen_ = nullptr;
+    screenManager_->screens_[id] = rsScreen;
+    result = screenManager_->GetScreenVCPFeature(id, 0x10, currentValue, maximumValue, errorCode);
+    ASSERT_NE(result, 0);
+    screenManager_->screens_[id] = nullptr;
+}
+
+/*
+ * @tc.name: SetScreenVCPFeature_001
+ * @tc.desc: Test SetScreenVCPFeature
+ * @tc.type: FUNC
+ * @tc.require: issueI5ZK2I
+ */
+HWTEST_F(RSScreenManagerTest, SetScreenVCPFeature_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    ScreenId id = 10;
+    screenManager_->screens_[id] = nullptr;
+
+    uint16_t currentValue = 0;
+    auto result = screenManager_->SetScreenVCPFeature(id, 0x10, currentValue);
+    ASSERT_NE(result, 0);
+
+    auto rsScreen = std::make_shared<RSScreen>(id);
+    rsScreen->hdiScreen_ = nullptr;
+    screenManager_->screens_[id] = rsScreen;
+    result = screenManager_->SetScreenVCPFeature(id, 0x10, currentValue);
+    ASSERT_NE(result, 0);
+    screenManager_->screens_[id] = nullptr;
 }
 
 /*
@@ -3548,6 +3599,171 @@ HWTEST_F(RSScreenManagerTest, AddVirtualScreenWhiteList002, TestSize.Level2)
 }
 
 /*
+ * @tc.name: OnScreenChangeCallbackChangedTest001
+ * @tc.desc: Test OnScreenChangeCallbackChanged - noScreenProcessed=true, noPhysicalScreen=true, empty screens
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnScreenChangeCallbackChangedTest001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->noScreenProcessed_ = true;
+    screenManager_->screens_.clear();
+    auto callbackMgr = std::make_unique<RSScreenCallbackManager>();
+    RSScreenPreprocessor preprocessor(*screenManager_, *callbackMgr, nullptr, false);
+    auto agentListener = sptr<RSScreenManagerAgentListener>::MakeSptr();
+    screenManager_->OnScreenChangeCallbackChanged(agentListener);
+}
+
+/*
+ * @tc.name: OnScreenChangeCallbackChangedTest002
+ * @tc.desc: Test OnScreenChangeCallbackChanged - noScreenProcessed=false, noPhysicalScreen=true (virtual only)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnScreenChangeCallbackChangedTest002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->noScreenProcessed_ = false;
+    screenManager_->screens_.clear();
+    auto callbackMgr = std::make_unique<RSScreenCallbackManager>();
+    RSScreenPreprocessor preprocessor(*screenManager_, *callbackMgr, nullptr, false);
+    auto agentListener = sptr<RSScreenManagerAgentListener>::MakeSptr();
+    auto virtualScreen = std::make_shared<RSScreen>(100);
+    virtualScreen->property_.SetIsVirtual(true);
+    screenManager_->screens_[100] = virtualScreen;
+    screenManager_->OnScreenChangeCallbackChanged(agentListener);
+}
+
+/*
+ * @tc.name: OnScreenChangeCallbackChangedTest003
+ * @tc.desc: Test OnScreenChangeCallbackChanged - noScreenProcessed=true, noPhysicalScreen=false (physical present)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnScreenChangeCallbackChangedTest003, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->noScreenProcessed_ = true;
+    screenManager_->screens_.clear();
+    auto callbackMgr = std::make_unique<RSScreenCallbackManager>();
+    RSScreenPreprocessor preprocessor(*screenManager_, *callbackMgr, nullptr, false);
+    auto agentListener = sptr<RSScreenManagerAgentListener>::MakeSptr();
+    auto physicalScreen = std::make_shared<RSScreen>(100);
+    physicalScreen->property_.SetIsVirtual(false);
+    screenManager_->screens_[100] = physicalScreen;
+    screenManager_->OnScreenChangeCallbackChanged(agentListener);
+}
+
+/*
+ * @tc.name: OnScreenChangeCallbackChangedTest004
+ * @tc.desc: Test OnScreenChangeCallbackChanged - noScreenProcessed=false, noPhysicalScreen=false (physical present)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnScreenChangeCallbackChangedTest004, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->noScreenProcessed_ = false;
+    screenManager_->screens_.clear();
+    auto callbackMgr = std::make_unique<RSScreenCallbackManager>();
+    RSScreenPreprocessor preprocessor(*screenManager_, *callbackMgr, nullptr, false);
+    auto agentListener = sptr<RSScreenManagerAgentListener>::MakeSptr();
+    auto physicalScreen = std::make_shared<RSScreen>(100);
+    physicalScreen->property_.SetIsVirtual(false);
+    screenManager_->screens_[100] = physicalScreen;
+    screenManager_->OnScreenChangeCallbackChanged(agentListener);
+}
+
+/*
+ * @tc.name: OnScreenChangeCallbackChangedTest005
+ * @tc.desc: Test OnScreenChangeCallbackChanged - nullptr screen in map, both flags true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, OnScreenChangeCallbackChangedTest005, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->noScreenProcessed_ = true;
+    screenManager_->screens_.clear();
+    auto callbackMgr = std::make_unique<RSScreenCallbackManager>();
+    RSScreenPreprocessor preprocessor(*screenManager_, *callbackMgr, nullptr, false);
+    auto agentListener = sptr<RSScreenManagerAgentListener>::MakeSptr();
+    screenManager_->screens_[100] = nullptr;
+    screenManager_->OnScreenChangeCallbackChanged(agentListener);
+}
+
+/*
+ * @tc.name: HasPhysicalScreen_001
+ * @tc.desc: Test HasPhysicalScreen - empty screens map
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, HasPhysicalScreen_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->screens_.clear();
+    EXPECT_FALSE(screenManager_->HasPhysicalScreen());
+}
+
+/*
+ * @tc.name: HasPhysicalScreen_002
+ * @tc.desc: Test HasPhysicalScreen - all screens are virtual
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, HasPhysicalScreen_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->screens_.clear();
+    auto virtualScreen = std::make_shared<RSScreen>(100);
+    virtualScreen->property_.SetIsVirtual(true);
+    screenManager_->screens_[100] = virtualScreen;
+    EXPECT_FALSE(screenManager_->HasPhysicalScreen());
+}
+
+/*
+ * @tc.name: HasPhysicalScreen_003
+ * @tc.desc: Test HasPhysicalScreen - physical screen exists
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, HasPhysicalScreen_003, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->screens_.clear();
+    auto physicalScreen = std::make_shared<RSScreen>(100);
+    physicalScreen->property_.SetIsVirtual(false);
+    screenManager_->screens_[100] = physicalScreen;
+    EXPECT_TRUE(screenManager_->HasPhysicalScreen());
+}
+
+/*
+ * @tc.name: HasPhysicalScreen_004
+ * @tc.desc: Test HasPhysicalScreen - emixed physical and virtual screens
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, HasPhysicalScreen_004, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->screens_.clear();
+    auto physicalScreen = std::make_shared<RSScreen>(100);
+    physicalScreen->property_.SetIsVirtual(false);
+    auto virtualScreen = std::make_shared<RSScreen>(200);
+    virtualScreen->property_.SetIsVirtual(true);
+    screenManager_->screens_[100] = physicalScreen;
+    screenManager_->screens_[200] = virtualScreen;
+    EXPECT_TRUE(screenManager_->HasPhysicalScreen());
+}
+
+
+/*
+ * @tc.name: HasPhysicalScreen_005
+ * @tc.desc: Test HasPhysicalScreen - nullptr screen in map
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, HasPhysicalScreen_005, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, screenManager_);
+    screenManager_->screens_.clear();
+    screenManager_->screens_[100] = nullptr;
+    EXPECT_FALSE(screenManager_->HasPhysicalScreen());
+    screenManager_->screens_.clear();
+}
+
+/*
  * @tc.name: RemoveVirtualScreenWhiteList001
  * @tc.desc: check if whitelist change after RemoveVirtualScreenWhiteList
  * @tc.type: FUNC
@@ -3697,5 +3913,298 @@ HWTEST_F(RSScreenManagerTest, OnProcessDisconnectedTest007, TestSize.Level2)
     screens.push_back({virtualScreenId, nullptr});
     screenManager_->OnProcessDisconnected(screens);
     usleep(SLEEP_TIME_US);
+}
+
+/**
+ * @tc.name: CreateVirtualScreen_DuplicateSurface
+ * @tc.desc: Test CreateVirtualScreen returns INVALID when surface is already used by another screen
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, CreateVirtualScreen_DuplicateSurface, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    uint32_t width = 480;
+    uint32_t height = 320;
+
+    auto csurface = IConsumerSurface::Create("DuplicateSurfaceTest");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    ASSERT_NE(producer, nullptr);
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    auto id1 = screenManager_->CreateVirtualScreen("screen1", width, height, psurface, INVALID_SCREEN_ID, 0, {});
+    ASSERT_NE(id1, INVALID_SCREEN_ID);
+
+    auto id2 = screenManager_->CreateVirtualScreen("screen2", width, height, psurface, INVALID_SCREEN_ID, 0, {});
+    EXPECT_EQ(id2, INVALID_SCREEN_ID);
+
+    screenManager_->RemoveVirtualScreen(id1);
+    sleep(1);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface_EmptyConfigs
+ * @tc.desc: Test AddVirtualScreenSurface with empty surfaceConfigs
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenSurface_EmptyConfigs, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto virtualId = screenManager_->
+        CreateVirtualScreen("virtual_add_empty", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(virtualId, INVALID_SCREEN_ID);
+
+    std::vector<SurfaceRegionConfig> emptyConfigs;
+    auto res = screenManager_->AddVirtualScreenSurface(virtualId, emptyConfigs);
+    EXPECT_EQ(res, INVALID_ARGUMENTS);
+
+    screenManager_->RemoveVirtualScreen(virtualId);
+    sleep(1);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface_ScreenNotFound
+ * @tc.desc: Test AddVirtualScreenSurface with non-existent screen id
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenSurface_ScreenNotFound, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("AddSurfaceNotFound");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    std::vector<SurfaceRegionConfig> configs = {
+        {psurface, RectI{0, 0, static_cast<int32_t>(VIRTUAL_SCREEN_WIDTH), static_cast<int32_t>(VIRTUAL_SCREEN_HEIGHT)}}
+    };
+    auto res = screenManager_->AddVirtualScreenSurface(99999, configs);
+    EXPECT_EQ(res, SCREEN_NOT_FOUND);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface_NotVirtual
+ * @tc.desc: Test AddVirtualScreenSurface with physical screen id
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenSurface_NotVirtual, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("AddSurfaceNotVirtual");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    std::vector<SurfaceRegionConfig> configs = {
+        {psurface, RectI{0, 0, static_cast<int32_t>(VIRTUAL_SCREEN_WIDTH), static_cast<int32_t>(VIRTUAL_SCREEN_HEIGHT)}}
+    };
+    auto res = screenManager_->AddVirtualScreenSurface(0, configs);
+    EXPECT_EQ(res, INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface_AllNullSurfaces
+ * @tc.desc: Test AddVirtualScreenSurface where all config surfaces are null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenSurface_AllNullSurfaces, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto virtualId = screenManager_->
+        CreateVirtualScreen("virtual_add_null", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(virtualId, INVALID_SCREEN_ID);
+
+    std::vector<SurfaceRegionConfig> configs = {
+        {nullptr, RectI{0, 0, static_cast<int32_t>(VIRTUAL_SCREEN_WIDTH), static_cast<int32_t>(VIRTUAL_SCREEN_HEIGHT)}}
+    };
+    auto res = screenManager_->AddVirtualScreenSurface(virtualId, configs);
+    EXPECT_EQ(res, INVALID_ARGUMENTS);
+
+    screenManager_->RemoveVirtualScreen(virtualId);
+    sleep(1);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface_DuplicateSurface
+ * @tc.desc: Test AddVirtualScreenSurface with surface already used by another screen
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenSurface_DuplicateSurface, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("AddSurfaceDup");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    auto id1 = screenManager_->
+        CreateVirtualScreen("virtual_dup1", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, psurface);
+    ASSERT_NE(id1, INVALID_SCREEN_ID);
+    auto id2 = screenManager_->
+        CreateVirtualScreen("virtual_dup2", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(id2, INVALID_SCREEN_ID);
+
+    std::vector<SurfaceRegionConfig> configs = {
+        {psurface, RectI{0, 0, static_cast<int32_t>(VIRTUAL_SCREEN_WIDTH), static_cast<int32_t>(VIRTUAL_SCREEN_HEIGHT)}}
+    };
+    auto res = screenManager_->AddVirtualScreenSurface(id2, configs);
+    EXPECT_EQ(res, SURFACE_NOT_UNIQUE);
+
+    screenManager_->RemoveVirtualScreen(id1);
+    screenManager_->RemoveVirtualScreen(id2);
+    sleep(1);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface_Success
+ * @tc.desc: Test AddVirtualScreenSurface with valid unique surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, AddVirtualScreenSurface_Success, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto virtualId = screenManager_->
+        CreateVirtualScreen("virtual_add_ok", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(virtualId, INVALID_SCREEN_ID);
+
+    auto csurface = IConsumerSurface::Create("AddSurfaceOK");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    std::vector<SurfaceRegionConfig> configs = {
+        {psurface, RectI{0, 0, static_cast<int32_t>(VIRTUAL_SCREEN_WIDTH), static_cast<int32_t>(VIRTUAL_SCREEN_HEIGHT)}}
+    };
+    auto res = screenManager_->AddVirtualScreenSurface(virtualId, configs);
+    EXPECT_EQ(res, SUCCESS);
+
+    screenManager_->RemoveVirtualScreen(virtualId);
+    sleep(1);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface_EmptySurfaces
+ * @tc.desc: Test RemoveVirtualScreenSurface with empty surfaces vector
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenSurface_EmptySurfaces, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto virtualId = screenManager_->
+        CreateVirtualScreen("virtual_rm_empty", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, nullptr);
+    ASSERT_NE(virtualId, INVALID_SCREEN_ID);
+
+    std::vector<sptr<Surface>> emptySurfaces;
+    auto res = screenManager_->RemoveVirtualScreenSurface(virtualId, emptySurfaces);
+    EXPECT_EQ(res, INVALID_ARGUMENTS);
+
+    screenManager_->RemoveVirtualScreen(virtualId);
+    sleep(1);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface_ScreenNotFound
+ * @tc.desc: Test RemoveVirtualScreenSurface with non-existent screen id
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenSurface_ScreenNotFound, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("RmSurfaceNotFound");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    std::vector<sptr<Surface>> surfaces = {psurface};
+    auto res = screenManager_->RemoveVirtualScreenSurface(99999, surfaces);
+    EXPECT_EQ(res, SCREEN_NOT_FOUND);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface_NotVirtual
+ * @tc.desc: Test RemoveVirtualScreenSurface with physical screen id
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenSurface_NotVirtual, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("RmSurfaceNotVirtual");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    std::vector<sptr<Surface>> surfaces = {psurface};
+    auto res = screenManager_->RemoveVirtualScreenSurface(0, surfaces);
+    EXPECT_EQ(res, INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface_Success
+ * @tc.desc: Test RemoveVirtualScreenSurface with valid surfaces including null filtering
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, RemoveVirtualScreenSurface_Success, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("RmSurfaceOK");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    auto virtualId = screenManager_->
+        CreateVirtualScreen("virtual_rm_ok", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, psurface);
+    ASSERT_NE(virtualId, INVALID_SCREEN_ID);
+
+    std::vector<sptr<Surface>> surfaces = {psurface, nullptr};
+    auto res = screenManager_->RemoveVirtualScreenSurface(virtualId, surfaces);
+    EXPECT_EQ(res, SUCCESS);
+
+    screenManager_->RemoveVirtualScreen(virtualId);
+    sleep(1);
+}
+
+/**
+ * @tc.name: CollectVirtualScreenSurfaceIds_NullSurfaceInConfigs
+ * @tc.desc: Test CollectVirtualScreenSurfaceIds skips null surface entries in multi-surface configs
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSScreenManagerTest, CollectVirtualScreenSurfaceIds_NullSurfaceInConfigs, TestSize.Level2)
+{
+    ASSERT_NE(screenManager_, nullptr);
+    auto csurface = IConsumerSurface::Create("CollectNullSurfaceTest");
+    ASSERT_NE(csurface, nullptr);
+    auto producer = csurface->GetProducer();
+    auto psurface = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurface, nullptr);
+
+    auto virtualId = screenManager_->
+        CreateVirtualScreen("virtual_collect", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, psurface);
+    ASSERT_NE(virtualId, INVALID_SCREEN_ID);
+
+    auto screen = screenManager_->GetScreen(virtualId);
+    ASSERT_NE(screen, nullptr);
+    screen->AddSurfaceConfigs({{nullptr, RectI{0, 0, 100, 100}}});
+
+    auto csurface2 = IConsumerSurface::Create("CollectNullSurfaceTest2");
+    ASSERT_NE(csurface2, nullptr);
+    auto producer2 = csurface2->GetProducer();
+    auto psurface2 = Surface::CreateSurfaceAsProducer(producer2);
+    ASSERT_NE(psurface2, nullptr);
+
+    auto res = screenManager_->CreateVirtualScreen(
+        "virtual_collect2", VIRTUAL_SCREEN_WIDTH, VIRTUAL_SCREEN_HEIGHT, psurface2, INVALID_SCREEN_ID, 0, {});
+    EXPECT_NE(res, INVALID_SCREEN_ID);
+
+    screenManager_->RemoveVirtualScreen(virtualId);
+    screenManager_->RemoveVirtualScreen(res);
+    sleep(1);
 }
 } // namespace OHOS::Rosen

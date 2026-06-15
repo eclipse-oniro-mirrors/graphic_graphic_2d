@@ -135,7 +135,11 @@ private:
     void ForceRefreshOneFrameWithNextVSync() override;
 
     int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) override;
-    
+
+    // Multi-surface virtual screen: dynamic surface management
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs) override;
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces) override;
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) override;
 
     void RemoveVirtualScreen(ScreenId id) override;
@@ -213,6 +217,11 @@ private:
     ErrCode GetScreenBacklight(uint64_t id, int32_t& level) override;
 
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData) override;
+
+    ErrCode GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) override;
+
+    ErrCode SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue) override;
 
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) override;
 
@@ -383,6 +392,8 @@ private:
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     ErrCode SetOverlayDisplayMode(int32_t mode) override;
 #endif
+
+    ErrCode SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo) override;
 
     ErrCode NotifyPageName(const std::string& packageName, const std::string& pageName, bool isEnter) override;
 

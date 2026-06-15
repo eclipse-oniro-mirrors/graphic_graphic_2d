@@ -34,6 +34,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "transaction/rs_ashmem_helper.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "render/rs_typeface_cache.h"
 #include "rs_trace.h"
@@ -48,7 +49,9 @@ constexpr size_t MAX_OBJECTNUM = 512;
 constexpr size_t MAX_DATA_SIZE = 1024 * 1024; // 1MB
 static constexpr int MAX_SECURITY_EXEMPTION_LIST_NUMBER = 1024; // securityExemptionList size not exceed 1024
 const uint32_t MAX_VOTER_SIZE = 100;
+constexpr uint32_t MAX_SURFACE_REGION_CONFIG_COUNT = 16;
 constexpr uint32_t MAX_PID_SIZE_NUMBER = 100000;
+static constexpr uint32_t MAX_VIDEO_INFO_SIZE = 32; // video rate info max map size
 #ifdef RES_SCHED_ENABLE
 const uint32_t RS_IPC_QOS_LEVEL = 7;
 constexpr const char* RS_BUNDLE_NAME = "client_to_service";
@@ -58,11 +61,13 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_ACTIVE_SCREEN_ID),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_ALL_SCREEN_IDS),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::CREATE_VIRTUAL_SCREEN),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_SURFACE),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_SURFACE),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_ROG_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_ROG_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_PHYSICAL_SCREEN_RESOLUTION),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_RESOLUTION),
-    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_SURFACE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_BLACKLIST),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIRTUAL_SCREEN_TYPE_BLACKLIST),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_BLACKLIST),
@@ -75,6 +80,8 @@ static constexpr std::array descriptorCheckList = {
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_DUAL_SCREEN_STATE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_PANEL_POWER_STATUS),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_VCP_FEATURE),
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_VCP_FEATURE),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_CHANGE_CALLBACK),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_SWITCHING_NOTIFY_CALLBACK),
@@ -202,6 +209,7 @@ static constexpr std::array descriptorCheckList = {
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_OVERLAY_DISPLAY_MODE),
 #endif
+    static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIDEO_RATE_INFO),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::NOTIFY_PAGE_NAME),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_BEHIND_WINDOW_FILTER_ENABLED),
     static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BEHIND_WINDOW_FILTER_ENABLED),
@@ -465,6 +473,101 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             ScreenId id = CreateVirtualScreen(name, width, height, surface, associatedScreenId, flags, whiteList);
             if (!reply.WriteUint64(id)) {
                 RS_LOGE("RSClientToServiceConnectionStub::CREATE_VIRTUAL_SCREEN Write id failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_SURFACE): {
+            ScreenId id{INVALID_SCREEN_ID};
+            if (!data.ReadUint64(id)) {
+                RS_LOGE("RSClientToServiceConnectionStub::ADD_VIRTUAL_SCREEN_SURFACE read id failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+
+            uint32_t configCount{0};
+            if (!data.ReadUint32(configCount)) {
+                RS_LOGE("RSClientToServiceConnectionStub::ADD_VIRTUAL_SCREEN_SURFACE read count failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (configCount > MAX_SURFACE_REGION_CONFIG_COUNT) {
+                RS_LOGE("RSClientToServiceConnectionStub::ADD_VIRTUAL_SCREEN_SURFACE configCount exceeds limit!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+
+            std::vector<SurfaceRegionConfig> surfaceConfigs;
+            surfaceConfigs.reserve(configCount);
+            bool readFailed = false;
+            for (uint32_t i = 0; i < configCount; i++) {
+                SurfaceRegionConfig config;
+                auto remoteObject = data.ReadRemoteObject();
+                if (remoteObject != nullptr) {
+                    auto bufferProducer = iface_cast<IBufferProducer>(remoteObject);
+                    config.surface = Surface::CreateSurfaceAsProducer(bufferProducer);
+                }
+                if (!data.ReadInt32(config.region.left_) || !data.ReadInt32(config.region.top_) ||
+                    !data.ReadInt32(config.region.width_) || !data.ReadInt32(config.region.height_)) {
+                    RS_LOGE("RSClientToServiceConnectionStub::ADD_VIRTUAL_SCREEN_SURFACE read region failed!");
+                    ret = ERR_INVALID_DATA;
+                    readFailed = true;
+                    break;
+                }
+                surfaceConfigs.push_back(std::move(config));
+            }
+            if (readFailed) {
+                break;
+            }
+
+            int32_t status = AddVirtualScreenSurface(id, surfaceConfigs);
+            if (!reply.WriteInt32(status)) {
+                RS_LOGE("RSClientToServiceConnectionStub::ADD_VIRTUAL_SCREEN_SURFACE Write status failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_SURFACE): {
+            ScreenId id{INVALID_SCREEN_ID};
+            if (!data.ReadUint64(id)) {
+                RS_LOGE("RSClientToServiceConnectionStub::REMOVE_VIRTUAL_SCREEN_SURFACE read id failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+
+            uint32_t surfaceCount = 0;
+            if (!data.ReadUint32(surfaceCount)) {
+                RS_LOGE("RSClientToServiceConnectionStub::REMOVE_VIRTUAL_SCREEN_SURFACE read surfaceCount failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (surfaceCount > MAX_SURFACE_REGION_CONFIG_COUNT) {
+                RS_LOGE("RSClientToServiceConnectionStub::REMOVE_VIRTUAL_SCREEN_SURFACE surfaceCount exceeds limit!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+
+            std::vector<sptr<Surface>> surfaces;
+            surfaces.reserve(surfaceCount);
+            bool readFailed = false;
+            for (uint32_t i = 0; i < surfaceCount; ++i) {
+                auto remoteObject = data.ReadRemoteObject();
+                if (remoteObject == nullptr) {
+                    RS_LOGE("RSClientToServiceConnectionStub::REMOVE_VIRTUAL_SCREEN_SURFACE read surface failed!");
+                    ret = ERR_NULL_OBJECT;
+                    readFailed = true;
+                    break;
+                }
+                auto bufferProducer = iface_cast<IBufferProducer>(remoteObject);
+                surfaces.push_back(Surface::CreateSurfaceAsProducer(bufferProducer));
+            }
+            if (readFailed) {
+                break;
+            }
+
+            int32_t status = RemoveVirtualScreenSurface(id, surfaces);
+            if (!reply.WriteInt32(status)) {
+                RS_LOGE("RSClientToServiceConnectionStub::REMOVE_VIRTUAL_SCREEN_SURFACE Write status failed!");
                 ret = ERR_INVALID_REPLY;
             }
             break;
@@ -1343,13 +1446,46 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
         }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT): {
             RsScreenBrightnessData brightnessData;
-            if (!data.ReadUint64(brightnessData.screenId) || !data.ReadUint32(brightnessData.level) ||
-                !data.ReadFloat(brightnessData.brightnessPosition)) {
-                ROSEN_LOGE("RSClientToServiceConnectionStub::SET_SCREEN_BACK_LIGHT Read parcel failed!");
+            if (!RSMarshallingHelper::Unmarshalling(data, brightnessData)) {
+                ROSEN_LOGE("RSClientToServiceConnectionStub::SET_SCREEN_BACK_LIGHT Unmarshalling failed!");
                 ret = ERR_INVALID_DATA;
                 break;
             }
             SetScreenBacklight(brightnessData);
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_VCP_FEATURE): {
+            ScreenId id{INVALID_SCREEN_ID};
+            uint8_t vcpCode{0};
+            if (!data.ReadUint64(id) || !data.ReadUint8(vcpCode)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_SCREEN_VCP_FEATURE Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            uint16_t currentValue{0};
+            uint16_t maximumValue{0};
+            int32_t errorCode{0};
+            if (GetScreenVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode) != ERR_OK ||
+                !reply.WriteUint16(currentValue) || !reply.WriteUint16(maximumValue) ||
+                !reply.WriteInt32(errorCode)) {
+                RS_LOGE("RSClientToServiceConnectionStub::GET_SCREEN_VCP_FEATURE Write failed!");
+                ret = ERR_INVALID_REPLY;
+            }
+            break;
+        }
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_VCP_FEATURE): {
+            ScreenId id{INVALID_SCREEN_ID};
+            uint8_t vcpCode{0};
+            uint16_t currentValue{0};
+            if (!data.ReadUint64(id) || !data.ReadUint8(vcpCode) || !data.ReadUint16(currentValue)) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_SCREEN_VCP_FEATURE Read parcel failed!");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (SetScreenVCPFeature(id, vcpCode, currentValue) != ERR_OK) {
+                RS_LOGE("RSClientToServiceConnectionStub::SET_SCREEN_VCP_FEATURE failed!");
+                ret = ERR_INVALID_REPLY;
+            }
             break;
         }
         case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_GAMUTS): {
@@ -2971,6 +3107,35 @@ int RSClientToServiceConnectionStub::OnRemoteRequest(
             break;
         }
 #endif
+        case static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIDEO_RATE_INFO) : {
+            uint32_t mapSize;
+            if (!data.ReadUint32(mapSize)) {
+                RS_LOGE("read map size failed");
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            if (mapSize <= 0 || mapSize > MAX_VIDEO_INFO_SIZE) {
+                ret = ERR_INVALID_DATA;
+                break;
+            }
+            std::unordered_map<std::string, std::string> videoRateInfo;
+            bool shouldBreak = false;
+            for (uint32_t i = 0; i < mapSize; i++) {
+                std::string key;
+                std::string value;
+                if (!data.ReadString(key) || !data.ReadString(value)) {
+                    shouldBreak = true;
+                    ret = ERR_INVALID_DATA;
+                    break;
+                }
+                videoRateInfo[key] = value;
+            }
+            if (shouldBreak) {
+                break;
+            }
+            SendVideoRateInfo(videoRateInfo) != ERR_OK ? (ret = ERR_INVALID_REPLY) : 0;
+            break;
+        }
         case static_cast<uint32_t>(
             RSIClientToServiceConnectionInterfaceCode::REGISTER_SELF_DRAWING_NODE_RECT_CHANGE_CALLBACK): {
             uint32_t size;

@@ -1447,20 +1447,6 @@ HWTEST_F(RSSurfaceNodeTest, AttachToDisplay, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetAnimationFinished Test
- * @tc.desc: SetAnimationFinished
- * @tc.type: FUNC
- * @tc.require:SR000HSUII
- */
-HWTEST_F(RSSurfaceNodeTest, SetAnimationFinished, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    surfaceNode->SetAnimationFinished();
-    ASSERT_FALSE(surfaceNode->isSkipLayer_);
-}
-
-/**
  * @tc.name: SetForceHardwareAndFixRotation Test
  * @tc.desc: SetForceHardwareAndFixRotation and SetTextureExport
  * @tc.type: FUNC
@@ -1525,7 +1511,7 @@ HWTEST_F(RSSurfaceNodeTest, SetClonedNodeInfo, TestSize.Level1)
 
 /**
  * @tc.name: SetForeground Test
- * @tc.desc: SetForeground and SetForceUIFirst and SetAncoFlags and SetHDRPresent
+ * @tc.desc: SetForeground and SetForceUIFirst and SetAncoFlags
  * @tc.type: FUNC
  * @tc.require:issueI9MWJR
  */
@@ -1537,7 +1523,6 @@ HWTEST_F(RSSurfaceNodeTest, SetForeground, TestSize.Level1)
     surfaceNode->SetForeground(true);
     surfaceNode->SetForceUIFirst(true);
     surfaceNode->SetAncoFlags(1);
-    surfaceNode->SetHDRPresent(true, 0);
     ASSERT_NE(RSTransactionProxy::GetInstance()->implicitRemoteTransactionData_, nullptr);
 }
 
@@ -1718,6 +1703,22 @@ HWTEST_F(RSSurfaceNodeTest, OnBoundsSizeChanged, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->OnBoundsSizeChanged();
     ASSERT_NE(surfaceNode, nullptr);
+}
+
+/**
+ * @tc.name: OnAlphaValueChanged Test
+ * @tc.desc: OnAlphaValueChanged
+ * @tc.type: FUNC
+ * @tc.require:SR000HSUII
+ */
+HWTEST_F(RSSurfaceNodeTest, OnAlphaValueChanged, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetAlphaChangedCallback([](float alpha) {});
+    surfaceNode->SetAlpha(0.1f);
+    surfaceNode->OnAlphaValueChanged();
 }
 
 /**
@@ -2330,5 +2331,47 @@ HWTEST_F(RSSurfaceNodeTest, DumpSubClass004, TestSize.Level1)
     EXPECT_FALSE(out.empty());
     EXPECT_TRUE(out.find("isShadowNode[true") != std::string::npos);
     EXPECT_TRUE(out.find("existsDuplicateModifier[true") != std::string::npos);
+}
+
+/**
+ * @tc.name: SendDataToRender001
+ * @tc.desc: Test SendDataToRender returns false when rsUIContext is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::DEFAULT, true, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SendDataToRender002
+ * @tc.desc: Test SendDataToRender returns false when rsUIContext is nullptr with isWindow=false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::DEFAULT, false, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SendDataToRender003
+ * @tc.desc: Test SendDataToRender returns false with LEASH_WINDOW_NODE type and rsUIContext nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::LEASH_WINDOW_NODE, true, false);
+    EXPECT_FALSE(result);
 }
 } // namespace OHOS::Rosen

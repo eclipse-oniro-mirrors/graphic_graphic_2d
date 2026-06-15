@@ -40,6 +40,7 @@ static constexpr uint32_t EDID_DATA_MAX_SIZE = 64 * 1024;
 static constexpr int MAX_VOTER_SIZE = 100; // SetWindowExpectedRefreshRate map size not exceed 100
 static constexpr int ZERO = 0; // empty map size
 #endif
+static constexpr uint32_t MAX_VIDEO_INFO_SIZE = 32; // video rate info max map size
 }
 
 RSClientToServiceConnectionProxy::RSClientToServiceConnectionProxy(const sptr<IRemoteObject>& impl)
@@ -784,6 +785,10 @@ int32_t RSClientToServiceConnectionProxy::SetVirtualScreenSurface(ScreenId id, s
         return WRITE_PARCEL_ERR;
     }
     auto producer = surface->GetProducer();
+    if (producer == nullptr) {
+        ROSEN_LOGE("SetVirtualScreenSurface: producer is nullptr!");
+        return WRITE_PARCEL_ERR;
+    }
     if (!data.WriteRemoteObject(producer->AsObject())) {
         ROSEN_LOGE("SetVirtualScreenSurface: WriteRemoteObject producer->AsObject() err.");
         return WRITE_PARCEL_ERR;
@@ -819,6 +824,125 @@ void RSClientToServiceConnectionProxy::RemoveVirtualScreen(ScreenId id)
         ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreen: Send Request err.");
         return;
     }
+}
+
+int32_t RSClientToServiceConnectionProxy::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("AddVirtualScreenSurface: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("AddVirtualScreenSurface: WriteUint64 id err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    // Filter valid configs
+    std::vector<SurfaceRegionConfig> validConfigs;
+    validConfigs.reserve(surfaceConfigs.size());
+    for (const auto& config : surfaceConfigs) {
+        if (config.surface != nullptr && config.surface->GetProducer() != nullptr) {
+            validConfigs.push_back(config);
+        }
+    }
+
+    if (!data.WriteUint32(static_cast<uint32_t>(validConfigs.size()))) {
+        ROSEN_LOGE("AddVirtualScreenSurface: WriteUint32 configCount err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    for (const auto& config : validConfigs) {
+        auto producer = config.surface->GetProducer();
+        if (producer == nullptr) {
+            ROSEN_LOGE("AddVirtualScreenSurface: producer is nullptr!");
+            return WRITE_PARCEL_ERR;
+        }
+        if (!data.WriteRemoteObject(producer->AsObject())) {
+            ROSEN_LOGE("AddVirtualScreenSurface: WriteRemoteObject producer err.");
+            return WRITE_PARCEL_ERR;
+        }
+        if (!data.WriteInt32(config.region.left_) || !data.WriteInt32(config.region.top_) ||
+            !data.WriteInt32(config.region.width_) || !data.WriteInt32(config.region.height_)) {
+            ROSEN_LOGE("AddVirtualScreenSurface: WriteInt32 region err.");
+            return WRITE_PARCEL_ERR;
+        }
+    }
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::ADD_VIRTUAL_SCREEN_SURFACE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::AddVirtualScreenSurface: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+
+    int32_t status = reply.ReadInt32();
+    return status;
+}
+
+int32_t RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface(
+    ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    if (surfaces.empty()) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface: surfaces is empty!");
+        return INVALID_ARGUMENTS;
+    }
+    for (const auto& surface : surfaces) {
+        if (surface == nullptr) {
+            ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface: surface is nullptr!");
+            return INVALID_ARGUMENTS;
+        }
+    }
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("RemoveVirtualScreenSurface: WriteInterfaceToken GetDescriptor err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("RemoveVirtualScreenSurface: WriteUint64 id err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    if (!data.WriteUint32(static_cast<uint32_t>(surfaces.size()))) {
+        ROSEN_LOGE("RemoveVirtualScreenSurface: WriteUint32 surfaceCount err.");
+        return WRITE_PARCEL_ERR;
+    }
+
+    for (const auto& surface : surfaces) {
+        auto producer = surface->GetProducer();
+        if (producer == nullptr) {
+            ROSEN_LOGE("RemoveVirtualScreenSurface: producer is nullptr!");
+            return WRITE_PARCEL_ERR;
+        }
+        if (!data.WriteRemoteObject(producer->AsObject())) {
+            ROSEN_LOGE("RemoveVirtualScreenSurface: WriteRemoteObject producer err.");
+            return WRITE_PARCEL_ERR;
+        }
+    }
+
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::REMOVE_VIRTUAL_SCREEN_SURFACE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::RemoveVirtualScreenSurface: Send Request err.");
+        return RS_CONNECTION_ERROR;
+    }
+
+    int32_t status = reply.ReadInt32();
+    return status;
 }
 
 int32_t RSClientToServiceConnectionProxy::SetScreenChangeCallback(sptr<RSIScreenChangeCallback> callback)
@@ -875,9 +999,10 @@ sptr<IRemoteObject> RSClientToServiceConnectionProxy::GetConnectToRenderToken(Sc
     }
     sptr<IRemoteObject> rObj = reply.ReadRemoteObject();
     if (rObj == nullptr) {
+        ROSEN_LOGE("RSClientToServiceConnectionProxy::GetConnectToRenderToken clientToService is nullptr");
         return nullptr;
     }
-    return nullptr;
+    return rObj;
 }
 
 int32_t RSClientToServiceConnectionProxy::SetScreenSwitchingNotifyCallback(
@@ -2032,16 +2157,8 @@ void RSClientToServiceConnectionProxy::SetScreenBacklight(const RsScreenBrightne
         return;
     }
     option.SetFlags(MessageOption::TF_SYNC);
-    if (!data.WriteUint64(brightnessData.screenId)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteUint64 screenId err.");
-        return;
-    }
-    if (!data.WriteUint32(brightnessData.level)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteUint32 level err.");
-        return;
-    }
-    if (!data.WriteFloat(brightnessData.brightnessPosition)) {
-        ROSEN_LOGE("SetScreenBacklight: WriteFloat brightnessPosition err.");
+    if (!RSMarshallingHelper::Marshalling(data, brightnessData)) {
+        ROSEN_LOGE("SetScreenBacklight: Marshalling brightnessData err.");
         return;
     }
     uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_BACK_LIGHT);
@@ -2050,6 +2167,71 @@ void RSClientToServiceConnectionProxy::SetScreenBacklight(const RsScreenBrightne
         ROSEN_LOGE("SetScreenBacklight: SendRequest failed");
         return;
     }
+}
+
+ErrCode RSClientToServiceConnectionProxy::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("GetScreenVCPFeature: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("GetScreenVCPFeature: WriteUint64 id err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint8(vcpCode)) {
+        ROSEN_LOGE("GetScreenVCPFeature: WriteUint8 vcpCode err.");
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_VCP_FEATURE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("GetScreenVCPFeature: SendRequest failed");
+        return ERR_INVALID_OPERATION;
+    }
+    if (!reply.ReadUint16(currentValue) || !reply.ReadUint16(maximumValue) ||
+        !reply.ReadInt32(errorCode)) {
+        ROSEN_LOGE("GetScreenVCPFeature: Read values failed");
+        return READ_PARCEL_ERR;
+    }
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnectionProxy::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t currentValue)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("SetScreenVCPFeature: WriteInterfaceToken GetDescriptor err.");
+        return ERR_INVALID_VALUE;
+    }
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteUint64(id)) {
+        ROSEN_LOGE("SetScreenVCPFeature: WriteUint64 id err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint8(vcpCode)) {
+        ROSEN_LOGE("SetScreenVCPFeature: WriteUint8 vcpCode err.");
+        return ERR_INVALID_VALUE;
+    }
+    if (!data.WriteUint16(currentValue)) {
+        ROSEN_LOGE("SetScreenVCPFeature: WriteUint16 currentValue err.");
+        return ERR_INVALID_VALUE;
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_VCP_FEATURE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("SetScreenVCPFeature: SendRequest failed");
+        return ERR_INVALID_OPERATION;
+    }
+    return ERR_OK;
 }
 
 ErrCode RSClientToServiceConnectionProxy::GetPanelPowerStatus(uint64_t screenId, PanelPowerStatus& status)
@@ -4360,6 +4542,44 @@ void RSClientToServiceConnectionProxy::RunOnRemoteDiedCallback()
         OnRemoteDiedCallback_();
     }
 }
+
+ErrCode RSClientToServiceConnectionProxy::SendVideoRateInfo(
+    const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    auto mapSize = videoRateInfo.size();
+    if (mapSize <= 0 || mapSize > MAX_VIDEO_INFO_SIZE) {
+        ROSEN_LOGE("SendVideoRateInfo: map size err.");
+        return ERR_INVALID_VALUE;
+    }
+ 
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC);
+    if (!data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor())) {
+        ROSEN_LOGE("%{public}s: Write InterfaceToken val err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+ 
+    if (!data.WriteUint32(mapSize)) {
+        ROSEN_LOGE("%{public}s: Write UInt32 val err.", __func__);
+        return ERR_INVALID_VALUE;
+    }
+ 
+    for (auto const &it : videoRateInfo) {
+        if (!data.WriteString(it.first) || !data.WriteString(it.second)) {
+            ROSEN_LOGE("%{public}s: write key value failed!", __func__);
+            return ERR_INVALID_VALUE;
+        }
+    }
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_VIDEO_RATE_INFO);
+    int ret = SendRequest(code, data, reply, option);
+    if (ret != ERR_OK) {
+        ROSEN_LOGE("%{public}s: SendRequest failed. err:%{public}d.", __func__, ret);
+        return ERR_INVALID_VALUE;
+    }
+    return ERR_OK;
+}
+
 #ifndef ENABLE_RS_PROXY
 std::vector<ActiveDirtyRegionInfo> RSClientToServiceConnectionProxy::GetActiveDirtyRegionInfo()
 {

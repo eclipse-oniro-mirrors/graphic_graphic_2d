@@ -18,6 +18,7 @@
 #include <parameters.h>
 
 #include "drawable/rs_logical_display_render_node_drawable.h"
+#include "feature/dirty/rs_uni_dirty_compute_util.h"
 #include "feature/special_layer/rs_special_layer_utils.h"
 #include "graphic_feature_param_manager.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -756,7 +757,8 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest001, TestS
     auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     ASSERT_NE(renderParams, nullptr);
     renderParams->SetAncestorScreenDrawable(nullptr);
-    displayDrawable_->DrawExpandDisplay(*renderParams);
+    std::shared_ptr<RSProcessor> processor = nullptr;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
     EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
 }
 
@@ -778,8 +780,312 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest002, TestS
     auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
     ASSERT_NE(screenParams, nullptr);
     screenParams->hasHdrPresent_ = true;
-    displayDrawable_->DrawExpandDisplay(*renderParams);
+    std::shared_ptr<RSProcessor> processor = nullptr;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
     EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: DrawExpandDisplayTest003
+ * @tc.desc: Test DrawExpandDisplay with multi-surface extend mode processor
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest003, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+
+    auto virtualProcessor = std::make_shared<RSUniRenderVirtualProcessor>();
+    virtualProcessor->needsOffscreenRender_ = true;
+    std::shared_ptr<RSProcessor> processor = virtualProcessor;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: DrawExpandDisplayTest004
+ * @tc.desc: Test DrawExpandDisplay with nullptr processor falls through to HDR/else branch
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest004, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    screenParams->hasHdrPresent_ = false;
+
+    std::shared_ptr<RSProcessor> processor = nullptr;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: DrawExpandDisplayTest005
+ * @tc.desc: Test DrawExpandDisplay HDR branch when not multi-surface extend
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest005, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    screenParams->hasHdrPresent_ = true;
+
+    auto virtualProcessor = std::make_shared<RSUniRenderVirtualProcessor>();
+    virtualProcessor->needsOffscreenRender_ = false;
+    std::shared_ptr<RSProcessor> processor = virtualProcessor;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: DrawExpandDisplayTest006
+ * @tc.desc: Test DrawExpandDisplay else branch with no HDR and no multi-surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest006, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    screenParams->hasHdrPresent_ = false;
+
+    auto virtualProcessor = std::make_shared<RSUniRenderVirtualProcessor>();
+    virtualProcessor->needsOffscreenRender_ = false;
+    std::shared_ptr<RSProcessor> processor = virtualProcessor;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: DrawExpandDisplayTest007
+ * @tc.desc: Test DrawExpandDisplay multi-surface extend mode with HDR present
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawExpandDisplayTest007, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    screenParams->hasHdrPresent_ = true;
+
+    auto virtualProcessor = std::make_shared<RSUniRenderVirtualProcessor>();
+    virtualProcessor->needsOffscreenRender_ = true;
+    std::shared_ptr<RSProcessor> processor = virtualProcessor;
+    displayDrawable_->DrawExpandDisplay(*renderParams, processor);
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: OnCaptureTest010
+ * @tc.desc: Test OnCapture with empty multi-surface configs (else branch logging)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest010, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    renderParams->shouldPaint_ = true;
+    renderParams->contentEmpty_ = false;
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    auto surfaceHandler = screenDrawable_->GetRSSurfaceHandlerOnDraw();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    surfaceHandler->SetBuffer(buffer, SyncFence::InvalidFence(), {}, 0, nullptr);
+    displayDrawable_->OnCapture(*drawingFilterCanvas_);
+    EXPECT_TRUE(displayDrawable_->ShouldPaint());
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+}
+
+/**
+ * @tc.name: OnCaptureTest011
+ * @tc.desc: Test OnCapture with multi-surface configs containing a surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest011, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    renderParams->shouldPaint_ = true;
+    renderParams->contentEmpty_ = false;
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+
+    SurfaceRegionConfig config;
+    config.surface = nullptr;
+    config.region = RectI(0, 0, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::vector<SurfaceRegionConfig> configs = {config};
+    screenParams->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(configs);
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    auto surfaceHandler = screenDrawable_->GetRSSurfaceHandlerOnDraw();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    surfaceHandler->SetBuffer(buffer, SyncFence::InvalidFence(), {}, 0, nullptr);
+    displayDrawable_->OnCapture(*drawingFilterCanvas_);
+    EXPECT_TRUE(displayDrawable_->ShouldPaint());
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto surfaceConfigs = screenParams->GetScreenProperty().GetMultiSurfaceConfigs();
+    EXPECT_EQ(surfaceConfigs.size(), 1u);
+}
+
+/**
+ * @tc.name: OnCaptureTest012
+ * @tc.desc: Test OnCapture with non-empty surfaceConfigs, non-null surface, GetLastFlushedBuffer error
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest012, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    renderParams->shouldPaint_ = true;
+    renderParams->contentEmpty_ = false;
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+
+    auto csurf = IConsumerSurface::Create("OnCaptureTest012");
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig config;
+    config.surface = pSurface;
+    config.region = RectI(0, 0, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::vector<SurfaceRegionConfig> configs = {config};
+    screenParams->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(configs);
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    auto surfaceHandler = screenDrawable_->GetRSSurfaceHandlerOnDraw();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    surfaceHandler->SetBuffer(buffer, SyncFence::InvalidFence(), {}, 0, nullptr);
+    displayDrawable_->OnCapture(*drawingFilterCanvas_);
+    EXPECT_TRUE(displayDrawable_->ShouldPaint());
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
+}
+
+/**
+ * @tc.name: OnCaptureTest013
+ * @tc.desc: Test OnCapture with non-empty surfaceConfigs, non-null surface, GetLastFlushedBuffer GSERROR_OK
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, OnCaptureTest013, TestSize.Level2)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    renderParams->shouldPaint_ = true;
+    renderParams->contentEmpty_ = false;
+    auto screenDrawable = screenNode_->GetRenderDrawable();
+    ASSERT_NE(screenDrawable, nullptr);
+    renderParams->SetAncestorScreenDrawable(screenDrawable);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->GetRenderParams().get());
+    ASSERT_NE(screenParams, nullptr);
+
+    auto csurf = IConsumerSurface::Create("OnCaptureTest013");
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    BufferRequestConfig requestConfig = {
+        .width = DEFAULT_CANVAS_SIZE, .height = DEFAULT_CANVAS_SIZE,
+        .strideAlignment = 4, .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, .timeout = 0,
+    };
+    sptr<SurfaceBuffer> requestedBuffer;
+    int32_t releaseFence = -1;
+    GSError reqRet = pSurface->RequestBuffer(requestedBuffer, releaseFence, requestConfig);
+    if (reqRet == GSERROR_OK && requestedBuffer) {
+        BufferFlushConfig flushConfig = {};
+        pSurface->FlushBuffer(requestedBuffer, -1, flushConfig);
+    }
+    SurfaceRegionConfig config;
+    config.surface = pSurface;
+    config.region = RectI(0, 0, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::vector<SurfaceRegionConfig> configs = {config};
+    screenParams->screenProperty_.Set<ScreenPropertyType::MULTI_SURFACE_CONFIGS>(configs);
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    auto surfaceHandler = screenDrawable_->GetRSSurfaceHandlerOnDraw();
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    surfaceHandler->SetBuffer(buffer, SyncFence::InvalidFence(), {}, 0, nullptr);
+    displayDrawable_->OnCapture(*drawingFilterCanvas_);
+    EXPECT_TRUE(displayDrawable_->ShouldPaint());
+    EXPECT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest011
+ * @tc.desc: Test PrepareOffscreenRender when curCanvas_ is null, expect early return
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest011, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    displayDrawable_->curCanvas_ = nullptr;
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_);
+    EXPECT_EQ(displayDrawable_->offscreenSurface_, nullptr);
+    displayDrawable_->curCanvas_ = drawingFilterCanvas_.get();
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest012
+ * @tc.desc: Test PrepareOffscreenRender with canvas set up, verify offscreenSurface creation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, PrepareOffscreenRenderTest012, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    ASSERT_NE(displayDrawable_->curCanvas_, nullptr);
+    displayDrawable_->PrepareOffscreenRender(*displayDrawable_, false, false);
+    EXPECT_NE(displayDrawable_->curCanvas_, nullptr);
 }
 
 /**
@@ -1000,6 +1306,70 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest009, T
     auto param = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
     param->mirrorSourceDrawable_.reset();
     displayDrawable_->CalculateVirtualDirty(virtualProcesser, *screenDrawable_, *renderParams, matrix);
+}
+
+/**
+ * @tc.name: CalculateVirtualDirtyTest011
+ * @tc.desc: Test CalculateVirtualDirty when IsDamageRegionGpuTileValid is false
+ * @tc.type: FUNC
+ * @tc.require: issue23778
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest011, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    screenDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    screenDrawable_->syncDirtyManager_->currentFrameDirtyRegion_ = {1, 1, 1, 1};
+
+    RSUniDirtyComputeUtil::SetDamageRegionGpuTile(std::make_pair(0, 0));
+    EXPECT_FALSE(RSUniDirtyComputeUtil::IsDamageRegionGpuTileValid());
+
+    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
+    Drawing::Matrix matrix;
+    auto damageRects =
+        displayDrawable_->CalculateVirtualDirty(virtualProcesser, *screenDrawable_, *renderParams, matrix);
+    EXPECT_NE(damageRects.size(), 0);
+}
+
+/**
+ * @tc.name: CalculateVirtualDirtyTest012
+ * @tc.desc: Test CalculateVirtualDirty when IsDamageRegionGpuTileValid is true
+ * @tc.type: FUNC
+ * @tc.require: issue23778
+ */
+HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CalculateVirtualDirtyTest012, TestSize.Level1)
+{
+    ASSERT_NE(displayDrawable_, nullptr);
+    ASSERT_NE(displayDrawable_->renderParams_, nullptr);
+    ASSERT_NE(screenDrawable_, nullptr);
+
+    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
+    ASSERT_NE(renderParams, nullptr);
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(uniParams));
+    screenDrawable_->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
+    screenDrawable_->syncDirtyManager_->currentFrameDirtyRegion_ = {1, 1, 1, 1};
+
+    constexpr int32_t gpuTileWidth = 16;
+    constexpr int32_t gpuTileHeight = 16;
+    RSUniDirtyComputeUtil::SetDamageRegionGpuTile(std::make_pair(gpuTileWidth, gpuTileHeight));
+    EXPECT_TRUE(RSUniDirtyComputeUtil::IsDamageRegionGpuTileValid());
+    EXPECT_EQ(RSUniDirtyComputeUtil::GetDamageRegionGpuTile().first, gpuTileWidth);
+    EXPECT_EQ(RSUniDirtyComputeUtil::GetDamageRegionGpuTile().second, gpuTileHeight);
+
+    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
+    Drawing::Matrix matrix;
+    auto damageRects =
+        displayDrawable_->CalculateVirtualDirty(virtualProcesser, *screenDrawable_, *renderParams, matrix);
+    EXPECT_NE(damageRects.size(), 0);
+
+    RSUniDirtyComputeUtil::SetDamageRegionGpuTile(std::make_pair(0, 0));
 }
 
 /**
@@ -1444,275 +1814,6 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, ScaleAndRotateMirrorForWiredScr
 }
 
 /**
- * @tc.name: WiredScreenProjectionTest001
- * @tc.desc: Test WiredScreenProjection when curCanvas_ is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest001, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    displayDrawable_->curCanvas_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-    EXPECT_EQ(displayDrawable_->curCanvas_, nullptr);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest002
- * @tc.desc: Test WiredScreenProjection when curScreenDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest002, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    screenDrawable_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    ASSERT_NE(params, nullptr);
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest003
- * @tc.desc: Test WiredScreenProjection when curScreenParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest003, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    screenDrawable_->renderParams_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-    EXPECT_EQ(screenDrawable_->renderParams_, nullptr);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest004
- * @tc.desc: Test WiredScreenProjection when mirroredDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest004, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    mirroredDisplayDrawable_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest005
- * @tc.desc: Test WiredScreenProjection when mirroredDisplayParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest005, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    mirroredDisplayDrawable_->renderParams_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-    EXPECT_EQ(mirroredDisplayDrawable_->renderParams_, nullptr);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest006
- * @tc.desc: Test WiredScreenProjection when mirroredScreenDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest006, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    mirroredScreenDrawable_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest007
- * @tc.desc: Test WiredScreenProjection when mirroredScreenParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest007, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    mirroredScreenDrawable_->renderParams_ = nullptr;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-    EXPECT_EQ(mirroredScreenDrawable_->renderParams_, nullptr);
-}
-
-/**
- * @tc.name: WiredScreenProjectionTest008
- * @tc.desc: Test WiredScreenProjection when has protected layer
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, WiredScreenProjectionTest008, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    RSSpecialLayerManager slManager;
-    slManager.Set(SpecialLayerType::HAS_PROTECTED, true);
-    mirroredRenderParams->specialLayerManager_ = slManager;
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->WiredScreenProjection(*params, virtualProcesser);
-    EXPECT_TRUE(mirroredRenderParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_PROTECTED));
-}
-
-/**
- * @tc.name: DrawWiredMirrorCopyTest001
- * @tc.desc: Test DrawWiredMirrorCopy when mirroredParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest001, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-    mirroredDisplayDrawable_->renderParams_ = nullptr;
-    auto params = std::make_unique<RSLogicalDisplayRenderParams>(0);
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-    EXPECT_EQ(mirroredDisplayDrawable_->GetRenderParams(), nullptr);
-}
-
-/**
- * @tc.name: DrawWiredMirrorCopyTest002
- * @tc.desc: Test DrawWiredMirrorCopy when mirroredScreenDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest002, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    mirroredScreenDrawable_ = nullptr;
-    auto params = std::make_unique<RSLogicalDisplayRenderParams>(0);
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-}
-
-/**
- * @tc.name: DrawWiredMirrorCopyTest003
- * @tc.desc: Test DrawWiredMirrorCopy when cacheImage is not nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest003, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    auto params = std::make_unique<RSLogicalDisplayRenderParams>(0);
-    mirroredScreenDrawable_->cachedImageByCapture_ = std::make_shared<Drawing::Image>();
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-    EXPECT_NE(mirroredScreenDrawable_->GetCacheImgForCapture(), nullptr);
-
-    // when rosen.cacheimage.mirror.enabled is 0
-    system::SetParameter("rosen.cacheimage.mirror.enabled", "0");
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-    EXPECT_EQ(std::atoi((system::GetParameter("rosen.cacheimage.mirror.enabled", "1")).c_str()), 0);
-    system::SetParameter("rosen.cacheimage.mirror.enabled", "1");
-
-    // when enableVisibleRect is true
-    displayDrawable_->enableVisibleRect_ = true;
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-}
-
-/**
- * @tc.name: DrawWiredMirrorCopyTest004
- * @tc.desc: Test DrawWiredMirrorCopy when cacheImage is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest004, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    auto params = std::make_unique<RSLogicalDisplayRenderParams>(0);
-
-    // enableVisibleRect is false
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-
-    // enableVisibleRect is true
-    displayDrawable_->enableVisibleRect_ = true;
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params.get());
-}
-
-/**
- * @tc.name: DrawWiredMirrorCopyTest005
- * @tc.desc: Test DrawWiredMirrorCopy when curScreenDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest005, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params);
-
-    screenDrawable_ = nullptr;
-    params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-
-    // enableVisibleRect is false
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params);
-
-    // enableVisibleRect is true
-    displayDrawable_->enableVisibleRect_ = true;
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params);
-}
-
-/**
- * @tc.name: DrawWiredMirrorCopyTest006
- * @tc.desc: Test DrawWiredMirrorCopy when curScreenParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorCopyTest006, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-    ASSERT_NE(mirroredScreenDrawable_, nullptr);
-    auto params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params);
-
-    screenDrawable_->renderParams_ = nullptr;
-    params = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-
-    // enableVisibleRect is false
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params);
-
-    // enableVisibleRect is true
-    displayDrawable_->enableVisibleRect_ = true;
-    displayDrawable_->DrawWiredMirrorCopy(*mirroredDisplayDrawable_, *params);
-}
-
-/**
  * @tc.name: CheckDirtyRefreshTest001
  * @tc.desc: Test CheckDirtyRefresh when params is nullptr
  * @tc.type: FUNC
@@ -1870,479 +1971,6 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, CheckDirtyRefreshTest008, TestS
     RSUniRenderThread::Instance().Sync(std::move(uniParams2));
     renderParams->virtualScreenMuteStatus_ = false;
     displayDrawable_->CheckDirtyRefresh(CompositeType::UNI_RENDER_MIRROR_COMPOSITE, false);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest001
- * @tc.desc: Test DrawWiredMirrorOnDraw when uniParam is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest001, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest002
- * @tc.desc: Test DrawWiredMirrorOnDraw when mirroredParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest002, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    mirroredDisplayDrawable_->renderParams_ = nullptr;
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    EXPECT_EQ(mirroredDisplayDrawable_->GetRenderParams(), nullptr);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest003
- * @tc.desc: Test DrawWiredMirrorOnDraw when IsExternalScreenSecure is true
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest003, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    auto isExternalScreenSecure = MultiScreenParam::IsExternalScreenSecure();
-    MultiScreenParam::SetExternalScreenSecure(true);
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    EXPECT_TRUE(MultiScreenParam::IsExternalScreenSecure());
-    MultiScreenParam::SetExternalScreenSecure(isExternalScreenSecure);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest004
- * @tc.desc: Test DrawWiredMirrorOnDraw when IsExternalScreenSecure is false and hasSecSurface is true
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest004, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    RSSpecialLayerManager slManager;
-    slManager.Set(SpecialLayerType::HAS_SECURITY, true);
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    mirroredRenderParams->specialLayerManager_ = slManager;
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    EXPECT_TRUE(mirroredRenderParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY));
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest005
- * @tc.desc: Test DrawWiredMirrorOnDraw when mirroredScreenParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest005, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-    ASSERT_NE(mirroredScreenDrawable_, nullptr);
-
-    mirroredScreenDrawable_->renderParams_ = nullptr;
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    EXPECT_EQ(mirroredScreenDrawable_->GetRenderParams(), nullptr);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest006
- * @tc.desc: Test DrawWiredMirrorOnDraw with default
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest006, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-    ASSERT_NE(mirroredScreenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest007
- * @tc.desc: Test DrawWiredMirrorOnDraw when curScreenDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest007, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    RSSpecialLayerManager slManager;
-    slManager.Set(SpecialLayerType::HAS_SECURITY, true);
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    mirroredRenderParams->specialLayerManager_ = slManager;
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    
-    screenDrawable_ = nullptr;
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest008
- * @tc.desc: Test DrawWiredMirrorOnDraw when curScreenParam is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest008, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    RSSpecialLayerManager slManager;
-    slManager.Set(SpecialLayerType::HAS_SECURITY, false);
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    mirroredRenderParams->specialLayerManager_ = slManager;
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    
-    screenDrawable_->renderParams_ = nullptr;
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    EXPECT_FALSE(mirroredRenderParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY));
-}
-
-/**
- * @tc.name: DrawWiredMirrorOnDrawTest009
- * @tc.desc: Test DrawWiredMirrorOnDraw when hasSecSurface && IsExternalScreenSecure
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawWiredMirrorOnDrawTest009, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-    auto isExternalScreenSecure = MultiScreenParam::IsExternalScreenSecure();
-
-    // default, hasSecSurface is false and isExternalScreenSecure is false
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
-    RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
-    auto processor = RSProcessorFactory::CreateProcessor(renderParams->GetCompositeType(), 0);
-    MultiScreenParam::SetExternalScreenSecure(false);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-
-    // do something to make hasSecSurface is false and isExternalScreenSecure is true
-    MultiScreenParam::SetExternalScreenSecure(true);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-
-    // do something to make hasSecSurface is true and isExternalScreenSecure is true
-    RSSpecialLayerManager slManager;
-    slManager.Set(SpecialLayerType::HAS_SECURITY, true);
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    mirroredRenderParams->specialLayerManager_ = slManager;
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-
-    // do something to make hasSecSurface is true and isExternalScreenSecure is false
-    MultiScreenParam::SetExternalScreenSecure(false);
-    displayDrawable_->DrawWiredMirrorOnDraw(*mirroredDisplayDrawable_, *renderParams, processor);
-    EXPECT_TRUE(mirroredRenderParams->GetSpecialLayerMgr().Find(SpecialLayerType::HAS_SECURITY));
-    
-    // reset isExternalScreenSecure
-    MultiScreenParam::SetExternalScreenSecure(isExternalScreenSecure);
-    slManager.Set(SpecialLayerType::HAS_SECURITY, false);
-    mirroredRenderParams->specialLayerManager_ = slManager;
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest001
- * @tc.desc: Test DrawMirrorScreen when mirroredDrawable is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest001, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    mirroredDisplayDrawable_ = nullptr;
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    displayDrawable_->DrawMirrorScreen(*renderParams, nullptr);
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest002
- * @tc.desc: Test DrawMirrorScreen when mirroredParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest002, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredDisplayDrawable_, nullptr);
-
-    mirroredDisplayDrawable_->renderParams_ = nullptr;
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    displayDrawable_->DrawMirrorScreen(*renderParams, nullptr);
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest003
- * @tc.desc: Test DrawMirrorScreen when virtualProcesser is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest003, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    displayDrawable_->DrawMirrorScreen(*renderParams, nullptr);
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest004
- * @tc.desc: Test DrawMirrorScreen when screenParams is nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest004, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    screenDrawable_->renderParams_ = nullptr;
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest005
- * @tc.desc: Test DrawMirrorScreen when mirroredParams isSecurityDisplay != params isSecurityDisplay
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest005, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    renderParams->isSecurityDisplay_ = true;
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    mirroredRenderParams->isSecurityDisplay_ = false;
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-
-    // when specialLayerType is HAS_SPECIAL_LAYER
-    RSSpecialLayerManager slManager;
-    slManager.Set(SpecialLayerType::HAS_SECURITY, true);
-    mirroredRenderParams->specialLayerManager_ = slManager;
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest006
- * @tc.desc: Test DrawMirrorScreen when cacheImage is not nullptr
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest006, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(mirroredScreenDrawable_, nullptr);
-
-    mirroredScreenDrawable_->cachedImageByCapture_ = std::make_shared<Drawing::Image>();
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_TRUE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest006
- * @tc.desc: Test DrawMirrorScreen when GetVirtualScreenMuteStatus is true
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest008, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    renderParams->virtualScreenMuteStatus_ = true;
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest006
- * @tc.desc: Test DrawMirrorScreen when default, redraw
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest009, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest006
- * @tc.desc: Test DrawMirrorScreen when default, redraw
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest010, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest006
- * @tc.desc: Test DrawMirrorScreen when default, redraw
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest011, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest012
- * @tc.desc: Test DrawMirrorScreen when mirroredScreenIsPause is true
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest012, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-    ASSERT_NE(screenDrawable_, nullptr);
-
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto mirroredRenderParams =
-        static_cast<RSLogicalDisplayRenderParams*>(mirroredDisplayDrawable_->GetRenderParams().get());
-    ASSERT_NE(mirroredRenderParams, nullptr);
-    auto mirroredScreenParams = static_cast<RSScreenRenderParams*>(mirroredScreenDrawable_->GetRenderParams().get());
-    VirtualScreenStatus status = mirroredScreenParams->screenProperty_.GetVirtualScreenStatus();
-    mirroredScreenParams->screenProperty_.Set<ScreenPropertyType::SCREEN_STATUS>(VIRTUAL_SCREEN_PAUSE);
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    // recover virtualScreenStatus
-    mirroredScreenParams->screenProperty_.Set<ScreenPropertyType::SCREEN_STATUS>(status);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
-}
-
-/**
- * @tc.name: DrawMirrorScreenTest013
- * @tc.desc: Test DrawMirrorScreen when mirroredParams
- * @tc.type: FUNC
- * @tc.require: issue21104
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, DrawMirrorScreenTest013, TestSize.Level1)
-{
-    auto renderParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
-    auto mirroredScreenParams = static_cast<RSScreenRenderParams*>(mirroredScreenDrawable_->GetRenderParams().get());
-    mirroredScreenParams->SetHDRPresent(false);
-    auto virtualProcesser = std::make_shared<RSUniRenderVirtualProcessor>();
-    virtualProcesser->canvas_ = drawingFilterCanvas_;
-    RSUniRenderThread& instance = RSUniRenderThread::Instance();
-    instance.uniRenderEngine_ = std::make_shared<RSRenderEngine>();
-    ASSERT_NE(instance.uniRenderEngine_, nullptr);
-    instance.uniRenderEngine_->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
-    ASSERT_TRUE(instance.IsColorFilterModeOn());
-    auto uniParams = std::make_unique<RSRenderThreadParams>();
-    RSUniRenderThread::Instance().Sync(std::move(uniParams));
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
- 
-    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable_->GetRenderParams().get());
-    mirroredScreenParams->SetHDRPresent(true);
-    screenParams->SetHDRPresent(true);
-    displayDrawable_->DrawMirrorScreen(*renderParams, virtualProcesser);
-    EXPECT_FALSE(virtualProcesser->GetDrawVirtualMirrorCopy());
 }
 
 /**
@@ -3891,27 +3519,6 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, FinishOffscreenRenderTest005, T
 }
 
 /**
- * @tc.name: MirrorRedrawDFXTest001
- * @tc.desc: Test MirrorRedrawDFX when mirrorRedraw_ has/not have value
- * @tc.type: FUNC
- * @tc.require: #I9NVOG
- */
-HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, MirrorRedrawDFXTest001, TestSize.Level1)
-{
-    ASSERT_NE(displayDrawable_, nullptr);
-
-    // when mirrorRedraw_ not have value
-    displayDrawable_->MirrorRedrawDFX(true, INVALID_SCREEN_ID);
-    // when mirrorRedraw_ have value and mirrorRedraw_ == mirrorRedraw
-    displayDrawable_->mirrorRedraw_ = true;
-    displayDrawable_->MirrorRedrawDFX(true, INVALID_SCREEN_ID);
-    EXPECT_TRUE(displayDrawable_->mirrorRedraw_);
-    // when mirrorRedraw_ have value and mirrorRedraw_ != mirrorRedraw
-    displayDrawable_->MirrorRedrawDFX(false, INVALID_SCREEN_ID);
-    EXPECT_TRUE(displayDrawable_->mirrorRedraw_);
-}
-
-/**
  * @tc.name: PrepareOffscreenRenderWithFixFormatTest
  * @tc.desc: Test PrepareOffscreenRender with fixFormat parameter
  * @tc.type: FUNC
@@ -4328,6 +3935,7 @@ HWTEST_F(RSLogicalDisplayRenderNodeDrawableTest, GetScreenParamsTest001, TestSiz
     ASSERT_NE(displayDrawable_->GetRenderParams(), nullptr);
     auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable_->GetRenderParams().get());
     ASSERT_NE(displayParams, nullptr);
+    displayParams->ancestorScreenDrawable_.lock()->nodeType_ = RSRenderNodeType::UNKNOW;
     auto [_, screenParams] = displayDrawable_->GetScreenParams(*displayParams);
     ASSERT_EQ(_, nullptr);
     ASSERT_EQ(screenParams, nullptr);

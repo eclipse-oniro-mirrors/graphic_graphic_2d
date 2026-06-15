@@ -34,7 +34,7 @@ bool ShouldNotifyTunnelLayerDestroyed(const sptr<IConsumerSurface>& surface, uin
     if (surface == nullptr) {
         return false;
     }
-    if (tunnelLayerId == 0 || property == TUNNEL_PROP_INVALID) {
+    if (tunnelLayerId == 0) {
         TunnelLayerState state;
         if (surface->GetTunnelLayerInfo(state) != GSERROR_OK) {
             return false;
@@ -402,6 +402,20 @@ void RSSurfaceLayer::SetCornerRadiusInfoForDRM(const std::vector<float>& drmCorn
 const std::vector<float>& RSSurfaceLayer::GetCornerRadiusInfoForDRM() const
 {
     return drmCornerRadiusInfo_;
+}
+
+void RSSurfaceLayer::SetVcldInfo(const RSVcldParam& vcldInfo)
+{
+    if (vcldInfo_ == vcldInfo) {
+        return;
+    }
+    vcldInfo_ = vcldInfo;
+    SetRSLayerCmd<RSRenderLayerVcldInfoCmd>(vcldInfo);
+}
+
+const RSVcldParam& RSSurfaceLayer::GetVcldInfo() const
+{
+    return vcldInfo_;
 }
 
 void RSSurfaceLayer::SetColorTransform(const std::vector<float> &matrix)

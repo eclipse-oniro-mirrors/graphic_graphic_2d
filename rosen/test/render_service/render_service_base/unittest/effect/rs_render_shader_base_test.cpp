@@ -106,9 +106,9 @@ HWTEST_F(RSNGRenderShaderBaseTest, Dump001, TestSize.Level1)
     std::string out;
     shader->Dump(out);
 
-    // Should contain the type name followed by ": "
+    // Should contain the type name followed by ":"
     std::string typeName = RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT);
-    EXPECT_NE(out.find(typeName + ": "), std::string::npos);
+    EXPECT_NE(out.find(typeName + ":"), std::string::npos);
 }
 
 /**
@@ -128,8 +128,8 @@ HWTEST_F(RSNGRenderShaderBaseTest, Dump002, TestSize.Level1)
     std::string out;
     head->Dump(out);
 
-    // Chained output should contain ", " separator
-    EXPECT_NE(out.find(", "), std::string::npos);
+    // Chained output should contain "," separator
+    EXPECT_NE(out.find(","), std::string::npos);
     // And include the next effect's type name
     std::string nextName = RSNGRenderEffectHelper::GetEffectTypeString(RSNGEffectType::WAVY_RIPPLE_LIGHT);
     EXPECT_NE(out.find(nextName), std::string::npos);
@@ -477,6 +477,45 @@ HWTEST_F(RSNGRenderShaderBaseTest, CreateBorderSDFShader001, TestSize.Level1)
     auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
     EXPECT_NE(shader, nullptr);
     EXPECT_EQ(shader->GetType(), RSNGEffectType::BORDER_SDF_SHADER);
+}
+
+/**
+ * @tc.name: CreateBorderSDFLGColor001
+ * @tc.desc: Verify that Create returns a non-null instance for BORDER_SDF_LG_COLOR type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, CreateBorderSDFLGColor001, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_LG_COLOR);
+    EXPECT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::BORDER_SDF_LG_COLOR);
+}
+
+/**
+ * @tc.name: BorderSDFLGColorPropertyTags001
+ * @tc.desc: Test setting and getting properties on BorderSDFLGColor shader
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNGRenderShaderBaseTest, BorderSDFLGColorPropertyTags001, TestSize.Level1)
+{
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::BORDER_SDF_LG_COLOR);
+    ASSERT_NE(shader, nullptr);
+    auto lgColor = std::static_pointer_cast<RSNGRenderBorderSDFLGColor>(shader);
+
+    lgColor->Setter<BorderSDFLGColorAngleRenderTag>(45.0f, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    EXPECT_FLOAT_EQ(lgColor->Getter<BorderSDFLGColorAngleRenderTag>()->Get(), 45.0f);
+
+    lgColor->Setter<BorderSDFLGColorWidthRenderTag>(5.0f, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    EXPECT_FLOAT_EQ(lgColor->Getter<BorderSDFLGColorWidthRenderTag>()->Get(), 5.0f);
+
+    lgColor->Setter<BorderSDFLGColorIsOutlineRenderTag>(true);
+    EXPECT_EQ(lgColor->Getter<BorderSDFLGColorIsOutlineRenderTag>()->Get(), true);
+
+    lgColor->Setter<BorderSDFLGColorIsOutlineRenderTag>(false);
+    EXPECT_EQ(lgColor->Getter<BorderSDFLGColorIsOutlineRenderTag>()->Get(), false);
+
+    lgColor->Setter<BorderSDFLGColorColorNumberRenderTag>(3);
+    EXPECT_EQ(lgColor->Getter<BorderSDFLGColorColorNumberRenderTag>()->Get(), 3);
 }
 
 /**

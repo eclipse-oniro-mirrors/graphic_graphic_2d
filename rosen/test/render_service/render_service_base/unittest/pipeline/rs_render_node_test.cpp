@@ -26,6 +26,7 @@
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_property_drawable_background.h"
 #include "drawable/rs_property_drawable_foreground.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
 #include "effect/rs_render_shader_base.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "offscreen_render/rs_offscreen_render_thread.h"
@@ -51,7 +52,7 @@ namespace Rosen {
 const std::string OUT_STR1 =
     "DISPLAY_NODERS_NODESURFACE_NODECANVAS_NODEROOT_NODEPROXY_NODECANVAS_DRAWING_NODEEFFECT_NODEUNKNOWN_NODE";
 const std::string OUT_STR2 =
-    "| RS_NODE[0], instanceRootNodeId[0], SharedTransitionParam: [0 -> 0], [nodeGroup1], uifirstRootNodeId_: 1, "
+    "| RS_NODE[0], instanceRootNodeId[0], SharedTransitionParam: [0 -> 0], nodeGroup: 1, uifirstRootNodeId_: 1, "
     "Properties: Bounds[-inf -inf -inf -inf] Frame[-inf -inf -inf -inf]"
     ", hasDecoration: 0, hasClipRRect: 0, hasGeoTrans: 0"
     ", rrect[-inf -inf -inf -inf rx:0.0 ry:0.0]"
@@ -667,6 +668,7 @@ HWTEST_F(RSRenderNodeTest, OnTreeStateChangedTest, TestSize.Level1)
     std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(id, context); // isOnTheTree_ false
     std::shared_ptr<RSFilter> filter = RSFilter::CreateBlurFilter(floatData[0], floatData[1]);
     node->renderProperties_.filter_ = filter;
+    node->InitRenderParams();
     node->OnTreeStateChanged();
     EXPECT_FALSE(node->isOnTheTree_);
     EXPECT_TRUE(node->HasBlurFilter());
@@ -683,6 +685,7 @@ HWTEST_F(RSRenderNodeTest, OnTreeStateChangedTest, TestSize.Level1)
     EXPECT_TRUE(node->IsDirty());
 
     auto canvasDrawingNode = std::make_shared<RSCanvasDrawingRenderNode>(1);
+    canvasDrawingNode->InitRenderParams();
     canvasDrawingNode->isNeverOnTree_ = false;
     canvasDrawingNode->OnTreeStateChanged();
     EXPECT_FALSE(canvasDrawingNode->isNeverOnTree_);
@@ -1165,6 +1168,38 @@ HWTEST_F(RSRenderNodeTest, UpdateSrcOrClipedAbsDrawRectChangeStateTest, TestSize
 }
 
 /**
+ * @tc.name: IsNodeParentHasUIFirstCacheTest
+ * @tc.desc: IsNodeParentHasUIFirstCache Test
+ * @tc.type: FUNC
+ * @tc.require: issueIA5Y41
+ */
+
+HWTEST_F(RSRenderNodeTest, IsNodeParentHasUIFirstCacheTest, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(20);
+    EXPECT_NE(node, nullptr);
+    std::shared_ptr<RSSurfaceRenderNode> surfaceNode = std::make_shared<RSSurfaceRenderNode>(10086);
+    EXPECT_NE(surfaceNode, nullptr);
+
+    node->uifirstRootNodeId_ = 10086;
+    auto sContext = std::make_shared<RSContext>();
+
+    node->context_ = sContext;
+    auto& nodeMap = sContext->GetMutableNodeMap();
+    EXPECT_TRUE(nodeMap.RegisterRenderNode(surfaceNode));
+
+    auto uiFirstRootNode =
+        node->uiFirstRootNodeId_ != INVALID_NODEID ? node->GetUifirstRootNode() : node->GetFirstLevelNode();
+    EXPECT_TRUE(uiFirstRootNode);
+
+    surfaceNode->uifirstState_.lastFrameCacheType = MultiThreadCacheType::LEASH_WINDOW;
+    EXPECT_TRUE(surfaceNode && surfaceNode->GetLastFrameUifirstCacheType() != MultiThreadCacheType::NONE);
+
+    EXPECT_TRUE(uiFirstRootNode == surfaceNode);
+    EXPECT_TRUE(node->IsNodeParentHasUIFirstCache());
+}
+
+/**
  * @tc.name: OnSyncTest
  * @tc.desc: OnSync Test
  * @tc.type: FUNC
@@ -1198,16 +1233,22 @@ HWTEST_F(RSRenderNodeTest, OnSyncTest, TestSize.Level1)
     node->GetDrawableVec(__func__)[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_FILTER)] = drawableFilter;
     node->drawingCacheType_ = RSDrawingCacheType::FORCED_CACHE;
     node->stagingRenderParams_->SetRSFreezeFlag(true);
-    node->needClearSurface_ = true;
+    node->SetNeedClearRenderGroupCache(true);
     std::function<void()> clearTask = []() { printf("ClearSurfaceTask CallBack\n"); };
     node->GetOpincRootCache().isOpincRootFlag_ = true;
+
     node->nodeGroupType_ = RSRenderNode::NodeGroupType::GROUPED_BY_LAYER;
-    Vector4f value {0.5f, 0.5f, 0.5f, 0.5f};
-    node->renderProperties_.SetBgBrightnessRates(value);
+    node->stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    node->GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(false);
+    node->stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    bool isLayerNode = node->nodeGroupType_ == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
+ 	                        node->stagingRenderParams_->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE;
+    EXPECT_TRUE(isLayerNode);
+    EXPECT_TRUE(RSLayerCacheManagerBase::IsNodeUnSupportLayer(node));
     node->OnSync();
     EXPECT_TRUE(node->dirtySlots_.empty());
     EXPECT_FALSE(node->drawCmdListNeedSync_);
-    EXPECT_FALSE(node->needClearSurface_);
+    EXPECT_FALSE(node->NeedClearRenderGroupCache());
 }
 
 /**
@@ -1244,14 +1285,20 @@ HWTEST_F(RSRenderNodeTest, OnSyncTest1, TestSize.Level1)
     node->GetDrawableVec(__func__)[static_cast<uint32_t>(RSDrawableSlot::BACKGROUND_FILTER)] = drawableFilter;
     node->drawingCacheType_ = RSDrawingCacheType::FORCED_CACHE;
     node->stagingRenderParams_->SetRSFreezeFlag(true);
-    node->needClearSurface_ = true;
+    node->SetNeedClearRenderGroupCache(true);
     std::function<void()> clearTask = []() { printf("ClearSurfaceTask CallBack\n"); };
     node->GetOpincRootCache().isOpincRootFlag_ = true;
     node->nodeGroupType_ = RSRenderNode::NodeGroupType::GROUPED_BY_LAYER;
+    node->stagingRenderParams_->SetDrawingCacheType(RSDrawingCacheType::TARGETED_CACHE);
+    bool isLayerNode = node->nodeGroupType_ == RSRenderNode::NodeGroupType::GROUPED_BY_LAYER &&
+ 	                        node->stagingRenderParams_->GetDrawingCacheType() != RSDrawingCacheType::DISABLED_CACHE;
+    node->GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(true);
+    EXPECT_TRUE(isLayerNode);
+    EXPECT_TRUE(RSLayerCacheManagerBase::IsNodeUnSupportLayer(node));
     node->OnSync();
     EXPECT_TRUE(node->dirtySlots_.empty());
     EXPECT_FALSE(node->drawCmdListNeedSync_);
-    EXPECT_FALSE(node->needClearSurface_);
+    EXPECT_FALSE(node->NeedClearRenderGroupCache());
 }
 
 /**
@@ -2131,8 +2178,9 @@ HWTEST_F(RSRenderNodeTest, IsSubTreeNeedPrepareTest001, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, IsSubTreeNeedPrepareTest002, TestSize.Level1)
 {
-    std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(0);
+    auto parent = std::make_shared<RSSurfaceRenderNode>(0);
     EXPECT_NE(parent, nullptr);
+    parent->InitRenderParams();
 
     system::SetParameter("persist.sys.graphic.SubTreePrepareCheckType.type", "1");
     auto checkType = RSSystemProperties::GetSubTreePrepareCheckType();
@@ -2696,12 +2744,12 @@ HWTEST_F(RSRenderNodeTest, AddCrossParentChildTest008, TestSize.Level1)
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
     nodeTest->isOnTheTree_ = false;
-    std::shared_ptr<RSRenderNode> childTest = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> childTest = nullptr;
     nodeTest->AddCrossParentChild(childTest, -1);
 
-    std::shared_ptr<RSRenderNode> child1 = std::make_shared<RSRenderNode>(1);
-    std::shared_ptr<RSRenderNode> child2 = std::make_shared<RSRenderNode>(2);
-    std::shared_ptr<RSRenderNode> child3 = std::make_shared<RSRenderNode>(3);
+    std::shared_ptr<RSSurfaceRenderNode> child1 = std::make_shared<RSSurfaceRenderNode>(1);
+    std::shared_ptr<RSSurfaceRenderNode> child2 = std::make_shared<RSSurfaceRenderNode>(2);
+    std::shared_ptr<RSSurfaceRenderNode> child3 = std::make_shared<RSSurfaceRenderNode>(3);
     nodeTest->isFullChildrenListValid_ = true;
     nodeTest->AddCrossParentChild(child1, -1);
     EXPECT_FALSE(nodeTest->isFullChildrenListValid_);
@@ -2730,10 +2778,10 @@ HWTEST_F(RSRenderNodeTest, RemoveCrossParentChild009, TestSize.Level1)
 
     std::shared_ptr<RSRenderNode> newParent1 = std::make_shared<RSRenderNode>(1);
     std::shared_ptr<RSRenderNode> newParent2 = std::make_shared<RSRenderNode>(2);
-    std::shared_ptr<RSRenderNode> childTest = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> childTest = nullptr;
     nodeTest->RemoveCrossParentChild(childTest, newParent1);
 
-    childTest = std::make_shared<RSRenderNode>(0);
+    childTest = std::make_shared<RSSurfaceRenderNode>(0);
     std::shared_ptr<RSRenderNode> parent = std::make_shared<RSRenderNode>(0);
     childTest->parent_ = parent;
     nodeTest->isFullChildrenListValid_ = true;
@@ -2743,8 +2791,8 @@ HWTEST_F(RSRenderNodeTest, RemoveCrossParentChild009, TestSize.Level1)
     nodeTest->isFullChildrenListValid_ = true;
     nodeTest->disappearingTransitionCount_ = 1;
 
-    std::shared_ptr<RSRenderNode> child1 = std::make_shared<RSRenderNode>(1);
-    std::shared_ptr<RSRenderNode> child2 = std::make_shared<RSRenderNode>(2);
+    std::shared_ptr<RSSurfaceRenderNode> child1 = std::make_shared<RSSurfaceRenderNode>(1);
+    std::shared_ptr<RSSurfaceRenderNode> child2 = std::make_shared<RSSurfaceRenderNode>(2);
     nodeTest->AddCrossParentChild(child1);
     nodeTest->AddCrossParentChild(child2);
 
@@ -2770,7 +2818,7 @@ HWTEST_F(RSRenderNodeTest, AddCrossScreenChild, TestSize.Level1)
     auto context = std::make_shared<RSContext>();
     auto displayRenderNode = std::make_shared<RSScreenRenderNode>(id, 0, context);
     EXPECT_NE(displayRenderNode, nullptr);
-    auto childTest1 = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> childTest1 = nullptr;
     displayRenderNode->AddCrossScreenChild(childTest1, 2, -1);
 
     id = 2;
@@ -2792,7 +2840,7 @@ HWTEST_F(RSRenderNodeTest, RemoveCrossScreenChild, TestSize.Level1)
 {
     std::shared_ptr<RSRenderNode> nodeTest = std::make_shared<RSRenderNode>(0);
     EXPECT_NE(nodeTest, nullptr);
-    auto childTest1 = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> childTest1 = nullptr;
     nodeTest->RemoveCrossScreenChild(childTest1);
 
     auto childTest2 = std::make_shared<RSSurfaceRenderNode>(1);
@@ -3485,7 +3533,7 @@ HWTEST_F(RSRenderNodeTest, UpdateAbsDirtyRegion001, TestSize.Level1)
 
     std::shared_ptr<RSDirtyRegionManager> rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     rsDirtyManager->SetSurfaceSize(surfaceWidth, surfaceHeight);
-    RSRenderNode node(id, context);
+    RSSurfaceRenderNode node(id, context);
     node.GetMutableRenderProperties().subTreeAllDirty_ = true;
     node.oldChildrenRect_ = RectI(defaultLeft, defaultTop, defaultWidth, defaultHeight);
     node.oldClipRect_ = RectI(0, 0, defaultWidth, defaultHeight);
@@ -3649,7 +3697,7 @@ HWTEST_F(RSRenderNodeTest, ProcessTransitionAfterChildren, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, IsCrossNodeTest, TestSize.Level1)
 {
-    auto renderNode = std::make_shared<RSRenderNode>(1);
+    auto renderNode = std::make_shared<RSSurfaceRenderNode>(1);
     ASSERT_NE(renderNode, nullptr);
     renderNode->SetIsCrossNode(true);
     ASSERT_TRUE(renderNode->isCrossNode_);
@@ -3666,9 +3714,9 @@ HWTEST_F(RSRenderNodeTest, IsCrossNodeTest, TestSize.Level1)
  */
 HWTEST_F(RSRenderNodeTest, SetCrossNodeVisitedStatusTest, TestSize.Level1)
 {
-    auto node = std::make_shared<RSRenderNode>(1);
+    auto node = std::make_shared<RSSurfaceRenderNode>(1);
     ASSERT_NE(node, nullptr);
-    auto cloneNode = std::make_shared<RSRenderNode>(2);
+    auto cloneNode = std::make_shared<RSSurfaceRenderNode>(2);
     ASSERT_NE(cloneNode, nullptr);
     node->isCrossNode_ = true;
     cloneNode->isCloneCrossNode_ = true;
@@ -4550,6 +4598,66 @@ HWTEST_F(RSRenderNodeTest, GetColorPickerDrawable002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IsDirty001
+ * @tc.desc: test IsDirty returns true when dirtyStatus_ is DIRTY and properties are clean
+ * @tc.type: FUNC
+ * @tc.require: issue23778
+ */
+HWTEST_F(RSRenderNodeTest, IsDirty001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID);
+    ASSERT_NE(node, nullptr);
+    node->dirtyStatus_ = RSRenderNode::NodeDirty::DIRTY;
+    node->GetMutableRenderProperties().ResetDirty();
+    EXPECT_TRUE(node->IsDirty());
+}
+
+/**
+ * @tc.name: IsDirty002
+ * @tc.desc: test IsDirty returns true when dirtyStatus_ is CLEAN and properties are dirty
+ * @tc.type: FUNC
+ * @tc.require: issue23778
+ */
+HWTEST_F(RSRenderNodeTest, IsDirty002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID);
+    ASSERT_NE(node, nullptr);
+    node->dirtyStatus_ = RSRenderNode::NodeDirty::CLEAN;
+    node->GetMutableRenderProperties().SetDirty();
+    EXPECT_TRUE(node->IsDirty());
+}
+
+/**
+ * @tc.name: IsDirty003
+ * @tc.desc: test IsDirty returns false when both dirtyStatus_ and properties are clean
+ * @tc.type: FUNC
+ * @tc.require: issue23778
+ */
+HWTEST_F(RSRenderNodeTest, IsDirty003, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID);
+    ASSERT_NE(node, nullptr);
+    node->dirtyStatus_ = RSRenderNode::NodeDirty::CLEAN;
+    node->GetMutableRenderProperties().ResetDirty();
+    EXPECT_FALSE(node->IsDirty());
+}
+
+/**
+ * @tc.name: IsDirty004
+ * @tc.desc: test IsDirty returns true when both dirtyStatus_ and properties are dirty
+ * @tc.type: FUNC
+ * @tc.require: issue23778
+ */
+HWTEST_F(RSRenderNodeTest, IsDirty004, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(DEFAULT_NODE_ID);
+    ASSERT_NE(node, nullptr);
+    node->dirtyStatus_ = RSRenderNode::NodeDirty::DIRTY;
+    node->GetMutableRenderProperties().SetDirty();
+    EXPECT_TRUE(node->IsDirty());
+}
+
+/**
  * @tc.name: GetNodeColorSpaceForceSRGBTest
  * @tc.desc: Verify GetNodeColorSpace returns SRGB when ForceSRGBOutput is enabled
  * @tc.type: FUNC
@@ -4974,6 +5082,96 @@ HWTEST_F(RSRenderNodeTest, SetGlobalAlphaTriggersOnAlphaChangedTest, TestSize.Le
 
     node->SetGlobalAlpha(1.0f);
     ASSERT_FLOAT_EQ(node->GetGlobalAlpha(), 1.0f);
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty001
+ * @tc.desc: test AccumulateParentGeoDirty with no parent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty001, TestSize.Level1)
+{
+    auto node = std::make_shared<RSRenderNode>(id, context);
+    node->GetMutableRenderProperties().SetParentGeoDirty(false);
+    node->AccumulateParentGeoDirty();
+    EXPECT_FALSE(node->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty002
+ * @tc.desc: test AccumulateParentGeoDirty when parent geoDirty_ is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty002, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto child = std::make_shared<RSRenderNode>(id + 2, context);
+    child->SetParent(parent);
+    parent->GetMutableRenderProperties().curGeoDirty_ = true;
+    parent->GetMutableRenderProperties().SetParentGeoDirty(false);
+    child->AccumulateParentGeoDirty();
+    EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty003
+ * @tc.desc: test AccumulateParentGeoDirty when parent parentGeoDirty_ is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty003, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto child = std::make_shared<RSRenderNode>(id + 2, context);
+    child->SetParent(parent);
+    parent->GetMutableRenderProperties().curGeoDirty_ = false;
+    parent->GetMutableRenderProperties().SetParentGeoDirty(true);
+    child->AccumulateParentGeoDirty();
+    EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty004
+ * @tc.desc: test AccumulateParentGeoDirty when parent has no dirty flags
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty004, TestSize.Level1)
+{
+    auto parent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto child = std::make_shared<RSRenderNode>(id + 2, context);
+    child->SetParent(parent);
+    parent->GetMutableRenderProperties().curGeoDirty_ = false;
+    parent->GetMutableRenderProperties().SetParentGeoDirty(false);
+    child->AccumulateParentGeoDirty();
+    EXPECT_FALSE(child->GetRenderProperties().IsParentGeoDirty());
+}
+
+/**
+ * @tc.name: AccumulateParentGeoDirty005
+ * @tc.desc: test AccumulateParentGeoDirty chain propagation from grandparent
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeTest, AccumulateParentGeoDirty005, TestSize.Level1)
+{
+    auto grandparent = std::make_shared<RSRenderNode>(id + 1, context);
+    auto parent = std::make_shared<RSRenderNode>(id + 2, context);
+    auto child = std::make_shared<RSRenderNode>(id + 3, context);
+    parent->SetParent(grandparent);
+    child->SetParent(parent);
+
+    grandparent->GetMutableRenderProperties().curGeoDirty_ = true;
+    grandparent->GetMutableRenderProperties().SetParentGeoDirty(false);
+
+    parent->AccumulateParentGeoDirty();
+    EXPECT_TRUE(parent->GetRenderProperties().IsParentGeoDirty());
+
+    parent->GetMutableRenderProperties().curGeoDirty_ = false;
+    child->AccumulateParentGeoDirty();
+    EXPECT_TRUE(child->GetRenderProperties().IsParentGeoDirty());
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -120,7 +120,7 @@ public:
     static SharedPtr CreateSurfaceNode(const RSSurfaceNodeConfig& surfaceNodeConfig, bool isWindow = true);
 
     bool SendDataToRender(const RSSurfaceNodeConfig& surfaceNodeConfig,
-    RSSurfaceNodeType type, bool isWindow, bool unobscured);
+        RSSurfaceNodeType type, bool isWindow, bool unobscured);
  
     /**
      * @brief Creates a new instance of RSSurfaceNode with the specified configuration.
@@ -197,7 +197,7 @@ public:
     bool SetBufferAvailableCallback(BufferAvailableCallback callback);
     bool IsBufferAvailable() const;
     void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
-    void SetAnimationFinished();
+    void SetAlphaChangedCallback(AlphaChangedCallback&& callback) override;
 
     /**
      * @brief Serializes the RSSurfaceNode into a parcel.
@@ -333,7 +333,6 @@ public:
     // Force enable UIFirst when set TRUE
     void SetForceUIFirst(bool forceUIFirst);
     void SetAncoFlags(uint32_t flags);
-    void SetHDRPresent(bool hdrPresent, NodeId id);
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
     void SetDarkColorMode(bool isDark);
@@ -393,6 +392,8 @@ protected:
     RSSurfaceNode& operator=(const RSSurfaceNode&) = delete;
     RSSurfaceNode& operator=(const RSSurfaceNode&&) = delete;
 
+    // For RegisterBufferAvailableListener
+    BufferAvailableCallback BufferAvailableCallbackFunc();
 private:
 #ifdef USE_SURFACE_TEXTURE
     void CreateSurfaceExt(const RSSurfaceExtConfig& config);
@@ -403,12 +404,14 @@ private:
     /**
      * @brief Called when the bounds size of the surface node changes.
      */
-    void OnBoundsSizeChanged() const override;
+    void OnBoundsSizeChanged() override;
     // this function is only used in texture export
     void SetSurfaceIdToRenderNode();
     void CreateRenderNodeForTextureExportSwitch() override;
     void SetIsTextureExportNode(bool isTextureExportNode);
     void RegisterNodeMap() override;
+
+    void OnAlphaValueChanged() const override;
 
     bool InitShadowModifiers(SharedPtr shadowNode, const std::set<ShadowPropertyType>& shadowPropertyTypes = {});
 
@@ -426,6 +429,7 @@ private:
     BufferAvailableCallback callback_;
     bool bufferAvailable_ = false;
     BoundsChangedCallback boundsChangedCallback_;
+    AlphaChangedCallback alphaChangedCallback_;
     // If has shadow node or itself is a shadow node, existsDuplicateModifier_ may be true.
     bool existsDuplicateModifier_ = false;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;

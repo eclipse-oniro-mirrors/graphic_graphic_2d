@@ -38,6 +38,7 @@
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "ipc_callbacks/surface_capture_callback_stub.h"
+#include "transaction/rs_marshalling_helper.h"
 #include "transaction/rs_ashmem_helper.h"
 #include "transaction/rs_unmarshal_thread.h"
 #include "transaction/rs_render_service_client_info.h"
@@ -556,6 +557,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             }
             break;
         }
+        // LCOV_EXCL_START
         case static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REGISTER_APPLICATION_AGENT): {
             pid_t pid = GetCallingPid();
             RS_PROFILER_PATCH_PID(data, pid);
@@ -572,6 +574,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             RegisterApplicationAgent(pid, app);
             break;
         }
+        // LCOV_EXCL_STOP
         case static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::SET_BUFFER_CLEAR_LISTENER): {
             NodeId id{0};
             if (!data.ReadUint64(id)) {
@@ -1090,7 +1093,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                 ret = ERR_INVALID_REPLY;
                 break;
             }
-            if (!WriteBrightnessInfo(brightnessInfo, reply)) {
+            if (!RSMarshallingHelper::Marshalling(reply, brightnessInfo)) {
                 RS_LOGE("RSClientToRenderConnectionStub::GET_BRIGHTNESS_INFO Write brightnessInfo failed!");
                 ret = ERR_INVALID_REPLY;
             }
@@ -1762,18 +1765,6 @@ bool RSClientToRenderConnectionStub::ReadDataBaseRs(DataBaseRs& info, MessagePar
         !data.ReadString(info.abilityName) ||!data.ReadString(info.pageUrl) ||
         !data.ReadString(info.sourceType) || !data.ReadString(info.note)) {
         RS_LOGE("RSClientToRenderConnectionStub::ReadDataBaseRs Read parcel failed!");
-        return false;
-    }
-    return true;
-}
-
-bool RSClientToRenderConnectionStub::WriteBrightnessInfo(const BrightnessInfo& brightnessInfo, MessageParcel& data)
-{
-    if (!data.WriteFloat(brightnessInfo.currentHeadroom) ||
-        !data.WriteFloat(brightnessInfo.maxHeadroom) ||
-        !data.WriteFloat(brightnessInfo.sdrNits) ||
-        !data.WriteFloat(brightnessInfo.brightnessPosition)) {
-        RS_LOGE("RSClientToRenderConnectionStub::WriteBrightnessInfo write brightnessInfo failed!");
         return false;
     }
     return true;

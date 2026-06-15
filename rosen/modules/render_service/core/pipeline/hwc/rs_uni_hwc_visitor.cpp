@@ -519,9 +519,12 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByAlpha(const std::shared_ptr<RSSurface
 void RSUniHwcVisitor::CollectHdrForceHwcNodes(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
     std::unordered_set<pid_t>& hdrForceHwcNodes)
 {
+    if (!RSSystemProperties::GetXcomponentEdrEnabled() || RSBaseHdrUtil::GetRGBA1010108Enabled()) {
+        return;
+    }
     // Collect HDR_VIDEO status first
     uniRenderVisitor_.curScreenNode_->CollectHdrStatus(hwcNode->GetId(), hwcNode->GetVideoHdrStatus());
-    if (!RSBaseHdrUtil::GetRGBA1010108Enabled() && hwcNode->IsHdrForceHwcEnabled()) {
+    if (hwcNode->IsHdrForceHwcEnabled()) {
         hdrForceHwcNodes.emplace(ExtractPid(hwcNode->GetId()));
     }
 }
@@ -696,6 +699,12 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& 
     }
     auto absBound = hwcNode->GetRenderProperties().GetBoundsGeometry()->GetAbsRect();
     if (!isIntersectWithRoundCorner) {
+        hwcRects.emplace_back(absBound);
+        return;
+    }
+    if (hwcNode->GetVcldInfo().enable) {
+        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " skip IntersectedRoundCorner because vcld",
+            hwcNode->GetName().c_str(), hwcNode->GetId());
         hwcRects.emplace_back(absBound);
         return;
     }
@@ -1379,6 +1388,18 @@ void RSUniHwcVisitor::UpdateCrossInfoForProtectedHwcNode(RSSurfaceRenderNode& hw
     }
 }
 
+void RSUniHwcVisitor::UpdateHwcNodeEnableByGlobalPosition(RSSurfaceRenderNode& hwcNode)
+{
+    if (hwcNode.GetAncoFlags() & static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE)) {
+        auto firstLevelNode = RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(hwcNode.GetFirstLevelNode());
+        if (firstLevelNode && firstLevelNode->GetGlobalPositionEnabled()) {
+            hwcNode.SetHardwareForcedDisabledState(true);
+            RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " disabled by anco node has global position",
+                hwcNode.GetName().c_str(), hwcNode.GetId());
+        }
+    }
+}
+
 void RSUniHwcVisitor::PrintHiperfCounterLog(const char* const counterContext, uint64_t counter)
 {
 #ifdef HIPERF_TRACE_ENABLE
@@ -1443,6 +1464,7 @@ void RSUniHwcVisitor::UpdateHwcNodeInfo(RSSurfaceRenderNode& node,
         }
     }
     UpdateSrcRect(node, absMatrix);
+    UpdateHwcNodeEnableByGlobalPosition(node);
     UpdateHwcNodeEnableByBackgroundAlpha(node);
     UpdateHwcNodeByTransform(node, absMatrix);
     // dstRect transform to global position after UpdateHwcNodeByTransform

@@ -113,6 +113,8 @@ Drawing::ColorType GetColorTypeWithVKFormat(VkFormat vkFormat)
     switch (vkFormat) {
         case VK_FORMAT_R8G8B8A8_UNORM:
             return Drawing::COLORTYPE_RGBA_8888;
+        case VK_FORMAT_B8G8R8A8_UNORM:
+            return Drawing::COLORTYPE_BGRA_8888;
         case VK_FORMAT_R16G16B16A16_SFLOAT:
             return Drawing::COLORTYPE_RGBA_F16;
         case VK_FORMAT_R5G6B5_UNORM_PACK16:
@@ -705,7 +707,8 @@ std::shared_ptr<Drawing::Image> RSImageBase::MakeFromTextureForVK(
     Drawing::ColorType colorType = GetColorTypeWithVKFormat(vkTextureInfo->format);
     std::shared_ptr<Drawing::ColorSpace> colorSpace =
         RSColorSpaceUtil::ColorSpaceToDrawingColorSpace(pixelMap_->InnerGetGrColorSpace().GetColorSpaceName());
-    Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
+    Drawing::AlphaType alphaType = RSPixelMapUtil::AlphaTypeToDrawingAlphaType(pixelMap_->GetAlphaType());
+    Drawing::BitmapFormat bitmapFormat = { colorType, alphaType };
     if (!dmaImage->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, colorSpace, NativeBufferUtils::DeleteVkImage,
         cleanUpHelper_->Ref())) {

@@ -73,6 +73,7 @@
 #include "recording/mask_cmd_list.h"
 
 #include "property/rs_properties_def.h"
+#include "screen_manager/rs_surface_region_config.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -3651,6 +3652,30 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSRenderParticleVector& 
 {
     return false;
 }
+
+#ifndef ROSEN_CROSS_PLATFORM
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SurfaceRegionConfig& val)
+{
+    if (!Marshalling(parcel, val.surface)) {
+        return false;
+    }
+    if (!Marshalling(parcel, val.region)) {
+        return false;
+    }
+    return true;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SurfaceRegionConfig& val)
+{
+    if (!Unmarshalling(parcel, val.surface)) {
+        return false;
+    }
+    if (!Unmarshalling(parcel, val.region)) {
+        return false;
+    }
+    return true;
+}
+#endif
 
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, sptr<Surface> surface)
 {

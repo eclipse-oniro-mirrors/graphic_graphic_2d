@@ -56,7 +56,7 @@ static void OnBoundsChangedCallback(const Vector4f& bounds)
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_SetBoundsChangedCallback_001)
 {
     // Test with valid callback
-    auto testNode1 = RSCanvasNode::Create();
+    auto testNode1 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode1->SetBounds({ 50, 50, 400, 400 });
     testNode1->SetBackgroundColor(0xffff0000);
     testNode1->SetBoundsChangedCallback(OnBoundsChangedCallback);
@@ -64,7 +64,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     RegisterNode(testNode1);
 
     // Test with null callback
-    auto testNode2 = RSCanvasNode::Create();
+    auto testNode2 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode2->SetBounds({ 500, 50, 400, 400 });
     testNode2->SetBackgroundColor(0xffff0000);
     testNode2->SetBoundsChangedCallback(nullptr);
@@ -85,7 +85,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     // Test with pixelmap
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            auto testNode = RSCanvasNode::Create();
+            auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
             testNode->SetBounds({ (int)j * 380 + 50, (int)i * 350 + 50, 300, 300 });
             if (i == 0 && j == 0) {
                 testNode->SetPixelmap(nullptr); // null pixelmap
@@ -111,7 +111,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
 
     for (size_t row = 0; row < typeList.size(); row++) {
         for (size_t col = 0; col < alphaList.size(); col++) {
-            auto testNode = RSCanvasNode::Create();
+            auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
             testNode->SetBounds({ (int)col * 380 + 50, (int)row * 350 + 50, 300, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetAlpha(alphaList[col]);
@@ -132,7 +132,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<bool> exportStates = { true, false, true };
 
     for (size_t i = 0; i < exportStates.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetTextureExport(exportStates[i]);
@@ -148,12 +148,12 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_ClearChildren_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 1100, 400 });
     parent->SetBackgroundColor(0xffff0000);
 
     for (int i = 0; i < 4; i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ 50 + i * 280, 50, 250, 300 });
         child->SetBackgroundColor(0xff00ff00);
         parent->AddChild(child);
@@ -176,7 +176,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
 
     for (size_t row = 0; row < boundaryTags.size(); row++) {
         for (size_t col = 0; col < alphaList.size(); col++) {
-            auto testNode = RSCanvasNode::Create();
+            auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
             testNode->SetBounds({ (int)col * 380 + 50, (int)row * 350 + 50, 300, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetAlpha(alphaList[col]);
@@ -197,7 +197,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<uint64_t> instanceIds = { 0, 1, 100, 1000, UINT64_MAX };
 
     for (size_t i = 0; i < instanceIds.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 220 + 50, 50, 200, 200 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetInstanceId(instanceIds[i]);
@@ -213,7 +213,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_MarkSuggestOpincNode_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->MarkSuggestOpincNode(true);
@@ -228,7 +228,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_MarkUifirstNode_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->MarkUifirstNode(true);
@@ -243,7 +243,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_SetOutOfParent_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 600, 600 });
     parent->SetBackgroundColor(0xffff0000);
 
@@ -254,7 +254,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     };
 
     for (size_t i = 0; i < childBounds.size(); i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ childBounds[i].x_, childBounds[i].y_,
             childBounds[i].z_, childBounds[i].w_ });
         child->SetBackgroundColor(0xff00ff00);
@@ -277,12 +277,12 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_AddChild_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 1100, 1100 });
     parent->SetBackgroundColor(0xffff0000);
 
     for (int i = 0; i < 9; i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ 50 + (i % 3) * 350, 50 + (i / 3) * 350, 300, 300 });
         child->SetBackgroundColor(0xff00ff00 - i * 0x00100000);
         parent->AddChild(child);
@@ -299,12 +299,12 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_MoveChild_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 1100, 400 });
     parent->SetBackgroundColor(0xffff0000);
 
     for (int i = 0; i < 4; i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ 50 + i * 280, 50, 250, 300 });
         child->SetBackgroundColor(0xff00ff00);
         parent->AddChild(child);
@@ -322,12 +322,12 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_RemoveChildByNodeSelf_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 600, 600 });
     parent->SetBackgroundColor(0xffff0000);
 
     for (int i = 0; i < 3; i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ 50 + i * 180, 50, 150, 150 });
         child->SetBackgroundColor(0xff00ff00);
         parent->AddChild(child);
@@ -347,11 +347,11 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_RemoveFromTree_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 500, 500 });
     parent->SetBackgroundColor(0xffff0000);
 
-    auto child = RSCanvasNode::Create();
+    auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     child->SetBounds({ 100, 100, 200, 200 });
     child->SetBackgroundColor(0xff00ff00);
     parent->AddChild(child);
@@ -368,12 +368,12 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_AddCompositeNodeChild_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 1100, 400 });
     parent->SetBackgroundColor(0xffff0000);
 
     for (int i = 0; i < 3; i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ 50 + i * 350, 50, 300, 300 });
         child->SetBackgroundColor(0xff00ff00);
         parent->AddCompositeNodeChild(child, -1);
@@ -390,15 +390,15 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_AddCrossParentChild_001)
 {
-    auto parent1 = RSCanvasNode::Create();
+    auto parent1 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent1->SetBounds({ 50, 50, 500, 500 });
     parent1->SetBackgroundColor(0xffff0000);
 
-    auto parent2 = RSCanvasNode::Create();
+    auto parent2 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent2->SetBounds({ 600, 50, 500, 500 });
     parent2->SetBackgroundColor(0xff00ff00);
 
-    auto child = RSCanvasNode::Create();
+    auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     child->SetBounds({ 100, 100, 200, 200 });
     child->SetBackgroundColor(0xff0000ff);
 
@@ -417,11 +417,11 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_RemoveCrossParentChild_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 500, 500 });
     parent->SetBackgroundColor(0xffff0000);
 
-    auto child = RSCanvasNode::Create();
+    auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     child->SetBounds({ 100, 100, 200, 200 });
     child->SetBackgroundColor(0xff00ff00);
 
@@ -441,7 +441,9 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<bool> isCrossValues = { true, false, true };
 
     for (size_t i = 0; i < isCrossValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        RSSurfaceNodeConfig surfaceNodeConfig;
+        auto testNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+            RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetIsCrossNode(isCrossValues[i]);
@@ -457,11 +459,13 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_AddCrossScreenChild_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 500, 500 });
     parent->SetBackgroundColor(0xffff0000);
 
-    auto child = RSCanvasNode::Create();
+    RSSurfaceNodeConfig surfaceNodeConfig;
+    auto child = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     child->SetBounds({ 100, 100, 200, 200 });
     child->SetBackgroundColor(0xff00ff00);
 
@@ -478,11 +482,13 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_RemoveCrossScreenChild_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 500, 500 });
     parent->SetBackgroundColor(0xffff0000);
 
-    auto child = RSCanvasNode::Create();
+    RSSurfaceNodeConfig surfaceNodeConfig;
+    auto child = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     child->SetBounds({ 100, 100, 200, 200 });
     child->SetBackgroundColor(0xff00ff00);
 
@@ -500,16 +506,17 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_IsInstanceOf_001)
 {
-    auto canvasNode = RSCanvasNode::Create();
+    auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     canvasNode->SetBounds({ 50, 50, 300, 300 });
     canvasNode->SetBackgroundColor(0xffff0000);
 
     RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     surfaceNode->SetBounds({ 400, 50, 300, 300 });
 
     RSDisplayNodeConfig displayConfig;
-    auto displayNode = RSDisplayNode::Create(displayConfig);
+    auto displayNode = RSDisplayNode::Create(displayConfig, RSGraphicTestDirector::Instance().GetRSUIContext());
     displayNode->SetBounds({ 750, 50, 300, 300 });
 
     bool isCanvas = canvasNode->IsInstanceOf(RSUINodeType::CANVAS_NODE);
@@ -541,7 +548,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<bool> flagValues = { true, false, true };
 
     for (size_t i = 0; i < flagValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetTakeSurfaceForUIFlag();
@@ -557,7 +564,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_RemoveModifier_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
 
@@ -580,7 +587,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<bool> customTypeValues = { true, false, true };
 
     for (size_t i = 0; i < customTypeValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetIsCustomTextType(customTypeValues[i]);
@@ -597,7 +604,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_CloseImplicitCancelAnimation_001)
 {
     for (size_t i = 0; i < 4; i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         testNode->SetBackgroundColor(0xffff0000);
         (void)RSCanvasNode::CloseImplicitCancelAnimation(nullptr);
@@ -613,7 +620,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_NotifyTransition_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     // NotifyTransition requires RSTransitionEffect parameter - testing without effect for now
@@ -631,7 +638,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<int32_t> infoValues = { 0, 100, 200, 300 };
 
     for (size_t i = 0; i < infoValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetFrameNodeInfo(infoValues[i], "test_tag");
@@ -650,7 +657,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     std::vector<bool> needUseList = { true, false, true };
 
     for (size_t i = 0; i < needUseList.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetNeedUseCmdlistDrawRegion(needUseList[i]);
@@ -667,7 +674,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_MarkNodeSingleFrameComposer_001)
 {
     for (int i = 0; i < 4; i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         testNode->SetBackgroundColor(0xffff0000 - i * 0x00200000);
         testNode->MarkNodeSingleFrameComposer(true);
@@ -683,7 +690,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_CalcExpectedFrameRate_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->CalcExpectedFrameRate("test_scene", 1.0f);
@@ -699,7 +706,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_SetDrawNode_001)
 {
     for (size_t i = 0; i < 4; i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetDrawNode();
@@ -715,7 +722,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_SyncDrawNodeType_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     DrawNodeType nodeType = DrawNodeType::PureContainerType;
@@ -736,12 +743,12 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_DumpTree_001)
 {
-    auto parent = RSCanvasNode::Create();
+    auto parent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     parent->SetBounds({ 50, 50, 500, 500 });
     parent->SetBackgroundColor(0xffff0000);
 
     for (int i = 0; i < 3; i++) {
-        auto child = RSCanvasNode::Create();
+        auto child = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         child->SetBounds({ 50 + i * 150, 50, 100, 100 });
         child->SetBackgroundColor(0xff00ff00);
         parent->AddChild(child);
@@ -760,7 +767,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_Dump_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     GetRootNode()->AddChild(testNode);
@@ -776,7 +783,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_DumpNode_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     GetRootNode()->AddChild(testNode);
@@ -792,7 +799,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_IsUniRenderEnabled_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     bool isEnabled = testNode->IsUniRenderEnabled();
@@ -808,7 +815,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_IsRenderServiceNode_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     bool isRSSNode = testNode->IsRenderServiceNode();
@@ -824,7 +831,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_SetDrawNodeChangeCallback_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->SetDrawNodeChangeCallback([](std::shared_ptr<RSNode> node, bool isDrawNode) {
@@ -849,7 +856,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
     };
 
     for (size_t i = 0; i < dirtyTypes.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->MarkDirty(dirtyTypes[i], true);
@@ -865,7 +872,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_IsGeometryDirty_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->MarkDirty(NodeDirtyType::GEOMETRY, true);
@@ -880,7 +887,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_IsAppearanceDirty_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->MarkDirty(NodeDirtyType::APPEARANCE, true);
@@ -895,7 +902,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_UpdateLocalGeometry_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->UpdateLocalGeometry();
@@ -910,7 +917,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveTest_UpdateGlobalGeometry_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->UpdateGlobalGeometry(nullptr);
@@ -930,7 +937,8 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensiveT
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Surface_MarkUIHidden_001)
 {
     RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
     surfaceNode->SetBackgroundColor(0xffff0000);
 
@@ -948,30 +956,13 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Surface_IsBufferAvailable_001)
 {
     RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
     surfaceNode->SetBackgroundColor(0xffff0000);
 
     bool isAvailable = surfaceNode->IsBufferAvailable();
     (void)isAvailable;
-
-    GetRootNode()->AddChild(surfaceNode);
-    RegisterNode(surfaceNode);
-}
-
-/*
- * @tc.name: RSNodeComprehensive_Surface_SetAnimationFinished_001
- * @tc.desc: Test SetAnimationFinished
- * @tc.type: FUNC
- */
-GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Surface_SetAnimationFinished_001)
-{
-    RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
-    surfaceNode->SetBounds({ 50, 50, 400, 400 });
-    surfaceNode->SetBackgroundColor(0xffff0000);
-
-    surfaceNode->SetAnimationFinished();
 
     GetRootNode()->AddChild(surfaceNode);
     RegisterNode(surfaceNode);
@@ -985,7 +976,8 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Surface_IsSelfDrawingNode_001)
 {
     RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
     surfaceNode->SetBackgroundColor(0xffff0000);
 
@@ -1012,7 +1004,8 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 
     for (size_t i = 0; i < rotationValues.size(); i++) {
         RSSurfaceNodeConfig surfaceNodeConfig;
-        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+        auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
         surfaceNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         surfaceNode->SetBackgroundColor(0xffff0000);
         surfaceNode->SetAppRotationCorrection(rotationValues[i]);
@@ -1029,7 +1022,8 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Surface_ResetContextAlpha_001)
 {
     RSSurfaceNodeConfig surfaceNodeConfig;
-    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
+    auto surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
     surfaceNode->SetBounds({ 50, 50, 400, 400 });
     surfaceNode->SetBackgroundColor(0xffff0000);
     surfaceNode->SetAlpha(0.5f);
@@ -1052,7 +1046,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Display_AddDisplayNodeToTree_001)
 {
     RSDisplayNodeConfig displayConfig;
-    auto displayNode = RSDisplayNode::Create(displayConfig);
+    auto displayNode = RSDisplayNode::Create(displayConfig, RSGraphicTestDirector::Instance().GetRSUIContext());
     displayNode->SetBounds({ 50, 50, 1100, 1900 });
     displayNode->SetBackgroundColor(0xffff0000);
 
@@ -1070,7 +1064,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_Display_IsMirrorDisplay_001)
 {
     RSDisplayNodeConfig displayConfig;
-    auto displayNode = RSDisplayNode::Create(displayConfig);
+    auto displayNode = RSDisplayNode::Create(displayConfig, RSGraphicTestDirector::Instance().GetRSUIContext());
     displayNode->SetBounds({ 50, 50, 1100, 1900 });
     displayNode->SetBackgroundColor(0xffff0000);
 
@@ -1098,7 +1092,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_SetPropertyNodeChangeCallback_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
 
@@ -1120,7 +1114,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
     std::vector<bool> needCallbackValues = { true, false, true };
 
     for (size_t i = 0; i < needCallbackValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetNeedCallbackNodeChange(needCallbackValues[i]);
@@ -1136,11 +1130,11 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_RegisterTransitionPair_001)
 {
-    auto node1 = RSCanvasNode::Create();
+    auto node1 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     node1->SetBounds({ 50, 50, 400, 400 });
     node1->SetBackgroundColor(0xffff0000);
 
-    auto node2 = RSCanvasNode::Create();
+    auto node2 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     node2->SetBounds({ 500, 50, 400, 400 });
     node2->SetBackgroundColor(0xff00ff00);
 
@@ -1159,11 +1153,11 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_UnregisterTransitionPair_001)
 {
-    auto node1 = RSCanvasNode::Create();
+    auto node1 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     node1->SetBounds({ 50, 50, 400, 400 });
     node1->SetBackgroundColor(0xffff0000);
 
-    auto node2 = RSCanvasNode::Create();
+    auto node2 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     node2->SetBounds({ 500, 50, 400, 400 });
     node2->SetBackgroundColor(0xff00ff00);
 
@@ -1188,7 +1182,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_SyncTextureExport_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->SetTextureExport(true);
@@ -1210,7 +1204,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 
     for (size_t row = 0; row < qualityLevels.size(); row++) {
         for (size_t col = 0; col < blurRadius.size(); col++) {
-            auto testNode = RSCanvasNode::Create();
+            auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
             testNode->SetBounds({ (int)col * 290 + 50, (int)row * 350 + 50, 250, 300 });
             testNode->SetBackgroundColor(0xffff0000);
             testNode->SetBackgroundBlurRadius(blurRadius[col]);
@@ -1232,19 +1226,19 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_ComplexHierarchy_001)
 {
-    auto root = RSCanvasNode::Create();
+    auto root = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     root->SetBounds({ 50, 50, 1100, 1100 });
     root->SetBackgroundColor(0xffff0000);
 
-    auto level1 = RSCanvasNode::Create();
+    auto level1 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     level1->SetBounds({ 50, 50, 1000, 1000 });
     level1->SetBackgroundColor(0xff00ff00);
 
-    auto level2 = RSCanvasNode::Create();
+    auto level2 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     level2->SetBounds({ 50, 50, 900, 900 });
     level2->SetBackgroundColor(0xff0000ff);
 
-    auto level3 = RSCanvasNode::Create();
+    auto level3 = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     level3->SetBounds({ 50, 50, 800, 800 });
     level3->SetBackgroundColor(0xffffff00);
 
@@ -1263,7 +1257,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_MultipleProperties_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 600, 600 });
     testNode->SetFrame(50, 50, 600, 600);
     testNode->SetBackgroundColor(0xffff0000);
@@ -1292,7 +1286,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
     std::vector<bool> excludedValues = { true, false, true };
 
     for (size_t i = 0; i < excludedValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->ExcludedFromNodeGroup(excludedValues[i]);
@@ -1315,7 +1309,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
     };
 
     for (size_t i = 0; i < switchValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetUIFirstSwitch(switchValues[i]);
@@ -1332,7 +1326,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_SetUIContextToken_001)
 {
     for (size_t i = 0; i < 4; i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 280 + 50, 50, 250, 250 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetUIContextToken();
@@ -1351,7 +1345,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
     std::vector<bool> skipValues = { true, false, true };
 
     for (size_t i = 0; i < skipValues.size(); i++) {
-        auto testNode = RSCanvasNode::Create();
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         testNode->SetBounds({ (int)i * 380 + 50, 50, 350, 350 });
         testNode->SetBackgroundColor(0xffff0000);
         testNode->SetSkipCheckInMultiInstance(skipValues[i]);
@@ -1367,7 +1361,7 @@ GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_
  */
 GRAPHIC_TEST(RSNodeComprehensiveTest, CONTENT_DISPLAY_TEST, RSNodeComprehensive_UpdateOcclusionCullingStatus_001)
 {
-    auto testNode = RSCanvasNode::Create();
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     testNode->SetBounds({ 50, 50, 400, 400 });
     testNode->SetBackgroundColor(0xffff0000);
     testNode->UpdateOcclusionCullingStatus(true, INVALID_NODEID);

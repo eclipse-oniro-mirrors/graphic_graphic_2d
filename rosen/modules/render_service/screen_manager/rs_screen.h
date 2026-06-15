@@ -28,6 +28,7 @@
 
 #include <common/rs_rect.h>
 #include <screen_manager/screen_types.h>
+#include <screen_manager/rs_surface_region_config.h>
 #include "rs_screen_thread_safe_property.h"
 
 #include "ipc_callbacks/screen_supported_hdr_formats_callback.h"
@@ -40,10 +41,10 @@ struct VirtualScreenConfigs {
     std::string name;
     uint32_t width = 0;
     uint32_t height = 0;
-    sptr<Surface> surface = nullptr;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_RGBA_8888;
     int32_t flags = 0; // reserve flag.
     std::unordered_set<uint64_t> whiteList = {};
+    std::vector<SurfaceRegionConfig> surfaceConfigs;
 };
 
 class RSScreen : public std::enable_shared_from_this<RSScreen> {
@@ -100,6 +101,11 @@ public:
 
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData);
     int32_t GetScreenBacklight() const;
+
+    int32_t GetScreenVCPFeature(uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const;
+    int32_t SetScreenVCPFeature(uint8_t vcpCode, uint16_t currentValue);
+
     int32_t SetScreenConstraint(uint64_t frameId, uint64_t timestamp, ScreenConstraintType type);
 
     int32_t SetPixelFormat(GraphicPixelFormat pixelFormat);
@@ -126,8 +132,13 @@ public:
     uint32_t SetScreenActiveRect(const Rect& activeRect);
 
     // virtual screen
-    void SetProducerSurface(sptr<Surface> producerSurface);
-    sptr<Surface> GetProducerSurface() const;
+
+    // Multi-surface virtual screen (for mirror/extend mode with multiple surfaces)
+    using MultiSurfaceConfigs = std::vector<SurfaceRegionConfig>;
+    void SetMultiSurfaceConfigs(const MultiSurfaceConfigs& configs);
+    void AddSurfaceConfigs(const MultiSurfaceConfigs& configs);
+    void RemoveSurfaceConfigs(const std::unordered_set<uint64_t>& surfaceIds);
+    MultiSurfaceConfigs GetMultiSurfaceConfigs() const;
 
     void ResizeVirtualScreen(uint32_t width, uint32_t height);
 

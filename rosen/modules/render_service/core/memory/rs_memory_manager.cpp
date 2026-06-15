@@ -68,6 +68,7 @@
 #include "gpuComposition/rs_vk_image_manager.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #endif
+// LCOV_EXCL_START
 static inline const char* GetThreadName()
 {
     static constexpr int nameLen = 16;
@@ -78,6 +79,7 @@ static inline const char* GetThreadName()
     }
     return threadName;
 }
+// LCOV_EXCL_STOP
 
 namespace OHOS::Rosen {
 namespace {
@@ -123,11 +125,17 @@ static std::string Data2String(std::string data, uint32_t targetNumber)
     }
 }
 
+// LCOV_EXCL_START
 void MemoryManager::GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
-    std::unordered_map<int, int>& nullnode_info, std::unordered_map<pid_t, size_t>& modifierSize)
+    std::unordered_map<int, int>& nullnode_info, std::unordered_map<pid_t, size_t>& modifierSize, DfxString& log)
 {
-    RS_TRACE_NAME_FMT("MemoryManager::GetNodeInfo MemNodeMap size:%zu", MemoryTrack::Instance().GetMemNodeMap().size());
-    for (auto& [nodeId, info] : MemoryTrack::Instance().GetMemNodeMap()) {
+    auto memNodeMap = MemoryTrack::Instance().GetMemNodeMap();
+    RS_TRACE_NAME_FMT("MemoryManager::GetNodeInfo memNodeMap size:%zu", memNodeMap.size());
+    size_t totalSize = 0;
+    int count = 0;
+    for (auto& [nodeId, info] : memNodeMap) {
+        totalSize += info.size;
+        count++;
         auto node = RSMainThread::Instance()->GetContext().GetMutableNodeMap().GetRenderNode(nodeId);
         int pid = info.pid;
         if (node) {
@@ -147,8 +155,11 @@ void MemoryManager::GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& no
             }
         }
     }
+    log.AppendFormat("Total Node Size = %d KB (%d entries)\n", totalSize / MEMUNIT_RATE, count);
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MemoryManager::RenderServiceAllNodeDump(DfxString& log)
 {
     RS_TRACE_NAME("MemoryManager::RenderServiceAllNodeDump");
@@ -156,8 +167,8 @@ void MemoryManager::RenderServiceAllNodeDump(DfxString& log)
     std::unordered_map<int, int> nullnode_info; // [pid, count]
     std::unordered_map<pid_t, size_t> modifierSize; // [pid, modifiersize]
     constexpr uint32_t NODE_DUMP_STRING_LEN = 8;
-
-    GetNodeInfo(node_info, nullnode_info, modifierSize);
+    log.AppendFormat("\nRSRenderNode:\n");
+    GetNodeInfo(node_info, nullnode_info, modifierSize, log);
     std::string log_str = Data2String("Pid", NODE_DUMP_STRING_LEN) + "\t" +
         Data2String("Count", NODE_DUMP_STRING_LEN) + "\t" +
         Data2String("OnTree", NODE_DUMP_STRING_LEN) + "\t" +
@@ -197,7 +208,9 @@ void MemoryManager::RenderServiceAllNodeDump(DfxString& log)
     node_info.clear();
     nullnode_info.clear();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MemoryManager::RenderServiceAllSurfaceDump(DfxString& log)
 {
     RS_TRACE_NAME("MemoryManager::RenderServiceAllSurfaceDump");
@@ -238,6 +251,7 @@ void MemoryManager::RenderServiceAllSurfaceDump(DfxString& log)
         }
     });
 }
+// LCOV_EXCL_STOP
 
 void MemoryManager::DumpMem(std::unordered_set<std::u16string>& argSets, std::string& dumpString,
     std::string& type, pid_t pid, bool isLite)
@@ -589,6 +603,7 @@ void MemoryManager::DumpRenderServiceMemory(DfxString& log, bool isLite)
     }
 }
 
+// LCOV_EXCL_START
 void MemoryManager::DumpDrawingCpuMemory(DfxString& log)
 {
     // CPU
@@ -626,6 +641,7 @@ void MemoryManager::DumpDrawingCpuMemory(DfxString& log)
     size_t fontCacheLimit = Drawing::SkiaGraphics::GetFontCacheLimit();
     log.AppendFormat("\ncpu cache limit = %zu ( fontcache = %zu ):\n", cacheLimit, fontCacheLimit);
 }
+// LCOV_EXCL_STOP
 
 void MemoryManager::DumpGpuCache(
     DfxString& log, const Drawing::GPUContext* gpuContext, Drawing::GPUResourceTag* tag, std::string& name)
@@ -685,6 +701,7 @@ void MemoryManager::DumpAllGpuInfo(DfxString& log, const Drawing::GPUContext* gp
 #endif
 }
 
+// LCOV_EXCL_START
 void MemoryManager::DumpGpuNodeMemory(DfxString& log)
 {
     std::string gpuMemInfo;
@@ -702,6 +719,7 @@ void MemoryManager::DumpGpuNodeMemory(DfxString& log)
     log.AppendFormat("%s", gpuMemInfo.c_str());
     log.AppendFormat("\n---------------\n");
 }
+// LCOV_EXCL_STOP
 
 static int32_t MemoryTrackerGetGLByPid(int32_t pid)
 {
@@ -817,6 +835,7 @@ void MemoryManager::DumpGpuStats(DfxString& log, const Drawing::GPUContext* gpuC
     }
 }
 
+// LCOV_EXCL_START
 void ProcessJemallocString(std::string* sp, const char* str)
 {
     sp->append("strbuf size = " + std::to_string(strlen(str)) + "\n");
@@ -859,7 +878,9 @@ void ProcessJemallocString(std::string* sp, const char* str)
         }
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void MemoryManager::DumpMemorySnapshot(DfxString& log)
 {
     size_t totalMemory = MemorySnapshot::Instance().GetTotalMemory();
@@ -875,6 +896,7 @@ void MemoryManager::DumpMemorySnapshot(DfxString& log)
         log.AppendFormat("%s\n", infoStr.c_str());
     }
 }
+// LCOV_EXCL_STOP
 
 uint64_t ParseMemoryLimit(const cJSON* json, const char* name)
 {
@@ -885,6 +907,7 @@ uint64_t ParseMemoryLimit(const cJSON* json, const char* name)
     return UINT64_MAX;
 }
 
+// LCOV_EXCL_START
 void MemoryManager::InitMemoryLimit()
 {
     auto featureParam = GraphicFeatureParamManager::GetInstance().GetFeatureParam(FEATURE_CONFIGS[MEM]);
@@ -945,6 +968,7 @@ void MemoryManager::InitMemoryLimit()
     MemorySnapshot::Instance().InitMemoryLimit(
         MemoryReportAndKill, memoryWarning_, cpuMemoryControl, gpuMemoryControl_, totalMemoryWarning);
 }
+// LCOV_EXCL_STOP
 
 void MemoryManager::SetGpuMemoryLimit(Drawing::GPUContext* gpuContext)
 {
@@ -1015,6 +1039,7 @@ void MemoryManager::MemoryOverCheck(Drawing::GPUContext* gpuContext)
 #endif
 }
 
+// LCOV_EXCL_START
 void MemoryManager::FillMemorySnapshot()
 {
     std::vector<pid_t> pidList;
@@ -1031,6 +1056,7 @@ void MemoryManager::FillMemorySnapshot()
     }
     MemorySnapshot::Instance().FillMemorySnapshot(infoMap);
 }
+// LCOV_EXCL_STOP
 
 static bool KillProcessByPid(const pid_t pid, const MemorySnapshotInfo& info)
 {
@@ -1324,12 +1350,15 @@ void MemoryManager::DumpExitPidMem(std::string& log, int pid)
     log.append(dfxlog.GetString());
 }
 
+// LCOV_EXCL_START
 RSReclaimMemoryManager& RSReclaimMemoryManager::Instance()
 {
     static RSReclaimMemoryManager instance;
     return instance;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void RSReclaimMemoryManager::TriggerReclaimTask()
 {
     // Clear two Applications in one second, post task to reclaim.
@@ -1348,6 +1377,7 @@ void RSReclaimMemoryManager::TriggerReclaimTask()
         lastClearAppTime = currentTime;
     }
 }
+// LCOV_EXCL_STOP
 
 void RSReclaimMemoryManager::InterruptReclaimTask(const std::string& sceneId)
 {

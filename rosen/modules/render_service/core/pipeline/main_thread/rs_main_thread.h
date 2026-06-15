@@ -131,7 +131,7 @@ public:
     void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
-    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect);
+    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, const Drawing::Rect& rect);
 
     void SetForceRsDVsync(const std::string& sceneId);
     void GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
@@ -179,6 +179,7 @@ public:
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
+    sptr<IApplicationAgent> UnRegisterApplicationAgent(uint32_t pid);
 
     void RegisterOcclusionChangeCallback(pid_t pid, sptr<RSIOcclusionChangeCallback> callback);
     void UnRegisterOcclusionChangeCallback(pid_t pid);
@@ -208,6 +209,15 @@ public:
     void CheckWindowCapTasks();
     void ProcessWindowCapTasks();
     bool IsSnapshotPendingThisFrame() const;
+    bool IsLastFrameGpuComposition() const { return directComposeHelper_.lastFrameDidGpuRender_; }
+    uint32_t GetConsecutiveDoCompSuccessCount() const
+    {
+        return directComposeHelper_.consecutiveDoCompSuccessCount_.load(std::memory_order_acquire);
+    }
+    void ResetConsecutiveDoCompSuccessCount()
+    {
+        directComposeHelper_.consecutiveDoCompSuccessCount_.store(0, std::memory_order_release);
+    }
 
     void SetDirtyFlag(bool isDirty = true);
     bool GetDirtyFlag();
@@ -257,7 +267,7 @@ public:
 
     bool IsWatermarkFlagChanged() const
     {
-        return lastWatermarkFlag_ != watermarkFlag_;
+        return lastWatermarkFlag_ != watermarkFlag_ || lastWatermarkImg_ != watermarkImg_;
     }
 
     uint64_t GetFrameCount() const
@@ -626,6 +636,7 @@ private:
     bool isNeedResetClearMemoryTask_ = false;
     bool watermarkFlag_ = false;
     bool lastWatermarkFlag_ = false;
+    std::shared_ptr<Drawing::Image> lastWatermarkImg_ = nullptr;
     bool hasProtectedLayer_ = false;
     bool hasSurfaceLockLayer_ = false;
     DeviceType deviceType_ = DeviceType::PHONE;
@@ -662,7 +673,7 @@ private:
 
     pid_t lastCleanCachePid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;
-    pid_t desktopPidForRotationScene_ = 0;
+    std::atomic<pid_t> desktopPidForRotationScene_ = 0;
     int32_t subscribeFailCount_ = 0;
     SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS; // guard by systemAndRegularMutex_
     bool isRegularAnimation_ = false; // guard by systemAndRegularMutex_

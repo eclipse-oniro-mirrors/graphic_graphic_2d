@@ -54,14 +54,12 @@ void RSAnimationBaseTest::TearDown()
 
 void RSAnimationBaseTest::InitNode(int width, int height)
 {
-    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    rootNode = RSRootNode::Create(false, false, rsUIContext);
+    rootNode = RSRootNode::Create(false, false, rsUiDirector->GetRSUIContext());
     rootNode->SetBounds(0, 0, width, height);
     rootNode->SetFrame(0, 0, width, height);
     rootNode->SetBackgroundColor(SK_ColorYELLOW);
 
-    canvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    canvasNode = RSCanvasNode::Create(false, false, rsUiDirector->GetRSUIContext());
     canvasNode->SetBounds(ANIMATION_START_BOUNDS);
     canvasNode->SetFrame(ANIMATION_START_BOUNDS);
     canvasNode->SetBackgroundColor(SK_ColorBLUE);
@@ -78,7 +76,9 @@ void RSAnimationBaseTest::InitAnimationWindow()
     struct RSSurfaceNodeConfig surfaceNodeConfig = { .SurfaceNodeName = surfaceNodeName, .isSync = true };
     animationSurfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true);
 
-    rsUiDirector = RSUIDirector::Create(nullptr, nullptr);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    rsUiDirector = RSUIDirector::Create(connectToRenderRemote, rsUIContext);
     
     auto runner = OHOS::AppExecFwk::EventRunner::Create(true);
     auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
@@ -99,7 +99,6 @@ void RSAnimationBaseTest::DestoryAnimationWindow()
     std::cout << "DestoryAnimationWindow start" << std::endl;
     animationSurfaceNode = nullptr;
     rootNode = nullptr;
-    rsUiDirector->Destroy();
     rsUiDirector = nullptr;
     std::cout << "DestoryAnimationWindow end" << std::endl;
 }
@@ -112,9 +111,7 @@ void RSAnimationBaseTest::RemoveAnimationCanvasNode()
 
 void RSAnimationBaseTest::ResetAnimationCanvasNode()
 {
-    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    canvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    canvasNode = RSCanvasNode::Create(false, false, rsUiDirector->GetRSUIContext());
     canvasNode->SetBounds(ANIMATION_START_BOUNDS);
     canvasNode->SetFrame(ANIMATION_START_BOUNDS);
     canvasNode->SetBackgroundColor(SK_ColorBLUE);

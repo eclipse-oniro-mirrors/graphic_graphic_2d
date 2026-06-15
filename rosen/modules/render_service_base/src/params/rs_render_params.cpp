@@ -170,11 +170,20 @@ void RSRenderParams::SetChildHasVisibleEffect(bool val)
 
 void RSRenderParams::SetCacheSize(Vector2f size)
 {
-    if (cacheSize_ == size) {
-        return;
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
     }
-    cacheSize_ = size;
-    needSync_ = true;
+    if (renderGroupCache_ && renderGroupCache_->SetCacheSize(size)) {
+        needSync_ = true;
+    }
+}
+
+Vector2f RSRenderParams::GetCacheSize() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->GetCacheSize();
+    }
+    return Vector2f();
 }
 
 void RSRenderParams::SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced)
@@ -341,13 +350,39 @@ bool RSRenderParams::NeedClipHoleForFilter() const
     return false;
 }
 
-void RSRenderParams::SetDrawingCacheIncludeProperty(bool includeProperty)
+void RSRenderParams::SetNeedClearRenderGroupCache(bool needClear)
 {
-    if (drawingCacheIncludeProperty_ == includeProperty) {
-        return;
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
     }
-    drawingCacheIncludeProperty_ = includeProperty;
-    needSync_ = true;
+    if (renderGroupCache_->SetNeedClearRenderGroupCache(needClear)) {
+        needSync_ = true;
+    }
+}
+bool RSRenderParams::NeedClearRenderGroupCache() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->NeedClearRenderGroupCache();
+    }
+    return false;
+}
+
+void RSRenderParams::SetRenderGroupIncludeProperty(bool includeProperty)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetRenderGroupIncludeProperty(includeProperty)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::IsRenderGroupIncludeProperty() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->IsRenderGroupIncludeProperty();
+    }
+    return false;
 }
 
 void RSRenderParams::SetRSFreezeFlag(bool freezeFlag, bool isMarkedByUI)
@@ -481,6 +516,22 @@ void RSRenderParams::SetShadowRect(Drawing::Rect rect)
     }
     shadowRect_ = rect;
     needSync_ = true;
+}
+
+void RSRenderParams::SetRealShadowRect(const Drawing::Rect& rect)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    renderGroupCache_->SetRealShadowRect(rect);
+}
+
+Drawing::Rect RSRenderParams::GetRealShadowRect() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->GetRealShadowRect();
+    }
+    return Drawing::Rect();
 }
 
 void RSRenderParams::SetNeedSync(bool needSync)
@@ -646,7 +697,6 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->hasSandBox_ = hasSandBox_;
     target->localDrawRect_ = localDrawRect_;
     target->id_ = id_;
-    target->cacheSize_ = cacheSize_;
     target->frameGravity_ = frameGravity_;
     target->childHasVisibleFilter_ = childHasVisibleFilter_;
     target->childHasVisibleEffect_ = childHasVisibleEffect_;
@@ -654,7 +704,6 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     // (flag in render param may be not used because of occlusion skip, so we need to update cache in next frame)
     target->isDrawingCacheChanged_ = target->isDrawingCacheChanged_ || isDrawingCacheChanged_;
     target->shadowRect_ = shadowRect_;
-    target->drawingCacheIncludeProperty_ = drawingCacheIncludeProperty_;
     if (renderGroupCache_) {
         target->renderGroupCache_ = std::make_unique<RSRenderGroupCache>(*renderGroupCache_);
     }
@@ -687,9 +736,6 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->uifirstRootNodeId_ = uifirstRootNodeId_;
     target->instanceRootNodeId_ = instanceRootNodeId_;
     target->instanceRootNodeName_ = instanceRootNodeName_;
-    target->isFirstLevelCrossNode_ = isFirstLevelCrossNode_;
-    target->cloneSourceDrawable_ = cloneSourceDrawable_;
-    target->isCrossNodeOffscreenOn_ = isCrossNodeOffscreenOn_;
     target->absRotation_ = absRotation_;
     target->hasUnobscuredUEC_ = hasUnobscuredUEC_;
 
@@ -788,11 +834,6 @@ DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr RSRenderParams::GetMirrorSource
 {
     static DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr defaultPtr;
     return defaultPtr;
-}
-
-void RSRenderParams::SetCloneSourceDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
-{
-    cloneSourceDrawable_ = drawable;
 }
 
 // [Attention] Only used in PC window resize scene now

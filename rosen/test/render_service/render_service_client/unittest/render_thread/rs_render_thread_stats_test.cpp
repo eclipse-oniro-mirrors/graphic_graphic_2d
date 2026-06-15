@@ -41,7 +41,7 @@
 
 using namespace testing;
 using namespace testing::ext;
-
+#if defined(RS_ENABLE_UNI_RENDER)
 namespace OHOS::Rosen {
 class RSRenderThreadStatsTest : public testing::Test {
 public:
@@ -56,6 +56,7 @@ void RSRenderThreadStatsTest::TearDownTestCase() {}
 void RSRenderThreadStatsTest::SetUp() {}
 void RSRenderThreadStatsTest::TearDown() {}
 
+#ifdef RS_ENABLE_UNI_RENDER
 /**
  * @tc.name: RenderFitToString
  * @tc.desc: test RenderFitToString
@@ -487,4 +488,6 @@ HWTEST_F(RSRenderThreadStatsTest, AddStaticInfo007, TestSize.Level1)
     EXPECT_TRUE(instance.rsRenderFitRenderThreadInfo_.empty());
     EXPECT_TRUE(instance.recentUpdatedRenderFitRenderThreadInfo_.empty());
 }
+#endif
 } // namespace OHOS::Rosen
+#endif

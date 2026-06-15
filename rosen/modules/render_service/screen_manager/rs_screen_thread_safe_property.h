@@ -18,6 +18,7 @@
 
 #include <shared_mutex>
 #include <screen_manager/rs_screen_property.h>
+#include <screen_manager/rs_surface_region_config.h>
 
 namespace OHOS {
 namespace Rosen {
@@ -60,7 +61,6 @@ public:
     ResType SetPowerStatus(ScreenPowerStatus powerStatus);
     ResType SetScreenType(RSScreenType screenType);
     ResType SetConnectionType(ScreenConnectionType connectionType);
-    ResType SetProducerSurface(sptr<Surface> producerSurface);
     ResType SetScreenScaleMode(ScreenScaleMode scaleMode);
     ResType SetScreenStatus(VirtualScreenStatus screenStatus);
     ResType SetVirtualSecLayerOption(int32_t virtualSecLayerOption);
@@ -69,6 +69,9 @@ public:
     ResType SetDisablePowerOffRenderControl(bool disable);
     ResType SetScreenSwitchStatus(bool status);
     ResType SetFrameGravity(int32_t gravity);
+    ResType SetMultiSurfaceConfigs(const std::vector<SurfaceRegionConfig>& configs);
+    ResType AddSurfaceConfigs(const std::vector<SurfaceRegionConfig>& configs);
+    ResType RemoveSurfaceConfigs(const std::unordered_set<uint64_t>& surfaceIds);
     ResType SetAsMainScreen(bool isMainScreen);
 
     ScreenId GetId() const;
@@ -111,12 +114,12 @@ public:
     ScreenPowerStatus GetPowerStatus() const;
     RSScreenType GetScreenType() const;
     ScreenConnectionType GetConnectionType() const;
-    sptr<Surface> GetProducerSurface() const;
     ScreenScaleMode GetScreenScaleMode() const;
     VirtualScreenStatus GetScreenStatus() const;
     int32_t GetVirtualSecLayerOption() const;
     bool GetIsHardCursorSupport() const;
     std::vector<ScreenColorGamut> GetSupportedColorGamuts() const;
+    std::vector<SurfaceRegionConfig> GetMultiSurfaceConfigs() const;
     bool IsMainScreen() const;
 
     ScreenInfo GetScreenInfo() const;

@@ -53,6 +53,10 @@
 #include "property/rs_properties.h"
 #include "screen_manager/screen_types.h"
 
+#ifdef USE_PRIMITIVE
+#include "foundation/graphic/graphic_2d_ext/subtree/primitive/primitive_dirty_type.h"
+#endif
+
 namespace OHOS {
 namespace Rosen {
 namespace DrawableV2 {
@@ -154,29 +158,13 @@ public:
     void RemoveFromTree(bool skipTransition = false);
 
     // Add/RemoveCrossParentChild only used as: the child is under multiple parents(e.g. a window cross multi-screens)
-    void AddCrossParentChild(const SharedPtr& child, int32_t index = -1);
-    void RemoveCrossParentChild(const SharedPtr& child, const WeakPtr& newParent);
-    void SetIsCrossNode(bool isCrossNode);
+    void AddCrossParentChild(const std::shared_ptr<RSSurfaceRenderNode>& child, int32_t index = -1);
+    void RemoveCrossParentChild(const std::shared_ptr<RSSurfaceRenderNode>& child, const WeakPtr& newParent);
 
     // Only used in PC extend screen
-    void AddCrossScreenChild(const SharedPtr& child, NodeId cloneNodeId, int32_t index = -1,
+    void AddCrossScreenChild(const std::shared_ptr<RSSurfaceRenderNode>& child, NodeId cloneNodeId, int32_t index = -1,
         bool autoClearCloneNode = false);
-    void RemoveCrossScreenChild(const SharedPtr& child);
-    void ClearCloneCrossNode();
-
-    WeakPtr GetSourceCrossNode() const
-    {
-        return sourceCrossNode_;
-    }
-
-    bool IsCloneCrossNode() const
-    {
-        return isCloneCrossNode_;
-    }
-
-    bool HasVisitedCrossNode() const;
-
-    void SetCrossNodeVisitedStatus(bool hasVisited);
+    void RemoveCrossScreenChild(const std::shared_ptr<RSSurfaceRenderNode>& child);
 
     void SetCurCloneNodeParent(SharedPtr node)
     {
@@ -287,14 +275,13 @@ public:
     bool GetAbsMatrixReverse(const RSRenderNode& rootNode, Drawing::Matrix& absMatrix);
 
     // flag: isOnTheTree; instanceRootNodeId: displaynode or leash/appnode attached to
-    // firstLevelNodeId: surfacenode for uiFirst to assign task; cacheNodeId: drawing cache rootnode attached to
+    // firstLevelNodeId: surfacenode for uiFirst to assign task
     virtual void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
-        NodeId logicalDisplayNodeId = INVALID_NODEID);
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId uifirstRootNodeId = INVALID_NODEID,
+        NodeId screenNodeId = INVALID_NODEID, NodeId logicalDisplayNodeId = INVALID_NODEID);
     void SetIsOntheTreeOnlyFlag(bool flag)
     {
-        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_, drawingCacheRootId_,
+        SetIsOnTheTree(flag, instanceRootNodeId_, firstLevelNodeId_,
             uifirstRootNodeId_, screenNodeId_, logicalDisplayNodeId_);
     }
     inline bool IsOnTheTree() const
@@ -533,6 +520,7 @@ public:
     bool UpdateRenderStatus(RectI& dirtyRegion, bool isPartialRenderEnabled);
 
     std::shared_ptr<RSAnimationManager> GetAnimationManager() const;
+    std::shared_ptr<RSAnimationManager> GetOrCreateAnimationManager();
     void AddAnimation(const std::shared_ptr<RSRenderAnimation>& animation);
 
     void ApplyAlphaAndBoundsGeometry(RSPaintFilterCanvas& canvas);
@@ -689,15 +677,6 @@ public:
         commandExecuted_ = commandExecuted;
     }
 
-    bool IsScale() const
-    {
-        return isScale_;
-    }
-    void SetIsScale(bool isScale)
-    {
-        isScale_ = isScale;
-    }
-
     void SetDrawRegion(const std::shared_ptr<RectF>& rect);
     void SetOutOfParent(OutOfParentType outOfParent);
     OutOfParentType GetOutOfParent() const;
@@ -772,7 +751,10 @@ public:
     NodeGroupType GetNodeGroupType() const;
     void SetChildHasTranslateOnSqueeze(bool val);
     void SetNodeGroupHasChildInBlacklist(bool inBlacklist);
-    bool IsNodeGroupIncludeProperty() const;
+    void SetNeedClearRenderGroupCache(bool needClear);
+    bool NeedClearRenderGroupCache() const;
+    void SetRenderGroupIncludeProperty(bool includeProperty);
+    bool IsRenderGroupIncludeProperty() const;
     void UpdateDrawingCacheInfoBeforeChildren(bool isScreenRotation, bool isOnExcludedSubTree);
     void UpdateDrawingCacheInfoAfterChildren(const std::unordered_set<NodeId>& childHasProtectedNodeSet = {});
     // !used for renderGroup
@@ -797,7 +779,9 @@ public:
     virtual void SetNewOnTree(bool isNewOnTree) {}
 
     // mark cross node in physical extended screen model
-    bool IsCrossNode() const;
+    virtual bool IsCrossNode() const{
+        return false;
+    }
 
     // arkui mark
     void MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate);
@@ -873,7 +857,6 @@ public:
     virtual void ApplyModifiers();
     void ApplyPositionZModifier();
     virtual void UpdateRenderParams();
-    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn);
 
     virtual RectI GetFilterRect() const;
     RectI GetAbsRect() const;
@@ -946,8 +929,6 @@ public:
 
     // will be abandoned
     void MarkUifirstNode(bool isUifirstNode);
-    virtual void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch);
-    virtual RSUIFirstSwitch GetUIFirstSwitch() const { return RSUIFirstSwitch::NONE; }
 
     const RectI GetFilterCachedRegion() const;
     virtual bool EffectNodeShouldPaint() const { return true; };
@@ -1124,6 +1105,8 @@ public:
     bool IsColorPickerOnlyNode() const;
 
     void ReSortChildrenByZIndex();
+
+    void AccumulateParentGeoDirty();
 protected:
     void ResetDirtyStatus();
 
@@ -1174,6 +1157,8 @@ protected:
     void RemoveUIExtensionChild(SharedPtr child);
     bool NeedRoutedBasedOnUIExtension(SharedPtr child);
 
+    bool IsNodeParentHasUIFirstCache();
+
     void UpdateDrawableVecV2();
     void ClearDrawableVec2();
     void UpdateDrawableEnableEDR();
@@ -1213,8 +1198,6 @@ protected:
     }
     // if true, it means currently it's in partial render mode and this node is intersect with dirtyRegion
     bool isShadowValidLastFrame_ = false;
-    bool needClearSurface_ = false;
-
     bool lastFrameHasVisibleEffectWithoutEmptyRect_ = false;
     mutable bool isFullChildrenListValid_ = true;
     mutable bool isChildrenSorted_ = true;
@@ -1226,10 +1209,11 @@ protected:
     bool srcOrClipedAbsDrawRectChangeFlag_ = false;
     bool startingWindowFlag_ = false;
     bool childHasSharedTransition_ = false;
+    bool isFirstLevelCrossNode_ = false;
+    WeakPtr curCloneNodeParent_;
     std::atomic<bool> isStaticCached_ = false;
     NodeDirty dirtyStatus_ = NodeDirty::CLEAN;
     NodeDirty curDirtyStatus_ = NodeDirty::CLEAN;
-    NodeId drawingCacheRootId_ = INVALID_NODEID;
     mutable std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter> renderDrawable_;
     std::unique_ptr<RSRenderParams> stagingRenderParams_;
 
@@ -1241,15 +1225,17 @@ protected:
     // Enable HWCompose
     RSHwcRecorder hwcRecorder_;
 
+#ifdef USE_PRIMITIVE
+    bool isTransformDirty_ = false;
+    PrimitiveDirtyBitmap stagingSelfPrimDirtyBitmap_;
+    PrimitiveDirtyBitmap stagingInfectiousPrimDirtyBitmap_;
+#endif
+
 private:
     std::unordered_map<ScreenId, std::shared_ptr<RSLayer>> rsLayersPerScreen_;
     // mark cross node in physical extended screen model
     bool isRepaintBoundary_ = false;
     bool hasForceSubmit_ = false;
-    bool isCrossNode_ = false;
-    bool isCloneCrossNode_ = false;
-    bool isFirstLevelCrossNode_ = false;
-    bool autoClearCloneNode_ = false;
     uint8_t nodeGroupType_ = NodeGroupType::NONE;
     bool shouldPaint_ = true;
     bool isAccumulatedClipFlagChanged_ = false;
@@ -1277,7 +1263,6 @@ private:
     bool isSubTreeDirty_ = false;
     bool isTreeStateChangeDirty_ = false;
     bool isContentDirty_ = false;
-    bool nodeGroupIncludeProperty_ = false;
     bool geometryChangeNotPerceived_ = false;
     bool isDirtyRegionUpdated_ = false;
     bool isLastVisible_ = false;
@@ -1287,7 +1272,6 @@ private:
     bool lastFrameHasChildrenOutOfRect_ = false;
     CacheType cacheType_ = CacheType::NONE;
     bool isDrawingCacheChanged_ = false;
-    bool isScale_ = false;
     bool backgroundFilterRegionChanged_ = false;
     bool backgroundFilterInteractWithDirty_ = false;
     // for UIExtension info collection
@@ -1328,8 +1312,6 @@ private:
     std::shared_ptr<RectF> drawRegion_ = nullptr;
     std::shared_ptr<std::unordered_set<std::shared_ptr<RSRenderNode>>> stagingUECChildren_ =
         std::make_shared<std::unordered_set<std::shared_ptr<RSRenderNode>>>();
-    WeakPtr sourceCrossNode_;
-    WeakPtr curCloneNodeParent_;
     std::weak_ptr<RSContext> context_ = {};
     WeakPtr parent_;
     // including enlarged draw region
@@ -1362,8 +1344,6 @@ private:
     };
     std::unique_ptr<FilterRegionInfo> filterRegionInfo_;
     RectI lastFilterRegion_;
-    std::vector<SharedPtr> cloneCrossNodeVec_;
-    bool hasVisitedCrossNode_ = false;
 
     ModifiersNGMap modifiersNG_;
     std::map<PropertyId, std::shared_ptr<RSRenderPropertyBase>> properties_;
@@ -1391,8 +1371,6 @@ private:
     friend class RSRenderPropertyBase;
     friend class RSRenderTransition;
     std::unique_ptr<std::string> nodeName_;
-    std::unordered_set<NodeId> curCacheFilterRects_ = {};
-    std::unordered_set<NodeId> visitedCacheRoots_ = {};
 
     RSProperties renderProperties_;
 
@@ -1456,8 +1434,6 @@ private:
 
     void UpdateDisplayList();
     void UpdateShadowRect();
-
-    void RecordCloneCrossNode(SharedPtr node);
 
     void OnRegister(const std::weak_ptr<RSContext>& context);
 

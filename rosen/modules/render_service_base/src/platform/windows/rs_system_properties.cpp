@@ -446,6 +446,11 @@ int RSSystemProperties::WatchSystemProperty(const char* name, OnSystemPropertyCh
     return {};
 }
 
+int RSSystemProperties::RemoveWatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context)
+{
+    return {};
+}
+
 bool RSSystemProperties::GetAFBCEnabled()
 {
     return {};
@@ -642,6 +647,11 @@ bool RSSystemProperties::GetLayerPartRenderEnabled()
 }
 
 bool RSSystemProperties::GetLayerPartRenderDebugEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetLayerEnabled()
 {
     return false;
 }
@@ -895,6 +905,11 @@ bool RSSystemProperties::GetReleaseImageOneByOneFlag()
 }
 
 bool RSSystemProperties::GetNewTunnelEnabled()
+{
+    return false;
+}
+
+bool RSSystemProperties::GetXcomponentEdrEnabled()
 {
     return false;
 }

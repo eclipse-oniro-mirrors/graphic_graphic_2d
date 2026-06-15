@@ -112,19 +112,17 @@ RSScreen::RSScreen(const VirtualScreenConfigs& configs)
     property_.SetName(configs.name);
     property_.SetResolution(std::make_pair(configs.width, configs.height));
     property_.SetVirtualSecLayerOption(configs.flags);
-    property_.SetProducerSurface(configs.surface);
     property_.SetPixelFormat(configs.pixelFormat);
     property_.SetScreenType(RSScreenType::VIRTUAL_TYPE_SCREEN);
     property_.SetWhiteList(configs.whiteList);
-    if (property_.GetProducerSurface()) {
-        property_.SetState(ScreenState::PRODUCER_SURFACE_ENABLE);
-    } else {
-        property_.SetState(ScreenState::DISABLED);
-    }
+    property_.SetMultiSurfaceConfigs(configs.surfaceConfigs);
+    property_.SetState(configs.surfaceConfigs.empty() ? ScreenState::DISABLED : ScreenState::PRODUCER_SURFACE_ENABLE);
     VirtualScreenInit();
-    HILOG_COMM_WARN("init virtual screen: {id: %{public}" PRIu64 ", associatedScreenId: %{public}" PRIu64", w * h: "
-        "[%{public}u * %{public}u], name: %{public}s, screenType: VIRTUAL_TYPE_SCREEN, whiteList size: %{public}zu}",
-        configs.id, associatedScreenId_, configs.width, configs.height, configs.name.c_str(), configs.whiteList.size());
+    HILOG_COMM_WARN("init virtual screen: {id: %{public}" PRIu64 ", associatedScreenId: %{public}" PRIu64", "
+        "w * h: [%{public}u * %{public}u], name: %{public}s, screenType: VIRTUAL_TYPE_SCREEN, "
+        "surfaceCount: %{public}zu, whiteList size: %{public}zu}",
+        configs.id, associatedScreenId_, configs.width, configs.height, configs.name.c_str(),
+        configs.surfaceConfigs.size(), configs.whiteList.size());
 }
 
 void RSScreen::VirtualScreenInit() noexcept
@@ -508,8 +506,8 @@ int32_t RSScreen::SetResolution(uint32_t width, uint32_t height)
 
 void RSScreen::UpdateSamplingScale(uint32_t phyWidth, uint32_t phyHeight, uint32_t width, uint32_t height)
 {
-    bool isSamplingOn = (width >= phyWidth && height >= phyHeight) && !(width == phyWidth && height == phyHeight) &&
-        width > 0 && height > 0;
+    bool isSamplingOn = !isRogResolution_ && (width >= phyWidth && height >= phyHeight) &&
+        !(width == phyWidth && height == phyHeight) && width > 0 && height > 0;
     float samplingScale = 1.f;
     float translateX = 0.f;
     float translateY = 0.f;
@@ -647,6 +645,7 @@ int32_t RSScreen::SetDualScreenState(DualScreenStatus status)
     return StatusCode::SUCCESS;
 }
 
+
 int32_t RSScreen::SetAsMainScreen(bool isMainScreen)
 {
     RS_LOGI("RSScreen::SetAsMainScreen screenId:%{public}" PRIu64 " isMainScreen:%{public}d",
@@ -660,19 +659,43 @@ bool RSScreen::IsMainScreen() const
     return property_.IsMainScreen();
 }
 
-sptr<Surface> RSScreen::GetProducerSurface() const
+void RSScreen::SetMultiSurfaceConfigs(const MultiSurfaceConfigs& configs)
 {
-    return property_.GetProducerSurface();
+    UPDATE_PROPERTY(MultiSurfaceConfigs, configs);
+    if (configs.empty()) {
+        UPDATE_PROPERTY(State, ScreenState::DISABLED);
+    } else {
+        UPDATE_PROPERTY(State, ScreenState::PRODUCER_SURFACE_ENABLE);
+    }
 }
 
-void RSScreen::SetProducerSurface(sptr<Surface> producerSurface)
+void RSScreen::AddSurfaceConfigs(const MultiSurfaceConfigs& configs)
 {
-    UPDATE_PROPERTY(ProducerSurface, producerSurface);
-    if (producerSurface) {
-        UPDATE_PROPERTY(State, ScreenState::PRODUCER_SURFACE_ENABLE);
+    auto prop = property_.AddSurfaceConfigs(configs);
+    NotifyScreenPropertyChange(prop);
+    auto current = property_.GetMultiSurfaceConfigs();
+    if (configs.empty()) {
+        UPDATE_PROPERTY(State, ScreenState::DISABLED);
     } else {
+        UPDATE_PROPERTY(State, ScreenState::PRODUCER_SURFACE_ENABLE);
+    }
+}
+
+void RSScreen::RemoveSurfaceConfigs(const std::unordered_set<uint64_t>& surfaceIds)
+{
+    auto prop = property_.RemoveSurfaceConfigs(surfaceIds);
+    NotifyScreenPropertyChange(prop);
+    auto current = property_.GetMultiSurfaceConfigs();
+    if (current.empty()) {
+        RS_LOGW("%{public}s: screen %{public}" PRIu64 " has no surfaces, disabling",
+            __func__, property_.GetId());
         UPDATE_PROPERTY(State, ScreenState::DISABLED);
     }
+}
+
+MultiSurfaceConfigs RSScreen::GetMultiSurfaceConfigs() const
+{
+    return property_.GetMultiSurfaceConfigs();
 }
 
 void RSScreen::ModeInfoDump(std::string& dumpString)
@@ -720,6 +743,10 @@ void RSScreen::CapabilityTypeDump(GraphicInterfaceType capabilityType, std::stri
         }
         case GRAPHIC_DISP_INTF_GPMI: {
             dumpString += "DISP_INTF_GPMI, ";
+            break;
+        }
+        case GRAPHIC_DISP_INTF_VGA: {
+            dumpString += "DISP_INTF_VGA, ";
             break;
         }
         default:
@@ -933,6 +960,33 @@ int32_t RSScreen::GetScreenBacklight() const
         return INVALID_BACKLIGHT_VALUE;
     }
     return static_cast<int32_t>(level);
+}
+
+int32_t RSScreen::GetScreenVCPFeature(uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const
+{
+    if (IsVirtual()) {
+        RS_LOGW("%{public}s: virtual screen not support GetScreenVCPFeature.", __func__);
+        return StatusCode::VIRTUAL_SCREEN;
+    }
+    if (!hdiScreen_) {
+        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
+        return StatusCode::HDI_ERROR;
+    }
+    return hdiScreen_->GetScreenVCPFeature(vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t RSScreen::SetScreenVCPFeature(uint8_t vcpCode, uint16_t currentValue)
+{
+    if (IsVirtual()) {
+        RS_LOGW("%{public}s: virtual screen not support SetScreenVCPFeature.", __func__);
+        return StatusCode::VIRTUAL_SCREEN;
+    }
+    if (!hdiScreen_) {
+        RS_LOGE("%{public}s failed, hdiScreen_ is nullptr", __func__);
+        return StatusCode::HDI_ERROR;
+    }
+    return hdiScreen_->SetScreenVCPFeature(vcpCode, currentValue);
 }
 
 PanelPowerStatus RSScreen::GetPanelPowerStatus() const

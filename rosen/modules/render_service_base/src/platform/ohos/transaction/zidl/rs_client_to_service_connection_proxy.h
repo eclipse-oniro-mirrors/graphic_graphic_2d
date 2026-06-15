@@ -59,6 +59,10 @@ public:
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) override;
 
+    // Multi-surface virtual screen: dynamic surface management
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs) override;
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces) override;
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) override;
     ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) override;
@@ -166,6 +170,11 @@ public:
     ErrCode GetScreenBacklight(uint64_t id, int32_t& level) override;
 
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData) override;
+
+    ErrCode GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) override;
+
+    ErrCode SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue) override;
 
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) override;
 
@@ -284,6 +293,9 @@ public:
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) override;
 
     void RunOnRemoteDiedCallback() override;
+
+    ErrCode SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo) override;
+
 #ifndef ENABLE_RS_PROXY
     void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) override;
     ErrCode SetCurtainScreenUsingStatus(bool isCurtainScreenOn) override;
