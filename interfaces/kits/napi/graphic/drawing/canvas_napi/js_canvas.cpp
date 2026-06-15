@@ -64,10 +64,6 @@ using namespace Media;
 namespace {
 bool CheckDrawingPixelMapMeshParams(int column, int row, int& vertCounts, int& indexCount)
 {
-    if (column <= 0 || row <= 0) {
-        ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh column or row is invalid");
-        return false;
-    }
     int64_t tempVertCounts = (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1);
     if (tempVertCounts > INT_MAX || tempVertCounts - 1 > UINT16_MAX) {
         ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh vertCounts overflow");
