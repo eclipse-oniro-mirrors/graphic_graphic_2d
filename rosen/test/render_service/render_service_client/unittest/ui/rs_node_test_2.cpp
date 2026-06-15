@@ -44,6 +44,7 @@
 #include "modifier_ng/appearance/rs_overlay_ng_shader_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_modifier.h"
+#include "modifier_ng/appearance/rs_use_union_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_modifier.h"
 #include "modifier_ng/background/rs_background_color_modifier.h"
 #include "modifier_ng/background/rs_background_image_modifier.h"
@@ -966,18 +967,18 @@ HWTEST_F(RSNodeTest2, SetUseUnionAndUnionSpacing, TestSize.Level1)
 {
     auto rsNode = RSCanvasNode::Create();
 
-    auto boundsModifier = std::make_shared<ModifierNG::RSBoundsModifier>();
-    rsNode->AddModifier(boundsModifier);
+    auto useUnionModifier = std::make_shared<ModifierNG::RSUseUnionModifier>();
+    rsNode->AddModifier(useUnionModifier);
 
-    EXPECT_EQ(boundsModifier->GetUnionSpacing(), 0.0f);
-    EXPECT_EQ(boundsModifier->GetUseUnion(), false);
+    EXPECT_EQ(useUnionModifier->GetUnionSpacing(), 0.0f);
+    EXPECT_EQ(useUnionModifier->GetUseUnion(), false);
 
     // test the path of using modifier to set these properties
-    boundsModifier->SetUnionSpacing(0.5f);
-    boundsModifier->SetUseUnion(true);
+    useUnionModifier->SetUnionSpacing(0.5f);
+    useUnionModifier->SetUseUnion(true);
 
-    EXPECT_EQ(boundsModifier->GetUnionSpacing(), 0.5f);
-    EXPECT_EQ(boundsModifier->GetUseUnion(), true);
+    EXPECT_EQ(useUnionModifier->GetUnionSpacing(), 0.5f);
+    EXPECT_EQ(useUnionModifier->GetUseUnion(), true);
 }
 
 /**
@@ -987,7 +988,7 @@ HWTEST_F(RSNodeTest2, SetUseUnionAndUnionSpacing, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetUseUnion, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
+    auto modifierType = ModifierNG::RSModifierType::USE_UNION;
     auto rsNode = RSCanvasNode::Create();
 
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -1205,7 +1206,7 @@ HWTEST_F(RSNodeTest2, SetHdrDarkenBlenderParams002, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetGravityPullCenterFlagTest, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
+    auto modifierType = ModifierNG::RSModifierType::USE_UNION;
     auto rsNode = RSCanvasNode::Create();
 
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
