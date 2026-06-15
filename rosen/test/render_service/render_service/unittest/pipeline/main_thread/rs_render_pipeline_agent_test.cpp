@@ -639,14 +639,14 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_NullPipeline, TestSize.Level1)
     std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
     sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
     ASSERT_NE(agent, nullptr);
-    ASSERT_EQ(agent->rsRenderPipeline_, nullptr);
+    ASSERT_EQ(agent->rsRenderPipeline_.lock(), nullptr);
 
     pid_t testPid = 12345;
     // Should return early without crash when rsRenderPipeline_ is nullptr
     agent->Clean(testPid, false);
     agent->Clean(testPid, true);
     // Verify agent state remains unchanged after Clean
-    EXPECT_EQ(agent->rsRenderPipeline_, nullptr);
+    EXPECT_EQ(agent->rsRenderPipeline_.lock(), nullptr);
 }
 
 /**
@@ -663,14 +663,14 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_ForRefreshFalse, TestSize.Level1)
     renderPipeline->mainThread_ = mainThread_;
 
     pid_t testPid = 12345;
-    ASSERT_NE(agent->rsRenderPipeline_, nullptr);
-    ASSERT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 
     // Execute Clean with forRefresh=false
     agent->Clean(testPid, false);
     // Verify agent and pipeline remain valid after Clean
-    EXPECT_NE(agent->rsRenderPipeline_, nullptr);
-    EXPECT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 }
 
 /**
@@ -687,14 +687,14 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_ForRefreshTrue, TestSize.Level1)
     renderPipeline->mainThread_ = mainThread_;
 
     pid_t testPid = 12345;
-    ASSERT_NE(agent->rsRenderPipeline_, nullptr);
-    ASSERT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 
     // Execute Clean with forRefresh=true
     agent->Clean(testPid, true);
     // Verify agent and pipeline remain valid after Clean
-    EXPECT_NE(agent->rsRenderPipeline_, nullptr);
-    EXPECT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 }
 
 /**
