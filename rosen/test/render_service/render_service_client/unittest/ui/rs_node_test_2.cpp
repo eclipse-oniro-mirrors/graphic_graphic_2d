@@ -1223,6 +1223,75 @@ HWTEST_F(RSNodeTest2, SetGravityPullCenterFlagTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetSDFUnionModeTest
+ * @tc.desc: test results of RSNode::SetSDFUnionMode
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetSDFUnionModeTest, TestSize.Level1)
+{
+    auto modifierType = ModifierNG::RSModifierType::USE_UNION;
+    auto rsNode = RSCanvasNode::Create();
+
+    EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+
+    rsNode->SetSDFUnionMode(0);
+    auto& properties = rsNode->GetModifierCreatedBySetter(modifierType)->properties_;
+
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::SDF_UNION_MODE), properties.end());
+
+    rsNode->SetSDFUnionMode(1);
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::SDF_UNION_MODE), properties.end());
+}
+
+/**
+ * @tc.name: SetGravityPullStrengthTest
+ * @tc.desc: test results of RSNode::SetGravityPullStrength
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetGravityPullStrengthTest, TestSize.Level1)
+{
+    auto modifierType = ModifierNG::RSModifierType::USE_UNION;
+    auto rsNode = RSCanvasNode::Create();
+
+    EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+
+    rsNode->SetGravityPullStrength(0.5f);
+    auto& properties = rsNode->GetModifierCreatedBySetter(modifierType)->properties_;
+
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::GRAVITY_UNION_STRENGTH), properties.end());
+
+    rsNode->SetGravityPullStrength(1.0f);
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::GRAVITY_UNION_STRENGTH), properties.end());
+}
+
+/**
+ * @tc.name: SetGravityHotZoneTest
+ * @tc.desc: test results of RSNode::SetGravityHotZone
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetGravityHotZoneTest, TestSize.Level1)
+{
+    auto modifierType = ModifierNG::RSModifierType::USE_UNION;
+    auto rsNode = RSCanvasNode::Create();
+
+    EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+
+    rsNode->SetGravityHotZone(100.0f);
+    auto& properties = rsNode->GetModifierCreatedBySetter(modifierType)->properties_;
+
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::GRAVITY_HOT_ZONE), properties.end());
+
+    rsNode->SetGravityHotZone(200.0f);
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::GRAVITY_HOT_ZONE), properties.end());
+}
+
+/**
  * @tc.name: ReSortChildrenByZIndexTest
  * @tc.desc: test results of ReSortChildrenByZIndex
  * @tc.type: FUNC

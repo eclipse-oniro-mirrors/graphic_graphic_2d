@@ -43,6 +43,10 @@ HWTEST_F(RSUseUnionRenderModifierNGTypeTest, GetTypeTest, TestSize.Level1)
 {
     ModifierNG::RSUseUnionRenderModifier modifier;
     EXPECT_EQ(modifier.GetType(), ModifierNG::RSModifierType::USE_UNION);
+    EXPECT_NE(modifier.GetType(), ModifierNG::RSModifierType::INVALID);
+    EXPECT_NE(modifier.GetType(), ModifierNG::RSModifierType::BOUNDS);
+    EXPECT_NE(modifier.GetType(), ModifierNG::RSModifierType::ALPHA);
+    EXPECT_NE(modifier.GetType(), ModifierNG::RSModifierType::FRAME);
 }
 
 HWTEST_F(RSUseUnionRenderModifierNGTypeTest, ResetPropertiesTest, TestSize.Level1)

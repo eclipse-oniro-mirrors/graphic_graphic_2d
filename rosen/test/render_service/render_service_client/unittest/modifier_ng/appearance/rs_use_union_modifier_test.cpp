@@ -41,6 +41,10 @@ HWTEST_F(RSUseUnionModifierNGTypeTest, GetTypeTest, TestSize.Level1)
 {
     auto modifier = std::make_shared<ModifierNG::RSUseUnionModifier>();
     EXPECT_EQ(modifier->GetType(), ModifierNG::RSModifierType::USE_UNION);
+    EXPECT_NE(modifier->GetType(), ModifierNG::RSModifierType::INVALID);
+    EXPECT_NE(modifier->GetType(), ModifierNG::RSModifierType::BOUNDS);
+    EXPECT_NE(modifier->GetType(), ModifierNG::RSModifierType::ALPHA);
+    EXPECT_NE(modifier->GetType(), ModifierNG::RSModifierType::FRAME);
 }
 
 HWTEST_F(RSUseUnionModifierNGTypeTest, SetGetUseUnionTest, TestSize.Level1)
@@ -131,5 +135,53 @@ HWTEST_F(RSUseUnionModifierNGTypeTest, SetGetGravityHotZoneTest, TestSize.Level1
 
     modifier->SetGravityHotZone(0.f);
     EXPECT_FLOAT_EQ(modifier->GetGravityHotZone(), 0.f);
+}
+
+/**
+ * @tc.name: SetGetUnionSpacingBoundaryTest
+ * @tc.desc: Test boundary values for UnionSpacing
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUseUnionModifierNGTypeTest, SetGetUnionSpacingBoundaryTest, TestSize.Level1)
+{
+    auto modifier = std::make_shared<ModifierNG::RSUseUnionModifier>();
+
+    modifier->SetUnionSpacing(-1.0f);
+    EXPECT_FLOAT_EQ(modifier->GetUnionSpacing(), -1.0f);
+
+    modifier->SetUnionSpacing(100.0f);
+    EXPECT_FLOAT_EQ(modifier->GetUnionSpacing(), 100.0f);
+}
+
+/**
+ * @tc.name: SetGetGravityPullStrengthBoundaryTest
+ * @tc.desc: Test boundary values for GravityPullStrength
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUseUnionModifierNGTypeTest, SetGetGravityPullStrengthBoundaryTest, TestSize.Level1)
+{
+    auto modifier = std::make_shared<ModifierNG::RSUseUnionModifier>();
+
+    modifier->SetGravityPullStrength(-0.5f);
+    EXPECT_FLOAT_EQ(modifier->GetGravityPullStrength(), -0.5f);
+
+    modifier->SetGravityPullStrength(50.0f);
+    EXPECT_FLOAT_EQ(modifier->GetGravityPullStrength(), 50.0f);
+}
+
+/**
+ * @tc.name: SetGetGravityHotZoneBoundaryTest
+ * @tc.desc: Test boundary values for GravityHotZone
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSUseUnionModifierNGTypeTest, SetGetGravityHotZoneBoundaryTest, TestSize.Level1)
+{
+    auto modifier = std::make_shared<ModifierNG::RSUseUnionModifier>();
+
+    modifier->SetGravityHotZone(-1.0f);
+    EXPECT_FLOAT_EQ(modifier->GetGravityHotZone(), -1.0f);
+
+    modifier->SetGravityHotZone(200.0f);
+    EXPECT_FLOAT_EQ(modifier->GetGravityHotZone(), 200.0f);
 }
 } // namespace OHOS::Rosen
