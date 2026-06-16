@@ -65,7 +65,7 @@ namespace {
 bool CheckDrawingPixelMapMeshParams(int column, int row, int& vertCounts, int& indexCount)
 {
     int64_t tempVertCounts = (static_cast<int64_t>(column) + 1) * (static_cast<int64_t>(row) + 1);
-    if (tempVertCounts > INT_MAX || tempVertCounts - 1 > UINT16_MAX) {
+    if (tempVertCounts > INT_MAX) {
         ROSEN_LOGE("Drawing_napi::DrawingPixelMapMesh vertCounts overflow");
         return false;
     }
