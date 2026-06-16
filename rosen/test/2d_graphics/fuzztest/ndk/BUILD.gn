@@ -33,7 +33,7 @@ group("fuzztest") {
     "ndkmemorystream_fuzzer:fuzztest",
     "ndkpath_fuzzer:fuzztest",
     "ndkpatheffect_fuzzer:fuzztest",
-    "ndkpath_iterator_fuzzer:fuzztest",
+    "ndkpathIterator_fuzzer:fuzztest",
     "ndkpen_fuzzer:fuzztest",
     "ndkpixelmap_fuzzer:fuzztest",
     "ndkpoint_fuzzer:fuzztest",
@@ -47,9 +47,9 @@ group("fuzztest") {
     "ndksurface_fuzzer:fuzztest",
     "ndktextblob_fuzzer:fuzztest",
     "ndktypeface_fuzzer:fuzztest",
-    "ndkdrawing_canvas_utils_fuzzer:fuzztest",
+    "ndkdrawingcanvasutils_fuzzer:fuzztest",
   ]
   if (!is_emulator) {
-    deps += ["ndkdrawing_gpu_context_fuzzer:fuzztest"]
+    deps += ["ndkdrawinggpucontext_fuzzer:fuzztest"]
   }
 }

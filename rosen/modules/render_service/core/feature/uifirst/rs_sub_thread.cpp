@@ -121,17 +121,8 @@ void RSSubThread::DumpMem(DfxString& log, bool isLite)
     });
 }
 
-void RSSubThread::DumpGpuMem(DfxString& log)
+void RSSubThread::DumpGpuMem(DfxString& log, const std::vector<std::pair<NodeId, std::string>>& nodeTags)
 {
-    std::vector<std::pair<NodeId, std::string>> nodeTags;
-    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
-    nodeMap.TraverseSurfaceNodes([&nodeTags](const std::shared_ptr<RSSurfaceRenderNode> node) {
-        if (node == nullptr) {
-            return;
-        }
-        std::string name = node->GetName() + " " + std::to_string(node->GetId());
-        nodeTags.push_back({node->GetId(), name});
-    });
     PostSyncTask([&log, &nodeTags, this]() {
         MemoryManager::DumpAllGpuInfoNew(log, grContext_.get(), nodeTags);
     });
@@ -144,6 +135,28 @@ float RSSubThread::GetAppGpuMemoryInMB()
         total = MemoryManager::GetAppGpuMemoryInMB(grContext_.get());
     });
     return total;
+}
+
+std::pair<NodeId, std::string> RSSubThread::GetSubAppNodeInfo(
+    std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable, RSSurfaceRenderParams* surfaceParams)
+{
+    NodeId tagNodeId = INVALID_NODEID;
+    std::string subAppName = "";
+    for (const auto& subDrawable : nodeDrawable->GetDrawableVectorById(surfaceParams->GetAllSubSurfaceNodeIds())) {
+        if (UNLIKELY(!subDrawable)) {
+            continue;
+        }
+        auto subSurfaceParams = static_cast<RSSurfaceRenderParams*>(subDrawable->GetRenderParams().get());
+        if (UNLIKELY(!subSurfaceParams)) {
+            continue;
+        }
+        if (subSurfaceParams->IsAppWindow()) {
+            tagNodeId = subDrawable->GetId();
+            subAppName = subSurfaceParams->GetName();
+            break;
+        }
+    }
+    return {tagNodeId, subAppName};
 }
 
 bool RSSubThread::CheckValid(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
@@ -179,8 +192,13 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
         RS_LOGE("DrawableCache surfaceParams is nullptr");
         return;
     }
-
-    RSTagTracker tagTracker(grContext_, RSTagTracker::TAGTYPE::TAG_UIFIRST);
+    auto [subAppNodeId, subAppName] = GetSubAppNodeInfo(nodeDrawable, surfaceParams);
+    std::optional<RSTagTracker> tagTracker;
+    if (INVALID_NODEID == subAppNodeId) {
+        tagTracker.emplace(grContext_, RSTagTracker::TAGTYPE::TAG_SUB_THREAD);
+    } else {
+        tagTracker.emplace(grContext_, subAppNodeId, RSTagTracker::TAGTYPE::TAG_SUB_THREAD, subAppName);
+    }
     // set cur firstlevel node in subThread
     RSUiFirstProcessStateCheckerHelper stateCheckerHelper(
         surfaceParams->GetFirstLevelNodeId(), surfaceParams->GetUifirstRootNodeId(), surfaceParams->GetId());
@@ -202,9 +220,7 @@ void RSSubThread::DrawableCache(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeD
     }
     DrawableCacheWithSkImage(nodeDrawable);
 
-    RSMainThread::Instance()->PostTask([]() {
-        RSMainThread::Instance()->SetIsCachedSurfaceUpdated(true);
-    });
+    RSMainThread::Instance()->PostTask([]() { RSMainThread::Instance()->SetIsCachedSurfaceUpdated(true); });
 
     rsSubThreadCache.SetCacheSurfaceProcessedStatus(CacheProcessStatus::DONE);
     rsSubThreadCache.SetCacheSurfaceNeedUpdated(true);
@@ -268,7 +284,7 @@ void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurface
     auto& rsSubThreadCache = nodeDrawable->GetRsSubThreadCache();
     auto cacheSurface = rsSubThreadCache.GetCacheSurface(threadIndex_);
     bool isHdrSurface = false;
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetRenderParams().get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(nodeDrawable->GetUifirstRenderParams().get());
     if (surfaceParams != nullptr) {
         isHdrSurface = surfaceParams->GetHDRPresent();
     }
@@ -276,7 +292,15 @@ void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurface
         RSUifirstManager::Instance().GetUiFirstSwitch();
     bool isNeedFP16 = isHdrSurface || isScRGBEnable;
     bool bufferFormatNeedUpdate = RSHdrUtil::BufferFormatNeedUpdate(cacheSurface, isNeedFP16);
-    if (!cacheSurface || rsSubThreadCache.NeedInitCacheSurface(surfaceParams) || bufferFormatNeedUpdate) {
+    bool bufferColorSpaceChange =
+        rsSubThreadCache.GetTargetColorGamut() != rsSubThreadCache.GetCacheSurfaceColorSpace();
+    if (!cacheSurface || rsSubThreadCache.NeedInitCacheSurface(surfaceParams) ||
+        bufferFormatNeedUpdate || bufferColorSpaceChange) {
+        if (bufferColorSpaceChange) {
+            RS_TRACE_NAME_FMT("UIFirst InitCacheSurface due to ColorSpaceChange: target=%d, current=%d",
+                static_cast<int>(rsSubThreadCache.GetTargetColorGamut()),
+                static_cast<int>(rsSubThreadCache.GetCacheSurfaceColorSpace()));
+        }
         DrawableV2::RsSubThreadCache::ClearCacheSurfaceFunc func = &RSUniRenderUtil::ClearNodeCacheSurface;
         rsSubThreadCache.InitCacheSurface(grContext_.get(), nodeDrawable, func, threadIndex_, isNeedFP16);
         cacheSurface = rsSubThreadCache.GetCacheSurface(threadIndex_);
@@ -301,15 +325,18 @@ void RSSubThread::DrawableCacheWithSkImage(std::shared_ptr<DrawableV2::RSSurface
     rscanvas->SetHdrOn(rsSubThreadCache.GetHDRPresent());
     rscanvas->SetIsDrawingCache(true);
     rscanvas->Save();
+
+    RSUniRenderThread::BufferManagerGuard bufferGuard;
     rsSubThreadCache.SubDraw(nodeDrawable.get(), *rscanvas);
     rscanvas->Restore();
     bool optFenceWait = (RSUifirstManager::Instance().GetUiFirstType() == UiFirstCcmType::MULTI &&
         !rsSubThreadCache.IsHighPostPriority()) ? false : true;
-    RSUniRenderUtil::OptimizedFlushAndSubmit(cacheSurface, grContext_.get(), optFenceWait);
-    rsSubThreadCache.UpdateCacheSurfaceInfo(nodeDrawable);
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+    RSUniRenderUtil::OptimizedFlushAndSubmit(cacheSurface, grContext_.get(), acquireFence, optFenceWait);
+    bufferGuard.SetAcquireFence(acquireFence);
+    rsSubThreadCache.UpdateCacheSurfaceInfo(nodeDrawable.get(), surfaceParams);
     rsSubThreadCache.UpdateBackendTexture();
     rsSubThreadCache.SetCacheBehindWindowData(rscanvas->GetCacheBehindWindowData());
-
     // uifirst_debug dump img, run following commands to grant permissions before dump, otherwise dump maybe fail:
     // 1. hdc shell mount -o rw,remount /
     // 2. hdc shell setenforce 0 # close selinux temporarily
@@ -354,10 +381,6 @@ void RSSubThread::AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface)
 void RSSubThread::ReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable)
 {
     if (!nodeDrawable) {
-        return;
-    }
-    const auto& param = nodeDrawable->GetRenderParams();
-    if (!param) {
         return;
     }
     NodeId nodeId = nodeDrawable->GetId();

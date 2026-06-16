@@ -26,10 +26,12 @@
 #include "params/rs_logical_display_render_params.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/rs_render_node.h"
+#include "feature/multi_screen/rs_multi_screen_util.h"
 
 namespace OHOS::Rosen {
 class RSScreenRenderParams;
 namespace DrawableV2 {
+
 class RSLogicalDisplayRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
     ~RSLogicalDisplayRenderNodeDrawable() override;
@@ -67,27 +69,23 @@ private:
     void DrawSecurityMask();
     void DrawCurtainScreen() const;
     void ClearCanvasStencil(RSPaintFilterCanvas& canvas, const RSLogicalDisplayRenderParams& params,
-        const RSRenderThreadParams& uniParam, const ScreenInfo& screenInfo);
+        const RSRenderThreadParams& uniParam, const RSScreenProperty& screenProperty);
     void CheckDirtyRefresh(CompositeType type, bool hasSecLayerInVisibleRect);
+    void UpdateMainSizeFromContentRect(RSLogicalDisplayRenderParams* params, float& mainWidth, float& mainHeight);
     void ScaleAndRotateMirrorForWiredScreen(RSLogicalDisplayRenderNodeDrawable& mirroredDrawable);
     void RotateMirrorCanvas(ScreenRotation& rotation, float width, float height);
-    void WiredScreenProjection(RSLogicalDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor);
     void DrawMirror(RSLogicalDisplayRenderParams& params, std::shared_ptr<RSUniRenderVirtualProcessor> virtualProcesser,
         RSRenderThreadParams& uniParam);
     void DrawMirrorCopy(RSLogicalDisplayRenderParams& params,
         std::shared_ptr<RSUniRenderVirtualProcessor> virtualProcesser, RSRenderThreadParams& uniParam);
-    void DrawWiredMirrorCopy(
-        RSLogicalDisplayRenderNodeDrawable& mirroredDrawable, RSLogicalDisplayRenderParams& params);
-    void DrawWiredMirrorOnDraw(RSLogicalDisplayRenderNodeDrawable& mirroredDrawable,
-        RSLogicalDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor);
-    void DrawMirrorScreen(RSLogicalDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor);
-    void DrawExpandDisplay(RSLogicalDisplayRenderParams& params);
+    void DrawExpandDisplay(RSLogicalDisplayRenderParams& params, std::shared_ptr<RSProcessor> processor);
     void PrepareOffscreenRender(const RSLogicalDisplayRenderNodeDrawable& displayDrawable, bool useFixedSize = false,
-        bool useCanvasSize = true);
+        bool useCanvasSize = true, bool fixFormat = false);
     void FinishOffscreenRender(const Drawing::SamplingOptions& sampling,
         bool isSamplingOn = false, float hdrBrightnessRatio = 1.0f);
-    void UpdateSlrScale(ScreenInfo& screenInfo, RSScreenRenderParams* params = nullptr);
-    void ScaleCanvasIfNeeded(const ScreenInfo& screenInfo);
+    void UpdateSlrScale(const RSScreenProperty& screenProperty, float srcWidth, float srcHeight,
+        RSScreenRenderParams* params = nullptr);
+    void ScaleCanvasIfNeeded(const RSScreenProperty& screenProperty);
     void ClearTransparentBeforeSaveLayer();
     std::vector<RectI> CalculateVirtualDirtyForWiredScreen(
         RSScreenRenderNodeDrawable& curScreenDrawable, Drawing::Matrix canvasMatrix);
@@ -102,9 +100,7 @@ private:
     void DrawHardwareEnabledNodes(Drawing::Canvas& canvas, RSLogicalDisplayRenderParams& params,
         sptr<SurfaceBuffer> virtualBuffer = nullptr, sptr<SyncFence> virtualFence = nullptr);
     void DrawAdditionalContent(RSPaintFilterCanvas& canvas);
-    void DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas);
-
-    void MirrorRedrawDFX(bool mirrorRedraw, ScreenId screenId);
+    void DrawWatermarkIfNeed(RSPaintFilterCanvas& canvas, const Drawing::Rect& drawRegion = {0.f, 0.f, 0.f, 0.f});
 
     void SetScreenRotationForPointLight(RSLogicalDisplayRenderParams& params);
 
@@ -147,8 +143,10 @@ private:
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::LOGICAL_DISPLAY_NODE, OnGenerate>;
     static Registrar instance_;
 
-    // mirror display drawing path dfx
-    std::optional<bool> mirrorRedraw_;
+    // display drawing path dfx
+    DrawingPath lastFrameDrawingPath_ = DrawingPath::INVALID;
+
+    friend class RSMultiScreenUtil;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

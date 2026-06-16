@@ -19,6 +19,11 @@
 #include <parameters.h>
 #include <string>
 
+#include "display_engine/rs_luminance_control.h"
+#include "feature/anco_manager/rs_anco_manager.h"
+#include "feature/hpae/rs_hpae_manager.h"
+#include "feature/multi_screen/rs_multi_screen_util.h"
+#include "feature/uifirst/rs_uifirst_manager.h"
 #include "graphic_feature_param_manager.h"
 #include "rs_trace.h"
 #include "system/rs_system_parameters.h"
@@ -27,44 +32,46 @@
 #include "common/rs_optional_trace.h"
 #include "common/rs_singleton.h"
 #include "common/rs_special_layer_manager.h"
-#include "display_engine/rs_luminance_control.h"
 #include "drawable/rs_surface_render_node_drawable.h"
-#include "feature/anco_manager/rs_anco_manager.h"
-#include "feature/hpae/rs_hpae_manager.h"
-#include "feature/uifirst/rs_uifirst_manager.h"
+#include "engine/rs_base_render_engine.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
+#include "feature/dirty/rs_uni_dirty_compute_util.h"
+#include "feature/drm/rs_drm_util.h"
+#include "feature/frame_stability/rs_frame_stability_manager.h"
+#include "feature/layer/rs_layer_cache_manager.h"
+#include "feature/pointer_window_manager/rs_pointer_window_manager.h"
+#include "feature/round_corner_display/rs_round_corner_display_manager.h"
+#include "feature/round_corner_display/rs_rcd_render_manager.h"
+#include "feature/round_corner_display/rs_message_bus.h"
 #include "hgm_core.h"
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_screen_render_params.h"
 #include "params/rs_surface_render_params.h"
-#include "feature/dirty/rs_uni_dirty_compute_util.h"
-#include "feature/drm/rs_drm_util.h"
-#include "feature/round_corner_display/rs_rcd_render_manager.h"
 #include "feature/hdr/rs_hdr_util.h"
-#include "feature/round_corner_display/rs_round_corner_display_manager.h"
 #include "feature/uifirst/rs_sub_thread_manager.h"
-#include "pipeline/render_thread/rs_base_render_engine.h"
-#include "pipeline/rs_screen_render_node.h"
 #include "pipeline/main_thread/rs_main_thread.h"
-#include "pipeline/rs_paint_filter_canvas.h"
-#include "pipeline/rs_processor_factory.h"
-#include "pipeline/rs_pointer_window_manager.h"
-#include "pipeline/rs_surface_handler.h"
 #include "pipeline/main_thread/rs_uni_render_listener.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
+#ifdef RS_ENABLE_GPU
+#include "gpuComposition/rs_gpu_cache_manager.h"
+#endif
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
+#include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_processor_factory.h"
+#include "pipeline/rs_screen_render_node.h"
+#include "pipeline/rs_surface_handler.h"
 #include "pipeline/sk_resource_manager.h"
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #include "pipeline/magic_pointer_render/rs_magic_pointer_render_manager.h"
 #endif
+#include "rs_frame_report.h"
 #include "platform/common/rs_log.h"
 #include "platform/ohos/rs_jank_stats_helper.h"
+#include "render/rs_filter_cache_memory_controller.h"
 #include "render/rs_pixel_map_util.h"
-#include "screen_manager/rs_screen_manager.h"
-#include "rs_frame_report.h"
 // dfx
 #include "drawable/dfx/rs_dirty_rects_dfx.h"
 #include "drawable/dfx/rs_skp_capture_dfx.h"
@@ -75,10 +82,14 @@
 // xml parser
 #include "graphic_feature_param_manager.h"
 // hpae offline
-#include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
+#include "feature/hwc/hpae_offline/rs_offline_processor.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
+#endif
+
+#ifdef USE_PRIMITIVE
+#include "primitive/primitive_adapter.h"
 #endif
 
 namespace OHOS::Rosen::DrawableV2 {
@@ -86,6 +97,7 @@ namespace {
 constexpr const char* CLEAR_GPU_CACHE = "ClearGpuCache";
 constexpr const char* DEFAULT_CLEAR_GPU_CACHE = "DefaultClearGpuCache";
 constexpr int32_t CAPTURE_WINDOW = 2; // To be deleted after captureWindow being deleted
+constexpr int32_t MAX_DAMAGE_REGION_INFO = 300;
 constexpr int64_t MAX_JITTER_NS = 2000000; // 2ms
 
 std::string RectVectorToString(const std::vector<RectI>& regionRects)
@@ -96,43 +108,28 @@ std::string RectVectorToString(const std::vector<RectI>& regionRects)
     }
     return results;
 }
-
-Drawing::Region GetFlippedRegion(const std::vector<RectI>& rects, ScreenInfo& screenInfo)
-{
-    Drawing::Region region;
-
-    for (const auto& r : rects) {
-        int32_t topAfterFilp = 0;
-#ifdef RS_ENABLE_VK
-        topAfterFilp = (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-                           RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)
-                           ? r.top_
-                           : static_cast<int32_t>(screenInfo.GetRotatedHeight()) - r.GetBottom();
-#else
-        topAfterFilp = static_cast<int32_t>(screenInfo.GetRotatedHeight()) - r.GetBottom();
-#endif
-        Drawing::Region tmpRegion;
-        tmpRegion.SetRect(Drawing::RectI(r.left_, topAfterFilp, r.left_ + r.width_, topAfterFilp + r.height_));
-        RS_OPTIONAL_TRACE_NAME_FMT("GetFlippedRegion orig ltrb[%d %d %d %d] to fliped rect ltrb[%d %d %d %d]",
-            r.left_, r.top_, r.left_ + r.width_, r.top_ + r.height_, r.left_, topAfterFilp, r.left_ + r.width_,
-            topAfterFilp + r.height_);
-        region.Op(tmpRegion, Drawing::RegionOp::UNION);
-    }
-    return region;
-}
-}
+} // namespace
 
 void DoScreenRcdTask(NodeId id, std::shared_ptr<RSProcessor>& processor, std::unique_ptr<RcdInfo>& rcdInfo,
-    const ScreenInfo& screenInfo)
+    const RSScreenProperty& screenProperty)
 {
     if (rcdInfo == nullptr || processor == nullptr) {
         RS_LOGD("DoScreenRcdTask has nullptr processor or rcdInfo");
         return;
     }
-    if (!RoundCornerDisplayManager::CheckRcdRenderEnable(screenInfo)) {
+    if (!RoundCornerDisplayManager::CheckRcdRenderEnable(screenProperty)) {
         RS_LOGD("DoScreenRcdTask is not at HDI_OUPUT mode");
         return;
     }
+
+    // Check if UniRenderThread is ready for RCD rendering
+    bool isRcdTaskDelayed = !RSUniRenderThread::Instance().IsMainLooping();
+    if (isRcdTaskDelayed) {
+        RS_LOGW("DoScreenRcdTask: UniRenderThread not ready, skip RCD rendering for screen %{public}llu",
+            static_cast<unsigned long long>(id));
+        return;
+    }
+
     if (RSSingleton<RoundCornerDisplayManager>::GetInstance().GetRcdEnable()) {
         RSSingleton<RoundCornerDisplayManager>::GetInstance().RunHardwareTask(id,
             [id, &processor, &rcdInfo](void) {
@@ -157,6 +154,7 @@ RSScreenRenderNodeDrawable::~RSScreenRenderNodeDrawable()
     auto curScreenId = params ? params->GetScreenId() : INVALID_SCREEN_ID;
     RSUniRenderThread::Instance().UnRegisterCond(curScreenId);
     RSPointerWindowManager::Instance().RemoveCommitResult(GetId());
+    RSFrameStabilityManager::GetInstance().CleanResourcesByScreenId(curScreenId);
 }
 
 RSRenderNodeDrawable::Ptr RSScreenRenderNodeDrawable::OnGenerate(std::shared_ptr<const RSRenderNode> node)
@@ -193,8 +191,10 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
         RS_LOGE("RSScreenRenderNodeDrawable::RequestFrame No RSSurface found");
         return nullptr;
     }
-    auto bufferConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(params.GetScreenInfo(), false,
-        params.GetNewColorSpace(), params.GetNewPixelFormat());
+    ComposerScreenInfo composerScreenInfo;
+    RSComposerClient::ConvertScreenInfo(params.GetScreenProperty().GetScreenInfo(), composerScreenInfo);
+    auto bufferConfig = RSBaseRenderUtil::GetFrameBufferRequestConfig(
+        composerScreenInfo, false, params.GetNewColorSpace(), params.GetNewPixelFormat());
     RS_LOGD("RequestFrame colorspace is %{public}d, pixelformat is %{public}d, lastPixelFormat: %{public}d",
         params.GetNewColorSpace(), params.GetNewPixelFormat(), GetLastPixelFormat());
 
@@ -216,45 +216,13 @@ std::unique_ptr<RSRenderFrame> RSScreenRenderNodeDrawable::RequestFrame(
         }
     }
     SetLastPixelFormat(params.GetNewPixelFormat());
-    auto renderFrame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface),
-        bufferConfig, false, isHebc);
+    auto renderFrame =
+        renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rsSurface), bufferConfig, false, isHebc);
     if (!renderFrame) {
-        RS_LOGE("RSScreenRenderNodeDrawable::RequestFrame renderEngine requestFrame is null");
         return nullptr;
     }
 
     return renderFrame;
-}
-
-static void ClipRegion(Drawing::Canvas& canvas, Drawing::Region& region, bool clear = true)
-{
-    if (region.IsEmpty()) {
-        // [planning] Remove this after frame buffer can cancel
-        canvas.ClipRect(Drawing::Rect());
-    } else if (region.IsRect()) {
-        canvas.ClipRegion(region);
-    } else {
-        RS_TRACE_NAME("RSScreenRenderNodeDrawable: clipPath");
-#ifdef RS_ENABLE_VK
-        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
-            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-            canvas.ClipRegion(region);
-        } else {
-            Drawing::Path dirtyPath;
-            region.GetBoundaryPath(&dirtyPath);
-            canvas.ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
-        }
-#else
-        Drawing::Path dirtyPath;
-        region.GetBoundaryPath(&dirtyPath);
-        canvas.ClipPath(dirtyPath, Drawing::ClipOp::INTERSECT, true);
-#endif
-    }
-
-    // clear canvas after clip region if need
-    if (clear && !region.IsEmpty()) {
-        canvas.Clear(Drawing::Color::COLOR_TRANSPARENT);
-    }
 }
 
 void RSScreenRenderNodeDrawable::RenderOverDraw()
@@ -305,15 +273,14 @@ void RSScreenRenderNodeDrawable::RenderOverDraw()
     curCanvas_->DetachBrush();
 }
 
-static inline bool IsForceCommit(uint32_t forceCommitReason, bool needForceUpdateHwcNode,
-    bool hasHardCursor)
+static inline bool IsForceCommit(uint32_t forceCommitReason, bool needForceUpdateHwcNode, bool hasHardCursor)
 {
     /* force commit in 3 situations:
      1.force commit reasons is not hwc nodes updated or cursor moved
      2.hwc nodes forced commit and hwc nodes is visible
      3.soft cursor's position changed */
-    return (forceCommitReason & ~(ForceCommitReason::FORCED_BY_HWC_UPDATE |
-                                  ForceCommitReason::FORCED_BY_POINTER_WINDOW)) ||
+    return (forceCommitReason &
+           ~(ForceCommitReason::FORCED_BY_HWC_UPDATE | ForceCommitReason::FORCED_BY_POINTER_WINDOW)) ||
            ((forceCommitReason & ForceCommitReason::FORCED_BY_HWC_UPDATE) && needForceUpdateHwcNode) ||
            ((forceCommitReason & ForceCommitReason::FORCED_BY_POINTER_WINDOW) && !hasHardCursor);
 }
@@ -327,7 +294,8 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
         return false;
     }
     if (GetSyncDirtyManager()->IsCurrentFrameDirty() ||
-        (params.GetMainAndLeashSurfaceDirty() || RSUifirstManager::Instance().HasForceUpdateNode()) ||
+        (params.GetMainAndLeashSurfaceDirty() ||
+        RSUifirstManager::Instance().HasForceUpdateNode(params.GetScreenId())) ||
         RSMainThread::Instance()->GetDirtyFlag()) {
         return false;
     }
@@ -337,7 +305,7 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     }
 
     RS_LOGD("ScreenNode skip");
-    RS_TRACE_NAME("DisplayNode skip");
+    RS_TRACE_NAME("ScreenNode skip");
     GpuDirtyRegionCollection::GetInstance().AddSkipProcessFramesNumberForDFX(RSBaseRenderUtil::GetLastSendingPid());
 #ifdef OHOS_PLATFORM
     RSJankStatsRenderFrameHelper::GetInstance().SetSkipJankAnimatorFrame(true);
@@ -346,10 +314,10 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
     bool hardCursorNeedCommit = RSPointerWindowManager::Instance().GetHardCursorNeedCommit(GetId());
     auto forceCommitReason = uniParam->GetForceCommitReason();
     bool layersNeedCommit = IsForceCommit(forceCommitReason, params.GetNeedForceUpdateHwcNodes(), hasHardCursor);
-    RS_TRACE_NAME_FMT("DisplayNode skip, forceCommitReason: %u, forceUpdateByHwcNodes %d, "
+    RS_TRACE_NAME_FMT("ScreenNode skip, forceCommitReason: %u, forceUpdateByHwcNodes %d, "
         "byHardCursor: %d", forceCommitReason, params.GetNeedForceUpdateHwcNodes(), hardCursorNeedCommit);
     if (!layersNeedCommit && !hardCursorNeedCommit) {
-        RS_TRACE_NAME("DisplayNodeSkip skip commit");
+        RS_TRACE_NAME("ScreenNodeSkip skip commit");
         return true;
     }
 
@@ -368,6 +336,14 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
         if (drawable->GetRenderParams()->GetHardwareEnabled()) {
             auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
             auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
+            // record surface current frame refresh area to frame stability manager
+            std::vector<RectI> tempRefreshRects;
+            auto rect = surfaceParams->GetLayerInfo().dstRect;
+            RectI dstRect = { rect.x, rect.y, rect.w, rect.h };
+            tempRefreshRects.emplace_back(dstRect);
+            RSFrameStabilityManager::GetInstance().RecordCurrentFrameDirty(
+                surfaceParams->GetInstanceRootNodeId(), tempRefreshRects,
+                params.GetScreenProperty().GetWidth() * params.GetScreenProperty().GetHeight());
             // hpae offline
             if (surfaceParams->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, false)) {
@@ -376,15 +352,18 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
             processor->CreateLayerForRenderThread(*surfaceDrawable);
         }
     }
-    if (!RSRenderComposerManager::GetInstance().WaitComposerTaskExecute(params.GetScreenId())) {
-        RS_LOGW("RSScreenRenderNodeDrawable::CheckScreenNodeSkip: hardwareThread task has too many to Execute");
-    }
     processor->ProcessScreenSurfaceForRenderThread(*this);
 
     // commit RCD layers
     auto rcdInfo = std::make_unique<RcdInfo>();
-    const auto& screenInfo = params.GetScreenInfo();
-    DoScreenRcdTask(params.GetId(), processor, rcdInfo, screenInfo);
+    const auto& screenProperty = params.GetScreenProperty();
+    DoScreenRcdTask(params.GetId(), processor, rcdInfo, screenProperty);
+
+    // record current frame refresh area to frame stability manager
+    std::vector<RectI> refreshRects({ syncDirtyManager_->GetHwcDirtyRegion() });
+    RSFrameStabilityManager::GetInstance().RecordCurrentFrameDirty(
+        params.GetScreenId(), refreshRects, screenProperty.GetWidth() * screenProperty.GetHeight());
+
     processor->PostProcess();
     return true;
 }
@@ -392,7 +371,7 @@ bool RSScreenRenderNodeDrawable::CheckScreenNodeSkip(
 void RSScreenRenderNodeDrawable::PostClearMemoryTask() const
 {
     auto& unirenderThread = RSUniRenderThread::Instance();
-    if (unirenderThread.IsDefaultClearMemroyFinished()) {
+    if (unirenderThread.IsDefaultClearMemoryFinished()) {
         unirenderThread.DefaultClearMemoryCache(); //default clean with no rendering in 5s
         unirenderThread.SetDefaultClearMemoryFinished(false);
     }
@@ -428,13 +407,15 @@ void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPar
         auto filterNodeDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(drawableAdapter);
         if (filterNodeDrawable == nullptr) {
             RS_LOGD("CheckFilterCacheFullyCovered filter node drawable is nullptr, Name[%{public}s],"
-                "NodeId[%" PRIu64 "]", surfaceParams.GetName().c_str(), filterNodeId);
+                "NodeId[%" PRIu64 "]",
+                surfaceParams.GetName().c_str(), filterNodeId);
             continue;
         }
         const auto& filterParams = filterNodeDrawable->GetRenderParams();
         if (filterParams == nullptr || !filterParams->HasBlurFilter()) {
             RS_LOGD("CheckFilterCacheFullyCovered filter params is nullptr or has no blur, Name[%{public}s],"
-                "NodeId[%" PRIu64 "]", surfaceParams.GetName().c_str(), filterNodeId);
+                "NodeId[%" PRIu64 "]",
+                surfaceParams.GetName().c_str(), filterNodeId);
             continue;
         }
         // Filter cache occlusion need satisfy:
@@ -447,10 +428,9 @@ void RSScreenRenderNodeDrawable::CheckFilterCacheFullyCovered(RSSurfaceRenderPar
             bool cacheValid = filterNodeDrawable->IsFilterCacheValidForOcclusion();
             RectI filterCachedRect = filterNodeDrawable->GetFilterCachedRegion();
             surfaceParams.CheckValidFilterCacheFullyCoverTarget(cacheValid, filterCachedRect, screenRect);
-            RSFilterDirtyCollector::RecordFilterCacheValidForOcclusion(filterNodeId,
-                surfaceParams.IsMainWindowType() && cacheValid && screenRect.IsInsideOf(filterCachedRect));
         }
-        RS_OPTIONAL_TRACE_NAME_FMT("CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], globalAlpha: %f, "
+        RS_OPTIONAL_TRACE_NAME_FMT(
+            "CheckFilterCacheFullyCovered NodeId[%" PRIu64 "], globalAlpha: %f, "
             "hasNoCorner: %d, isNodeTypeCorrect: %d, isCacheValid: %d, cacheRect: %s",
             filterNodeId, filterParams->GetGlobalAlpha(), !filterParams->HasGlobalCorner(),
             filterParams->GetType() != RSRenderNodeType::EFFECT_NODE,
@@ -471,7 +451,8 @@ void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
         return;
     }
     bool isScreenOccluded = false;
-    RectI screenRect = {0, 0, screenInfo.width, screenInfo.height};
+    RectI screenRect = (screenInfo.activeRect.IsEmpty() ?
+        RectI(0, 0, screenInfo.width, screenInfo.height) : screenInfo.activeRect);
     // top-down traversal all mainsurface
     // if upper surface reuse filter cache which fully cover whole screen
     // mark lower layers for process skip
@@ -504,15 +485,15 @@ void RSScreenRenderNodeDrawable::CheckAndUpdateFilterCacheOcclusion(
 
 int32_t RSScreenRenderNodeDrawable::GetBufferAge()
 {
-    return expandRenderFrame_ ? expandRenderFrame_->GetBufferAge() : 0;
+    return wiredMirrorRenderFrame_ ? wiredMirrorRenderFrame_->GetBufferAge() : 0;
 }
 
 void RSScreenRenderNodeDrawable::SetDamageRegion(const std::vector<RectI>& rects)
 {
-    if (expandRenderFrame_ == nullptr) {
+    if (wiredMirrorRenderFrame_ == nullptr) {
         return;
     }
-    expandRenderFrame_->SetDamageRegion(rects);
+    wiredMirrorRenderFrame_->SetDamageRegion(rects);
 }
 
 void RSScreenRenderNodeDrawable::SetAccumulateDirtyInSkipFrame(bool accumulateDirtyInSkipFrame)
@@ -539,24 +520,23 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         SetDrawSkipType(DrawSkipType::NO_DISPLAY_NODE);
         return;
     }
-    auto screenInfo = params->GetScreenInfo();
-    if (screenInfo.state == ScreenState::DISABLED) {
+    const auto& screenProperty = params->GetScreenProperty();
+    auto screenInfo = screenProperty.GetScreenInfo();
+    if (screenProperty.GetState() == ScreenState::DISABLED) {
         SetDrawSkipType(DrawSkipType::SCREEN_STATE_INVALID);
         return;
     }
     // [Attention] do not return before layer created set false, otherwise will result in buffer not released
     auto& hardwareDrawables = uniParam->GetHardwareEnabledTypeDrawables();
     for (const auto& [screenNodeId, _, drawable] : hardwareDrawables) {
-        if (UNLIKELY(!drawable || !drawable->GetRenderParams()) ||
-            screenNodeId != params->GetId()) {
+        if (UNLIKELY(!drawable || !drawable->GetRenderParams()) || screenNodeId != params->GetId()) {
             continue;
         }
         drawable->GetRenderParams()->SetLayerCreated(false);
     }
     auto& hardCursorDrawables = uniParam->GetHardCursorDrawables();
-    auto iter = std::find_if(hardCursorDrawables.begin(), hardCursorDrawables.end(), [id = GetId()](const auto& node) {
-        return std::get<0>(node) == id;
-    });
+    auto iter = std::find_if(hardCursorDrawables.begin(), hardCursorDrawables.end(),
+        [id = GetId()](const auto& node) { return std::get<0>(node) == id; });
     if (iter != hardCursorDrawables.end()) {
         auto drawable = std::get<2>(*iter);
         if (drawable && drawable->GetRenderParams()) {
@@ -566,9 +546,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // if screen power off, skip on draw, needs to draw one more frame.
     // for regional projection, since buffer-copying is used, frame still need to be updated for mirror.
-    isRenderSkipIfScreenOff_ = RSUniRenderUtil::CheckRenderSkipIfScreenOff(true, params->GetScreenId()) &&
+    isRenderSkipIfScreenOff_ = uniParam->GetPowerOffRenderController().GetScreenRenderSkipped(params->GetScreenId()) &&
         !(params->HasMirrorScreen() && MultiScreenParam::IsForceRenderForMirror());
-    if (isRenderSkipIfScreenOff_) {
+    if (isRenderSkipIfScreenOff_ && !params->IsActiveRectChanged()) {
         SetDrawSkipType(DrawSkipType::RENDER_SKIP_IF_SCREEN_OFF);
         return;
     }
@@ -579,14 +559,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     PostClearMemoryTask();
 
-    sptr<RSScreenManager> screenManager = CreateOrGetScreenManager();
-    if (!screenManager) {
-        SetDrawSkipType(DrawSkipType::SCREEN_MANAGER_NULL);
-        RS_LOGE("RSScreenRenderNodeDrawable::OnDraw ScreenManager is nullptr");
-        return;
-    }
-
-    if (RSSystemProperties::IsFoldScreenFlag() && screenManager->IsScreenSwitching()) {
+    if (RSSystemProperties::IsFoldScreenFlag() && screenProperty.IsScreenSwitching() && !isRenderSkipIfScreenOff_) {
         SetDrawSkipType(DrawSkipType::RENDER_SKIP_IF_SCREEN_SWITCHING);
         RS_LOGI("RSScreenRenderNodeDrawable::OnDraw FoldScreenNodeSwitching is true, do not drawframe");
         RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable FoldScreenNodeSwitching is true");
@@ -595,14 +568,14 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // dfx
     RSRenderNodeDrawable::InitDfxForCacheInfo();
+    CompositeType compositeType = params->GetCompositeType();
     // set for cache and draw cross node in extended screen model
     uniParam->SetIsMirrorScreen(params->IsMirrorScreen());
     uniParam->SetCurrentVisitDisplayDrawableId(GetId());
     uniParam->SetIsFirstVisitCrossNodeDisplay(params->IsFirstVisitCrossNodeDisplay());
-    uniParam->SetCompositeType(params->GetCompositeType());
+    uniParam->SetCompositeType(compositeType);
     params->SetDirtyAlignEnabled(uniParam->IsDirtyAlignEnabled());
     ScreenId paramScreenId = params->GetScreenId();
-    const auto& screenProperty = params->GetScreenProperty();
     offsetX_ = screenProperty.GetOffsetX();
     offsetY_ = screenProperty.GetOffsetY();
     curDisplayScreenId_ = paramScreenId;
@@ -615,53 +588,54 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         syncDirtyManager->GetSurfaceRect() : syncDirtyManager->GetActiveSurfaceRect();
     uint32_t vsyncRefreshRate = RSMainThread::Instance()->GetVsyncRefreshRate();
     RS_TRACE_NAME_FMT("RSScreenRenderNodeDrawable::OnDraw[%" PRIu64 "][%" PRIu64"] zoomed(%d), "
-        "currentFrameDirty(%d, %d, %d, %d), screen(%d, %d), active(%d, %d, %d, %d), vsyncRefreshRate(%u)",
-        paramScreenId, GetId(), params->GetZoomed(),
-        dirtyRegion.left_, dirtyRegion.top_, dirtyRegion.width_, dirtyRegion.height_,
-        screenInfo.width, screenInfo.height,
-        activeSurfaceRect.left_, activeSurfaceRect.top_, activeSurfaceRect.width_, activeSurfaceRect.height_,
-        vsyncRefreshRate);
+                      "currentFrameDirty(%d, %d, %d, %d), screen(%d, %d), active(%d, %d, %d, %d), "
+                      "vsyncRefreshRate(%u), gpuTile(%d, %d)",
+        paramScreenId, GetId(), params->GetZoomed(), dirtyRegion.left_, dirtyRegion.top_, dirtyRegion.width_,
+        dirtyRegion.height_, screenProperty.GetWidth(), screenProperty.GetHeight(), activeSurfaceRect.left_,
+        activeSurfaceRect.top_, activeSurfaceRect.width_, activeSurfaceRect.height_, vsyncRefreshRate,
+        RSUniDirtyComputeUtil::GetDamageRegionGpuTile().first, RSUniDirtyComputeUtil::GetDamageRegionGpuTile().second);
     RS_LOGD("RSScreenRenderNodeDrawable::OnDraw node: %{public}" PRIu64 "", GetId());
-    ScreenId activeScreenId = HgmCore::Instance().GetActiveScreenId();
 
     // when set expectedRefreshRate, the vsyncRefreshRate maybe change from 60 to 120
     // so that need change whether equal vsync period and whether use virtual dirty
-    if (screenInfo.skipFrameStrategy == SKIP_FRAME_BY_REFRESH_RATE) {
-        bool isEqualVsyncPeriod = (vsyncRefreshRate == screenInfo.expectedRefreshRate);
+    if (screenProperty.GetScreenSkipFrameStrategy() == SKIP_FRAME_BY_REFRESH_RATE) {
+        bool isEqualVsyncPeriod = (vsyncRefreshRate == screenProperty.GetScreenExpectedRefreshRate());
         params->SetIsEqualVsyncPeriod(isEqualVsyncPeriod);
-    } else if (screenInfo.skipFrameStrategy == SKIP_FRAME_BY_INTERVAL) {
-        bool isEqualVsyncPeriod = (screenInfo.skipFrameInterval == 1);
+    } else if (screenProperty.GetScreenSkipFrameStrategy() == SKIP_FRAME_BY_INTERVAL) {
+        bool isEqualVsyncPeriod = (screenProperty.GetScreenSkipFrameInterval() == 1);
         params->SetIsEqualVsyncPeriod(isEqualVsyncPeriod);
     }
-    screenManager->RemoveForceRefreshTask();
+    RSMainThread::Instance()->RemoveForceRefreshTask();
 
-    bool isVirtualExpandComposite =
-        params->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
+    bool isVirtualExpandComposite = params->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE;
     if (isVirtualExpandComposite) {
-        RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params, *this, screenManager);
-        if (RSUniDirtyComputeUtil::CheckVirtualExpandScreenSkip(*params, *this)) {
+        RSUniDirtyComputeUtil::UpdateVirtualExpandScreenAccumulatedParams(*params,
+            syncDirtyManager->IsCurrentFrameDirty());
+        bool isMultiSurfaceExpand = screenProperty.GetMultiSurfaceConfigs().size() > 1;
+        if (!isMultiSurfaceExpand &&
+            RSUniDirtyComputeUtil::CheckVirtualExpandScreenSkip(*params, *this)) {
             RS_TRACE_NAME("VirtualExpandScreenNode skip");
             return;
         }
     }
 
-    if (SkipFrame(vsyncRefreshRate, screenInfo)) {
+    if (SkipFrame(vsyncRefreshRate, screenProperty)) {
         SetDrawSkipType(DrawSkipType::SKIP_FRAME);
         accumulateDirtyInSkipFrame_ |= RSUniDirtyComputeUtil::CheckCurrentFrameHasDirtyInVirtual(*this);
         RS_TRACE_NAME_FMT("SkipFrame, screenId:%lu, strategy:%d, interval:%u, refreshrate:%u, dirty:%d",
-            paramScreenId, screenInfo.skipFrameStrategy, screenInfo.skipFrameInterval,
-            screenInfo.expectedRefreshRate, accumulateDirtyInSkipFrame_);
+            paramScreenId, screenProperty.GetScreenSkipFrameStrategy(), screenProperty.GetScreenSkipFrameInterval(),
+            screenProperty.GetScreenExpectedRefreshRate(), accumulateDirtyInSkipFrame_);
         if (isVirtualExpandComposite) {
             RSUniDirtyComputeUtil::AccumulateVirtualExpandScreenDirtyRegions(*this, *params);
         }
-        screenManager->PostForceRefreshTask();
+        RSMainThread::Instance()->PostForceRefreshTask();
         return;
     }
     if (!params->IsEqualVsyncPeriod()) {
         uniParam->SetVirtualDirtyRefresh(true);
     }
 
-    auto processor = RSProcessorFactory::CreateProcessor(params->GetCompositeType());
+    auto processor = RSProcessorFactory::CreateProcessor(compositeType, paramScreenId);
     if (!processor) {
         SetDrawSkipType(DrawSkipType::CREATE_PROCESSOR_FAIL);
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw RSProcessor is null!");
@@ -669,125 +643,40 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     uniParam->SetRSProcessor(processor);
+
+    if (!screenProperty.IsVirtual()) {
+        if (auto composerClientManager = RSUniRenderThread::Instance().GetComposerClientManager()) {
+            PipelineParam param = {
+                .frameTimestamp = RSUniRenderThread::Instance().GetCurrentTimestamp(),
+                .actualTimestamp = RSUniRenderThread::Instance().GetActualTimestamp(),
+                .fastComposeTimeStampDiff = RSUniRenderThread::Instance().GetFastComposeTimeStampDiff(),
+                .vsyncId = RSUniRenderThread::Instance().GetVsyncId(),
+                .pendingConstraintRelativeTime = RSUniRenderThread::Instance().GetPendingConstraintRelativeTime(),
+                .pendingScreenRefreshRate = RSUniRenderThread::Instance().GetPendingScreenRefreshRate(),
+                .isForceRefresh = RSUniRenderThread::Instance().GetForceRefreshFlag(),
+                .hasGameScene = RSUniRenderThread::Instance().GetHasGameScene(),
+                .hasLppVideo = RSUniRenderThread::Instance().GetHasLppVideo(),
+                .SurfaceFpsOpNum = RSUniRenderThread::Instance().GetSurfaceFpsOpNum(),
+                .SurfaceFpsOpList = RSUniRenderThread::Instance().GetSurfaceFpsOpList(),
+            };
+            composerClientManager->UpdatePipelineParam(paramScreenId, param);
+        }
+    }
+
     RSUniRenderThread::Instance().SetEnableVisibleRect(false);
     auto mirroredDrawable = params->GetMirrorSourceDrawable().lock();
-    auto mirroredRenderParams = mirroredDrawable ?
-        static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;
-    if (mirroredRenderParams ||
-        params->GetCompositeType() == CompositeType::UNI_RENDER_EXPAND_COMPOSITE) {
-        DirtyStatusAutoUpdate dirtyStatusAutoUpdate(*uniParam, params->GetChildDisplayCount() == 1);
-        if (!processor->InitForRenderThread(*this, RSUniRenderThread::Instance().GetRenderEngine())) {
-            SetDrawSkipType(DrawSkipType::RENDER_ENGINE_NULL);
-            syncDirtyManager_->ResetDirtyAsSurfaceSize();
-            syncDirtyManager_->UpdateDirty(false);
-            RS_LOGD("RSScreenRenderNodeDrawable::OnDraw processor init failed!");
-            return;
-        }
-        if (mirroredRenderParams) {
-            const auto& mirroredScreenProperty = mirroredRenderParams->GetScreenProperty();
-            offsetX_ = mirroredScreenProperty.GetOffsetX();
-            offsetY_ = mirroredScreenProperty.GetOffsetY();
-            bool enableVisibleRect = screenProperty.GetEnableVisibleRect();
-            RSUniRenderThread::Instance().SetEnableVisibleRect(enableVisibleRect);
-            if (enableVisibleRect) {
-                const auto& rect = screenProperty.GetVisibleRect();
-                auto curVisibleRect = Drawing::RectI(rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
-                RSUniRenderThread::Instance().SetVisibleRect(curVisibleRect);
-            }
-            if (params->GetCompositeType() == CompositeType::UNI_RENDER_COMPOSITE) {
-                SetDrawSkipType(DrawSkipType::WIRED_SCREEN_PROJECTION);
-                RSUniRenderThread::Instance().WaitUntilScreenNodeBufferReleased(*this);
-                expandRenderFrame_ = RequestFrame(*params, processor);
-                if (!expandRenderFrame_) {
-                    SetDrawSkipType(DrawSkipType::REQUEST_FRAME_FAIL);
-                    RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to request frame");
-                    return;
-                }
-                auto drSurface = expandRenderFrame_->GetFrame()->GetSurface();
-                if (!drSurface) {
-                    RS_LOGE("RSScreenRenderNodeDrawable::OnDraw DrawingSurface is null");
-                    return;
-                }
-                curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drSurface.get());
-                RSRenderNodeDrawable::OnDraw(*curCanvas_);
-                expandRenderFrame_->Flush();
-                processor->ProcessScreenSurfaceForRenderThread(*this);
-                RSPointerWindowManager::Instance().HardCursorCreateLayer(processor, GetId());
-                processor->PostProcess();
-                expandRenderFrame_ = nullptr;
-                return;
-            }
-            auto virtualProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
-            if (!virtualProcessor) {
-                RS_LOGE("RSScreenRenderNodeDrawable::OnDraw virtualProcessor is null!");
-                return;
-            }
-            curCanvas_ = virtualProcessor->GetCanvas();
-            RSRenderNodeDrawable::OnDraw(*curCanvas_);
-            if (virtualProcessor->GetDisplaySkipInMirror()) {
-                RS_TRACE_NAME("skip in virtual screen and cancelbuffer");
-                virtualProcessor->SetDisplaySkipInMirror(false);
-                virtualProcessor->CancelCurrentFrame();
-                return;
-            }
-            params->ResetVirtualExpandAccumulatedParams();
-        } else {
-            RS_LOGD("RSScreenRenderNodeDrawable::OnDraw Expand screen.");
-            bool isOpDropped = uniParam->IsOpDropped();
-            uniParam->SetOpDropped(uniParam->IsVirtualExpandScreenDirtyEnabled());
-            auto expandProcessor = RSProcessor::ReinterpretCast<RSUniRenderVirtualProcessor>(processor);
-            if (!expandProcessor) {
-                SetDrawSkipType(DrawSkipType::EXPAND_PROCESSOR_NULL);
-                RS_LOGE("RSScreenRenderNodeDrawable::OnDraw expandProcessor is null!");
-                return;
-            }
-            RSDirtyRectsDfx rsDirtyRectsDfx(*this);
-            std::vector<RectI> damageRegionRects;
-            RSUniDirtyComputeUtil::MergeVirtualExpandScreenAccumulatedDirtyRegions(*this, *params);
-            int32_t bufferAge = expandProcessor->GetBufferAge();
-            damageRegionRects = RSUniRenderUtil::MergeDirtyHistory(
-                *this, bufferAge, screenInfo, rsDirtyRectsDfx, *params);
-            uniParam->Reset();
-            if (uniParam->IsVirtualExpandScreenDirtyEnabled() && !uniParam->IsVirtualDirtyDfxEnabled()) {
-                expandProcessor->SetDirtyInfo(damageRegionRects);
-            } else {
-                std::vector<RectI> emptyRects = {};
-                expandProcessor->SetRoiRegionToCodec(emptyRects);
-            }
-            rsDirtyRectsDfx.SetVirtualDirtyRects(damageRegionRects, screenInfo);
-            curCanvas_ = expandProcessor->GetCanvas();
-            curCanvas_->Save();
-            if (uniParam->IsVirtualExpandScreenDirtyEnabled()) {
-                UpdateSurfaceDrawRegion(curCanvas_, params);
-                curCanvas_->SetDrawnRegion(params->GetDrawnRegion());
-                Drawing::Region clipRegion = GetFlippedRegion(damageRegionRects, screenInfo);
-                uniParam->SetClipRegion(clipRegion);
-                ClipRegion(*curCanvas_, clipRegion);
-            }
-            curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
-            RSUniDirtyComputeUtil::ClearVirtualExpandScreenAccumulatedDirtyRegions(*this, *params);
-            RSRenderNodeDrawable::OnDraw(*curCanvas_);
-            params->ResetVirtualExpandAccumulatedParams();
-            auto targetSurfaceRenderNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-                params->GetTargetSurfaceRenderNodeDrawable().lock());
-            if ((targetSurfaceRenderNodeDrawable || params->HasMirrorScreen()) && curCanvas_->GetSurface()) {
-                RS_TRACE_NAME("DrawExpandScreen cacheImgForMultiScreenView");
-                cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
-            } else {
-                cacheImgForMultiScreenView_ = nullptr;
-            }
-            // Restore the initial state of the canvas to avoid state accumulation
-            curCanvas_->RestoreToCount(0);
-            if (curCanvas_) {
-                rsDirtyRectsDfx.OnDrawVirtual(*curCanvas_);
-            }
-            uniParam->SetOpDropped(isOpDropped);
-        }
-        DrawCurtainScreen();
-        processor->PostProcess();
-        SetDrawSkipType(DrawSkipType::MIRROR_DRAWABLE_SKIP);
+    auto mirrorSourceParams =
+        mirroredDrawable ? static_cast<RSScreenRenderParams*>(mirroredDrawable->GetRenderParams().get()) : nullptr;
+    if (mirrorSourceParams) {
+        RSMultiScreenUtil::HandleMirrorScreen(*this, *mirrorSourceParams, *params, processor);
         return;
     }
+    if (compositeType == CompositeType::UNI_RENDER_EXPAND_COMPOSITE) {
+        RSMultiScreenUtil::HandleVirtualExtendScreen(*this, *params, processor);
+        return;
+    }
+
+    RSUniRenderThread::BufferManagerGuard bufferGuard;
 
     bool isHdrOn = params->GetHDRPresent();
     // 0 means defalut hdrBrightnessRatio
@@ -812,24 +701,26 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         isHdrOn, hdrBrightnessRatio);
 
     // checkScreenNodeSkip need to be judged at the end
-    if (RSAncoManager::Instance()->GetAncoHebcStatus() == AncoHebcStatus::INITIAL &&
-        uniParam->IsOpDropped() && CheckScreenNodeSkip(*params, processor)) {
+    if (RSAncoManager::Instance()->GetAncoHebcStatus() == AncoHebcStatus::INITIAL && uniParam->IsOpDropped() &&
+        CheckScreenNodeSkip(*params, processor)) {
         SetDrawSkipType(DrawSkipType::SCREEN_NODE_SKIP);
         RSMainThread::Instance()->SetFrameIsRender(false);
         SetScreenNodeSkipFlag(*uniParam, true);
         return;
     }
+    params->GetLayerSkipContext().Reset();
     SetScreenNodeSkipFlag(*uniParam, false);
     RSMainThread::Instance()->SetFrameIsRender(true);
 
     CheckAndUpdateFilterCacheOcclusion(*params, screenInfo);
-    bool isRGBA1010108Enabled = RSHdrUtil::GetRGBA1010108Enabled();
-    bool isNeed10bit = isHdrOn || (params->GetNewColorSpace() == GRAPHIC_COLOR_GAMUT_BT2020 && isRGBA1010108Enabled);
-    if (isNeed10bit) {
-        params->SetNewPixelFormat(isRGBA1010108Enabled && params->GetExistHWCNode() ?
-            GRAPHIC_PIXEL_FMT_RGBA_1010108 : GRAPHIC_PIXEL_FMT_RGBA_1010102);
+    if (isHdrOn) {
+        auto nonRGBA1010108Fmt = RSSystemProperties::GetXcomponentEdrEnabled() &&
+            !RSBaseHdrUtil::GetRGBA1010108Enabled() && params->GetHasForceHwcHdrSurface() ?
+            GRAPHIC_PIXEL_FMT_RGBA_8888 : GRAPHIC_PIXEL_FMT_RGBA_1010102;
+        params->SetNewPixelFormat(RSBaseHdrUtil::GetRGBA1010108Enabled() && params->GetExistHWCNode() ?
+            GRAPHIC_PIXEL_FMT_RGBA_1010108 : nonRGBA1010108Fmt);
     }
-    // hpae offline: post offline task
+    // hpae_offline: post offline task
     CheckAndPostAsyncProcessOfflineTask();
 #if defined(ROSEN_OHOS)
     bool isHebc = (RSAncoManager::Instance()->GetAncoHebcStatus() != AncoHebcStatus::NOT_USE_HEBC);
@@ -837,33 +728,12 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         isHdrOn, params->GetNewPixelFormat(), params->GetNewColorSpace(), isHebc);
 #endif
     RSUniRenderThread::Instance().WaitUntilScreenNodeBufferReleased(*this);
-    // displayNodeSp to get  rsSurface witch only used in renderThread
     auto renderFrame = RequestFrame(*params, processor);
-    if (!renderFrame) {
+    if (renderFrame == nullptr || renderFrame->GetFrame() == nullptr) {
         SetDrawSkipType(DrawSkipType::REQUEST_FRAME_FAIL);
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to request frame");
         return;
     }
-
-    UpdateSlrScale(screenInfo);
-    RSDirtyRectsDfx rsDirtyRectsDfx(*this);
-    std::vector<RectI> damageRegionrects;
-    std::vector<RectI> curFrameVisibleRegionRects;
-    Drawing::Region clipRegion;
-    if (uniParam->IsPartialRenderEnabled()) {
-        damageRegionrects = RSUniRenderUtil::MergeDirtyHistory(
-            *this, renderFrame->GetBufferAge(), screenInfo, rsDirtyRectsDfx, *params);
-        curFrameVisibleRegionRects = RSUniDirtyComputeUtil::GetCurrentFrameVisibleDirty(*this, screenInfo, *params);
-        rsDirtyRectsDfx.SetCurrentFrameVisibleDirtyRects(curFrameVisibleRegionRects);
-        uniParam->Reset();
-        clipRegion = GetFlippedRegion(damageRegionrects, screenInfo);
-        RS_TRACE_NAME_FMT("SetDamageRegion damageRegionrects num: %zu, info: %s",
-            damageRegionrects.size(), RectVectorToString(damageRegionrects).c_str());
-        if (!uniParam->IsRegionDebugEnabled()) {
-            renderFrame->SetDamageRegion(damageRegionrects);
-        }
-    }
-
     auto drSurface = renderFrame->GetFrame()->GetSurface();
     if (!drSurface) {
         SetDrawSkipType(DrawSkipType::SURFACE_NULL);
@@ -871,12 +741,58 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         return;
     }
 
+    if (uniParam->IsDirtyAlignEnabled() && !RSUniDirtyComputeUtil::IsDamageRegionGpuTileInited()) {
+        auto renderAreaGranularity = drSurface->GetRenderAreaGranularity();
+        RSUniDirtyComputeUtil::SetDamageRegionGpuTile(std::make_pair(
+            static_cast<int>(renderAreaGranularity.width),
+            static_cast<int>(renderAreaGranularity.height)));
+        RS_LOGI("gpu tile: (%d, %d)",
+            RSUniDirtyComputeUtil::GetDamageRegionGpuTile().first,
+            RSUniDirtyComputeUtil::GetDamageRegionGpuTile().second);
+    }
+    UpdateSlrScale(screenInfo);
+    RSDirtyRectsDfx rsDirtyRectsDfx(*this);
+    std::vector<RectI> damageRegionrects;
+    std::vector<RectI> curFrameVisibleRegionRects;
+    Drawing::Region clipRegion;
+    bool needSetDamageForPartialRender = uniParam->NeedSetDamageForPartialRender();
+    if (LIKELY(uniParam->IsPartialRenderEnabled())) {
+        damageRegionrects = RSUniRenderUtil::MergeDirtyHistory(
+            *this, renderFrame->GetBufferAge(), screenInfo, rsDirtyRectsDfx, *params);
+        curFrameVisibleRegionRects = RSUniDirtyComputeUtil::GetCurrentFrameVisibleDirty(*this, screenInfo, *params);
+        rsDirtyRectsDfx.SetCurrentFrameVisibleDirtyRects(curFrameVisibleRegionRects);
+        uniParam->Reset();
+        clipRegion = RSUniDirtyComputeUtil::GetFlippedRegion(damageRegionrects, screenInfo);
+        RS_TRACE_NAME_FMT("SetDamageRegion damageRegionrects num: %zu, info: %s",
+            damageRegionrects.size(),
+            RectVectorToString(damageRegionrects).substr(0, MAX_DAMAGE_REGION_INFO).c_str());
+        if (LIKELY(needSetDamageForPartialRender && !uniParam->IsRegionDebugEnabled())) {
+            renderFrame->SetDamageRegion(damageRegionrects);
+        }
+    }
+
+    // record current frame refresh area to frame stability manager
+    std::vector<RectI> refreshRects(damageRegionrects);
+    refreshRects.emplace_back(syncDirtyManager_->GetHwcDirtyRegion());
+    RSFrameStabilityManager::GetInstance().RecordCurrentFrameDirty(
+        paramScreenId, refreshRects, screenInfo.width * screenInfo.height);
+
     curCanvas_ = std::make_shared<RSPaintFilterCanvas>(drSurface.get());
     if (!curCanvas_) {
         SetDrawSkipType(DrawSkipType::CANVAS_NULL);
         RS_LOGE("RSScreenRenderNodeDrawable::OnDraw failed to create canvas");
         return;
     }
+
+#ifdef USE_PRIMITIVE
+    auto primListAdapter = std::make_shared<PrimListAdapter>();
+    curCanvas_->primListAdapter_ = primListAdapter;
+    AutoDirtyTypesRestore autoDirtyTypesRestore(primListAdapter, *this);
+#endif
+
+    auto& layerCacheManager = RSLayerCacheManager::Instance();
+    layerCacheManager.HandleLayerDrawables(*curCanvas_);
+
     curCanvas_->SetDrawnRegion(params->GetDrawnRegion());
     curCanvas_->SetTargetColorGamut(params->GetNewColorSpace());
     curCanvas_->SetScreenId(paramScreenId);
@@ -888,10 +804,15 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
 #ifdef DDGR_ENABLE_FEATURE_OPINC
     if (RSOpincDrawCache::IsAutoCacheEnable()) {
-        RSOpincDrawCache::SetScreenRectInfo({0, 0, screenInfo.width, screenInfo.height});
+        RSOpincDrawCache::SetScreenRectInfo({ 0, 0, screenProperty.GetWidth(), screenProperty.GetHeight() });
     }
 #endif
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo({0, 0, screenInfo.width, screenInfo.height});
     UpdateSurfaceDrawRegion(curCanvas_, params);
+
+#ifdef USE_PRIMITIVE
+    primListAdapter->PrimDrawResume();
+#endif
 
     // canvas draw
     {
@@ -902,17 +823,29 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 #ifdef SUBTREE_PARALLEL_ENABLE
             RSParallelManager::Singleton().Reset(curCanvas_, uniParam, params, vsyncRefreshRate);
 #endif
-            if (uniParam->IsOpDropped()) {
-                if (uniParam->IsDirtyAlignEnabled()) {
-                    RS_TRACE_NAME_FMT("dirty align enabled and no clip operation");
+            if (LIKELY(uniParam->NeedClipForPartialRender() && !uniParam->IsRegionDebugEnabled())) {
+                if (needSetDamageForPartialRender && uniParam->IsDirtyAlignEnabled() &&
+                    RSUniDirtyComputeUtil::IsDamageRegionGpuTileValid() &&
+                    damageRegionrects.size() > RSUniDirtyComputeUtil::DIRTY_REGION_COUNT_THRESHOLD) {
+                    RS_TRACE_NAME("dirty align enabled and no clip operation");
                     curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
                 } else {
-                    uniParam->SetClipRegion(clipRegion);
-                    ClipRegion(*curCanvas_, clipRegion);
+                    RSUniDirtyComputeUtil::ClipRegion(*curCanvas_, clipRegion);
                 }
             } else {
                 curCanvas_->Clear(Drawing::Color::COLOR_TRANSPARENT);
             }
+#ifdef USE_PRIMITIVE
+            bool isRegionClipped = uniParam->IsOpDropped() && !uniParam->IsDirtyAlignEnabled();
+            primListAdapter->ClipDirtyProcess(isRegionClipped, lastIsRegionClipped_, damageRegionrects,
+                lastDamageRegionrects_);
+            if (isRegionClipped) {
+                lastDamageRegionrects_ = damageRegionrects;
+            } else {
+                lastDamageRegionrects_.clear();
+            }
+            lastIsRegionClipped_ = isRegionClipped;
+#endif
             // just used in SubTree, used for check whether a new Surface needs to be created in the SubTree thread.
             curCanvas_->SetWeakSurface(drSurface);
 
@@ -924,7 +857,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             ffrt_cpu_boost_end(CPUBOOST_START_POINT + 1);
             curCanvas_->Save();
             curCanvas_->ResetMatrix();
-            if (screenInfo.isSamplingOn) {
+            if (screenProperty.GetIsSamplingOn()) {
                 curCanvas_->ConcatMatrix(params->GetSlrMatrix());
             }
             rsDirtyRectsDfx.OnDraw(*curCanvas_);
@@ -940,14 +873,15 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
             auto dirtyManager = GetSyncDirtyManager();
             const auto& activeRect = dirtyManager->GetActiveSurfaceRect();
             if (!activeRect.IsEmpty() && (!dirtyManager->GetDirtyRegion().IsInsideOf(activeRect) ||
-                !uniParam->IsPartialRenderEnabled() || uniParam->IsRegionDebugEnabled())) {
+                                          !uniParam->IsPartialRenderEnabled() || uniParam->IsRegionDebugEnabled())) {
                 RS_TRACE_NAME_FMT("global dirty region:[%s] is not inside of active surface rect:[%s], "
-                    "clear extra area to black", dirtyManager->GetDirtyRegion().ToString().c_str(),
-                    activeRect.ToString().c_str());
+                                  "clear extra area to black",
+                    dirtyManager->GetDirtyRegion().ToString().c_str(), activeRect.ToString().c_str());
                 curCanvas_->Save();
-                auto activeRegion = RSUniDirtyComputeUtil::ScreenIntersectDirtyRects(
-                    Occlusion::Region(activeRect), screenInfo);
-                curCanvas_->ClipRegion(GetFlippedRegion(activeRegion, screenInfo), Drawing::ClipOp::DIFFERENCE);
+                auto activeRegion =
+                    RSUniDirtyComputeUtil::ScreenIntersectDirtyRects(Occlusion::Region(activeRect), screenInfo);
+                curCanvas_->ClipRegion(RSUniDirtyComputeUtil::GetFlippedRegion(activeRegion, screenInfo),
+                    Drawing::ClipOp::DIFFERENCE);
                 curCanvas_->Clear(Drawing::Color::COLOR_BLACK);
                 curCanvas_->Restore();
             }
@@ -955,9 +889,9 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
         if (RSSystemProperties::GetDrawMirrorCacheImageEnabled() && params->HasMirrorScreen() &&
             curCanvas_->GetSurface() != nullptr) {
-            cacheImgForMultiScreenView_ = curCanvas_->GetSurface()->GetImageSnapshot();
+            cacheImgForCapture_ = curCanvas_->GetSurface()->GetImageSnapshot();
         } else {
-            cacheImgForMultiScreenView_ = nullptr;
+            cacheImgForCapture_ = nullptr;
         }
     }
     RenderOverDraw();
@@ -968,10 +902,15 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
     }
 
     RS_TRACE_BEGIN("RSScreenRenderNodeDrawable Flush");
-    RsFrameReport::GetInstance().CheckBeginFlushPoint();
+    RsFrameReport::CheckBeginFlushPoint();
     Drawing::GPUResourceTag::SetCurrentNodeId(GetId());
 
+#ifdef USE_PRIMITIVE
+    primListAdapter->PrimDrawSuspend();
+#endif
+
     renderFrame->Flush();
+    bufferGuard.SetAcquireFence(renderFrame->GetAcquireFence());
     RS_TRACE_END();
 
 #ifdef SUBTREE_PARALLEL_ENABLE
@@ -986,11 +925,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 
     // process round corner display
     auto rcdInfo = std::make_unique<RcdInfo>();
-    DoScreenRcdTask(params->GetId(), processor, rcdInfo, screenInfo);
-
-    if (!RSRenderComposerManager::GetInstance().WaitComposerTaskExecute(screenInfo.id)) {
-        RS_LOGW("RSScreenRenderNodeDrawable::ondraw: hardwareThread task has too many to Execute");
-    }
+    DoScreenRcdTask(params->GetId(), processor, rcdInfo, screenProperty);
 
     RS_TRACE_BEGIN("RSScreenRenderNodeDrawable CommitLayer");
     for (const auto& [screenNodeId, _, drawable] : hardwareDrawables) {
@@ -1003,7 +938,7 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
         if (drawable->GetRenderParams()->GetHardwareEnabled()) {
             auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable->GetRenderParams().get());
-            // hpae offline: wait task and create layer
+            // hpae_offline: wait task and create layer
             if (surfaceParams->GetLayerInfo().useDeviceOffline &&
                 ProcessOfflineSurfaceDrawable(processor, surfaceDrawable, true)) {
                 continue;
@@ -1012,29 +947,22 @@ void RSScreenRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
         }
     }
     RSPointerWindowManager::Instance().HardCursorCreateLayer(processor, GetId());
-    if (screenInfo.activeRect.IsEmpty() ||
-        screenInfo.activeRect == RectI(0, 0, screenInfo.width, screenInfo.height) ||
+    const auto& activeRect = screenProperty.GetActiveRect();
+    if (activeRect.IsEmpty() || activeRect == RectI(0, 0, screenProperty.GetWidth(), screenProperty.GetHeight()) ||
         DirtyRegionParam::IsComposeDirtyRegionEnableInPartialDisplay()) {
         if (uniParam->IsRegionDebugEnabled()) {
             std::vector<RectI> emptyRegionRects = {};
             SetDirtyRects(emptyRegionRects);
         } else {
-            SetDirtyRects(RSSystemProperties::GetOptimizeHwcComposeAreaEnabled() ?
-                curFrameVisibleRegionRects : damageRegionrects);
+            SetDirtyRects(RSSystemProperties::GetOptimizeHwcComposeAreaEnabled() ? curFrameVisibleRegionRects
+                                                                                 : damageRegionrects);
         }
     } else {
-        SetDirtyRects({GetSyncDirtyManager()->GetRectFlipWithinSurface(screenInfo.activeRect)});
+        SetDirtyRects({ GetSyncDirtyManager()->GetRectFlipWithinSurface(activeRect) });
     }
     processor->ProcessScreenSurfaceForRenderThread(*this);
     processor->PostProcess();
     RS_TRACE_END();
-
-#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
-    if (RSMagicPointerRenderManager::GetInstance().GetPointerColorInversionEnabled() && !mirroredDrawable) {
-        RSMagicPointerRenderManager::GetInstance().ProcessColorPicker(processor, curCanvas_->GetGPUContext());
-        RSMagicPointerRenderManager::GetInstance().SetCacheImgForPointer(nullptr);
-    }
-#endif
 }
 
 void RSScreenRenderNodeDrawable::UpdateSlrScale(ScreenInfo& screenInfo)
@@ -1081,7 +1009,7 @@ bool RSScreenRenderNodeDrawable::CreateSurface(sptr<IBufferConsumerListener> lis
         RS_LOGI("RSScreenRenderNodeDrawable::CreateSurface already created, return");
         return true;
     }
-    consumer = IConsumerSurface::Create("ScreenNode");
+    consumer = IConsumerSurface::Create(RENDER_NODE_NAME);
     if (consumer == nullptr) {
         RS_LOGE("RSScreenRenderNodeDrawable::CreateSurface get consumer surface fail");
         return false;
@@ -1104,6 +1032,9 @@ bool RSScreenRenderNodeDrawable::CreateSurface(sptr<IBufferConsumerListener> lis
     RS_LOGI("RSScreenRenderNodeDrawable::CreateSurface end");
     surfaceCreated_ = true;
     surfaceHandler_->SetConsumer(consumer);
+    if (auto renderEngine = RSUniRenderThread::Instance().GetRenderEngine()) {
+        surfaceHandler_->RegisterDeleteBufferListener(renderEngine->CreateBufferDeleteCallback());
+    }
     return true;
 }
 #endif
@@ -1113,8 +1044,9 @@ bool RSScreenRenderNodeDrawable::SkipFrameByInterval(uint32_t refreshRate, uint3
     if (refreshRate == 0 || skipFrameInterval <= 1) {
         return false;
     }
-    int64_t currentTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
-        std::chrono::steady_clock::now().time_since_epoch()).count();
+    int64_t currentTime =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch())
+            .count();
     // the skipFrameInterval is equal to 60 divide the virtual screen refresh rate
     int64_t refreshInterval = currentTime - lastRefreshTime_;
     // 1000000000ns == 1s, 110/100 allows 10% over.
@@ -1148,19 +1080,19 @@ bool RSScreenRenderNodeDrawable::SkipFrameByRefreshRate(uint32_t refreshRate, ui
     return false;
 }
 
-bool RSScreenRenderNodeDrawable::SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo)
+bool RSScreenRenderNodeDrawable::SkipFrame(uint32_t refreshRate, const RSScreenProperty& screenProperty)
 {
     bool needSkip = false;
-    switch (screenInfo.skipFrameStrategy) {
+    switch (screenProperty.GetScreenSkipFrameStrategy()) {
         case SKIP_FRAME_BY_INTERVAL:
-            needSkip = SkipFrameByInterval(refreshRate, screenInfo.skipFrameInterval);
+            needSkip = SkipFrameByInterval(refreshRate, screenProperty.GetScreenSkipFrameInterval());
             break;
         case SKIP_FRAME_BY_REFRESH_RATE:
-            needSkip = SkipFrameByRefreshRate(refreshRate, screenInfo.expectedRefreshRate);
+            needSkip = SkipFrameByRefreshRate(refreshRate, screenProperty.GetScreenExpectedRefreshRate());
             break;
         case SKIP_FRAME_BY_ACTIVE_REFRESH_RATE:
-            if (refreshRate > screenInfo.activeRefreshRate) {
-                needSkip = SkipFrameByRefreshRate(refreshRate, screenInfo.activeRefreshRate);
+            if (refreshRate > screenProperty.GetRefreshRate()) {
+                needSkip = SkipFrameByRefreshRate(refreshRate, screenProperty.GetRefreshRate());
                 GetSyncDirtyManager()->ResetDirtyAsSurfaceSize();
             }
             break;
@@ -1170,8 +1102,7 @@ bool RSScreenRenderNodeDrawable::SkipFrame(uint32_t refreshRate, ScreenInfo scre
     return needSkip;
 }
 
-bool RSScreenRenderNodeDrawable::ProcessOfflineSurfaceDrawable(
-    const std::shared_ptr<RSProcessor>& processor,
+bool RSScreenRenderNodeDrawable::ProcessOfflineSurfaceDrawable(const std::shared_ptr<RSProcessor>& processor,
     std::shared_ptr<RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async)
 {
     if (processor->ProcessOfflineLayer(surfaceDrawable, async)) {
@@ -1199,8 +1130,10 @@ void RSScreenRenderNodeDrawable::CheckAndPostAsyncProcessOfflineTask()
         auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(drawable);
         if (surfaceDrawable->GetRenderParams()->GetHardwareEnabled() &&
             surfaceDrawable->GetRenderParams()->GetLayerInfo().useDeviceOffline) {
-            if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(
-                surfaceDrawable, RSUniRenderThread::Instance().GetVsyncId())) {
+                offlineTaskId taskId = std::make_pair(RSUniRenderThread::Instance().GetVsyncId(),
+                    surfaceDrawable->GetId());
+            if (!RSOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(
+                surfaceDrawable, taskId)) {
                 RS_LOGW("RSUniRenderProcessor::ProcessSurface: post offline task failed, go redraw");
             }
         }
@@ -1227,5 +1160,4 @@ bool RSScreenRenderNodeDrawable::CheckScreenFreezeSkip(RSScreenRenderParams& par
     }
     return false;
 }
-
 } // namespace OHOS::Rosen::DrawableV2

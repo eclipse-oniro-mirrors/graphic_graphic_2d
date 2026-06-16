@@ -171,9 +171,6 @@ bool RSRenderNodeMap::RegisterRenderNode(const std::shared_ptr<RSBaseRenderNode>
         AddUIExtensionSurfaceNode(surfaceNode);
         ObtainLauncherNodeId(surfaceNode);
         ObtainScreenLockWindowNodeId(surfaceNode);
-        if (surfaceNode->IsSelfDrawingType()) {
-            RSSurfaceFpsManager::GetInstance().RegisterSurfaceFps(id, surfaceNode->GetName());
-        }
     } else if (nodePtr->GetType() == RSRenderNodeType::CANVAS_DRAWING_NODE) {
         auto canvasDrawingNode = nodePtr->ReinterpretCastTo<RSCanvasDrawingRenderNode>();
         canvasDrawingNodeMap_.emplace(id, canvasDrawingNode);
@@ -218,12 +215,19 @@ void RSRenderNodeMap::UnregisterRenderNode(NodeId id)
     if (it != surfaceNodeMap_.end()) {
         RemoveUIExtensionSurfaceNode(it->second);
         surfaceNodeMap_.erase(id);
-        RSSurfaceFpsManager::GetInstance().UnregisterSurfaceFps(id);
     }
     residentSurfaceNodeMap_.erase(id);
     screenNodeMap_.erase(id);
     logicalDisplayNodeMap_.erase(id);
     canvasDrawingNodeMap_.erase(id);
+    auto removeIter = std::remove_if(needAttachedNode_.begin(), needAttachedNode_.end(), [id](const auto& node) {
+        if (node && node->GetId() == id) {
+            node->GetAttachedInfo() = std::nullopt;
+            return true;
+        }
+        return false;
+    });
+    needAttachedNode_.erase(removeIter, needAttachedNode_.end());
 }
 
 void RSRenderNodeMap::MoveRenderNodeMap(
@@ -275,7 +279,9 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid, bool immediate)
             } else {
                 subIter->second->RemoveFromTree(false);
             }
-            subIter->second->GetAnimationManager().FilterAnimationByPid(pid);
+            if (auto animationManager = subIter->second->GetAnimationManager()) {
+                animationManager->FilterAnimationByPid(pid);
+            }
             subIter = subMap.erase(subIter);
         }
         renderNodeMap_.erase(iter);
@@ -288,7 +294,6 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid, bool immediate)
     EraseIf(surfaceNodeMap_, [pid, useBatchRemoving, this](const auto& pair) -> bool {
         bool shouldErase = (ExtractPid(pair.first) == pid);
         if (shouldErase) {
-            RSSurfaceFpsManager::GetInstance().UnregisterSurfaceFps(pair.first);
             RemoveUIExtensionSurfaceNode(pair.second);
         }
         if (shouldErase && pair.second && useBatchRemoving) {
@@ -346,11 +351,11 @@ void RSRenderNodeMap::FilterNodeByPid(pid_t pid, bool immediate)
 
     if (auto fallbackNode = GetAnimationFallbackNode()) {
         // remove all fallback animations belong to given pid
-        fallbackNode->GetAnimationManager().FilterAnimationByPid(pid);
+        if (auto animationManager = fallbackNode->GetAnimationManager()) {
+            animationManager->FilterAnimationByPid(pid);
+        }
     }
-#ifdef RS_ENABLE_MEMORY_DOWNTREE
     RSRenderNodeGC::Instance().ReleaseNodeNotOnTree(pid);
-#endif
 }
 
 void RSRenderNodeMap::TraversalNodes(std::function<void (const std::shared_ptr<RSBaseRenderNode>&)> func) const
@@ -371,6 +376,15 @@ void RSRenderNodeMap::TraversalNodesByPid(int pid,
             func(node);
         }
     }
+}
+
+size_t RSRenderNodeMap::GetNodeCountByPid(pid_t pid) const
+{
+    const auto& itr = renderNodeMap_.find(pid);
+    if (itr != renderNodeMap_.end()) {
+        return itr->second.size();
+    }
+    return 0;
 }
 
 void RSRenderNodeMap::TraverseCanvasDrawingNodes(
@@ -499,23 +513,13 @@ std::vector<NodeId> RSRenderNodeMap::GetSelfDrawingNodeInProcess(pid_t pid)
     return sortedSelfDrawingNodes;
 }
 
-const std::string RSRenderNodeMap::GetSelfDrawSurfaceNameByPid(pid_t nodePid) const
-{
-    for (auto &t : surfaceNodeMap_) {
-        if (ExtractPid(t.first) == nodePid && t.second->IsSelfDrawingType() && !t.second->IsRosenWeb()) {
-            return t.second->GetName();
-        }
-    }
-    ROSEN_LOGD("RSRenderNodeMap::GetSurfaceNameByPid no self drawing nodes belong to pid %{public}d",
-        static_cast<int32_t>(nodePid));
-    return "";
-}
-
 bool RSRenderNodeMap::AttachToDisplay(
     std::shared_ptr<RSSurfaceRenderNode> surfaceRenderNode, ScreenId screenId, bool toContainer) const
 {
+#ifndef ROSEN_ARKUI_X
     bool result = false;
     surfaceRenderNode->GetAttachedInfo() = std::nullopt;
+    std::shared_ptr<RSRenderNode> displayRenderNodeTop = nullptr;
     for (const auto& [_, displayRenderNode] : logicalDisplayNodeMap_) {
         if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId ||
             !displayRenderNode->IsOnTheTree() ||
@@ -534,10 +538,33 @@ bool RSRenderNodeMap::AttachToDisplay(
         if (parentNode == surfaceRenderNode->GetParent().lock()) {
             continue;
         }
-        parentNode->AddChild(surfaceRenderNode);
+        if (displayRenderNodeTop == nullptr) {
+            displayRenderNodeTop = parentNode;
+        } else {
+            auto positionZcur = parentNode->GetRenderProperties().GetPositionZ();
+            auto positionZd = displayRenderNodeTop->GetRenderProperties().GetPositionZ();
+            if (positionZcur > positionZd) {
+                displayRenderNodeTop = parentNode;
+            }
+        }
+    }
+    if (displayRenderNodeTop != nullptr) {
+        RS_LOGI("RSRenderNodeMap::AttachToDisplay surfaceRenderNode:%{public}" PRIu64
+                " attach to displayRenderNodeTop:%{public}" PRIu64,
+            surfaceRenderNode->GetId(),
+            displayRenderNodeTop->GetId());
+        displayRenderNodeTop->AddChild(surfaceRenderNode);
         result = true;
     }
     return result;
+#else
+    return false;
+#endif
+}
+
+void RSRenderNodeMap::RegisterNeedAttachedNode(std::shared_ptr<RSSurfaceRenderNode> surfaceRenderNode)
+{
+    needAttachedNode_.emplace_back(surfaceRenderNode);
 }
 } // namespace Rosen
 } // namespace OHOS

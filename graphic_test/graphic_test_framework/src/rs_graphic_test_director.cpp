@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <algorithm>
 #include <chrono>
 #include <condition_variable>
 #include <filesystem>
@@ -27,6 +28,8 @@
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
+#include "ui/rs_ui_context.h"
+#include "ui/rs_ui_context_manager.h"
 #include "ui/rs_ui_director.h"
 
 namespace OHOS {
@@ -52,8 +55,7 @@ public:
             LOGE("RSGraphicTestDirector pixelMap == nullptr");
         }
     }
-
-    void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelMap,
+    void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelmap,
         std::shared_ptr<Media::PixelMap> pixelMapHDR) override {}
 
     void Wait(int ms)
@@ -78,7 +80,15 @@ public:
             .callback_ = [this](int64_t timestamp, void*) { this->OnVSync(timestamp); },
         };
         vsyncReceiver_ = RSInterfaces::GetInstance().CreateVSyncReceiver("RSGraphicTest", handler);
-        vsyncReceiver_->Init();
+        if (!vsyncReceiver_) {
+            LOGE("VSyncWaiter CreateVSyncReceiver failed");
+            return;
+        }
+        auto ret = vsyncReceiver_->Init();
+        if (ret != VSYNC_ERROR_OK) {
+            LOGE("VSyncWaiter Init failed, ret=%{public}d", static_cast<int>(ret));
+            vsyncReceiver_ = nullptr;
+        }
     }
 
     void OnVSync(int64_t timestamp)
@@ -129,10 +139,20 @@ RSGraphicTestDirector& RSGraphicTestDirector::Instance()
 
 RSGraphicTestDirector::~RSGraphicTestDirector()
 {
-    rootNode_->screenSurfaceNode_->RemoveFromTree();
-    rsUiDirector_->SendMessages();
-    runner_->Stop();
-    sleep(1);
+    if (rootNode_) {
+        rootNode_->ResetSubWindows();
+        if (rootNode_->screenSurfaceNode_) {
+            rootNode_->screenSurfaceNode_->RemoveFromTree();
+        }
+    }
+
+    if (rsUiDirector_) {
+        rsUiDirector_->SendMessages();
+    }
+
+    if (runner_) {
+        runner_->Stop();
+    }
 }
 
 void RetryProfilerSocketConnection()
@@ -144,16 +164,43 @@ void RetryProfilerSocketConnection()
     WaitTimeout(SOCKET_RETRY_TIME);
 }
 
+void RSGraphicTestDirector::InitProfilerThread()
+{
+    auto CreateAndStartProfilerThread = []() {
+        auto thread = std::make_shared<RSGraphicTestProfilerThread>();
+        thread->Start();
+        return thread;
+    };
+    auto WaitForThreadInit = [](std::shared_ptr<RSGraphicTestProfilerThread> thread) {
+        return thread->WaitForSocketResultWithTimeout(SOCKET_RETRY_TIME);
+    };
+
+    auto profilerThread = CreateAndStartProfilerThread();
+    if (WaitForThreadInit(profilerThread) != AGT_SUCCESS) {
+        RetryProfilerSocketConnection();
+        profilerThread = CreateAndStartProfilerThread();
+    }
+
+    profilerThread_ = profilerThread;
+
+    if (pendingFailureCallback_) {
+        profilerThread_->SetReconnectRequestCallback(pendingFailureCallback_);
+    }
+}
+
 void RSGraphicTestDirector::Run()
 {
-    rsUiDirector_ = RSUIDirector::Create();
-    rsUiDirector_->Init();
+    Reset();
+    screenId_ = RSInterfaces::GetInstance().GetDefaultScreenId();
+    sptr<IRemoteObject> connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId_);
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRender);
+    rsUiDirector_ = OHOS::Rosen::RSUIDirector::Create(connectToRender, rsUIContext);
 
     rsUiDirector_->SetUITaskRunner([](const std::function<void()>& task, uint32_t delay) {
         if (task) {
             task();
         }
-    });
+    }, INSTANCE_ID_UNDEFINED, true);
 
     runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
     handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner_);
@@ -161,38 +208,34 @@ void RSGraphicTestDirector::Run()
     runner_->Run();
 
     if (isProfilerTest_) {
-        auto CreateAndStartProfilerThread = []() {
-            auto thread = std::make_shared<RSGraphicTestProfilerThread>();
-            thread->Start();
-            return thread;
-        };
-        auto WaitForThreadInit = [](std::shared_ptr<RSGraphicTestProfilerThread> thread) {
-            return thread->WaitForSocketResultWithTimeout(SOCKET_RETRY_TIME);
-        };
-
-        auto profilerThread = CreateAndStartProfilerThread();
-        if (WaitForThreadInit(profilerThread) != AGT_SUCCESS) {
-            RetryProfilerSocketConnection();
-            profilerThread = CreateAndStartProfilerThread();
-        }
-        
-        profilerThread_ = profilerThread;
+        InitProfilerThread();
     }
 
     screenId_ = RSInterfaces::GetInstance().GetDefaultScreenId();
 
+    Vector4f defaultScreenBounds = {0, 0, 0, 0};
     auto defaultDisplay = DisplayManager::GetInstance().GetDefaultDisplay();
-    Vector4f defaultScreenBounds = {0, 0, defaultDisplay->GetWidth(), defaultDisplay->GetHeight()};
+    if (defaultDisplay) {
+        defaultScreenBounds = {0, 0, defaultDisplay->GetWidth(), defaultDisplay->GetHeight()};
+    } else {
+        LOGE("RSGraphicTestDirector::Run GetDefaultDisplay failed");
+    }
     screenBounds_ = defaultScreenBounds;
-
-    rootNode_ = std::make_shared<RSGraphicRootNode>();
-    rootNode_->screenSurfaceNode_->SetBounds(defaultScreenBounds);
-    rootNode_->screenSurfaceNode_->SetFrame(defaultScreenBounds);
-    rootNode_->screenSurfaceNode_->SetBackgroundColor(SCREEN_COLOR);
-    rootNode_->screenSurfaceNode_->AttachToDisplay(screenId_);
-    rootNode_->screenSurfaceNode_->SetPositionZ(TOP_LEVEL_Z);
-
-    rsUiDirector_->SetRSSurfaceNode(rootNode_->screenSurfaceNode_);
+    if (!isDynamicTest_) {
+        rootNode_ = std::make_shared<RSGraphicRootNode>();
+        if (!rootNode_ || !rootNode_->screenSurfaceNode_) {
+            LOGE("RSGraphicTestDirector::Run root node or screen surface node is null");
+            return;
+        }
+        rootNode_->screenSurfaceNode_->SetBounds(defaultScreenBounds);
+        rootNode_->screenSurfaceNode_->SetFrame(defaultScreenBounds);
+        rootNode_->screenSurfaceNode_->SetBackgroundColor(SCREEN_COLOR);
+        rootNode_->screenSurfaceNode_->AttachToDisplay(screenId_);
+        rootNode_->screenSurfaceNode_->SetPositionZ(TOP_LEVEL_Z);
+        rootNode_->SetScreenId(screenId_);
+        rootNode_->SetMainWindowZ(TOP_LEVEL_Z);
+        rsUiDirector_->SetRSSurfaceNode(rootNode_->screenSurfaceNode_);
+    }
     rsUiDirector_->SendMessages();
     sleep(1);
 
@@ -201,8 +244,35 @@ void RSGraphicTestDirector::Run()
 
 void RSGraphicTestDirector::FlushMessage()
 {
-    RS_TRACE_NAME("RSGraphicTestDirector::FlushMessage");
+    RS_TRACE_NAME("RSGraphicTestDirector::FlushMessage.");
     rsUiDirector_->SendMessages();
+}
+
+bool RSGraphicTestDirector::FlushMessageAndWait(int timeoutMs)
+{
+    RS_TRACE_NAME("RSGraphicTestDirector::FlushMessageAndWait");
+    struct SyncState {
+        std::mutex mtx;
+        std::condition_variable flushMessageCv;
+        bool flushMessageFinish = false;
+    };
+
+    auto state = std::make_shared<SyncState>();
+
+    //rs call this lambda after SendMessages
+    rsUiDirector_->SendMessages([state]() {
+        std::cout << "=== CALLBACK CALLED! ===" << std::endl;
+        std::lock_guard<std::mutex> lock(state->mtx);
+        state->flushMessageFinish = true;
+        state->flushMessageCv.notify_one();
+    });
+
+    std::unique_lock<std::mutex> lock(state->mtx);
+    return state->flushMessageCv.wait_for(
+        lock,
+        std::chrono::milliseconds(timeoutMs),
+        [state]() { return state->flushMessageFinish; }
+    );
 }
 
 std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureAndWait(int ms, bool isScreenShot)
@@ -210,13 +280,21 @@ std::shared_ptr<Media::PixelMap> RSGraphicTestDirector::TakeScreenCaptureAndWait
     RS_TRACE_NAME("RSGraphicTestDirector::TakeScreenCaptureAndWait");
 
     if (isScreenShot) {
+        DmErrorCode code = DmErrorCode::DM_OK;
         auto pixelMap =
-            DisplayManager::GetInstance().GetScreenshot(DisplayManager::GetInstance().GetDefaultDisplayId());
+            DisplayManager::GetInstance().GetScreenshot(DisplayManager::GetInstance().GetDefaultDisplayId(),
+                &code, true);
         return pixelMap;
     }
 
+    if (!rootNode_ || !rootNode_->screenSurfaceNode_) {
+        LOGE("RSGraphicTestDirector::TakeScreenCaptureAndWait root node or screen surface node is null");
+        return nullptr;
+    }
     auto callback = std::make_shared<TestSurfaceCaptureCallback>();
-    if (!RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(rootNode_->screenSurfaceNode_, callback)) {
+    auto rsInterface = rsUiDirector_->GetRSUIContext()->GetRSRenderInterface();
+    if (!rsInterface->TakeSurfaceCaptureForUI(
+        rootNode_->screenSurfaceNode_, callback)) {
         return nullptr;
     }
 
@@ -244,6 +322,11 @@ std::shared_ptr<RSGraphicRootNode> RSGraphicTestDirector::GetRootNode() const
     return rootNode_;
 }
 
+float RSGraphicTestDirector::GetMainWindowZ() const
+{
+    return rootNode_ ? rootNode_->GetMainWindowZ() : 0.0f;
+}
+
 Vector2f RSGraphicTestDirector::GetScreenSize() const
 {
     return {screenBounds_.GetWidth(), screenBounds_.GetHeight()};
@@ -264,6 +347,16 @@ bool RSGraphicTestDirector::IsSingleTest()
     return isSingleTest_;
 }
 
+void RSGraphicTestDirector::SetDynamicTest(bool isDynamicTest)
+{
+    isDynamicTest_ = isDynamicTest;
+}
+
+bool RSGraphicTestDirector::IsDynamicTest()
+{
+    return isDynamicTest_;
+}
+
 void RSGraphicTestDirector::SetProfilerTest(bool isProfilerTest)
 {
     isProfilerTest_ = isProfilerTest;
@@ -271,24 +364,31 @@ void RSGraphicTestDirector::SetProfilerTest(bool isProfilerTest)
 
 void RSGraphicTestDirector::SetSurfaceBounds(const Vector4f& bounds)
 {
-    if (rootNode_->testSurfaceNode_) {
-        rootNode_->testSurfaceNode_->SetBounds(bounds);
+    if (!rootNode_ || rootNode_->testSurfaceNodes_.empty() || !rootNode_->testSurfaceNodes_.back()) {
+        LOGE("RSGraphicTestDirector::SetSurfaceBounds test surface node is null");
+        return;
     }
+    rootNode_->testSurfaceNodes_.back()->SetBounds(bounds);
+    rootNode_->testSurfaceNodes_.back()->SetFrame(bounds);
 }
 
 void RSGraphicTestDirector::SetScreenSurfaceBounds(const Vector4f& bounds)
 {
-    if (rootNode_->screenSurfaceNode_) {
-        rootNode_->screenSurfaceNode_->SetBounds(bounds);
-        rootNode_->screenSurfaceNode_->SetFrame(bounds);
+    if (!rootNode_ || !rootNode_->screenSurfaceNode_) {
+        LOGE("RSGraphicTestDirector::SetScreenSurfaceBounds screen surface node is null");
+        return;
     }
+    rootNode_->screenSurfaceNode_->SetBounds(bounds);
+    rootNode_->screenSurfaceNode_->SetFrame(bounds);
 }
 
 void RSGraphicTestDirector::SetSurfaceColor(const RSColor& color)
 {
-    if (rootNode_->testSurfaceNode_) {
-        rootNode_->testSurfaceNode_->SetBackgroundColor(color.AsRgbaInt());
+    if (!rootNode_ || rootNode_->testSurfaceNodes_.empty() || !rootNode_->testSurfaceNodes_.back()) {
+        LOGE("RSGraphicTestDirector::SetSurfaceColor test surface node is null");
+        return;
     }
+    rootNode_->testSurfaceNodes_.back()->SetBackgroundColor(color.AsRgbaInt());
 }
 
 void RSGraphicTestDirector::StartRunUIAnimation()
@@ -311,6 +411,7 @@ void RSGraphicTestDirector::FlushAnimation(int64_t time)
 {
     RS_TRACE_NAME_FMT("RSGraphicTestDirector FlushAnimation time is %llu", time);
     rsUiDirector_->FlushAnimation(time);
+    NotifyAnimationFrameCallbacks();
     rsUiDirector_->FlushModifier();
 }
 
@@ -335,7 +436,43 @@ std::pair<double, double> RSGraphicTestDirector::ReceiveProfilerTimeInfo()
     if (profilerThread_) {
         return profilerThread_->ReceiveTimeInfo();
     }
-    return std::pair<double, double>(0.0, 0.0);
+    return {};
+}
+
+uint64_t RSGraphicTestDirector::AddAnimationFrameCallback(AnimationFrameCallback callback)
+{
+    if (!callback) {
+        return 0;
+    }
+    std::lock_guard lock(animationFrameCallbackMutex_);
+    uint64_t callbackId = nextAnimationFrameCallbackId_++;
+    animationFrameCallbacks_.emplace_back(callbackId, std::move(callback));
+    return callbackId;
+}
+
+void RSGraphicTestDirector::RemoveAnimationFrameCallback(uint64_t callbackId)
+{
+    std::lock_guard lock(animationFrameCallbackMutex_);
+    auto endIter = std::remove_if(animationFrameCallbacks_.begin(), animationFrameCallbacks_.end(),
+        [callbackId](const auto& callbackItem) { return callbackItem.first == callbackId; });
+    animationFrameCallbacks_.erase(endIter, animationFrameCallbacks_.end());
+}
+
+void RSGraphicTestDirector::NotifyAnimationFrameCallbacks()
+{
+    std::vector<AnimationFrameCallback> callbacks;
+    {
+        std::lock_guard lock(animationFrameCallbackMutex_);
+        callbacks.reserve(animationFrameCallbacks_.size());
+        for (const auto& callbackItem : animationFrameCallbacks_) {
+            callbacks.emplace_back(callbackItem.second);
+        }
+    }
+    for (const auto& callback : callbacks) {
+        if (callback) {
+            callback();
+        }
+    }
 }
 
 void RSGraphicTestDirector::SendProfilerCommand(const std::string command, int outTime)
@@ -349,5 +486,59 @@ void RSGraphicTestDirector::ReleaseRootNode()
 {
     rootNode_.reset();
 }
+
+void RSGraphicTestDirector::SetProfilerFailureCallback(FailureCallback failureCallback)
+{
+    std::cout << "RSGraphicTestDirector::SetProfilerFailureCallback" << std::endl;
+    pendingFailureCallback_ = std::move(failureCallback);
+    if (profilerThread_) {
+        profilerThread_->SetReconnectRequestCallback(pendingFailureCallback_);
+    }
+}
+
+void RSGraphicTestDirector::Reset()
+{
+    // 1. stop runner
+    if (runner_) {
+        runner_->Stop();
+        runner_.reset();
+    }
+
+    // 2. destory VSyncWaiter
+    vsyncWaiter_.reset();
+
+    // 3. clean UI Director
+    if (rsUiDirector_) {
+        rsUiDirector_->SendMessages();
+        rsUiDirector_->Destroy(false);
+    }
+
+    // 4. release rootNode
+    if (rootNode_) {
+        rootNode_->ResetSubWindows();
+        if (rootNode_->screenSurfaceNode_) {
+            rootNode_->screenSurfaceNode_->RemoveFromTree();
+        }
+    }
+    rootNode_.reset();
+
+    // 5. destory profiler thread
+    profilerThread_.reset();
+
+    // 6. clean EventHandler
+    handler_.reset();
+
+    // 7. clean animation frame callbacks
+    {
+        std::lock_guard lock(animationFrameCallbackMutex_);
+        animationFrameCallbacks_.clear();
+    }
+}
+
+std::shared_ptr<RSUIContext> RSGraphicTestDirector::GetRSUIContext() const
+{
+    return rsUiDirector_ ? rsUiDirector_->GetRSUIContext() : nullptr;
+}
+
 } // namespace Rosen
 } // namespace OHOS

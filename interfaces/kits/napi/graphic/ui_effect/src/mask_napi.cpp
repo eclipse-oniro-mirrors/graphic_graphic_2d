@@ -21,6 +21,7 @@
 #include "pixel_map.h"
 #include "ui_effect_napi_utils.h"
 #include "mask/include/use_effect_mask_para.h"
+#include "mask/include/wave_disturbance_mask_para.h"
 
 #ifdef IMAGE_NAPI_ENABLE
 #include "pixel_map_napi.h"
@@ -94,6 +95,7 @@ napi_value MaskNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_STATIC_FUNCTION("createRadialGradientMask", CreateRadialGradientMask),
         DECLARE_NAPI_STATIC_FUNCTION("createPixelMapMask", CreatePixelMapMask),
         DECLARE_NAPI_STATIC_FUNCTION("createWaveGradientMask", CreateWaveGradientMask),
+        DECLARE_NAPI_STATIC_FUNCTION("createWaveDisturbanceMask", CreateWaveDisturbanceMask),
         DECLARE_NAPI_STATIC_FUNCTION("createUseEffectMask", CreateUseEffectMask),
     };
 
@@ -173,6 +175,39 @@ bool ParseRippleMask(
         rippleMask->SetWidthCenterOffset(static_cast<float>(val));
         parseTimes++;
     }
+    return (parseTimes == realArgc);
+}
+
+bool ParseWaveDisturbanceMask(napi_env env, napi_value* argv,
+    const std::shared_ptr<WaveDisturbanceMaskPara>& waveDisturbanceMask, size_t& realArgc)
+{
+    if (!waveDisturbanceMask) {
+        MASK_LOG_E("ParseWaveDisturbanceMask:: waveDisturbanceMask is nullptr");
+        return false;
+    }
+    uint32_t parseTimes = 0;
+    double progress;
+    if (ParseJsDoubleValue(env, argv[NUM_0], progress)) {
+        waveDisturbanceMask->SetProgress(static_cast<float>(progress));
+        parseTimes++;
+    }
+    Vector2f clickPos;
+    if (ParseJsVector2f(env, argv[NUM_1], clickPos)) {
+        waveDisturbanceMask->SetClickPos(clickPos);
+        parseTimes++;
+    }
+    Vector2f waveRD;
+    if (ParseJsVector2f(env, argv[NUM_2], waveRD)) {
+        waveDisturbanceMask->SetWaveRD(waveRD);
+        parseTimes++;
+    }
+    Vector3f waveLWH;
+    if (ParseJsVector3f(env, argv[NUM_3], waveLWH)) {
+        waveDisturbanceMask->SetWaveLWH(waveLWH);
+        parseTimes++;
+    }
+
+    MASK_LOG_I("ParseWaveDisturbanceMask parseTimes: %{public}d, realArgc: %{public}zu", parseTimes, realArgc);
     return (parseTimes == realArgc);
 }
 
@@ -307,6 +342,30 @@ napi_value MaskNapi::Create(napi_env env, std::shared_ptr<MaskPara> maskPara)
     return maskObj;
 }
 
+napi_value MaskNapi::CreateWaveDisturbanceMask(napi_env env, napi_callback_info info)
+{
+    if (!UIEffectNapiUtils::IsSystemApp()) {
+        MASK_LOG_E("MaskNapi CreateWaveDisturbanceMask failed, is not system app");
+        napi_throw_error(env, std::to_string(ERR_NOT_SYSTEM_APP).c_str(),
+            "MaskNapi CreateWaveDisturbanceMask failed, is not system app");
+        return nullptr;
+    }
+    const size_t requireArgc = NUM_4;
+    size_t realArgc = NUM_4;
+    napi_value argv[requireArgc];
+    napi_value thisVar = nullptr;
+    napi_status status;
+    UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
+    UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && requireArgc == realArgc, nullptr,
+        MASK_LOG_E("MaskNapi CreateWaveDisturbanceMask parsing input fail."));
+
+    auto maskPara = std::make_shared<WaveDisturbanceMaskPara>();
+    UIEFFECT_NAPI_CHECK_RET_D(ParseWaveDisturbanceMask(env, argv, maskPara, realArgc), nullptr,
+        MASK_LOG_E("MaskNapi CreateWaveDisturbanceMask parsing mask input fail."));
+    MASK_LOG_I("MaskNapi CreateWaveDisturbanceMask parsing mask success.");
+    return Create(env, maskPara);
+}
+
 napi_value MaskNapi::CreateWaveGradientMask(napi_env env, napi_callback_info info)
 {
     if (!UIEffectNapiUtils::IsSystemApp()) {
@@ -329,6 +388,7 @@ napi_value MaskNapi::CreateWaveGradientMask(napi_env env, napi_callback_info inf
     UIEFFECT_NAPI_CHECK_RET_D(ParseWaveGradientMask(env, argv, maskPara, realArgc), nullptr,
         MASK_LOG_E("MaskNapi CreateWaveGradientMask parsing mask input fail."));
     MASK_LOG_I("MaskNapi CreateWaveGradientMask parsing mask success.");
+    API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createWaveGradientMask", 1);
     return Create(env, maskPara);
 }
 
@@ -353,6 +413,7 @@ napi_value MaskNapi::CreateRippleMask(napi_env env, napi_callback_info info)
     auto maskPara = std::make_shared<RippleMaskPara>();
     UIEFFECT_NAPI_CHECK_RET_D(ParseRippleMask(env, argv, maskPara, realArgc), nullptr,
         MASK_LOG_E("MaskNapi CreateRippleMask parsing mask input fail."));
+    API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createRippleMask", 1);
     return Create(env, maskPara);
 }
 
@@ -376,6 +437,7 @@ napi_value MaskNapi::CreateRadialGradientMask(napi_env env, napi_callback_info i
     auto maskPara = std::make_shared<RadialGradientMaskPara>();
     UIEFFECT_NAPI_CHECK_RET_D(ParseRadialGradientMask(env, argv, maskPara, realArgc), nullptr,
         MASK_LOG_E("MaskNapi CreateRadialGradientMask parsing mask input fail."));
+    API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createRadialGradientMask", 1);
     return Create(env, maskPara);
 }
 
@@ -441,6 +503,7 @@ napi_value MaskNapi::CreatePixelMapMask(napi_env env, napi_callback_info info)
     napi_value thisVar = nullptr;
     UIEFFECT_JS_ARGS(env, info, status, realArgc, argv, thisVar);
     if (status == napi_ok && realArgc == NUM_1) {
+        API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createPixelMapMask", 1);
         return CreateImageMask(env, info);
     }
     UIEFFECT_NAPI_CHECK_RET_D(status == napi_ok && minArgc <= realArgc && realArgc <= maxArgc, nullptr,
@@ -456,6 +519,7 @@ napi_value MaskNapi::CreatePixelMapMask(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createPixelMapMask", 1);
     return Create(env, para);
 }
 
@@ -543,15 +607,13 @@ napi_value MaskNapi::CreateUseEffectMask(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    API_STATS_HISTOGRAM("Arkgraphics2d.Mask.createUseEffectMask", 1);
     return Create(env, para);
 }
 
 void MaskNapi::RegisterMaskParaUnmarshallingCallback()
 {
-    PixelMapMaskPara::RegisterUnmarshallingCallback();
-    RadialGradientMaskPara::RegisterUnmarshallingCallback();
-    ImageMaskPara::RegisterUnmarshallingCallback();
-    UseEffectMaskPara::RegisterUnmarshallingCallback();
+    Mask::RegisterUnmarshallingCallback();
 }
 
 }  // namespace Rosen

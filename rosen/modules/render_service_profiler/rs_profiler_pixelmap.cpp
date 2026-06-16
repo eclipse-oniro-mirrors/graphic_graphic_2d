@@ -221,13 +221,16 @@ bool PixelMapStorage::PushSharedMemory(uint64_t id, PixelMap& map)
         return false;
     }
 
-    constexpr size_t skipBytes = 24u;
-    const auto size = static_cast<size_t>(map.GetByteCount());
-    const ImageProperties properties(map);
+    // see PixelMap::Marshalling
+    const auto size = (map.IsAstc() || map.IsYuvFormat() || (map.GetPixelFormat() == Media::PixelFormat::RGBA_F16))
+                          ? static_cast<size_t>(map.GetCapacity())
+                          : static_cast<size_t>(map.GetByteCount());
     if (auto image = MapImage(*reinterpret_cast<const int32_t*>(map.GetFd()), size, PROT_READ)) {
-        auto ret = PushImage(id, GenerateImageData(0, image, size, map), skipBytes, nullptr, &properties);
+        constexpr size_t skipBytes = 24u;
+        const ImageProperties properties(map);
+        const auto result = PushImage(id, GenerateImageData(0, image, size, map), skipBytes, nullptr, &properties);
         UnmapImage(image, size);
-        return ret;
+        return result;
     }
     return false;
 }
@@ -303,25 +306,22 @@ bool PixelMapStorage::PushHeapMemory(uint64_t id, const ImageInfo& info, const P
 
 bool PixelMapStorage::PushHeapMemory(uint64_t id, PixelMap& map)
 {
-    if (!map.GetFd()) {
+    const auto *data = map.GetPixels();
+    const auto size = static_cast<size_t>(map.GetByteCount());
+    if (!data || !size) {
         return false;
     }
 
-    constexpr size_t skipBytes = 24u;
-    const auto baseSize = static_cast<size_t>(const_cast<PixelMap&>(map).GetByteCount());
+    constexpr size_t skipFdSize = 24u; // skip fd size
+    const auto skipBytes = (size <= PixelMap::MIN_IMAGEDATA_SIZE) ? size : skipFdSize;
     const ImageProperties properties(map);
-    const uint8_t *base = map.GetPixels();
-    if (base && baseSize) {
-        const auto pixels = GenerateImageData(0, base, baseSize, map);
-        return PushImage(id, pixels, skipBytes, nullptr, &properties);
-    }
-    return false;
+    return PushImage(id, GenerateImageData(0, data, size, map), skipBytes, nullptr, &properties);
 }
 
 bool PixelMapStorage::PullHeapMemory(uint64_t id, const ImageInfo& info, PixelMemInfo& memory, size_t& skipBytes)
 {
     if (memory.bufferSize <= static_cast<int32_t>(PixelMap::MIN_IMAGEDATA_SIZE)) {
-        return false;
+        return PullSharedMemory(id, info, memory, skipBytes);
     }
 
     auto retCode = PullSharedMemory(id, info, memory, skipBytes);
@@ -867,7 +867,11 @@ bool RSProfiler::MarshalPixelMap(Parcel& parcel, const std::shared_ptr<Media::Pi
 Media::PixelMap* RSProfiler::UnmarshalPixelMapNstd(Parcel& parcel,
     std::function<int(Parcel& parcel, std::function<int(Parcel&)> readFdDefaultFunc)> readSafeFdFunc)
 {
-    const uint64_t id = parcel.ReadUint64();
+    uint64_t id = 0u;
+    if (!parcel.ReadUint64(id)) {
+        HRPE("UnmarshalPixelMapNstd: Cannot read id");
+        return nullptr;
+    }
 
     if (IsRecordAbortRequested()) {
         return Media::PixelMapRecordParcel::UnmarshallingPixelMapForRecord(parcel, readSafeFdFunc);
@@ -889,6 +893,7 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMapNstd(Parcel& parcel,
     const auto parcelPosition = parcel.GetReadPosition();
     if (map && !Media::PixelMapRecordParcel::ReadMemInfoFromParcel(parcel, memory, error, readSafeFdFunc)) {
         delete map;
+        map = nullptr;
         return nullptr;
     }
 
@@ -905,7 +910,7 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
 {
     uint8_t flags;
     if (!parcel.ReadUint8(flags)) {
-        HRPE("UnmarshalPixelMap: Unable to read flags");
+        HRPE("UnmarshalPixelMap: Cannot read flags");
         return nullptr;
     }
 
@@ -919,7 +924,11 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
         return UnmarshalPixelMapNstd(parcel, readSafeFdFunc);
     }
 
-    const uint64_t id = parcel.ReadUint64();
+    uint64_t id = 0u;
+    if (!parcel.ReadUint64(id)) {
+        HRPE("UnmarshalPixelMap: Cannot read id");
+        return nullptr;
+    }
 
     if (IsRecordAbortRequested()) {
         return PixelMap::Unmarshalling(parcel, readSafeFdFunc);
@@ -941,6 +950,7 @@ Media::PixelMap* RSProfiler::UnmarshalPixelMap(Parcel& parcel,
     const auto parcelPosition = parcel.GetReadPosition();
     if (map && !PixelMap::ReadMemInfoFromParcel(parcel, memory, error, readSafeFdFunc)) {
         delete map;
+        map = nullptr;
         return nullptr;
     }
 

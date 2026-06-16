@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "feature/layer/rs_layer_cache_manager_base.h"
+#include "params/rs_render_params.h"
+
+namespace OHOS {
+namespace Rosen {
+std::vector<std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter>> RSLayerCacheManagerBase::layerDrawables_;
+
+bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(std::shared_ptr<RSRenderNode> node)
+{
+    if (!node->GetStagingRenderParams()) {
+        return false;
+    }
+    auto layerParams = node->GetStagingRenderParams()->GetLayerParams();
+    if (layerParams) {
+        return layerParams->isUnSupportLayer;
+    }
+    return false;
+}
+
+bool RSLayerCacheManagerBase::IsNodeUnSupportLayer(RSRenderNode& node)
+{
+    if (!node.GetStagingRenderParams()) {
+        return false;
+    }
+    auto layerParams = node.GetStagingRenderParams()->GetLayerParams();
+    if (layerParams) {
+        return layerParams->isUnSupportLayer;
+    }
+    return false;
+}
+
+void RSLayerCacheManagerBase::SetLayerParamsIsUnSupportLayer(RSRenderNode& node, bool isUnSupportLayer)
+{
+    if (node.GetStagingRenderParams()) {
+        node.GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(isUnSupportLayer);
+    }
+}
+} // namespace Rosen
+} // namespace OHOS

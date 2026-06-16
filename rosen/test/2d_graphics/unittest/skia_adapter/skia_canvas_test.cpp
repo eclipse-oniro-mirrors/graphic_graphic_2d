@@ -352,7 +352,7 @@ HWTEST_F(SkiaCanvasTest, GetLocalShadowBounds001, TestSize.Level1)
     Point3 planeParams = {0, 50, 50};
     Point3 devLightPos = {1.f, 2.f, 100.f};
     ASSERT_TRUE(skiaCanvas.GetLocalShadowBounds(ctm, path, planeParams,
-        devLightPos, 1.0f, ShadowFlags::TRANSPARENT_OCCLUDER, true, rect) == false);
+        devLightPos, 1.0f, ShadowFlags::TRANSPARENT_OCCLUDER, true, rect) == true);
 }
 
 /**
@@ -725,7 +725,6 @@ HWTEST_F(SkiaCanvasTest, GetDeviceClipBoundsTest001, TestSize.Level1)
 }
 
 /**
-
  * @tc.name: RecordState
  * @tc.desc: Test for Canvas Record State
  * @tc.type: FUNC
@@ -1096,6 +1095,29 @@ HWTEST_F(SkiaCanvasTest, DrawTextBlob001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: DrawGlyphs001
+ * @tc.desc: Test DrawGlyphs
+ * @tc.type: FUNC
+ * @tc.require: I91EH1
+ */
+HWTEST_F(SkiaCanvasTest, DrawGlyphs001, TestSize.Level1)
+{
+    auto skiaCanvas = std::make_shared<SkiaCanvas>();
+    ASSERT_TRUE(skiaCanvas != nullptr);
+    Paint paint;
+    paint.SetStyle(Paint::PaintStyle::PAINT_FILL);
+    uint16_t glyphs[3] = {0, 1, 2};
+    Point positions[3] = {{0, 0}, {0, 1}, {0, 2}};
+    Font font;
+    skiaCanvas->DrawGlyphs(0, nullptr, nullptr, {0, 0}, nullptr, paint);
+    skiaCanvas->DrawGlyphs(0, glyphs, nullptr, {0, 0}, &font, paint);
+    skiaCanvas->DrawGlyphs(0, nullptr, positions, {0, 0}, &font, paint);
+    skiaCanvas->DrawGlyphs(0, glyphs, positions, {0, 0}, &font, paint);
+    skiaCanvas->ImportSkCanvas(nullptr);
+    skiaCanvas->DrawTextBlob(nullptr, 0, 0, paint);
+}
+
+/**
  * @tc.name: DrawPatch001
  * @tc.desc: Test DrawPatch
  * @tc.type: FUNC
@@ -1207,9 +1229,9 @@ HWTEST_F(SkiaCanvasTest, DrawImageEffectHPSTest001, TestSize.Level1)
 
 /**
  * @tc.name: OpCalculateBeforeTest001
- * @tc.desc: Test OpCalculateBefore
+ * @tc.desc:
  * @tc.type: FUNC
- * @tc.require: I9B0X4
+ * @tc.author:
  */
 HWTEST_F(SkiaCanvasTest, OpCalculateBeforeTest001, TestSize.Level1)
 {
@@ -1220,9 +1242,9 @@ HWTEST_F(SkiaCanvasTest, OpCalculateBeforeTest001, TestSize.Level1)
 
 /**
  * @tc.name: OpCalculateAfterTest001
- * @tc.desc: Test OpCalculateAfter
+ * @tc.desc:
  * @tc.type: FUNC
- * @tc.require: I9B0X4
+ * @tc.author:
  */
 HWTEST_F(SkiaCanvasTest, OpCalculateAfterTest001, TestSize.Level1)
 {
@@ -1234,9 +1256,9 @@ HWTEST_F(SkiaCanvasTest, OpCalculateAfterTest001, TestSize.Level1)
 
 /**
  * @tc.name: OpCalculateAfterTest002
- * @tc.desc: Test OpCalculateAfter
+ * @tc.desc:
  * @tc.type: FUNC
- * @tc.require: I9B0X4
+ * @tc.author:
  */
 HWTEST_F(SkiaCanvasTest, OpCalculateAfterTest002, TestSize.Level1)
 {
@@ -1250,9 +1272,9 @@ HWTEST_F(SkiaCanvasTest, OpCalculateAfterTest002, TestSize.Level1)
 
 /**
  * @tc.name: GetOpsNumTest001
- * @tc.desc: Test GetOpsNum
+ * @tc.desc:
  * @tc.type: FUNC
- * @tc.require: I9B0X4
+ * @tc.author:
  */
 HWTEST_F(SkiaCanvasTest, GetOpsNumTest001, TestSize.Level1)
 {
@@ -1269,9 +1291,9 @@ HWTEST_F(SkiaCanvasTest, GetOpsNumTest001, TestSize.Level1)
 
 /**
  * @tc.name: GetOpsPercentTest001
- * @tc.desc: Test GetOpsPercent
+ * @tc.desc:
  * @tc.type: FUNC
- * @tc.require: I9B0X4
+ * @tc.author:
  */
 HWTEST_F(SkiaCanvasTest, GetOpsPercentTest001, TestSize.Level1)
 {
@@ -1286,6 +1308,19 @@ HWTEST_F(SkiaCanvasTest, GetOpsPercentTest001, TestSize.Level1)
     ASSERT_EQ(tmp->GetOpsPercent(), 0);
 }
 
+/**
+ * @tc.name: DrawUIColor001
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SkiaCanvasTest, DrawUIColor001, TestSize.Level1)
+{
+    auto skiaCanvas = std::make_shared<SkiaCanvas>();
+    ASSERT_TRUE(skiaCanvas != nullptr);
+    UIColor uiColor(0.5f, 0.6f, 0.7f, 0.8f, 2.0f);
+    skiaCanvas->DrawUIColor(uiColor, BlendMode::SRC_OVER);
+}
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

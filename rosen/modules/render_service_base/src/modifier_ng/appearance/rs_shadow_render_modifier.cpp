@@ -31,6 +31,8 @@ const RSShadowRenderModifier::LegacyPropertyApplierMap RSShadowRenderModifier::L
     { RSPropertyType::SHADOW_COLOR_STRATEGY,
         RSRenderModifier::PropertyApplyHelper<int, &RSProperties::SetShadowColorStrategy> },
     { RSPropertyType::SHADOW_IS_FILLED, RSRenderModifier::PropertyApplyHelper<bool, &RSProperties::SetShadowIsFilled> },
+    { RSPropertyType::SHADOW_DISABLE_SDF_BLUR,
+        RSRenderModifier::PropertyApplyHelper<bool, &RSProperties::SetShadowDisableSDFBlur> },
     { RSPropertyType::USE_SHADOW_BATCHING,
         RSRenderModifier::PropertyApplyHelper<bool, &RSProperties::SetUseShadowBatching> },
 };
@@ -41,11 +43,12 @@ void RSShadowRenderModifier::ResetProperties(RSProperties& properties)
     properties.SetShadowOffsetX(0.f);
     properties.SetShadowOffsetY(0.f);
     properties.SetShadowElevation(0.f);
-    properties.SetShadowRadius(0.f);
+    properties.SetShadowRadius(DEFAULT_SHADOW_RADIUS);
     properties.SetShadowPath(nullptr);
     properties.SetShadowMask(SHADOW_MASK_STRATEGY::MASK_NONE);
     properties.SetShadowColorStrategy(static_cast<int>(SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE));
     properties.SetShadowIsFilled(false);
+    properties.SetShadowDisableSDFBlur(false);
     properties.SetUseShadowBatching(false);
 }
 } // namespace OHOS::Rosen::ModifierNG

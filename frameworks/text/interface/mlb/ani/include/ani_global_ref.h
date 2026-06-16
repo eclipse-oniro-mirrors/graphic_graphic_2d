@@ -79,15 +79,22 @@ public:
     ani_class rectStyle;
     ani_class fontFeature;
     ani_class fontVariation;
+    ani_class fontVariationAxis;
+    ani_class fontVariationInstance;
     ani_class typographicBounds;
     ani_class cleaner;
     ani_class canvas;
     ani_class paragraphStyle;
     ani_class strutStyle;
     ani_class textTab;
+    ani_class textTabInternal;
+    ani_class strutStyleInternal;
+    ani_class paragraphStyleInternal;
     ani_class point;
     ani_class path;
     ani_class placeholderSpan;
+    ani_class textLayoutResult;
+    ani_class textRectSize;
 
 private:
     AniGlobalClass() = default;
@@ -109,6 +116,8 @@ public:
     void Init(ani_env* env);
 
     ani_enum fontWeight;
+    ani_enum fontWidth;
+    ani_enum fontEdging;
     ani_enum affinity;
     ani_enum textDirection;
     ani_enum fontStyle;
@@ -117,6 +126,14 @@ public:
     ani_enum textDecorationType;
     ani_enum textDecorationStyle;
     ani_enum textBadgeType;
+    ani_enum lineHeightStyle;
+    ani_enum textProcessState;
+    ani_enum textDisplayState;
+    ani_enum textAlign;
+    ani_enum wordBreak;
+    ani_enum breakStrategy;
+    ani_enum textHeightBehavior;
+    ani_enum textVerticalAlign;
 
 private:
     AniGlobalEnum() = default;
@@ -173,6 +190,8 @@ public:
     ani_method fontDescriptorGetItalic;
     ani_method fontDescriptorGetMonoSpace;
     ani_method fontDescriptorGetSymbolic;
+    ani_method fontDescriptorGetVariationAxisRecords;
+    ani_method fontDescriptorGetVariationInstanceRecords;
     ani_method positionWithAffinity;
     ani_method paragraphStyleMaxLines;
     ani_method paragraphStyleTextStyle;
@@ -186,9 +205,15 @@ public:
     ani_method paragraphStyleTrailingSpaceOptimized;
     ani_method paragraphStyleAutoSpace;
     ani_method paragraphStyleCompressHeadPunctuation;
+    ani_method paragraphStylePunctuationOverflow;
     ani_method paragraphStyleVerticalAlign;
     ani_method paragraphStyleIncludeFontPadding;
     ani_method paragraphStyleFallbackLineSpacing;
+    ani_method paragraphStyleOrphanCharOptimization;
+    ani_method paragraphStyleLineSpacing;
+    ani_method paragraphStyleFirstLineIndent;
+    ani_method paragraphStyleTailIndents;
+    ani_method paragraphStyleHeadIndents;
     ani_method strutStyleFontStyle;
     ani_method strutStyleFontWidth;
     ani_method strutStyleFontWeight;
@@ -205,9 +230,11 @@ public:
     ani_method textStyleCtor;
     ani_method textStyleColor;
     ani_method textStyleFontWeight;
+    ani_method textStyleFontWidth;
     ani_method textStyleFontStyle;
     ani_method textStyleBaseline;
     ani_method textStyleFontFamilies;
+    ani_method textStyleFontTypefaces;
     ani_method textStyleFontSize;
     ani_method textStyleLetterSpacing;
     ani_method textStyleWordSpacing;
@@ -224,6 +251,10 @@ public:
     ani_method textStyleFontVariations;
     ani_method textStyleBackgroundRect;
     ani_method textStyleBadgeType;
+    ani_method textStyleMaxLineHeight;
+    ani_method textStyleMinLineHeight;
+    ani_method textStyleLineHeightStyle;
+    ani_method textStyleFontEdging;
     ani_method decorationCtor;
     ani_method decorationDecorationType;
     ani_method decorationDecorationStyle;
@@ -241,6 +272,9 @@ public:
     ani_method fontVariationCtor;
     ani_method fontVariationAxis;
     ani_method fontVariationValue;
+    ani_method fontVariationIsNormalized;
+    ani_method fontVariationAxisCtor;
+    ani_method fontVariationInstanceCtor;
     ani_method rectStyleCtor;
     ani_method rectStyleColor;
     ani_method rectStyleLeftTopRadius;
@@ -263,8 +297,15 @@ public:
     ani_method rangeCtor;
     ani_method rangeStart;
     ani_method rangeEnd;
+    ani_method textRectSizeCtor;
+    ani_method textRectSizeWidth;
+    ani_method textRectSizeHeight;
     ani_method textBoxCtor;
     ani_method typographicBoundsCtor;
+    ani_method textLayoutResultCtor;
+    ani_method textTabInternalCtor;
+    ani_method strutStyleInternalCtor;
+    ani_method paragraphStyleInternalCtor;
 
 private:
     AniGlobalMethod() = default;
@@ -284,12 +325,38 @@ private:
     void InitTextShadowMethod(ani_env* env);
     void InitFontFeatureMethod(ani_env* env);
     void InitFontVariationMethod(ani_env* env);
+    void InitFontVariationAxisMethod(ani_env* env);
+    void InitFontVariationInstanceMethod(ani_env* env);
     void InitRectStyleMethod(ani_env* env);
+    void InitTextLayoutResultMethod(ani_env* env);
     void InitPlaceholderMethod(ani_env* env);
     void InitGlobalResourceMethod(ani_env* env);
     void InitRangeMethod(ani_env* env);
     void InitPointMethod(ani_env* env);
     void InitTextTabMethod(ani_env* env);
+    void InitTextRectSizeMethod(ani_env* env);
+    void InitParagraphStyleInternalMethod(ani_env* env);
+};
+
+class AniGlobalField {
+public:
+    static AniGlobalField& GetInstance()
+    {
+        static AniGlobalField instance;
+        return instance;
+    }
+
+    void Init(ani_env* env);
+
+    ani_field typefaceNativeObj;
+
+private:
+    AniGlobalField() = default;
+    ~AniGlobalField() = default;
+    AniGlobalField(const AniGlobalField&) = delete;
+    AniGlobalField& operator=(const AniGlobalField&) = delete;
+    AniGlobalField(AniGlobalField&&) = delete;
+    AniGlobalField& operator=(AniGlobalField&&) = delete;
 };
 } // namespace OHOS::Text::ANI
 #endif // OHOS_TEXT_GLOBAL_REF_H

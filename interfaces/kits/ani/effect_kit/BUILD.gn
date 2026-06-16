@@ -16,6 +16,13 @@ import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 ## Build effectKit_ani.so
+
+arkgraphic2d_api_metrics = true
+if (defined(global_parts_info) &&
+    !defined(global_parts_info.hiviewdfx_api_metrics)) {
+  arkgraphic2d_api_metrics = false
+}
+
 config("graphic_ani_effect_kit_config") {
   visibility = [ ":*" ]
 
@@ -69,6 +76,7 @@ ohos_shared_library("effectKit_ani") {
   ]
 
   deps = [
+    "$graphic_2d_root/frameworks/opengl_wrapper:EGL",
     "$graphic_2d_root/interfaces/kits/napi/graphic/effect_kit:effectkit",
     "$graphic_2d_root/rosen/modules/effect/color_picker:color_picker",
     "$graphic_2d_root/rosen/modules/effect/skia_effectChain:skeffectchain",
@@ -77,6 +85,8 @@ ohos_shared_library("effectKit_ani") {
 
   external_deps = [
     "c_utils:utils",
+    "graphic_surface:surface",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image",
     "image_framework:image_taihe",
@@ -85,6 +95,11 @@ ohos_shared_library("effectKit_ani") {
     "runtime_core:ani_helpers",
     "runtime_core:libarkruntime",
   ]
+
+  if (defined(arkgraphic2d_api_metrics) && arkgraphic2d_api_metrics) {
+    external_deps += [ "api_metrics:histogrammanager" ]
+    defines = [ "HISTOGRAM_MANAGEMENT_ENABLE=1" ]
+  }
 
   part_name = "graphic_2d"
   subsystem_name = "graphic"

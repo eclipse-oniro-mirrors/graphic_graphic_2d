@@ -267,4 +267,41 @@ HWTEST_F(RSScreenRenderParamsTest, SetHasMirroredScreenChanged, TestSize.Level1)
     params.SetHasMirroredScreenChanged(false);
     ASSERT_FALSE(params.GetHasMirroredScreenChanged());
 }
+
+/**
+ * @tc.name: SetLogicalCameraRotationCorrection
+ * @tc.desc: test result of SetLogicalCameraRotationCorrection
+ * @tc.type: FUNC
+ * @tc.require: issue20471
+ */
+HWTEST_F(RSScreenRenderParamsTest, SetLogicalCameraRotationCorrection, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSScreenRenderParams params(id);
+    ASSERT_EQ(params.GetLogicalCameraRotationCorrection(), ScreenRotation::ROTATION_0);
+
+    params.SetLogicalCameraRotationCorrection(ScreenRotation::ROTATION_90);
+    ASSERT_EQ(params.GetLogicalCameraRotationCorrection(), ScreenRotation::ROTATION_90);
+    params.SetLogicalCameraRotationCorrection(ScreenRotation::ROTATION_90);
+
+    std::unique_ptr<RSRenderParams> target = nullptr;
+    params.OnSync(target);
+}
+
+/**
+ * @tc.name: HasForceHwcHdrSurface
+ * @tc.desc:
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSScreenRenderParamsTest, HasForceHwcHdrSurfaceTest, TestSize.Level1)
+{
+    constexpr NodeId id = TestSrc::limitNumber::Uint64[0];
+    RSScreenRenderParams params(id);
+    params.SetHasForceHwcHdrSurface(params.GetHasForceHwcHdrSurface());
+    EXPECT_EQ(params.needSync_, false);
+    params.SetHasForceHwcHdrSurface(true);
+    EXPECT_EQ(params.needSync_, true);
+    EXPECT_EQ(params.GetHasForceHwcHdrSurface(), true);
+}
 } // namespace OHOS::Rosen

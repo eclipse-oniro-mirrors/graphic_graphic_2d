@@ -15,6 +15,7 @@
 
 #include "ui/rs_ui_context.h"
 
+#include "animation/rs_interactive_implict_animator.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_node_command.h"
 #include "modifier/rs_modifier_manager_map.h"
@@ -23,16 +24,20 @@
 
 namespace OHOS {
 namespace Rosen {
-RSUIContext::RSUIContext(uint64_t token) : token_(token)
+RSUIContext::RSUIContext(uint64_t token, sptr<IRemoteObject>& connectToRenderRemote) : token_(token)
 {
-    rsTransactionHandler_ = std::make_shared<RSTransactionHandler>(token);
+    connectToRenderRemote_ = connectToRenderRemote;
+    rsRenderInterface_ = std::shared_ptr<RSRenderInterface>(new RSRenderInterface(connectToRenderRemote));
+    rsTransactionHandler_ =
+        std::make_shared<RSTransactionHandler>(token, rsRenderInterface_->GetRSRenderPipelineClient());
     rsSyncTransactionHandler_ = std::shared_ptr<RSSyncTransactionHandler>(new RSSyncTransactionHandler());
     rsSyncTransactionHandler_->SetTransactionHandler(rsTransactionHandler_);
 }
 
-RSUIContext::RSUIContext() : RSUIContext(0) {}
-
-RSUIContext::~RSUIContext() {}
+RSUIContext::~RSUIContext()
+{
+    RS_LOGI("~RSUIContext: Token:%{public}" PRIu64, token_);
+}
 
 const std::shared_ptr<RSImplicitAnimator> RSUIContext::GetRSImplicitAnimator()
 {
@@ -53,10 +58,29 @@ const std::shared_ptr<RSImplicitAnimator> RSUIContext::GetRSImplicitAnimator()
 
 const std::shared_ptr<RSModifierManager> RSUIContext::GetRSModifierManager()
 {
-    if (rsModifierManager_ == nullptr) {
-        rsModifierManager_ = std::make_shared<RSModifierManager>();
+    static bool isUniRender = RSSystemProperties::GetUniRenderEnabled();
+    if (isUniRender) {
+        if (rsModifierManager_ == nullptr) {
+            rsModifierManager_ = std::make_shared<RSModifierManager>();
+            rsModifierManager_->SetRSUIContext(weak_from_this());
+        }
+        return rsModifierManager_;
+    } else {
+        std::lock_guard<std::mutex> lock(rsModifierManagerMutex_);
+        auto it = rsModifierManagerMap_.find(gettid());
+        if (it != rsModifierManagerMap_.end()) {
+            return it->second;
+        }
+
+        if (!rsModifierManagerMap_.empty()) {
+            RS_LOGI_LIMIT("Too many threads are using the same ModifierManagerMap");
+        }
+
+        auto rsModifierManager = std::make_shared<RSModifierManager>();
+        rsModifierManager->SetRSUIContext(weak_from_this());
+        rsModifierManagerMap_.emplace(gettid(), rsModifierManager);
+        return rsModifierManager;
     }
-    return rsModifierManager_;
 }
 
 bool RSUIContext::AnimationCallback(AnimationId animationId, AnimationCallbackEvent event)
@@ -113,21 +137,29 @@ void RSUIContext::RemoveAnimationInner(const std::shared_ptr<RSAnimation>& anima
 
 void RSUIContext::SetRequestVsyncCallback(const std::function<void()>& callback)
 {
+    std::lock_guard<std::mutex> lock(requestVsyncCallbackMutex_);
     requestVsyncCallback_ = callback;
 }
 
 void RSUIContext::RequestVsyncCallback()
 {
-    if (requestVsyncCallback_ == nullptr) {
+    std::function<void()> callback;
+    {
+        std::lock_guard<std::mutex> lock(requestVsyncCallbackMutex_);
+        callback = requestVsyncCallback_;
+    }
+    if (callback == nullptr) {
         ROSEN_LOGE("RSUIContext::RequestVsyncCallback failed requestVsyncCallback_ is null, token=%{public}" PRIu64 "",
             token_);
         return;
     }
-    requestVsyncCallback_();
+    callback();
 }
 
 void RSUIContext::SetUITaskRunner(const TaskRunner& uiTaskRunner)
 {
+    RS_LOGI("RSUIContext::SetUITaskRunner, Context token:%{public}" PRIu64, GetToken());
+    std::lock_guard<std::recursive_mutex> lock(uiTaskRunnersVisitorMutex_);
     taskRunner_ = uiTaskRunner;
     if (rsTransactionHandler_) {
         rsTransactionHandler_->SetUITaskRunner(uiTaskRunner);
@@ -141,6 +173,7 @@ void RSUIContext::PostTask(const std::function<void()>& task)
 
 void RSUIContext::PostDelayTask(const std::function<void()>& task, uint32_t delay)
 {
+    std::lock_guard<std::recursive_mutex> lock(uiTaskRunnersVisitorMutex_);
     if (taskRunner_ == nullptr) {
         ROSEN_LOGW(
             "multi-instance RSUIContext::PostDelayTask failed, taskRunner is empty, token=%{public}" PRIu64, token_);
@@ -180,27 +213,41 @@ void RSUIContext::DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t taskI
     transaction->FlushImplicitTransaction();
 }
 
-int32_t RSUIContext::GetUiPiplineNum() const
+int32_t RSUIContext::GetUiPiplineNum()
 {
-    return uiPiplineNum_.load();
+    std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
+    return uiPipelineNum_;
 }
- 
+
 void RSUIContext::DetachFromUI()
 {
-    if (uiPiplineNum_.load() <= 0) {
-        ROSEN_LOGD("RSUIContext::DetachFromUI failed");
+    std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
+    if (uiPipelineNum_ <= 0) {
+        ROSEN_LOGE("RSUIContext::DetachFromUI failed. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_,
+            uiPipelineNum_);
         return;
     }
-    uiPiplineNum_--;
+    uiPipelineNum_--;
+    ROSEN_LOGI(
+        "RSUIContext::DetachFromUI. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_, uiPipelineNum_);
 }
- 
+
 void RSUIContext::AttachFromUI()
 {
-    if (uiPiplineNum_.load() == UI_PiPLINE_NUM_UNDEFINED) {
-        uiPiplineNum_ = 1;
+    std::lock_guard<std::mutex> lock(uiPipelineNumMutex_);
+    ROSEN_LOGI(
+        "RSUIContext::AttachFromUI. token: %{public}" PRIu64 " uiPiplineNum: %{public}d", token_, uiPipelineNum_);
+    if (uiPipelineNum_ == UI_PiPLINE_NUM_UNDEFINED) {
+        uiPipelineNum_ = 1;
         return;
     }
-    uiPiplineNum_++;
+    uiPipelineNum_++;
+}
+
+bool RSUIContext::HasTaskRunner()
+{
+    std::lock_guard<std::recursive_mutex> lock(uiTaskRunnersVisitorMutex_);
+    return taskRunner_ != nullptr;
 }
 
 void RSUIContext::MoveModifier(std::shared_ptr<RSUIContext> dstUIContext, NodeId nodeId)
@@ -209,9 +256,25 @@ void RSUIContext::MoveModifier(std::shared_ptr<RSUIContext> dstUIContext, NodeId
         return;
     }
 
-    if (auto dstModifierManager = dstUIContext->rsModifierManager_) {
+    if (auto dstModifierManager = dstUIContext->GetRSModifierManager()) {
         rsModifierManager_->MoveModifier(dstModifierManager, nodeId);
     }
+}
+
+void RSUIContext::AddInteractiveImplictAnimator(const std::shared_ptr<RSInteractiveImplictAnimator>& animator)
+{
+    if (!animator) {
+        ROSEN_LOGE("RSUIContext::AddInteractiveImplictAnimator - animator is null");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(interactiveImplictAnimatorMutex_);
+    interactiveImplictAnimators_.emplace(animator->GetId(), animator);
+}
+
+void RSUIContext::RemoveInteractiveImplictAnimator(InteractiveImplictAnimatorId id)
+{
+    std::lock_guard<std::mutex> lock(interactiveImplictAnimatorMutex_);
+    interactiveImplictAnimators_.erase(id);
 }
 } // namespace Rosen
 } // namespace OHOS

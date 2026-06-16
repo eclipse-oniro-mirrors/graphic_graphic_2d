@@ -14,7 +14,7 @@
  */
 
 #include "transaction/rs_render_service_client.h"
-
+#include "transaction/rs_render_pipeline_client.h"
 #include "platform/common/rs_log.h"
 #include "rs_surface_darwin.h"
 #include "rs_vsync_client_darwin.h"
@@ -48,46 +48,15 @@ bool RSRenderServiceClient::GetTotalAppMemSize(float& cpuMemSize, float& gpuMemS
     return {};
 }
 
-bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark)
+bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
+    uint32_t rowCount, uint32_t colCount)
 {
     return false;
-}
-
-uint32_t RSRenderServiceClient::SetSurfaceWatermark(pid_t pid, const std::string &name,
-    const std::shared_ptr<Media::PixelMap> &watermark,
-    const std::vector<NodeId> &nodeIdList, SurfaceWatermarkType watermarkType)
-{
-    return 0;
-}
-    
-void RSRenderServiceClient::ClearSurfaceWatermarkForNodes(pid_t pid, const std::string &name,
-    const std::vector<NodeId> &nodeIdList)
-{
-}
-    
-void RSRenderServiceClient::ClearSurfaceWatermark(pid_t pid, const std::string &name)
-{
 }
 
 bool RSRenderServiceClient::GetUniRenderEnabled()
 {
     return {};
-}
-
-bool RSRenderServiceClient::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
-{
-    return {};
-}
-
-bool RSRenderServiceClient::CreateNode(const RSSurfaceRenderNodeConfig& config)
-{
-    return {};
-}
-
-std::shared_ptr<RSSurface> RSRenderServiceClient::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config,
-    bool unobscured)
-{
-    return std::make_shared<RSSurfaceDarwin>(reinterpret_cast<OnRenderFunc>(config.additionalData));
 }
 
 class VSyncReceiverDarwin : public VSyncReceiver {
@@ -138,6 +107,11 @@ std::shared_ptr<VSyncReceiver> RSRenderServiceClient::CreateVSyncReceiver(
     return std::make_shared<VSyncReceiverDarwin>();
 }
 
+sptr<IRemoteObject> RSRenderServiceClient::GetConnectToRenderToken(ScreenId screenId)
+{
+    return nullptr;
+}
+
 int32_t RSRenderServiceClient::GetPixelMapByProcessId(std::vector<PixelMapInfo>& pixelMapInfoVector, pid_t pid)
 {
     return 0;
@@ -168,35 +142,7 @@ void RSRenderServiceClient::RemoveVirtualScreen(ScreenId id)
 {
 }
 
-#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
-int32_t RSRenderServiceClient::SetPointerColorInversionConfig(float darkBuffer, float brightBuffer,
-    int64_t interval, int32_t rangeSize)
-{
-    return 0;
-}
- 
-int32_t RSRenderServiceClient::SetPointerColorInversionEnabled(bool enable)
-{
-    return 0;
-}
- 
-int32_t RSRenderServiceClient::RegisterPointerLuminanceChangeCallback(const PointerLuminanceChangeCallback &callback)
-{
-    return 0;
-}
- 
-int32_t RSRenderServiceClient::UnRegisterPointerLuminanceChangeCallback()
-{
-    return 0;
-}
-#endif
-
 int32_t RSRenderServiceClient::SetBrightnessInfoChangeCallback(const BrightnessInfoChangeCallback& callback)
-{
-    return 0;
-}
-
-int32_t RSRenderServiceClient::GetBrightnessInfo(ScreenId screenId, BrightnessInfo& brightnessInfo)
 {
     return 0;
 }
@@ -211,12 +157,21 @@ int32_t RSRenderServiceClient::SetScreenSwitchingNotifyCallback(const ScreenSwit
     return 0;
 }
 
+int32_t RSRenderServiceClient::SetActiveScreenIdChangedCallback(const ActiveScreenIdChangedCallback& callback)
+{
+    return 0;
+}
+
 uint32_t RSRenderServiceClient::SetScreenActiveMode(ScreenId id, uint32_t modeId)
 {
     return 0;
 }
 
-void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offSetX, int32_t offSetY)
+void RSRenderServiceClient::SetScreenOffset(ScreenId id, int32_t offsetX, int32_t offsetY)
+{
+}
+
+void RSRenderServiceClient::SetScreenFrameGravity(ScreenId id, int32_t gravity)
 {
 }
 
@@ -276,6 +231,11 @@ std::string RSRenderServiceClient::GetRefreshInfoToSP(NodeId id)
     return "";
 }
 
+std::string RSRenderServiceClient::GetRefreshInfoByPidAndUniqueId(pid_t pid, uint64_t uniqueId)
+{
+    return "";
+}
+
 int32_t RSRenderServiceClient::SetRogScreenResolution(ScreenId id, uint32_t width, uint32_t height)
 {
     return 0;
@@ -309,10 +269,6 @@ void RSRenderServiceClient::RepaintEverything()
 {
 }
 
-void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
-{
-}
-
 void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus status)
 {
 }
@@ -320,6 +276,16 @@ void RSRenderServiceClient::SetScreenPowerStatus(ScreenId id, ScreenPowerStatus 
 int32_t RSRenderServiceClient::SetDualScreenState(ScreenId id, DualScreenStatus status)
 {
     return StatusCode::RS_CONNECTION_ERROR;
+}
+
+int32_t RSRenderServiceClient::SetAsMainScreen(ScreenId screenId, bool isMainScreen)
+{
+    return StatusCode::RS_CONNECTION_ERROR;
+}
+
+ScreenId RSRenderServiceClient::GetMainScreenId()
+{
+    return INVALID_SCREEN_ID;
 }
 
 void RSRenderServiceClient::DisablePowerOffRenderControl(ScreenId id)
@@ -356,30 +322,24 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
     return {};
 }
 
-void RSRenderServiceClient::SetScreenBacklight(ScreenId id, uint32_t level)
+void RSRenderServiceClient::SetScreenBacklight(const RsScreenBrightnessData& brightnessData)
 {
+}
+
+int32_t RSRenderServiceClient::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    return {};
+}
+
+int32_t RSRenderServiceClient::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+{
+    return {};
 }
 
 PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
 {
-    return {};
-}
-
-bool RSRenderServiceClient::RegisterBufferAvailableListener(
-    NodeId id, const BufferAvailableCallback &callback, bool isFromRenderThread)
-{
-    return {};
-}
-
-bool RSRenderServiceClient::RegisterBufferClearListener(
-        NodeId id, const BufferClearCallback& callback)
-{
-    return {};
-}
-
-bool RSRenderServiceClient::UnregisterBufferAvailableListener(NodeId id)
-{
-    return {};
+    return PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
 }
 
 int32_t RSRenderServiceClient::GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode)
@@ -427,11 +387,6 @@ bool RSRenderServiceClient::SetVirtualMirrorScreenScaleMode(ScreenId id, ScreenS
     return {};
 }
 
-bool RSRenderServiceClient::SetGlobalDarkColorMode(bool isDark)
-{
-    return {};
-}
-
 int32_t RSRenderServiceClient::GetScreenGamutMap(ScreenId id, ScreenGamutMap& mode)
 {
     return {};
@@ -452,7 +407,8 @@ int32_t RSRenderServiceClient::SetPixelFormat(ScreenId id, GraphicPixelFormat pi
     return {};
 }
 
-int32_t RSRenderServiceClient::GetScreenSupportedHDRFormats(ScreenId id, std::vector<ScreenHDRFormat>& hdrFormats)
+int32_t RSRenderServiceClient::GetScreenSupportedHDRFormats(ScreenId id,
+    std::vector<ScreenHDRFormat>& hdrFormats, const ScreenSupportedHDRFormatsCallback& callback)
 {
     return {};
 }
@@ -484,17 +440,6 @@ int32_t RSRenderServiceClient::SetScreenColorSpace(ScreenId id, GraphicCM_ColorS
 }
 
 int32_t RSRenderServiceClient::GetScreenType(ScreenId id, RSScreenType& screenType)
-{
-    return {};
-}
-
-bool RSRenderServiceClient::GetBitmap(NodeId id, Drawing::Bitmap& bitmap)
-{
-    return {};
-}
-
-bool RSRenderServiceClient::GetPixelmap(NodeId id, const std::shared_ptr<Media::PixelMap> pixelmap,
-    const Drawing::Rect* rect, std::shared_ptr<Drawing::DrawCmdList> drawCmdList)
 {
     return {};
 }
@@ -560,20 +505,8 @@ uint32_t RSRenderServiceClient::SetScreenActiveRect(ScreenId id, const Rect& act
     return {};
 }
 
-int32_t RSRenderServiceClient::RegisterOcclusionChangeCallback(const OcclusionChangeCallback& callback)
+void RSRenderServiceClient::ForceRefreshOneFrameWithNextVSync()
 {
-    return {};
-}
-
-int32_t RSRenderServiceClient::RegisterSurfaceOcclusionChangeCallback(
-    NodeId id, const SurfaceOcclusionChangeCallback& callback, std::vector<float>& partitionPoints)
-{
-    return {};
-}
-
-int32_t RSRenderServiceClient::UnRegisterSurfaceOcclusionChangeCallback(NodeId id)
-{
-    return {};
 }
 
 int32_t RSRenderServiceClient::RegisterHgmConfigChangeCallback(const HgmConfigChangeCallback& callback)
@@ -599,17 +532,14 @@ int32_t RSRenderServiceClient::RegisterFirstFrameCommitCallback(
     return {};
 }
 
-int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
-    int32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
+int32_t RSRenderServiceClient::RegisterExposedEventCallback(
+    const RSExposedEventType type, const RSExposedEventCallback& callback)
 {
     return {};
 }
 
-void RSRenderServiceClient::SetAppWindowNum(uint32_t num)
-{
-}
-
-bool RSRenderServiceClient::SetSystemAnimatedScenes(SystemAnimatedScenes systemAnimatedScenes, bool isRegularAnimation)
+int32_t RSRenderServiceClient::RegisterFrameRateLinkerExpectedFpsUpdateCallback(
+    int32_t dstPid, const FrameRateLinkerExpectedFpsUpdateCallback& callback)
 {
     return {};
 }
@@ -698,22 +628,17 @@ void RSRenderServiceClient::NotifyDynamicModeEvent(bool enableDynamicMode)
 {
 }
 
-void RSRenderServiceClient::SetHardwareEnabled(NodeId id, bool isEnabled, SelfDrawingNodeType selfDrawingType,
-    bool dynamicHardwareEnable)
-{
-}
-
-uint32_t RSRenderServiceClient::SetHidePrivacyContent(NodeId id, bool needHidePrivacyContent)
-{
-    return {};
-}
-
 void RSRenderServiceClient::SetCacheEnabledForRotation(bool isEnabled)
 {
 }
 
 void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback)
 {
+}
+
+int32_t RSRenderServiceClient::SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    return {};
 }
 
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()
@@ -771,11 +696,11 @@ bool RSRenderServiceClient::SetVirtualScreenStatus(ScreenId id, VirtualScreenSta
     return false;
 }
 
-void RSRenderServiceClient::SetFreeMultiWindowStatus(bool enable)
+void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
 {
 }
 
-void RSRenderServiceClient::SetLayerTop(const std::string &nodeIdStr, bool isTop)
+void RSRenderServiceClient::SetHdrForceHwcEnabled(const std::string &nodeIdStr, bool isHdrForceHwcEnabled)
 {
 }
 
@@ -802,14 +727,9 @@ int32_t RSRenderServiceClient::UnRegisterSelfDrawingNodeRectChangeCallback()
     return {};
 }
 
-void RSRenderServiceClient::NotifyPageName(const std::string &packageName,
-    const std::string &pageName, bool isEnter)
+void RSRenderServiceClient::NotifyPageName(const std::string& packageName,
+    const std::string& pageName, bool isEnter)
 {
-}
-
-bool RSRenderServiceClient::GetHighContrastTextState()
-{
-    return false;
 }
 
 bool RSRenderServiceClient::SetBehindWindowFilterEnabled(bool enabled)
@@ -835,6 +755,16 @@ void RSRenderServiceClient::AvcodecVideoStart(const std::vector<uint64_t>& uniqu
 void RSRenderServiceClient::AvcodecVideoStop(const std::vector<uint64_t>& uniqueIdList,
     const std::vector<std::string>& surfaceNameList, uint32_t fps)
 {
+}
+
+bool RSRenderServiceClient::AvcodecVideoGet(uint64_t uniqueId)
+{
+    return false;
+}
+ 
+bool RSRenderServiceClient::AvcodecVideoGetRecent()
+{
+    return false;
 }
 } // namespace Rosen
 } // namespace OHOS

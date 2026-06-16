@@ -16,6 +16,7 @@
 #ifndef RENDER_SERVICE_BASE_DRAWABLE_RS_MISC_DRAWABLE_H
 #define RENDER_SERVICE_BASE_DRAWABLE_RS_MISC_DRAWABLE_H
 
+#include <atomic>
 #include <bitset>
 #include <cstdint>
 #include <functional>
@@ -23,17 +24,13 @@
 #include <set>
 #include <unordered_set>
 
+#include "common/rs_macros.h"
 #include "drawable/rs_drawable.h"
 #include "modifier_ng/rs_modifier_ng_type.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "property/rs_properties_def.h"
-
+#include "pipeline/rs_simple_draw_cmd_list.h"
 namespace OHOS::Rosen {
-class RSColorPickerManager;
-namespace Drawing {
-class DrawCmdList;
-}
-
 namespace DrawableV2 {
 class RSRenderNodeDrawableAdapter;
 // RSChildrenDrawable, for drawing children of RSRenderNode, updates on child add/remove
@@ -45,7 +42,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& content) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     bool needSync_ = false;
@@ -57,27 +54,10 @@ private:
     bool OnSharedTransition(const std::shared_ptr<RSRenderNode>& node);
     friend class RSRenderNode;
     friend class RSRenderNodeDrawableAdapter;
-};
 
-// RSColorPickerDrawable, pick color for current content of canvas
-class RSColorPickerDrawable : public RSDrawable {
-public:
-    explicit RSColorPickerDrawable();
-    ~RSColorPickerDrawable() override = default;
-
-    static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
-    bool OnUpdate(const RSRenderNode& content) override;
-    void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
-
-private:
-    NodeId stagingNodeId_ = INVALID_NODEID;
-    NodeId nodeId_ = INVALID_NODEID;
-    std::shared_ptr<ColorPickerParam> stagingColorPicker_;
-    ColorPickerParam colorPicker_;
-
-    bool needSync_ = false;
-    std::shared_ptr<RSColorPickerManager> colorPickerManager_;
+#ifdef USE_PRIMITIVE
+    void OnDrawPrimitive(Drawing::Canvas* canvas, const Drawing::Rect* rect) override;
+#endif
 };
 
 // RSCustomModifierDrawable, for drawing custom modifiers
@@ -89,7 +69,7 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
     void OnPurge() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     ModifierNG::RSModifierType modifierTypeNG_ = ModifierNG::RSModifierType::INVALID;
@@ -99,8 +79,8 @@ private:
     Gravity stagingGravity_ = Gravity::DEFAULT;
     bool isCanvasNode_ = false;
     bool stagingIsCanvasNode_ = false;
-    std::vector<std::shared_ptr<Drawing::DrawCmdList>> drawCmdListVec_;
-    std::vector<std::shared_ptr<Drawing::DrawCmdList>> stagingDrawCmdListVec_;
+    std::vector<SimpleDrawCmdListPtr> drawCmdListVec_;
+    std::vector<SimpleDrawCmdListPtr> stagingDrawCmdListVec_;
 };
 
 // ============================================================================
@@ -112,7 +92,7 @@ public:
 
     // no need to sync, content_ only used in render thread
     void OnSync() override {};
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     std::shared_ptr<uint32_t> content_;
@@ -125,7 +105,7 @@ public:
 
     // no need to sync, content_ only used in render thread
     void OnSync() override {};
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     std::shared_ptr<uint32_t> content_;
@@ -139,7 +119,7 @@ public:
 
     // no need to sync, content_ only used in render thread
     void OnSync() override {};
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
@@ -153,7 +133,7 @@ public:
 
     // no need to sync, content_ only used in render thread
     void OnSync() override {};
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     std::shared_ptr<RSPaintFilterCanvas::SaveStatus> content_;
@@ -169,8 +149,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 protected:
     bool needSync_ = false;
@@ -188,8 +167,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 protected:
     bool needSync_ = false;
@@ -212,8 +190,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 protected:
     bool needSync_ = false;
@@ -232,7 +209,7 @@ public:
     void PostUpdate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
     bool GetEnableEDR() const override
     {
@@ -263,7 +240,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     bool needSync_ = false;

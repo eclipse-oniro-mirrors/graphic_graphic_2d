@@ -15,6 +15,8 @@
 
 #include "rs_tv_metadata_manager.h"
 
+#include <charconv>
+
 #include "feature_cfg/feature_param/performance_feature/video_metadata_param.h"
 #include "platform/common/rs_log.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -39,6 +41,9 @@ constexpr uint8_t PRIORITY_FOR_SMALLSCREEN = 1;
 constexpr uint8_t PRIORITY_FOR_VIDEO_EFFECT = 2;
 constexpr uint8_t RESERVED_INDEX_FOR_NODE_ID = 0;
 constexpr uint8_t RESERVED_INDEX_FOR_CACHE = 1;
+constexpr uint16_t DECODE_SPEED_BASE = 100;
+constexpr const char* const VIDEO_RATE_KEY = "rate";
+constexpr const char* const VIDEO_DECSPEED_KEY = "decSpeed";
 }
 
 enum TvColorPrimaries {
@@ -58,31 +63,10 @@ RSTvMetadataManager& RSTvMetadataManager::Instance()
     return instance;
 }
 
-void RSTvMetadataManager::CombineMetadata(TvPQMetadata& dstMetadata, const TvPQMetadata& srcMetadata)
-{
-    srcMetadata.dpPixFmt != 0 ? dstMetadata.dpPixFmt = srcMetadata.dpPixFmt : 0;
-    srcMetadata.uiFrameCnt != 0 ? dstMetadata.uiFrameCnt = srcMetadata.uiFrameCnt : 0;
-    srcMetadata.sceneTag != 0 ? dstMetadata.sceneTag = srcMetadata.sceneTag : 0;
-    srcMetadata.vidFrameCnt != 0 ? dstMetadata.vidFrameCnt = srcMetadata.vidFrameCnt : 0;
-    srcMetadata.vidFps != 0 ? dstMetadata.vidFps = srcMetadata.vidFps : 0;
-    srcMetadata.vidWinX != 0 ? dstMetadata.vidWinX = srcMetadata.vidWinX : 0;
-    srcMetadata.vidWinY != 0 ? dstMetadata.vidWinY = srcMetadata.vidWinY : 0;
-    srcMetadata.vidWinWidth != 0 ? dstMetadata.vidWinWidth = srcMetadata.vidWinWidth : 0;
-    srcMetadata.vidWinHeight != 0 ? dstMetadata.vidWinHeight = srcMetadata.vidWinHeight : 0;
-    srcMetadata.vidWinSize != 0 ? dstMetadata.vidWinSize = srcMetadata.vidWinSize : 0;
-    srcMetadata.vidVdhWidth != 0 ? dstMetadata.vidVdhWidth = srcMetadata.vidVdhWidth : 0;
-    srcMetadata.vidVdhHeight != 0 ? dstMetadata.vidVdhHeight = srcMetadata.vidVdhHeight : 0;
-    srcMetadata.scaleMode != 0 ? dstMetadata.scaleMode = srcMetadata.scaleMode : 0;
-    srcMetadata.colorimetry != 0 ? dstMetadata.colorimetry = srcMetadata.colorimetry : 0;
-    srcMetadata.hdr != 0 ? dstMetadata.hdr = srcMetadata.hdr : 0;
-    srcMetadata.hdrLuminance != 0 ? dstMetadata.hdrLuminance = srcMetadata.hdrLuminance : 0;
-    srcMetadata.hdrRatio != 0 ? dstMetadata.hdrRatio = srcMetadata.hdrRatio : 0;
-}
-
 void RSTvMetadataManager::RecordAndCombineMetadata(const TvPQMetadata& metadata)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    CombineMetadata(metadata_, metadata);
+    RSTvMetadataUtil::CombineMetadata(metadata_, metadata);
 }
 
 void RSTvMetadataManager::Reset()
@@ -141,67 +125,6 @@ void RSTvMetadataManager::CopyTvMetadataToSurface(std::shared_ptr<RSSurfaceOhos>
     (void)memset_s(&metadata_, sizeof(metadata_), 0, sizeof(metadata_));
 }
 
-void RSTvMetadataManager::CopyFromLayersToSurface(const std::vector<RSLayerPtr>& layers,
-    std::shared_ptr<RSSurfaceOhos>& surface)
-{
-    if (surface == nullptr || surface->GetCurrentBuffer() == nullptr) {
-        return;
-    }
-    TvPQMetadata tvMetadataCombined = { 0 };
-    for (const auto& layer : layers) {
-        if (layer && layer->GetBuffer()) {
-            auto buffer = layer->GetBuffer();
-            TvPQMetadata tvMetadata = { 0 };
-            if (MetadataHelper::GetVideoTVMetadata(buffer, tvMetadata) == GSERROR_OK) {
-                CombineMetadata(tvMetadataCombined, tvMetadata);
-            }
-        }
-    }
-    tvMetadataCombined.scaleMode = SCALER_MODE_GPU;
-    auto buffer = surface->GetCurrentBuffer();
-    if (MetadataHelper::SetVideoTVMetadata(buffer, tvMetadataCombined) != GSERROR_OK) {
-        RS_LOGE("CopyFromLayersToSurface failed!");
-    }
-}
-
-void RSTvMetadataManager::CombineMetadataForAllLayers(const std::vector<RSLayerPtr>& layers)
-{
-    TvPQMetadata tvUniRenderMetadata = { 0 };
-    TvPQMetadata tvSelfDrawMetadata = { 0 };
-    sptr<SurfaceBuffer> tvUniRenderBuffer = nullptr;
-    sptr<SurfaceBuffer> tvSelfDrawBuffer = nullptr;
-
-    uint32_t zorderMin = 0;
-    for (const auto& layer : layers) {
-        if (layer == nullptr) {
-            continue;
-        }
-        auto buffer = layer->GetBuffer();
-        if (buffer == nullptr) {
-            continue;
-        }
-        TvPQMetadata tvMetadata = { 0 };
-        if (MetadataHelper::GetVideoTVMetadata(buffer, tvMetadata) != GSERROR_OK) {
-            continue;
-        }
-        if (layer->GetUniRenderFlag()) {
-            tvUniRenderBuffer = buffer;
-            tvUniRenderMetadata = tvMetadata;
-        } else if (tvSelfDrawBuffer == nullptr || zorderMin > layer->GetZorder()) {
-            zorderMin = layer->GetZorder();
-            tvSelfDrawBuffer = buffer;
-            tvSelfDrawMetadata = tvMetadata;
-        }
-    }
-    if (tvSelfDrawBuffer == nullptr) {
-        return;
-    }
-    // update ui info
-    tvSelfDrawMetadata.uiFrameCnt = tvUniRenderMetadata.uiFrameCnt;
-    tvSelfDrawMetadata.dpPixFmt = tvUniRenderMetadata.dpPixFmt;
-    static_cast<void>(MetadataHelper::SetVideoTVMetadata(tvSelfDrawBuffer, tvSelfDrawMetadata));
-}
-
 void RSTvMetadataManager::UpdateTvMetadata(const RSSurfaceRenderParams& params, const sptr<SurfaceBuffer>& buffer)
 {
     if (buffer == nullptr) {
@@ -257,6 +180,7 @@ void RSTvMetadataManager::CollectTvMetadata(const RSSurfaceRenderParams& params,
         CollectSurfaceSize(params, metaData);
         CollectColorPrimaries(buffer, metaData);
         CollectHdrType(buffer, metaData);
+        CollectVideoRate(metaData);
     }
 }
 
@@ -306,6 +230,11 @@ void RSTvMetadataManager::CollectHdrType(const sptr<SurfaceBuffer>& buffer, TvPQ
     if (MetadataHelper::GetHDRMetadataType(buffer, hdrMetadataType) == GSERROR_OK) {
         metaData.hdr = hdrMetadataType;
     }
+}
+
+void RSTvMetadataManager::CollectVideoRate(TvPQMetadata& metaData)
+{
+    metaData.vidFps = videoRate_;
 }
 
 bool RSTvMetadataManager::IsSdpInfoAppId(const std::string& bundleName)
@@ -364,5 +293,33 @@ bool RSTvMetadataManager::CheckCacheValid()
         return false;
     }
     return true;
+}
+
+int32_t RSTvMetadataManager::SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    auto rateIt = videoRateInfo.find(VIDEO_RATE_KEY);
+    uint16_t rate{0};
+    if (rateIt != videoRateInfo.end()) {
+        auto resultRate =
+            std::from_chars(rateIt->second.data(), rateIt->second.data() + rateIt->second.size(), rate);
+        if (resultRate.ec != std::errc()) {
+            return -1;
+        }
+    }
+    uint32_t decSpeed{0};
+    auto speedIt = videoRateInfo.find(VIDEO_DECSPEED_KEY);
+    if (speedIt != videoRateInfo.end()) {
+        auto resultRate =
+            std::from_chars(speedIt->second.data(), speedIt->second.data() + speedIt->second.size(), decSpeed);
+        if (resultRate.ec != std::errc()) {
+            decSpeed = 0;
+        }
+    }
+    videoRate_ = rate;
+    if (decSpeed > DECODE_SPEED_BASE) {
+        videoRate_ = 0; // 倍速播放时，设置帧率信息无效，设置为0，不生效策略
+    }
+    RS_LOGI("SendVideoRateInfo rate:%{public}d, decSpeed:%{public}d", rate, decSpeed);
+    return 0;
 }
 } // namespace OHOS::Rosen

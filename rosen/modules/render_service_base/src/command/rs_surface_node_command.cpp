@@ -79,10 +79,6 @@ std::shared_ptr<RSSurfaceRenderNode> SurfaceNodeCommandHelper::CreateWithConfigI
             "been too many surfaceNodes, nodeId:%{public}" PRIu64 "", config.id);
         return nullptr;
     }
-    if (context.GetMutableNodeMap().UnRegisterUnTreeNode(config.id)) {
-        ROSEN_LOGE("SurfaceNodeCommandHelper::CreateWithConfigInRS create after add, id:%{public}" PRIu64, config.id);
-        RS_TRACE_NAME_FMT("SurfaceNodeCommandHelper::CreateWithConfigInRS create after add, id:%" PRIu64, config.id);
-    }
     auto node = std::shared_ptr<RSSurfaceRenderNode>(new RSSurfaceRenderNode(config,
         context.weak_from_this()), RSRenderNodeGC::NodeDestructor);
     node->SetUIExtensionUnobscured(unobscured);
@@ -168,10 +164,11 @@ void SurfaceNodeCommandHelper::UpdateSurfaceDefaultSize(RSContext& context, Node
     }
 }
 
-void SurfaceNodeCommandHelper::ConnectToNodeInRenderService(RSContext& context, NodeId id)
+void SurfaceNodeCommandHelper::ConnectToNodeInRenderService(
+    RSContext& context, NodeId id, sptr<IRemoteObject> connectToRender)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id)) {
-        node->ConnectToNodeInRenderService();
+        node->ConnectToNodeInRenderService(connectToRender);
     }
 }
 
@@ -229,13 +226,6 @@ void SurfaceNodeCommandHelper::SetContainerWindow(
     }
 }
 
-void SurfaceNodeCommandHelper::SetAnimationFinished(RSContext& context, NodeId nodeId)
-{
-    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetStartAnimationFinished();
-    }
-}
-
 void SurfaceNodeCommandHelper::AttachToDisplay(RSContext& context, NodeId nodeId, uint64_t screenId)
 {
     const auto& nodeMap = context.GetNodeMap();
@@ -289,6 +279,15 @@ void SurfaceNodeCommandHelper::CreateSurfaceExt(RSContext& context, NodeId id,
         node->SetSurfaceTexture(surfaceExt);
     }
 }
+
+void SurfaceNodeCommandHelper::SetSurfaceCaptureCallBack(
+    RSContext& context, NodeId id, std::function<std::shared_ptr<Media::PixelMap>()> callback)
+{
+    auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(id);
+    if (node != nullptr) {
+        node->SetSurfaceCaptureCallback(callback);
+    }
+}
 #endif
 
 void SurfaceNodeCommandHelper::SetForceHardwareAndFixRotation(RSContext& context, NodeId nodeId, bool flag)
@@ -313,10 +312,10 @@ void SurfaceNodeCommandHelper::SetSurfaceId(RSContext& context, NodeId nodeId, S
 }
 
 void SurfaceNodeCommandHelper::SetClonedNodeInfo(
-    RSContext& context, NodeId nodeId, NodeId cloneNodeId, bool needOffscreen)
+    RSContext& context, NodeId nodeId, NodeId cloneNodeId, bool needOffscreen, bool isRelated)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetClonedNodeInfo(cloneNodeId, needOffscreen);
+        node->SetClonedNodeInfo(cloneNodeId, needOffscreen, isRelated);
     }
 }
 
@@ -334,17 +333,17 @@ void SurfaceNodeCommandHelper::SetAncoFlags(RSContext& context, NodeId nodeId, u
     }
 }
 
-void SurfaceNodeCommandHelper::SetHDRPresent(RSContext& context, NodeId nodeId, bool hdrPresent)
-{
-    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
-        node->SetHDRPresent(hdrPresent);
-    }
-}
-
 void SurfaceNodeCommandHelper::SetSkipDraw(RSContext& context, NodeId nodeId, bool skip)
 {
     if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetSkipDraw(skip);
+    }
+}
+
+void SurfaceNodeCommandHelper::SetDarkColorMode(RSContext& context, NodeId nodeId, bool isDarkColorMode)
+{
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetDarkColorMode(isDarkColorMode);
     }
 }
 
@@ -365,10 +364,8 @@ void SurfaceNodeCommandHelper::SetAbilityState(RSContext& context, NodeId nodeId
         return;
     }
     node->SetAbilityState(abilityState);
-#ifdef RS_ENABLE_MEMORY_DOWNTREE
     RSRenderNodeGC::Instance().SetAbilityState(ExtractPid(nodeId),
         abilityState == RSSurfaceNodeAbilityState::BACKGROUND);
-#endif
 }
 
 void SurfaceNodeCommandHelper::SetApiCompatibleVersion(RSContext& context, NodeId nodeId, uint32_t apiCompatibleVersion)
@@ -388,14 +385,14 @@ void SurfaceNodeCommandHelper::SetHardwareEnableHint(RSContext& context, NodeId 
     }
 }
 
-void SurfaceNodeCommandHelper::SetSourceVirtualDisplayId(RSContext& context, NodeId nodeId, ScreenId screenId)
+void SurfaceNodeCommandHelper::SetSourceVirtualScreenId(RSContext& context, NodeId nodeId, ScreenId screenId)
 {
     if (auto surfaceRenderNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         const auto& nodeMap = context.GetNodeMap();
         nodeMap.TraverseScreenNodes(
             [surfaceRenderNode, screenId](const std::shared_ptr<RSScreenRenderNode>& screenRenderNode) {
                 if (screenRenderNode != nullptr && screenRenderNode->GetScreenId() == screenId) {
-                    surfaceRenderNode->SetSourceDisplayRenderNodeId(screenRenderNode->GetId());
+                    surfaceRenderNode->SetSourceScreenRenderNodeId(screenRenderNode->GetId());
                 }
             }
         );
@@ -417,12 +414,14 @@ void SurfaceNodeCommandHelper::AttachToWindowContainer(RSContext& context, NodeI
 
 void SurfaceNodeCommandHelper::DetachFromWindowContainer(RSContext& context, NodeId nodeId, ScreenId screenId)
 {
+#ifndef ROSEN_ARKUI_X
     const auto& nodeMap = context.GetNodeMap();
     auto surfaceRenderNode = nodeMap.GetRenderNode<RSSurfaceRenderNode>(nodeId);
     if (surfaceRenderNode == nullptr) {
         RS_LOGE("SurfaceNodeCommandHelper::DetachFromWindowContainer Invalid surfaceRenderNode");
         return;
     }
+    surfaceRenderNode->attachedInfo_ = std::nullopt;
     nodeMap.TraverseLogicalDisplayNodes(
         [surfaceRenderNode, screenId](const std::shared_ptr<RSLogicalDisplayRenderNode>& displayRenderNode) {
             if (displayRenderNode == nullptr || displayRenderNode->GetScreenId() != screenId ||
@@ -441,6 +440,7 @@ void SurfaceNodeCommandHelper::DetachFromWindowContainer(RSContext& context, Nod
             }
         }
     );
+#endif
 }
 
 void SurfaceNodeCommandHelper::SetRegionToBeMagnified(
@@ -477,6 +477,27 @@ void SurfaceNodeCommandHelper::SetContainerWindowTransparent(
 {
     if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetContainerWindowTransparent(isContainerWindowTransparent);
+    }
+}
+
+void SurfaceNodeCommandHelper::SetAppRotationCorrection(
+    RSContext& context, NodeId nodeId, ScreenRotation appRotationCorrection)
+{
+    if (appRotationCorrection > ScreenRotation::INVALID_SCREEN_ROTATION) {
+        RS_LOGE("SurfaceNodeCommandHelper::SetAppRotationCorrection %{public}" PRIu64
+                " set invalid AppRotationCorrection",
+            nodeId);
+        return;
+    }
+    if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetAppRotationCorrection(appRotationCorrection);
+    }
+}
+
+void SurfaceNodeCommandHelper::SetHDRType(RSContext& context, NodeId nodeId, uint32_t hdrType)
+{
+    if (const auto& node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
+        node->SetHDRType(hdrType);
     }
 }
 } // namespace Rosen

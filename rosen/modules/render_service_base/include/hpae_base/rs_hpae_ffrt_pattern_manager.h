@@ -19,12 +19,20 @@
 #include <functional>
 #include <memory>
 #include <stdexcept>
+#ifdef ROSEN_ARKUI_X
+#include <unordered_map>
+#endif
 #include <utility>
 #include <vector>
 #include "common/rs_macros.h"
 #ifdef RS_ENABLE_VK
+#ifdef ROSEN_IOS
+#include "include/third_party/vulkan/vulkan/vulkan_core.h"
+#else
 #include "vulkan/vulkan_core.h"
 #endif
+#endif
+
 namespace OHOS::Rosen {
 
 enum class PatternType_C {
@@ -89,6 +97,8 @@ public:
     RSHpaeFfrtPatternManager(RSHpaeFfrtPatternManager&&) = delete;
     RSHpaeFfrtPatternManager& operator=(const RSHpaeFfrtPatternManager&) = delete;
     RSHpaeFfrtPatternManager& operator=(RSHpaeFfrtPatternManager&&) = delete;
+
+    void OpenDevice();
 
     bool IsUpdated();
 
@@ -172,7 +182,7 @@ public:
     std::shared_ptr<VkSemaphore> GetSemaphoreMap(uint16_t eventId);
 #endif
 protected:
-    RSHpaeFfrtPatternManager();
+    RSHpaeFfrtPatternManager() = default;
     ~RSHpaeFfrtPatternManager();
 
     bool IsThreadIdMatch();

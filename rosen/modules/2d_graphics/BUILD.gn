@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 Huawei Device Co., Ltd.. All rights reserved.
+# Copyright (c) 2022-2026 Huawei Device Co., Ltd.. All rights reserved.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -84,7 +84,9 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/draw/path.cpp",
       "$drawing_core_src_dir/draw/path_iterator.cpp",
       "$drawing_core_src_dir/draw/pen.cpp",
+      "$drawing_core_src_dir/draw/prim_list.cpp",
       "$drawing_core_src_dir/draw/surface.cpp",
+      "$drawing_core_src_dir/draw/ui_color.cpp",
       "$drawing_core_src_dir/effect/blender.cpp",
       "$drawing_core_src_dir/effect/blur_draw_looper.cpp",
       "$drawing_core_src_dir/effect/color_filter.cpp",
@@ -94,6 +96,8 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/effect/image_filter.cpp",
       "$drawing_core_src_dir/effect/mask_filter.cpp",
       "$drawing_core_src_dir/effect/path_effect.cpp",
+      "$drawing_core_src_dir/effect/particle_builder.cpp",
+      "$drawing_core_src_dir/effect/particle_effect.cpp",
       "$drawing_core_src_dir/effect/runtime_blender_builder.cpp",
       "$drawing_core_src_dir/effect/runtime_effect.cpp",
       "$drawing_core_src_dir/effect/runtime_shader_builder.cpp",
@@ -101,10 +105,15 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/effect/blur_image_filter_obj.cpp",
       "$drawing_core_src_dir/effect/color_filter_image_filter_obj.cpp",
       "$drawing_core_src_dir/effect/image_filter_lazy.cpp",
+      "$drawing_core_src_dir/effect/linear_gradient_shader_obj.cpp",
+      "$drawing_core_src_dir/effect/gradient_shader_obj_base.cpp",
       "$drawing_core_src_dir/effect/offset_image_filter_obj.cpp",
+      "$drawing_core_src_dir/effect/radial_gradient_shader_obj.cpp",
+      "$drawing_core_src_dir/effect/conical_gradient_shader_obj.cpp",
       "$drawing_core_src_dir/effect/shader_effect.cpp",
       "$drawing_core_src_dir/effect/shader_effect_lazy.cpp",
       "$drawing_core_src_dir/effect/shader_image_filter_obj.cpp",
+      "$drawing_core_src_dir/effect/sweep_gradient_shader_obj.cpp",
       "$drawing_core_src_dir/engine_adapter/impl_factory.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/rs_skia_memory_tracer.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_bitmap.cpp",
@@ -137,6 +146,7 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_picture.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_picture_recorder.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_pixmap.cpp",
+      "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_prim_list.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_region.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_runtime_blender_builder.cpp",
       "$drawing_core_src_dir/engine_adapter/skia_adapter/skia_runtime_effect.cpp",
@@ -169,18 +179,23 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/recording/record_cmd.cpp",
       "$drawing_core_src_dir/recording/recording_canvas.cpp",
       "$drawing_core_src_dir/text/font.cpp",
+      "$drawing_core_src_dir/text/font_event_callback.cpp",
       "$drawing_core_src_dir/text/font_filetype.cpp",
       "$drawing_core_src_dir/text/font_harfbuzz.cpp",
       "$drawing_core_src_dir/text/font_metadata.cpp",
       "$drawing_core_src_dir/text/font_mgr.cpp",
       "$drawing_core_src_dir/text/font_unicode_query.cpp",
+      "$drawing_core_src_dir/text/font_language_query.cpp",
+      "$drawing_core_src_dir/text/font_feature_query.cpp",
       "$drawing_core_src_dir/text/font_style_set.cpp",
       "$drawing_core_src_dir/text/font_variation_info.cpp",
       "$drawing_core_src_dir/text/hm_symbol.cpp",
       "$drawing_core_src_dir/text/text.cpp",
       "$drawing_core_src_dir/text/text_blob.cpp",
       "$drawing_core_src_dir/text/text_blob_builder.cpp",
+      "$drawing_core_src_dir/text/font_properties_query.cpp",
       "$drawing_core_src_dir/text/typeface.cpp",
+      "$drawing_core_src_dir/text/glyph_cache.cpp",
       "$drawing_core_src_dir/utils/camera3d.cpp",
       "$drawing_core_src_dir/utils/colorspace_convertor.cpp",
       "$drawing_core_src_dir/utils/data.cpp",
@@ -202,6 +217,9 @@ template("graphics2d_source_set") {
       "$drawing_core_src_dir/utils/vertices.cpp",
       "$drawing_core_src_dir/utils/canvas_utils.cpp",
       "$drawing_core_src_dir/utils/object_helper.cpp",
+      "$drawing_core_src_dir/utils/typeface_hash_map.cpp",
+      "$drawing_core_src_dir/utils/typeface_map.cpp",
+      "$drawing_core_src_dir/utils/text_utils.cpp",
     ]
 
     if (platform == "ohos" || platform == "ohos_ng") {
@@ -217,13 +235,12 @@ template("graphics2d_source_set") {
       }
       external_deps += [ "init:libbegetutil" ]
       sources += [ "$drawing_core_src_dir/utils/system_properties.cpp" ]
-      if (defined(
-          graphic_2d_platform_configs.system_graphic_properties_sources)) {
-        sources += graphic_2d_platform_configs.system_graphic_properties_sources
-      } else {
-        sources +=
-            [ "$drawing_core_src_dir/utils/system_graphic_properties.cpp" ]
+      sources += [ "$drawing_core_src_dir/utils/system_graphic_properties.cpp" ]
+    } else if (platform == "android" || platform == "ios") {
+      if (platform == "ios") {
+        defines += [ "ROSEN_IOS" ]
       }
+      sources += [ "$drawing_core_src_dir/utils/system_properties.cpp" ]
     }
     if (is_emulator) {
       defines += [ "ROSEN_EMULATOR" ]
@@ -277,19 +294,20 @@ template("graphics2d_source_set") {
         defines += [ "RES_SCHED_ENABLE" ]
         include_dirs += [ "$rosen_root/modules/frame_report/include" ]
         if (rosen_is_ohos) {
-          sources +=
-              [ "$rosen_root/modules/frame_report/src/rs_frame_report.cpp" ]
+          sources += [ "$rosen_root/modules/frame_report/src/rs_frame_report.cpp" ]
+          external_deps += [ "frame_aware_sched:frame_ui_intf"]
         } else {
-          sources += [
-            "$rosen_root/modules/frame_report/src/mingw/rs_frame_report.cpp",
-          ]
+          sources += [ "$rosen_root/modules/frame_report/src/mingw/rs_frame_report.cpp" ]
         }
       }
     }
 
     if (is_arkui_x) {
       configs = [ "//third_party/jsoncpp:jsoncpp_public_config" ]
-      defines += [ "ROSEN_ARKUI_X" ]
+      defines += [
+        "ROSEN_ARKUI_X",
+        "ROSEN_CROSS_PLATFORM",
+      ]
     } else {
       external_deps += [ "jsoncpp:jsoncpp" ]
     }
@@ -311,6 +329,7 @@ template("graphics2d_source_set") {
       sources += ddgr_adapter_opt_set.drawing_ddgr_adapter_src_set
       include_dirs += ddgr_adapter_opt_set.drawing_ddgr_adapter_include_set
       public_deps += [ "$rosen_root/modules/2d_engine/ddgr:libddgr" ]
+      inputs = [ "${ddgr_feature_pgo_path}libddgr.profdata" ]
       cflags += [
         "-fprofile-use=" +
             rebase_path("${ddgr_feature_pgo_path}libddgr.profdata",
@@ -319,7 +338,9 @@ template("graphics2d_source_set") {
         "-Wno-profile-instr-out-of-date",
         "-Wno-profile-instr-unprofiled",
       ]
-      external_deps += [ "freetype:freetype_static" ]
+      if (!(is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path))) {
+        external_deps += [ "freetype:freetype_static" ]
+      }
     }
 
     if (enable_text_gine) {
@@ -345,6 +366,7 @@ template("graphics2d_source_set") {
         "hitrace:hitrace_meter",
         "icu:shared_icuuc",
         "skia:skia_canvaskit",
+        "vma:vma",
       ]
 
       deps = []
@@ -362,6 +384,9 @@ template("graphics2d_source_set") {
       deps += [ "$rosen_root/modules/platform:hilog" ]
 
       if (is_arkui_x) {
+        if(graphic_2d_feature_enable_vulkan) {
+          public_external_deps -= [ "vulkan-headers:vulkan_headers" ]
+        }
         deps += [
           "//third_party/bounds_checking_function:libsec_static",
           "//third_party/skia:skia_$platform",
@@ -461,6 +486,14 @@ if (!is_arkui_x) {
 
     if (platform == "ohos") {
       version_script = "2d_graphics.versionscript"
+    }
+
+    if (is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path)) {
+      ldflags = [ 
+        "-Wl,--emit-relocs",
+        "-Wl,--no-relax", 
+        "-mno-fix-cortex-a53-843419" 
+      ]
     }
 
     part_name = "graphic_2d"

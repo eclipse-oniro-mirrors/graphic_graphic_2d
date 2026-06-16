@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef RS_VPE_MANAGER_H
 #define RS_VPE_MANAGER_H
 
@@ -22,12 +23,14 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSB_EXPORT RSVpeManager {
+class RSVpeManager {
 public:
     RSB_EXPORT static RSVpeManager& GetInstance();
 
     RSB_EXPORT sptr<Surface> CheckAndGetSurface(const sptr<Surface>& surface, const RSSurfaceRenderNodeConfig& config);
     RSB_EXPORT void ReleaseVpeVideo(uint64_t nodeId);
+    RSB_EXPORT void EnableVpeVideo(const RSSurfaceRenderNodeConfig& config);
+    RSB_EXPORT void DisableVpeVideo(const RSSurfaceRenderNodeConfig& config);
 
 private:
     sptr<Surface> GetVpeVideoSurface(uint32_t type, const sptr<Surface>& RSSurface,
@@ -36,7 +39,8 @@ private:
         const RSSurfaceRenderNodeConfig& config);
     bool SetVpeVideoParameter(std::shared_ptr<OHOS::Media::VideoProcessingEngine::VpeVideo> vpeVideo,
         uint32_t type, const RSSurfaceRenderNodeConfig& config);
-    mutable std::mutex vpeVideoLock_{};
+    
+    std::mutex vpeVideoLock_{};
     // Guarded by vpeVideoLock_ begin
     std::unordered_map<uint64_t, std::shared_ptr<OHOS::Media::VideoProcessingEngine::VpeVideo>> allVpeVideo_{};
     // Guarded by vpeVideoLock_ end

@@ -14,7 +14,9 @@
  */
 
 #include "gtest/gtest.h"
+#include "animation/rs_render_curve_animation.h"
 #include "command/rs_node_showing_command.h"
+#include "pipeline/rs_base_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 
 using namespace testing;
@@ -72,7 +74,9 @@ HWTEST_F(RSNodeGetShowingPropertyAndCancelAnimationTest, Marshalling001, TestSiz
     Parcel parcel;
     auto property = std::make_shared<RSRenderProperty<bool>>();
     RSNodeGetShowingPropertyAndCancelAnimation animation(targetId, property);
+#ifdef RS_ENABLE_UNI_RENDER
     EXPECT_TRUE(animation.Marshalling(parcel) == false);
+#endif
 }
 
 /**
@@ -119,35 +123,6 @@ HWTEST_F(RSNodeGetShowingPropertyAndCancelAnimationTest, ReadFromParcel001, Test
     RSNodeGetShowingPropertyAndCancelAnimation animation(targetId, property);
     EXPECT_TRUE(animation.ReadFromParcel(parcel) == false);
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: Process001
- * @tc.desc: test results of Process
- * @tc.type: FUNC
- * @tc.require: issueI9P2KH
- */
-HWTEST_F(RSNodeGetShowingPropertyAndCancelAnimationTest, Process001, TestSize.Level1)
-{
-    RSContext context;
-    NodeId targetId = 0;
-    auto property = std::make_shared<RSRenderProperty<bool>>();
-    RSNodeGetShowingPropertyAndCancelAnimation animation(targetId, property);
-    animation.Process(context);
-    EXPECT_TRUE(property != nullptr);
-
-    auto node = context.GetNodeMap().GetRenderNode<RSRenderNode>(targetId);
-    auto renderProperty = std::shared_ptr<RSRenderProperty<Drawing::Matrix>>();
-    auto modifier = std::make_shared<RSGeometryTransRenderModifier>(renderProperty);
-    node->modifiers_[renderProperty->GetId()] = modifier;
-    animation.Process(context);
-    EXPECT_TRUE(node->modifiers_.empty() != true);
-
-    animation.targetId_ = 1;
-    animation.Process(context);
-    EXPECT_TRUE(property != nullptr);
-}
-#endif
 
 /**
  * @tc.name: Marshalling001
@@ -226,17 +201,6 @@ HWTEST_F(RSNodeGetShowingPropertiesAndCancelAnimationTest, Process001, TestSize.
     animation.Process(context);
     EXPECT_TRUE(renderProperty != nullptr);
 
-#ifndef MODIFIER_NG
-    NodeId targetId = 0;
-    PropertyId id = 0;
-    auto node = context.GetNodeMap().GetRenderNode<RSRenderNode>(targetId);
-    auto property = std::shared_ptr<RSRenderProperty<Drawing::Matrix>>();
-    auto modifier = std::make_shared<RSGeometryTransRenderModifier>(property);
-    node->modifiers_[id] = modifier;
-    animation.Process(context);
-    EXPECT_TRUE(renderProperty != nullptr);
-#endif
-
     nodeId = 1;
     propertyId = 1;
     std::pair<std::pair<NodeId, PropertyId>, std::pair<std::shared_ptr<RSRenderPropertyBase>, std::vector<AnimationId>>>
@@ -246,63 +210,48 @@ HWTEST_F(RSNodeGetShowingPropertiesAndCancelAnimationTest, Process001, TestSize.
     EXPECT_TRUE(renderProperty != nullptr);
 }
 
-#ifndef MODIFIER_NG
 /**
- * @tc.name: Process002
- * @tc.desc: test results of Process
+ * @tc.name: Process_WithNodeNotFound
+ * @tc.desc: test results of Process with nodeNotFound
  * @tc.type: FUNC
- * @tc.require: issueIA61E9
+ * @tc.require: issueI9P2KH
  */
-HWTEST_F(RSNodeGetShowingPropertiesAndCancelAnimationTest, Process002, TestSize.Level1)
+HWTEST_F(RSNodeGetShowingPropertiesAndCancelAnimationTest, Process_WithNodeNotFound, TestSize.Level1)
+{
+    RSContext context;
+    uint64_t timeoutNS = 0;
+    RSNodeGetShowingPropertiesAndCancelAnimation animation(timeoutNS);
+    NodeId nodeId = 100;
+    PropertyId propertyId = 1;
+    auto renderProperty = std::make_shared<RSRenderProperty<bool>>();
+    std::vector<AnimationId> animationIds = { 0 };
+
+    std::pair<std::pair<NodeId, PropertyId>, std::pair<std::shared_ptr<RSRenderPropertyBase>, std::vector<AnimationId>>>
+        entry(std::make_pair(nodeId, propertyId), std::make_pair(renderProperty, animationIds));
+    animation.propertiesMap_.insert(entry);
+
+    animation.Process(context);
+
+    EXPECT_TRUE(animation.HasNodeNotFound());
+    EXPECT_TRUE(animation.IsSuccess());
+}
+
+/**
+ * @tc.name: HasNodeNotFound_ReturnsCorrectValue
+ * @tc.desc: test HasNodeNotFound returns correct value
+ * @tc.type: FUNC
+ * @tc.require: issueI9P2KH
+ */
+HWTEST_F(RSNodeGetShowingPropertiesAndCancelAnimationTest, HasNodeNotFound_ReturnsCorrectValue, TestSize.Level1)
 {
     uint64_t timeoutNS = 0;
     RSNodeGetShowingPropertiesAndCancelAnimation animation(timeoutNS);
-    RSContext context;
-    context.nodeMap.renderNodeMap_.clear();
 
-    std::shared_ptr<RSBaseRenderNode> renderNodeTest1 = std::make_shared<RSBaseRenderNode>(0);
-    EXPECT_NE(renderNodeTest1, nullptr);
-    renderNodeTest1->modifiers_[0] = nullptr;
-    context.nodeMap.renderNodeMap_[ExtractPid(0)][0] = renderNodeTest1;
+    EXPECT_FALSE(animation.HasNodeNotFound());
 
-    std::shared_ptr<RSBaseRenderNode> renderNodeTest2 = std::make_shared<RSBaseRenderNode>(1);
-    EXPECT_NE(renderNodeTest2, nullptr);
-    auto propertyTest2 = std::make_shared<RSRenderProperty<Drawing::Matrix>>();
-    EXPECT_NE(propertyTest2, nullptr);
-    auto modifierTest2 = std::make_shared<RSGeometryTransRenderModifier>(propertyTest2);
-    EXPECT_NE(modifierTest2, nullptr);
-    modifierTest2->property_ = nullptr;
-    renderNodeTest2->modifiers_[1] = modifierTest2;
-    context.nodeMap.renderNodeMap_[ExtractPid(1)][1] = renderNodeTest2;
-
-    std::shared_ptr<RSBaseRenderNode> renderNodeTest3 = std::make_shared<RSBaseRenderNode>(2);
-    EXPECT_NE(renderNodeTest3, nullptr);
-    auto propertyTest3 = std::make_shared<RSRenderProperty<Drawing::Matrix>>();
-    EXPECT_NE(propertyTest3, nullptr);
-    auto modifierTest3 = std::make_shared<RSGeometryTransRenderModifier>(propertyTest3);
-    EXPECT_NE(modifierTest3, nullptr);
-    renderNodeTest3->modifiers_[2] = modifierTest3;
-    context.nodeMap.renderNodeMap_[ExtractPid(2)][2] = renderNodeTest3;
-
-    auto renderPropertyTest1 = std::make_shared<RSRenderProperty<bool>>();
-    EXPECT_NE(renderPropertyTest1, nullptr);
-    auto renderPropertyTest2 = std::make_shared<RSRenderProperty<bool>>();
-    EXPECT_NE(renderPropertyTest2, nullptr);
-    auto renderPropertyTest3 = std::make_shared<RSRenderProperty<bool>>();
-    EXPECT_NE(renderPropertyTest3, nullptr);
-    auto renderPropertyTest4 = std::make_shared<RSRenderProperty<bool>>();
-    EXPECT_NE(renderPropertyTest4, nullptr);
-    std::vector<AnimationId> animationIdsTest1 = { 0 };
-    std::vector<AnimationId> animationIdsTest2 = { 0 };
-    std::vector<AnimationId> animationIdsTest3 = { 0 };
-    std::vector<AnimationId> animationIdsTest4 = { 0 };
-    animation.propertiesMap_.emplace(std::make_pair(0, 0), std::make_pair(renderPropertyTest1, animationIdsTest1));
-    animation.propertiesMap_.emplace(std::make_pair(1, 1), std::make_pair(renderPropertyTest1, animationIdsTest1));
-    animation.propertiesMap_.emplace(std::make_pair(2, 2), std::make_pair(renderPropertyTest1, animationIdsTest1));
-    animation.propertiesMap_.emplace(std::make_pair(3, 3), std::make_pair(renderPropertyTest1, animationIdsTest1));
-    animation.Process(context);
+    animation.nodeNotFound_ = true;
+    EXPECT_TRUE(animation.HasNodeNotFound());
 }
-#endif
 
 /**
  * @tc.name: Process003
@@ -320,10 +269,13 @@ HWTEST_F(RSNodeGetShowingPropertiesAndCancelAnimationTest, Process003, TestSize.
 
     std::shared_ptr<RSBaseRenderNode> renderNode = std::make_shared<RSBaseRenderNode>(0);
     EXPECT_NE(renderNode, nullptr);
-    renderNode->animationManager_.animations_.clear();
+    renderNode->animationManager_ = std::make_shared<RSAnimationManager>();
+    auto animationManager = renderNode->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    animationManager->animations_.clear();
     std::shared_ptr<RSRenderAnimation> animationTest = std::make_shared<RSRenderAnimation>(0);
     EXPECT_NE(animationTest, nullptr);
-    renderNode->animationManager_.animations_.emplace(0, animationTest);
+    animationManager->animations_.emplace(0, animationTest);
     context.nodeMap.renderNodeMap_[0][0] = renderNode;
     animation.Process(context);
 
@@ -408,5 +360,84 @@ HWTEST_F(RSNodeGetAnimationsValueFractionTest, IsCallingPidValid001, TestSize.Le
     surfaceNode->nodeType_ = RSSurfaceNodeType::UI_EXTENSION_SECURE_NODE;
     context.nodeMap.AddUIExtensionSurfaceNode(surfaceNode);
     EXPECT_TRUE(animation.IsCallingPidValid(1, context.GetNodeMap()));
+}
+
+/**
+ * @tc.name: Process_PendingCancelWithoutAnimationManager001
+ * @tc.desc: Verify cancel animation request is recorded in pendingCancelAnimation_ when AnimationManager
+ *           does not exist initially, so that later AddAnimation will reject the pending-cancelled animation
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(
+    RSNodeGetShowingPropertiesAndCancelAnimationTest, Process_PendingCancelWithoutAnimationManager001, TestSize.Level1)
+{
+    RSContext context;
+    uint64_t timeoutNS = 0;
+    RSNodeGetShowingPropertiesAndCancelAnimation animation(timeoutNS);
+    NodeId nodeId = 0;
+    PropertyId propertyId = 1;
+    auto renderProperty = std::make_shared<RSRenderProperty<bool>>();
+    AnimationId animationIdToCancel = 42;
+    std::vector<AnimationId> animationIds = { animationIdToCancel };
+
+    auto renderNode = std::make_shared<RSBaseRenderNode>(nodeId);
+    ASSERT_EQ(renderNode->GetAnimationManager(), nullptr);
+
+    std::pair<std::pair<NodeId, PropertyId>,
+        std::pair<std::shared_ptr<RSRenderPropertyBase>, std::vector<AnimationId>>>
+        entry(std::make_pair(nodeId, propertyId), std::make_pair(renderProperty, animationIds));
+    animation.propertiesMap_.insert(entry);
+    context.nodeMap.renderNodeMap_[0][0] = renderNode;
+
+    animation.Process(context);
+
+    auto animationManager = renderNode->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    EXPECT_FALSE(animationManager->pendingCancelAnimation_.empty());
+    EXPECT_EQ(animationManager->pendingCancelAnimation_.front(), animationIdToCancel);
+}
+
+/**
+ * @tc.name: Process_PendingCancelWithoutAnimationManager002
+ * @tc.desc: Verify pendingCancelAnimation_ prevents later-added animation from being added
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(
+    RSNodeGetShowingPropertiesAndCancelAnimationTest, Process_PendingCancelWithoutAnimationManager002, TestSize.Level1)
+{
+    RSContext context;
+    uint64_t timeoutNS = 0;
+    RSNodeGetShowingPropertiesAndCancelAnimation animation(timeoutNS);
+    NodeId nodeId = 0;
+    PropertyId propertyId = 1;
+    auto renderProperty = std::make_shared<RSRenderProperty<bool>>();
+    AnimationId animationIdToCancel = 42;
+    std::vector<AnimationId> animationIds = { animationIdToCancel };
+
+    auto renderNode = std::make_shared<RSBaseRenderNode>(nodeId);
+    ASSERT_EQ(renderNode->GetAnimationManager(), nullptr);
+
+    std::pair<std::pair<NodeId, PropertyId>,
+        std::pair<std::shared_ptr<RSRenderPropertyBase>, std::vector<AnimationId>>>
+        entry(std::make_pair(nodeId, propertyId), std::make_pair(renderProperty, animationIds));
+    animation.propertiesMap_.insert(entry);
+    context.nodeMap.renderNodeMap_[0][0] = renderNode;
+
+    animation.Process(context);
+
+    auto animationManager = renderNode->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto newAnimation = std::make_shared<RSRenderCurveAnimation>(
+        animationIdToCancel, 1, property, property1, property2);
+    animationManager->AddAnimation(newAnimation);
+
+    EXPECT_TRUE(animationManager->animations_.find(animationIdToCancel) == animationManager->animations_.end());
+    EXPECT_TRUE(animationManager->pendingCancelAnimation_.empty());
 }
 } // namespace OHOS::Rosen

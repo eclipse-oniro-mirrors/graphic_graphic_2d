@@ -24,13 +24,10 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace Drawing {
-class DrawCmdList;
-}
-
 namespace ModifierNG {
 class RSModifierContext;
 }
+
 class RSCanvasRenderNode : public RSRenderNode {
 public:
     using WeakPtr = std::weak_ptr<RSCanvasRenderNode>;
@@ -39,8 +36,8 @@ public:
 
     virtual ~RSCanvasRenderNode();
 
-    void UpdateRecordingNG(std::shared_ptr<Drawing::DrawCmdList> drawCmds,
-        ModifierNG::RSModifierType type, bool isSingleFrameComposer = false);
+    void UpdateRecordingNG(
+        SimpleDrawCmdListPtr drawCmds, ModifierNG::RSModifierType type, bool isSingleFrameComposer = false);
     void ClearRecording();
 
     void ProcessTransitionBeforeChildren(RSPaintFilterCanvas& canvas) override;
@@ -72,12 +69,19 @@ public:
     {
         return hasHdrPresent_;
     }
+    void OnSetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap);
 
     void SetColorGamut(uint32_t colorGamut);
     uint32_t GetColorGamut();
     void ModifyWindowWideColorGamutNum(bool isOnTree, GraphicColorGamut colorGamut);
     void UpdateNodeColorSpace() override;
+    void MarkNodeColorSpace(int8_t colorSpace) override;
 
+    // Temporary for node slimming dump verification, will be removed after slimming merged
+    const RSPaintFilterCanvas::SaveStatus& GetCanvasNodeSaveCount() const
+    {
+        return canvasNodeSaveCount_;
+    }
 protected:
     explicit RSCanvasRenderNode(NodeId id,
         const std::weak_ptr<RSContext>& context = {}, bool isTextureExportNode = false);
@@ -100,6 +104,7 @@ private:
     bool hasHdrPresent_ = false;
     GraphicColorGamut colorGamut_ = GRAPHIC_COLOR_GAMUT_SRGB;
     NodeId preDisplayNodeId_ = INVALID_NODEID;
+    NodeId preScreenNodeId_ = INVALID_NODEID;
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -15,8 +15,13 @@
 
 #include "text/typeface.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #ifdef ENABLE_OHOS_ENHANCE
 #include "ashmem.h"
+#include <sys/mman.h>
+#include <sys/stat.h>
 #endif
 #include "static_factory.h"
 
@@ -26,6 +31,7 @@
 
 #ifdef USE_M133_SKIA
 #include "src/core/SkChecksum.h"
+#include "include/core/SkGraphics.h"
 #else
 #include "src/core/SkOpts.h"
 #endif
@@ -33,7 +39,62 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+static const int MAX_CHUNK_SIZE = 20000;
+MappedFile::MappedFile(const std::string& path)
+{
+#ifdef ENABLE_OHOS_ENHANCE
+    char realPath[PATH_MAX] = {0};
+    if (realpath(path.c_str(), realPath) == nullptr) {
+        LOGE("Invalid filePath, file path is %{public}s.", path.c_str());
+        return;
+    }
+    fd = open(realPath, O_RDONLY);
+    if (fd < 0) {
+        LOGE("Map file failed, file path is %{public}s.", path.c_str());
+        return;
+    }
+
+    struct stat st {};
+    if (fstat(fd, &st) < 0) {
+        LOGE("Map file fstat failed, file path is %{public}s.", path.c_str());
+        close(fd);
+        fd = -1;
+        return;
+    }
+    size = static_cast<size_t>(st.st_size);
+
+    void* ptr = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (ptr == MAP_FAILED) {
+        LOGE("Map file mmap failed, file path is %{public}s.", path.c_str());
+        close(fd);
+        fd = -1;
+        return;
+    }
+    data = ptr;
+#endif
+}
+
+MappedFile::~MappedFile()
+{
+#ifdef ENABLE_OHOS_ENHANCE
+    if (data != nullptr && data != MAP_FAILED) {
+        munmap(const_cast<void*>(data), size);
+    }
+    if (fd >= 0) {
+        close(fd);
+    }
+#endif
+}
 Typeface::Typeface(std::shared_ptr<TypefaceImpl> typefaceImpl) noexcept : typefaceImpl_(typefaceImpl) {}
+
+Typeface::~Typeface()
+{
+#ifdef USE_M133_SKIA
+    if (typefaceImpl_) {
+        SkGraphics::RemoveCacheByUniqueId(typefaceImpl_->GetUniqueID());
+    }
+#endif
+}
 
 std::shared_ptr<Typeface> Typeface::MakeDefault()
 {
@@ -123,7 +184,7 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(int32_t fd, uint32_t size, ui
     }
     tf->SetHash(hash);
     tf->SetSize(size);
-    tf->index_ = fontArguments.GetCollectionIndex();
+    tf->index_ = static_cast<uint32_t>(fontArguments.GetCollectionIndex());
     return tf;
 #else
     return nullptr;
@@ -174,7 +235,8 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     const uint8_t* data, uint32_t size, uint32_t hash, const std::string& name, uint32_t index)
 {
 #ifdef ENABLE_OHOS_ENHANCE
-    int32_t fd = OHOS::AshmemCreate(name.c_str(), size);
+    std::string ashmemName = name + "[custom font]";
+    int32_t fd = OHOS::AshmemCreate(ashmemName.c_str(), size);
     auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadAndWriteAshmem();
     bool writeResult = ashmem->WriteToAshmem(data, size, 0);
@@ -198,7 +260,8 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     tf->index_ = index;
     return tf;
 #else
-    return nullptr;
+    auto stream = std::make_unique<MemoryStream>(data, size, true);
+    return Typeface::MakeFromStream(std::move(stream), index);
 #endif
 }
 
@@ -206,7 +269,7 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     const uint8_t* data, uint32_t size, uint32_t hash, const std::string& name, const FontArguments& fontArguments)
 {
 #ifdef ENABLE_OHOS_ENHANCE
-    std::string ashmemName = name + "[cunstom font]";
+    std::string ashmemName = name + "[custom font]";
     int32_t fd = OHOS::AshmemCreate(ashmemName.c_str(), size);
     auto ashmem = std::make_unique<Ashmem>(fd, size);
     bool mapResult = ashmem->MapReadAndWriteAshmem();
@@ -228,10 +291,11 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(
     }
     tf->SetHash(hash);
     tf->SetSize(size);
-    tf->index_ = fontArguments.GetCollectionIndex();
+    tf->index_ = static_cast<uint32_t>(fontArguments.GetCollectionIndex());
     return tf;
 #else
-    return nullptr;
+    auto stream = std::make_unique<MemoryStream>(data, size, true);
+    return Typeface::MakeFromStream(std::move(stream), fontArguments);
 #endif
 }
 
@@ -255,7 +319,32 @@ std::shared_ptr<Typeface> Typeface::MakeFromAshmem(std::unique_ptr<MemoryStream>
     tf->index_ = index;
     return tf;
 #else
-    return nullptr;
+    return Typeface::MakeFromStream(std::move(memoryStream), index);
+#endif
+}
+
+std::shared_ptr<Typeface> Typeface::MakeFromAshmem(std::unique_ptr<MemoryStream> memoryStream,
+    const FontArguments& fontArguments)
+{
+#ifdef ENABLE_OHOS_ENHANCE
+    size_t size = 0;
+    const void* data = nullptr;
+    int32_t fd;
+    std::unique_ptr<MemoryStream> stream = StaticFactory::GenerateAshMemoryStream(
+        std::move(memoryStream), data, size, fd);
+    auto tf = Typeface::MakeFromStream(std::move(stream), fontArguments);
+    if (tf == nullptr) {
+        LOGE("Typeface::MakeFromAshmem: typeface is nullptr");
+        return nullptr;
+    }
+    tf->SetFd(fd);
+    uint32_t hash = CalculateHash(static_cast<const uint8_t*>(data), size, fontArguments.GetCollectionIndex());
+    tf->SetHash(hash);
+    tf->SetSize(size);
+    tf->index_ = static_cast<uint32_t>(fontArguments.GetCollectionIndex());
+    return tf;
+#else
+    return Typeface::MakeFromStream(std::move(memoryStream), fontArguments);
 #endif
 }
 
@@ -264,6 +353,7 @@ std::shared_ptr<Typeface> Typeface::MakeFromName(const char familyName[], FontSt
     return StaticFactory::MakeFromName(familyName, fontStyle);
 }
 
+// LCOV_EXCL_START
 std::string Typeface::GetFamilyName() const
 {
     if (typefaceImpl_) {
@@ -271,6 +361,7 @@ std::string Typeface::GetFamilyName() const
     }
     return std::string();
 }
+// LCOV_EXCL_STOP
 
 std::string Typeface::GetFontPath() const
 {
@@ -284,6 +375,7 @@ std::int32_t Typeface::GetFontIndex() const
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 FontStyle Typeface::GetFontStyle() const
 {
     if (typefaceImpl_) {
@@ -291,6 +383,7 @@ FontStyle Typeface::GetFontStyle() const
     }
     return FontStyle();
 }
+// LCOV_EXCL_STOP
 
 size_t Typeface::GetTableSize(uint32_t tag) const
 {
@@ -308,6 +401,7 @@ size_t Typeface::GetTableData(uint32_t tag, size_t offset, size_t length, void* 
     return 0;
 }
 
+// LCOV_EXCL_START
 bool Typeface::GetBold() const
 {
     if (typefaceImpl_) {
@@ -315,7 +409,9 @@ bool Typeface::GetBold() const
     }
     return false;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool Typeface::GetItalic() const
 {
     if (typefaceImpl_) {
@@ -323,6 +419,27 @@ bool Typeface::GetItalic() const
     }
     return false;
 }
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
+bool Typeface::GetMonospace() const
+{
+    if (typefaceImpl_) {
+        return typefaceImpl_->GetMonospace();
+    }
+    return false;
+}
+// LCOV_EXCL_STOP
+
+// LCOV_EXCL_START
+bool Typeface::IsColored() const
+{
+    if (typefaceImpl_) {
+        return typefaceImpl_->IsColored();
+    }
+    return false;
+}
+// LCOV_EXCL_STOP
 
 uint32_t Typeface::GetUniqueID() const
 {
@@ -356,12 +473,26 @@ bool Typeface::IsCustomTypeface() const
     return false;
 }
 
+void Typeface::SetIsCustomTypeface(bool isCustom)
+{
+    if (typefaceImpl_) {
+        typefaceImpl_->SetIsCustomTypeface(isCustom);
+    }
+}
+
 bool Typeface::IsThemeTypeface() const
 {
     if (typefaceImpl_) {
         return typefaceImpl_->IsThemeTypeface();
     }
     return false;
+}
+
+void Typeface::SetIsThemeTypeface(bool isTheme)
+{
+    if (typefaceImpl_) {
+        typefaceImpl_->SetIsThemeTypeface(isTheme);
+    }
 }
 
 std::shared_ptr<Data> Typeface::Serialize() const
@@ -381,26 +512,36 @@ std::shared_ptr<Typeface> Typeface::Deserialize(const void* data, size_t size)
     return typeface;
 }
 
-TypefaceRegisterCallback Typeface::registerTypefaceCallBack_ = nullptr;
+static TypefaceRegisterCallback& GetRegisterCallBackHolder()
+{
+    static TypefaceRegisterCallback callback = nullptr;
+    return callback;
+}
+
+static GetByUniqueIdCallback& GetUniqueIdCallBackHolder()
+{
+    static GetByUniqueIdCallback callback = nullptr;
+    return callback;
+}
+
 void Typeface::RegisterCallBackFunc(TypefaceRegisterCallback func)
 {
-    registerTypefaceCallBack_ = func;
+    GetRegisterCallBackHolder() = func;
 }
 
 TypefaceRegisterCallback& Typeface::GetTypefaceRegisterCallBack()
 {
-    return registerTypefaceCallBack_;
+    return GetRegisterCallBackHolder();
 }
 
-std::function<std::shared_ptr<Typeface>(uint64_t)> Typeface::uniqueIdCallBack_ = nullptr;
 void Typeface::RegisterUniqueIdCallBack(std::function<std::shared_ptr<Typeface>(uint64_t)> cb)
 {
-    uniqueIdCallBack_ = cb;
+    GetUniqueIdCallBackHolder() = cb;
 }
 
-std::function<std::shared_ptr<Typeface>(uint64_t)> Typeface::GetUniqueIdCallBack()
+GetByUniqueIdCallback Typeface::GetUniqueIdCallBack()
 {
-    return uniqueIdCallBack_;
+    return GetUniqueIdCallBackHolder();
 }
 
 uint32_t Typeface::GetHash() const
@@ -418,6 +559,7 @@ void Typeface::SetHash(uint32_t hash)
     }
 }
 
+// LCOV_EXCL_START
 uint32_t Typeface::GetSize()
 {
     if (size_ != 0) {
@@ -433,6 +575,7 @@ uint32_t Typeface::GetSize()
     size_ = data->GetSize();
     return size_;
 }
+// LCOV_EXCL_STOP
 
 void Typeface::SetSize(uint32_t size)
 {
@@ -511,7 +654,6 @@ uint32_t Typeface::CalculateHash(const uint8_t* data, size_t datalen, uint32_t i
             }
         }
         size_t size = extraOffset + STATIC_HEADER_LEN;
-        // prevent reading beyond the data length
         if (datalen >= extraOffset + TABLE_COUNT + sizeof(uint16_t)) {
             size += TABLE_ENTRY_LEN * read<uint16_t>(data + extraOffset + TABLE_COUNT);
         }
@@ -524,6 +666,38 @@ uint32_t Typeface::CalculateHash(const uint8_t* data, size_t datalen, uint32_t i
     }
     return hash + index;
 }
+
+uint32_t Typeface::CalculateFontArgsHash(const FontArguments::VariationPosition& coords)
+{
+    if (coords.coordinateCount <= 0 || coords.coordinates == nullptr) {
+        return 0;
+    }
+
+    size_t size = coords.coordinateCount * (sizeof(Drawing::FontArguments::VariationPosition::Coordinate));
+#ifdef USE_M133_SKIA
+    return SkChecksum::Hash32(coords.coordinates, std::min(size, static_cast<size_t>(MAX_CHUNK_SIZE)));
+#else
+    return SkOpts::hash_fn(coords.coordinates, std::min(size, static_cast<size_t>(MAX_CHUNK_SIZE)), 0);
+#endif
+}
+
+uint64_t Typeface::AssembleFullHash(uint32_t fontArgsHash, uint32_t baseHash)
+{
+    uint64_t fontArgsHash64 = static_cast<uint64_t>(fontArgsHash) << 32;
+    return (fontArgsHash64 | baseHash);
+}
+
+void Typeface::SetFullHash(uint64_t fullHash)
+{
+    fullHash_ = fullHash;
+}
+
+// LCOV_EXCL_START
+uint64_t Typeface::GetFullHash() const
+{
+    return fullHash_;
+}
+// LCOV_EXCL_STOP
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

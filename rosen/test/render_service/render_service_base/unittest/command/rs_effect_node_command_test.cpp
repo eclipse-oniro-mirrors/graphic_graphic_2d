@@ -16,6 +16,8 @@
 #include "gtest/gtest.h"
 
 #include "command/rs_effect_node_command.h"
+#include "common/rs_common_def.h"
+#include "pipeline/rs_effect_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -47,6 +49,5 @@ HWTEST_F(EffectNodeCommandTest, Create, TestSize.Level1)
     EffectNodeCommandHelper::Create(context, nodeId);
     EXPECT_TRUE(nodeId != -1);
 }
-
 } // namespace Rosen
 } // namespace OHOS

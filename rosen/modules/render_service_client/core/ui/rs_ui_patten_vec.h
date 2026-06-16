@@ -15,35 +15,12 @@
 #ifndef RENDER_SERVICE_UI_PATTEN_VEC_H
 #define RENDER_SERVICE_UI_PATTEN_VEC_H
 
+#include <string>
+
 namespace OHOS {
 namespace Rosen {
-// subtree parallel judgment conditions vec
-static const std::set<std::string> g_rbPattenVec = {
-    "GridItem",
-    "Grid",
-    "GridCol",
-    "Column",
-    "Row",
-    "ListItemGroup",
-    "ArcListItem",
-    "ListItem",
-    "List",
-    "NodeContainer",
-    "RelativeContainer",
-    "Stack",
-    "Swiper",
-    "FlowItem",
-    "WaterFlow",
-    "Scroll",
-    "TabBar",
-    "Custom",
-    "__Common__"
-};
 
-inline bool CheckRbPatten(const std::string& tag)
-{
-    return g_rbPattenVec.find(tag) != g_rbPattenVec.end();
-}
+bool CheckRbPatten(const std::string& tag);
 
 } // namespace Rosen
 } // namespace OHOS

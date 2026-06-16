@@ -26,13 +26,13 @@
 #include "pipeline/rs_dirty_region_manager.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_draw_cmd_list.h"
-#include "pipeline/rs_occlusion_config.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "pipeline/rs_draw_cmd.h"
+#include "pipeline/rs_simple_draw_cmd_list.h"
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/sk_resource_manager.h"
 
@@ -46,7 +46,6 @@ size_t g_pos;
 uint32_t g_gcLevelLow = 30;
 uint32_t g_gcLevelMid = 100;
 uint32_t g_gcLevelHig = 700;
-constexpr size_t STR_LEN = 10;
 } // namespace
 
 /*
@@ -106,7 +105,7 @@ bool RSBaseRenderNodeFuzzTest(const uint8_t* data, size_t size)
     NodeId id = GetData<NodeId>();
     std::shared_ptr<RSContext> context = std::make_shared<RSContext>();
     bool isOnTheTree = GetData<bool>();
-    RSBaseRenderNode::SharedPtr child = std::make_shared<RSCanvasRenderNode>(id, context);
+    auto child = std::make_shared<RSSurfaceRenderNode>(id, context);
     int index = GetData<int>();
     bool skipTransition = GetData<bool>();
     std::vector<RSBaseRenderNode::SharedPtr> vec = { child };
@@ -120,6 +119,7 @@ bool RSBaseRenderNodeFuzzTest(const uint8_t* data, size_t size)
     int width = GetData<int>();
     int height = GetData<int>();
     int64_t leftDelayTime = GetData<int64_t>();
+    int64_t nextFrameTime = 0;
     RectI r(left, top, width, height);
 
     // test
@@ -131,7 +131,7 @@ bool RSBaseRenderNodeFuzzTest(const uint8_t* data, size_t size)
     node->AddCrossParentChild(child, index);
     node->CollectSurface(child, vec, isUniRender, false);
     node->SetIsOnTheTree(flag);
-    node->Animate(timestamp, leftDelayTime);
+    node->Animate(timestamp, leftDelayTime, nextFrameTime);
     node->SetIsOnTheTree(flag);
     node->HasDisappearingTransition(recursive);
     node->SetTunnelHandleChange(change);
@@ -179,7 +179,8 @@ bool RSCanvasRenderNodeFuzzTest(const uint8_t* data, size_t size)
     RSCanvasRenderNode node(id);
 
     // test
-    node.UpdateRecordingNG(drawCmds, type);
+    auto simpleCmdList = RSSimpleDrawCmdList::CreateFromDrawCmdList(drawCmds);
+    node.UpdateRecordingNG(simpleCmdList, type);
     node.ProcessRenderBeforeChildren(canvas);
     node.ProcessRenderContents(canvas);
     node.ProcessRenderAfterChildren(canvas);
@@ -236,7 +237,7 @@ bool RSDirtyRegionManagerFuzzTest(const uint8_t* data, size_t size)
     return true;
 }
 
-bool RSScreenRenderParamsNodeFuzzTest(const uint8_t* data, size_t size)
+bool RSScreenRenderNodeFuzzTest(const uint8_t* data, size_t size)
 {
     if (data == nullptr) {
         return false;
@@ -294,22 +295,6 @@ bool RSDrawCmdListFuzzTest(const uint8_t* data, size_t size)
         { &drawBuffer, sizeof(DrawBuffer) }, true);
     list->Playback(drCanvas, &rect);
     list->Playback(canvas, &rect);
-    return true;
-}
-
-bool RSOcclusionConfigFuzzTest(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
-    }
-
-    RSOcclusionConfig config = RSOcclusionConfig::GetInstance();
-    std::string win = GetStringFromData(STR_LEN);
-    config.IsLeashWindow(win);
-    config.IsStartingWindow(win);
-    config.IsAlphaWindow(win);
-    config.IsDividerBar(win);
-
     return true;
 }
 
@@ -412,8 +397,6 @@ bool RSRenderNodeMapFuzzerTest(const uint8_t* data, size_t size)
 
     pid_t pidnew = GetData<pid_t>();
     nodeMap->GetSelfDrawingNodeInProcess(pidnew);
-    nodeMap->GetSelfDrawSurfaceNameByPid(pidnew);
-
     return true;
 }
 
@@ -473,9 +456,9 @@ bool RSSurfaceHandleFuzzerTest(const uint8_t* data, size_t size)
     sptr<SurfaceBuffer> surfaceBuffer;
     sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
     buffer.buffer = surfaceBuffer;
-    surfaceHandler->SetBuffer(surfaceBuffer, acquireFence, damage, timestamp);
+    surfaceHandler->SetBuffer(surfaceBuffer, acquireFence, damage, timestamp, nullptr);
     surfaceHandler->ConsumeAndUpdateBufferInner(buffer);
-    surfaceHandler->UpdateBuffer(surfaceBuffer, acquireFence, damage, timestamp);
+    surfaceHandler->UpdateBuffer(surfaceBuffer, acquireFence, damage, timestamp, nullptr);
     return true;
 }
 
@@ -503,9 +486,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::RSContextFuzzTest(data, size);
     OHOS::Rosen::RSCanvasRenderNodeFuzzTest(data, size);
     OHOS::Rosen::RSDirtyRegionManagerFuzzTest(data, size);
-    OHOS::Rosen::RSScreenRenderParamsNodeFuzzTest(data, size);
+    OHOS::Rosen::RSScreenRenderNodeFuzzTest(data, size);
     OHOS::Rosen::RSDrawCmdListFuzzTest(data, size);
-    OHOS::Rosen::RSOcclusionConfigFuzzTest(data, size);
 
     OHOS::Rosen::RSContextFuzzerTest(data, size);
     OHOS::Rosen::RSRenderNodeGcFuzzerTest(data, size);

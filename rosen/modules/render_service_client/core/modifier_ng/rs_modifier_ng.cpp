@@ -121,6 +121,7 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::COLOR_BLEND, ThresholdType::COLOR },
     { RSPropertyType::PARTICLE, ThresholdType::ZERO },
     { RSPropertyType::SHADOW_IS_FILLED, ThresholdType::ZERO },
+    { RSPropertyType::SHADOW_DISABLE_SDF_BLUR, ThresholdType::ZERO },
     { RSPropertyType::OUTLINE_COLOR, ThresholdType::COLOR },
     { RSPropertyType::OUTLINE_WIDTH, ThresholdType::LAYOUT },
     { RSPropertyType::OUTLINE_STYLE, ThresholdType::ZERO },
@@ -145,7 +146,6 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::FLY_OUT_PARAMS, ThresholdType::ZERO },
     { RSPropertyType::DISTORTION_K, ThresholdType::COARSE },
     { RSPropertyType::DYNAMIC_DIM_DEGREE, ThresholdType::COARSE },
-    { RSPropertyType::MAGNIFIER_PARA, ThresholdType::ZERO },
     { RSPropertyType::BACKGROUND_BLUR_RADIUS, ThresholdType::COARSE },
     { RSPropertyType::BACKGROUND_BLUR_SATURATION, ThresholdType::COARSE },
     { RSPropertyType::BACKGROUND_BLUR_BRIGHTNESS, ThresholdType::COARSE },
@@ -178,14 +178,18 @@ static const std::unordered_map<RSPropertyType, ThresholdType> g_propertyTypeToT
     { RSPropertyType::HDR_BRIGHTNESS, ThresholdType::DEFAULT },
     { RSPropertyType::HDR_UI_BRIGHTNESS, ThresholdType::COARSE },
     { RSPropertyType::HDR_BRIGHTNESS_FACTOR, ThresholdType::COARSE },
+    { RSPropertyType::HDR_COLOR_HEADROOM, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS, ThresholdType::COARSE },
     { RSPropertyType::BEHIND_WINDOW_FILTER_MASK_COLOR, ThresholdType::COARSE },
     { RSPropertyType::SHADOW_BLENDER_PARAMS, ThresholdType::ZERO },
-    { RSPropertyType::COLOR_PICKER_PLACEHOLDER, ThresholdType::DEFAULT },
-    { RSPropertyType::COLOR_PICKER_STRATEGY, ThresholdType::DEFAULT },
-    { RSPropertyType::COLOR_PICKER_INTERVAL, ThresholdType::COARSE },
+    { RSPropertyType::HDR_DARKEN_BLENDER_PARAMS, ThresholdType::ZERO },
+    { RSPropertyType::COLOR_PICKER_PLACEHOLDER, ThresholdType::ZERO },
+    { RSPropertyType::COLOR_PICKER_STRATEGY, ThresholdType::ZERO },
+    { RSPropertyType::COLOR_PICKER_INTERVAL, ThresholdType::ZERO },
+    { RSPropertyType::COLOR_PICKER_NOTIFY_THRESHOLD, ThresholdType::ZERO },
+    { RSPropertyType::COLOR_ADAPTIVE, ThresholdType::ZERO },
     { RSPropertyType::CHILDREN, ThresholdType::DEFAULT }
 };
 
@@ -339,6 +343,7 @@ std::shared_ptr<RSRenderModifier> RSModifier::CreateRenderModifier() const
     }
     auto renderModifier = constructor();
     renderModifier->id_ = id_;
+    renderModifier->SetDeduplicationEnabled(IsDeduplicationEnabled());
     for (auto& [type, property] : properties_) {
         if (property == nullptr) {
             RS_LOGE("RSModifier::CreateRenderModifier property is null! type: %{public}d", static_cast<int32_t>(type));

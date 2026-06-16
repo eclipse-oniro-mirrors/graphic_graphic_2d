@@ -29,12 +29,20 @@ namespace OHOS {
 
 
 #define HGM_CPRINTF(func, fmt, ...) \
-    HILOG_IMPL(LOG_CORE, func, 0xD001407, "graphic_2d_hgm", "<%{public}d>%{public}s: " fmt, \
-        __LINE__, __func__, ##__VA_ARGS__)
+    HILOG_IMPL(LOG_CORE, func, 0xD001407, "hgm", "%{public}s " fmt, __func__, ##__VA_ARGS__)
 
 #define HGM_LOGD(fmt, ...) HGM_CPRINTF(LOG_DEBUG, fmt, ##__VA_ARGS__)
 #define HGM_LOGI(fmt, ...) HGM_CPRINTF(LOG_INFO, fmt, ##__VA_ARGS__)
 #define HGM_LOGW(fmt, ...) HGM_CPRINTF(LOG_WARN, fmt, ##__VA_ARGS__)
 #define HGM_LOGE(fmt, ...) HGM_CPRINTF(LOG_ERROR, fmt, ##__VA_ARGS__)
+
+#define CONDITION(cond)     (__builtin_expect((cond) != 0, 0))
+
+#ifndef HGM_LOGD_IF
+#define HGM_LOGD_IF(cond, fmt, ...) \
+    ( (CONDITION(cond)) \
+    ? ((void)HGM_CPRINTF(LOG_DEBUG, fmt, ##__VA_ARGS__)) \
+    : (void)0)
+#endif
 } // namespace OHOS
 #endif // HGM_CONFIG_LOG_H

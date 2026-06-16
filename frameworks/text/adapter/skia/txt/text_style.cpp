@@ -53,12 +53,12 @@ const std::vector<std::pair<std::string, int>>& FontFeatures::GetFontFeatures() 
     return features_;
 }
 
-void FontVariations::SetAxisValue(std::string tag, float value)
+void FontVariations::SetAxisValue(std::string tag, float value, bool isNormalization)
 {
-    axis_[tag] = value;
+    axis_[tag] = {value, isNormalization};
 }
 
-const std::map<std::string, float>& FontVariations::GetAxisValues() const
+const std::map<std::string, std::pair<float, bool>>& FontVariations::GetAxisValues() const
 {
     return axis_;
 }
@@ -116,7 +116,25 @@ bool TextStyle::operator==(TextStyle const& other) const
         skt::nearlyEqual(maxLineHeight, other.maxLineHeight) &&
         skt::nearlyEqual(minLineHeight, other.minLineHeight) &&
         lineHeightStyle == other.lineHeightStyle &&
-        badgeType == other.badgeType;
+        badgeType == other.badgeType &&
+        fontEdging == other.fontEdging &&
+        isFakeBoldEnabled == other.isFakeBoldEnabled &&
+        fontTypefaces == other.fontTypefaces;
+}
+
+bool TextStyle::operator!=(TextStyle const& other) const
+{
+    return !(*this == other);
+}
+
+void TextStyle::SetFontTypefaces(const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces)
+{
+    fontTypefaces = typefaces;
+}
+
+const std::vector<std::shared_ptr<Drawing::Typeface>>& TextStyle::GetFontTypefaces() const
+{
+    return fontTypefaces;
 }
 } // namespace SPText
 } // namespace Rosen

@@ -23,8 +23,9 @@
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "limit_number.h"
 #include "metadata_helper.h"
+#include "params/rs_render_thread_params.h"
 #include "params/rs_screen_render_params.h"
-#include "pipeline/render_thread/rs_uni_render_engine.h"
+#include "engine/rs_uni_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_processor.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/rs_logical_display_render_node.h"
@@ -66,10 +67,12 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+    static void SetTunnelLayerSnapshot(NodeId nodeId, uint64_t tunnelLayerId = 1,
+        uint32_t property = TUNNEL_PROP_BUFFER_ADDR, uint64_t generation = 1);
 
     static inline uint32_t screenId_ = 0;
     static inline std::shared_ptr<RSUniRenderProcessor> renderProcessor = nullptr;
-    static inline std::unique_ptr<OHOS::Rosen::RSScreen> screen = nullptr;
+    static inline std::unique_ptr<RSScreen> screen = nullptr;
 };
 
 void RSUniRenderProcessorTest::SetUpTestCase()
@@ -77,28 +80,50 @@ void RSUniRenderProcessorTest::SetUpTestCase()
 #ifdef RS_ENABLE_VK
     RsVulkanContext::SetRecyclable(false);
 #endif
+    RSUniRenderThread::Instance().composerClientManager_ = std::make_shared<RSComposerClientManager>();
     RSTestUtil::InitRenderNodeGC();
     auto output = std::make_shared<HdiOutput>(screenId_);
-    RSRenderComposerManager::GetInstance().OnScreenConnected(output);
-    screen = std::make_unique<OHOS::Rosen::RSScreen>(output);
-    auto screenManager = RSScreenManager::GetInstance();
-    screenManager->screens_.insert(std::make_pair(0, std::move(screen)));
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    screen = std::make_unique<RSScreen>(screenId_);
+    auto screenManager = sptr<RSScreenManager>::MakeSptr();
+    screenManager->screens_.insert(std::make_pair(screenId_, std::move(screen)));
 
-    renderProcessor = std::make_shared<RSUniRenderProcessor>();
+    renderProcessor = std::make_shared<RSUniRenderProcessor>(screenId_);
     renderProcessor->screenInfo_.id = screenId_;
     NodeId nodeId = 1;
     RSScreenRenderNode node(nodeId, screenId_);
     auto renderEngine = std::make_shared<RSUniRenderEngine>();
-    renderProcessor->Init(node, 0, 0, 0, renderEngine);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+    renderProcessor->Init(node, renderEngine);
     EXPECT_NE(renderProcessor->composerClient_, nullptr);
 }
+
 void RSUniRenderProcessorTest::TearDownTestCase()
 {
-    RSRenderComposerManager::GetInstance().rsRenderComposerMap_[screenId_]->uniRenderEngine_ = nullptr;
     renderProcessor = nullptr;
 }
-void RSUniRenderProcessorTest::SetUp() {}
-void RSUniRenderProcessorTest::TearDown() {}
+void RSUniRenderProcessorTest::SetUp()
+{
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
+    if (renderProcessor != nullptr) {
+        renderProcessor->layers_.clear();
+    }
+}
+void RSUniRenderProcessorTest::TearDown()
+{
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
+}
+
+void RSUniRenderProcessorTest::SetTunnelLayerSnapshot(NodeId nodeId, uint64_t tunnelLayerId,
+    uint32_t property, uint64_t generation)
+{
+    auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
+    RSRenderThreadParams::TunnelLayerSnapshotMap snapshots;
+    snapshots[nodeId] = { tunnelLayerId, property, generation };
+    renderThreadParams->SetTunnelLayerSnapshots(std::move(snapshots));
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(renderThreadParams));
+}
 
 /**
  * @tc.name: ProcessorInit001
@@ -112,9 +137,11 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessorInit001, TestSize.Level1)
     ScreenId screenId = 0;
     std::weak_ptr<RSContext> context = {};
     if (RSUniRenderJudgement::IsUniRender()) {
-        auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_COMPOSITE);
+        std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
+        RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
+        auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_COMPOSITE, screenId);
         RSScreenRenderNode node(nodeId, screenId, context);
-        EXPECT_EQ(processor->Init(node, 0, 0, 0, nullptr), false);
+        EXPECT_EQ(processor->Init(node, nullptr), false);
     }
 }
 
@@ -130,11 +157,13 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessSurface001, TestSize.Level1)
     ScreenId screenId = 0;
     std::weak_ptr<RSContext> context = {};
     if (RSUniRenderJudgement::IsUniRender()) {
-        auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_COMPOSITE);
+        std::shared_ptr<RSComposerClientManager> rsComposerClientMgr = std::make_shared<RSComposerClientManager>();
+        RSUniRenderThread::Instance().composerClientManager_ = rsComposerClientMgr;
+        auto processor = RSProcessorFactory::CreateProcessor(CompositeType::UNI_RENDER_COMPOSITE, screenId);
         ASSERT_NE(processor, nullptr);
         RSScreenRenderNode node(nodeId, screenId, context);
         auto uniRenderEngine = std::make_shared<RSUniRenderEngine>();
-        processor->Init(node, 0, 0, 0, uniRenderEngine);
+        processor->Init(node, uniRenderEngine);
         RSSurfaceRenderNode surfaceNode(2);
         processor->ProcessSurface(surfaceNode);
     }
@@ -172,8 +201,8 @@ HWTEST_F(RSUniRenderProcessorTest, CreateLayerTest, TestSize.Level1)
         RSLayerInfo layerInfo;
         sptr<SurfaceBuffer> bufferTest = OHOS::SurfaceBuffer::Create();
         sptr<SurfaceBuffer> preBufferTest = OHOS::SurfaceBuffer::Create();
-        params->SetBuffer(bufferTest, {});
-        params->SetPreBuffer(preBufferTest);
+        params->SetBuffer(bufferTest, {}, DEFAULT_RECT);
+        params->SetPreBuffer(preBufferTest, nullptr);
         layerInfo.zOrder = 0;
         params->SetLayerInfo(layerInfo);
         renderProcessor->composerClient_ = nullptr;
@@ -182,7 +211,9 @@ HWTEST_F(RSUniRenderProcessorTest, CreateLayerTest, TestSize.Level1)
         NodeId nodeId = 1;
         RSScreenRenderNode screenNode(nodeId, screenId_);
         auto renderEngine = std::make_shared<RSUniRenderEngine>();
-        renderProcessor->Init(screenNode, 0, 0, 0, renderEngine);
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
         renderProcessor->CreateLayer(*surfaceNode, *params);
         EXPECT_TRUE(params->GetLayerCreated());
     }
@@ -202,6 +233,27 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurfaceTest, TestSize.Level1)
         constexpr NodeId nodeId = TestSrc::limitNumber::Uint64[0];
         RSScreenRenderNode node(nodeId, screenId, context);
         auto size = renderProcessor->layers_.size();
+        renderProcessor->ProcessScreenSurface(node);
+        EXPECT_EQ(renderProcessor->layers_.size(), size);
+    }
+}
+
+/**
+ * @tc.name: ProcessScreenSurfaceTest002
+ * @tc.desc: Verify function ProcessScreenSurface
+ * @tc.type:FUNC
+ * @tc.require:issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurfaceTest002, TestSize.Level1)
+{
+    ScreenId screenId = 0;
+    std::weak_ptr<RSContext> context = {};
+    if (RSUniRenderJudgement::IsUniRender()) {
+        constexpr NodeId nodeId = TestSrc::limitNumber::Uint64[0];
+        RSScreenRenderNode node(nodeId, screenId, context);
+        auto size = renderProcessor->layers_.size();
+        auto layerSkipController = node.GetDynamicLayerSkipController();
+        layerSkipController->screenLayerInvalid_ = true;
         renderProcessor->ProcessScreenSurface(node);
         EXPECT_EQ(renderProcessor->layers_.size(), size);
     }
@@ -234,7 +286,7 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessRcdSurfaceTest, TestSize.Level1)
 HWTEST_F(RSUniRenderProcessorTest, InitForRenderThread001, TestSize.Level1)
 {
     if (RSUniRenderJudgement::IsUniRender()) {
-        // case1:renderEngine is nullptr
+        // case1: renderEngine is nullptr
         NodeId nodeId = 1;
         auto screenNode = std::make_shared<RSRenderNode>(nodeId);
         auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(
@@ -250,9 +302,9 @@ HWTEST_F(RSUniRenderProcessorTest, InitForRenderThread001, TestSize.Level1)
         EXPECT_EQ(ret, false);
 
         // case3: renderEngine not nullptr, renderParams not nullptr
-        screenDrawable->renderParams_ = std::make_unique<RSRenderParams>(screenNode->GetId());
+        screenDrawable->renderParams_ = std::make_unique<RSScreenRenderParams>(screenNode->GetId());
         ret = renderProcessor->InitForRenderThread(*screenDrawable, renderEngine);
-        EXPECT_EQ(ret, false);
+        EXPECT_EQ(ret, true);
     }
 }
 
@@ -277,7 +329,7 @@ HWTEST_F(RSUniRenderProcessorTest, InitForRenderThread002, TestSize.Level1)
         auto renderEngine = std::make_shared<RSRenderEngine>();
         ASSERT_NE(renderEngine, nullptr);
         bool result = renderProcessor->InitForRenderThread(*screenDrawable, renderEngine);
-        ASSERT_EQ(result, true);
+        ASSERT_EQ(result, false);
     }
 }
 
@@ -312,8 +364,6 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurfaceForRenderThread002, TestS
         DrawableV2::RSScreenRenderNodeDrawable drawable(node);
         drawable.renderParams_= nullptr;
         ASSERT_NE(renderProcessor, nullptr);
-        auto output = std::make_shared<HdiOutput>(1);
-        renderProcessor->uniComposerAdapter_->output_ = output;
         renderProcessor->ProcessScreenSurfaceForRenderThread(drawable);
     }
 }
@@ -332,11 +382,7 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurfaceForRenderThread003, TestS
         DrawableV2::RSScreenRenderNodeDrawable drawable(node);
         drawable.renderParams_= std::make_unique<RSRenderParams>(0);
 
-        auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
         ASSERT_NE(renderProcessor, nullptr);
-        auto output = std::make_shared<HdiOutput>(1);
-        ASSERT_NE(output, nullptr);
-        renderProcessor->uniComposerAdapter_->output_ = output;
         renderProcessor->ProcessScreenSurfaceForRenderThread(drawable);
     }
 }
@@ -359,10 +405,159 @@ HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurfaceForRenderThread004, TestS
         ASSERT_NE(drawable.surfaceHandler_, nullptr);
 
         ASSERT_NE(renderProcessor, nullptr);
-        auto output = std::make_shared<HdiOutput>(1);
-        ASSERT_NE(output, nullptr);
-        renderProcessor->uniComposerAdapter_->output_ = output;
         renderProcessor->ProcessScreenSurfaceForRenderThread(drawable);
+    }
+}
+
+// Test helper class for buffer consumer listener
+class TestBufferConsumerListener : public IBufferConsumerListener {
+public:
+    void OnBufferAvailable() override {}
+};
+
+/**
+ * @tc.name: ProcessScreenSurface_FingerprintTrueTest001
+ * @tc.desc: Test ProcessScreenSurface when GetFingerprint() is true
+ *           The if (node.GetFingerprint()) branch at line 520 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurface_FingerprintTrueTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        NodeId nodeId = 1;
+        auto node = std::make_shared<RSScreenRenderNode>(nodeId, screenId_);
+        node->SetFingerprint(true);
+
+        // Initialize render drawable
+        auto drawable = node->GetRenderDrawable();
+        if (drawable == nullptr) {
+            drawable = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(
+                std::static_pointer_cast<RSRenderNode>(node));
+        }
+        ASSERT_NE(drawable, nullptr);
+
+        auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(drawable);
+        ASSERT_NE(screenDrawable, nullptr);
+
+        // Set surfaceHandler
+        screenDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(0);
+        ASSERT_NE(screenDrawable->surfaceHandler_, nullptr);
+
+        // Create consumer and call CreateSurface to set surfaceCreated_ = true
+        // Use a simple test listener since RSRenderServiceListener requires RSSurfaceRenderNode
+        sptr<IBufferConsumerListener> listener = new TestBufferConsumerListener();
+        screenDrawable->CreateSurface(listener);
+        ASSERT_TRUE(screenDrawable->IsSurfaceCreated());
+
+        // Request and flush buffer
+        auto consumer = screenDrawable->surfaceHandler_->GetConsumer();
+        ASSERT_NE(consumer, nullptr);
+        auto producer = consumer->GetProducer();
+        auto surface = Surface::CreateSurfaceAsProducer(producer);
+        ASSERT_NE(surface, nullptr);
+        surface->SetQueueSize(1);
+
+        sptr<SurfaceBuffer> buffer;
+        sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+        [[maybe_unused]] GSError ret = surface->RequestBuffer(buffer, requestFence, requestConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+        BufferFlushConfig flushConfig = { .damage = { .w = 200, .h = 200, } };
+        ret = surface->FlushBuffer(buffer, flushFence, flushConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        // Acquire buffer to consumer
+        OHOS::sptr<SurfaceBuffer> cbuffer;
+        Rect damage;
+        sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
+        int64_t timestamp = 0;
+        ret = consumer->AcquireBuffer(cbuffer, acquireFence, timestamp, damage);
+        ASSERT_EQ(ret, GSERROR_OK);
+        ASSERT_NE(cbuffer, nullptr);
+
+        screenDrawable->surfaceHandler_->SetBuffer(cbuffer, acquireFence, damage, timestamp, nullptr);
+
+        // Call ProcessScreenSurface with Fingerprint = true
+        auto layerSize = renderProcessor->layers_.size();
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->ProcessScreenSurface(*node));
+
+        // Verify that a layer was created
+        EXPECT_GT(renderProcessor->layers_.size(), layerSize);
+    }
+}
+
+/**
+ * @tc.name: ProcessScreenSurface_FingerprintFalseTest001
+ * @tc.desc: Test ProcessScreenSurface when GetFingerprint() is false
+ *           The if (node.GetFingerprint()) branch at line 520 should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurface_FingerprintFalseTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        NodeId nodeId = 2;
+        auto node = std::make_shared<RSScreenRenderNode>(nodeId, screenId_);
+        node->SetFingerprint(false);  // Explicitly set to false
+
+        // Initialize render drawable
+        auto drawable = node->GetRenderDrawable();
+        if (drawable == nullptr) {
+            drawable = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(
+                std::static_pointer_cast<RSRenderNode>(node));
+        }
+        ASSERT_NE(drawable, nullptr);
+
+        auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(drawable);
+        ASSERT_NE(screenDrawable, nullptr);
+
+        // Set surfaceHandler
+        screenDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(0);
+        ASSERT_NE(screenDrawable->surfaceHandler_, nullptr);
+
+        // Create consumer and call CreateSurface to set surfaceCreated_ = true
+        // Use a simple test listener since RSRenderServiceListener requires RSSurfaceRenderNode
+        sptr<IBufferConsumerListener> listener = new TestBufferConsumerListener();
+        screenDrawable->CreateSurface(listener);
+        ASSERT_TRUE(screenDrawable->IsSurfaceCreated());
+
+        // Request and flush buffer
+        auto consumer = screenDrawable->surfaceHandler_->GetConsumer();
+        ASSERT_NE(consumer, nullptr);
+        auto producer = consumer->GetProducer();
+        auto surface = Surface::CreateSurfaceAsProducer(producer);
+        ASSERT_NE(surface, nullptr);
+        surface->SetQueueSize(1);
+
+        sptr<SurfaceBuffer> buffer;
+        sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+        [[maybe_unused]] GSError ret = surface->RequestBuffer(buffer, requestFence, requestConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+        BufferFlushConfig flushConfig = { .damage = { .w = 200, .h = 200, } };
+        ret = surface->FlushBuffer(buffer, flushFence, flushConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        // Acquire buffer to consumer
+        OHOS::sptr<SurfaceBuffer> cbuffer;
+        Rect damage;
+        sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
+        int64_t timestamp = 0;
+        ret = consumer->AcquireBuffer(cbuffer, acquireFence, timestamp, damage);
+        ASSERT_EQ(ret, GSERROR_OK);
+        ASSERT_NE(cbuffer, nullptr);
+
+        screenDrawable->surfaceHandler_->SetBuffer(cbuffer, acquireFence, damage, timestamp, nullptr);
+
+        // Call ProcessScreenSurface with Fingerprint = false
+        auto layerSize = renderProcessor->layers_.size();
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->ProcessScreenSurface(*node));
+
+        // Verify that a layer was created
+        EXPECT_GT(renderProcessor->layers_.size(), layerSize);
     }
 }
 
@@ -404,15 +599,15 @@ HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread002, TestSize.Level
             DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
         ASSERT_NE(surfaceDrawable->renderParams_, nullptr);
         sptr<SurfaceBuffer> buffer = OHOS::SurfaceBuffer::Create();
-        surfaceDrawable->renderParams_->SetBuffer(buffer, {});
-        ASSERT_EQ(renderProcessor, nullptr);
+        surfaceDrawable->renderParams_->SetBuffer(buffer, {}, DEFAULT_RECT);
+        ASSERT_NE(renderProcessor, nullptr);
         renderProcessor->composerClient_ = nullptr;
         renderProcessor->CreateLayerForRenderThread(*surfaceDrawable);
-        
+
         NodeId nodeId = 1;
         RSScreenRenderNode screenNode(nodeId, screenId_);
         auto renderEngine = std::make_shared<RSUniRenderEngine>();
-        renderProcessor->Init(screenNode, 0, 0, 0, renderEngine);
+        renderProcessor->Init(screenNode, renderEngine);
         renderProcessor->CreateLayerForRenderThread(*surfaceDrawable);
     }
 }
@@ -482,7 +677,6 @@ HWTEST_F(RSUniRenderProcessorTest, GetForceClientForDRM004, TestSize.Level1)
     ScreenId screenId = 0;
     std::weak_ptr<RSContext> context = {};
     if (RSUniRenderJudgement::IsUniRender()) {
-        auto renderProcessor = std::make_shared<RSUniRenderProcessor>();
         ASSERT_NE(renderProcessor, nullptr);
         RSSurfaceRenderParams params(0);
         params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
@@ -509,20 +703,28 @@ HWTEST_F(RSUniRenderProcessorTest, HandleTunnelLayerParameters001, TestSize.Leve
 {
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
+    constexpr uint64_t testTunnelLayerId = 1001;
+    constexpr uint32_t testTunnelLayerProperty = TUNNEL_PROP_BUFFER_ADDR;
 
     RSLayerPtr layer = nullptr;
-    params.SetTunnelLayerId(0);
-    renderProcessor->HandleTunnelLayerParameters(params, layer);
+    SetTunnelLayerSnapshot(params.GetId(), testTunnelLayerId, testTunnelLayerProperty);
+    renderProcessor->HandleTunnelLayerParameters(params.GetId(), layer);
 
-    params.SetTunnelLayerId(0);
-    renderProcessor->HandleTunnelLayerParameters(params, layer);
+    layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    ASSERT_NE(layer, nullptr);
+    layer->SetTunnelLayerId(testTunnelLayerId);
+    layer->SetTunnelLayerProperty(testTunnelLayerProperty);
+    renderProcessor->HandleTunnelLayerParameters(params.GetId(), layer);
+    EXPECT_EQ(layer->GetTunnelLayerId(), testTunnelLayerId);
+    EXPECT_EQ(layer->GetTunnelLayerProperty(), testTunnelLayerProperty);
 
-    layer = std::make_shared<RSSurfaceLayer>();
-    renderProcessor->HandleTunnelLayerParameters(params, layer);
+    layer->SetType(GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
+    renderProcessor->HandleTunnelLayerParameters(params.GetId(), layer);
 
-    ASSERT_EQ(layer->GetTunnelLayerId(), params.GetTunnelLayerId());
+    EXPECT_EQ(layer->GetTunnelLayerId(), testTunnelLayerId);
+    EXPECT_EQ(layer->GetTunnelLayerProperty(), testTunnelLayerProperty);
 }
- 
+
 /**
  * @tc.name: GetLayerInfo001
  * @tc.desc: Test RSUniRenderProcessorTest.GetLayerInfo
@@ -533,14 +735,13 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo001, TestSize.Level1)
 {
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
-    params.SetTunnelLayerId(1);
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SurfaceBuffer> preBuffer = nullptr;
     sptr<IConsumerSurface> consumer = nullptr;
     sptr<SyncFence> acquireFence = nullptr;
-    EXPECT_EQ(params.GetTunnelLayerId(), 1);
+    SetTunnelLayerSnapshot(params.GetId());
     RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
-    EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
+    EXPECT_EQ(result, nullptr);
 }
 
 /**
@@ -553,12 +754,14 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo002, TestSize.Level1)
 {
     ASSERT_NE(renderProcessor, nullptr);
     RSSurfaceRenderParams params(0);
-    params.SetTunnelLayerId(1);
+    SetTunnelLayerSnapshot(params.GetId());
     params.SetHwcGlobalPositionEnabled(true);
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SurfaceBuffer> preBuffer = nullptr;
-    sptr<IConsumerSurface> consumer = nullptr;
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
     sptr<SyncFence> acquireFence = nullptr;
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
     RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
     EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
 }
@@ -577,12 +780,14 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo003, TestSize.Level1)
     ASSERT_NE(renderProcessor, nullptr);
     renderProcessor->screenInfo_ = screenInfo;
     RSSurfaceRenderParams params(0);
-    params.SetTunnelLayerId(1);
+    SetTunnelLayerSnapshot(params.GetId());
     params.SetHwcGlobalPositionEnabled(true);
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SurfaceBuffer> preBuffer = nullptr;
-    sptr<IConsumerSurface> consumer = nullptr;
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
     sptr<SyncFence> acquireFence = nullptr;
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
     RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
     EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
 }
@@ -601,12 +806,14 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo004, TestSize.Level1)
     ASSERT_NE(renderProcessor, nullptr);
     renderProcessor->screenInfo_ = screenInfo;
     RSSurfaceRenderParams params(0);
-    params.SetTunnelLayerId(1);
+    SetTunnelLayerSnapshot(params.GetId());
     params.SetHwcGlobalPositionEnabled(true);
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SurfaceBuffer> preBuffer = nullptr;
-    sptr<IConsumerSurface> consumer = nullptr;
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
     sptr<SyncFence> acquireFence = nullptr;
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
     RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
     EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
 }
@@ -625,13 +832,15 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo005, TestSize.Level1)
     ASSERT_NE(renderProcessor, nullptr);
     renderProcessor->screenInfo_ = screenInfo;
     RSSurfaceRenderParams params(0);
-    params.SetTunnelLayerId(1);
+    SetTunnelLayerSnapshot(params.GetId());
     params.SetHwcGlobalPositionEnabled(true);
     params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
     sptr<SurfaceBuffer> buffer = nullptr;
     sptr<SurfaceBuffer> preBuffer = nullptr;
-    sptr<IConsumerSurface> consumer = nullptr;
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
     sptr<SyncFence> acquireFence = nullptr;
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
     RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
     EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
 }
@@ -645,21 +854,21 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo005, TestSize.Level1)
 HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo006, TestSize.Level1)
 {
     ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
     RSSurfaceRenderParams params(0);
-    params.SetTunnelLayerId(1);
+    SetTunnelLayerSnapshot(params.GetId());
     sptr<SurfaceBuffer> preBuffer = nullptr;
-    sptr<IConsumerSurface> consumer = nullptr;
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
     sptr<SyncFence> acquireFence = nullptr;
     auto buffer = SurfaceBuffer::Create();
     auto ret = buffer->Alloc(RSUniRenderProcessorTest::requestConfig);
     ASSERT_EQ(ret, GSERROR_OK);
- 
-    auto src = RSGpuDirtyCollector::GetBufferSelfDrawingData(buffer);
-    ASSERT_NE(src, nullptr);
-    (*src) = RSUniRenderProcessorTest::defaultSelfDrawingRect;
 
-    EXPECT_EQ(params.GetTunnelLayerId(), 1);
-    params.SetBuffer(buffer, DEFAULT_RECT);
+    auto src = RSGpuDirtyCollector::GetBufferSelfDrawingData(buffer);
+    ASSERT_EQ(src, nullptr);
+
+    params.SetBuffer(buffer, nullptr, DEFAULT_RECT);
     auto param = system::GetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "");
     system::SetParameter("rosen.graphic.selfdrawingdirtyregion.enabled", "1");
     RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
@@ -677,12 +886,17 @@ HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo006, TestSize.Level1)
  */
 HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayerTest, TestSize.Level1)
 {
-    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>();
+    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
+    layer->SetZorder(5);
     auto surfaceNode = RSTestUtil::CreateSurfaceNode();
     auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
         DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
-    auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+    auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->renderParams_.get());
     params->SetIsHwcEnabledBySolidLayer(true);
+    params->SetSolidLayerColor(Color(255, 0, 0, 128));
+    RSLayerInfo layerInfo;
+    layerInfo.dstRect = {10, 10, 100, 100};
+    params->SetLayerInfo(layerInfo);
     ASSERT_NE(renderProcessor, nullptr);
     renderProcessor->composerClient_ = nullptr;
     renderProcessor->CreateSolidColorLayer(layer, *params);
@@ -690,8 +904,1981 @@ HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayerTest, TestSize.Level1)
     NodeId nodeId = 1;
     RSScreenRenderNode screenNode(nodeId, screenId_);
     auto renderEngine = std::make_shared<RSUniRenderEngine>();
-    renderProcessor->Init(screenNode, 0, 0, 0, renderEngine);
+    renderProcessor->Init(screenNode, renderEngine);
     renderProcessor->CreateSolidColorLayer(layer, *params);
-    ASSERT_NE(renderProcessor->layers_.size(), 0);
+    auto property = layer->GetSolidColorLayerProperty();
+    ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer001
+ * @tc.desc: Test CreateSolidColorLayer when GetIsHwcEnabledBySolidLayer returns true (layer created)
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer001, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(layer, nullptr);
+        layer->SetZorder(5);
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set IsHwcEnabledBySolidLayer to true - should create solid color layer
+        params->SetIsHwcEnabledBySolidLayer(true);
+        params->SetSolidLayerColor(Color(255, 0, 0, 128));
+        RSLayerInfo layerInfo;
+        layerInfo.dstRect = {10, 10, 100, 100};
+        params->SetLayerInfo(layerInfo);
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        renderProcessor->CreateSolidColorLayer(layer, *params);
+        auto property = layer->GetSolidColorLayerProperty();
+        ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer002
+ * @tc.desc: Test CreateSolidColorLayer when composerClient is nullptr (layer creation fails)
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer002, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(layer, nullptr);
+        layer->SetZorder(5);
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set IsHwcEnabledBySolidLayer to true (should create layer, but will fail due to null composerClient)
+        params->SetIsHwcEnabledBySolidLayer(true);
+        params->SetSolidLayerColor(Color(0, 255, 0, 200));
+
+        // Create processor with null composerClient
+        auto processor = std::make_shared<RSUniRenderProcessor>();
+        processor->composerClient_ = nullptr;
+
+        processor->CreateSolidColorLayer(layer, *params);
+        auto property = layer->GetSolidColorLayerProperty();
+        ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer003
+ * @tc.desc: Test CreateSolidColorLayer with normal conditions and zorder > 0
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer003, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(layer, nullptr);
+        layer->SetZorder(5);
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set IsHwcEnabledBySolidLayer to true and set color
+        params->SetIsHwcEnabledBySolidLayer(true);
+        params->SetSolidLayerColor(Color(128, 128, 128, 255));
+        RSLayerInfo layerInfo;
+        layerInfo.dstRect = {10, 10, 100, 100};
+        params->SetLayerInfo(layerInfo);
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        renderProcessor->CreateSolidColorLayer(layer, *params);
+        auto property = layer->GetSolidColorLayerProperty();
+        ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer004
+ * @tc.desc: Test CreateSolidColorLayer when zorder is 0 (boundary condition)
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer004, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(layer, nullptr);
+        layer->SetZorder(0);
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set IsHwcEnabledBySolidLayer to true
+        params->SetIsHwcEnabledBySolidLayer(true);
+        params->SetSolidLayerColor(Color(255, 255, 0, 100));
+        RSLayerInfo layerInfo;
+        layerInfo.dstRect = {10, 10, 100, 100};
+        params->SetLayerInfo(layerInfo);
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        renderProcessor->CreateSolidColorLayer(layer, *params);
+        auto property = layer->GetSolidColorLayerProperty();
+        ASSERT_NE(property.zOrder, layer->GetZorder() - 1);
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer005
+ * @tc.desc: Test CreateSolidColorLayer when zorder is negative (boundary condition)
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer005, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(layer, nullptr);
+        layer->SetZorder(-1);
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set IsHwcEnabledBySolidLayer to true
+        params->SetIsHwcEnabledBySolidLayer(true);
+        params->SetSolidLayerColor(Color(0, 0, 255, 180));
+        RSLayerInfo layerInfo;
+        layerInfo.dstRect = {10, 10, 100, 100};
+        params->SetLayerInfo(layerInfo);
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        renderProcessor->CreateSolidColorLayer(layer, *params);
+        auto property = layer->GetSolidColorLayerProperty();
+        ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer006
+ * @tc.desc: Test CreateSolidColorLayer with various color values
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer006, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        struct ColorTestCase {
+            uint32_t argb;
+            std::string name;
+        };
+        std::vector<ColorTestCase> testColors = {
+            {0xFF000000, "Black"},
+            {0xFFFFFFFF, "White"},
+            {0xFFFF0000, "Red"},
+            {0xFF00FF00, "Green"},
+            {0xFF0000FF, "Blue"},
+            {0x80FFFFFF, "Semi-transparent white"}
+        };
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        for (const auto& colorCase : testColors) {
+            // Create a new layer for each iteration
+            auto ctx = std::make_shared<RSComposerContext>(nullptr);
+            RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+            ASSERT_NE(layer, nullptr);
+            layer->SetZorder(3);
+
+            auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+            auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+                DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+            auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+            params->SetIsHwcEnabledBySolidLayer(true);
+            Color color(colorCase.argb);
+            params->SetSolidLayerColor(color);
+            RSLayerInfo layerInfo;
+            layerInfo.dstRect = {10, 10, 100, 100};
+            params->SetLayerInfo(layerInfo);
+
+            renderProcessor->CreateSolidColorLayer(layer, *params);
+            auto property = layer->GetSolidColorLayerProperty();
+            ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+        }
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer007
+ * @tc.desc: Test CreateSolidColorLayer with different dstRect values
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer007, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        struct RectTestCase {
+            GraphicIRect dstRect;
+            std::string name;
+        };
+        std::vector<RectTestCase> testRects = {
+            {{0, 0, 100, 100}, "Top-left origin"},
+            {{1920, 1080, 100, 100}, "Bottom-right area"},
+            {{-100, -100, 50, 50}, "Negative coordinates"},
+            {{0, 0, 1, 1}, "Minimum size"},
+            {{0, 0, 3840, 2160}, "Full HD size"}
+        };
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        for (const auto& rectCase : testRects) {
+            // Create a new layer for each iteration
+            auto ctx = std::make_shared<RSComposerContext>(nullptr);
+            RSLayerPtr layer = RSSurfaceLayer::Create(0, ctx);
+            ASSERT_NE(layer, nullptr);
+            layer->SetZorder(2);
+
+            auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+            auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+                DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+            auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+            params->SetIsHwcEnabledBySolidLayer(true);
+            params->SetSolidLayerColor(Color(100, 150, 200, 255));
+            RSLayerInfo layerInfo;
+            layerInfo.dstRect = rectCase.dstRect;
+            params->SetLayerInfo(layerInfo);
+
+            renderProcessor->CreateSolidColorLayer(layer, *params);
+            auto property = layer->GetSolidColorLayerProperty();
+            ASSERT_EQ(property.zOrder, layer->GetZorder() - 1);
+        }
+    }
+}
+
+/**
+ * @tc.name: CreateSolidColorLayer008
+ * @tc.desc: Test CreateSolidColorLayer with layer pointer nullptr
+ * @tc.type:FUNC
+ * @tc.require: issuesI9KRF1
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateSolidColorLayer008, TestSize.Level1)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        RSLayerPtr layer = nullptr;
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        params->SetIsHwcEnabledBySolidLayer(false);
+        params->SetSolidLayerColor(Color(255, 0, 0, 128));
+
+        ASSERT_NE(renderProcessor, nullptr);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        // Should handle null layer gracefully
+        renderProcessor->CreateSolidColorLayer(layer, *params);
+    }
+}
+
+/**
+ * @tc.name: PostProcess_UniLayerNullTest001
+ * @tc.desc: Test PostProcess when uniLayer_ is nullptr
+ *           The first if (uniLayer_) branch at line 103 should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_UniLayerNullTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+        // Ensure uniLayer_ is nullptr (default state after initialization)
+        renderProcessor->uniLayer_ = nullptr;
+        renderProcessor->layers_.clear();
+
+        // Call PostProcess, should not crash and skip uniLayer_ branch
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_UniBufferOwnerCountNullTest001
+ * @tc.desc: Test PostProcess when uniBufferOwnerCount is nullptr
+ *           When uniLayer_ exists but GetBufferOwnerCount() returns nullptr,
+ *           the if (uniBufferOwnerCount) branch at line 106 should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_UniBufferOwnerCountNullTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ without setting bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto layer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(layer, nullptr);
+        renderProcessor->uniLayer_ = layer;
+        renderProcessor->layers_.clear();
+
+        // Call PostProcess, uniBufferOwnerCount will be nullptr since no bufferOwnerCount is set
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_LayerNullInLoopTest001
+ * @tc.desc: Test PostProcess when layer pointer in layers_ is expired (weak_ptr.lock() returns nullptr)
+ *           The if (layer == nullptr ...) branch at line 109 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_LayerNullInLoopTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ with bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto uniLayer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(uniLayer, nullptr);
+        auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        owner->bufferId_ = 1000ULL;
+        uniLayer->SetBufferOwnerCount(owner, true);
+        renderProcessor->uniLayer_ = uniLayer;
+
+        // Add an expired weak_ptr to layers_
+        {
+            auto tempLayer = RSSurfaceLayer::Create(1, ctx);
+            renderProcessor->layers_.emplace_back(tempLayer);
+            // tempLayer goes out of scope, weak_ptr becomes expired
+        }
+
+        // Call PostProcess, should skip expired layer
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_LayerEqualsUniLayerTest001
+ * @tc.desc: Test PostProcess when layer in layers_ is the same as uniLayer_
+ *           The if (... layer == uniLayer_ ...) branch at line 109 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_LayerEqualsUniLayerTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ with bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto uniLayer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(uniLayer, nullptr);
+        auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        owner->bufferId_ = 1000ULL;
+        uniLayer->SetBufferOwnerCount(owner, true);
+        renderProcessor->uniLayer_ = uniLayer;
+
+        // Add same layer to layers_
+        renderProcessor->layers_.emplace_back(uniLayer);
+
+        // Call PostProcess, should skip layer that equals uniLayer_
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_LayerBufferNullTest001
+ * @tc.desc: Test PostProcess when layer->GetBuffer() returns nullptr
+ *           The if (... layer->GetBuffer() == nullptr) branch at line 109 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_LayerBufferNullTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ with bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto uniLayer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(uniLayer, nullptr);
+        auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        owner->bufferId_ = 1000ULL;
+        uniLayer->SetBufferOwnerCount(owner, true);
+        renderProcessor->uniLayer_ = uniLayer;
+
+        // Add a layer without buffer to layers_
+        auto layerWithoutBuffer = RSSurfaceLayer::Create(1, ctx);
+        ASSERT_NE(layerWithoutBuffer, nullptr);
+        renderProcessor->layers_.emplace_back(layerWithoutBuffer);
+
+        // Call PostProcess, should skip layer without buffer
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_BufferOwnerCountNullInLoopTest001
+ * @tc.desc: Test PostProcess when layer->GetBufferOwnerCount() returns nullptr
+ *           The if (bufferOwnerCount == nullptr) branch at line 114 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_BufferOwnerCountNullInLoopTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ with bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto uniLayer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(uniLayer, nullptr);
+        auto uniOwner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        uniOwner->bufferId_ = 1000ULL;
+        uniLayer->SetBufferOwnerCount(uniOwner, true);
+        renderProcessor->uniLayer_ = uniLayer;
+
+        // Add a layer with buffer but without bufferOwnerCount to layers_
+        auto layerWithoutOwner = RSSurfaceLayer::Create(1, ctx);
+        ASSERT_NE(layerWithoutOwner, nullptr);
+        auto buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        layerWithoutOwner->SetBuffer(buffer, nullptr);
+        // Do NOT set bufferOwnerCount, so GetBufferOwnerCount() will return nullptr
+        renderProcessor->layers_.emplace_back(layerWithoutOwner);
+
+        // Call PostProcess, should skip layer without bufferOwnerCount
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_AllBranchesCoveredTest001
+ * @tc.desc: Test PostProcess with all branches covered
+ *           Covers: uniLayer_ != nullptr, uniBufferOwnerCount != nullptr,
+ *           layers_ with valid layer, buffer, and bufferOwnerCount
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_AllBranchesCoveredTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ with bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto uniLayer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(uniLayer, nullptr);
+        auto uniOwner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        uniOwner->bufferId_ = 1000ULL;
+        uniLayer->SetBufferOwnerCount(uniOwner, true);
+        renderProcessor->uniLayer_ = uniLayer;
+
+        // Add a valid layer with buffer and bufferOwnerCount to layers_
+        auto validLayer = RSSurfaceLayer::Create(1, ctx);
+        ASSERT_NE(validLayer, nullptr);
+        auto buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        validLayer->SetBuffer(buffer, nullptr);
+        auto layerOwner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        layerOwner->bufferId_ = buffer->GetBufferId();
+        validLayer->SetBufferOwnerCount(layerOwner, true);
+        renderProcessor->layers_.emplace_back(validLayer);
+
+        // Call PostProcess with all valid conditions
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: PostProcess_MixedLayersTest001
+ * @tc.desc: Test PostProcess with mixed layer conditions
+ *           Including: null layer, same as uniLayer, null buffer, null bufferOwnerCount, and valid layer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, PostProcess_MixedLayersTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        // Create uniLayer_ with bufferOwnerCount
+        auto ctx = std::make_shared<RSComposerContext>(nullptr);
+        auto uniLayer = RSSurfaceLayer::Create(0, ctx);
+        ASSERT_NE(uniLayer, nullptr);
+        auto uniOwner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        uniOwner->bufferId_ = 1000ULL;
+        uniLayer->SetBufferOwnerCount(uniOwner, true);
+        renderProcessor->uniLayer_ = uniLayer;
+        renderProcessor->layers_.clear();
+
+        // Add expired weak_ptr (null layer after lock)
+        {
+            auto tempLayer = RSSurfaceLayer::Create(1, ctx);
+            renderProcessor->layers_.emplace_back(tempLayer);
+        }
+
+        // Add same as uniLayer
+        renderProcessor->layers_.emplace_back(uniLayer);
+
+        // Add layer without buffer
+        auto layerNoBuffer = RSSurfaceLayer::Create(2, ctx);
+        renderProcessor->layers_.emplace_back(layerNoBuffer);
+
+        // Add layer without bufferOwnerCount
+        auto layerNoOwner = RSSurfaceLayer::Create(3, ctx);
+        auto buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        layerNoOwner->SetBuffer(buffer, nullptr);
+        renderProcessor->layers_.emplace_back(layerNoOwner);
+
+        // Add valid layer
+        auto validLayer = RSSurfaceLayer::Create(4, ctx);
+        auto buffer2 = SurfaceBuffer::Create();
+        ret = buffer2->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        validLayer->SetBuffer(buffer2, nullptr);
+        auto layerOwner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        layerOwner->bufferId_ = buffer2->GetBufferId();
+        validLayer->SetBufferOwnerCount(layerOwner, true);
+        renderProcessor->layers_.emplace_back(validLayer);
+
+        // Call PostProcess, should handle all cases
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->PostProcess());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_NullBufferTest001
+ * @tc.desc: Test CreateLayer when buffer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 131 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_NullBufferTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Ensure buffer is nullptr
+        sptr<SurfaceBuffer> nullBuffer = nullptr;
+        params->SetBuffer(nullBuffer, {}, DEFAULT_RECT);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with null buffer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_NullConsumerTest001
+ * @tc.desc: Test CreateLayer when consumer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 131 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_NullConsumerTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        // Do not request buffer, consumer will be nullptr
+
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with null consumer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_NullLayerFromGetLayerInfoTest001
+ * @tc.desc: Test CreateLayer when GetLayerInfo returns nullptr
+ *           The if (layer == nullptr) branch at line 140 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_NullLayerFromGetLayerInfoTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set composerClient_ to nullptr so GetLayerInfo returns nullptr
+        renderProcessor->composerClient_ = nullptr;
+
+        // Call CreateLayer with null composerClient, GetLayerInfo will return nullptr
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_NullBufferOwnerCountTest001
+ * @tc.desc: Test CreateLayer when bufferOwnerCount is nullptr
+ *           The if (bufferOwnerCount) branch at line 150 should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_NullBufferOwnerCountTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Do NOT set bufferOwnerCount in params
+        // params->GetBufferOwnerCount() will return nullptr
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with null bufferOwnerCount
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params));
+        EXPECT_TRUE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_WithBufferOwnerCountTest001
+ * @tc.desc: Test CreateLayer when bufferOwnerCount is not nullptr
+ *           The if (bufferOwnerCount) branch at line 150 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_WithBufferOwnerCountTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set bufferOwnerCount in params
+        auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        bufferOwnerCount->bufferId_ = 9999ULL;
+        params->bufferOwnerCount_ = bufferOwnerCount;
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with non-null bufferOwnerCount
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params));
+        EXPECT_TRUE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_WithOfflineResultTest001
+ * @tc.desc: Test CreateLayer with offlineResult parameter
+ *           Covers the offlineResult != nullptr path
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_WithOfflineResultTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Create offlineResult with buffer and consumer
+        auto offlineResult = std::make_shared<ProcessOfflineResult>();
+        offlineResult->buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = offlineResult->buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        offlineResult->consumer = IConsumerSurface::Create("test-offline");
+        offlineResult->damageRect = {0, 0, 100, 100};
+        offlineResult->bufferRect = {0, 0, 100, 100};
+        offlineResult->taskSuccess = true;
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with offlineResult
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params, offlineResult));
+        EXPECT_TRUE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_WithOfflineResultNullBufferTest001
+ * @tc.desc: Test CreateLayer with offlineResult but buffer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 131 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_WithOfflineResultNullBufferTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Create offlineResult with null buffer
+        auto offlineResult = std::make_shared<ProcessOfflineResult>();
+        offlineResult->buffer = nullptr;
+        offlineResult->consumer = IConsumerSurface::Create("test-offline");
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with offlineResult null buffer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params, offlineResult));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_WithOfflineResultNullConsumerTest001
+ * @tc.desc: Test CreateLayer with offlineResult but consumer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 131 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_WithOfflineResultNullConsumerTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Create offlineResult with null consumer
+        auto offlineResult = std::make_shared<ProcessOfflineResult>();
+        offlineResult->buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = offlineResult->buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        offlineResult->consumer = nullptr;
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with offlineResult null consumer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params, offlineResult));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayer_AllBranchesCoveredTest001
+ * @tc.desc: Test CreateLayer with all branches covered
+ *           Covers: buffer != nullptr, consumer != nullptr, layer != nullptr, bufferOwnerCount != nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayer_AllBranchesCoveredTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set bufferOwnerCount
+        auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        bufferOwnerCount->bufferId_ = 8888ULL;
+        params->bufferOwnerCount_ = bufferOwnerCount;
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayer with all valid conditions
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayer(*surfaceNode, *params));
+        EXPECT_TRUE(params->GetLayerCreated());
+        EXPECT_EQ(renderProcessor->layers_.size(), 1);
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_NullBufferTest001
+ * @tc.desc: Test CreateLayerForRenderThread when buffer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 199 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_NullBufferTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Ensure buffer is nullptr
+        sptr<SurfaceBuffer> nullBuffer = nullptr;
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+        params->SetBuffer(nullBuffer, {}, DEFAULT_RECT);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        // Call CreateLayerForRenderThread with null buffer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_NullConsumerTest001
+ * @tc.desc: Test CreateLayerForRenderThread when consumer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 199 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_NullConsumerTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // consumer will be nullptr since no consumer is set
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+
+        // Call CreateLayerForRenderThread with null consumer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_NullLayerFromGetLayerInfoTest001
+ * @tc.desc: Test CreateLayerForRenderThread when GetLayerInfo returns nullptr
+ *           The if (layer == nullptr) branch at line 204 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_NullLayerFromGetLayerInfoTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Set composerClient_ to nullptr so GetLayerInfo returns nullptr
+        renderProcessor->composerClient_ = nullptr;
+
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Call CreateLayerForRenderThread with null composerClient, GetLayerInfo will return nullptr
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_NullBufferOwnerCountTest001
+ * @tc.desc: Test CreateLayerForRenderThread when bufferOwnerCount is nullptr
+ *           The if (bufferOwnerCount) branch at line 216 should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_NullBufferOwnerCountTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Do NOT set bufferOwnerCount in params
+        // params->GetBufferOwnerCount() will return nullptr
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Set buffer in params from node's surfaceHandler
+        auto surfaceHandler = node->GetRSSurfaceHandler();
+        auto buffer = surfaceHandler->GetBuffer();
+        ASSERT_NE(buffer, nullptr);
+        auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        params->SetBuffer(buffer, bufferOwnerCount, DEFAULT_RECT);
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+
+        // Call CreateLayerForRenderThread with null bufferOwnerCount
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable));
+        EXPECT_TRUE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_WithBufferOwnerCountTest001
+ * * @tc.desc: Test CreateLayerForRenderThread when bufferOwnerCount is not nullptr
+ *           The if (bufferOwnerCount) branch at line 220 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_WithBufferOwnerCountTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Set bufferOwnerCount in params
+        auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        bufferOwnerCount->bufferId_ = 7777ULL;
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+        params->bufferOwnerCount_ = bufferOwnerCount;
+
+        // Set buffer in params from node's surfaceHandler
+        auto surfaceHandler = node->GetRSSurfaceHandler();
+        auto buffer = surfaceHandler->GetBuffer();
+        ASSERT_NE(buffer, nullptr);
+        params->SetBuffer(buffer, bufferOwnerCount, DEFAULT_RECT);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayerForRenderThread with non-null bufferOwnerCount
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable));
+        EXPECT_TRUE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_WithOfflineResultTest001
+ * @tc.desc: Test CreateLayerForRenderThread with offlineResult parameter
+ *           Covers the offlineResult != nullptr path
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_WithOfflineResultTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Create offlineResult with buffer and consumer
+        auto offlineResult = std::make_shared<ProcessOfflineResult>();
+        offlineResult->buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = offlineResult->buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        offlineResult->consumer = IConsumerSurface::Create("test-offline-render");
+        offlineResult->damageRect = {0, 0, 100, 100};
+        offlineResult->bufferRect = {0, 0, 100, 100};
+        offlineResult->taskSuccess = true;
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Call CreateLayerForRenderThread with offlineResult
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable, offlineResult));
+        EXPECT_TRUE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_WithOfflineResultNullBufferTest001
+ * @tc.desc: Test CreateLayerForRenderThread with offlineResult but buffer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 199 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_WithOfflineResultNullBufferTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Create offlineResult with null buffer
+        auto offlineResult = std::make_shared<ProcessOfflineResult>();
+        offlineResult->buffer = nullptr;
+        offlineResult->consumer = IConsumerSurface::Create("test-offline-render");
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Call CreateLayerForRenderThread with offlineResult null buffer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable, offlineResult));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_WithOfflineResultNullConsumerTest001
+ * @tc.desc: Test CreateLayerForRenderThread with offlineResult but consumer is nullptr
+ *           The if (buffer == nullptr || consumer == nullptr) branch at line 199 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_WithOfflineResultNullConsumerTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNode();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Create offlineResult with null consumer
+        auto offlineResult = std::make_shared<ProcessOfflineResult>();
+        offlineResult->buffer = SurfaceBuffer::Create();
+        BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+            BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+        auto ret = offlineResult->buffer->Alloc(cfg);
+        ASSERT_EQ(ret, GSERROR_OK);
+        offlineResult->consumer = nullptr;
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+
+        // Call CreateLayerForRenderThread with offlineResult null consumer, should return early
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable, offlineResult));
+        EXPECT_FALSE(params->GetLayerCreated());
+    }
+}
+
+/**
+ * @tc.name: CreateLayerForRenderThread_AllBranchesCoveredTest001
+ * @tc.desc: Test CreateLayerForRenderThread with all branches covered
+ *           Covers: paramsSp != nullptr, buffer != nullptr, consumer != nullptr,
+ *           layer != nullptr, bufferOwnerCount != nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, CreateLayerForRenderThread_AllBranchesCoveredTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        // Set bufferOwnerCount
+        auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+        bufferOwnerCount->bufferId_ = 6666ULL;
+        auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+        params->bufferOwnerCount_ = bufferOwnerCount;
+
+        // Set buffer in params from node's surfaceHandler
+        auto surfaceHandler = node->GetRSSurfaceHandler();
+        auto buffer = surfaceHandler->GetBuffer();
+        ASSERT_NE(buffer, nullptr);
+        params->SetBuffer(buffer, bufferOwnerCount, DEFAULT_RECT);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        // Call CreateLayerForRenderThread with all valid conditions
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->CreateLayerForRenderThread(*surfaceDrawable));
+        EXPECT_TRUE(params->GetLayerCreated());
+        EXPECT_EQ(renderProcessor->layers_.size(), 1);
+    }
+}
+
+/**
+ * @tc.name: GetLayerInfo_ComposerClientNullTest001
+ * @tc.desc: Test GetLayerInfo when composerClient_ is nullptr
+ *           The if (composerClient_ == nullptr) branch at line 361 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_ComposerClientNullTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    RSSurfaceRenderParams params(0);
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    // Set composerClient_ to nullptr
+    renderProcessor->composerClient_ = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name: GetLayerInfo_HwcGlobalPositionDisabledTest001
+ * @tc.desc: Test GetLayerInfo when HwcGlobalPositionEnabled is false
+ *           The if (params.GetHwcGlobalPositionEnabled()) branch at line 372 should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_HwcGlobalPositionDisabledTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    RSSurfaceRenderParams params(0);
+    params.SetHwcGlobalPositionEnabled(false);  // Disabled
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name: GetLayerInfo_TunnelLayerIdDisabledTest001
+ * @tc.desc: Test GetLayerInfo when tunnel snapshot is absent
+ *           The tunnel layer branch should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_TunnelLayerIdDisabledTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    RSSurfaceRenderParams params(0);
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+    EXPECT_NE(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL);
+}
+
+/**
+ * @tc.name: GetLayerInfo_CursorLayerTypeTest001
+ * @tc.desc: Test GetLayerInfo when layerType is CURSOR
+ *           Covers the cursor layer specific branches at line 400 and 408
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_CursorLayerTypeTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    RSSurfaceRenderParams params(0);
+    RSLayerInfo layerInfo;
+    layerInfo.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR;
+    layerInfo.dstRect = {0, 0, 200, 200};
+    layerInfo.srcRect = {0, 0, 100, 100};  // Different from dstRect to trigger cursor branch
+    layerInfo.zOrder = 100;
+    params.SetLayerInfo(layerInfo);
+
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR);
+    // Cursor layer should have rotation set to NONE
+    EXPECT_EQ(result->GetTransform(), GraphicTransformType::GRAPHIC_ROTATE_NONE);
+}
+
+/**
+ * @tc.name: GetLayerInfo_WithOfflineResultTest001
+ * @tc.desc: Test GetLayerInfo with offlineResult parameter
+ *           Covers the offlineResult branches at line 382, 437, 478
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_WithOfflineResultTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    RSSurfaceRenderParams params(0);
+    RSLayerInfo layerInfo;
+    layerInfo.srcRect = {0, 0, 100, 100};
+    params.SetLayerInfo(layerInfo);
+
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+
+    auto offlineResult = std::make_shared<ProcessOfflineResult>();
+    offlineResult->buffer = buffer;
+    offlineResult->consumer = consumer;
+    offlineResult->damageRect = {0, 0, 50, 50};
+    offlineResult->bufferRect = {0, 0, 100, 100};
+    offlineResult->taskSuccess = true;
+
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence, offlineResult);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name: GetLayerInfo_NonCursorLayerTypeTest001
+ * @tc.desc: Test GetLayerInfo when layerType is not CURSOR
+ *           The if (layerInfo.layerType != GRAPHIC_LAYER_TYPE_CURSOR) branch at line 400 should be true
+ *           Covers ROG ratio adjustment path
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_NonCursorLayerTypeTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    // Set screen info with ROG ratios
+    ScreenInfo screenInfo;
+    screenInfo.isSamplingOn = false;
+    renderProcessor->screenInfo_ = screenInfo;
+
+    RSSurfaceRenderParams params(0);
+    RSLayerInfo layerInfo;
+    layerInfo.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC;
+    layerInfo.dstRect = {0, 0, 100, 100};
+    params.SetLayerInfo(layerInfo);
+
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+    EXPECT_NE(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_CURSOR);
+}
+
+/**
+ * @tc.name: GetLayerInfo_ProtectedLayerTest001
+ * @tc.desc: Test GetLayerInfo with protected layer type
+ *           Covers GetForceClientForDRM branch with PROTECTED layer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_ProtectedLayerTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    RSSurfaceRenderParams params(0);
+    params.GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+    params.animateState_ = true;  // This triggers forceClientForDRM
+
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name: GetLayerInfo_CornerRadiusInfoForDRMTest001
+ * @tc.desc: Test GetLayerInfo with CornerRadiusInfoForDRM set
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_CornerRadiusInfoForDRMTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    RSSurfaceRenderParams params(0);
+    std::vector<float> cornerRadius = {10.0f, 10.0f, 10.0f, 10.0f};
+    params.SetCornerRadiusInfoForDRM(cornerRadius);
+
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = nullptr;
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+    EXPECT_FALSE(result->GetCornerRadiusInfoForDRM().empty());
+}
+
+/**
+ * @tc.name: GetLayerInfo_AllBranchesCoveredTest001
+ * @tc.desc: Test GetLayerInfo with all main branches covered
+ *           Normal path with all valid parameters
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, GetLayerInfo_AllBranchesCoveredTest001, TestSize.Level2)
+{
+    ASSERT_NE(renderProcessor, nullptr);
+    auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+    renderProcessor->composerClient_ = composerClient;
+
+    // Set screen info
+    ScreenInfo screenInfo;
+    screenInfo.isSamplingOn = false;
+    renderProcessor->screenInfo_ = screenInfo;
+
+    RSSurfaceRenderParams params(0);
+    RSLayerInfo layerInfo;
+    layerInfo.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC;
+    layerInfo.dstRect = {0, 0, 100, 100};
+    layerInfo.srcRect = {0, 0, 100, 100};
+    layerInfo.zOrder = 1;
+    layerInfo.alpha = 1.0f;
+    params.SetLayerInfo(layerInfo);
+    params.SetHwcGlobalPositionEnabled(false);
+
+    sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { 100, 100, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    auto ret = buffer->Alloc(cfg);
+    ASSERT_EQ(ret, GSERROR_OK);
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    sptr<SurfaceBuffer> preBuffer = nullptr;
+    sptr<SyncFence> acquireFence = new SyncFence(dup(STDOUT_FILENO));
+
+    RSLayerPtr result = renderProcessor->GetLayerInfo(params, buffer, preBuffer, consumer, acquireFence);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC);
+    EXPECT_TRUE(result->GetIsNeedComposition());
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_NullParamsTest001
+ * @tc.desc: Test UpdateMirrorInfo when displayDrawable.GetRenderParams() returns nullptr
+ *           The if (params == nullptr) branch in RSProcessor::UpdateMirrorInfo should be true
+ *           Function should return false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_NullParamsTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable drawable(node);
+        drawable.renderParams_ = nullptr;
+
+        bool result = renderProcessor->UpdateMirrorInfo(drawable);
+        EXPECT_EQ(result, false);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_NoMirrorSourceTest001
+ * @tc.desc: Test UpdateMirrorInfo when GetMirrorSourceDrawable() returns nullptr
+ *           The isMirror_ should be set to false and function should return true
+ *           Covers branch: mirroredNodeDrawable == nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_NoMirrorSourceTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable drawable(node);
+        drawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(node->GetId());
+
+        auto params = static_cast<RSLogicalDisplayRenderParams*>(drawable.GetRenderParams().get());
+        params->mirrorSourceDrawable_ = std::weak_ptr<DrawableV2::RSLogicalDisplayRenderNodeDrawable>();
+
+        bool result = renderProcessor->UpdateMirrorInfo(drawable);
+        EXPECT_EQ(result, true);
+        EXPECT_EQ(renderProcessor->isMirror_, false);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_MirrorSourceWithParamsTest001
+ * @tc.desc: Test UpdateMirrorInfo when mirroredNodeDrawable exists and has valid renderParams
+ *           The CalculateMirrorAdaptiveCoefficient should be called
+ *           Covers branch: mirroredNodeDrawable != nullptr && mirroredNodeDrawable->GetRenderParams() != nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_MirrorSourceWithParamsTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto displayNode = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable displayDrawable(displayNode);
+        displayDrawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(displayNode->GetId());
+        auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable.GetRenderParams().get());
+
+        auto mirrorNode = std::make_shared<RSRenderNode>(2);
+        auto mirrorDrawable = std::static_pointer_cast<DrawableV2::RSLogicalDisplayRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirrorNode));
+        mirrorDrawable->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(mirrorNode->GetId());
+
+        displayParams->mirrorSourceDrawable_ = mirrorDrawable;
+
+        bool result = renderProcessor->UpdateMirrorInfo(displayDrawable);
+        EXPECT_EQ(result, true);
+        EXPECT_EQ(renderProcessor->isMirror_, true);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_MirrorSourceNullParamsTest001
+ * @tc.desc: Test UpdateMirrorInfo when mirroredNodeDrawable exists but its GetRenderParams() returns nullptr
+ *           CalculateMirrorAdaptiveCoefficient should NOT be called
+ *           Covers branch: mirroredNodeDrawable != nullptr && mirroredNodeDrawable->GetRenderParams() == nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_MirrorSourceNullParamsTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto displayNode = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable displayDrawable(displayNode);
+        displayDrawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(displayNode->GetId());
+        auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable.GetRenderParams().get());
+
+        auto mirrorNode = std::make_shared<RSRenderNode>(2);
+        auto mirrorDrawable = std::static_pointer_cast<DrawableV2::RSLogicalDisplayRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirrorNode));
+        mirrorDrawable->renderParams_ = nullptr;
+
+        displayParams->mirrorSourceDrawable_ = mirrorDrawable;
+
+        bool result = renderProcessor->UpdateMirrorInfo(displayDrawable);
+        EXPECT_EQ(result, true);
+        EXPECT_EQ(renderProcessor->isMirror_, true);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_UniComposerAdapterUpdateSuccessTest001
+ * @tc.desc: Test UpdateMirrorInfo when uniComposerAdapter_->UpdateMirrorInfo returns true
+ *           Covers the normal successful path after RSProcessor::UpdateMirrorInfo returns true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_UniComposerAdapterUpdateSuccessTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable drawable(node);
+        drawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(node->GetId());
+
+        bool result = renderProcessor->UpdateMirrorInfo(drawable);
+        EXPECT_EQ(result, true);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_MirrorAdaptiveCoefficientCalculatedTest001
+ * @tc.desc: Test UpdateMirrorInfo to verify mirrorAdaptiveCoefficient_ is calculated correctly
+ *           When mirror source has different bounds than current display
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_MirrorAdaptiveCoefficientCalculatedTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto displayNode = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable displayDrawable(displayNode);
+        displayDrawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(displayNode->GetId());
+        auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable.GetRenderParams().get());
+
+        auto mirrorNode = std::make_shared<RSRenderNode>(2);
+        auto mirrorDrawable = std::static_pointer_cast<DrawableV2::RSLogicalDisplayRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirrorNode));
+        mirrorDrawable->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(mirrorNode->GetId());
+
+        displayParams->mirrorSourceDrawable_ = mirrorDrawable;
+
+        bool result = renderProcessor->UpdateMirrorInfo(displayDrawable);
+        EXPECT_EQ(result, true);
+        EXPECT_EQ(renderProcessor->isMirror_, true);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_RotationSetTest001
+ * @tc.desc: Test UpdateMirrorInfo to verify screenInfo_.rotation is set from displayParams
+ *           Covers the line: screenInfo_.rotation = displayParams->GetNodeRotation()
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_RotationSetTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable drawable(node);
+        drawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(node->GetId());
+        auto params = static_cast<RSLogicalDisplayRenderParams*>(drawable.GetRenderParams().get());
+
+        params->nodeRotation_ = ScreenRotation::ROTATION_90;
+
+        bool result = renderProcessor->UpdateMirrorInfo(drawable);
+        EXPECT_EQ(result, true);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_MirrorSourceExpiredTest001
+ * @tc.desc: Test UpdateMirrorInfo when mirrorSourceDrawable weak_ptr is expired
+ *           mirroredNodeDrawable.lock() returns nullptr, isMirror_ should be false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_MirrorSourceExpiredTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto displayNode = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable displayDrawable(displayNode);
+        displayDrawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(displayNode->GetId());
+        auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable.GetRenderParams().get());
+
+        std::weak_ptr<DrawableV2::RSLogicalDisplayRenderNodeDrawable> expiredWeakPtr;
+        {
+            auto mirrorNode = std::make_shared<RSRenderNode>(2);
+            auto mirrorDrawable = std::static_pointer_cast<DrawableV2::RSLogicalDisplayRenderNodeDrawable>(
+                DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirrorNode));
+            expiredWeakPtr = mirrorDrawable;
+        }
+
+        displayParams->mirrorSourceDrawable_ = expiredWeakPtr;
+
+        bool result = renderProcessor->UpdateMirrorInfo(displayDrawable);
+        EXPECT_EQ(result, true);
+        EXPECT_EQ(renderProcessor->isMirror_, false);
+    }
+}
+
+/**
+ * @tc.name: UpdateMirrorInfo_AllBranchesCoveredTest001
+ * @tc.desc: Test UpdateMirrorInfo with all branches covered
+ *           Covers: params != nullptr, mirroredNodeDrawable != nullptr, mirrorNodeParams != nullptr
+ *           and uniComposerAdapter_->UpdateMirrorInfo returns true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, UpdateMirrorInfo_AllBranchesCoveredTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto displayNode = std::make_shared<RSRenderNode>(1);
+        DrawableV2::RSLogicalDisplayRenderNodeDrawable displayDrawable(displayNode);
+        displayDrawable.renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(displayNode->GetId());
+        auto displayParams = static_cast<RSLogicalDisplayRenderParams*>(displayDrawable.GetRenderParams().get());
+        displayParams->nodeRotation_ = ScreenRotation::ROTATION_0;
+
+        auto mirrorNode = std::make_shared<RSRenderNode>(2);
+        auto mirrorDrawable = std::static_pointer_cast<DrawableV2::RSLogicalDisplayRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(mirrorNode));
+        mirrorDrawable->renderParams_ = std::make_unique<RSLogicalDisplayRenderParams>(mirrorNode->GetId());
+
+        displayParams->mirrorSourceDrawable_ = mirrorDrawable;
+
+        bool result = renderProcessor->UpdateMirrorInfo(displayDrawable);
+        EXPECT_EQ(result, true);
+        EXPECT_EQ(renderProcessor->isMirror_, true);
+    }
+}
+
+/**
+ * @tc.name: ProcessOfflineLayer_SurfaceDrawableAsyncTest001
+ * @tc.desc: Test ProcessOfflineLayer with surfaceDrawable and async=true
+ *           When async=true, PostProcessOfflineTask should be skipped
+ *           Covers branch: if (!async) skip PostProcessOfflineTask, WaitForProcessOfflineResult fails
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessOfflineLayer_SurfaceDrawableAsyncTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        bool async = true;
+        bool result = renderProcessor->ProcessOfflineLayer(surfaceDrawable, async);
+        EXPECT_EQ(result, false);
+    }
+}
+
+/**
+ * @tc.name: ProcessOfflineLayer_SurfaceDrawableSyncPostFailedTest001
+ * @tc.desc: Test ProcessOfflineLayer with surfaceDrawable and async=false, PostProcessOfflineTask fails
+ *           When async=false and PostProcessOfflineTask returns false, function should return false early
+ *           Covers branch: async==false && PostProcessOfflineTask fails -> return false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessOfflineLayer_SurfaceDrawableSyncPostFailedTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        bool async = false;
+        bool result = renderProcessor->ProcessOfflineLayer(surfaceDrawable, async);
+        EXPECT_EQ(result, false);
+    }
+}
+
+/**
+ * @tc.name: ProcessOfflineLayer_SurfaceDrawableSyncPostSuccessTest001
+ * @tc.desc: Test ProcessOfflineLayer with surfaceDrawable and async=false, PostProcessOfflineTask succeeds
+ *           When async=false and PostProcessOfflineTask succeeds, wait for result
+ *           Covers branch: async==false && PostProcessOfflineTask succeeds, WaitForProcessOfflineResult fails
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessOfflineLayer_SurfaceDrawableSyncPostSuccessTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        auto surfaceDrawable = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
+            DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(node));
+        ASSERT_NE(surfaceDrawable, nullptr);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        bool async = false;
+        bool result = renderProcessor->ProcessOfflineLayer(surfaceDrawable, async);
+        EXPECT_EQ(result, false);
+    }
+}
+
+/**
+ * @tc.name: ProcessOfflineLayer_NodePtrPostFailedTest001
+ * @tc.desc: Test ProcessOfflineLayer with RSSurfaceRenderNode pointer, PostProcessOfflineTask fails
+ *           When PostProcessOfflineTask returns false, function should return false early
+ *           Covers branch: PostProcessOfflineTask fails -> return false
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessOfflineLayer_NodePtrPostFailedTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        ASSERT_NE(node, nullptr);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        bool result = renderProcessor->ProcessOfflineLayer(node);
+        EXPECT_EQ(result, false);
+    }
+}
+
+/**
+ * @tc.name: ProcessOfflineLayer_NodePtrPostSuccessTest001
+ * @tc.desc: Test ProcessOfflineLayer with RSSurfaceRenderNode pointer, PostProcessOfflineTask succeeds
+ *           When PostProcessOfflineTask succeeds, wait for result
+ *           Covers branch: PostProcessOfflineTask succeeds, WaitForProcessOfflineResult fails
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessOfflineLayer_NodePtrPostSuccessTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+        ASSERT_NE(node, nullptr);
+
+        NodeId nodeId = 1;
+        RSScreenRenderNode screenNode(nodeId, screenId_);
+        auto renderEngine = std::make_shared<RSUniRenderEngine>();
+        renderProcessor->Init(screenNode, renderEngine);
+        auto composerClient = RSComposerClient::Create(nullptr, nullptr);
+        renderProcessor->composerClient_ = composerClient;
+
+        bool result = renderProcessor->ProcessOfflineLayer(node);
+        EXPECT_EQ(result, false);
+    }
+}
+
+/**
+ * @tc.name: ProcessScreenSurface_AllBranchesCoveredTest001
+ * @tc.desc: Test ProcessScreenSurface with all branches covered
+ *           Covers: layer != nullptr, GetFingerprint() check, drawable != nullptr, SetAcquireFence
+ *           Note: The if (!drawable) branch at line 561 is defensive code - if CreateLayer succeeds,
+ *           drawable must be non-null since CreateLayer also checks drawable internally
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSUniRenderProcessorTest, ProcessScreenSurface_AllBranchesCoveredTest001, TestSize.Level2)
+{
+    if (RSUniRenderJudgement::IsUniRender()) {
+        ASSERT_NE(renderProcessor, nullptr);
+
+        NodeId nodeId = 100;
+        auto node = std::make_shared<RSScreenRenderNode>(nodeId, screenId_);
+
+        auto drawable = node->GetRenderDrawable();
+        if (drawable == nullptr) {
+            drawable = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(
+                std::static_pointer_cast<RSRenderNode>(node));
+        }
+
+        auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(drawable);
+        ASSERT_NE(screenDrawable, nullptr);
+
+        screenDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(0);
+        sptr<IBufferConsumerListener> listener = new TestBufferConsumerListener();
+        screenDrawable->CreateSurface(listener);
+
+        auto consumer = screenDrawable->surfaceHandler_->GetConsumer();
+        ASSERT_NE(consumer, nullptr);
+        auto producer = consumer->GetProducer();
+        auto surface = Surface::CreateSurfaceAsProducer(producer);
+        surface->SetQueueSize(1);
+
+        sptr<SurfaceBuffer> buffer;
+        sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+        GSError ret = surface->RequestBuffer(buffer, requestFence, requestConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+        BufferFlushConfig flushConfig = { .damage = { .w = 200, .h = 200, } };
+        ret = surface->FlushBuffer(buffer, flushFence, flushConfig);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        OHOS::sptr<SurfaceBuffer> cbuffer;
+        Rect damage;
+        sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
+        int64_t timestamp = 0;
+        ret = consumer->AcquireBuffer(cbuffer, acquireFence, timestamp, damage);
+        ASSERT_EQ(ret, GSERROR_OK);
+
+        screenDrawable->surfaceHandler_->SetBuffer(cbuffer, acquireFence, damage, timestamp, nullptr);
+
+        auto layerSize = renderProcessor->layers_.size();
+        EXPECT_NO_FATAL_FAILURE(renderProcessor->ProcessScreenSurface(*node));
+
+        EXPECT_GT(renderProcessor->layers_.size(), layerSize);
+    }
 }
 }

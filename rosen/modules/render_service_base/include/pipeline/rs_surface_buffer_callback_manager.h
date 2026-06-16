@@ -17,15 +17,20 @@
 #define RENDER_SERVICE_BASE_PIPELINE_RS_SURFACE_BUFFER_CALLBACK_MANAGER_H
 
 #include <functional>
+#include <list>
 #include <map>
 #include <mutex>
 #include <shared_mutex>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "common/rs_common_def.h"
+#include "pipeline/rs_draw_cmd.h"
 #include "refbase.h"
-
+#if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+#include "surface_buffer.h"
+#endif
 namespace OHOS {
 namespace Rosen {
 
@@ -37,10 +42,10 @@ struct DrawSurfaceBufferAfterAcquireCbData;
 class RSB_EXPORT RSSurfaceBufferCallbackManager {
 public:
     struct VSyncFuncs {
-        std::function<void()> requestNextVsync;
+        std::function<void()> requestNextVSync;
         std::function<bool()> isRequestedNextVSync;
     };
- 
+
 #ifdef ROSEN_OHOS
     using OnFinishCb = std::function<void(const Drawing::DrawSurfaceBufferFinishCbData&)>;
     using OnAfterAcquireBufferCb = std::function<void(const Drawing::DrawSurfaceBufferAfterAcquireCbData&)>;
@@ -63,10 +68,17 @@ public:
 #ifdef ROSEN_OHOS
     void SetReleaseFence(int releaseFenceFd, NodeId rootNodeId = INVALID_NODEID);
 #endif
- 
+
     void RunSurfaceBufferCallback();
-#ifdef RS_ENABLE_VK
+
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
     void RunSurfaceBufferSubCallbackForVulkan(NodeId rootNodeId);
+#endif
+
+#ifdef ROSEN_OHOS
+    void StoreSurfaceBufferInfo(const DrawingSurfaceBufferInfo& info);
+    void RemoveAllSurfaceBufferInfo(pid_t pid, uint64_t uid);
+    std::vector<DrawingSurfaceBufferInfo> GetSurfaceBufferInfoByPid(pid_t pid);
 #endif
 
     static RSSurfaceBufferCallbackManager& Instance();
@@ -80,6 +92,15 @@ private:
 #endif
         std::vector<NodeId> rootNodeIds;
     };
+#ifdef ROSEN_OHOS
+    struct SurfaceBufferInfoEntry {
+        wptr<SurfaceBuffer> surfaceBuffer;
+        uint32_t bufferId;
+        pid_t pid;
+        uint64_t uid;
+        Drawing::Rect dstRect;
+    };
+#endif
     RSSurfaceBufferCallbackManager() = default;
     ~RSSurfaceBufferCallbackManager() noexcept = default;
 
@@ -95,7 +116,7 @@ private:
     void OnAfterAcquireBuffer(const Drawing::DrawSurfaceBufferAfterAcquireCbData& data);
     void OnFinish(const Drawing::DrawSurfaceBufferFinishCbData& data);
 #endif
- 
+
 #ifdef ROSEN_OHOS
     void EnqueueSurfaceBufferId(const Drawing::DrawSurfaceBufferFinishCbData& data);
 #endif
@@ -109,6 +130,10 @@ private:
     std::map<pid_t, uint64_t> processCallbackCount_;
     mutable std::shared_mutex registerSurfaceBufferCallbackMutex_;
     std::mutex surfaceBufferOpItemMutex_;
+#ifdef ROSEN_OHOS
+    std::unordered_map<uint64_t, std::list<SurfaceBufferInfoEntry>> surfaceBufferInfoMap_;
+    std::mutex surfaceBufferInfoMutex_;
+#endif
     std::function<void(std::function<void()>)> runPolicy_ = [](auto task) {
         std::invoke(task);
     };
@@ -129,7 +154,7 @@ std::tuple<Iters...> FindIf(std::tuple<Iters...> begin, std::tuple<Iters...> end
     }
     return end;
 }
- 
+
 template<class... Iters, class UnaryPred, size_t... Is>
 std::tuple<Iters...> RemoveIf(std::tuple<Iters...> begin, std::tuple<Iters...> end,
     UnaryPred unaryPred, std::index_sequence<Is...>)
@@ -144,7 +169,7 @@ std::tuple<Iters...> RemoveIf(std::tuple<Iters...> begin, std::tuple<Iters...> e
     }
     return begin;
 }
- 
+
 template <class... InputIters, class... OutPutIters, class UnaryPred, size_t... Is>
 std::tuple<OutPutIters...> CopyIf(std::tuple<InputIters...> inputBegin,
     std::tuple<InputIters...> inputEnd, std::tuple<OutPutIters...> outputBegin, UnaryPred unaryPred,
@@ -160,21 +185,21 @@ std::tuple<OutPutIters...> CopyIf(std::tuple<InputIters...> inputBegin,
     return outputBegin;
 }
 } // namespace Detail
- 
+
 template<class... Iters, class UnaryPred>
 std::tuple<Iters...> FindIf(std::tuple<Iters...> begin,
     std::tuple<Iters...> end, UnaryPred unaryPred)
 {
     return Detail::FindIf(begin, end, unaryPred, std::make_index_sequence<sizeof...(Iters)>());
 }
- 
+
 template<class... Iters, class UnaryPred>
 std::tuple<Iters...> RemoveIf(std::tuple<Iters...> begin,
     std::tuple<Iters...> end, UnaryPred unaryPred)
 {
     return Detail::RemoveIf(begin, end, unaryPred, std::make_index_sequence<sizeof...(Iters)>());
 }
- 
+
 template<class... InputIters, class... OutPutIters, class UnaryPred>
 std::tuple<OutPutIters...> CopyIf(std::tuple<InputIters...> inputBegin,
     std::tuple<InputIters...> inputEnd, std::tuple<OutPutIters...> outputBegin, UnaryPred unaryPred)

@@ -43,11 +43,15 @@ enum class RoundingStrategyType : uint8_t {
     ROUND_STATIC_CAST_INT,
     ROUND_BUTT,
 };
+namespace Drawing {
+class GEVisualEffectContainer;
+}
 
 class RSPropertyDrawableUtils {
 public:
     static Drawing::RoundRect RRect2DrawingRRect(const RRect& rr);
     static Drawing::Rect Rect2DrawingRect(const RectF& r);
+    static RectI DrawingRectI2RectI(const Drawing::RectI& r);
     static RRect GetRRectForDrawingBorder(
         const RSProperties& properties, const std::shared_ptr<RSBorder>& border, const bool& isOutline);
     static RRect GetInnerRRectForDrawingBorder(
@@ -65,18 +69,19 @@ public:
     static bool PickColorSyn(Drawing::Canvas* canvas, Drawing::Path& drPath, Drawing::Matrix& matrix,
         RSColor& colorPicked, const int& colorStrategy);
     static bool PickColor(std::shared_ptr<Drawing::GPUContext> context, std::shared_ptr<Drawing::Image> image,
-        Drawing::ColorQuad& colorPicked, ColorPickStrategyType strategy, bool prevDark);
+        Drawing::ColorQuad& colorPicked);
     static std::shared_ptr<Drawing::Image> GpuScaleImage(std::shared_ptr<Drawing::GPUContext> context,
         std::shared_ptr<Drawing::Image> image);
     static void GetDarkColor(RSColor& color);
     static void BeginForegroundFilter(RSPaintFilterCanvas& canvas, const RectF& bounds);
-    static void DrawForegroundFilter(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSFilter>& rsFilter);
+    static void DrawForegroundFilter(RSPaintFilterCanvas& canvas,
+        const std::shared_ptr<RSFilter>& rsFilter, std::optional<RectF> drawRect = std::nullopt);
     static void DrawFilter(Drawing::Canvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
         const std::unique_ptr<RSFilterCacheManager>& cacheManager, NodeId id, const bool isForegroundFilter,
         const std::optional<Drawing::RectI>& snapshotRect = std::nullopt,
         const std::optional<Drawing::RectI>& drawRect = std::nullopt);
     static void DrawBackgroundEffect(RSPaintFilterCanvas* canvas, const std::shared_ptr<RSFilter>& rsFilter,
-        const std::unique_ptr<RSFilterCacheManager>& cacheManager,
+        NodeId filterId, const std::unique_ptr<RSFilterCacheManager>& cacheManager,
         Drawing::RectI& bounds, bool behindWindow = false);
     static void DrawColorFilter(Drawing::Canvas* canvas, const std::shared_ptr<Drawing::ColorFilter>& colorFilter);
     static void DrawLightUpEffect(Drawing::Canvas* canvas, const float lightUpEffectDegree);
@@ -91,6 +96,7 @@ public:
     static std::shared_ptr<Drawing::RuntimeBlenderBuilder> MakeDynamicBrightnessLinearBuilder();
     static std::shared_ptr<Drawing::Blender> MakeDynamicBrightnessBlender(const RSDynamicBrightnessPara& params);
     static std::shared_ptr<Drawing::Blender> MakeShadowBlender(const RSShadowBlenderPara& params);
+    static std::shared_ptr<Drawing::Blender> MakeHdrDarkenBlender(const RSHdrDarkenBlenderPara& params);
     static void DrawBinarization(Drawing::Canvas* canvas, const std::optional<Vector4f>& aiInvert);
     static void DrawPixelStretch(Drawing::Canvas* canvas, const std::optional<Vector4f>& pixelStretch,
         const RectF& boundsRect, const bool boundsGeoValid, const Drawing::TileMode pixelStretchTileMode);
@@ -99,7 +105,7 @@ public:
     static void DrawShadow(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX, const float& offsetY,
         const float& elevation, const bool& isFilled, Color spotColor);
     static void DrawShadowMaskFilter(Drawing::Canvas* canvas, Drawing::Path& path, const float& offsetX,
-        const float& offsetY, const float& radius, const bool& isFilled, Color spotColor);
+        const float& offsetY, const float& radius, const bool& isFilled, Color spotColor, bool disableSDFBlur);
     static void DrawUseEffect(RSPaintFilterCanvas* canvas, UseEffectType useEffectType);
 
     static bool IsDangerousBlendMode(int blendMode, int blendApplyType);
@@ -116,6 +122,9 @@ public:
     static bool RSFilterSetPixelStretch(const RSProperties& property, const std::shared_ptr<RSFilter>& filter);
     static void RSFilterRemovePixelStretch(const std::shared_ptr<RSFilter>& filter);
     static void DrawFilterWithDRM(Drawing::Canvas* canvas, bool isDark);
+    static void DrawColorUsingSDFWithDRM(Drawing::Canvas* canvas, const Drawing::Rect* rect, bool isDark,
+        const std::shared_ptr<Drawing::GEVisualEffectContainer>& filterGEContainer, const std::string& filterTag,
+        const std::string& shapeTag);
 
     static std::shared_ptr<RSFilter> GenerateBehindWindowFilter(float radius, float saturation, float brightness,
         RSColor maskColor);
@@ -130,8 +139,16 @@ public:
         const Drawing::Matrix& totalMatrix, const Drawing::Rect& relativeRect, RoundingStrategyType roundingStrategy);
     RSB_EXPORT static std::tuple<Drawing::RectI, Drawing::RectI> GetAbsRectByStrategyForImage(
         const Drawing::Surface* surface, const Drawing::Matrix& totalMatrix, const Drawing::Rect& relativeRect);
-    static bool ApplySDFShapeToFrostedGlassFilter(const RSProperties& properties,
+    static void ApplySDFShapeToFilter(const RSProperties& properties,
         const std::shared_ptr<RSDrawingFilter>& drawingFilter, NodeId nodeId);
+    static void ApplySDFShapeToEffect(const RSProperties& properties,
+        const std::shared_ptr<RSNGRenderShaderBase>& shader, NodeId nodeId);
+    static std::shared_ptr<RSNGRenderShapeBase> GetResolvedSDFShape(const RSProperties& properties);
+    static std::shared_ptr<RSNGRenderShapeBase> CreateDefaultRRectShape(const RRect& sdfRRect, NodeId nodeId);
+    static void ApplySDFShapeToMagnifier(const RSProperties& properties,
+        const std::shared_ptr<RSNGRenderFilterBase>& shader, NodeId nodeId);
+    static void UpdatePropertiesToSpatialGlassEffect(const RSProperties& properties,
+        const std::shared_ptr<RSNGRenderShaderBase>& shader, NodeId nodeId);
 
 private:
     static std::shared_ptr<Drawing::ColorFilter> GenerateMaterialColorFilter(float sat, float brt);
@@ -142,6 +159,7 @@ private:
     static std::shared_ptr<Drawing::RuntimeEffect> dynamicBrightnessLinearBlenderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> lightUpShaderEffect_;
     static std::shared_ptr<Drawing::RuntimeEffect> shadowBlenderEffect_;
+    static std::shared_ptr<Drawing::RuntimeEffect> hdrDarkenBlenderEffect_;
     inline static std::atomic<int> g_blurCnt = 0;
 };
 } // namespace Rosen

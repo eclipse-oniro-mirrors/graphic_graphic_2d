@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,6 +40,8 @@ public:
     static void SetSize(ani_env* env, ani_object obj, ani_double alpha);
     static void SetTypeface(ani_env* env, ani_object obj, ani_object typeface);
     static ani_double MeasureSingleCharacter(ani_env* env, ani_object obj, ani_string text);
+    static ani_double MeasureSingleCharacterWithFeatures(ani_env* env, ani_object obj, ani_string text,
+        ani_array featuresobj);
     static ani_double MeasureText(ani_env* env, ani_object obj, ani_string aniText, ani_enum_item encoding);
     static void SetScaleX(ani_env* env, ani_object obj, ani_double scaleX);
     static void SetBaselineSnap(ani_env* env, ani_object obj, ani_boolean isBaselineSnap);
@@ -47,7 +49,7 @@ public:
     static void SetEmbeddedBitmaps(ani_env* env, ani_object obj, ani_boolean isEmbeddedBitmaps);
     static ani_boolean IsEmbeddedBitmaps(ani_env* env, ani_object obj);
     static void SetForceAutoHinting(ani_env* env, ani_object obj, ani_boolean isForceAutoHinting);
-    static ani_object GetWidths(ani_env* env, ani_object obj, ani_object glyphs);
+    static ani_object GetWidths(ani_env* env, ani_object obj, ani_array glyphs);
     static ani_object TextToGlyphs(ani_env* env, ani_object obj, ani_string aniText, ani_object glyphCount);
     static ani_boolean IsSubpixel(ani_env* env, ani_object obj);
     static ani_boolean IsLinearMetrics(ani_env* env, ani_object obj);
@@ -62,8 +64,10 @@ public:
     static ani_enum_item GetHinting(ani_env* env, ani_object obj);
     static ani_enum_item GetEdging(ani_env* env, ani_object obj);
     static ani_object CreatePathForGlyph(ani_env* env, ani_object obj, ani_int index);
-    static ani_object GetBounds(ani_env* env, ani_object obj, ani_object glyphs);
+    static ani_object GetBounds(ani_env* env, ani_object obj, ani_array glyphs);
     static ani_object GetTextPath(ani_env* env, ani_object obj, ani_string aniText,
+        ani_int byteLength, ani_double x, ani_double y);
+    static ani_object GetTextPathWithFallback(ani_env* env, ani_object obj, ani_string aniText,
         ani_int byteLength, ani_double x, ani_double y);
     static void SetThemeFontFollowed(ani_env* env, ani_object obj, ani_boolean followed);
     static ani_boolean IsThemeFontFollowed(ani_env* env, ani_object obj);

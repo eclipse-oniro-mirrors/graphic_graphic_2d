@@ -17,30 +17,24 @@
 #include "typeface_ani/ani_typeface.h"
 #include "rosen_text/font_collection.h"
 #include "txt/platform.h"
+#include "image/image_info.h"
+#include "image/image.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
 
-namespace {
-ani_ref gRectClassRef = nullptr;
-ani_method gGetLeftMethod = nullptr;
-ani_method gGetTopMethod = nullptr;
-ani_method gGetRightMethod = nullptr;
-ani_method gGetBottomMethod = nullptr;
-}
-
 ani_status AniThrowError(ani_env* env, const std::string& message)
 {
     ani_class errCls;
-    const char* className = "escompat.Error";
+    const char* className = "std.core.Error";
     if (ANI_OK != env->FindClass(className, &errCls)) {
         ROSEN_LOGE("Not found %{public}s", className);
         return ANI_ERROR;
     }
 
     ani_method errCtor;
-    if (ANI_OK != env->Class_FindMethod(errCls, "<ctor>", "C{std.core.String}C{escompat.ErrorOptions}:", &errCtor)) {
+    if (ANI_OK != env->Class_FindMethod(errCls, "<ctor>", "C{std.core.String}C{std.core.ErrorOptions}:", &errCtor)) {
         ROSEN_LOGE("get errCtor Failed %{public}s", className);
         return ANI_ERROR;
     }
@@ -71,6 +65,125 @@ ani_status ThrowBusinessError(ani_env* env, DrawingErrorCode errorCode, const ch
     return ANI_OK;
 }
 
+#ifdef ROSEN_OHOS
+std::shared_ptr<Drawing::ColorSpace> ColorSpaceToDrawingColorSpace(Media::ColorSpace colorSpace)
+{
+    switch (colorSpace) {
+        case Media::ColorSpace::DISPLAY_P3:
+            return Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
+        case Media::ColorSpace::LINEAR_SRGB:
+            return Drawing::ColorSpace::CreateSRGBLinear();
+        case Media::ColorSpace::SRGB:
+            return Drawing::ColorSpace::CreateSRGB();
+        default:
+            return Drawing::ColorSpace::CreateSRGB();
+    }
+}
+
+Drawing::ColorType PixelFormatToDrawingColorType(Media::PixelFormat pixelFormat)
+{
+    switch (pixelFormat) {
+        case Media::PixelFormat::RGB_565:
+            return Drawing::ColorType::COLORTYPE_RGB_565;
+        case Media::PixelFormat::RGBA_8888:
+            return Drawing::ColorType::COLORTYPE_RGBA_8888;
+        case Media::PixelFormat::BGRA_8888:
+            return Drawing::ColorType::COLORTYPE_BGRA_8888;
+        case Media::PixelFormat::ALPHA_8:
+            return Drawing::ColorType::COLORTYPE_ALPHA_8;
+        case Media::PixelFormat::RGBA_F16:
+            return Drawing::ColorType::COLORTYPE_RGBA_F16;
+        case Media::PixelFormat::UNKNOWN:
+        case Media::PixelFormat::ARGB_8888:
+        case Media::PixelFormat::RGB_888:
+        case Media::PixelFormat::NV21:
+        case Media::PixelFormat::NV12:
+        case Media::PixelFormat::CMYK:
+        default:
+            return Drawing::ColorType::COLORTYPE_UNKNOWN;
+    }
+}
+
+Drawing::AlphaType AlphaTypeToDrawingAlphaType(Media::AlphaType alphaType)
+{
+    switch (alphaType) {
+        case Media::AlphaType::IMAGE_ALPHA_TYPE_UNKNOWN:
+            return Drawing::AlphaType::ALPHATYPE_UNKNOWN;
+        case Media::AlphaType::IMAGE_ALPHA_TYPE_OPAQUE:
+            return Drawing::AlphaType::ALPHATYPE_OPAQUE;
+        case Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL:
+            return Drawing::AlphaType::ALPHATYPE_PREMUL;
+        case Media::AlphaType::IMAGE_ALPHA_TYPE_UNPREMUL:
+            return Drawing::AlphaType::ALPHATYPE_UNPREMUL;
+        default:
+            return Drawing::AlphaType::ALPHATYPE_UNKNOWN;
+    }
+}
+
+struct PixelMapReleaseContext {
+    explicit PixelMapReleaseContext(std::shared_ptr<Media::PixelMap> pixelMap) : pixelMap_(pixelMap) {}
+
+    ~PixelMapReleaseContext()
+    {
+        pixelMap_ = nullptr;
+    }
+
+private:
+    std::shared_ptr<Media::PixelMap> pixelMap_;
+};
+
+static void PixelMapReleaseProc(const void* /* pixels */, void* context)
+{
+    PixelMapReleaseContext* ctx = static_cast<PixelMapReleaseContext*>(context);
+    if (ctx) {
+        delete ctx;
+        ctx = nullptr;
+    }
+}
+
+std::shared_ptr<Drawing::Image> ExtractDrawingImage(std::shared_ptr<Media::PixelMap> pixelMap)
+{
+    if (!pixelMap) {
+        ROSEN_LOGE("Drawing_napi::pixelMap fail");
+        return nullptr;
+    }
+    Media::ImageInfo imageInfo;
+    pixelMap->GetImageInfo(imageInfo);
+    Drawing::ImageInfo drawingImageInfo { imageInfo.size.width, imageInfo.size.height,
+        PixelFormatToDrawingColorType(imageInfo.pixelFormat), AlphaTypeToDrawingAlphaType(imageInfo.alphaType),
+        ColorSpaceToDrawingColorSpace(imageInfo.colorSpace) };
+    Drawing::Pixmap imagePixmap(
+        drawingImageInfo, reinterpret_cast<const void*>(pixelMap->GetPixels()), pixelMap->GetRowStride());
+    PixelMapReleaseContext* releaseContext = new PixelMapReleaseContext(pixelMap);
+    auto image = Drawing::Image::MakeFromRaster(imagePixmap, PixelMapReleaseProc, releaseContext);
+    if (!image) {
+        ROSEN_LOGE("Drawing_napi :RSPixelMapUtil::ExtractDrawingImage fail");
+        delete releaseContext;
+        releaseContext = nullptr;
+    }
+    return image;
+}
+#endif
+
+std::string CreateStdString(ani_env* env, ani_string aniStr)
+{
+    ani_size aniStrSize = 0;
+    ani_status status = env->String_GetUTF8Size(aniStr, &aniStrSize);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("failed to get utf8 strsize");
+        return "";
+    }
+    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(aniStrSize + 1);
+    ani_size byteSize = 0;
+    status = env->String_GetUTF8(aniStr, buffer.get(), aniStrSize + 1, &byteSize);
+    if (status != ANI_OK) {
+        ROSEN_LOGE("failed to get utf8 size");
+        return "";
+    }
+    buffer[byteSize] = '\0';
+    return std::string(buffer.get());
+}
+
 ani_status CreateStdStringUtf16(ani_env* env, const ani_string& str, std::u16string& utf16Str)
 {
     ani_size strSize;
@@ -95,6 +208,98 @@ ani_status CreateStdStringUtf16(ani_env* env, const ani_string& str, std::u16str
     return ANI_OK;
 }
 
+bool GetColor4fFromAniColor4fObj(ani_env* env, ani_object obj, Drawing::Color4f &color)
+{
+    ani_class colorCls = AniGlobalClass::GetInstance().color4fInterface;
+    if (colorCls == nullptr) {
+        ROSEN_LOGE("GetColor4fFromAniColor4fObj failed by cls is null");
+        return false;
+    }
+
+    ani_method colorGetAlpha = AniGlobalMethod::GetInstance().color4fGetAlpha;
+    ani_method colorGetRed = AniGlobalMethod::GetInstance().color4fGetRed;
+    ani_method colorGetGreen = AniGlobalMethod::GetInstance().color4fGetGreen;
+    ani_method colorGetBlue = AniGlobalMethod::GetInstance().color4fGetBlue;
+    if (colorGetAlpha == nullptr || colorGetRed == nullptr || colorGetGreen == nullptr || colorGetBlue == nullptr) {
+        ROSEN_LOGE("GetColor4fFromAniColor4fObj failed by cls method is null");
+        return false;
+    }
+
+    ani_boolean isColorClass;
+    if (env->Object_InstanceOf(obj, colorCls, &isColorClass) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return false;
+    }
+
+    if (!isColorClass) {
+        return false;
+    }
+
+    ani_double alpha;
+    ani_double red;
+    ani_double blue;
+    ani_double green;
+
+    if ((env->Object_CallMethod_Double(obj, colorGetAlpha, &alpha) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, colorGetRed, &red) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, colorGetGreen, &green) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, colorGetBlue, &blue) != ANI_OK)) {
+        ROSEN_LOGE("GetColor4fFromAniColor4fObj failed by Color class");
+        return false;
+    }
+    
+    color.alphaF_ = static_cast<float>(alpha);
+    color.redF_ = static_cast<float>(red);
+    color.greenF_ = static_cast<float>(green);
+    color.blueF_ = static_cast<float>(blue);
+
+    return true;
+}
+
+bool GetValueFromAniRectObj(ani_env* env, ani_object obj, std::vector<double>& ltrb)
+{
+    ltrb.clear();
+    ani_class rectCls = AniGlobalClass::GetInstance().rectInterface;
+    if (rectCls == nullptr) {
+        ROSEN_LOGE("GetValueFromAniRectObj failed by cls is null");
+        return false;
+    }
+    ani_method rectGetLeft = AniGlobalMethod::GetInstance().rectGetLeft;
+    ani_method rectGetTop = AniGlobalMethod::GetInstance().rectGetTop;
+    ani_method rectGetRight = AniGlobalMethod::GetInstance().rectGetRight;
+    ani_method rectGetBottom = AniGlobalMethod::GetInstance().rectGetBottom;
+    if (rectGetLeft == nullptr || rectGetTop == nullptr || rectGetRight == nullptr || rectGetBottom == nullptr) {
+        ROSEN_LOGE("GetValueFromAniRectObj failed by cls method is null");
+        return false;
+    }
+
+    ani_boolean isRectClass;
+    if (env->Object_InstanceOf(obj, rectCls, &isRectClass) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return false;
+    }
+    if (!isRectClass) {
+        return false;
+    }
+
+    ani_double left = 0;
+    ani_double top = 0;
+    ani_double right = 0;
+    ani_double bottom = 0;
+    if ((env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetLeft, &left) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetTop, &top) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetRight, &right) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetBottom, &bottom) != ANI_OK)) {
+        ROSEN_LOGE("GetValueFromAniRectObj failed");
+        return false;
+    }
+    ltrb.push_back(left);
+    ltrb.push_back(top);
+    ltrb.push_back(right);
+    ltrb.push_back(bottom);
+    return true;
+}
+
 ani_status CreateBusinessError(ani_env* env, int32_t error, const char* message, ani_object& err)
 {
     ani_class aniClass;
@@ -104,7 +309,7 @@ ani_status CreateBusinessError(ani_env* env, int32_t error, const char* message,
         return status;
     }
     ani_method aniCtor;
-    status = env->Class_FindMethod(aniClass, "<ctor>", "C{std.core.String}C{escompat.ErrorOptions}:", &aniCtor);
+    status = env->Class_FindMethod(aniClass, "<ctor>", "C{std.core.String}C{std.core.ErrorOptions}:", &aniCtor);
     if (status != ANI_OK) {
         ROSEN_LOGE("Failed to find ctor, status:%{public}d", static_cast<int32_t>(status));
         return status;
@@ -123,17 +328,28 @@ ani_status CreateBusinessError(ani_env* env, int32_t error, const char* message,
     return ANI_OK;
 }
 
-
 bool GetColorQuadFromColorObj(ani_env* env, ani_object obj, Drawing::ColorQuad &color)
 {
-    ani_class colorClass;
-    ani_status status = env->FindClass("@ohos.graphics.common2D.common2D.Color", &colorClass);
-    if (status != ANI_OK) {
-        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+    ani_class colorCls = AniGlobalClass::GetInstance().colorInterface;
+    if (colorCls == nullptr) {
+        ROSEN_LOGE("GetColorQuadFromColorObj failed by cls is null");
         return false;
     }
+
+    ani_method colorGetAlpha = AniGlobalMethod::GetInstance().colorGetAlpha;
+    ani_method colorGetRed = AniGlobalMethod::GetInstance().colorGetRed;
+    ani_method colorGetGreen = AniGlobalMethod::GetInstance().colorGetGreen;
+    ani_method colorGetBlue = AniGlobalMethod::GetInstance().colorGetBlue;
+    if (colorGetAlpha == nullptr || colorGetRed == nullptr || colorGetGreen == nullptr || colorGetBlue == nullptr) {
+        ROSEN_LOGE("GetColorQuadFromColorObj failed by cls method is null");
+        return false;
+    }
+
     ani_boolean isColorClass;
-    env->Object_InstanceOf(obj, colorClass, &isColorClass);
+    if (env->Object_InstanceOf(obj, colorCls, &isColorClass) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return false;
+    }
 
     if (!isColorClass) {
         return false;
@@ -144,11 +360,11 @@ bool GetColorQuadFromColorObj(ani_env* env, ani_object obj, Drawing::ColorQuad &
     ani_int green;
     ani_int blue;
 
-    if ((env->Object_GetPropertyByName_Int(obj, "alpha", &alpha) != ANI_OK) ||
-        (env->Object_GetPropertyByName_Int(obj, "red", &red) != ANI_OK) ||
-        (env->Object_GetPropertyByName_Int(obj, "green", &green) != ANI_OK) ||
-        (env->Object_GetPropertyByName_Int(obj, "blue", &blue) != ANI_OK)) {
-        ROSEN_LOGE("GetColorQuadFromParam failed by Color class");
+    if ((env->Object_CallMethod_Int(obj, colorGetAlpha, &alpha) != ANI_OK) ||
+        (env->Object_CallMethod_Int(obj, colorGetRed, &red) != ANI_OK) ||
+        (env->Object_CallMethod_Int(obj, colorGetGreen, &green) != ANI_OK) ||
+        (env->Object_CallMethod_Int(obj, colorGetBlue, &blue) != ANI_OK)) {
+        ROSEN_LOGE("GetColorQuadFromColorObj failed by Color class");
         return false;
     }
 
@@ -156,7 +372,7 @@ bool GetColorQuadFromColorObj(ani_env* env, ani_object obj, Drawing::ColorQuad &
         red < 0 || red > Color::RGB_MAX ||
         green < 0 || green > Color::RGB_MAX ||
         blue < 0 || blue > Color::RGB_MAX) {
-        ROSEN_LOGE("GetColorQuadFromParam failed by Color class invaild value");
+        ROSEN_LOGE("GetColorQuadFromColorObj failed by Color class invaild value");
         return false;
     }
 
@@ -167,17 +383,19 @@ bool GetColorQuadFromColorObj(ani_env* env, ani_object obj, Drawing::ColorQuad &
 
 bool GetColorQuadFromParam(ani_env* env, ani_object obj, Drawing::ColorQuad &color)
 {
-    ani_class intClass;
-    ani_status status = env->FindClass(ANI_INT_STRING, &intClass);
-    if (status != ANI_OK) {
-        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+    ani_class intClass = AniGlobalClass::GetInstance().intCls;
+    if (intClass == nullptr) {
+        ROSEN_LOGE("GetColorQuadFromParam Failed to find class %{public}s", ANI_INT_STRING);
         return false;
     }
     ani_boolean isInt;
-    env->Object_InstanceOf(obj, intClass, &isInt);
+    if (env->Object_InstanceOf(obj, intClass, &isInt) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return false;
+    }
     if (isInt) {
         ani_int aniColor;
-        if (ANI_OK != env->Object_CallMethodByName_Int(obj, "toInt", nullptr, &aniColor)) {
+        if (ANI_OK != env->Object_CallMethod_Int(obj, AniGlobalMethod::GetInstance().intGet, &aniColor)) {
             ROSEN_LOGE("GetColorQuadFromParam failed by int value");
             return false;
         }
@@ -190,7 +408,7 @@ bool GetColorQuadFromParam(ani_env* env, ani_object obj, Drawing::ColorQuad &col
 
 ani_status CreateColorObj(ani_env* env, const Drawing::Color& color, ani_object& obj)
 {
-    obj = CreateAniObject(env, "@ohos.graphics.common2D.common2D.ColorInternal", "iiii:",
+    obj = CreateAniObject(env, AniGlobalClass::GetInstance().color, AniGlobalMethod::GetInstance().colorCtor,
         ani_int(color.GetAlpha()),
         ani_int(color.GetRed()),
         ani_int(color.GetGreen()),
@@ -199,41 +417,27 @@ ani_status CreateColorObj(ani_env* env, const Drawing::Color& color, ani_object&
     return ANI_OK;
 }
 
-bool GetRectClass(ani_env* env, ani_class& rectClass)
-{
-    if (gRectClassRef) {
-        rectClass = reinterpret_cast<ani_class>(gRectClassRef);
-        return true;
-    }
-    if (env->FindClass("@ohos.graphics.common2D.common2D.Rect", &rectClass) != ANI_OK) {
-        ROSEN_LOGE("[Drawing] GetRectClass FindClass failed");
-        return false;
-    }
-    if (env->GlobalReference_Create(reinterpret_cast<ani_ref>(rectClass), &gRectClassRef) != ANI_OK) {
-        ROSEN_LOGE("[Drawing] GetRectClass GlobalReference_Create failed");
-    }
-    return true;
-}
-
-ani_status GetRectPropertyValue(ani_env* env, ani_object obj, ani_class rectClass, const RectPropertyConfig& config)
-{
-    if ((config.method || env->Class_FindMethod(rectClass, config.methodName, ":d", &config.method) == ANI_OK) &&
-        env->Object_CallMethod_Double(obj, config.method, &config.result) == ANI_OK) {
-        return ANI_OK;
-    }
-    return env->Object_GetPropertyByName_Double(obj, config.propertyName, &config.result);
-}
-
 bool GetRectFromAniRectObj(ani_env* env, ani_object obj, Drawing::Rect& rect)
 {
-    ani_class rectClass;
-    if (!GetRectClass(env, rectClass)) {
-        ROSEN_LOGE("[Drawing] GetRectFromAniRectObj GetRectClass failed");
+    ani_class rectCls = AniGlobalClass::GetInstance().rectInterface;
+    if (rectCls == nullptr) {
+        ROSEN_LOGE("GetRectFromAniRectObj failed by cls is null");
+        return false;
+    }
+    ani_method rectGetLeft = AniGlobalMethod::GetInstance().rectGetLeft;
+    ani_method rectGetTop = AniGlobalMethod::GetInstance().rectGetTop;
+    ani_method rectGetRight = AniGlobalMethod::GetInstance().rectGetRight;
+    ani_method rectGetBottom = AniGlobalMethod::GetInstance().rectGetBottom;
+    if (rectGetLeft == nullptr || rectGetTop == nullptr || rectGetRight == nullptr || rectGetBottom == nullptr) {
+        ROSEN_LOGE("GetRectFromAniRectObj failed by cls method is null");
         return false;
     }
 
     ani_boolean isRectClass;
-    env->Object_InstanceOf(obj, rectClass, &isRectClass);
+    if (env->Object_InstanceOf(obj, rectCls, &isRectClass) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return false;
+    }
     if (!isRectClass) {
         return false;
     }
@@ -242,15 +446,10 @@ bool GetRectFromAniRectObj(ani_env* env, ani_object obj, Drawing::Rect& rect)
     ani_double top = 0;
     ani_double right = 0;
     ani_double bottom = 0;
-    RectPropertyConfig leftConfig = { "left", "<get>left", gGetLeftMethod, left };
-    RectPropertyConfig topConfig = { "top", "<get>top", gGetTopMethod, top };
-    RectPropertyConfig rightConfig = { "right", "<get>right", gGetRightMethod, right };
-    RectPropertyConfig bottomConfig = { "bottom", "<get>bottom", gGetBottomMethod, bottom };
-
-    if ((GetRectPropertyValue(env, obj, rectClass, leftConfig) != ANI_OK) ||
-        (GetRectPropertyValue(env, obj, rectClass, topConfig) != ANI_OK) ||
-        (GetRectPropertyValue(env, obj, rectClass, rightConfig) != ANI_OK) ||
-        (GetRectPropertyValue(env, obj, rectClass, bottomConfig) != ANI_OK)) {
+    if ((env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetLeft, &left) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetTop, &top) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetRight, &right) != ANI_OK) ||
+        (env->Object_CallMethod_Double(obj, AniGlobalMethod::GetInstance().rectGetBottom, &bottom) != ANI_OK)) {
         ROSEN_LOGE("GetRectFromAniRectObj failed");
         return false;
     }
@@ -262,9 +461,20 @@ bool GetRectFromAniRectObj(ani_env* env, ani_object obj, Drawing::Rect& rect)
     return true;
 }
 
+ani_status CreateColor4fObj(ani_env* env, const Drawing::Color4f& color, ani_object& obj)
+{
+    obj = CreateAniObject(env, AniGlobalClass::GetInstance().color4f, AniGlobalMethod::GetInstance().color4fCtor,
+        ani_double(color.alphaF_),
+        ani_double(color.redF_),
+        ani_double(color.greenF_),
+        ani_double(color.blueF_)
+    );
+    return ANI_OK;
+}
+
 ani_status CreateRectObj(ani_env* env, const Drawing::Rect& rect, ani_object& obj)
 {
-    obj = CreateAniObject(env, "@ohos.graphics.common2D.common2D.RectInternal", "dddd:",
+    obj = CreateAniObject(env, AniGlobalClass::GetInstance().rect, AniGlobalMethod::GetInstance().rectCtor,
         ani_double(rect.left_),
         ani_double(rect.top_),
         ani_double(rect.right_),
@@ -273,17 +483,96 @@ ani_status CreateRectObj(ani_env* env, const Drawing::Rect& rect, ani_object& ob
     return ANI_OK;
 }
 
+bool DrawingValueConvertToAniRect(ani_env* env, ani_object obj, ani_double left, ani_double top, ani_double right,
+    ani_double bottom)
+{
+    ani_method rectSetLeft = AniGlobalMethod::GetInstance().rectSetLeft;
+    ani_method rectSetTop = AniGlobalMethod::GetInstance().rectSetTop;
+    ani_method rectSetRight = AniGlobalMethod::GetInstance().rectSetRight;
+    ani_method rectSetBottom = AniGlobalMethod::GetInstance().rectSetBottom;
+    if (rectSetLeft == nullptr || rectSetTop == nullptr || rectSetRight == nullptr || rectSetBottom == nullptr) {
+        ROSEN_LOGE("DrawingRectConvertToAniRect failed by method is null");
+        return false;
+    }
+    if (env->Object_CallMethod_Void(obj, rectSetLeft, left) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetTop, top) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetRight, right) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetBottom, bottom) != ANI_OK) {
+        ROSEN_LOGE("DrawingRectConvertToAniRect failed by Object_SetProperty_Double");
+        return false;
+    }
+    return true;
+}
+
+bool MakeFontFeaturesFromAniObjArray(ani_env* env, std::shared_ptr<Drawing::DrawingFontFeatures> fontfeatures,
+    uint32_t size, ani_array featuresobj)
+{
+    fontfeatures->clear();
+    for (uint32_t i = 0; i < size; ++i) {
+        ani_ref fontFeatureRef;
+        if (ANI_OK != env->Array_Get(featuresobj, static_cast<ani_size>(i), &fontFeatureRef)) {
+            ROSEN_LOGE("GetFontFeaturesRef get fontFeatureRef failed");
+            return false;
+        }
+        
+        ani_method fontFeatureGetName = AniGlobalMethod::GetInstance().fontFeatureGetName;
+        ani_ref nameRef = nullptr;
+        ani_status ret = env->Object_CallMethod_Ref(static_cast<ani_object>(fontFeatureRef),
+            fontFeatureGetName, &nameRef);
+        if (ret != ANI_OK) {
+            ROSEN_LOGE("Failed to get name, ret %{public}d", ret);
+            return false;
+        }
+        std::string name = CreateStdString(env, reinterpret_cast<ani_string>(nameRef));
+        if (name == "") {
+            ROSEN_LOGE("Failed to get CreateStdString");
+            return false;
+        }
+
+        ani_double valueDouble;
+        ret = env->Object_CallMethod_Double(static_cast<ani_object>(fontFeatureRef),
+            AniGlobalMethod::GetInstance().fontFeatureGetValue, &valueDouble);
+        if (ret != ANI_OK) {
+            ROSEN_LOGE("Failed to get value, ret %{public}d", ret);
+            return false;
+        }
+        fontfeatures->push_back({{name, valueDouble}});
+    }
+    return true;
+}
+
 ani_status GetPointFromPointObj(ani_env* env, ani_object obj, Drawing::Point& point)
 {
+    ani_class pointCls  = AniGlobalClass::GetInstance().pointInterface;
+    if (pointCls == nullptr) {
+        ROSEN_LOGE("GetPointFromPointObj Failed to find class %{public}s", ANI_INTERFACE_POINT_NAME);
+        return ANI_NOT_FOUND;
+    }
+    ani_boolean isPoint;
+    if (env->Object_InstanceOf(obj, pointCls, &isPoint) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return ANI_ERROR;
+    }
+    if (!isPoint) {
+        return ANI_ERROR;
+    }
+
+    ani_method pointGetX = AniGlobalMethod::GetInstance().pointGetX;
+    ani_method pointGetY = AniGlobalMethod::GetInstance().pointGetY;
+    if (pointGetX == nullptr || pointGetY == nullptr) {
+        ROSEN_LOGE("GetPointFromPointObj failed by cls method is null");
+        return ANI_ERROR;
+    }
+
     ani_double x = 0;
-    ani_status ret = env->Object_GetPropertyByName_Double(obj, "x", &x);
+    ani_status ret = env->Object_CallMethod_Double(obj, pointGetX, &x);
     if (ret != ANI_OK) {
         ROSEN_LOGE("Param x is invalid, ret %{public}d", ret);
         return ret;
     }
 
     ani_double y = 0;
-    ret = env->Object_GetPropertyByName_Double(obj, "y", &y);
+    ret = env->Object_CallMethod_Double(obj, pointGetY, &y);
     if (ret != ANI_OK) {
         ROSEN_LOGE("Param y is invalid, ret %{public}d", ret);
         return ret;
@@ -295,7 +584,7 @@ ani_status GetPointFromPointObj(ani_env* env, ani_object obj, Drawing::Point& po
 
 ani_status CreatePointObj(ani_env* env, const Drawing::Point& point, ani_object& obj)
 {
-    obj = CreateAniObject(env, "@ohos.graphics.common2D.common2D.PointInternal", "dd:",
+    obj = CreateAniObject(env, AniGlobalClass::GetInstance().point, AniGlobalMethod::GetInstance().pointCtor,
         ani_double(point.GetX()),
         ani_double(point.GetY())
     );
@@ -304,26 +593,28 @@ ani_status CreatePointObj(ani_env* env, const Drawing::Point& point, ani_object&
 
 bool CreatePointObjAndCheck(ani_env* env, const Drawing::Point& point, ani_object& obj)
 {
-    obj = CreateAniObject(env, "@ohos.graphics.common2D.common2D.PointInternal", "dd:",
+    obj = CreateAniObject(env, AniGlobalClass::GetInstance().point, AniGlobalMethod::GetInstance().pointCtor,
         ani_double(point.GetX()),
         ani_double(point.GetY())
     );
     ani_boolean isUndefined;
-    env->Reference_IsUndefined(obj, &isUndefined);
+    if (env->Reference_IsUndefined(obj, &isUndefined) != ANI_OK) {
+        ROSEN_LOGE("Reference_IsUndefined failed");
+        return false;
+    }
     return !isUndefined;
 }
 
-bool ConvertFromAniPointsArray(ani_env* env, ani_object aniPointArray, Drawing::Point* points, uint32_t pointSize)
+bool ConvertFromAniPointsArray(ani_env* env, ani_array aniPointArray, Drawing::Point* points, uint32_t pointSize)
 {
     for (uint32_t i = 0; i < pointSize; i++) {
         ani_ref pointRef;
         Drawing::Point point;
-        if (ANI_OK != env->Object_CallMethodByName_Ref(
-            aniPointArray, "$_get", "i:Y", &pointRef, (ani_int)i)) {
+        if (ANI_OK != env->Array_Get(aniPointArray, static_cast<ani_size>(i), &pointRef)) {
             ROSEN_LOGE("aniPointArray get pointRef failed.");
             return false;
         }
-        if (!GetPointFromAniPointObj(env, static_cast<ani_object>(pointRef), point)) {
+        if (GetPointFromPointObj(env, static_cast<ani_object>(pointRef), point) != ANI_OK) {
             ROSEN_LOGE("pointRef is invalid");
             return false;
         }
@@ -334,36 +625,44 @@ bool ConvertFromAniPointsArray(ani_env* env, ani_object aniPointArray, Drawing::
 
 bool GetPoint3FromPoint3dObj(ani_env* env, ani_object obj, Drawing::Point3& point3d)
 {
-    ani_class point3dClass;
-    ani_status status = env->FindClass("@ohos.graphics.common2D.common2D.Point3d", &point3dClass);
-    if (status != ANI_OK) {
-        ROSEN_LOGE("[ANI] can't find class @ohos.graphics.common2D.common2D.Point3d, status = %{public}d",
-            static_cast<int>(status));
+    ani_class point3dClass = AniGlobalClass::GetInstance().point3dInterface;
+    if (point3dClass == nullptr) {
+        ROSEN_LOGE("[ANI] can't find class %{public}s", ANI_INTERFACE_POINT3D_NAME);
         return false;
     }
     ani_boolean isPoint3dClass;
-    env->Object_InstanceOf(obj, point3dClass, &isPoint3dClass);
+    if (env->Object_InstanceOf(obj, point3dClass, &isPoint3dClass) != ANI_OK) {
+        ROSEN_LOGE("Object_InstanceOf failed");
+        return false;
+    }
     if (!isPoint3dClass) {
         ROSEN_LOGE("Get point3d object failed");
         return false;
     }
+    ani_method point3dGetX = AniGlobalMethod::GetInstance().point3dGetX;
+    ani_method point3dGetY = AniGlobalMethod::GetInstance().point3dGetY;
+    ani_method point3dGetZ = AniGlobalMethod::GetInstance().point3dGetZ;
+    if (point3dGetX == nullptr || point3dGetY == nullptr || point3dGetZ == nullptr) {
+        ROSEN_LOGE("GetPoint3FromPoint3dObj failed by cls method is null");
+        return false;
+    }
 
     ani_double x = 0;
-    ani_status ret = env->Object_GetPropertyByName_Double(obj, "x", &x);
+    ani_status ret = env->Object_CallMethod_Double(obj, point3dGetX, &x);
     if (ret != ANI_OK) {
         ROSEN_LOGE("Param x is invalid, ret %{public}d", ret);
         return false;
     }
 
     ani_double y = 0;
-    ret = env->Object_GetPropertyByName_Double(obj, "y", &y);
+    ret = env->Object_CallMethod_Double(obj, point3dGetY, &y);
     if (ret != ANI_OK) {
         ROSEN_LOGE("Param y is invalid, ret %{public}d", ret);
         return false;
     }
 
     ani_double z = 0;
-    ret = env->Object_GetPropertyByName_Double(obj, "z", &z);
+    ret = env->Object_CallMethod_Double(obj, point3dGetZ, &z);
     if (ret != ANI_OK) {
         ROSEN_LOGE("Param z is invalid, ret %{public}d", ret);
         return false;
@@ -376,28 +675,23 @@ bool GetPoint3FromPoint3dObj(ani_env* env, ani_object obj, Drawing::Point3& poin
 ani_object CreateAniUndefined(ani_env* env)
 {
     ani_ref aniRef;
-    env->GetUndefined(&aniRef);
+    if (env->GetUndefined(&aniRef) != ANI_OK) {
+        ROSEN_LOGE("GetUndefined failed");
+        return {};
+    }
     return static_cast<ani_object>(aniRef);
 }
 
-ani_object CreateAniObject(ani_env* env, const char* className, const char* methodSig, ...)
+ani_object CreateAniObject(ani_env* env, const ani_class cls, const ani_method ctor, ...)
 {
-    ani_class aniClass;
-    if (env->FindClass(className, &aniClass) != ANI_OK) {
-        ROSEN_LOGE("[Drawing] CreateAniObject FindClass failed");
+    if (cls == nullptr || ctor == nullptr) {
+        ROSEN_LOGE("[Drawing] CreateAniObject cls or ctor is null");
         return CreateAniUndefined(env);
     }
-
-    ani_method aniConstructor;
-    if (env->Class_FindMethod(aniClass, "<ctor>", methodSig, &aniConstructor) != ANI_OK) {
-        ROSEN_LOGE("[Drawing] CreateAniObject Class_FindMethod failed");
-        return CreateAniUndefined(env);
-    }
-
     ani_object aniObject;
     va_list args;
-    va_start(args, methodSig);
-    if (env->Object_New_V(aniClass, aniConstructor, &aniObject, args) != ANI_OK) {
+    va_start(args, ctor);
+    if (env->Object_New_V(cls, ctor, &aniObject, args) != ANI_OK) {
         ROSEN_LOGE("[Drawing] CreateAniObject Object_New failed");
         va_end(args);
         return CreateAniUndefined(env);
@@ -410,64 +704,89 @@ ani_object CreateAniObject(ani_env* env, const char* className, const char* meth
 ani_object CreateAniNull(ani_env* env)
 {
     ani_ref aniRef;
-    env->GetNull(&aniRef);
+    if (env->GetNull(&aniRef) != ANI_OK) {
+        ROSEN_LOGE("GetNull failed");
+        return {};
+    }
     return static_cast<ani_object>(aniRef);
 }
 
-bool GetPointFromAniPointObj(ani_env* env, ani_object obj, Drawing::Point& point)
+bool CreateAniEnumByEnumIndex(ani_env* env, const ani_enum enumType, ani_size index, ani_enum_item& enumItem)
 {
-    ani_class pointClass;
-    ani_status status = env->FindClass("@ohos.graphics.common2D.common2D.Point", &pointClass);
-    if (status != ANI_OK) {
-        ROSEN_LOGE("Failed to find class, status:%{public}d", static_cast<int32_t>(status));
+    if (enumType == nullptr) {
+        ROSEN_LOGE("CreateAniEnumByEnumIndex enumType is null.");
         return false;
     }
-    ani_boolean isPointClass;
-    env->Object_InstanceOf(obj, pointClass, &isPointClass);
-    if (!isPointClass) {
-        ROSEN_LOGE("object is not a point obj");
-        return false;
-    }
-
-    ani_double x = 0.0;
-    ani_double y = 0.0;
-    if ((env->Object_GetPropertyByName_Double(obj, "x", &x) != ANI_OK) ||
-        (env->Object_GetPropertyByName_Double(obj, "y", &y) != ANI_OK)) {
-        ROSEN_LOGE("GetPointFromAniPointObj failed");
-        return false;
-    }
-    point.SetX(x);
-    point.SetY(y);
-    return true;
-}
-
-bool CreateAniEnumByEnumIndex(ani_env* env, const char* enumDescripter, ani_size index, ani_enum_item& enumItem)
-{
-    ani_enum enumType;
-    ani_status ret = env->FindEnum(enumDescripter, &enumType);
+    ani_status ret = env->Enum_GetEnumItemByIndex(enumType, index, &enumItem);
     if (ret != ANI_OK) {
-        ROSEN_LOGE("CreateAniEnum find enum failed. ret: %{public}d. %{public}s", ret, enumDescripter);
-        return false;
-    }
-    ret = env->Enum_GetEnumItemByIndex(enumType, index, &enumItem);
-    if (ret != ANI_OK) {
-        ROSEN_LOGE("CreateAniEnum get enum by index failed. ret: %{public}d.", ret);
+        ROSEN_LOGE("CreateAniEnumByEnumIndex get enum by index failed. ret: %{public}d.", ret);
         return false;
     }
 
     return true;
 }
 
-bool SetPointToAniPointArrayWithIndex(ani_env* env, Drawing::Point& point, ani_object& pointArray, uint32_t index)
+bool CreateAniEnumByEnumName(ani_env* env, const ani_enum enumType, const std::string itemName, ani_enum_item& enumItem)
+{
+    if (enumType == nullptr) {
+        ROSEN_LOGE("CreateAniEnumByEnumName enumType is null.");
+        return false;
+    }
+    ani_status ret = env->Enum_GetEnumItemByName(enumType, itemName.c_str(), &enumItem);
+    if (ret != ANI_OK) {
+        ROSEN_LOGE("CreateAniEnumByEnumName get enum by name failed. ret: %{public}d.", ret);
+        return false;
+    }
+
+    return true;
+}
+
+bool SetPointToAniPointArrayWithIndex(ani_env* env, Drawing::Point& point, ani_array& pointArray, uint32_t index)
 {
     ani_object pointObj;
     if (!CreatePointObjAndCheck(env, point, pointObj)) {
         ROSEN_LOGE("AniPathIterator::Next Set pointObj from point failed.");
         return false;
     }
-    ani_status ret = env->Object_CallMethodByName_Void(pointArray, "$_set", "iY:", index, pointObj);
+    ani_status ret = env->Array_Set(pointArray, static_cast<ani_size>(index), pointObj);
     if (ret != ANI_OK) {
-        ROSEN_LOGE("AniPathIterator::Next SObject_CallMethodByName_Void  $_set Faild. ret: %{public}d", ret);
+        ROSEN_LOGE("AniPathIterator::Next Array_Set Faild. ret: %{public}d", ret);
+        return false;
+    }
+    return true;
+}
+
+bool DrawingPointConvertToAniPoint(ani_env* env, ani_object obj, const Drawing::Point& point)
+{
+    ani_method pointSetX = AniGlobalMethod::GetInstance().pointSetX;
+    ani_method pointSetY = AniGlobalMethod::GetInstance().pointSetY;
+    if (pointSetX == nullptr || pointSetY == nullptr) {
+        ROSEN_LOGE("DrawingPointConvertToAniPoint failed by method is null");
+        return false;
+    }
+    if (env->Object_CallMethod_Void(obj, pointSetX, point.GetX()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, pointSetY, point.GetY()) != ANI_OK) {
+        ROSEN_LOGE("DrawingPointConvertToAniPoint failed by Object_SetProperty_Double");
+        return false;
+    }
+    return true;
+}
+
+bool DrawingRectConvertToAniRect(ani_env* env, ani_object obj, const Drawing::Rect& rect)
+{
+    ani_method rectSetLeft = AniGlobalMethod::GetInstance().rectSetLeft;
+    ani_method rectSetTop = AniGlobalMethod::GetInstance().rectSetTop;
+    ani_method rectSetRight = AniGlobalMethod::GetInstance().rectSetRight;
+    ani_method rectSetBottom = AniGlobalMethod::GetInstance().rectSetBottom;
+    if (rectSetLeft == nullptr || rectSetTop == nullptr || rectSetRight == nullptr || rectSetBottom == nullptr) {
+        ROSEN_LOGE("DrawingRectConvertToAniRect failed by method is null");
+        return false;
+    }
+    if (env->Object_CallMethod_Void(obj, rectSetLeft, rect.GetLeft()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetTop, rect.GetTop()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetRight, rect.GetRight()) != ANI_OK ||
+        env->Object_CallMethod_Void(obj, rectSetBottom, rect.GetBottom()) != ANI_OK) {
+        ROSEN_LOGE("DrawingRectConvertToAniRect failed by Object_SetProperty_Double");
         return false;
     }
     return true;
@@ -525,24 +844,19 @@ std::shared_ptr<FontMgr> GetFontMgr(std::shared_ptr<Font> font)
     return fontMgr;
 }
 
-ani_object CreateAniArrayWithSize(ani_env* env, size_t size)
+ani_array CreateAniArrayWithSize(ani_env* env, size_t size)
 {
-    ani_class arrayCls;
-    if (env->FindClass("std.core.Array", &arrayCls) != ANI_OK) {
-        ROSEN_LOGE("Failed to findClass std.core.Array");
-        return CreateAniUndefined(env);
+    ani_ref undefinedRef = nullptr;
+    if (ANI_OK != env->GetUndefined(&undefinedRef)) {
+        ROSEN_LOGE("GetUndefined Failed.");
+        return nullptr;
     }
-    ani_method arrayCtor;
-    if (env->Class_FindMethod(arrayCls, "<ctor>", "i:", &arrayCtor) != ANI_OK) {
-        ROSEN_LOGE("Failed to find <ctor>");
-        return CreateAniUndefined(env);
+    ani_array resultArray;
+    if (ANI_OK != env->Array_New(size, undefinedRef, &resultArray)) {
+        ROSEN_LOGE("Array_New Failed.");
+        return nullptr;
     }
-    ani_object arrayObj = nullptr;
-    if (env->Object_New(arrayCls, arrayCtor, &arrayObj, size) != ANI_OK) {
-        ROSEN_LOGE("Failed to create object Array");
-        return CreateAniUndefined(env);
-    }
-    return arrayObj;
+    return resultArray;
 }
 } // namespace Drawing
 } // namespace Rosen

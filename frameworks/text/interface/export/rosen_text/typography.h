@@ -25,15 +25,22 @@
 #include "include/core/SkCanvas.h" // SKIA
 #include "symbol_animation_config.h"
 #include "text/font_metrics.h"
+#include "text/font_types.h"
 #include "text/text_blob.h"
 #include "text_style.h"
 #include "text_line_base.h"
 #include "typography_style.h"
 #include "typography_types.h"
 #include "utils/rect.h"
+#ifdef ENABLE_OHOS_ENHANCE
+#include "pixel_map.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
+
+using Drawing::TextEncoding;
+
 enum class TextRectWidthStyle {
     TIGHT,
     MAX,
@@ -118,6 +125,20 @@ struct TextBlobRecordInfo {
     SkPoint offset{0.0f, 0.0f};
     Drawing::Color color{Drawing::Color::COLOR_BLACK};
 };
+struct RS_EXPORT ImageOptions {
+    int32_t width{0};
+    int32_t height{0};
+    float offsetX{0.0f};
+    float offsetY{0.0f};
+};
+
+/**
+ * @brief Represents a single text glyph's path and its position.
+ */
+struct TextPathInfo {
+    Drawing::Path path;
+    Drawing::Point offset;
+};
 
 class Typography {
 public:
@@ -151,9 +172,15 @@ public:
         TextRectHeightStyle heightStyle, TextRectWidthStyle widthStyle) = 0;
     virtual std::vector<TextRect> GetTextRectsOfPlaceholders() = 0;
     virtual IndexAndAffinity GetGlyphIndexByCoordinate(double x, double y) = 0;
+    virtual IndexAndAffinity GetCharacterIndexByCoordinate(double x, double y,
+        TextEncoding encodeType = TextEncoding::UTF8) const = 0;
+    virtual Boundary GetCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd, Boundary* actualGlyphRange,
+        TextEncoding encodeType = TextEncoding::UTF8) const = 0;
+    virtual Boundary GetGlyphRangeForCharacterRange(size_t charStart, size_t charEnd, Boundary* actualCharRange,
+        TextEncoding encodeType = TextEncoding::UTF8) const = 0;
     virtual Boundary GetWordBoundaryByIndex(size_t index) = 0;
     virtual Boundary GetActualTextRange(int lineNumber, bool includeSpaces) = 0;
-    virtual Boundary GetEllipsisTextRange() = 0;
+    virtual Boundary GetEllipsisTextRange() const = 0;
     virtual double GetLineHeight(int lineNumber) = 0;
     virtual double GetLineWidth(int lineNumber) = 0;
     virtual void SetAnimation(
@@ -183,6 +210,37 @@ public:
     virtual std::vector<TextBlobRecordInfo> GetTextBlobRecordInfo() const = 0;
     virtual bool CanPaintAllText() const = 0;
     virtual std::string GetDumpInfo() const = 0;
+    virtual TextProcessState GetProcessState() const = 0;
+    virtual TextDisplayState GetTextDisplayState() const = 0;
+    virtual TypographyStyle GetParagraphStyle() const = 0;
+#ifdef ENABLE_OHOS_ENHANCE
+    virtual std::shared_ptr<OHOS::Media::PixelMap> GetTextPathImageByIndex(
+        size_t start, size_t end, const ImageOptions& options, bool fill) const = 0;
+    /**
+     * @brief Gets the vector path and position of each glyph in the specified cluster index range.
+     *
+     * Each element in the returned vector contains the vector path of a glyph and its offset
+     * relative to the paragraph origin. The number of elements corresponds to the number of
+     * glyphs that fall within [start, end).
+     *
+     * @param start The starting cluster index of the text range (inclusive).
+     *              Defaults to 0 (beginning of the text).
+     *              Must be less than @p end, otherwise an empty vector is returned.
+     * @param end The ending cluster index of the text range (exclusive).
+     *            Defaults to SIZE_MAX (end of the text, clamped to the actual length).
+     *            If it exceeds the text length, it is clamped to the text length.
+     * @return A vector of TextPathInfo. The vector is empty when:
+     *         - The text has not been laid out (Layout() was not called).
+     *         - The start index is greater than or equal to the end index.
+     *         - No glyphs fall within the specified index range.
+     *         - Any glyphs in the range cannot provide vector paths (e.g. bitmap glyphs, color glyphs).
+     */
+    virtual std::vector<TextPathInfo> GetTextPathsByIndex(size_t start = 0, size_t end = SIZE_MAX) const = 0;
+#endif
+    virtual TextLayoutResult LayoutWithConstraints(const TextRectSize& constraint) = 0;
+    virtual std::vector<TextRange> GetVisibleTextRanges() const = 0;
+    virtual void SetForceReuseRasterResult(bool flag) = 0;
+    virtual bool GetForceReuseRasterResult() const = 0;
 };
 } // namespace Rosen
 } // namespace OHOS

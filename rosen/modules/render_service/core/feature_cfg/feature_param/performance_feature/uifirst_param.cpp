@@ -98,4 +98,34 @@ void UIFirstParam::SetSizeChangedThreshold(float threshold)
 {
     sizeChangedThreshold_ = threshold;
 }
+
+bool UIFirstParam::IsOcclusionEnabled()
+{
+    return isOcclusionEnabled_;
+}
+
+void UIFirstParam::SetOcclusionEnabled(bool isEnable)
+{
+    isOcclusionEnabled_ = isEnable;
+}
+
+bool UIFirstParam::IsUIFirstLeashAllEnable()
+{
+    return isUIFirstLeashAllEnable_;
+}
+
+void UIFirstParam::SetUIFirstLeashAllEnable(bool isEnable)
+{
+    isUIFirstLeashAllEnable_ = isEnable;
+}
+
+uint32_t UIFirstParam::GetSubThreadFrameRateControlByScene()
+{
+    return subThreadFrameRateControlByScene_;
+}
+ 
+void UIFirstParam::SetSubThreadFrameRateControlByScene(uint32_t value)
+{
+    subThreadFrameRateControlByScene_ = value;
+}
 } // namespace OHOS::Rosen

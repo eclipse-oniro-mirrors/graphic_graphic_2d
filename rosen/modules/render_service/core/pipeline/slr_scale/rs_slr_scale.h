@@ -16,8 +16,8 @@
 #ifndef RS_SLR_SCALE_H
 #define RS_SLR_SCALE_H
 
+#include "engine/rs_base_render_util.h"
 #include "params/rs_screen_render_params.h"
-#include "pipeline/render_thread/rs_base_render_util.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 
 namespace OHOS {
@@ -72,6 +72,7 @@ private:
     std::shared_ptr<Drawing::ShaderEffect> GetSLRShaderEffect(float coeff, int dstWidth);
     std::shared_ptr<Rosen::Drawing::Image> ProcessSLRImage(RSPaintFilterCanvas& canvas,
         Drawing::Image& cacheImageProcessed);
+    void DDGRDrawImage(RSPaintFilterCanvas& canvas, Drawing::Image& cacheImage, Drawing::Brush& brush);
     std::shared_ptr<Drawing::RuntimeShaderBuilder> SLRImageShaderBuilder(
         const Drawing::Image& image);
     std::shared_ptr<Drawing::RuntimeShaderBuilder> LaplaceShaderBuilder(const Drawing::Image& image);

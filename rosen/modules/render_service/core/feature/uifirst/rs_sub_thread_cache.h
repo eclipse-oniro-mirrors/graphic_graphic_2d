@@ -25,8 +25,8 @@
 
 #include "common/rs_common_def.h"
 #include "drawable/rs_render_node_drawable.h"
+#include "engine/rs_base_render_engine.h"
 #include "params/rs_surface_render_params.h"
-#include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "feature/uifirst/rs_draw_window_cache.h"
 
@@ -70,7 +70,7 @@ public:
     void UpdateCompletedCacheSurface();
     void ClearCacheSurfaceInThread();
     void ClearCacheSurfaceOnly();
-    void UpdateCacheSurfaceInfo(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable);
+    void UpdateCacheSurfaceInfo(RSSurfaceRenderNodeDrawable* surfaceDrawable, RSSurfaceRenderParams* surfaceParams);
     std::shared_ptr<Drawing::Surface> GetCacheSurface(uint32_t threadIndex);
     bool NeedInitCacheSurface(RSSurfaceRenderParams* surfaceParams);
     std::shared_ptr<Drawing::Image> GetCompletedImage(RSPaintFilterCanvas& canvas, uint32_t threadIndex,
@@ -100,6 +100,17 @@ public:
     int GetCacheSurfaceProcessedNodes() const
     {
         return cacheSurfaceInfo_.processedNodeCount;
+    }
+
+    // only use in RT sync phase
+    uint64_t GetCompletedCacheSurfaceVsyncId() const
+    {
+        return cacheCompletedSurfaceInfo_.vsyncId;
+    }
+
+    GraphicColorGamut GetCacheSurfaceColorSpace() const
+    {
+        return cacheSurfaceInfo_.colorSpace;
     }
 
     void SetCacheSurfaceNeedUpdated(bool isCacheSurfaceNeedUpdate)
@@ -196,11 +207,14 @@ public:
         RSSurfaceRenderParams& surfaceParams, RSRenderThreadParams& uniParams);
     bool DrawCacheSurface(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable, RSPaintFilterCanvas& canvas,
         const Vector2f& boundSize, uint32_t threadIndex = UNI_MAIN_THREAD_INDEX, bool isUIFirst = false);
+    void InsertOpaqueRegion(RSPaintFilterCanvas& canvas, DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
+        std::vector<Drawing::RectI>& opaqueRects, const Drawing::Rect& imgDrawRect);
+    void DrawOpaqueRegionDfx(RSPaintFilterCanvas& canvas, const std::vector<Drawing::RectI>& opaqueRects);
 
     // uifirst dirtyRegion
     std::shared_ptr<RSDirtyRegionManager> GetSyncUifirstDirtyManager() const;
     bool UpdateCacheSurfaceDirtyManager(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
-        bool hasCompletateCache, bool isLastFrameSkip);
+        bool hasCompleteCache, bool isLastFrameSkip);
     void UpdateUifirstDirtyManager(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable);
     void SetUifirstDirtyRegion(Drawing::Region dirtyRegion);
     Drawing::Region GetUifirstDirtyRegion() const;
@@ -210,14 +224,14 @@ public:
         Drawing::RectF& latestDirtyRect, Drawing::RectF& absDrawRect);
     bool MergeUifirstAllSurfaceDirtyRegion(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
         Drawing::RectI& dirtyRects);
-    void SetUifrstDirtyEnableFlag(bool dirtyEnableFlag);
-    bool GetUifrstDirtyEnableFlag() const;
+    void SetUifirstDirtyEnableFlag(bool dirtyEnableFlag);
+    bool GetUifirstDirtyEnableFlag() const;
     void PushDirtyRegionToStack(RSPaintFilterCanvas& canvas, Drawing::Region& resultRegion);
     bool IsCacheValid() const;
     void UifirstDirtyRegionDfx(Drawing::Canvas& canvas, Drawing::RectI& surfaceDrawRect);
-    bool IsDirtyRecordCompletated();
-    void UpdateDirtyRecordCompletatedState(bool isCompletate);
-    void UpadteAllSurfaceUifirstDirtyEnableState(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
+    bool IsDirtyRecordCompleted();
+    void UpdateDirtyRecordCompletedState(bool isCompleted);
+    void UpdateAllSurfaceUifirstDirtyEnableState(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable,
         bool isEnableDirtyRegion);
     void SubDraw(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable, Drawing::Canvas& canvas);
 
@@ -226,7 +240,8 @@ public:
     void ResetCacheBehindWindowData();
     void ResetCacheCompletedBehindWindowData();
     void DrawBehindWindowBeforeCache(RSPaintFilterCanvas& canvas,
-        const Drawing::scalar px = 0.f, const Drawing::scalar py = 0.f);
+        const Drawing::scalar px = 0.f, const Drawing::scalar py = 0.f,
+        DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable = nullptr);
 
     void SetUifirstSurfaceCacheContentStatic(bool staticContent);
     bool GetUifirstSurfaceCacheContentStatic() const;
@@ -246,6 +261,16 @@ public:
         cacheReuseCount_ = 0;
     }
 
+    bool IsContainShadow() const
+    {
+        return cacheCompletedSurfaceInfo_.isContainShadow;
+    }
+
+    const std::unordered_set<NodeId>& GetAllDrawnSubSurfaceNodeIds() const
+    {
+        return cacheCompletedSurfaceInfo_.processedSubSurfaceNodeIds;
+    }
+
 private:
     void ClearCacheSurface(bool isClearCompletedCacheSurface = true);
     bool DrawUIFirstCache(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable, RSPaintFilterCanvas& rscanvas,
@@ -254,7 +279,9 @@ private:
         RSPaintFilterCanvas& rscanvas, NodeId startingWindowId);
     void DrawUIFirstDfx(RSPaintFilterCanvas& canvas, MultiThreadCacheType enableType,
         RSSurfaceRenderParams& surfaceParams, bool drawCacheSuccess);
-    NodeId GetSubAppNodeId(DrawableV2::RSSurfaceRenderNodeDrawable* surfaceDrawable);
+    bool IsCacheSizeMatchBound(const RectF& cacheSize, const Vector2f& boundSize);
+    void CalculateSurfaceOpaqueRegion(RSSurfaceRenderNodeDrawable* surfaceDrawable,
+        RSSurfaceRenderParams* surfaceParams, Occlusion::Region& opaqueRegion, RectI& absDrawRect);
 
     NodeId nodeId_ = 0;
     // Cache in RT
@@ -272,11 +299,32 @@ private:
         int processedSurfaceCount = -1;
         int processedNodeCount = -1;
         float alpha = -1.f;
+        bool isContainShadow = false;
+        GraphicColorGamut colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE;
+        std::unordered_set<NodeId> processedSubSurfaceNodeIds;
+        Occlusion::Region opaqueRegion;
+        RectI absDrawRect;
+        uint64_t vsyncId = 0;
+
+        void Reset()
+        {
+            processedSurfaceCount = -1;
+            processedNodeCount = -1;
+            alpha = -1.f;
+            isContainShadow = false;
+            colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE;
+            processedSubSurfaceNodeIds.clear();
+            opaqueRegion.Reset();
+            absDrawRect = {};
+            vsyncId = 0;
+        }
     };
     CacheSurfaceInfo cacheSurfaceInfo_;
     CacheSurfaceInfo cacheCompletedSurfaceInfo_;
     std::shared_ptr<Drawing::Surface> cacheSurface_ = nullptr;
     std::shared_ptr<Drawing::Surface> cacheCompletedSurface_ = nullptr;
+    RectF cacheSurfaceRect_;
+    RectF cacheCompletedSurfaceRect_;
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     Drawing::BackendTexture cacheBackendTexture_;
     Drawing::BackendTexture cacheCompletedBackendTexture_;
@@ -302,15 +350,16 @@ private:
     static inline std::atomic<int> totalProcessedSurfaceCount_ = 0;
 
     std::shared_ptr<RSDirtyRegionManager> syncUifirstDirtyManager_ = nullptr;
-    bool isDirtyRecordCompletated_ = false;
+    bool isDirtyRecordCompleted_ = false;
     Drawing::Region uifirstDirtyRegion_;
-    bool uifrstDirtyEnableFlag_ = false;
+    bool uifirstDirtyEnableFlag_ = false;
     Drawing::Region uifirstMergedDirtyRegion_;
     std::shared_ptr<RSPaintFilterCanvas::CacheBehindWindowData> cacheBehindWindowData_ = nullptr;
     std::shared_ptr<RSPaintFilterCanvas::CacheBehindWindowData> cacheCompletedBehindWindowData_ = nullptr;
     bool uifirstSurfaceCacheContentStatic_ = true;
 
     uint32_t cacheReuseCount_ = 0;
+    bool isOcclusionEnabled_ = false;
 };
 } // DrawableV2
 } // OHOS::Rosen

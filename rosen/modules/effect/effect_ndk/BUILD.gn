@@ -40,6 +40,7 @@ template("effect_ndk_source_set") {
       "c_utils:utils",
       "hilog:libhilog",
       "image_framework:image",
+      "graphics_effect:graphics_effect_core",
     ]
 
     public_deps = [
@@ -68,11 +69,18 @@ template("effect_ndk_source_set") {
       "$graphic_2d_root/modules/2d_graphics/include",
     ]
 
+    if (is_arkui_x) {
+      include_dirs += [
+        "//foundation/graphic/graphics_effect/include"
+      ]
+    }
+
     if (platform == "ohos" || platform == "ohos_ng") {
       defines += [ "OHOS_PLATFORM" ]
       external_deps += [
         "bounds_checking_function:libsec_static",
         "image_framework:pixelmap",
+        "napi:ace_napi",
         "image_framework:pixelmap_ndk",
       ]
       deps = [ "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base" ]
@@ -109,8 +117,12 @@ ohos_shared_library("native_effect_ndk") {
   }
   public_configs = [ ":export_config" ]
 
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+  ]
+
   if (platform == "ohos") {
-    deps = [ "$effect_root/effect_ndk:effect_ndk_source_ohos" ]
+    deps += [ "$effect_root/effect_ndk:effect_ndk_source_ohos" ]
     symlink_target_name = [ "libnative_effect.so" ]
     innerapi_tags = [ "ndk" ]
   }

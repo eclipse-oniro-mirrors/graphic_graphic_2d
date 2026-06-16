@@ -16,9 +16,11 @@
 #ifndef RENDER_SERVICE_BASE_FEATURE_COLOR_PICKER_RS_COLOR_PICKER_THREAD_H
 #define RENDER_SERVICE_BASE_FEATURE_COLOR_PICKER_RS_COLOR_PICKER_THREAD_H
 
+#include <atomic>
 #include <functional>
 
 #include "event_handler.h"
+
 #include "common/rs_macros.h"
 
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
@@ -30,12 +32,16 @@ class RenderContext;
 
 class RSB_EXPORT RSColorPickerThread final {
 public:
-using NodeDirtyCallback = std::function<void(uint64_t)>;
+    using NodeDirtyCallback = std::function<void(uint64_t)>;
+    using NotifyClientCallback = std::function<void(uint64_t, uint32_t)>;
 
     static RSColorPickerThread& Instance();
-    void PostTask(const std::function<void()>& task, int64_t delayTime = 0);
+    bool PostTask(const std::function<void()>& task, int64_t delayTime);
     void RegisterNodeDirtyCallback(const NodeDirtyCallback& callback);
     void NotifyNodeDirty(uint64_t nodeId);
+
+    void RegisterNotifyClientCallback(const NotifyClientCallback& callback);
+    void NotifyClient(uint64_t nodeId, uint32_t color);
 
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     void InitRenderContext(std::shared_ptr<RenderContext> context);
@@ -53,6 +59,7 @@ private:
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
     NodeDirtyCallback callback_ = nullptr;
+    NotifyClientCallback notifyClient_ = nullptr;
 
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     std::shared_ptr<RenderContext> renderContext_ = nullptr;
@@ -60,5 +67,5 @@ private:
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;
 #endif
 };
-}
+} // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_FEATURE_COLOR_PICKER_RS_COLOR_PICKER_THREAD_H

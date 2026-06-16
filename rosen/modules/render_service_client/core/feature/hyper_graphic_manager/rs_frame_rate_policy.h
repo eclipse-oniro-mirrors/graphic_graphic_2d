@@ -16,9 +16,10 @@
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_FRAME_RATE_POLICY_H
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
-#include <memory>
+
 #include "transaction/rs_hgm_config_data.h"
 
 namespace OHOS {
@@ -38,6 +39,8 @@ enum TouchStatus : uint32_t {
     TOUCH_PULL_DOWN = 12,
     TOUCH_PULL_MOVE = 13,
     TOUCH_PULL_UP = 14,
+    POINTER_ACTION_PROXIMITY_IN = 35,
+    POINTER_ACTION_PROXIMITY_OUT = 36,
 };
 
 struct AnimDynamicAttribute {
@@ -57,7 +60,8 @@ public:
     int32_t GetExpectedFrameRate(const RSPropertyUnit unit, float velocity);
     bool GetTouchOrPointerAction(int32_t pointerAction);
 
-    const std::unordered_set<std::string>& GetPageNameList() const;
+    std::unordered_set<std::string> GetPageNameList() const;
+
 private:
     RSFrameRatePolicy() = default;
     ~RSFrameRatePolicy();
@@ -71,7 +75,7 @@ private:
     std::unordered_set<std::string> pageNameList_;
     int32_t currentRefreshRateModeName_ = -1;
     std::unordered_map<std::string, std::unordered_map<std::string, AnimDynamicAttribute>> animAttributes_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     std::atomic<std::chrono::steady_clock::time_point> sendMoveTime_ = std::chrono::steady_clock::now();
     std::atomic<std::chrono::steady_clock::time_point> sendAxisUpdateTime_ = std::chrono::steady_clock::now();
 };

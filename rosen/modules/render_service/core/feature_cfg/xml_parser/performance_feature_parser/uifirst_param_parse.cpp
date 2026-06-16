@@ -24,7 +24,9 @@ UIFirstSwitchType UIFirstParamParse::GetUIFirstSwitchType(const std::string& inp
         {"UIFirstEnabled", UIFirstSwitchType::UIFIRST_ENABLED},
         {"CardUIFirstEnabled", UIFirstSwitchType::CARD_UIFIRST_ENABLED},
         {"CacheOptimizeRotateEnabled", UIFirstSwitchType::ROTATE_ENABLED},
-        {"FreeMultiWindowEnabled", UIFirstSwitchType::FREE_MULTI_WINDOW_ENABLED}
+        {"FreeMultiWindowEnabled", UIFirstSwitchType::FREE_MULTI_WINDOW_ENABLED},
+        {"OcclusionEnabled", UIFirstSwitchType::OCCLUSION_ENABLED},
+        {"ShadowEnabled", UIFirstSwitchType::LEASH_ALL_ENABLED}
     };
 
     auto it = uifirstSwitchTypeMap.find(input);
@@ -81,6 +83,16 @@ int32_t UIFirstParamParse::ParseUIFirstInternal(xmlNode &node)
                 RS_LOGI("UIFirstParamParse parse FreeMultiWindowEnabled %{public}d",
                     UIFirstParam::IsFreeMultiWindowEnable());
                 break;
+            case UIFirstSwitchType::OCCLUSION_ENABLED:
+                UIFirstParam::SetOcclusionEnabled(isEnabled);
+                RS_LOGI("UIFirstParamParse parse OcclusionEnabled %{public}d",
+                    UIFirstParam::IsOcclusionEnabled());
+                break;
+            case UIFirstSwitchType::LEASH_ALL_ENABLED:
+                UIFirstParam::SetUIFirstLeashAllEnable(isEnabled);
+                RS_LOGI("UIFirstParamParse parse UIFirstShadowEnable %{public}d",
+                    UIFirstParam::IsUIFirstLeashAllEnable());
+                break;
             default:
                 RS_LOGE("UIFirstParamParse %{public}s is not support!", name.c_str());
                 break;
@@ -124,6 +136,14 @@ int32_t UIFirstParamParse::ParseUIFirstSingleParam(const std::string& name, cons
             RS_LOGI("UIFirstParamParse parse SizeChangedThreshold %{public}f", UIFirstParam::GetSizeChangedThreshold());
         } else {
             RS_LOGE("UIFirstParamParse invalid SizeChangedThreshold: %{public}s", value.c_str());
+        }
+    } else if (name == "SubThreadFrameRateControlByScene" && IsNumber(value)) {
+        unsigned int num;
+        std::istringstream iss(value);
+        if (iss >> num) {
+            UIFirstParam::SetSubThreadFrameRateControlByScene(num);
+            RS_LOGI("UIFirstParamParse parse SubThreadFrameRateControlByScene %{public}u",
+                UIFirstParam::GetSubThreadFrameRateControlByScene());
         }
     }
     return PARSE_EXEC_SUCCESS;

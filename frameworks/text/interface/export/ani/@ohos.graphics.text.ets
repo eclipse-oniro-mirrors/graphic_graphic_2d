@@ -26,9 +26,10 @@ import hilog from '@ohos.hilog';
 const TEXT_LOG_DOMAIN = 0xD001408;
 const TEXT_LOG_TAG = "Text";
 
-namespace text {
+export default namespace text {
+  loadLibraryWithPermissionCheck('drawing_ani_core', "@ohos.graphics.text");
   loadLibraryWithPermissionCheck('text_engine_ani.z', "@ohos.graphics.text");
-  const ERROR_INVALID_PARAM = 401;
+  const ERROR_INVALID_PARAM: int = 401;
 
   class Cleaner {
     static { loadLibraryWithPermissionCheck('text_engine_ani.z', "@ohos.graphics.text") }
@@ -41,10 +42,10 @@ namespace text {
     native clean(): void;
   }
 
-  let destroyRegister = new FinalizationRegistry<Cleaner>((cleaner: Cleaner)=>{
+  let destroyRegister: FinalizationRegistry<Cleaner> = new FinalizationRegistry<Cleaner>((cleaner: Cleaner)=>{
     cleaner.clean();
   });
-  let unregisterToken = new object();
+  let unregisterToken: Object = new object();
 
   export class FontCollection {
     static { loadLibraryWithPermissionCheck('text_engine_ani.z', "@ohos.graphics.text") }
@@ -86,6 +87,7 @@ namespace text {
       }) as Promise<void>;
     }
     native clearCaches(): void;
+    native setParagraphCachesEnabled(enable: boolean): void;
 
     private static native nativeTransferStatic(input: ESValue): Object;
     static transferStatic(input: Any): Object {
@@ -167,6 +169,7 @@ namespace text {
       this.cleaner = new Cleaner("Paragraph", ptr);
       destroyRegister.register(this, this.cleaner!, unregisterToken);
     }
+    native layoutWithConstraints(constraint: TextRectSize): TextLayoutResult;
     native layoutSync(width: double): void;
     async layout(width: double): Promise<void> {
       return taskpool.execute((): void => {
@@ -193,6 +196,7 @@ namespace text {
     native didExceedMaxLines(): boolean;
     native getTextLines(): Array<TextLine>;
     native getActualTextRange(lineNumber: int, includeSpaces: boolean): Range;
+    native getVisibleTextRanges(): Array<Range>;
     native getLineMetrics(): Array<LineMetrics>;
     getLineMetrics(lineNumber: int): LineMetrics | undefined {
         return this.nativeGetLineMetricsAt(lineNumber);
@@ -201,6 +205,13 @@ namespace text {
     private native nativeGetLineMetricsAt(lineNumber: int): LineMetrics | undefined;
     native updateColor(color: common2D.Color): void;
     native updateDecoration(decoration: Decoration): void;
+    native getProcessState(): TextProcessState;
+    native getTextDisplayState(): TextDisplayState;
+    native getParagraphStyle(): ParagraphStyle;
+    native forceReuseRasterResult(isForce: boolean): void;
+    native getCharacterRangeForGlyphRange(glyphRange: Range, encoding: drawing.TextEncoding): Array<Range>;
+    native getGlyphRangeForCharacterRange(characterRange: Range, encoding: drawing.TextEncoding): Array<Range>;
+    native getCharacterPositionAtCoordinate(x: double, y: double, encoding: drawing.TextEncoding): PositionWithAffinity;
 
     private static native nativeTransferStatic(input: ESValue): Object;
     static transferStatic(input: Any): Object {
@@ -279,6 +290,11 @@ namespace text {
     BREAK_HYPHEN,
   }
 
+  export enum LineHeightStyle {
+    FONT_SIZE = 0,
+    FONT_HEIGHT = 1,
+  }
+
   export interface StrutStyle {
     fontFamilies?: Array<string>;
     fontStyle?: FontStyle;
@@ -293,12 +309,64 @@ namespace text {
     halfLeading?: boolean;
   }
 
+  class StrutStyleInternal implements StrutStyle {
+    fontFamilies?: Array<string>;
+    fontStyle?: FontStyle;
+    fontWidth?: FontWidth;
+    fontWeight?: FontWeight;
+    fontSize?: double;
+    height?: double;
+    leading?: double;
+    forceHeight?: boolean;
+    enabled?: boolean;
+    heightOverride?: boolean;
+    halfLeading?: boolean;
+    constructor(
+      fontFamilies?: Array<string>,
+      fontStyle?: FontStyle,
+      fontWidth?: FontWidth,
+      fontWeight?: FontWeight,
+      fontSize?: double,
+      height?: double,
+      leading?: double,
+      forceHeight?: boolean,
+      enabled?: boolean,
+      heightOverride?: boolean,
+      halfLeading?: boolean
+    ) {
+      this.fontFamilies = fontFamilies;
+      this.fontStyle = fontStyle;
+      this.fontWidth = fontWidth;
+      this.fontWeight = fontWeight;
+      this.fontSize = fontSize;
+      this.height = height;
+      this.leading = leading;
+      this.forceHeight = forceHeight;
+      this.enabled = enabled;
+      this.heightOverride = heightOverride;
+      this.halfLeading = halfLeading;
+    }
+  }
+
   export interface TextTab {
     alignment: TextAlign;
     location: double;
   }
 
+  class TextTabInternal implements TextTab {
+    alignment: TextAlign;
+    location: double;
+    constructor(
+      alignment: TextAlign,
+      location: double
+    ) {
+      this.alignment = alignment;
+      this.location = location;
+    }
+  }
+
   export interface ParagraphStyle {
+    orphanCharOptimization?: boolean;
     fallbackLineSpacing?: boolean;
     includeFontPadding?: boolean;
     textStyle?: TextStyle;
@@ -314,6 +382,80 @@ namespace text {
     autoSpace?: boolean;
     verticalAlign?: TextVerticalAlign;
     compressHeadPunctuation?: boolean;
+    punctuationOverflow?: boolean;
+    lineSpacing?: double;
+    firstLineHeadIndent?: double;
+    tailIndents?: Array<double>;
+    headIndents?: Array<double>;
+  }
+
+  class ParagraphStyleInternal implements ParagraphStyle {
+    orphanCharOptimization?: boolean;
+    fallbackLineSpacing?: boolean;
+    includeFontPadding?: boolean;
+    textStyle?: TextStyle;
+    textDirection?: TextDirection;
+    align?: TextAlign;
+    wordBreak?: WordBreak;
+    maxLines?: int;
+    breakStrategy?: BreakStrategy;
+    strutStyle?: StrutStyle;
+    textHeightBehavior?: TextHeightBehavior;
+    tab?: TextTab;
+    trailingSpaceOptimized?: boolean;
+    autoSpace?: boolean;
+    verticalAlign?: TextVerticalAlign;
+    compressHeadPunctuation?: boolean;
+    punctuationOverflow?: boolean;
+    lineSpacing?: double;
+    firstLineHeadIndent?: double;
+    tailIndents?: Array<double>;
+    headIndents?: Array<double>;
+    constructor(
+      orphanCharOptimization?: boolean,
+      fallbackLineSpacing?: boolean,
+      includeFontPadding?: boolean,
+      textStyle?: TextStyle,
+      textDirection?: TextDirection,
+      align?: TextAlign,
+      wordBreak?: WordBreak,
+      maxLines?: int,
+      breakStrategy?: BreakStrategy,
+      strutStyle?: StrutStyle,
+      textHeightBehavior?: TextHeightBehavior,
+      tab?: TextTab,
+      trailingSpaceOptimized?: boolean,
+      autoSpace?: boolean,
+      verticalAlign?: TextVerticalAlign,
+      compressHeadPunctuation?: boolean,
+      punctuationOverflow?: boolean,
+      lineSpacing?: double,
+      firstLineHeadIndent?: double,
+      tailIndents?: Array<double>,
+      headIndents?: Array<double>
+    ) {
+      this.orphanCharOptimization = orphanCharOptimization;
+      this.fallbackLineSpacing = fallbackLineSpacing;
+      this.includeFontPadding = includeFontPadding;
+      this.textStyle = textStyle;
+      this.textDirection = textDirection;
+      this.align = align;
+      this.wordBreak = wordBreak;
+      this.maxLines = maxLines;
+      this.breakStrategy = breakStrategy;
+      this.strutStyle = strutStyle;
+      this.textHeightBehavior = textHeightBehavior;
+      this.tab = tab;
+      this.trailingSpaceOptimized = trailingSpaceOptimized;
+      this.autoSpace = autoSpace;
+      this.verticalAlign = verticalAlign;
+      this.compressHeadPunctuation = compressHeadPunctuation;
+      this.punctuationOverflow = punctuationOverflow;
+      this.lineSpacing = lineSpacing;
+      this.firstLineHeadIndent = firstLineHeadIndent;
+      this.tailIndents = tailIndents;
+      this.headIndents = headIndents;
+    }
   }
 
   export interface TextShadow {
@@ -359,6 +501,12 @@ namespace text {
     backgroundRect?: RectStyle;
     fontVariations?: Array<FontVariation>;
     badgeType?: TextBadgeType;
+    lineHeightMaximum?: double;
+    lineHeightMinimum?: double;
+    lineHeightStyle?: LineHeightStyle;
+    fontWidth?: FontWidth;
+    fontEdging?: drawing.FontEdging;
+    fontTypefaces?: Array<drawing.Typeface>;
   }
 
   class TextStyleInternal implements TextStyle {
@@ -383,6 +531,12 @@ namespace text {
     backgroundRect?: RectStyle;
     fontVariations?: Array<FontVariation>;
     badgeType?: TextBadgeType;
+    lineHeightMaximum?: double;
+    lineHeightMinimum?: double;
+    lineHeightStyle?: LineHeightStyle;
+    fontWidth?: FontWidth;
+    fontEdging?: drawing.FontEdging;
+    fontTypefaces?: Array<drawing.Typeface>;
     constructor(
       decoration: Decoration,
       color: common2D.Color,
@@ -403,7 +557,14 @@ namespace text {
       fontFeatures: Array<FontFeature>,
       textShadows: Array<TextShadow>,
       backgroundRect: RectStyle,
-      badgeType: TextBadgeType
+      fontVariations: Array<FontVariation>,
+      badgeType: TextBadgeType,
+      lineHeightMaximum: double,
+      lineHeightMinimum: double,
+      lineHeightStyle: LineHeightStyle,
+      fontWidth: FontWidth,
+      fontEdging: drawing.FontEdging,
+      fontTypefaces: Array<drawing.Typeface>
     ) {
       this.decoration = decoration;
       this.color = color;
@@ -424,7 +585,14 @@ namespace text {
       this.fontFeatures = fontFeatures;
       this.textShadows = textShadows;
       this.backgroundRect = backgroundRect;
+      this.fontVariations = fontVariations;
       this.badgeType = badgeType;
+      this.lineHeightMaximum = lineHeightMaximum;
+      this.lineHeightMinimum = lineHeightMinimum;
+      this.lineHeightStyle = lineHeightStyle;
+      this.fontWidth = fontWidth;
+      this.fontEdging = fontEdging;
+      this.fontTypefaces = fontTypefaces;
     }
   }
 
@@ -508,6 +676,8 @@ namespace text {
     START,
     MIDDLE,
     END,
+    MULTILINE_START,
+    MULTILINE_MIDDLE,
   }
 
   export interface Decoration {
@@ -616,11 +786,80 @@ namespace text {
   export interface FontVariation {
     axis: string;
     value: double;
+    isNormalized?: boolean;
   }
 
   class FontVariationInternal implements FontVariation {
     axis: string;
     value: double;
+    isNormalized?: boolean;
+    constructor(
+      axis: string,
+      value: double,
+      isNormalized?: boolean
+    ) {
+      this.axis = axis;
+      this.value = value;
+      this.isNormalized = isNormalized;
+    }
+  }
+
+  export interface FontVariationAxis {
+    key: string;
+    minValue: double;
+    maxValue: double;
+    defaultValue: double;
+    flags: int;
+    name: string;
+    localName: string;
+  }
+
+  class FontVariationAxisInternal implements FontVariationAxis {
+    key: string;
+    minValue: double;
+    maxValue: double;
+    defaultValue: double;
+    flags: int;
+    name: string;
+    localName: string;
+    constructor(
+      key: string,
+      minValue: double,
+      maxValue: double,
+      defaultValue: double,
+      flags: int,
+      name: string,
+      localName: string
+    ) {
+      this.key = key;
+      this.minValue = minValue;
+      this.maxValue = maxValue;
+      this.defaultValue = defaultValue;
+      this.flags = flags;
+      this.name = name;
+      this.localName = localName;
+    }
+  }
+
+  export interface FontVariationInstance {
+    name: string;
+    localName: string;
+    coordinates: Array<FontVariation>;
+  }
+
+  class FontVariationInstanceInternal implements FontVariationInstance {
+    name: string;
+    localName: string;
+    coordinates: Array<FontVariation>;
+    constructor(
+      name: string,
+      localName: string,
+      coordinates: Array<FontVariation>
+    ) {
+      this.name = name;
+      this.localName = localName;
+      this.coordinates = coordinates;
+    }
   }
 
   export interface TextBox {
@@ -772,6 +1011,7 @@ namespace text {
     native getImageBounds(): common2D.Rect;
     native getTextDirection(): TextDirection;
     native getAdvances(range: Range): Array<common2D.Point> | undefined;
+    native getTextStyle(): TextStyle;
 
     private static native nativeTransferStatic(input: ESValue): Object;
     static transferStatic(input: Any): Object {
@@ -926,6 +1166,10 @@ namespace text {
     trademark?: string;
     license?: string;
     index?: int;
+    variationAxisRecords?: Array<FontVariationAxis>;
+    variationInstanceRecords?: Array<FontVariationInstance>;
+    languages?: Array<string>;
+    fontFeatures?: Array<string>;
   }
 
   class FontDescriptorInternal implements FontDescriptor {
@@ -949,6 +1193,10 @@ namespace text {
     trademark?: string;
     license?: string;
     index?: int;
+    variationAxisRecords?: Array<FontVariationAxis>;
+    variationInstanceRecords?: Array<FontVariationInstance>;
+    languages?: Array<string>;
+    fontFeatures?: Array<string>;
     constructor(
       path: string,
       postScriptName: string,
@@ -970,6 +1218,10 @@ namespace text {
       trademark: string,
       license: string,
       index: int,
+      variationAxisRecords?: Array<FontVariationAxis>,
+      variationInstanceRecords?: Array<FontVariationInstance>,
+      languages?: Array<string>,
+      fontFeatures?: Array<string>,
     ) {
       this.path = path;
       this.postScriptName = postScriptName;
@@ -991,6 +1243,10 @@ namespace text {
       this.trademark = trademark;
       this.license = license;
       this.index = index;
+      this.variationAxisRecords = variationAxisRecords;
+      this.variationInstanceRecords = variationInstanceRecords;
+      this.languages = languages;
+      this.fontFeatures = fontFeatures;
     }
   }
 
@@ -1013,5 +1269,54 @@ namespace text {
     USE_TOFU,
   }
 
+  export enum TextProcessState {
+    INIT = 0,
+    INDEXED = 1,
+    SHAPED = 2,
+    LINE_BROKEN = 3,
+    FORMATTED = 4,
+    PAINT = 5,
+    UPDATE_ATTRIBUTE = 6,
+  }
+
+  export enum TextDisplayState {
+    UNKNOWN = 0,
+    ALL = 1,
+    CLIP = 2,
+    OMITTED = 3,
+  }
+
   export native function setTextUndefinedGlyphDisplay(noGlyphShow: TextUndefinedGlyphDisplay): void;
+  export native function isFontSupported(fontURL: Resource | string): boolean;
+
+  export interface TextRectSize {
+    width: double;
+    height: double;
+  }
+
+  class TextRectSizeInternal implements TextRectSize {
+    width: double;
+    height: double;
+    constructor(width: double, height: double) {
+      this.width = width;
+      this.height = height;
+    }
+  }
+
+  export interface TextLayoutResult {
+    fitStrRange: Array<Range>;
+    correctRect: TextRectSize;
+  }
+
+  class TextLayoutResultInternal implements TextLayoutResult {
+    fitStrRange: Array<Range>;
+    correctRect: TextRectSize;
+    constructor(
+      fitStrRange: Array<Range>,
+      correctRect: TextRectSize
+    ) {
+      this.fitStrRange = fitStrRange;
+      this.correctRect = correctRect;
+    }
+  }
 }

@@ -17,7 +17,9 @@
 
 #include <unordered_map>
 
+#include "common/rs_optional_trace.h"
 #include "effect/rs_render_mask_base.h"
+#include "effect/rs_render_shape_base.h"
 #include "ge_visual_effect.h"
 #include "ge_visual_effect_container.h"
 #include "platform/common/rs_log.h"
@@ -30,6 +32,10 @@ using ShaderCreator = std::function<std::shared_ptr<RSNGRenderShaderBase>()>;
 static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
     {RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT, [] {
             return std::make_shared<RSNGRenderContourDiagonalFlowLight>();
+        }
+    },
+    {RSNGEffectType::DOT_MATRIX_SHADER, [] {
+            return std::make_shared<RSNGRenderDotMatrixShader>();
         }
     },
     {RSNGEffectType::WAVY_RIPPLE_LIGHT, [] {
@@ -80,14 +86,71 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
             return std::make_shared<RSNGRenderCircleFlowlight>();
         }
     },
+#ifndef ROSEN_ARKUI_X
     {RSNGEffectType::FROSTED_GLASS_EFFECT, [] {
             return std::make_shared<RSNGRenderFrostedGlassEffect>();
         }
     },
+#endif
     {RSNGEffectType::DISTORT_CHROMA, [] {
             return std::make_shared<RSNGRenderDistortChroma>();
         }
     },
+    {RSNGEffectType::SDF_EDGE_LIGHT_EFFECT, [] {
+            return std::make_shared<RSNGRenderSDFEdgeLightEffect>();
+        }
+    },
+    {RSNGEffectType::BORDER_SDF_SHADER, [] {
+            return std::make_shared<RSNGRenderBorderSDFShader>();
+        }
+    },
+    {RSNGEffectType::BORDER_SDF_LG_COLOR, [] {
+            return std::make_shared<RSNGRenderBorderSDFLGColor>();
+        }
+    },
+    {RSNGEffectType::SPATIAL_POINT_LIGHT, [] {
+            return std::make_shared<RSNGRenderSpatialPointLight>();
+        }
+    },
+    {RSNGEffectType::SPATIAL_GLASS_EFFECT, [] {
+            return std::make_shared<RSNGRenderSpatialGlassEffect>();
+        }
+    },
+};
+
+using ShaderGetDrawRect = std::function<RectF(std::shared_ptr<RSNGRenderShaderBase>, const RectF&)>;
+static std::unordered_map<RSNGEffectType, ShaderGetDrawRect> getDrawRectLUT = {
+    {
+        RSNGEffectType::SDF_EDGE_LIGHT_EFFECT, [](std::shared_ptr<RSNGRenderShaderBase> shader, const RectF& rect) {
+            auto sdfEdgeLightEffect = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+            auto maxBorderWidth =
+                sdfEdgeLightEffect->Getter<OHOS::Rosen::SDFEdgeLightEffectMaxBorderWidthRenderTag>()->Get();
+            auto outerBorderBloomWidth =
+                sdfEdgeLightEffect->Getter<OHOS::Rosen::SDFEdgeLightEffectOuterBorderBloomWidthRenderTag>()->Get();
+            auto sdfShape =
+                sdfEdgeLightEffect->Getter<OHOS::Rosen::SDFEdgeLightEffectSDFShapeRenderTag>()->Get();
+            if (sdfShape) {
+                if (sdfShape->GetTransformDrawRect().IsEmpty()) {
+                    RSNGRenderShapeHelper::CalcRect(sdfShape, rect);
+                }
+                auto transformRect = sdfShape->GetTransformDrawRect();
+                return transformRect.MakeOutset(std::max(maxBorderWidth, outerBorderBloomWidth));
+            }
+            return rect.MakeOutset(std::max(maxBorderWidth, outerBorderBloomWidth));
+        }
+    },
+#ifndef ROSEN_ARKUI_X
+    {
+        RSNGEffectType::FROSTED_GLASS_EFFECT, [](std::shared_ptr<RSNGRenderShaderBase> filter, const RectF& rect) {
+            auto frostedGlassEffect = std::static_pointer_cast<RSNGRenderFrostedGlassEffect>(filter);
+            auto shape = frostedGlassEffect->Getter<OHOS::Rosen::FrostedGlassEffectShapeRenderTag>()->Get();
+            if (shape && shape->GetTransformDrawRect().IsEmpty()) {
+                RSNGRenderShapeHelper::CalcRect(shape, rect);
+            }
+            return shape == nullptr ? rect : shape->GetTransformDrawRect();
+        }
+    }
+#endif
 };
 
 std::shared_ptr<RSNGRenderShaderBase> RSNGRenderShaderBase::Create(RSNGEffectType type)
@@ -135,6 +198,7 @@ bool RSNGRenderShaderHelper::CheckEnableEDR(std::shared_ptr<RSNGRenderShaderBase
     auto current = shader;
     while (current) {
         if (RSEffectLuminanceManager::GetEnableHdrEffect(current)) {
+            RS_OPTIONAL_TRACE_NAME_FMT("CheckEnableEDR:find edr shader, type=%d", static_cast<int>(current->GetType()));
             return true;
         }
         current = current->nextEffect_;
@@ -181,6 +245,24 @@ std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> RSNGRenderShaderHelper::G
         return nullptr;
     }
     return effectData;
+}
+
+RectF RSNGRenderShaderHelper::CalcRect(const std::shared_ptr<RSNGRenderShaderBase>& shader, const RectF& bound)
+{
+    if (shader == nullptr) {
+        return RectF();
+    }
+
+    RectF drawRect = bound;
+    auto current = shader;
+    while (current) {
+        auto iter = getDrawRectLUT.find(current->GetType());
+        if (iter != getDrawRectLUT.end()) {
+            drawRect = iter->second(current, drawRect);
+        }
+        current = current->nextEffect_;
+    }
+    return drawRect;
 }
 } // namespace Rosen
 } // namespace OHOS

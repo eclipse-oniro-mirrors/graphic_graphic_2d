@@ -16,7 +16,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "effect_image_chain.h"
+#include "ge_linear_gradient_shader_mask.h"
 #include "platform/common/rs_system_properties.h"
+#include "surface_buffer.h"
+#include "render/rs_pixel_map_util.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -92,6 +95,60 @@ HWTEST_F(EffectImageChainUnittest, PrepareTest002, TestSize.Level1)
     EXPECT_CALL(*srcPixelMap, GetAlphaType()).WillOnce(testing::Return(Media::AlphaType::IMAGE_ALPHA_TYPE_UNKNOWN));
     ret = image->Prepare(srcPixelMap, false);
     ASSERT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: PrepareTest004
+ * @tc.desc: test prepare
+ */
+HWTEST_F(EffectImageChainUnittest, PrepareTest004, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+    const auto width = 200;
+    const auto height = 200;
+    auto colorSpace = Drawing::ColorSpace::CreateSRGB();
+    Drawing::ImageInfo imageInfo = Drawing::ImageInfo{
+        width, height,
+        Drawing::ColorType::COLORTYPE_RGBA_8888,
+        Drawing::AlphaType::ALPHATYPE_UNPREMUL,
+        colorSpace};
+    OHOS::Media::InitializationOptions opts = {
+        .size =
+            {
+                .width = static_cast<int32_t>(width),
+                .height = static_cast<int32_t>(height),
+            },
+        .srcPixelFormat = OHOS::Media::PixelFormat::RGBA_8888,
+        .pixelFormat = OHOS::Media::PixelFormat::RGBA_8888,
+        .alphaType = OHOS::Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL,
+    };
+
+    std::shared_ptr<Media::PixelMap> srcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(srcPixelMap, nullptr);
+
+    OH_NativeBuffer_Config config {
+        .width = width,
+        .height = height,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA
+    };
+    OH_NativeBuffer* dstBuffer = OH_NativeBuffer_Alloc(&config);
+
+    std::shared_ptr<OH_NativeBuffer> dst(
+        dstBuffer,
+        [](OH_NativeBuffer* buffer) {}
+    );
+
+    std::shared_ptr<Media::PixelMap> nullPixelmap = nullptr;
+    std::shared_ptr<OH_NativeBuffer> nullBuffer = nullptr;
+    auto ret = image->PrepareNativeBuffer(nullPixelmap, dst);
+    ASSERT_NE(ret, DrawingError::ERR_OK);
+    ret = image->PrepareNativeBuffer(srcPixelMap, nullBuffer);
+    ASSERT_NE(ret, DrawingError::ERR_OK);
+    ret = image->PrepareNativeBuffer(srcPixelMap, dst);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+    OH_NativeBuffer_Unreference(dstBuffer);
 }
 
 /**
@@ -212,6 +269,106 @@ HWTEST_F(EffectImageChainUnittest, ApplyDrawTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: ApplyDrawTest003
+ * @tc.desc: test Apply and Draw
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyDrawTest003, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+    const auto width = 200;
+    const auto height = 200;
+    auto colorSpace = Drawing::ColorSpace::CreateSRGB();
+    Drawing::ImageInfo imageInfo = Drawing::ImageInfo{
+        width, height,
+        Drawing::ColorType::COLORTYPE_RGBA_8888,
+        Drawing::AlphaType::ALPHATYPE_UNPREMUL,
+        colorSpace};
+    OHOS::Media::InitializationOptions opts = {
+        .size =
+            {
+                .width = static_cast<int32_t>(width),
+                .height = static_cast<int32_t>(height),
+            },
+        .srcPixelFormat = OHOS::Media::PixelFormat::RGBA_8888,
+        .pixelFormat = OHOS::Media::PixelFormat::RGBA_8888,
+        .alphaType = OHOS::Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL,
+    };
+
+    std::shared_ptr<Media::PixelMap> srcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(srcPixelMap, nullptr);
+
+    OH_NativeBuffer_Config config {
+        .width = width,
+        .height = height,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA
+    };
+    OH_NativeBuffer* dstBuffer = OH_NativeBuffer_Alloc(&config);
+
+    std::shared_ptr<OH_NativeBuffer> dst(
+        dstBuffer,
+        [](OH_NativeBuffer* buffer) {}
+    );
+
+    // check proper error return when Prepare(...) not called
+    auto ret = image->DrawNativeBuffer();
+    ASSERT_NE(ret, DrawingError::ERR_OK);
+
+    ret = image->PrepareNativeBuffer(srcPixelMap, dst);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+    ret = image->DrawNativeBuffer();
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+    OH_NativeBuffer_Unreference(dstBuffer);
+}
+
+/**
+ * @tc.name: ApplySDFTest001
+ * @tc.desc: test ApplySDFCreation
+ */
+HWTEST_F(EffectImageChainUnittest, ApplySDFTest001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+
+    auto ret = image->ApplySDFCreation(32, false);
+    ASSERT_NE(ret, DrawingError::ERR_OK); // not prepared
+
+    ret = image->Prepare(srcPixelMap, true);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->ApplySDFCreation(8, false);
+    EXPECT_NE(ret, DrawingError::ERR_OK); // force cpu unsupported
+
+    ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->Draw(); // no filter
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->ApplySDFCreation(64, true);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->Draw();
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+    ASSERT_NE(filterBlur, nullptr);
+    ret = image->ApplyDrawingFilter(filterBlur);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+    ret = image->ApplySDFCreation(64, true); // has drawing before sdf
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->Draw();
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
  * @tc.name: PixelFormatConvertTest001
  * @tc.desc: test PixelFormatToDrawingColorType
  */
@@ -259,8 +416,8 @@ HWTEST_F(EffectImageChainUnittest, AlphaTypeConvertTest001, TestSize.Level1)
 }
 
 /**
- * @tc.name: EffectCanvasTest
- * @tc.desc: test EffectCanvas
+ * @tc.name  : EffectCanvasTest
+ * @tc.desc  : test EffectCanvas
  */
 HWTEST_F(EffectImageChainUnittest, EffectCanvasTest, TestSize.Level1) {
     class MockSurface : public Drawing::Surface {
@@ -290,5 +447,958 @@ HWTEST_F(EffectImageChainUnittest, EffectCanvasTest, TestSize.Level1) {
     auto& detachCanvas = effectCanvas.DetachBrush();
     EXPECT_EQ(&detachCanvas, &effectCanvas);
 }
+
+/**
+ * @tc.name: ApplyMapColorByBrightnessTest
+ * @tc.desc: test ApplyMapColorByBrightness
+ * @tc.type: FUNC
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyMapColorByBrightnessTest, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    std::vector<Vector4f> colors = {{1.0f, 0.0f, 0.5f, 1.0f}}; // color rgba
+    std::vector<float> positions = {0.5};
+
+    // test not prepare
+    auto ret = image->ApplyMapColorByBrightness(colors, positions);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // test CPU
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    EXPECT_NE(srcPixelMap, nullptr);
+    ret = image->Prepare(srcPixelMap, true);
+    ret = image->ApplyMapColorByBrightness(colors, positions);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // test filter is nullptr
+    ret = image->Prepare(srcPixelMap, false);
+    ret = image->ApplyMapColorByBrightness(colors, positions);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    // test filter not is nullptr
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+    ASSERT_NE(filterBlur, nullptr);
+    ret = image->ApplyDrawingFilter(filterBlur);
+    ret = image->ApplyMapColorByBrightness(colors, positions);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyGammaCorrectionTest
+ * @tc.desc: test ApplyGammaCorrection
+ * @tc.type: FUNC
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyGammaCorrectionTest, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    float gamma = 1.5f; // valid value
+
+    // test not prepare
+    auto ret = image->ApplyGammaCorrection(gamma);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // test CUP
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    EXPECT_NE(srcPixelMap, nullptr);
+    ret = image->Prepare(srcPixelMap, true);
+    ret = image->ApplyGammaCorrection(gamma);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // test filter is nullptr
+    ret = image->Prepare(srcPixelMap, false);
+    ret = image->ApplyGammaCorrection(gamma);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    // test filter not is nullptr
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+    ASSERT_NE(filterBlur, nullptr);
+    ret = image->ApplyDrawingFilter(filterBlur);
+    ret = image->ApplyGammaCorrection(gamma);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: WaterGlassReturnsErrorWhenNotPrepared
+ * @tc.desc: test ApplyWaterGlass returns error when not prepared.
+ */
+HWTEST_F(EffectImageChainUnittest, WaterGlassReturnsErrorWhenNotPrepared, TestSize.Level1)
+{
+    EffectImageChain chain;
+    auto params = std::make_shared<Drawing::GEWaterGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyWaterGlass(params), DrawingError::ERR_NOT_PREPARED);
+}
+
+/**
+ * @tc.name: WaterGlassReturnsErrorWhenForceCPU
+ * @tc.desc: test ApplyWaterGlass returns error when not ForceCPU.
+ */
+HWTEST_F(EffectImageChainUnittest, WaterGlassReturnsErrorWhenForceCPU, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, true);
+    auto params = std::make_shared<Drawing::GEWaterGlassDataParams>();
+    EXPECT_EQ(chain.ApplyWaterGlass(params), DrawingError::ERR_ILLEGAL_INPUT);
+}
+
+/**
+ * @tc.name: WaterGlassReturnsOkWhenApplySuccessfully
+ * @tc.desc: test ApplyWaterGlass returns ok when apply successfully.
+ */
+HWTEST_F(EffectImageChainUnittest, WaterGlassReturnsOkWhenApplySuccessfully, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, false);
+
+    auto params = std::make_shared<Drawing::GEWaterGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyWaterGlass(params), DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: WaterGlassReturnsError
+ * @tc.desc: test ApplyWaterGlass returns Error.
+ */
+HWTEST_F(EffectImageChainUnittest, WaterGlassReturnsError, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, false);
+
+    std::shared_ptr<Drawing::GEWaterGlassDataParams> params = nullptr;
+    EXPECT_NE(chain.ApplyWaterGlass(params), DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: WaterGlassFilters
+ * @tc.desc: test ApplyWaterGlass filters not nullptr.
+ */
+HWTEST_F(EffectImageChainUnittest, WaterGlassFilters, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, false);
+
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+    EXPECT_NE(filterBlur, nullptr);
+    auto ret = chain.ApplyDrawingFilter(filterBlur);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    auto params = std::make_shared<Drawing::GEWaterGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyWaterGlass(params), DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ReededGlassReturnsError
+ * @tc.desc: test ApplyReededGlass returns Error.
+ */
+HWTEST_F(EffectImageChainUnittest, ReededGlassReturnsError, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, false);
+
+    std::shared_ptr<Drawing::GEReededGlassDataParams> params = nullptr;
+    EXPECT_NE(chain.ApplyReededGlass(params), DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ReededGlassFilter
+ * @tc.desc: test ApplyReededGlass filters not null.
+ */
+HWTEST_F(EffectImageChainUnittest, ReededGlassFilter, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, false);
+
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1, 1, Drawing::TileMode::DECAL, nullptr);
+    EXPECT_NE(filterBlur, nullptr);
+    auto ret = chain.ApplyDrawingFilter(filterBlur);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    auto params = std::make_shared<Drawing::GEReededGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyReededGlass(params), DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ReededGlassReturnsErrorWhenNotPrepared
+ * @tc.desc: test ApplyReededGlass returns error when not prepared.
+ */
+HWTEST_F(EffectImageChainUnittest, ReededGlassReturnsErrorWhenNotPrepared, TestSize.Level1)
+{
+    EffectImageChain chain;
+    auto params = std::make_shared<Drawing::GEReededGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyReededGlass(params), DrawingError::ERR_NOT_PREPARED);
+}
+
+/**
+ * @tc.name: ReededGlassReturnsErrorWhenForceCPU
+ * @tc.desc: test ApplyReededGlass returns error when not ForceCPU.
+ */
+HWTEST_F(EffectImageChainUnittest, ReededGlassReturnsErrorWhenForceCPU, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, true);
+
+    auto params = std::make_shared<Drawing::GEReededGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyReededGlass(params), DrawingError::ERR_ILLEGAL_INPUT);
+}
+
+/**
+ * @tc.name: ReededGlassReturnsOkWhenApplySuccessfully
+ * @tc.desc: test ApplyReededGlass returns ok when apply successfully.
+ */
+HWTEST_F(EffectImageChainUnittest, ReededGlassReturnsOkWhenApplySuccessfully, TestSize.Level1)
+{
+    EffectImageChain chain;
+    chain.prepared_ = true;
+
+    Media::InitializationOptions opts;
+    opts.size = { 1, 1 };
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    chain.Prepare(srcPixelMap, false);
+
+    auto params = std::make_shared<Drawing::GEReededGlassDataParams>();
+    ASSERT_NE(params, nullptr);
+    EXPECT_EQ(chain.ApplyReededGlass(params), DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyMaskTransitionFilterTest001
+ * @tc.desc: Test ApplyMaskTransitionFilter with null parameters
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyMaskTransitionFilterTest001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    std::vector<float> colors = {0.0f, 1.0f};
+    std::vector<float> positions = {0.0f, 1.0f};
+    Drawing::GELinearGradientShaderMaskParams maskParams{
+        {{0.0f, 1.0f}, {0.0f, 1.0f}}, Drawing::Point(0, 0), Drawing::Point(100, 100)};
+    auto mask = std::static_pointer_cast<Drawing::GEShaderMask>(
+        std::make_shared<Drawing::GELinearGradientShaderMask>(maskParams));
+
+    // Test not prepared
+    auto ret = image->ApplyMaskTransitionFilter(nullptr, mask, 0.5f, false);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // Prepare image
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    ret = image->Prepare(srcPixelMap, true);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with forceCPU = true
+    ret = image->ApplyMaskTransitionFilter(nullptr, mask, 0.5f, false);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with null top layer
+    ret = image->ApplyMaskTransitionFilter(nullptr, mask, 0.5f, false);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyMaskTransitionFilterTest002
+ * @tc.desc: Test ApplyMaskTransitionFilter with valid parameters
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyMaskTransitionFilterTest002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Create top layer pixelmap
+    std::shared_ptr<Media::PixelMap> topLayerPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(topLayerPixelMap, nullptr);
+
+    std::vector<std::pair<float, float>> fractionStops = {{0.0f, 0.0f}, {1.0f, 1.0f}};
+    Drawing::GELinearGradientShaderMaskParams maskParams{
+        fractionStops, Drawing::Point(0, 0), Drawing::Point(100, 100)};
+    auto mask = std::static_pointer_cast<Drawing::GEShaderMask>(
+        std::make_shared<Drawing::GELinearGradientShaderMask>(maskParams));
+
+    ret = image->ApplyMaskTransitionFilter(topLayerPixelMap, mask, 0.5f, false);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->Draw();
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyMaskTransitionFilterTest003
+ * @tc.desc: Test ApplyMaskTransitionFilter with filters_ already set (tests cascade path)
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyMaskTransitionFilterTest003, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Add a drawing filter first to test the cascade path
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1.0f, 1.0f, Drawing::TileMode::CLAMP, nullptr);
+    ASSERT_NE(filterBlur, nullptr);
+    ret = image->ApplyDrawingFilter(filterBlur);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Create top layer pixelmap
+    std::shared_ptr<Media::PixelMap> topLayerPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(topLayerPixelMap, nullptr);
+
+    std::vector<std::pair<float, float>> fractionStops = {{0.0f, 0.0f}, {1.0f, 1.0f}};
+    Drawing::GELinearGradientShaderMaskParams maskParams{
+        fractionStops, Drawing::Point(0, 0), Drawing::Point(100, 100)};
+    auto mask = std::static_pointer_cast<Drawing::GEShaderMask>(
+        std::make_shared<Drawing::GELinearGradientShaderMask>(maskParams));
+
+    // This will trigger the cascade path where filters_ != nullptr
+    ret = image->ApplyMaskTransitionFilter(topLayerPixelMap, mask, 0.5f, false);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    ret = image->Draw();
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyMaskTransitionFilterTest004
+ * @tc.desc: Test ApplyMaskTransitionFilter with non-increasing fractionStops y values
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyMaskTransitionFilterTest004, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Create top layer pixelmap
+    std::shared_ptr<Media::PixelMap> topLayerPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(topLayerPixelMap, nullptr);
+
+    // Test with non-increasing y values (should still work, validation happens in shader)
+    std::vector<std::pair<float, float>> fractionStops = {{0.0f, 0.5f}, {1.0f, 0.2f}};
+    Drawing::GELinearGradientShaderMaskParams maskParams{
+        fractionStops, Drawing::Point(0, 0), Drawing::Point(100, 100)};
+    auto mask = std::static_pointer_cast<Drawing::GEShaderMask>(
+        std::make_shared<Drawing::GELinearGradientShaderMask>(maskParams));
+
+    ret = image->ApplyMaskTransitionFilter(topLayerPixelMap, mask, 0.5f, false);
+    // The API itself doesn't validate the increasing requirement, it happens in the shader
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyWaterDropletTransitionFilterTest001
+ * @tc.desc: Test ApplyWaterDropletTransitionFilter with null parameters
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyWaterDropletTransitionFilterTest001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    Drawing::GEWaterDropletTransitionFilterParams params = {
+        nullptr, false, 0.5f, 5.0f, 0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f
+    };
+    auto waterDropletParams = std::make_shared<Drawing::GEWaterDropletTransitionFilterParams>(params);
+
+    // Test not prepared
+    auto ret = image->ApplyWaterDropletTransitionFilter(nullptr, waterDropletParams);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // Prepare image
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    ret = image->Prepare(srcPixelMap, true);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with forceCPU = true (should return ERR_ILLEGAL_INPUT)
+    ret = image->ApplyWaterDropletTransitionFilter(nullptr, waterDropletParams);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with null top layer
+    ret = image->ApplyWaterDropletTransitionFilter(nullptr, waterDropletParams);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+
+    // Test with null params
+    ret = image->ApplyWaterDropletTransitionFilter(srcPixelMap, nullptr);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyWaterDropletTransitionFilterTest002
+ * @tc.desc: Test ApplyWaterDropletTransitionFilter with valid parameters
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyWaterDropletTransitionFilterTest002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Create top layer pixelmap
+    std::shared_ptr<Media::PixelMap> topLayerPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(topLayerPixelMap, nullptr);
+
+    Drawing::GEWaterDropletTransitionFilterParams params = {
+        nullptr, false, 0.5f, 5.0f, 0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f
+    };
+    auto waterDropletParams = std::make_shared<Drawing::GEWaterDropletTransitionFilterParams>(params);
+
+    // GE plugin not loaded in test env, GenerateWaterDropletTransitionFilter returns nullptr
+    ret = image->ApplyWaterDropletTransitionFilter(topLayerPixelMap, waterDropletParams);
+    EXPECT_EQ(ret, DrawingError::ERR_ILLEGAL_INPUT);
+
+    ret = image->Draw();
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+ * @tc.name: ApplyWaterDropletTransitionFilterTest003
+ * @tc.desc: Test ApplyWaterDropletTransitionFilter with filters_ already set (tests cascade path)
+ */
+HWTEST_F(EffectImageChainUnittest, ApplyWaterDropletTransitionFilterTest003, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Add a drawing filter first to test the cascade path
+    auto filterBlur = Drawing::ImageFilter::CreateBlurImageFilter(1.0f, 1.0f, Drawing::TileMode::CLAMP, nullptr);
+    ASSERT_NE(filterBlur, nullptr);
+    ret = image->ApplyDrawingFilter(filterBlur);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Create top layer pixelmap
+    std::shared_ptr<Media::PixelMap> topLayerPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(topLayerPixelMap, nullptr);
+
+    Drawing::GEWaterDropletTransitionFilterParams params = {
+        nullptr, false, 0.5f, 5.0f, 0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f
+    };
+    auto waterDropletParams = std::make_shared<Drawing::GEWaterDropletTransitionFilterParams>(params);
+
+    // GE plugin not loaded in test env, GenerateWaterDropletTransitionFilter returns nullptr
+    ret = image->ApplyWaterDropletTransitionFilter(topLayerPixelMap, waterDropletParams);
+    EXPECT_EQ(ret, DrawingError::ERR_ILLEGAL_INPUT);
+
+    ret = image->Draw();
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithInvalidScaleX001
+* @tc.desc: Test EffectImageChain::ApplyScale with invalid scaleX (zero)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithInvalidScaleX001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with scaleX = 0
+    ret = image->ApplyScale(0.0f, 1.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithInvalidScaleX002
+* @tc.desc: Test EffectImageChain::ApplyScale with invalid scaleX (negative)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithInvalidScaleX002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with negative scaleX
+    ret = image->ApplyScale(-0.5f, 1.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithInvalidScaleX003
+* @tc.desc: Test EffectImageChain::ApplyScale with invalid scaleX (very negative)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithInvalidScaleX003, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with very negative scaleX
+    ret = image->ApplyScale(-100.0f, 1.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithInvalidScaleY001
+* @tc.desc: Test EffectImageChain::ApplyScale with invalid scaleY (zero)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithInvalidScaleY001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with scaleY = 0
+    ret = image->ApplyScale(1.0f, 0.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithInvalidScaleY002
+* @tc.desc: Test EffectImageChain::ApplyScale with invalid scaleY (negative)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithInvalidScaleY002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with negative scaleY
+    ret = image->ApplyScale(1.0f, -0.5f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithInvalidScaleY003
+* @tc.desc: Test EffectImageChain::ApplyScale with invalid scaleY (very negative)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithInvalidScaleY003, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with very negative scaleY
+    ret = image->ApplyScale(1.0f, -100.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithBothInvalidScales001
+* @tc.desc: Test EffectImageChain::ApplyScale with both scales zero
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithBothInvalidScales001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with both scales = 0
+    ret = image->ApplyScale(0.0f, 0.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithBothInvalidScales002
+* @tc.desc: Test EffectImageChain::ApplyScale with both scales negative
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithBothInvalidScales002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with both scales negative
+    ret = image->ApplyScale(-1.0f, -1.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithoutPrepare001
+* @tc.desc: Test EffectImageChain::ApplyScale without prepare
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithoutPrepare001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    // Test without prepare
+    auto ret = image->ApplyScale(1.0f, 1.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithCPU001
+* @tc.desc: Test EffectImageChain::ApplyScale with CPU mode (not supported)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithCPU001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, true);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with CPU mode (should fail)
+    ret = image->ApplyScale(1.5f, 0.8f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_NE(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleWithExistingFilters001
+* @tc.desc: Test EffectImageChain::ApplyScale when filters already exist
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleWithExistingFilters001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Apply a drawing filter first
+    auto filter = Drawing::ImageFilter::CreateBlurImageFilter(1.0f, 1.0f,
+        Drawing::TileMode::CLAMP, nullptr);
+    ASSERT_NE(filter, nullptr);
+    ret = image->ApplyDrawingFilter(filter);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Now apply scale - should handle existing filters by calling UpdateImage first
+    ret = image->ApplyScale(0.5f, 0.5f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleSuccess001
+* @tc.desc: Test EffectImageChain::ApplyScale success case (GPU mode)
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleSuccess001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with valid scales in GPU mode
+    ret = image->ApplyScale(1.5f, 0.8f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleSuccess002
+* @tc.desc: Test EffectImageChain::ApplyScale with different filter and mipmap modes
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleSuccess002, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with NEAREST filter mode
+    ret = image->ApplyScale(0.5f, 0.5f,
+        Drawing::FilterMode::NEAREST, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with LINEAR mipmap mode
+    ret = image->ApplyScale(1.0f, 1.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::LINEAR);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleSuccess003
+* @tc.desc: Test EffectImageChain::ApplyScale with upscale
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleSuccess003, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with upscale
+    ret = image->ApplyScale(2.0f, 2.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleSuccess004
+* @tc.desc: Test EffectImageChain::ApplyScale with downscale
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleSuccess004, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with downscale
+    ret = image->ApplyScale(0.5f, 0.5f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleSuccess005
+* @tc.desc: Test EffectImageChain::ApplyScale with very small scales
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleSuccess005, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with very small but valid scales
+    ret = image->ApplyScale(0.001f, 0.001f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: ApplyScaleSuccess006
+* @tc.desc: Test EffectImageChain::ApplyScale with very large scales
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, ApplyScaleSuccess006, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    Media::InitializationOptions opts;
+    opts.size = {100, 100};
+    std::shared_ptr<Media::PixelMap> srcPixelMap(Media::PixelMap::Create(opts));
+    ASSERT_NE(srcPixelMap, nullptr);
+    auto ret = image->Prepare(srcPixelMap, false);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // Test with very large scales
+    ret = image->ApplyScale(100.0f, 100.0f,
+        Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+}
+
+/**
+* @tc.name: DrawNativeBufferWithScaling001
+* @tc.desc: Test EffectImageChain::DrawNativeBuffer when canvas and surface sizes differ
+* @tc.type: FUNC
+*/
+HWTEST_F(EffectImageChainUnittest, DrawNativeBufferWithScaling001, TestSize.Level1)
+{
+    auto image = std::make_shared<EffectImageChain>();
+    ASSERT_NE(image, nullptr);
+
+    const auto width = 200;
+    const auto height = 200;
+
+    Media::InitializationOptions opts = {
+        .size = {
+            .width = static_cast<int32_t>(width),
+            .height = static_cast<int32_t>(height),
+        },
+        .srcPixelFormat = OHOS::Media::PixelFormat::RGBA_8888,
+        .pixelFormat = OHOS::Media::PixelFormat::RGBA_8888,
+        .alphaType = OHOS::Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL,
+    };
+
+    std::shared_ptr<Media::PixelMap> srcPixelMap = Media::PixelMap::Create(opts);
+    ASSERT_NE(srcPixelMap, nullptr);
+
+    // Create native buffer with different size to trigger scaling
+    OH_NativeBuffer_Config config {
+        .width = width * 2,  // Different size
+        .height = height * 2,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA
+    };
+    OH_NativeBuffer* dstBuffer = OH_NativeBuffer_Alloc(&config);
+
+    std::shared_ptr<OH_NativeBuffer> dst(
+        dstBuffer,
+        [](OH_NativeBuffer* buffer) {}
+    );
+
+    auto ret = image->PrepareNativeBuffer(srcPixelMap, dst);
+    ASSERT_EQ(ret, DrawingError::ERR_OK);
+
+    // This should trigger scaling in DrawNativeBuffer
+    ret = image->DrawNativeBuffer();
+    EXPECT_EQ(ret, DrawingError::ERR_OK);
+
+    OH_NativeBuffer_Unreference(dstBuffer);
+}
+
 } // namespace Rosen
 } // namespace OHOS

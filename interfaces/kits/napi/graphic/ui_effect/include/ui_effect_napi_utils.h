@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 Huawei Device Co., Ltd.
+ * Copyright (C) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -80,6 +80,13 @@ do \
 
 #define UIEFFECT_ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
+#if defined(HISTOGRAM_MANAGEMENT_ENABLE) && (HISTOGRAM_MANAGEMENT_ENABLE==1)
+#include "histogram_plugin_macros.h"
+#define API_STATS_HISTOGRAM(...) HISTOGRAM_BOOLEAN(__VA_ARGS__)
+#else
+#define API_STATS_HISTOGRAM(...)
+#endif
+
 namespace OHOS {
 namespace Rosen {
 namespace UIEffect {
@@ -114,13 +121,10 @@ constexpr uint32_t NUM_27 = 27;
 constexpr uint32_t NUM_28 = 28;
 constexpr uint32_t NUM_29 = 29;
 constexpr uint32_t NUM_30 = 30;
-constexpr uint32_t NUM_31 = 31;
-constexpr uint32_t NUM_32 = 32;
-constexpr uint32_t NUM_33 = 33;
-constexpr uint32_t NUM_34 = 34;
-constexpr uint32_t NUM_35 = 35;
 constexpr uint32_t NUM_1000 = 1000;
+constexpr int32_t ERR_NO_PERMISSION = 201;
 constexpr int32_t ERR_NOT_SYSTEM_APP = 202;
+constexpr int32_t ERR_INVALID_PARAM = 401;
 
 bool ConvertDoubleValueFromJsElement(napi_env env, napi_value jsObject, uint32_t idx, double& data);
 bool ParseJsDoubleValue(napi_env env, napi_value jsObject, double& data);
@@ -131,8 +135,13 @@ bool ParseJsVector2f(napi_env env, napi_value jsObject, Vector2f& values);
 bool ConvertFromJsPoint(napi_env env, napi_value jsObject, double* point, size_t size);
 bool ParseJsRGBAColor(napi_env env, napi_value jsValue, Vector4f& rgba);
 bool ParseJsPoint(napi_env env, napi_value jsObject, Vector2f& point);
+bool ParseJsVector4f(napi_env env, napi_value jsObject, Vector4f& vec);
 bool ParseJsLTRBRect(napi_env env, napi_value jsValue, Vector4f& ltrb);
 bool ParseJsVector3f(napi_env env, napi_value jsObject, Vector3f& values);
+bool ParsegrayscaleFactor(napi_env env, napi_value jsObject, Vector3f& values);
+napi_value CreateJsValue(napi_env env, int32_t value);
+napi_value CreateJsValue(napi_env env, const std::string& message);
+napi_value CreateJsError(napi_env env, int32_t errCode, const std::string& message);
 } // namespace UIEffect
 
 class UIEffectNapiUtils {
@@ -140,6 +149,7 @@ public:
     static napi_valuetype GetType(napi_env env, napi_value root);
     static bool IsSystemApp();
     static bool IsFormRenderServiceCall();
+    static bool CheckPermission(const std::string& permission);
 private:
     static std::string GetBundleName();
 };

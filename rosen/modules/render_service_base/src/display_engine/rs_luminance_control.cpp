@@ -125,10 +125,10 @@ void RSLuminanceControl::DimmingIncrease(ScreenId screenId)
     }
 }
 
-void RSLuminanceControl::SetSdrLuminance(ScreenId screenId, uint32_t level)
+void RSLuminanceControl::SetSdrLuminance(const RsScreenBrightnessData& brightnessData)
 {
     if (rSLuminanceControlInterface_ != nullptr) {
-        rSLuminanceControlInterface_->SetSdrLuminance(screenId, level);
+        rSLuminanceControlInterface_->SetSdrLuminance(brightnessData);
     }
 }
 
@@ -246,11 +246,50 @@ float RSLuminanceControl::ConvertScalerFromLevelToFloat(uint32_t& level) const
 }
 
 void RSLuminanceControl::SetCurDisplayHdrBrightnessScaler(ScreenId screenId,
-    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler)
+    const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler)
 {
     if (rSLuminanceControlInterface_ != nullptr) {
         rSLuminanceControlInterface_->SetCurDisplayHdrBrightnessScaler(screenId, curDisplayHdrBrightnessScaler);
     }
 }
+
+double RSLuminanceControl::GetConfigScaler(ScreenId screenId, HdrStatus type) const
+{
+    return (rSLuminanceControlInterface_ != nullptr) ?
+        rSLuminanceControlInterface_->GetConfigScaler(screenId, type) : 1.0; // 1.0 means no headroom
+}
+
+void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
+{
+    if (rSLuminanceControlInterface_ != nullptr) {
+        rSLuminanceControlInterface_->SetDualScreenStatus(screenId, dualScreenStatus);
+    }
+}
+
+float RSLuminanceControl::HdrDimmingProcess(ScreenId screenId, uint64_t nodeId)
+{
+    if (rSLuminanceControlInterface_ != nullptr) {
+        return rSLuminanceControlInterface_->HdrDimmingProcess(screenId, nodeId);
+    }
+    return 1.0f;
+}
+
+void RSLuminanceControl::HdrDimmingPostProcess(ScreenId screenId)
+{
+    if (rSLuminanceControlInterface_ != nullptr) {
+        rSLuminanceControlInterface_->HdrDimmingPostProcess(screenId);
+    }
+}
+
+#ifndef ROSEN_CROSS_PLATFORM
+int32_t RSLuminanceControl::UpdateMetadataBasedOnScaler(const sptr<SurfaceBuffer>& input, float scaler,
+    HdrStatus hdrStatus)
+{
+    if (rSLuminanceControlInterface_ != nullptr) {
+        return rSLuminanceControlInterface_->UpdateMetadataBasedOnScaler(input, scaler, hdrStatus);
+    }
+    return 0;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

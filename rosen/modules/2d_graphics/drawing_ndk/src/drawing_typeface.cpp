@@ -15,12 +15,7 @@
 
 #include "drawing_typeface.h"
 
-#include <cerrno>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <mutex>
-#include <unistd.h>
 #include <unordered_map>
 #include <vector>
 
@@ -56,56 +51,6 @@ struct FontArgumentsHelper {
 
     int fontCollectionIndex_ = 0;
     std::vector<Coordinate> coordinates_;
-};
-
-struct MappedFile {
-    const void* data = nullptr;
-    size_t size = 0;
-    int fd = -1;
-
-    MappedFile() = default;
-
-    explicit MappedFile(const std::string& path)
-    {
-        fd = open(path.c_str(), O_RDONLY);
-        if (fd < 0) {
-            g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
-            LOGE("Map file failed, file path is %{public}s.", path.c_str());
-            return;
-        }
-
-        struct stat st {};
-        if (fstat(fd, &st) < 0) {
-            g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
-            LOGE("Map file fstat failed, file path is %{public}s.", path.c_str());
-            close(fd);
-            fd = -1;
-            return;
-        }
-        size = static_cast<size_t>(st.st_size);
-
-        void* ptr = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
-        if (ptr == MAP_FAILED) {
-            g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
-            LOGE("Map file mmap failed, file path is %{public}s.", path.c_str());
-            close(fd);
-            fd = -1;
-            return;
-        }
-        data = ptr;
-    }
-
-    ~MappedFile()
-    {
-        if (data != nullptr && data != MAP_FAILED) {
-            munmap(const_cast<void*>(data), size);
-        }
-        if (fd >= 0) {
-            close(fd);
-        }
-    }
-    MappedFile(const MappedFile&) = delete;
-    MappedFile& operator=(const MappedFile&) = delete;
 };
 
 static MemoryStream* CastToMemoryStream(OH_Drawing_MemoryStream* cMemoryStream)
@@ -176,7 +121,6 @@ OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFile(const char* path, int ind
         typeface = Typeface::MakeFromAshmem(
             static_cast<const uint8_t*>(mappedFile.data), mappedFile.size, 0, "0", index);
     } else {
-        g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         LOGE("OH_Drawing_TypefaceCreateFromFile: read typeface file failed, path is %{public}s, index is %{public}d.",
             path, index);
         return nullptr;
@@ -215,7 +159,6 @@ OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFileWithArguments(const char* 
         typeface = Typeface::MakeFromAshmem(
             static_cast<const uint8_t*>(mappedFile.data), mappedFile.size, 0, "0", fontArguments);
     } else {
-        g_drawingErrorCode = OH_DRAWING_ERROR_INVALID_PARAMETER;
         LOGE("OH_Drawing_TypefaceCreateFromFileWithArguments: read typeface file failed, path is %{public}s.", path);
         return nullptr;
     }
@@ -232,12 +175,21 @@ OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromCurrent(const OH_Drawing_Typef
     }
     FontArguments fontArguments;
     ConvertToDrawingFontArguments(*fontArgumentsHelper, fontArguments);
-    int currentTypefaceSize = const_cast<Typeface*>(currentTypeface)->GetSize();
+    uint32_t currentTypefaceSize = const_cast<Typeface*>(currentTypeface)->GetSize();
     if (fontArguments.GetCollectionIndex() == 0 && fontArguments.GetVariationDesignPosition().coordinateCount == 0) {
         return nullptr;
     }
-    std::shared_ptr<Typeface> typeface = Typeface::MakeFromAshmem(
-        currentTypeface->GetFd(), currentTypefaceSize, currentTypeface->GetHash(), fontArguments);
+
+    std::shared_ptr<Typeface> typeface = nullptr;
+    if (currentTypeface->GetFd() == -1) {
+        typeface = currentTypeface->MakeClone(fontArguments);
+        if (typeface == nullptr || currentTypeface->GetUniqueID() == typeface->GetUniqueID()) {
+            return nullptr;
+        }
+    } else {
+        typeface = Typeface::MakeFromAshmem(
+            currentTypeface->GetFd(), currentTypefaceSize, currentTypeface->GetHash(), fontArguments);
+    }
     return RegisterAndConvertTypeface(typeface);
 }
 

@@ -16,7 +16,7 @@
 #include "mem_param.h"
 
 namespace OHOS::Rosen {
-std::string MEMParam::GetRSWatchPoint()
+std::string MEMParam::GetRSWatchPoint() const
 {
     return rsWatchPoint_;
 }
@@ -46,16 +46,6 @@ void MEMParam::SetReclaimEnabled(bool isEnabled)
     isReclaimEnabled_ = isEnabled;
 }
 
-bool MEMParam::IsDeeplyRelGpuResEnable()
-{
-    return isDeeplyRelGpuResEnable_;
-}
-
-void MEMParam::SetDeeplyRelGpuResEnable(bool isDeeplyRelGpuResEnable)
-{
-    isDeeplyRelGpuResEnable_ = isDeeplyRelGpuResEnable;
-}
-
 bool MEMParam::IsKillScbEnabled()
 {
     return isKillScbEnabled_;
@@ -64,5 +54,35 @@ bool MEMParam::IsKillScbEnabled()
 void MEMParam::SetKillScbEnabled(bool isEnabled)
 {
     isKillScbEnabled_ = isEnabled;
+}
+
+bool MEMParam::IsKernelReportEnabled()
+{
+    return isKernelReportEnabled_;
+}
+
+void MEMParam::SetKernelReportEnabled(bool isEnabled)
+{
+    isKernelReportEnabled_ = isEnabled;
+}
+
+int MEMParam::GetKernelReportAvailableMemLimit()
+{
+    return kernelReportAvailableMemLimit_;
+}
+
+void MEMParam::SetKernelReportAvailableMemLimit(int kernelReportAvailableMemLimit)
+{
+    kernelReportAvailableMemLimit_ = kernelReportAvailableMemLimit;
+}
+
+int MEMParam::GetKernelReportMemInterval()
+{
+    return kernelReportMemInterval_;
+}
+
+void MEMParam::SetKernelReportMemInterval(int kernelReportMemInterval)
+{
+    kernelReportMemInterval_ = kernelReportMemInterval;
 }
 } // namespace OHOS::Rosen

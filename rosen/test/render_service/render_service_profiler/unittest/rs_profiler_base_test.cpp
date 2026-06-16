@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,6 +32,7 @@
 
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "render_server/rs_render_service.h"
+#include "transaction/rs_service_to_render_connection.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -85,8 +86,11 @@ HWTEST(RSProfilerBaseTest, PixelMapPushCheckJSON1, Level1)
     options.srcPixelFormat = Media::PixelFormat::RGBA_8888;
     options.pixelFormat = Media::PixelFormat::RGBA_8888;
     options.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
+    options.allocatorType = Media::AllocatorType::SHARE_MEM_ALLOC;
     options.useDMA = false;
-    auto pixelMap = Media::PixelMap::Create(options);
+    const auto pixelMap = Media::PixelMap::Create(options);
+    ASSERT_NE(pixelMap, nullptr);
+    ASSERT_EQ(pixelMap->GetAllocatorType(), Media::AllocatorType::SHARE_MEM_ALLOC);
 
     RSProfilerLogMsg msg;
     do {
@@ -94,14 +98,15 @@ HWTEST(RSProfilerBaseTest, PixelMapPushCheckJSON1, Level1)
     } while (msg.time_);
 
     constexpr uint64_t testId = 123;
-    std::string checkValue = "{\"id\":123,"
-        "\"type\":\"SHARED\",\"width\":128,\"height\":256,\"stride\":512,\"format\":3}";
-
     PixelMapStorage::Push(testId, *pixelMap);
 
     msg = RSProfiler::ReceiveRSLogBase();
     RSProfiler::SetMode(Mode::NONE);
-    EXPECT_EQ((msg.type_ == RSProfilerLogType::PIXELMAP && msg.msg_.find(checkValue) != std::string::npos), true);
+
+    const std::string checkValue = "{\"id\":123,"
+                                   "\"type\":\"SHARED\",\"width\":128,\"height\":256,\"stride\":512,\"format\":3}";
+    EXPECT_EQ((msg.type_ == RSProfilerLogType::PIXELMAP && msg.msg_.find(checkValue) != std::string::npos), true)
+        << "Message: " << msg.msg_;
 }
 
 /*
@@ -120,8 +125,11 @@ HWTEST(RSProfilerBaseTest, PixelMapPushCheckJSON2, Level1)
     options.srcPixelFormat = Media::PixelFormat::RGBA_8888;
     options.pixelFormat = Media::PixelFormat::RGBA_8888;
     options.alphaType = Media::AlphaType::IMAGE_ALPHA_TYPE_PREMUL;
+    options.allocatorType = Media::AllocatorType::DMA_ALLOC;
     options.useDMA = true;
-    auto pixelMap = Media::PixelMap::Create(options);
+    const auto pixelMap = Media::PixelMap::Create(options);
+    ASSERT_NE(pixelMap, nullptr);
+    ASSERT_EQ(pixelMap->GetAllocatorType(), Media::AllocatorType::DMA_ALLOC);
 
     RSProfilerLogMsg msg;
     do {
@@ -129,14 +137,14 @@ HWTEST(RSProfilerBaseTest, PixelMapPushCheckJSON2, Level1)
     } while (msg.time_);
 
     constexpr uint64_t testId = 321;
-    std::string checkValue = "{\"id\":321,"
-        "\"type\":\"DMA\",\"width\":1024,\"height\":512,\"stride\":4096,\"format\":12}";
-
     PixelMapStorage::Push(testId, *pixelMap);
 
     msg = RSProfiler::ReceiveRSLogBase();
     RSProfiler::SetMode(Mode::NONE);
-    EXPECT_EQ((msg.type_ == RSProfilerLogType::PIXELMAP && msg.msg_.find(checkValue) != std::string::npos), true);
+    const std::string checkValue = "{\"id\":321,"
+                                   "\"type\":\"DMA\",\"width\":1024,\"height\":512,\"stride\":4096,\"format\":12}";
+    EXPECT_EQ((msg.type_ == RSProfilerLogType::PIXELMAP && msg.msg_.find(checkValue) != std::string::npos), true)
+        << "Message: " << msg.msg_;
 }
 
 /*
@@ -243,6 +251,22 @@ HWTEST(RSProfilerBaseTest, RSLOGW2, Level1)
     RSProfiler::SetMode(Mode::NONE);
 
     EXPECT_EQ(msg, checkValue);
+}
+
+/*
+ * @tc.name: TimeNanoTest
+ * @tc.desc: Test Profiler TimeNano
+ * @tc.type: FUNC
+ * @tc.require: 21658
+ */
+HWTEST(RSProfilerBaseTest, TimeNanoTest, Level1)
+{
+    RSProfiler::SetReplayStartTimeNano(0);
+    ASSERT_EQ(RSProfiler::GetReplayStartTimeNano(), 0);
+
+    RSProfiler::SetReplayStartTimeNano(Utils::ToNanoseconds(1));
+    RSProfiler::SetTransactionTimeCorrection(1);
+    ASSERT_EQ(RSProfiler::GetReplayStartTimeNano(), Utils::ToNanoseconds(1));
 }
 
 /*
@@ -499,29 +523,34 @@ public:
     void TearDown() override;
 
 private:
-    static sptr<RSRenderService> renderService_;
     static RSMainThread* mainThread_;
 };
-sptr<RSRenderService> RecorRsProfileRecordTest::renderService_ = nullptr;
 RSMainThread* RecorRsProfileRecordTest::mainThread_ = nullptr;
 
 void RecorRsProfileRecordTest::SetUpTestCase()
 {
     mainThread_ = RSMainThread::Instance();
-    mainThread_->runner_ = AppExecFwk::EventRunner::Create(true);
-    mainThread_->handler_ = std::make_shared<AppExecFwk::EventHandler>(mainThread_->runner_);
+    if (mainThread_) {
+        const auto runner = OHOS::AppExecFwk::EventRunner::Create(true);
+        mainThread_->handler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+        mainThread_->handler_->eventRunner_->Run();
+    }
 
-    renderService_ = new RSRenderService();
-    renderService_->mainThread_ = mainThread_;
-    renderService_->screenManager_ = CreateOrGetScreenManager();
+    auto pipeline = std::make_shared<RSRenderPipeline>();
+    pipeline->mainThread_ = mainThread_;
 
-    RSProfiler::Init(renderService_);
+    const auto serviceToRenderConnection =
+        sptr<RSServiceToRenderConnection>::MakeSptr(new RSRenderPipelineAgent(pipeline));
+    RSProfiler::Init(pipeline, serviceToRenderConnection);
 }
 
 void RecorRsProfileRecordTest::TearDownTestCase()
 {
+    RSProfiler::Init(nullptr, nullptr);
     // Wait for all tasks in the main thread to complete.
-    mainThread_->ScheduleTask([]() -> int { return 0; }).get();
+    if (mainThread_) {
+        mainThread_->ScheduleTask([]() -> int { return 0; }).get();
+    }
 }
 
 void RecorRsProfileRecordTest::SetUp() {}

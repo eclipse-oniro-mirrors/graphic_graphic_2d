@@ -70,8 +70,10 @@ RSImageBase::~RSImageBase()
         if (uniqueId_ > 0) {
             if (renderServiceImage_ || isDrawn_) {
                 RSImageCache::Instance().CollectUniqueId(uniqueId_);
+                RSImageCache::Instance().DecreaseRefCountAndDiscardEditablePixelMapCache(uniqueId_);
             } else {
                 RSImageCache::Instance().ReleasePixelMapCache(uniqueId_);
+                RSImageCache::Instance().DecreaseRefCountAndReleaseEditablePixelMapCache(uniqueId_);
             }
         }
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
@@ -111,6 +113,8 @@ Drawing::ColorType GetColorTypeWithVKFormat(VkFormat vkFormat)
     switch (vkFormat) {
         case VK_FORMAT_R8G8B8A8_UNORM:
             return Drawing::COLORTYPE_RGBA_8888;
+        case VK_FORMAT_B8G8R8A8_UNORM:
+            return Drawing::COLORTYPE_BGRA_8888;
         case VK_FORMAT_R16G16B16A16_SFLOAT:
             return Drawing::COLORTYPE_RGBA_F16;
         case VK_FORMAT_R5G6B5_UNORM_PACK16:
@@ -239,15 +243,6 @@ void RSImageBase::SetPixelMap(const std::shared_ptr<Media::PixelMap>& pixelmap)
         image_ = nullptr;
         GenUniqueId(pixelMap_->GetUniqueId());
     }
-}
-
-void RSImageBase::DumpPicture(DfxString& info) const
-{
-    if (!pixelMap_) {
-        return;
-    }
-    info.AppendFormat("%d    [%d * %d]  %p\n", pixelMap_->GetByteCount(), pixelMap_->GetWidth(), pixelMap_->GetHeight(),
-        pixelMap_.get());
 }
 
 void RSImageBase::SetSrcRect(const RectF& srcRect)
@@ -386,28 +381,28 @@ static bool UnmarshallingAndCacheDrawingImage(
     return true;
 }
 
+static bool ShouldCacheEditablePixelMap(std::shared_ptr<Media::PixelMap>& pixelMap)
+{
+    if (pixelMap && pixelMap->IsEditable() && pixelMap->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
+        !pixelMap->IsAstc() && !pixelMap->IsYuvFormat()) {
+        return true;
+    }
+    return false;
+}
 
-static bool UnmarshallingAndCachePixelMap(Parcel& parcel, std::shared_ptr<Media::PixelMap>& pixelMap,
-    uint64_t uniqueId, uint32_t versionId)
+static bool UnmarshallingAndCachePixelMap(Parcel& parcel, std::shared_ptr<Media::PixelMap>& pixelMap, uint64_t uniqueId)
 {
     if (pixelMap != nullptr) {
         // match a cached pixelMap
-        if (versionId == pixelMap->GetVersionId()) {
-            if (!RSMarshallingHelper::SkipPixelMap(parcel)) {
-                return false;
-            }
-        } else {
-            RSImageCache::Instance().ReleasePixelMapCache(uniqueId);
-            if (!RSMarshallingHelper::Unmarshalling(parcel, pixelMap)) {
-                return false;
-            }
-            // unmarshalling the pixelmap and cache it
-            RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);
+        if (!RSMarshallingHelper::SkipPixelMap(parcel)) {
+            return false;
         }
     } else if (RSMarshallingHelper::Unmarshalling(parcel, pixelMap, uniqueId)) {
-        if (pixelMap) {
+        if (pixelMap && !pixelMap->IsEditable()) {
             // unmarshalling the pixelMap and cache it
             RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);
+        } else if (ShouldCacheEditablePixelMap(pixelMap)) {
+            RSImageCache::Instance().CacheEditablePixelMap(uniqueId, pixelMap);
         }
     } else {
         return false;
@@ -438,8 +433,10 @@ bool RSImageBase::UnmarshallingDrawingImageAndPixelMap(Parcel& parcel, uint64_t 
     if (!RSMarshallingHelper::Unmarshalling(parcel, useSkImage)) {
         return false;
     }
-    uint32_t versionId = 0;
-    if (!RSMarshallingHelper::Unmarshalling(parcel, versionId)) {
+    bool isPropertiesDirty = false;
+    if (!RSMarshallingHelper::CompatibleUnmarshalling(parcel, isPropertiesDirty, PIXELMAP_IS_PROPERTIES_DIRTY_DEFAULT,
+        RSPARCELVER_ADD_ISPROPDIRTY)) {
+        RS_LOGE("RSImageBase::Unmarshalling isPropertiesDirty fail");
         return false;
     }
     if (useSkImage) {
@@ -456,9 +453,16 @@ bool RSImageBase::UnmarshallingDrawingImageAndPixelMap(Parcel& parcel, uint64_t 
             return false;
         }
         pixelMap = RSImageCache::Instance().GetPixelMapCache(uniqueId);
+        if (pixelMap == nullptr) {
+            pixelMap = RSImageCache::Instance().GetEditablePixelMapCache(uniqueId);
+            if (pixelMap && isPropertiesDirty) {
+                pixelMap = nullptr;
+                RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+            }
+        }
         RS_TRACE_NAME_FMT("RSImageBase::Unmarshalling pixelMap uniqueId:%lu, size:[%d %d], cached:%d",
             uniqueId, pixelMap ? pixelMap->GetWidth() : 0, pixelMap ? pixelMap->GetHeight() : 0, pixelMap != nullptr);
-        if (!UnmarshallingAndCachePixelMap(parcel, pixelMap, uniqueId, versionId)) {
+        if (!UnmarshallingAndCachePixelMap(parcel, pixelMap, uniqueId)) {
             RS_LOGE("RSImageBase::Unmarshalling UnmarshalAndCachePixelMap fail");
             return false;
         }
@@ -471,21 +475,27 @@ void RSImageBase::IncreaseCacheRefCount(uint64_t uniqueId, bool useSkImage, std:
 {
     if (useSkImage) {
         RSImageCache::Instance().IncreaseDrawingImageCacheRefCount(uniqueId);
-    } else if (pixelMap) {
+    } else if (pixelMap && !pixelMap->IsEditable()) {
         RSImageCache::Instance().IncreasePixelMapCacheRefCount(uniqueId);
+    } else if (ShouldCacheEditablePixelMap(pixelMap)) {
+        RSImageCache::Instance().IncreaseEditablePixelMapCacheRefCount(uniqueId);
     }
 }
 
 bool RSImageBase::Marshalling(Parcel& parcel) const
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t versionId = pixelMap_ == nullptr ? 0 : pixelMap_->GetVersionId();
+    auto image = image_;
+    if (pixelMap_ != nullptr) {
+        image = nullptr;
+    }
+    bool isPropertiesDirty = (pixelMap_ ? pixelMap_->IsPropertiesDirty() : PIXELMAP_IS_PROPERTIES_DIRTY_DEFAULT);
     bool success = RSMarshallingHelper::Marshalling(parcel, uniqueId_) &&
                    RSMarshallingHelper::Marshalling(parcel, srcRect_) &&
                    RSMarshallingHelper::Marshalling(parcel, dstRect_) &&
                    parcel.WriteBool(pixelMap_ == nullptr) &&
-                   RSMarshallingHelper::Marshalling(parcel, versionId) &&
-                   RSMarshallingHelper::Marshalling(parcel, image_) &&
+                   RSMarshallingHelper::CompatibleMarshalling(parcel, isPropertiesDirty, RSPARCELVER_ADD_ISPROPDIRTY) &&
+                   RSMarshallingHelper::Marshalling(parcel, image) &&
                    RSMarshallingHelper::Marshalling(parcel, pixelMap_);
     if (!success) {
         RS_LOGE("RSImageBase::Marshalling parcel fail");
@@ -527,6 +537,7 @@ RSImageBase* RSImageBase::Unmarshalling(Parcel& parcel)
 void RSImageBase::ConvertPixelMapToDrawingImage()
 {
     if (!image_ && pixelMap_ && !pixelMap_->IsAstc() && !isYUVImage_) {
+        if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
             if (RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
                 image_ = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_);
@@ -536,17 +547,20 @@ void RSImageBase::ConvertPixelMapToDrawingImage()
 #else
             image_ = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(uniqueId_);
 #endif
+        }
         if (!image_) {
             image_ = RSPixelMapUtil::ExtractDrawingImage(pixelMap_);
+            if (!pixelMap_->IsEditable()) {
 #if defined(ROSEN_OHOS)
-            if (RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
-                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_);
-            } else {
-                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, gettid());
-            }
+                if (RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+                    RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_);
+                } else {
+                    RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, gettid());
+                }
 #else
-            RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_);
+                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_);
 #endif
+            }
         }
     }
 }
@@ -598,6 +612,7 @@ void RSImageBase::ProcessYUVImage(std::shared_ptr<Drawing::GPUContext> gpuContex
 void RSImageBase::SetCompressData(const std::shared_ptr<Drawing::Data> compressData)
 {
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
+    std::lock_guard<std::mutex> lock(compressDataMutex_);
     isDrawn_ = false;
     compressData_ = compressData;
     canPurgeShareMemFlag_ = CanPurgeFlag::DISABLED;
@@ -616,8 +631,14 @@ bool RSImageBase::SetCompressedDataForASTC()
     if (pixelMap_->GetAllocatorType() == Media::AllocatorType::DMA_ALLOC &&
         (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
         RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
-        sptr<SurfaceBuffer> surfaceBuf(reinterpret_cast<SurfaceBuffer *>(pixelMap_->GetFd()));
-        nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBuf);
+        if (nativeWindowBuffer_ == nullptr) {
+            sptr<SurfaceBuffer> surfaceBuf(reinterpret_cast<SurfaceBuffer *>(pixelMap_->GetFd()));
+            nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&surfaceBuf);
+            if (nativeWindowBuffer_ == nullptr) {
+                RS_LOGE("RSImageBase SetCompressedDataForASTC create native window buffer fail");
+                return false;
+            }
+        }
         OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer_);
         if (nativeBuffer == nullptr || !fileData->BuildFromOHNativeBuffer(nativeBuffer, pixelMap_->GetCapacity())) {
             RS_LOGE("%{public}s data BuildFromOHNativeBuffer fail", __func__);
@@ -686,7 +707,8 @@ std::shared_ptr<Drawing::Image> RSImageBase::MakeFromTextureForVK(
     Drawing::ColorType colorType = GetColorTypeWithVKFormat(vkTextureInfo->format);
     std::shared_ptr<Drawing::ColorSpace> colorSpace =
         RSColorSpaceUtil::ColorSpaceToDrawingColorSpace(pixelMap_->InnerGetGrColorSpace().GetColorSpaceName());
-    Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
+    Drawing::AlphaType alphaType = RSPixelMapUtil::AlphaTypeToDrawingAlphaType(pixelMap_->GetAlphaType());
+    Drawing::BitmapFormat bitmapFormat = { colorType, alphaType };
     if (!dmaImage->BuildFromTexture(*canvas.GetGPUContext(), backendTexture_.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, colorSpace, NativeBufferUtils::DeleteVkImage,
         cleanUpHelper_->Ref())) {
@@ -710,12 +732,12 @@ void RSImageBase::BindPixelMapToDrawingImage(Drawing::Canvas& canvas)
         }
         if (imageCache) {
             image_ = imageCache;
-        } else {
-            image_ = MakeFromTextureForVK(canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap_->GetFd()));
-            if (image_) {
-                SKResourceManager::Instance().HoldResource(image_);
-                RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, threadId);
-            }
+            return;
+        }
+        image_ = MakeFromTextureForVK(canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap_->GetFd()));
+        if (!pixelMap_->IsEditable() && image_) {
+            SKResourceManager::Instance().HoldResource(image_);
+            RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(uniqueId_, image_, threadId);
         }
     }
 }

@@ -18,6 +18,7 @@
 #include "drawing_font_collection.h"
 #include "drawing_register_font.h"
 #include "drawing_text_declaration.h"
+#include "file_ex.h"
 #include "gtest/gtest.h"
 #include "txt/platform.h"
 
@@ -30,29 +31,32 @@ protected:
     const char* fontFamily_ = "Roboto";
     const char* existFontPath_ = "/system/fonts/Roboto-Regular.ttf";
     const char* notExistFontPath_ = "/system/fonts/Roboto-Regular1.ttf";
+    const char* cjkFontPath_ = "/system/fonts/NotoSansCJK-Regular.ttc";
 };
 
 /*
- * @tc.name: NdkRegisterFontTest001
+ * @tc.name: RegisterFontByPath
  * @tc.desc: test for register font
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest001, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, RegisterFontByPath, TestSize.Level0)
 {
     OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
     uint32_t errorCode = OH_Drawing_RegisterFont(fontCollection, fontFamily_, notExistFontPath_);
     EXPECT_EQ(errorCode, 1);
     errorCode = OH_Drawing_RegisterFont(fontCollection, fontFamily_, existFontPath_);
     EXPECT_EQ(errorCode, 0);
+    errorCode = OH_Drawing_RegisterFont(fontCollection, nullptr, existFontPath_);
+    EXPECT_EQ(errorCode, 0);
     OH_Drawing_DestroyFontCollection(fontCollection);
 }
 
 /*
- * @tc.name: NdkRegisterFontTest002
+ * @tc.name: RegisterFontBuffer
  * @tc.desc: test for register font buffer
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest002, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, RegisterFontBuffer, TestSize.Level0)
 {
     OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
     std::ifstream fileStream(existFontPath_);
@@ -66,6 +70,8 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest002, TestSize.Level0)
     // 测试有效的数据
     uint32_t result = OH_Drawing_RegisterFontBuffer(fontCollection, fontFamily_, buffer.get(), bufferSize);
     EXPECT_EQ(result, 0);
+    result = OH_Drawing_RegisterFontBuffer(fontCollection, nullptr, buffer.get(), bufferSize);
+    EXPECT_EQ(result, 0);
     uint8_t invalidBuffer[] = { 0, 0, 0, 0, 0 };
     // 测试无效的数据
     result = OH_Drawing_RegisterFontBuffer(fontCollection, fontFamily_, invalidBuffer, sizeof(invalidBuffer));
@@ -73,11 +79,11 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest002, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkRegisterFontTest003
+ * @tc.name: RegisterFontNullptrParameters
  * @tc.desc: test for nullptr
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest003, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, RegisterFontNullptrParameters, TestSize.Level0)
 {
     // ERROR_NULL_FONT_COLLECTION is 8
     const uint32_t nullFontCollection = 8;
@@ -96,11 +102,11 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest003, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkRegisterFontTest004
+ * @tc.name: RegisterFontThemeFontRejected
  * @tc.desc: test for ohosthemefont
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest004, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, RegisterFontThemeFontRejected, TestSize.Level0)
 {
     const uint32_t fileCorruption = 9;
 
@@ -112,11 +118,11 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest004, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkRegisterFontTest005
+ * @tc.name: RegisterSameTtfWithDifferentFamilyNames
  * @tc.desc: test for same ttf with different family name
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest005, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, RegisterSameTtfWithDifferentFamilyNames, TestSize.Level0)
 {
     OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
     uint32_t result = OH_Drawing_RegisterFont(fontCollection, "test1", existFontPath_);
@@ -128,11 +134,11 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest005, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkRegisterFontTest006
+ * @tc.name: UnregisterFontAfterRegistration
  * @tc.desc: test for unregister font
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest006, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, UnregisterFontAfterRegistration, TestSize.Level0)
 {
     OH_Drawing_FontCollection* fontCollection = OH_Drawing_CreateFontCollection();
     uint32_t result = OH_Drawing_RegisterFont(fontCollection, "test1", existFontPath_);
@@ -147,11 +153,11 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest006, TestSize.Level0)
 }
 
 /*
- * @tc.name: NdkRegisterFontTest007
+ * @tc.name: UnregisterFontInvalidParameters
  * @tc.desc: test for unregister font
  * @tc.type: FUNC
  */
-HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest007, TestSize.Level0)
+HWTEST_F(NdkRegisterFontTest, UnregisterFontInvalidParameters, TestSize.Level0)
 {
     // ERROR_NULL_FONT_COLLECTION is 8
     const uint32_t nullFontCollection = 8;
@@ -162,5 +168,52 @@ HWTEST_F(NdkRegisterFontTest, NdkRegisterFontTest007, TestSize.Level0)
     EXPECT_EQ(OH_Drawing_UnregisterFont(fontCollection, ""), nullFontCollection);
     EXPECT_EQ(OH_Drawing_UnregisterFont(fontCollection, Rosen::SPText::OHOS_THEME_FONT), nullFontCollection);
     OH_Drawing_DestroyFontCollection(fontCollection);
+}
+
+/*
+ * @tc.name: IsFontSupportedByPath
+ * @tc.desc: test for is font supported by path
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkRegisterFontTest, IsFontSupportedByPath, TestSize.Level0)
+{
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromPath(nullptr));
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromPath(notExistFontPath_));
+    EXPECT_TRUE(OH_Drawing_IsFontSupportedFromPath(existFontPath_));
+}
+
+/*
+ * @tc.name: IsFontSupportedByBuffer
+ * @tc.desc: test for is font supported by buffer
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkRegisterFontTest, IsFontSupportedByBuffer, TestSize.Level0)
+{
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(nullptr, 0));
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(nullptr, 1));
+    std::vector<char> buffer;
+    LoadBufferFromFile(existFontPath_, buffer);
+    EXPECT_TRUE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), 0));
+    for (size_t i = 0; i < buffer.size() / 2; i++) {
+        buffer[i] = 0;
+    }
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
+}
+
+/*
+ * @tc.name: IsFontSupportedByBufferTtcFile
+ * @tc.desc: test for is font supported by buffer ttc file.
+ * @tc.type: FUNC
+ */
+HWTEST_F(NdkRegisterFontTest, IsFontSupportedByBufferTtcFile, TestSize.Level0)
+{
+    std::vector<char> buffer;
+    LoadBufferFromFile(cjkFontPath_, buffer);
+    EXPECT_TRUE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
+    for (size_t i = 0; i < buffer.size() / 2; i++) {
+        buffer[i] = 0;
+    }
+    EXPECT_FALSE(OH_Drawing_IsFontSupportedFromBuffer(reinterpret_cast<uint8_t*>(buffer.data()), buffer.size()));
 }
 } // namespace OHOS

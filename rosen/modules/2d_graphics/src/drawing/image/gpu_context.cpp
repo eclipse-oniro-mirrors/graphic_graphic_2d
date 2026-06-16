@@ -215,11 +215,6 @@ void GPUContext::DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPU
     impl_->DumpMemoryStatisticsByTag(traceMemoryDump, tag);
 }
 
-uint64_t GPUContext::NewDumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) const
-{
-    return impl_->NewDumpMemoryStatisticsByTag(traceMemoryDump, tag);
-}
-
 void GPUContext::DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump) const
 {
     impl_->DumpMemoryStatistics(traceMemoryDump);
@@ -244,6 +239,18 @@ void GPUContext::InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t s
 {
     impl_->InitGpuMemoryLimit(callback, size);
 }
+
+// LCOV_EXCL_START
+void GPUContext::SetAbnormalPid(pid_t pid)
+{
+    impl_->SetAbnormalPid(pid);
+}
+
+void GPUContext::InitGpuMemoryInfoStatProc(GpuMemoryInfoStatProcCallback callback)
+{
+    impl_->InitGpuMemoryInfoStatProc(callback);
+}
+// LCOV_EXCL_STOP
 
 void GPUContext::ResetContext()
 {
@@ -343,7 +350,7 @@ std::string GPUContextOptions::GetStoreCachePath() const
     return filePath_;
 }
 
-void GPUContextOptions::SetIsUniRender(bool isUniRender)
+ void GPUContextOptions::SetIsUniRender(bool isUniRender)
 {
     isUniRender_ = isUniRender;
 }

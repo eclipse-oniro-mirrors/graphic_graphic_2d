@@ -39,7 +39,7 @@ public:
     MOCK_METHOD(bool, IsHdrOn, (ScreenId screenId), (override, const));
     MOCK_METHOD(bool, IsDimmingOn, (ScreenId screenId), (override));
     MOCK_METHOD(void, DimmingIncrease, (ScreenId screenId), (override));
-    MOCK_METHOD(void, SetSdrLuminance, (ScreenId screenId, uint32_t level), (override));
+    MOCK_METHOD(void, SetSdrLuminance, (const RsScreenBrightnessData& brightnessData), (override));
     MOCK_METHOD(uint32_t, GetNewHdrLuminance, (ScreenId screenId), (override));
     MOCK_METHOD(void, SetNowHdrLuminance, (ScreenId screenId, uint32_t level), (override));
     MOCK_METHOD(bool, IsNeedUpdateLuminance, (ScreenId screenId), (override));
@@ -56,10 +56,16 @@ public:
     MOCK_METHOD(void, HandleGamutSpecialRender, (std::vector<ScreenColorGamut>& modes), (override));
     MOCK_METHOD(uint32_t, ConvertScalerFromFloatToLevel, (float& scaler), (override, const));
     MOCK_METHOD(float, ConvertScalerFromLevelToFloat, (uint32_t& level), (override, const));
-    using HdrToBrightnessScalerMap = std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
+    using HdrToBrightnessScalerMap = const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
     MOCK_METHOD(void, SetCurDisplayHdrBrightnessScaler, (ScreenId screenId,
         HdrToBrightnessScalerMap& curDisplayHdrBrightnessScaler), (override));
     MOCK_METHOD(bool, IsHardwareHdrDisabled, (bool checkBrightnessRatio, ScreenId screenId), (override));
+    MOCK_METHOD(double, GetConfigScaler, (ScreenId screenId, HdrStatus type), (override, const));
+    MOCK_METHOD(void, SetDualScreenStatus, (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
+    MOCK_METHOD(float, HdrDimmingProcess, (ScreenId screenId, uint64_t nodeId), (override));
+    MOCK_METHOD(void, HdrDimmingPostProcess, (ScreenId screenId), (override));
+    MOCK_METHOD(int32_t, UpdateMetadataBasedOnScaler, (const sptr<SurfaceBuffer>& input, float scaler,
+        HdrStatus hdrStatus), (override));
 
     float CalScaler(const float& maxContentLightLevel,
         const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus) override;
@@ -68,7 +74,8 @@ public:
 float MockRSLuminanceControl::CalScaler(const float& maxContentLightLevel,
     const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus)
 {
-    if (hdrStatus == HdrStatus::AI_HDR_VIDEO_GAINMAP || hdrStatus == HdrStatus::AI_HDR_VIDEO_GTM) {
+    if (hdrStatus == HdrStatus::AI_HDR_VIDEO_GAINMAP || hdrStatus == HdrStatus::AI_HDR_VIDEO_GTM
+        || hdrStatus == HdrStatus::AI_HDR_VIDEO_AI2020) {
         return AI_HDR_SCALER;
     } else {
         return HDR_DEFAULT_SCALER * ratio;
@@ -97,19 +104,28 @@ void RSLuminanceControlTest::TearDown() {}
 HWTEST_F(RSLuminanceControlTest, LuminanceControl001, TestSize.Level1)
 {
     ScreenId screenId{};
+    uint64_t nodeId{};
     uint32_t level{};
     std::vector<ScreenColorGamut> mode{};
     std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>> displayHdrBrightnessScaler;
+    DualScreenStatus dualScreenStatus{};
+    sptr<SurfaceBuffer> input = nullptr;
+    HdrStatus hdrStatus{};
+    float scaler = 0.0f;
     auto& luminCtrl = RSLuminanceControl::Get();
     luminCtrl.Init();
     luminCtrl.initStatus_ = true;
     luminCtrl.DimmingIncrease(screenId);
     luminCtrl.SetNowHdrLuminance(screenId, level);
-    luminCtrl.SetSdrLuminance(screenId, level);
+    luminCtrl.SetSdrLuminance(RsScreenBrightnessData(screenId, level));
     luminCtrl.ForceCloseHdr(screenId, true);
     luminCtrl.GetBrightnessInfo(screenId);
     luminCtrl.HandleGamutSpecialRender(mode);
     luminCtrl.SetCurDisplayHdrBrightnessScaler(screenId, displayHdrBrightnessScaler);
+    luminCtrl.SetDualScreenStatus(screenId, dualScreenStatus);
+    luminCtrl.HdrDimmingProcess(screenId, nodeId);
+    luminCtrl.HdrDimmingPostProcess(screenId);
+    luminCtrl.UpdateMetadataBasedOnScaler(input, scaler, hdrStatus);
 
     auto mockRSLuminanceControl = MockRSLuminanceControl::GetInstance();
     luminCtrl.rSLuminanceControlInterface_ = mockRSLuminanceControl.get();
@@ -117,16 +133,20 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl001, TestSize.Level1)
     luminCtrl.UpdateScreenStatus(screenId, POWER_STATUS_ON);
     luminCtrl.DimmingIncrease(screenId);
     luminCtrl.SetNowHdrLuminance(screenId, level);
-    luminCtrl.SetSdrLuminance(screenId, level);
+    luminCtrl.SetSdrLuminance(RsScreenBrightnessData(screenId, level));
     luminCtrl.SetHdrStatus(screenId, HdrStatus::NO_HDR);
     luminCtrl.SetHdrStatus(screenId, HdrStatus::HDR_VIDEO);
     luminCtrl.SetHdrStatus(screenId, HdrStatus::AI_HDR_VIDEO_GTM);
     luminCtrl.SetHdrStatus(screenId, HdrStatus::HDR_PHOTO);
     luminCtrl.ForceCloseHdr(screenId, true);
     luminCtrl.GetBrightnessInfo(screenId);
-    luminCtrl.SetCurDisplayHdrBrightnessScaler(screenId, displayHdrBrightnessScaler);
     luminCtrl.HandleGamutSpecialRender(mode);
-    
+    luminCtrl.SetCurDisplayHdrBrightnessScaler(screenId, displayHdrBrightnessScaler);
+    luminCtrl.SetDualScreenStatus(screenId, dualScreenStatus);
+    luminCtrl.HdrDimmingProcess(screenId, nodeId);
+    luminCtrl.HdrDimmingPostProcess(screenId);
+    luminCtrl.UpdateMetadataBasedOnScaler(input, scaler, hdrStatus);
+
     ASSERT_NE((&luminCtrl), nullptr);
 }
 
@@ -170,6 +190,7 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl003, TestSize.Level1)
     ratio = 0.5f;
     ASSERT_EQ(luminCtrl.CalScaler(maxCll, dyMetadata, ratio), HDR_DEFAULT_SCALER * ratio);
     ASSERT_EQ(luminCtrl.CalScaler(maxCll, dyMetadata, ratio, HdrStatus::AI_HDR_VIDEO_GAINMAP), AI_HDR_SCALER);
+    ASSERT_EQ(luminCtrl.CalScaler(maxCll, dyMetadata, ratio, HdrStatus::AI_HDR_VIDEO_AI2020), AI_HDR_SCALER);
     ASSERT_EQ(luminCtrl.CalScaler(maxCll, dyMetadata, ratio, HdrStatus::AI_HDR_VIDEO_GTM), AI_HDR_SCALER);
 }
 
@@ -201,21 +222,6 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl005, TestSize.Level1)
     luminCtrl.rSLuminanceControlInterface_ = mockRSLuminanceControl.get();
     ASSERT_NE(luminCtrl.rSLuminanceControlInterface_, nullptr);
     ASSERT_EQ(luminCtrl.IsForceCloseHdr(), false);
-}
-
-/**
- * @tc.name: LuminanceControl006
- * @tc.desc: Test LuminanceControl class members
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSLuminanceControlTest, LuminanceControl006, TestSize.Level1)
-{
-    auto& luminCtrl = RSLuminanceControl::Get();
-    auto mockRSLuminanceControl = MockRSLuminanceControl::GetInstance();
-    luminCtrl.rSLuminanceControlInterface_ = mockRSLuminanceControl.get();
-    ASSERT_NE(luminCtrl.rSLuminanceControlInterface_, nullptr);
-    ASSERT_EQ(luminCtrl.IsHardwareHdrDisabled(0.0f, 0), false);
 }
 
 /**
@@ -398,5 +404,20 @@ HWTEST_F(RSLuminanceControlTest, LuminanceControl018, TestSize.Level1)
     ASSERT_NE(luminCtrl.rSLuminanceControlInterface_, nullptr);
     uint32_t level = 0;
     ASSERT_EQ(luminCtrl.ConvertScalerFromLevelToFloat(level), 0.0f);
+}
+
+/**
+ * @tc.name: LuminanceControl019
+ * @tc.desc: Test LuminanceControl class members
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSLuminanceControlTest, LuminanceControl019, TestSize.Level1)
+{
+    auto& luminCtrl = RSLuminanceControl::Get();
+    auto mockRSLuminanceControl = MockRSLuminanceControl::GetInstance();
+    luminCtrl.rSLuminanceControlInterface_ = mockRSLuminanceControl.get();
+    ASSERT_NE(luminCtrl.rSLuminanceControlInterface_, nullptr);
+    ASSERT_EQ(luminCtrl.GetConfigScaler(0, HDR_EFFECT), 0.0);
 }
 } // namespace OHOS::Rosen

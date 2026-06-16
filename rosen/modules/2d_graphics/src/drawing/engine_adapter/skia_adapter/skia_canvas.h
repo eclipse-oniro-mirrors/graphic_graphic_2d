@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.. All rights reserved.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,6 +44,7 @@
 #include "skia_canvas_op.h"
 
 #include "common/rs_macros.h"
+#include "draw/prim_list.h"
 #include "impl_interface/core_canvas_impl.h"
 
 namespace OHOS {
@@ -117,6 +118,11 @@ public:
     // color
     void DrawColor(ColorQuad color, BlendMode mode) override;
 
+    // UIColor
+    void DrawUIColor(UIColor color, BlendMode mode) override;
+
+    void DrawParticle(std::shared_ptr<ParticleEffect> particle) override;
+
     bool OpCalculateBefore(const Matrix& matrix) override;
     std::shared_ptr<Drawing::OpListHandle> OpCalculateAfter(const Rect& bound) override;
 
@@ -137,6 +143,8 @@ public:
     void DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom) override;
 
     // text
+    void DrawGlyphs(int count, const uint16_t glyphs[], const Point positions[],
+                    Point origin, const Font* font, const Paint& paint) override;
     void DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y, const Paint& paint) override;
 
     // symbol
@@ -195,6 +203,14 @@ public:
         const std::vector<std::shared_ptr<Drawing::HpsEffectParameter>>& hpsEffectParams) override;
 
     std::array<int, 2> CalcHpsBluredImageDimension(const Drawing::HpsBlurParameter& blurParams) override;
+
+    void InsertOpaqueRegion(const std::vector<RectI>& opaqueRects) override;
+
+    bool IsOpaque() override;
+
+    void BeginPrimListCollecting(const Rect& bounds) override;
+    std::shared_ptr<PrimList> EndPrimListCollecting() override;
+    bool DrawPrimList(const PrimList& primList) override;
 
 private:
     void RoundRectCastToSkRRect(const RoundRect& roundRect, SkRRect& skRRect) const;

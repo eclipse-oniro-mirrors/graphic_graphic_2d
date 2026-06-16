@@ -14,6 +14,7 @@
  */
 
 #include "filter_taihe.h"
+#include <cstdint>
 
 #include "effect/include/blender.h"
 #include "effect/include/brightness_blender.h"
@@ -24,6 +25,9 @@
 using namespace ANI::UIEffect;
 
 namespace ANI::UIEffect {
+
+static const std::string HDR_BRIGHTNESS_PERMISSION = "ohos.permission.HDR_BRIGHTNESS";
+
 FilterImpl::FilterImpl()
 {
     nativeFilter_ = std::make_shared<OHOS::Rosen::Filter>();
@@ -192,7 +196,7 @@ Filter FilterImpl::MaskTransition(::ohos::graphics::uiEffect::uiEffect::weak::Ma
         para->SetFactor(factor.value());
     }
     if (inverse.has_value()) {
-        para->SetFactor(inverse.value());
+        para->SetInverse(inverse.value());
     }
     nativeFilter_->AddPara(para);
     auto filter = nativeFilter_;
@@ -217,7 +221,7 @@ Filter FilterImpl::DirectionLight(uintptr_t direction, ::ohos::graphics::uiEffec
     ani_double directionX { 0.0 };
     ani_double directionY { 0.0 };
     ani_double directionZ { 0.0 };
-    if (env->Object_GetPropertyByName_Double(ani_obj, "x", &directionX) == ANI_OK &&
+    if (env && ani_obj && env->Object_GetPropertyByName_Double(ani_obj, "x", &directionX) == ANI_OK &&
         env->Object_GetPropertyByName_Double(ani_obj, "y", &directionY) == ANI_OK &&
         env->Object_GetPropertyByName_Double(ani_obj, "z", &directionZ) == ANI_OK) {
         OHOS::Rosen::Vector3f lightDirection = OHOS::Rosen::Vector3f(directionX, directionY, directionZ);
@@ -248,17 +252,18 @@ bool FilterImpl::GetFractionStops(
     }
     ani_size len = 0;
     if (env->Array_GetLength(arrayObj, &len) != ANI_OK || len <= 0) {
-        UIEFFECT_LOG_E("call GetFractionStops failed, get anit array failed");
+        UIEFFECT_LOG_E("call GetFractionStops failed, get ani array failed");
         return false;
     }
     ani_ref tupleObj {};
     for (ani_size i = 0; i < len; i++) {
-        if (env->Array_Get(arrayObj, i, &tupleObj) == ANI_OK) {
-            OHOS::Rosen::Vector2f fraStopsData;
-            if (ConvertVector2fFromAniTuple(fraStopsData, reinterpret_cast<uintptr_t>(tupleObj))) {
-                fractionStops.emplace_back(
-                    static_cast<float>(fraStopsData[0]), static_cast<float>(fraStopsData[1]));
-            }
+        if (env->Array_Get(arrayObj, i, &tupleObj) != ANI_OK) {
+            continue;
+        }
+        OHOS::Rosen::Vector2f fraStopsData;
+        if (ConvertVector2fFromAniTuple(fraStopsData, reinterpret_cast<uintptr_t>(tupleObj))) {
+            fractionStops.emplace_back(
+                static_cast<float>(fraStopsData[0]), static_cast<float>(fraStopsData[1]));
         }
     }
     return true;
@@ -283,7 +288,6 @@ Filter FilterImpl::RadiusGradientBlur(double value, uintptr_t options)
     ani_object ani_obj = reinterpret_cast<ani_object>(options);
     if (ani_obj == nullptr || env == nullptr) {
         nativeFilter_->AddPara(para);
-        auto filter = nativeFilter_;
         return make_holder<FilterImpl, Filter>(nativeFilter_);
     }
     
@@ -306,8 +310,7 @@ Filter FilterImpl::RadiusGradientBlur(double value, uintptr_t options)
     }
 
     nativeFilter_->AddPara(para);
-    auto filter = nativeFilter_;
-    return taihe::make_holder<FilterImpl, Filter>(std::move(filter));
+    return taihe::make_holder<FilterImpl, Filter>(nativeFilter_);
 }
 
 Filter FilterImpl::DisplacementDistort(::ohos::graphics::uiEffect::uiEffect::weak::Mask displacementMap,
@@ -363,8 +366,10 @@ Filter FilterImpl::VariableRadiusBlur(double radius, ::ohos::graphics::uiEffect:
 
 Filter FilterImpl::HdrBrightnessRatio(double ratio)
 {
-    if (!IsSystemApp()) {
-        UIEFFECT_LOG_E("call hdrBrightnessRatio failed, is not system app");
+    if (!IsSystemApp() && !CheckPermission(HDR_BRIGHTNESS_PERMISSION)) {
+        UIEFFECT_LOG_E("FilterImpl HdrBrightnessRatio caller is not system app or lacks the required permission.");
+        set_business_error(static_cast<int32_t>(UIEffectErrorCode::ERR_NO_PERMISSION),
+            "The HdrBrightnessRatio is only accessible to applications which have HDR_BRIGHTNESS permission.");
         return make_holder<FilterImpl, Filter>(nativeFilter_);
     }
 
@@ -405,8 +410,6 @@ Filter FilterImpl::ContentLight(uintptr_t lightPosition, uintptr_t lightColor, d
     }
     para->SetLightPosition(lightPositionRes);
     para->SetLightColor(lightColorRes);
-    if (displacementMap.has_value()) {
-    }
     para->SetLightIntensity(static_cast<float>(lightIntensity));
 
     nativeFilter_->AddPara(para);
@@ -442,13 +445,13 @@ Filter FilterImpl::MaskDispersion(::ohos::graphics::uiEffect::uiEffect::weak::Ma
     if (gFactor.has_value()) {
         OHOS::Rosen::Vector2f gFactors;
         if (ConvertVector2fFromAniTuple(gFactors, gFactor.value())) {
-            para->SetRedOffset(gFactors);
+            para->SetGreenOffset(gFactors);
         }
     }
     if (bFactor.has_value()) {
         OHOS::Rosen::Vector2f bFactors;
         if (ConvertVector2fFromAniTuple(bFactors, bFactor.value())) {
-            para->SetRedOffset(bFactors);
+            para->SetBlueOffset(bFactors);
         }
     }
     auto filter = nativeFilter_;
@@ -543,37 +546,14 @@ Filter FilterImpl::ColorGradient(taihe::array_view<::ohos::graphics::uiEffect::u
     return make_holder<FilterImpl, Filter>(std::move(filter));
 }
 
-BrightnessBlender CreateBrightnessBlender(BrightnessBlenderParam const& param)
-{
-    BrightnessBlender brightnessBlender;
-    brightnessBlender.cubicRate = param.cubicRate;
-    brightnessBlender.quadraticRate = param.quadraticRate;
-    brightnessBlender.linearRate = param.linearRate;
-    brightnessBlender.degree = param.degree;
-    brightnessBlender.saturation = param.saturation;
-    brightnessBlender.positiveCoefficient = param.positiveCoefficient;
-    brightnessBlender.negativeCoefficient = param.negativeCoefficient;
-    brightnessBlender.fraction = param.fraction;
-    return brightnessBlender;
-}
-
-HdrBrightnessBlender CreateHdrBrightnessBlender(BrightnessBlenderParam const& param)
-{
-    HdrBrightnessBlender hdrBrightnessBlender;
-    hdrBrightnessBlender.brightnessBlender.cubicRate = param.cubicRate;
-    hdrBrightnessBlender.brightnessBlender.quadraticRate = param.quadraticRate;
-    hdrBrightnessBlender.brightnessBlender.linearRate = param.linearRate;
-    hdrBrightnessBlender.brightnessBlender.degree = param.degree;
-    hdrBrightnessBlender.brightnessBlender.saturation = param.saturation;
-    hdrBrightnessBlender.brightnessBlender.positiveCoefficient = param.positiveCoefficient;
-    hdrBrightnessBlender.brightnessBlender.negativeCoefficient = param.negativeCoefficient;
-    hdrBrightnessBlender.brightnessBlender.fraction = param.fraction;
-    return hdrBrightnessBlender;
-}
-
 bool FilterImpl::IsFilterValid() const
 {
     return nativeFilter_ != nullptr;
+}
+
+int64_t FilterImpl::getNativePtr()
+{
+    return reinterpret_cast<int64_t>(nativeFilter_.get());
 }
 
 Filter CreateFilter()
@@ -584,6 +564,4 @@ Filter CreateFilter()
 
 // NOLINTBEGIN
 TH_EXPORT_CPP_API_CreateFilter(CreateFilter);
-TH_EXPORT_CPP_API_CreateHdrBrightnessBlender(CreateHdrBrightnessBlender);
-TH_EXPORT_CPP_API_CreateBrightnessBlender(CreateBrightnessBlender);
 // NOLINTEND

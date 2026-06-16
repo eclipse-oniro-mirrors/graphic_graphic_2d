@@ -22,6 +22,11 @@ namespace Rosen {
 Filter::Filter(std::shared_ptr<OHOS::Media::PixelMap> pixelMap) : srcPixelMap_(pixelMap)
 {}
 
+std::shared_ptr<OHOS::Media::PixelMap> Filter::GetSrcPixelMap()
+{
+    return srcPixelMap_;
+}
+
 bool Filter::Render(bool forceCPU)
 {
     if (srcPixelMap_ == nullptr) {
@@ -29,6 +34,22 @@ bool Filter::Render(bool forceCPU)
     }
     EffectImageRender imageRender;
     auto error = imageRender.Render(srcPixelMap_, effectFilters_, forceCPU, dstPixelMap_);
+    return error == DrawingError::ERR_OK;
+}
+
+bool Filter::RenderNativeBuffer(
+    bool forceCPU, OH_NativeBuffer *dstNativeBuffer, int32_t *syncFenceFd, bool releaseGpuContext)
+{
+    if (dstNativeBuffer == nullptr) {
+        return false;
+    }
+    if (srcPixelMap_ == nullptr) {
+        return false;
+    }
+    EffectImageRender imageRender;
+    auto dstNativeBufferSharedPtr = std::shared_ptr<OH_NativeBuffer>(dstNativeBuffer, [](OH_NativeBuffer* p) {});
+    auto error = imageRender.RenderNativeBuffer(
+        srcPixelMap_, dstNativeBufferSharedPtr, effectFilters_, syncFenceFd, releaseGpuContext);
     return error == DrawingError::ERR_OK;
 }
 
@@ -55,6 +76,16 @@ bool Filter::Blur(float radius, Drawing::TileMode tileMode)
     return true;
 }
 
+bool Filter::Blur(float radius, float angle, Drawing::TileMode tileMode)
+{
+    auto blur = EffectImageFilter::Blur(radius, angle, tileMode);
+    if (!blur) {
+        return false;
+    }
+    AddNextFilter(blur);
+    return true;
+}
+
 bool Filter::Brightness(float brightness)
 {
     auto bright = EffectImageFilter::Brightness(brightness);
@@ -62,6 +93,16 @@ bool Filter::Brightness(float brightness)
         return false;
     }
     AddNextFilter(bright);
+    return true;
+}
+
+bool Filter::Scale(float scaleX, float scaleY, Drawing::FilterMode filterMode, Drawing::MipmapMode mipmapMode)
+{
+    auto scale = EffectImageFilter::Scale(scaleX, scaleY, filterMode, mipmapMode);
+    if (!scale) {
+        return false;
+    }
+    AddNextFilter(scale);
     return true;
 }
 
@@ -85,6 +126,26 @@ bool Filter::Invert()
     return true;
 }
 
+bool Filter::MapColorByBrightness(const std::vector<Vector4f>& colors, const std::vector<float>& positions)
+{
+    auto filter = EffectImageFilter::MapColorByBrightness(colors, positions);
+    if (!filter) {
+        return false;
+    }
+    AddNextFilter(filter);
+    return true;
+}
+
+bool Filter::GammaCorrection(float gamma)
+{
+    auto filter = EffectImageFilter::GammaCorrection(gamma);
+    if (!filter) {
+        return false;
+    }
+    AddNextFilter(filter);
+    return true;
+}
+
 bool Filter::SetColorMatrix(const Drawing::ColorMatrix& matrix)
 {
     auto applyColorMatrix = EffectImageFilter::ApplyColorMatrix(matrix);
@@ -94,5 +155,45 @@ bool Filter::SetColorMatrix(const Drawing::ColorMatrix& matrix)
     AddNextFilter(applyColorMatrix);
     return true;
 }
+
+bool Filter::MaskTransition(const std::shared_ptr<OHOS::Media::PixelMap>& topLayer,
+    const std::shared_ptr<Drawing::GEShaderMask>& mask, float factor, bool inverse)
+{
+    auto filter = EffectImageFilter::MaskTransition(topLayer, mask, factor, inverse);
+    if (!filter) {
+        return false;
+    }
+    AddNextFilter(filter);
+    return true;
+}
+ 
+bool Filter::WaterDropletTransition(const std::shared_ptr<OHOS::Media::PixelMap>& topLayer,
+    const std::shared_ptr<Drawing::GEWaterDropletTransitionFilterParams>& geWaterDropletParams)
+{
+    auto filter = EffectImageFilter::WaterDropletTransition(topLayer, geWaterDropletParams);
+    if (!filter) {
+        return false;
+    }
+    AddNextFilter(filter);
+    return true;
+}
+
+bool Filter::WaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& params)
+{
+    auto glass = EffectImageFilter::WaterGlass(params);
+    AddNextFilter(glass);
+
+    return true;
+}
+
+bool Filter::ReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& params)
+{
+    auto glass = EffectImageFilter::ReededGlass(params);
+
+    AddNextFilter(glass);
+
+    return true;
+}
+
 } // namespace Rosen
 } // namespace OHOS

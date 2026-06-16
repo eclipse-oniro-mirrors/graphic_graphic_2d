@@ -61,6 +61,12 @@ namespace OHOS {
         uint32_t maskInfo = GetData<uint32_t>();
         uint64_t tunnelId = GetData<uint64_t>();
         uint32_t property = GetData<uint32_t>();
+        int32_t pixelFormat = GetData<int32_t>();
+        int32_t dataspace = GetData<int32_t>();
+        uint8_t vcpCode = GetData<uint8_t>();
+        uint16_t currentValue = GetData<uint16_t>();
+        uint16_t maximumValue = GetData<uint16_t>();
+        int32_t errorCode = GetData<int32_t>();
 
         // test
         HdiDevice *device = HdiDevice::GetInstance();
@@ -73,12 +79,16 @@ namespace OHOS {
         device->SetTunnelLayerProperty(screenId, layerId, property);
         device->GetPresentTimestamp(screenId, layerId, timestamp);
         device->SetLayerMaskInfo(screenId, layerId, maskInfo);
+        device->GetDisplayClientTargetProperty(screenId, pixelFormat, dataspace);
 
         // DISPLAY ENGINE
         std::vector<std::string> keys = device->GetSupportedLayerPerFrameParameterKey();
         std::vector<int8_t> valueBlob{static_cast<int8_t>(1)};
         std::string validKey = "ArsrDoEnhance";
         device->SetLayerPerFrameParameter(screenId, layerId, validKey, valueBlob);
+
+        device->GetScreenVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
+        device->SetScreenVCPFeature(screenId, vcpCode, currentValue);
     }
 
     void HdiDeviceFuzzTest2()

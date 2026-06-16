@@ -26,12 +26,13 @@
  * @brief Defines the properties and methods for RSUIContextManager class.
  */
 
-#ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_UI_CONTEXT_MANAGER_H
-#define RENDER_SERVICE_CLIENT_CORE_UI_RS_UI_CONTEXT_MANAGER_H
+#ifndef RENDER_SERVICE_CLIENT_CORE_PIPLINE_RS_UI_CONTEXT_MAP_H
+#define RENDER_SERVICE_CLIENT_CORE_PIPLINE_RS_UI_CONTEXT_MAP_H
 
 #include "rs_ui_context.h"
 
 #include "common/rs_macros.h"
+#include <iremote_object.h>
 
 namespace OHOS {
 namespace Rosen {
@@ -61,7 +62,7 @@ public:
 
     /**
      * @brief Retrieves the RSUIContext associated with the given token.
-     * 
+     *
      * @param token The unique identifier for the RSUIContext.
      * @return A shared pointer to the RSUIContext if found; otherwise, nullptr.
      */
@@ -72,7 +73,7 @@ public:
      *
      * @return A shared pointer to the newly created RSUIContext.
      */
-    std::shared_ptr<RSUIContext> CreateRSUIContext();
+    std::shared_ptr<RSUIContext> CreateRSUIContext(sptr<IRemoteObject>& connectToRenderRemote);
 
     /**
      * @brief Destroys the RSUIContext associated with the given token.
@@ -111,6 +112,8 @@ private:
     std::unordered_map<uint64_t, std::shared_ptr<RSUIContext>> rsUIContextMap_;
     uint32_t instanceIdCounter_ = 0;
     bool isMultiInstanceOpen_ = false;
+    bool isDividedRender_ = false;
+    bool hasCreateRSUIContext_ = false;
     std::shared_ptr<AppExecFwk::EventHandler> handler_;
     std::queue<std::string> taskNames_{};
     std::mutex closeSyncFallBackMutex_;
@@ -122,4 +125,4 @@ private:
 } // namespace OHOS
 
 /** @} */
-#endif // RENDER_SERVICE_CLIENT_CORE_UI_RS_UI_CONTEXT_MANAGER_H
+#endif // RENDER_SERVICE_CLIENT_CORE_PIPLINE_RS_UI_CONTEXT_MAP_H

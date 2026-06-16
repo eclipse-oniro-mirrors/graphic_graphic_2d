@@ -44,22 +44,9 @@ void MEMParamTest::TearDown() {}
  */
 HWTEST_F(MEMParamTest, SetRSWatchPoint, Function | SmallTest | Level1)
 {
-    MEMParam::SetRSWatchPoint("RsWatchPoint");
-    EXPECT_EQ(MEMParam::GetRSWatchPoint(), "RsWatchPoint");
-}
-
-/**
- * @tc.name: SetDeeplyRelGpuResEnable
- * @tc.desc: Verify the SetDeeplyRelGpuResEnable function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(MEMParamTest, SetDeeplyRelGpuResEnable, Function | SmallTest | Level1)
-{
-    MEMParam::SetDeeplyRelGpuResEnable(true);
-    EXPECT_EQ(MEMParam::IsDeeplyRelGpuResEnable(), true);
-    MEMParam::SetDeeplyRelGpuResEnable(false);
-    EXPECT_EQ(MEMParam::IsDeeplyRelGpuResEnable(), false);
+    MEMParam memParam;
+    memParam.SetRSWatchPoint("RsWatchPoint");
+    EXPECT_EQ(memParam.GetRSWatchPoint(), "RsWatchPoint");
 }
 
 /**
@@ -88,6 +75,48 @@ HWTEST_F(MEMParamTest, v, Function | SmallTest | Level1)
     MEMParam memParam;
     memParam.SetKillScbEnabled(isKillScbEnabled);
     EXPECT_EQ(memParam.IsKillScbEnabled(), isKillScbEnabled);
+}
+
+/**
+ * @tc.name: SetKernelReportEnabled
+ * @tc.desc: Verify the SetKernelReportEnabled function
+ * @tc.type: FUNC
+ * @tc.require: #IBIE4T
+ */
+HWTEST_F(MEMParamTest, SetKernelReportEnabled, Function | SmallTest | Level1)
+{
+    bool isEnabled = false;
+    MEMParam memParam;
+    memParam.SetKernelReportEnabled(isEnabled);
+    EXPECT_EQ(memParam.IsKernelReportEnabled(), isEnabled);
+}
+
+/**
+ * @tc.name: SetKernelReportAvailableMemLimit
+ * @tc.desc: Verify the SetKernelReportAvailableMemLimit function
+ * @tc.type: FUNC
+ * @tc.require: #IBIE4T
+ */
+HWTEST_F(MEMParamTest, SetKernelReportAvailableMemLimit, Function | SmallTest | Level1)
+{
+    int limit = 1000;
+    MEMParam memParam;
+    memParam.SetKernelReportAvailableMemLimit(limit);
+    EXPECT_EQ(memParam.GetKernelReportAvailableMemLimit(), limit);
+}
+
+/**
+ * @tc.name: SetKernelReportMemInterval
+ * @tc.desc: Verify the SetKernelReportMemInterval function
+ * @tc.type: FUNC
+ * @tc.require: #IBIE4T
+ */
+HWTEST_F(MEMParamTest, SetKernelReportMemInterval, Function | SmallTest | Level1)
+{
+    int size = 200;
+    MEMParam memParam;
+    memParam.SetKernelReportMemInterval(size);
+    EXPECT_EQ(memParam.GetKernelReportMemInterval(), size);
 }
 } // namespace Rosen
 } // namespace OHOS

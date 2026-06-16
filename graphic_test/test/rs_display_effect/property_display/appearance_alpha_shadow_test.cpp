@@ -1,0 +1,1415 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "parameters_defination.h"
+#include "effect/rs_render_shape_base.h"
+#include "ui_effect/property/include/rs_ui_shape_base.h"
+#include "rs_graphic_test.h"
+#include "rs_graphic_test_img.h"
+
+using namespace testing;
+using namespace testing::ext;
+
+namespace OHOS::Rosen {
+
+class AppearanceTest09 : public RSGraphicTest {
+private:
+    const int screenWidth = 1200;
+    const int screenHeight = 2000;
+
+public:
+    // called before each tests
+    void BeforeEach() override
+    {
+        SetScreenSize(screenWidth, screenHeight);
+    }
+};
+
+// shadow color
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Color_Test_1)
+{
+    uint32_t colorList[] = { 0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff };
+
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeColor = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeColor->SetAlpha(0.333f * i);
+        testNodeColor->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeColor->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeColor->SetShadowColor(colorList[i]);
+        testNodeColor->SetShadowRadius(FIFTY_);
+        GetRootNode()->AddChild(testNodeColor);
+        RegisterNode(testNodeColor);
+    }
+}
+
+// shadow offset
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Offset_Test_1)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeOffset = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeOffset->SetAlpha(0.333f * i);
+        testNodeOffset->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeOffset->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeOffset->SetShadowColor(0xff000000);
+        switch (i) {
+            case 0: {
+                testNodeOffset->SetShadowOffset(-50, -50);
+                break;
+            }
+            case 1: {
+                testNodeOffset->SetShadowOffset(50, -50);
+                break;
+            }
+            case 2: {
+                testNodeOffset->SetShadowOffset(-50, 50);
+                break;
+            }
+            case 3: {
+                testNodeOffset->SetShadowOffset(50, 50);
+                break;
+            }
+            default:
+                break;
+        }
+        testNodeOffset->SetShadowRadius(FIFTY_);
+        GetRootNode()->AddChild(testNodeOffset);
+        RegisterNode(testNodeOffset);
+    }
+}
+
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Offset_Test_2)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    for (int i = 0; i < FIVE_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeOffset = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeOffset->SetAlpha(0.25f * i);
+        testNodeOffset->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeOffset->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeOffset->SetBackgroundColor(0xffc0c0c0);
+        testNodeOffset->SetShadowColor(0xff000000);
+        testNodeOffset->SetShadowRadius(50);
+
+        switch (i) {
+            case 0: {
+                testNodeOffset->SetShadowOffset(-250, -250);
+                break;
+            }
+            case 1: {
+                testNodeOffset->SetShadowOffset(250, 0);
+                break;
+            }
+            case 2: {
+                testNodeOffset->SetShadowOffset(0, 250);
+                break;
+            }
+            case 3: {
+                testNodeOffset->SetShadowOffset(250, 250);
+                break;
+            }
+            case 4: {
+                testNodeOffset->SetTranslate(0, nodeOffset, 0);
+                testNodeOffset->SetShadowOffset(nodeSize, nodeSize);
+                break;
+            }
+            default:
+                break;
+        }
+        GetRootNode()->AddChild(testNodeOffset);
+        RegisterNode(testNodeOffset);
+    }
+}
+
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Offset_Test_3)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    std::vector<Vector4f> radiusList = { { 200, 200, 200, 200 }, { 100, 100, 100, 100 }, { 100, 100, 150, 150 },
+        { 50, 50, 50, 50 }, { 200, 1000, 250, 50 } };
+
+    for (int i = 0; i < FIVE_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeOffset = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeOffset->SetAlpha(0.25f * i);
+        testNodeOffset->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeOffset->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeOffset->SetBackgroundColor(0xffc0c0c0);
+        testNodeOffset->SetCornerRadius(radiusList[i]);
+        testNodeOffset->SetShadowColor(0xff000000);
+        testNodeOffset->SetShadowRadius(50);
+
+        switch (i) {
+            case 0: {
+                testNodeOffset->SetShadowOffset(-100, -100);
+                break;
+            }
+            case 1: {
+                testNodeOffset->SetShadowOffset(100, 0);
+                break;
+            }
+            case 2: {
+                testNodeOffset->SetShadowOffset(0, 100);
+                break;
+            }
+            case 3: {
+                testNodeOffset->SetShadowOffset(100, 100);
+                break;
+            }
+            case 4: {
+                testNodeOffset->SetTranslate(0, nodeOffset, 0);
+                testNodeOffset->SetShadowOffset(nodeSize, nodeSize);
+                break;
+            }
+            default:
+                break;
+        }
+        GetRootNode()->AddChild(testNodeOffset);
+        RegisterNode(testNodeOffset);
+    }
+}
+
+// shadow alpha
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Alpha_Test_1)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    float alphaList[] = { 0, 0.2, 0.8, 1 };
+
+    for (int i = 0; i < FOUR_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeAlpha = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeAlpha->SetAlpha(0.333f * i);
+        testNodeAlpha->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeAlpha->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeAlpha->SetBackgroundColor(0xffc0c0c0);
+        testNodeAlpha->SetShadowColor(0xff000000);
+        testNodeAlpha->SetShadowAlpha(alphaList[i]);
+        testNodeAlpha->SetShadowRadius(FIFTY_);
+        GetRootNode()->AddChild(testNodeAlpha);
+        RegisterNode(testNodeAlpha);
+    }
+}
+
+// shadow radius
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Test_1)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    float radiusList[] = { -1, 50, 250 };
+
+    for (int i = 0; i < THREE_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeRadius = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeRadius->SetAlpha(0.4f * i);
+        testNodeRadius->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeRadius->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeRadius->SetBackgroundColor(0xffc0c0c0);
+        testNodeRadius->SetShadowColor(0xff000000);
+        testNodeRadius->SetShadowRadius(radiusList[i]);
+        GetRootNode()->AddChild(testNodeRadius);
+        RegisterNode(testNodeRadius);
+    }
+
+    // ClipToBounds
+    const int yPos = 1250;
+    for (int i = 0; i < 2; i++) {
+        auto testNodeParent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeParent->SetAlpha(0.5f);
+        testNodeParent->SetBounds({ i * nodePos, yPos, nodeSize, nodeSize });
+        testNodeParent->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeParent->SetClipToBounds(i);
+        GetRootNode()->AddChild(testNodeParent);
+        RegisterNode(testNodeParent);
+
+        auto testNodeChild = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeChild->SetAlpha(0.5f);
+        testNodeChild->SetBounds({ 0, 0, nodeSize, nodeSize });
+        testNodeChild->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeChild->SetBackgroundColor(0xffc0c0c0);
+        testNodeChild->SetShadowColor(0xff000000);
+        testNodeChild->SetShadowRadius(FIFTY_);
+        testNodeParent->AddChild(testNodeChild);
+        RegisterNode(testNodeChild);
+    }
+}
+
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Test_2)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    std::vector<float> radiusList = { 10, 50, 100, 200 };
+
+    // First column draw normal shadow radius
+    for (int i = 0; i < radiusList.size(); i++) {
+        int x = 0; // first column
+        int y = i * nodePos;
+        auto testNodeRadius = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeRadius->SetAlpha(0.333f * i);
+        testNodeRadius->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeRadius->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeRadius->SetBackgroundColor(0xffc0c0c0);
+        testNodeRadius->SetShadowColor(0xff000000);
+        testNodeRadius->SetShadowRadius(radiusList[i]);
+        GetRootNode()->AddChild(testNodeRadius);
+        RegisterNode(testNodeRadius);
+    }
+
+    // Second column draw shadow radius with elevation
+    for (int i = 0; i < radiusList.size(); i++) {
+        int x = nodePos; // second column's x position
+        int y = i * nodePos;
+        auto testNodeRadius = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeRadius->SetAlpha(0.333f * i);
+        testNodeRadius->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeRadius->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeRadius->SetBackgroundColor(0xffc0c0c0);
+        testNodeRadius->SetShadowColor(0xff000000);
+        testNodeRadius->SetShadowRadius(radiusList[i]);
+        testNodeRadius->SetShadowElevation(radiusList[radiusList.size() - i]); // reverse index
+        GetRootNode()->AddChild(testNodeRadius);
+        RegisterNode(testNodeRadius);
+    }
+}
+
+// shadow color strategy
+// 0 -- None
+// 1 -- Average
+// 2 -- Primary
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Strategy_Test_1)
+{
+    float alphaList[] = { 1, 0.2 };
+    float radiusList[] = { 50, 100 };
+    float offsetList[] = { 0, 50 };
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % TWO_) * FIVE_HUNDRED_TEN_;
+        int y = (i / TWO_) * FIVE_HUNDRED_TEN_;
+        auto testNodeParent = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeParent->SetAlpha(0.2f * i);
+        testNodeParent->SetBounds({ x, y, FIVE_HUNDRED_, FIVE_HUNDRED_ });
+
+        auto imageModifier = std::make_shared<ImageCustomModifier>();
+        imageModifier->SetWidth(FIVE_HUNDRED_);
+        imageModifier->SetHeight(FIVE_HUNDRED_);
+        imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+        testNodeParent->AddModifier(imageModifier);
+
+        GetRootNode()->AddChild(testNodeParent);
+        RegisterNode(testNodeParent);
+
+        auto testNodeChild = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeChild->SetAlpha(0.2f * i);
+        testNodeChild->SetBounds({ 0, 0, TWO_HUNDRED_FIFTY_, TWO_HUNDRED_FIFTY_ });
+        testNodeChild->SetTranslate(ONE_HUNDRED_, ONE_HUNDRED_, 0);
+        testNodeChild->SetBackgroundColor(0xffffffff);
+        testNodeChild->SetShadowAlpha(alphaList[i % TWO_]);
+        testNodeChild->SetShadowOffset(offsetList[i % TWO_], offsetList[i % TWO_]);
+        // 1st, 2nd row, Average and Primary, radius
+        if (i < 4) {
+            testNodeChild->SetShadowColorStrategy((i / TWO_) + 1);
+            testNodeChild->SetShadowRadius(radiusList[i % TWO_]);
+        }
+        // third row, Shadow Elevation, normal shadow
+        else {
+            testNodeChild->SetShadowColorStrategy(i / TWO_);
+            testNodeChild->SetShadowElevation(radiusList[i % TWO_]);
+        }
+        testNodeParent->AddChild(testNodeChild);
+        RegisterNode(testNodeChild);
+    }
+}
+
+// shadow filled
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Filled_Test_1)
+{
+    int nodePos = 500;
+    int nodeOffset = 100;
+    int nodeSize = 400;
+
+    float alphaList[] = { 1, 0.5 };
+
+    for (int i = 0; i < FOUR_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeFilled = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeFilled->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeFilled->SetTranslate(nodeOffset, nodeOffset, 0);
+        auto imageModifier = std::make_shared<ImageCustomModifier>();
+        imageModifier->SetWidth(nodeSize);
+        imageModifier->SetHeight(nodeSize);
+        imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+        testNodeFilled->AddModifier(imageModifier);
+        testNodeFilled->SetAlpha(0.5f);
+        testNodeFilled->SetShadowColor(0xff00ff00);
+        testNodeFilled->SetShadowOffset(FIFTY_, FIFTY_);
+        testNodeFilled->SetShadowRadius(FIFTY_);
+        testNodeFilled->SetShadowIsFilled(i / TWO_);
+        testNodeFilled->SetShadowAlpha(alphaList[i % TWO_]);
+        GetRootNode()->AddChild(testNodeFilled);
+        RegisterNode(testNodeFilled);
+    }
+}
+
+// shadow mask
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_mask_Test_1)
+{
+    const int nodePos = 500;
+    const int nodeSize = 400;
+    const int nodeOffset = 100;
+
+    const int columnCount = TWO_;
+
+    for (int i = 0; i < columnCount; i++) {
+        int x = (i % columnCount) * nodePos;
+        int y = (i / columnCount) * nodePos;
+        auto testNodeMask = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        testNodeMask->SetAlpha(0.6f);
+        testNodeMask->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeMask->SetShadowMask(i);
+        testNodeMask->SetShadowRadius(ONE_HUNDRED_);
+        testNodeMask->SetShadowAlpha(0.5);
+        GetRootNode()->AddChild(testNodeMask);
+        RegisterNode(testNodeMask);
+    }
+
+    // With shadowMask, the shadow color will not be shown correctly
+    std::vector<uint32_t> colorList = { 0xffff0000, 0xff00ff00, 0xff0000ff };
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePos;
+        int y = (i / columnCount) * nodePos + nodePos; // start from the second row
+        auto testNodeMask = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        testNodeMask->SetAlpha(0.2f * i);
+        testNodeMask->SetTranslate(nodeOffset, nodeOffset, 0);
+        testNodeMask->SetShadowColor(colorList[i / columnCount]);
+        if (i % columnCount == 0) {
+            testNodeMask->SetShadowMask(false);
+        } else {
+            testNodeMask->SetShadowMask(true);
+        }
+        testNodeMask->SetShadowRadius(ONE_HUNDRED_);
+        GetRootNode()->AddChild(testNodeMask);
+        RegisterNode(testNodeMask);
+    }
+}
+
+// shadow mask with different radius - SetShadowMask(true)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_mask_Test_2)
+{
+    const int nodePosX = 500;
+    const int nodePosY = 500;
+    const int nodeOffsetX = 100;
+    const int nodeOffsetY = 100;
+    const int nodeSize = 400;
+    const int columnCount = TWO_;
+
+    const float radiusList[] = {-1.0f, 0.0f, 0.5f, 0.999f, 1.0f, 10.0f};
+    const float offsetXList[] = {-5.0f, 5.0f, 1.0f, 5.0f, 10.0f, 25.0f};
+    const float offsetYList[] = {-4.5f, 5.0f, 0.5f, 5.0f, 10.0f, 30.0f};
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePosX;
+        int y = (i / columnCount) * nodePosY;
+        auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        maskTestNode->SetBackgroundColor(0xffff0000);
+        maskTestNode->SetAlpha(0.1f * i);
+        maskTestNode->SetTranslate(nodeOffsetX, nodeOffsetY, 0);
+        maskTestNode->SetShadowMask(true);
+        maskTestNode->SetShadowRadius(radiusList[i]);
+        maskTestNode->SetShadowAlpha(1.0f);
+        maskTestNode->SetShadowOffsetX(offsetXList[i]);
+        maskTestNode->SetShadowOffsetY(offsetYList[i]);
+        GetRootNode()->AddChild(maskTestNode);
+        RegisterNode(maskTestNode);
+    }
+}
+
+// shadow mask with different radius - SetShadowMask(false)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_mask_Test_3)
+{
+    const int nodePosX = 500;
+    const int nodePosY = 500;
+    const int nodeOffsetX = 100;
+    const int nodeOffsetY = 100;
+    const int nodeSize = 400;
+
+    const int columnCount = TWO_;
+
+    const float radiusList[] = {-1.0f, 0.0f, 0.5f, 0.999f, 1.0f, 10.0f};
+    const float offsetXList[] = {-5.0f, 5.0f, 1.0f, 5.0f, 10.0f, 25.0f};
+    const float offsetYList[] = {-4.5f, 5.0f, 0.5f, 5.0f, 10.0f, 30.0f};
+
+    std::vector<uint32_t> colorList = { 0xffff0000, 0xff00ff00, 0xff0000ff };
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePosX;
+        int y = (i / columnCount) * nodePosY;
+        auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        maskTestNode->SetAlpha(0.1f * i);
+        maskTestNode->SetTranslate(nodeOffsetX, nodeOffsetY, 0);
+        maskTestNode->SetShadowColor(colorList[i / columnCount]);
+        maskTestNode->SetShadowMask(false);
+        maskTestNode->SetShadowRadius(radiusList[i]);
+        maskTestNode->SetShadowAlpha(1.0f);
+        maskTestNode->SetShadowOffsetX(offsetXList[i]);
+        maskTestNode->SetShadowOffsetY(offsetYList[i]);
+        GetRootNode()->AddChild(maskTestNode);
+        RegisterNode(maskTestNode);
+    }
+}
+
+// shadow touch
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Touch_Test_1)
+{
+    int nodePos = 500;
+    int nodeSize = 400;
+
+    float alphaList[] = { 1, 0.5 };
+    uint32_t colorList[] = { 0xff000000, 0xffff0000, 0xff0000ff, 0xffff0000 };
+
+    for (int i = 0; i < FOUR_; i++) {
+        int x = (i % TWO_) * nodePos;
+        int y = (i / TWO_) * nodePos;
+        auto testNodeTouch = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNodeTouch->SetAlpha(0.333f * i);
+        testNodeTouch->SetBounds({ x, y, nodeSize, nodeSize });
+        testNodeTouch->SetShadowColor(colorList[i]);
+        testNodeTouch->SetShadowRadius(ONE_HUNDRED_);
+        testNodeTouch->SetShadowAlpha(alphaList[i / TWO_]);
+        GetRootNode()->AddChild(testNodeTouch);
+        RegisterNode(testNodeTouch);
+    }
+}
+
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Filter_Test_1)
+{
+    int nodePos = 500;
+    int nodeSize = 20;
+
+    uint32_t colorList[] = { 0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff };
+    std::vector<Drawing::Path> drawingPath(4, Drawing::Path());
+    drawingPath[0].AddRect(0, 0, 200, 450, Drawing::PathDirection::CW_DIRECTION);
+    drawingPath[1].AddCircle(160, 260, 245);
+    std::vector<Drawing::Point> triangle = { { 50, 50 }, { 250, 50 }, { 150, 250 } };
+    drawingPath[2].AddPoly(triangle, 3, true);
+    std::vector<Drawing::Point> star = { { 50, 15 }, { 61, 39 }, { 88, 39 }, { 66, 57 }, { 74, 84 }, { 50, 69 },
+        { 26, 84 }, { 34, 57 }, { 12, 39 }, { 39, 39 } };
+    drawingPath[3].AddPoly(star, 10, true);
+    drawingPath[3].AddCircle(160, 260, 145);
+
+    for (int i = 0; i < 4; i++) {
+        auto shadowPath = RSPath::CreateRSPath(drawingPath[i]);
+        int x = (i % 2) * nodePos;
+        int y = (i / 2) * nodePos;
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNode->SetAlpha(0.333f * i);
+        testNode->SetBounds({ x, y, nodeSize, nodeSize });
+        testNode->SetBackgroundColor(0xffc0c0c0);
+        testNode->SetShadowColor(colorList[i]);
+        testNode->SetShadowRadius(30);
+        testNode->SetShadowPath(shadowPath);
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Filter_Test_2)
+{
+    int nodePos = 500;
+    int nodeSize = 20;
+
+    uint32_t colorList[] = { 0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff };
+    std::vector<Drawing::Path> drawingPath(4, Drawing::Path());
+    drawingPath[0].AddRect(0, 0, 200, 450, Drawing::PathDirection::CW_DIRECTION);
+    drawingPath[1].AddCircle(160, 260, 245);
+    std::vector<Drawing::Point> triangle = { { 50, 50 }, { 250, 50 }, { 150, 250 } };
+    drawingPath[2].AddPoly(triangle, 3, true);
+    std::vector<Drawing::Point> star = { { 50, 15 }, { 61, 39 }, { 88, 39 }, { 66, 57 }, { 74, 84 }, { 50, 69 },
+        { 26, 84 }, { 34, 57 }, { 12, 39 }, { 39, 39 } };
+    drawingPath[3].AddPoly(star, 10, true);
+    drawingPath[3].AddCircle(160, 260, 145);
+    std::vector<bool> filledList = { false, true, false, true };
+
+    for (int i = 0; i < 4; i++) {
+        auto shadowPath = RSPath::CreateRSPath(drawingPath[i]);
+        int x = (i % 2) * nodePos;
+        int y = (i / 2) * nodePos;
+        auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        testNode->SetAlpha(0.333f * i);
+        testNode->SetBounds({ x, y, nodeSize, nodeSize });
+        testNode->SetBackgroundColor(0xffc0c0c0);
+        testNode->SetShadowColor(colorList[i]);
+        testNode->SetShadowElevation(30);
+        testNode->SetShadowOffset(50, 50);
+        testNode->SetShadowIsFilled(filledList[i]);
+        testNode->SetShadowPath(shadowPath);
+        GetRootNode()->AddChild(testNode);
+        RegisterNode(testNode);
+    }
+}
+
+// Elevation shadow: different triangles (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_Triangle_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    std::vector<std::tuple<Vector2f, Vector2f, Vector2f>> triangles = {
+        { Vector2f(150, 80),  Vector2f(250, 80),  Vector2f(200, 350) },  // acute
+        { Vector2f(100, 300), Vector2f(400, 300), Vector2f(100, 80) },   // right angle at v0
+        { Vector2f(80, 150),  Vector2f(450, 200), Vector2f(200, 350) },  // obtuse
+        { Vector2f(200, 120), Vector2f(280, 120), Vector2f(240, 250) },  // small
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int rowY = i * nodeH;
+        auto [v0, v1, v2] = triangles[i];
+
+        // Left: Skia path
+        Drawing::Path path;
+        std::vector<Drawing::Point> pts = { { v0.x_, v0.y_ }, { v1.x_, v1.y_ }, { v2.x_, v2.y_ } };
+        path.AddPoly(pts, 3, true);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFTriangleShape>();
+        auto triShape = std::static_pointer_cast<RSNGSDFTriangleShape>(childShape);
+        triShape->Setter<SDFTriangleShapeVertex0Tag>(v0);
+        triShape->Setter<SDFTriangleShapeVertex1Tag>(v1);
+        triShape->Setter<SDFTriangleShapeVertex2Tag>(v2);
+        triShape->Setter<SDFTriangleShapeRadiusTag>(0.0f);
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: different rounded rectangles (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_RRect_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    // { left, top, width, height, cornerX, cornerY }
+    std::vector<std::tuple<float, float, float, float, float, float>> rrects = {
+        { 100, 100, 250, 250, 50, 50 },   // square, large corner
+        { 50,  50,  350, 350, 120, 120 },  // large square, very large corner (capsule-ish)
+        { 75,  100, 400, 200, 80, 80 },    // wide rect, large corner
+        { 150, 100, 150, 300, 60, 60 },    // tall rect, medium corner
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int rowY = i * nodeH;
+        auto [l, t, w, h, rx, ry] = rrects[i];
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: different colors with RRect (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_Color_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    uint32_t colorList[] = { 0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff };
+    float l = 100, t = 100, w = 250, h = 250, rx = 60, ry = 60;
+
+    for (int i = 0; i < 4; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(colorList[i]);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(colorList[i]);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: different offsets with RRect (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_Offset_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    float offsetList[][2] = { { 0, 0 }, { 50, 50 }, { 100, 100 }, { -50, -50 } };
+    float l = 100, t = 100, w = 250, h = 250, rx = 50, ry = 50;
+
+    for (int i = 0; i < 4; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowOffset(offsetList[i][0], offsetList[i][1]);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowOffset(offsetList[i][0], offsetList[i][1]);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: different elevation values with RRect (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_Value_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    float elevationList[] = { 5, 20, 50, 100 };
+    float l = 100, t = 100, w = 250, h = 250, rx = 60, ry = 60;
+
+    for (int i = 0; i < 4; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(elevationList[i]);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(elevationList[i]);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: isFilled with RRect (left=Skia path, right=SDF)
+// isFilled=false clips shadow inside shape, use transparent bg to see clipping effect
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_IsFilled_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    float l = 100, t = 100, w = 250, h = 250, rx = 50, ry = 50;
+    bool filledList[] = { false, true, false, true };
+    float offsetXList[] = { 0, 0, 50, 50 };
+    float offsetYList[] = { 0, 0, 50, 50 };
+
+    for (int i = 0; i < 4; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0x30000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowOffset(offsetXList[i], offsetYList[i]);
+        skiaNode->SetShadowIsFilled(filledList[i]);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0x30000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowOffset(offsetXList[i], offsetYList[i]);
+        sdfNode->SetShadowIsFilled(filledList[i]);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// shadow mask strategy with different radius and alpha - MASK_BLUR (no shadowColor)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Mask_Strategy_Test1)
+{
+    const int nodePosX = 500;
+    const int nodePosY = 500;
+    const int nodeOffsetX = 100;
+    const int nodeOffsetY = 100;
+    const int nodeSize = 400;
+    const int columnCount = TWO_;
+
+    const float radiusList[] = { -1.0f, 0.0f, 0.5f, 0.999f, 1.0f, 10.0f };
+    const float alphaList[] = { 0.2f, 0.4f, 0.6f, 0.8f, 0.3f, 0.7f };
+    const float shadowAlphaList[] = { 0.3f, 0.5f, 0.7f, 0.9f, 0.4f, 0.8f };
+    const float offsetXList[] = {-5.0f, 5.0f, 1.0f, 5.0f, 10.0f, 25.0f};
+    const float offsetYList[] = {-4.5f, 5.0f, 0.5f, 5.0f, 10.0f, 30.0f};
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePosX;
+        int y = (i / columnCount) * nodePosY;
+        auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        maskTestNode->SetAlpha(alphaList[i]);
+        maskTestNode->SetTranslate(nodeOffsetX, nodeOffsetY, 0);
+        maskTestNode->SetShadowMaskStrategy(SHADOW_MASK_STRATEGY::MASK_BLUR);
+        maskTestNode->SetBackgroundColor(0xffff0000);
+        maskTestNode->SetShadowRadius(radiusList[i]);
+        maskTestNode->SetShadowAlpha(shadowAlphaList[i]);
+        maskTestNode->SetShadowOffsetX(offsetXList[i]);
+        maskTestNode->SetShadowOffsetY(offsetYList[i]);
+        GetRootNode()->AddChild(maskTestNode);
+        RegisterNode(maskTestNode);
+    }
+}
+
+// shadow mask strategy with different radius and alpha - MASK_BLUR (with shadowColor)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Mask_Strategy_Test2)
+{
+    const int nodePosX = 500;
+    const int nodePosY = 500;
+    const int nodeOffsetX = 100;
+    const int nodeOffsetY = 100;
+    const int nodeSize = 400;
+    const int columnCount = TWO_;
+
+    const float radiusList[] = { -1.0f, 0.0f, 0.5f, 0.999f, 1.0f, 10.0f };
+    const float alphaList[] = { 0.2f, 0.4f, 0.6f, 0.8f, 0.3f, 0.7f };
+    const float shadowAlphaList[] = { 0.3f, 0.5f, 0.7f, 0.9f, 0.4f, 0.8f };
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePosX;
+        int y = (i / columnCount) * nodePosY;
+        auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        maskTestNode->SetAlpha(alphaList[i]);
+        maskTestNode->SetTranslate(nodeOffsetX, nodeOffsetY, 0);
+        maskTestNode->SetBackgroundColor(0xffff0000);
+        maskTestNode->SetShadowColor(0xff00ff00);
+        maskTestNode->SetShadowMaskStrategy(SHADOW_MASK_STRATEGY::MASK_BLUR);
+        maskTestNode->SetShadowRadius(radiusList[i]);
+        maskTestNode->SetShadowAlpha(shadowAlphaList[i]);
+        GetRootNode()->AddChild(maskTestNode);
+        RegisterNode(maskTestNode);
+    }
+}
+
+// shadow mask strategy with different radius and alpha - MASK_COLOR_BLUR (no shadowColor)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Mask_Strategy_Test3)
+{
+    const int nodePosX = 500;
+    const int nodePosY = 500;
+    const int nodeOffsetX = 100;
+    const int nodeOffsetY = 100;
+    const int nodeSize = 400;
+    const int columnCount = TWO_;
+
+    const float radiusList[] = { -1.0f, 0.0f, 0.5f, 0.999f, 1.0f, 10.0f };
+    const float alphaList[] = { 0.2f, 0.4f, 0.6f, 0.8f, 0.3f, 0.7f };
+    const float shadowAlphaList[] = { 0.3f, 0.5f, 0.7f, 0.9f, 0.4f, 0.8f };
+    const float offsetXList[] = {-5.0f, 5.0f, 1.0f, 5.0f, 10.0f, 25.0f};
+    const float offsetYList[] = {-4.5f, 5.0f, 0.5f, 5.0f, 10.0f, 30.0f};
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePosX;
+        int y = (i / columnCount) * nodePosY;
+        auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        maskTestNode->SetAlpha(alphaList[i]);
+        maskTestNode->SetTranslate(nodeOffsetX, nodeOffsetY, 0);
+        maskTestNode->SetShadowMaskStrategy(SHADOW_MASK_STRATEGY::MASK_COLOR_BLUR);
+        maskTestNode->SetBackgroundColor(0xffff0000);
+        maskTestNode->SetShadowRadius(radiusList[i]);
+        maskTestNode->SetShadowAlpha(shadowAlphaList[i]);
+        maskTestNode->SetShadowOffsetX(offsetXList[i]);
+        maskTestNode->SetShadowOffsetY(offsetYList[i]);
+        GetRootNode()->AddChild(maskTestNode);
+        RegisterNode(maskTestNode);
+    }
+}
+
+// shadow mask strategy with different radius and alpha - MASK_COLOR_BLUR (with shadowColor)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Mask_Strategy_Test4)
+{
+    const int nodePosX = 500;
+    const int nodePosY = 500;
+    const int nodeOffsetX = 100;
+    const int nodeOffsetY = 100;
+    const int nodeSize = 400;
+    const int columnCount = TWO_;
+
+    const float radiusList[] = { -1.0f, 0.0f, 0.5f, 0.999f, 1.0f, 10.0f };
+    const float alphaList[] = { 0.2f, 0.4f, 0.6f, 0.8f, 0.3f, 0.7f };
+    const float shadowAlphaList[] = { 0.3f, 0.5f, 0.7f, 0.9f, 0.4f, 0.8f };
+    const float offsetXList[] = {-5.0f, 5.0f, 1.0f, 5.0f, 10.0f, 25.0f};
+    const float offsetYList[] = {-4.5f, 5.0f, 0.5f, 5.0f, 10.0f, 30.0f};
+
+    for (int i = 0; i < SIX_; i++) {
+        int x = (i % columnCount) * nodePosX;
+        int y = (i / columnCount) * nodePosY;
+        auto maskTestNode = SetUpNodeBgImage("/data/local/tmp/appearance_test.jpg", { x, y, nodeSize, nodeSize });
+        maskTestNode->SetBackgroundColor(0xffff0000);
+        maskTestNode->SetAlpha(alphaList[i]);
+        maskTestNode->SetTranslate(nodeOffsetX, nodeOffsetY, 0);
+        maskTestNode->SetShadowColor(0xff00ff00);
+        maskTestNode->SetShadowMaskStrategy(SHADOW_MASK_STRATEGY::MASK_COLOR_BLUR);
+        maskTestNode->SetShadowRadius(radiusList[i]);
+        maskTestNode->SetShadowAlpha(shadowAlphaList[i]);
+        maskTestNode->SetShadowOffsetX(offsetXList[i]);
+        maskTestNode->SetShadowOffsetY(offsetYList[i]);
+        GetRootNode()->AddChild(maskTestNode);
+        RegisterNode(maskTestNode);
+    }
+}
+
+/*
+ * @tc.name: Appearance_Alpha_Shadow_Radius_Zero_Test
+ * @tc.desc: Test shadow with radius=0 (no blur), Color type, offset(10, 10)
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Zero_Test)
+{
+    int nodePosX = ONE_HUNDRED_;
+    int nodePosY = ONE_HUNDRED_;
+    int nodeOffset = ONE_HUNDRED_;
+    int nodeSize = FOUR_HUNDRED_;
+
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+    testNode->SetAlpha(0.3f);
+    testNode->SetBounds({ nodePosX, nodePosY, nodeSize, nodeSize });
+    testNode->SetTranslate(nodeOffset, nodeOffset, 0);
+    testNode->SetBackgroundColor(0xffc0c0c0);
+    testNode->SetShadowColor(0xff000000);
+    testNode->SetShadowRadius(0.0f);
+    testNode->SetShadowOffset(TEN_, TEN_);
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+/*
+ * @tc.name: Appearance_Alpha_Shadow_Radius_Negative_Test
+ * @tc.desc: Test shadow with radius=-1 (no shadow), Color type, offset(10, 10)
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Negative_Test)
+{
+    int nodePosX = THREE_HUNDRED_;
+    int nodePosY = THREE_HUNDRED_;
+    int nodeOffset = ONE_HUNDRED_;
+    int nodeSize = FOUR_HUNDRED_;
+
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+    testNode->SetAlpha(0.6f);
+    testNode->SetBounds({ nodePosX, nodePosY, nodeSize, nodeSize });
+    testNode->SetTranslate(nodeOffset, nodeOffset, 0);
+    testNode->SetBackgroundColor(0xffc0c0c0);
+    testNode->SetShadowColor(0xff000000);
+    testNode->SetShadowRadius(-1.0f);
+    testNode->SetShadowOffset(TEN_, TEN_);
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+/*
+ * @tc.name: Appearance_Alpha_Shadow_Radius_Positive_Test
+ * @tc.desc: Test shadow with radius=10 (with blur), Color type, offset(10, 10)
+ * @tc.type: FUNC
+ */
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Alpha_Shadow_Radius_Positive_Test)
+{
+    int nodePosX = FIVE_HUNDRED_;
+    int nodePosY = FIVE_HUNDRED_;
+    int nodeOffset = ONE_HUNDRED_;
+    int nodeSize = FOUR_HUNDRED_;
+
+    auto testNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+    testNode->SetAlpha(0.9f);
+    testNode->SetBounds({ nodePosX, nodePosY, nodeSize, nodeSize });
+    testNode->SetTranslate(nodeOffset, nodeOffset, 0);
+    testNode->SetBackgroundColor(0xffc0c0c0);
+    testNode->SetShadowColor(0xff000000);
+    testNode->SetShadowRadius(10.0f);
+    testNode->SetShadowOffset(TEN_, TEN_);
+    GetRootNode()->AddChild(testNode);
+    RegisterNode(testNode);
+}
+
+// Elevation shadow: different corner radii with RRect (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_CornerRadius_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    float cornerList[] = { 0, 10, 50, 150 };
+    float l = 100, t = 100, w = 250, h = 250;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int rowY = i * nodeH;
+        float rx = cornerList[i];
+        float ry = cornerList[i];
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: extreme elevation values with RRect (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_Extreme_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    float elevationList[] = { 0.5f, 50.0f, 200.0f, 400.0f };
+    float l = 150, t = 150, w = 300, h = 300, rx = 60, ry = 60;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(elevationList[i]);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(elevationList[i]);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: different shadow alpha with RRect (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_Alpha_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    float alphaList[] = { 0.1f, 0.3f, 0.6f, 1.0f };
+    float l = 150, t = 150, w = 300, h = 300, rx = 60, ry = 60;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowAlpha(alphaList[i]);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowAlpha(alphaList[i]);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: different shape scales (left=Skia path, right=SDF)
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_ShapeScale_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    // { left, top, width, height, cornerX, cornerY }
+    std::vector<std::tuple<float, float, float, float, float, float>> shapeList = {
+        { 200, 200, 100, 100, 20, 20 },   // small
+        { 150, 150, 200, 200, 20, 20 },   // medium
+        { 50,  50,  350, 350, 20, 20 },   // large
+        { 50,  150, 400, 150, 20, 20 },   // wide
+    };
+
+    for (int i = 0; i < FOUR_; i++) {
+        int rowY = i * nodeH;
+        auto [l, t, w, h, rx, ry] = shapeList[i];
+
+        // Left: Skia path
+        Drawing::Path path;
+        Drawing::RoundRect rr(Drawing::Rect(l, t, l + w, t + h), rx, ry);
+        path.AddRoundRect(rr);
+        auto shadowPath = RSPath::CreateRSPath(path);
+        auto skiaNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        skiaNode->SetFrame({ 0, rowY, nodeW, nodeH });
+        skiaNode->SetBackgroundColor(0xff000000);
+        skiaNode->SetShadowColor(0xff000000);
+        skiaNode->SetShadowElevation(20);
+        skiaNode->SetShadowIsFilled(false);
+        skiaNode->SetShadowPath(shadowPath);
+        skiaNode->SetClipToBounds(true);
+        skiaNode->SetClipBounds(shadowPath);
+        GetRootNode()->AddChild(skiaNode);
+        RegisterNode(skiaNode);
+
+        // Right: SDF shape
+        auto childShape = std::make_shared<RSNGSDFRRectShape>();
+        auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+        rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { l, t, w, h }, rx, ry });
+        auto sdfNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+        sdfNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+        sdfNode->SetBackgroundColor(0xff000000);
+        sdfNode->SetShadowColor(0xff000000);
+        sdfNode->SetShadowElevation(20);
+        sdfNode->SetShadowIsFilled(false);
+        sdfNode->SetSDFShape(childShape);
+        GetRootNode()->AddChild(sdfNode);
+        RegisterNode(sdfNode);
+    }
+}
+
+// Elevation shadow: color strategy with background image (left=Skia path, right=SDF)
+// ShadowColorStrategy derives shadow color from content below the node
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Elevation_ColorStrategy_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    int strategyList[] = { 1, 2, 1, 2 }; // 1=Average, 2=Primary
+    float elevationList[] = { 20, 20, 50, 50 };
+    float l = 100, t = 100, w = 250, h = 250, rx = 60, ry = 60;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path with background image
+        {
+            auto parentNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            parentNode->SetFrame({ 0, rowY, nodeW, nodeH });
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(nodeW);
+            imageModifier->SetHeight(nodeH);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            parentNode->AddModifier(imageModifier);
+            GetRootNode()->AddChild(parentNode);
+            RegisterNode(parentNode);
+
+            Drawing::Path path;
+            Drawing::RoundRect rr(Drawing::Rect(0, 0, w, h), rx, ry);
+            path.AddRoundRect(rr);
+            auto shadowPath = RSPath::CreateRSPath(path);
+            auto childNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            childNode->SetFrame({ l, t, w, h});
+            childNode->SetBounds({ l, t, w, h});
+            childNode->SetCornerRadius(rx);
+            childNode->SetBackgroundColor(0xff000000);
+            childNode->SetShadowColor(0xff000000);
+            childNode->SetShadowElevation(elevationList[i]);
+
+            childNode->SetShadowPath(shadowPath);
+            childNode->SetShadowColorStrategy(strategyList[i]);
+            childNode->SetClipToBounds(true);
+            childNode->SetClipBounds(shadowPath);
+            childNode->SetShadowOffset(250, 150);
+            parentNode->AddChild(childNode);
+            RegisterNode(childNode);
+        }
+
+        // Right: SDF shape with background image
+        {
+            auto parentNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            parentNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(nodeW);
+            imageModifier->SetHeight(nodeH);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            parentNode->AddModifier(imageModifier);
+            GetRootNode()->AddChild(parentNode);
+            RegisterNode(parentNode);
+
+            auto childShape = std::make_shared<RSNGSDFRRectShape>();
+            auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+            rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { 0, 0, w, h }, rx, ry });
+            auto childNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            childNode->SetFrame({ l, t, w, h });
+            childNode->SetBounds({ l, t, w, h });
+            childNode->SetCornerRadius(rx);
+            childNode->SetBackgroundColor(0xff000000);
+            childNode->SetShadowColor(0xff000000);
+            childNode->SetShadowElevation(elevationList[i]);
+            childNode->SetSDFShape(childShape);
+            childNode->SetShadowColorStrategy(strategyList[i]);
+            childNode->SetShadowOffset(250, 150);
+            parentNode->AddChild(childNode);
+            RegisterNode(childNode);
+        }
+    }
+}
+
+GRAPHIC_TEST(AppearanceTest09, CONTENT_DISPLAY_TEST, Appearance_Radius_Shadow_ColorStrategy_Cmp_Test)
+{
+    int nodeW = 600;
+    int nodeH = 500;
+    int strategyList[] = { 1, 2, 1, 2 }; // 1=Average, 2=Primary
+    float shadowRadius[] = { 10, 20, 50, 100 };
+    float l = 100, t = 100, w = 250, h = 250, rx = 60, ry = 60;
+
+    for (int i = 0; i < FOUR_; i++) {
+        int rowY = i * nodeH;
+
+        // Left: Skia path with background image
+        {
+            auto parentNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            parentNode->SetFrame({ 0, rowY, nodeW, nodeH });
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(nodeW);
+            imageModifier->SetHeight(nodeH);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            parentNode->AddModifier(imageModifier);
+            GetRootNode()->AddChild(parentNode);
+            RegisterNode(parentNode);
+
+            Drawing::Path path;
+            Drawing::RoundRect rr(Drawing::Rect(0, 0, w, h), rx, ry);
+            path.AddRoundRect(rr);
+            auto shadowPath = RSPath::CreateRSPath(path);
+            auto childNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            childNode->SetFrame({ l, t, w, h});
+            childNode->SetBounds({ l, t, w, h});
+            childNode->SetCornerRadius(rx);
+            childNode->SetBackgroundColor(0xff000000);
+            childNode->SetShadowColor(0xff000000);
+            childNode->SetShadowRadius(shadowRadius[i]);
+            childNode->SetShadowIsFilled(false);
+            childNode->SetShadowPath(shadowPath);
+            childNode->SetShadowColorStrategy(strategyList[i]);
+            childNode->SetClipToBounds(true);
+            childNode->SetClipBounds(shadowPath);
+            childNode->SetShadowOffset(250, 150);
+            parentNode->AddChild(childNode);
+            RegisterNode(childNode);
+        }
+
+        // Right: SDF shape with background image
+        {
+            auto parentNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            parentNode->SetFrame({ nodeW, rowY, nodeW, nodeH });
+            auto imageModifier = std::make_shared<ImageCustomModifier>();
+            imageModifier->SetWidth(nodeW);
+            imageModifier->SetHeight(nodeH);
+            imageModifier->SetPixelMapPath("/data/local/tmp/appearance_test.jpg");
+            parentNode->AddModifier(imageModifier);
+            GetRootNode()->AddChild(parentNode);
+            RegisterNode(parentNode);
+
+            auto childShape = std::make_shared<RSNGSDFRRectShape>();
+            auto rrectShape = std::static_pointer_cast<RSNGSDFRRectShape>(childShape);
+            rrectShape->Setter<SDFRRectShapeRRectTag>(RRect { RectT<float> { 0, 0, w, h }, rx, ry });
+            auto childNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
+            childNode->SetFrame({ l, t, w, h });
+            childNode->SetBounds({ l, t, w, h });
+            childNode->SetCornerRadius(rx);
+            childNode->SetBackgroundColor(0xff000000);
+            childNode->SetShadowColor(0xff000000);
+            childNode->SetShadowRadius(shadowRadius[i]);
+            childNode->SetShadowIsFilled(false);
+            childNode->SetSDFShape(childShape);
+            childNode->SetShadowColorStrategy(strategyList[i]);
+            childNode->SetShadowOffset(250, 150);
+            parentNode->AddChild(childNode);
+            RegisterNode(childNode);
+        }
+    }
+}
+
+} // namespace OHOS::Rosen

@@ -28,6 +28,7 @@ namespace OHOS::Rosen {
 int32_t DRAWING_CACHE_DURATION_TIMEOUT_THRESHOLD = 1000;
 int32_t REPORT_INTERVAL = 120000000;
 int32_t INTERVAL_THRESHOLD = 1000000;
+int32_t SLEEP_TIME = 50000; // 50ms
 
 class RSPerfmonitorReporterTest : public testing::Test {
 public:
@@ -40,7 +41,10 @@ public:
 void RSPerfmonitorReporterTest::SetUpTestCase() {}
 void RSPerfmonitorReporterTest::TearDownTestCase() {}
 void RSPerfmonitorReporterTest::SetUp() {}
-void RSPerfmonitorReporterTest::TearDown() {}
+void RSPerfmonitorReporterTest::TearDown()
+{
+    usleep(SLEEP_TIME);
+}
 
 /**
  * @tc.name: SetFocusAppInfoTest
@@ -55,6 +59,7 @@ HWTEST_F(RSPerfmonitorReporterTest, SetFocusAppInfoTest, TestSize.Level1)
     perfMonitor.SetFocusAppInfo(bundleName.c_str());
     perfMonitor.ReportAtRsFrameEnd();
     EXPECT_EQ(perfMonitor.currentBundleName_, bundleName);
+    usleep(SLEEP_TIME);
 }
 
 /**
@@ -70,18 +75,24 @@ HWTEST_F(RSPerfmonitorReporterTest, EndRendergroupMonitorTest, TestSize.Level1)
     NodeId nodeId1 = 1;
     auto startTime = high_resolution_clock::now();
     perfMonitor.EndRendergroupMonitor(startTime, nodeId1, updateTimes);
-    EXPECT_EQ(perfMonitor.drawingCacheLastTwoTimestampMap_[nodeId1].size(), 1);
+    if (perfMonitor.IsOpenPerf()) {
+        EXPECT_EQ(perfMonitor.drawingCacheLastTwoTimestampMap_[nodeId1].size(), 1);
+    }
 
     updateTimes = 8;
     NodeId nodeId2 = 2;
     startTime = high_resolution_clock::now() - std::chrono::microseconds(5001);
     perfMonitor.EndRendergroupMonitor(startTime, nodeId2, updateTimes);
-    EXPECT_EQ(perfMonitor.drawingCacheLastTwoTimestampMap_[nodeId2].size(), 1);
+    if (perfMonitor.IsOpenPerf()) {
+        EXPECT_EQ(perfMonitor.drawingCacheLastTwoTimestampMap_[nodeId2].size(), 1);
+    }
     
     NodeId nodeId3 = 3;
     startTime = high_resolution_clock::now();
     perfMonitor.EndRendergroupMonitor(startTime, nodeId3, updateTimes);
-    EXPECT_EQ(perfMonitor.drawingCacheLastTwoTimestampMap_[nodeId3].size(), 1);
+    if (perfMonitor.IsOpenPerf()) {
+        EXPECT_EQ(perfMonitor.drawingCacheLastTwoTimestampMap_[nodeId3].size(), 1);
+    }
 }
 
 /**

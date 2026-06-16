@@ -63,12 +63,11 @@ bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     g_pos = 0;
 
     RsVulkanContext::SetRecyclable(false);
-    RsVulkanContext rsVulkanContext;
+    auto& rsVulkanContext = RsVulkanContext::GetSingleton();
     rsVulkanContext.SetIsProtected(true);
     rsVulkanContext.GetRsVulkanInterface();
     rsVulkanContext.IsValid();
     rsVulkanContext.CreateSkiaGetProc();
-    rsVulkanContext.GetRsVkMemStat();
     rsVulkanContext.GetPhysicalDevice();
     rsVulkanContext.GetDevice();
     rsVulkanContext.GetQueue();

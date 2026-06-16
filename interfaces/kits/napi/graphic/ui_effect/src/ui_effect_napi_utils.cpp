@@ -33,6 +33,7 @@ constexpr const char* POINT_STRING[2] = { "x", "y" };
 constexpr const char* POINT3D_STRING[3] = { "x", "y", "z" };
 constexpr const char* COLOR_STRING[4] = {"red", "green", "blue", "alpha"};
 constexpr const char* RECT_STRING[4] = {"left", "top", "right", "bottom"};
+constexpr const char* VECTOR4_STRING[4] = {"x", "y", "z", "w"};
 
 bool ConvertDoubleValueFromJsElement(napi_env env, napi_value jsObject, uint32_t idx, double& data)
 {
@@ -77,6 +78,28 @@ bool ParseJsDoubleValue(napi_env env, napi_value jsObject, const std::string& na
     if (napi_get_value_double(env, value, &data) != napi_ok) {
         return false;
     }
+    return true;
+}
+
+bool ParsegrayscaleFactor(napi_env env, napi_value jsObject, Vector3f& values)
+{
+    uint32_t length = 0;
+    if (napi_get_array_length(env, jsObject, &length) != napi_ok || length != NUM_3) {
+        return false;
+    }
+    double val;
+    if (!ConvertDoubleValueFromJsElement(env, jsObject, NUM_0, val)) {
+        return false;
+    }
+    values[NUM_0] = static_cast<float>(val);
+    if (!ConvertDoubleValueFromJsElement(env, jsObject, NUM_1, val)) {
+        return false;
+    }
+    values[NUM_1] = static_cast<float>(val);
+    if (!ConvertDoubleValueFromJsElement(env, jsObject, NUM_2, val)) {
+        return false;
+    }
+    values[NUM_2] = static_cast<float>(val);
     return true;
 }
 
@@ -178,6 +201,22 @@ bool ParseJsPoint(napi_env env, napi_value jsObject, Vector2f& point)
     return true;
 }
 
+bool ParseJsVector4f(napi_env env, napi_value jsObject, Vector4f& vec)
+{
+    napi_value tmpValue = nullptr;
+    for (size_t idx = 0; idx < NUM_4; idx++) {
+        if (napi_get_named_property(env, jsObject, VECTOR4_STRING[idx], &tmpValue) != napi_ok || tmpValue == nullptr) {
+            return false;
+        }
+        double value = 0.0;
+        if (napi_get_value_double(env, tmpValue, &value) != napi_ok) {
+            return false;
+        }
+        vec[idx] = static_cast<float>(value);
+    }
+    return true;
+}
+
 bool ParseJsRGBAColor(napi_env env, napi_value jsValue, Vector4f& rgba)
 {
     for (size_t idx = 0; idx < NUM_4; idx++) {
@@ -204,6 +243,28 @@ bool ParseJsLTRBRect(napi_env env, napi_value jsValue, Vector4f& ltrb)
         ltrb[idx] = static_cast<float>(value);
     }
     return true;
+}
+
+napi_value CreateJsValue(napi_env env, int32_t value)
+{
+    napi_value result = nullptr;
+    napi_create_int32(env, value, &result);
+    return result;
+}
+
+napi_value CreateJsValue(napi_env env, const std::string& message)
+{
+    napi_value result = nullptr;
+    napi_create_string_utf8(env, message.c_str(), message.length(), &result);
+    return result;
+}
+
+napi_value CreateJsError(napi_env env, int32_t errCode, const std::string& message)
+{
+    napi_value result = nullptr;
+    napi_create_error(env, CreateJsValue(env, errCode),
+        CreateJsValue(env, message), &result);
+    return result;
 }
 
 } // namespace UIEffect
@@ -260,6 +321,18 @@ std::string UIEffectNapiUtils::GetBundleName()
     return bundleInfo.applicationInfo.bundleName;
 #else
     return "";
+#endif
+}
+
+bool UIEffectNapiUtils::CheckPermission(const std::string& permission)
+{
+#ifdef ENABLE_IPC_SECURITY
+    auto tokenID = OHOS::IPCSkeleton::GetCallingTokenID();
+    int result = Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        tokenID, permission, false);
+    return result == Security::AccessToken::PERMISSION_GRANTED;
+#else
+    return true;
 #endif
 }
 

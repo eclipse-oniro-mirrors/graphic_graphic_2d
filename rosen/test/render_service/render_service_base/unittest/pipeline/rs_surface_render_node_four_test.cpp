@@ -15,6 +15,9 @@
 
 #include <gtest/gtest.h>
 
+#include "modifier_ng/appearance/rs_behind_window_filter_render_modifier.h"
+#include "modifier_ng/geometry/rs_bounds_render_modifier.h"
+#include "modifier_ng/geometry/rs_frame_render_modifier.h"
 #include "pipeline/rs_context.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/rs_surface_render_node.h"
@@ -230,30 +233,30 @@ HWTEST_F(RSSurfaceRenderNodeFourTest, NotifyUIBufferAvailable, TestSize.Level2)
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
     node->isNotifyUIBufferAvailable_ = false;
-    node->isWaitUifirstFirstFrame_ = false;
+    node->uifirstState_.isWaitFirstFrame.store(false);
     node->NotifyUIBufferAvailable();
     ASSERT_TRUE(node->isNotifyUIBufferAvailable_);
     node->isNotifyUIBufferAvailable_ = true;
-    node->isWaitUifirstFirstFrame_ = true;
+    node->uifirstState_.isWaitFirstFrame.store(true);
     node->NotifyUIBufferAvailable();
     ASSERT_TRUE(node->isNotifyUIBufferAvailable_);
     node->isNotifyUIBufferAvailable_ = false;
-    node->isWaitUifirstFirstFrame_ = true;
+    node->uifirstState_.isWaitFirstFrame.store(true);
     node->NotifyUIBufferAvailable();
     ASSERT_FALSE(node->isNotifyUIBufferAvailable_);
     node->isNotifyUIBufferAvailable_ = true;
-    node->isWaitUifirstFirstFrame_ = false;
+    node->uifirstState_.isWaitFirstFrame.store(false);
     node->NotifyUIBufferAvailable();
     ASSERT_TRUE(node->isNotifyUIBufferAvailable_);
     sptr<RSIBufferAvailableCallback> callback = new CustomBufferAvailableCallback();
     node->isNotifyUIBufferAvailable_ = false;
-    node->isWaitUifirstFirstFrame_ = false;
+    node->uifirstState_.isWaitFirstFrame.store(false);
     node->callbackFromUI_ = callback;
     node->NotifyUIBufferAvailable();
     ASSERT_FALSE(node->IsAppWindow());
     node->nodeType_ = RSSurfaceNodeType::APP_WINDOW_NODE;
     node->isNotifyUIBufferAvailable_ = false;
-    node->isWaitUifirstFirstFrame_ = false;
+    node->uifirstState_.isWaitFirstFrame.store(false);
     node->NotifyUIBufferAvailable();
     ASSERT_TRUE(node->IsAppWindow());
 }
@@ -407,6 +410,8 @@ HWTEST_F(RSSurfaceRenderNodeFourTest, ChildrenBlurBehindWindowTest, TestSize.Lev
 {
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSSurfaceRenderNode>(0, rsContext);
+    auto modifier = std::make_shared<ModifierNG::RSBehindWindowFilterRenderModifier>();
+    node->AddModifier(modifier);
     NodeId idOne = 1;
     NodeId idTwo = 2;
     node->AddChildBlurBehindWindow(idOne);
@@ -462,6 +467,348 @@ HWTEST_F(RSSurfaceRenderNodeFourTest, GetChildBlurBehindWindow, TestSize.Level1)
     NodeId id = 1001;
     surfaceNode->childrenBlurBehindWindow_.emplace(id);
     EXPECT_TRUE(!surfaceNode->GetChildBlurBehindWindow().empty());
+}
+
+/**
+ * @tc.name: SetIsParticipateInOcclusion
+ * @tc.desc: Test SetIsParticipateInOcclusion
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetIsParticipateInOcclusion, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(0, rsContext);
+
+    surfaceNode->SetIsParticipateInOcclusion(true);
+    ASSERT_TRUE(surfaceNode->GetIsParticipateInOcclusion());
+}
+
+/**
+ * @tc.name: SetAppRotationCorrection
+ * @tc.desc: Test SetAppRotationCorrection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetAppRotationCorrection, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    node->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(id);
+    ASSERT_NE(node->stagingRenderParams_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(node->stagingRenderParams_.get());
+    node->SetAppRotationCorrection(ScreenRotation::ROTATION_180);
+    EXPECT_EQ(surfaceParams->GetAppRotationCorrection(), ScreenRotation::ROTATION_180);
+    node->stagingRenderParams_ = nullptr;
+    node->SetAppRotationCorrection(ScreenRotation::ROTATION_270);
+}
+
+/**
+ * @tc.name: SetRotationCorrectionDegree
+ * @tc.desc: Test SetRotationCorrectionDegree
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetRotationCorrectionDegree, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    node->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(id);
+    ASSERT_NE(node->stagingRenderParams_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(node->stagingRenderParams_.get());
+    node->SetRotationCorrectionDegree(180);
+    EXPECT_EQ(surfaceParams->GetRotationCorrectionDegree(), 180);
+    node->stagingRenderParams_ = nullptr;
+    node->SetRotationCorrectionDegree(270);
+}
+
+/**
+ * @tc.name: SetIsOnTheTreeTest001
+ * @tc.desc: Test SetIsOnTheTree
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetIsOnTheTreeTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+
+    // when isOnTheTree_ is false
+    surfaceNode.isOnTheTree_ = false;
+    surfaceNode.SetIsOnTheTree(false);
+
+    // when !onTree is false
+    surfaceNode.isOnTheTree_ = true;
+    surfaceNode.SetIsOnTheTree(true);
+    EXPECT_TRUE(surfaceNode.isOnTheTree_);
+}
+
+/**
+ * @tc.name: SetCrossNodeOffScreenStatusTest001
+ * @tc.desc: Test SetCrossNodeOffScreenStatus when params is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetCrossNodeOffScreenStatusTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+    surfaceNode.stagingRenderParams_ = nullptr;
+    surfaceNode.SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType::DISABLED);
+    EXPECT_EQ(surfaceNode.stagingRenderParams_, nullptr);
+}
+
+/**
+ * @tc.name: ClearCloneCrossNodeTest001
+ * @tc.desc: Test ClearCloneCrossNode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, ClearCloneCrossNodeTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+    auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(config);
+    auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode.cloneCrossNodeVec_.push_back(surfaceNode1);
+    surfaceNode.cloneCrossNodeVec_.push_back(surfaceNode2);
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 2);
+
+    auto surfaceNode3 = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode2->parent_ = surfaceNode3;
+
+    surfaceNode.ClearCloneCrossNode();
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 0);
+}
+
+/**
+ * @tc.name: SetCrossNodeVisitedStatusTest001
+ * @tc.desc: Test SetCrossNodeVisitedStatus
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, SetCrossNodeVisitedStatusTest001, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    RSSurfaceRenderNode surfaceNode(config);
+    auto cloneSurfaceNode1 = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode.cloneCrossNodeVec_.push_back(cloneSurfaceNode1);
+    surfaceNode.cloneCrossNodeVec_.push_back(nullptr);
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 2);
+
+    // set true and false
+    surfaceNode.isCrossNode_ = true;
+    surfaceNode.isCloneCrossNode_ = false;
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // set false and true
+    surfaceNode.isCrossNode_ = false;
+    surfaceNode.isCloneCrossNode_ = true;
+
+    // when sourceCrossNode_ is nullptr
+    surfaceNode.sourceCrossNode_.reset();
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // when sourceCrossNode_ is not nullptr
+    auto sourceSurfaceNode = std::make_shared<RSSurfaceRenderNode>(config);
+    surfaceNode.sourceCrossNode_ = sourceSurfaceNode;
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // set false and false
+    surfaceNode.isCrossNode_ = false;
+    surfaceNode.isCloneCrossNode_ = false;
+    surfaceNode.SetCrossNodeVisitedStatus(true);
+
+    // clear
+    surfaceNode.cloneCrossNodeVec_.clear();
+    EXPECT_EQ(surfaceNode.cloneCrossNodeVec_.size(), 0);
+}
+
+/**
+ * @tc.name: EmplaceSameTypeModifier001
+ * @tc.desc: Test EmplaceSameTypeModifier with deduplication disabled
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, EmplaceSameTypeModifier001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>> container;
+    auto modifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    modifier->id_ = 1;
+    node->EmplaceSameTypeModifier(container, modifier);
+    EXPECT_EQ(container.size(), 1);
+}
+
+/**
+ * @tc.name: EmplaceSameTypeModifier002
+ * @tc.desc: Test EmplaceSameTypeModifier with duplicate modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, EmplaceSameTypeModifier002, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>> container;
+    auto modifier1 = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    modifier1->id_ = 1;
+    auto modifier2 = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    modifier2->id_ = 1;
+    node->EmplaceSameTypeModifier(container, modifier1);
+    node->EmplaceSameTypeModifier(container, modifier2);
+    EXPECT_EQ(container.size(), 2);
+}
+
+/**
+ * @tc.name: EmplaceSameTypeModifier003
+ * @tc.desc: Test EmplaceSameTypeModifier with BOUNDS deduplication
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, EmplaceSameTypeModifier003, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>> container;
+    auto boundsModifier1 = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    boundsModifier1->id_ = 1;
+    auto boundsModifier2 = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    boundsModifier2->id_ = 1;
+    node->EmplaceSameTypeModifier(container, boundsModifier1);
+    node->EmplaceSameTypeModifier(container, boundsModifier2);
+    EXPECT_EQ(container.size(), 2);
+}
+
+/**
+ * @tc.name: EmplaceSameTypeModifier004
+ * @tc.desc: Test EmplaceSameTypeModifier with FRAME deduplication
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, EmplaceSameTypeModifier004, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>> container;
+    auto frameModifier1 = std::make_shared<ModifierNG::RSFrameRenderModifier>();
+    frameModifier1->id_ = 1;
+    auto frameModifier2 = std::make_shared<ModifierNG::RSFrameRenderModifier>();
+    frameModifier2->id_ = 1;
+    frameModifier2->enableDeduplication_ = true;
+    node->EmplaceSameTypeModifier(container, frameModifier1);
+    node->EmplaceSameTypeModifier(container, frameModifier2);
+    EXPECT_EQ(container.size(), 1);
+}
+
+/**
+ * @tc.name: EmplaceSameTypeModifier005
+ * @tc.desc: Test EmplaceSameTypeModifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, EmplaceSameTypeModifier005, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    std::vector<std::shared_ptr<ModifierNG::RSRenderModifier>> container;
+    auto boundsModifier1 = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    boundsModifier1->id_ = 1;
+    boundsModifier1->enableDeduplication_ = true;
+    auto boundsModifier2 = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    boundsModifier2->id_ = 1;
+    boundsModifier2->enableDeduplication_ = true;
+    node->EmplaceSameTypeModifier(container, boundsModifier1);
+    node->EmplaceSameTypeModifier(container, boundsModifier2);
+    EXPECT_EQ(container.size(), 1);
+}
+
+/**
+ * @tc.name: CopyModifierValue001
+ * @tc.desc: Test CopyModifierValue with old property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, CopyModifierValue001, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    auto oldModifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    oldModifier->id_ = 1;
+    auto newModifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    newModifier->id_ = 1;
+    Vector4f value(1.0f, 2.0f, 3.0f, 4.0f);
+    oldModifier->AttachProperty(
+        ModifierNG::RSPropertyType::BOUNDS, std::make_shared<RSRenderProperty<Vector4f>>(Vector4f(), 1));
+    node->CopyModifierValue<Vector4f>(ModifierNG::RSPropertyType::BOUNDS, oldModifier, newModifier);
+    auto copiedValue = oldModifier->Getter<Vector4f>(ModifierNG::RSPropertyType::BOUNDS);
+    EXPECT_EQ(copiedValue.x_, 0.f);
+    EXPECT_EQ(copiedValue.y_, 0.f);
+    EXPECT_EQ(copiedValue.z_, 0.f);
+    EXPECT_EQ(copiedValue.w_, 0.f);
+}
+
+/**
+ * @tc.name: CopyModifierValue002
+ * @tc.desc: Test CopyModifierValue with new property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, CopyModifierValue002, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    auto oldModifier = std::make_shared<ModifierNG::RSFrameRenderModifier>();
+    oldModifier->id_ = 1;
+    auto newModifier = std::make_shared<ModifierNG::RSFrameRenderModifier>();
+    newModifier->id_ = 1;
+    Vector4f value(1.0f, 2.0f, 3.0f, 4.0f);
+    newModifier->AttachProperty(
+        ModifierNG::RSPropertyType::FRAME, std::make_shared<RSRenderProperty<Vector4f>>(value, 1));
+    node->CopyModifierValue<Vector4f>(ModifierNG::RSPropertyType::FRAME, oldModifier, newModifier);
+    auto copiedValue = oldModifier->Getter<Vector4f>(ModifierNG::RSPropertyType::FRAME);
+    EXPECT_EQ(copiedValue.x_, 0.f);
+    EXPECT_EQ(copiedValue.y_, 0.f);
+    EXPECT_EQ(copiedValue.z_, 0.f);
+    EXPECT_EQ(copiedValue.w_, 0.f);
+}
+
+/**
+ * @tc.name: CopyModifierValue003
+ * @tc.desc: Test CopyModifierValue with property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, CopyModifierValue003, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    auto oldModifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    oldModifier->id_ = 1;
+    Vector4f value(1.0f, 2.0f, 3.0f, 4.0f);
+    auto newModifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    newModifier->id_ = 1;
+    newModifier->AttachProperty(
+        ModifierNG::RSPropertyType::BOUNDS, std::make_shared<RSRenderProperty<Vector4f>>(value, 1));
+    oldModifier->AttachProperty(
+        ModifierNG::RSPropertyType::BOUNDS, std::make_shared<RSRenderProperty<Vector4f>>(Vector4f(), 1));
+    node->CopyModifierValue<Vector4f>(ModifierNG::RSPropertyType::BOUNDS, oldModifier, newModifier);
+    auto copiedValue = oldModifier->Getter<Vector4f>(ModifierNG::RSPropertyType::BOUNDS);
+    EXPECT_EQ(copiedValue.x_, value.x_);
+    EXPECT_EQ(copiedValue.y_, value.y_);
+    EXPECT_EQ(copiedValue.z_, value.z_);
+    EXPECT_EQ(copiedValue.w_, value.w_);
+}
+
+/**
+ * @tc.name: CopyModifierValue004
+ * @tc.desc: Test CopyModifierValue without property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderNodeFourTest, CopyModifierValue004, TestSize.Level1)
+{
+    auto rsContext = std::make_shared<RSContext>();
+    auto node = std::make_shared<RSSurfaceRenderNode>(id, rsContext);
+    auto oldModifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    oldModifier->id_ = 1;
+    auto newModifier = std::make_shared<ModifierNG::RSBoundsRenderModifier>();
+    newModifier->id_ = 1;
+    node->CopyModifierValue<Vector4f>(ModifierNG::RSPropertyType::BOUNDS, oldModifier, newModifier);
+    auto copiedValue = oldModifier->Getter<Vector4f>(ModifierNG::RSPropertyType::BOUNDS);
+    EXPECT_EQ(copiedValue.x_, 0.f);
+    EXPECT_EQ(copiedValue.y_, 0.f);
+    EXPECT_EQ(copiedValue.z_, 0.f);
+    EXPECT_EQ(copiedValue.w_, 0.f);
 }
 } // namespace Rosen
 } // namespace OHOS

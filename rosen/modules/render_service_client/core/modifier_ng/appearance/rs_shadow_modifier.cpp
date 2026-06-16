@@ -81,7 +81,7 @@ void RSShadowModifier::SetShadowRadius(float radius)
 
 float RSShadowModifier::GetShadowRadius() const
 {
-    return Getter(RSPropertyType::SHADOW_RADIUS, 0.f);
+    return Getter(RSPropertyType::SHADOW_RADIUS, DEFAULT_SHADOW_RADIUS);
 }
 
 void RSShadowModifier::SetShadowPath(const std::shared_ptr<RSPath>& shadowPath)
@@ -122,6 +122,16 @@ void RSShadowModifier::SetShadowIsFilled(bool shadowIsFilled)
 bool RSShadowModifier::GetShadowIsFilled() const
 {
     return Getter(RSPropertyType::SHADOW_IS_FILLED, false);
+}
+
+void RSShadowModifier::SetShadowDisableSDFBlur(bool disable)
+{
+    Setter<RSProperty>(RSPropertyType::SHADOW_DISABLE_SDF_BLUR, disable);
+}
+
+bool RSShadowModifier::GetShadowDisableSDFBlur() const
+{
+    return Getter(RSPropertyType::SHADOW_DISABLE_SDF_BLUR, false);
 }
 
 void RSShadowModifier::SetUseShadowBatching(bool useShadowBatching)

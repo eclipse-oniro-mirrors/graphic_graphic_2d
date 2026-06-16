@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_COMMON_RS_COMMON_DEF_H
 
 #include <atomic>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -65,12 +66,12 @@ enum class SurfaceRegionDebugType {
 };
 
 enum class PartialRenderType {
-    DISABLED = 0,                               // 0, disable partial render, including set damage region
-    SET_DAMAGE,                                 // 1, set damageregion, without draw_op dropping
-    SET_DAMAGE_AND_DROP_OP,                     // 2, drop draw_op if node is not in dirty region
-    SET_DAMAGE_AND_DROP_OP_OCCLUSION,           // 3, drop draw_op if node is not in visible region (unirender)
-    SET_DAMAGE_AND_DROP_OP_NOT_VISIBLEDIRTY,    // 4, drop draw_op if node is not in visible dirty region (unirender)
-    SET_DAMAGE_BUT_COMPLETE_RENDER,             // 5, set full screen dirty region and set damage
+    DISABLED = 0,                    // 0, disable partial render
+    SET_DAMAGE,                      // 1, only set damage
+    CLIP,                            // 2, only clip
+    CLIP_AND_DROP_OP,                // 3, clip and drop op
+    SET_DAMAGE_AND_CLIP_AND_DROP_OP, // 4, set damage, clip and drop op
+    FORCE_FULL_SCREEN_DIRTY_REGION,  // 5, force setting full screen dirty region for set damage, clip and drop op
 };
 
 enum class StencilPixelOcclusionCullingType {
@@ -86,6 +87,7 @@ enum class AdvancedDirtyRegionType {
 };
 
 enum class DirtyAlignType {
+    DEFAULT = -1, // follow the ccm configuration
     DISABLED = 0,
     ENABLED = 1,
 };
@@ -173,6 +175,7 @@ public:
     static bool GetDrawOpTraceEnabled();
     static bool GetDrawOpLimitEnabled();
     static bool GetAnimationTraceEnabled();
+    static bool GetTestModeEnabled();
     static bool GetAnimationDelayOptimizeEnabled();
     static bool GetRSClientMultiInstanceEnabled();
     static bool GetRenderNodePurgeEnabled();
@@ -185,15 +188,18 @@ public:
     static DirtyAlignType GetDirtyAlignEnabled();
     static PartialRenderType GetPartialRenderEnabled();
     static PartialRenderType GetUniPartialRenderEnabled();
+    static bool GetRCDForceRedrawEnable();
     static bool GetRenderNodeLazyLoadEnabled();
     static StencilPixelOcclusionCullingType GetStencilPixelOcclusionCullingEnabled();
     static float GetClipRectThreshold();
     static bool GetAllSurfaceVisibleDebugEnabled();
+    static bool GetVirtualSelfDrawOptEnabled();
     static bool GetVirtualDirtyDebugEnabled();
     static bool GetVirtualDirtyEnabled();
     static bool GetVirtualExpandScreenDirtyEnabled();
     static bool GetVirtualExpandScreenSkipEnabled();
     static bool GetOcclusionEnabled();
+    static bool GetDynamicLayerSkipEnabled();
     static std::string GetRSEventProperty(const std::string &paraName);
     static bool GetHighContrastStatus();
     static uint32_t GetCorrectionMode();
@@ -232,10 +238,11 @@ public:
     static bool GetFilterCacheEnabled();
     static int GetFilterCacheUpdateInterval();
     static int GetFilterCacheSizeThreshold();
+    static bool GetDynamicBrightnessEnabled();
     static bool GetMaskLinearBlurEnabled();
     static bool GetMotionBlurEnabled();
+    static bool GetDrmEnabled();
     static bool GetMagnifierEnabled();
-    static bool GetDynamicBrightnessEnabled();
     static bool GetKawaseEnabled();
     static void SetForceHpsBlurDisabled(bool flag);
     static float GetHpsBlurNoiseFactor();
@@ -245,16 +252,16 @@ public:
     static bool GetForceKawaseDisabled();
     static float GetKawaseRandomColorFactor();
     static bool GetRandomColorEnabled();
-    static bool GetImageReleaseUsingPostTask();
     static bool GetKawaseOriginalEnabled();
     static bool GetBlurEnabled();
-    static bool GetFgBlenderEnabled();
     static bool GetForegroundFilterEnabled();
+    static bool GetFgBlenderEnabled();
     static const std::vector<float>& GetAiInvertCoef();
     static bool GetSkipForAlphaZeroEnabled();
     static bool GetSkipGeometryNotChangeEnabled();
     static bool GetRenderParallelEnabled();
     static bool GetPropertyDrawableEnable();
+    static bool GetEDRCanvasReplaceEnabled();
 
     static bool GetDrawFilterWithoutSnapshotEnabled();
     static bool GetBlurExtraFilterEnabled();
@@ -265,13 +272,18 @@ public:
 
     static bool GetAnimationCacheEnabled();
 
+    static bool ViewDrawNodeType();
+    static bool GetNewTunnelEnabled();
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
+    static int RemoveWatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
     static bool GetCacheOptimizeRotateEnable();
     static CrossNodeOffScreenRenderDebugType GetCrossNodeOffScreenStatus();
     static bool GetSingleDrawableLockerEnabled();
     static bool GetUIFirstEnabled();
     static bool GetHeterogeneousHDREnabled();
+    static bool GetGPUOfflineEnabled();
+    static bool GetXcomponentEdrEnabled();
     static bool GetUIFirstDebugEnabled();
     static bool GetUIFirstOptScheduleEnabled();
     static bool GetUIFirstBehindWindowEnabled();
@@ -281,11 +293,11 @@ public:
     static bool GetUIFirstBehindWindowFilterEnabled();
     static bool GetUIFirstAutoClearCacheEnabled();
     static bool GetWideColorSpaceEnabled();
-    static bool GetSkipUnpremulEnabled();
     static bool GetSubtreeParallelEnable();
     static uint32_t GetSubtreeDebugOption();
     static bool GetSurfaceOffscreenEnadbled();
     static bool GetDebugTraceEnabled();
+    static bool GetImageReleaseUsingPostTask();
     static int GetDebugTraceLevel();
     static bool FindNodeInTargetList(std::string node);
     static bool IsFoldScreenFlag();
@@ -295,23 +307,22 @@ public:
     static bool GetASTCEnabled();
     static bool GetCachedBlurPartialRenderEnabled();
     static bool GetImageGpuResourceCacheEnable(int width, int height);
-    static bool GetDrmEnabled();
     static bool GetSurfaceNodeWatermarkEnabled();
-    static bool IsPhoneType();
     static bool IsSuperFoldDisplay();
-    static bool IsBetaRelease();
     static bool GetSyncTransactionEnabled();
     static int GetSyncTransactionWaitDelay();
     static bool GetSingleFrameComposerEnabled();
     static bool GetSingleFrameComposerCanvasNodeEnabled();
+
     static bool GetSecurityPermissionCheckEnabled();
     static bool GetEffectMergeEnabled();
     static SubTreePrepareCheckType GetSubTreePrepareCheckType();
+    static bool IsForceClient();
     static bool GetHdrImageEnabled();
     static bool GetHdrVideoEnabled();
-    static bool IsForceClient();
-    static bool GetDrmMarkedFilterEnabled();
     static bool GetGpuOverDrawBufferOptimizeEnabled();
+
+    static bool GetDrmMarkedFilterEnabled();
 
     static DdgrOpincType GetDdgrOpincType();
     static bool IsDdgrOpincEnable();
@@ -319,32 +330,35 @@ public:
     static DdgrOpincDfxType GetDdgrOpincDfxType();
     static bool IsOpincRealDrawCacheEnable();
     static bool GetOpincCacheMemThresholdEnabled();
+    static bool GetLayerPartRenderEnabled();
+    static bool GetLayerPartRenderDebugEnabled();
+    static bool GetLayerEnabled();
+    static bool GetLayerDebugEnabled();
+    static bool GetFilterCacheMemThresholdEnabled();
     static bool GetSkipDisplayIfScreenOffEnabled();
     static bool GetBatchRemovingOnRemoteDiedEnabled();
 
     static bool GetDumpUICaptureEnabled();
     static bool GetDumpUIPixelmapEnabled();
+    static int GetVirtualScreenScaleModeDFX();
     static bool GetDumpImgEnabled();
 
     static bool GetTransactionTerminateEnabled();
-
-    static int GetVirtualScreenScaleModeDFX();
     static bool GetTextBlobAsPixelMap();
     static inline GpuApiType GetGpuApiType()
     {
         return RSSystemProperties::systemGpuApiType_;
     }
 
+    static int GetRSNodeLimit();
     static inline bool IsUseVulkan()
     {
         return RSSystemProperties::GetGpuApiType() != GpuApiType::OPENGL;
     }
 
-    static bool ViewDrawNodeType();
     static bool GetJankLoadOptimizeEnabled();
-    static int GetRSNodeLimit();
-    static std::string GetVersionType();
     static bool GetHwcDirtyRegionEnabled();
+    static std::string GetVersionType();
     static bool GetHveFilterEnabled();
     static bool GetDmaReclaimParam();
     static bool GetOptimizeParentNodeRegionEnabled();
@@ -353,11 +367,13 @@ public:
     static bool GetHpaeBlurUsingAAE();
 
     static bool GetWindowKeyFrameEnabled();
+
     static bool GetNodeGroupGroupedByUIEnabled();
-    static bool GetTimeVsyncDisabled();
     static void SetDebugFmtTraceEnabled(bool flag);
+    static void SetAnimationTraceEnabled(bool flag);
     static bool GetTextureExportDFXEnabled();
     static bool GetDebugFmtTraceEnabled();
+    static bool GetTimeVsyncDisabled();
 
     static bool GetHybridRenderEnabled();
     static bool GetHybridRenderDfxEnabled();
@@ -392,31 +408,31 @@ public:
     static bool GetScaleImageAsyncEnabled();
     static bool GetMemoryWatermarkEnabled();
     static bool GetPreparePhaseQuickSkipEnabled();
-
+    static bool GetUnmarshalParallelEnabled();
+    static uint32_t GetUnmarshalParallelMinDataSize();
     static bool GetBootCompleted();
-
     static bool GetClipRRectOptimizationEnabled();
-
     static bool GetNodeMemClearEnabled();
-
-    static bool GetRSNodeExceedKillEnabled();
+    static bool GetTransactionDataTraceEnabled();
+    static bool GetDefaultMemClearEnabled();
+    static bool GetSceneBoardIsPcMode();
+    static bool GetBufferOwnerCountDfxEnabled();
 
     static bool GetCanvasDrawingNodePreAllocateDmaEnabled();
     static bool GetCanvasDrawingNodeRenderDmaEnabled();
-    static bool GetDefaultMemClearEnabled();
 
-    static bool GetSceneBoardIsPcMode();
     static bool GetReleaseImageOneByOneFlag();
-    static bool GetTransactionDataTraceEnabled();
+    static bool GetUsePrimList();
 
 private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
-    inline static bool cacheEnabledForRotation_ = false;
+    inline static std::atomic_bool cacheEnabledForRotation_ = false;
     static inline bool forceHpsBlurDisabled_ = false;
     static inline bool debugFmtTraceEnable_ = false;
+    static inline bool animationTestEnable_ = false;
     static inline bool isBehindWindowFilterEnabled_ = true;
     static inline bool isTypicalResidentProcess_ = false;
     static bool isEnableEarlyZ_;
@@ -424,7 +440,6 @@ private:
     static const DdgrOpincType ddgrOpincType_;
     static const DdgrOpincDfxType ddgrOpincDfxType_;
 };
-
 } // namespace Rosen
 } // namespace OHOS
 

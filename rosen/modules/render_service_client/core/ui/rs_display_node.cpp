@@ -58,7 +58,7 @@ RSDisplayNode::SharedPtr RSDisplayNode::Create(
             }
         }
     } else {
-        if (!node->CreateNode(displayNodeConfig, node->GetId())) {
+        if (!node->CreateDisplayNode(displayNodeConfig, node->GetId())) {
             ROSEN_LOGE("RSDisplayNode::Create: CreateNode Failed.");
             return nullptr;
         }
@@ -72,12 +72,17 @@ RSDisplayNode::SharedPtr RSDisplayNode::Create(
     return node;
 }
 
-bool RSDisplayNode::CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
+bool RSDisplayNode::CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId)
 {
-    return std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())->
-        CreateNode(displayNodeConfig, nodeId);
+    auto rsUIContext = GetRSUIContext();
+    if (rsUIContext == nullptr || rsUIContext->GetRSRenderInterface() == nullptr) {
+        ROSEN_LOGE("RSDisplayNode::CreateNode uiContext is nullptr");
+        return false;
+    }
+    return rsUIContext->GetRSRenderInterface()->CreateDisplayNode(displayNodeConfig, nodeId);
 }
 
+// LCOV_EXCL_START
 void RSDisplayNode::RegisterNodeMap()
 {
     auto rsContext = GetRSUIContext();
@@ -87,7 +92,9 @@ void RSDisplayNode::RegisterNodeMap()
     auto& nodeMap = rsContext->GetMutableNodeMap();
     nodeMap.RegisterNode(shared_from_this());
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void RSDisplayNode::AddDisplayNodeToTree()
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeAddToTree>(GetId());
@@ -95,7 +102,9 @@ void RSDisplayNode::AddDisplayNodeToTree()
     SetIsOnTheTree(true);
     HILOG_COMM_INFO("RSDisplayNode::AddDisplayNodeToTree, id:%{public}" PRIu64, GetId());
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void RSDisplayNode::RemoveDisplayNodeFromTree()
 {
     std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeRemoveFromTree>(GetId());
@@ -103,6 +112,7 @@ void RSDisplayNode::RemoveDisplayNodeFromTree()
     SetIsOnTheTree(false);
     HILOG_COMM_INFO("RSDisplayNode::RemoveDisplayNodeFromTree, id:%{public}" PRIu64, GetId());
 }
+// LCOV_EXCL_STOP
 
 bool RSDisplayNode::Marshalling(Parcel& parcel) const
 {
@@ -148,11 +158,14 @@ void RSDisplayNode::SetSecurityDisplay(bool isSecurityDisplay)
         " isSecurityDisplay:[%{public}s]", GetId(), isSecurityDisplay ? "true" : "false");
 }
 
+// LCOV_EXCL_START
 bool RSDisplayNode::GetSecurityDisplay() const
 {
     return isSecurityDisplay_;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void RSDisplayNode::ClearChildren()
 {
     auto children = GetChildren();
@@ -162,6 +175,7 @@ void RSDisplayNode::ClearChildren()
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void RSDisplayNode::SetScreenId(uint64_t screenId)
 {
@@ -184,13 +198,14 @@ void RSDisplayNode::SetScreenId(uint64_t screenId)
     RS_TRACE_NAME_FMT("RSDisplayNode::SetScreenId, DisplayNode: %" PRIu64 ", ScreenId: %" PRIu64, GetId(), screenId);
 }
 
-void RSDisplayNode::SetForceCloseHdr(bool isForceCloseHdr)
+void RSDisplayNode::SetDisplayContentRect(const Rect& contentRect)
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSDisplayNodeForceCloseHdr>(GetId(), isForceCloseHdr);
-    if (AddCommand(command, true)) {
-        ROSEN_LOGD("RSDisplayNode::SetForceCloseHdr: [%{public}s], displayNodeId:[%{public}" PRIu64 "]",
-            isForceCloseHdr ? "true" : "false", GetId());
-    }
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSDisplayNodeSetDisplayContentRect>(GetId(), contentRect);
+    AddCommand(command, true);
+    HILOG_COMM_INFO("RSDisplayNode::SetDisplayContentRect, DisplayNode: %{public}" PRIu64
+        ", contentRect: [%{public}d, %{public}d, %{public}d, %{public}d]",
+        GetId(), contentRect.x, contentRect.y, contentRect.w, contentRect.h);
 }
 
 void RSDisplayNode::SetDisplayNodeMirrorConfig(const RSDisplayNodeConfig& displayNodeConfig)
@@ -202,10 +217,12 @@ void RSDisplayNode::SetDisplayNodeMirrorConfig(const RSDisplayNodeConfig& displa
         " isMirror:[%{public}d]", GetId(), displayNodeConfig.isMirrored);
 }
 
+// LCOV_EXCL_START
 bool RSDisplayNode::IsMirrorDisplay() const
 {
     return isMirrorDisplay_;
 }
+// LCOV_EXCL_STOP
 
 void RSDisplayNode::SetScreenRotation(const uint32_t& rotation)
 {
@@ -248,10 +265,12 @@ void RSDisplayNode::SetBootAnimation(bool isBootAnimation)
     AddCommand(command, true);
 }
 
+// LCOV_EXCL_START
 bool RSDisplayNode::GetBootAnimation() const
 {
     return isBootAnimation_;
 }
+// LCOV_EXCL_STOP
 
 void RSDisplayNode::ClearModifierByPid(pid_t pid)
 {
@@ -269,7 +288,7 @@ void RSDisplayNode::SetVirtualScreenMuteStatus(bool virtualScreenMuteStatus)
         "virtualScreenMuteStatus: %{public}d", GetId(), virtualScreenMuteStatus);
 }
 
-void RSDisplayNode::OnBoundsSizeChanged() const
+void RSDisplayNode::OnBoundsSizeChanged()
 {
     auto bounds = GetStagingProperties().GetBounds();
     ROSEN_LOGI("RSDisplayNode::%{public}s, screenId:[%{public}" PRIu64 "], displayNodeId:[%{public}" PRIu64 "], "
@@ -277,9 +296,7 @@ void RSDisplayNode::OnBoundsSizeChanged() const
                __func__, screenId_, GetId(), bounds.x_, bounds.y_, bounds.z_, bounds.w_);
 }
 
-RSDisplayNode::~RSDisplayNode()
-{
-    RS_LOGI("%{public}s, NodeId:[%{public}" PRIu64 "]", __func__, GetId());
-}
+RSDisplayNode::~RSDisplayNode() = default;
+
 } // namespace Rosen
 } // namespace OHOS

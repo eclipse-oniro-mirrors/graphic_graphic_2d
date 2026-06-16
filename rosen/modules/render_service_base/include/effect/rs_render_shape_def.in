@@ -25,14 +25,60 @@ DECLARE_SHAPE(SDFSmoothUnionOpShape, SDF_SMOOTH_UNION_OP_SHAPE,
     ADD_PROPERTY_TAG(SDFSmoothUnionOpShape, ShapeY)
 );
 
+DECLARE_SHAPE(SDFSubOpShape, SDF_SUB_OP_SHAPE,
+    ADD_PROPERTY_TAG(SDFSubOpShape, ShapeX),
+    ADD_PROPERTY_TAG(SDFSubOpShape, ShapeY)
+);
+
+DECLARE_SHAPE(SDFSmoothSubOpShape, SDF_SMOOTH_SUB_OP_SHAPE,
+    ADD_PROPERTY_TAG(SDFSmoothSubOpShape, Spacing),
+    ADD_PROPERTY_TAG(SDFSmoothSubOpShape, ShapeX),
+    ADD_PROPERTY_TAG(SDFSmoothSubOpShape, ShapeY)
+);
+
+DECLARE_SHAPE(SDFDistortOpShape, SDF_DISTORT_OP_SHAPE,
+    ADD_PROPERTY_TAG(SDFDistortOpShape, LUCorner),
+    ADD_PROPERTY_TAG(SDFDistortOpShape, RUCorner),
+    ADD_PROPERTY_TAG(SDFDistortOpShape, RBCorner),
+    ADD_PROPERTY_TAG(SDFDistortOpShape, LBCorner),
+    ADD_PROPERTY_TAG(SDFDistortOpShape, BarrelDistortion),
+    // Inner Shape auto-syncs with node RRect when empty or Sync=true
+    ADD_PROPERTY_TAG(SDFDistortOpShape, Shape),
+    ADD_PROPERTY_TAG(SDFDistortOpShape, Sync)
+);
+
 // SDF shape
 DECLARE_SHAPE(SDFRRectShape, SDF_RRECT_SHAPE,
     ADD_PROPERTY_TAG(SDFRRectShape, RRect)
 );
 
+DECLARE_SHAPE(SDFTriangleShape, SDF_TRIANGLE_SHAPE,
+    ADD_PROPERTY_TAG(SDFTriangleShape, Vertex0),
+    ADD_PROPERTY_TAG(SDFTriangleShape, Vertex1),
+    ADD_PROPERTY_TAG(SDFTriangleShape, Vertex2),
+    ADD_PROPERTY_TAG(SDFTriangleShape, Radius)
+);
+
+DECLARE_SHAPE(SDFEllipseShape, SDF_ELLIPSE_SHAPE,
+    ADD_PROPERTY_TAG(SDFEllipseShape, Center),
+    ADD_PROPERTY_TAG(SDFEllipseShape, Width),
+    ADD_PROPERTY_TAG(SDFEllipseShape, Height)
+);
+
 DECLARE_SHAPE(SDFTransformShape, SDF_TRANSFORM_SHAPE,
     ADD_PROPERTY_TAG(SDFTransformShape, Matrix),
-    ADD_PROPERTY_TAG(SDFTransformShape, Shape)
+    ADD_PROPERTY_TAG(SDFTransformShape, Shape),
+    ADD_PROPERTY_TAG(SDFTransformShape, UnionMode),
+    ADD_PROPERTY_TAG(SDFTransformShape, GravityCenter),
+    ADD_PROPERTY_TAG(SDFTransformShape, GravityStrength),
+    ADD_PROPERTY_TAG(SDFTransformShape, GravitySpacing),
+    ADD_PROPERTY_TAG(SDFTransformShape, GravityHotZone)
+);
+
+DECLARE_SHAPE(SDFPathShape, SDF_PATH_SHAPE,
+    ADD_PROPERTY_TAG(SDFPathShape, Path),
+    ADD_PROPERTY_TAG(SDFPathShape, Offset),
+    ADD_PROPERTY_TAG(SDFPathShape, Scale)
 );
 
 DECLARE_SHAPE(SDFPixelmapShape, SDF_PIXELMAP_SHAPE,

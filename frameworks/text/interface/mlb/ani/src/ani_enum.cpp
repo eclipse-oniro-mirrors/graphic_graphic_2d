@@ -16,6 +16,7 @@
 #include "ani_enum.h"
 
 #include "font_parser.h"
+#include "text/font_types.h"
 #include "text_global_config.h"
 #include "typography_create.h"
 #include "typography_types.h"
@@ -93,6 +94,8 @@ const std::vector<uint32_t> AniTextEnum::ellipsisModal = {
     static_cast<uint32_t>(EllipsisModal::HEAD),
     static_cast<uint32_t>(EllipsisModal::MIDDLE),
     static_cast<uint32_t>(EllipsisModal::TAIL),
+    static_cast<uint32_t>(EllipsisModal::MULTILINE_HEAD),
+    static_cast<uint32_t>(EllipsisModal::MULTILINE_MIDDLE),
 };
 
 const std::vector<uint32_t> AniTextEnum::placeHolderAlignment = {
@@ -173,6 +176,34 @@ const std::vector<uint32_t> AniTextEnum::textVerticalAlign = {
     static_cast<uint32_t>(TextVerticalAlign::BOTTOM),
     static_cast<uint32_t>(TextVerticalAlign::CENTER),
     static_cast<uint32_t>(TextVerticalAlign::TOP),
+};
+
+const std::vector<uint32_t> AniTextEnum::lineHeightStyle = {
+    static_cast<uint32_t>(LineHeightStyle::kFontSize),
+    static_cast<uint32_t>(LineHeightStyle::kFontHeight),
+};
+
+const std::vector<uint32_t> AniTextEnum::fontEdging = {
+    static_cast<uint32_t>(Drawing::FontEdging::ALIAS),
+    static_cast<uint32_t>(Drawing::FontEdging::ANTI_ALIAS),
+    static_cast<uint32_t>(Drawing::FontEdging::SUBPIXEL_ANTI_ALIAS),
+};
+
+const std::vector<uint32_t> AniTextEnum::textProcessState = {
+    static_cast<uint32_t>(TextProcessState::INIT),
+    static_cast<uint32_t>(TextProcessState::INDEXED),
+    static_cast<uint32_t>(TextProcessState::SHAPED),
+    static_cast<uint32_t>(TextProcessState::LINE_BROKEN),
+    static_cast<uint32_t>(TextProcessState::FORMATTED),
+    static_cast<uint32_t>(TextProcessState::PAINT),
+    static_cast<uint32_t>(TextProcessState::UPDATE_ATTRIBUTE),
+};
+
+const std::vector<uint32_t> AniTextEnum::textDisplayState = {
+    static_cast<uint32_t>(TextDisplayState::UNKNOWN),
+    static_cast<uint32_t>(TextDisplayState::ALL),
+    static_cast<uint32_t>(TextDisplayState::CLIP),
+    static_cast<uint32_t>(TextDisplayState::OMITTED),
 };
 
 std::optional<size_t> aniGetEnumIndex(const std::vector<uint32_t>& enumValues, uint32_t enumValue)

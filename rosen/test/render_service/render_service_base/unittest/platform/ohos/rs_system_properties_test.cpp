@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -103,17 +103,6 @@ HWTEST_F(RSSystemPropertiesTest, SetRecordingDisenabled, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetProfilerEnabled
- * @tc.desc: GetProfilerEnabled Test
- * @tc.type:FUNC
- * @tc.require: issueI9JZWC
- */
-HWTEST_F(RSSystemPropertiesTest, GetProfilerEnabled, TestSize.Level1)
-{
-    ASSERT_EQ(RSSystemProperties::GetProfilerEnabled(), 0);
-}
-
-/**
  * @tc.name: GetPixelCheckEnabled
  * @tc.desc: GetPixelCheckEnabled Test
  * @tc.type:FUNC
@@ -141,16 +130,13 @@ HWTEST_F(RSSystemPropertiesTest, SetPixelCheckEnabled, TestSize.Level1)
 /**
  * @tc.name: SetInstantRecording
  * @tc.desc: SetInstantRecording Test
- * @tc.type:FUNC
+ * @tc.type: FUNC
  * @tc.require: issueI9JZWC
  */
 HWTEST_F(RSSystemPropertiesTest, SetInstantRecording, TestSize.Level1)
 {
-    bool flag = true;
-    RSSystemProperties::SetInstantRecording(flag);
-    ASSERT_TRUE(flag);
-    flag = false;
-    RSSystemProperties::SetInstantRecording(flag);
+    RSSystemProperties::SetInstantRecording(false);
+    ASSERT_FALSE(RSSystemProperties::GetInstantRecording());
 }
 
 /**
@@ -252,18 +238,7 @@ HWTEST_F(RSSystemPropertiesTest, GetPartialRenderEnabled, TestSize.Level1)
 HWTEST_F(RSSystemPropertiesTest, GetUniPartialRenderEnabled, TestSize.Level1)
 {
     ASSERT_EQ(
-        RSSystemProperties::GetUniPartialRenderEnabled(), PartialRenderType::SET_DAMAGE_AND_DROP_OP_NOT_VISIBLEDIRTY);
-}
-
-/**
- * @tc.name: GetRenderNodeLazyLoadEnabled
- * @tc.desc: Test GetRenderNodeLazyLoadEnabled default return
- * @tc.type: FUNC
- * @tc.require: issue20607
- */
-HWTEST_F(RSSystemPropertiesTest, GetRenderNodeLazyLoadEnabled, TestSize.Level1)
-{
-    ASSERT_EQ(RSSystemProperties::GetRenderNodeLazyLoadEnabled(), true);
+        RSSystemProperties::GetUniPartialRenderEnabled(), PartialRenderType::SET_DAMAGE_AND_CLIP_AND_DROP_OP);
 }
 
 /**
@@ -399,17 +374,6 @@ HWTEST_F(RSSystemPropertiesTest, GetRSEventProperty, TestSize.Level1)
 HWTEST_F(RSSystemPropertiesTest, GetHighContrastStatus, TestSize.Level1)
 {
     ASSERT_FALSE(RSSystemProperties::GetHighContrastStatus());
-}
-
-/**
- * @tc.name: GetDrmEnabled
- * @tc.desc: GetDrmEnabled Test
- * @tc.type:FUNC
- * @tc.require: issueI9JZWC
- */
-HWTEST_F(RSSystemPropertiesTest, GetDrmEnabled, TestSize.Level1)
-{
-    ASSERT_TRUE(RSSystemProperties::GetDrmEnabled());
 }
 
 /**
@@ -629,6 +593,21 @@ HWTEST_F(RSSystemPropertiesTest, GetAnimationScale, TestSize.Level1)
 HWTEST_F(RSSystemPropertiesTest, GetAnimationDelayOptimizeEnabled, TestSize.Level1)
 {
     ASSERT_TRUE(RSSystemProperties::GetAnimationDelayOptimizeEnabled());
+}
+
+/**
+ * @tc.name: GetEDRCanvasReplaceEnabled
+ * @tc.desc: GetEDRCanvasReplaceEnabled Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9JZWC
+ */
+HWTEST_F(RSSystemPropertiesTest, GetEDRCanvasReplaceEnabledTest, TestSize.Level1)
+{
+    auto ret = system::GetParameter("rosen.EDRCanvasReplace.enabled", "0");
+    system::SetParameter("rosen.EDRCanvasReplace.enabled", "1");
+    EXPECT_TRUE(RSSystemProperties::GetEDRCanvasReplaceEnabled());
+    system::SetParameter("rosen.EDRCanvasReplace.enabled", ret);
+    EXPECT_FALSE(RSSystemProperties::GetEDRCanvasReplaceEnabled());
 }
 
 /**
@@ -889,17 +868,6 @@ HWTEST_F(RSSystemPropertiesTest, GetWideColorSpaceEnabled, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSkipUnpremulEnabled
- * @tc.desc: GetSkipUnpremulEnabled Test
- * @tc.type:FUNC
- * @tc.require: issueI9JZWC
- */
-HWTEST_F(RSSystemPropertiesTest, GetSkipUnpremulEnabled, TestSize.Level1)
-{
-    ASSERT_TRUE(RSSystemProperties::GetSkipUnpremulEnabled());
-}
-
-/**
  * @tc.name: GetUIFirstDebugEnabled
  * @tc.desc: GetUIFirstDebugEnabled Test
  * @tc.type:FUNC
@@ -992,7 +960,7 @@ HWTEST_F(RSSystemPropertiesTest, GetASTCEnabled, TestSize.Level1)
  */
 HWTEST_F(RSSystemPropertiesTest, GetCachedBlurPartialRenderEnabled, TestSize.Level1)
 {
-    ASSERT_FALSE(RSSystemProperties::GetCachedBlurPartialRenderEnabled());
+    ASSERT_TRUE(RSSystemProperties::GetCachedBlurPartialRenderEnabled());
 }
 
 /**
@@ -1037,14 +1005,18 @@ HWTEST_F(RSSystemPropertiesTest, WatchSystemProperty, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsPhoneType
- * @tc.desc: IsPhoneType Test
+ * @tc.name: RemoveWatchSystemProperty
+ * @tc.desc: RemoveWatchSystemProperty Test
  * @tc.type:FUNC
- * @tc.require: issueI9JZWC
  */
-HWTEST_F(RSSystemPropertiesTest, IsPhoneType, TestSize.Level1)
+HWTEST_F(RSSystemPropertiesTest, RemoveWatchSystemProperty, TestSize.Level1)
 {
-    ASSERT_FALSE(RSSystemProperties::IsPhoneType());
+    OnSystemPropertyChanged func = [](const char*, const char*, void*) {};
+    int context = 1;
+    ASSERT_EQ(RSSystemProperties::WatchSystemProperty(
+        std::string("noNameRemove").c_str(), func, &context), 0);
+    ASSERT_EQ(RSSystemProperties::RemoveWatchSystemProperty(
+        std::string("noNameRemove").c_str(), func, &context), 0);
 }
 
 /**
@@ -1099,7 +1071,6 @@ HWTEST_F(RSSystemPropertiesTest, GetSingleFrameComposerCanvasNodeEnabled, TestSi
  */
 HWTEST_F(RSSystemPropertiesTest, GetSubTreePrepareCheckType, TestSize.Level1)
 {
-    EXPECT_FALSE(RSSystemProperties::GetSecurityPermissionCheckEnabled());
     EXPECT_TRUE(RSSystemProperties::GetEffectMergeEnabled());
     EXPECT_FALSE(RSSystemProperties::GetDumpUICaptureEnabled());
     EXPECT_FALSE(RSSystemProperties::GetDumpUIPixelmapEnabled());
@@ -1233,6 +1204,20 @@ HWTEST_F(RSSystemPropertiesTest, GetScaleImageAsyncEnabledTest, TestSize.Level1)
     system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "1");
     EXPECT_TRUE(RSSystemProperties::GetScaleImageAsyncEnabled());
     system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", ret);
+}
+
+/**
+ * @tc.name: GetMemoryWatermarkEnabled
+ * @tc.desc: GetMemoryWatermarkEnabledTest
+ * @tc.type: FUNC
+ * @tc.require: issuesICQ74B
+ */
+HWTEST_F(RSSystemPropertiesTest, GetMemoryWatermarkEnabledTest, TestSize.Level1)
+{
+    system::SetParameter("resourceschedule.memmgr.min.memmory.watermark", "true");
+    EXPECT_FALSE(RSSystemProperties::GetMemoryWatermarkEnabled());
+    system::SetParameter("resourceschedule.memmgr.min.memmory.watermark", "false");
+    EXPECT_TRUE(RSSystemProperties::GetMemoryWatermarkEnabled());
 }
 
 /**

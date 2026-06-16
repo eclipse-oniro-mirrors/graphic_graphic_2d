@@ -50,7 +50,8 @@ public:
 
     const std::shared_ptr<RSRenderNode> GetAnimationFallbackNode() const;
 
-    const std::string GetSelfDrawSurfaceNameByPid(pid_t nodePid) const;
+
+    std::string GetSelfDrawSurfaceNameByPidAndUniqueId(pid_t nodePid, uint64_t uniqueId);
 
     bool ContainPid(pid_t pid) const;
     // On remote died, the instance root node will be directly removed from the tree,
@@ -77,6 +78,7 @@ public:
     NodeId GetNegativeScreenNodeId() const;
     void ObtainScreenLockWindowNodeId(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
     void ObtainLauncherNodeId(const std::shared_ptr<RSSurfaceRenderNode> surfaceNode);
+    size_t GetNodeCountByPid(pid_t pid) const;
 
     uint32_t GetVisibleLeashWindowCount() const;
     uint64_t GetSize() const;
@@ -86,6 +88,16 @@ public:
 
     bool AttachToDisplay(
         std::shared_ptr<RSSurfaceRenderNode> surfaceRenderNode, ScreenId screenId, bool toContainer) const;
+    void RegisterNeedAttachedNode(std::shared_ptr<RSSurfaceRenderNode> surfaceRenderNode);
+    const std::vector<std::shared_ptr<RSSurfaceRenderNode>>& GetNeedAttachedNode() const
+    {
+        return needAttachedNode_;
+    }
+
+    void ClearNeedAttachedNode()
+    {
+        needAttachedNode_.clear();
+    }
 
 private:
     explicit RSRenderNodeMap();
@@ -120,6 +132,7 @@ private:
     void CollectSelfDrawingNodeOfSubTree(std::vector<NodeId>& vec, const std::shared_ptr<RSBaseRenderNode> rootNode);
     std::unordered_set<NodeId> uiExtensionSurfaceNodes_;
     mutable std::mutex uiExtensionSurfaceNodesMutex_;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> needAttachedNode_;
 
     friend class RSContext;
     friend class RSMainThread;

@@ -35,6 +35,9 @@ static const std::string FILE_NAME = "/system/fonts/visibility_list.json";
 static const std::string TEST_FONT_PATH = "/system/fonts/NotoSans[wdth,wght].ttf";
 static const std::string TEST_TTC_PATH = "/system/fonts/NotoSansCJK-Regular.ttc";
 static const std::string NON_EXISTENT_PATH = "/system/fonts/nonexistent.ttf";
+static const std::string VARIABLE_FONT_PATH = "/system/fonts/NotoSansLisu[wght].ttf";
+static const std::string UNVARIABLE_FONT_PATH = "/system/fonts/NotoSansLycian-Regular.ttf";
+static const std::string DUAL_AXIS_VARIABLE_FONT_PATH = "/system/fonts/NotoSansTamil[wdth,wght].ttf";
 
 class FontParserTest : public testing::Test {
 };
@@ -111,7 +114,6 @@ HWTEST_F(FontParserTest, FontConfigTest1, TestSize.Level0)
     auto info = fontConfigJson.GetFontConfigJsonInfo();
     ASSERT_NE(info, nullptr);
     EXPECT_EQ(info->fontDirSet.size(), 1);
-    fontConfigJson.Dump();
 }
 
 /**
@@ -131,7 +133,6 @@ HWTEST_F(FontParserTest, FontConfigTest2, TestSize.Level0)
         std::string end = it.second.substr(it.second.size() - 3, 3);
         EXPECT_TRUE(end == "ttf" || end == "oft" || end == "ttc");
     }
-    fontConfigJson.Dump();
 }
 
 /**
@@ -855,6 +856,665 @@ HWTEST_F(FontParserTest, FillFontDescriptorWithLocalInfoWithDifferentSystemLangT
     EXPECT_STREQ(originalLang.c_str(), Global::I18n::LocaleConfig::GetSystemLanguage().c_str());
 }
 
+/**
+ * @tc.name: FillFontDescriptorWithFallbackTest
+ * @tc.desc: Test filling font descriptor with fallback mechanism
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithFallbackTest, TestSize.Level0)
+{
+    FontParser fontParser;
+
+    // Test case 1: All fields are empty, should be filled by fallback
+    std::ifstream testFile(TEST_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(TEST_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    fontParser.FillFontDescriptorWithFallback(typeface, desc);
+
+    // Verify all fields are filled
+    EXPECT_FALSE(desc.localFamilyName.empty());
+    EXPECT_FALSE(desc.localSubFamilyName.empty());
+    EXPECT_FALSE(desc.localFullName.empty());
+    EXPECT_FALSE(desc.localPostscriptName.empty());
+    EXPECT_FALSE(desc.version.empty());
+    EXPECT_FALSE(desc.manufacture.empty());
+    EXPECT_FALSE(desc.copyright.empty());
+    EXPECT_FALSE(desc.trademark.empty());
+    EXPECT_FALSE(desc.license.empty());
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithFallbackWithPrefilledFieldsTest
+ * @tc.desc: Test that fallback does not overwrite already filled fields
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithFallbackWithPrefilledFieldsTest, TestSize.Level0)
+{
+    FontParser fontParser;
+
+    std::ifstream testFile(TEST_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(TEST_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    // Pre-fill some fields with custom values
+    desc.localFamilyName = "CustomFamily";
+    desc.localFullName = "CustomFullName";
+    desc.version = "CustomVersion";
+    desc.manufacture = "CustomManufacture";
+
+    fontParser.FillFontDescriptorWithFallback(typeface, desc);
+
+    // Pre-filled fields should remain unchanged
+    EXPECT_EQ(desc.localFamilyName, "CustomFamily");
+    EXPECT_EQ(desc.localFullName, "CustomFullName");
+    EXPECT_EQ(desc.version, "CustomVersion");
+    EXPECT_EQ(desc.manufacture, "CustomManufacture");
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithFallbackWithNullptrTest
+ * @tc.desc: Test filling font descriptor with nullptr typeface
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithFallbackWithNullptrTest, TestSize.Level0)
+{
+    FontParser fontParser;
+
+    FontParser::FontDescriptor desc;
+    desc.localFamilyName = "InitialValue";
+
+    // Should not crash, fields should remain unchanged
+    fontParser.FillFontDescriptorWithFallback(nullptr, desc);
+
+    EXPECT_EQ(desc.localFamilyName, "InitialValue");
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithFallbackPartialEmptyTest
+ * @tc.desc: Test fallback with partially filled descriptor
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithFallbackPartialEmptyTest, TestSize.Level0)
+{
+    FontParser fontParser;
+
+    std::ifstream testFile(TEST_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(TEST_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    // Only fill some fields
+    desc.localFamilyName = "ExistingFamily";
+    desc.localFullName = "ExistingFullName";
+
+    fontParser.FillFontDescriptorWithFallback(typeface, desc);
+
+    // Pre-filled fields should not be overwritten
+    EXPECT_EQ(desc.localFamilyName, "ExistingFamily");
+    EXPECT_EQ(desc.localFullName, "ExistingFullName");
+
+    // Empty fields should be filled
+    EXPECT_FALSE(desc.localSubFamilyName.empty());
+    EXPECT_FALSE(desc.localPostscriptName.empty());
+    EXPECT_FALSE(desc.version.empty());
+    EXPECT_FALSE(desc.manufacture.empty());
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithVariationInfoWithNullptrTest
+ * @tc.desc: Test filling font descriptor with variation info when typeface is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithVariationInfoWithNullptrTest, TestSize.Level0)
+{
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en", "zh"};
+
+    // Should not crash with nullptr typeface
+    FontParser::FillFontDescriptorWithVariationInfo(nullptr, desc, bcpTagList);
+
+    // Vectors should remain empty
+    EXPECT_TRUE(desc.variationAxisRecords.empty());
+    EXPECT_TRUE(desc.variationInstanceRecords.empty());
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithVariationInfoWithEmptyBcpTagListTest
+ * @tc.desc: Test filling font descriptor with variation info with empty BCP tag list
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithVariationInfoWithEmptyBcpTagListTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> emptyBcpTagList;
+
+    // Test with a valid font file
+    std::ifstream testFile(TEST_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(TEST_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    // Should not crash with empty BCP tag list
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, emptyBcpTagList);
+
+    // Verify method works correctly with empty BCP tag list
+    // TEST_FONT_PATH is a variable font, so it should have variation records
+    EXPECT_FALSE(desc.variationAxisRecords.empty());
+
+    // Verify all required fields are populated correctly
+    for (const auto& axis : desc.variationAxisRecords) {
+        EXPECT_FALSE(axis.key.empty());
+        EXPECT_GE(axis.maxValue, axis.minValue);
+        EXPECT_GE(axis.defaultValue, axis.minValue);
+        EXPECT_LE(axis.defaultValue, axis.maxValue);
+    }
+
+    for (const auto& instance : desc.variationInstanceRecords) {
+        EXPECT_FALSE(instance.name.empty());
+        EXPECT_FALSE(instance.coordinates.empty());
+        for (const auto& coord : instance.coordinates) {
+            EXPECT_FALSE(coord.axis.empty());
+        }
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithVariationInfoWithNonVariableFontTest
+ * @tc.desc: Test filling font descriptor with variation info for non-variable font
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithVariationInfoWithNonVariableFontTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en", "zh"};
+
+    // Test with a TTC font collection (non-variable font)
+    std::ifstream testFile(TEST_TTC_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(TEST_TTC_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // Non-variable fonts should have empty variation records
+    EXPECT_TRUE(desc.variationAxisRecords.empty());
+    EXPECT_TRUE(desc.variationInstanceRecords.empty());
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FontDescriptorVariationWithVariableFontTest
+ * @tc.desc: Test font descriptor with actual variable font
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FontDescriptorVariationWithVariableFontTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::string variableFontPath = "/system/fonts/HMSymbolVF.ttf";
+    std::ifstream testFile(variableFontPath.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(variableFontPath.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en", "zh-Hans"};
+
+    // Fill with variation info
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // HMSymbolVF.ttf is a variable font, should have variation axes
+    if (!desc.variationAxisRecords.empty()) {
+        // Verify axis structure
+        for (const auto& axis : desc.variationAxisRecords) {
+            EXPECT_FALSE(axis.key.empty());
+            EXPECT_FALSE(axis.name.empty());
+            EXPECT_EQ(axis.maxValue, 900);
+            EXPECT_EQ(axis.defaultValue, 400);
+            EXPECT_EQ(axis.minValue, 40);
+            EXPECT_EQ(axis.flags, 0);
+        }
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithVariationInfoGetValueTest
+ * @tc.desc: Test getting variation instance values from variable font
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithVariationInfoGetValueTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::string variableFontPath = "/system/fonts/HMSymbolVF.ttf";
+    std::ifstream testFile(variableFontPath.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(variableFontPath.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en", "zh-Hans"};
+
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // Verify variation instance records are populated
+    if (!desc.variationInstanceRecords.empty()) {
+        for (const auto& instance : desc.variationInstanceRecords) {
+            EXPECT_FALSE(instance.name.empty());
+            EXPECT_FALSE(instance.coordinates.empty());
+            for (const auto& coord : instance.coordinates) {
+                EXPECT_FALSE(coord.axis.empty());
+            }
+        }
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: FillFontDescriptorWithVariationInfoMultipleLanguagesTest
+ * @tc.desc: Test filling variation info with different BCP tag lists
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, FillFontDescriptorWithVariationInfoMultipleLanguagesTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::string variableFontPath = "/system/fonts/HMSymbolVF.ttf";
+    std::ifstream testFile(variableFontPath.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(variableFontPath.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    // Test with English BCP tag list
+    {
+        FontParser::FontDescriptor desc1;
+        std::vector<std::string> bcpTagList1 = {"en"};
+        FontParser::FillFontDescriptorWithVariationInfo(typeface, desc1, bcpTagList1);
+
+        if (!desc1.variationAxisRecords.empty()) {
+            // Verify structure is populated
+            EXPECT_GT(desc1.variationAxisRecords.size(), 0);
+        }
+    }
+
+    // Test with Chinese BCP tag list
+    {
+        FontParser::FontDescriptor desc2;
+        std::vector<std::string> bcpTagList2 = {"zh-Hans", "zh"};
+        FontParser::FillFontDescriptorWithVariationInfo(typeface, desc2, bcpTagList2);
+
+        if (!desc2.variationAxisRecords.empty()) {
+            // Verify structure is populated
+            EXPECT_GT(desc2.variationAxisRecords.size(), 0);
+        }
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: VariableFontAxisTest
+ * @tc.desc: Test variable font axis information for NotoSansLisu[wght].ttf
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, VariableFontAxisTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::ifstream testFile(VARIABLE_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(VARIABLE_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // NotoSansLisu[wght].ttf is a variable font, should have variation axes
+    EXPECT_FALSE(desc.variationAxisRecords.empty());
+
+    // Should have exactly 1 axis (wght - weight)
+    EXPECT_EQ(desc.variationAxisRecords.size(), 1);
+
+    // Verify the 'wght' (weight) axis
+    const auto& wghtAxis = desc.variationAxisRecords[0];
+    EXPECT_EQ(wghtAxis.key, "wght");
+    EXPECT_EQ(wghtAxis.minValue, 400);
+    EXPECT_EQ(wghtAxis.defaultValue, 400);
+    EXPECT_EQ(wghtAxis.maxValue, 700);
+    EXPECT_EQ(wghtAxis.name, "Weight");
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: VariableFontInstancesTest
+ * @tc.desc: Test variable font instance information for NotoSansLisu[wght].ttf
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, VariableFontInstancesTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::ifstream testFile(VARIABLE_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(VARIABLE_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // NotoSansLisu[wght].ttf should have 4 named instances
+    EXPECT_FALSE(desc.variationInstanceRecords.empty());
+    EXPECT_EQ(desc.variationInstanceRecords.size(), 4);
+
+    // Expected instance data
+    struct ExpectedInstance {
+        std::string name;
+        int wghtValue;
+    };
+    std::vector<ExpectedInstance> expectedInstances = {
+        {"Regular", 400},
+        {"Medium", 500},
+        {"SemiBold", 600},
+        {"Bold", 700}
+    };
+
+    // Verify each instance
+    for (size_t i = 0; i < expectedInstances.size() && i < desc.variationInstanceRecords.size(); ++i) {
+        const auto& instance = desc.variationInstanceRecords[i];
+        const auto& expected = expectedInstances[i];
+
+        EXPECT_EQ(instance.name, expected.name);
+        EXPECT_FALSE(instance.coordinates.empty());
+        EXPECT_EQ(instance.coordinates.size(), 1);
+
+        // Verify wght coordinate value
+        const auto& coord = instance.coordinates[0];
+        EXPECT_EQ(coord.axis, "wght");
+        EXPECT_EQ(coord.value, expected.wghtValue);
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: UnvariableFontNoVariationTest
+ * @tc.desc: Test that non-variable font has no variation information
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, UnvariableFontNoVariationTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::ifstream testFile(UNVARIABLE_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(UNVARIABLE_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // NotoSansLycian-Regular.ttf is not a variable font, should have no variation records
+    EXPECT_TRUE(desc.variationAxisRecords.empty());
+    EXPECT_TRUE(desc.variationInstanceRecords.empty());
+
+    testFile.close();
+}
+
+
+/**
+ * @tc.name: VariableFontChineseLocaleTest
+ * @tc.desc: Test that bcpTagList affects localName but not technical values
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, VariableFontChineseLocaleTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::ifstream testFile(VARIABLE_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(VARIABLE_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    // Get variation info with English locale
+    FontParser::FontDescriptor descEn;
+    std::vector<std::string> bcpTagListEn = {"en"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, descEn, bcpTagListEn);
+
+    // Get variation info with Chinese locale
+    FontParser::FontDescriptor descZh;
+    std::vector<std::string> bcpTagListZh = {"zh-Hans", "zh"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, descZh, bcpTagListZh);
+
+    ASSERT_EQ(descEn.variationAxisRecords.size(), descZh.variationAxisRecords.size());
+    ASSERT_EQ(descEn.variationInstanceRecords.size(), descZh.variationInstanceRecords.size());
+
+    // Font only provides English localized names
+    for (size_t i = 0; i < descEn.variationAxisRecords.size(); ++i) {
+        EXPECT_EQ(descEn.variationAxisRecords[i].name, descZh.variationAxisRecords[i].name);
+        // localName with English locale should be non-empty
+        EXPECT_FALSE(descEn.variationAxisRecords[i].localName.empty());
+        // localName with Chinese locale should be empty (this font has no Chinese names)
+        EXPECT_TRUE(descZh.variationAxisRecords[i].localName.empty());
+    }
+
+    for (size_t i = 0; i < descEn.variationInstanceRecords.size(); ++i) {
+        EXPECT_EQ(descEn.variationInstanceRecords[i].name, descZh.variationInstanceRecords[i].name);
+        EXPECT_FALSE(descEn.variationInstanceRecords[i].localName.empty());
+        EXPECT_TRUE(descZh.variationInstanceRecords[i].localName.empty());
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: DualAxisVariableFontAxisTest
+ * @tc.desc: Test dual-axis variable font axis information for NotoSansTamil[wdth,wght].ttf
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, DualAxisVariableFontAxisTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::ifstream testFile(DUAL_AXIS_VARIABLE_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(DUAL_AXIS_VARIABLE_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // NotoSansTamil[wdth,wght].ttf is a dual-axis variable font
+    EXPECT_FALSE(desc.variationAxisRecords.empty());
+    EXPECT_EQ(desc.variationAxisRecords.size(), 2);
+
+    // Verify the 'wght' (weight) axis
+    const auto& wghtAxis = desc.variationAxisRecords[0];
+    EXPECT_EQ(wghtAxis.key, "wght");
+    EXPECT_EQ(wghtAxis.minValue, 100);
+    EXPECT_EQ(wghtAxis.defaultValue, 400);
+    EXPECT_EQ(wghtAxis.maxValue, 900);
+    EXPECT_EQ(wghtAxis.name, "Weight");
+
+    // Verify the 'wdth' (width) axis
+    const auto& wdthAxis = desc.variationAxisRecords[1];
+    EXPECT_EQ(wdthAxis.key, "wdth");
+    EXPECT_NEAR(wdthAxis.minValue, 62.5, 0.01);
+    EXPECT_EQ(wdthAxis.defaultValue, 100);
+    EXPECT_EQ(wdthAxis.maxValue, 100);
+    EXPECT_EQ(wdthAxis.name, "Width");
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: DualAxisVariableFontInstancesTest
+ * @tc.desc: Test dual-axis variable font instance information for NotoSansTamil[wdth,wght].ttf
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, DualAxisVariableFontInstancesTest, TestSize.Level0)
+{
+    FontParser fontParser;
+    std::ifstream testFile(DUAL_AXIS_VARIABLE_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+
+    auto typeface = Drawing::Typeface::MakeFromFile(DUAL_AXIS_VARIABLE_FONT_PATH.c_str());
+    ASSERT_NE(typeface, nullptr);
+
+    FontParser::FontDescriptor desc;
+    std::vector<std::string> bcpTagList = {"en"};
+    FontParser::FillFontDescriptorWithVariationInfo(typeface, desc, bcpTagList);
+
+    // NotoSansTamil[wdth,wght].ttf should have 9 named instances
+    EXPECT_FALSE(desc.variationInstanceRecords.empty());
+    EXPECT_EQ(desc.variationInstanceRecords.size(), 9);
+
+    // Expected instance data (each instance has 2 coordinates: wght and wdth)
+    struct ExpectedInstance {
+        std::string name;
+        int wghtValue;
+        int wdthValue;
+    };
+    std::vector<ExpectedInstance> expectedInstances = {
+        {"Thin", 100, 100},
+        {"ExtraLight", 200, 100},
+        {"Light", 300, 100},
+        {"Regular", 400, 100},
+        {"Medium", 500, 100},
+        {"SemiBold", 600, 100},
+        {"Bold", 700, 100},
+        {"ExtraBold", 800, 100},
+        {"Black", 900, 100}
+    };
+
+    for (size_t i = 0; i < expectedInstances.size() && i < desc.variationInstanceRecords.size(); ++i) {
+        const auto& instance = desc.variationInstanceRecords[i];
+        const auto& expected = expectedInstances[i];
+
+        EXPECT_EQ(instance.name, expected.name);
+        EXPECT_EQ(instance.coordinates.size(), 2);
+
+        // Find coordinate by axis name instead of relying on position order
+        for (const auto& coord : instance.coordinates) {
+            if (coord.axis == "wght") {
+                EXPECT_EQ(coord.value, expected.wghtValue);
+            } else if (coord.axis == "wdth") {
+                EXPECT_EQ(coord.value, expected.wdthValue);
+            }
+        }
+    }
+
+    testFile.close();
+}
+
+/**
+ * @tc.name: ParserFontDescriptorsFromPathLanguagesTest
+ * @tc.desc: Test languages field from ParserFontDescriptorsFromPath with ttf file
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, ParserFontDescriptorsFromPathLanguagesTest, TestSize.Level0)
+{
+    // Test case 1: Valid font file path
+    std::ifstream testFile(TEST_FONT_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+    testFile.close();
+
+    auto descriptors = FontParser::ParserFontDescriptorsFromPath(TEST_FONT_PATH);
+    ASSERT_EQ(descriptors.size(), 1);
+
+    auto desc = descriptors[0];
+    ASSERT_NE(desc, nullptr);
+    EXPECT_EQ(desc->languages.size(), 56);
+
+    // Test case 2: Invalid font file path
+    auto invalidDescriptors = FontParser::ParserFontDescriptorsFromPath(NON_EXISTENT_PATH);
+    EXPECT_EQ(invalidDescriptors.size(), 0);
+
+    // Test case 3: Empty string path
+    auto emptyDescriptors = FontParser::ParserFontDescriptorsFromPath("");
+    EXPECT_EQ(emptyDescriptors.size(), 0);
+}
+
+/**
+ * @tc.name: ParserFontDescriptorsFromPathFontFeaturesTest
+ * @tc.desc: Test fontFeatures field from ParserFontDescriptorsFromPath with ttc file
+ * @tc.type: FUNC
+ */
+HWTEST_F(FontParserTest, ParserFontDescriptorsFromPathFontFeaturesTest, TestSize.Level0)
+{
+    // Test case 1: Valid font file path
+    std::ifstream testFile(TEST_TTC_PATH.c_str());
+    if (!testFile.is_open()) {
+        GTEST_SKIP();
+    }
+    testFile.close();
+
+    auto descriptors = FontParser::ParserFontDescriptorsFromPath(TEST_TTC_PATH);
+    ASSERT_EQ(descriptors.size(), 10);
+
+    auto desc = descriptors[0];
+    ASSERT_NE(desc, nullptr);
+    EXPECT_EQ(desc->fontFeatures.size(), 27);
+}
 } // namespace TextEngine
 } // namespace Rosen
 } // namespace OHOS

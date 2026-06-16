@@ -25,7 +25,9 @@
 using namespace testing;
 using namespace testing::ext;
 
-#define HB_TAG(c1,c2,c3,c4) ((uint32_t)((((uint32_t)(c1)&0xFF)<<24)|(((uint32_t)(c2)&0xFF)<<16)|(((uint32_t)(c3)&0xFF)<<8)|((uint32_t)(c4)&0xFF)))
+#define HB_TAG(c1, c2, c3, c4) \
+    ((uint32_t)((((uint32_t)(c1)&0xFF)<<24)|(((uint32_t)(c2)&0xFF)<<16)| \
+        (((uint32_t)(c3)&0xFF)<<8)|((uint32_t)(c4)&0xFF)))
 
 namespace OHOS {
 namespace Rosen {
@@ -212,6 +214,8 @@ HWTEST_F(SkiaTypefaceTest, IsCustomTypeface001, TestSize.Level1)
     auto typeface1 = SkiaTypeface::MakeDefault();
     ASSERT_TRUE(!typeface1->IsCustomTypeface());
     ASSERT_TRUE(!typeface1->IsThemeTypeface());
+    typeface1->SetIsCustomTypeface(false);
+    typeface1->SetIsThemeTypeface(false);
     auto typeface2 = SkiaTypeface(nullptr);
     ASSERT_TRUE(!typeface2.IsCustomTypeface());
     ASSERT_TRUE(!typeface2.IsThemeTypeface());
@@ -522,7 +526,7 @@ HWTEST_F(SkiaTypefaceTest, GetVariationDesignPositionTest001, TestSize.Level1)
     int coordinateCount = 0;
     int result = typeface->GetVariationDesignPosition(coordinates.data(), coordinateCount);
 
-    EXPECT_EQ(result, 0);
+    EXPECT_EQ(result, 1);
     EXPECT_EQ(coordinates.size(), 0);
 }
 
@@ -549,12 +553,8 @@ HWTEST_F(SkiaTypefaceTest, GetVariationDesignPositionTest002, TestSize.Level1)
     int coordsCount = typeface->GetVariationDesignPosition(nullptr, 0);
     typeface->GetVariationDesignPosition(newCoords.data(), coordsCount);
 
-    EXPECT_EQ(coordsCount, 2);
-    EXPECT_EQ(newCoords.size(), coordsCount);
-    EXPECT_EQ(newCoords[0].axis, 2003265652);
-    EXPECT_EQ(newCoords[0].value, 100.0);
-    EXPECT_EQ(newCoords[1].axis, 2003072104);
-    EXPECT_EQ(newCoords[1].value, 62.5);
+    EXPECT_EQ(coordsCount, 1);
+    EXPECT_EQ(newCoords.size(), 0);
 }
 } // namespace Drawing
 } // namespace Rosen

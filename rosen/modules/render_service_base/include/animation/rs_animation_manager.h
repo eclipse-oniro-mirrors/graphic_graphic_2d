@@ -52,6 +52,7 @@ public:
     void FilterAnimationByPid(pid_t pid);
     uint32_t GetAnimationsSize();
     pid_t GetAnimationPid() const;
+    const std::unordered_map<AnimationId, std::shared_ptr<RSRenderAnimation>>& GetAnimations() const;
 
     std::tuple<bool, bool, bool> Animate(
         int64_t time, int64_t& minLeftDelayTime, bool nodeIsOnTheTree, RSSurfaceNodeAbilityState abilityState);
@@ -89,6 +90,7 @@ private:
     AnimationId preDrawCmdListAnimationId_;
     friend class RSRenderNode;
     friend class RSRenderCurveAnimation;
+    friend class RSRenderTimeDrivenGroupAnimator;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

@@ -17,6 +17,7 @@
 #define RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H
 
 #include "feature/render_group/rs_render_group_cache.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
 
 #include "common/rs_common_def.h"
 #include "common/rs_occlusion_region.h"
@@ -24,6 +25,7 @@
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_render_node.h"
+#include "pipeline/rs_surface_handler.h"
 #include "property/rs_properties.h"
 #include "screen_manager/screen_types.h"
 #include "utils/matrix.h"
@@ -40,14 +42,6 @@ namespace OHOS::Rosen {
 #define RENDER_RECT_PARAM_TO_STRING(rect) (std::string(#rect "[") + (rect).ToString() + "] ")
 #define RENDER_PARAM_TO_STRING(param) (std::string(#param "[") + (param).ToString() + "] ")
 
-struct DirtyRegionInfoForDFX {
-    RectI oldDirty;
-    RectI oldDirtyInSurface;
-    bool operator==(const DirtyRegionInfoForDFX& rhs) const
-    {
-        return oldDirty == rhs.oldDirty && oldDirtyInSurface == rhs.oldDirtyInSurface;
-    }
-};
 struct RSLayerInfo;
 
 typedef enum {
@@ -57,6 +51,45 @@ typedef enum {
     RS_PARAM_OWNED_BY_DRAWABLE_UIFIRST,
     RS_PARAM_INVALID,
 } RSRenderParamsType;
+
+typedef enum {
+    SURFACE_FPS_DEFAULT,
+    SURFACE_FPS_ADD,
+    SURFACE_FPS_REMOVE,
+} SurfaceFpsOpType;
+
+struct SurfaceFpsOp {
+    uint32_t surfaceFpsOpType = 0;
+    NodeId surfaceNodeId = 0;
+    std::string surfaceName = "";
+    uint64_t uniqueId = 0;
+};
+
+struct PipelineParam {
+    uint64_t frameTimestamp = 0;
+    int64_t actualTimestamp = 0;
+    uint64_t fastComposeTimeStampDiff = 0;
+    uint64_t vsyncId = 0;
+    uint64_t pendingConstraintRelativeTime = 0;
+    uint32_t pendingScreenRefreshRate = 0;
+    bool isForceRefresh = false;
+    bool hasGameScene = false;
+    bool hasLppVideo = false;
+
+    uint32_t SurfaceFpsOpNum = 0;
+    std::vector<SurfaceFpsOp> SurfaceFpsOpList;
+
+    uint32_t GetSurfaceFpsOpNum() const
+    {
+        return static_cast<uint32_t>(SurfaceFpsOpList.size());
+    }
+
+    void AddSurfaceFpsOp(const SurfaceFpsOp& op)
+    {
+        SurfaceFpsOpList.emplace_back(op);
+        SurfaceFpsOpNum = static_cast<uint32_t>(SurfaceFpsOpList.size());
+    }
+};
 
 class RSB_EXPORT RSRenderParams {
 public:
@@ -71,12 +104,6 @@ public:
         MemoryTrack::Instance().UnRegisterNodeMem(ExtractPid(GetId()),
             sizeof(*this), MEMORY_TYPE::MEM_RENDER_DRAWABLE_NODE);
     }
-
-    struct SurfaceParam {
-        int width = 0;
-        int height = 0;
-        GraphicColorGamut colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    };
 
     void SetDirtyType(RSRenderParamsDirtyType dirtyType);
 
@@ -186,6 +213,11 @@ public:
         return childHasVisibleHDRContent_;
     }
 
+    bool SelfOrChildHasHDR() const
+    {
+        return childHasVisibleHDRContent_ || hdrStatus_ != HdrStatus::NO_HDR;
+    }
+
     void SetNodeColorSpace(GraphicColorGamut colorSpace);
 
     GraphicColorGamut GetNodeColorSpace() const
@@ -230,20 +262,9 @@ public:
         return globalAlpha_;
     }
 
-    inline bool NodeGroupHasChildInBlacklist() const
-    {
-        return isNodeGroupHasChildInBlacklist_;
-    }
+    bool NodeGroupHasChildInBlacklist() const;
 
-    inline void SetNodeGroupHasChildInBlacklist(bool isInBlackList)
-    {
-        isNodeGroupHasChildInBlacklist_ = isInBlackList;
-    }
-    
-    inline bool IsSnapshotSkipLayer() const
-    {
-        return isSnapshotSkipLayer_;
-    }
+    void SetNodeGroupHasChildInBlacklist(bool inBlacklist);
 
     inline bool IsLayerDirty() const
     {
@@ -266,21 +287,13 @@ public:
         return childHasVisibleEffect_;
     }
 
+    // used for RenderGroup
     void SetCacheSize(Vector2f size);
-    inline Vector2f GetCacheSize() const
-    {
-        return cacheSize_;
-    }
-
+    Vector2f GetCacheSize() const;
     void SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced);
     bool GetDrawingCacheChanged() const
     {
         return isDrawingCacheChanged_;
-    }
-    void SetForceDisableNodeGroup(bool forceDisable);
-    bool IsForceDisableNodeGroup() const
-    {
-        return isForceDisableNodeGroup_;
     }
     void SetNeedUpdateCache(bool needUpdateCache)
     {
@@ -290,18 +303,32 @@ public:
     {
         return isNeedUpdateCache_;
     }
-
     void SetDrawingCacheType(RSDrawingCacheType cacheType);
     RSDrawingCacheType GetDrawingCacheType() const
     {
         return drawingCacheType_;
     }
-
     bool ExcludedFromNodeGroup(bool isExcluded);
     bool IsExcludedFromNodeGroup() const;
-
     void SetHasChildExcludedFromNodeGroup(bool isExcluded);
     bool HasChildExcludedFromNodeGroup() const;
+    void SetRenderGroupExcludedStateChanged(bool isChanged);
+    bool IsRenderGroupExcludedStateChanged() const;
+    void SetRenderGroupSubTreeDirty(bool isDirty);
+    bool IsRenderGroupSubTreeDirty() const;
+    void SetChildHasTranslateOnSqueeze(bool val);
+    bool ChildHasTranslateOnSqueeze() const;
+    void SetNeedClipHoleForFilter(bool val);
+    bool NeedClipHoleForFilter() const;
+    void SetNeedClearRenderGroupCache(bool needClear);
+    bool NeedClearRenderGroupCache() const;
+    void SetRenderGroupIncludeProperty(bool includeProperty);
+    bool IsRenderGroupIncludeProperty() const;
+    void SetRSFreezeFlag(bool freezeFlag, bool isMarkedByUI = false);
+    bool GetRSFreezeFlag() const;
+    RSRenderGroupCache::RSFreezeFlag GetRSFreezeFlagType() const;
+    bool IsFreezedByUser() const;
+    // !used for RenderGroup
 
     void OpincSetIsSuggest(bool isSuggest);
     bool OpincIsSuggest() const
@@ -326,44 +353,20 @@ public:
         return state;
     }
 
-    void SetDrawingCacheIncludeProperty(bool includeProperty);
-    bool GetDrawingCacheIncludeProperty() const
-    {
-        return drawingCacheIncludeProperty_;
-    }
+    void SetLayerPartRenderEnabled(bool enable);
+    bool GetLayerPartRenderEnabled() const;
 
-    void SetRSFreezeFlag(bool freezeFlag);
-    bool GetRSFreezeFlag() const
-    {
-        return freezeFlag_;
-    }
+    void SetLayerPartRenderCurrentFrameDirtyRegion(const RectI& dirtyRegion);
+    const RectI& GetLayerPartRenderCurrentFrameDirtyRegion() const;
+
     void SetShadowRect(Drawing::Rect rect);
     Drawing::Rect GetShadowRect() const
     {
         return shadowRect_;
     }
 
-    // One-time trigger, needs to be manually reset false in main/RT thread after each sync operation
-    void OnCanvasDrawingSurfaceChange(const std::unique_ptr<RSRenderParams>& target);
-    bool GetCanvasDrawingSurfaceChanged() const
-    {
-        return canvasDrawingNodeSurfaceChanged_;
-    }
-    void SetCanvasDrawingSurfaceChanged(bool changeFlag);
-
-    uint32_t GetCanvasDrawingResetSurfaceIndex() const
-    {
-        return canvasDrawingResetSurfaceIndex_;
-    }
-
-    void SetCanvasDrawingResetSurfaceIndex(uint32_t index);
-
-    SurfaceParam GetCanvasDrawingSurfaceParams()
-    {
-        return surfaceParams_;
-    }
-    void SetCanvasDrawingSurfaceParams(int width, int height,
-        GraphicColorGamut colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    void SetRealShadowRect(const Drawing::Rect& rect);
+    Drawing::Rect GetRealShadowRect() const;
 
     void SetStartingWindowFlag(bool b)
     {
@@ -377,6 +380,13 @@ public:
     bool GetStartingWindowFlag() const
     {
         return startingWindowFlag_;
+    }
+
+    void SetDoubleSidedEnabled(bool isDoubleSided);
+
+    bool GetDoubleSidedEnabled() const
+    {
+        return isDoubleSided_;
     }
 
     bool IsRepaintBoundary() const;
@@ -421,9 +431,11 @@ public:
 
     // overrided surface params
 #ifndef ROSEN_CROSS_PLATFORM
-    virtual void SetBuffer(const sptr<SurfaceBuffer>& buffer, const Rect& damageRect) {}
+    virtual void SetBuffer(const sptr<SurfaceBuffer>& buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect) {}
     virtual sptr<SurfaceBuffer> GetBuffer() const { return nullptr; }
-    virtual void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer) {}
+    virtual void SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount) {}
     virtual sptr<SurfaceBuffer> GetPreBuffer() { return nullptr; }
     virtual void SetAcquireFence(const sptr<SyncFence>& acquireFence) {}
     virtual sptr<SyncFence> GetAcquireFence() const { return nullptr; }
@@ -431,6 +443,14 @@ public:
     {
         static const Rect defaultRect = {};
         return defaultRect;
+    }
+    virtual std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetBufferOwnerCount() const
+    {
+        return nullptr;
+    }
+    virtual std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> GetPreBufferOwnerCount() const
+    {
+        return nullptr;
     }
 #endif
     virtual const RSLayerInfo& GetLayerInfo() const;
@@ -442,6 +462,21 @@ public:
     void SetAbsDrawRect(const RectI& absRect)
     {
         absDrawRect_ = absRect;
+    }
+
+    std::shared_ptr<LayerParams> GetLayerParams()
+    {
+        return layerParams_;
+    }
+
+    void SetLayerParamsIsUnSupportLayer(bool isUnSupportLayer)
+    {
+        if (layerParams_) {
+            layerParams_->isUnSupportLayer = isUnSupportLayer;
+        } else {
+            layerParams_ = std::make_shared<LayerParams>();
+            layerParams_->isUnSupportLayer = isUnSupportLayer;
+        }
     }
 
     // surface params
@@ -487,24 +522,6 @@ public:
     virtual void SetFingerprint(bool hasFingerprint) {}
     // virtual display params
     virtual DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetMirrorSourceDrawable();
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetCloneSourceDrawable() const
-    {
-        return cloneSourceDrawable_;
-    }
-    void SetCloneSourceDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
-    // canvas drawing node
-    virtual bool IsNeedProcess() const { return true; }
-    virtual void SetNeedProcess(bool isNeedProcess) {}
-    virtual bool IsFirstLevelCrossNode() const { return isFirstLevelCrossNode_; }
-    virtual void SetFirstLevelCrossNode(bool firstLevelCrossNode) { isFirstLevelCrossNode_ = firstLevelCrossNode; }
-    CrossNodeOffScreenRenderDebugType GetCrossNodeOffScreenStatus() const
-    {
-        return isCrossNodeOffscreenOn_;
-    }
-    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffScreenOn)
-    {
-        isCrossNodeOffscreenOn_ = isCrossNodeOffScreenOn;
-    }
 
     void SetAbsRotation(float degree)
     {
@@ -525,12 +542,16 @@ public:
         hasUnobscuredUEC_ = flag;
     }
 
-    void SetVirtualScreenWhiteListInfo(const std::unordered_map<ScreenId, bool>& info);
-    const std::unordered_map<ScreenId, bool>& GetVirtualScreenWhiteListInfo() const
+    void SetScreensWithSubTreeWhitelist(const std::unordered_set<ScreenId>& screenIds);
+    const std::unordered_set<ScreenId>& GetScreensWithSubTreeWhitelist() const
     {
-        return hasVirtualScreenWhiteList_;
+        return screensWithSubTreeWhitelist_;
     }
 
+    void AddScreensWithSubTreeWhitelist(const std::unordered_set<ScreenId>& screenIds)
+    {
+        screensWithSubTreeWhitelist_.insert(screenIds.begin(), screenIds.end());
+    }
     // [Attention] Only used in PC window resize scene now
     void SetWindowKeyFrameNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable);
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr GetWindowKeyFrameNodeDrawable();
@@ -538,11 +559,19 @@ public:
     void SetIsOnTheTree(bool isOnTheTree);
     bool GetIsOnTheTree() const;
 
+    virtual bool IsUIFirstLeashAllEnable() const
+    {
+        return false;
+    }
+
+    void SwapRelatedRenderParams(RSRenderParams& relatedRenderParams);
+
 protected:
     bool needSync_ = false;
     std::bitset<RSRenderParamsDirtyType::MAX_DIRTY_TYPE> dirtyType_;
 
 private:
+    void ApplySandboxMatrixToCanvas(RSPaintFilterCanvas& canvas) const;
     NodeId id_;
     RSRenderParamsType paramsType_ = RSRenderParamsType::RS_PARAM_DEFAULT;
     RSRenderNodeType renderNodeType_ = RSRenderNodeType::RS_NODE;
@@ -554,50 +583,40 @@ private:
     // this rect should map display coordination
     RectF localDrawRect_;
     RectI absDrawRect_;
-    Vector2f cacheSize_;
     Gravity frameGravity_ = Gravity::CENTER;
     // default 1.0f means max available headroom
     float hdrBrightness_ = 1.0f;
     HdrStatus hdrStatus_ = HdrStatus::NO_HDR;
     bool childHasVisibleHDRContent_ = false;
     GraphicColorGamut nodeColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
-    bool freezeFlag_ = false;
     bool childHasVisibleEffect_ = false;
     bool childHasVisibleFilter_ = false;
     bool hasSandBox_ = false;
     bool isDrawingCacheChanged_ = false;
-    bool isForceDisableNodeGroup_ = false;
     std::atomic_bool isNeedUpdateCache_ = false;
-    bool drawingCacheIncludeProperty_ = false;
-    bool isNodeGroupHasChildInBlacklist_ = false;
-    bool isSnapshotSkipLayer_ = false;
     bool shouldPaint_ = false;
     bool contentEmpty_  = false;
-    std::atomic_bool canvasDrawingNodeSurfaceChanged_ = false;
-    std::atomic_uint32_t canvasDrawingResetSurfaceIndex_ = 0;
     bool alphaOffScreen_ = false;
     Drawing::Rect shadowRect_;
     RSDrawingCacheType drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     std::unique_ptr<RSRenderGroupCache> renderGroupCache_ = nullptr;
-    DirtyRegionInfoForDFX dirtyRegionInfoForDFX_;
     std::shared_ptr<RSFilter> foregroundFilterCache_ = nullptr;
     bool isOpincSuggestFlag_ = false;
     bool isOpincSupportFlag_ = false;
     bool isOpincRootFlag_ = false;
     bool isOpincStateChanged_ = false;
+    bool isLayerPartRenderEnable_ = false;
+    RectI layerPartRenderCurrentFrameDirtyRegion_;
     bool startingWindowFlag_ = false;
+    bool isDoubleSided_ = true;
     bool needFilter_ = false;
     bool effectNodeShouldPaint_ = false;
     bool hasGlobalCorner_ = false;
     bool hasBlurFilter_ = false;
-    SurfaceParam surfaceParams_;
     NodeId firstLevelNodeId_ = INVALID_NODEID;
     NodeId uifirstRootNodeId_ = INVALID_NODEID;
     NodeId instanceRootNodeId_ = INVALID_NODEID;
     std::string instanceRootNodeName_ = "";
-    bool isFirstLevelCrossNode_ = false;
-    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr cloneSourceDrawable_;
-    CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn_ = CrossNodeOffScreenRenderDebugType::ENABLE;
     // The angle at which the node rotates about the Z-axis
     float absRotation_ = 0.f;
     bool hasUnobscuredUEC_ = false;
@@ -609,7 +628,10 @@ private:
     // used for DFX
     bool isOnTheTree_ = false;
 
-    std::unordered_map<ScreenId, bool> hasVirtualScreenWhiteList_;
+    // used for Layer
+    std::shared_ptr<LayerParams> layerParams_ = nullptr;
+
+    std::unordered_set<ScreenId> screensWithSubTreeWhitelist_;
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_PARAMS_RS_RENDER_PARAMS_H

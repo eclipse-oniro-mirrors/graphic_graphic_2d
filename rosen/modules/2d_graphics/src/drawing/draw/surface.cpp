@@ -193,7 +193,7 @@ void Surface::ClearDrawingArea()
 void Surface::SetHeadroom(float headroom)
 {
     if (!impl_) {
-        LOGD("surfaceImpl SetHeadroom failed impl nullptr");
+        LOGE("surfaceImpl SetHeadroom failed impl nullptr");
         return;
     }
     impl_->SetHeadroom(headroom);
@@ -202,7 +202,7 @@ void Surface::SetHeadroom(float headroom)
 float Surface::GetHeadroom() const
 {
     if (!impl_) {
-        LOGD("surfaceImpl GetHeadroom failed impl nullptr");
+        LOGE("surfaceImpl GetHeadroom failed impl nullptr");
         return 1.0f;
     }
     return impl_->GetHeadroom();
@@ -216,6 +216,20 @@ int Surface::Width() const
 int Surface::Height() const
 {
     return impl_->Height();
+}
+
+TileGranularity Surface::GetRenderAreaGranularity()
+{
+    if (!impl_) {
+        LOGE("surfaceImpl GetRenderAreaGranularity failed impl nullptr");
+        return {0, 0};
+    }
+    return impl_->GetRenderAreaGranularity();
+}
+
+sk_sp<SkSurface> Surface::GetSkSurface() const
+{
+    return impl_->GetSkSurface();
 }
 
 } // namespace Drawing

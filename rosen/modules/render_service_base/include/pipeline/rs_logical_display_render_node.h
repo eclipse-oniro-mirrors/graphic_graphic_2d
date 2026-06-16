@@ -24,7 +24,6 @@
 #include "params/rs_logical_display_render_params.h"
 #include "pipeline/rs_render_node.h"
 
-
 namespace OHOS {
 namespace Rosen {
 class RSB_EXPORT RSLogicalDisplayRenderNode : public RSRenderNode {
@@ -57,9 +56,14 @@ public:
         return screenId_;
     }
 
-    bool IsValidScreenId() const
+    void SetDisplayContentRect(const Rect& contentRect)
     {
-        return screenId_ != INVALID_SCREEN_ID;
+        contentRect_ = contentRect;
+    }
+
+    const Rect& GetDisplayContentRect() const
+    {
+        return contentRect_;
     }
 
     void SetScreenRotation(const ScreenRotation& screenRotation)
@@ -76,6 +80,8 @@ public:
     {
         return screenRotation_;
     }
+
+    bool IsOnlyHDRAnimation();
 
     void IncreaseHDRNode(NodeId id)
     {
@@ -96,20 +102,18 @@ public:
         return hdrNodeMap_;
     }
 
-    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
+    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID, NodeId firstLevelNodeId = INVALID_NODEID,
         NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
         NodeId logicalDisplayNodeId = INVALID_NODEID) override;
-    
+
     // Window Container
     void SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container);
     std::shared_ptr<RSBaseRenderNode> GetWindowContainer() const;
 
-    using ScreenStatusNotifyTask = std::function<void(bool)>;
+    using ScreenSwitchFinishTask = std::function<void(ScreenId)>;
+    static void SetScreenSwitchFinishTask(ScreenSwitchFinishTask task);
 
-    static void SetScreenStatusNotifyTask(ScreenStatusNotifyTask task);
-
-    void NotifyScreenNotSwitching();
+    void NotifyScreenSwitchFinish(ScreenId id);
 
     ScreenRotation GetRotation() const;
     void UpdateRotation();
@@ -133,6 +137,9 @@ public:
     bool GetVirtualScreenMuteStatus() const;
     void SetDisplaySpecialSurfaceChanged(bool displaySpecialSurfaceChanged);
 
+    void SetBootAnimation(bool isBootAnimation) override;
+    bool GetBootAnimation() const override;
+
     RSSpecialLayerManager& GetMultableSpecialLayerMgr();
     const RSSpecialLayerManager& GetSpecialLayerMgr() const;
 
@@ -152,8 +159,8 @@ public:
     CompositeType GetCompositeType() const;
 
     void UpdateFixedSize();
-    uint32_t GetFixedWidth() const;
-    uint32_t GetFixedHeight() const;
+    float GetFixedWidth() const;
+    float GetFixedHeight() const;
 
     Occlusion::Region GetTopSurfaceOpaqueRegion() const;
 
@@ -190,6 +197,7 @@ private:
     void InitRenderParams() override;
 
     ScreenId screenId_ = INVALID_SCREEN_ID;
+    Rect contentRect_;
     std::vector<Occlusion::Rect> topSurfaceOpaqueRects_;
 
     // bounds rotation
@@ -198,8 +206,8 @@ private:
     bool lastRotationChanged_ = false;
     float lastRotation_ = 0.f;
 
-    uint32_t fixedWidth_ = 0;
-    uint32_t fixedHeight_ = 0;
+    float fixedWidth_ = 0;
+    float fixedHeight_ = 0;
     
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation mirrorSourceRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
@@ -217,6 +225,8 @@ private:
     CompositeType compositeType_ = CompositeType::HARDWARE_COMPOSITE;
     bool hasCaptureWindow_ = false;
 
+    bool isBootAnimation_ = false;
+
     bool waitToSetOnTree_ = false;
 
     // Use in virtual screen security exemption
@@ -229,7 +239,7 @@ private:
     // window Container
     std::shared_ptr<RSBaseRenderNode> windowContainer_;
 
-    static inline ScreenStatusNotifyTask screenStatusNotifyTask_ = nullptr;
+    static inline RS_HIDDEN ScreenSwitchFinishTask screenSwitchFinishTask_ = nullptr;
 
     friend class DisplayNodeCommandHelper;
 };

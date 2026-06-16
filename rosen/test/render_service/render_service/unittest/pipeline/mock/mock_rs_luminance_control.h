@@ -31,7 +31,7 @@ public:
     MOCK_METHOD(void, UpdateScreenStatus, (ScreenId screenId, ScreenPowerStatus powerStatus), (override));
     MOCK_METHOD(bool, IsDimmingOn, (ScreenId screenId), (override));
     MOCK_METHOD(void, DimmingIncrease, (ScreenId screenId), (override));
-    MOCK_METHOD(void, SetSdrLuminance, (ScreenId screenId, uint32_t level), (override));
+    MOCK_METHOD(void, SetSdrLuminance, (const RsScreenBrightnessData& brightnessData), (override));
     MOCK_METHOD(uint32_t, GetNewHdrLuminance, (ScreenId screenId), (override));
     MOCK_METHOD(void, SetNowHdrLuminance, (ScreenId screenId, uint32_t level), (override));
     MOCK_METHOD(bool, IsNeedUpdateLuminance, (ScreenId screenId), (override));
@@ -42,7 +42,7 @@ public:
         const float& ratio, HdrStatus hdrStatus), (override));
     MOCK_METHOD(uint32_t, ConvertScalerFromFloatToLevel, (float& scaler), (override, const));
     MOCK_METHOD(float, ConvertScalerFromLevelToFloat, (uint32_t& level), (override, const));
-    using HdrToBrightnessScalerMap = std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
+    using HdrToBrightnessScalerMap = const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
     MOCK_METHOD(void, SetCurDisplayHdrBrightnessScaler,
         (ScreenId screenId, HdrToBrightnessScalerMap& curDisplayHdrBrightnessScaler), (override));
     MOCK_METHOD(bool, IsHdrPictureOn, (), (override));
@@ -53,6 +53,12 @@ public:
     MOCK_METHOD(BrightnessInfo, GetBrightnessInfo, (ScreenId screenId), (override));
     MOCK_METHOD(bool, IsBrightnessInfoChanged, (ScreenId screenId), (override));
     MOCK_METHOD(void, HandleGamutSpecialRender, (std::vector<ScreenColorGamut>& modes), (override));
+    MOCK_METHOD(double, GetConfigScaler, (ScreenId screenId, HdrStatus type), (override, const));
+    MOCK_METHOD(void, SetDualScreenStatus, (ScreenId screenId, DualScreenStatus dualScreenStatus), (override));
+    MOCK_METHOD(float, HdrDimmingProcess, (ScreenId screenId, uint64_t nodeId), (override));
+    MOCK_METHOD(void, HdrDimmingPostProcess, (ScreenId screenId), (override));
+    MOCK_METHOD(int32_t, UpdateMetadataBasedOnScaler, (const sptr<SurfaceBuffer>& input, float scaler,
+        HdrStatus hdrStatus), (override));
 
     bool IsHardwareHdrDisabled(bool checkBrightnessRatio, ScreenId screenId) override;
     bool SetHdrStatus(ScreenId screenId, HdrStatus curDisplayHdrStatus) override;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,22 +14,56 @@
  */
 
 #include "feature/opinc/rs_opinc_cache.h"
-#ifdef DDGR_ENABLE_FEATURE_OPINC_DFX
-#include "string_utils.h"
-#endif
-#include "common/rs_optional_trace.h"
 
 namespace OHOS {
 namespace Rosen {
+RSOpincCache::RSOpincCache() = default;
 
-constexpr int64_t MIN_REUSECOUNT = 10;
-constexpr int64_t MAX_REUSECOUNT = 20;
-constexpr int32_t MAX_TRY_TIMES = 3;
-constexpr int32_t MIN_UNCHANGE_COUNT = 3;
-constexpr int32_t MAX_UNCHANGE_COUNT = 100;
-constexpr int32_t INIT_WAIT_COUNT = 60;
+RSOpincCache::~RSOpincCache() = default;
 
-// mark stable node
+bool RSOpincCache::GetSubTreeSupportFlag() const
+{
+    return subTreeSupportFlag_;
+}
+
+void RSOpincCache::SetSubTreeSupportFlag(bool supportFlag)
+{
+    subTreeSupportFlag_ = supportFlag;
+}
+
+void RSOpincCache::UpdateSubTreeSupportFlag(bool childSupportFlag, bool childRootFlag, bool groupTypeIsNone)
+{
+    subTreeSupportFlag_ = subTreeSupportFlag_ && childSupportFlag && !childRootFlag && groupTypeIsNone;
+}
+
+bool RSOpincCache::GetCurNodeTreeSupportFlag() const
+{
+    return curNodeTreeSupportFlag_;
+}
+
+void RSOpincCache::SetCurNodeTreeSupportFlag(bool curNodeTreeSupportFlag)
+{
+    curNodeTreeSupportFlag_ = curNodeTreeSupportFlag;
+}
+
+bool RSOpincCache::HasUnstableOpincNode() const
+{
+    return hasUnstableOpincNode_;
+}
+
+void RSOpincCache::SetHasUnstableOpincNode(bool hasUnstableOpincNode)
+{
+    hasUnstableOpincNode_ = hasUnstableOpincNode;
+}
+
+void RSOpincCache::UpdateSubTreeHasUnstableOpincNode(RSOpincCache& childOpincCache,
+    bool childRootHasUnstableOpincNode)
+{
+    childOpincCache.SetHasUnstableOpincNode(
+        childOpincCache.HasUnstableOpincNode() || childRootHasUnstableOpincNode);
+    SetHasUnstableOpincNode(HasUnstableOpincNode() || childOpincCache.HasUnstableOpincNode());
+}
+
 void RSOpincCache::OpincSetInAppStateStart(bool& unchangeMarkInApp)
 {
     if (unchangeMarkInApp) {
@@ -47,140 +81,34 @@ void RSOpincCache::OpincSetInAppStateEnd(bool& unchangeMarkInApp)
     }
 }
 
-void RSOpincCache::OpincQuickMarkStableNode(bool& unchangeMarkInApp, bool& unchangeMarkEnable,
-    bool isSelfDirty)
+void RSOpincCache::MarkMaterialNode(bool isMaterialNode)
 {
-    if (!unchangeMarkInApp) {
-        return;
-    }
-    if (IsSuggestOpincNode() && !unchangeMarkEnable) {
-        isUnchangeMarkEnable_ = true;
-        unchangeMarkEnable = true;
-    }
-    if (!unchangeMarkEnable) {
-        return;
-    }
-    if (isSelfDirty) {
-        NodeCacheStateChange(NodeChangeType::SELF_DIRTY);
-    } else if (nodeCacheState_ != NodeCacheState::STATE_UNCHANGE) {
-        NodeCacheStateChange(NodeChangeType::KEEP_UNCHANGE);
-    } else {
-        if (waitCount_ > 0) {
-            waitCount_--;
-        } else {
-            unchangeCountUpper_ = MIN_UNCHANGE_COUNT;
-        }
-    }
+    isMaterialNode_ = isMaterialNode;
 }
 
-void RSOpincCache::UpdateSubTreeSupportFlag(bool childSupportFlag, bool childRootFlag, bool groupTypeIsNone)
+bool RSOpincCache::IsMaterialNode() const
 {
-    subTreeSupportFlag_ = subTreeSupportFlag_ && childSupportFlag && !childRootFlag && groupTypeIsNone;
+    return isMaterialNode_;
 }
 
-void RSOpincCache::OpincUpdateRootFlag(bool& unchangeMarkEnable, bool isOpincNodeSupportFlag)
+void RSOpincCache::SetLayerPartRenderDirtyFlag(bool dirtyFlag)
 {
-    if (unchangeMarkEnable) {
-        if (IsOpincUnchangeState() && isOpincNodeSupportFlag) {
-            isOpincRootFlag_ = true;
-        }
-    }
-    if (isUnchangeMarkEnable_) {
-        isUnchangeMarkEnable_ = false;
-        unchangeMarkEnable = false;
-    }
+    layerPartRenderDirtyFlag_ = dirtyFlag;
 }
 
-bool RSOpincCache::IsOpincUnchangeState()
+bool RSOpincCache::GetLayerPartRenderDirtyFlag() const
 {
-    return (nodeCacheState_ == NodeCacheState::STATE_UNCHANGE) && IsSuggestOpincNode();
+    return layerPartRenderDirtyFlag_;
 }
 
-bool RSOpincCache::IsMarkedRenderGroup(bool groupTypeNotNone)
+void RSOpincCache::SetLayerPartRenderOldAbsDrawRect(const RectI& oldAbsDrawRect)
 {
-    return groupTypeNotNone || isOpincRootFlag_;
+    oldAbsDrawRect_ = oldAbsDrawRect;
 }
 
-bool RSOpincCache::OpincForcePrepareSubTree(bool autoCacheEnable, bool isDirty, bool supportFlag)
+const RectI& RSOpincCache::GetLayerPartRenderOldAbsDrawRect() const
 {
-    if (!autoCacheEnable) {
-        return false;
-    }
-    // Non-root nodes that support opinc and are marked by arkui need to forcibly prepare subtrees
-    // until they are marked as root
-    return (!isDirty) && IsSuggestOpincNode() && supportFlag && !isOpincRootFlag_;
-}
-
-bool RSOpincCache::OpincGetRootFlag() const
-{
-    return isOpincRootFlag_;
-}
-
-bool RSOpincCache::GetCacheChangeFlag() const
-{
-    return cacheChangeFlag_;
-}
-
-// arkui mark
-void RSOpincCache::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
-{
-    isSuggestOpincNode_ = isOpincNode;
-    isNeedCalculate_ = isNeedCalculate;
-    NodeCacheStateReset(NodeCacheState::STATE_CHANGE);
-}
-
-bool RSOpincCache::IsSuggestOpincNode() const
-{
-    return isSuggestOpincNode_;
-}
-
-void RSOpincCache::NodeCacheStateChange(NodeChangeType type)
-{
-#ifdef DDGR_ENABLE_FEATURE_OPINC_DFX
-    RS_TRACE_NAME_FMT("NodeCacheStateChange type:%d r%d unc:%d uncU:%d",
-        type, nodeCacheState_, unchangeCount_, unchangeCountUpper_);
-#endif
-    switch (type) {
-        case NodeChangeType::KEEP_UNCHANGE:
-            unchangeCount_++;
-            if (unchangeCount_ > unchangeCountUpper_) {
-                nodeCacheState_ = NodeCacheState::STATE_UNCHANGE;
-            }
-            cacheChangeFlag_ = false;
-            break;
-        case NodeChangeType::SELF_DIRTY:
-            NodeCacheStateReset(NodeCacheState::STATE_CHANGE);
-            break;
-    }
-}
-
-void RSOpincCache::SetCacheStateByRetrytime()
-{
-    tryCacheTimes_++;
-    if (unchangeCountUpper_ > MAX_UNCHANGE_COUNT) {
-        return;
-    }
-    if (tryCacheTimes_ < MAX_TRY_TIMES) {
-        unchangeCountUpper_ = unchangeCountUpper_ + MIN_REUSECOUNT;
-        return;
-    }
-    unchangeCountUpper_ = unchangeCountUpper_ + MAX_REUSECOUNT;
-}
-
-void RSOpincCache::NodeCacheStateReset(NodeCacheState nodeCacheState)
-{
-    if (nodeCacheState_ == NodeCacheState::STATE_UNCHANGE) {
-        waitCount_ = INIT_WAIT_COUNT;
-    }
-    nodeCacheState_ = nodeCacheState;
-    unchangeCount_ = 0;
-    isUnchangeMarkInApp_ = false;
-    isUnchangeMarkEnable_ = false;
-    if (OpincGetRootFlag()) {
-        SetCacheStateByRetrytime();
-    }
-    cacheChangeFlag_ = true;
-    isOpincRootFlag_ = false;
+    return oldAbsDrawRect_;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -27,16 +27,18 @@
 
 namespace OHOS {
 namespace Rosen {
-RSSpringAnimation::RSSpringAnimation(std::shared_ptr<RSPropertyBase> property,
-    const std::shared_ptr<RSPropertyBase>& byValue) : RSPropertyAnimation(property)
+RSSpringAnimation::RSSpringAnimation(const std::shared_ptr<RSUIContext>& rsUIContext,
+    std::shared_ptr<RSPropertyBase> property, const std::shared_ptr<RSPropertyBase>& byValue)
+    : RSPropertyAnimation(rsUIContext, property)
 {
     isDelta_ = true;
     byValue_ = byValue;
 }
 
-RSSpringAnimation::RSSpringAnimation(std::shared_ptr<RSPropertyBase> property,
-    const std::shared_ptr<RSPropertyBase>& startValue, const std::shared_ptr<RSPropertyBase>& endValue)
-    : RSPropertyAnimation(property)
+RSSpringAnimation::RSSpringAnimation(const std::shared_ptr<RSUIContext>& rsUIContext,
+    std::shared_ptr<RSPropertyBase> property, const std::shared_ptr<RSPropertyBase>& startValue,
+    const std::shared_ptr<RSPropertyBase>& endValue)
+    : RSPropertyAnimation(rsUIContext, property)
 {
     isDelta_ = false;
     startValue_ = startValue;
@@ -60,7 +62,7 @@ const RSAnimationTimingCurve& RSSpringAnimation::GetTimingCurve() const
 void RSSpringAnimation::SetZeroThreshold(const float zeroThreshold)
 {
     constexpr float ZERO = 0.0f;
-    if (zeroThreshold_ < ZERO) {
+    if (zeroThreshold < ZERO) {
         ROSEN_LOGE("RSSpringAnimation::SetZeroThreshold: invalid threshold.");
         return;
     }
@@ -133,7 +135,7 @@ void RSSpringAnimation::StartUIAnimation(const std::shared_ptr<RSRenderSpringAni
     auto prevAnimation = modifierManager->QuerySpringAnimation(propertyId);
     modifierManager->RegisterSpringAnimation(propertyId, GetId());
     // stop running the previous animation and inherit velocity from it
-    animation->InheritSpringAnimation(prevAnimation);
+    animation->InheritSpringAnimation(prevAnimation, true);
 }
 
 bool RSSpringAnimation::GetIsLogicallyFinishCallback() const

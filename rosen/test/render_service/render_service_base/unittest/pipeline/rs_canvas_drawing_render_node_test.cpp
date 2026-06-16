@@ -18,9 +18,11 @@
 #include "common/rs_obj_geometry.h"
 #include "draw/canvas.h"
 #include "modifier_ng/rs_render_modifier_ng.h"
+#include "params/rs_canvas_drawing_render_params.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 #include "pipeline/rs_context.h"
+#include "pipeline/rs_simple_draw_cmd_list.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "property/rs_properties_painter.h"
 
@@ -28,9 +30,6 @@ using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
-constexpr size_t DRAWCMDLIST_DUMP_LIMIT = 10; // limit of the DrawCmdListDump.
-constexpr size_t OP_DUMP_LIMIT_PER_CMD = 15; // limit of the DrawOpItemsDump.
-
 class RSCanvasDrawingRenderNodeDrawableAdapterTest : public DrawableV2::RSRenderNodeDrawableAdapter {
 public:
     explicit RSCanvasDrawingRenderNodeDrawableAdapterTest(std::shared_ptr<const RSRenderNode> node)
@@ -44,7 +43,7 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
-    static inline NodeId nodeId_ = 0;
+    static inline NodeId id;
     static inline std::weak_ptr<RSContext> context = {};
     static inline RSPaintFilterCanvas* canvas_;
     static inline Drawing::Canvas drawingCanvas_;
@@ -64,37 +63,6 @@ void RSCanvasDrawingRenderNodeTest::TearDownTestCase()
 void RSCanvasDrawingRenderNodeTest::SetUp() {}
 void RSCanvasDrawingRenderNodeTest::TearDown() {}
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: ProcessRenderContentsTest
- * @tc.desc: test results of ProcessRenderContents
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, ProcessRenderContentsTest, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    std::weak_ptr<RSContext> context;
-    RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId, context);
-    rsCanvasDrawingRenderNode.ProcessRenderContents(*canvas_);
-
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-    modifierCast->drawStyle_ = RSModifierType::BOUNDS;
-    rsCanvasDrawingRenderNode.boundsModifier_ = modifier;
-    rsCanvasDrawingRenderNode.AddGeometryModifier(modifier);
-    rsCanvasDrawingRenderNode.surface_ = std::make_shared<Drawing::Surface>();
-    rsCanvasDrawingRenderNode.image_ = std::make_shared<Drawing::Image>();
-    rsCanvasDrawingRenderNode.ProcessRenderContents(*canvas_);
-    ASSERT_FALSE(rsCanvasDrawingRenderNode.isNeedProcess_);
-}
-#endif
-
 /**
  * @tc.name: ProcessRenderContentsOtherTest
  * @tc.desc: test results of ProcessRenderContents other case
@@ -106,11 +74,13 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ProcessRenderContentsOtherTest, TestSize
     NodeId nodeId = 1;
     RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId);
     // case 1: can GetSizeFromDrawCmdModifiers
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>(
+        Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
     drawCmdList->SetWidth(1024);
     drawCmdList->SetHeight(1090);
-    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    property->GetRef() = drawCmdList;
+    auto simpleCmdList = RSSimpleDrawCmdList::CreateFromDrawCmdList(drawCmdList);
+    auto property = std::make_shared<RSRenderProperty<SimpleDrawCmdListPtr>>();
+    property->GetRef() = simpleCmdList;
     auto modifier = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
     RSRenderNode::ModifierNGContainer vecModifier = { modifier };
@@ -169,6 +139,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ResetSurfaceTest002, TestSize.Level1)
     NodeId rootNodeId = 2;
     auto context = std::make_shared<RSContext>();
     RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId, context);
+    rsCanvasDrawingRenderNode.stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(nodeId);
     auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(rootNodeId);
     surfaceNode->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
     context->GetMutableNodeMap().RegisterRenderNode(surfaceNode);
@@ -178,8 +149,9 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ResetSurfaceTest002, TestSize.Level1)
         RSBaseRenderNode::ReinterpretCast<RSSurfaceRenderNode>(rsCanvasDrawingRenderNode.GetInstanceRootNode());
     EXPECT_NE(appSurfaceNode, nullptr);
     rsCanvasDrawingRenderNode.ResetSurface(width, height, height);
-    ASSERT_EQ(rsCanvasDrawingRenderNode.stagingRenderParams_->surfaceParams_.colorSpace,
-        GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    auto stagingRenderParams =
+        static_cast<RSCanvasDrawingRenderParams*>(rsCanvasDrawingRenderNode.stagingRenderParams_.get());
+    ASSERT_EQ(stagingRenderParams->surfaceParams_.colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
 }
 
 /**
@@ -197,70 +169,17 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetSizeFromDrawCmdModifiersTest001, Test
     RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId, context);
     EXPECT_FALSE(rsCanvasDrawingRenderNode.GetSizeFromDrawCmdModifiers(width, height));
 
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>(1024, 1090);
-    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    property->GetRef() = drawCmdList;
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(1024, 1090,
+        Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+    auto property = std::make_shared<RSRenderProperty<SimpleDrawCmdListPtr>>();
+    auto simpleCmdList = RSSimpleDrawCmdList::CreateFromDrawCmdList(drawCmdList);
+    property->GetRef() = simpleCmdList;
     auto modifier = std::make_shared<ModifierNG::RSCustomRenderModifier<ModifierNG::RSModifierType::CONTENT_STYLE>>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::CONTENT_STYLE, property);
     RSRenderNode::ModifierNGContainer vecModifier = { modifier };
     rsCanvasDrawingRenderNode.modifiersNG_[ModifierNG::RSModifierType::CONTENT_STYLE] = vecModifier;
     EXPECT_TRUE(rsCanvasDrawingRenderNode.GetSizeFromDrawCmdModifiers(width, height));
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: GetSizeFromDrawCmdModifiersTest002
- * @tc.desc: test results of GetSizeFromDrawCmdModifiers
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetSizeFromDrawCmdModifiersTest002, TestSize.Level1)
-{
-    int width = -1;
-    int height = -1;
-    NodeId nodeId = 1;
-    std::weak_ptr<RSContext> context;
-    RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId, context);
-
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    modifierCast->SetType(RSModifierType::CONTENT_STYLE);
-    std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-    rsCanvasDrawingRenderNode.modifiers_.emplace(modifier->GetPropertyId(), modifier);
-    auto res = rsCanvasDrawingRenderNode.GetSizeFromDrawCmdModifiers(width, height);
-    ASSERT_FALSE(res);
-
-    width = 1;
-    height = 1;
-    ASSERT_FALSE(rsCanvasDrawingRenderNode.GetSizeFromDrawCmdModifiers(width, height));
-}
-
-/**
- * @tc.name: GetSizeFromDrawCmdModifiersTest003
- * @tc.desc: test results of GetSizeFromDrawCmdModifiers
- * @tc.type: FUNC
- * @tc.require: issueI9W0GK
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetSizeFromDrawCmdModifiersTest003, TestSize.Level1)
-{
-    int32_t width = 0;
-    int32_t height = 0;
-    NodeId nodeId = 1;
-    RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId);
-    EXPECT_FALSE(rsCanvasDrawingRenderNode.GetSizeFromDrawCmdModifiers(width, height));
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>(width, height);
-    auto property = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    property->GetRef() = drawCmdList;
-    std::list<std::shared_ptr<RSRenderModifier>> listModifier { std::make_shared<RSDrawCmdListRenderModifier>(
-        property) };
-    rsCanvasDrawingRenderNode.drawCmdModifiers_.emplace(RSModifierType::CONTENT_STYLE, listModifier);
-    EXPECT_FALSE(rsCanvasDrawingRenderNode.GetSizeFromDrawCmdModifiers(width, height));
-}
-#endif
 
 /**
  * @tc.name: IsNeedResetSurfaceTest
@@ -296,37 +215,6 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, InitRenderParamsTest, TestSize.Level1)
     rsCanvasDrawingRenderNode->InitRenderParams();
     EXPECT_TRUE(rsCanvasDrawingRenderNode->renderDrawable_ == nullptr);
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: ApplyDrawCmdModifier
- * @tc.desc: test results of ApplyDrawCmdModifier
- * @tc.type: FUNC
- * @tc.require: issueI9W0GK
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, ApplyDrawCmdModifier, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    std::weak_ptr<RSContext> context;
-    RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId, context);
-
-    RSProperties properties;
-    RSModifierContext contextArgs(properties);
-    rsCanvasDrawingRenderNode.ApplyDrawCmdModifier(contextArgs, RSModifierType::CONTENT_STYLE);
-
-    int width = 1024;
-    int hight = 1090;
-    auto type = RSModifierType::CONTENT_STYLE;
-    std::list<Drawing::DrawCmdListPtr> listDrawCmd { std::make_shared<Drawing::DrawCmdList>(width, hight) };
-    rsCanvasDrawingRenderNode.drawCmdLists_.emplace(type, listDrawCmd);
-    auto it = rsCanvasDrawingRenderNode.drawCmdLists_.find(type);
-    EXPECT_FALSE(it == rsCanvasDrawingRenderNode.drawCmdLists_.end() || it->second.empty());
-    Drawing::Canvas canvas(width, hight);
-    RSPaintFilterCanvas paintCanvas(&canvas);
-    contextArgs.canvas_ = &paintCanvas;
-    rsCanvasDrawingRenderNode.ApplyDrawCmdModifier(contextArgs, type);
-}
-#endif
 
 /**
  * @tc.name: GetBitmap
@@ -437,69 +325,17 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetPixelmapSurfaceImgValidTest, TestSize
 #endif
 }
 
-#ifndef MODIFIER_NG
 /**
- * @tc.name: AddDirtyType
- * @tc.desc: test results of AddDirtyType
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, AddDirtyType, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    std::weak_ptr<RSContext> context;
-    RSCanvasDrawingRenderNode rsCanvasDrawingRenderNode(nodeId, context);
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-    modifierCast->drawStyle_ = RSModifierType::BOUNDS;
-    rsCanvasDrawingRenderNode.boundsModifier_ = modifier;
-    rsCanvasDrawingRenderNode.AddGeometryModifier(modifier);
-    rsCanvasDrawingRenderNode.AddDirtyType(RSModifierType::BLOOM);
-    EXPECT_FALSE(rsCanvasDrawingRenderNode.isNeedProcess_);
-
-    int32_t width = 1024;
-    int32_t height = 2468;
-    auto type = RSModifierType::CONTENT_STYLE;
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>(width, height);
-    auto property1 = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    property1->GetRef() = drawCmdList;
-    std::list<std::shared_ptr<RSRenderModifier>> listModifier { std::make_shared<RSDrawCmdListRenderModifier>(
-        property1) };
-    std::shared_ptr<RSDrawCmdListRenderModifier> modifier1;
-    listModifier.emplace_back(modifier1);
-    auto property2 = std::make_shared<RSRenderProperty<Drawing::DrawCmdListPtr>>();
-    auto modifier2 = std::make_shared<RSDrawCmdListRenderModifier>(property2);
-    listModifier.emplace_back(modifier2);
-    rsCanvasDrawingRenderNode.drawCmdModifiers_.emplace(type, listModifier);
-    std::list<Drawing::DrawCmdListPtr> listDrawCmd;
-    auto listDrawCmdMax = 20;
-    for (int i = 0; i < listDrawCmdMax; ++i) {
-        listDrawCmd.emplace_back(std::make_shared<Drawing::DrawCmdList>(width + i, height + i));
-    }
-    rsCanvasDrawingRenderNode.drawCmdLists_.emplace(type, listDrawCmd);
-    rsCanvasDrawingRenderNode.AddDirtyType(type);
-    EXPECT_TRUE(rsCanvasDrawingRenderNode.isNeedProcess_);
-    rsCanvasDrawingRenderNode.ClearOp();
-    const auto& curDrawCmdLists = rsCanvasDrawingRenderNode.GetDrawCmdLists();
-    EXPECT_TRUE(curDrawCmdLists.empty());
-}
-#endif
-
-/**
- * @tc.name: AddDirtyType
+ * @tc.name: AddDirtyTypeTest
  * @tc.desc: test results of AddDirtyType
  * @tc.type:FUNC
  */
 HWTEST_F(RSCanvasDrawingRenderNodeTest, AddDirtyTypeTest, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(1);
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(100, 100);
-    node->outOfLimitCmdList_.emplace_back(drawCmdList);
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(100, 100, Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+    auto simpleCmdList = RSSimpleDrawCmdList::CreateFromDrawCmdList(drawCmdList);
+    node->outOfLimitCmdList_.emplace_back(simpleCmdList);
     EXPECT_FALSE(node->outOfLimitCmdList_.empty());
     node->AddDirtyType(ModifierNG::RSModifierType::CONTENT_STYLE);
     EXPECT_TRUE(node->outOfLimitCmdList_.empty());
@@ -594,7 +430,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, SetNeedProcessTest, TestSize.Level1)
     rsCanvasDrawingRenderNode->stagingRenderParams_ = std::make_unique<RSRenderParams>(nodeId);
     bool needProcess = true;
     rsCanvasDrawingRenderNode->SetNeedProcess(needProcess);
-    EXPECT_FALSE(rsCanvasDrawingRenderNode->stagingRenderParams_->NeedSync());
+    EXPECT_TRUE(rsCanvasDrawingRenderNode->stagingRenderParams_->NeedSync());
     EXPECT_TRUE(rsCanvasDrawingRenderNode->isNeedProcess_);
 }
 
@@ -633,25 +469,8 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetImageTest, TestSize.Level1)
     EXPECT_TRUE(rsCanvasDrawingRenderNode->GetImage(tid) == nullptr);
 }
 
-#ifndef MODIFIER_NG
 /**
- * @tc.name: ClearResourceTest
- * @tc.desc: Test ClearResource
- * @tc.type: FUNC
- * @tc.require: issueI9W0GK
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, ClearResourceTest, TestSize.Level1)
-{
-    NodeId nodeId = 7;
-    auto rsCanvasDrawingRenderNode = std::make_shared<RSCanvasDrawingRenderNode>(nodeId);
-    rsCanvasDrawingRenderNode->ClearResource();
-    auto lists = rsCanvasDrawingRenderNode->GetDrawCmdLists();
-    EXPECT_TRUE(lists.empty());
-}
-#endif
-
-/**
- * @tc.name: CheckCanvasDrawingPostPlaybacked
+ * @tc.name: CheckCanvasDrawingPostPlaybackedTest
  * @tc.desc: Test CheckCanvasDrawingPostPlaybacked
  * @tc.type: FUNC
  * @tc.require: issueIB8OVD
@@ -665,33 +484,6 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, CheckCanvasDrawingPostPlaybackedTest, Te
     rsCanvasDrawingRenderNode->CheckCanvasDrawingPostPlaybacked();
 }
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: GetDrawCmdListsTest
- * @tc.desc: Test GetDrawCmdLists
- * @tc.type: FUNC
- * @tc.require: ICETEZ
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawCmdListsTest, TestSize.Level1)
-{
-    NodeId nodeId = 8;
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId);
-    auto type = RSModifierType::CONTENT_STYLE;
-    std::list<Drawing::DrawCmdListPtr> cmdLists;
-    auto cmd = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    Drawing::Brush brush;
-    cmd->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    cmdLists.push_back(cmd);
-    node->drawCmdLists_.emplace(type, cmdLists);
-
-    auto lists = node->GetDrawCmdLists();
-    EXPECT_FALSE(lists.empty());
-    node->ClearResource();
-    auto lists2 = node->GetDrawCmdLists();
-    EXPECT_TRUE(lists2.empty());
-}
-#endif
-
 /**
  * @tc.name: ApplyCachedCmdListTest
  * @tc.desc: Test ApplyCachedCmdList
@@ -699,9 +491,10 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawCmdListsTest, TestSize.Level1)
  */
 HWTEST_F(RSCanvasDrawingRenderNodeTest, ApplyCachedCmdListTest, TestSize.Level1)
 {
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(10, 10);
+    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(10, 10, Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(9);
-    node->outOfLimitCmdList_.emplace_back(drawCmdList);
+    auto simpleCmdList = RSSimpleDrawCmdList::CreateFromDrawCmdList(drawCmdList);
+    node->outOfLimitCmdList_.emplace_back(simpleCmdList);
     node->ApplyCachedCmdList();
     EXPECT_TRUE(node->outOfLimitCmdList_.empty());
     node->ApplyCachedCmdList();
@@ -753,34 +546,35 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, CheckCachedOpTest, TestSize.Level1)
 
 /**
  * @tc.name: ContentStyleSlotUpdateTest001
- * @tc.desc: Test ContentStyleSlotUpdate
+ * @tc.desc: Test ContentStyleSlotUpdate with valid params
  * @tc.type: FUNC
  */
 HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest001, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
     node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
-    node->waitSync_ = false;
+    node->SetWaitSync(false);
     node->isOnTheTree_ = false;
     node->isNeverOnTree_ = false;
-    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(node->GetId());
-    node->stagingRenderParams_->surfaceParams_ = { 100, 100, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB };
+    node->stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(node->GetId());
+    auto stagingRenderParams = static_cast<RSCanvasDrawingRenderParams*>(node->stagingRenderParams_.get());
+    stagingRenderParams->surfaceParams_ = { 100, 100, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB };
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
     node->ContentStyleSlotUpdate();
     EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
 
+/**
+ * @tc.name: ContentStyleSlotUpdateTest002
+ * @tc.desc: Test ContentStyleSlotUpdate with isOnTheTree true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
     node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
-    node->waitSync_ = true;
-    node->isOnTheTree_ = false;
-    node->isNeverOnTree_ = false;
-    node->stagingRenderParams_ = nullptr;
-    node->isTextureExportNode_ = false;
-    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    node->ContentStyleSlotUpdate();
-    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
-
-    node->waitSync_ = false;
+    node->SetWaitSync(false);
     node->isOnTheTree_ = true;
     node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = nullptr;
@@ -788,8 +582,18 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest001, TestSize.
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     node->ContentStyleSlotUpdate();
     EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
 
-    node->waitSync_ = false;
+/**
+ * @tc.name: ContentStyleSlotUpdateTest003
+ * @tc.desc: Test ContentStyleSlotUpdate with isNeverOnTree true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest003, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->SetWaitSync(false);
     node->isOnTheTree_ = false;
     node->isNeverOnTree_ = true;
     node->stagingRenderParams_ = nullptr;
@@ -800,33 +604,34 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest001, TestSize.
 }
 
 /**
- * @tc.name: ContentStyleSlotUpdateTest002
- * @tc.desc: Test ContentStyleSlotUpdate
+ * @tc.name: ContentStyleSlotUpdateTest004
+ * @tc.desc: Test ContentStyleSlotUpdate with RSRenderParams
  * @tc.type: FUNC
  */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest002, TestSize.Level1)
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest004, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
     node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
-    node->waitSync_ = false;
+    node->SetWaitSync(false);
     node->isOnTheTree_ = false;
     node->isNeverOnTree_ = false;
-    node->stagingRenderParams_ = nullptr;
-    node->isTextureExportNode_ = true;
-    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
-    node->ContentStyleSlotUpdate();
-    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
-
-    node->waitSync_ = false;
-    node->isOnTheTree_ = false;
-    node->isNeverOnTree_ = false;
-    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(node->GetId());
+    node->stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(node->GetId());
     node->isTextureExportNode_ = false;
     RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
     node->ContentStyleSlotUpdate();
     EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
 
-    node->waitSync_ = false;
+/**
+ * @tc.name: ContentStyleSlotUpdateTest005
+ * @tc.desc: Test ContentStyleSlotUpdate with UNI_RENDER_ENABLED_FOR_ALL
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest005, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->SetWaitSync(false);
     node->isOnTheTree_ = false;
     node->isNeverOnTree_ = false;
     node->stagingRenderParams_ = nullptr;
@@ -837,6 +642,126 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest002, TestSize.
 }
 
 /**
+ * @tc.name: ContentStyleSlotUpdateTest006
+ * @tc.desc: Test ContentStyleSlotUpdate with isTextureExportNode true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest006, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->SetWaitSync(false);
+    node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
+    node->stagingRenderParams_ = nullptr;
+    node->isTextureExportNode_ = true;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    node->ContentStyleSlotUpdate();
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
+
+/**
+ * @tc.name: ContentStyleSlotUpdateTest007
+ * @tc.desc: Test ContentStyleSlotUpdate with RSCanvasDrawingRenderParams
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest007, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->SetWaitSync(false);
+    node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
+    node->stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(node->GetId());
+    node->isTextureExportNode_ = false;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_DISABLED;
+    node->ContentStyleSlotUpdate();
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
+
+/**
+ * @tc.name: ContentStyleSlotUpdateTest008
+ * @tc.desc: Test ContentStyleSlotUpdate with UNI_RENDER_ENABLED_FOR_ALL
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest008, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->SetWaitSync(false);
+    node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
+    node->stagingRenderParams_ = nullptr;
+    node->isTextureExportNode_ = false;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    node->ContentStyleSlotUpdate();
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
+
+/**
+ * @tc.name: ContentStyleSlotUpdateTest009
+ * @tc.desc: Test ContentStyleSlotUpdate with waitSync true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest009, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
+    node->SetWaitSync(true);
+    node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
+    node->stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(node->GetId());
+    node->isTextureExportNode_ = false;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    node->ContentStyleSlotUpdate();
+    EXPECT_TRUE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
+
+/**
+ * @tc.name: ContentStyleSlotUpdateTest010
+ * @tc.desc: Test ContentStyleSlotUpdate with CONTENT_STYLE not dirty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest010, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(12);
+    node->SetWaitSync(false);
+    node->isOnTheTree_ = false;
+    node->isNeverOnTree_ = false;
+    node->stagingRenderParams_ = std::make_unique<RSCanvasDrawingRenderParams>(node->GetId());
+    auto stagingRenderParams = static_cast<RSCanvasDrawingRenderParams*>(node->stagingRenderParams_.get());
+    stagingRenderParams->surfaceParams_ = { 100, 100, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB };
+    node->isTextureExportNode_ = false;
+    RSUniRenderJudgement::uniRenderEnabledType_ = UniRenderEnabledType::UNI_RENDER_ENABLED_FOR_ALL;
+    node->ContentStyleSlotUpdate();
+    EXPECT_FALSE(node->dirtyTypesNG_.test(static_cast<size_t>(ModifierNG::RSModifierType::CONTENT_STYLE)));
+}
+
+/**
+ * @tc.name: OnSyncWaitSyncTrueTest
+ * @tc.desc: Test OnSync with waitSync true covers SetNeedDraw
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSCanvasDrawingRenderNodeTest, OnSyncWaitSyncTrueTest, TestSize.Level1)
+{
+    auto node = std::make_shared<RSCanvasDrawingRenderNode>(14);
+    std::shared_ptr<const RSRenderNode> otherNode = std::make_shared<const RSRenderNode>(14 + 1);
+    node->renderDrawable_ =
+        std::make_shared<RSCanvasDrawingRenderNodeDrawableAdapterTest>(otherNode);
+    node->renderDrawable_->renderParams_ = std::make_unique<RSRenderParams>(14);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(14);
+    node->SetWaitSync(true);
+    node->OnSync();
+    EXPECT_FALSE(node->waitSync_);
+    node->SetWaitSync(true);
+    node->AfterSync();
+    EXPECT_FALSE(node->waitSync_);
+    node->SetWaitSync(false);
+    node->AfterSync();
+    EXPECT_FALSE(node->waitSync_);
+}
+
+/**
  * @tc.name: SplitDrawCmdListTest
  * @tc.desc: Test SplitDrawCmdList
  * @tc.type: FUNC
@@ -844,7 +769,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, ContentStyleSlotUpdateTest002, TestSize.
 HWTEST_F(RSCanvasDrawingRenderNodeTest, SplitDrawCmdListTest, TestSize.Level1)
 {
     auto node = std::make_shared<RSCanvasDrawingRenderNode>(13);
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>();
+    auto drawCmdList = std::make_shared<RSSimpleDrawCmdList>();
     Drawing::Brush brush;
     drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
     node->SplitDrawCmdList(1, drawCmdList, true);
@@ -860,285 +785,5 @@ HWTEST_F(RSCanvasDrawingRenderNodeTest, SplitDrawCmdListTest, TestSize.Level1)
     drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
     node->SplitDrawCmdList(1, drawCmdList, false);
     EXPECT_TRUE(drawCmdList->IsEmpty());
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest001
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest001, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-
-    node->cachedReversedOpTypes_.clear();
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList0 = nullptr;
-    node->GetDrawOpItemInfo(drawCmdList0, 1);
-    EXPECT_EQ(node->cachedReversedOpTypes_.size(), 0);
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-    EXPECT_EQ(outTest1, ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: []");
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest002
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest002, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-    Drawing::Brush brush;
-
-    // add special drawCmdList
-    auto drawCmdList1 = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList1->width_ = 1;
-    drawCmdList1->height_ = 1;
-    drawCmdList1->drawOpItems_.clear();
-    node->GetDrawOpItemInfo(drawCmdList1, drawCmdList1->drawOpItems_.size());
-
-    auto drawCmdList2 = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList2->width_ = 2;
-    drawCmdList2->height_ = 2;
-    drawCmdList2->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    drawCmdList2->AddDrawOp(nullptr);
-    drawCmdList2->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    node->GetDrawOpItemInfo(drawCmdList2, drawCmdList2->drawOpItems_.size());
-
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-    EXPECT_EQ(outTest1, ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: [[1,1,0][],[2,2,3][15,15]]");
-    std::cout << outTest1 << std::endl;
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest003
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest003, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-    Drawing::Brush brush;
-
-    // add special drawCmdList
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList->width_ = 2;
-    drawCmdList->height_ = 2;
-    drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    node->GetDrawOpItemInfo(drawCmdList, drawCmdList->drawOpItems_.size());
-
-    // could not happen
-    node->cachedReversedOpTypes_[0].drawOpTypes.clear();
-
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-    EXPECT_EQ(outTest1, ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: [[2,2,1][]]");
-    std::cout << outTest1 << std::endl;
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest004
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest004, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-    Drawing::Brush brush;
-
-    // drawCmdList num less than DRAWCMDLIST_DUMP_LIMIT
-    // drawOpItems num less than OP_DUMP_LIMIT_PER_CMD
-    size_t drawCmdListLimit = 2;
-    size_t drawOpItemsLimit = 2;
-    
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList->width_ = 1;
-    drawCmdList->height_ = 1;
-    for (int i = 0; i < drawOpItemsLimit; ++i) {
-        drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    }
-    auto opItemsSize = drawCmdList->GetDrawOpItems().size();
-    EXPECT_EQ(opItemsSize, drawOpItemsLimit);
-
-    for (int i = 0; i < drawCmdListLimit; ++i) {
-        node->GetDrawOpItemInfo(drawCmdList, opItemsSize);
-    }
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().drawOpTypes.size(), drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().drawOpTypes.size(), drawOpItemsLimit);
-
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-    EXPECT_EQ(outTest1,
-        ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: [[1,1,2][15,15],[1,1,2][15,15]]");
-    std::cout << outTest1 << std::endl;
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest005
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest005, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-    Drawing::Brush brush;
-
-    // drawCmdList num more than DRAWCMDLIST_DUMP_LIMIT
-    // drawOpItems num less than OP_DUMP_LIMIT_PER_CMD
-    size_t drawCmdListLimit = DRAWCMDLIST_DUMP_LIMIT + 1;
-    size_t drawOpItemsLimit = 3;
-    
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList->width_ = 1;
-    drawCmdList->height_ = 1;
-    for (int i = 0; i < drawOpItemsLimit; ++i) {
-        drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    }
-    auto opItemsSize = drawCmdList->GetDrawOpItems().size();
-    EXPECT_EQ(opItemsSize, drawOpItemsLimit);
-
-    for (int i = 0; i < drawCmdListLimit; ++i) {
-        node->GetDrawOpItemInfo(drawCmdList, opItemsSize);
-    }
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().drawOpTypes.size(), drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().drawOpTypes.size(), drawOpItemsLimit);
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.size(), DRAWCMDLIST_DUMP_LIMIT);
-
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-
-    std::string opTypesStr = "[";
-    for (int i = 0; i < drawOpItemsLimit; ++i) {
-        opTypesStr += "15,";
-    }
-    opTypesStr.pop_back();
-    opTypesStr += "]";
-
-    std::string ret = ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: [";
-    for (int i = 0; i < DRAWCMDLIST_DUMP_LIMIT; ++i) {
-        ret += "[1,1," + std::to_string(opItemsSize) + "]" + opTypesStr + ",";
-    }
-    ret.pop_back();
-    ret += "]";
-    EXPECT_EQ(outTest1, ret);
-    std::cout << outTest1 << std::endl;
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest006
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest006, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-    Drawing::Brush brush;
-
-    // drawCmdList num less than DRAWCMDLIST_DUMP_LIMIT
-    // drawOpItems num more than OP_DUMP_LIMIT_PER_CMD
-    size_t drawCmdListLimit = 3;
-    size_t drawOpItemsLimit = OP_DUMP_LIMIT_PER_CMD + 1;
-    
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList->width_ = 1;
-    drawCmdList->height_ = 1;
-    for (int i = 0; i < drawOpItemsLimit; ++i) {
-        drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    }
-    auto opItemsSize = drawCmdList->GetDrawOpItems().size();
-    EXPECT_EQ(opItemsSize, drawOpItemsLimit);
-
-    for (int i = 0; i < drawCmdListLimit; ++i) {
-        node->GetDrawOpItemInfo(drawCmdList, opItemsSize);
-    }
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().drawOpTypes.size(), OP_DUMP_LIMIT_PER_CMD);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().drawOpTypes.size(), OP_DUMP_LIMIT_PER_CMD);
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.size(), drawCmdListLimit);
-
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-
-    std::string opTypesStr = "[";
-    for (int i = 0; i < OP_DUMP_LIMIT_PER_CMD; ++i) {
-        opTypesStr += "15,";
-    }
-    opTypesStr.pop_back();
-    opTypesStr += "]";
-
-    std::string ret = ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: [";
-    for (int i = 0; i < drawCmdListLimit; ++i) {
-        ret += "[1,1," + std::to_string(opItemsSize) + "]" + opTypesStr + ",";
-    }
-    ret.pop_back();
-    ret += "]";
-    EXPECT_EQ(outTest1, ret);
-    std::cout << outTest1 << std::endl;
-}
-
-/**
- * @tc.name: GetDrawOpItemInfoTest007
- * @tc.desc: Test GetDrawOpItemInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingRenderNodeTest, GetDrawOpItemInfoTest007, TestSize.Level1)
-{
-    auto node = std::make_shared<RSCanvasDrawingRenderNode>(nodeId_ + 1);
-    Drawing::Brush brush;
-
-    // drawCmdList num more than DRAWCMDLIST_DUMP_LIMIT
-    // drawOpItems num more than OP_DUMP_LIMIT_PER_CMD
-    size_t drawCmdListLimit = DRAWCMDLIST_DUMP_LIMIT + 1;
-    size_t drawOpItemsLimit = OP_DUMP_LIMIT_PER_CMD + 1;
-    
-    auto drawCmdList = std::make_shared<Drawing::DrawCmdList>(Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    drawCmdList->width_ = 1;
-    drawCmdList->height_ = 1;
-    for (int i = 0; i < drawOpItemsLimit; ++i) {
-        drawCmdList->AddDrawOp(std::make_shared<Drawing::DrawBackgroundOpItem>(brush));
-    }
-    auto opItemsSize = drawCmdList->GetDrawOpItems().size();
-    EXPECT_EQ(opItemsSize, drawOpItemsLimit);
-
-    for (int i = 0; i < drawCmdListLimit; ++i) {
-        node->GetDrawOpItemInfo(drawCmdList, opItemsSize);
-    }
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.front().drawOpTypes.size(), OP_DUMP_LIMIT_PER_CMD);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().opItemSize, drawOpItemsLimit);
-    EXPECT_EQ(node->cachedReversedOpTypes_.back().drawOpTypes.size(), OP_DUMP_LIMIT_PER_CMD);
-
-    EXPECT_EQ(node->cachedReversedOpTypes_.size(), DRAWCMDLIST_DUMP_LIMIT);
-
-    std::string outTest1;
-    node->DumpSubClassNode(outTest1);
-
-    std::string opTypesStr = "[";
-    for (int i = 0; i < OP_DUMP_LIMIT_PER_CMD; ++i) {
-        opTypesStr += "15,";
-    }
-    opTypesStr.pop_back();
-    opTypesStr += "]";
-
-    std::string ret = ", lastResetSurfaceTime: 0, opCountAfterReset: 0, drawOpInfo: [";
-    for (int i = 0; i < DRAWCMDLIST_DUMP_LIMIT; ++i) {
-        ret += "[1,1," + std::to_string(opItemsSize) + "]" + opTypesStr + ",";
-    }
-    ret.pop_back();
-    ret += "]";
-    EXPECT_EQ(outTest1, ret);
-    std::cout << outTest1 << std::endl;
 }
 } // namespace OHOS::Rosen

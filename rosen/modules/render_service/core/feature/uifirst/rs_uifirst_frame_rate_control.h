@@ -19,10 +19,10 @@
 #include <parameter.h>
 #include <parameters.h>
 #include <string>
+#include <atomic>
 #include "pipeline/rs_surface_render_node.h"
 #include "variable_frame_rate/rs_variable_frame_rate.h"
 #include "transaction/rs_render_service_client.h"
-#include <mutex>
 
 namespace OHOS::Rosen {
 class RSUifirstFrameRateControl {
@@ -41,6 +41,17 @@ public:
         UNKNOWN
     };
 
+    enum FrameControlSceneBit : uint32_t {
+        SCENE_APP_LAUNCH_FROM_ICON   = (1 << 0),
+        SCENE_APP_LAUNCH_FROM_DOCK   = (1 << 1),
+        SCENE_APP_SWIPE_TO_HOME      = (1 << 2),
+        SCENE_GESTURE_TO_RECENTS     = (1 << 3),
+        SCENE_EXIT_RECENT            = (1 << 4),
+        SCENE_CLEAR_RECENT           = (1 << 5),
+        SCENE_AOD_TO_LAUNCHER        = (1 << 6),
+        SCENE_LOCKSCREEN_TO_LAUNCHER = (1 << 7),
+    };
+
     SceneId GetSceneId(const std::string& sceneId)
     {
         if (sceneId == "LAUNCHER_APP_LAUNCH_FROM_ICON") {
@@ -57,7 +68,7 @@ public:
             return SceneId::EXIT_RECENT_2_HOME_ANI;
         } else if (sceneId == "CLEAR_1_RECENT_ANI") {
             return SceneId::CLEAR_1_RECENT_ANI;
-        } else if (sceneId == "CLEAR_All_RECENT_ANI") {
+        } else if (sceneId == "CLEAR_ALL_RECENT_ANI") {
             return SceneId::CLEAR_ALL_RECENT_ANI;
         } else if (sceneId == "AOD_TO_LAUNCHER") {
             return SceneId::AOD_TO_LAUNCHER;
@@ -79,44 +90,49 @@ public:
     bool JudgeMultiSubSurface(const RSSurfaceRenderNode& node);
     bool SubThreadFrameDropDecision(const RSSurfaceRenderNode& node);
     bool NeedRSUifirstControlFrameDrop(const RSSurfaceRenderNode& node);
-    bool GetUifirstFrameDropInternal(int);
+    bool GetUifirstFrameDropInternal(int frameInterval);
+    bool IsSceneEnabled(SceneId sceneId) const;
+    uint32_t GetFrameControlScenesMask() const;
+    static uint32_t GetSceneIdBit(SceneId sceneId);
     bool JudgeStartAnimation() const
     {
-        return startAnimationStatus_;
+        return startAnimationStatus_.load(std::memory_order_relaxed);
     }
 
     void SetStartAnimation(bool status)
     {
-        startAnimationStatus_ = status;
+        startAnimationStatus_.store(status, std::memory_order_relaxed);
     }
 
     bool JudgeStopAnimation() const
     {
-        return stopAnimationStatus_;
+        return stopAnimationStatus_.load(std::memory_order_relaxed);
     }
 
     void SetStopAnimation(bool status)
     {
-        stopAnimationStatus_ = status;
+        stopAnimationStatus_.store(status, std::memory_order_relaxed);
     }
 
-    bool JudgeMultTaskAnimation() const
+    bool JudgeMultiTaskAnimation() const
     {
-        return multTaskAnimationStatus_;
+        return multiTaskAnimationStatus_.load(std::memory_order_relaxed);
     }
 
-    void SetMultTaskAnimation(bool status)
+    void SetMultiTaskAnimation(bool status)
     {
-        multTaskAnimationStatus_ = status;
+        multiTaskAnimationStatus_.store(status, std::memory_order_relaxed);
     }
 
 private:
-    RSUifirstFrameRateControl() {}
-    std::mutex incrementCallCount_;
-    int callCount_ = 0;
-    bool startAnimationStatus_ = false;
-    bool stopAnimationStatus_ = false;
-    bool multTaskAnimationStatus_ = false;
+    RSUifirstFrameRateControl(const RSUifirstFrameRateControl&) = delete;
+    RSUifirstFrameRateControl& operator=(const RSUifirstFrameRateControl&) = delete;
+    RSUifirstFrameRateControl() : startAnimationStatus_(false),
+        stopAnimationStatus_(false), multiTaskAnimationStatus_(false) {}
+    std::atomic<int32_t> callCount_ = 0;
+    std::atomic<bool> startAnimationStatus_;
+    std::atomic<bool> stopAnimationStatus_;
+    std::atomic<bool> multiTaskAnimationStatus_;
     bool forceRefreshOnce_ = true;
 };
 }

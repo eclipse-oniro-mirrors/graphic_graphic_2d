@@ -25,22 +25,25 @@ class RSB_EXPORT RSTagTracker {
 public:
     enum TAGTYPE : uint32_t {
         TAG_DRAW_SURFACENODE = 1, // don't change head and tail, insert the middle if u add data.
+        TAG_SUB_THREAD,
         TAG_SAVELAYER_DRAW_NODE,
-        TAG_UIFIRST,
         TAG_RESTORELAYER_DRAW_NODE,
         TAG_SAVELAYER_COLOR_FILTER,
         TAG_ACQUIRE_SURFACE,
         TAG_FILTER,
         TAG_FILTER_CACHE,
+        TAG_FILTER_MATERIAL_CACHE,
         TAG_RENDER_FRAME,
-        TAG_HDR_OFFSCREEN,
-        TAG_COMMON_OFFSCREEN,
         TAG_RENDER_GROUP,
         TAG_OPINC,
         TAG_SUBTREE_PARALLEL,
         TAG_CANVAS_DRAWING_NODE,
+        TAG_FROSTEDGLASS_GEN_FILTERED_SNAPSHOT,
+        TAG_FROSTEDGLASS_EFFECT,
+        TAG_WINDOW_SURFACE_CACHE,
         TAG_UNTAGGED,
         TAG_CAPTURE,
+        TAG_COLOR_PICKER_SNAPSHOT,
     };
     enum SOURCETYPE : uint32_t {
         SOURCE_OTHER,
@@ -77,6 +80,7 @@ public:
     ~RSTagTracker();
     static void UpdateReleaseResourceEnabled(bool releaseResEnabled);
     static std::string TagType2String(TAGTYPE type);
+    static Drawing::GPUResourceTag GetCurrentGpuResourceTag(Drawing::GPUContext* gpuContext);
 private:
     bool isSetTagEnd_ = false;
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;

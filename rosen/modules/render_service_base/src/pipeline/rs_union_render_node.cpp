@@ -22,6 +22,9 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr float SCALE_EPSILON = 0.0001f;
+} // namespace
 
 RSUnionRenderNode::RSUnionRenderNode(NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
     : RSCanvasRenderNode(id, context, isTextureExportNode)
@@ -54,24 +57,28 @@ void RSUnionRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visit
     visitor->QuickPrepareUnionRenderNode(*this);
 }
 
-void RSUnionRenderNode::UpdateVisibleUnionChildren(RSRenderNode& childNode)
+void RSUnionRenderNode::AddUnionChild(NodeId id)
 {
-    if (childNode.GetRenderProperties().GetUseUnion() && !childNode.GetOldDirtyInSurface().IsEmpty()) {
-        visibleUnionChildren_.emplace(childNode.GetId());
-    }
+    unionChildren_.emplace(id);
 }
 
-void RSUnionRenderNode::ResetVisibleUnionChildren()
+void RSUnionRenderNode::RemoveUnionChild(NodeId id)
 {
-    visibleUnionChildren_.clear();
+    unionChildren_.erase(id);
 }
 
-void RSUnionRenderNode::ProcessSDFShape()
+void RSUnionRenderNode::ResetUnionChildren()
 {
-    RS_TRACE_NAME_FMT("RSUnionRenderNode::ProcessSDFShape, visibleUnionChildren_[%lu], UnionSpacing[%f]",
-        visibleUnionChildren_.size(), GetRenderProperties().GetUnionSpacing());
+    unionChildren_.clear();
+}
+
+void RSUnionRenderNode::ProcessSDFShape(RSDirtyRegionManager& dirtyManager)
+{
+    unionMode_ = GetRenderProperties().GetSDFUnionMode();
+    RS_TRACE_NAME_FMT("RSUnionRenderNode::ProcessSDFShape, unionChildren_[%lu], UnionSpacing[%f] unimode[%d]",
+        unionChildren_.size(), GetRenderProperties().GetUnionSpacing(), unionMode_);
     std::shared_ptr<RSNGRenderShapeBase> root;
-    if (visibleUnionChildren_.empty()) {
+    if (unionChildren_.empty()) {
         if (GetRenderProperties().GetSDFShape() &&
             GetRenderProperties().GetSDFShape()->GetType() == RSNGEffectType::SDF_EMPTY_SHAPE) {
             return;
@@ -79,7 +86,14 @@ void RSUnionRenderNode::ProcessSDFShape()
         root = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_EMPTY_SHAPE);
     } else {
         std::queue<std::shared_ptr<RSNGRenderShapeBase>> shapeQueue;
-        if (ROSEN_NE(GetRenderProperties().GetUnionSpacing(), 0.f)) {
+        boundingBox_ = RectI(0, 0, 0, 0);
+        if (ROSEN_NE(GetRenderProperties().GetUnionSpacing(), 0.f) && unionMode_ == 1) {
+            gravityCenter_ =  GetGravityCenter();
+            root = GenerateSDFNonLeaf<RSNGEffectType::SDF_UNION_OP_SHAPE, RSNGRenderSDFUnionOpShape,
+                SDFUnionOpShapeShapeXRenderTag, SDFUnionOpShapeShapeYRenderTag>(shapeQueue);
+            GenerateSDFLeaf<RSNGRenderSDFUnionOpShape, SDFUnionOpShapeShapeXRenderTag,
+                SDFUnionOpShapeShapeYRenderTag>(shapeQueue);
+        } else if (ROSEN_NE(GetRenderProperties().GetUnionSpacing(), 0.f) && unionMode_ == 0) {
             root = GenerateSDFNonLeaf<RSNGEffectType::SDF_SMOOTH_UNION_OP_SHAPE, RSNGRenderSDFSmoothUnionOpShape,
                 SDFSmoothUnionOpShapeShapeXRenderTag, SDFSmoothUnionOpShapeShapeYRenderTag>(shapeQueue);
             GenerateSDFLeaf<RSNGRenderSDFSmoothUnionOpShape, SDFSmoothUnionOpShapeShapeXRenderTag,
@@ -91,12 +105,29 @@ void RSUnionRenderNode::ProcessSDFShape()
                 SDFUnionOpShapeShapeYRenderTag>(shapeQueue);
         }
     }
-    GetMutableRenderProperties().SetSDFShape(root);
-    UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType::BOUNDS);
+    if (root && (!GetRenderProperties().GetSDFShape() ||
+        GetRenderProperties().GetSDFShape()->CalculateHash() != root->CalculateHash())) {
+        GetMutableRenderProperties().InternalSetSDFShape(root);
+        dirtyManager.MergeDirtyRect(GetAbsDrawRect());
+        UpdateDrawableAfterPostPrepare(ModifierNG::RSModifierType::CLIP_TO_BOUNDS);
+    }
+}
+
+RectI RSUnionRenderNode::GenerateSDFDrawingRect(std::shared_ptr<RSRenderNode> &child)
+{
+    Drawing::Matrix relativeMatrix;
+    if (!GetChildRelativeMatrixToUnionNode(relativeMatrix, child)) {
+        return RectI(0, 0, 0, 0);
+    }
+    auto childRect = child->GetSelfDrawRect();
+    Drawing::RectF mappedRect;
+    relativeMatrix.MapRect(mappedRect,
+        Drawing::RectF(childRect.GetLeft(), childRect.GetTop(), childRect.GetWidth(), childRect.GetHeight()));
+    return RectI(mappedRect.GetLeft(), mappedRect.GetTop(), mappedRect.GetWidth(), mappedRect.GetHeight());
 }
 
 bool RSUnionRenderNode::GetChildRelativeMatrixToUnionNode(Drawing::Matrix& relativeMatrix,
-    std::shared_ptr<RSRenderNode>& child)
+    std::shared_ptr<RSRenderNode>& child) const
 {
     auto geoPtr = GetRenderProperties().GetBoundsGeometry();
     if (!geoPtr) {
@@ -114,10 +145,6 @@ bool RSUnionRenderNode::GetChildRelativeMatrixToUnionNode(Drawing::Matrix& relat
         return false;
     }
     relativeMatrix.PostConcat(invertUnionAbsMatrix);
-    // GE need inverted matrix
-    Drawing::Matrix invertMat;
-    relativeMatrix.Invert(invertMat);
-    relativeMatrix = invertMat;
     return true;
 }
 
@@ -161,7 +188,51 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::CreateChildToContainerSD
         RSNGRenderShapeBase::Create(RSNGEffectType::SDF_TRANSFORM_SHAPE));
     transformShape->Setter<SDFTransformShapeMatrixRenderTag>(matrix);
     transformShape->Setter<SDFTransformShapeShapeRenderTag>(childShape);
+
+    transformShape->Setter<SDFTransformShapeUnionModeRenderTag>(0);
+    if (ROSEN_NE(GetRenderProperties().GetUnionSpacing(), 0.f) && unionMode_ == 1) {
+        transformShape->Setter<SDFTransformShapeUnionModeRenderTag>(1);
+        transformShape->Setter<SDFTransformShapeGravityCenterRenderTag>(gravityCenter_);
+        transformShape->Setter<SDFTransformShapeGravityStrengthRenderTag>(gravityStrength_);
+        transformShape->Setter<SDFTransformShapeGravityHotZoneRenderTag>(gravityHotZone_);
+        transformShape->Setter<SDFTransformShapeGravitySpacingRenderTag>(GetRenderProperties().GetUnionSpacing());
+    }
     return transformShape;
+}
+
+Vector2f RSUnionRenderNode::GetGravityCenter()
+{
+    auto context = GetContext().lock();
+    if (!context) {
+        RS_LOGE("RSUnionRenderNode::GetGravityCenter GetContext fail");
+        return Vector2f(0.0f, 0.0f);
+    }
+    for (auto& childId : unionChildren_) {
+        auto child = context->GetNodeMap().GetRenderNode<RSRenderNode>(childId);
+        if (!child || !child->GetRenderProperties().GetGravityPullCenterFlag()) {
+            continue;
+        }
+        Drawing::Matrix relativeMatrix;
+        if (!GetChildRelativeMatrixToUnionNode(relativeMatrix, child)) {
+            return Vector2f(0.0f, 0.0f);
+        }
+        Matrix3f matrix(relativeMatrix.Get(Drawing::Matrix::Index::SCALE_X),
+            relativeMatrix.Get(Drawing::Matrix::Index::SKEW_X), relativeMatrix.Get(Drawing::Matrix::Index::TRANS_X),
+            relativeMatrix.Get(Drawing::Matrix::Index::SKEW_Y), relativeMatrix.Get(Drawing::Matrix::Index::SCALE_Y),
+            relativeMatrix.Get(Drawing::Matrix::Index::TRANS_Y), relativeMatrix.Get(Drawing::Matrix::Index::PERSP_0),
+            relativeMatrix.Get(Drawing::Matrix::Index::PERSP_1), relativeMatrix.Get(Drawing::Matrix::Index::PERSP_2));
+        auto sdfRect = child->GetRenderProperties().GetRRectForSDF().rect_;
+        auto center = Vector3f(sdfRect.GetLeft() + sdfRect.GetWidth() / 2.0f,
+            sdfRect.GetTop() + sdfRect.GetHeight() / 2.0f, 1.0f);
+        auto result = matrix.Transpose() *  center;
+        if (std::abs(result.z_) < SCALE_EPSILON) {
+            return Vector2f(0.0f, 0.0f); // scaling too large
+        }
+        gravityStrength_ = child->GetRenderProperties().GetGravityPullStrength();
+        gravityHotZone_ = child->GetRenderProperties().GetGravityHotZone();
+        return Vector2f(result.x_ / result.z_, result.y_ / result.z_);
+    }
+    return Vector2f(0.0f, 0.0f);
 }
 
 std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GetOrCreateChildSDFShape(std::shared_ptr<RSRenderNode>& child)
@@ -176,11 +247,60 @@ std::shared_ptr<RSNGRenderShapeBase> RSUnionRenderNode::GetOrCreateChildSDFShape
     return childShape;
 }
 
-void RSUnionRenderNode::ResetChildRelevantFlags()
+void RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged(const std::shared_ptr<RSRenderNode> node)
 {
-    visibleUnionChildren_.clear();
-    RSRenderNode::ResetChildRelevantFlags();
+    if (!node->GetRenderProperties().GetUseUnion()) {
+        return;
+    }
+    auto unionNode = FindClosestUnionAncestor(node);
+    if (!unionNode) {
+        ROSEN_LOGD("RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged: invalid unionNode");
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUnionRenderNode::ProcessUnionInfoOnTreeStateChanged node[%llu], unionNode[%llu], "
+        "isOnTheTree[%d]", node->GetId(), unionNode->GetId(), node->IsOnTheTree());
+    node->IsOnTheTree() ? unionNode->AddUnionChild(node->GetId()) : unionNode->RemoveUnionChild(node->GetId());
 }
 
+void RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers(const std::shared_ptr<RSRenderNode> node)
+{
+    if (!node->IsOnTheTree()) {
+        return;
+    }
+    auto unionNode = FindClosestUnionAncestor(node);
+    if (!unionNode) {
+        ROSEN_LOGD("RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers: invalid unionNode");
+        return;
+    }
+    RS_OPTIONAL_TRACE_NAME_FMT("RSUnionRenderNode::ProcessUnionInfoAfterApplyModifiers node[%llu], unionNode[%llu], "
+        "useUnion[%d]", node->GetId(), unionNode->GetId(), node->GetRenderProperties().GetUseUnion());
+    node->GetRenderProperties().GetUseUnion() ?
+        unionNode->AddUnionChild(node->GetId()) : unionNode->RemoveUnionChild(node->GetId());
+}
+
+std::shared_ptr<RSUnionRenderNode> RSUnionRenderNode::FindClosestUnionAncestor(
+    const std::shared_ptr<RSRenderNode> node)
+{
+    std::shared_ptr<RSRenderNode> curNode = node;
+    while (auto parent = curNode->GetParent().lock()) {
+        if (parent->IsInstanceOf<RSUnionRenderNode>()) {
+            return std::static_pointer_cast<RSUnionRenderNode>(parent);
+        }
+        curNode = parent;
+    }
+    return nullptr;
+}
+
+RectF RSUnionRenderNode::CalcBoundingBox() const
+{
+    // need to change it to enum
+    static const int gravityPullUnionMode = 1;
+    auto extendZone = std::min(std::abs(gravityHotZone_), std::abs(gravityStrength_));
+    auto realBoundingBox = boundingBox_.MakeOutset(extendZone);
+    return GetRenderProperties().GetSDFUnionMode() == gravityPullUnionMode
+        ? RectF(realBoundingBox.GetLeft(), realBoundingBox.GetTop(),
+                realBoundingBox.GetWidth(), realBoundingBox.GetHeight())
+        : GetRenderProperties().GetBoundsRect();
+}
 } // namespace Rosen
 } // namespace OHOS

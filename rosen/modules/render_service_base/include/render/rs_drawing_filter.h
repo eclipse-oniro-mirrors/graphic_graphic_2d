@@ -31,6 +31,7 @@
 namespace OHOS {
 namespace Rosen {
 class RSPaintFilterCanvas;
+struct IGECacheProvider;
 class RSB_EXPORT RSDrawingFilter : public RSFilter {
 public:
     RSDrawingFilter() = default;
@@ -49,10 +50,12 @@ public:
     struct DrawImageRectParams {
         bool discardCanvas;
         bool offscreenDraw;
+        IGECacheProvider* geCacheProvider;
     };
 
     void DrawImageRect(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image> image,
-        const Drawing::Rect& src, const Drawing::Rect& dst, const DrawImageRectParams params = { false, false });
+        const Drawing::Rect& src, const Drawing::Rect& dst,
+        const DrawImageRectParams params = { false, false, nullptr });
     std::vector<std::shared_ptr<RSRenderFilterParaBase>> GetShaderFilters() const;
     void InsertShaderFilter(std::shared_ptr<RSRenderFilterParaBase> shaderFilter);
     std::shared_ptr<Drawing::ImageFilter> GetImageFilter() const;
@@ -86,10 +89,15 @@ public:
     }
 
     void GenerateAndUpdateGEVisualEffect();
+    inline std::shared_ptr<Drawing::GEVisualEffectContainer> GetGEContainer() const
+    {
+        return visualEffectContainer_;
+    }
 
     void SetGeometry(const Drawing::Matrix& matrix, const Drawing::RectF& bound, const Drawing::RectF& materialDst,
         float geoWidth, float geoHeight);
     void SetDisplayHeadroom(float headroom);
+    void SetDisableFilterCache(bool disableFilterCache);
 
     void SetDarkScale(float darkScale);
 
@@ -101,6 +109,16 @@ public:
     void SetSkipFrame(bool canSkipFrame)
     {
         canSkipFrame_ = canSkipFrame;
+    }
+
+    bool HasCustomRegion() const
+    {
+        return hasCustomRegion_;
+    }
+
+    void SetHasCustomRegion(bool hasCustomRegion)
+    {
+        hasCustomRegion_ = hasCustomRegion;
     }
 
     static bool CanSkipFrame(float radius);
@@ -126,6 +144,7 @@ private:
         Drawing::Rect dst;
         bool discardCanvas;
         float brushAlpha;
+        IGECacheProvider* geCacheProvider;
     };
     void DrawImageRectInternal(Drawing::Canvas& canvas, const std::shared_ptr<Drawing::Image> image,
         const DrawImageRectAttributes& attr);
@@ -187,6 +206,8 @@ private:
     uint32_t renderFilterHash_ = 0;
     bool canSkipFrame_ = false;
     bool canSkipMaskColor_ = false;
+    // Indicates whether a custom region is set for the filter
+    bool hasCustomRegion_ = false;
     float saturationForHPS_ = 1.f;
     float brightnessForHPS_ = 1.f;
     friend class RSMarshallingHelper;

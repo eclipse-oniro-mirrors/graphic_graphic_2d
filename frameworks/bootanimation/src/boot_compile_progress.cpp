@@ -32,18 +32,28 @@
 #include "transaction/rs_render_service_client.h"
 #include "transaction/rs_transaction.h"
 #include "ui/rs_ui_context_manager.h"
+#include <iservice_registry.h>
+#include <system_ability_definition.h>
 
 namespace OHOS {
 namespace {
     constexpr const char* OTA_COMPILE_TIME_LIMIT = "persist.bms.optimizing_apps.timing";
-    constexpr int32_t OTA_COMPILE_TIME_LIMIT_DEFAULT = 4 * 60;
+    constexpr int32_t OTA_COMPILE_TIME_LIMIT_DEFAULT = 10 * 60;
     constexpr const char* OTA_COMPILE_DISPLAY_INFO = "const.bms.optimizing_apps.display_info";
     const std::string BOOTEVENT_BMS_MAIN_BUNDLES_READY = "bootevent.bms.main.bundles.ready";
+    const std::string UPDATE_FIRMWARE_READY = "update.firmware.ready";
     const std::string OTA_COMPILE_DISPLAY_INFO_DEFAULT = "正在优化应用";
-    const std::string OTA_COMPILE_DISPLAY_INFO_OVERSEA = "Optimizing Apps";
+    const std::string OTA_COMPILE_DISPLAY_INFO_OVERSEA = "Optimizing apps";
+    const std::string FIRMWARE_UPDATE_DISPLAY_INFO_DEFAULT = "正在优化系统";
+    const std::string FIRMWARE_UPDATE_DISPLAY_INFO_OVERSEA = "Optimizing system";
     constexpr const char* REGION_PARA_STR_CUST = "const.cust.region";
     constexpr const char* CHINA_REGION = "cn";
+    constexpr const char* FIRMWARE_UPDATE_START = "start";
+    constexpr const char* FIRMWARE_UPDATE_END = "end";
     constexpr const int32_t ONE_HUNDRED_PERCENT = 100;
+    constexpr const int32_t NINETY_PERCENT = 90;
+    constexpr const int32_t TEN_PERCENT = 10;
+    constexpr const float HALF_PERCENT = 0.5;
     constexpr const int32_t SEC_MS = 1000;
     constexpr const int32_t CIRCLE_NUM = 3;
     constexpr const float RADIUS = 3.0f;
@@ -75,9 +85,18 @@ namespace {
     constexpr const int DOUBLE_TIMES = 2;
 }
 
-void BootCompileProgress::Init(const std::string& configPath, const BootAnimationConfig& config)
+BootCompileProgress::~BootCompileProgress()
+{
+    if (deathRecipient_ && renderObj_) {
+        renderObj_->RemoveDeathRecipient(deathRecipient_);
+    }
+}
+
+void BootCompileProgress::Init(const std::string& configPath, const BootAnimationConfig& config,
+    sptr<IRemoteObject> connectToRender)
 {
     LOGI("ota compile, screenId: " BPUBU64 "", config.screenId);
+    connectToRender_ = connectToRender;
     RecordDeviceType();
     screenId_ = config.screenId;
     rotateDegree_ = config.rotateDegree;
@@ -89,13 +108,19 @@ void BootCompileProgress::Init(const std::string& configPath, const BootAnimatio
     Rosen::RSScreenModeInfo modeInfo = interface.GetScreenActiveMode(config.screenId);
     windowWidth_ = modeInfo.GetScreenWidth();
     windowHeight_ = modeInfo.GetScreenHeight();
+
+    uint32_t width = 0;
+    uint32_t height = 0;
+    interface.GetRogScreenResolution(config.screenId, width, height);
+    rogWidth_ = static_cast<int32_t>(width);
+    rogHeight_ = static_cast<int32_t>(height);
+
     fontSize_ = isWearable_ ? FONT_SIZE_WEARABLE :
         TranslateVp2Pixel(std::min(windowWidth_, windowHeight_), isOther_ ? FONT_SIZE_OTHER : FONT_SIZE_PHONE);
     currentRadius_ = isWearable_ ? RADIUS_WEARABLE :
         TranslateVp2Pixel(std::min(windowWidth_, windowHeight_), isOther_ ? RADIUS * DOUBLE_TIMES : RADIUS);
 
     timeLimitSec_ = system::GetIntParameter<int32_t>(OTA_COMPILE_TIME_LIMIT, OTA_COMPILE_TIME_LIMIT_DEFAULT);
-    tf_ = Rosen::Drawing::Typeface::MakeFromName("HarmonyOS Sans SC", Rosen::Drawing::FontStyle());
 
     std::string defaultDisplayInfo = OTA_COMPILE_DISPLAY_INFO_DEFAULT;
     if (system::GetParameter(REGION_PARA_STR_CUST, CHINA_REGION) != CHINA_REGION) {
@@ -105,6 +130,7 @@ void BootCompileProgress::Init(const std::string& configPath, const BootAnimatio
     sharpCurve_ = std::make_shared<Rosen::RSCubicBezierInterpolator>(
         SHARP_CURVE_CTLX1, SHARP_CURVE_CTLY1, SHARP_CURVE_CTLX2, SHARP_CURVE_CTLY2);
     compileRunner_ = AppExecFwk::EventRunner::Create(false);
+    RegisterDeathRecipientInner();
     compileHandler_ = std::make_shared<AppExecFwk::EventHandler>(compileRunner_);
     compileHandler_->PostTask([this] { this->CreateCanvasNode(); });
     compileHandler_->PostTask([this] { this->RegisterVsyncCallback(); });
@@ -117,9 +143,13 @@ bool BootCompileProgress::CreateCanvasNode()
     surfaceNodeConfig.SurfaceNodeName = "BootCompileProgressNode";
     surfaceNodeConfig.isSync = true;
     Rosen::RSSurfaceNodeType surfaceNodeType = Rosen::RSSurfaceNodeType::SELF_DRAWING_WINDOW_NODE;
-    rsUIDirector_ = OHOS::Rosen::RSUIDirector::Create();
-    rsUIDirector_->Init(false, false);
+    rsUIDirector_ = OHOS::Rosen::RSUIDirector::Create(connectToRender_);
     auto rsUIContext = rsUIDirector_->GetRSUIContext();
+    if (!rsUIContext) {
+        LOGE("rsUIContext is nullptr");
+        compileRunner_->Stop();
+        return false;
+    }
     rsSurfaceNode_ = Rosen::RSSurfaceNode::Create(surfaceNodeConfig, surfaceNodeType, true, false, rsUIContext);
     if (!rsSurfaceNode_) {
         LOGE("ota compile, SFNode create failed");
@@ -133,9 +163,9 @@ bool BootCompileProgress::CreateCanvasNode()
     rsSurfaceNode_->SetBackgroundColor(SK_ColorTRANSPARENT);
     rsSurfaceNode_->SetFrameGravity(Rosen::Gravity::RESIZE_ASPECT);
     rsSurfaceNode_->SetBootAnimation(true);
-    Rosen::RSTransaction::FlushImplicitTransaction();
+    rsUIDirector_->SendMessages();
     rsSurfaceNode_->AttachToDisplay(screenId_);
-    Rosen::RSTransaction::FlushImplicitTransaction();
+    rsUIDirector_->SendMessages();
 
     rsCanvasNode_ = Rosen::RSCanvasNode::Create(true, false, rsUIContext);
     rsCanvasNode_->SetBounds(0, 0, windowWidth_, windowHeight_);
@@ -150,8 +180,8 @@ bool BootCompileProgress::CreateCanvasNode()
 
 bool BootCompileProgress::RegisterVsyncCallback()
 {
-    if (IsBmsBundleReady()) {
-        LOGI("bms bundle is already done.");
+    if (IsBmsBundleReady() && GetFirmwareUpdateState() != FIRMWARE_UPDATE_START) {
+        LOGI("progress need not display.");
         compileRunner_->Stop();
         return false;
     }
@@ -198,6 +228,11 @@ bool BootCompileProgress::IsBmsBundleReady()
     return system::GetBoolParameter(BOOTEVENT_BMS_MAIN_BUNDLES_READY, false);
 }
 
+std::string BootCompileProgress::GetFirmwareUpdateState()
+{
+    return system::GetParameter(UPDATE_FIRMWARE_READY, FIRMWARE_UPDATE_END);
+}
+
 void BootCompileProgress::OnVsync()
 {
     if (!isUpdateOptEnd_) {
@@ -207,7 +242,7 @@ void BootCompileProgress::OnVsync()
         compileRunner_->Stop();
         if (rsSurfaceNode_) {
             rsSurfaceNode_->DetachToDisplay(screenId_);
-            OHOS::Rosen::RSTransaction::FlushImplicitTransaction();
+            rsUIDirector_->SendMessages();
         }
     }
 }
@@ -223,6 +258,11 @@ void BootCompileProgress::DrawCompileProgress()
         return;
     }
 
+    if (tf_ == nullptr) {
+        SkFontMgr::SetSymbolLoadMode(SymbolLoadMode::NONE);
+        tf_ = Rosen::Drawing::Typeface::MakeFromName("HarmonyOS Sans SC", Rosen::Drawing::FontStyle());
+    }
+    UpdateText();
     Rosen::Drawing::Font font;
     font.SetTypeface(tf_);
     font.SetSize(fontSize_);
@@ -254,7 +294,17 @@ void BootCompileProgress::DrawCompileProgress()
     canvas->DetachBrush();
 
     DrawMarginBrush(canvas);
+    DrawCircle(canvas);
+    rsCanvasNode_->FinishRecording();
+    rsUIDirector_->SendMessages();
 
+    if (progress_ >= ONE_HUNDRED_PERCENT) {
+        isUpdateOptEnd_ = true;
+    }
+}
+
+void BootCompileProgress::DrawCircle(Rosen::Drawing::RecordingCanvas* canvas)
+{
     int32_t freqNum = times_++;
     for (int i = 0; i < CIRCLE_NUM; i++) {
         canvas->AttachBrush(DrawProgressPoint(i, freqNum));
@@ -263,12 +313,17 @@ void BootCompileProgress::DrawCompileProgress()
         canvas->DrawCircle({pointX, pointY}, currentRadius_);
         canvas->DetachBrush();
     }
+}
 
-    rsCanvasNode_->FinishRecording();
-    Rosen::RSTransaction::FlushImplicitTransaction();
-
-    if (progress_ >= ONE_HUNDRED_PERCENT) {
-        isUpdateOptEnd_ = true;
+void BootCompileProgress::UpdateText()
+{
+    if (!isUpdateText_ && IsBmsBundleReady() && GetFirmwareUpdateState() != FIRMWARE_UPDATE_END) {
+        LOGI("update text.");
+        isUpdateText_ = true;
+        displayInfo_ = FIRMWARE_UPDATE_DISPLAY_INFO_DEFAULT;
+        if (system::GetParameter(REGION_PARA_STR_CUST, CHINA_REGION) != CHINA_REGION) {
+            displayInfo_ = FIRMWARE_UPDATE_DISPLAY_INFO_OVERSEA;
+        }
     }
 }
 
@@ -287,22 +342,41 @@ void BootCompileProgress::DrawMarginBrush(Rosen::Drawing::RecordingCanvas* canva
 
 void BootCompileProgress::UpdateCompileProgress()
 {
-    if (!IsBmsBundleReady()) {
+    if (!IsBmsBundleReady() || GetFirmwareUpdateState() != FIRMWARE_UPDATE_END) {
         int64_t now = GetSystemCurrentTime();
         if (endTimePredictMs_ < now) {
-            progress_ = ONE_HUNDRED_PERCENT - 1;
+            progress_ = IsBmsBundleReady() ? ONE_HUNDRED_PERCENT : ONE_HUNDRED_PERCENT - 1;
             return;
         }
         if (!timeLimitSec_) {
             return;
         }
-        progress_ = (int32_t)((now - startTimeMs_) * ONE_HUNDRED_PERCENT / (timeLimitSec_ * SEC_MS));
+        int64_t showTime = now - startTimeMs_;
+        int64_t halfTimeLimitSec_ = timeLimitSec_ * SEC_MS * HALF_PERCENT;
+        if (showTime <= halfTimeLimitSec_) {
+            progress_ = (int32_t)(showTime * NINETY_PERCENT / halfTimeLimitSec_);
+        } else {
+            progress_ = (int32_t)((showTime - halfTimeLimitSec_) * TEN_PERCENT / halfTimeLimitSec_ + NINETY_PERCENT);
+        }
         progress_ = progress_ < 0 ? 0 : progress_ > ONE_HUNDRED_PERCENT ? ONE_HUNDRED_PERCENT: progress_;
     } else {
         progress_++;
     }
 
     LOGD("update progress: %{public}d", progress_);
+}
+
+void BootCompileProgress::SetFrameForRog()
+{
+    float posX = static_cast<float>(rogWidth_ - windowWidth_) / NUMBER_TWO;
+    float posY = static_cast<float>(rogHeight_ - rogHeight_ * OFFSET_Y_PERCENT);
+    int32_t rogMin = std::min(rogWidth_, rogHeight_);
+    fontSize_ = TranslateVp2Pixel(rogMin, FONT_SIZE_PHONE);
+    currentRadius_ = TranslateVp2Pixel(rogMin, RADIUS);
+
+    rsCanvasNode_->SetFrame(posX, posY, rogWidth_, rogHeight_ * HEIGHT_PERCENT);
+    LOGI("SetFrame ROG Rect:[%{public}f, %{public}f, %{public}d, %{public}f], fontSize: %{public}d, "
+         "currentRadius: %{public}f", posX, posY, rogWidth_, rogHeight_ * HEIGHT_PERCENT, fontSize_, currentRadius_);
 }
 
 Rosen::Drawing::Brush BootCompileProgress::DrawProgressPoint(int32_t idx, int32_t frameNum)
@@ -337,7 +411,12 @@ void BootCompileProgress::RecordDeviceType()
 
 void BootCompileProgress::SetSpecialProgressFrame(int32_t maxLength, int32_t screenId)
 {
-    BootAnimationProgressConfig progressConfig = progressConfigsMap_.find(screenId)->second;
+    auto it = progressConfigsMap_.find(screenId);
+    if (it == progressConfigsMap_.end()) {
+        LOGE("SetSpecialProgressFrame screenId not fount: %{public}d", screenId);
+        return;
+    }
+    BootAnimationProgressConfig progressConfig = it->second;
     float positionX = progressConfig.progressOffset == -1 ? 0 : progressConfig.progressOffset;
     float positionY = progressConfig.progressHeight == -1 ? windowHeight_ - maxLength * OFFSET_Y_PERCENT
         : progressConfig.progressHeight;
@@ -360,8 +439,46 @@ void BootCompileProgress::SetFrame()
     } else if (isWearable_) {
         rsCanvasNode_->SetFrame(0, windowHeight_ - OFFSET_Y_WEARABLE - HEIGHT_WEARABLE, windowWidth_, HEIGHT_WEARABLE);
     } else {
-        rsCanvasNode_->SetFrame(0, windowHeight_ - maxLength * OFFSET_Y_PERCENT, windowWidth_,
-            maxLength * HEIGHT_PERCENT);
+        int32_t rogMaxLen = std::max(rogWidth_, rogHeight_);
+        bool isRogMode = rogWidth_ > 0 && rogHeight_ > 0 && rogMaxLen != maxLength;
+        if (isRogMode) {
+            SetFrameForRog();
+        } else {
+            rsCanvasNode_->SetFrame(0, windowHeight_ - maxLength * OFFSET_Y_PERCENT, windowWidth_,
+                                    maxLength * HEIGHT_PERCENT);
+        }
     }
 }
+
+void BootCompileProgress::RegisterDeathRecipientInner()
+{
+    sptr<ISystemAbilityManager> saMgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (saMgr == nullptr) {
+        LOGE("saMgr is null");
+        return;
+    }
+    renderObj_ = saMgr->GetSystemAbility(RENDER_SERVICE);
+    if (renderObj_ == nullptr) {
+        LOGE("renderObj_ is null");
+        return;
+    }
+    if (deathRecipient_ == nullptr) {
+        deathRecipient_ = new DeathRecipientInner(compileRunner_);
+    }
+    if (!renderObj_->AddDeathRecipient(deathRecipient_)) {
+        LOGE("Failed to add death recipient");
+    }
+}
+
+void BootCompileProgress::DeathRecipientInner::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    LOGE("OnRemoteDied run, force stop progress");
+    if (compileRunner_) {
+        compileRunner_->Stop();
+    }
+}
+
+BootCompileProgress::DeathRecipientInner::DeathRecipientInner(
+    std::shared_ptr<OHOS::AppExecFwk::EventRunner> compileRunner) : compileRunner_(compileRunner)
+{}
 } // namespace OHOS

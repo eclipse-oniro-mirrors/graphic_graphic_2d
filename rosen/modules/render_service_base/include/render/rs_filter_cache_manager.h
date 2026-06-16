@@ -38,7 +38,7 @@ class RSHpaeFilterCacheManager;
 class RSB_EXPORT RSFilterCacheManager final {
 public:
     RSFilterCacheManager();
-    ~RSFilterCacheManager() = default;
+    ~RSFilterCacheManager();
     RSFilterCacheManager(const RSFilterCacheManager&) = delete;
     RSFilterCacheManager(const RSFilterCacheManager&&) = delete;
     RSFilterCacheManager& operator=(const RSFilterCacheManager&) = delete;
@@ -68,7 +68,8 @@ public:
     // This function is similar to DrawFilter(), but instead of drawing anything on the canvas, it simply returns the
     // cache data. This is used with effect component in RSPropertiesPainter::DrawBackgroundEffect.
     const std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> GeneratedCachedEffectData(RSPaintFilterCanvas& canvas,
-        const std::shared_ptr<RSDrawingFilter>& filter, const std::optional<Drawing::RectI>& srcRect = std::nullopt,
+        const std::shared_ptr<RSDrawingFilter>& filter, NodeId filterId,
+        const std::optional<Drawing::RectI>& srcRect = std::nullopt,
         const std::optional<Drawing::RectI>& dstRect = std::nullopt);
 
     uint8_t CalcDirectionBias(const Drawing::Matrix& mat);
@@ -112,6 +113,7 @@ public:
     bool IsSkippingFrame() const;
     void MarkRotationChanged();
     bool IsFilterCacheValidForOcclusion();
+    bool IsFilterCacheValidForPartialRender() const;
     void MarkNodeIsOccluded(bool isOccluded);
     bool IsFilterCacheValid() const;
     void SwapDataAndInitStagingFlags(std::unique_ptr<RSFilterCacheManager>& cacheManager);
@@ -146,13 +148,15 @@ public:
     void ClearEffectCacheWithDrawnRegion(const RSPaintFilterCanvas& canvas, const Drawing::RectI& filterBound);
 
     void MarkDebugEnabled();
+    bool IsFilterCacheMemExceedThreshold() const;
+
 private:
     void TakeSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
-        const Drawing::RectI& srcRect);
+        const Drawing::RectI& srcRect, NodeId filterId = INVALID_NODEID);
     void GenerateFilteredSnapshot(
         RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter, const Drawing::RectI& dstRect);
     bool DrawFilterWithoutSnapshot(RSPaintFilterCanvas& canvas, const std::shared_ptr<RSDrawingFilter>& filter,
-        const Drawing::RectI& src, const Drawing::RectI& dst, bool shouldClearFilteredCache);
+        const Drawing::RectI& dst, bool shouldClearFilteredCache);
     void DrawCachedFilteredSnapshot(RSPaintFilterCanvas& canvas, const Drawing::RectI& dstRect,
         const std::shared_ptr<RSDrawingFilter>& filter) const;
     bool CanDiscardCanvas(RSPaintFilterCanvas& canvas, const Drawing::RectI& dstRect) const;
@@ -169,6 +173,10 @@ private:
     void ClearFilterCache();
 
     void PrintDebugInfo(NodeId nodeID);
+
+    void ReplaceCachedEffectData(std::shared_ptr<Drawing::Image> image, const Drawing::RectI& rect,
+        std::shared_ptr<RSPaintFilterCanvas::CachedEffectData>& targetCache,
+        std::shared_ptr<IGECacheProvider> cacheProvider = nullptr);
 
     // We keep both the snapshot and filtered snapshot in the cache, and clear unneeded one in next frame.
     // Note: rect in cachedSnapshot_ and cachedFilteredSnapshot_ is in device coordinate.

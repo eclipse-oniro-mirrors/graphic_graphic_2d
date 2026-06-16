@@ -88,11 +88,6 @@ namespace OHOS {
         context.GetMutableNodeMap().RegisterRenderNode(node);
         AnimationCommandHelper::CreateAnimation(context, targetId, animation);
         AnimationCommandHelper::CancelAnimation(context, targetId, propertyId);
-#ifndef MODIFIER_NG
-        auto modifier = std::make_shared<RSGeometryTransRenderModifier>(property);
-        node->modifiers_[propertyId] = modifier;
-        AnimationCommandHelper::CreateAnimation(context, targetId, animation);
-#endif
     }
 
     void CreateParticleAnimationFuzzerTest()
@@ -139,6 +134,22 @@ namespace OHOS {
         AnimationCommandHelper::ReverseInteractiveAnimator(context, animatorId);
         AnimationCommandHelper::SetFractionInteractiveAnimator(context, animatorId, fraction);
         AnimationCommandHelper::DestoryInteractiveAnimator(context, animatorId);
+
+        // test CreateInteractiveAnimatorGroup
+        RSAnimationTimingProtocol timingProtocol;
+        int duration = GetData<int>();
+        int startDelay = GetData<int>();
+        int repeatCount = GetData<int>();
+        float speed = GetData<float>();
+        bool autoReverse = GetData<bool>();
+        timingProtocol.SetDuration(duration);
+        timingProtocol.SetStartDelay(startDelay);
+        timingProtocol.SetRepeatCount(repeatCount);
+        timingProtocol.SetSpeed(speed);
+        timingProtocol.SetAutoReverse(autoReverse);
+
+        AnimationCommandHelper::CreateInteractiveAnimatorGroup(
+            context, animatorId, animations, isImmediately, timingProtocol);
     }
 
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
@@ -150,10 +161,6 @@ namespace OHOS {
         data_ = data;
         size_ = size;
         pos = 0;
-#ifndef MODIFIER_NG
-        CreateAnimationFuzzerTest();
-        CreateParticleAnimationFuzzerTest();
-#endif
         InteractiveAnimatiorFuzzerTest();
         return true;
     }

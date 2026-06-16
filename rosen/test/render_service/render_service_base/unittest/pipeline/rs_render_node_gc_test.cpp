@@ -14,6 +14,7 @@
  */
 #include "gtest/gtest.h"
 
+#include "animation/rs_render_curve_animation.h"
 #include "pipeline/rs_render_node_allocator.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "drawable/rs_render_node_shadow_drawable.h"
@@ -24,19 +25,49 @@ using namespace testing::ext;
 namespace OHOS {
 namespace Rosen {
 
+class ConcreteRSRenderNodeDrawableAdapter : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit ConcreteRSRenderNodeDrawableAdapter(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {}
+    void Draw(Drawing::Canvas& canvas) {}
+};
+
 class RSRenderNodeGCTest : public testing::Test {
 public:
+    typedef void (*GcTask)(RSTaskMessage::RSTask, const std::string&, int64_t,
+        AppExecFwk::EventQueue::Priority);
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
 private:
+    // just flag for test, HIGH for drawableReleaseFunc_, IMMEDIATE for imageReleaseFunc_
+    GCLevel taskFlag_ = GCLevel::IDLE;
+    void ClearResource();
+    void ClearNodeBucket();
     void AddNodes(uint32_t nums, pid_t pid, NodeId startId,
         bool needInvalidNode, std::shared_ptr<RSBaseRenderNode> parent);
     void AddNodes(uint32_t nums, NodeId startId);
+    void AddCanvasNodes(uint32_t nums, NodeId startId);
     void ClearOffTreeBucket();
     void ClearOffTreeBucketMap();
 };
+
+void RSRenderNodeGCTest::ClearResource()
+{
+    ClearOffTreeBucket();
+    ClearOffTreeBucketMap();
+    ClearNodeBucket();
+}
+
+void RSRenderNodeGCTest::ClearNodeBucket()
+{
+    auto& nodeGC = RSRenderNodeGC::Instance();
+    while (!nodeGC.nodeBucket_.empty()) {
+        nodeGC.nodeBucket_.pop();
+    }
+}
 
 void RSRenderNodeGCTest::ClearOffTreeBucket()
 {
@@ -82,13 +113,38 @@ void RSRenderNodeGCTest::AddNodes(uint32_t nums, NodeId startId)
     }
 }
 
-void RSRenderNodeGCTest::SetUpTestCase() {}
+void RSRenderNodeGCTest::AddCanvasNodes(uint32_t nums, NodeId startId)
+{
+    auto& nodeGC = RSRenderNodeGC::Instance();
+    RSRenderNodeAllocator& nodeAllocator = RSRenderNodeAllocator::Instance();
+    for (int i = 0; i < nums; i++) {
+        const auto& renderNode = nodeAllocator.CreateRSCanvasRenderNode(startId + i);
+        nodeGC.AddToOffTreeNodeBucket(renderNode);
+        ConcreteRSRenderNodeDrawableAdapter::OnGenerate(renderNode);
+    }
+}
+
+void RSRenderNodeGCTest::SetUpTestCase()
+{
+    GcTask testTask = [](RSTaskMessage::RSTask task,
+                const std::string& str,
+                int64_t value,
+                AppExecFwk::EventQueue::Priority priority) {
+        task();
+    };
+    RSRenderNodeGC::Instance().SetMainTask(testTask);
+    RSRenderNodeGC::Instance().SetRenderTask(testTask);
+}
+
 void RSRenderNodeGCTest::TearDownTestCase() {}
-void RSRenderNodeGCTest::SetUp() {}
+void RSRenderNodeGCTest::SetUp()
+{
+    ClearResource();
+}
+
 void RSRenderNodeGCTest::TearDown()
 {
-    ClearOffTreeBucket();
-    ClearOffTreeBucketMap();
+    ClearResource();
 }
 
 /**
@@ -114,7 +170,7 @@ HWTEST_F(RSRenderNodeGCTest, NodeDestructorInner001, TestSize.Level1)
 {
     RSRenderNodeGC& node = RSRenderNodeGC::Instance();
     node.NodeDestructorInner(nullptr);
-    EXPECT_TRUE(node.nodeBucket_.size() == 1);
+    EXPECT_TRUE(node.nodeBucket_.size() == 0);
 
     auto ptr = std::make_shared<RSRenderNode>(0);
     node.NodeDestructorInner(ptr.get());
@@ -133,28 +189,6 @@ HWTEST_F(RSRenderNodeGCTest, NodeDestructorInner001, TestSize.Level1)
 HWTEST_F(RSRenderNodeGCTest, AddNodeToBucket001, TestSize.Level1)
 {
     RSRenderNodeGC& gc = RSRenderNodeGC::Instance();
-    // clear nodeBucket_
-    std::queue<std::vector<RSRenderNode*>> tempQueue;
-    gc.nodeBucket_.swap(tempQueue);
-
-    gc.AddNodeToBucket(nullptr);
-    EXPECT_TRUE(gc.IsBucketQueueEmpty());
-}
-
-
-/**
- * @tc.name: AddNodeToBucket002
- * @tc.desc: test results of AddNodeToBucket
- * @tc.type: FUNC
- * @tc.require: issue19909
- */
-HWTEST_F(RSRenderNodeGCTest, AddNodeToBucket002, TestSize.Level1)
-{
-    RSRenderNodeGC& gc = RSRenderNodeGC::Instance();
-    // clear nodeBucket_
-    std::queue<std::vector<RSRenderNode*>> tempQueue;
-    gc.nodeBucket_.swap(tempQueue);
-
     auto ptr = std::make_shared<RSRenderNode>(0).get();
 
     // Test adding more than BUCKET_MAX_SIZE nodes
@@ -170,7 +204,7 @@ HWTEST_F(RSRenderNodeGCTest, AddNodeToBucket002, TestSize.Level1)
  * @tc.name: ReleaseNodeBucketTest001
  * @tc.desc: test results of ReleaseNodeBucket
  * @tc.type: FUNC
- * @tc.require:
+ * @tc.require: issueICD9PG
  */
 HWTEST_F(RSRenderNodeGCTest, ReleaseNodeBucketTest001, TestSize.Level1)
 {
@@ -203,6 +237,41 @@ HWTEST_F(RSRenderNodeGCTest, ReleaseNodeBucketTest002, TestSize.Level1)
     gc.isEnable_.store(false);
     gc.ReleaseNodeBucket();
     EXPECT_TRUE(gc.nodeBucket_.size() == 1);
+    gc.isEnable_.store(true);
+}
+
+/**
+ * @tc.name: ReleaseNodeBucketTest003
+ * @tc.desc: test results of ReleaseNodeBucket
+ * @tc.type: FUNC
+ * @tc.require: issueICD9PG
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeBucketTest003, TestSize.Level1)
+{
+    RSRenderNodeGC& gc = RSRenderNodeGC::Instance();
+    // cannot happen
+    gc.AddNodeToBucket(nullptr);
+    gc.ReleaseNodeBucket();
+    EXPECT_TRUE(gc.nodeBucket_.size() == 0);
+}
+
+/**
+ * @tc.name: ReleaseNodeBucketTest004
+ * @tc.desc: test results of ReleaseNodeBucket
+ * @tc.type: FUNC
+ * @tc.require: issueICD9PG
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeBucketTest004, TestSize.Level1)
+{
+    RSRenderNodeGC& gc = RSRenderNodeGC::Instance();
+    // Test adding more than BUCKET_MAX_SIZE * GC_LEVEL_THR_HIGH nodes
+    constexpr int nodeNum = BUCKET_MAX_SIZE * GC_LEVEL_THR_HIGH + 1;
+    for (int i = 0; i < nodeNum; ++i) {
+        auto ptr = new RSRenderNode(0);
+        gc.AddNodeToBucket(ptr);
+    }
+    gc.ReleaseNodeBucket();
+    EXPECT_TRUE(gc.nodeBucket_.size() == GC_LEVEL_THR_HIGH);
 }
 
 /**
@@ -221,6 +290,14 @@ HWTEST_F(RSRenderNodeGCTest, ReleaseNodeMemory001, TestSize.Level1)
 
     auto ptrToNode = new RSRenderNode(0);
     node.NodeDestructorInner(ptrToNode);
+    node.ReleaseNodeMemory();
+    EXPECT_TRUE(node.nodeBucket_.size() == 0);
+
+    constexpr int nodeNum = BUCKET_MAX_SIZE * GC_LEVEL_THR_IMMEDIATE + 1;
+    for (int i = 0; i < nodeNum; ++i) {
+        auto ptr = new RSRenderNode(i);
+        node.AddNodeToBucket(ptr);
+    }
     node.ReleaseNodeMemory();
     EXPECT_TRUE(node.nodeBucket_.size() == 0);
 }
@@ -397,12 +474,37 @@ HWTEST_F(RSRenderNodeGCTest, ReleaseOffTreeNodeBucket005, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReleaseFromTree
+ * @tc.name: ReleaseOffTreeNodeBucket006
+ * @tc.desc: test ReleaseOffTreeNodeForBucketMap when isEnable_ is false
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseOffTreeNodeBucket006, TestSize.Level1)
+{
+    RSRenderNodeGC& nodeGC = RSRenderNodeGC::Instance();
+    ClearOffTreeBucketMap();
+    constexpr uint32_t nodeNums = 100;
+    AddNodes(nodeNums, 1, 10000, false, nullptr);
+    
+    EXPECT_EQ(nodeGC.offTreeBucketMap_.size(), 1);
+    auto originalMapSize = nodeGC.offTreeBucketMap_.front().second.size();
+    
+    nodeGC.isEnable_.store(false);
+    nodeGC.ReleaseOffTreeNodeBucket();
+    
+    EXPECT_EQ(nodeGC.offTreeBucketMap_.size(), 1);
+    EXPECT_EQ(nodeGC.offTreeBucketMap_.front().second.size(), originalMapSize);
+    
+    nodeGC.isEnable_.store(true);
+}
+
+/**
+ * @tc.name: ReleaseFromTree001
  * @tc.desc: test results of ReleaseFromTree, expect node off tree and queue is empty
  * @tc.type: FUNC
  * @tc.require: issueIAF9XV
  */
-HWTEST_F(RSRenderNodeGCTest, ReleaseFromTree, TestSize.Level1)
+HWTEST_F(RSRenderNodeGCTest, ReleaseFromTree001, TestSize.Level1)
 {
     RSRenderNodeGC& nodeGC = RSRenderNodeGC::Instance();
     {
@@ -431,6 +533,164 @@ HWTEST_F(RSRenderNodeGCTest, ReleaseFromTree, TestSize.Level1)
     nodeGC.ReleaseFromTree();
 }
 
+/**
+ * @tc.name: ReleaseNodePidTest001
+ * @tc.desc: ReleaseNodePid Test
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodePidTest001, TestSize.Level1)
+{
+    RSRenderNodeGC &nodeGC = RSRenderNodeGC::Instance();
+    pid_t pid = 5;
+    nodeGC.backgroundPidSet_.insert(pid);
+    nodeGC.ReleaseNodePid(pid);
+    EXPECT_EQ(nodeGC.backgroundPidSet_.end(), nodeGC.backgroundPidSet_.find(pid));
+}
+ 
+/**
+ * @tc.name: ReleaseNodeNotOnTreeTest001
+ * @tc.desc: ReleaseNodeNotOnTree Test
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeNotOnTreeTest001, TestSize.Level1)
+{
+    RSRenderNodeGC &nodeGC = RSRenderNodeGC::Instance();
+    pid_t pid = 5;
+    auto node = std::make_shared<RSRenderNode>(0);
+    EXPECT_NE(node, nullptr);
+    std::weak_ptr<RSBaseRenderNode> ptrnode = node->weak_from_this();
+    nodeGC.notOnTreeNodeMap_[pid][node->GetId()] = ptrnode;
+    nodeGC.ReleaseNodeNotOnTree(pid);
+    EXPECT_EQ(nodeGC.notOnTreeNodeMap_.end(), nodeGC.notOnTreeNodeMap_.find(pid));
+}
+ 
+/**
+ * @tc.name: ReleaseNodeMemNotOnTreeTest001
+ * @tc.desc: ReleaseNodeMemNotOnTree Test
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeMemNotOnTreeTest001, TestSize.Level1)
+{
+    RSRenderNodeGC &nodeGC = RSRenderNodeGC::Instance();
+    pid_t pid = 5;
+    auto node = std::make_shared<RSCanvasRenderNode>(0);
+    EXPECT_NE(node, nullptr);
+    auto node2 = std::make_shared<RSCanvasRenderNode>(1);
+    EXPECT_NE(node2, nullptr);
+    std::weak_ptr<RSBaseRenderNode> ptrnode = node->weak_from_this();
+    std::weak_ptr<RSBaseRenderNode> ptrnode2 = node2->weak_from_this();
+    nodeGC.backgroundPidSet_.insert(pid);
+    nodeGC.notOnTreeNodeMap_[pid][node->GetId()] = ptrnode;
+    nodeGC.notOnTreeNodeMap_[pid][node2->GetId()] = ptrnode2;
+    node2.reset();
+    nodeGC.ReleaseNodeMemNotOnTree();
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: ReleaseNodeMemNotOnTreeTest002
+ * @tc.desc: Test ReleaseNodeMemNotOnTree when isEnable_ is false
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeMemNotOnTreeTest002, TestSize.Level1)
+{
+    RSRenderNodeGC &nodeGC = RSRenderNodeGC::Instance();
+    pid_t pid = 5;
+    auto node = std::make_shared<RSCanvasRenderNode>(0);
+    EXPECT_NE(node, nullptr);
+    auto node2 = std::make_shared<RSCanvasRenderNode>(1);
+    EXPECT_NE(node2, nullptr);
+    std::weak_ptr<RSBaseRenderNode> ptrnode = node->weak_from_this();
+    std::weak_ptr<RSBaseRenderNode> ptrnode2 = node2->weak_from_this();
+    nodeGC.backgroundPidSet_.insert(pid);
+    nodeGC.notOnTreeNodeMap_[pid][node->GetId()] = ptrnode;
+    nodeGC.notOnTreeNodeMap_[pid][node2->GetId()] = ptrnode2;
+
+    // Set isEnable_ to false to trigger early return in ReleaseNodeMemNotOnTree
+    nodeGC.isEnable_.store(false);
+
+    // Store original map size to verify it doesn't change
+    auto originalMapSize = nodeGC.notOnTreeNodeMap_[pid].size();
+
+    nodeGC.ReleaseNodeMemNotOnTree();
+
+    // Verify that the map size hasn't changed due to early return
+    EXPECT_EQ(nodeGC.notOnTreeNodeMap_[pid].size(), originalMapSize);
+}
+
+/**
+ * @tc.name: ReleaseNodeMemNotOnTreeTest003
+ * @tc.desc: Test ReleaseNodeMemNotOnTree when cnt exceeds NODE_MEM_RELEASE_LIMIT
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeMemNotOnTreeTest003, TestSize.Level1)
+{
+    RSRenderNodeGC &nodeGC = RSRenderNodeGC::Instance();
+    pid_t pid = 5;
+
+    // Add more than NODE_MEM_RELEASE_LIMIT nodes to trigger the cnt condition
+    constexpr uint32_t nodeCount = NODE_MEM_RELEASE_LIMIT + 10;
+    std::vector<std::shared_ptr<RSCanvasRenderNode>> nodes;
+
+    // Create and add nodes
+    for (uint32_t i = 0; i < nodeCount; ++i) {
+        auto node = std::make_shared<RSCanvasRenderNode>(i);
+        nodes.push_back(node);
+        nodeGC.notOnTreeNodeMap_[pid][node->GetId()] = node->weak_from_this();
+    }
+
+    nodeGC.backgroundPidSet_.insert(pid);
+
+    // Store original map size to verify it shrinks due to early return
+    auto originalMapSize = nodeGC.notOnTreeNodeMap_[pid].size();
+
+    nodeGC.isEnable_.store(true);
+    // isEnable_ remains true (default), only cnt condition triggers early return
+    nodeGC.ReleaseNodeMemNotOnTree();
+
+    // Verify that the map size has reduced due to early return triggered by cnt limit
+    // Since we return early after NODE_MEM_RELEASE_LIMIT iterations, some nodes should remain
+    EXPECT_LT(nodeGC.notOnTreeNodeMap_[pid].size(), originalMapSize);
+    EXPECT_GT(nodeGC.notOnTreeNodeMap_[pid].size(), 0);
+}
+
+/**
+ * @tc.name: ReleaseNodeMemNotOnTreeTest004
+ * @tc.desc: Test ReleaseNodeMemNotOnTree when cnt is below NODE_MEM_RELEASE_LIMIT and isEnable_ is true
+ * @tc.type: FUNC
+ * @tc.require: issueIAF9XV
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseNodeMemNotOnTreeTest004, TestSize.Level1)
+{
+    RSRenderNodeGC &nodeGC = RSRenderNodeGC::Instance();
+    pid_t pid = 5;
+
+    // Add fewer than NODE_MEM_RELEASE_LIMIT nodes to ensure cnt condition doesn't trigger
+    constexpr uint32_t nodeCount = 50; // Much less than 200
+    std::vector<std::shared_ptr<RSCanvasRenderNode>> nodes;
+
+    // Create and add nodes
+    for (uint32_t i = 0; i < nodeCount; ++i) {
+        auto node = std::make_shared<RSCanvasRenderNode>(i);
+        nodes.push_back(node);
+        nodeGC.notOnTreeNodeMap_[pid][node->GetId()] = node->weak_from_this();
+    }
+
+    nodeGC.backgroundPidSet_.insert(pid);
+
+    // Set isEnable_ to true to ensure only cnt condition is evaluated
+    nodeGC.isEnable_.store(true);
+
+    nodeGC.ReleaseNodeMemNotOnTree();
+    
+    // Verify that all nodes are processed (map should be empty since cnt++ > NODE_MEM_RELEASE_LIMIT is false)
+    EXPECT_EQ(nodeGC.notOnTreeNodeMap_[pid].size(), 0);
+}
 
 /**
  * @tc.name: SetAbilityState001
@@ -474,5 +734,49 @@ HWTEST_F(RSRenderNodeGCTest, SetIsOnTheTree001, TestSize.Level1)
     nodeGC.SetIsOnTheTree(nodeId, ptr, isOnTree);
     EXPECT_EQ(nodeGC.notOnTreeNodeMap_[nodePid][nodeId].lock().get(), ptr.get());
 }
+
+/**
+ * @tc.name: NodeOffTreeMemReleaseEnabledTest
+ * @tc.desc: Verify the SetNodeOffTreeMemReleaseEnabled and IsNodeOffTreeMemReleaseEnabled functions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSRenderNodeGCTest, NodeOffTreeMemReleaseEnabledTest, TestSize.Level1)
+{
+    RSRenderNodeGC::Instance().SetNodeOffTreeMemReleaseEnabled(true);
+    ASSERT_EQ(RSRenderNodeGC::Instance().IsNodeOffTreeMemReleaseEnabled(), true);
+    RSRenderNodeGC::Instance().SetNodeOffTreeMemReleaseEnabled(false);
+    ASSERT_EQ(RSRenderNodeGC::Instance().IsNodeOffTreeMemReleaseEnabled(), false);
+}
+
+/**
+ * @tc.name: ReleaseOffTreeNodeBucket007
+ * @tc.desc: Cover branch: animationManager non-null in ReleaseOffTreeNodeForBucketMap
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderNodeGCTest, ReleaseOffTreeNodeBucket007, TestSize.Level1)
+{
+    RSRenderNodeGC& nodeGC = RSRenderNodeGC::Instance();
+    ClearOffTreeBucketMap();
+    nodeGC.isEnable_ = true;
+
+    pid_t pid = 1;
+    NodeId nodeId = 10000;
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(nodeId);
+    // Make animationManager_ non-null by adding an animation
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto animation = std::make_shared<RSRenderCurveAnimation>(1, 1, property, property1, property2);
+    renderNode->AddAnimation(animation);
+    ASSERT_NE(renderNode->GetAnimationManager(), nullptr);
+
+    std::unordered_map<NodeId, std::shared_ptr<RSBaseRenderNode>> renderNodeMap;
+    renderNodeMap[nodeId] = renderNode;
+    nodeGC.AddToOffTreeNodeBucket(pid, renderNodeMap);
+    nodeGC.ReleaseOffTreeNodeBucket();
+    EXPECT_TRUE(true);
+}
+
 } // namespace Rosen
 } // namespace OHOS

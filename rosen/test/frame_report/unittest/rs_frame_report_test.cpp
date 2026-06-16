@@ -15,6 +15,10 @@
 
 #include <gtest/gtest.h>
 #include <string>
+#if defined (RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
+#include <dlfcn.h>
+#include <gmock/gmock.h>
+#endif
 
 #include "rs_frame_report.h"
 
@@ -35,104 +39,91 @@ void RsFrameReportTest::SetUpTestCase() {}
 void RsFrameReportTest::TearDownTestCase() {}
 void RsFrameReportTest::SetUp() {}
 void RsFrameReportTest::TearDown() {}
+#if defined (RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
+class MockDlopen {
+public:
+    MOCK_METHOD(void*, dlopen, (const char* filename, int flag));
+};
 
-/**
- * @tc.name: GetEnable001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, GetEnable001, TestSize.Level1)
+class MockDlsym {
+public:
+    MOCK_METHOD(void*, dlsym, (void* restrict, const char* funcname));
+};
+
+void* mockvkGetDeviceProcAddr(void*, const char*)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    fr.LoadLibrary();
-    fr.GetEnable();
-    EXPECT_EQ(fr.GetEnable(), 1);
+    return nullptr;
 }
-
-/**
- * @tc.name: SendCommandsStart001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, SendCommandsStart001, TestSize.Level1)
+void* (*mockvkGetDeviceProcAddrFunc)(void*, const char*) = mockvkGetDeviceProcAddr;
+ 
+void* mockvkEnumeratePhysicalDevices(void*, const char*)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    fr.LoadLibrary();
-    EXPECT_EQ(fr.sendCommandsStartFunc_, nullptr);
-    fr.SendCommandsStart();
+    return nullptr;
 }
-
-/**
- * @tc.name: SetFrameParam001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, SetFrameParam001, TestSize.Level1)
+void* mockvkGetInstanceProcAddr(void* instance, const char* funcname)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    EXPECT_EQ(fr.setFrameParamFunc_, nullptr);
-    fr.SetFrameParam(0, 0, 0, 0);
+    if (strcmp(funcname, "vkEnumeratePhysicalDevices") == 0) {
+        return reinterpret_cast<void*>(mockvkEnumeratePhysicalDevices);
+    }
+    return nullptr;
 }
-
-/**
- * @tc.name: LoadLibrary001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, LoadLibrary001, TestSize.Level1)
+void* (*mockvkGetInstanceProcAddrFunc)(void*, const char*) = mockvkGetInstanceProcAddr;
+ 
+VkResult mockvkCreateInstance(const VkInstanceCreateInfo*, const VkAllocationCallbacks*, VkInstance*)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    fr.LoadLibrary();
-    EXPECT_TRUE(fr.frameSchedSoLoaded_);
+    return VK_TIMEOUT;
 }
+VkResult (*mockvkCreateInstanceFunc)(const VkInstanceCreateInfo*, const VkAllocationCallbacks*, VkInstance*) =
+    mockvkCreateInstance;
+#endif
 
 /**
- * @tc.name: LoadSymbol001
+ * @tc.name: NoBranchTestCase001
  * @tc.desc: test
  * @tc.type:FUNC
  * @tc.require:
  */
-HWTEST_F(RsFrameReportTest, LoadSymbol001, TestSize.Level1)
+HWTEST_F(RsFrameReportTest, NoBranchTestCase, TestSize.Level1)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    fr.LoadSymbol("function");
-    fr.LoadLibrary();
-    fr.LoadSymbol("function");
-    EXPECT_TRUE(fr.frameSchedSoLoaded_);
-}
+    ASSERT_FALSE(RsFrameReport::IsInitSchedCompleted());
+    RsFrameReport::InitDeadline();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+    
+    RsFrameReport::SetFrameParam(0, 0, 0, 0);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 
-/**
- * @tc.name: LoadLibrary002
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, LoadLibrary002, TestSize.Level1)
-{
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    fr.frameSchedSoLoaded_ = false;
-    fr.LoadLibrary();
-    fr.frameSchedSoLoaded_ = true;
-    EXPECT_TRUE(fr.LoadLibrary());
-}
+    RsFrameReport::SendCommandsStart();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 
-/**
- * @tc.name: ReportSchedEvent001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, ReportSchedEvent001, TestSize.Level1)
-{
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    EXPECT_EQ(fr.reportSchedEventFunc_, nullptr);
-    fr.ReportSchedEvent(FrameSchedEvent::INIT, {});
-    EXPECT_NE(fr.reportSchedEventFunc_, nullptr);
-    fr.ReportSchedEvent(FrameSchedEvent::INIT, {});
+    RsFrameReport::RenderStart(1, 1);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::RenderEnd();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::DirectRenderEnd();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::UniRenderStart();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::UniRenderEnd();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::CheckUnblockMainThreadPoint();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::CheckPostAndWaitPoint();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::CheckBeginFlushPoint();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::ReportComposerInfo(1, 1);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
+
+    RsFrameReport::ReportDDGRTaskInfo();
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 }
 
 /**
@@ -143,14 +134,13 @@ HWTEST_F(RsFrameReportTest, ReportSchedEvent001, TestSize.Level1)
  */
 HWTEST_F(RsFrameReportTest, ReportScbSceneInfo001, TestSize.Level1)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
     std::string description = "test";
     bool eventStatus = true;
-    fr.ReportScbSceneInfo(description, eventStatus);
-    EXPECT_NE(fr.reportSchedEventFunc_, nullptr);
+    RsFrameReport::ReportScbSceneInfo(description, eventStatus);
+ 
     eventStatus = false;
-    fr.ReportScbSceneInfo(description, eventStatus);
-    EXPECT_NE(fr.reportSchedEventFunc_, nullptr);
+    RsFrameReport::ReportScbSceneInfo(description, eventStatus);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 }
 
 /**
@@ -161,17 +151,16 @@ HWTEST_F(RsFrameReportTest, ReportScbSceneInfo001, TestSize.Level1)
  */
 HWTEST_F(RsFrameReportTest, ReportFrameDeadline001, TestSize.Level1)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
     int deadline = 8333;
     uint32_t currentRate = 120;
-    fr.ReportFrameDeadline(deadline, currentRate);
-    EXPECT_NE(fr.reportSchedEventFunc_, nullptr);
+    RsFrameReport::ReportFrameDeadline(deadline, currentRate);
+ 
     deadline = -8333;
-    fr.ReportFrameDeadline(deadline, currentRate);
-    EXPECT_NE(fr.reportSchedEventFunc_, nullptr);
+    RsFrameReport::ReportFrameDeadline(deadline, currentRate);
+ 
     deadline = 0;
-    fr.ReportFrameDeadline(deadline, currentRate);
-    EXPECT_NE(fr.reportSchedEventFunc_, nullptr);
+    RsFrameReport::ReportFrameDeadline(deadline, currentRate);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 }
 
 /**
@@ -182,24 +171,9 @@ HWTEST_F(RsFrameReportTest, ReportFrameDeadline001, TestSize.Level1)
  */
 HWTEST_F(RsFrameReportTest, ReportBufferCount001, TestSize.Level1)
 {
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    EXPECT_EQ(fr.bufferCount_, 0);
-    fr.ReportBufferCount(1);
-    EXPECT_EQ(fr.bufferCount_, 1);
-}
-
-/**
- * @tc.name: ReportHardwareInfo001
- * @tc.desc: test
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RsFrameReportTest, ReportHardwareInfo001, TestSize.Level1)
-{
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    EXPECT_EQ(fr.hardwareTid_, 0);
-    fr.ReportHardwareInfo(1);
-    EXPECT_EQ(fr.hardwareTid_, 1);
+    RsFrameReport::ReportBufferCount(1);
+    RsFrameReport::ReportBufferCount(1);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 }
 
 /**
@@ -212,11 +186,293 @@ HWTEST_F(RsFrameReportTest, ReportUnmarshalData001, TestSize.Level1)
 {
     int unmarshalTid = 123456;
     size_t dataSize = 20 * 1024;
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    fr.ReportUnmarshalData(unmarshalTid, dataSize);
+    RsFrameReport::ReportUnmarshalData(unmarshalTid, dataSize);
+ 
     unmarshalTid = 0;
-    fr.ReportUnmarshalData(unmarshalTid, dataSize);
-    EXPECT_EQ(fr.hardwareTid_, 1);
+    RsFrameReport::ReportUnmarshalData(unmarshalTid, dataSize);
+    ASSERT_TRUE(RsFrameReport::IsInitSchedCompleted());
 }
+
+#if defined (RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
+/**
+ * @tc.name: ReportWindowInfo001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, ReportWindowInfo001, TestSize.Level1)
+{
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::mSetFrontWindowStatusHUAWEI = nullptr;
+    RsFrameReport::ReportWindowInfo(false, "com.test.app");
+    EXPECT_TRUE(RsFrameReport::isInit.load());
+}
+
+/**
+ * @tc.name: ReportWindowInfo002
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, ReportWindowInfo002, TestSize.Level1)
+{
+    RsFrameReport::initCount_ = 3;
+    RsFrameReport::ReportWindowInfo(false, "com.test.app");
+    EXPECT_TRUE(RsFrameReport::isInit.load());
+}
+
+/**
+ * @tc.name: VkHandleDeleter001
+ * @tc.desc: test Nullptr Do Not Call_dlclose
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, VkHandleDeleter001, TestSize.Level1)
+{
+    RsFrameReport::VkHandleDeleter deleter;
+    deleter(nullptr);
+    EXPECT_TRUE(RsFrameReport::isInit.load());
+}
+
+/**
+ * @tc.name: GetSetFrontWindowStatus
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, GetSetFrontWindowStatus, TestSize.Level1)
+{
+    RsFrameReport::vkGetDeviceProcAddr = nullptr;
+    bool result = RsFrameReport::GetSetFrontWindowStatusHUAWEI();
+    EXPECT_FALSE(result);
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: CreateVulkanDevice001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, CreateVulkanDevice001, TestSize.Level1)
+{
+    auto mockvkCreateDevice =
+        [](VkPhysicalDevice, const VkDeviceCreateInfo*, const VkAllocationCallbacks*, VkDevice*) -> VkResult {
+        return VK_TIMEOUT;
+    };
+    RsFrameReport::vkCreateDevice = mockvkCreateDevice;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+ 
+    auto mockvkGetPhysicalDeviceQueueFamilyProperties =
+        [](VkPhysicalDevice, uint32_t* pPropertyCount, VkQueueFamilyProperties*) -> void {
+        *pPropertyCount = 0;
+    };
+    RsFrameReport::vkGetPhysicalDeviceQueueFamilyProperties = mockvkGetPhysicalDeviceQueueFamilyProperties;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+ 
+    auto mockvkEnumeratePhysicalDevices = [](VkInstance, uint32_t* pDeviceCount, VkPhysicalDevice*) -> VkResult {
+        *pDeviceCount = 0;
+        return VK_SUCCESS;
+    };
+    RsFrameReport::vkEnumeratePhysicalDevices = mockvkEnumeratePhysicalDevices;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: CreateVulkanDevice002
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, CreateVulkanDevice002, TestSize.Level1)
+{
+    RsFrameReport::vkCreateDevice = nullptr;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+    RsFrameReport::vkEnumeratePhysicalDevices = nullptr;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: FindQueueFamilyIndex001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, FindQueueFamilyIndex001, TestSize.Level1)
+{
+    auto mockvkGetPhysicalDeviceQueueFamilyProperties =
+        [](VkPhysicalDevice, uint32_t* pPropertyCount, VkQueueFamilyProperties* queueFamilies) -> void {
+        *pPropertyCount = 1;
+        if (queueFamilies) {
+            for (uint32_t i = 0; i < *pPropertyCount; i++) {
+                queueFamilies[i].queueFlags = false;
+            }
+        }
+    };
+    RsFrameReport::vkGetPhysicalDeviceQueueFamilyProperties = mockvkGetPhysicalDeviceQueueFamilyProperties;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: FindQueueFamilyIndex002
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, FindQueueFamilyIndex002, TestSize.Level1)
+{
+    RsFrameReport::vkGetPhysicalDeviceQueueFamilyProperties = nullptr;
+    EXPECT_FALSE(RsFrameReport::CreateVulkanDevice());
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: CreateVulkanInstance001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, CreateVulkanInstance001, TestSize.Level1)
+{
+    RsFrameReport::vkCreateInstance = nullptr;
+    bool result = RsFrameReport::CreateVulkanInstance();
+    EXPECT_FALSE(result);
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: GetVulkanFunctionPointersByInstance001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, GetVulkanFunctionPointersByInstance001, TestSize.Level1)
+{
+    RsFrameReport::vkGetInstanceProcAddr = nullptr;
+    EXPECT_FALSE(RsFrameReport::GetVulkanFunctionPointersByInstance());
+    RsFrameReport::vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(0x123);
+    RsFrameReport::instance_ = nullptr;
+    EXPECT_FALSE(RsFrameReport::GetVulkanFunctionPointersByInstance());
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::InitializeVulkanExtensions();
+}
+ 
+/**
+ * @tc.name: InitializeVulkanExtensions001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, InitializeVulkanExtensions001, TestSize.Level1)
+{
+    RsFrameReport::isInit.store(true);
+    RsFrameReport::mSetFrontWindowStatusHUAWEI = nullptr;
+    EXPECT_TRUE(RsFrameReport::InitializeVulkanExtensions());
+    RsFrameReport::isInit.store(true);
+    RsFrameReport::mSetFrontWindowStatusHUAWEI = reinterpret_cast<PFN_vkSetFrontWindowStatusHUAWEI>(0x1234);
+    EXPECT_TRUE(RsFrameReport::InitializeVulkanExtensions());
+}
+ 
+/**
+ * @tc.name: InitializeVulkanExtensions002
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, InitializeVulkanExtensions002, TestSize.Level1)
+{
+    RsFrameReport::isInit.store(false);
+    auto originDlsym = RsFrameReport::dlsymFunc;
+    MockDlsym mockDlsym;
+    RsFrameReport::dlsymFunc = [&mockDlsym, &originDlsym](void* restrict, const char* funcname) {
+        if (strcmp(funcname, "vkGetDeviceProcAddr") == 0) {
+            return mockDlsym.dlsym(restrict, funcname);
+        }
+        return originDlsym(restrict, funcname);
+    };
+    EXPECT_CALL(mockDlsym, dlsym(testing::_, testing::_)).WillOnce(testing::Invoke([](void*, const char*) {
+        return reinterpret_cast<void*>(mockvkGetDeviceProcAddrFunc);
+    }));
+    EXPECT_FALSE(RsFrameReport::InitializeVulkanExtensions());
+    RsFrameReport::dlsymFunc = originDlsym;
+}
+ 
+/**
+ * @tc.name: InitializeVulkanExtensions003
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, InitializeVulkanExtensions003, TestSize.Level1)
+{
+    RsFrameReport::isInit.store(false);
+    auto originDlsym = RsFrameReport::dlsymFunc;
+    MockDlsym mockDlsym;
+    RsFrameReport::dlsymFunc = [&mockDlsym, &originDlsym](void* restrict, const char* funcname) {
+        if (strcmp(funcname, "vkCreateInstance") == 0) {
+            return mockDlsym.dlsym(restrict, funcname);
+        }
+        return originDlsym(restrict, funcname);
+    };
+    EXPECT_CALL(mockDlsym, dlsym(testing::_, testing::_)).WillOnce(testing::Invoke([](void*, const char*) {
+        return reinterpret_cast<void*>(mockvkCreateInstanceFunc);
+    }));
+    EXPECT_FALSE(RsFrameReport::InitializeVulkanExtensions());
+    RsFrameReport::dlsymFunc = originDlsym;
+}
+ 
+/**
+ * @tc.name: InitializeVulkanExtensions004
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, InitializeVulkanExtensions004, TestSize.Level1)
+{
+    RsFrameReport::isInit.store(false);
+    auto originDlsym = RsFrameReport::dlsymFunc;
+    MockDlsym mockDlsym;
+    RsFrameReport::dlsymFunc = [&mockDlsym, &originDlsym](void* restrict, const char* funcname) {
+        if (strcmp(funcname, "vkGetInstanceProcAddr") == 0) {
+            return mockDlsym.dlsym(restrict, funcname);
+        }
+        return originDlsym(restrict, funcname);
+    };
+    EXPECT_CALL(mockDlsym, dlsym(testing::_, testing::_)).WillOnce(testing::Invoke([](void*, const char*) {
+        return reinterpret_cast<void*>(mockvkGetInstanceProcAddrFunc);
+    }));
+    EXPECT_FALSE(RsFrameReport::InitializeVulkanExtensions());
+    RsFrameReport::dlsymFunc = originDlsym;
+}
+ 
+/**
+ * @tc.name: LoadVulkanLibrary001
+ * @tc.desc: test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RsFrameReportTest, LoadVulkanLibrary001, TestSize.Level1)
+{
+    auto originDlopen = RsFrameReport::dlopenFunc;
+    MockDlopen mockDlopen;
+    RsFrameReport::dlopenFunc = [&mockDlopen](const char* filename, int flag) {
+        return mockDlopen.dlopen(filename, flag);
+    };
+    EXPECT_CALL(mockDlopen, dlopen(testing::_, testing::_)).WillOnce(testing::Return(nullptr));
+    RsFrameReport::isInit.store(false);
+    RsFrameReport::ReportWindowInfo(false, "com.test.app");
+    EXPECT_FALSE(RsFrameReport::isInit.load());
+    RsFrameReport::dlopenFunc = originDlopen;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

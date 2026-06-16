@@ -93,7 +93,17 @@ inline std::string GSErrorStr(GSError err)
     return "<GSError error index out of range>";
 }
 
+inline std::string WMErrorStr(GSError err)
+{
+    return GSErrorStr(err);
+}
+
 inline std::string SurfaceErrorStr(GSError err)
+{
+    return GSErrorStr(err);
+}
+
+inline std::string VsyncErrorStr(GSError err)
 {
     return GSErrorStr(err);
 }
@@ -117,6 +127,7 @@ inline bool operator !=(GSError a, GSError b)
 using WMError = GSError;
 using SurfaceError = GSError;
 using VsyncError = GSError;
+using RSComposerError = GSError;
 } // namespace OHOS
 #endif // __cplusplus
 

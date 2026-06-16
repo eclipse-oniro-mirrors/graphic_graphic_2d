@@ -41,7 +41,11 @@ config("pipeline_test") {
 ## Build RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest
 ohos_unittest("RSIRenderServiceConnectionIpcInterfaceCodeAccessVerifierTest") {
   module_out_path = module_output_path
+  include_dirs = [
+    "mock",
+  ]
   sources = [
+    "mock/mock_accesstoken_kit.cpp",
     "rs_irender_service_connection_ipc_interface_code_access_verifier_test.cpp",
   ]
   deps = [
@@ -80,15 +84,23 @@ ohos_unittest("RSIRenderServiceIpcInterfaceCodeAccessVerifierTest") {
 ## Build RSClientToServiceConnectionStubTest
 ohos_unittest("RSClientToServiceConnectionStubTest") {
   module_out_path = module_output_path
+  include_dirs = [
+    "mock",
+  ]
   sources = [
+    "mock/mock_accesstoken_kit.cpp",
     "../pipeline/mock/mock_hdi_device.cpp",
     "rs_client_to_service_connection_stub_test.cpp",
+    "${rosen_root}/modules/render_service_base/src/pipeline/rs_uni_render_judgement.cpp",
   ]
   deps = [
     ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
     "$graphic_2d_root/utils:socketpair",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager:libhyper_graphic_manager",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "googletest:gmock_main",
@@ -103,6 +115,13 @@ ohos_unittest("RSClientToServiceConnectionStubTest") {
   }
   defines = []
   defines += gpu_defines
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
 }
 
 ## Build RSClientToRenderConnectionStubTest
@@ -117,6 +136,7 @@ ohos_unittest("RSClientToRenderConnectionStubTest") {
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
     "$graphic_2d_root/utils:socketpair",
     "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
   ]
   external_deps = [
     "googletest:gmock_main",
@@ -137,6 +157,7 @@ ohos_unittest("RSRenderServiceStubTest") {
   deps = [
     ":rs_test_common",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "$graphic_2d_root/utils:socketpair",
   ]
   external_deps = [
@@ -150,17 +171,78 @@ ohos_unittest("RSRenderServiceStubTest") {
   defines += gpu_defines
 }
 
+## Build RSConnectToRenderProcessTest
+ohos_unittest("RSConnectToRenderProcessTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_connect_to_render_process_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
+  ]
+  external_deps = []
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  external_deps += [
+    "safwk:system_ability_fwk",
+  ]
+  defines = []
+  defines += gpu_defines
+}
+
+## Build RSConnectToRenderProcessProxyTest
+ohos_unittest("RSConnectToRenderProcessProxyTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_connect_to_render_process_proxy_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
+  ]
+  external_deps = []
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  external_deps += [
+    "safwk:system_ability_fwk",
+  ]
+  defines = []
+  defines += gpu_defines
+}
+
+## Build RSConnectToRenderProcessStubTest
+ohos_unittest("RSConnectToRenderProcessStubTest") {
+  module_out_path = module_output_path
+  sources = [ "rs_connect_to_render_process_stub_test.cpp" ]
+  deps = [
+    ":rs_test_common",
+    "$graphic_2d_root/rosen/modules/render_service_base/src/platform:platform",
+  ]
+  external_deps = []
+  if (defined(global_parts_info) && defined(global_parts_info.sensors_sensor)) {
+    external_deps += [ "sensor:sensor_interface_native" ]
+  }
+  external_deps += [
+    "safwk:system_ability_fwk",
+  ]
+  defines = []
+  defines += gpu_defines
+}
+
 ## Build rs_test_common.a {{{
 config("rs_test_common_public_config") {
   include_dirs = [
     "$graphic_2d_root/rosen/include",
+    "$graphic_2d_root/rosen/modules/frame_load/include",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/config",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/soft_vsync_manager",
     "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
+    "$graphic_2d_root/rosen/modules/render_service",
     "$graphic_2d_root/rosen/modules/render_service/main",
+    "$graphic_2d_root/rosen/modules/render_service/main/render_process",
     "$graphic_2d_root/rosen/modules/render_service/core",
+    "$graphic_2d_root/rosen/modules/render_service/core/transaction",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param",
     "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param/extend_feature",
@@ -174,12 +256,18 @@ config("rs_test_common_public_config") {
     "$graphic_2d_root/rosen/test/include",
     "$graphic_2d_root/rosen/modules/render_service_base/include/platform/ohos/",
     "$graphic_2d_root/rosen/test/render_service/render_service/unittest/pipeline/mock",
-    "$graphic_2d_root/rosen/modules/render_service/composer/composer_base/layer_backend",
-    "$graphic_2d_root/rosen/modules/render_service/composer/composer_base/render_layer",
-    "$graphic_2d_root/rosen/modules/render_service/composer/composer_base/pipeline",
-    "$graphic_2d_root/rosen/modules/render_service/composer/composer_base/transaction",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/layer_backend",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/render_layer",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/transaction",
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/connection",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend",
     "$graphic_2d_root/rosen/modules/render_service/composer/composer_base/connection",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/transaction/command",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/connection/zidl",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/connection/zidl",
+    "$graphic_2d_root/rosen/modules/render_service/vsync",
   ]
 
   cflags = [
@@ -232,6 +320,7 @@ ohos_static_library("rs_test_common") {
   public_deps = [
     "$graphic_2d_root/rosen/modules/composer:libcomposer",
     "$graphic_2d_root/rosen/modules/composer/vsync:libvsync",
+    "$graphic_2d_root/rosen/modules/render_service/composer:librender_composer",
     "$graphic_2d_root/rosen/modules/render_service:librender_service",
     "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",

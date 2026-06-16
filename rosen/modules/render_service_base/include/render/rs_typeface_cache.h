@@ -47,6 +47,7 @@ public:
     void CacheDrawingTypeface(uint64_t globalUniqueId, std::shared_ptr<Drawing::Typeface> typeface);
     std::shared_ptr<Drawing::Typeface> GetDrawingTypefaceCache(uint64_t globalUniqueId) const;
     std::shared_ptr<Drawing::Typeface> UpdateDrawingTypefaceRef(Drawing::SharedTypeface& sharedTypeface);
+    int32_t InsertVariationTypeface(Drawing::SharedTypeface& sharedTypeface);
     void RemoveDrawingTypefaceByGlobalUniqueId(uint64_t globalUniqueId);
     void RemoveDrawingTypefacesByPid(pid_t pid);
     void AddDelayDestroyQueue(uint64_t globalUniqueId);
@@ -61,13 +62,13 @@ public:
      * @brief    Serialize drawing typeface cache (used for profiler replay).
      * @param ss String stream to write serialized data.
      */
-    void ReplaySerialize(std::stringstream& ss);
+    void ReplaySerialize(std::stringstream& stream);
 
     /**
      * @brief    Deserialize drawing typeface cache (used for profiler replay).
      * @param ss Serialized data.
      */
-    std::string ReplayDeserialize(std::stringstream& ss);
+    std::string ReplayDeserialize(std::stringstream& stream);
 
     RSTypefaceCache() = default;
     ~RSTypefaceCache() = default;
@@ -77,7 +78,6 @@ public:
         uint64_t globalUniqueId = 0;
         uint32_t refCount = 0;
     };
-    void Dump() const;
     void Dump(DfxString& log) const;
 
 private:
@@ -91,7 +91,7 @@ private:
     mutable std::mutex mapMutex_;
     std::unordered_map<uint64_t, uint64_t> typefaceHashCode_;
     std::unordered_map<uint64_t, TypefaceTuple> typefaceHashMap_;
-    std::unordered_map<uint32_t, std::shared_ptr<Drawing::Typeface>> typefaceBaseHashMap_;
+    std::unordered_map<uint32_t, TypefaceTuple> typefaceBaseHashMap_;
 
     mutable std::mutex listMutex_;
     std::list<RSTypefaceRef> delayDestroyTypefaces_;

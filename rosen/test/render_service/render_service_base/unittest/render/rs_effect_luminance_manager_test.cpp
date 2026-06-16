@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
+
 #include <vector>
 
 #include "effect/rs_render_filter_base.h"
@@ -49,6 +50,47 @@ HWTEST_F(RSEffectLuminanceManagerTest, HeadroomSetGetTest, TestSize.Level1)
     EXPECT_EQ(manager.GetDisplayHeadroom(0), 1.0f);
     manager.SetDisplayHeadroom(0, 4.0f);
     EXPECT_EQ(manager.GetDisplayHeadroom(0), 4.0f);
+}
+
+/**
+ * @tc.name: CurrentScreenIdSetGetTest
+ * @tc.desc: test results of SetCurrentScreenId & GetCurrentScreenId
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectLuminanceManagerTest, CurrentScreenIdSetGetTest, TestSize.Level1)
+{
+    auto& manager = RSEffectLuminanceManager::GetInstance();
+    ScreenId screenId = Rosen::INVALID_SCREEN_ID;
+    EXPECT_EQ(manager.GetCurrentScreenId(), screenId);
+    screenId = 0;
+    manager.SetCurrentScreenId(screenId);
+    EXPECT_EQ(manager.GetCurrentScreenId(), screenId);
+}
+
+/**
+ * @tc.name: CurrentScreenshotTypeSetGetTest
+ * @tc.desc: test results of SetCurrentScreenshotType & GetCurrentScreenshotType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectLuminanceManagerTest, CurrentScreenshotTypeSetGetTest, TestSize.Level1)
+{
+    auto& manager = RSEffectLuminanceManager::GetInstance();
+    EXPECT_EQ(manager.GetCurrentScreenshotType(), RSPaintFilterCanvas::ScreenshotType::NON_SHOT);
+    manager.SetCurrentScreenshotType(RSPaintFilterCanvas::ScreenshotType::SDR_SCREENSHOT);
+    EXPECT_EQ(manager.GetCurrentScreenshotType(), RSPaintFilterCanvas::ScreenshotType::SDR_SCREENSHOT);
+}
+
+/**
+ * @tc.name: HdrPipelineStatusSetGetTest
+ * @tc.desc: test results of SetHdrPipelineStatus & GetHdrPipelineStatus
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectLuminanceManagerTest, HdrPipelineStatusSetGetTest, TestSize.Level1)
+{
+    auto& manager = RSEffectLuminanceManager::GetInstance();
+    EXPECT_EQ(manager.GetHdrPipelineStatus(), false);
+    manager.SetHdrPipelineStatus(true);
+    EXPECT_EQ(manager.GetHdrPipelineStatus(), true);
 }
 
 /**
@@ -125,7 +167,7 @@ HWTEST_F(RSEffectLuminanceManagerTest, GetEnableHdrShader, TestSize.Level1)
 
 /**
  * @tc.name: GetEnableEDRShaderAIBarGlowTest
- * @tc.desc: test results of GetEnableHdrEffectSoundWave
+ * @tc.desc: test results of GetEnableEDRShaderAIBarGlow
  * @tc.type: FUNC
  */
 HWTEST_F(RSEffectLuminanceManagerTest, GetEnableEDRShaderAIBarGlow, TestSize.Level1)

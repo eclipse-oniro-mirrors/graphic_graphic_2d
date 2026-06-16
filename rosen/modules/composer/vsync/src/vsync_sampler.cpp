@@ -14,6 +14,7 @@
  */
 
 #include "vsync_sampler.h"
+#include <cinttypes>
 #include <cmath>
 #include "vsync_generator.h"
 #include "vsync_log.h"
@@ -37,7 +38,10 @@ constexpr uint32_t MINES_SAMPLE_NUMS = 3;
 constexpr uint32_t SAMPLES_INTERVAL_DIFF_NUMS = 2;
 constexpr int64_t MAX_IDLE_TIME_THRESHOLD = 900000000; // 900000000ns == 900ms
 constexpr double SAMPLE_VARIANCE_THRESHOLD = 250000000000.0; // 500 usec squared
-constexpr int64_t INSPECTION_PERIOD = 5000000000; //5s
+constexpr double ADAPTIVE_DIFF_RATIO = 0.6;
+constexpr int64_t PERIOD_THRESHOLD = 500000; // 500000ns == 0.5ms
+constexpr uint32_t CORRECTION_FRAME_COUNT = 15;
+constexpr uint32_t CORRECTION_RATE_COUNT = 3;
 
 static int64_t SystemTime()
 {
@@ -63,6 +67,105 @@ VSyncSampler::VSyncSampler()
 {
 }
 
+void VSyncSampler::RegSetScreenVsyncEnabledCallbackForRenderService(ScreenId vsyncEnabledScreenId,
+    std::shared_ptr<AppExecFwk::EventHandler> handler)
+{
+    if (updateVsyncEnabledScreenIdCallback_ == nullptr) {
+        return;
+    }
+    if (!updateVsyncEnabledScreenIdCallback_(vsyncEnabledScreenId)) {
+        return;
+    }
+    SetVsyncEnabledScreenId(vsyncEnabledScreenId);
+    RegSetScreenVsyncEnabledCallback([this, handler](uint64_t screenId, bool enabled) {
+        auto task = [this, screenId, enabled, handler]() {
+            setScreenVsyncEnableByIdCallback_(INVALID_SCREEN_ID, screenId, enabled);
+        };
+        if (handler != nullptr) {
+            handler->PostTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+        }
+    });
+}
+
+void VSyncSampler::ProcessVSyncScreenIdWhilePowerStatusChanged(ScreenId id, ScreenPowerStatus status,
+    std::shared_ptr<AppExecFwk::EventHandler> handler, bool isFold)
+{
+    RS_TRACE_NAME_FMT("%s, id:%lu, status:%d, isPowerOff:%d, isSuspend:%d", __func__, id, status,
+        (status == ScreenPowerStatus::POWER_STATUS_OFF), (status == ScreenPowerStatus::POWER_STATUS_SUSPEND));
+    if (status == ScreenPowerStatus::POWER_STATUS_OFF || status == ScreenPowerStatus::POWER_STATUS_SUSPEND) {
+        SetScreenVsyncEnabledInRSMainThread(id, false);
+    }
+    if (isFold) {
+        uint64_t lastVsyncEnabledScreenId = GetVsyncEnabledScreenId();
+        uint64_t vsyncEnabledScreenId = judgeVSyncEnabledScreenWhilePowerStatusChangedCallback_(
+            id, status, lastVsyncEnabledScreenId);
+        if (vsyncEnabledScreenId != lastVsyncEnabledScreenId) {
+            RS_TRACE_NAME_FMT("vsyncEnabledScreenId has changed, need disable lastVsyncEnabledScreenId vsync, "
+                "vsyncEnabledScreenId:%lu, lastVsyncEnabledScreenId:%lu",
+                vsyncEnabledScreenId, lastVsyncEnabledScreenId);
+            SetScreenVsyncEnabledInRSMainThread(lastVsyncEnabledScreenId, false);
+        }
+        RegSetScreenVsyncEnabledCallbackForRenderService(id, handler);
+    }
+}
+
+uint64_t VSyncSampler::JudgeVSyncEnabledScreenWhileHotPlug(ScreenId screenId, bool connected)
+{
+    if (updateFoldScreenConnectStatusLockedCallback_ == nullptr) {
+        return INVALID_SCREEN_ID;
+    }
+    updateFoldScreenConnectStatusLockedCallback_(screenId, connected);
+    uint64_t vsyncEnabledScreenId = GetVsyncEnabledScreenId();
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (connected) { // screen connected
+        if (vsyncEnabledScreenId == INVALID_SCREEN_ID) {
+            return screenId;
+        }
+    } else { // screen disconnected
+        if (vsyncEnabledScreenId != screenId) {
+            return vsyncEnabledScreenId;
+        }
+        vsyncEnabledScreenId = INVALID_SCREEN_ID;
+        vsyncEnabledScreenId = getScreenVsyncEnableByIdCallback_(vsyncEnabledScreenId);
+    }
+    return vsyncEnabledScreenId;
+}
+
+void VSyncSampler::RegUpdateVsyncEnabledScreenIdCallback(
+    VSyncSampler::UpdateVsyncEnabledScreenIdCallback cb)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    updateVsyncEnabledScreenIdCallback_ = cb;
+}
+
+void VSyncSampler::RegJudgeVSyncEnabledScreenWhilePowerStatusChangedCallback(
+    VSyncSampler::JudgeVSyncEnabledScreenWhilePowerStatusChangedCallback cb)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    judgeVSyncEnabledScreenWhilePowerStatusChangedCallback_ = cb;
+}
+
+void VSyncSampler::RegUpdateFoldScreenConnectStatusLockedCallback(
+    VSyncSampler::UpdateFoldScreenConnectStatusLockedCallback cb)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    updateFoldScreenConnectStatusLockedCallback_ = cb;
+}
+
+void VSyncSampler::RegSetScreenVsyncEnableByIdCallback(
+    VSyncSampler::SetScreenVsyncEnableByIdCallback cb)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    setScreenVsyncEnableByIdCallback_ = cb;
+}
+
+void VSyncSampler::RegGetScreenVsyncEnableByIdCallback(
+    VSyncSampler::GetScreenVsyncEnableByIdCallback cb)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    getScreenVsyncEnableByIdCallback_ = cb;
+}
+
 void VSyncSampler::ResetErrorLocked()
 {
     presentFenceTimeOffset_ = 0;
@@ -79,7 +182,15 @@ void VSyncSampler::SetAdaptive(bool isAdaptive)
         return;
     }
     lastAdaptiveTime_ = 0;
+    RS_TRACE_NAME_FMT("VSyncSampler SetAdaptive: %d", isAdaptive);
+    CreateVSyncGenerator()->SetAdaptive(isAdaptive);
     isAdaptive_ = isAdaptive;
+}
+
+bool VSyncSampler::GetAdaptive()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return isAdaptive_;
 }
 
 void VSyncSampler::SetVsyncEnabledScreenId(uint64_t vsyncEnabledScreenId)
@@ -181,7 +292,7 @@ bool VSyncSampler::AddSample(int64_t timeStamp)
         return true;
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!hardwareVSyncStatus_) {
+    if (!isAdaptive_ && !hardwareVSyncStatus_) {
         return true;
     }
     if (numSamples_ > 0) {
@@ -194,21 +305,19 @@ bool VSyncSampler::AddSample(int64_t timeStamp)
         }
     }
 
-    if (isAdaptive_ && SystemTime() - lastAdaptiveTime_ < INSPECTION_PERIOD) {
-        return true;
-    }
-
     if (numSamples_ < MAX_SAMPLES - 1) {
         numSamples_++;
     } else {
         firstSampleIndex_ = (firstSampleIndex_ + 1) % MAX_SAMPLES;
+        numSamples_ = isAdaptive_ ? 0 : numSamples_;
     }
 
     if (firstSampleIndex_ + numSamples_ >= 1) {
         uint32_t index = (firstSampleIndex_ + numSamples_ - 1) % MAX_SAMPLES;
         samples_[index] = timeStamp;
     }
-    
+
+    UpdateModeForASLocked();
     UpdateReferenceTimeLocked();
     UpdateModeLocked();
 
@@ -225,6 +334,57 @@ bool VSyncSampler::AddSample(int64_t timeStamp)
     }
 
     return !shouldDisableScreenVsync;
+}
+
+void VSyncSampler::UpdateModeForASLocked()
+{
+    if (!isAdaptive_ || period_ == 0) {
+        return;
+    }
+
+    frameCount_++;
+
+    if (numSamples_ <= 1) {
+        return;
+    }
+
+    if (int64_t pulse = CreateVSyncGenerator()->GetVSyncPulse(); pulse > 0) {
+        int64_t prevSample = samples_[(firstSampleIndex_ + numSamples_ - 2) % MAX_SAMPLES];
+        int64_t latestSample = samples_[(firstSampleIndex_ + numSamples_ - 1) % MAX_SAMPLES];
+        int64_t diff = latestSample - prevSample;
+        diffSum_ = (diffSum_ + diff) % period_;
+
+        bool asTriggered = static_cast<double>(std::abs(diff - period_) % period_) >
+                           static_cast<double>(pulse) * ADAPTIVE_DIFF_RATIO;
+        if (asTriggered) {
+            RS_TRACE_NAME_FMT("AdaptiveSync already triggered");
+            return;
+        }
+
+        if ((diffSum_ <= PERIOD_THRESHOLD || period_ - diffSum_ <= PERIOD_THRESHOLD) &&
+            frameCount_ >= CORRECTION_FRAME_COUNT) {
+            RS_TRACE_NAME_FMT("AS UpdateNode normal diffSum: %" PRId64 ", period: %" PRId64 ", frameCount: %u",
+                diffSum_, period_, frameCount_);
+            CreateVSyncGenerator()->UpdateMode(0, phase_, latestSample);
+            ResetCountForASLocked();
+        } else if (frameCount_ >= CreateVSyncGenerator()->GetVsyncRefreshRate() * CORRECTION_RATE_COUNT) {
+            RS_TRACE_NAME_FMT("AS UpdateNode for AS diffSum: %" PRId64 ", period: %" PRId64 ", frameCount: %u",
+                diffSum_, period_, frameCount_);
+            CreateVSyncGenerator()->UpdateMode(0, phase_, latestSample);
+            ResetCountForASLocked();
+            auto now = SystemTime();
+            CreateVSyncGenerator()->SetUpdateModeTimeForAS(now);
+            RS_TRACE_NAME_FMT("AS UpdateNode updateModeTimeForAS: %" PRId64, now);
+        }
+    } else {
+        RS_TRACE_NAME_FMT("pulse is not ready!!!");
+    }
+}
+
+void VSyncSampler::ResetCountForASLocked()
+{
+    diffSum_ = 0;
+    frameCount_ = 0;
 }
 
 void VSyncSampler::UpdateReferenceTimeLocked()
@@ -289,7 +449,10 @@ void VSyncSampler::UpdateModeLocked()
 
         modeUpdated_ = true;
         CheckIfFirstRefreshAfterIdleLocked();
-        CreateVSyncGenerator()->UpdateMode(period_, phase_, referenceTime_);
+        if (!isAdaptive_) {
+            CreateVSyncGenerator()->UpdateMode(period_, phase_, referenceTime_);
+            ResetCountForASLocked();
+        }
         pendingPeriod_ = period_;
     }
 }
@@ -449,7 +612,7 @@ void VSyncSampler::Dump(std::string &result)
     }
     result += "]";
     result += "\npresentFenceTimeOffset:" + std::to_string(presentFenceTimeOffset_);
-    result += "\nvsyncEnabledScreenId:" + std::to_string(vsyncEnabledScreenId_);
+    result += "\nvsyncEnabledScreenId:" + std::to_string(vsyncEnabledScreenId_) + "\n";
 }
 
 VSyncSampler::~VSyncSampler()

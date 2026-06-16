@@ -15,6 +15,7 @@
  */
 
 #include "modifier/rs_modifier_manager.h"
+#include "ui/rs_node.h"
 
 #include "rs_trace.h"
 
@@ -22,6 +23,7 @@
 #include "animation/rs_render_animation.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_message_processor.h"
+#include "common/rs_optional_trace.h"
 #include "modifier_ng/custom/rs_custom_modifier.h"
 #include "platform/common/rs_log.h"
 
@@ -59,6 +61,8 @@ void RSModifierManager::AddAnimation(const std::shared_ptr<RSRenderAnimation>& a
         return;
     }
     animations_.emplace(key, animation);
+    RS_OPTIONAL_TRACE_NAME_FMT("RSModifierManager::AddAnimation id:%" PRIu64 " targetId:%" PRIu64 " targetName:%s",
+        animation->id_, animation->targetId_, animation->targetName_.c_str());
     hasFirstFrameAnimation_ = true;
 
     std::shared_ptr<RSRenderDisplaySync> displaySync = std::make_shared<RSRenderDisplaySync>(animation);
@@ -80,9 +84,13 @@ void RSModifierManager::RemoveAnimation(AnimationId keyId)
 bool RSModifierManager::HasUIRunningAnimation()
 {
     for (auto& iter : animations_) {
-        auto animation = iter.second.lock();
-        if (animation && animation->IsRunning()) {
-            return true;
+        if (auto animation = iter.second.lock(); animation && animation->IsRunning()) {
+            if (!RSSystemProperties::GetAnimationDelayOptimizeEnabled()) {
+                return true;
+            }
+            if (GetNodeTreeStatus(animation->GetTargetId())) {
+                return true;
+            }
         }
     }
     return false;
@@ -94,9 +102,7 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
     // process animation
     bool hasRunningAnimation = false;
     rateDecider_.Reset();
-    // For now, there is no need to optimize the power consumption issue related to delayTime.
-    int64_t minLeftDelayTime = 0;
-
+    int64_t minLeftDelayTime = RSSystemProperties::GetAnimationDelayOptimizeEnabled() ? INT64_MAX : 0;
     // iterate and execute all animations, remove finished animations
     EraseIf(animations_, [this, &hasRunningAnimation, time, vsyncPeriod, &minLeftDelayTime](auto& iter) -> bool {
         auto animation = iter.second.lock();
@@ -108,7 +114,7 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
         bool isFinished = false;
         AnimationId animId = animation->GetAnimationId();
         if (!JudgeAnimateWhetherSkip(animId, time, vsyncPeriod)) {
-            isFinished = animation->Animate(time, minLeftDelayTime);
+            isFinished = animation->Animate(time, minLeftDelayTime, true, GetNodeTreeStatus(animation->GetTargetId()));
         }
 
         if (isFinished) {
@@ -121,7 +127,7 @@ bool RSModifierManager::Animate(int64_t time, int64_t vsyncPeriod)
         return isFinished;
     });
     rateDecider_.MakeDecision(frameRateGetFunc_);
-
+    RequestDelayedVSync(minLeftDelayTime, hasRunningAnimation);
     return hasRunningAnimation;
 }
 
@@ -166,6 +172,47 @@ const FrameRateRange RSModifierManager::GetFrameRateRange() const
     auto frameRateRange = rateDecider_.GetFrameRateRange();
     frameRateRange.type_ |= UI_ANIMATION_FRAME_RATE_TYPE;
     return frameRateRange;
+}
+
+void RSModifierManager::RequestDelayedVSync(int64_t minLeftDelayTime, bool& hasRunningAnimation)
+{
+    constexpr int64_t oneFrameTimeInFPS60 = 17;
+    if (!hasRunningAnimation || minLeftDelayTime <= oneFrameTimeInFPS60 || minLeftDelayTime >= INT64_MAX) {
+        return;
+    }
+    
+    if (auto rsUIContext = rsUIContext_.lock()) {
+        constexpr int64_t maxDelayTimeMs = 60000;
+        int64_t delayTimeMs = std::min(minLeftDelayTime, maxDelayTimeMs);
+        int64_t actualDelayMs = delayTimeMs - oneFrameTimeInFPS60;
+
+        RS_TRACE_NAME_FMT("RequestDelayedVSync: actualDelayMs=%lldms", actualDelayMs);
+        rsUIContext->PostDelayTask(
+            [this]() {
+                if (auto context = rsUIContext_.lock()) {
+                    context->RequestVsyncCallback();
+                }
+            }, static_cast<uint32_t>(actualDelayMs));
+        hasRunningAnimation = false;
+    }
+}
+
+bool RSModifierManager::GetNodeTreeStatus(NodeId targetId) const
+{
+    auto rsUIContext = rsUIContext_.lock();
+    if (!rsUIContext) {
+        return true;
+    }
+    auto node = rsUIContext->GetNodeMap().GetNode<RSNode>(targetId);
+    if (!node) {
+        return false;
+    }
+    return node->GetIsOnTheTree();
+}
+
+void RSModifierManager::SetRSUIContext(std::weak_ptr<RSUIContext> context)
+{
+    rsUIContext_ = context;
 }
 
 void RSModifierManager::OnAnimationFinished(const std::shared_ptr<RSRenderAnimation>& animation)

@@ -15,7 +15,11 @@
 
 #include "rosen_text/text_style.h"
 
+#include <limits>
+#include <mutex>
 #include <sstream>
+
+#include "utils/text_histogram.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -55,12 +59,17 @@ void FontFeatures::Clear()
     featureSet_.clear();
 }
 
-void FontVariations::SetAxisValue(const std::string& tag, float value)
+void FontVariations::SetAxisValue(const std::string& tag, float value, bool isNormalization)
 {
-    axis_[tag] = value;
+    axis_[tag] = { value, isNormalization };
+    constexpr float FONT_WEIGHT_NORMAL = 400.0f;
+    static std::once_flag flag;
+    if (tag != "wght" || std::abs(value - FONT_WEIGHT_NORMAL) >= std::numeric_limits<float>::epsilon()) {
+        std::call_once(flag, [] { TEXT_HISTOGRAM_BOOLEAN_NAME("FontVariationAxis", true); });
+    }
 }
 
-const std::map<std::string, float>& FontVariations::GetAxisValues() const
+const std::map<std::string, std::pair<float, bool>>& FontVariations::GetAxisValues() const
 {
     return axis_;
 }
@@ -142,7 +151,9 @@ bool TextStyle::operator ==(const TextStyle& rhs) const
         shadows == rhs.shadows &&
         fontFeatures == rhs.fontFeatures &&
         fontVariations == rhs.fontVariations &&
-        badgeType == rhs.badgeType;
+        badgeType == rhs.badgeType &&
+        fontEdging == rhs.fontEdging &&
+        fontTypefaces == rhs.fontTypefaces;
 }
 
 bool TextStyle::EqualByFonts(const TextStyle &rhs) const
@@ -152,12 +163,14 @@ bool TextStyle::EqualByFonts(const TextStyle &rhs) const
         fontFamilies == rhs.fontFamilies &&
         fontFeatures == rhs.fontFeatures &&
         fontVariations == rhs.fontVariations &&
+        fontEdging == rhs.fontEdging &&
         Drawing::IsScalarAlmostEqual(letterSpacing, rhs.letterSpacing) &&
         Drawing::IsScalarAlmostEqual(wordSpacing, rhs.wordSpacing) &&
         Drawing::IsScalarAlmostEqual(heightScale, rhs.heightScale) &&
         Drawing::IsScalarAlmostEqual(baseLineShift, rhs.baseLineShift) &&
         Drawing::IsScalarAlmostEqual(fontSize, rhs.fontSize) &&
-        locale == rhs.locale;
+        locale == rhs.locale &&
+        fontTypefaces == rhs.fontTypefaces;
 }
 
 bool TextStyle::MatchOneAttribute(StyleType styleType, const TextStyle &rhs) const
@@ -192,6 +205,7 @@ bool TextStyle::MatchOneAttribute(StyleType styleType, const TextStyle &rhs) con
             return fontStyle == rhs.fontStyle &&
                 locale == rhs.locale &&
                 fontFamilies == rhs.fontFamilies &&
+                fontEdging == rhs.fontEdging &&
                 Drawing::IsScalarAlmostEqual(fontSize, rhs.fontSize) &&
                 Drawing::IsScalarAlmostEqual(heightScale, rhs.heightScale) &&
                 halfLeading == rhs.halfLeading &&
@@ -199,6 +213,16 @@ bool TextStyle::MatchOneAttribute(StyleType styleType, const TextStyle &rhs) con
         default:
             return false;
     }
+}
+
+void TextStyle::SetFontTypefaces(const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces)
+{
+    fontTypefaces = typefaces;
+}
+
+const std::vector<std::shared_ptr<Drawing::Typeface>>& TextStyle::GetFontTypefaces() const
+{
+    return fontTypefaces;
 }
 } // namespace Rosen
 } // namespace OHOS

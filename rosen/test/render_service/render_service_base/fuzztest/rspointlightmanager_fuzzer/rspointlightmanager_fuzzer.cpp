@@ -30,9 +30,8 @@
 namespace OHOS {
 namespace Rosen {
 
-RSPointLightManager* instance = RSPointLightManager::Instance();
-
 namespace {
+auto& instance = RSPointLightManager::Instance(0);
 const uint8_t* g_data = nullptr;
 size_t g_size = 0;
 size_t g_pos;
@@ -129,7 +128,6 @@ bool DoPrepareLight(const uint8_t* data, size_t size)
         return false;
     }
 
-    instance->GetScreenRotation();
     instance->PrepareLight();
     instance->ClearDirtyList();
 
@@ -143,22 +141,6 @@ bool DoPrepareLight(const uint8_t* data, size_t size)
     dirtyList.push_back(renderNode);
     bool isLightSourceDirty = GetData<bool>();
     instance->PrepareLight(nodeMap, dirtyList, isLightSourceDirty);
-    return true;
-}
-
-bool DoSetScreenRotation(const uint8_t* data, size_t size)
-{
-    if (data == nullptr) {
-        return false;
-    }
-
-    uint32_t value = GetData<uint32_t>();
-    ScreenRotation screenRotation = (ScreenRotation)value;
-    instance->SetScreenRotation(screenRotation);
-
-    RSLightSource lightSourcePtr;
-    RectI illuminatedAbsRect;
-    instance->CalculateLightPosForIlluminated(lightSourcePtr, illuminatedAbsRect);
     return true;
 }
 
@@ -176,11 +158,6 @@ bool DoCheckIlluminated(const uint8_t* data, size_t size)
     instance->CheckIlluminated(lightSourcePtr, illuminatedGeoPtr);
 
     lightSourcePtr->GetMutableRenderProperties().GetEffect().lightSourcePtr_ = std::make_shared<RSLightSource>();
-    instance->CheckIlluminated(lightSourcePtr, illuminatedGeoPtr);
-
-    uint32_t rotation = GetData<uint32_t>();
-    ScreenRotation screenRotation = (ScreenRotation)rotation;
-    instance->SetScreenRotation(rotation);
     instance->CheckIlluminated(lightSourcePtr, illuminatedGeoPtr);
     return true;
 }
@@ -203,7 +180,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::Rosen::DoAddDirtyLightSource(data, size);             // AddDirtyLightSource
     OHOS::Rosen::DoAddDirtyIlluminated(data, size);             // AddDirtyIlluminated
     OHOS::Rosen::DoPrepareLight(data, size);                    // PrepareLight
-    OHOS::Rosen::DoSetScreenRotation(data, size);               // SetScreenRotation
     OHOS::Rosen::DoCheckIlluminated(data, size);                // CheckIlluminated
     return 0;
 }

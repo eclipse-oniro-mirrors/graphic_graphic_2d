@@ -28,7 +28,7 @@
 #include "thread_private_data_ctl.h"
 #include "wrapper_log.h"
 #include "egl_blob_cache.h"
-#if USE_IGAMESERVICE_PLUGIN
+#ifdef USE_IGAMESERVICE_PLUGIN
 #include "igameservice_plugin.h"
 #endif
 #ifdef EGL_USE_APS_PLUGIN
@@ -329,6 +329,10 @@ __eglMustCastToProperFunctionPointerType EglGetProcAddressImpl(const char *procn
         return __eglMustCastToProperFunctionPointerType(addr);
     }
 
+    if (auto it = gCustomMap.find(procname); it != gCustomMap.end()) {
+        return __eglMustCastToProperFunctionPointerType(it->second);
+    }
+
     EglWrapperLoader& loader(EglWrapperLoader::GetInstance());
     void *func = loader.GetProcAddrFromDriver(procname);
 
@@ -343,12 +347,6 @@ __eglMustCastToProperFunctionPointerType EglGetProcAddressImpl(const char *procn
         return __eglMustCastToProperFunctionPointerType(func);
     }
 
-#ifdef OPENGL_WRAPPER_ENABLE_GL4
-    auto it = gCustomMap.find(procname);
-    if (it != gCustomMap.end()) {
-        return __eglMustCastToProperFunctionPointerType(it->second);
-    }
-#endif
     WLOGD("FindEglExtApi did not find an entry for %{public}s", procname);
     return nullptr;
 }
@@ -356,7 +354,7 @@ __eglMustCastToProperFunctionPointerType EglGetProcAddressImpl(const char *procn
 EGLBoolean EglInitializeImpl(EGLDisplay dpy, EGLint *major, EGLint *minor)
 {
     WLOGD("");
-#if USE_IGAMESERVICE_PLUGIN
+#ifdef USE_IGAMESERVICE_PLUGIN
     OHOS::Rosen::IGameServicePlugin::Instance()->InitEglSliceReport();
 #endif
 #ifdef EGL_USE_APS_PLUGIN
@@ -467,7 +465,7 @@ EGLBoolean EglSwapBuffersImpl(EGLDisplay dpy, EGLSurface surf)
 {
     ClearError();
     WLOGD("");
-#if USE_IGAMESERVICE_PLUGIN
+#ifdef USE_IGAMESERVICE_PLUGIN
     OHOS::Rosen::IGameServicePlugin::Instance()->AddEglGraphicCount();
 #endif
 #ifdef EGL_USE_APS_PLUGIN
@@ -1296,7 +1294,7 @@ EGLBoolean EglSwapBuffersWithDamageKHRImpl(EGLDisplay dpy, EGLSurface draw,
 {
     ClearError();
     WLOGD("");
-#if USE_IGAMESERVICE_PLUGIN
+#ifdef USE_IGAMESERVICE_PLUGIN
     OHOS::Rosen::IGameServicePlugin::Instance()->AddEglGraphicCount();
 #endif
     EglWrapperDisplay *display = ValidateDisplay(dpy);

@@ -62,6 +62,7 @@ public:
     bool GetHasHpaeBlurNode();
     NodeId GetBlurNodeId();
     Vector4f GetPixelStretch();
+    void SwapPixelStretch();
     Vector2f GetGreyCoef();
     int GetTileMode();
     float GetBlurRadius();
@@ -78,6 +79,11 @@ public:
 
     void NotifyBufferUsed(bool status) { bufferUsed_ = status; }
     bool GetBufferUsed() { return bufferUsed_; }
+    void NotifyOfftree(const std::string nodeName, bool isOnTree);
+    void SetDesktopOffTree(bool offTree);
+    bool GetDesktopOffTree();
+    void SetScaleFactor(float factor);
+    float GetScaleFactor() const;
 
 private:
     RSHpaeBaseData();
@@ -88,9 +94,11 @@ private:
     bool isFirstFrame_ = false;
     bool needReset_ = false;
     bool blurContentChanged_ = false;
+    float hpaeScaleFactor_ = 1.f;
 
     HpaeStatus hpaeStatus_;
     bool bufferUsed_ = true;
+    bool desktopOffTree_ = false;
 };
 
 } // OHOS::Rosen

@@ -20,6 +20,7 @@
 #include "common/rs_color.h"
 #include "rs_animation_base_test.h"
 #include "rs_animation_test_utils.h"
+#include "ui/rs_ui_context_manager.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -33,8 +34,14 @@ public:
     static void TearDownTestCase();
 };
 
-void RSTransitionTest::SetUpTestCase() {}
-void RSTransitionTest::TearDownTestCase() {}
+void RSTransitionTest::SetUpTestCase()
+{
+    RSAnimationBaseTest::SetUpTestCase();
+}
+void RSTransitionTest::TearDownTestCase()
+{
+    RSAnimationBaseTest::TearDownTestCase();
+}
 
 /**
  * @tc.name: SetTransitionEffectTest
@@ -44,7 +51,9 @@ void RSTransitionTest::TearDownTestCase() {}
 HWTEST_F(RSTransitionTest, SetTransitionEffectTest, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSTransitionTest SetTransitionEffectTest start";
-    RSTransition transition(nullptr, false);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    RSTransition transition(rsUIContext, nullptr, false);
     ASSERT_FALSE(transition.effect_);
     auto effect = RSTransitionEffect::Create();
     transition.SetTransitionEffect(effect);
@@ -63,7 +72,9 @@ HWTEST_F(RSTransitionTest, SetTransitionEffectTest001, TestSize.Level1)
     /**
      * @tc.steps: step1. init SetTransitionEffect
      */
-    auto transition = std::make_shared<RSTransition>(RSTransitionEffect::EMPTY, true);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    auto transition = std::make_shared<RSTransition>(rsUIContext, RSTransitionEffect::EMPTY, true);
     /**
      * @tc.steps: step2. start SetTransitionEffect test
      */
@@ -88,7 +99,9 @@ HWTEST_F(RSTransitionTest, SetTransitionEffectTest002, TestSize.Level1)
     /**
      * @tc.steps: step1. init SetTransitionEffect
      */
-    auto transition = std::make_shared<RSTransition>(RSTransitionEffect::EMPTY, true);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    auto transition = std::make_shared<RSTransition>(rsUIContext, RSTransitionEffect::EMPTY, true);
     /**
      * @tc.steps: step2. start SetTransitionEffect test
      */
@@ -112,7 +125,9 @@ HWTEST_F(RSTransitionTest, SetTransitionEffectTest003, TestSize.Level1)
     /**
      * @tc.steps: step1. init SetTransitionEffect
      */
-    auto transition = std::make_shared<RSTransition>(RSTransitionEffect::EMPTY, true);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    auto transition = std::make_shared<RSTransition>(rsUIContext, RSTransitionEffect::EMPTY, true);
     /**
      * @tc.steps: step2. start SetTransitionEffect test
      */
@@ -136,7 +151,9 @@ HWTEST_F(RSTransitionTest, SetTimingCurveTest001, TestSize.Level1)
     /**
      * @tc.steps: step1. init GetTimingCurve
      */
-    auto transition = std::make_shared<RSTransition>(RSTransitionEffect::OPACITY, true);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    auto transition = std::make_shared<RSTransition>(rsUIContext, RSTransitionEffect::OPACITY, true);
     transition->SetTimingCurve(RSAnimationTimingCurve::DEFAULT);
     /**
      * @tc.steps: step2. start GetTimingCurve test
@@ -160,7 +177,9 @@ HWTEST_F(RSTransitionTest, SetTimingCurveTest002, TestSize.Level1)
     /**
      * @tc.steps: step1. init GetTimingCurve
      */
-    auto transition = std::make_shared<RSTransition>(RSTransitionEffect::OPACITY, true);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    auto transition = std::make_shared<RSTransition>(rsUIContext, RSTransitionEffect::OPACITY, true);
     transition->SetTimingCurve(RSAnimationTimingCurve::LINEAR);
     /**
      * @tc.steps: step2. start GetTimingCurve test
@@ -184,7 +203,9 @@ HWTEST_F(RSTransitionTest, SetTimingCurveTest003, TestSize.Level1)
     /**
      * @tc.steps: step1. init GetTimingCurve
      */
-    auto transition = std::make_shared<RSTransition>(RSTransitionEffect::SCALE, true);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
+    auto transition = std::make_shared<RSTransition>(rsUIContext, RSTransitionEffect::SCALE, true);
     transition->SetTimingCurve(RSAnimationTimingCurve::EASE_IN);
     /**
      * @tc.steps: step2. start GetTimingCurve test
@@ -208,14 +229,17 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest001, TestSize.Level1)
     /**
      * @tc.steps: step1. init RSNodeAnimate
      */
+    auto rsUIContext = rsUiDirector->GetRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    
     auto effect = RSTransitionEffect::Create()->Translate({500.f, 300.f, 0.f});
-    auto newCanvasNode = RSCanvasNode::Create();
+    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
     newCanvasNode->SetBoundsWidth(200.f);
     newCanvasNode->SetBoundsHeight(300.f);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
     newCanvasNode->SetTransitionEffect(effect);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(rsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode]() {
         rootNode->AddChild(newCanvasNode, -1);
     });
@@ -241,14 +265,17 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest002, TestSize.Level1)
     /**
      * @tc.steps: step1. init RSNodeAnimate
      */
+    auto rsUIContext = rsUiDirector->GetRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    
     auto effect = RSTransitionEffect::Create()->Opacity(0.5f);
-    auto newCanvasNode = RSCanvasNode::Create();
+    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
     newCanvasNode->SetTransitionEffect(effect);
     rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(rsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode]() {
         newCanvasNode->SetVisible(false);
     });
@@ -274,13 +301,16 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest003, TestSize.Level1)
     /**
      * @tc.steps: step1. init RSNodeAnimate
      */
+    auto rsUIContext = rsUiDirector->GetRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-    auto newCanvasNode = RSCanvasNode::Create();
+    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
     rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(rsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
@@ -305,18 +335,19 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest004, TestSize.Level1)
     /**
      * @tc.steps: step1. init RSNodeAnimate
      */
-    std::string surfaceNodeName = "AnimationSurface";
-    struct RSSurfaceNodeConfig surfaceNodeConfig = { .SurfaceNodeName = surfaceNodeName, .isSync = true };
-    auto animationSurfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true);
+    auto rsUIContext = rsUiDirector->GetRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    
+    auto animationCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
     auto effect = RSTransitionEffect::Create()->Translate({500.f, 300.f, 0.f});
-    animationSurfaceNode->SetBoundsWidth(200.f);
-    animationSurfaceNode->SetBoundsHeight(300.f);
-    animationSurfaceNode->SetBackgroundColor(SK_ColorRED);
-    animationSurfaceNode->SetTransitionEffect(effect);
+    animationCanvasNode->SetBoundsWidth(200.f);
+    animationCanvasNode->SetBoundsHeight(300.f);
+    animationCanvasNode->SetBackgroundColor(SK_ColorRED);
+    animationCanvasNode->SetTransitionEffect(effect);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::EASE,
-        [&animationSurfaceNode]() {
-        rootNode->AddChild(animationSurfaceNode, -1);
+    auto animations = RSNode::Animate(rsUIContext, protocol, RSAnimationTimingCurve::EASE,
+        [&animationCanvasNode]() {
+        rootNode->AddChild(animationCanvasNode, -1);
     });
 
     /**
@@ -340,18 +371,19 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest005, TestSize.Level1)
     /**
      * @tc.steps: step1. init RSNodeAnimate
      */
-    std::string surfaceNodeName = "AnimationSurface";
-    struct RSSurfaceNodeConfig surfaceNodeConfig = { .SurfaceNodeName = surfaceNodeName, .isSync = true };
-    auto animationSurfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true);
+    auto rsUIContext = rsUiDirector->GetRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    
+    auto animationCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
     auto effect = RSTransitionEffect::Create()->Opacity(0.5f);
-    animationSurfaceNode->SetFrame(ANIMATION_START_BOUNDS);
-    animationSurfaceNode->SetBackgroundColor(SK_ColorRED);
-    animationSurfaceNode->SetTransitionEffect(effect);
-    rootNode->AddChild(animationSurfaceNode, -1);
+    animationCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
+    animationCanvasNode->SetBackgroundColor(SK_ColorRED);
+    animationCanvasNode->SetTransitionEffect(effect);
+    rootNode->AddChild(animationCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::EASE,
-        [&animationSurfaceNode]() {
-        animationSurfaceNode->SetVisible(false);
+    auto animations = RSNode::Animate(rsUIContext, protocol, RSAnimationTimingCurve::EASE,
+        [&animationCanvasNode]() {
+        animationCanvasNode->SetVisible(false);
     });
 
     /**
@@ -375,17 +407,18 @@ HWTEST_F(RSTransitionTest, RSNodeAnimateTest006, TestSize.Level1)
     /**
      * @tc.steps: step1. init RSNodeAnimate
      */
-    std::string surfaceNodeName = "AnimationSurface";
-    struct RSSurfaceNodeConfig surfaceNodeConfig = { .SurfaceNodeName = surfaceNodeName, .isSync = true };
-    auto animationSurfaceNode = RSSurfaceNode::Create(surfaceNodeConfig, true);
+    auto rsUIContext = rsUiDirector->GetRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    
+    auto animationCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-    animationSurfaceNode->SetFrame(ANIMATION_START_BOUNDS);
-    animationSurfaceNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(animationSurfaceNode, -1);
+    animationCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
+    animationCanvasNode->SetBackgroundColor(SK_ColorRED);
+    rootNode->AddChild(animationCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(protocol, RSAnimationTimingCurve::EASE,
-        [&animationSurfaceNode, &effect]() {
-        animationSurfaceNode->NotifyTransition(effect, true);
+    auto animations = RSNode::Animate(rsUIContext, protocol, RSAnimationTimingCurve::EASE,
+        [&animationCanvasNode, &effect]() {
+        animationCanvasNode->NotifyTransition(effect, true);
     });
     /**
      * @tc.steps: step2. start RSNodeAnimate test

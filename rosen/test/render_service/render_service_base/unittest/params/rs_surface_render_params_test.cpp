@@ -141,20 +141,6 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetLayerSourceTuning, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetTunnelLayerId
- * @tc.desc:
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSSurfaceRenderParamsTest, SetTunnelLayerId, TestSize.Level1)
-{
-    RSSurfaceRenderParams params(DEFAULT_NODEID);
-    EXPECT_EQ(params.GetTunnelLayerId(), 0);
-    params.SetTunnelLayerId(1);
-    EXPECT_EQ(params.GetTunnelLayerId(), 1);
-}
-
-/**
  * @tc.name: SetFixRotationByUser
  * @tc.desc:
  * @tc.type:FUNC
@@ -547,5 +533,160 @@ HWTEST_F(RSSurfaceRenderParamsTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
     EXPECT_EQ(params.GetSurfaceBufferOpaque(), false);
     params.SetSurfaceBufferOpaque(true);
     EXPECT_EQ(params.GetSurfaceBufferOpaque(), true);
+}
+
+/**
+ * @tc.name: IsRelated
+ * @tc.desc: Test function IsRelated
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, IsRelated, TestSize.Level2)
+{
+    RSSurfaceRenderParams params(118);
+    auto result = params.IsRelated();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: IsRelatedSourceNode
+ * @tc.desc: Test function IsRelatedSourceNode
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, IsRelatedSourceNode, TestSize.Level2)
+{
+    RSSurfaceRenderParams params(118);
+    auto result = params.IsRelatedSourceNode();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SetAppRotationCorrectionTest
+ * @tc.desc: SetAppRotationCorrection and GetAppRotationCorrection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetAppRotationCorrectionTest, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(111);
+    params.SetAppRotationCorrection(ScreenRotation::ROTATION_180);
+    EXPECT_EQ(params.GetAppRotationCorrection(), ScreenRotation::ROTATION_180);
+    params.SetAppRotationCorrection(ScreenRotation::ROTATION_180);
+}
+
+/**
+ * @tc.name: SetRotationCorrectionDegreeTest
+ * @tc.desc: SetRotationCorrectionDegree and GetRotationCorrectionDegree
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetRotationCorrectionDegreeTest, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(111);
+    params.SetRotationCorrectionDegree(270);
+    EXPECT_EQ(params.GetRotationCorrectionDegree(), 270);
+    params.SetRotationCorrectionDegree(270);
+}
+
+/**
+ * @tc.name: SetUifirstStartingWindowId
+ * @tc.desc: Test set uifirst starting window id
+ * @tc.type:FUNC
+ * @tc.require: issue21674
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetUifirstStartingWindowId, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(DEFAULT_NODEID);
+    NodeId startingWindowId = 100;
+    params.SetUifirstStartingWindowId(startingWindowId);
+    EXPECT_EQ(params.GetUifirstStartingWindowId(), startingWindowId);
+
+    // Test setting multiple times
+    params.SetUifirstStartingWindowId(startingWindowId);
+    EXPECT_EQ(params.GetUifirstStartingWindowId(), startingWindowId);
+}
+
+/**
+ * @tc.name: SetIsParticipateInOcclusionTest
+ * @tc.desc: Test SetIsParticipateInOcclusion and GetIsParticipateInOcclusion
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetIsParticipateInOcclusionTest, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(DEFAULT_NODEID);
+
+    // Test set to true - should trigger needSync
+    params.SetIsParticipateInOcclusion(true);
+    EXPECT_EQ(params.GetIsParticipateInOcclusion(), true);
+    EXPECT_EQ(params.needSync_, true);
+
+    // Test set to false - should trigger needSync
+    params.needSync_ = false;
+    params.SetIsParticipateInOcclusion(false);
+    EXPECT_EQ(params.GetIsParticipateInOcclusion(), false);
+    EXPECT_EQ(params.needSync_, true);
+
+    // Test set same value - should not trigger needSync
+    params.needSync_ = false;
+    params.SetIsParticipateInOcclusion(false);
+    EXPECT_EQ(params.needSync_, false);
+}
+/**
+ * @tc.name: SwapRelatedRenderParamsTest
+ * @tc.desc: Test SwapRelatedRenderParams swaps occludedByFilterCache, skipDraw, matrix and shouldPaint
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SwapRelatedRenderParamsTest, TestSize.Level1)
+{
+    RSSurfaceRenderParams paramsA(DEFAULT_NODEID);
+    RSSurfaceRenderParams paramsB(DEFAULT_NODEID);
+
+    Drawing::Matrix matrixA;
+    matrixA.SetScale(2.0f, 2.0f);
+    Drawing::Matrix matrixB;
+    matrixB.SetScale(3.0f, 3.0f);
+
+    paramsA.SetOccludedByFilterCache(true);
+    paramsB.SetOccludedByFilterCache(false);
+    paramsA.SetSkipDraw(true);
+    paramsB.SetSkipDraw(false);
+    paramsA.SetMatrix(matrixA);
+    paramsB.SetMatrix(matrixB);
+    paramsA.SetShouldPaint(true);
+    paramsB.SetShouldPaint(false);
+
+    ASSERT_TRUE(paramsA.GetOccludedByFilterCache());
+    ASSERT_FALSE(paramsB.GetOccludedByFilterCache());
+    ASSERT_TRUE(paramsA.GetSkipDraw());
+    ASSERT_FALSE(paramsB.GetSkipDraw());
+    ASSERT_TRUE(paramsA.GetShouldPaint());
+    ASSERT_FALSE(paramsB.GetShouldPaint());
+    ASSERT_EQ(paramsA.GetMatrix().Get(Drawing::Matrix::SCALE_X), 2.0f);
+    ASSERT_EQ(paramsB.GetMatrix().Get(Drawing::Matrix::SCALE_X), 3.0f);
+
+    paramsA.SwapRelatedRenderParams(paramsB);
+
+    ASSERT_FALSE(paramsA.GetOccludedByFilterCache());
+    ASSERT_TRUE(paramsB.GetOccludedByFilterCache());
+    ASSERT_FALSE(paramsA.GetSkipDraw());
+    ASSERT_TRUE(paramsB.GetSkipDraw());
+    ASSERT_FALSE(paramsA.GetShouldPaint());
+    ASSERT_TRUE(paramsB.GetShouldPaint());
+    ASSERT_EQ(paramsA.GetMatrix().Get(Drawing::Matrix::SCALE_X), 3.0f);
+    ASSERT_EQ(paramsB.GetMatrix().Get(Drawing::Matrix::SCALE_X), 2.0f);
+}
+
+/**
+ * @tc.name: SetNeedClearRelatedCacheTest
+ * @tc.desc: Test SetNeedClearRelatedCache
+ * @tc.type:FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSurfaceRenderParamsTest, SetNeedClearRelatedCacheTest, TestSize.Level1)
+{
+    RSSurfaceRenderParams params(DEFAULT_NODEID);
+    params.SetNeedClearRelatedCache(false);
+    EXPECT_EQ(params.IsNeedClearRelatedCache(), false);
+    params.SetNeedClearRelatedCache(true);
+    EXPECT_EQ(params.IsNeedClearRelatedCache(), true);
 }
 } // namespace OHOS::Rosen

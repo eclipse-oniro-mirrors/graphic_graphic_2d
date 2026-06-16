@@ -33,7 +33,7 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetBootAnimation, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetGlobalPositionEnabled, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSecurityLayer, Uint64, Bool);
-    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSourceVirtualDisplayId, Uint64, Uint64);
+    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSourceVirtualScreenId, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSkipLayer, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSnapshotSkipLayer, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetFingerprint, Uint64, Bool);
@@ -47,7 +47,6 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetIsTextureExportNode, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSurfaceNodeType, Uint64, Uint8);
     ADD_RANDOM_COMMAND_WITH_PARAM_3(RSSurfaceNodeSetContainerWindow, Uint64, Bool, RRect);
-    ADD_RANDOM_COMMAND_WITH_PARAM_1(RSSurfaceNodeSetAnimationFinished, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeAttachToDisplay, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeDetachToDisplay, Uint64, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSurfaceNodeSetSurfaceId, Uint64, Uint64);
@@ -56,7 +55,7 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetForeground, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetForceUIFirst, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetAncoFlags, Uint64, Uint32);
-    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetHDRPresent, Uint64, Bool);
+    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetDarkColorMode, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSkipDraw, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_3(RSSurfaceNodeSetWatermarkEnabled, Uint64, String, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetAbilityState, Uint64, RSSurfaceNodeAbilityState);
@@ -69,8 +68,9 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetSurfaceBufferOpaque, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetAncoSrcCrop, Uint64, Rect);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetContainerWindowTransparent, Uint64, Bool);
-    ADD_RANDOM_COMMAND_WITH_PARAM_3(RSSurfaceNodeSetClonedNodeId, Uint64, Uint64, Bool);
-    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSetNeedUseCmdlistDrawRegion, Uint64, Bool);
+    ADD_RANDOM_COMMAND_WITH_PARAM_4(RSSurfaceNodeSetClonedNodeId, Uint64, Uint64, Bool, Bool);
+    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetAppRotationCorrection, Uint64, ScreenRotation);
+    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSSurfaceNodeSetHDRType, Uint64, Uint32);
 };
 } // namespace Rosen
 } // namespace OHOS

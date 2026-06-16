@@ -61,12 +61,14 @@ ohos_unittest("EffectTest") {
   external_deps = [
     "cJSON:cjson",
     "c_utils:utils",
+    "graphics_effect:graphics_effect_core",
     "googletest:gtest_main",
     "googletest:gmock_main",
     "hilog:libhilog",
     "image_framework:image",
     "image_framework:image_native",
     "image_framework:pixelmap",
+    "napi:ace_napi",
   ]
 
   external_deps += [ "skia:skia_canvaskit" ]

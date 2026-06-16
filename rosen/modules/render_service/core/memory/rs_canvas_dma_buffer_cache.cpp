@@ -66,6 +66,11 @@ void RSCanvasDmaBufferCache::NotifyCanvasSurfaceBufferChanged(
 bool RSCanvasDmaBufferCache::AddPendingBuffer(
     NodeId nodeId, const sptr<SurfaceBuffer>& buffer, uint32_t resetSurfaceIndex)
 {
+    if (buffer == nullptr && resetSurfaceIndex == 0) {
+        ClearPendingBufferByNodeId(nodeId);
+        return true;
+    }
+
     std::lock_guard<std::mutex> lock(pendingBufferMutex_);
     auto it = pendingBufferMap_.find(nodeId);
     // Cache first buffer for the node
@@ -76,24 +81,19 @@ bool RSCanvasDmaBufferCache::AddPendingBuffer(
 
     auto& cache = it->second; // std::pair<currentResetSurfaceIndex, BufferMap>
     auto currentResetSurfaceIndex = cache.first;
-    if (resetSurfaceIndex <= currentResetSurfaceIndex) {
+    auto& nodeBufferMap = cache.second; // resetSurfaceIndex -> SurfaceBuffer
+    bool willAdd = false;
+    if (resetSurfaceIndex > currentResetSurfaceIndex) {
+        willAdd = nodeBufferMap.find(resetSurfaceIndex) == nodeBufferMap.end();
+    } else {
         RS_LOGW("RSCanvasDmaBufferCache::AddPendingBuffer nodeId=%{public}" PRIu64 " ignored (old resetSurfaceIndex)",
             nodeId);
-        return false;
     }
-
-    auto& nodeBufferMap = cache.second; // resetSurfaceIndex -> SurfaceBuffer
-    auto bufferIt = nodeBufferMap.find(resetSurfaceIndex);
-    if (bufferIt == nodeBufferMap.end()) {
+    if (willAdd) {
         nodeBufferMap.emplace(resetSurfaceIndex, buffer);
-        if (nodeBufferMap.size() > CACHED_SURFACE_BUFFER_LIMIT_PER_NODE) {
-            RS_LOGW("RSCanvasDmaBufferCache::AddPendingBuffer, Cached surfaceBuffer out of limit, "
-                "nodeId=%{public}" PRIu64, nodeId);
-            nodeBufferMap.erase(nodeBufferMap.begin());
-        }
-        return true;
     }
-    return false;
+    RemovePendingBuffer(nodeBufferMap, currentResetSurfaceIndex, nodeId);
+    return willAdd;
 }
 
 sptr<SurfaceBuffer> RSCanvasDmaBufferCache::AcquirePendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex)
@@ -118,17 +118,24 @@ sptr<SurfaceBuffer> RSCanvasDmaBufferCache::AcquirePendingBuffer(NodeId nodeId, 
         RS_LOGW("RSCanvasDmaBufferCache::AcquirePendingBuffer, failed to hit cache, nodeId=%{public}" PRIu64, nodeId);
     }
 
-    bufferIt = nodeBufferMap.begin();
+    RemovePendingBuffer(nodeBufferMap, resetSurfaceIndex, nodeId);
+    return buffer;
+}
+
+void RSCanvasDmaBufferCache::RemovePendingBuffer(BufferMap& nodeBufferMap, uint32_t resetSurfaceIndex, NodeId nodeId)
+{
+    auto bufferIt = nodeBufferMap.begin();
     while (bufferIt != nodeBufferMap.end()) {
         if (bufferIt->first <= resetSurfaceIndex) {
             bufferIt = nodeBufferMap.erase(bufferIt);
-            continue;
+        } else if (nodeBufferMap.size() > CACHED_SURFACE_BUFFER_LIMIT_PER_NODE) {
+            RS_LOGW("RSCanvasDmaBufferCache::RemovePendingBuffer, Cached surfaceBuffer out of limit, "
+                    "nodeId=%{public}" PRIu64, nodeId);
+            bufferIt = nodeBufferMap.erase(bufferIt);
         } else {
             break;
         }
     }
-
-    return buffer;
 }
 
 void RSCanvasDmaBufferCache::RemovePendingBuffer(NodeId nodeId, uint32_t resetSurfaceIndex)
@@ -138,12 +145,7 @@ void RSCanvasDmaBufferCache::RemovePendingBuffer(NodeId nodeId, uint32_t resetSu
     if (it == pendingBufferMap_.end()) {
         return;
     }
-
-    auto& nodeBufferMap = it->second.second;
-    auto bufferIt = nodeBufferMap.find(resetSurfaceIndex);
-    if (bufferIt != nodeBufferMap.end()) {
-        nodeBufferMap.erase(bufferIt);
-    }
+    RemovePendingBuffer(it->second.second, resetSurfaceIndex, nodeId);
 }
 
 void RSCanvasDmaBufferCache::ClearPendingBufferByNodeId(NodeId nodeId)

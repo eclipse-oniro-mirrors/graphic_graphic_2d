@@ -275,9 +275,46 @@ IndexAndAffinity Typography::GetGlyphIndexByCoordinate(double x, double y)
     return Convert(pos);
 }
 
-Boundary Typography::GetWordBoundaryByIndex(size_t index)
+IndexAndAffinity Typography::GetCharacterIndexByCoordinate(double x, double y, TextEncoding encodeType) const
 {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
+    auto pos = paragraph_->GetCharacterPositionAtCoordinate(x, y, static_cast<SPText::TextEncoding>(encodeType));
+    return Convert(pos);
+}
+
+Boundary Typography::GetCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd, Boundary* actualGlyphRange,
+    TextEncoding encodeType) const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    SPText::Range<size_t> tempActualGlyphRange;
+    auto charRange = paragraph_->GetCharacterRangeForGlyphRange(glyphStart, glyphEnd, &tempActualGlyphRange,
+        static_cast<SPText::TextEncoding>(encodeType));
+
+    // Only set output parameter if caller requested it (non-NULL)
+    if (actualGlyphRange != nullptr) {
+        *actualGlyphRange = {tempActualGlyphRange.start, tempActualGlyphRange.end};
+    }
+    return {charRange.start, charRange.end};
+}
+
+Boundary Typography::GetGlyphRangeForCharacterRange(size_t charStart, size_t charEnd, Boundary* actualCharRange,
+    TextEncoding encodeType) const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    SPText::Range<size_t> tempActualCharacterRange;
+    auto glyphRange = paragraph_->GetGlyphRangeForCharacterRange(charStart, charEnd, &tempActualCharacterRange,
+        static_cast<SPText::TextEncoding>(encodeType));
+
+    // Only set output parameter if caller requested it (non-NULL)
+    if (actualCharRange != nullptr) {
+        *actualCharRange = {tempActualCharacterRange.start, tempActualCharacterRange.end};
+    }
+    return {glyphRange.start, glyphRange.end};
+}
+
+Boundary Typography::GetWordBoundaryByIndex(size_t index)
+{
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     auto range = paragraph_->GetWordBoundary(index);
     return Convert(range);
 }
@@ -289,11 +326,17 @@ Boundary Typography::GetActualTextRange(int lineNumber, bool includeSpaces)
     return Convert(range);
 }
 
-Boundary Typography::GetEllipsisTextRange()
+Boundary Typography::GetEllipsisTextRange() const
 {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
     auto range = paragraph_->GetEllipsisTextRange();
     return Convert(range);
+}
+
+std::vector<TextRange> Typography::GetVisibleTextRanges() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    return paragraph_->GetVisibleTextRanges();
 }
 
 double Typography::GetLineHeight(int lineNumber)
@@ -395,9 +438,8 @@ bool Typography::GetLineInfo(int lineNumber, bool oneLine, bool includeWhitespac
     return true;
 }
 
-std::vector<LineMetrics> Typography::GetLineMetrics()
+std::vector<LineMetrics> Typography::GetAllLineMetrics()
 {
-    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     if (lineMetrics_) {
         return lineMetrics_.value();
     }
@@ -440,15 +482,23 @@ std::vector<LineMetrics> Typography::GetLineMetrics()
     return lineMetrics_.value();
 }
 
+std::vector<LineMetrics> Typography::GetLineMetrics()
+{
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    return GetAllLineMetrics();
+}
+
 bool Typography::GetLineMetricsAt(int lineNumber, LineMetrics* lineMetrics)
 {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     if (paragraph_ == nullptr) {
         return false;
     }
     if (lineNumber < 0 || lineNumber >= static_cast<int>(paragraph_->GetLineCount()) || lineMetrics == nullptr) {
         return false;
     }
-    std::vector<LineMetrics> vecLineMetrics = GetLineMetrics();
+
+    std::vector<LineMetrics> vecLineMetrics = GetAllLineMetrics();
 
     if (vecLineMetrics.empty()) {
         return false;
@@ -579,6 +629,82 @@ std::string Typography::GetDumpInfo() const
     return paragraph_->GetDumpInfo();
 }
 
+TextProcessState Typography::GetProcessState() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return TextProcessState::INIT;
+    }
+    return paragraph_->GetProcessState();
+}
+
+TextDisplayState Typography::GetTextDisplayState() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return TextDisplayState::UNKNOWN;
+    }
+    return paragraph_->GetTextDisplayState();
+}
+
+TypographyStyle Typography::GetParagraphStyle() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return {};
+    }
+    return Convert(paragraph_->GetParagraphStyle());
+}
+
+#ifdef ENABLE_OHOS_ENHANCE
+std::shared_ptr<OHOS::Media::PixelMap> Typography::GetTextPathImageByIndex(
+    size_t start, size_t end, const ImageOptions& options, bool fill) const
+{
+    TEXT_TRACE_FUNC();
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return nullptr;
+    }
+    TEXT_LOGD("Getting text path image by index: start %{public}zu, end %{public}zu, "
+        "fill %{public}d, options %{public}d %{public}d %{public}f %{public}f",
+        start, end, fill, options.width, options.height, options.offsetX, options.offsetY);
+    return paragraph_->GetTextPathImageByIndex(start, end, options, fill);
+}
+
+std::vector<TextPathInfo> Typography::GetTextPathsByIndex(size_t start, size_t end) const
+{
+    TEXT_TRACE_FUNC();
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return {};
+    }
+    TEXT_LOGD("Getting text paths by index: start %{public}zu, end %{public}zu", start, end);
+    return paragraph_->GetTextPathsByIndex(start, end);
+}
+#endif
+
+TextLayoutResult Typography::LayoutWithConstraints(const TextRectSize &constraint)
+{
+    return paragraph_->LayoutWithConstraints(constraint);
+}
+
+void Typography::SetForceReuseRasterResult(bool flag)
+{
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return;
+    }
+    paragraph_->SetForceReuseRasterResult(flag);
+}
+
+bool Typography::GetForceReuseRasterResult() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return false;
+    }
+    return paragraph_->GetForceReuseRasterResult();
+}
 } // namespace AdapterTxt
 } // namespace Rosen
 } // namespace OHOS

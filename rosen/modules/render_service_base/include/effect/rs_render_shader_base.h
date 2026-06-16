@@ -58,7 +58,7 @@ public:
         if (ge == nullptr) {
             return;
         }
-        RS_OPTIONAL_TRACE_FMT("RSNGRenderShaderTemplate::AppendToGEContainer, Type: %s paramStr: %s",
+        RS_OPTIONAL_TRACE_FMT("RSRenderShader, Type: %s paramStr: %s",
             RSNGRenderEffectHelper::GetEffectTypeString(Type).c_str(),
             EffectTemplateBase::DumpProperties().c_str());
         auto geShader = RSNGRenderEffectHelper::CreateGEVisualEffect(Type);
@@ -85,8 +85,13 @@ public:
 
     static void SetCornerRadius(const std::shared_ptr<RSNGRenderShaderBase>& shader,
         float cornerRadius);
+    
+    static void SetSDFShape(const std::shared_ptr<RSNGRenderShaderBase>& shader,
+        const std::shared_ptr<RSNGRenderShapeBase>& sdfShape);
 
     static std::shared_ptr<RSPaintFilterCanvas::CachedEffectData> GetCachedBlurImage(Drawing::Canvas* canvas);
+
+    static RectF CalcRect(const std::shared_ptr<RSNGRenderShaderBase>& shader, const RectF& bound);
 };
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag

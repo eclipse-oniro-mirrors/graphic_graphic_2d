@@ -18,15 +18,17 @@
 #include "drawable/rs_property_drawable_utils.h"
 #include "draw/surface.h"
 #include "effect/rs_render_filter_base.h"
+#include "effect/rs_render_shader_base.h"
 #include "effect/rs_render_shape_base.h"
+#include "ge_visual_effect_container.h"
 #include "property/rs_properties_painter.h"
 #include "render/rs_drawing_filter.h"
 #include "skia_adapter/skia_image.h"
 #include "skia_adapter/skia_image_info.h"
 #include "skia_adapter/skia_surface.h"
+#include "render/rs_filter_cache_memory_controller.h"
 #include "render/rs_fly_out_shader_filter.h"
 #include "render/rs_render_linear_gradient_blur_filter.h"
-#include "render/rs_render_magnifier_filter.h"
 #include "render/rs_render_mesa_blur_filter.h"
 #include "hpae_base/rs_hpae_base_data.h"
 #include "hpae_base/rs_hpae_filter_cache_manager.h"
@@ -38,6 +40,43 @@ public:
     static void TearDownTestCase();
     void SetUp() override;
     void TearDown() override;
+
+    struct MagnifierTestParams {
+        float clipWidth;
+        float clipHeight;
+        float clipRadius;
+        float filterWidth;
+        float filterHeight;
+        float filterRadius;
+        float expectedLeft;
+        float expectedTop;
+        float expectedWidth;
+        float expectedHeight;
+        float expectedRadius;
+    };
+
+    void TestApplySDFShapeToMagnifier(const MagnifierTestParams& params)
+    {
+        RSProperties properties;
+        EXPECT_EQ(properties.GetSDFShape(), nullptr);
+        properties.SetClipRRect(RRect(RectT<float>(0.0f, 0.0f, params.clipWidth, params.clipHeight),
+            params.clipRadius, params.clipRadius));
+        NodeId id = 1;
+        auto filter = std::static_pointer_cast<RSNGRenderMagnifierFilter>(
+            RSNGRenderFilterBase::Create(RSNGEffectType::MAGNIFIER));
+        EXPECT_EQ(filter->Getter<MagnifierSDFShapeRenderTag>()->stagingValue_, nullptr);
+
+        filter->Setter<MagnifierWidthRenderTag>(params.filterWidth);
+        filter->Setter<MagnifierHeightRenderTag>(params.filterHeight);
+        filter->Setter<MagnifierCornerRadiusRenderTag>(params.filterRadius);
+
+        RSPropertyDrawableUtils::ApplySDFShapeToMagnifier(properties, filter, id);
+        const auto& rrectShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
+            filter->Getter<MagnifierSDFShapeRenderTag>()->stagingValue_);
+        auto rrectFromShape = rrectShape->Getter<SDFRRectShapeRRectRenderTag>()->stagingValue_;
+        EXPECT_TRUE(rrectFromShape.IsNearEqual(RRect(RectT<float>(params.expectedLeft, params.expectedTop,
+            params.expectedWidth, params.expectedHeight), params.expectedRadius, params.expectedRadius)));
+    }
 };
 
 void RSPropertyDrawableUtilsTest::SetUpTestCase() {}
@@ -66,29 +105,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, RRect2DrawingRRectAndCreateShadowPathTest0
     rsPropertyDrawableUtils->CreateShadowPath(rsPath, clipBounds, rrect);
     clipBounds = nullptr;
     rsPropertyDrawableUtils->CreateShadowPath(rsPath, clipBounds, rrect);
-}
-
-/**
- * @tc.name: GetRRectForDrawingBorderTest002
- * @tc.desc: GetRRectForDrawingBorder test
- * @tc.type: FUNC
- * @tc.require:issueI9SCBR
- */
-HWTEST_F(RSPropertyDrawableUtilsTest, GetRRectForDrawingBorderTest002, testing::ext::TestSize.Level1)
-{
-    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
-    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
-    RSProperties properties;
-    properties.rrect_ = RRect(RectT<float>(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, 1.0f);
-    std::shared_ptr<RSBorder> border = std::make_shared<RSBorder>();
-    EXPECT_NE(border, nullptr);
-    EXPECT_EQ(rsPropertyDrawableUtils->GetRRectForDrawingBorder(properties, border, false),
-        RRect(RectT<float>(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, 1.0f));
-    EXPECT_EQ(rsPropertyDrawableUtils->GetInnerRRectForDrawingBorder(properties, border, true),
-        RRect(RectT<float>(0.0f, 0.0f, 1.0f, 1.0f), 0.0f, 1.0f));
-    border = nullptr;
-    rsPropertyDrawableUtils->GetRRectForDrawingBorder(properties, border, false);
-    rsPropertyDrawableUtils->GetInnerRRectForDrawingBorder(properties, border, true);
 }
 
 /**
@@ -162,14 +178,6 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawAndBeginForegroundFilterTest006, testi
     cacheManager->renderClearFilteredCacheAfterDrawing_ = true;
     rsPropertyDrawableUtils->DrawFilter(&paintFilterCanvasTest1, rsFilter, cacheManager, 0, false);
     paintFilterCanvasTest1.SetDisableFilterCache(true);
-    cacheManager->renderClearFilteredCacheAfterDrawing_ = true;
-    rsPropertyDrawableUtils->DrawFilter(&paintFilterCanvasTest1, rsFilter, cacheManager, 0, false);
-    auto magnifierParams = std::make_shared<RSMagnifierParams>();
-    auto magnifierFilter = std::make_shared<RSMagnifierShaderFilter>(magnifierParams);
-    magnifierFilter->type_ = RSUIFilterType::MAGNIFIER;
-    rsFilter = std::make_shared<RSDrawingFilter>(magnifierFilter);
-    rsFilter->type_ = RSFilter::BLUR;
-    rsFilter->imageFilter_ = std::make_shared<Drawing::ImageFilter>();
     cacheManager->renderClearFilteredCacheAfterDrawing_ = true;
     rsPropertyDrawableUtils->DrawFilter(&paintFilterCanvasTest1, rsFilter, cacheManager, 0, false);
     Drawing::Rect visibleRect = Drawing::Rect(0.0f, 0.0f, 300.0f, 300.0f);
@@ -288,28 +296,29 @@ HWTEST_F(RSPropertyDrawableUtilsTest, RSPropertyDrawableUtilsTest008, testing::e
     Drawing::Canvas canvasTest1;
     RSPaintFilterCanvas paintFilterCanvas(&canvasTest1);
     std::shared_ptr<RSFilter> rsFilter = nullptr;
+    NodeId filterId = 1;
     std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
     Drawing::RectI bounds(0, 0, 400, 400);
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
     rsFilter = std::make_shared<RSFilter>();
     rsFilter->type_ = RSFilter::NONE;
     paintFilterCanvas.surface_ = nullptr;
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
     Drawing::Surface surface;
     paintFilterCanvas.surface_ = &surface;
     Drawing::Canvas canvasTest2;
     paintFilterCanvas.canvas_ = &canvasTest2;
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
     paintFilterCanvas.SetDisableFilterCache(true);
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
     int lastBlurCnt = rsPropertyDrawableUtils->g_blurCnt;
     ASSERT_NE(lastBlurCnt, 0);
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(nullptr, rsFilter, cacheManager, bounds);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(nullptr, rsFilter, filterId, cacheManager, bounds);
 }
 
 /**
@@ -549,6 +558,33 @@ HWTEST_F(RSPropertyDrawableUtilsTest, GetInvertedBackgroundColorTest015, testing
 }
 
 /**
+ * @tc.name: DrawColorUsingSDFWithDRMTest
+ * @tc.desc: DrawColorUsingSDFWithDRM test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawColorUsingSDFWithDRMTest, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    Drawing::Canvas canvas;
+    bool isDark = true;
+    Drawing::Rect rect(0, 0, 0, 0);
+
+    rsPropertyDrawableUtils->DrawColorUsingSDFWithDRM(&canvas, &rect, isDark, nullptr, "Tag1", "Tag2");
+    EXPECT_TRUE(isDark);
+    auto filterGEContainer = std::make_shared<Drawing::GEVisualEffectContainer>();
+    auto geVisualEffect = std::make_shared<Drawing::GEVisualEffect>("test");
+    filterGEContainer->AddToChainedFilter(geVisualEffect);
+    rsPropertyDrawableUtils->DrawColorUsingSDFWithDRM(&canvas, &rect, isDark, filterGEContainer, "Tag1", "Tag2");
+    rsPropertyDrawableUtils->DrawColorUsingSDFWithDRM(&canvas, &rect, isDark, filterGEContainer, "test", "Tag2");
+    EXPECT_TRUE(isDark);
+    isDark = false;
+    rsPropertyDrawableUtils->DrawColorUsingSDFWithDRM(&canvas, &rect, isDark, filterGEContainer, "test", "Tag2");
+    EXPECT_FALSE(isDark);
+}
+
+/**
  * @tc.name: IsDangerousBlendModeAndEndBlenderTest016
  * @tc.desc: IsDangerousBlendMode and EndBlender test
  * @tc.type: FUNC
@@ -626,7 +662,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, GetShadowRegionImageTest018, testing::ext:
 
 /**
  * @tc.name: DrawShadowMaskFilterTest019
- * @tc.desc: DrawShadowMaskFilter test
+ * @tc.desc: DrawShadowMaskFilter test with positive radius (blur shadow)
  * @tc.type: FUNC
  * @tc.require:issueIA5Y41
  */
@@ -638,7 +674,43 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawShadowMaskFilterTest019, testing::ext:
     Drawing::Path path;
     path.AddRect({0, 0, 5, 5});
     rsPropertyDrawableUtilsTest->DrawShadowMaskFilter(&canvasTest, path, 1.f, 1.f, 1.f, false,
-        Color(255, 255, 255, 255));
+        Color(255, 255, 255, 255), false);
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: DrawShadowMaskFilterTest020
+ * @tc.desc: DrawShadowMaskFilter test with zero radius (solid shadow, no blur)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawShadowMaskFilterTest020, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtilsTest, nullptr);
+    Drawing::Canvas canvasTest;
+    Drawing::Path path;
+    path.AddRect({0, 0, 5, 5});
+    rsPropertyDrawableUtilsTest->DrawShadowMaskFilter(&canvasTest, path, 1.f, 1.f, 0.f, false,
+        Color(255, 0, 0, 255), false);
+    ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: DrawShadowMaskFilterTest021
+ * @tc.desc: DrawShadowMaskFilter test with negative radius (no shadow expected)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawShadowMaskFilterTest021, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtilsTest = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtilsTest, nullptr);
+    Drawing::Canvas canvasTest;
+    Drawing::Path path;
+    path.AddRect({0, 0, 5, 5});
+    rsPropertyDrawableUtilsTest->DrawShadowMaskFilter(&canvasTest, path, 1.f, 1.f, -1.f, false,
+        Color(255, 255, 255, 255), false);
     ASSERT_TRUE(true);
 }
 
@@ -727,12 +799,12 @@ HWTEST_F(RSPropertyDrawableUtilsTest, RSFilterSetPixelStretchTest021, testing::e
 
     // -1.0f: stretch offset param
     Vector4f pixelStretchTest(-1.0f, -1.0f, -1.0f, -1.0f);
-    properties.GetEffect().pixelStretch_ = pixelStretchTest;
+    properties.SetPixelStretch(pixelStretchTest);
     EXPECT_TRUE(rsPropertyDrawableUtils->RSFilterSetPixelStretch(properties, filter3));
 
     // 1.0f: stretch offset param
     Vector4f pixelStretchTest2(1.0f, 1.0f, 1.0f, 1.0f);
-    properties.GetEffect().pixelStretch_ = pixelStretchTest2;
+    properties.SetPixelStretch(pixelStretchTest2);
     EXPECT_FALSE(rsPropertyDrawableUtils->RSFilterSetPixelStretch(properties, filter3));
 }
 
@@ -778,28 +850,29 @@ HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest002, testing::ext:
     Drawing::Canvas canvasTest1;
     RSPaintFilterCanvas paintFilterCanvas(&canvasTest1);
     std::shared_ptr<RSFilter> rsFilter = nullptr;
+    NodeId filterId = 1;
     std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
     Drawing::RectI bounds(0, 0, 400, 400);
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds, true);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds, true);
     rsFilter = std::make_shared<RSFilter>();
     rsFilter->type_ = RSFilter::NONE;
     paintFilterCanvas.surface_ = nullptr;
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds, true);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds, true);
     Drawing::Surface surface;
     paintFilterCanvas.surface_ = &surface;
     Drawing::Canvas canvasTest2;
     paintFilterCanvas.canvas_ = &canvasTest2;
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds, true);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds, true);
     paintFilterCanvas.SetDisableFilterCache(true);
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, cacheManager, bounds, true);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds, true);
     int lastBlurCnt = rsPropertyDrawableUtils->g_blurCnt;
     ASSERT_NE(lastBlurCnt, 0);
     cacheManager->renderClearFilteredCacheAfterDrawing_ = false;
-    rsPropertyDrawableUtils->DrawBackgroundEffect(nullptr, rsFilter, cacheManager, bounds);
+    rsPropertyDrawableUtils->DrawBackgroundEffect(nullptr, rsFilter, filterId, cacheManager, bounds);
 }
 
 /**
@@ -979,7 +1052,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter001, test
     RSProperties properties;
     NodeId id = 1;
     std::shared_ptr<RSDrawingFilter> drawingFilter;
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     EXPECT_EQ(drawingFilter, nullptr);
 }
 
@@ -994,7 +1067,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter002, test
     RSProperties properties;
     NodeId id = 1;
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     EXPECT_EQ(drawingFilter->GetNGRenderFilter(), nullptr);
 }
 
@@ -1012,9 +1085,35 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter003, test
     auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
     drawingFilter->SetNGRenderFilter(renderFilter);
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
     EXPECT_NE(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::FROSTED_GLASS);
+}
+
+/**
+ * @tc.name: DrawForegroundFilterWithCustomRect001
+ * @tc.desc: Test DrawForegroundFilter with custom draw rect
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawForegroundFilterWithCustomRect001, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    Drawing::Canvas canvasTest(100, 100);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+
+    auto imageFilter = std::make_shared<Drawing::ImageFilter>();
+    auto filterPtr = std::make_shared<RSRenderFilterParaBase>();
+    std::vector<std::shared_ptr<RSRenderFilterParaBase>> shaderFilters;
+    shaderFilters.push_back(filterPtr);
+    uint32_t hash = 1;
+    auto rsFilter = std::make_shared<RSDrawingFilter>(imageFilter, shaderFilters, hash);
+
+    RectF customDrawRect(10.0f, 10.0f, 50.0f, 50.0f);
+    std::optional<RectF> drawRect = customDrawRect;
+
+    rsPropertyDrawableUtils->DrawForegroundFilter(paintFilterCanvas, rsFilter, drawRect);
 }
 
 /**
@@ -1035,7 +1134,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter004, test
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
     drawingFilter->SetNGRenderFilter(renderFilter);
 
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
     EXPECT_EQ(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::FROSTED_GLASS);
     const auto& filterFromDrawingFilter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(
@@ -1061,7 +1160,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter005, test
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
     drawingFilter->SetNGRenderFilter(renderFilter);
 
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
     EXPECT_EQ(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::FROSTED_GLASS);
     const auto& filterFromDrawingFilter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(
@@ -1091,7 +1190,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter006, test
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
     drawingFilter->SetNGRenderFilter(renderFilter);
 
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
     EXPECT_EQ(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::FROSTED_GLASS);
     const auto& filterFromDrawingFilter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(
@@ -1124,7 +1223,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter007, test
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
     drawingFilter->SetNGRenderFilter(renderFilter);
 
-    RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
     ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
     EXPECT_EQ(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::FROSTED_GLASS);
     const auto& filterFromDrawingFilter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(
@@ -1136,24 +1235,192 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter007, test
 }
 
 /**
- * @tc.name: ApplySDFShapeToFrostedGlassFilter008
- * @tc.desc: have empty sdfShape test
+ * @tc.name: ApplySDFShapeToFilter008
+ * @tc.desc: SDF_EDGE_LIGHT filter with sdfShape test
  * @tc.type: FUNC
+ * @tc.require: issue190
  */
-HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter008, testing::ext::TestSize.Level1)
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFilter008, testing::ext::TestSize.Level1)
 {
     RSProperties properties;
-    auto emptyShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_EMPTY_SHAPE);
-    properties.SetSDFShape(emptyShape);
+    auto sdfRRectShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    properties.SetSDFShape(sdfRRectShape);
     NodeId id = 1;
-    auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
-    const auto& filter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(renderFilter);
-    EXPECT_EQ(filter->Getter<FrostedGlassShapeRenderTag>()->stagingValue_, nullptr);
+
+    auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::SDF_EDGE_LIGHT);
+    ASSERT_NE(renderFilter, nullptr);
+    const auto& filter = std::static_pointer_cast<RSNGRenderSDFEdgeLightFilter>(renderFilter);
+    EXPECT_EQ(filter->Getter<SDFEdgeLightSDFShapeRenderTag>()->stagingValue_, nullptr);
+
     auto drawingFilter = std::make_shared<RSDrawingFilter>();
     drawingFilter->SetNGRenderFilter(renderFilter);
 
-    auto ret = RSPropertyDrawableUtils::ApplySDFShapeToFrostedGlassFilter(properties, drawingFilter, id);
-    ASSERT_FALSE(ret);
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
+
+    ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
+    EXPECT_EQ(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::SDF_EDGE_LIGHT);
+    const auto& filterFromDrawingFilter = std::static_pointer_cast<RSNGRenderSDFEdgeLightFilter>(
+        drawingFilter->GetNGRenderFilter());
+    EXPECT_NE(filterFromDrawingFilter->Getter<SDFEdgeLightSDFShapeRenderTag>()->stagingValue_, nullptr);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToFilter009
+ * @tc.desc: SDF_EDGE_LIGHT filter without sdfShape test (early return)
+ * @tc.type: FUNC
+ * @tc.require: issue190
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFilter009, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetSDFShape(), nullptr);
+    NodeId id = 1;
+
+    auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::SDF_EDGE_LIGHT);
+    ASSERT_NE(renderFilter, nullptr);
+    const auto& filter = std::static_pointer_cast<RSNGRenderSDFEdgeLightFilter>(renderFilter);
+    EXPECT_EQ(filter->Getter<SDFEdgeLightSDFShapeRenderTag>()->stagingValue_, nullptr);
+
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(renderFilter);
+
+    // Should return early without setting shape
+    RSPropertyDrawableUtils::ApplySDFShapeToFilter(properties, drawingFilter, id);
+
+    ASSERT_NE(drawingFilter->GetNGRenderFilter(), nullptr);
+    EXPECT_EQ(drawingFilter->GetNGRenderFilter()->GetType(), RSNGEffectType::SDF_EDGE_LIGHT);
+    const auto& filterFromDrawingFilter = std::static_pointer_cast<RSNGRenderSDFEdgeLightFilter>(
+        drawingFilter->GetNGRenderFilter());
+    // Shape should still be null since we returned early
+    EXPECT_EQ(filterFromDrawingFilter->Getter<SDFEdgeLightSDFShapeRenderTag>()->stagingValue_, nullptr);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToEffect001
+ * @tc.desc: test ApplySDFShapeToEffect with null shader
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect001, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    NodeId nodeId = 1;
+    std::shared_ptr<RSNGRenderShaderBase> shader = nullptr;
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    EXPECT_EQ(shader, nullptr);
+}
+/**
+ * @tc.name: ApplySDFShapeToEffect002
+ * @tc.desc: test ApplySDFShapeToEffect with non SDF_EDGE_LIGHT_EFFECT shader
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect002, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    NodeId nodeId = 1;
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_NE(shader->GetType(), RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+}
+/**
+ * @tc.name: ApplySDFShapeToEffect003
+ * @tc.desc: test ApplySDFShapeToEffect with sdfShape
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect003, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto sdfRRectShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    properties.SetSDFShape(sdfRRectShape);
+    NodeId nodeId = 1;
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& effectShader = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    EXPECT_EQ(effectShader->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_, nullptr);
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& shaderFromResult = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    EXPECT_NE(shaderFromResult->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_, nullptr);
+}
+/**
+ * @tc.name: ApplySDFShapeToEffect004
+ * @tc.desc: test ApplySDFShapeToEffect without sdfShape but with clipRRect
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect004, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetSDFShape(), nullptr);
+    properties.SetClipRRect(RRect(RectT<float>(0.0f, 0.0f, 100.0f, 100.0f), 10.0f, 10.0f));
+    NodeId nodeId = 1;
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& effectShader = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    EXPECT_EQ(effectShader->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_, nullptr);
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& shaderFromResult = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    const auto& rrectShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
+        shaderFromResult->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_);
+    auto rrectFromShape = rrectShape->Getter<SDFRRectShapeRRectRenderTag>()->stagingValue_;
+    EXPECT_TRUE(rrectFromShape.IsNearEqual(RRect(RectT<float>(0.0f, 0.0f, 100.0f, 100.0f), 10.0f, 10.0f)));
+}
+/**
+ * @tc.name: ApplySDFShapeToEffect005
+ * @tc.desc: test ApplySDFShapeToEffect with cornerRadius
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect005, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetSDFShape(), nullptr);
+    EXPECT_EQ(properties.GetClipRRect(), RRect());
+    properties.SetCornerRadius(10.0f);
+    NodeId nodeId = 1;
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& effectShader = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    EXPECT_EQ(effectShader->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_, nullptr);
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& shaderFromResult = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    const auto& rrectShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
+        shaderFromResult->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_);
+    auto rrectFromShape = rrectShape->Getter<SDFRRectShapeRRectRenderTag>()->stagingValue_;
+    EXPECT_TRUE(rrectFromShape.IsNearEqual(RRect(properties.GetRRect().rect_, properties.GetRRect().radius_[0].x_,
+        properties.GetRRect().radius_[0].y_)));
+}
+/**
+ * @tc.name: ApplySDFShapeToEffect006
+ * @tc.desc: test ApplySDFShapeToEffect with boundsRect
+ * @tc.type: FUNC
+ * @tc.require: issue23101
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect006, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(properties.GetSDFShape(), nullptr);
+    EXPECT_EQ(properties.GetClipRRect(), RRect());
+    EXPECT_EQ(properties.GetCornerRadius(), Vector4f(0.f, 0.f, 0.f, 0.f));
+    properties.SetBounds(Vector4f(0.0f, 0.0f, 100.0f, 100.0f));
+    properties.SetFrame(Vector4f(0.0f, 0.0f, 100.0f, 100.0f));
+    NodeId nodeId = 1;
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& effectShader = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    EXPECT_EQ(effectShader->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_, nullptr);
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    const auto& shaderFromResult = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    const auto& rrectShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(
+        shaderFromResult->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_);
+    auto rrectFromShape = rrectShape->Getter<SDFRRectShapeRRectRenderTag>()->stagingValue_;
+    EXPECT_TRUE(rrectFromShape.IsNearEqual(RRect(RectT<float>(0.0f, 0.0f, 100.0f, 100.0f), 0.0f, 0.0f)));
 }
 
 /**
@@ -1164,10 +1431,7 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToFrostedGlassFilter008, test
  */
 HWTEST_F(RSPropertyDrawableUtilsTest, ApplyAdaptiveFrostedGlassParamsTest001, testing::ext::TestSize.Level1)
 {
-    // null effect
     Drawing::Canvas canvas;
-    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&canvas, nullptr);
-
     // effect not frosted glass
     auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
     ASSERT_NE(renderFilter, nullptr);
@@ -1224,19 +1488,733 @@ HWTEST_F(RSPropertyDrawableUtilsTest, ApplyAdaptiveFrostedGlassParamsTest002, te
     // prepare canvas and set picked color to black -> light
     Drawing::Canvas canvasDark;
     RSPaintFilterCanvas paintFilterCanvasDark(&canvasDark);
-    paintFilterCanvasDark.SetColorPicked(ColorPlaceholder::SURFACE_CONTRAST, Drawing::Color::COLOR_BLACK);
+    paintFilterCanvasDark.SetColorPicked(Drawing::Color::COLOR_BLACK);
 
-    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&canvasDark, drawingFilter);
+    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&paintFilterCanvasDark, drawingFilter);
 
     // prepare canvas and set picked color to white -> dark
     Drawing::Canvas canvasLight;
     RSPaintFilterCanvas paintFilterCanvasLight(&canvasLight);
-    paintFilterCanvasLight.SetColorPicked(ColorPlaceholder::SURFACE_CONTRAST, Drawing::Color::COLOR_WHITE);
+    paintFilterCanvasLight.SetColorPicked(Drawing::Color::COLOR_WHITE);
 
-    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&canvasLight, drawingFilter);
+    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&paintFilterCanvasLight, drawingFilter);
 
     drawingFilter->visualEffectContainer_ = nullptr;
     ASSERT_FALSE(drawingFilter->visualEffectContainer_);
-    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&canvasLight, drawingFilter);
+    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&paintFilterCanvasLight, drawingFilter);
+}
+
+/**
+ * @tc.name: ApplyAdaptiveFrostedGlassParamsTest003
+ * @tc.desc: filter has no GE container (GetGEContainer returns nullptr)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplyAdaptiveFrostedGlassParamsTest003, testing::ext::TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    // no renderFilter set, so GetGEContainer returns nullptr
+    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&canvas, drawingFilter);
+    EXPECT_EQ(drawingFilter->GetGEContainer(), nullptr);
+}
+
+/**
+ * @tc.name: ApplyAdaptiveFrostedGlassParamsTest004
+ * @tc.desc: GE container exists but filter is not frosted glass type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplyAdaptiveFrostedGlassParamsTest004, testing::ext::TestSize.Level1)
+{
+    Drawing::Canvas canvas;
+    auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
+    ASSERT_NE(renderFilter, nullptr);
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(renderFilter);
+    drawingFilter->GenerateAndUpdateGEVisualEffect();
+    // container is non-null but has no FROSTED_GLASS effect inside
+    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(&canvas, drawingFilter);
+    EXPECT_NE(drawingFilter->GetGEContainer(), nullptr);
+    EXPECT_EQ(drawingFilter->GetGEContainer()->GetGEVisualEffect(Drawing::GE_FILTER_FROSTED_GLASS), nullptr);
+}
+
+/**
+ * @tc.name: ApplyAdaptiveFrostedGlassParamsTest005
+ * @tc.desc: canvas is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplyAdaptiveFrostedGlassParamsTest005, testing::ext::TestSize.Level1)
+{
+    auto renderFilter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
+    ASSERT_NE(renderFilter, nullptr);
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(renderFilter);
+    drawingFilter->GenerateAndUpdateGEVisualEffect();
+    ASSERT_NE(drawingFilter->GetGEContainer(), nullptr);
+    RSPropertyDrawableUtils::ApplyAdaptiveFrostedGlassParams(nullptr, drawingFilter);
+    EXPECT_NE(drawingFilter->GetGEContainer(), nullptr);
+    EXPECT_NE(drawingFilter->GetGEContainer()->GetGEVisualEffect(Drawing::GE_FILTER_FROSTED_GLASS), nullptr);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest003
+ * @tc.desc: test DrawBackgroundEffect when filter cache branch condition is satisfied
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest003, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    // Set up conditions to satisfy the branch:
+
+    // 1. Enable filter cache
+    RSProperties::filterCacheEnabled_ = true;
+
+    // 2. Create valid filter
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    // 3. Create valid id
+    NodeId filterId = 1;
+
+    // 4. Create cache manager
+    std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
+    EXPECT_NE(cacheManager, nullptr);
+
+    // 5. Create canvas with valid surface
+    Drawing::Canvas canvasTest(400, 400);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+
+    // 6. Enable filter cache on canvas (not disabled)
+    paintFilterCanvas.SetDisableFilterCache(false);
+
+    // 7. Set up screen size to ensure memory threshold is not exceeded
+    Drawing::RectI normalScreenRect(0, 0, 1920, 1080);
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo(normalScreenRect);
+
+    // 8. Set bounds
+    Drawing::RectI bounds(0, 0, 400, 400);
+
+    // Verify all conditions are satisfied
+    EXPECT_TRUE(RSProperties::filterCacheEnabled_);
+    EXPECT_NE(cacheManager, nullptr);
+    EXPECT_FALSE(paintFilterCanvas.GetDisableFilterCache());
+    EXPECT_FALSE(cacheManager->IsFilterCacheMemExceedThreshold());
+
+    // Call DrawBackgroundEffect - this should enter the cache branch
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
+
+    // The test passes if we reach here without crashing, meaning the branch was taken
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest004
+ * @tc.desc: test DrawBackgroundEffect when memory threshold is not exceeded but other conditions are met
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest004, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    // Set up conditions to satisfy the branch
+    RSProperties::filterCacheEnabled_ = true;
+
+    // Create a valid filter
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    // Create valid id
+    NodeId filterId = 1;
+
+    // Create cache manager
+    std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
+    EXPECT_NE(cacheManager, nullptr);
+
+    // Create canvas with valid surface and set up cache properly
+    Drawing::Canvas canvasTest(200, 200);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+    paintFilterCanvas.SetDisableFilterCache(false);
+
+    // Set up reasonable screen size
+    Drawing::RectI screenRect(0, 0, 1920, 1080);
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo(screenRect);
+
+    Drawing::RectI bounds(0, 0, 200, 200);
+
+    // Verify conditions
+    EXPECT_TRUE(RSProperties::filterCacheEnabled_);
+    EXPECT_NE(cacheManager, nullptr);
+    EXPECT_FALSE(paintFilterCanvas.GetDisableFilterCache());
+    EXPECT_FALSE(cacheManager->IsFilterCacheMemExceedThreshold());
+
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest005
+ * @tc.desc: test DrawBackgroundEffect when filter cache is disabled
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest005, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    // Disable filter cache to ensure the branch is NOT taken
+    RSProperties::filterCacheEnabled_ = false;
+
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    NodeId filterId = 1;
+
+    std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
+    EXPECT_NE(cacheManager, nullptr);
+
+    Drawing::Canvas canvasTest(300, 300);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+    paintFilterCanvas.SetDisableFilterCache(false);
+
+    Drawing::RectI screenRect(0, 0, 1920, 1080);
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo(screenRect);
+
+    Drawing::RectI bounds(0, 0, 300, 300);
+
+    // Verify the first condition is false while others are true
+    EXPECT_FALSE(RSProperties::filterCacheEnabled_);
+    EXPECT_NE(cacheManager, nullptr);
+    EXPECT_FALSE(paintFilterCanvas.GetDisableFilterCache());
+    EXPECT_FALSE(cacheManager->IsFilterCacheMemExceedThreshold());
+
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest006
+ * @tc.desc: test DrawBackgroundEffect when canvas filter cache is disabled
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest006, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    // Enable filter cache but disable it on canvas
+    RSProperties::filterCacheEnabled_ = true;
+
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    NodeId filterId = 1;
+
+    std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
+    EXPECT_NE(cacheManager, nullptr);
+
+    Drawing::Canvas canvasTest(300, 300);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+    paintFilterCanvas.SetDisableFilterCache(true); // Disable cache on canvas
+
+    Drawing::RectI screenRect(0, 0, 1920, 1080);
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo(screenRect);
+
+    Drawing::RectI bounds(0, 0, 300, 300);
+
+    // Verify one condition is false while others are true
+    EXPECT_TRUE(RSProperties::filterCacheEnabled_);
+    EXPECT_NE(cacheManager, nullptr);
+    EXPECT_TRUE(paintFilterCanvas.GetDisableFilterCache()); // This should prevent cache branch
+    EXPECT_FALSE(cacheManager->IsFilterCacheMemExceedThreshold());
+
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest007
+ * @tc.desc: test DrawBackgroundEffect when memory threshold is exceeded
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest007, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    // Enable filter cache but set up memory threshold to be exceeded
+    RSProperties::filterCacheEnabled_ = true;
+
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    NodeId filterId = 1;
+
+    std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
+    EXPECT_NE(cacheManager, nullptr);
+
+    Drawing::Canvas canvasTest(300, 300);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+    paintFilterCanvas.SetDisableFilterCache(false);
+
+    // Set very small screen size to trigger memory threshold exceeded
+    Drawing::RectI smallScreenRect(0, 0, 1, 1);
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo(smallScreenRect);
+    RSFilterCacheMemoryController::Instance().cacheMem_ = 1000000;
+
+    Drawing::RectI bounds(0, 0, 300, 300);
+
+    // Verify conditions
+    EXPECT_TRUE(RSProperties::filterCacheEnabled_);
+    EXPECT_NE(cacheManager, nullptr);
+    EXPECT_FALSE(paintFilterCanvas.GetDisableFilterCache());
+    EXPECT_TRUE(cacheManager->IsFilterCacheMemExceedThreshold()); // This should prevent cache branch
+
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest008
+ * @tc.desc: test DrawBackgroundEffect when cache manager is null
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest008, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    RSProperties::filterCacheEnabled_ = true;
+
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    NodeId filterId = 1;
+
+    // Set cache manager to null
+    std::unique_ptr<RSFilterCacheManager> cacheManager = nullptr;
+
+    Drawing::Canvas canvasTest(300, 300);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+    paintFilterCanvas.SetDisableFilterCache(false);
+
+    Drawing::RectI bounds(0, 0, 300, 300);
+
+    // Verify one condition is false while others can't be checked (null cacheManager)
+    EXPECT_TRUE(RSProperties::filterCacheEnabled_);
+    EXPECT_EQ(cacheManager, nullptr);
+    EXPECT_FALSE(paintFilterCanvas.GetDisableFilterCache());
+
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds);
+}
+
+/**
+ * @tc.name: DrawBackgroundEffectTest009
+ * @tc.desc: test DrawBackgroundEffect with all cache conditions satisfied and behindWindow true
+ * @tc.type: FUNC
+ * @tc.require: issueIA5FLZ
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, DrawBackgroundEffectTest009, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+
+    // Set up all conditions to satisfy the cache branch
+    RSProperties::filterCacheEnabled_ = true;
+
+    std::shared_ptr<RSFilter> rsFilter = std::make_shared<RSFilter>();
+    EXPECT_NE(rsFilter, nullptr);
+
+    NodeId filterId = 1;
+
+    std::unique_ptr<RSFilterCacheManager> cacheManager = std::make_unique<RSFilterCacheManager>();
+    EXPECT_NE(cacheManager, nullptr);
+
+    Drawing::Canvas canvasTest(400, 400);
+    RSPaintFilterCanvas paintFilterCanvas(&canvasTest);
+    paintFilterCanvas.SetDisableFilterCache(false);
+
+    Drawing::RectI screenRect(0, 0, 1920, 1080);
+    RSFilterCacheMemoryController::Instance().SetScreenRectInfo(screenRect);
+
+    Drawing::RectI bounds(0, 0, 400, 400);
+
+    // Verify all conditions are satisfied
+    EXPECT_TRUE(RSProperties::filterCacheEnabled_);
+    EXPECT_NE(cacheManager, nullptr);
+    EXPECT_FALSE(paintFilterCanvas.GetDisableFilterCache());
+    EXPECT_FALSE(cacheManager->IsFilterCacheMemExceedThreshold());
+
+    // Call DrawBackgroundEffect with behindWindow = true
+    rsPropertyDrawableUtils->DrawBackgroundEffect(&paintFilterCanvas, rsFilter, filterId, cacheManager, bounds, true);
+}
+
+/**
+ * @tc.name: PickColorAndGpuScaleImageTest001
+ * @tc.desc: test PickColor and GpuScaleImage null handling and void* semaphore
+ * @tc.type: FUNC
+ * @tc.require: issueI9SCBR
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, PickColorAndGpuScaleImageTest001, testing::ext::TestSize.Level1)
+{
+    auto utils = std::make_shared<RSPropertyDrawableUtils>();
+    Drawing::Canvas canvas;
+    auto gpuContext = canvas.GetGPUContext();
+    auto image = std::make_shared<Drawing::Image>();
+    Drawing::ColorQuad color;
+
+    // PickColor: null context/image should return false
+    EXPECT_FALSE(utils->PickColor(nullptr, image, color));
+    EXPECT_FALSE(utils->PickColor(gpuContext, nullptr, color));
+
+    // GpuScaleImage: null context/image/invalid should return nullptr
+    EXPECT_EQ(utils->GpuScaleImage(nullptr, image), nullptr);
+    EXPECT_EQ(utils->GpuScaleImage(gpuContext, nullptr), nullptr);
+    EXPECT_EQ(utils->GpuScaleImage(gpuContext, image), nullptr); // invalid dims
+
+    utils->PickColor(gpuContext, image, color);
+    utils->GpuScaleImage(gpuContext, image);
+}
+
+/**
+ * @tc.name: MakeHdrDarkenBlenderTest001
+ * @tc.desc: MakeHdrDarkenBlender Test
+ * @tc.type: FUNC
+ * @tc.require: issueICLU4I
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, MakeHdrDarkenBlenderTest001, testing::ext::TestSize.Level1)
+{
+    std::shared_ptr<RSPropertyDrawableUtils> rsPropertyDrawableUtils = std::make_shared<RSPropertyDrawableUtils>();
+    EXPECT_NE(rsPropertyDrawableUtils, nullptr);
+    RSHdrDarkenBlenderPara hdrDarkenBlenderParams1;
+    EXPECT_NE(rsPropertyDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams1), nullptr);
+
+    RSHdrDarkenBlenderPara hdrDarkenBlenderParams2 = {1.0, {0.2, 0.3, 0.5}};
+    EXPECT_NE(rsPropertyDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams2), nullptr);
+
+    RSHdrDarkenBlenderPara hdrDarkenBlenderParams3 = {0.0};
+    EXPECT_EQ(rsPropertyDrawableUtils->MakeHdrDarkenBlender(hdrDarkenBlenderParams3), nullptr);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_NullFilter
+ * @tc.desc: empty shader test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_Null, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    NodeId id = 1;
+    std::shared_ptr<RSNGRenderFilterBase> filter;
+    RSPropertyDrawableUtils::ApplySDFShapeToMagnifier(properties, filter, id);
+    EXPECT_EQ(filter, nullptr);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_NotMagnifierType
+ * @tc.desc: filter type not MAGNIFIER test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_NotMagnifier, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    NodeId id = 1;
+    auto filter = RSNGRenderFilterBase::Create(RSNGEffectType::FROSTED_GLASS);
+    RSPropertyDrawableUtils::ApplySDFShapeToMagnifier(properties, filter, id);
+    EXPECT_NE(filter->GetType(), RSNGEffectType::MAGNIFIER);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_HasSDFShape
+ * @tc.desc: properties have SDFShape test
+ * @tc.type: FUNC
+
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_HasSDFShape, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto sdfRRectShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    properties.SetSDFShape(sdfRRectShape);
+    NodeId id = 1;
+    auto filter = std::static_pointer_cast<RSNGRenderMagnifierFilter>(
+        RSNGRenderFilterBase::Create(RSNGEffectType::MAGNIFIER));
+    EXPECT_EQ(filter->Getter<MagnifierSDFShapeRenderTag>()->stagingValue_, nullptr);
+
+    RSPropertyDrawableUtils::ApplySDFShapeToMagnifier(properties, filter, id);
+    EXPECT_NE(filter->Getter<MagnifierSDFShapeRenderTag>()->stagingValue_, nullptr);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_ClipRRectWithEqualSize
+ * @tc.desc: not have sdfShape but have clip to rrect test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_EqualSize, testing::ext::TestSize.Level1)
+{
+    MagnifierTestParams params = {
+        .clipWidth = 100.0f,
+        .clipHeight = 100.0f,
+        .clipRadius = 10.0f,
+        .filterWidth = 100.0f,
+        .filterHeight = 100.0f,
+        .filterRadius = 10.0f,
+        .expectedLeft = 0.0f,
+        .expectedTop = 0.0f,
+        .expectedWidth = 100.0f,
+        .expectedHeight = 100.0f,
+        .expectedRadius = 10.0f
+    };
+    TestApplySDFShapeToMagnifier(params);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_FilterSmallerThanClipRRect
+ * @tc.desc: magnifier size smaller than outer rect
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_FilterSmaller, testing::ext::TestSize.Level1)
+{
+    MagnifierTestParams params = {
+        .clipWidth = 200.0f,
+        .clipHeight = 200.0f,
+        .clipRadius = 10.0f,
+        .filterWidth = 100.0f,
+        .filterHeight = 100.0f,
+        .filterRadius = 15.0f,
+        .expectedLeft = 50.0f,
+        .expectedTop = 50.0f,
+        .expectedWidth = 100.0f,
+        .expectedHeight = 100.0f,
+        .expectedRadius = 15.0f
+    };
+    TestApplySDFShapeToMagnifier(params);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_FilterLargerThanClipRRect
+ * @tc.desc: magnifier size larger than outer rect
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_FilterLarger, testing::ext::TestSize.Level1)
+{
+    MagnifierTestParams params = {
+        .clipWidth = 100.0f,
+        .clipHeight = 100.0f,
+        .clipRadius = 10.0f,
+        .filterWidth = 200.0f,
+        .filterHeight = 200.0f,
+        .filterRadius = 20.0f,
+        .expectedLeft = -50.0f,
+        .expectedTop = -50.0f,
+        .expectedWidth = 200.0f,
+        .expectedHeight = 200.0f,
+        .expectedRadius = 20.0f
+    };
+    TestApplySDFShapeToMagnifier(params);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_FilterWidthLargerHeightSmaller
+ * @tc.desc: magnifier width larger than outer rect, height smaller
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_WidthLargerHeightSmaller, testing::ext::TestSize.Level1)
+{
+    MagnifierTestParams params = {
+        .clipWidth = 100.0f,
+        .clipHeight = 200.0f,
+        .clipRadius = 10.0f,
+        .filterWidth = 200.0f,
+        .filterHeight = 100.0f,
+        .filterRadius = 25.0f,
+        .expectedLeft = -50.0f,
+        .expectedTop = 50.0f,
+        .expectedWidth = 200.0f,
+        .expectedHeight = 100.0f,
+        .expectedRadius = 25.0f
+    };
+    TestApplySDFShapeToMagnifier(params);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToMagnifier_FilterWidthSmallerHeightLarger
+ * @tc.desc: magnifier width smaller than outer rect, height larger
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToMagnifier_WidthSmallerHeightLarger, testing::ext::TestSize.Level1)
+{
+    MagnifierTestParams params = {
+        .clipWidth = 200.0f,
+        .clipHeight = 100.0f,
+        .clipRadius = 10.0f,
+        .filterWidth = 100.0f,
+        .filterHeight = 200.0f,
+        .filterRadius = 30.0f,
+        .expectedLeft = 50.0f,
+        .expectedTop = -50.0f,
+        .expectedWidth = 100.0f,
+        .expectedHeight = 200.0f,
+        .expectedRadius = 30.0f
+    };
+    TestApplySDFShapeToMagnifier(params);
+}
+
+/**
+ * @tc.name: ApplySDFShapeToEffect011
+ * @tc.desc: test ApplySDFShapeToEffect with SDF_EDGE_LIGHT_EFFECT and valid sdfShape
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, ApplySDFShapeToEffect011, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    NodeId nodeId = 1;
+    auto rrectShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    properties.SetSDFShape(rrectShape);
+    auto shader = RSNGRenderShaderBase::Create(RSNGEffectType::SDF_EDGE_LIGHT_EFFECT);
+    ASSERT_NE(shader, nullptr);
+    RSPropertyDrawableUtils::ApplySDFShapeToEffect(properties, shader, nodeId);
+    const auto& effectShader = std::static_pointer_cast<RSNGRenderSDFEdgeLightEffect>(shader);
+    auto resultShape = effectShader->Getter<SDFEdgeLightEffectSDFShapeRenderTag>()->stagingValue_;
+    EXPECT_NE(resultShape, nullptr);
+    EXPECT_EQ(resultShape->GetType(), RSNGEffectType::SDF_RRECT_SHAPE);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape001
+ * @tc.desc: Test GetResolvedSDFShape when sdfShape is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape001, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    EXPECT_EQ(RSPropertyDrawableUtils::GetResolvedSDFShape(properties), nullptr);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape002
+ * @tc.desc: Test GetResolvedSDFShape when sdfShape type is not SDF_DISTORT_OP_SHAPE
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape002, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto rrectShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    properties.SetSDFShape(rrectShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_RRECT_SHAPE);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape003
+ * @tc.desc: Test GetResolvedSDFShape when foregroundFilter is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape003, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto distortShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+    properties.SetSDFShape(distortShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape004
+ * @tc.desc: Test GetResolvedSDFShape when foregroundFilter is not DrawingFilter
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape004, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto foregroundFilter = std::make_shared<RSFilter>();
+    properties.SetForegroundFilter(foregroundFilter);
+    auto distortShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+    properties.SetSDFShape(distortShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape005
+ * @tc.desc: Test GetResolvedSDFShape when renderFilter is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape005, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    properties.SetForegroundFilter(drawingFilter);
+    auto distortShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+    properties.SetSDFShape(distortShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape006
+ * @tc.desc: Test GetResolvedSDFShape when renderFilter type is not DISTORTION_COLLAPSE
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape006, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto blurFilter = RSNGRenderFilterBase::Create(RSNGEffectType::BLUR);
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(blurFilter);
+    properties.SetForegroundFilter(drawingFilter);
+    auto distortShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+    properties.SetSDFShape(distortShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape007
+ * @tc.desc: Test GetResolvedSDFShape when innerShape exists
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape007, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto collapseFilter = RSNGRenderFilterBase::Create(RSNGEffectType::DISTORTION_COLLAPSE);
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(collapseFilter);
+    properties.SetForegroundFilter(drawingFilter);
+    auto distortShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+    auto innerShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+    auto distortOpShape = std::static_pointer_cast<RSNGRenderSDFDistortOpShape>(distortShape);
+    distortOpShape->Setter<SDFDistortOpShapeShapeRenderTag>(innerShape, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+    properties.SetSDFShape(distortShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_RRECT_SHAPE);
+    EXPECT_EQ(result.get(), innerShape.get());
+}
+
+/**
+ * @tc.name: GetResolvedSDFShape008
+ * @tc.desc: Test GetResolvedSDFShape when innerShape does not exist
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSPropertyDrawableUtilsTest, GetResolvedSDFShape008, testing::ext::TestSize.Level1)
+{
+    RSProperties properties;
+    auto collapseFilter = RSNGRenderFilterBase::Create(RSNGEffectType::DISTORTION_COLLAPSE);
+    auto drawingFilter = std::make_shared<RSDrawingFilter>();
+    drawingFilter->SetNGRenderFilter(collapseFilter);
+    properties.SetForegroundFilter(drawingFilter);
+    auto distortShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_DISTORT_OP_SHAPE);
+    properties.SetSDFShape(distortShape);
+    auto result = RSPropertyDrawableUtils::GetResolvedSDFShape(properties);
+    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(result->GetType(), RSNGEffectType::SDF_DISTORT_OP_SHAPE);
 }
 } // namespace OHOS::Rosen

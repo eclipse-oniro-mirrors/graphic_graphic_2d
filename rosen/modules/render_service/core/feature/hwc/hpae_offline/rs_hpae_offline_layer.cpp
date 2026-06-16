@@ -16,7 +16,7 @@
 #include "feature/hwc/hpae_offline/rs_hpae_offline_layer.h"
 
 #include "common/rs_optional_trace.h"
-#include "feature/hwc/hpae_offline/rs_hpae_offline_util.h"
+#include "feature/hwc/hpae_offline/rs_offline_util.h"
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/main_thread/rs_uni_render_listener.h"
 #include "platform/common/rs_log.h"
@@ -96,7 +96,7 @@ bool RSHpaeOfflineLayer::CreateSurface(sptr<IBufferConsumerListener>& listener)
         return false;
     }
     pSurface_->SetQueueSize(bufferSize_);
-    pSurface_->SetBufferName(HPAE_OFFLINE_BUFFER_TAG);
+    pSurface_->SetBufferTypeLeak(HPAE_OFFLINE_BUFFER_TAG);
     surfaceCreated_ = true;
     surfaceHandler_->SetConsumer(consumer);
     return true;

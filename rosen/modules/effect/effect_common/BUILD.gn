@@ -14,6 +14,16 @@
 import("//build/ohos.gni")
 import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
+config("effect_config") {
+
+  include_dirs = [
+    "$graphic_2d_root/rosen/modules/effect/effect_common/include",
+    "$graphic_2d_root/rosen/modules/effect/skia_effectChain/include",
+    "$graphic_2d_root/rosen/modules/2d_graphics/src/",
+  ]
+
+}
+
 ohos_shared_library("effect_common") {
   sanitize = {
     cfi = true
@@ -29,18 +39,24 @@ ohos_shared_library("effect_common") {
     "$graphic_2d_root/utils/color_manager/export",
   ]
 
+  public_configs = [ ":effect_config" ]
+
   if (!defined(defines)) {
     defines = []
   }
 
   deps = [
+    "$graphic_2d_root/frameworks/opengl_wrapper:EGL",
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
     "$graphic_2d_root/rosen/modules/effect/color_picker:color_picker",
     "$graphic_2d_root/rosen/modules/effect/skia_effectChain:skeffectchain",
   ]
   external_deps = [
     "c_utils:utils",
+    "graphics_effect:graphics_effect_core",
     "hilog:libhilog",
     "image_framework:image_native",
+    "graphic_surface:surface",
   ]
   sources = [
     "src/color_picker_common.cpp",

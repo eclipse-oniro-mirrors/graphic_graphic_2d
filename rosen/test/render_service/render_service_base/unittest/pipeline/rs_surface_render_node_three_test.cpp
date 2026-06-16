@@ -461,9 +461,6 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, CheckOpaqueRegionBaseInfo, TestSize.Level
 HWTEST_F(RSSurfaceRenderNodeThreeTest, NeedSetCallbackForRenderThreadRefresh, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
-    node->SetStartAnimationFinished();
-    ASSERT_TRUE(node->IsStartAnimationFinished());
-
     node->SetCallbackForRenderThreadRefresh(true);
     ASSERT_FALSE(node->NeedSetCallbackForRenderThreadRefresh());
 }
@@ -785,7 +782,7 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, QuickPrepare, TestSize.Level2)
     ASSERT_TRUE(node->IsAppWindow());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = true;
-    node->isWaitUifirstFirstFrame_ = true;
+    node->uifirstState_.isWaitFirstFrame.store(true);
     ASSERT_TRUE(node->IsNotifyUIBufferAvailable());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = false;
@@ -821,7 +818,7 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, QuickPrepare001, TestSize.Level2)
     ASSERT_TRUE(node->IsUIExtension());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = true;
-    node->isWaitUifirstFirstFrame_ = true;
+    node->uifirstState_.isWaitFirstFrame.store(true);
     ASSERT_TRUE(node->IsNotifyUIBufferAvailable());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = false;
@@ -831,7 +828,7 @@ HWTEST_F(RSSurfaceRenderNodeThreeTest, QuickPrepare001, TestSize.Level2)
     ASSERT_TRUE(node->IsUIExtension());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = true;
-    node->isWaitUifirstFirstFrame_ = true;
+    node->uifirstState_.isWaitFirstFrame.store(true);
     ASSERT_TRUE(node->IsNotifyUIBufferAvailable());
     node->QuickPrepare(visitor);
     node->isNotifyUIBufferAvailable_ = false;

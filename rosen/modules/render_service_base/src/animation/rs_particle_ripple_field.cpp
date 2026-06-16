@@ -18,6 +18,10 @@
 
 #include "animation/rs_particle_ripple_field.h"
 
+#include <parcel.h>
+
+#include "common/rs_common_def.h"
+
 namespace OHOS {
 namespace Rosen {
 
@@ -46,9 +50,6 @@ void ParticleRippleField::UpdateRipple(float deltaTime)
 
 float ParticleRippleField::CalculateForceStrength(float distance)
 {
-    const float k = 2.0f * static_cast<float>(M_PI) / std::max(1e-3f, wavelength_);
-    const float w = waveSpeed_ * k;
-
     const float t  = std::max(0.0f, lifeTime_);
     const float ct = waveSpeed_ * t;
 
@@ -67,8 +68,32 @@ float ParticleRippleField::CalculateForceStrength(float distance)
 
     const float radialAtten = 1.0f / (1.0f + 0.002f * distance);
 
-    const float phase = k * distance + w * t;
-    float disp = amplitude_ * decay * radialAtten * std::sin(phase);
+    const float sigma = std::max(1.0f, 0.15f * wavelength_);
+    const float d = distance - ct;
+
+    float band = 0.0f;
+    if (std::abs(d) <= sigma) {
+        const float x = d / sigma;
+        band = 0.5f * (1.0f + std::cos(static_cast<float>(M_PI) * x));
+    }
+
+    const float tailW     = 0.25f * wavelength_;
+    const float residual  = 0.50f;
+    const float areaRatio = 1.0f - residual;
+
+    float recoilCoeff = areaRatio * sigma * (static_cast<float>(M_PI) * 0.5f)
+                        / std::max(1e-3f, tailW);
+
+    const float dtTail = 0.5f * tailW / std::max(1e-3f, waveSpeed_);
+    recoilCoeff *= std::exp(attenuation_ * dtTail);
+
+    float tail = 0.0f;
+    if (d < 0.0f && d >= -tailW) {
+        float u = (-d) / std::max(1e-6f, tailW);
+        tail = recoilCoeff * std::sin(static_cast<float>(M_PI) * u);
+    }
+
+    float disp = amplitude_ * decay * radialAtten * (band - tail);
 
     return gate * disp;
 }
@@ -100,6 +125,65 @@ bool ParticleRippleField::IsPointInRegion(const Vector2f& point) const
         default:
             return true;
     }
+}
+
+Vector2f ParticleRippleField::Apply(const Vector2f& position, float deltaTime)
+{
+    return ApplyRippleField(position, deltaTime);
+}
+
+void ParticleRippleField::Update(float deltaTime)
+{
+    UpdateRipple(deltaTime);
+}
+
+bool ParticleRippleField::Equals(const ParticleFieldBase& rhs) const
+{
+    const auto& other = static_cast<const ParticleRippleField&>(rhs);
+    return (center_ == other.center_) &&
+           ROSEN_EQ(amplitude_, other.amplitude_) &&
+           ROSEN_EQ(wavelength_, other.wavelength_) &&
+           ROSEN_EQ(waveSpeed_, other.waveSpeed_) &&
+           ROSEN_EQ(attenuation_, other.attenuation_) &&
+           ROSEN_EQ(lifeTime_, other.lifeTime_);
+}
+
+bool ParticleRippleField::MarshalSpecific(Parcel& parcel) const
+{
+    bool success = parcel.WriteFloat(center_.x_) && parcel.WriteFloat(center_.y_);
+    success = success && parcel.WriteFloat(amplitude_);
+    success = success && parcel.WriteFloat(wavelength_);
+    success = success && parcel.WriteFloat(waveSpeed_);
+    success = success && parcel.WriteFloat(attenuation_);
+    success = success && parcel.WriteFloat(lifeTime_);
+    return success;
+}
+
+bool ParticleRippleField::UnmarshalSpecific(Parcel& parcel)
+{
+    float cx = 0.0f;
+    float cy = 0.0f;
+    if (!parcel.ReadFloat(cx) || !parcel.ReadFloat(cy)) {
+        return false;
+    }
+    center_ = Vector2f(cx, cy);
+
+    if (!parcel.ReadFloat(amplitude_)) {
+        return false;
+    }
+    if (!parcel.ReadFloat(wavelength_)) {
+        return false;
+    }
+    if (!parcel.ReadFloat(waveSpeed_)) {
+        return false;
+    }
+    if (!parcel.ReadFloat(attenuation_)) {
+        return false;
+    }
+    if (!parcel.ReadFloat(lifeTime_)) {
+        return false;
+    }
+    return true;
 }
 
 void ParticleRippleField::Dump(std::string& out) const

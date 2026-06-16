@@ -120,8 +120,6 @@ public:
 
     void DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) override;
 
-    uint64_t NewDumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) override;
-
     void DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump) override;
 
     void SetCurrentGpuResourceTag(const GPUResourceTag &tag) override;
@@ -131,6 +129,11 @@ public:
     void GetUpdatedMemoryMap(std::unordered_map<pid_t, size_t> &out) override;
 
     void InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size) override;
+    
+    void SetAbnormalPid(pid_t pid) override;
+
+    void InitGpuMemoryInfoStatProc(GpuMemoryInfoStatProcCallback callback) override;
+
 #ifdef RS_ENABLE_VK
     void StoreVkPipelineCacheData() override;
 #endif

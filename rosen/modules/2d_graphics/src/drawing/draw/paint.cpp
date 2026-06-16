@@ -50,7 +50,13 @@ Paint::Paint(const Paint& other) noexcept
     pathEffect_ = other.pathEffect_;
     blender_ = other.blender_;
     blurDrawLooper_ = other.blurDrawLooper_;
-    color_ = other.color_;
+    if (other.HasUIColor()) {
+        hdrColor_ = other.GetUIColor();
+        isHdrColor_ = other.HasUIColor();
+    } else {
+        color_ = other.color_;
+        isHdrColor_ = false;
+    }
     if (other.hasFilter_) {
         filter_ = other.filter_;
     } else {
@@ -88,7 +94,13 @@ Paint& Paint::operator=(const Paint& other)
     pathEffect_ = other.pathEffect_;
     blender_ = other.blender_;
     blurDrawLooper_ = other.blurDrawLooper_;
-    color_ = other.color_;
+    if (other.HasUIColor()) {
+        hdrColor_ = other.GetUIColor();
+        isHdrColor_ = other.HasUIColor();
+    } else {
+        color_ = other.color_;
+        isHdrColor_ = false;
+    }
     if (other.hasFilter_) {
         filter_ = other.filter_;
     } else {
@@ -99,12 +111,12 @@ Paint& Paint::operator=(const Paint& other)
 
 bool Paint::CanCombinePaint(const Paint& pen, const Paint& brush)
 {
-    return pen.antiAlias_ == brush.antiAlias_ &&
-        pen.color_ == brush.color_ &&
+    return pen.antiAlias_ == brush.antiAlias_ && pen.isHdrColor_ == brush.isHdrColor_ &&
+        (pen.isHdrColor_ ? (pen.hdrColor_ == brush.hdrColor_) : (pen.color_ == brush.color_)) &&
         pen.blendMode_ == brush.blendMode_ &&
         pen.hasFilter_ == brush.hasFilter_ &&
         pen.filter_ == brush.filter_ &&
-        pen.colorSpace_ == brush.colorSpace_ &&
+        (pen.colorSpace_ ? pen.colorSpace_->Equals(brush.colorSpace_) : (pen.colorSpace_ == brush.colorSpace_)) &&
         pen.shaderEffect_ == brush.shaderEffect_ &&
         pen.blender_ == brush.blender_ &&
         pen.blenderEnabled_ == brush.blenderEnabled_ &&
@@ -114,7 +126,13 @@ bool Paint::CanCombinePaint(const Paint& pen, const Paint& brush)
 void Paint::AttachBrush(const Brush& brush)
 {
     antiAlias_ = brush.IsAntiAlias();
-    color_ = brush.GetColor();
+    if (brush.HasUIColor()) {
+        hdrColor_ = brush.GetUIColor();
+        isHdrColor_ = brush.HasUIColor();
+    } else {
+        color_ = brush.GetColor();
+        isHdrColor_ = false;
+    }
     blendMode_ = brush.GetBlendMode();
     style_ = PaintStyle::PAINT_FILL;
     if (brush.HasFilter()) {
@@ -134,7 +152,13 @@ void Paint::AttachBrush(const Brush& brush)
 void Paint::AttachPen(const Pen& pen)
 {
     antiAlias_ = pen.IsAntiAlias();
-    color_ = pen.GetColor();
+    if (pen.HasUIColor()) {
+        hdrColor_ = pen.GetUIColor();
+        isHdrColor_ = pen.HasUIColor();
+    } else {
+        color_ = pen.GetColor();
+        isHdrColor_ = false;
+    }
     blendMode_ = pen.GetBlendMode();
     style_ = PaintStyle::PAINT_STROKE;
     width_ = pen.GetWidth();
@@ -169,27 +193,45 @@ bool Paint::HasStrokeStyle() const
 void Paint::SetColor(const Color& c)
 {
     color_ = c;
+    isHdrColor_ = false;
 }
 
 void Paint::SetARGB(int a, int r, int g, int b)
 {
     color_.SetRgb(r, g, b, a);
+    isHdrColor_ = false;
 }
 
 void Paint::SetColor(const Color4f& cf, std::shared_ptr<ColorSpace> s)
 {
     color_.SetRgbF(cf.redF_, cf.greenF_, cf.blueF_, cf.alphaF_);
     colorSpace_ = s;
+    isHdrColor_ = false;
+}
+
+void Paint::SetUIColor(const UIColor& color, std::shared_ptr<ColorSpace> colorSpace)
+{
+    hdrColor_ = color;
+    colorSpace_ = colorSpace;
+    isHdrColor_ = true;
 }
 
 void Paint::SetAlpha(uint32_t a)
 {
-    color_.SetAlpha(a);
+    if (isHdrColor_) {
+        hdrColor_.SetAlpha(static_cast<scalar>(a) / Color::RGB_MAX);
+    } else {
+        color_.SetAlpha(a);
+    }
 }
 
 void Paint::SetAlphaF(scalar a)
 {
-    color_.SetAlphaF(a);
+    if (isHdrColor_) {
+        hdrColor_.SetAlpha(a);
+    } else {
+        color_.SetAlphaF(a);
+    }
 }
 
 void Paint::SetWidth(scalar width)
@@ -295,6 +337,9 @@ void Paint::Reset()
     shaderEffect_ = nullptr;
     pathEffect_ = nullptr;
     blurDrawLooper_ = nullptr;
+
+    hdrColor_ = UIColor();
+    isHdrColor_ = false;
 }
 
 void Paint::Disable()
@@ -309,8 +354,8 @@ void Paint::Disable()
 
 bool operator==(const Paint& p1, const Paint& p2)
 {
-    return p1.antiAlias_ == p2.antiAlias_ &&
-        p1.color_ == p2.color_ &&
+    return p1.antiAlias_ == p2.antiAlias_ && p1.isHdrColor_ == p2.isHdrColor_ &&
+        (p1.isHdrColor_ ? (p1.hdrColor_ == p2.hdrColor_) : (p1.color_ == p2.color_)) &&
         p1.blendMode_ == p2.blendMode_ &&
         p1.style_ == p2.style_ &&
         IsScalarAlmostEqual(p1.width_, p2.width_) &&
@@ -318,7 +363,7 @@ bool operator==(const Paint& p1, const Paint& p2)
         p1.join_ == p2.join_ &&
         p1.cap_ == p2.cap_ &&
         p1.filter_ == p2.filter_ &&
-        p1.colorSpace_ == p2.colorSpace_ &&
+        (p1.colorSpace_ ? p1.colorSpace_->Equals(p2.colorSpace_) : (p1.colorSpace_ == p2.colorSpace_)) &&
         p1.shaderEffect_ == p2.shaderEffect_ &&
         p1.pathEffect_ == p2.pathEffect_ &&
         p1.blender_ == p2.blender_ &&
@@ -329,7 +374,8 @@ bool operator==(const Paint& p1, const Paint& p2)
 bool operator!=(const Paint& p1, const Paint& p2)
 {
     return p1.antiAlias_ != p2.antiAlias_ ||
-        p1.color_ != p2.color_ ||
+        !(p1.isHdrColor_ == p2.isHdrColor_ &&
+        (p1.isHdrColor_ ? (p1.hdrColor_ == p2.hdrColor_) : (p1.color_ == p2.color_))) ||
         p1.blendMode_ != p2.blendMode_ ||
         p1.style_ != p2.style_ ||
         !IsScalarAlmostEqual(p1.width_, p2.width_) ||
@@ -337,7 +383,7 @@ bool operator!=(const Paint& p1, const Paint& p2)
         p1.join_ != p2.join_ ||
         p1.cap_ != p2.cap_ ||
         p1.filter_ != p2.filter_ ||
-        p1.colorSpace_ != p2.colorSpace_ ||
+        !(p1.colorSpace_ ? p1.colorSpace_->Equals(p2.colorSpace_) : (p1.colorSpace_ == p2.colorSpace_)) ||
         p1.shaderEffect_ != p2.shaderEffect_ ||
         p1.pathEffect_ != p2.pathEffect_ ||
         p1.blender_ != p2.blender_ ||
@@ -358,6 +404,9 @@ void Paint::Dump(std::string& out) const
     out += " cap:" + std::to_string(static_cast<int>(cap_));
     out += " blenderEnabled:" + std::string(blenderEnabled_ ? "true" : "false");
     out += " hasFilter:" + std::string(hasFilter_ ? "true" : "false");
+    out += " UIColor";
+    hdrColor_.Dump(out);
+    out += " isHdrColor:" + std::string(isHdrColor_ ? "true" : "false");
     out += ']';
 }
 

@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include "common/rs_common_def.h"
 #include "include/feature/window_keyframe/rs_window_keyframe_node_command.h"
 #include "feature/window_keyframe/rs_window_keyframe_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -70,5 +71,4 @@ HWTEST_F(RSWindowKeyFrameNodeCommandTest, LinkNode, TestSize.Level1)
     ASSERT_NE(keyframeNode, nullptr);
     EXPECT_EQ(keyframeNode->GetLinkedNodeId(), linkedNodeId);
 }
-
 } // namespace OHOS::Rosen

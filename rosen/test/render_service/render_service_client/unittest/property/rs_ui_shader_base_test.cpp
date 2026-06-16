@@ -86,4 +86,42 @@ HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateCircleFlowlight, TestSize.Level
     EXPECT_EQ(shader->GetType(), RSNGEffectType::CIRCLE_FLOWLIGHT);
 }
 
+/**
+ * @tc.name: RSNGShaderBaseCreateAIBarRectHalo
+ * @tc.desc: Calling Create(RSNGEffectType::AIBAR_RECT_HALO)
+ *           should return a non-null RSNGAIBarRectHalo instance
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateAIBarRectHalo, TestSize.Level1)
+{
+    auto shader = RSNGShaderBase::Create(RSNGEffectType::AIBAR_RECT_HALO);
+    EXPECT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::AIBAR_RECT_HALO);
+}
+
+/**
+ * @tc.name: RSNGShaderBaseCreateBorderSDFShader
+ * @tc.desc: Calling Create(RSNGEffectType::BORDER_SDF_SHADER)
+ *           should return a non-null RSNGBorderSDFShader instance
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateBorderSDFShader, TestSize.Level1)
+{
+    auto shader = RSNGShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    EXPECT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::BORDER_SDF_SHADER);
+}
+
+/**
+ * @tc.name: RSNGShaderBaseCreateBorderSDFLGColor
+ * @tc.desc: Calling Create(RSNGEffectType::BORDER_SDF_LG_COLOR)
+ *           should return a non-null RSNGBorderSDFLGColor instance
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIShaderBaseTest, RSNGShaderBaseCreateBorderSDFLGColor, TestSize.Level1)
+{
+    auto shader = RSNGShaderBase::Create(RSNGEffectType::BORDER_SDF_LG_COLOR);
+    EXPECT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetType(), RSNGEffectType::BORDER_SDF_LG_COLOR);
+}
 } // namespace OHOS::Rosen

@@ -14,7 +14,10 @@
  */
 
 #include "gtest/gtest.h"
+#include "common/rs_common_def.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "drawable/rs_screen_render_node_drawable.h"
+#include "feature/uifirst/rs_sub_thread_cache.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "parameters.h"
 #include "params/rs_render_thread_params.h"
@@ -24,7 +27,9 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "render/rs_drawing_filter.h"
 #include "skia_adapter/skia_surface.h"
+#include "uifirst_param.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -33,6 +38,16 @@ using namespace OHOS::Rosen::DrawableV2;
 namespace OHOS::Rosen {
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr NodeId DEFAULT_ID = 0xFFFF;
+
+class RSTestDrawable : public RSDrawable {
+public:
+    RSTestDrawable() = default;
+    ~RSTestDrawable() override = default;
+
+    void OnSync() override {}
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override {}
+};
+
 class RSSubThreadCacheTest : public testing::Test {
 public:
     std::shared_ptr<RSSurfaceRenderNode> renderNode_;
@@ -60,7 +75,7 @@ void RSSubThreadCacheTest::SetUp()
 {
     renderNode_ = std::make_shared<RSSurfaceRenderNode>(DEFAULT_ID);
     auto context = std::make_shared<RSContext>();
-    displayRenderNode_ = std::make_shared<RSScreenRenderNode>(DEFAULT_ID, 0, context);
+    displayRenderNode_ = std::make_shared<RSScreenRenderNode>(DEFAULT_ID + 1, 0, context);
     if (!renderNode_) {
         RS_LOGE("RSSubThreadCacheTest: failed to create surface node.");
         return;
@@ -71,6 +86,7 @@ void RSSubThreadCacheTest::SetUp()
         RS_LOGE("RSSubThreadCacheTest: failed to init render params.");
         return;
     }
+    surfaceDrawable_->uifirstRenderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
     drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     if (drawingCanvas_) {
         canvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
@@ -138,7 +154,7 @@ HWTEST_F(RSSubThreadCacheTest, GetCompletedImageTest, TestSize.Level1)
 
     surfaceDrawable_->GetRsSubThreadCache().cacheCompletedBackendTexture_.isValid_ = true;
     result = surfaceDrawable_->GetRsSubThreadCache().GetCompletedImage(paintFilterCanvas, threadIndex, isUIFirst);
-    ASSERT_EQ(result, nullptr);
+    ASSERT_NE(result, nullptr);
 
 #ifdef RS_ENABLE_VK
     surfaceDrawable_->GetRsSubThreadCache().cacheCompletedSurface_ = std::make_shared<Drawing::Surface>();
@@ -180,15 +196,65 @@ HWTEST_F(RSSubThreadCacheTest, DrawCacheSurfaceTest, TestSize.Level1)
         threadIndex, isUIFirst);
     EXPECT_FALSE(result);
 
-    surfaceDrawable_->boundsWidth_ = 1.f;
+    boundSize.x_ = 1.f;
     result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
         threadIndex, isUIFirst);
     EXPECT_FALSE(result);
 
-    surfaceDrawable_->boundsHeight_ = 1.f;
+    boundSize.y_ = 1.f;
     result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
         threadIndex, isUIFirst);
     EXPECT_FALSE(result);
+
+#ifdef RS_ENABLE_VK
+    auto context = RsVulkanContext::GetSingleton().GetRsVulkanInterface().CreateDrawingContext();
+    rscanvas.canvas_->gpuContext_ = context;
+    Drawing::ImageInfo info = Drawing::ImageInfo {
+                                100, 100,
+                                Drawing::ColorType::COLORTYPE_RGBA_8888,
+                                Drawing::AlphaType::ALPHATYPE_PREMUL };
+    surfaceDrawable_->GetRsSubThreadCache().cacheCompletedSurface_ =
+        Drawing::Surface::MakeRenderTarget(context.get(), false, info);
+    result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
+        threadIndex, isUIFirst);
+    EXPECT_TRUE(result);
+
+    surfaceDrawable_->GetRsSubThreadCache().cacheCompletedSurfaceInfo_.isContainShadow = true;
+    result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
+        threadIndex, isUIFirst);
+    EXPECT_TRUE(result);
+
+    boundSize.x_ = 10;
+    boundSize.y_ = 50;
+    auto recordingEnabled = system::GetParameter("debug.graphic.recording.enabled", "0");
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
+    system::SetParameter("debug.graphic.recording.enabled", "1");
+    result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
+        threadIndex, isUIFirst);
+    EXPECT_TRUE(result);
+
+    std::shared_ptr<RSTestDrawable> rsDrawable1 = std::make_shared<RSTestDrawable>();
+    surfaceDrawable_->drawCmdList_.emplace_back(rsDrawable1);
+    surfaceDrawable_->drawCmdIndex_.clipToBoundsIndex_ = 0;
+    result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
+        threadIndex, isUIFirst);
+    EXPECT_TRUE(result);
+
+    surfaceDrawable_->GetRsSubThreadCache().isOcclusionEnabled_ = true;
+    result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
+        threadIndex, isUIFirst);
+    EXPECT_TRUE(result);
+
+    boundSize.x_ = 100;
+    boundSize.y_ = 100;
+    result = surfaceDrawable_->GetRsSubThreadCache().DrawCacheSurface(surfaceDrawable_.get(), rscanvas, boundSize,
+        threadIndex, isUIFirst);
+    EXPECT_TRUE(result);
+    
+    surfaceDrawable_->GetRsSubThreadCache().isOcclusionEnabled_ = false;
+    system::SetParameter("debug.graphic.recording.enabled", recordingEnabled);
+#endif
 }
 
 /**
@@ -305,16 +371,23 @@ HWTEST_F(RSSubThreadCacheTest, UpdateUifirstDirtyManagerTest, TestSize.Level1)
     surfaceDrawable_->syncDirtyManager_->dirtyRegion_ = {0, 0, 10, 10};
     surfaceDrawable_->GetRsSubThreadCache().isCacheValid_ = true;
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
-    surfaceParams->allSubSurfaceNodeIds_.insert(renderNode_->GetId());
     surfaceDrawable_->GetRsSubThreadCache().UpdateUifirstDirtyManager(surfaceDrawable_.get());
     ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().syncUifirstDirtyManager_->currentFrameDirtyRegion_.GetWidth(),
         10);
 
     surfaceDrawable_->GetRsSubThreadCache().isCacheValid_ = false;
     surfaceParams->absDrawRect_ = {0, 0, 15, 15};
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
+    surfaceParams->windowInfo_.isLeashWindow_ = true;
     surfaceDrawable_->GetRsSubThreadCache().UpdateUifirstDirtyManager(surfaceDrawable_.get());
     ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().syncUifirstDirtyManager_->currentFrameDirtyRegion_.GetWidth(),
-        15);
+        0);
+    auto screenDrawable = std::static_pointer_cast<RSScreenRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(displayRenderNode_));
+    surfaceParams->SetAncestorScreenNode(displayRenderNode_);
+    surfaceDrawable_->GetRsSubThreadCache().UpdateUifirstDirtyManager(surfaceDrawable_.get());
+    screenDrawable->syncDirtyManager_ = nullptr;
+    surfaceDrawable_->GetRsSubThreadCache().UpdateUifirstDirtyManager(surfaceDrawable_.get());
     surfaceDrawable_->syncDirtyManager_->Clear();
     surfaceDrawable_->GetRsSubThreadCache().syncUifirstDirtyManager_->Clear();
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
@@ -329,21 +402,31 @@ HWTEST_F(RSSubThreadCacheTest, UpdateUifirstDirtyManagerTest, TestSize.Level1)
 HWTEST_F(RSSubThreadCacheTest, CalculateUifirstDirtyRegionTest001, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    Drawing::RectI dirtyRect = {};
+    Drawing::RectI visibleFilterRect = {};
+    bool isCalculateSucc = surfaceDrawable_->GetRsSubThreadCache().CalculateUifirstDirtyRegion(surfaceDrawable_.get(),
+        dirtyRect, false, visibleFilterRect);
+    ASSERT_EQ(isCalculateSucc, true);
     RectI dirtyRegion = {0, 0, 10, 10};
     surfaceDrawable_->GetRsSubThreadCache().syncUifirstDirtyManager_->historyHead_ = 0;
     surfaceDrawable_->GetRsSubThreadCache().syncUifirstDirtyManager_->dirtyHistory_[0]= dirtyRegion;
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
     surfaceParams->absDrawRect_ = {0, 0, 15, 15};
-    Drawing::RectI dirtyRect = {};
-    Drawing::RectI visibleFilterRect = {};
-    bool isCalculateSucc = surfaceDrawable_->GetRsSubThreadCache().CalculateUifirstDirtyRegion(surfaceDrawable_.get(),
-        dirtyRect, false, visibleFilterRect);
-    ASSERT_EQ(isCalculateSucc, false);
-
-    visibleFilterRect = {0, 0, 10, 10};
     isCalculateSucc = surfaceDrawable_->GetRsSubThreadCache().CalculateUifirstDirtyRegion(surfaceDrawable_.get(),
         dirtyRect, false, visibleFilterRect);
     ASSERT_EQ(isCalculateSucc, false);
+
+    surfaceParams->screenRect_ = {0, 0, 100, 100};
+    isCalculateSucc = surfaceDrawable_->GetRsSubThreadCache().CalculateUifirstDirtyRegion(surfaceDrawable_.get(),
+        dirtyRect, false, visibleFilterRect);
+    ASSERT_EQ(isCalculateSucc, true);
+
+    visibleFilterRect = {0, 0, 10, 10};
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
+    surfaceParams->windowInfo_.isLeashWindow_ = true;
+    isCalculateSucc = surfaceDrawable_->GetRsSubThreadCache().CalculateUifirstDirtyRegion(surfaceDrawable_.get(),
+        dirtyRect, false, visibleFilterRect);
+    ASSERT_EQ(isCalculateSucc, true);
     surfaceDrawable_->syncDirtyManager_->Clear();
     surfaceDrawable_->GetRsSubThreadCache().syncUifirstDirtyManager_->Clear();
 }
@@ -428,38 +511,38 @@ HWTEST_F(RSSubThreadCacheTest, CalculateUifirstDirtyRegionTest005, TestSize.Leve
 }
 
 /**
- * @tc.name: UpadteAllSurfaceUifirstDirtyEnableState
- * @tc.desc: Test UpadteAllSurfaceUifirstDirtyEnableState
+ * @tc.name: UpdateAllSurfaceUifirstDirtyEnableState
+ * @tc.desc: Test UpdateAllSurfaceUifirstDirtyEnableState
  * @tc.type: FUNC
  * @tc.require: issueI9NVOG
  */
-HWTEST_F(RSSubThreadCacheTest, UpadteAllSurfaceUifirstDirtyEnableState, TestSize.Level1)
+HWTEST_F(RSSubThreadCacheTest, UpdateAllSurfaceUifirstDirtyEnableState, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
     auto dirtyEnableFlag = false;
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
     system::SetParameter("rosen.ui.first.dirty.enabled", "0");
-    surfaceDrawable_->GetRsSubThreadCache().UpadteAllSurfaceUifirstDirtyEnableState(
+    surfaceDrawable_->GetRsSubThreadCache().UpdateAllSurfaceUifirstDirtyEnableState(
         surfaceDrawable_.get(), dirtyEnableFlag);
-    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifrstDirtyEnableFlag(), false);
+    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifirstDirtyEnableFlag(), false);
 
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
     system::SetParameter("rosen.ui.first.dirty.enabled", "1");
-    surfaceDrawable_->GetRsSubThreadCache().UpadteAllSurfaceUifirstDirtyEnableState(
+    surfaceDrawable_->GetRsSubThreadCache().UpdateAllSurfaceUifirstDirtyEnableState(
         surfaceDrawable_.get(), dirtyEnableFlag);
-    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifrstDirtyEnableFlag(), false);
+    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifirstDirtyEnableFlag(), false);
 
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::MULTI));
     system::SetParameter("rosen.ui.first.dirty.enabled", "0");
-    surfaceDrawable_->GetRsSubThreadCache().UpadteAllSurfaceUifirstDirtyEnableState(
+    surfaceDrawable_->GetRsSubThreadCache().UpdateAllSurfaceUifirstDirtyEnableState(
         surfaceDrawable_.get(), dirtyEnableFlag);
-    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifrstDirtyEnableFlag(), false);
+    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifirstDirtyEnableFlag(), false);
 
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::MULTI));
     system::SetParameter("rosen.ui.first.dirty.enabled", "1");
-    surfaceDrawable_->GetRsSubThreadCache().UpadteAllSurfaceUifirstDirtyEnableState(
+    surfaceDrawable_->GetRsSubThreadCache().UpdateAllSurfaceUifirstDirtyEnableState(
         surfaceDrawable_.get(), dirtyEnableFlag);
-    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifrstDirtyEnableFlag(), false);
+    ASSERT_EQ(surfaceDrawable_->GetRsSubThreadCache().GetUifirstDirtyEnableFlag(), false);
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
 }
 
@@ -472,16 +555,11 @@ HWTEST_F(RSSubThreadCacheTest, UpadteAllSurfaceUifirstDirtyEnableState, TestSize
 HWTEST_F(RSSubThreadCacheTest, MergeUifirstAllSurfaceDirtyRegionTest001, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    auto uifirstDirtyEnabled = system::GetParameter("rosen.ui.first.dirty.enabled", "1");
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
     system::SetParameter("rosen.ui.first.dirty.enabled", "0");
     Drawing::RectI dirtyRect = {};
     bool dirtyEnableFlag = surfaceDrawable_->GetRsSubThreadCache().MergeUifirstAllSurfaceDirtyRegion(
-        surfaceDrawable_.get(), dirtyRect);
-    ASSERT_EQ(dirtyEnableFlag, false);
-
-    uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
-    system::SetParameter("rosen.ui.first.dirty.enabled", "1");
-    dirtyEnableFlag = surfaceDrawable_->GetRsSubThreadCache().MergeUifirstAllSurfaceDirtyRegion(
         surfaceDrawable_.get(), dirtyRect);
     ASSERT_EQ(dirtyEnableFlag, false);
 
@@ -506,7 +584,17 @@ HWTEST_F(RSSubThreadCacheTest, MergeUifirstAllSurfaceDirtyRegionTest001, TestSiz
     dirtyEnableFlag = surfaceDrawable_->GetRsSubThreadCache().MergeUifirstAllSurfaceDirtyRegion(
         surfaceDrawable_.get(), dirtyRect);
     ASSERT_EQ(dirtyEnableFlag, false);
+
+    auto uifirstParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
+    uifirstParams->windowInfo_.isLeashWindow_ = true;
+    uifirstParams->absDrawRect_ = {0, 0, 15, 15};
+    uifirstParams->screenRect_ = {0, 0, 100, 100};
+    surfaceDrawable_->GetRsSubThreadCache().isDirtyRecordCompleted_ = true;
+    dirtyEnableFlag = surfaceDrawable_->GetRsSubThreadCache().MergeUifirstAllSurfaceDirtyRegion(
+        surfaceDrawable_.get(), dirtyRect);
+    ASSERT_EQ(dirtyEnableFlag, true);
     uifirstManager_.SetUiFirstType(static_cast<int>(UiFirstCcmType::SINGLE));
+    system::SetParameter("rosen.ui.first.dirty.enabled", uifirstDirtyEnabled);
 }
 
 /**
@@ -592,10 +680,10 @@ HWTEST_F(RSSubThreadCacheTest, MergeUifirstAllSurfaceDirtyRegionTest006, TestSiz
     // leash window
     surfaceParam->SetWindowInfo(false, true, false);
     surfaceDrawable_->uifirstRenderParams_ = std::move(surfaceParam);
-    subCache.isDirtyRecordCompletated_ = false;
+    subCache.isDirtyRecordCompleted_ = false;
     ASSERT_FALSE(subCache.MergeUifirstAllSurfaceDirtyRegion(surfaceDrawable_.get(), dirtyRect));
 
-    subCache.isDirtyRecordCompletated_ = true;
+    subCache.isDirtyRecordCompleted_ = true;
     ASSERT_TRUE(subCache.MergeUifirstAllSurfaceDirtyRegion(surfaceDrawable_.get(), dirtyRect));
 }
 
@@ -616,6 +704,60 @@ HWTEST_F(RSSubThreadCacheTest, SubDrawTest, TestSize.Level1)
     EXPECT_TRUE(surfaceDrawable_->uifirstDrawCmdList_.empty());
 }
 
+/**
+ * @tc.name: SubDraw
+ * @tc.desc: Test If SubDraw Can Run, uifirstDrawCmdList_ is not empty
+ * @tc.type: FUNC
+ * @tc.require: #IB1MHP
+ */
+HWTEST_F(RSSubThreadCacheTest, SubDrawTest001, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto rscanvas = RSPaintFilterCanvas(drawingCanvas_.get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+    EXPECT_TRUE(surfaceDrawable_->uifirstDrawCmdList_.empty());
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    surfaceDrawable_->uifirstDrawCmdList_.emplace_back(rsDrawable);
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+    EXPECT_FALSE(surfaceDrawable_->uifirstDrawCmdList_.empty());
+    surfaceDrawable_->skipType_ = SkipType::SKIP_BACKGROUND_COLOR;
+    surfaceDrawable_->uifirstDrawCmdIndex_.endIndex_ = surfaceDrawable_->uifirstDrawCmdList_.size();
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+    EXPECT_FALSE(surfaceDrawable_->uifirstDrawCmdList_.empty());
+    surfaceDrawable_->drawCmdIndex_.backgroundColorIndex_ = 0;
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+    EXPECT_FALSE(surfaceDrawable_->uifirstDrawCmdList_.empty());
+    surfaceDrawable_->uifirstDrawCmdIndex_.endIndex_ = 0;
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+}
+
+
+/**
+ * @tc.name: SubDrawTest002
+ * @tc.desc: Test If SubDraw Can Run
+ * @tc.type: FUNC
+ * @tc.require: #IB1MHP
+ */
+HWTEST_F(RSSubThreadCacheTest, SubDrawTest002, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto rscanvas = RSPaintFilterCanvas(drawingCanvas_.get());
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
+    auto rsDrawable1 = std::make_shared<RSTestDrawable>();
+    auto rsDrawable2 = std::make_shared<RSTestDrawable>();
+    auto rsDrawable3 = std::make_shared<RSTestDrawable>();
+    surfaceDrawable_->uifirstDrawCmdList_.emplace_back(rsDrawable1);
+    surfaceDrawable_->uifirstDrawCmdList_.emplace_back(rsDrawable2);
+    surfaceDrawable_->uifirstDrawCmdList_.emplace_back(rsDrawable3);
+    surfaceDrawable_->uifirstDrawCmdIndex_.endIndex_ = surfaceDrawable_->uifirstDrawCmdList_.size();
+    surfaceDrawable_->GetRsSubThreadCache().SubDraw(surfaceDrawable_.get(), rscanvas);
+    EXPECT_FALSE(surfaceDrawable_->uifirstDrawCmdList_.empty());
+}
 /**
  * @tc.name: DrawUIFirstCache
  * @tc.desc: Test If DrawUIFirstCache Can Run
@@ -775,20 +917,25 @@ HWTEST_F(RSSubThreadCacheTest, InitCacheSurfaceTest, TestSize.Level1)
     Drawing::GPUContext* gpuContext = new Drawing::GPUContext();
     DrawableV2::RsSubThreadCache::ClearCacheSurfaceFunc func;
     uint32_t threadIndex = 0;
-    surfaceDrawable_->GetRsSubThreadCache().InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
-    ASSERT_FALSE(surfaceDrawable_->GetRsSubThreadCache().clearCacheSurfaceFunc_);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    auto params = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetUifirstRenderParams().get());
+    params->uifirstParams_.leashAllEnabled = true;
+    subCache.InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
+    ASSERT_FALSE(subCache.clearCacheSurfaceFunc_);
 
     func = [](std::shared_ptr<Drawing::Surface>&& oldSurface, std::shared_ptr<Drawing::Surface>&& newSurface,
                uint32_t width, uint32_t height) {};
-    surfaceDrawable_->GetRsSubThreadCache().InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
-    ASSERT_TRUE(surfaceDrawable_->GetRsSubThreadCache().clearCacheSurfaceFunc_);
+    surfaceDrawable_->uifirstRenderParams_ = nullptr;
+    subCache.InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
+    ASSERT_TRUE(subCache.clearCacheSurfaceFunc_);
 
-    surfaceDrawable_->GetRsSubThreadCache().cacheSurface_ = std::make_shared<Drawing::Surface>();
-    surfaceDrawable_->GetRsSubThreadCache().InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
+    subCache.cacheSurface_ = std::make_shared<Drawing::Surface>();
+    surfaceDrawable_->uifirstRenderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    subCache.InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
     delete gpuContext;
     gpuContext = nullptr;
-    surfaceDrawable_->GetRsSubThreadCache().InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
-    ASSERT_FALSE(surfaceDrawable_->GetRsSubThreadCache().cacheSurface_);
+    subCache.InitCacheSurface(gpuContext, surfaceDrawable_, func, threadIndex);
+    ASSERT_FALSE(subCache.cacheSurface_);
 }
 
 /**
@@ -1037,7 +1184,7 @@ HWTEST_F(RSSubThreadCacheTest, DealWithUIFirstCacheTest005, TestSize.Level1)
     surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::LEASH_WINDOW);
 
     surfaceParams->SetGlobalPositionEnabled(true);
-    surfaceParams->SetUifirstUseStarting(0);
+    surfaceParams->SetUifirstStartingWindowId(0);
     surfaceParams->SetWindowInfo(false, true, false);
     uniParams->isUIFirstDebugEnable_ = true;
     // irrevertible matrix
@@ -1048,7 +1195,7 @@ HWTEST_F(RSSubThreadCacheTest, DealWithUIFirstCacheTest005, TestSize.Level1)
     ASSERT_TRUE(subThreadCache.DealWithUIFirstCache(surfaceDrawable_.get(), *canvas_, *surfaceParams, *uniParams));
 
     surfaceParams->SetGlobalPositionEnabled(true);
-    surfaceParams->SetUifirstUseStarting(1);
+    surfaceParams->SetUifirstStartingWindowId(1);
     surfaceParams->SetWindowInfo(false, false, false);
     uniParams->isUIFirstDebugEnable_ = false;
     // draw starting window
@@ -1079,6 +1226,8 @@ HWTEST_F(RSSubThreadCacheTest, DealWithUIFirstCacheTest006, TestSize.Level1)
     EXPECT_TRUE(subThreadCache.DealWithUIFirstCache(surfaceDrawable_.get(), *canvas_, *surfaceParams, *uniParams));
 
     RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
+    surfaceDrawable_->GetRsSubThreadCache().cacheCompletedSurfaceInfo_.isContainShadow = true;
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
     EXPECT_TRUE(subThreadCache.DealWithUIFirstCache(surfaceDrawable_.get(), *canvas_, *surfaceParams, *uniParams));
 }
 /**
@@ -1139,7 +1288,8 @@ HWTEST_F(RSSubThreadCacheTest, DrawBehindWindowBeforeCacheTest, TestSize.Level1)
     subThreadCache.DrawBehindWindowBeforeCache(canvas);
     ASSERT_EQ(canvas.GetTotalMatrix().Get(Drawing::Matrix::SCALE_X), scaleFactor);
 
-    data->filter_ = RSFilter::CreateMaterialFilter(80.0f, 1.9f, 1.0f, 0xFFFFFFE5);
+    auto filter = std::make_shared<RSRenderFilterParaBase>();
+    data->filter_ = std::make_shared<RSDrawingFilter>(filter);
     data->rect_ = {200, 0, 100, 100};
     // rect invalid
     subThreadCache.DrawBehindWindowBeforeCache(canvas);
@@ -1149,6 +1299,23 @@ HWTEST_F(RSSubThreadCacheTest, DrawBehindWindowBeforeCacheTest, TestSize.Level1)
     // surface is null
     subThreadCache.DrawBehindWindowBeforeCache(canvas);
     ASSERT_EQ(canvas.GetTotalMatrix().Get(Drawing::Matrix::SCALE_X), scaleFactor);
+
+#ifdef RS_ENABLE_VK
+    auto context = RsVulkanContext::GetSingleton().GetRsVulkanInterface().CreateDrawingContext();
+    Drawing::ImageInfo info = Drawing::ImageInfo { 100, 100, Drawing::ColorType::COLORTYPE_RGBA_8888,
+        Drawing::AlphaType::ALPHATYPE_PREMUL };
+    auto surface = Drawing::Surface::MakeRenderTarget(context.get(), false, info);
+    RSPaintFilterCanvas paintFilterCanvas(surface.get());
+    subThreadCache.DrawBehindWindowBeforeCache(paintFilterCanvas);
+    ASSERT_EQ(canvas.GetTotalMatrix().Get(Drawing::Matrix::SCALE_X), scaleFactor);
+
+    subThreadCache.DrawBehindWindowBeforeCache(paintFilterCanvas, 0.f, 0.f, surfaceDrawable_.get());
+    ASSERT_EQ(canvas.GetTotalMatrix().Get(Drawing::Matrix::SCALE_X), scaleFactor);
+
+    surfaceDrawable_->GetRsSubThreadCache().cacheCompletedSurfaceInfo_.isContainShadow = true;
+    subThreadCache.DrawBehindWindowBeforeCache(paintFilterCanvas, 0.f, 0.f, surfaceDrawable_.get());
+    ASSERT_EQ(canvas.GetTotalMatrix().Get(Drawing::Matrix::SCALE_X), scaleFactor);
+#endif
 }
 
 /**
@@ -1226,13 +1393,13 @@ HWTEST_F(RSSubThreadCacheTest, PushDirtyRegionToStack, TestSize.Level1)
     Drawing::Canvas drawingCanvas;
     RSPaintFilterCanvas canvas(&drawingCanvas);
     canvas.SetIsParallelCanvas(true);
-    subCache.SetUifrstDirtyEnableFlag(false);
+    subCache.SetUifirstDirtyEnableFlag(false);
     // push nothing
     subCache.PushDirtyRegionToStack(canvas, region);
     ASSERT_TRUE(canvas.IsDirtyRegionStackEmpty());
 
     canvas.SetIsParallelCanvas(true);
-    subCache.SetUifrstDirtyEnableFlag(true);
+    subCache.SetUifirstDirtyEnableFlag(true);
     subCache.SetUifirstDirtyRegion(dirtyRegion);
     // push uifirst dirty region
     subCache.PushDirtyRegionToStack(canvas, region);
@@ -1298,22 +1465,24 @@ HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceDirtyManagerTest002, TestSize.L
     surfaceDrawable->syncDirtyManager_ = std::make_shared<RSDirtyRegionManager>();
 
     ASSERT_TRUE(subCache.UpdateCacheSurfaceDirtyManager(surfaceDrawable.get(), true, true));
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
+    surfaceParams->uifirstParams_.leashAllEnabled = true;
     ASSERT_TRUE(subCache.UpdateCacheSurfaceDirtyManager(surfaceDrawable.get(), false, false));
 }
 
 /**
- * @tc.name: IsDirtyRecordCompletatedTest
- * @tc.desc: Test IsDirtyRecordCompletated
+ * @tc.name: IsDirtyRecordCompletedTest
+ * @tc.desc: Test IsDirtyRecordCompleted
  * @tc.type: FUNC
  * @tc.require: issuesICFWAC
  */
-HWTEST_F(RSSubThreadCacheTest, IsDirtyRecordCompletatedTest, TestSize.Level1)
+HWTEST_F(RSSubThreadCacheTest, IsDirtyRecordCompletedTest, TestSize.Level1)
 {
     RsSubThreadCache subCache;
-    subCache.UpdateDirtyRecordCompletatedState(true);
-    ASSERT_TRUE(subCache.IsDirtyRecordCompletated());
-    subCache.UpdateDirtyRecordCompletatedState(false);
-    ASSERT_FALSE(subCache.IsDirtyRecordCompletated());
+    subCache.UpdateDirtyRecordCompletedState(true);
+    ASSERT_TRUE(subCache.IsDirtyRecordCompleted());
+    subCache.UpdateDirtyRecordCompletedState(false);
+    ASSERT_FALSE(subCache.IsDirtyRecordCompleted());
 }
 
 /**
@@ -1334,18 +1503,18 @@ HWTEST_F(RSSubThreadCacheTest, GetUifirstDirtyRegionTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetUifrstDirtyEnableFlagTest
- * @tc.desc: Test GetUifrstDirtyEnableFlag
+ * @tc.name: GetUifirstDirtyEnableFlagTest
+ * @tc.desc: Test GetUifirstDirtyEnableFlag
  * @tc.type: FUNC
  * @tc.require: issuesICFWAC
  */
-HWTEST_F(RSSubThreadCacheTest, GetUifrstDirtyEnableFlagTest, TestSize.Level1)
+HWTEST_F(RSSubThreadCacheTest, GetUifirstDirtyEnableFlagTest, TestSize.Level1)
 {
     RsSubThreadCache subCache;
-    subCache.SetUifrstDirtyEnableFlag(true);
-    ASSERT_TRUE(subCache.GetUifrstDirtyEnableFlag());
-    subCache.SetUifrstDirtyEnableFlag(false);
-    ASSERT_FALSE(subCache.GetUifrstDirtyEnableFlag());
+    subCache.SetUifirstDirtyEnableFlag(true);
+    ASSERT_TRUE(subCache.GetUifirstDirtyEnableFlag());
+    subCache.SetUifirstDirtyEnableFlag(false);
+    ASSERT_FALSE(subCache.GetUifirstDirtyEnableFlag());
 }
 
 /**
@@ -1426,37 +1595,6 @@ HWTEST_F(RSSubThreadCacheTest, GetSurfaceSkipPriorityTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSubAppNodeIdTest
- * @tc.desc: GetSubAppNodeId
- * @tc.type: FUNC
- * @tc.require: issuesICFWAC
- */
-HWTEST_F(RSSubThreadCacheTest, GetSubAppNodeIdTest, TestSize.Level1)
-{
-    RsSubThreadCache subCache;
-    auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(100);
-    auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
-    NodeId nodeId = subCache.GetSubAppNodeId(surfaceDrawable.get());
-    ASSERT_EQ(nodeId, 100);
-
-    auto surfaceNode1 = std::make_shared<RSSurfaceRenderNode>(101);
-    auto surfaceDrawable1 = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode1));
-    auto surfaceNode2 = std::make_shared<RSSurfaceRenderNode>(102);
-    auto surfaceDrawable2 = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode2));
-    auto surfaceParams2 = static_cast<RSSurfaceRenderParams*>(surfaceDrawable2->GetRenderParams().get());
-    surfaceParams2->SetWindowInfo(true, true, true);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable->GetRenderParams().get());
-    surfaceParams->allSubSurfaceNodeIds_.insert(surfaceNode1->GetId());
-    surfaceParams->allSubSurfaceNodeIds_.insert(surfaceNode2->GetId());
-    surfaceParams->allSubSurfaceNodeIds_.insert(102);
-    NodeId nodeId1 = subCache.GetSubAppNodeId(surfaceDrawable.get());
-    ASSERT_EQ(nodeId1, 102);
-}
-
-/**
  * @tc.name: CacheReuseCountTest
  * @tc.desc: Test uifirst cache reuse count
  * @tc.type: FUNC
@@ -1476,9 +1614,9 @@ HWTEST_F(RSSubThreadCacheTest, CacheReuseCountTest, TestSize.Level1)
 
 /**
  * @tc.name: UpdateCacheSurfaceInfo001
- * @tc.desc: Test UpdateCacheSurfaceInfo when drawable is null
+ * @tc.desc: Test update cache info failed
  * @tc.type: FUNC
- * @tc.require: issue21071
+ * @tc.require: issue21674
  */
 HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfo001, TestSize.Level1)
 {
@@ -1486,16 +1624,20 @@ HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfo001, TestSize.Level1)
     subCache.cacheSurfaceInfo_.processedSurfaceCount = 0;
     subCache.cacheSurfaceInfo_.processedNodeCount = 0;
     subCache.totalProcessedSurfaceCount_ = 3;
-    subCache.UpdateCacheSurfaceInfo(nullptr);
+    subCache.UpdateCacheSurfaceInfo(nullptr, nullptr);
+    ASSERT_EQ(subCache.cacheSurfaceInfo_.processedSurfaceCount, 0);
+    ASSERT_EQ(subCache.cacheSurfaceInfo_.processedNodeCount, 0);
+
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), nullptr);
     ASSERT_EQ(subCache.cacheSurfaceInfo_.processedSurfaceCount, 0);
     ASSERT_EQ(subCache.cacheSurfaceInfo_.processedNodeCount, 0);
 }
 
 /**
  * @tc.name: UpdateCacheSurfaceInfo002
- * @tc.desc: Test UpdateCacheSurfaceInfo when render param is null
+ * @tc.desc: Test update cache info success
  * @tc.type: FUNC
- * @tc.require: issue21071
+ * @tc.require: issue21674
  */
 HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfo002, TestSize.Level1)
 {
@@ -1503,36 +1645,889 @@ HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfo002, TestSize.Level1)
     RsSubThreadCache subCache;
     subCache.cacheSurfaceInfo_.processedSurfaceCount = 0;
     subCache.cacheSurfaceInfo_.processedNodeCount = 0;
-    subCache.totalProcessedSurfaceCount_ = 3;
-    surfaceDrawable_->renderParams_ = nullptr;
-    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_);
-    ASSERT_EQ(subCache.cacheSurfaceInfo_.processedSurfaceCount, 0);
-    ASSERT_EQ(subCache.cacheSurfaceInfo_.processedNodeCount, 0);
-}
-
-/**
- * @tc.name: UpdateCacheSurfaceInfo003
- * @tc.desc: Test UpdateCacheSurfaceInfo
- * @tc.type: FUNC
- * @tc.require: issue21071
- */
-HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfo003, TestSize.Level1)
-{
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    RsSubThreadCache subCache;
-    subCache.cacheSurfaceInfo_.processedSurfaceCount = 0;
-    subCache.cacheSurfaceInfo_.processedNodeCount = 0;
     subCache.cacheSurfaceInfo_.alpha = -1.f;
     subCache.totalProcessedSurfaceCount_ = 1;
-    surfaceDrawable_->renderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
     surfaceDrawable_->renderParams_->SetGlobalAlpha(0);
     RSRenderNodeDrawable::ClearProcessedNodeCount();
     RSRenderNodeDrawable::ProcessedNodeCountInc();
     RSRenderNodeDrawable::ProcessedNodeCountInc();
-
-    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_);
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    surfaceParams->SetGlobalAlpha(0);
+    subCache.isOcclusionEnabled_ = false;
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
     ASSERT_EQ(subCache.cacheSurfaceInfo_.processedSurfaceCount, 1);
     ASSERT_EQ(subCache.cacheSurfaceInfo_.processedNodeCount, 2);
     ASSERT_EQ(subCache.cacheSurfaceInfo_.alpha, 0);
+    ASSERT_TRUE(subCache.cacheSurfaceInfo_.processedSubSurfaceNodeIds.empty());
+    ASSERT_TRUE(subCache.cacheSurfaceInfo_.absDrawRect.IsEmpty());
+
+    subCache.isOcclusionEnabled_ = true;
+    subCache.cacheSurfaceInfo_.absDrawRect = {0, 0, 100, 100};
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    ASSERT_TRUE(subCache.cacheSurfaceInfo_.absDrawRect.IsEmpty());
 }
+
+/**
+ * @tc.name: UpdateCacheSurfaceInfo003
+ * @tc.desc: Test update cache info with RSRenderThreadParams not null
+ * @tc.type: FUNC
+ * @tc.require: issue29235
+ */
+HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfo004, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    RsSubThreadCache subCache;
+    subCache.cacheSurfaceInfo_.vsyncId = 0;
+    subCache.totalProcessedSurfaceCount_ = 1;
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    surfaceParams->SetGlobalAlpha(1.0f);
+    subCache.isOcclusionEnabled_ = false;
+    auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
+    constexpr uint64_t testVsyncId = 12345;
+    renderThreadParams->SetVsyncId(testVsyncId);
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(renderThreadParams));
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    ASSERT_EQ(subCache.cacheSurfaceInfo_.vsyncId, testVsyncId);
+    std::unique_ptr<RSRenderThreadParams> nullParams = nullptr;
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(nullParams));
 }
+
+/**
+ * @tc.name: DrawOpaqueRegionDfxTest001
+ * @tc.desc: Test DrawOpaqueRegionDfx when debug is disabled
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, DrawOpaqueRegionDfxTest001, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    std::vector<Drawing::RectI> opaqueRects = {
+        Drawing::RectI(10, 10, 50, 50),
+        Drawing::RectI(60, 60, 100, 100)
+    };
+    auto originDfxEnabled = system::GetParameter("rosen.uifirst.occlusion.dfx.enable", "0");
+
+    subCache.isOcclusionEnabled_ = false;
+    subCache.DrawOpaqueRegionDfx(canvas, opaqueRects);
+
+    subCache.isOcclusionEnabled_ = true;
+    system::SetParameter("rosen.uifirst.occlusion.dfx.enable", "0");
+    subCache.DrawOpaqueRegionDfx(canvas, opaqueRects);
+
+    system::SetParameter("rosen.uifirst.occlusion.dfx.enable", "1");
+    subCache.DrawOpaqueRegionDfx(canvas, opaqueRects);
+
+    subCache.isOcclusionEnabled_ = false;
+    system::SetParameter("rosen.uifirst.occlusion.dfx.enable", originDfxEnabled);
+}
+
+/**
+ * @tc.name: InsertOpaqueRegionTest001
+ * @tc.desc: Test InsertOpaqueRegion early return branches (null checks and special node types)
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, InsertOpaqueRegionTest001, TestSize.Level1)
+{
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    std::vector<Drawing::RectI> resultRects;
+    Drawing::Rect imgDrawRect = { 0, 0, 100, 100 };
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    // Test 1: IsMirrorScreen = true
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    std::unique_ptr<RSRenderThreadParams> uniParam = std::make_unique<RSRenderThreadParams>();
+    RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParam));
+    auto& params = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(params, nullptr);
+    params->isMirrorScreen_ = true;
+
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    params->isMirrorScreen_ = false;
+    resultRects.clear();
+
+    // Test 2: surfaceDrawable is null
+    subCache.InsertOpaqueRegion(canvas, nullptr, resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+    resultRects.clear();
+
+    // Test 3: surfaceParams is null
+    surfaceDrawable_->renderParams_.reset(nullptr);
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    surfaceDrawable_->renderParams_ = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    resultRects.clear();
+
+    // Test 4: ClonedSourceNode = true
+    surfaceParams->clonedSourceNode_ = true;
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    surfaceParams->clonedSourceNode_ = false;
+    resultRects.clear();
+
+    // Test 5: IsCrossNode = true
+    surfaceParams->isCrossNode_ = true;
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    surfaceParams->isCrossNode_ = false;
+    resultRects.clear();
+
+    // Test 6: IsRelatedSourceNode = true
+    surfaceParams->isRelatedSourceNode_ = true;
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    surfaceParams->isRelatedSourceNode_ = false;
+}
+
+/**
+ * @tc.name: InsertOpaqueRegionTest002
+ * @tc.desc: Test InsertOpaqueRegion cached data empty branches
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, InsertOpaqueRegionTest002, TestSize.Level1)
+{
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    std::vector<Drawing::RectI> resultRects;
+    Drawing::Rect imgDrawRect = { 0, 0, 100, 100 };
+
+    // Test 1: cachedOpaqueRegion.IsEmpty() - default is empty
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+    resultRects.clear();
+
+    // Test 2: cachedAbsDrawRect.IsEmpty() - setup non-empty opaqueRegion but empty absDrawRect
+    Occlusion::Region cachedOpaqueRegion(Occlusion::Rect { 50, 50, 150, 150 });
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = cachedOpaqueRegion;
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = RectI(); // Empty
+
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    // Reset
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = {};
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = {};
+}
+
+/**
+ * @tc.name: InsertOpaqueRegionTest003
+ * @tc.desc: Test InsertOpaqueRegion isDrawAreaChanged = true branch (with scale transform and zero protection)
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, InsertOpaqueRegionTest003, TestSize.Level1)
+{
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    std::vector<Drawing::RectI> resultRects;
+    Drawing::Rect imgDrawRect = { 0, 0, 500, 500 };
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->SetWindowInfo(false, false, false);
+    surfaceParams->SetIsParticipateInOcclusion(true);
+
+    // Test 1: isDrawAreaChanged && IsPartialSynced - should return early
+    Occlusion::Region cachedOpaqueRegion(Occlusion::Rect { 50, 50, 150, 150 });
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = cachedOpaqueRegion;
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = RectI(0, 0, 200, 200);
+
+    surfaceParams->SetAbsDrawRect(RectI(0, 0, 400, 400));
+    surfaceParams->SetOpaqueRegion(cachedOpaqueRegion);
+    surfaceParams->SetPartialSynced(true);
+    // draw area changed and partial sync, skip calculate
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    surfaceParams->SetPartialSynced(false);
+    resultRects.clear();
+
+    // Test 2: normal cauclate opaque region
+    cachedOpaqueRegion = Occlusion::Region(Occlusion::Rect { 150, 150, 500, 500 });
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = cachedOpaqueRegion;
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = RectI(100, 100, 600, 600);
+    Occlusion::Region curOpaqueRegion(Occlusion::Rect { 300, 300, 400, 400 });
+    surfaceParams->SetAbsDrawRect(RectI(250, 250, 300, 300));
+    surfaceParams->SetOpaqueRegion(curOpaqueRegion);
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_FALSE(resultRects.empty());
+    resultRects.clear();
+
+    // Test 3: protect divide zero
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = RectI(0, 0, 0, 0);
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    // Test 4: opaque region no intersected with draw area
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = RectI(100, 100, 600, 600);
+    imgDrawRect = { 1000, 1000, 500, 500 };
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    // Reset
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = {};
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = {};
+    resultRects.clear();
+}
+
+/**
+ * @tc.name: InsertOpaqueRegionTest004
+ * @tc.desc: Test InsertOpaqueRegion isDrawAreaChanged = false branch (no scaling, use cached directly)
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, InsertOpaqueRegionTest004, TestSize.Level1)
+{
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    std::vector<Drawing::RectI> resultRects;
+    Drawing::Rect imgDrawRect = { 0, 0, 100, 100 };
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->SetWindowInfo(false, false, false);
+    surfaceParams->SetIsParticipateInOcclusion(true);
+
+    // Setup cached data
+    Occlusion::Region cachedOpaqueRegion(Occlusion::Rect { 50, 50, 150, 150 });
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = cachedOpaqueRegion;
+    RectI sameDrawRect(0, 0, 200, 200);
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = sameDrawRect;
+
+    // Setup current frame with SAME absDrawRect (isDrawAreaChanged = false)
+    surfaceParams->SetAbsDrawRect(sameDrawRect); // Same as cached
+    surfaceParams->SetOpaqueRegion(cachedOpaqueRegion);
+
+    // Test isDrawAreaChanged = false branch - should use cached opaque region directly
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    // Should use cached opaque region without scaling
+    EXPECT_FALSE(resultRects.empty());
+
+    // Reset
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = {};
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = {};
+}
+
+/**
+ * @tc.name: InsertOpaqueRegionTest005
+ * @tc.desc: Test InsertOpaqueRegion calculatedOpaqueRegion.AndSelf(curOpaqueRegion) branch
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, InsertOpaqueRegionTest005, TestSize.Level1)
+{
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    std::vector<Drawing::RectI> resultRects;
+    Drawing::Rect imgDrawRect = { 0, 0, 100, 100 };
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->SetWindowInfo(false, false, false);
+
+    // Setup cached data
+    Occlusion::Region cachedOpaqueRegion(Occlusion::Rect { 50, 50, 150, 150 });
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = cachedOpaqueRegion;
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = RectI(0, 0, 200, 200);
+
+    // Setup current frame with same absDrawRect but IsParticipateInOcclusion = false
+    // This makes curOpaqueRegion empty, so AndSelf result will be empty
+    surfaceParams->SetIsParticipateInOcclusion(false);
+    surfaceParams->SetAbsDrawRect(RectI(0, 0, 200, 200)); // Same as cached
+    surfaceParams->SetOpaqueRegion(cachedOpaqueRegion);
+
+    // Test calculatedOpaqueRegion.AndSelf(curOpaqueRegion) - curOpaqueRegion is empty
+    // Result should be empty after AndSelf
+    subCache.InsertOpaqueRegion(canvas, surfaceDrawable_.get(), resultRects, imgDrawRect);
+    EXPECT_TRUE(resultRects.empty());
+
+    // Reset
+    subCache.cacheCompletedSurfaceInfo_.opaqueRegion = {};
+    subCache.cacheCompletedSurfaceInfo_.absDrawRect = {};
+}
+
+/**
+ * @tc.name: CalculateSurfaceOpaqueRegionTest001
+ * @tc.desc: Test CalculateSurfaceOpaqueRegion with non-leash window
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, CalculateSurfaceOpaqueRegionTest001, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Occlusion::Region opaqueRegion;
+    RectI absDrawRect;
+
+    // Setup surface params as non-leash window
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetWindowInfo(false, false, false); // Not a leash window
+    surfaceParams->SetIsParticipateInOcclusion(true);
+
+    // Setup test opaque region and absDrawRect
+    Occlusion::Region testOpaqueRegion(Occlusion::Rect { 100, 100, 200, 200 });
+    RectI testAbsDrawRect(0, 0, 300, 300);
+    surfaceParams->SetOpaqueRegion(testOpaqueRegion);
+    surfaceParams->SetAbsDrawRect(testAbsDrawRect);
+
+    // Test non-leash window branch
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+
+    // Should directly copy from surfaceParams
+    EXPECT_FALSE(opaqueRegion.IsEmpty());
+    EXPECT_EQ(absDrawRect, testAbsDrawRect);
+
+    surfaceParams->SetIsParticipateInOcclusion(false);
+    // Test CalculateSurfaceOpaqueRegion with non-participate window
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+    EXPECT_TRUE(absDrawRect.IsEmpty());
+}
+
+/**
+ * @tc.name: CalculateSurfaceOpaqueRegionTest002
+ * @tc.desc: Test CalculateSurfaceOpaqueRegion with leash window and multiple children
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, CalculateSurfaceOpaqueRegionTest002, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Occlusion::Region opaqueRegion;
+    RectI absDrawRect(0, 0, 300, 300);
+
+    // Setup surface params as leash window
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetWindowInfo(false, true, false); // Is a leash window
+    surfaceParams->SetIsParticipateInOcclusion(true);
+
+    // Setup multiple children (more than 1)
+    surfaceParams->allSubSurfaceNodeIds_.insert(100);
+    surfaceParams->allSubSurfaceNodeIds_.insert(200);
+
+    // Test multiple children branch - should return early (only handles size == 1)
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+
+    // Should remain empty because subSurfaceIds.size() != 1
+    EXPECT_TRUE(opaqueRegion.IsEmpty());
+    EXPECT_TRUE(absDrawRect.IsEmpty());
+
+    // Cleanup
+    surfaceParams->allSubSurfaceNodeIds_.clear();
+}
+
+/**
+ * @tc.name: CalculateSurfaceOpaqueRegionTest003
+ * @tc.desc: Test CalculateSurfaceOpaqueRegion with leash window and single child
+ * @tc.type: FUNC
+ * @tc.require: issues22651
+ */
+HWTEST_F(RSSubThreadCacheTest, CalculateSurfaceOpaqueRegionTest003, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    Occlusion::Region opaqueRegion;
+    RectI absDrawRect(0, 0, 500, 500);
+
+    // Setup surface params as leash window
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetWindowInfo(false, true, false); // Is a leash window
+    surfaceParams->SetIsParticipateInOcclusion(true);
+
+    // Setup single child
+    NodeId childId = 100;
+    surfaceParams->allSubSurfaceNodeIds_.insert(childId);
+
+    // Don't add child drawable - GetDrawableVectorById will return null
+
+    // Test null child drawable branch
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+
+    // Should remain empty because child drawable is null
+    EXPECT_TRUE(opaqueRegion.IsEmpty());
+    EXPECT_TRUE(absDrawRect.IsEmpty());
+
+    // Create child drawable
+    auto childNode = std::make_shared<RSSurfaceRenderNode>(childId);
+    auto childDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(childNode));
+    auto childParams = static_cast<RSSurfaceRenderParams*>(childDrawable->renderParams_.get());
+    ASSERT_NE(childParams, nullptr);
+
+    // Setup child opaque region
+    Occlusion::Region childOpaqueRegion(Occlusion::Rect { 50, 50, 150, 150 });
+    RectI childAbsDrawRect(10, 10, 200, 200);
+    childParams->SetOpaqueRegion(childOpaqueRegion);
+    childParams->SetAbsDrawRect(childAbsDrawRect);
+    childParams->SetIsParticipateInOcclusion(true);
+
+    // Note: CalculateSurfaceOpaqueRegion uses GetDrawableVectorById to get child drawable
+    // The child drawable is registered in the global drawable map via OnGenerate
+
+    // Test single child branch
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+    // Should use child's opaque region and absDrawRect
+    EXPECT_FALSE(opaqueRegion.IsEmpty());
+    EXPECT_EQ(absDrawRect, childAbsDrawRect);
+
+    // Test child not participating branch
+    childParams->SetIsParticipateInOcclusion(false);
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+    EXPECT_TRUE(absDrawRect.IsEmpty());
+
+    // Test child params null branch
+    childDrawable->renderParams_ = nullptr;
+    subCache.CalculateSurfaceOpaqueRegion(surfaceDrawable_.get(), surfaceParams, opaqueRegion, absDrawRect);
+    EXPECT_TRUE(absDrawRect.IsEmpty());
+
+    // Cleanup
+    surfaceParams->allSubSurfaceNodeIds_.clear();
+}
+
+/*
+ * @tc.name: GetCompletedCacheSurfaceVsyncIdTest
+ * @tc.desc: Test GetCompletedCacheSurfaceVsyncId method
+ * @tc.type: FUNC
+ * @tc.require: issue23075
+ */
+HWTEST_F(RSSubThreadCacheTest, GetCompletedCacheSurfaceVsyncIdTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+
+    // Test default vsyncId is 0
+    uint64_t vsyncId = subCache.GetCompletedCacheSurfaceVsyncId();
+    EXPECT_EQ(vsyncId, 0);
+
+    // Test after setting vsyncId in cacheCompletedSurfaceInfo_
+    uint64_t testVsyncId = 12345;
+    subCache.cacheCompletedSurfaceInfo_.vsyncId = testVsyncId;
+    vsyncId = subCache.GetCompletedCacheSurfaceVsyncId();
+    EXPECT_EQ(vsyncId, testVsyncId);
+}
+
+/**
+ * @tc.name: GetCacheSurfaceColorSpaceTest
+ * @tc.desc: Test GetCacheSurfaceColorSpace method - get color space from cache surface info
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, GetCacheSurfaceColorSpaceTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+
+    // Test default color space is NATIVE
+    GraphicColorGamut colorSpace = subCache.GetCacheSurfaceColorSpace();
+    EXPECT_EQ(colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+
+    // Test after setting colorSpace in cacheSurfaceInfo_
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    colorSpace = subCache.GetCacheSurfaceColorSpace();
+    EXPECT_EQ(colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+
+    // Test with DISPLAY_P3
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    colorSpace = subCache.GetCacheSurfaceColorSpace();
+    EXPECT_EQ(colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+
+    // Test with BT2020
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020;
+    colorSpace = subCache.GetCacheSurfaceColorSpace();
+    EXPECT_EQ(colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+
+    // Reset to default
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE;
+}
+
+/**
+ * @tc.name: UpdateCacheSurfaceInfoColorSpaceTest
+ * @tc.desc: Test UpdateCacheSurfaceInfo stores color space from targetColorGamut
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfoColorSpaceTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    RsSubThreadCache subCache;
+    
+    // Initial state - colorSpace should be NATIVE
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+
+    // Set target color gamut
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    
+    // Create surface params
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    ASSERT_NE(surfaceParams, nullptr);
+    
+    // Update cache surface info - should store target color gamut
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    // Verify color space is updated to target
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+
+    // Test with different color gamut
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+
+    // Test with BT2020
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+}
+
+/**
+ * @tc.name: UpdateCacheSurfaceInfoColorSpaceWithNullParamsTest
+ * @tc.desc: Test UpdateCacheSurfaceInfo with null params - color space should not change
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfoColorSpaceWithNullParamsTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    RsSubThreadCache subCache;
+    
+    // Set initial color space
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    
+    // Call UpdateCacheSurfaceInfo with null params
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), nullptr);
+    
+    // Color space should remain unchanged (still SRGB)
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+/**
+ * @tc.name: UpdateCacheSurfaceInfoColorSpaceWithNullDrawableTest
+ * @tc.desc: Test UpdateCacheSurfaceInfo with null drawable - should not crash
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, UpdateCacheSurfaceInfoColorSpaceWithNullDrawableTest, TestSize.Level1)
+{
+    RsSubThreadCache subCache;
+    
+    // Set initial target color gamut
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    
+    // Create surface params
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(DEFAULT_ID);
+    ASSERT_NE(surfaceParams, nullptr);
+    
+    // Call UpdateCacheSurfaceInfo with null drawable - should not crash
+    subCache.UpdateCacheSurfaceInfo(nullptr, surfaceParams.get());
+    
+    // Color space should remain default NATIVE (unchanged because drawable is null)
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+}
+
+/**
+ * @tc.name: CacheSurfaceInfoResetColorSpaceTest
+ * @tc.desc: Test CacheSurfaceInfo Reset method resets color space to NATIVE
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, CacheSurfaceInfoResetColorSpaceTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    RsSubThreadCache::CacheSurfaceInfo info;
+    
+    // Initial state - should be NATIVE
+    EXPECT_EQ(info.colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+    
+    // Modify color space
+    info.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3;
+    EXPECT_EQ(info.colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    
+    // Call Reset
+    info.Reset();
+    
+    // After reset, should be NATIVE again
+    EXPECT_EQ(info.colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+}
+
+/**
+ * @tc.name: GetCacheSurfaceColorSpaceAfterClearCacheTest
+ * @tc.desc: Test GetCacheSurfaceColorSpace after ClearCacheSurface is called
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, GetCacheSurfaceColorSpaceAfterClearCacheTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Set color space to a non-default value
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    // Verify color space is set
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    
+    // Clear cache surface
+    subCache.ClearCacheSurfaceInThread();
+    
+    // After clear, color space should be reset to default NATIVE
+    // because ClearCacheSurface calls Reset() which resets colorSpace
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+}
+
+/**
+ * @tc.name: GetCacheSurfaceColorSpaceAfterClearCacheSurfaceOnlyTest
+ * @tc.desc: Test GetCacheSurfaceColorSpace after ClearCacheSurfaceOnly is called
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, GetCacheSurfaceColorSpaceAfterClearCacheSurfaceOnlyTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Set color space to a non-default value
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    // Verify color space is set
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    
+    // Clear only cache surface (not completed)
+    subCache.ClearCacheSurfaceOnly();
+    
+    // Color space in cacheSurfaceInfo_ should remain unchanged
+    // because ClearCacheSurfaceOnly only clears cacheSurface_, not cacheSurfaceInfo_
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+}
+
+/**
+ * @tc.name: ColorSpaceChangeDetectionTest
+ * @tc.desc: Test color space change detection - target vs current cache
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, ColorSpaceChangeDetectionTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Case 1: Same color space - no change
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    
+    bool isColorSpaceChanged = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
+    EXPECT_FALSE(isColorSpaceChanged);
+    
+    // Case 2: Different color space - change detected
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    
+    isColorSpaceChanged = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
+    EXPECT_TRUE(isColorSpaceChanged);
+    
+    // Case 3: Target changes to BT2020, cache is still SRGB
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    subCache.cacheSurfaceInfo_.colorSpace = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    
+    isColorSpaceChanged = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
+    EXPECT_TRUE(isColorSpaceChanged);
+    
+    // Case 4: After UpdateCacheSurfaceInfo, they should be equal
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    isColorSpaceChanged = (subCache.GetTargetColorGamut() != subCache.GetCacheSurfaceColorSpace());
+    EXPECT_FALSE(isColorSpaceChanged);
+}
+
+/**
+ * @tc.name: ResetUifirstColorSpaceTest
+ * @tc.desc: Test ResetUifirst resets color space properly
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, ResetUifirstColorSpaceTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Set color space to a non-default value
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    // Verify color space is set
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    
+    // Call ResetUifirst
+    subCache.ResetUifirst(false);
+    
+    // After reset, color space should be reset to default NATIVE
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+}
+
+/**
+ * @tc.name: UpdateCompletedCacheSurfaceColorSpaceTest
+ * @tc.desc: Test color space is swapped when UpdateCompletedCacheSurface is called
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, UpdateCompletedCacheSurfaceColorSpaceTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Set up cache surface with SRGB
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    // Create a valid cache surface to make UpdateCompletedCacheSurface work
+    auto grContext = std::make_shared<Drawing::GPUContext>();
+    subCache.InitCacheSurface(grContext.get(), nullptr, nullptr, 0, false);
+    
+    // Verify current cache color space
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+/**
+ * @tc.name: ColorSpaceMultipleFrameUpdateTest
+ * @tc.desc: Test color space across multiple frame updates
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, ColorSpaceMultipleFrameUpdateTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    
+    // Frame 1: SRGB
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    
+    // Frame 2: DISPLAY_P3
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    
+    // Frame 3: BT2020
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    
+    // Frame 4: Back to SRGB
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    
+    // Frame 5: NATIVE
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    EXPECT_EQ(subCache.GetCacheSurfaceColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+}
+
+/**
+ * @tc.name: SetTargetColorGamutTest
+ * @tc.desc: Test SetTargetColorGamut method stores color gamut correctly
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, SetTargetColorGamutTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Test default is SRGB
+    EXPECT_EQ(subCache.GetTargetColorGamut(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    
+    // Set to DISPLAY_P3
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    EXPECT_EQ(subCache.GetTargetColorGamut(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    
+    // Set to BT2020
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    EXPECT_EQ(subCache.GetTargetColorGamut(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_BT2020);
+    
+    // Set to NATIVE
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+    EXPECT_EQ(subCache.GetTargetColorGamut(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+    
+    // Reset to default SRGB
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+/**
+ * @tc.name: ColorSpaceConsistencyBetweenCacheAndCompletedTest
+ * @tc.desc: Test color space consistency between cacheSurfaceInfo_ and cacheCompletedSurfaceInfo_
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, ColorSpaceConsistencyBetweenCacheAndCompletedTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    auto surfaceParams = std::make_unique<RSSurfaceRenderParams>(surfaceDrawable_->GetId());
+    
+    // Set up initial color space
+    subCache.SetTargetColorGamut(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    subCache.UpdateCacheSurfaceInfo(surfaceDrawable_.get(), surfaceParams.get());
+    
+    // Create a valid cache surface to make UpdateCompletedCacheSurface work
+    auto grContext = std::make_shared<Drawing::GPUContext>();
+    subCache.InitCacheSurface(grContext.get(), nullptr, nullptr, 0, false);
+    
+    // Before UpdateCompletedCacheSurface, they should be different
+    // cacheSurfaceInfo_ has SRGB, cacheCompletedSurfaceInfo_ has default NATIVE
+    EXPECT_EQ(subCache.cacheSurfaceInfo_.colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    EXPECT_EQ(subCache.cacheCompletedSurfaceInfo_.colorSpace, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_NATIVE);
+}
+
+/**
+ * @tc.name: GetCacheSurfaceColorSpaceConstRefTest
+ * @tc.desc: Test GetCacheSurfaceColorSpace returns const reference
+ * @tc.type: FUNC
+ * @tc.require: issueColorSpace
+ */
+HWTEST_F(RSSubThreadCacheTest, GetCacheSurfaceColorSpaceConstRefTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto& subCache = surfaceDrawable_->GetRsSubThreadCache();
+    
+    // Test that the method can be called on const object
+    const RsSubThreadCache& constSubCache = subCache;
+    GraphicColorGamut colorSpace = constSubCache.GetCacheSurfaceColorSpace();
+    
+    // Should return the same value
+    EXPECT_EQ(colorSpace, subCache.GetCacheSurfaceColorSpace());
+}
+} // namespace OHOS::Rosen

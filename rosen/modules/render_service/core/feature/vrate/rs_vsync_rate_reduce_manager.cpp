@@ -14,6 +14,7 @@
  */
 
 #include "rs_vsync_rate_reduce_manager.h"
+#include <cstdint>
 #include <parameters.h>
 #include <ratio>
 #include <thread>
@@ -95,7 +96,7 @@ void RSVsyncRateReduceManager::PushWindowNodeId(NodeId nodeId)
 
 void RSVsyncRateReduceManager::FrameDurationBegin()
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     curTime_ = Now();
@@ -103,7 +104,7 @@ void RSVsyncRateReduceManager::FrameDurationBegin()
 
 void RSVsyncRateReduceManager::FrameDurationEnd()
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     if (oneFramePeriod_ > 0) {
@@ -111,6 +112,11 @@ void RSVsyncRateReduceManager::FrameDurationEnd()
         EnqueueFrameDuration(val);
     }
     curTime_ = 0;
+}
+
+void RSVsyncRateReduceManager::SyncOneFramePeriod()
+{
+    oneFramePeriod_ = stagingOneFramePeriod_;
 }
 
 void RSVsyncRateReduceManager::EnqueueFrameDuration(float duration)
@@ -124,7 +130,7 @@ void RSVsyncRateReduceManager::EnqueueFrameDuration(float duration)
 
 void RSVsyncRateReduceManager::CollectSurfaceVsyncInfo(const ScreenInfo& screenInfo, RSSurfaceRenderNode& surfaceNode)
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     if (surfaceNode.IsHardwareEnabledTopSurface()) {
@@ -158,13 +164,13 @@ void RSVsyncRateReduceManager::CollectSurfaceVsyncInfo(const ScreenInfo& screenI
 
 void RSVsyncRateReduceManager::SetUniVsync()
 {
-    if (!vRateConditionQualified_) {
+    if (!vRateConditionQualified_.load()) {
         return;
     }
     RS_TRACE_FUNC();
     UpdateRatesLevel();
     CalcRates();
-    NotifyVRates();
+    lastVSyncRateMap_ = vSyncRateMap_;
 }
 
 int RSVsyncRateReduceManager::UpdateRatesLevel()
@@ -231,7 +237,7 @@ void RSVsyncRateReduceManager::CalcRates()
     }
     for (const auto& [nodeId, vRateInfo]: surfaceVRateMap_) {
         double vVal = 0;
-        int visArea = vRateInfo.visibleRegion.Area();
+        int visArea = static_cast<int>(vRateInfo.visibleRegion.Area());
         const bool visibleRegionBehindWindowEmpty = vRateInfo.visibleRegionBehindWindow.IsEmpty();
         if (vRateInfo.visibleRegion.IsEmpty()) {
             vVal = V_VAL_MIN;
@@ -261,35 +267,6 @@ void RSVsyncRateReduceManager::CalcRates()
     }
 }
 
-void RSVsyncRateReduceManager::NotifyVRates()
-{
-    if (vSyncRateMap_.empty() || !CheckNeedNotify()) {
-        return;
-    }
-
-    linkersRateMap_.clear();
-    for (const auto& [nodeId, rate]: vSyncRateMap_) {
-        std::vector<uint64_t> linkerIds = appVSyncDistributor_->GetSurfaceNodeLinkerIds(nodeId);
-        if (rate != 0 && RSSystemParameters::GetVRateControlEnabled()) {
-            for (auto linkerId : linkerIds) {
-                linkersRateMap_.emplace(linkerId, rate);
-                RS_OPTIONAL_TRACE_NAME_FMT("NotifyVRates linkerid = %" PRIu64 " nodeId=%" PRIu64
-                    " rate=%d isSysAnimate=%d", linkerId, nodeId, rate, isSystemAnimatedScenes_);
-                RS_LOGD("NotifyVRates linkerid = %{public}" PRIu64 " nodeId=%{public}"
-                    PRIu64 " rate=%{public}d isSysAnimate=%{public}d", linkerId, nodeId, rate, isSystemAnimatedScenes_);
-            }
-        }
-        auto iter = lastVSyncRateMap_.find(nodeId);
-        if (iter != lastVSyncRateMap_.end() && iter->second == rate) {
-            continue;
-        }
-        if (RSSystemParameters::GetVRateControlEnabled()) {
-            needPostTask_.exchange(true);
-        }
-    }
-
-    lastVSyncRateMap_ = vSyncRateMap_;
-}
 int RSVsyncRateReduceManager::GetRateByBalanceLevel(double vVal)
 {
     if (std::abs(vVal - V_VAL_LEVEL_BEHINDWINDOW) < 10e-6) {
@@ -350,7 +327,7 @@ Occlusion::Rect RSVsyncRateReduceManager::CalcMaxVisibleRect(const Occlusion::Re
     for (const auto &rect: rects) {
         if (rect.Area() > maxRArea) {
             maxRect = rect;
-            maxRArea = maxRect.Area();
+            maxRArea = static_cast<int>(maxRect.Area());
         }
         xPositionSet.emplace(rect.left_);
         xPositionSet.emplace(rect.right_);
@@ -375,7 +352,7 @@ Occlusion::Rect RSVsyncRateReduceManager::CalcMaxVisibleRect(const Occlusion::Re
             Occlusion::Rect tmpRect = GetMaxVerticalRect(verticalRegion);
             if (tmpRect.Area() > maxRArea) {
                 maxRect = tmpRect;
-                maxRArea = tmpRect.Area();
+                maxRArea = static_cast<int>(tmpRect.Area());
             }
         }
     }
@@ -445,9 +422,8 @@ bool RSVsyncRateReduceManager::CheckNeedNotify()
     return true;
 }
 
-void RSVsyncRateReduceManager::Init(const sptr<VSyncDistributor>& appVSyncDistributor)
+void RSVsyncRateReduceManager::Init()
 {
-    appVSyncDistributor_ = appVSyncDistributor;
     isDeviceSupprotVRate_ = VRateParam::GetVRateEnable();
     vRateReduceEnabled_ = isDeviceSupprotVRate_ && RSSystemParameters::GetVSyncControlEnabled();
     RS_LOGI("Init vRateReduceEnabled_ is %{public}d", vRateReduceEnabled_);
@@ -465,12 +441,51 @@ void RSVsyncRateReduceManager::ResetFrameValues(uint32_t rsRefreshRate)
     vSyncRatesChanged_ = false;
     vSyncRateMap_.clear();
     curAllMainAndLeashWindowNodesIds_.clear();
-    vRateConditionQualified_ = rsRefreshRate > 0 && appVSyncDistributor_ != nullptr;
+    vRateConditionQualified_ = rsRefreshRate > 0;
     if (!vRateConditionQualified_) {
         return;
     }
-    oneFramePeriod_ = PERIOD_CHECK_THRESHOLD / static_cast<int64_t>(rsRefreshRate);
+    stagingOneFramePeriod_ = PERIOD_CHECK_THRESHOLD / static_cast<int64_t>(rsRefreshRate);
     rsRefreshRate_ = rsRefreshRate;
+}
+
+void RSVsyncRateReduceUtil::TransformNodeToLinkersRateMap(const std::unordered_map<NodeId, int>& vRateMap,
+    bool isNeedRefreshVRate, sptr<VSyncDistributor> appVSyncDistributor)
+{
+    if (!isNeedRefreshVRate || vRateMap.empty()) {
+        return;
+    }
+    linkersRateMap_.clear();
+    for (const auto& [nodeId, rate] : vRateMap) {
+        std::vector<uint64_t> linkerIds = appVSyncDistributor->GetSurfaceNodeLinkerIds(nodeId);
+        if (rate != 0 && RSSystemParameters::GetVRateControlEnabled()) {
+            for (auto& linkerId : linkerIds) {
+                linkersRateMap_.emplace(linkerId, rate);
+                RS_OPTIONAL_TRACE_NAME_FMT("NotifyVRates linkerid = %" PRIu64 " nodeId=%" PRIu64
+                    " rate=%d", linkerId, nodeId, rate);
+                RS_LOGD("TransformNodeToLinkersRateMap linkerid = %{public}" PRIu64 " nodeId=%{public}"
+                    PRIu64 " rate=%{public}d", linkerId, nodeId, rate);
+            }
+        }
+        auto iter = lastVSyncRateMap_.find(nodeId);
+        if (iter != lastVSyncRateMap_.end() && iter->second == rate) {
+            continue;
+        }
+        if (RSSystemParameters::GetVRateControlEnabled()) {
+            needPostTask_.exchange(true);
+        }
+    }
+    lastVSyncRateMap_ = vRateMap;
+}
+
+bool RSVsyncRateReduceUtil::SetVSyncRatesChangeStatus(bool newState)
+{
+    return needPostTask_.exchange(newState);
+}
+
+std::map<uint64_t, int> RSVsyncRateReduceUtil::GetLinkersRateMap()
+{
+    return linkersRateMap_;
 }
 } // namespace Rosen
 } // namespace OHOS

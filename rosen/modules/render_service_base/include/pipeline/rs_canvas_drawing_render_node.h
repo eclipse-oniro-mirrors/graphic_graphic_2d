@@ -27,7 +27,7 @@ namespace OHOS {
 namespace Rosen {
 
 using ThreadInfo = std::pair<uint32_t, std::function<void(std::shared_ptr<Drawing::Surface>)>>;
-using ModifierCmdList = std::list<Drawing::DrawCmdListPtr>;
+using ModifierCmdList = std::list<SimpleDrawCmdListPtr>;
 class RSRecordingCanvas;
 
 class RSB_EXPORT RSCanvasDrawingRenderNode : public RSCanvasRenderNode {
@@ -64,7 +64,7 @@ public:
     void ContentStyleSlotUpdate();
     void SetNeedProcess(bool needProcess);
     const std::map<ModifierNG::RSModifierType, ModifierCmdList>& GetDrawCmdListsNG() const;
-    void ClearResource() override;
+    void AccumulateLastDirtyTypes() override;
     void ClearNeverOnTree() override;
     void CheckCanvasDrawingPostPlaybacked();
     bool GetIsPostPlaybacked();
@@ -72,6 +72,14 @@ public:
     void ApplyModifiers() override;
     bool CheckCachedOp();
     bool HasCachedOp() const;
+
+    void SetWaitSync(bool waitSync)
+    {
+        waitSync_ = waitSync;
+    }
+
+protected:
+    void OnApplyModifiers() override;
 
 private:
     explicit RSCanvasDrawingRenderNode(
@@ -82,9 +90,11 @@ private:
     bool GetSizeFromDrawCmdModifiers(int& width, int& height);
     bool IsNeedResetSurface() const;
     void InitRenderParams() override;
-    void ReportOpCount(const std::list<Drawing::DrawCmdListPtr>& cmdLists) const;
-    void SplitDrawCmdList(size_t firstOpCount, Drawing::DrawCmdListPtr drawCmdList, bool splitOrigin);
+    void ReportOpCount(const std::list<SimpleDrawCmdListPtr>& cmdLists) const;
+    void SplitDrawCmdList(size_t firstOpCount, SimpleDrawCmdListPtr drawCmdList, bool splitOrigin);
     size_t ApplyCachedCmdList();
+    void AfterSync();
+    void ClearResource();
 #if (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
     bool ResetSurfaceWithTexture(int width, int height, RSPaintFilterCanvas& canvas);
 #endif
@@ -96,11 +106,12 @@ private:
     bool isPostPlaybacked_ = false;
     bool lastOverflowStatus_ = false;
     std::atomic<bool> isNeedProcess_ = false;
+    bool waitSync_ = false;
     // Used in uni render thread.
     uint32_t drawingNodeRenderID = UNI_MAIN_THREAD_INDEX;
     std::shared_ptr<Drawing::Surface> surface_;
     std::shared_ptr<Drawing::Image> image_;
-    std::shared_ptr<ExtendRecordingCanvas> recordingCanvas_;
+    std::unique_ptr<ExtendRecordingCanvas> recordingCanvas_;
     std::unique_ptr<RSPaintFilterCanvas> canvas_;
     std::mutex imageMutex_;
     std::mutex taskMutex_;
@@ -112,17 +123,7 @@ private:
     int64_t lastResetSurfaceTime_ = 0;
     size_t opCountAfterReset_ = 0;
 
-    struct CachedReversedOpInfo {
-        std::vector<uint32_t> drawOpTypes;
-        int32_t width = 0;
-        int32_t height = 0;
-        size_t opItemSize = 0;
-        CachedReversedOpInfo() : drawOpTypes{}, width(0), height(0), opItemSize(0) {}
-    };
-    std::deque<CachedReversedOpInfo> cachedReversedOpTypes_;
-    void DumpSubClassNode(std::string& out) const override;
-    void GetDrawOpItemInfo(const Drawing::DrawCmdListPtr& drawCmdList, size_t opItemSize);
-
+    bool modifiersApplied_ = false;
 
     friend class RSCanvasDrawingNodeCommandHelper;
     friend class RSRenderNode;

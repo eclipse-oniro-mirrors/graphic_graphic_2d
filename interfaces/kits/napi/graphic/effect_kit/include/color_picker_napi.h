@@ -38,6 +38,12 @@ class ColorPickerNapi {
 public:
     ColorPickerNapi();
     ~ColorPickerNapi();
+
+    static constexpr napi_type_tag NAPI_TYPE_TAG = {
+        .lower = 0xe52a6a6b55bf4d29,
+        .upper = 0x98cf1408b6253bc8
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
     static napi_value CreateColorPickerFromPtr(napi_env env, std::shared_ptr<ColorPicker> picker);
     std::shared_ptr<ColorPicker> GetColorPicker(){ return nativeColorPicker_; }
@@ -66,7 +72,7 @@ private:
     static napi_value GetDeepenImmersionColor(napi_env env, napi_callback_info info);
     static napi_value GetImmersiveBackgroundColor(napi_env env, napi_callback_info info);
     static napi_value GetImmersiveForegroundColor(napi_env env, napi_callback_info info);
-    static napi_value DiscriminatePitureLightDegree(napi_env env, napi_callback_info info);
+    static napi_value DiscriminatePictureLightDegree(napi_env env, napi_callback_info info);
     static napi_value GetReverseColor(napi_env env, napi_callback_info info);
     static napi_value GetTopProportionColors(napi_env env, napi_callback_info info);
     static napi_value GetTopProportionColorsAndPercentage(napi_env env, napi_callback_info info);

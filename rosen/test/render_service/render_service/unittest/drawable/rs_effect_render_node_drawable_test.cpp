@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
+#include <parameters.h>
+
 #include "gtest/gtest.h"
+#include "drawable/rs_color_picker_drawable.h"
 #include "drawable/rs_effect_render_node_drawable.h"
 #include "params/rs_render_thread_params.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
@@ -22,7 +25,7 @@
 #include "pipeline/rs_render_node_gc.h"
 
 #ifdef SUBTREE_PARALLEL_ENABLE
-#include "rs_parallel_manager.h
+#include "rs_parallel_manager.h"
 #include "rs_parallel_misc.h"
 #include "rs_parallel_multiwin_policy.h"
 #endif
@@ -38,13 +41,6 @@ constexpr NodeId DEFAULT_ID = 0xFFFF;
 
 class RSEffectRenderNodeDrawableTest : public testing::Test {
 public:
-    std::shared_ptr<RSEffectRenderNode> renderNode_;
-    RSRenderNodeDrawableAdapter* drawable_ = nullptr;
-    RSEffectRenderNodeDrawable* effectDrawable_ = nullptr;
-
-    std::shared_ptr<Drawing::Canvas> drawingCanvas_;
-    std::shared_ptr<RSPaintFilterCanvas> canvas_;
-      
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override;
@@ -57,26 +53,10 @@ void RSEffectRenderNodeDrawableTest::SetUpTestCase()
     renderNodeGC.nodeBucket_ = std::queue<std::vector<RSRenderNode*>>();
     renderNodeGC.drawableBucket_ = std::queue<std::vector<DrawableV2::RSRenderNodeDrawableAdapter*>>();
 }
+
 void RSEffectRenderNodeDrawableTest::TearDownTestCase() {}
 void RSEffectRenderNodeDrawableTest::SetUp()
 {
-    renderNode_ = std::make_shared<RSEffectRenderNode>(DEFAULT_ID);
-    if (!renderNode_) {
-        RS_LOGE("RSEffectRenderNodeDrawableTest:failed to create effect node.");
-    }
-    drawable_ = RSEffectRenderNodeDrawable::OnGenerate(renderNode_);
-    if (drawable_) {
-        drawable_->renderParams_ = std::make_unique<RSEffectRenderParams>(DEFAULT_ID);
-        effectDrawable_ = static_cast<RSEffectRenderNodeDrawable*>(drawable_);
-        if (!drawable_->renderParams_) {
-            RS_LOGE("RSEffectRenderNodeDrawableTest:failed to init effect render params.");
-        }
-    }
-    drawingCanvas_ = std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    if (drawingCanvas_) {
-        canvas_ = std::make_shared<RSPaintFilterCanvas>(drawingCanvas_.get());
-    }
-
     // set render thread param
     auto uniParams = std::make_unique<RSRenderThreadParams>();
     RSUniRenderThread::Instance().Sync(std::move(uniParams));
@@ -85,7 +65,7 @@ void RSEffectRenderNodeDrawableTest::TearDown() {}
 
 #ifdef SUBTREE_PARALLEL_ENABLE
 /**
- * @tc.name: OnDrawTest
+ * @tc.name: OnDraw
  * @tc.desc: Test OnDraw
  * @tc.type: FUNC
  * @tc.require: #ICEF7K
@@ -97,7 +77,6 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, OnDrawTest, TestSize.Level1)
     auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
         RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
     ASSERT_NE(effectDrawable->renderParams_, nullptr);
-
     auto canvas = std::make_shared<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
     auto rsPaintFilterCanvas = std::make_shared<RSPaintFilterCanvas>(canvas.get());
 
@@ -181,12 +160,12 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, OnCaptureTest002, TestSize.Level1)
 }
 
 /**
- * @tc.name: GenerateEffectWhenNoEffectChildrenAndUICaptureIsTrue
- * @tc.desc: generate effect when has no effect children and uiCapture is true
+ * @tc.name: GenerateEffectDataOnDemandIsBlurNotRequired
+ * @tc.desc: GenerateEffectDataOnDemand IsBlurNotRequired branch
  * @tc.type: FUNC
  * @tc.require: issueICQL6P
  */
-HWTEST_F(RSEffectRenderNodeDrawableTest, GenerateEffectWhenNoEffectChildrenAndUICaptureIsTrue, TestSize.Level1)
+HWTEST_F(RSEffectRenderNodeDrawableTest, GenerateEffectDataOnDemandIsBlurNotRequired, TestSize.Level1)
 {
     NodeId nodeId = 1;
     auto node = std::make_shared<RSRenderNode>(nodeId);
@@ -195,22 +174,17 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, GenerateEffectWhenNoEffectChildrenAndUI
     int height = 1920;
     Drawing::Canvas canvas(width, height);
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    paintFilterCanvas.SetUICapture(true);
     drawable->drawCmdIndex_.backgroundFilterIndex_ = 0;
     drawable->drawCmdIndex_.childrenIndex_ = 0;
-    Drawing::RecordingCanvas::DrawFunc drawFunc = [](Drawing::Canvas* canvas, const Drawing::Rect* rect) {
-        auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(canvas);
-        if (paintFilterCanvas == nullptr) {
-            return;
-        }
-        paintFilterCanvas->SetEffectData(std::make_shared<RSPaintFilterCanvas::CachedEffectData>());
-    };
-    drawable->drawCmdList_.emplace_back(drawFunc);
-
     RSEffectRenderParams params(nodeId);
+    paintFilterCanvas.SetUICapture(false);
+    paintFilterCanvas.SetIsParallelCanvas(false);
     params.SetHasEffectChildrenWithoutEmptyRect(false);
     EXPECT_TRUE(drawable->GenerateEffectDataOnDemand(&params, paintFilterCanvas, Drawing::Rect(), &paintFilterCanvas));
-    EXPECT_NE(paintFilterCanvas.GetEffectData(), nullptr);
+
+    paintFilterCanvas.SetIsParallelCanvas(true);
+    params.SetHasEffectChildren(true);
+    EXPECT_TRUE(drawable->GenerateEffectDataOnDemand(&params, paintFilterCanvas, Drawing::Rect(), &paintFilterCanvas));
 }
 
 /**
@@ -294,5 +268,272 @@ HWTEST_F(RSEffectRenderNodeDrawableTest, OnDraw004, TestSize.Level2)
 
     // restore
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+}
+
+/**
+ * @tc.name: IsBlurNotRequired
+ * @tc.desc: IsBlurNotRequired
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, IsBlurNotRequired, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    int width = 1024;
+    int height = 1920;
+    Drawing::Canvas canvas(width, height);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    ASSERT_TRUE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+}
+
+/**
+ * @tc.name: GenerateEffectDataOnDemandWithColorPicker
+ * @tc.desc: Test GenerateEffectDataOnDemand with ColorPickerDrawable
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, GenerateEffectDataOnDemandWithColorPicker, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    ASSERT_NE(node, nullptr);
+
+    // Create a ColorPicker drawable
+    auto colorPickerDrawable = std::make_shared<DrawableV2::RSColorPickerDrawable>(false, nodeId);
+    ASSERT_NE(colorPickerDrawable, nullptr);
+
+    // Create effect drawable
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(node);
+    ASSERT_NE(drawable, nullptr);
+
+    // Set up synced draw command indexes to pass the initial check and draw ColorPickerDrawable.
+    drawable->drawCmdList_.emplace_back(colorPickerDrawable);
+    drawable->drawCmdIndex_.childrenIndex_ = 0;
+    drawable->drawCmdIndex_.colorPickerIndex_ = 0;
+
+    int width = 1024;
+    int height = 1920;
+    Drawing::Canvas canvas(width, height);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    // Set up params to pass IsBlurNotRequired check
+    params.SetHasEffectChildren(false);
+
+    Drawing::Rect bounds(0, 0, width, height);
+
+    // Call GenerateEffectDataOnDemand - should not crash and return true
+    EXPECT_TRUE(drawable->GenerateEffectDataOnDemand(&params, paintFilterCanvas, bounds, &paintFilterCanvas));
+}
+
+/**
+ * @tc.name: IsBlurNotRequired001
+ * @tc.desc: Test IsBlurNotRequired when drawCmdIndex_.backgroundFilterIndex_ == -1
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, IsBlurNotRequiredWithUICapture001, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    Drawing::Canvas canvas(1024, 1920);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    drawable->drawCmdIndex_.backgroundFilterIndex_ = -1;
+    EXPECT_TRUE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+}
+
+/**
+ * @tc.name: IsBlurNotRequired002
+ * @tc.desc: Test IsBlurNotRequired when RSSystemProperties::GetEffectMergeEnabled == false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, IsBlurNotRequired002, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    Drawing::Canvas canvas(1024, 1920);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    drawable->drawCmdIndex_.backgroundFilterIndex_ = 0;
+    (void)system::SetParameter("rosen.graphic.effectMergeEnabled", "0");
+    int param = (int)RSSystemProperties::GetEffectMergeEnabled();
+    ASSERT_EQ(param, 0);
+    EXPECT_TRUE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+
+    (void)system::SetParameter("rosen.graphic.effectMergeEnabled", "1");
+    param = (int)RSSystemProperties::GetEffectMergeEnabled();
+    ASSERT_EQ(param, 1);
+}
+
+/**
+ * @tc.name: IsBlurNotRequired003
+ * @tc.desc: Test IsBlurNotRequired when RSFilterCacheManager::isCCMEffectMergeEnable_ == false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, IsBlurNotRequired003, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    Drawing::Canvas canvas(1024, 1920);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    drawable->drawCmdIndex_.backgroundFilterIndex_ = 0;
+    RSFilterCacheManager::isCCMEffectMergeEnable_ = false;
+    EXPECT_TRUE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+}
+
+/**
+ * @tc.name: IsBlurNotRequired004
+ * @tc.desc: Test IsBlurNotRequired when GetUICapture is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, IsBlurNotRequired004, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    Drawing::Canvas canvas(1024, 1920);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    drawable->drawCmdIndex_.backgroundFilterIndex_ = 0;
+    RSFilterCacheManager::isCCMEffectMergeEnable_ = true;
+
+    paintFilterCanvas.SetUICapture(true);
+    EXPECT_FALSE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+}
+
+/**
+ * @tc.name: IsBlurNotRequired005
+ * @tc.desc: Test IsBlurNotRequired when GetUICapture is false with different params
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, IsBlurNotRequired005, TestSize.Level1)
+{
+    NodeId nodeId = 1;
+    auto node = std::make_shared<RSRenderNode>(nodeId);
+    auto drawable = std::make_shared<RSEffectRenderNodeDrawable>(std::move(node));
+    Drawing::Canvas canvas(1024, 1920);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSEffectRenderParams params(nodeId);
+
+    drawable->drawCmdIndex_.backgroundFilterIndex_ = 0;
+    RSFilterCacheManager::isCCMEffectMergeEnable_ = true;
+
+    paintFilterCanvas.SetUICapture(false);
+    params.SetHasEffectChildren(false);
+    EXPECT_TRUE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+
+    params.SetHasEffectChildren(true);
+    params.SetHasEffectChildrenWithoutEmptyRect(false);
+    paintFilterCanvas.SetIsParallelCanvas(false);
+    EXPECT_TRUE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+
+    params.SetHasEffectChildrenWithoutEmptyRect(true);
+    EXPECT_FALSE(drawable->IsBlurNotRequired(&params, &paintFilterCanvas));
+}
+
+/**
+ * @tc.name: BackFaceSkipTest001
+ * @tc.desc: Test OnDraw skips with BACKFACE_SKIP when single sided + back face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, BackFaceSkipTest001, TestSize.Level2)
+{
+    auto effectNode = std::make_shared<RSEffectRenderNode>(DEFAULT_ID);
+    ASSERT_NE(effectNode, nullptr);
+    auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
+        RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
+    ASSERT_NE(effectDrawable->renderParams_, nullptr);
+    
+    effectDrawable->renderParams_->shouldPaint_ = true;
+    effectDrawable->renderParams_->contentEmpty_ = false;
+    
+    Drawing::Matrix matrix;
+    matrix.SetScale(-1.0f, 1.0f);
+    effectDrawable->renderParams_->SetMatrix(matrix);
+    effectDrawable->renderParams_->SetDoubleSidedEnabled(false);
+    
+    Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    
+    effectDrawable->OnDraw(paintFilterCanvas);
+    
+    ASSERT_EQ(effectDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: BackFaceSkipTest002
+ * @tc.desc: Test OnDraw does NOT skip when double sided + back face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, BackFaceSkipTest002, TestSize.Level2)
+{
+    auto effectNode = std::make_shared<RSEffectRenderNode>(DEFAULT_ID);
+    ASSERT_NE(effectNode, nullptr);
+    auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
+        RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
+    ASSERT_NE(effectDrawable->renderParams_, nullptr);
+    
+    effectDrawable->renderParams_->shouldPaint_ = true;
+    effectDrawable->renderParams_->contentEmpty_ = false;
+    
+    Drawing::Matrix matrix;
+    matrix.SetScale(-1.0f, 1.0f);
+    effectDrawable->renderParams_->SetMatrix(matrix);
+    effectDrawable->renderParams_->SetDoubleSidedEnabled(true);
+    
+    Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    
+    effectDrawable->OnDraw(paintFilterCanvas);
+    
+    ASSERT_NE(effectDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: BackFaceSkipTest003
+ * @tc.desc: Test OnDraw does NOT skip when single sided + front face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSEffectRenderNodeDrawableTest, BackFaceSkipTest003, TestSize.Level2)
+{
+    auto effectNode = std::make_shared<RSEffectRenderNode>(DEFAULT_ID);
+    ASSERT_NE(effectNode, nullptr);
+    auto effectDrawable = static_cast<RSEffectRenderNodeDrawable*>(
+        RSRenderNodeDrawableAdapter::OnGenerate(effectNode).get());
+    ASSERT_NE(effectDrawable->renderParams_, nullptr);
+    
+    effectDrawable->renderParams_->shouldPaint_ = true;
+    effectDrawable->renderParams_->contentEmpty_ = false;
+    
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f, 1.0f);
+    effectDrawable->renderParams_->SetMatrix(matrix);
+    effectDrawable->renderParams_->SetDoubleSidedEnabled(false);
+    
+    Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    
+    effectDrawable->OnDraw(paintFilterCanvas);
+    
+    ASSERT_NE(effectDrawable->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
 }
 }

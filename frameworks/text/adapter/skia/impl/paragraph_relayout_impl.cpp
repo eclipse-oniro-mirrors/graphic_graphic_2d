@@ -273,14 +273,21 @@ namespace {
         },
 
         [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
-            skt::StrutStyle& strutStyle =  paragraph.getParagraphStyle().exportStrutStyle();
+            skt::ParagraphStyle& paragraphStyle = paragraph.getParagraphStyle();
+            skt::StrutStyle& strutStyle =  paragraphStyle.exportStrutStyle();
             strutStyle.setLineBreakStrategy(static_cast<skt::LineBreakStrategy>(style.breakStrategy));
+            if (paragraphStyle.getUseLocaleForTextBreak()) {
+                state = skt::kUnknown;
+            }
             state = std::min(skt::InternalState::kShaped, state);
         },
 
         [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
-            paragraph.getParagraphStyle().exportStrutStyle()
-                .setWordBreakType(static_cast<skt::WordBreakType>(style.wordBreakType));
+            skt::ParagraphStyle& paragraphStyle = paragraph.getParagraphStyle();
+            paragraphStyle.exportStrutStyle().setWordBreakType(static_cast<skt::WordBreakType>(style.wordBreakType));
+            if (paragraphStyle.getUseLocaleForTextBreak()) {
+                state = skt::kUnknown;
+            }
             state = std::min(skt::InternalState::kShaped, state);
         },
 
@@ -313,6 +320,33 @@ namespace {
             paragraph.getParagraphStyle().setTextHeightBehavior(
                 static_cast<skt::TextHeightBehavior>(style.textHeightBehavior));
             state = std::min(skt::InternalState::kIndexed, state);
+        },
+
+        [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
+            if (style.firstLineIndent < 0) {
+                return;
+            }
+            paragraph.getParagraphStyle().setFirstLineIndent(style.firstLineIndent);
+            state = std::min(skt::InternalState::kShaped, state);
+        },
+
+        [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
+            if (std::none_of(style.headIndents.begin(), style.headIndents.end(), [](float num) {return num < 0.0f;})) {
+                paragraph.getParagraphStyle().setHeadIndents(style.headIndents);
+                state = std::min(skt::InternalState::kShaped, state);
+            }
+        },
+
+        [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
+            if (std::none_of(style.tailIndents.begin(), style.tailIndents.end(), [](float num) {return num < 0.0f;})) {
+                paragraph.getParagraphStyle().setTailIndents(style.tailIndents);
+                state = std::min(skt::InternalState::kShaped, state);
+            }
+        },
+
+        [](skt::Paragraph& paragraph, const ParagraphStyle& style, skt::InternalState& state) {
+            paragraph.getParagraphStyle().setPunctuationOverflow(style.punctuationOverflow);
+            state = std::min(skt::InternalState::kShaped, state);
         }
     };
 
@@ -452,7 +486,9 @@ namespace {
 
         [](ParagraphImpl& paragraph, skt::Block& skiaBlock, const TextStyle& spTextStyle, skt::InternalState& state) {
             skt::TextRange textRange = skiaBlock.fRange;
-            paragraph.UpdateColor(textRange.start, textRange.end, spTextStyle.color, skt::UtfEncodeType::kUtf16);
+            Drawing::Color rsColor(spTextStyle.color);
+            rsColor.SetPlaceholder(static_cast<ColorPlaceholder>(spTextStyle.colorPlaceholder));
+            paragraph.UpdateColor(textRange.start, textRange.end, rsColor, skt::UtfEncodeType::kUtf16);
             state = std::min(skt::InternalState::kFormatted, state);
         },
 
@@ -480,6 +516,12 @@ namespace {
             std::ignore = skiaBlock;
             std::ignore = state;
             paragraph.UpdateForegroundBrush(spTextStyle);
+        },
+
+        [](ParagraphImpl& paragraph, skt::Block& skiaBlock, const TextStyle& spTextStyle, skt::InternalState& state) {
+            skt::TextStyle& skiaTextStyle = skiaBlock.fStyle;
+            skiaTextStyle.setFontEdging(spTextStyle.fontEdging);
+            state = std::min(skt::InternalState::kIndexed, state);
         },
     };
 
@@ -556,6 +598,7 @@ void ParagraphImpl::UpdateSymbolRun(const HMSymbolTxt& symbolStyle, std::shared_
         }
         p.symbol = hmSymbolRun->GetSymbolTxt();
     }
+    MarkAttributeUpdated();
 }
 
 void ParagraphImpl::SymbolStyleUpdater(const HMSymbolTxt& symbolStyle, std::vector<std::shared_ptr<HMSymbolRun>>&
@@ -629,6 +672,7 @@ void ParagraphImpl::Relayout(double width, const ParagraphStyle& paragrahStyle,
     ApplyParagraphStyleChanges(paragrahStyle);
     ApplyTextStyleChanges(textStyles);
     paragraph_->layout(width);
+    MarkAttributeUpdated();
 }
 } // namespace SPText
 } // namespace Rosen

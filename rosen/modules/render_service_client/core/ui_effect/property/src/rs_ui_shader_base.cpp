@@ -32,6 +32,10 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
             return std::make_shared<RSNGContourDiagonalFlowLight>();
         }
     },
+    {RSNGEffectType::DOT_MATRIX_SHADER, [] {
+            return std::make_shared<RSNGDotMatrixShader>();
+        }
+    },
     {RSNGEffectType::WAVY_RIPPLE_LIGHT, [] {
             return std::make_shared<RSNGWavyRippleLight>();
         }
@@ -76,12 +80,30 @@ static std::unordered_map<RSNGEffectType, ShaderCreator> creatorLUT = {
             return std::make_shared<RSNGCircleFlowlight>();
         }
     },
+#ifndef ROSEN_ARKUI_X
     {RSNGEffectType::FROSTED_GLASS_EFFECT, [] {
             return std::make_shared<RSNGFrostedGlassEffect>();
         }
     },
+#endif
     {RSNGEffectType::DISTORT_CHROMA, [] {
             return std::make_shared<RSNGDistortChroma>();
+        }
+    },
+    {RSNGEffectType::BORDER_SDF_SHADER, [] {
+            return std::make_shared<RSNGBorderSDFShader>();
+        }
+    },
+    {RSNGEffectType::BORDER_SDF_LG_COLOR, [] {
+            return std::make_shared<RSNGBorderSDFLGColor>();
+        }
+    },
+    {RSNGEffectType::SDF_EDGE_LIGHT_EFFECT, [] {
+            return std::make_shared<RSNGSDFEdgeLightEffect>();
+        }
+    },
+    {RSNGEffectType::SPATIAL_POINT_LIGHT, [] {
+            return std::make_shared<RSNGSpatialPointLight>();
         }
     },
 };
@@ -148,9 +170,12 @@ std::shared_ptr<RSNGShaderBase> ConvertColorGradientEffectPara(std::shared_ptr<V
     Vector4f color4 = colorGradientEffectPara->GetDefaultColor4f();
     Vector2f pos2 = colorGradientEffectPara->GetDefaultPoint();
     float strth = colorGradientEffectPara->GetDefaultStrength();
+    float brightness = colorGradientEffectPara->GetDefaultBrightness();
 
     colorGradientEffect->Setter<ColorGradientEffectBlendTag>(blend);
     colorGradientEffect->Setter<ColorGradientEffectBlendKTag>(blendK);
+    // Convert brightness from [0,2] range to [-1,1] range for normalizing the input
+    colorGradientEffect->Setter<ColorGradientEffectBrightnessTag>(brightness - 1.0f);
 
     ColorGradientEffectColorTags colorTag{};
     std::apply([&colorGradientEffect, &colors, color4] (auto&&... args) {
@@ -170,8 +195,10 @@ std::shared_ptr<RSNGShaderBase> ConvertColorGradientEffectPara(std::shared_ptr<V
         (colorGradientEffect->Setter<std::decay_t<decltype(args)>>(i < strths.size() ? strths[i++] : strth), ...);
         }, strthTag);
 
+#if !defined(ROSEN_ARKUI_X)
     colorGradientEffect->Setter<ColorGradientEffectMaskTag>(
         RSNGMaskBase::Create(colorGradientEffectPara->GetMask()));
+#endif
 
     colorGradientEffect->Setter<ColorGradientEffectColorNumberTag>(static_cast<float>(strths.size()));
 
@@ -180,6 +207,7 @@ std::shared_ptr<RSNGShaderBase> ConvertColorGradientEffectPara(std::shared_ptr<V
 
 std::shared_ptr<RSNGShaderBase> ConvertFrostedGlassEffectPara(std::shared_ptr<VisualEffectPara> effectPara)
 {
+#if !defined(ROSEN_ARKUI_X)
     auto effect = RSNGShaderBase::Create(RSNGEffectType::FROSTED_GLASS_EFFECT);
     if (effect == nullptr || effectPara == nullptr) {
         ROSEN_LOGE("ConvertFrostedGlassEffectPara effect or effectPara is nullptr");
@@ -187,13 +215,13 @@ std::shared_ptr<RSNGShaderBase> ConvertFrostedGlassEffectPara(std::shared_ptr<Vi
     }
     auto frostedGlassEffect = std::static_pointer_cast<RSNGFrostedGlassEffect>(effect);
     auto frostedGlassEffectPara = std::static_pointer_cast<FrostedGlassEffectPara>(effectPara);
-    frostedGlassEffect->Setter<FrostedGlassEffectBlurParamTag>(frostedGlassEffectPara->GetBlurParam());
     frostedGlassEffect->Setter<FrostedGlassEffectWeightsEmbossTag>(frostedGlassEffectPara->GetWeightsEmboss());
     frostedGlassEffect->Setter<FrostedGlassEffectWeightsEdlTag>(frostedGlassEffectPara->GetWeightsEdl());
     frostedGlassEffect->Setter<FrostedGlassEffectBgRatesTag>(frostedGlassEffectPara->GetBgRates());
     frostedGlassEffect->Setter<FrostedGlassEffectBgKBSTag>(frostedGlassEffectPara->GetBgKBS());
     frostedGlassEffect->Setter<FrostedGlassEffectBgPosTag>(frostedGlassEffectPara->GetBgPos());
     frostedGlassEffect->Setter<FrostedGlassEffectBgNegTag>(frostedGlassEffectPara->GetBgNeg());
+    frostedGlassEffect->Setter<FrostedGlassEffectBgAlphaTag>(frostedGlassEffectPara->GetBgAlpha());
     frostedGlassEffect->Setter<FrostedGlassEffectRefractParamsTag>(frostedGlassEffectPara->GetRefractParams());
     frostedGlassEffect->Setter<FrostedGlassEffectSdParamsTag>(frostedGlassEffectPara->GetSdParams());
     frostedGlassEffect->Setter<FrostedGlassEffectSdRatesTag>(frostedGlassEffectPara->GetSdRates());
@@ -213,7 +241,11 @@ std::shared_ptr<RSNGShaderBase> ConvertFrostedGlassEffectPara(std::shared_ptr<Vi
     frostedGlassEffect->Setter<FrostedGlassEffectEdLightPosTag>(frostedGlassEffectPara->GetEdLightPos());
     frostedGlassEffect->Setter<FrostedGlassEffectEdLightNegTag>(frostedGlassEffectPara->GetEdLightNeg());
     frostedGlassEffect->Setter<FrostedGlassEffectMaterialColorTag>(frostedGlassEffectPara->GetMaterialColor());
+    frostedGlassEffect->Setter<FrostedGlassEffectWaveMaskTag>(RSNGMaskBase::Create(frostedGlassEffectPara->GetMask()));
     return frostedGlassEffect;
+#else
+    return nullptr;
+#endif
 }
 
 std::shared_ptr<RSNGShaderBase> ConvertHarmoniumEffectPara(std::shared_ptr<VisualEffectPara> effectPara)
@@ -229,9 +261,11 @@ std::shared_ptr<RSNGShaderBase> ConvertHarmoniumEffectPara(std::shared_ptr<Visua
         ROSEN_LOGE("ConvertHarmoniumEffectPara enable is false");
         return nullptr;
     }
+#if !defined(ROSEN_ARKUI_X)
     harmoniumEffect->Setter<HarmoniumEffectMaskTag>(RSNGMaskBase::Create(harmoniumEffectPara->GetMask()));
     harmoniumEffect->Setter<HarmoniumEffectUseEffectMaskTag>(RSNGMaskBase::Create(
         harmoniumEffectPara->GetUseEffectMask()));
+#endif
     harmoniumEffect->Setter<HarmoniumEffectRipplePositionTag>(harmoniumEffectPara->GetRipplePosition());
     harmoniumEffect->Setter<HarmoniumEffectRippleProgressTag>(harmoniumEffectPara->GetRippleProgress());
     harmoniumEffect->Setter<HarmoniumEffectTintColorTag>(harmoniumEffectPara->GetTintColor());

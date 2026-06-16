@@ -41,6 +41,9 @@ public:
     void SetScreenId(uint64_t screenId);
     uint64_t GetScreenId() const;
 
+    void SetDisplayContentRect(const Rect& contentRect);
+    const Rect& GetDisplayContentRect() const;
+
     void SetNeedOffscreen(bool needOffscreen);
     bool GetNeedOffscreen() const;
 
@@ -132,12 +135,12 @@ public:
         needSync_ = true;
     }
 
-    uint32_t GetFixedWidth() const
+    float GetFixedWidth() const
     {
         return fixedWidth_;
     }
 
-    uint32_t GetFixedHeight() const
+    float GetFixedHeight() const
     {
         return fixedHeight_;
     }
@@ -149,6 +152,7 @@ private:
     RSSpecialLayerManager specialLayerManager_;
     bool isSecurityExemption_ = false;
     uint64_t screenId_ = INVALID_SCREEN_ID;
+    Rect contentRect_ = {0, 0, 0, 0};
     bool needOffscreen_ = false;
     ScreenRotation screenRotation_ = ScreenRotation::ROTATION_0;
     ScreenRotation nodeRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
@@ -167,8 +171,8 @@ private:
 
     float offsetX_ = 0.f;
     float offsetY_ = 0.f;
-    uint32_t fixedWidth_ = 0;
-    uint32_t fixedHeight_ = 0;
+    float fixedWidth_ = 0;
+    float fixedHeight_ = 0;
 
     friend class RSLogicalDisplayRenderNode;
 };

@@ -41,6 +41,10 @@ public:
     void SetAdaptiveColorGamutEnable(bool isAdaptiveColorGamutEnable);
     bool IsAdaptiveColorGamutEnabled() const;
 
+    // use to force sRGB output on specific device types, disabling color management
+    void SetForceSRGBOutput(bool isForceSRGBOutput);
+    bool IsForceSRGBOutputEnabled() const;
+
     void SetTvPlayerBundleName(const std::string& bundleName);
     const std::string& GetTvPlayerBundleName() const;
 
@@ -69,8 +73,6 @@ public:
     std::string GetOverlappedHwcNodeInAppEnabledConfig(const std::string& appName);
 
     // DISPLAY ENGINE
-    void SetCurrentPkgName(const std::string& pkgName);
-    std::string GetCurrentPkgName() const;
     void SetImageEnhancePidList(const std::unordered_set<pid_t>& imageEnhancePidList);
     std::unordered_set<pid_t> GetImageEnhancePidList() const;
     void SetImageEnhanceParams(const RSImageDetailEnhanceParams& imageEnhanceParams);
@@ -80,6 +82,10 @@ public:
     RSImageDetailEnhanceAlgoParams GetImageEnhanceAlgoParams(const std::string& key) const;
     bool IsImageEnhanceParamsValid();
 
+    // LayerPartRender white list
+    void SetLayerPartRenderWhiteList(const std::unordered_set<std::string>& whiteList);
+    bool IsInLayerPartRenderWhiteList(const std::string& bundleName) const;
+
 private:
     std::function<void(const std::string&)> startNewAniamtionFunc_ = nullptr;
     // source crop tuning
@@ -88,13 +94,16 @@ private:
     // use to implement product isolation for the adaptive P3 scheme
     std::atomic<bool> isAdaptiveColorGamutEnable_{false};
 
+    // force sRGB output, disable color management
+    std::atomic<bool> isForceSRGBOutput_{false};
+
     std::string tvPlayerBundleName_;
 
     std::unordered_map<std::string, std::string> filterUnderHwcConfig_;
 
     std::unordered_map<std::string, std::string> overlappedHwcNodeInAppEnabledConfig_;
 
-    // use in updating hwc node hardware state with background alpha
+    // use in updating hwcnode hardware state with background alpha
     std::atomic<bool> hardwareEnabledByHwcnodeSkippedFlag_{false};
     std::atomic<bool> hardwareEnabledByBackgroundAlphaSkippedFlag_{false};
     std::atomic<bool> isWhiteListForSolidColorLayerFlag_{false};
@@ -105,11 +114,13 @@ private:
     std::unordered_map<std::string, std::string> hwcSolidLayerConfigFromHgm_;
     
     // DISPLAY ENGINE
-    std::string pkgName_{};
     mutable std::mutex mutexLock_{};
     std::unordered_set<pid_t> imageEnhancePidList_{};
     RSImageDetailEnhanceParams imageEnhanceParams_{};
     std::unordered_map<std::string, RSImageDetailEnhanceAlgoParams> imageEnhanceAlgoParams_{};
+
+    // LayerPartRender white list
+    std::unordered_set<std::string> layerPartRenderWhiteList_{};
 };
 } // namespace OHOS::Rosen
 #endif

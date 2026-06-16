@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -48,7 +48,7 @@ public:
         ani_double distance, ani_object aniPosition, ani_object aniTangent);
     static ani_double GetLength(ani_env* env, ani_object obj, ani_boolean forceClosed);
     static ani_boolean Op(ani_env* env, ani_object obj, ani_object aniPathObj, ani_enum_item aniPathOpEnum);
-    static void AddPolygon(ani_env* env, ani_object obj, ani_object aniPointArray, ani_boolean aniClose);
+    static void AddPolygon(ani_env* env, ani_object obj, ani_array aniPointArray, ani_boolean aniClose);
     static void ConicTo(ani_env* env, ani_object obj, ani_double ctrlX, ani_double ctrlY, ani_double endX,
         ani_double endY, ani_double weight);
     static void AddCircle(ani_env* env, ani_object obj,
@@ -68,6 +68,10 @@ public:
     static void AddPath(ani_env* env, ani_object obj, ani_object aniPathObj, ani_object aniMatrixObj);
     static ani_boolean IsClosed(ani_env* env, ani_object obj);
     static ani_boolean BuildFromSVGString(ani_env* env, ani_object obj, ani_string aniStringObj);
+    static ani_string ConvertToSVGString(ani_env* env, ani_object obj);
+    static ani_array GetPointData(ani_env* env, ani_object obj);
+    static ani_array GetVerbData(ani_env* env, ani_object obj);
+    static ani_array GetConicWeightData(ani_env* env, ani_object obj);
     static void CubicTo(ani_env* env, ani_object obj, ani_double ctrlX1, ani_double ctrlY1, ani_double ctrlX2,
         ani_double ctrlY2, ani_double endX, ani_double endY);
     static void QuadTo(ani_env* env, ani_object obj, ani_double ctrlX, ani_double ctrlY, ani_double ctrlX2,
@@ -77,6 +81,17 @@ public:
     static void Close(ani_env* env, ani_object obj);
     static ani_boolean IsInverseFillType(ani_env* env, ani_object obj);
     static void ToggleInverseFillType(ani_env* env, ani_object obj);
+    static ani_object Approximate(ani_env* env, ani_object obj, ani_double acceptableErrorobj);
+    static void SetLastPoint(ani_env* env, ani_object obj, ani_double x, ani_double y);
+    static void ReWind(ani_env* env, ani_object obj);
+    static ani_boolean Interpolate(ani_env* env, ani_object obj, ani_object otherobj, ani_double weight,
+        ani_object interpolatedPathobj);
+    static ani_boolean IsEmpty(ani_env* env, ani_object obj);
+    static void Set(ani_env* env, ani_object obj, ani_object srcobj);
+    static ani_boolean IsInterpolate(ani_env* env, ani_object obj, ani_object otherobj);
+    static ani_boolean IsEqual(ani_env* env, ani_object obj, ani_object otherobj);
+    static ani_enum_item GetFillType(ani_env* env, ani_object obj);
+    static ani_object GetLastPoint(ani_env* env, ani_object obj);
 
     std::shared_ptr<Path> GetPath();
 

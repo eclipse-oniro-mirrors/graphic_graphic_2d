@@ -77,7 +77,6 @@ public:
         ATTRACTION_EFFECT,
         WATER_RIPPLE,
         COMPOUND_EFFECT,
-        MAGNIFIER,
         FLY_OUT,
         DISTORT,
         ALWAYS_SNAPSHOT,
@@ -92,6 +91,7 @@ public:
         GASIFY_SCALE_TWIST,
         GASIFY_BLUR,
         GASIFY,
+        PARTICLE_ABLATION,
         FROSTED_GLASS,
         FROSTED_GLASS_BLUR,
     };
@@ -144,12 +144,7 @@ public:
         needSnapshotOutset_ = needSnapshotOutset;
     }
 
-    bool GetHpaeCallback() const {
-        return hasHpae_;
-    }
-
 protected:
-    bool hasHpae_ = false;
     FilterType type_;
     uint32_t hash_ = 0;
     bool needSnapshotOutset_ = true;

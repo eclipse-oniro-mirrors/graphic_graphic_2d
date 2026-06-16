@@ -18,6 +18,7 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
+#include "common/rs_vector2.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -44,9 +45,139 @@ public:
         return hasChildExcludedFromNodeGroup_;
     }
 
+    bool SetRenderGroupExcludedStateChanged(bool isChanged);
+    bool IsRenderGroupExcludedStateChanged() const
+    {
+        return isExcludedStateChanged_;
+    }
+
+    bool SetCachedSubTreeDirty(bool isDirty);
+    bool IsCachedSubTreeDirty() const
+    {
+        return isCachedSubTreeDirty_;
+    }
+
+    bool SetChildHasTranslateOnSqueeze(bool val);
+    bool ChildHasTranslateOnSqueeze() const
+    {
+        return childHasTranslateOnSqueeze_;
+    }
+
+    bool SetNodeGroupHasChildInBlacklist(bool inBlacklist);
+    bool NodeGroupHasChildInBlacklist() const
+    {
+        return nodeGroupHasChildInBlacklist_;
+    }
+
+    bool SetNeedClipHoleForFilter(bool val);
+    bool NeedClipHoleForFilter() const
+    {
+        return needClipHoleForFilter_;
+    }
+
+    bool SetNeedClearRenderGroupCache(bool needClear);
+    bool NeedClearRenderGroupCache() const
+    {
+        return needClearRenderGroupCache_;
+    }
+
+    bool SetRealShadowRect(const Drawing::Rect& rect);
+    const Drawing::Rect& GetRealShadowRect() const
+    {
+        return realShadowRect_;
+    }
+
+    bool SetRenderGroupIncludeProperty(bool includeProperty);
+    bool IsRenderGroupIncludeProperty() const
+    {
+        return renderGroupIncludeProperty_;
+    }
+
+    bool SetCacheSize(Vector2f size);
+    Vector2f GetCacheSize() const
+    {
+        return cacheSize_;
+    }
+
+    enum class RSFreezeFlag : uint8_t {
+        NONE = 0,
+        FREEZED_BY_UI = 1 << NONE,
+        FREEZED_BY_USER = 1 << FREEZED_BY_UI,
+    };
+
+    bool SetRSFreezeFlag(bool freezeFlag, bool isMarkedByUI);
+    RSFreezeFlag GetRSFreezeFlag() const
+    {
+        return freezeFlag_;
+    }
+    // operator overloading for the RSFreezeFlag enumeration
+    friend constexpr RSFreezeFlag operator|(RSFreezeFlag lhs, RSFreezeFlag rhs) noexcept;
+    friend constexpr RSFreezeFlag operator&(RSFreezeFlag lhs, RSFreezeFlag rhs) noexcept;
+    friend constexpr RSFreezeFlag operator~(RSFreezeFlag val) noexcept;
+    friend inline RSFreezeFlag& operator|=(RSFreezeFlag& lhs, RSFreezeFlag rhs) noexcept;
+    friend inline RSFreezeFlag& operator&=(RSFreezeFlag& lhs, RSFreezeFlag rhs) noexcept;
+
 private:
     bool excludedFromNodeGroup_ = false;
     bool hasChildExcludedFromNodeGroup_ = false;
+    bool isExcludedStateChanged_ = false;
+    bool isCachedSubTreeDirty_ = false;
+    bool childHasTranslateOnSqueeze_ = false;
+    bool nodeGroupHasChildInBlacklist_ = false;
+    bool needClipHoleForFilter_ = false;
+    bool needClearRenderGroupCache_ = false;
+    Drawing::Rect realShadowRect_;
+    bool renderGroupIncludeProperty_ = false;
+    Vector2f cacheSize_;
+    RSFreezeFlag freezeFlag_ = RSFreezeFlag::NONE;
+};
+
+constexpr RSRenderGroupCache::RSFreezeFlag operator|(
+    RSRenderGroupCache::RSFreezeFlag lhs, RSRenderGroupCache::RSFreezeFlag rhs) noexcept
+{
+    return static_cast<RSRenderGroupCache::RSFreezeFlag>(
+        static_cast<std::underlying_type_t<RSRenderGroupCache::RSFreezeFlag>>(lhs) |
+        static_cast<std::underlying_type_t<RSRenderGroupCache::RSFreezeFlag>>(rhs));
+}
+constexpr RSRenderGroupCache::RSFreezeFlag operator&(
+    RSRenderGroupCache::RSFreezeFlag lhs, RSRenderGroupCache::RSFreezeFlag rhs) noexcept
+{
+    return static_cast<RSRenderGroupCache::RSFreezeFlag>(
+        static_cast<std::underlying_type_t<RSRenderGroupCache::RSFreezeFlag>>(lhs) &
+        static_cast<std::underlying_type_t<RSRenderGroupCache::RSFreezeFlag>>(rhs));
+}
+constexpr RSRenderGroupCache::RSFreezeFlag operator~(RSRenderGroupCache::RSFreezeFlag val) noexcept
+{
+    return static_cast<RSRenderGroupCache::RSFreezeFlag>(
+        ~static_cast<std::underlying_type_t<RSRenderGroupCache::RSFreezeFlag>>(val));
+}
+RSRenderGroupCache::RSFreezeFlag& operator|=(
+    RSRenderGroupCache::RSFreezeFlag& lhs, RSRenderGroupCache::RSFreezeFlag rhs) noexcept
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+RSRenderGroupCache::RSFreezeFlag& operator&=(
+    RSRenderGroupCache::RSFreezeFlag& lhs, RSRenderGroupCache::RSFreezeFlag rhs) noexcept
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+class RSB_EXPORT AutoRenderGroupExcludedSubTreeGuard {
+public:
+    AutoRenderGroupExcludedSubTreeGuard(NodeId& curExcludedRootNodeId, bool isCurNodeExcluded, NodeId curNodeId);
+    ~AutoRenderGroupExcludedSubTreeGuard();
+
+    AutoRenderGroupExcludedSubTreeGuard() = delete;
+    AutoRenderGroupExcludedSubTreeGuard(const AutoRenderGroupExcludedSubTreeGuard& other) = delete;
+    AutoRenderGroupExcludedSubTreeGuard(AutoRenderGroupExcludedSubTreeGuard&& other) = delete;
+    AutoRenderGroupExcludedSubTreeGuard& operator=(const AutoRenderGroupExcludedSubTreeGuard& other) = delete;
+    AutoRenderGroupExcludedSubTreeGuard& operator=(AutoRenderGroupExcludedSubTreeGuard&& other) = delete;
+
+private:
+    NodeId& curExcludedRootNodeId_;
+    bool isExcluded_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

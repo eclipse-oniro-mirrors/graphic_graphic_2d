@@ -14,6 +14,7 @@
  */
 
 #include "rs_graphic_test_img.h"
+#include "rs_graphic_test_director.h"
 
 #include "drawing/draw/core_canvas.h"
 #include "image/bitmap.h"
@@ -26,7 +27,8 @@
 namespace OHOS {
 namespace Rosen {
 
-std::shared_ptr<Media::PixelMap> DecodePixelMap(const std::string& pathName, const Media::AllocatorType& allocatorType)
+std::shared_ptr<Media::PixelMap> DecodePixelMap(const std::string& pathName, const Media::AllocatorType& allocatorType,
+    const OHOS::Media::PixelFormat& dstFormat)
 {
     uint32_t errCode = 0;
     std::unique_ptr<Media::ImageSource> imageSource =
@@ -37,6 +39,7 @@ std::shared_ptr<Media::PixelMap> DecodePixelMap(const std::string& pathName, con
     }
     Media::DecodeOptions decodeOpt;
     decodeOpt.allocatorType = allocatorType;
+    decodeOpt.desiredPixelFormat = dstFormat;
     std::shared_ptr<Media::PixelMap> pixelmap = imageSource->CreatePixelMap(decodeOpt, errCode);
     if (pixelmap == nullptr || errCode != 0) {
         std::cout << "pixelmap == nullptr, err:" << errCode << std::endl;
@@ -71,7 +74,7 @@ std::shared_ptr<Rosen::RSCanvasNode> SetUpNodeBgImage(const std::string& pathNam
     auto image = std::make_shared<Rosen::RSImage>();
     image->SetPixelMap(pixelmap);
     image->SetImageFit((int)ImageFit::FILL);
-    auto node = Rosen::RSCanvasNode::Create();
+    auto node = Rosen::RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     node->SetBounds(bounds);
     node->SetFrame(bounds);
     node->SetBgImageSize(bounds[WIDTH_INDEX], bounds[HEIGHT_INDEX]);
@@ -85,7 +88,7 @@ std::shared_ptr<Rosen::RSCanvasNode> SetUpNodeBgImage(const uint8_t* data, uint3
     auto image = std::make_shared<Rosen::RSImage>();
     image->SetPixelMap(pixelmap);
     image->SetImageFit((int)ImageFit::FILL);
-    auto node = Rosen::RSCanvasNode::Create();
+    auto node = Rosen::RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     node->SetBounds(bounds);
     node->SetFrame(bounds);
     node->SetBgImageSize(bounds[WIDTH_INDEX], bounds[HEIGHT_INDEX]);

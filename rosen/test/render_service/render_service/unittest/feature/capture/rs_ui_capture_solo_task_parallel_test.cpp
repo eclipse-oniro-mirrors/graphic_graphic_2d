@@ -36,7 +36,7 @@
 #include "ui/rs_canvas_drawing_node.h"
 #include "ui/rs_proxy_node.h"
 #include "pipeline/render_thread/rs_render_engine.h"
-#include "pipeline/render_thread/rs_uni_render_engine.h"
+#include "engine/rs_uni_render_engine.h"
 #include "pipeline/rs_test_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
@@ -66,7 +66,6 @@ public:
         RsVulkanContext::SetRecyclable(false);
 #endif
         rsInterfaces_ = &RSInterfaces::GetInstance();
-        rsRenderInterfaces_ = &RSRenderInterface::GetInstance();
 
         RSTestUtil::InitRenderNodeGC();
         ScreenId screenId = rsInterfaces_->GetDefaultScreenId();
@@ -159,7 +158,6 @@ public:
     }
 
     static RSInterfaces* rsInterfaces_;
-    static RSRenderInterface* rsRenderInterfaces_;
     static std::shared_ptr<RenderContext> renderContext_;
     static RSDisplayNodeConfig mirrorConfig_;
     static std::shared_ptr<RSDisplayNode> displayNode_;
@@ -169,11 +167,11 @@ public:
     std::shared_ptr<RSCanvasDrawingNode> canvasDrawingNode_;
 };
 RSInterfaces* RSUiCaptureSoloTaskParallelTest::rsInterfaces_ = nullptr;
-RSRenderInterface* RSUiCaptureSoloTaskParallelTest::rsRenderInterfaces_ = nullptr;
 std::shared_ptr<RenderContext> RSUiCaptureSoloTaskParallelTest::renderContext_ = nullptr;
 RSDisplayNodeConfig RSUiCaptureSoloTaskParallelTest::mirrorConfig_ = {INVALID_SCREEN_ID, true, INVALID_SCREEN_ID};
 std::shared_ptr<RSDisplayNode> RSUiCaptureSoloTaskParallelTest::displayNode_ = nullptr;
 
+#ifdef RS_ENABLE_UNI_RENDER
 /*
 * @tc.name: RSUiCaptureSoloTaskParallelValid
 * @tc.desc: Test RSUiCaptureSoloTaskParallel with valid node
@@ -184,7 +182,7 @@ HWTEST_F(RSUiCaptureSoloTaskParallelTest, RSUiCaptureSoloTaskParallelValid, Func
 {
     SetUpSurface();
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> res;
-    res = rsRenderInterfaces_->TakeSurfaceCaptureSoloNodeList(surfaceNode_);
+    res = rsInterfaces_->TakeSurfaceCaptureSoloNodeList(surfaceNode_);
     EXPECT_EQ(res.size(), 0);
 }
 
@@ -320,7 +318,7 @@ HWTEST_F(RSUiCaptureSoloTaskParallelTest, CreateResources003, Function | SmallTe
     auto parent3 = std::make_shared<RSSurfaceRenderNode>(parentNodeId, std::make_shared<RSContext>(), true);
     parent3->nodeType_ = RSSurfaceNodeType::LEASH_WINDOW_NODE;
     parent3->hasSubNodeShouldPaint_ = true;
-    parent3->lastFrameUifirstFlag_ = MultiThreadCacheType::NONFOCUS_WINDOW;
+    parent3->uifirstState_.lastFrameCacheType = MultiThreadCacheType::NONFOCUS_WINDOW;
     parent3->renderProperties_.SetBoundsWidth(1024.0f);
     parent3->renderProperties_.SetBoundsHeight(1024.0f);
     renderNode->parent_ = parent3;
@@ -407,6 +405,6 @@ HWTEST_F(RSUiCaptureSoloTaskParallelTest, TestCreateSurfaceSyncCopyTask, Functio
     mainThread->context_->nodeMap.UnregisterRenderNode(node->GetId());
 #endif
 }
-
+#endif
 } // namespace Rosen
 } // namespace OHOS

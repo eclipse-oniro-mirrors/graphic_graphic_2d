@@ -164,11 +164,12 @@ bool RenderContextGL::Init()
         return false;
     }
 
+    unsigned int ret;
     EGLint count;
     EGLint config_attribs[] = { EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
         EGL_ALPHA_SIZE, 8, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT, EGL_NONE };
 
-    unsigned int ret = eglChooseConfig(eglDisplay_, config_attribs, &config_, 1, &count);
+    ret = eglChooseConfig(eglDisplay_, config_attribs, &config_, 1, &count);
     if (!(ret && static_cast<unsigned int>(count) >= 1)) {
         LOGE("Failed to eglChooseConfig");
         return false;
@@ -208,6 +209,7 @@ bool RenderContextGL::SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawi
         cacheDir_ = UNIRENDER_CACHE_DIR;
     }
     Drawing::GPUContextOptions options;
+    options.SetIsUniRender(isUniRenderMode_);
     if (glesVersion != nullptr) {
         auto size = glesVersion ? strlen(glesVersion) : 0;
         mHandler_->ConfigureContext(&options, glesVersion, size, cacheDir_, isUniRenderMode_);
@@ -460,6 +462,28 @@ void RenderContextGL::DestroyShareContext()
     eglDestroyContext(GetEGLDisplay(), eglShareContext_);
     eglShareContext_ = EGL_NO_CONTEXT;
     eglMakeCurrent(GetEGLDisplay(), EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+}
+
+bool RenderContextGL::QueryMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight)
+{
+    LOGI("RenderContextGL::QueryMaxGpuBufferSize: using OpenGL backend");
+    GLint maxTextureSize = 0;
+    GLint maxRenderBufferSize = 0;
+
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
+    glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE, &maxRenderBufferSize);
+
+    if (maxTextureSize <= 0 || maxRenderBufferSize <= 0) {
+        LOGE("RenderContextGL::QueryMaxGpuBufferSize: failed to get GPU buffer size");
+        return false;
+    }
+
+    maxWidth = static_cast<uint32_t>(std::min(maxTextureSize, maxRenderBufferSize));
+    maxHeight = static_cast<uint32_t>(std::min(maxTextureSize, maxRenderBufferSize));
+
+    LOGI("RenderContextGL::QueryMaxGpuBufferSize: GL_MAX_TEXTURE_SIZE = %d, GL_MAX_RENDERBUFFER_SIZE = %d, result = %u",
+        maxTextureSize, maxRenderBufferSize, maxWidth);
+    return true;
 }
 } // namespace Rosen
 } // namespace OHOS

@@ -26,44 +26,54 @@ constexpr int32_t NUMBER_ZREO = 0;
 constexpr int32_t MATRIX_SIZE = 9;
 constexpr uint32_t POLY_POINT_COUNT_MAX = 4;
 
+static const std::array g_methods = {
+    ani_native_function { "constructorNative", ":", reinterpret_cast<void*>(AniMatrix::Constructor) },
+    ani_native_function { "constructorNative", "C{@ohos.graphics.drawing.drawing.Matrix}:",
+        reinterpret_cast<void*>(AniMatrix::ConstructorWithMatrix) },
+    ani_native_function { "getValue", "i:d", reinterpret_cast<void*>(AniMatrix::GetValue) },
+    ani_native_function { "reset", ":", reinterpret_cast<void*>(AniMatrix::Reset) },
+    ani_native_function { "setTranslation", "dd:", reinterpret_cast<void*>(AniMatrix::SetTranslation) },
+    ani_native_function { "preConcat", "C{@ohos.graphics.drawing.drawing.Matrix}:",
+        reinterpret_cast<void*>(AniMatrix::preConcat)},
+    ani_native_function { "preRotate", nullptr, reinterpret_cast<void*>(AniMatrix::PreRotate) },
+    ani_native_function { "preScale", nullptr, reinterpret_cast<void*>(AniMatrix::PreScale) },
+    ani_native_function { "setRectToRect", nullptr, reinterpret_cast<void*>(AniMatrix::SetRectToRect) },
+    ani_native_function { "postScale", nullptr, reinterpret_cast<void*>(AniMatrix::PostScale) },
+    ani_native_function { "postTranslate", nullptr, reinterpret_cast<void*>(AniMatrix::PostTranslate) },
+    ani_native_function { "getAll", nullptr, reinterpret_cast<void*>(AniMatrix::GetAll) },
+    ani_native_function { "mapRect", nullptr, reinterpret_cast<void*>(AniMatrix::MapRect) },
+    ani_native_function { "postRotate", nullptr, reinterpret_cast<void*>(AniMatrix::PostRotate) },
+    ani_native_function { "invert", nullptr, reinterpret_cast<void*>(AniMatrix::Invert) },
+    ani_native_function { "isEqual", nullptr, reinterpret_cast<void*>(AniMatrix::IsEqual) },
+    ani_native_function { "setPolyToPoly", nullptr, reinterpret_cast<void*>(AniMatrix::SetPolyToPoly) },
+    ani_native_function { "isIdentity", nullptr, reinterpret_cast<void*>(AniMatrix::IsIdentity) },
+    ani_native_function { "mapPoints", nullptr, reinterpret_cast<void*>(AniMatrix::MapPoints) },
+    ani_native_function { "setRotation", nullptr, reinterpret_cast<void*>(AniMatrix::SetRotation) },
+    ani_native_function { "preTranslate", nullptr, reinterpret_cast<void*>(AniMatrix::PreTranslate) },
+    ani_native_function { "setScale", nullptr, reinterpret_cast<void*>(AniMatrix::SetScale) },
+    ani_native_function { "setMatrix", "C{std.core.Array}:", reinterpret_cast<void*>(AniMatrix::SetMatrix) },
+    ani_native_function { "setMatrix", "X{C{std.core.Array}C{@ohos.graphics.drawing.drawing.Matrix}}:",
+        reinterpret_cast<void*>(AniMatrix::SetMatrixWithObject) },
+    ani_native_function { "preSkew", nullptr, reinterpret_cast<void*>(AniMatrix::PreSkew) },
+    ani_native_function { "postSkew", nullptr, reinterpret_cast<void*>(AniMatrix::PostSkew) },
+    ani_native_function { "setSkew", nullptr, reinterpret_cast<void*>(AniMatrix::SetSkew) },
+    ani_native_function { "setSinCos", nullptr, reinterpret_cast<void*>(AniMatrix::SetSinCos) },
+    ani_native_function { "setConcat", nullptr, reinterpret_cast<void*>(AniMatrix::SetConcat) },
+    ani_native_function { "postConcat", nullptr, reinterpret_cast<void*>(AniMatrix::PostConcat) },
+    ani_native_function { "mapRadius", nullptr, reinterpret_cast<void*>(AniMatrix::MapRadius) },
+    ani_native_function { "rectStaysRect", nullptr, reinterpret_cast<void*>(AniMatrix::RectStaysRect) },
+    ani_native_function { "isAffine", nullptr, reinterpret_cast<void*>(AniMatrix::IsAffine) },
+};
+
 ani_status AniMatrix::AniInit(ani_env *env)
 {
-    ani_class cls = nullptr;
-    ani_status ret = env->FindClass(ANI_CLASS_MATRIX_NAME, &cls);
-    if (ret != ANI_OK) {
+    ani_class cls = AniGlobalClass::GetInstance().matrix;
+    if (cls == nullptr) {
         ROSEN_LOGE("[ANI] can't find class: %{public}s", ANI_CLASS_MATRIX_NAME);
         return ANI_NOT_FOUND;
     }
 
-    std::array methods = {
-        ani_native_function { "constructorNative", ":", reinterpret_cast<void*>(Constructor) },
-        ani_native_function { "constructorNative", "C{@ohos.graphics.drawing.drawing.Matrix}:",
-            reinterpret_cast<void*>(ConstructorWithMatrix) },
-        ani_native_function { "getValue", "i:d", reinterpret_cast<void*>(GetValue) },
-        ani_native_function { "reset", ":", reinterpret_cast<void*>(Reset) },
-        ani_native_function { "setTranslation", "dd:", reinterpret_cast<void*>(SetTranslation) },
-        ani_native_function { "preConcat", "C{@ohos.graphics.drawing.drawing.Matrix}:",
-            reinterpret_cast<void*>(preConcat)},
-        ani_native_function { "preRotate", nullptr, reinterpret_cast<void*>(PreRotate) },
-        ani_native_function { "preScale", nullptr, reinterpret_cast<void*>(PreScale) },
-        ani_native_function { "setRectToRect", nullptr, reinterpret_cast<void*>(SetRectToRect) },
-        ani_native_function { "postScale", nullptr, reinterpret_cast<void*>(PostScale) },
-        ani_native_function { "postTranslate", nullptr, reinterpret_cast<void*>(PostTranslate) },
-        ani_native_function { "getAll", nullptr, reinterpret_cast<void*>(GetAll) },
-        ani_native_function { "setMatrix", nullptr, reinterpret_cast<void*>(SetMatrix) },
-        ani_native_function { "mapRect", nullptr, reinterpret_cast<void*>(MapRect) },
-        ani_native_function { "postRotate", nullptr, reinterpret_cast<void*>(PostRotate) },
-        ani_native_function { "invert", nullptr, reinterpret_cast<void*>(Invert) },
-        ani_native_function { "isEqual", nullptr, reinterpret_cast<void*>(IsEqual) },
-        ani_native_function { "setPolyToPoly", nullptr, reinterpret_cast<void*>(SetPolyToPoly) },
-        ani_native_function { "isIdentity", nullptr, reinterpret_cast<void*>(IsIdentity) },
-        ani_native_function { "mapPoints", nullptr, reinterpret_cast<void*>(MapPoints) },
-        ani_native_function { "setRotation", nullptr, reinterpret_cast<void*>(SetRotation) },
-        ani_native_function { "preTranslate", nullptr, reinterpret_cast<void*>(PreTranslate) },
-        ani_native_function { "setScale", nullptr, reinterpret_cast<void*>(SetScale) },
-    };
-
-    ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
+    ani_status ret = env->Class_BindNativeMethods(cls, g_methods.data(), g_methods.size());
     if (ret != ANI_OK) {
         ROSEN_LOGE("[ANI] bind methods fail: ret %{public}d %{public}s", ret, ANI_CLASS_MATRIX_NAME);
         return ANI_NOT_FOUND;
@@ -87,7 +97,8 @@ void AniMatrix::Constructor(ani_env* env, ani_object obj)
 {
     std::shared_ptr<Matrix> matrix = std::make_shared<Matrix>();
     AniMatrix* aniMatrix = new AniMatrix(matrix);
-    if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniMatrix))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        obj, AniGlobalField::GetInstance().matrixNativeObj, reinterpret_cast<ani_long>(aniMatrix))) {
         ROSEN_LOGE("AniMatrix::Constructor failed create AniMatrix");
         delete aniMatrix;
         return;
@@ -96,7 +107,7 @@ void AniMatrix::Constructor(ani_env* env, ani_object obj)
 
 void AniMatrix::ConstructorWithMatrix(ani_env* env, ani_object obj, ani_object aniMatrixObj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -105,7 +116,8 @@ void AniMatrix::ConstructorWithMatrix(ani_env* env, ani_object obj, ani_object a
     std::shared_ptr<Matrix> other = aniMatrix->GetMatrix();
     std::shared_ptr<Matrix> matrix = other == nullptr ? std::make_shared<Matrix>() : std::make_shared<Matrix>(*other);
     AniMatrix* newAniMatrix = new AniMatrix(matrix);
-    ani_status ret = env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(newAniMatrix));
+    ani_status ret = env->Object_SetField_Long(
+        obj, AniGlobalField::GetInstance().matrixNativeObj, reinterpret_cast<ani_long>(newAniMatrix));
     if (ret != ANI_OK) {
         ROSEN_LOGE("AniMatrix::Constructor failed create AniMatrix. ret: %{public}d", ret);
         delete newAniMatrix;
@@ -115,7 +127,7 @@ void AniMatrix::ConstructorWithMatrix(ani_env* env, ani_object obj, ani_object a
 
 void AniMatrix::Reset(ani_env* env, ani_object obj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -126,7 +138,7 @@ void AniMatrix::Reset(ani_env* env, ani_object obj)
 
 void AniMatrix::SetTranslation(ani_env* env, ani_object obj, ani_double dx, ani_double dy)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -136,7 +148,7 @@ void AniMatrix::SetTranslation(ani_env* env, ani_object obj, ani_double dx, ani_
 
 ani_double AniMatrix::GetValue(ani_env* env, ani_object obj, ani_int index)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return 0;
@@ -152,13 +164,13 @@ ani_double AniMatrix::GetValue(ani_env* env, ani_object obj, ani_int index)
 
 void AniMatrix::preConcat(ani_env* env, ani_object obj, ani_object aniMatrixObj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniMatrix::preConcat invalid params: aniMatrix. ");
         return;
     }
-    auto aniNewMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj);
+    auto aniNewMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniNewMatrix == nullptr || aniNewMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniMatrix::preConcat invalid params: otherMatrix. ");
@@ -170,7 +182,7 @@ void AniMatrix::preConcat(ani_env* env, ani_object obj, ani_object aniMatrixObj)
 
 ani_boolean AniMatrix::RectStaysRect(ani_env* env, ani_object obj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return false;
@@ -180,7 +192,7 @@ ani_boolean AniMatrix::RectStaysRect(ani_env* env, ani_object obj)
 
 ani_boolean AniMatrix::IsAffine(ani_env* env, ani_object obj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return false;
@@ -190,7 +202,7 @@ ani_boolean AniMatrix::IsAffine(ani_env* env, ani_object obj)
 
 void AniMatrix::PreRotate(ani_env* env, ani_object obj, ani_double degree, ani_double px, ani_double py)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -200,7 +212,7 @@ void AniMatrix::PreRotate(ani_env* env, ani_object obj, ani_double degree, ani_d
 
 void AniMatrix::PreScale(ani_env* env, ani_object obj, ani_double sx, ani_double sy, ani_double px, ani_double py)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -211,7 +223,7 @@ void AniMatrix::PreScale(ani_env* env, ani_object obj, ani_double sx, ani_double
 ani_boolean AniMatrix::SetRectToRect(ani_env* env, ani_object obj, ani_object aniSrcRectObj,
     ani_object aniDstRectObj, ani_enum_item aniScaleToFit)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return false;
@@ -237,7 +249,7 @@ ani_boolean AniMatrix::SetRectToRect(ani_env* env, ani_object obj, ani_object an
 }
 void AniMatrix::PostScale(ani_env* env, ani_object obj, ani_double sx, ani_double sy, ani_double px, ani_double py)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -247,7 +259,7 @@ void AniMatrix::PostScale(ani_env* env, ani_object obj, ani_double sx, ani_doubl
 
 void AniMatrix::PostTranslate(ani_env* env, ani_object obj, ani_double dx, ani_double dy)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return;
@@ -255,34 +267,9 @@ void AniMatrix::PostTranslate(ani_env* env, ani_object obj, ani_double dx, ani_d
     aniMatrix->GetMatrix()->PostTranslate(dx, dy);
 }
 
-ani_object DoubleToObject(ani_env *env, double value)
-{
-    ani_object aniObject = nullptr;
-    ani_double doubleValue = static_cast<ani_double>(value);
-    ani_class aniClass;
-    static const char* className = "std.core.Double";
-    ani_status ret = env->FindClass(className, &aniClass);
-    if (ret != ANI_OK) {
-        ROSEN_LOGE("Not found '%{public}s' ret: %{public}d.", className, ret);
-        return aniObject;
-    }
-    ani_method ctorMethod;
-    ret = env->Class_FindMethod(aniClass, "<ctor>", "d:", &ctorMethod);
-    if (ret != ANI_OK) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Class_FindMethod <ctor> Failed.");
-        return aniObject;
-    }
-
-    if (ANI_OK != env->Object_New(aniClass, ctorMethod, &aniObject, doubleValue)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Object_New Double Faild.");
-        return aniObject;
-    }
-    return aniObject;
-}
-
 ani_object AniMatrix::GetAll(ani_env* env, ani_object obj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
         return CreateAniUndefined(env);
@@ -290,45 +277,37 @@ ani_object AniMatrix::GetAll(ani_env* env, ani_object obj)
     Drawing::Matrix::Buffer buffer;
     aniMatrix->GetMatrix()->GetAll(buffer);
 
-    ani_class arrayCls = nullptr;
-    if (ANI_OK != env->FindClass("std.core.Array", &arrayCls)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Find class failed.");
-        return CreateAniUndefined(env);
-    }
-    ani_method arrayCtor;
-    if (ANI_OK != env->Class_FindMethod(arrayCls, "<ctor>", "i:", &arrayCtor)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Class_FindMethod <ctor> Failed");
+    ani_array arrayObj = CreateAniArrayWithSize(env, Drawing::Matrix::MATRIX_SIZE);
+    if (arrayObj == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Create Array Faild");
         return CreateAniUndefined(env);
     }
 
-    ani_object arrayObj;
-    if (ANI_OK != env->Object_New(arrayCls, arrayCtor, &arrayObj, Drawing::Matrix::MATRIX_SIZE)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Object_New Array Faild");
-        return CreateAniUndefined(env);
-    }
-
-    ani_size index = 0;
-    for (auto item : buffer) {
-        ani_object aniValue = DoubleToObject(env, item);
-        if (ANI_OK != env->Object_CallMethodByName_Void(arrayObj, "$_set", "iY:", index, aniValue)) {
-            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Object_CallMethodByName_Void Array Faild");
+    for (ani_size index = 0; index < Drawing::Matrix::MATRIX_SIZE; index++) {
+        ani_object aniValue = CreateAniObject(env, AniGlobalClass::GetInstance().doubleCls,
+            AniGlobalMethod::GetInstance().doubleCtor, buffer[index]);
+        if (IsUndefined(env, aniValue)) {
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Create Double obj Faild");
+            return aniValue;
+        }
+        if (ANI_OK != env->Array_Set(arrayObj, index, aniValue)) {
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Array_Set Array Faild");
             return CreateAniUndefined(env);
         }
-        index++;
     }
     return arrayObj;
 }
 
-void AniMatrix::SetMatrix(ani_env* env, ani_object obj, ani_object aniValueArrayObj)
+void AniMatrix::SetMatrix(ani_env* env, ani_object obj, ani_array aniValueArrayObj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
         return;
     }
     std::vector<float> matrixVector;
-    ani_int aniLength;
-    ani_status ret = env->Object_GetPropertyByName_Int(aniValueArrayObj, "length", &aniLength);
+    ani_size aniLength;
+    ani_status ret = env->Array_GetLength(aniValueArrayObj, &aniLength);
     if (ret != ANI_OK) {
         ROSEN_LOGE("AniMatrix::SetMatrix aniValueArrayObj are invalid ret: %{public}d", ret);
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix.");
@@ -344,14 +323,14 @@ void AniMatrix::SetMatrix(ani_env* env, ani_object obj, ani_object aniValueArray
     for (uint32_t i = 0; i < matrixSize; i++) {
         ani_ref matrixRef;
         ani_double matrixValue;
-        ret = env->Object_CallMethodByName_Ref(
-            aniValueArrayObj, "$_get", "i:Y", &matrixRef, static_cast<ani_int>(i));
+        ret = env->Array_Get(aniValueArrayObj, static_cast<ani_size>(i), &matrixRef);
         if (ret != ANI_OK) {
             ROSEN_LOGE("AniMatrix::SetMatrix aniValueArrayObj get pointRef failed. ret: %{public}d", ret);
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix array element.");
             return;
         }
-        ret = env->Object_CallMethodByName_Double(static_cast<ani_object>(matrixRef), "toDouble", ":d", &matrixValue);
+        ret = env->Object_CallMethod_Double(
+            static_cast<ani_object>(matrixRef), AniGlobalMethod::GetInstance().doubleGet, &matrixValue);
         if (ret != ANI_OK) {
             ROSEN_LOGE("AniMatrix::SetMatrix matrixRef is invalid. ret: %{public}d", ret);
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix array element.");
@@ -366,14 +345,9 @@ void AniMatrix::SetMatrix(ani_env* env, ani_object obj, ani_object aniValueArray
 
 ani_boolean AniMatrix::MapRect(ani_env* env, ani_object obj, ani_object aniDstRectObj, ani_object aniSrcRectObj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
-        return false;
-    }
-    Drawing::Rect dst;
-    if (!GetRectFromAniRectObj(env, aniDstRectObj, dst)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param dst.");
         return false;
     }
 
@@ -382,12 +356,12 @@ ani_boolean AniMatrix::MapRect(ani_env* env, ani_object obj, ani_object aniDstRe
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param src.");
         return false;
     }
+    Drawing::Rect dst;
     auto result = aniMatrix->GetMatrix()->MapRect(dst, src);
-    if ((env->Object_SetPropertyByName_Double(aniDstRectObj, "left", ani_double(dst.GetLeft())) != ANI_OK) ||
-        (env->Object_SetPropertyByName_Double(aniDstRectObj, "top", ani_double(dst.GetTop())) != ANI_OK) ||
-        (env->Object_SetPropertyByName_Double(aniDstRectObj, "right", ani_double(dst.GetRight())) != ANI_OK) ||
-        (env->Object_SetPropertyByName_Double(aniDstRectObj, "bottom", ani_double(dst.GetBottom())) != ANI_OK)) {
+    if (!DrawingRectConvertToAniRect(env, aniDstRectObj, dst)) {
         ROSEN_LOGE("Set dstRectObject from rect failed.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniMatrix::MapRect Cannot fill 'dst' Rect type.");
         return false;
     }
     return result;
@@ -395,7 +369,7 @@ ani_boolean AniMatrix::MapRect(ani_env* env, ani_object obj, ani_object aniDstRe
 
 void AniMatrix::PostRotate(ani_env* env, ani_object obj, ani_double degree, ani_double px, ani_double py)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
         return;
@@ -405,20 +379,21 @@ void AniMatrix::PostRotate(ani_env* env, ani_object obj, ani_double degree, ani_
 
 ani_boolean AniMatrix::Invert(ani_env* env, ani_object obj, ani_object aniMatrixObj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
         return false;
     }
 
-    auto aniNewMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj);
+    auto aniNewMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniNewMatrix == nullptr || aniNewMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix.");
         return false;
     }
     std::shared_ptr<Matrix> matrix = aniNewMatrix->GetMatrix();
     auto result = aniMatrix->GetMatrix()->Invert(*matrix);
-    if (ANI_OK != env->Object_SetFieldByName_Long(aniMatrixObj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniNewMatrix))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        aniMatrixObj, AniGlobalField::GetInstance().matrixNativeObj, reinterpret_cast<ani_long>(aniNewMatrix))) {
         ROSEN_LOGE("AniMatrix::Constructor failed create AniMatrix");
         return false;
     }
@@ -427,12 +402,12 @@ ani_boolean AniMatrix::Invert(ani_env* env, ani_object obj, ani_object aniMatrix
 
 ani_boolean AniMatrix::IsEqual(ani_env* env, ani_object obj, ani_object aniMatrixObj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
         return false;
     }
-    auto aniNewMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj);
+    auto aniNewMatrix = GetNativeFromObj<AniMatrix>(env, aniMatrixObj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniNewMatrix == nullptr || aniNewMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix.");
         return false;
@@ -440,10 +415,10 @@ ani_boolean AniMatrix::IsEqual(ani_env* env, ani_object obj, ani_object aniMatri
     return aniMatrix->GetMatrix()->operator == (*aniNewMatrix->GetMatrix());
 }
 
-ani_boolean AniMatrix::SetPolyToPoly(ani_env* env, ani_object obj, ani_object aniSrcPointArray,
-    ani_object aniDstPointArray, ani_int count)
+ani_boolean AniMatrix::SetPolyToPoly(ani_env* env, ani_object obj, ani_array aniSrcPointArray,
+    ani_array aniDstPointArray, ani_int count)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return false;
@@ -470,7 +445,7 @@ ani_boolean AniMatrix::SetPolyToPoly(ani_env* env, ani_object obj, ani_object an
 
 ani_boolean AniMatrix::IsIdentity(ani_env* env, ani_object obj)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
         return false;
@@ -480,23 +455,11 @@ ani_boolean AniMatrix::IsIdentity(ani_env* env, ani_object obj)
 
 ani_object GetPointArray(ani_env* env, const std::vector<Drawing::Point>& points, uint32_t count)
 {
-    ani_class arrayCls = nullptr;
-    if (ANI_OK != env->FindClass("std.core.Array", &arrayCls)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "FindClass std.core.Array Failed");
-        return CreateAniUndefined(env);
-    }
-    ani_method arrayCtor;
-    if (ANI_OK != env->Class_FindMethod(arrayCls, "<ctor>", "i:", &arrayCtor)) {
-        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Class_FindMethod <ctor> Failed");
-        return CreateAniUndefined(env);
-    }
-
-    ani_object arrayObj;
-    if (ANI_OK != env->Object_New(arrayCls, arrayCtor, &arrayObj, count)) {
+    ani_array arrayObj = CreateAniArrayWithSize(env, count);
+    if (arrayObj == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Object_New Array Faild");
         return CreateAniUndefined(env);
     }
-
     ani_size index = 0;
     for (const auto& item : points) {
         ani_object aniPointObj;
@@ -504,9 +467,8 @@ ani_object GetPointArray(ani_env* env, const std::vector<Drawing::Point>& points
             return aniPointObj;
         }
 
-        if (ANI_OK != env->Object_CallMethodByName_Void(
-            arrayObj, "$_set", "iY:", index, aniPointObj)) {
-            ROSEN_LOGE("SObject_CallMethodByName_Void  $_set Faild ");
+        if (ANI_OK != env->Array_Set(arrayObj, index, aniPointObj)) {
+            ROSEN_LOGE("GetPointArray Array_Set Faild ");
             return CreateAniUndefined(env);
         }
         index++;
@@ -514,18 +476,18 @@ ani_object GetPointArray(ani_env* env, const std::vector<Drawing::Point>& points
     return arrayObj;
 }
 
-ani_object AniMatrix::MapPoints(ani_env* env, ani_object obj, ani_object aniSrcPointArray)
+ani_object AniMatrix::MapPoints(ani_env* env, ani_object obj, ani_array aniSrcPointArray)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
         return CreateAniUndefined(env);
     }
     
-    ani_int aniLength;
-    ani_status ret = env->Object_GetPropertyByName_Int(aniSrcPointArray, "length", &aniLength);
+    ani_size aniLength;
+    ani_status ret = env->Array_GetLength(aniSrcPointArray, &aniLength);
     if (ret != ANI_OK || aniLength == 0) {
-        ROSEN_LOGE("AniMatrix::MapPoints error getting aniSrcPointArray length. ret: %{public}d, length: %{public}d",
+        ROSEN_LOGE("AniMatrix::MapPoints error getting aniSrcPointArray length. ret: %{public}d, length: %{public}zu",
             ret, aniLength);
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
         return CreateAniUndefined(env);
@@ -543,7 +505,7 @@ ani_object AniMatrix::MapPoints(ani_env* env, ani_object obj, ani_object aniSrcP
 
 void AniMatrix::SetRotation(ani_env* env, ani_object obj, ani_double degree, ani_double px, ani_double py)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
         return;
@@ -554,7 +516,7 @@ void AniMatrix::SetRotation(ani_env* env, ani_object obj, ani_double degree, ani
 
 void AniMatrix::PreTranslate(ani_env* env, ani_object obj, ani_double dx, ani_double dy)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
         return;
@@ -564,12 +526,155 @@ void AniMatrix::PreTranslate(ani_env* env, ani_object obj, ani_double dx, ani_do
 
 void AniMatrix::SetScale(ani_env* env, ani_object obj, ani_double sx, ani_double sy, ani_double px, ani_double py)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
         return;
     }
     aniMatrix->GetMatrix()->Scale(sx, sy, px, py);
+}
+
+ani_double AniMatrix::MapRadius(ani_env* env, ani_object obj, ani_double radius)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid params.");
+        return 0;
+    }
+
+    return aniMatrix->GetMatrix()->MapRadius(radius);
+}
+
+void AniMatrix::OnSetMatrix(ani_env* env, ani_object obj, ani_object matrixArryaObj)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, matrixArryaObj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniMatrix::OnSetMatrix invalid params: otherMatrix. ");
+        return;
+    }
+            
+    std::shared_ptr<Matrix> matrix = aniMatrix->GetMatrix();
+    if (matrix == nullptr) {
+        ROSEN_LOGE("AniMatrix::SetMatrix get matrix failed.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix array element.");
+        return;
+    }
+    *matrix_ = *matrix;
+    return;
+}
+
+void AniMatrix::SetMatrixWithObject(ani_env* env, ani_object obj, ani_object matrixArrayObj)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
+        return;
+    }
+
+    ani_class matrixClass = AniGlobalClass::GetInstance().matrix;
+    if (matrixClass == nullptr) {
+        ROSEN_LOGE("AniMatrix::SetMatrix get matrixClass failed");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid param matrix array element.");
+        return;
+    }
+
+    ani_boolean isMatrix;
+    if (env->Object_InstanceOf(matrixArrayObj, matrixClass, &isMatrix) != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
+        return;
+    }
+    if (isMatrix) {
+        return aniMatrix->OnSetMatrix(env, obj, matrixArrayObj);
+    }
+    ani_array arrayObj = reinterpret_cast<ani_array>(matrixArrayObj);
+    return AniMatrix::SetMatrix(env, obj, arrayObj);
+}
+
+void AniMatrix::SetConcat(ani_env* env, ani_object obj, ani_object matrixAobj, ani_object matrixBobj)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
+        return;
+    }
+
+    auto aniMatrixA = GetNativeFromObj<AniMatrix>(env, matrixAobj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrixA == nullptr || aniMatrixA->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniMatrix::SetConcat invalid params: otherMatrix. ");
+        return;
+    }
+
+    auto aniMatrixB = GetNativeFromObj<AniMatrix>(env, matrixBobj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrixB == nullptr || aniMatrixB->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniMatrix::SetConcat invalid params: otherMatrix. ");
+        return;
+    }
+    std::shared_ptr<Matrix> matrixA = aniMatrixA->GetMatrix();
+    std::shared_ptr<Matrix> matrixB = aniMatrixB->GetMatrix();
+    aniMatrix->GetMatrix()->SetConcat(*matrixA, *matrixB);
+}
+
+void AniMatrix::PostConcat(ani_env* env, ani_object obj, ani_object matrixobj)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "invalid params.");
+        return;
+    }
+
+    auto aniMatrixobj = GetNativeFromObj<AniMatrix>(env, matrixobj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrixobj == nullptr || aniMatrixobj->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniMatrix::SetConcat invalid params: otherMatrix. ");
+        return;
+    }
+
+    std::shared_ptr<Matrix> matrix = aniMatrixobj->GetMatrix();
+    aniMatrix->GetMatrix()->PostConcat(*matrix);
+}
+
+void AniMatrix::PreSkew(ani_env* env, ani_object obj, ani_double kx, ani_double ky, ani_double px, ani_double py)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
+        return;
+    }
+    aniMatrix->GetMatrix()->PreSkew(kx, ky, px, py);
+}
+
+void AniMatrix::PostSkew(ani_env* env, ani_object obj, ani_double kx, ani_double ky, ani_double px, ani_double py)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
+        return;
+    }
+    aniMatrix->GetMatrix()->PostSkew(kx, ky, px, py);
+}
+
+void AniMatrix::SetSkew(ani_env* env, ani_object obj, ani_double kx, ani_double ky, ani_double px, ani_double py)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
+        return;
+    }
+    aniMatrix->GetMatrix()->SetSkew(kx, ky, px, py);
+}
+
+void AniMatrix::SetSinCos(ani_env* env, ani_object obj, ani_double sinValue, ani_double cosValue, ani_double px,
+    ani_double py)
+{
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, obj, AniGlobalField::GetInstance().matrixNativeObj);
+    if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid src array size.");
+        return;
+    }
+    aniMatrix->GetMatrix()->SetSinCos(sinValue, cosValue, px, py);
 }
 
 ani_object AniMatrix::MatrixTransferStatic(
@@ -592,7 +697,8 @@ ani_object AniMatrix::MatrixTransferStatic(
     }
 
     auto aniMatrix = new AniMatrix(jsMatrix->GetMatrix());
-    if (ANI_OK != env->Object_SetFieldByName_Long(output, NATIVE_OBJ, reinterpret_cast<ani_long>(aniMatrix))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        output, AniGlobalField::GetInstance().matrixNativeObj, reinterpret_cast<ani_long>(aniMatrix))) {
         ROSEN_LOGE("AniMatrix::MatrixTransferStatic failed create aniMatrix");
         delete aniMatrix;
         return CreateAniUndefined(env);
@@ -602,7 +708,7 @@ ani_object AniMatrix::MatrixTransferStatic(
 
 ani_long AniMatrix::GetMatrixAddr(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input)
 {
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, input);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, input, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr || aniMatrix->GetMatrix() == nullptr) {
         ROSEN_LOGE("AniMatrix::GetMatrixAddr aniMatrix is null");
         return 0;

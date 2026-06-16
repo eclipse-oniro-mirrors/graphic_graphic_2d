@@ -28,6 +28,14 @@ namespace Rosen {
 #ifdef OHOS_PLATFORM
 static sptr<RSApplicationAgentImpl> gRSApplicationAgentImplInstance;
 #endif
+
+RSApplicationAgentImpl::~RSApplicationAgentImpl()
+{
+#ifdef OHOS_PLATFORM
+    RSRenderServiceConnectHub::RemoveOnDiedCallback(RSOnDiedCallbackCode::APPLICATION_AGENT, isDestreuctionProcess_);
+#endif
+}
+
 RSApplicationAgentImpl* RSApplicationAgentImpl::Instance()
 {
 #ifdef OHOS_PLATFORM
@@ -37,13 +45,32 @@ RSApplicationAgentImpl* RSApplicationAgentImpl::Instance()
             gRSApplicationAgentImplInstance = new RSApplicationAgentImpl();
         }
     }
+
+    RSRenderServiceConnectHub::SetOnDiedCallback(RSOnDiedCallbackCode::APPLICATION_AGENT, []() {
+        RSApplicationAgentImpl::Destroy();
+    });
     return gRSApplicationAgentImplInstance.GetRefPtr();
 #else
     return nullptr;
 #endif
 }
 
-void RSApplicationAgentImpl::RegisterRSApplicationAgent()
+void RSApplicationAgentImpl::Destroy()
+{
+#ifdef OHOS_PLATFORM
+    if (gRSApplicationAgentImplInstance) {
+        gRSApplicationAgentImplInstance->SetDestreuctionProcess(true);
+        gRSApplicationAgentImplInstance = nullptr;
+    }
+#endif
+}
+
+void RSApplicationAgentImpl::SetDestreuctionProcess(bool isDestreuctionProcess)
+{
+    isDestreuctionProcess_ = isDestreuctionProcess;
+}
+
+void RSApplicationAgentImpl::RegisterRSApplicationAgent(std::shared_ptr<RSUIContext> rsUIContext)
 {
     static bool isRegistered = false;
     if (isRegistered) {
@@ -51,16 +78,16 @@ void RSApplicationAgentImpl::RegisterRSApplicationAgent()
     }
     isRegistered = true;
 #ifdef ROSEN_OHOS
-    RSRenderServiceConnectHub::SetOnConnectCallback(
-        [weakThis = wptr<RSApplicationAgentImpl>(this)](sptr<RSIClientToServiceConnection>& conn) {
-            sptr<IApplicationAgent> appSptr = weakThis.promote();
-            if (appSptr == nullptr) {
-                ROSEN_LOGE("RSApplicationAgentImpl::RegisterRSApplicationAgent appSptr is null");
-                return;
-            }
-            // Not necessory to set pid
-            conn->RegisterApplicationAgent(0, appSptr);
-        });
+     if (rsUIContext == nullptr) {
+        ROSEN_LOGE("RSApplicationAgentImpl::RegisterRSApplicationAgent rsUIContext return");
+        return;
+    }
+    if (auto renderInterface = rsUIContext->GetRSRenderInterface()) {
+        if (auto renderPipelineClient = renderInterface->GetRSRenderPipelineClient()) {
+            ROSEN_LOGI("RSApplicationAgentImpl::RegisterRSApplicationAgent!");
+            renderPipelineClient->RegisterApplicationAgent(0, sptr<RSApplicationAgentImpl>(this));
+        }
+    }
 #endif
 }
 

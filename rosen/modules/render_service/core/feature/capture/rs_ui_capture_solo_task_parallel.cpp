@@ -21,7 +21,6 @@
 
 #include "draw/surface.h"
 #include "draw/color.h"
-
 #include "rs_trace.h"
 
 #include "common/rs_background_thread.h"
@@ -33,20 +32,20 @@
 #include "memory/rs_tag_tracker.h"
 #include "params/rs_surface_render_params.h"
 #include "pipeline/main_thread/rs_main_thread.h"
-#include "transaction/rs_client_to_render_connection.h"
-#include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "pipeline/rs_base_render_node.h"
-#include "pipeline/rs_canvas_render_node.h"
+#include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "transaction/rs_client_to_render_connection.h"
+#include "render_server/transaction/rs_client_to_service_connection.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "platform/common/rs_log.h"
 #include "platform/drawing/rs_surface.h"
 #include "render/rs_drawing_filter.h"
 #include "render/rs_skia_filter.h"
-#include "screen_manager/rs_screen_manager.h"
-#include "screen_manager/rs_screen_mode_info.h"
+#include "transaction/rs_client_to_service_connection.h"
+#include "pipeline/rs_canvas_render_node.h"
 
 #ifdef RS_ENABLE_VK
 #include "platform/ohos/backend/native_buffer_utils.h"
@@ -103,7 +102,7 @@ std::unique_ptr<Media::PixelMap> RSUiCaptureSoloTaskParallel::CaptureSoloNodePix
     };
     RSUniRenderThread::Instance().PostSyncTask(captureTask);
     if (captureHandle->pixelMap_ == nullptr) {
-        RS_LOGD("RSUiCaptureSoloTaskParallel::CaptureSoloNodePixelMap pixelMap_ is nullptr");
+        RS_LOGE("RSUiCaptureSoloTaskParallel::CaptureSoloNodePixelMap pixelMap_ is nullptr");
     }
     return std::move(captureHandle->pixelMap_);
 }
@@ -208,14 +207,17 @@ bool RSUiCaptureSoloTaskParallel::Run()
     }
     canvas.SetMatrix(relativeMatrix);
 
+    RSUniRenderThread::BufferManagerGuard bufferGuard;
     RSUniRenderThread::SetCaptureParam(CaptureParam(true, true, false, false, false, false, false, true));
     nodeDrawable_->OnCapture(canvas);
     RSUniRenderThread::ResetCaptureParam();
 
 #if (defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)) && (defined RS_ENABLE_EGLIMAGE)
 #ifdef RS_ENABLE_UNI_RENDER
-    RSUniRenderUtil::OptimizedFlushAndSubmit(surface, grContext, GetFeatureParamValue("UICaptureConfig",
-        &UICaptureParam::IsUseOptimizedFlushAndSubmitEnabled).value_or(false));
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+    RSUniRenderUtil::OptimizedFlushAndSubmit(surface, grContext, acquireFence,
+        GetFeatureParamValue("UICaptureConfig", &UICaptureParam::IsUseOptimizedFlushAndSubmitEnabled).value_or(false));
+    bufferGuard.SetAcquireFence(acquireFence);
     bool snapshotDmaEnabled = system::GetBoolParameter("rosen.snapshotDma.enabled", true);
     bool isEnableFeature = GetFeatureParamValue("CaptureConfig",
         &CaptureBaseParam::IsSnapshotWithDMAEnabled).value_or(false);

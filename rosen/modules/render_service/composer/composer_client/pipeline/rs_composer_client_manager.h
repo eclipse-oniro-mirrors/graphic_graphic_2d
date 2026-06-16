@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef RENDER_SERVICE_COMPOSER_CLIENT_MANAGER_PIPELINE_RS_RENDER_COMPOSER_CLIENT_H
+#define RENDER_SERVICE_COMPOSER_CLIENT_MANAGER_PIPELINE_RS_RENDER_COMPOSER_CLIENT_H
+
+#include <unordered_map>
+
+#include "common/rs_common_def.h"
+#include "rs_composer_client.h"
+#include "surface_buffer.h"
+#include "sync_fence.h"
+
+namespace OHOS {
+namespace Rosen {
+struct TunnelLayerCommitInfo {
+    uint64_t surfaceId = 0;
+    NodeId nodeId = 0;
+    uint64_t tunnelLayerId = 0;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+};
+
+class RSComposerClientManager {
+public:
+    RSComposerClientManager() = default;
+    virtual ~RSComposerClientManager() = default;
+    void AddComposerClient(ScreenId screenId, const std::shared_ptr<RSComposerClient>& rsComposerClient);
+    void DeleteComposerClient(ScreenId screenId);
+    std::shared_ptr<RSComposerClient> GetComposerClient(ScreenId screenId);
+    void ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds);
+    void RenderFrameStart(uint64_t timestamp);
+    void CleanLayerBufferBySurfaceId(uint64_t surfaceId, NodeId nodeId);
+    int32_t CommitTunnelLayerBySurfaceId(const TunnelLayerCommitInfo& commitInfo, sptr<SyncFence>& releaseFence);
+    void SetScreenBacklight(const RsScreenBrightnessData& brightnessData);
+    void MarkTunnelSurfaceInvalid(ScreenId screenId, uint64_t surfaceId);
+    void SetScreenLinearMatrix(ScreenId screenId, const std::vector<float>& matrix);
+    PipelineParam GetPipelineParam(ScreenId screenId);
+    void UpdatePipelineParam(ScreenId screenId, const PipelineParam& pipelineParam);
+    void PreAllocProtectedFrameBuffers(ScreenId screenId, const sptr<SurfaceBuffer>& buffer);
+    void RegisterOnReleaseLayerBuffersCB(ScreenId screenId, OnReleaseLayerBuffersCB cb);
+    void ReleaseLayerBuffers(uint64_t screenId,
+        std::vector<std::tuple<RSLayerId, bool, GraphicPresentTimestamp>>& timestampVec,
+        std::vector<std::tuple<RSLayerId, sptr<SurfaceBuffer>, sptr<SyncFence>>>& releaseBufferFenceVec);
+    int32_t GetMinAccumulatedBufferCount();
+    void DumpSurfaceInfo(std::string& dumpString);
+    void DumpCurrentFrameLayers();
+    void ClearFrameBuffers(const std::unordered_set<ScreenId>& screenHasProtectedLayerSet);
+    void GetAllScreenHdiOutput(std::vector<std::shared_ptr<HdiOutput>>& hdiOutputVec);
+
+private:
+    mutable std::mutex rsComposerMapMutex_;
+    std::unordered_map<ScreenId, std::shared_ptr<RSComposerClient>> composerClientMap_;
+};
+} // namespace Rosen
+} // namespace OHOS
+#endif // RENDER_SERVICE_COMPOSER_CLIENT_MANAGER_PIPELINE_RS_RENDER_COMPOSER_CLIENT_H

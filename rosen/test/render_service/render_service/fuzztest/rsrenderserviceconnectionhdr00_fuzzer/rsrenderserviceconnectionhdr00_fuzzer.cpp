@@ -31,8 +31,10 @@
 
 #include "message_parcel.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "transaction/rs_client_to_render_connection.h"
+#include "transaction/zidl/rs_client_to_render_connection_stub.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
-#include "platform/ohos/rs_irender_service.h"
+#include "platform/ohos/transaction/zidl/rs_irender_service.h"
 #include "securec.h"
 #include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
 #include "transaction/rs_transaction_proxy.h"
@@ -55,67 +57,95 @@ const uint8_t DO_SET_FORCE_REFRESH = 10;
 const uint8_t DO_SET_BRIGHTNESS_INFO_CHANGE_CALLBACK = 11;
 const uint8_t DO_GET_BRIGHTNESS_INFO = 12;
 const uint8_t TARGET_SIZE = 13;
+const uint8_t DO_SET_HDR_FORCE_HWC_ENABLED = 14;
 } // namespace
-RSMainThread* g_mainThread = nullptr;
-sptr<RSIConnectionToken> g_token = nullptr;
-sptr<RSClientToServiceConnectionStub> g_toServiceConnectionStub = nullptr;
-sptr<RSClientToServiceConnection> g_toServiceConnection = nullptr;
-std::string g_originTag = "";
+class MockRenderProcessManager : public RSRenderProcessManager {
+public:
+    explicit MockRenderProcessManager(RSRenderService& renderService) : RSRenderProcessManager(renderService) {}
 
-void WriteUnirenderConfig(std::string& tag)
+    sptr<RSIServiceToRenderConnection> GetServiceToRenderConn(ScreenId screenId) const override { return nullptr; }
+    std::vector<sptr<RSIServiceToRenderConnection>> GetServiceToRenderConns() const override { return {}; }
+    sptr<RSIConnectToRenderProcess> GetConnectToRenderConnection(ScreenId screenId) const override
+    {
+        return nullptr;
+    }
+
+    sptr<IRemoteObject> OnScreenConnected(ScreenId id, const std::shared_ptr<HdiOutput>& output,
+        const sptr<RSScreenProperty>& property) override
+    {
+        return nullptr;
+    }
+    void OnScreenDisconnected(ScreenId id) override {}
+    void OnScreenPropertyChanged(ScreenId id, ScreenPropertyType type,
+        const sptr<ScreenPropertyBase>& property) override {}
+    void OnScreenRefresh(ScreenId id) override {}
+    void OnVirtualScreenConnected(ScreenId id, ScreenId associatedScreenId,
+        const sptr<RSScreenProperty>& property) override {}
+    void OnVirtualScreenDisconnected(ScreenId id) override {}
+};
+
+auto g_pid = getpid();
+constexpr const int WAIT_HANDLER_TIME = 1; // 1s
+constexpr const int WAIT_HANDLER_TIME_COUNT = 5;
+
+void WaitHandlerTask(RSMainThread* mainThread, RSUniRenderThread* uniRenderThread)
 {
-    std::ofstream file;
-    file.open(CONFIG_FILE);
-    if (file.is_open()) {
-        file << tag << "\r";
-        file.close();
+    if (mainThread == nullptr || mainThread->handler_ == nullptr ||
+        uniRenderThread == nullptr || uniRenderThread->handler_ == nullptr) {
+        return;
+    }
+    auto count = 0;
+    auto isMainThreadRunning = !mainThread->handler_->IsIdle();
+    auto isUniRenderThreadRunning = !uniRenderThread->handler_->IsIdle();
+    while (count < WAIT_HANDLER_TIME_COUNT && (isMainThreadRunning || isUniRenderThreadRunning)) {
+        std::this_thread::sleep_for(std::chrono::seconds(WAIT_HANDLER_TIME));
+        isMainThreadRunning = !mainThread->handler_->IsIdle();
+        isUniRenderThreadRunning = !uniRenderThread->handler_->IsIdle();
+        count++;
+    }
+    if (count >= WAIT_HANDLER_TIME_COUNT) {
+        mainThread->handler_->RemoveAllEvents();
+        uniRenderThread->handler_->RemoveAllEvents();
     }
 }
 
-std::string ReadUnirenderConfig()
-{
-    std::ifstream file(CONFIG_FILE);
-    if (file.is_open()) {
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        file.close();
-        return content;
-    }
-    return "";
-}
+// Global variables - ORDER MATTERS for C++ reverse destruction.
+// We declare runners and handlers FIRST so they are destroyed LAST.
+// This ensures connections' destructors (which PostTask to runner threads)
+// always find EventHandler/EventRunner alive.
+std::shared_ptr<AppExecFwk::EventRunner> g_serviceRunner = nullptr;
+std::shared_ptr<AppExecFwk::EventRunner> g_mainRunner = nullptr;
+std::shared_ptr<AppExecFwk::EventRunner> g_uniRunner = nullptr;
 
-void SetUp(FuzzedDataProvider& fdp)
-{
-    g_originTag = ReadUnirenderConfig();
-    bool enableForAll = fdp.ConsumeBool();
-    std::string tag = enableForAll ? "ENABLED_FOR_ALL" : "DISABLED";
-    WriteUnirenderConfig(tag);
-    RSUniRenderJudgement::InitUniRenderConfig();
-    g_toServiceConnection->mainThread_ = g_mainThread;
-}
+// Extra references to EventHandlers so they outlive connections.
+// Without these, the Meyers-singleton RSMainThread may be atexit-destroyed
+// before g_renderConnection, leaving handler_ dangling during ~RSClientToRenderConnection().
+std::shared_ptr<AppExecFwk::EventHandler> g_serviceHandler = nullptr;
+std::shared_ptr<AppExecFwk::EventHandler> g_mainHandler = nullptr;
+std::shared_ptr<AppExecFwk::EventHandler> g_uniHandler = nullptr;
 
-void TearDown()
-{
-    WriteUnirenderConfig(g_originTag);
-    g_toServiceConnection->mainThread_ = nullptr;
-}
+sptr<RSRenderService> g_renderService = nullptr;
+sptr<RSClientToServiceConnection> g_serviceConnection = nullptr;
+sptr<RSClientToRenderConnection> g_renderConnection = nullptr;
+
 
 /* Fuzzer test GetPixelFormat */
 void DoGetPixelFormat(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_PIXEL_FORMAT);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_PIXEL_FORMAT);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test SetPixelFormat */
 void DoSetPixelFormat(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_PIXEL_FORMAT);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_PIXEL_FORMAT);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -124,39 +154,39 @@ void DoSetPixelFormat(FuzzedDataProvider& fdp)
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
     dataParcel.WriteInt32(pixelFormat);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test GetScreenSupportedHDRFormats */
 void DoGetScreenSupportedHDRFormats(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_HDR_FORMATS);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_HDR_FORMATS);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test GetScreenHDRFormat */
 void DoGetScreenHDRFormat(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_HDR_FORMAT);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_HDR_FORMAT);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test SetScreenHDRFormat */
 void DoSetScreenHDRFormat(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_HDR_FORMAT);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_HDR_FORMAT);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -165,39 +195,39 @@ void DoSetScreenHDRFormat(FuzzedDataProvider& fdp)
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
     dataParcel.WriteInt32(modeIdx);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test GetScreenSupportedColorSpaces */
 void DoGetScreenSupportedColorSpaces(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_COLORSPACES);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_SUPPORTED_COLORSPACES);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test GetScreenColorSpace */
 void DoGetScreenColorSpace(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_SCREEN_COLORSPACE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_SCREEN_COLORSPACE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
     ScreenId id = fdp.ConsumeIntegral<uint64_t>();
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test SetScreenColorSpace */
 void DoSetScreenColorSpace(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_SCREEN_COLORSPACE);
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::SET_SCREEN_COLORSPACE);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -206,14 +236,14 @@ void DoSetScreenColorSpace(FuzzedDataProvider& fdp)
     dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
     dataParcel.WriteUint64(id);
     dataParcel.WriteInt32(color);
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test SetColorFollow */
 void DoSetColorFollow(FuzzedDataProvider& fdp)
 {
     RSSurfaceRenderNodeConfig config = { .id = 1, .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE };
-    auto mainThread = g_mainThread;
+    RSMainThread* mainThread = RSMainThread::Instance();
     mainThread->ScheduleTask([=]() {
         auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config.id);
         surfaceNode->nodeType_ = config.nodeType;
@@ -223,7 +253,7 @@ void DoSetColorFollow(FuzzedDataProvider& fdp)
     }).wait();
 
     bool isColorFollow = fdp.ConsumeBool();
-    g_toServiceConnectionStub->SetColorFollow(config.name, isColorFollow);
+    g_serviceConnection->SetColorFollow(config.name, isColorFollow);
 
     mainThread->ScheduleTask([=]() {
         auto& context = mainThread->GetContext();
@@ -235,7 +265,7 @@ void DoSetColorFollow(FuzzedDataProvider& fdp)
 void DoSetLayerTop(FuzzedDataProvider& fdp)
 {
     RSSurfaceRenderNodeConfig config = { .id = 1, .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE };
-    auto mainThread = g_mainThread;
+    RSMainThread* mainThread = RSMainThread::Instance();
     mainThread->ScheduleTask([=]() {
         auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config.id);
         surfaceNode->nodeType_ = config.nodeType;
@@ -245,7 +275,29 @@ void DoSetLayerTop(FuzzedDataProvider& fdp)
     }).wait();
 
     bool isLayerTop = fdp.ConsumeBool();
-    g_toServiceConnectionStub->SetLayerTop(config.name, isLayerTop);
+    g_serviceConnection->SetLayerTop(config.name, isLayerTop);
+
+    mainThread->ScheduleTask([=]() {
+        auto& context = mainThread->GetContext();
+        context.GetMutableNodeMap().surfaceNodeMap_.erase(config.id);
+    }).wait();
+}
+
+/* Fuzzer test SetHdrForceHwcEnabled */
+void DoSetHdrForceHwcEnabled(FuzzedDataProvider& fdp)
+{
+    RSSurfaceRenderNodeConfig config = { .id = 1, .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE };
+    RSMainThread* mainThread = RSMainThread::Instance();
+    mainThread->ScheduleTask([=]() {
+        auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config.id);
+        surfaceNode->nodeType_ = config.nodeType;
+        surfaceNode->stagingRenderParams_ = std::make_unique<RSSurfaceRenderParams>(config.id);
+        auto& context = mainThread->GetContext();
+        context.GetMutableNodeMap().surfaceNodeMap_.emplace(config.id, surfaceNode);
+    }).wait();
+
+    bool isHdrForceHwcEnabled = fdp.ConsumeBool();
+    g_serviceConnection->SetHdrForceHwcEnabled(config.name, isHdrForceHwcEnabled);
 
     mainThread->ScheduleTask([=]() {
         auto& context = mainThread->GetContext();
@@ -256,7 +308,8 @@ void DoSetLayerTop(FuzzedDataProvider& fdp)
 /* Fuzzer test SetBrightnessInfoChangeCallback */
 void DoSetBrightnessInfoChangeCallback(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK);
+    uint32_t code = static_cast<uint32_t>(
+        RSIClientToServiceConnectionInterfaceCode::SET_BRIGHTNESS_INFO_CHANGE_CALLBACK);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
@@ -267,26 +320,26 @@ void DoSetBrightnessInfoChangeCallback(FuzzedDataProvider& fdp)
         MockBrightnessInfoChangeCallback callback;
         dataParcel.WriteRemoteObject(callback.AsObject());
     }
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_serviceConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test GetBrightnessInfo */
 void DoGetBrightnessInfo(FuzzedDataProvider& fdp)
 {
-    uint32_t code = static_cast<uint32_t>(RSIRenderServiceConnectionInterfaceCode::GET_BRIGHTNESS_INFO);
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::GET_BRIGHTNESS_INFO);
     MessageOption option;
     MessageParcel dataParcel;
     MessageParcel replyParcel;
-    dataParcel.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    dataParcel.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor());
     dataParcel.WriteUint64(fdp.ConsumeIntegral<uint64_t>());
-    g_toServiceConnectionStub->OnRemoteRequest(code, dataParcel, replyParcel, option);
+    g_renderConnection->OnRemoteRequest(code, dataParcel, replyParcel, option);
 }
 
 /* Fuzzer test SetForceRefresh */
 void DoSetForceRefresh(FuzzedDataProvider& fdp)
 {
     RSSurfaceRenderNodeConfig config = { .id = 1, .nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE };
-    auto mainThread = g_mainThread;
+    RSMainThread* mainThread = RSMainThread::Instance();
     mainThread->ScheduleTask([=]() {
         auto surfaceNode = std::make_shared<RSSurfaceRenderNode>(config.id);
         surfaceNode->nodeType_ = config.nodeType;
@@ -296,7 +349,7 @@ void DoSetForceRefresh(FuzzedDataProvider& fdp)
     }).wait();
 
     bool isForceRefresh = fdp.ConsumeBool();
-    g_toServiceConnectionStub->SetForceRefresh(config.name, isForceRefresh);
+    g_serviceConnection->SetForceRefresh(config.name, isForceRefresh);
 
     mainThread->ScheduleTask([=]() {
         auto& context = mainThread->GetContext();
@@ -306,27 +359,197 @@ void DoSetForceRefresh(FuzzedDataProvider& fdp)
 } // namespace Rosen
 } // namespace OHOS
 
-/* Fuzzer envirement */
-extern "C" int LLVMFuzzerInitialize(int *argc, char ***argv)
+/* Fallback cleanup registered via atexit, in case LLVMFuzzerFinalize is not invoked. */
+static void FuzzerAtExitCleanup()
 {
-    OHOS::Rosen::g_mainThread = OHOS::Rosen::RSMainThread::Instance();
-    OHOS::Rosen::g_mainThread->runner_ = OHOS::AppExecFwk::EventRunner::Create(true);
-    OHOS::Rosen::g_mainThread->handler_ =
-        std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::g_mainThread->runner_);
-    OHOS::Rosen::g_token = new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
-    auto generator = OHOS::Rosen::impl::VSyncGenerator::GetInstance();
-    auto appVSyncController = new OHOS::Rosen::VSyncController(generator, 0);
-    OHOS::Rosen::DVSyncFeatureParam dvsyncParam;
-    auto appVSyncDistributor = new OHOS::Rosen::VSyncDistributor(appVSyncController, "app", dvsyncParam);
-    OHOS::Rosen::g_toServiceConnection = new OHOS::Rosen::RSClientToServiceConnection(getpid(), nullptr, nullptr,
-        OHOS::Rosen::RSScreenManager::GetInstance(), OHOS::Rosen::g_token->AsObject(), appVSyncDistributor);
-    OHOS::Rosen::g_toServiceConnectionStub = OHOS::Rosen::g_toServiceConnection;
-#ifdef RS_ENABLE_VK
-    OHOS::Rosen::RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
-#endif
-    // OHOS::Rosen::RSHardwareThread::Instance().Start();
+    using namespace OHOS::Rosen;
+    using namespace OHOS::AppExecFwk;
+    // Release connections BEFORE RSMainThread Meyers-singleton is destroyed
+    // by atexit, otherwise ~RSClientToRenderConnection() -> PostTask() UAF.
+    g_renderConnection = nullptr;
+    g_serviceConnection = nullptr;
+
+    // Stop runners and wait for worker threads to actually exit.
+    // Without this, ~RSMainThread() may free RSContext while T9 is still
+    // running CleanResources() inside the event loop.
+    if (g_serviceRunner != nullptr) {
+        g_serviceRunner->Stop();
+    }
+    if (g_mainRunner != nullptr) {
+        g_mainRunner->Stop();
+    }
+    if (g_uniRunner != nullptr) {
+        g_uniRunner->Stop();
+    }
+    auto waitRunnerStopped = [](const std::shared_ptr<EventRunner>& runner) {
+        if (runner == nullptr) {
+            return;
+        }
+        int count = 0;
+        while (runner->IsRunning() && count < 500) { // max 5s
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            count++;
+        }
+    };
+    waitRunnerStopped(g_serviceRunner);
+    waitRunnerStopped(g_mainRunner);
+    waitRunnerStopped(g_uniRunner);
+}
+
+/* Fuzzer environment */
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
+{
+    (void)argc;
+    (void)argv;
+
+    OHOS::sptr<OHOS::Rosen::RSIConnectionToken> token =
+        new OHOS::IRemoteStub<OHOS::Rosen::RSIConnectionToken>();
+
+    // Step 1: Create RSRenderService and basic handlers
+    OHOS::Rosen::g_renderService = new OHOS::Rosen::RSRenderService();
+    OHOS::sptr<OHOS::Rosen::RSRenderService>& renderService = OHOS::Rosen::g_renderService;
+    OHOS::Rosen::g_serviceRunner = OHOS::AppExecFwk::EventRunner::Create(true);
+    OHOS::Rosen::g_serviceRunner->Run();
+    OHOS::Rosen::g_serviceHandler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::g_serviceRunner);
+    renderService->handler_ = OHOS::Rosen::g_serviceHandler;
+
+    // Step 2: Initialize vsync and screen managers
+    renderService->vsyncManager_ = OHOS::sptr<OHOS::Rosen::RSVsyncManager>::MakeSptr();
+    renderService->screenManager_ = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
+    renderService->vsyncManager_->init(renderService->screenManager_);
+
+    // Step 3: Initialize render pipeline with main thread and uni render thread
+    // Note: We intentionally skip RSRenderProcessManager::Create here because
+    // in single-process mode (the default), RSSingleRenderProcessManager's
+    // constructor would create VSyncReceiver + overwrite renderPipeline_ +
+    // call RSUniRenderThread::Start(), spawning an uncontrollable runner thread.
+    // For the interfaces we fuzz (GetUniRenderEnabled, SetGlobalDarkColorMode),
+    // renderProcessManager is not needed.
+    renderService->renderPipeline_ = std::make_shared<OHOS::Rosen::RSRenderPipeline>();
+    OHOS::Rosen::RSMainThread* mainThread = OHOS::Rosen::RSMainThread::Instance();
+    OHOS::Rosen::g_mainRunner = OHOS::AppExecFwk::EventRunner::Create(true);
+    OHOS::Rosen::g_mainRunner->Run();
+    OHOS::Rosen::g_mainHandler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::g_mainRunner);
+    mainThread->handler_ = OHOS::Rosen::g_mainHandler;
+    renderService->renderPipeline_->mainThread_ = mainThread;
+
+    OHOS::Rosen::RSUniRenderThread* uniRenderThread = &(OHOS::Rosen::RSUniRenderThread::Instance());
+    OHOS::Rosen::g_uniRunner = OHOS::AppExecFwk::EventRunner::Create(true);
+    OHOS::Rosen::g_uniRunner->Run();
+    OHOS::Rosen::g_uniHandler = std::make_shared<OHOS::AppExecFwk::EventHandler>(OHOS::Rosen::g_uniRunner);
+    uniRenderThread->handler_ = OHOS::Rosen::g_uniHandler;
+    uniRenderThread->runner_ = OHOS::Rosen::g_uniRunner;
+    renderService->renderPipeline_->uniRenderThread_ = uniRenderThread;
+
+    // Step 5: Initialize composer manager
+    renderService->rsRenderComposerManager_ =
+        std::make_shared<OHOS::Rosen::RSRenderComposerManager>(renderService->handler_);
+
+    // Step 4: Create agents for service connection
+    auto renderServiceAgent = OHOS::sptr<OHOS::Rosen::RSRenderServiceAgent>::MakeSptr(*renderService);
+    auto screenManagerAgent = OHOS::sptr<OHOS::Rosen::RSScreenManagerAgent>::MakeSptr(renderService->screenManager_);
+    auto vsyncManagerAgent = renderService->vsyncManager_->GetVsyncManagerAgent();
+
+    // Step 5: Create RSClientToServiceConnection
+    // Use a mock RenderProcessManager to avoid nullptr crash in fuzzer tests,
+    // while skipping the real RSSingleRenderProcessManager which spawns uncontrollable threads.
+    auto mockRenderProcessManager = OHOS::sptr<OHOS::Rosen::MockRenderProcessManager>::MakeSptr(*renderService);
+    auto renderProcessManagerAgent =
+        OHOS::sptr<OHOS::Rosen::RSRenderProcessManagerAgent>::MakeSptr(mockRenderProcessManager);
+    OHOS::Rosen::g_serviceConnection = new OHOS::Rosen::RSClientToServiceConnection(
+        getpid(), renderServiceAgent, renderProcessManagerAgent,
+        screenManagerAgent, token->AsObject(), vsyncManagerAgent);
+
+    // Step 8: Create RSClientToRenderConnection
+    auto renderPipelineAgent =
+        OHOS::sptr<OHOS::Rosen::RSRenderPipelineAgent>::MakeSptr(renderService->renderPipeline_);
+    OHOS::Rosen::g_renderConnection = new OHOS::Rosen::RSClientToRenderConnection(
+        getpid(), renderPipelineAgent, token->AsObject());
+
+    // Register atexit cleanup AFTER all Meyers-singletons (RSMainThread/RSUniRenderThread)
+    // have been initialized. Meyers singletons register their destructors via atexit
+    // on first Instance() call. atexit is LIFO, so FuzzerAtExitCleanup must be
+    // registered AFTER them to ensure it runs BEFORE ~RSMainThread().
+    std::atexit(FuzzerAtExitCleanup);
+
     return 0;
 }
+
+/* Fuzzer cleanup: stop event runners before process exit to avoid UAF.
+ * Pattern borrowed from RSClientToRenderConnectionStubTest::TearDownTestCase
+ * and RSClientToServiceConnectionStubTest::TearDownTestCase.
+ */
+extern "C" int LLVMFuzzerFinalize(void)
+{
+    using namespace OHOS::Rosen;
+    using namespace OHOS::AppExecFwk;
+
+    // 1. Release connections FIRST while runners/handlers are still alive.
+    //    ~RSClientToRenderConnection() calls CleanAll() which uses
+    //    ScheduleMainThreadTask().wait() -- runners must be running.
+    g_renderConnection = nullptr;
+    g_serviceConnection = nullptr;
+
+    // 2. Wait for pending handler tasks to finish (borrowed from WaitHandlerTask).
+    RSMainThread* mainThread = RSMainThread::Instance();
+    RSUniRenderThread* uniRenderThread = &RSUniRenderThread::Instance();
+    WaitHandlerTask(mainThread, uniRenderThread);
+
+    // 3. Stop runners.
+    if (g_serviceRunner != nullptr) {
+        g_serviceRunner->Stop();
+    }
+    if (g_mainRunner != nullptr) {
+        g_mainRunner->Stop();
+    }
+    if (g_uniRunner != nullptr) {
+        g_uniRunner->Stop();
+    }
+
+    // 4. Wait for runner worker threads to ACTUALLY exit.
+    //    Stop() only sets queue_->Finish(); T9 may still be processing
+    //    the current event (e.g. CleanResources). IsRunning() becomes
+    //    false only after Run() returns in the worker thread.
+    auto waitRunnerStopped = [](const std::shared_ptr<EventRunner>& runner) {
+        if (runner == nullptr) {
+            return;
+        }
+        int count = 0;
+        while (runner->IsRunning() && count < 500) { // max 5s
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            count++;
+        }
+    };
+    waitRunnerStopped(g_serviceRunner);
+    waitRunnerStopped(g_mainRunner);
+    waitRunnerStopped(g_uniRunner);
+
+    // 5. Explicitly reset handler_/runner_ pointers on singletons
+    //    (same pattern as TearDownTestCase in the stub tests).
+    if (mainThread != nullptr) {
+        mainThread->handler_ = nullptr;
+        mainThread->receiver_ = nullptr;
+    }
+    if (uniRenderThread != nullptr) {
+        uniRenderThread->handler_ = nullptr;
+        uniRenderThread->runner_ = nullptr;
+    }
+
+    // 6. Release renderService (and its renderPipeline_) AFTER connections/agents
+    //    are dead and runners/handlers are stopped.
+    g_renderService = nullptr;
+
+    // 7. Release runners and extra handler references.
+    g_serviceRunner.reset();
+    g_mainRunner.reset();
+    g_uniRunner.reset();
+    g_serviceHandler.reset();
+    g_mainHandler.reset();
+    g_uniHandler.reset();
+
+    return 0;
+}
+
 
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
@@ -335,7 +558,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return -1;
     }
     auto fdp = FuzzedDataProvider(data, size);
-    OHOS::Rosen::SetUp(fdp);
     /* Run your code on data */
     uint8_t tarPos = fdp.ConsumeIntegral<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     if (tarPos == OHOS::Rosen::DO_GET_SCREEN_SUPPORTED_HDRFORMATS) {
@@ -362,11 +584,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         OHOS::Rosen::DoGetBrightnessInfo(fdp);
     } else if (tarPos == OHOS::Rosen::DO_SET_LAYER_TOP) {
         OHOS::Rosen::DoSetLayerTop(fdp);
+    } else if (tarPos == OHOS::Rosen::DO_SET_HDR_FORCE_HWC_ENABLED) {
+        OHOS::Rosen::DoSetHdrForceHwcEnabled(fdp);
     } else if (tarPos == OHOS::Rosen::DO_SET_FORCE_REFRESH) {
         OHOS::Rosen::DoSetForceRefresh(fdp);
     } else {
         // do nothing
     }
-    OHOS::Rosen::TearDown();
     return 0;
 }

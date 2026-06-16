@@ -38,13 +38,14 @@
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
 #include "ipc_callbacks/pointer_render/pointer_luminance_callback_stub.h"
 #endif
+#include "common/rs_event_def.h"
+#include "ipc_callbacks/rs_exposed_event_callback_stub.h"
 #include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/rs_first_frame_commit_callback_stub.h"
 #include "render_server/rs_render_service.h"
 #include "render_server/transaction/rs_client_to_service_connection.h"
 #include "transaction/rs_client_to_render_connection.h"
-#include "platform/ohos/rs_render_service_connect_hub.cpp"
-#include "screen_manager/rs_screen_manager.h"
+#include "platform/ohos/rs_render_service_connect_hub.h"
 #include "transaction/rs_render_service_client.h"
 #include "render_server/transaction/zidl/rs_client_to_service_connection_stub.h"
 #include "transaction/zidl/rs_client_to_render_connection_stub.h"
@@ -111,7 +112,7 @@ bool Init(const uint8_t* data, size_t size)
 
 bool DoRegisterApplicationAgent()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
 
@@ -119,7 +120,7 @@ bool DoRegisterApplicationAgent()
     MessageParcel message;
     auto remoteObject = message.ReadRemoteObject();
     sptr<IApplicationAgent> app = iface_cast<IApplicationAgent>(remoteObject);
-    rsToServiceConn_->RegisterApplicationAgent(pid, app);
+    rsToRenderConn_->RegisterApplicationAgent(pid, app);
     return true;
 }
 
@@ -130,7 +131,7 @@ bool DoCommitTransaction()
     }
 
     auto transactionData = std::make_unique<RSTransactionData>();
-    rsToServiceConn_->CommitTransaction(transactionData);
+    rsToRenderConn_->CommitTransaction(transactionData);
     return true;
 }
 
@@ -188,14 +189,15 @@ bool DoGetMemoryGraphics()
 
 bool DoCreateNodeAndSurface()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     RSSurfaceRenderNodeConfig config = { .id = 0, .name = "test" };
     bool success;
-    rsToServiceConn_->CreateNode(config, success);
+    rsToRenderConn_->CreateNode(config, success);
     sptr<Surface> surface = nullptr;
-    rsToServiceConn_->CreateNodeAndSurface(config, surface);
+    bool unobscured = false;
+    rsToRenderConn_->CreateNodeAndSurface(config, surface, unobscured);
     return true;
 }
 
@@ -205,8 +207,8 @@ bool DoGetScreenBacklight()
         return false;
     }
     ScreenId id = GetData<uint64_t>();
-    uint32_t setLevel = GetData<uint32_t>();
-    rsToServiceConn_->SetScreenBacklight(id, setLevel);
+    uint32_t level = GetData<uint32_t>();
+    rsToServiceConn_->SetScreenBacklight(RsScreenBrightnessData(id, level));
     int32_t getLevel = GetData<int32_t>();
     rsToServiceConn_->GetScreenBacklight(id, getLevel);
     return true;
@@ -226,13 +228,13 @@ bool DoGetScreenType()
 
 bool DoRegisterBufferAvailableListener()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     uint64_t id = GetData<uint64_t>();
     bool isFromRenderThread = GetData<bool>();
     sptr<RSIBufferAvailableCallback> cb = nullptr;
-    rsToServiceConn_->RegisterBufferAvailableListener(id, cb, isFromRenderThread);
+    rsToRenderConn_->RegisterBufferAvailableListener(id, cb, isFromRenderThread);
     return true;
 }
 
@@ -253,8 +255,10 @@ bool DoSetPhysicalScreenResolution()
     if (rsToServiceConn_ == nullptr) {
         return false;
     }
-    ScreenId id = GetData<uint64_t>();
-    rsToServiceConn_->SetPhysicalScreenResolution(id, SCREEN_WIDTH, SCREEN_HEIGHT);
+    ScreenId id = GetData<ScreenId>();
+    uint32_t width = GetData<uint32_t>();
+    uint32_t height = GetData<uint32_t>();
+    rsToServiceConn_->SetPhysicalScreenResolution(id, width, height);
     return true;
 }
 
@@ -331,16 +335,6 @@ bool DoSetScreenGamutMap()
     ScreenGamutMap mode = (ScreenGamutMap)mapMode;
     rsToServiceConn_->SetScreenGamutMap(id, mode);
     rsToServiceConn_->GetScreenGamutMap(id, mode);
-    return true;
-}
-
-bool DoSetAppWindowNum()
-{
-    if (rsToServiceConn_ == nullptr) {
-        return false;
-    }
-    uint32_t num = GetData<uint32_t>();
-    rsToServiceConn_->SetAppWindowNum(num);
     return true;
 }
 
@@ -500,13 +494,13 @@ bool DoSetScreenRefreshRate()
 
 bool DoGetBitmap()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     Drawing::Bitmap bm;
     NodeId id = GetData<uint64_t>();
     bool success;
-    rsToServiceConn_->GetBitmap(id, bm, success);
+    rsToRenderConn_->GetBitmap(id, bm, success);
     return true;
 }
 
@@ -538,34 +532,6 @@ bool DoGetScreenHDRCapability()
     ScreenId id = GetData<uint64_t>();
     RSScreenHDRCapability screenHDRCapability;
     rsToServiceConn_->GetScreenHDRCapability(id, screenHDRCapability);
-    return true;
-}
-
-class CustomOcclusionChangeCallback : public RSOcclusionChangeCallbackStub {
-public:
-    explicit CustomOcclusionChangeCallback(const OcclusionChangeCallback& callback) : cb_(callback) {}
-    ~CustomOcclusionChangeCallback() override {};
-
-    void OnOcclusionVisibleChanged(std::shared_ptr<RSOcclusionData> occlusionData) override
-    {
-        if (cb_ != nullptr) {
-            cb_(occlusionData);
-        }
-    }
-
-private:
-    OcclusionChangeCallback cb_;
-};
-
-bool DoRegisterOcclusionChangeCallback()
-{
-    if (rsToServiceConn_ == nullptr) {
-        return false;
-    }
-    OcclusionChangeCallback callback = [](std::shared_ptr<RSOcclusionData> data) {};
-    sptr<CustomOcclusionChangeCallback> cb = new CustomOcclusionChangeCallback(callback);
-    int32_t repCode = GetData<int32_t>();
-    rsToServiceConn_->RegisterOcclusionChangeCallback(cb, repCode);
     return true;
 }
 
@@ -758,7 +724,7 @@ bool DoGetUniRenderEnabled()
 
 bool DoCreateNode1()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     RSDisplayNodeConfig displayNodeConfig;
@@ -768,20 +734,20 @@ bool DoCreateNode1()
     displayNodeConfig.isSync = GetData<bool>();
     uint64_t nodeId = GetData<uint64_t>();
     bool success;
-    rsToServiceConn_->CreateNode(displayNodeConfig, nodeId, success);
+    rsToRenderConn_->CreateDisplayNode(displayNodeConfig, nodeId, success);
     return true;
 }
 
 bool DoCreateNode2()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     RSSurfaceRenderNodeConfig config;
     config.id = GetData<uint64_t>();
     config.name = GetData<std::string>();
     bool success;
-    rsToServiceConn_->CreateNode(config, success);
+    rsToRenderConn_->CreateNode(config, success);
     return true;
 }
 
@@ -983,11 +949,11 @@ bool DoSetVirtualMirrorScreenScaleMode()
 
 bool DoSetGlobalDarkColorMode()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     bool isDark = GetData<bool>();
-    rsToServiceConn_->SetGlobalDarkColorMode(isDark);
+    rsToRenderConn_->SetGlobalDarkColorMode(isDark);
     return true;
 }
 
@@ -998,10 +964,9 @@ bool DoSetPixelFormat()
     }
     uint64_t id = GetData<uint64_t>();
     uint32_t pixelFormat = GetData<uint32_t>();
-    int32_t resCode;
-    rsToServiceConn_->SetPixelFormat(id, static_cast<GraphicPixelFormat>(pixelFormat), resCode);
+    rsToServiceConn_->SetPixelFormat(id, static_cast<GraphicPixelFormat>(pixelFormat));
     GraphicPixelFormat pixelFormat1;
-    rsToServiceConn_->GetPixelFormat(id, pixelFormat1, resCode);
+    rsToServiceConn_->GetPixelFormat(id, pixelFormat1);
     return true;
 }
 
@@ -1012,12 +977,11 @@ bool DOGetScreenSupportedHDRFormats()
     }
     uint64_t id = GetData<uint64_t>();
     int32_t modeIdx = GetData<int32_t>();
-    int32_t resCode;
-    rsToServiceConn_->SetScreenHDRFormat(id, modeIdx, resCode);
+    rsToServiceConn_->SetScreenHDRFormat(id, modeIdx);
     ScreenHDRFormat hdrFormat;
-    rsToServiceConn_->GetScreenHDRFormat(id, hdrFormat, resCode);
+    rsToServiceConn_->GetScreenHDRFormat(id, hdrFormat);
     std::vector<ScreenHDRFormat> hdrFormats;
-    rsToServiceConn_->GetScreenSupportedHDRFormats(id, hdrFormats, resCode);
+    rsToServiceConn_->GetScreenSupportedHDRFormats(id, hdrFormats);
     return true;
 }
 
@@ -1028,10 +992,9 @@ bool DOGetScreenSupportedColorSpaces()
     }
     uint64_t id = GetData<uint64_t>();
     uint32_t colorSpace = GetData<uint32_t>();
-    int32_t resCode;
-    rsToServiceConn_->SetScreenColorSpace(id, static_cast<GraphicCM_ColorSpaceType>(colorSpace), resCode);
+    rsToServiceConn_->SetScreenColorSpace(id, static_cast<GraphicCM_ColorSpaceType>(colorSpace));
     std::vector<GraphicCM_ColorSpaceType> colorSpaces;
-    rsToServiceConn_->GetScreenSupportedColorSpaces(id, colorSpaces, resCode);
+    rsToServiceConn_->GetScreenSupportedColorSpaces(id, colorSpaces);
     return true;
 }
 
@@ -1050,12 +1013,12 @@ bool DOSetVirtualScreenRefreshRate()
 
 bool DOSetSystemAnimatedScenes()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     uint32_t systemAnimatedScenes = GetData<uint32_t>();
     bool success = GetData<bool>();
-    rsToServiceConn_->SetSystemAnimatedScenes(static_cast<SystemAnimatedScenes>(systemAnimatedScenes), false, success);
+    rsToRenderConn_->SetSystemAnimatedScenes(static_cast<SystemAnimatedScenes>(systemAnimatedScenes), false, success);
     return true;
 }
 
@@ -1177,13 +1140,13 @@ bool DOReportGameStateData()
 
 bool DOSetHidePrivacyContent()
 {
-    if (rsToServiceConn_ == nullptr) {
+    if (rsToRenderConn_ == nullptr) {
         return false;
     }
     uint32_t id = GetData<uint32_t>();
     bool needHidePrivacyContent = GetData<bool>();
     uint32_t resCode;
-    rsToServiceConn_->SetHidePrivacyContent(id, needHidePrivacyContent, resCode);
+    rsToRenderConn_->SetHidePrivacyContent(id, needHidePrivacyContent, resCode);
     return true;
 }
 
@@ -1372,6 +1335,17 @@ bool DOSetLayerTop()
     return true;
 }
 
+bool DOSetHdrForceHwcEnabled()
+{
+    if (rsToServiceConn_ == nullptr) {
+        return false;
+    }
+    std::string nodeIdStr = GetData<std::string>();
+    bool isHdrForceHwcEnabled = GetData<bool>();
+    rsToServiceConn_->SetHdrForceHwcEnabled(nodeIdStr, isHdrForceHwcEnabled);
+    return true;
+}
+
 bool DoSetForceRefresh()
 {
     if (rsToServiceConn_ == nullptr) {
@@ -1390,7 +1364,7 @@ bool DOSetFreeMultiWindowStatus()
     }
 
     bool enable = GetData<bool>();
-    rsToServiceConn_->SetFreeMultiWindowStatus(enable);
+    rsToRenderConn_->SetFreeMultiWindowStatus(enable);
     return true;
 }
 
@@ -1517,6 +1491,33 @@ bool DoRegisterFirstFrameCommitCallback()
     return true;
 }
 
+class CustomExposedEventCallback : public RSExposedEventCallbackStub {
+public:
+    explicit CustomExposedEventCallback(const RSExposedEventCallback& callback) : cb_(callback) {}
+    ~CustomExposedEventCallback() override {};
+
+    void OnDisplayEvent(const std::shared_ptr<RSExposedEventDataBase> data) override
+    {
+        if (cb_ != nullptr) {
+            cb_(data);
+        }
+    }
+private:
+    RSExposedEventCallback cb_;
+};
+
+bool DoRegisterExposedEventCallback()
+{
+    if (rsToServiceConn_ == nullptr) {
+        return false;
+    }
+    RSExposedEventType type = static_cast<RSExposedEventType>(GetData<uint32_t>());
+    RSExposedEventCallback callback = [](const std::shared_ptr<RSExposedEventDataBase> data) {};
+    sptr<CustomExposedEventCallback> cb = new CustomExposedEventCallback(callback);
+    rsToServiceConn_->RegisterExposedEventCallback(type, cb);
+    return true;
+}
+
 bool DoClearUifirstCache()
 {
     if (rsToRenderConn_ == nullptr) {
@@ -1548,7 +1549,8 @@ bool DoFreezeScreen()
     }
     NodeId nodeId = GetData<NodeId>();
     bool isFreeze = GetData<bool>();
-    rsToRenderConn_->FreezeScreen(nodeId, isFreeze);
+    bool needSync = GetData<bool>();
+    rsToRenderConn_->FreezeScreen(nodeId, isFreeze, needSync);
     return true;
 }
 
@@ -1570,7 +1572,6 @@ void DoFuzzerTest1()
     DoGetScreenColorGamut();
     DoSetScreenPowerStatus();
     DoSetScreenGamutMap();
-    DoSetAppWindowNum();
     DoCreateVirtualScreen();
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     DoSetPointerColorInversionConfig();
@@ -1587,7 +1588,6 @@ void DoFuzzerTest1()
     DoGetScreenCapability();
     DoGetScreenData();
     DoGetScreenHDRCapability();
-    DoRegisterOcclusionChangeCallback();
 #ifdef SUPPORT_ACCESS_TOKEN
     DoShowWatermark();
 #endif
@@ -1654,6 +1654,7 @@ void DoFuzzerTest2()
     DOSetCurtainScreenUsingStatus();
     DOSetVirtualScreenStatus();
     DOSetLayerTop();
+    DOSetHdrForceHwcEnabled();
     DoSetForceRefresh();
     DOSetFreeMultiWindowStatus();
 }
@@ -1668,6 +1669,7 @@ void DoFuzzerTest3()
     DoSetOverlayDisplayMode();
 #endif
     DoRegisterFirstFrameCommitCallback();
+    DoRegisterExposedEventCallback();
     DoNotifySoftVsyncRateDiscountEvent();
     DoSetBehindWindowFilterEnabled();
     DoGetBehindWindowFilterEnabled();

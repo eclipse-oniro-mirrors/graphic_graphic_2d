@@ -27,6 +27,7 @@
 #include "txt/paint_record.h"
 #include "txt/paragraph.h"
 #include "txt/paragraph_style.h"
+#include "txt/sp_convert.h"
 #include "txt/text_style.h"
 
 #ifdef USE_M133_SKIA
@@ -38,6 +39,7 @@
 namespace OHOS {
 namespace Rosen {
 namespace SPText {
+
 namespace skt = skia::textlayout;
 class ParagraphImpl : public Paragraph {
 public:
@@ -83,6 +85,8 @@ public:
 
     float DetectIndents(size_t index) override;
 
+    bool isRunCombinated() { return paragraph_->isRunCombinated(); }
+
     void Layout(double width) override;
 
     void Paint(SkCanvas* canvas, double x, double y) override;
@@ -98,11 +102,22 @@ public:
 
     PositionWithAffinity GetGlyphPositionAtCoordinate(double dx, double dy) override;
 
+    PositionWithAffinity GetCharacterPositionAtCoordinate(double dx, double dy,
+        TextEncoding encoding) const override;
+
+    Range<size_t> GetCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd,
+        Range<size_t>* actualGlyphRange, TextEncoding encoding) const override;
+
+    Range<size_t> GetGlyphRangeForCharacterRange(size_t charStart, size_t charEnd,
+        Range<size_t>* actualCharRange, TextEncoding encoding) const override;
+
     Range<size_t> GetWordBoundary(size_t offset) override;
 
     Range<size_t> GetActualTextRange(int lineNumber, bool includeSpaces) override;
 
-    Range<size_t> GetEllipsisTextRange() override;
+    Range<size_t> GetEllipsisTextRange() const override;
+
+    std::vector<TextRange> GetVisibleTextRanges() const override;
 
     std::vector<skt::LineMetrics> GetLineMetrics() override;
 
@@ -135,8 +150,7 @@ public:
     std::vector<std::unique_ptr<SPText::TextLineBase>> GetTextLines() const override;
     std::unique_ptr<Paragraph> CloneSelf() override;
     TextStyle SkStyleToTextStyle(const skt::TextStyle& skStyle) override;
-    void UpdateColor(size_t from, size_t to, const RSColor& color,
-        skia::textlayout::UtfEncodeType encodeType) override;
+    void UpdateColor(size_t from, size_t to, const RSColor& color, skia::textlayout::UtfEncodeType encodeType) override;
     Drawing::RectI GeneratePaintRegion(double x, double y) override;
     void UpdateForegroundBrush(const TextStyle& spTextStyle) override;
 
@@ -155,11 +169,35 @@ public:
 
     void SetSkipTextBlobDrawing(bool state) override;
 
-    bool isRunCombinated() { return paragraph_->isRunCombinated(); }
-
     bool CanPaintAllText() const override;
 
     std::string GetDumpInfo() const override;
+
+    TextLayoutResult LayoutWithConstraints(const TextRectSize& constraint) override;
+
+    void SetForceReuseRasterResult(bool flag) override;
+    bool GetForceReuseRasterResult() const override;
+
+    ParagraphStyle GetParagraphStyle() const override;
+
+    TextProcessState GetProcessState() const override;
+
+    TextDisplayState GetTextDisplayState() const override;
+
+#ifdef ENABLE_OHOS_ENHANCE
+    /**
+     * Get the text path image by index.
+     * This function retrieves the image representation of the text path within the specified range.
+     * @param start The starting index of the text path.
+     * @param end The ending index of the text path.
+     * @param options The image options to be applied.
+     * @param fill Whether to fill the path.
+     * @return A shared pointer to the pixel map representing the text path image.
+     */
+    std::shared_ptr<OHOS::Media::PixelMap> GetTextPathImageByIndex(
+        size_t start, size_t end, const ImageOptions& options, bool fill) const override;
+    std::vector<TextPathInfo> GetTextPathsByIndex(size_t start = 0, size_t end = SIZE_MAX) const override;
+#endif
 
 private:
     void ParagraphStyleUpdater(skt::Paragraph& skiaParagraph, const ParagraphStyle& spParagraphStyle,
@@ -169,8 +207,6 @@ private:
 
     void SymbolStyleUpdater(const HMSymbolTxt& symbolStyle, std::vector<std::shared_ptr<HMSymbolRun>>& hmSymbolRuns,
         skt::InternalState& state);
-
-    void GetExtraTextStyleAttributes(const skt::TextStyle& skStyle, TextStyle& textStyle);
 
     void ApplyParagraphStyleChanges(const ParagraphStyle& style);
 #ifdef USE_M133_SKIA
@@ -184,12 +220,16 @@ private:
 #endif
     void UpdatePaintsBySkiaBlock(skt::Block& skiaBlock, const std::optional<RSBrush>& brush);
 
-    void RecordDifferentPthreadCall(const char* caller) const;
-
     void InitSymbolRuns();
-
     void UpdateSymbolRun(const HMSymbolTxt& symbolStyle, std::shared_ptr<HMSymbolRun>& hmSymbolRun,
         skt::InternalState& state, size_t index);
+    std::string DumpSymbolInfo() const;
+
+    void BuildFitStrRange(std::vector<TextRange>& fitRanges) const;
+    void MarkAttributeUpdated()
+    {
+        updateAttr = true;
+    }
 
     std::unique_ptr<skt::Paragraph> paragraph_;
     std::vector<PaintRecord> paints_;
@@ -198,9 +238,10 @@ private:
     std::function<bool(
         const std::shared_ptr<OHOS::Rosen::TextEngine::SymbolAnimationConfig>&)> animationFunc_ = nullptr;
     uint32_t id_ = 0;
-    mutable pthread_t threadId_;
     std::vector<std::shared_ptr<HMSymbolRun>> hmSymbols_;
     std::once_flag initSymbolRunsFlag_;
+    bool updateAttr{false};
+    bool forceReuseRasterResult_{false};
 };
 } // namespace SPText
 } // namespace Rosen

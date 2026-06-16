@@ -16,12 +16,6 @@
 #include "modifier_ng/geometry/rs_bounds_clip_modifier.h"
 
 namespace OHOS::Rosen::ModifierNG {
-void RSBoundsClipModifier::SetClipRectWithRadius(const Vector4f& clipRect, const Vector4f& clipRadius)
-{
-    auto rrectPtr = std::make_shared<RRect>(clipRect, clipRadius);
-    Setter(RSPropertyType::CLIP_RRECT, rrectPtr ? *rrectPtr : RRect());
-}
-
 void RSBoundsClipModifier::SetClipRRect(const std::shared_ptr<RRect>& rrect)
 {
     Setter(RSPropertyType::CLIP_RRECT, rrect ? *rrect : RRect());
@@ -55,5 +49,15 @@ void RSBoundsClipModifier::SetCornerApplyType(RSCornerApplyType type)
 RSCornerApplyType RSBoundsClipModifier::GetCornerApplyType() const
 {
     return static_cast<RSCornerApplyType>(Getter(RSPropertyType::CORNER_APPLY_TYPE, 0));
+}
+
+void RSBoundsClipModifier::SetSDFShape(const std::shared_ptr<RSNGShapeBase>& shape)
+{
+    Setter<RSProperty, std::shared_ptr<RSNGShapeBase>>(RSPropertyType::SDF_SHAPE, shape);
+}
+
+std::shared_ptr<RSNGShapeBase> RSBoundsClipModifier::GetSDFShape() const
+{
+    return Getter<std::shared_ptr<RSNGShapeBase>>(RSPropertyType::SDF_SHAPE, nullptr);
 }
 } // namespace OHOS::Rosen::ModifierNG

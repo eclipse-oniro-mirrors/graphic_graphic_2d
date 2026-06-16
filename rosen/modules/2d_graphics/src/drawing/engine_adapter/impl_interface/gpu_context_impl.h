@@ -35,6 +35,7 @@ namespace Rosen {
 namespace Drawing {
 using pid_t = int;
 using MemoryOverflowCalllback = std::function<bool(pid_t, uint64_t, bool)>;
+using GpuMemoryInfoStatProcCallback =  std::function<bool(pid_t, size_t, bool)>;
 struct GPUResourceTag;
 struct HpsBlurParameter;
 class GPUContext;
@@ -56,14 +57,11 @@ public:
 #endif
     virtual void Flush() = 0;
     virtual void FlushAndSubmit(bool syncCpu) = 0;
-
+    virtual void Submit() = 0;
+    virtual void PerformDeferredCleanup(std::chrono::milliseconds msNotUsed) = 0;
     virtual void FlushCommands(bool isMainCtx) {}
     virtual void RegisterWaitSemCallback(const std::function<void(int seq)>& callBack, int seq) {}
     virtual void UnRegisterWaitSemCallback() {}
-
-    virtual void Submit() = 0;
-    virtual void PerformDeferredCleanup(std::chrono::milliseconds msNotUsed) = 0;
-
     virtual void GetResourceCacheLimits(int* maxResource, size_t* maxResourceBytes) const = 0;
     virtual void SetResourceCacheLimits(int maxResource, size_t maxResourceBytes) = 0;
     virtual void SetPurgeableResourceLimit(int purgeableMaxCount) = 0;
@@ -104,8 +102,6 @@ public:
 
     virtual void DumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) = 0;
 
-    virtual uint64_t NewDumpMemoryStatisticsByTag(TraceMemoryDump* traceMemoryDump, GPUResourceTag &tag) = 0;
-
     virtual void DumpMemoryStatistics(TraceMemoryDump* traceMemoryDump) = 0;
 
     virtual void SetCurrentGpuResourceTag(const GPUResourceTag &tag) = 0;
@@ -115,6 +111,10 @@ public:
     virtual void GetUpdatedMemoryMap(std::unordered_map<pid_t, size_t> &out) = 0;
 
     virtual void InitGpuMemoryLimit(MemoryOverflowCalllback callback, uint64_t size) = 0;
+    
+    virtual void SetAbnormalPid(pid_t pid) = 0;
+
+    virtual void InitGpuMemoryInfoStatProc(GpuMemoryInfoStatProcCallback callback) = 0;
 
 #ifdef RS_ENABLE_VK
     virtual void StoreVkPipelineCacheData() = 0;

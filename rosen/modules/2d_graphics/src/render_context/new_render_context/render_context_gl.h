@@ -18,6 +18,7 @@
 
 #include <memory>
 
+
 #include "common/rs_rect.h"
 #include "render_context/render_context.h"
 
@@ -42,6 +43,7 @@ public:
     std::string GetShaderCacheSize() const override;
     std::string CleanAllShaderCache() const override;
     bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> context = nullptr) override;
+    bool QueryMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight) override;
 
     std::shared_ptr<Drawing::Surface> AcquireSurface(int width, int height) override;
     void RenderFrame() override;
@@ -55,6 +57,13 @@ public:
     EGLSurface CreateEGLSurface(EGLNativeWindowType eglNativeWindow);
     void MakeCurrent(EGLSurface surface, EGLContext context = EGL_NO_CONTEXT);
     bool SwapBuffers(EGLSurface surface) const;
+    #ifdef ROSEN_ARKUI_X
+    void AddSurface() override;
+    void DeleteSurface() override;
+    void DestroySharedSource() override;
+    void SetCleanUpHelper(std::function<void()> func) override;
+    #endif
+
     EGLSurface GetEGLSurface() const
     {
         return eglSurface_;

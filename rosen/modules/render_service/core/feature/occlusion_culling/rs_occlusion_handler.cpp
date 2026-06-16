@@ -28,7 +28,7 @@ void RSOcclusionHandler::ProcessOffTreeNodes(const std::unordered_set<NodeId>& o
     if (occlusionNodes_.empty()) {
         return;
     }
-    RS_TRACE_NAME_FMT("RSOcclusionHandler::ProcessOffTreeNodes");
+    RS_OPTIONAL_TRACE_FMT("RSOcclusionHandler::ProcessOffTreeNodes");
     for (const auto id : offTreeNodeIds) {
         auto it = occlusionNodes_.find(id);
         if (it == occlusionNodes_.end() || it->second == nullptr) {
@@ -52,7 +52,7 @@ void RSOcclusionHandler::CollectNode(const RSRenderNode& node)
 
 void RSOcclusionHandler::CollectRootNode(const RSRenderNode& node)
 {
-    RS_TRACE_NAME_FMT("RSOcclusionHandler::CollectRootNode node id = %lu", node.GetId());
+    RS_OPTIONAL_TRACE_FMT("RSOcclusionHandler::CollectRootNode node id = %" PRIu64 "", node.GetId());
     auto itNode = occlusionNodes_.find(node.GetId());
     auto ocNode = (itNode != occlusionNodes_.end() && itNode->second != nullptr) ?
         itNode->second : std::make_shared<OcclusionNode>(node.GetId(), node.GetType());
@@ -73,8 +73,8 @@ void RSOcclusionHandler::CollectNodeInner(const RSRenderNode& node)
     }
     auto itParent = occlusionNodes_.find(parent->GetId());
     auto itNode = occlusionNodes_.find(node.GetId());
-    if (itParent == occlusionNodes_.end() || itParent->second == nullptr || itParent->second->IsSubTreeIgnored()) {
-        // If the parent is not collected or ignored, but the node is already collected,
+    if (itParent == occlusionNodes_.end() || itParent->second == nullptr) {
+        // If the parent is not collected, but the node is already collected,
         // we should delete the node and its subtree.
         if (itNode != occlusionNodes_.end() && itNode->second != nullptr) {
             itNode->second->RemoveSubTree(occlusionNodes_);
@@ -109,7 +109,7 @@ void RSOcclusionHandler::CollectSubTree(const RSRenderNode& node,
         }
         auto itNode = occlusionNodes_.find(child->GetId());
         if (itNode == occlusionNodes_.end() || itNode->second == nullptr) {
-            RS_TRACE_NAME_FMT("RSOcclusionHandler::CollectSubTree node id = %llu", child->GetId());
+            RS_OPTIONAL_TRACE_FMT("RSOcclusionHandler::CollectSubTree node id = %" PRIu64 "", child->GetId());
             CollectSubTreeInner(*child);
             return;
         }
@@ -120,7 +120,7 @@ void RSOcclusionHandler::CollectSubTree(const RSRenderNode& node,
             subTreeSkipPrepareNodes_.insert(child->GetId());
             return;
         }
-        RS_TRACE_NAME_FMT("RSOcclusionHandler::CollectSubTree node id = %llu", child->GetId());
+        RS_OPTIONAL_TRACE_FMT("RSOcclusionHandler::CollectSubTree node id = %" PRIu64 "", child->GetId());
         CollectSubTreeInner(*child);
     });
 }
@@ -129,8 +129,8 @@ void RSOcclusionHandler::CollectSubTreeInner(const RSRenderNode& node)
 {
     CollectNodeInner(node);
     auto itNode = occlusionNodes_.find(node.GetId());
-    // If the node is not collected or ignored, return.
-    if (itNode == occlusionNodes_.end() || itNode->second == nullptr || itNode->second->IsSubTreeIgnored()) {
+    // If the node is not collected, return.
+    if (itNode == occlusionNodes_.end() || itNode->second == nullptr) {
         return;
     }
     auto sortChildren = *(node.GetSortedChildren());
@@ -169,7 +169,7 @@ void RSOcclusionHandler::UpdateSkippedSubTreeProp()
 void RSOcclusionHandler::CalculateFrameOcclusion()
 {
     {
-        RS_TRACE_NAME_FMT("CalculateFrameOcclusion Started");
+        RS_OPTIONAL_TRACE_FMT("CalculateFrameOcclusion Started");
         culledNodes_.clear();
         std::unordered_set<NodeId> offTreeNodes_;
         if (rootOcclusionNode_) {
@@ -197,7 +197,9 @@ void RSOcclusionHandler::DumpSubTreeOcclusionInfo(const RSRenderNode& node)
     }
     auto ocNode = it->second;
     bool isNodeCulled = culledNodes_.count(ocNode->GetId()) > 0;
-    RS_TRACE_NAME_FMT("%s isNodeCulled %d", ocNode->GetOcclusionNodeInfoString().c_str(), isNodeCulled);
+    bool isSubtreeCulled = culledEntireSubtree_.count(ocNode->GetId()) > 0;
+    RS_TRACE_NAME_FMT("%s isSubtreeCulled:%d isNodeCulled:%d",
+        ocNode->GetOcclusionNodeInfoString().c_str(), isSubtreeCulled, isNodeCulled);
     for (const auto& child : *sortChildren) {
         DumpSubTreeOcclusionInfo(*child);
     }

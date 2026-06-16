@@ -72,42 +72,62 @@ public:
             case RSNGEffectType::DOUBLE_RIPPLE_MASK: return "DoubleRippleMask";
             case RSNGEffectType::PIXEL_MAP_MASK: return "PixelMapMask";
             case RSNGEffectType::CONTOUR_DIAGONAL_FLOW_LIGHT: return "ContourDiagonalFlowLight";
+            case RSNGEffectType::DOT_MATRIX_SHADER: return "DotMatrixShader";
             case RSNGEffectType::WAVY_RIPPLE_LIGHT: return "WavyRippleLight";
             case RSNGEffectType::AURORA_NOISE: return "AuroraNoise";
             case RSNGEffectType::PARTICLE_CIRCULAR_HALO: return "ParticleCircularHalo";
             case RSNGEffectType::RADIAL_GRADIENT_MASK: return "RadialGradientMask";
             case RSNGEffectType::WAVE_GRADIENT_MASK: return "WaveGradientMask";
+            case RSNGEffectType::WAVE_DISTURBANCE_MASK: return "WaveDisturbanceMask";
             case RSNGEffectType::MASK_TRANSITION: return "MaskTransition";
             case RSNGEffectType::VARIABLE_RADIUS_BLUR: return "VariableRadiusBlur";
             case RSNGEffectType::LIGHT_CAVE: return "LightCave";
             case RSNGEffectType::CONTENT_LIGHT: return "ContentLight";
+            case RSNGEffectType::HEAT_DISTORTION: return "HeatDistortion";
+            case RSNGEffectType::BLUR_BUBBLES_RISE: return "BlurBubblesRise";
             case RSNGEffectType::BORDER_LIGHT: return "BorderLight";
+            case RSNGEffectType::GASIFY_SCALE_TWIST: return "GasifyScaleTwist";
+            case RSNGEffectType::GASIFY_BLUR: return "GasifyBlur";
+            case RSNGEffectType::GASIFY: return "Gasify";
+            case RSNGEffectType::PARTICLE_ABLATION: return "ParticleAblation";
+            case RSNGEffectType::COLOR_GRADIENT_EFFECT: return "ColorGradientEffect";
+            case RSNGEffectType::HARMONIUM_EFFECT: return "HarmoniumEffect";
+            case RSNGEffectType::SDF_UNION_OP_SHAPE: return "SDFUnionOpShape";
+            case RSNGEffectType::SDF_SMOOTH_UNION_OP_SHAPE: return "SDFSmoothUnionOpShape";
+            case RSNGEffectType::SDF_RRECT_SHAPE: return "SDFRRectShape";
+            case RSNGEffectType::SDF_TRIANGLE_SHAPE: return "SDFTriangleShape";
+            case RSNGEffectType::SDF_ELLIPSE_SHAPE: return "SDFEllipseShape";
+            case RSNGEffectType::SDF_PATH_SHAPE: return "SDFPathShape";
+            case RSNGEffectType::SDF_PIXELMAP_SHAPE: return "SDFPixelmapShape";
+            case RSNGEffectType::SDF_TRANSFORM_SHAPE: return "SDFTransformShape";
+            case RSNGEffectType::SDF_EMPTY_SHAPE: return "SDFEmptyShape";
+            case RSNGEffectType::SDF_DISTORT_OP_SHAPE: return "SDFDistortOpShape";
+            case RSNGEffectType::SDF_SUB_OP_SHAPE: return "SDFSubOpShape";
+            case RSNGEffectType::SDF_SMOOTH_SUB_OP_SHAPE: return "SDFSmoothSubOpShape";
+            case RSNGEffectType::IMAGE_MASK: return "ImageMask";
+            case RSNGEffectType::USE_EFFECT_MASK: return "UseEffectMask";
             case RSNGEffectType::AIBAR_GLOW: return "AIBarGlow";
             case RSNGEffectType::AIBAR_RECT_HALO: return "AIBarRectHalo";
             case RSNGEffectType::ROUNDED_RECT_FLOWLIGHT: return "RoundedRectFlowlight";
             case RSNGEffectType::FRAME_GRADIENT_MASK: return "FrameGradientMask";
             case RSNGEffectType::GRADIENT_FLOW_COLORS: return "GradientFlowColors";
-            case RSNGEffectType::COLOR_GRADIENT_EFFECT: return "ColorGradientEffect";
-            case RSNGEffectType::SDF_UNION_OP_SHAPE: return "SDFUnionOpShape";
-            case RSNGEffectType::SDF_SMOOTH_UNION_OP_SHAPE: return "SDFSmoothUnionOpShape";
-            case RSNGEffectType::SDF_RRECT_SHAPE: return "SDFRRectShape";
-            case RSNGEffectType::SDF_TRANSFORM_SHAPE: return "SDFTransformShape";
-            case RSNGEffectType::SDF_PIXELMAP_SHAPE: return "SDFPixelmapShape";
-            case RSNGEffectType::SDF_EMPTY_SHAPE: return "SDFEmptyShape";
-            case RSNGEffectType::HARMONIUM_EFFECT: return "HarmoniumEffect";
-            case RSNGEffectType::GASIFY_SCALE_TWIST: return "GasifyScaleTwist";
-            case RSNGEffectType::GASIFY_BLUR: return "GasifyBlur";
-            case RSNGEffectType::GASIFY: return "Gasify";
-            case RSNGEffectType::IMAGE_MASK: return "ImageMask";
-            case RSNGEffectType::USE_EFFECT_MASK: return "UseEffectMask";
             case RSNGEffectType::FROSTED_GLASS: return "FrostedGlass";
             case RSNGEffectType::CIRCLE_FLOWLIGHT: return "CircleFlowlight";
-            case RSNGEffectType::GRID_WARP: return "GridWarp";
             case RSNGEffectType::FROSTED_GLASS_EFFECT: return "FrostedGlassEffect";
             case RSNGEffectType::FROSTED_GLASS_BLUR: return "FrostedGlassBlur";
+            case RSNGEffectType::GRID_WARP: return "GridWarp";
             case RSNGEffectType::DISTORT_CHROMA : return "DistortChroma";
             case RSNGEffectType::DUPOLI_NOISE_MASK : return "DupoliNoiseMask";
             case RSNGEffectType::NOISY_FRAME_GRADIENT_MASK: return "NoisyFrameGradientMask";
+            case RSNGEffectType::SDF_EDGE_LIGHT: return "SDFEdgeLight";
+            case RSNGEffectType::SDF_EDGE_LIGHT_EFFECT: return "SDFEdgeLightEffect";
+            case RSNGEffectType::MAGNIFIER: return "Magnifier";
+            case RSNGEffectType::DISTORTION_COLLAPSE: return "DistortionCollapse";
+            case RSNGEffectType::BORDER_SDF_SHADER: return "BorderSDFShader";
+            case RSNGEffectType::BORDER_SDF_LG_COLOR: return "BorderSDFLGColor";
+            case RSNGEffectType::SPATIAL_POINT_LIGHT: return "SpatialPointLight";
+            case RSNGEffectType::SPATIAL_GLASS_EFFECT: return "SpatialGlassEffect";
+            case RSNGEffectType::MOTION_BLUR: return "MotionBlur";
             default: return "UNKNOWN";
         }
     }
@@ -117,6 +137,9 @@ public:
         std::shared_ptr<Drawing::GEVisualEffect> geShader);
 
 private:
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, int value);
+
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, float value);
 
@@ -142,10 +165,16 @@ private:
         const std::string& desc, const std::vector<Vector2f>& value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, const std::vector<Vector4f>& value);
+
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, std::shared_ptr<Media::PixelMap> value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, const std::vector<float>& value);
+
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, std::shared_ptr<Drawing::Image> value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
         const std::string& desc, const RRect& value);
@@ -154,7 +183,12 @@ private:
         const std::string& desc, const Matrix3f& value);
 
     static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
-        const std::string& desc, std::shared_ptr<Drawing::Image> value);
+        const std::string& desc, const RSColor& value);
+    
+    static void UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+        const std::string& desc, std::shared_ptr<RSPath> value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, int value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, float value);
 
@@ -172,15 +206,21 @@ private:
 
     static void CalculatePropTagHashImpl(uint32_t& hash, const std::vector<Vector2f>& value);
 
+    static void CalculatePropTagHashImpl(uint32_t& hash, const std::vector<Vector4f>& value);
+
     static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<Media::PixelMap> value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, const std::vector<float>& value);
 
-    static void CalculatePropTagHashImpl(uint32_t& hash, const RRect& value);
-
     static void CalculatePropTagHashImpl(uint32_t& hash, const Matrix3f& value);
 
     static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<Drawing::Image> value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, const RRect& value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, const RSColor& value);
+
+    static void CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<RSPath> value);
 
 #ifdef USE_M133_SKIA
     static constexpr auto hashFunc_ = SkChecksum::Hash32;
@@ -203,6 +243,7 @@ public:
     virtual std::string Dump() const = 0;
     virtual uint32_t CalculateHash() = 0;
     virtual void CalculateHashInner(uint32_t& hash) = 0;
+    virtual bool CanSkipFrame() = 0;
 
     bool ContainsType(RSNGEffectType type)
     {
@@ -218,9 +259,9 @@ public:
 
 protected:
     [[nodiscard]] virtual bool OnUnmarshalling(Parcel& parcel) = 0;
-
     virtual void DumpProperties(std::string& out) const {}
     virtual std::string DumpProperties() const = 0;
+    virtual bool CanCurrentFilterSkipFrame() = 0;
 
     size_t GetEffectCount() const
     {
@@ -238,7 +279,7 @@ protected:
     template <typename U, typename R>
     friend class RSNGEffectBase;
 
-    template <typename U, RSNGEffectType T, typename... Tags>
+    template <typename U, typename RenderEffectTemplate, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 
@@ -285,12 +326,12 @@ public:
     }
 
     template<typename Tag>
-    constexpr void Setter(typename Tag::ValueType value)
+    constexpr void Setter(typename Tag::ValueType value, PropertyUpdateType type = UPDATE_TYPE_OVERWRITE)
     {
         static_assert(is_render_property_tag_v<Tag>, "Tag must be a render property tag");
         static_assert(sizeof...(PropertyTags) > 0, "Cannot call Setter: No properties are defined in this group.");
         static_assert(Contains<Tag>(), "Target property not registered.");
-        return std::get<Tag>(properties_).value_->Set(value);
+        return std::get<Tag>(properties_).value_->Set(value, type);
     }
 
     template<typename Tag>
@@ -303,9 +344,7 @@ public:
             tagName = tagName.substr(pos + 1);
         }
         out += tagName;
-        out += "[";
         Getter<Tag>()->Dump(out);
-        out += "]";
     }
 
     bool Marshalling(Parcel& parcel) const override
@@ -359,9 +398,9 @@ public:
 
     void Dump(std::string& out) const override
     {
-        std::string descStr = ": ";
+        std::string descStr = ":";
         std::string splitStr = "--";
-
+        out += "[";
         out += RSNGRenderEffectHelper::GetEffectTypeString(GetType());
         out += descStr;
         DumpProperties(out);
@@ -369,6 +408,7 @@ public:
             out += splitStr;
             Base::nextEffect_->Dump(out);
         }
+        out += "]";
     }
 
     std::string Dump() const override
@@ -398,7 +438,17 @@ public:
         }
     }
 
+    bool CanSkipFrame() override
+    {
+        bool isSkip = CanCurrentFilterSkipFrame();
+        if (Base::nextEffect_) {
+            isSkip &= Base::nextEffect_->CanSkipFrame();
+        }
+        return isSkip;
+    }
 protected:
+    virtual bool CanCurrentFilterSkipFrame() override { return false; }
+
     [[nodiscard]] bool OnUnmarshalling(Parcel& parcel) override
     {
         // Type has been covered in Unmarshalling
@@ -415,7 +465,7 @@ protected:
     void DumpProperties(std::string& out) const override
     {
         std::string startStr = "[";
-        std::string splitStr = ", ";
+        std::string splitStr = ",";
         std::string endStr = "]";
 
         out += startStr;
@@ -440,7 +490,7 @@ protected:
 
     std::tuple<PropertyTags...> properties_;
 
-    template <typename U, RSNGEffectType T, typename... Tags>
+    template <typename U, typename RenderEffectTemplate, RSNGEffectType T, typename... Tags>
     friend class RSNGEffectTemplate;
 };
 } // namespace Rosen

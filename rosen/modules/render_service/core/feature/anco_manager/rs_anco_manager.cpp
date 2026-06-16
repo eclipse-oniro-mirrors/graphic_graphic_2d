@@ -21,6 +21,12 @@
 #include "platform/common/rs_system_properties.h"
 
 namespace OHOS::Rosen {
+namespace {
+const std::string DIMMER_PREFIX = "ShellAssistantAnco_Dimmer_";
+const std::string SHELL_WINDOW_PREFIX = "shell_assistant";
+const std::string SYS_WINDOW_PREFIX = "shell_sys_win";
+}
+
 RSAncoManager* RSAncoManager::Instance()
 {
     static RSAncoManager instance;
@@ -93,7 +99,7 @@ bool RSAncoManager::AncoOptimizeScreenNode(std::shared_ptr<RSSurfaceHandler>& su
         isHebc = false;
     }
 
-    // process ScreenNode rect
+    // process screenNode rect
     uint32_t minArea = width * height / 2;
     if (minArea == 0) {
         return false;
@@ -136,7 +142,7 @@ void RSAncoManager::UpdateCropRectForAnco(const uint32_t ancoFlags, const Rect& 
     const AncoBufferInfo& ancoInfo, Drawing::Rect& outSrcRect)
 {
     if (IsAncoSfv(ancoFlags)) {
-        Drawing::Rect srcRect{ cropRect.x, cropRect.y, cropRect.x + cropRect.w, cropRect.y + cropRect.h };
+        Drawing::Rect srcRect(cropRect.x, cropRect.y, cropRect.x + cropRect.w, cropRect.y + cropRect.h);
         outSrcRect.Intersect(srcRect);
         ShrinkAmountIfNeed(ancoInfo, outSrcRect);
     }
@@ -169,24 +175,21 @@ bool RSAncoManager::IsAncoSfv(const uint32_t ancoFlags)
 
 bool RSAncoManager::ValidCropRect(const GraphicIRect& cropRect)
 {
-    if (cropRect.w > 0 && cropRect.h > 0 && cropRect.x >= 0 && cropRect.y >= 0) {
-        return true;
-    }
-    return false;
+    return cropRect.w > 0 && cropRect.h > 0 && cropRect.x >= 0 && cropRect.y >= 0;
 }
 
 void RSAncoManager::IntersectCrop(const GraphicIRect& cropRect, GraphicIRect& outSrcRect)
 {
-        int32_t left = std::max(outSrcRect.x, cropRect.x);
-        int32_t top = std::max(outSrcRect.y, cropRect.y);
-        int32_t right = std::min(outSrcRect.x + outSrcRect.w, cropRect.x + cropRect.w);
-        int32_t bottom = std::min(outSrcRect.y + outSrcRect.h, cropRect.y + cropRect.h);
-        int32_t width = right - left;
-        int32_t height = bottom - top;
-        if (width <= 0 || height <= 0) {
-            return;
-        }
-        outSrcRect = { left, top, width, height };
+    int32_t left = std::max(outSrcRect.x, cropRect.x);
+    int32_t top = std::max(outSrcRect.y, cropRect.y);
+    int32_t right = std::min(outSrcRect.x + outSrcRect.w, cropRect.x + cropRect.w);
+    int32_t bottom = std::min(outSrcRect.y + outSrcRect.h, cropRect.y + cropRect.h);
+    int32_t width = right - left;
+    int32_t height = bottom - top;
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+    outSrcRect = { left, top, width, height };
 }
 
 float RSAncoManager::CalculateShrinkAmount(const int32_t format)
@@ -209,17 +212,29 @@ float RSAncoManager::CalculateShrinkAmount(const int32_t format)
 
 void RSAncoManager::ShrinkAmountIfNeed(const AncoBufferInfo& ancoInfo, Drawing::Rect& outSrcRect)
 {
-    constexpr float TWOFOLD = 2.0f;
-    float shrinkAmount = CalculateShrinkAmount(ancoInfo.format_);
-    if (outSrcRect.right_ < static_cast<float>(ancoInfo.width_) &&
-        outSrcRect.GetWidth() > TWOFOLD * shrinkAmount) {
-            outSrcRect.left_ += shrinkAmount;
-            outSrcRect.right_ -= shrinkAmount;
+    constexpr float TWO_TIMES = 2.0f;
+    float shrinkAmount = CalculateShrinkAmount(ancoInfo.format);
+    float cropWidth = outSrcRect.GetWidth();
+    float cropHeight = outSrcRect.GetHeight();
+    if (cropWidth < static_cast<float>(ancoInfo.width) &&
+        cropWidth > TWO_TIMES * shrinkAmount) {
+        outSrcRect.left_ += shrinkAmount;
+        outSrcRect.right_ -= shrinkAmount;
     }
-    if (outSrcRect.bottom_ < static_cast<float>(ancoInfo.height_) &&
-        outSrcRect.GetHeight() > TWOFOLD * shrinkAmount) {
-            outSrcRect.top_ += shrinkAmount;
-            outSrcRect.bottom_ -= shrinkAmount;
+    if (cropHeight < static_cast<float>(ancoInfo.height) &&
+        cropHeight > TWO_TIMES * shrinkAmount) {
+        outSrcRect.top_ += shrinkAmount;
+        outSrcRect.bottom_ -= shrinkAmount;
     }
+}
+
+bool RSAncoManager::IsAncoDimmer(const std::string& name)
+{
+    return name.rfind(DIMMER_PREFIX, 0) == 0;
+}
+
+bool RSAncoManager::IsAncoType(const std::string& name)
+{
+    return (name.rfind(SHELL_WINDOW_PREFIX, 0) == 0) || (name.rfind(SYS_WINDOW_PREFIX, 0) == 0);
 }
 } // namespace OHOS::Rosen

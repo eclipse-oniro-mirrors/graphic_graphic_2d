@@ -38,4 +38,24 @@ void OPIncParam::SetCacheWidthThresholdPercentValue(int cacheWidthThresholdPerce
 {
     cacheWidthThresholdPercentValue_ = cacheWidthThresholdPercentValue;
 }
+
+bool OPIncParam::IsImageAliasEnable()
+{
+    return isImageAliasEnable_;
+}
+
+void OPIncParam::SetImageAliasEnable(bool isEnable)
+{
+    isImageAliasEnable_ = isEnable;
+}
+
+bool OPIncParam::IsLayerPartRenderEnable()
+{
+    return isLayerPartRenderEnable_;
+}
+
+void OPIncParam::SetLayerPartRenderEnable(bool isEnable)
+{
+    isLayerPartRenderEnable_ = isEnable;
+}
 } // namespace OHOS::Rosen

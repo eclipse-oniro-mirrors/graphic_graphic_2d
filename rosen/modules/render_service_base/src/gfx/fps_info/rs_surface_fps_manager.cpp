@@ -17,10 +17,10 @@
 #include <string>
 #include <codecvt>
 #include <locale>
-
+#include "rs_trace.h"
 #include "common/rs_common_def.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
-
+#include "platform/common/rs_log.h"
 namespace OHOS::Rosen {
 RSSurfaceFpsManager& RSSurfaceFpsManager::GetInstance()
 {
@@ -45,13 +45,13 @@ bool ConvertToLongLongUint(const std::string& str, uint64_t& value, int8_t base 
     return true;
 }
 
-bool RSSurfaceFpsManager::RegisterSurfaceFps(NodeId id, const std::string& name)
+bool RSSurfaceFpsManager::RegisterSurfaceFps(NodeId id, const std::string& name, uint64_t uniqueId)
 {
     std::unique_lock<std::shared_mutex> lock(smtx);
     if (surfaceFpsMap_.find(id) != surfaceFpsMap_.end()) {
         return false;
     }
-    surfaceFpsMap_[id] = std::make_shared<RSSurfaceFps>(name);
+    surfaceFpsMap_[id] = std::make_shared<RSSurfaceFps>(name, uniqueId);
     return true;
 }
 
@@ -101,50 +101,51 @@ std::shared_ptr<RSSurfaceFps> RSSurfaceFpsManager::GetSurfaceFpsByPid(pid_t pid)
     return nullptr;
 }
 
-bool RSSurfaceFpsManager::RecordFlushTime(NodeId id, uint64_t vsyncId, uint64_t timestamp)
+void RSSurfaceFpsManager::RecordFlushTime(NodeId id, uint64_t vsyncId, uint64_t timestamp)
 {
     const auto& surfaceFps = GetSurfaceFps(id);
     if (surfaceFps == nullptr) {
-        return false;
+        return;
     }
-    return surfaceFps->RecordFlushTime(vsyncId, timestamp);
+    std::unique_lock<std::shared_mutex> lock(smtx);
+    RS_TRACE_NAME_FMT("RecordFlushTime vsyncId:%llu, flushTimestamp:%llu", vsyncId, timestamp);
+    vsyncIdWithFlushTimeMap_.Put(vsyncId, id);
+    nodeIdWithFlushTimeMap_.insert({vsyncId, std::make_pair(id, timestamp)});
+    return;
 }
-bool RSSurfaceFpsManager::RecordPresentFd(NodeId id, uint64_t vsyncId, int32_t presentFd)
+
+void RSSurfaceFpsManager::RecordPresentFd(uint64_t vsyncId, int32_t presentFd)
 {
-    const auto& surfaceFps = GetSurfaceFps(id);
-    if (surfaceFps == nullptr) {
-        return false;
+    std::unique_lock<std::shared_mutex> lock(smtx);
+    RS_TRACE_NAME_FMT("RecordPresentFd vsyncId:%llu, presentFd:%llu", vsyncId, presentFd);
+    vsyncIdWithPresentFdMap_.Put(presentFd, vsyncId);
+}
+
+void RSSurfaceFpsManager::RecordPresentTime(int32_t presentFd, uint64_t timestamp)
+{
+    std::unique_lock<std::shared_mutex> lock(smtx);
+    uint64_t vsyncId;
+    if (!vsyncIdWithPresentFdMap_.Get(presentFd, vsyncId)) {
+        return;
     }
-    return surfaceFps->RecordPresentFd(vsyncId, presentFd);
-}
-bool RSSurfaceFpsManager::RecordPresentTime(NodeId id, int32_t presentFd, uint64_t timestamp)
-{
-    const auto& surfaceFps = GetSurfaceFps(id);
-    if (surfaceFps == nullptr) {
-        return false;
+    NodeId nodeId;
+    if (!vsyncIdWithFlushTimeMap_.Get(vsyncId, nodeId)) {
+        vsyncIdWithPresentFdMap_.Remove(presentFd);
+        return;
     }
-    return surfaceFps->RecordPresentTime(presentFd, timestamp);
-}
-void RSSurfaceFpsManager::RecordPresentFdForUniRender(uint64_t vsyncId, int32_t presentFd)
-{
-    std::shared_lock<std::shared_mutex> lock(smtx);
-    for (auto [id, surfaceFps] : surfaceFpsMap_) {
-        if (surfaceFps != nullptr) {
-            // some nodes do not record the flush time，continue processing the next node
-            (void)surfaceFps->RecordPresentFd(vsyncId, presentFd);
+    auto range = nodeIdWithFlushTimeMap_.equal_range(vsyncId);
+    for (auto it = range.first; it != range.second; ++it) {
+        auto iter = surfaceFpsMap_.find(it->second.first);
+        if (iter == surfaceFpsMap_.end()) {
+            continue;
         }
+        iter->second->RecordBufferTime(it->second.second, timestamp);
     }
+    nodeIdWithFlushTimeMap_.erase(range.first, range.second);
+    vsyncIdWithFlushTimeMap_.Remove(vsyncId);
+    vsyncIdWithPresentFdMap_.Remove(presentFd);
 }
-void RSSurfaceFpsManager::RecordPresentTimeForUniRender(int32_t presentFd, uint64_t timestamp)
-{
-    std::shared_lock<std::shared_mutex> lock(smtx);
-    for (auto [id, surfaceFps] : surfaceFpsMap_) {
-        if (surfaceFps != nullptr) {
-            // some nodes do not record the flush time, continue processing the next node
-            (void)surfaceFps->RecordPresentTime(presentFd, timestamp);
-        }
-    }
-}
+
 void RSSurfaceFpsManager::Dump(std::string& result, const std::string& name)
 {
     bool isUnique(false);
@@ -191,6 +192,40 @@ void RSSurfaceFpsManager::ClearDump(std::string& result, NodeId id)
     }
     result += " The fps info of surface [" + surfaceFps->GetName() + "] is cleared.\n";
     surfaceFps->ClearDump();
+}
+const std::string RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPid(pid_t nodePid)
+{
+    std::unique_lock<std::shared_mutex> lock(smtx);
+    for (auto [id, surfaceFps] : surfaceFpsMap_) {
+        auto name = surfaceFps->GetName();
+        if (ExtractPid(id) == nodePid && name.find("RosenWeb") == std::string::npos) {
+            return name;
+        }
+    }
+    RS_LOGE("RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPid no self drawing nodes belong to pid %{public}d",
+        static_cast<int32_t>(nodePid));
+    return "";
+}
+
+const std::string RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPidAndUniqueId(pid_t nodePid, uint64_t uniqueId)
+{
+    std::unique_lock<std::shared_mutex> lock(smtx);
+    for (auto [id, surfaceFps] : surfaceFpsMap_) {
+        auto name = surfaceFps->GetName();
+        if (ExtractPid(id) == nodePid && name.find("RosenWeb") == std::string::npos) {
+#ifndef ROSEN_CROSS_PLATFORM
+            if (surfaceFps->GetUniqueId() == uniqueId) {
+                return name;
+            }
+#else
+            return name;
+#endif
+        }
+    }
+    RS_LOGE(
+        "RSSurfaceFpsManager::GetSelfDrawSurfaceNameByPidAndUniqueId no self drawing nodes belong to pid %{public}d",
+        static_cast<int32_t>(nodePid));
+    return "";
 }
 
 void RSSurfaceFpsManager::DumpByPid(std::string& result, pid_t pid)

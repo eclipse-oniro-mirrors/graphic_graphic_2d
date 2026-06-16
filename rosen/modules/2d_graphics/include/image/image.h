@@ -20,7 +20,11 @@
 #include "include/core/SkImage.h"
 #include "utils/drawing_macros.h"
 #ifdef RS_ENABLE_VK
+#ifdef ROSEN_ARKUI_X
+#include "include/third_party/vulkan/vulkan/vulkan_core.h"
+#else
 #include "vulkan/vulkan.h"
+#endif
 #endif
 
 #include "yuv_info.h"
@@ -247,7 +251,7 @@ class DRAWING_API BackendTexture {
 public:
     BackendTexture() noexcept;
     BackendTexture(bool isValid) noexcept;
-    virtual ~BackendTexture() {};
+    virtual ~BackendTexture();
 
     bool IsValid() const;
     void SetTextureInfo(const TextureInfo& textureInfo);
@@ -263,7 +267,7 @@ public:
     Image() noexcept;
     // constructor adopt a raw image ptr, using for ArkUI, should remove after enable multi-media image decode.
     explicit Image(void* rawImg) noexcept;
-    virtual ~Image() {};
+    virtual ~Image();
     bool BuildFromBitmap(const Bitmap& bitmap, bool ignoreAlpha = false);
 
     /**
@@ -289,10 +293,14 @@ public:
 
     /**
      * @brief              Scale Image using the specified options.
-     * @param  srcImage    Source Image.
-     * @param  dstImage    Destination Image.
+     * Use AAE hardware to scale Image
+     * Performance is lower than Nearest and Bilinear. Verify if the scaling performance meets requirements before use.
+     * Supported scaling factor: 0.5 to 2.0.
+     * Maximum image width and height: below 4K.
+     * @param  srcImage    Source Image. Must be DMA buffer-converted.
+     * @param  dstImage    Destination Image. Must be DMA buffer-converted.
      * @param  optionData  Option Data. The top and left in src or dst rect need to be alined to 4
-     * @return             The scaling operation result.
+     * @return             The scaling operation result. Return value should be checked.
      */
     static ScaleImageResult ScaleImage(const std::shared_ptr<Image>& srcImage, const std::shared_ptr<Image>& dstImage,
         const ScalingOption& optionData);
@@ -317,11 +325,9 @@ public:
      * @return            True if Image is created succeeded.
      */
     bool BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap, bool ignoreAlpha = false);
-#endif
 
     bool MakeFromEncoded(const std::shared_ptr<Data>& data);
 
-#ifdef RS_ENABLE_GPU
     /**
      * @brief             Create a GPU-backed Image from compressed data.
      * @param gpuContext  GPU context.

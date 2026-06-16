@@ -15,6 +15,9 @@
 
 #include "gtest/gtest.h"
 #include "include/command/rs_proxy_node_command.h"
+#include "common/rs_common_def.h"
+#include "pipeline/rs_proxy_render_node.h"
+#include "pipeline/rs_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -49,4 +52,5 @@ HWTEST_F(RSProxyNodeCommandTest, TestRSProxyNodeCommand001, TestSize.Level1)
     ProxyNodeCommandHelper::ResetContextVariableCache(context, id);
     EXPECT_TRUE(id != -2);
 }
+
 } // namespace OHOS::Rosen

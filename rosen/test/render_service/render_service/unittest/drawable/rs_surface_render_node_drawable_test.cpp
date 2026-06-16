@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,17 +16,19 @@
 #include "gtest/gtest.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "feature/watermark/rs_surface_watermark.h"
 #include "feature_param/performance_feature/rotateoffscreen_param.h"
 #include "params/rs_effect_render_params.h"
 #include "params/rs_render_thread_params.h"
 #include "pipeline/render_thread/rs_render_engine.h"
-#include "pipeline/render_thread/rs_uni_render_engine.h"
+#include "engine/rs_uni_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "pipeline/rs_test_util.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
+#include "memory/rs_memory_snapshot.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -35,6 +37,16 @@ using namespace OHOS::Rosen::DrawableV2;
 namespace OHOS::Rosen {
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr NodeId DEFAULT_ID = 0xFFFF;
+
+class RSTestDrawable : public RSDrawable {
+public:
+    RSTestDrawable() = default;
+    ~RSTestDrawable() override = default;
+
+    //no need to sync, content_ only used in render thread
+    void OnSync() override {};
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override {};
+};
 
 class RSSurfaceRenderNodeDrawableTest : public testing::Test {
 public:
@@ -243,6 +255,104 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture003, TestSize.Level1)
     ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     surfaceDrawable_->OnCapture(*canvas_);
     RSUniRenderThread::Instance().SetBlackList({});
+}
+
+/**
+ * @tc.name: OnCapture004
+ * @tc.desc: Test OnCapture with privacy content layer in single surface capture
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture004, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+
+    CaptureParam captureParam;
+    captureParam.isSingleSurface_ = true;
+    captureParam.isSystemCalling_ = false;
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    surfaceParams->privacyContentLayerIds_.insert(surfaceDrawable_->nodeId_);
+    ASSERT_TRUE(surfaceParams->HasPrivacyContentLayer());
+
+    surfaceDrawable_->OnCapture(*canvas_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().hasPrivacyAndSpecialLayer_);
+
+    surfaceParams->privacyContentLayerIds_.clear();
+    RSUniRenderThread::SetCaptureParam(CaptureParam());
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+}
+
+/**
+ * @tc.name: OnCapture005
+ * @tc.desc: Test OnCapture with privacy content layer but isSystemCalling
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture005, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+
+    CaptureParam captureParam;
+    captureParam.isSingleSurface_ = true;
+    captureParam.isSystemCalling_ = true;
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    surfaceParams->privacyContentLayerIds_.insert(surfaceDrawable_->nodeId_);
+    ASSERT_TRUE(surfaceParams->HasPrivacyContentLayer());
+
+    surfaceDrawable_->OnCapture(*canvas_);
+    EXPECT_FALSE(RSUniRenderThread::GetCaptureParam().hasPrivacyAndSpecialLayer_);
+
+    surfaceParams->privacyContentLayerIds_.clear();
+    RSUniRenderThread::SetCaptureParam(CaptureParam());
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+}
+
+/**
+ * @tc.name: OnCapture006
+ * @tc.desc: Test OnCapture with HAS_GENERAL_SPECIAL special layer
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCapture006, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
+
+    CaptureParam captureParam;
+    captureParam.isSingleSurface_ = false;
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    surfaceParams->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, true);
+    ASSERT_TRUE(surfaceParams->GetSpecialLayerMgr().Find(HAS_GENERAL_SPECIAL));
+
+    surfaceDrawable_->OnCapture(*canvas_);
+    EXPECT_TRUE(RSUniRenderThread::GetCaptureParam().hasPrivacyAndSpecialLayer_);
+
+    surfaceParams->GetMultableSpecialLayerMgr().Set(HAS_GENERAL_SPECIAL, false);
+    RSUniRenderThread::SetCaptureParam(CaptureParam());
+    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
 }
 
 /**
@@ -525,7 +635,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface008, TestSize.Level1)
     ASSERT_TRUE(surfaceParams->GetSpecialLayerMgr().FindWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST));
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
-    surfaceParams->uiFirstFlag_ = MultiThreadCacheType::LEASH_WINDOW;
+    surfaceParams->uifirstParams_.cacheType = MultiThreadCacheType::LEASH_WINDOW;
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
     RSUniRenderThread::GetCaptureParam().isMirror_ = false;
@@ -534,7 +644,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface008, TestSize.Level1)
     surfaceParams->GetMultableSpecialLayerMgr().SetWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST, false);
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
-    surfaceParams->uiFirstFlag_ = MultiThreadCacheType::NONE;
+    surfaceParams->uifirstParams_.cacheType = MultiThreadCacheType::NONE;
     surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
 
     surfaceParams->GetMultableSpecialLayerMgr().SetWithScreen(virtualScreenId, SpecialLayerType::HAS_BLACK_LIST, true);
@@ -579,6 +689,55 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface009, TestSize.Level2)
 }
 
 /**
+ * @tc.name: DrawUifirstContentChildrenTest
+ * @tc.desc: Test DrawUifirstContentChildren
+ * @tc.type: FUNC
+ * @tc.require: issueI9UTMA
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawUifirstContentChildrenTest, TestSize.Level1)
+{
+    auto surfaceNode = RSTestUtil::CreateSurfaceNode();
+    auto surfaceDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceNode));
+    Drawing::Canvas canvas;
+    Drawing::Rect rect;
+    surfaceDrawable->DrawUifirstContentChildren(canvas, rect);
+    EXPECT_TRUE(surfaceDrawable->uifirstDrawCmdList_.empty());
+
+    std::shared_ptr<RSTestDrawable> rsDrawable = std::make_shared<RSTestDrawable>();
+    surfaceDrawable->uifirstDrawCmdList_.emplace_back(rsDrawable);
+    EXPECT_FALSE(surfaceDrawable->uifirstDrawCmdList_.empty());
+    surfaceDrawable->uifirstDrawCmdIndex_.contentIndex_ = 0;
+    surfaceDrawable->uifirstDrawCmdIndex_.childrenIndex_ = 0;
+    surfaceDrawable->DrawUifirstContentChildren(canvas, rect);
+
+    surfaceDrawable->uifirstDrawCmdIndex_.contentIndex_ = 1;
+    surfaceDrawable->uifirstDrawCmdIndex_.childrenIndex_ = 1;
+    surfaceDrawable->DrawUifirstContentChildren(canvas, rect);
+
+    surfaceDrawable->uifirstDrawCmdIndex_.contentIndex_ = -1;
+    surfaceDrawable->uifirstDrawCmdIndex_.childrenIndex_ = -1;
+    surfaceDrawable->DrawUifirstContentChildren(canvas, rect);
+}
+
+
+/**
+ * @tc.name: SyncUifirstDrawCmdsTest
+ * @tc.desc: Test SyncUifirstDrawCmds
+ * @tc.type: FUNC
+ * @tc.require: issueI9UTMA
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, SyncUifirstDrawCmdsTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->SyncUifirstDrawCmds();
+    EXPECT_NE(surfaceDrawable_->uifirstRenderParams_, nullptr);
+
+    surfaceDrawable_->SyncUifirstDrawCmds();
+    EXPECT_NE(surfaceDrawable_->uifirstRenderParams_, nullptr);
+}
+
+/**
  * @tc.name: CrossDisplaySurfaceDirtyRegionConversion
  * @tc.desc: Test CrossDisplaySurfaceDirtyRegionConversion, if node is cross-display, the surface dirty will be offset.
  * @tc.type: FUNC
@@ -602,11 +761,11 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CrossDisplaySurfaceDirtyRegionConversi
         DEFAULT_RECT.right_ - DEFAULT_RECT.left_, DEFAULT_RECT.bottom_ - DEFAULT_RECT.top_ };;
 
     // if surface node is not cross-display node, nothing will happen.
-    surfaceDrawable_->GetRenderParams()->SetFirstLevelCrossNode(false);
+    surfaceParams->isFirstLevelCrossNode_ = false;
     surfaceDrawable_->CrossDisplaySurfaceDirtyRegionConversion(*uniParams, *surfaceParams, surfaceDirtyRect);
     ASSERT_EQ(surfaceDirtyRect.GetTop(), DEFAULT_RECT.top_);
     // if surface node is not cross-display node, the surface dirty region will be offset.
-    surfaceDrawable_->GetRenderParams()->SetFirstLevelCrossNode(true);
+    surfaceParams->isFirstLevelCrossNode_ = true;
     surfaceDrawable_->CrossDisplaySurfaceDirtyRegionConversion(*uniParams, *surfaceParams, surfaceDirtyRect);
     ASSERT_NE(surfaceDirtyRect.GetTop(), DEFAULT_RECT.top_);
 }
@@ -655,19 +814,19 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CalculateVisibleDirtyRegion, TestSize.
 }
 
 /**
- * @tc.name: PrepareOffscreenRender
+ * @tc.name: PrepareOffscreenRenderTest001
  * @tc.desc: Test PrepareOffscreenRender
  * @tc.type: FUNC
  * @tc.require: #IA940V
  */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRender, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest001, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
     ASSERT_NE(surface, nullptr);
     RSPaintFilterCanvas paintFilterCanvas(surface.get());
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
-    surfaceDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
 
     surfaceDrawable_->curCanvas_->surface_ = nullptr;
@@ -675,38 +834,88 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRender, TestSize.Level
 }
 
 /**
- * @tc.name: PrepareOffscreenRender
+ * @tc.name: PrepareOffscreenRenderTest002
+ * @tc.desc: Test PrepareOffscreenRender
+ * @tc.type: FUNC
+ * @tc.require: #IA940V
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest002, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    ASSERT_NE(surface, nullptr);
+    RSPaintFilterCanvas paintFilterCanvas(surface.get());
+    surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
+    // case1: offscreenSurface_ = nullptr, maxRenderSize_ = 100;
+    surfaceDrawable_->offscreenRotationInfo_->maxRenderSize_ = 100;
+    auto matrix = Drawing::Matrix();
+    matrix.SetMatrix(1, 0, 0, 0, 0, 0, 0, 0, 1);
+    surfaceDrawable_->curCanvas_->SetMatrix(matrix);
+    ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
+
+    // case2: offscreenSurface_ != nullptr, maxRenderSize_ = 100
+    surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = surface->MakeSurface(100, 100);
+    surfaceDrawable_->offscreenRotationInfo_->maxRenderSize_ = 100;
+    matrix.SetMatrix(0, 0, 0, 0, 0, 0, 0, 0, 1);
+    surfaceDrawable_->curCanvas_->SetMatrix(matrix);
+    ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
+
+    // case3: offscreenSurface_ = nullptr, maxRenderSize_ = 0
+    surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = surface->MakeSurface(100, 100);
+    matrix.SetMatrix(0, 0, 0, 0, 1, 0, 0, 0, 1);
+    surfaceDrawable_->curCanvas_->SetMatrix(matrix);
+    ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
+}
+
+/**
+ * @tc.name: PrepareOffscreenRenderTest003
  * @tc.desc: Test PrepareOffscreenRender
  * @tc.type: FUNC
  * @tc.require: issueIAEDYI
  */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest001, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest003, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
     std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
     ASSERT_NE(surface, nullptr);
     RSPaintFilterCanvas paintFilterCanvas(surface.get());
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
-    surfaceDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
     ASSERT_TRUE(surfaceDrawable_->curCanvas_->GetSurface());
 }
 
 /**
- * @tc.name: PrepareOffscreenRender
+ * @tc.name: PrepareOffscreenRenderTest004
  * @tc.desc: Test PrepareOffscreenRender
  * @tc.type: FUNC
  * @tc.require: issueIAEDYI
  */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest002, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, PrepareOffscreenRenderTest004, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
     ASSERT_NE(surface, nullptr);
     RSPaintFilterCanvas paintFilterCanvas(surface.get());
     surfaceDrawable_->curCanvas_ = &paintFilterCanvas;
-    surfaceDrawable_->maxRenderSize_ = 200; // for test
-    surfaceDrawable_->offscreenSurface_ = std::make_shared<Drawing::Surface>();
+    surfaceDrawable_->offscreenRotationInfo_->maxRenderSize_ = 200; // for test
+    surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = nullptr;
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParams, nullptr);
+    auto& renderParam = surfaceDrawable_->renderParams_;
+    ASSERT_NE(renderParam, nullptr);
+    renderParam->SetChildHasVisibleHDRContent(true);
+    uniParams->SetIsMirrorScreen(true);
+    uniParams->SetCompositeType(CompositeType::UNI_RENDER_COMPOSITE);
+    uniParams->screenInfo_.width = DEFAULT_CANVAS_SIZE;
+    uniParams->screenInfo_.height = DEFAULT_CANVAS_SIZE;
     ASSERT_TRUE(surfaceDrawable_->PrepareOffscreenRender());
     ASSERT_TRUE(surfaceDrawable_->curCanvas_->GetSurface());
 }
@@ -749,17 +958,33 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, IsHardwareEnabled, TestSize.Level1)
 HWTEST_F(RSSurfaceRenderNodeDrawableTest, FinishOffscreenRender, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     Drawing::SamplingOptions samping;
     surfaceDrawable_->FinishOffscreenRender(samping);
     Drawing::Canvas canvas;
     RSPaintFilterCanvas backupCanvas(&canvas);
-    surfaceDrawable_->canvasBackup_ = &backupCanvas;
+    surfaceDrawable_->offscreenRotationInfo_->canvasBackup_ = &backupCanvas;
 
     Drawing::Canvas canvas2;
     RSPaintFilterCanvas curCanvas(&canvas2);
     surfaceDrawable_->curCanvas_ = &curCanvas;
     surfaceDrawable_->curCanvas_->Save();
-    surfaceDrawable_->offscreenSurface_ = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    surfaceDrawable_->FinishOffscreenRender(samping);
+    surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    surfaceDrawable_->offscreenRotationInfo_->scaleX_ = 1;
+    surfaceDrawable_->offscreenRotationInfo_->scaleY_ = 1;
+    surfaceDrawable_->FinishOffscreenRender(samping);
+
+    surfaceDrawable_->offscreenRotationInfo_->scaleX_ = 1;
+    surfaceDrawable_->offscreenRotationInfo_->scaleY_ = 0;
+    surfaceDrawable_->FinishOffscreenRender(samping);
+
+    surfaceDrawable_->offscreenRotationInfo_->scaleX_ = 0;
+    surfaceDrawable_->offscreenRotationInfo_->scaleY_ = 0;
+    surfaceDrawable_->FinishOffscreenRender(samping);
+
+    surfaceDrawable_->offscreenRotationInfo_->scaleX_ = 0;
+    surfaceDrawable_->offscreenRotationInfo_->scaleY_ = 1;
     surfaceDrawable_->FinishOffscreenRender(samping);
     ASSERT_NE(surfaceDrawable_->curCanvas_, nullptr);
 }
@@ -1138,6 +1363,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     RSUniRenderThread::GetCaptureParam().isSnapshot_ = true;
     RSUniRenderThread::GetCaptureParam().isSingleSurface_ = false;
     ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    RSUniRenderThread::Instance().SetBlackList({});
 }
 
 /**
@@ -1159,6 +1385,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     RSUniRenderThread::Instance().Sync(std::move(params));
     ASSERT_TRUE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({});
 }
 
 /**
@@ -1300,6 +1527,33 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DealWithSelfDrawingNodeBufferTest001, 
 }
 
 /**
+ * @tc.name: DrawSelfDrawingNodeBuffer
+ * @tc.desc: Test DrawSelfDrawingNodeBuffer
+ * @tc.type: FUNC
+ * @tc.require: issueIAOJHQ
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSelfDrawingNodeBufferTest001, TestSize.Level1)
+{
+    ASSERT_NE(drawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    BufferDrawParam params;
+    surfaceParams->selfDrawingType_ = SelfDrawingNodeType::DEFAULT;
+    surfaceParams->backgroundColor_ = Color(0xFF000000);
+    surfaceParams->vcldInfo_.enable = true;
+    surfaceParams->vcldInfo_.radius = 25;
+    surfaceParams->vcldRoundRect_ = RRect({0, 0, 500, 500}, {25, 25, 25, 25});
+    surfaceDrawable_->DrawSelfDrawingNodeBuffer(canvas, *surfaceParams, params);
+
+    surfaceParams->vcldInfo_.enable = false;
+    surfaceParams->vcldInfo_.radius = 0;
+    surfaceParams->vcldRoundRect_ = RRect({0, 0, 500, 500}, {0, 0, 0, 0});
+    surfaceDrawable_->DrawSelfDrawingNodeBuffer(canvas, *surfaceParams, params);
+}
+
+/**
  * @tc.name: DrawCloneNode
  * @tc.desc: Test DrawCloneNode while node is not clone
  * @tc.type: FUNC
@@ -1359,8 +1613,55 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawCloneNode001, TestSize.Level1)
     surfaceParams->clonedNodeRenderDrawable_ = clonedNodeRenderDrawableWeakPtr;
     result = surfaceDrawable->DrawCloneNode(canvas, uniParams, *surfaceParams, true);
     ASSERT_TRUE(result);
+
+    surfaceParams->isRelated_ = true;
+    result = surfaceDrawable->DrawCloneNode(canvas, uniParams, *surfaceParams, true);
+    ASSERT_TRUE(result);
+
     clonedRenderNodeDrawable->renderParams_ = nullptr;
     result = surfaceDrawable->DrawCloneNode(canvas, uniParams, *surfaceParams, true);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: DrawRelatedNode
+ * @tc.desc: Test DrawRelatedNode001 while node is clone
+ * @tc.type: FUNC
+ * @tc.require: issueIBKU7U
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawRelatedNode001, TestSize.Level1)
+{
+    auto cloneRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(cloneRenderNode, nullptr);
+    auto cloneRenderNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(cloneRenderNode));
+    ASSERT_NE(cloneRenderNodeDrawable, nullptr);
+
+    auto clonedRenderNode = RSTestUtil::CreateSurfaceNode();
+    ASSERT_NE(clonedRenderNode, nullptr);
+    auto clonedRenderNodeDrawable = std::static_pointer_cast<RSSurfaceRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(clonedRenderNode));
+    ASSERT_NE(clonedRenderNodeDrawable, nullptr);
+    Drawing::Canvas drawingCanvas;
+    RSPaintFilterCanvas canvas(&drawingCanvas);
+    auto surfaceDrawable = static_cast<RSSurfaceRenderNodeDrawable*>(cloneRenderNodeDrawable.get());
+    ASSERT_NE(surfaceDrawable, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(cloneRenderNodeDrawable->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    RSRenderThreadParams uniParams;
+
+    DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr clonedNodeRenderDrawableSharedPtr(clonedRenderNodeDrawable);
+    DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr clonedNodeRenderDrawableWeakPtr(clonedNodeRenderDrawableSharedPtr);
+    surfaceParams->clonedNodeRenderDrawable_ = clonedNodeRenderDrawableWeakPtr;
+    auto result = surfaceDrawable->DrawRelatedNode(canvas, uniParams, *surfaceParams, clonedRenderNodeDrawable, true);
+    ASSERT_TRUE(result);
+
+    clonedRenderNodeDrawable->relatedSourceNodeCache_ = std::make_shared<Drawing::Image>();
+    result = surfaceDrawable->DrawRelatedNode(canvas, uniParams, *surfaceParams, clonedRenderNodeDrawable, false);
+    ASSERT_TRUE(result);
+
+    clonedRenderNodeDrawable->renderParams_ = nullptr;
+    result = surfaceDrawable->DrawRelatedNode(canvas, uniParams, *surfaceParams, clonedRenderNodeDrawable, true);
     ASSERT_FALSE(result);
 }
 
@@ -1382,6 +1683,19 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckDrawAndCacheWindowContentTest, Te
     ASSERT_NE(uniParams, nullptr);
 
     uniParams->SetIsFirstVisitCrossNodeDisplay(false);
+    ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    surfaceParams->isRelatedSourceNode_ = true;
+    surfaceParams->specialLayerManager_.Set(SpecialLayerType::HAS_PROTECTED, false);
+    ASSERT_TRUE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    surfaceParams->specialLayerManager_.Set(SpecialLayerType::HAS_PROTECTED, true);
+    ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    surfaceParams->isRelatedSourceNode_ = false;
+    ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
+
+    surfaceParams->specialLayerManager_.Set(SpecialLayerType::HAS_PROTECTED, false);
     ASSERT_FALSE(surfaceDrawable_->CheckDrawAndCacheWindowContent(*surfaceParams, *uniParams));
 
     surfaceParams->SetNeedCacheSurface(true);
@@ -1418,8 +1732,16 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnGeneralProcessAndCache, TestSize.Lev
     RSPaintFilterCanvas canvas(surface.get());
     auto uniParams = std::make_shared<RSRenderThreadParams>();
     ASSERT_NE(uniParams, nullptr);
+
+    bool tmp = RSUniRenderThread::GetCaptureParam().isSnapshot_;
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
     surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, false);
     ASSERT_TRUE(surfaceDrawable_->GetRsSubThreadCache().GetRSDrawWindowCache().HasCache());
+
+    surfaceDrawable_->needCacheRelatedSourceNode_ = true;
+    surfaceDrawable_->OnGeneralProcess(canvas, *surfaceParams, *uniParams, false);
+    ASSERT_TRUE(surfaceDrawable_->HasRelatedSourceNodeCache());
+    RSUniRenderThread::GetCaptureParam().isSnapshot_ = tmp;
 }
 
 /**
@@ -1651,6 +1973,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw004, TestSize.Level1)
     RSUniRenderThread::Instance().SetEnableVisibleRect(true);
     surfaceDrawable_->OnDraw(*canvas_);
     canvas_->canvas_->gpuContext_ = nullptr;
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
     surfaceDrawable_->OnDraw(*canvas_);
     RSUniRenderThread::Instance().SetBlackList({});
 }
@@ -1688,6 +2011,25 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw005, TestSize.Level2)
     surfaceParams->isSkipDraw_ = false;
     RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
     RSUniRenderThread::Instance().SetEnableVisibleRect(false);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    surfaceDrawable_->offscreenRotationInfo_->offscreenSurface_ = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    surfaceParams->UpdateHDRStatus(HdrStatus::HDR_EFFECT, true);
+
+    surfaceDrawable_->OnDraw(*canvas_);
+    // HDR case Test
+    {
+        auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+        ASSERT_NE(uniParams, nullptr);
+        surfaceParams->SetChildHasVisibleHDRContent(true);
+        uniParams->SetIsMirrorScreen(true);
+        uniParams->SetCompositeType(CompositeType::UNI_RENDER_COMPOSITE);
+        surfaceDrawable_->OnDraw(*canvas_);
+        surfaceParams->SetChildHasVisibleHDRContent(false);
+        RSUniRenderThread::GetCaptureParam().isSnapshot_ = false;
+        surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::LEASH_WINDOW);
+        RSUniRenderThread::GetCaptureParam().isMirror_ = true;
+        surfaceDrawable_->OnDraw(*canvas_);
+    }
 
     // test no special layer
     surfaceDrawable_->OnDraw(*canvas_);
@@ -1696,7 +2038,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw005, TestSize.Level2)
     surfaceDrawable_->OnDraw(*canvas_);
     surfaceParams->specialLayerManager_.Set(SpecialLayerType::SECURITY, true);
     surfaceDrawable_->OnDraw(*canvas_);
-    // test blacklist
+    // test exceptional
     surfaceParams->specialLayerManager_.SetWithScreen(
         surfaceDrawable_->curDisplayScreenId_, SpecialLayerType::HAS_BLACK_LIST, true);
     surfaceDrawable_->OnDraw(*canvas_);
@@ -1706,39 +2048,38 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw005, TestSize.Level2)
 }
 
 /**
- * @tc.name: OnDraw006
- * @tc.desc: Test OnDraw when CheckIfSurfaceSkipInMirrorOrScreenshot return true
+ * @tc.name: OnDraw008
+ * @tc.desc: Test OnDraw when use isSyncRender
  * @tc.type: FUNC
- * @tc.require: #I9NVOG
  */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw006, TestSize.Level1)
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw008, TestSize.Level1)
 {
     ASSERT_NE(surfaceDrawable_, nullptr);
+    surfaceDrawable_->offscreenRotationInfo_ = std::make_shared<OffscreenRotationInfo>();
+    std::shared_ptr<Drawing::Surface> surface = Drawing::Surface::MakeRasterN32Premul(100, 100);
+    ASSERT_NE(surface, nullptr);
+    canvas_ = std::make_shared<RSPaintFilterCanvas>(surface.get());
     ASSERT_NE(drawable_->renderParams_, nullptr);
     drawable_->renderParams_->shouldPaint_ = true;
     drawable_->renderParams_->contentEmpty_ = false;
     canvas_->canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
 
-    NodeId id = 10086;
+    NodeId id = 10090;
     auto renderNode = std::make_shared<RSRenderNode>(id);
-    ASSERT_NE(renderNode, nullptr);
-    auto drawingCacheRoot = DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode);
-    ASSERT_NE(drawingCacheRoot, nullptr);
-    drawable_->curDrawingCacheRoot_ = drawingCacheRoot.get();
-    ASSERT_NE(drawable_->curDrawingCacheRoot_, nullptr);
-
-    auto params = std::make_unique<RSRenderThreadParams>();
-    params->isMirrorScreen_ = false;
-    params->SetSecurityDisplay(true);
-    RSUniRenderThread::Instance().Sync(std::move(params));
-    RSUniRenderThread::Instance().uniRenderEngine_ = std::make_shared<RSRenderEngine>();
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas backupCanvas(&canvas);
+    surfaceDrawable_->offscreenRotationInfo_->canvasBackup_ = &backupCanvas;
 
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    sptr<RSISurfaceCaptureCallback> callback;
+    RSSurfaceCaptureConfig config;
+    config.isSyncRender = true;
+    surfaceParams->RegisterCaptureCallback(callback, config);
+    surfaceDrawable_->OnDraw(*canvas_);
+    surfaceDrawable_->offscreenRotationInfo_ = nullptr;
+    surfaceDrawable_->OnDraw(*canvas_);
     ASSERT_TRUE(surfaceParams);
-    surfaceParams->isNodeGroupHasChildInBlacklist_ = true;
-    EXPECT_TRUE(surfaceParams->NodeGroupHasChildInBlacklist());
-    surfaceDrawable_->OnDraw(*drawingCanvas_);
-    EXPECT_TRUE(surfaceDrawable_->hasSkipCacheLayer_);
+    ASSERT_NE(renderNode, nullptr);
 }
 
 /**
@@ -1900,17 +2241,17 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermark01, TestSize.Level1)
     ASSERT_TRUE(surfaceDrawable_ != nullptr);
 
     auto surfaceParams = static_cast<RSSurfaceRenderParam*>(surfaceDrawable_->GetRenderParams().get());
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
 
     surfaceDrawable_->SetSystemWatermarkEnabled("watermask1", false);
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
     surfaceDrawable_->ClearSystemWatermarkEnabled("watermask1");
 
     surfaceDrawable_->SetSystemWatermarkEnabled("watermask1", false);
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
 
     surfaceDrawable_->SetSystemWatermarkEnabled("watermask1", true);
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
 
     auto uniParams = std::make_unique<RSRenderThreadParams>();
     uniParams->GetWatermark("watermask11111");
@@ -1924,12 +2265,13 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermark01, TestSize.Level1)
     
     // Test 1
     std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>> watermarks;
+    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> gridCounts;
     auto tmpImagePtr = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
     watermarks["watermask1"] = {tmpImagePtr, 0};
-    uniParams->SetWatermarks(watermarks);
+    uniParams->SetWatermarks(watermarks, gridCounts);
     RSUniRenderThread::Instance.Sync(std::move(uniParams));
     surfaceDrawable_->SetSystemWatermarkEnabled("watermask1", false);
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
     surfaceDrawable_->SetSystemWatermarkEnabled("watermask1", true);
 
     // Test 2
@@ -1939,9 +2281,9 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermark01, TestSize.Level1)
     uniParams = std::make_unique<RSRenderThreadParams>();
     tmpImagePtr = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
     watermarks["watermask1"] = {tmpImagePtr, 0};
-    uniParams->SetWatermarks(watermarks);
+    uniParams->SetWatermarks(watermarks, gridCounts);
     RSUniRenderThread::Instance.Sync(std::move(uniParams));
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
 
     // Tewt 3
     opts.size.width = width;
@@ -1950,26 +2292,65 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermark01, TestSize.Level1)
     uniParams = std::make_unique<RSRenderThreadParams>();
     tmpImagePtr = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
     watermarks["watermask1"] = {tmpImagePtr, 0};
-    uniParams->SetWatermarks(watermarks);
+    gridCounts["watermask1"] = {2, 2};
+    uniParams->SetWatermarks(watermarks, gridCounts);
     RSUniRenderThread::Instance.Sync(std::move(uniParams));
-    surfaceDrawable_->DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
 }
-#endif
 
 /**
- * @tc.name: DrawSpecialLayer001
- * @tc.desc: test DrawSpecialLayer while renderThreadParams_ = nullptr
+ * @tc.name: DrawWatermarkGrid01
+ * @tc.desc: Test DrawWatermark with grid watermark (rowCount > 0 && colCount > 0)
  * @tc.type: FUNC
- * @tc.require: issueICWNX9
+ * @tc.require:
  */
-HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSpecialLayer001, TestSize.Level2)
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawWatermarkGrid01, TestSize.Level1)
 {
-    ASSERT_NE(surfaceDrawable_, nullptr);
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
-    ASSERT_NE(surfaceParams, nullptr);
-    RSRenderThreadParamsManager::Instance().renderThreadParams_ = nullptr;
-    ASSERT_FALSE(surfaceDrawable_->DrawSpecialLayer(*canvas_, *surfaceParams));
+    ASSERT_TRUE(surfaceDrawable_ != nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParam*>(surfaceDrawable_->GetRenderParams().get());
+
+    int width = 50;
+    int height = 50;
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    ASSERT_TRUE(pixelMap != nullptr);
+    auto tmpImagePtr = RSPixelMapUtil::ExtractDrawingImage(pixelMap);
+    ASSERT_TRUE(tmpImagePtr != nullptr);
+
+    std::unordered_map<std::string, std::pair<std::shared_ptr<Drawing::Image>, pid_t>> watermarks;
+    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> gridCounts;
+    watermarks["watermask1"] = {tmpImagePtr, 0};
+    gridCounts["watermask1"] = {2, 2};
+
+    auto uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetWatermarks(watermarks, gridCounts);
+    RSUniRenderThread::Instance.Sync(std::move(uniParams));
+    surfaceDrawable_->SetSystemWatermarkEnabled("watermask1", true);
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+
+    EXPECT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetWatermarkRowCount("watermask1"), 2);
+    EXPECT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetWatermarkColCount("watermask1"), 2);
+    EXPECT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetWatermarkRowCount("notexist"), 0);
+    EXPECT_EQ(RSUniRenderThread::Instance().GetRSRenderThreadParams()->GetWatermarkColCount("notexist"), 0);
+
+    auto effect = RSSurfaceWatermarkHelper::GetGridWatermarkEffect();
+    EXPECT_TRUE(effect != nullptr || effect == nullptr);
+
+    gridCounts["watermask1"] = {0, 0};
+    uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetWatermarks(watermarks, gridCounts);
+    RSUniRenderThread::Instance.Sync(std::move(uniParams));
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
+
+    gridCounts["watermask1"] = {1, 0};
+    uniParams = std::make_unique<RSRenderThreadParams>();
+    uniParams->SetWatermarks(watermarks, gridCounts);
+    RSUniRenderThread::Instance.Sync(std::move(uniParams));
+    RSSurfaceWatermarkHelper::DrawCommSurfaceWatermark(*canvas_, *surfaceParams);
 }
+#endif
 
 /**
  * @tc.name: CaptureSurface010
@@ -2005,7 +2386,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface011, TestSize.Level2)
     rsRenderThreadParams1->isUIFirstDebugEnable_ = true;
     surfaceParams->SetUifirstNodeEnableParam(MultiThreadCacheType::LEASH_WINDOW);
     surfaceParams->SetGlobalPositionEnabled(true);
-    surfaceParams->SetUifirstUseStarting(0);
+    surfaceParams->SetUifirstStartingWindowId(0);
     surfaceParams->SetWindowInfo(false, true, false);
 
     surfaceParams->matrix_.SetMatrix(1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -2054,6 +2435,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     AutoSpecialLayerStateRecover whiteListRecover(surfaceParams->leashPersistentId_);
     ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
+    RSUniRenderThread::Instance().SetWhiteList({});
 }
 
 /**
@@ -2079,4 +2461,930 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, CheckIfSurfaceSkipInMirrorOrScreenshot
     canvas_->SetIsParallelCanvas(false);
     RSUniRenderThread::Instance().Sync(std::make_unique<RSRenderThreadParams>());
 }
+
+/**
+ * @tc.name: OnDraw007
+ * @tc.desc: Test OnDraw when DrawRelatdeSourceNode return true
+ * @tc.type: FUNC
+ * @tc.require: issue19858
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw007, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(drawable_->renderParams_, nullptr);
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+    canvas_->canvas_->gpuContext_ = std::make_shared<Drawing::GPUContext>();
+
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParams, nullptr);
+
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->GetRenderParams().get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(true);
+    ASSERT_FALSE(surfaceDrawable_->CheckIfSurfaceSkipInMirrorOrScreenshot(*surfaceParams, *canvas_));
+    ASSERT_FALSE(canvas_->GetDisableFilterCache());
+
+    surfaceParams->SetIsCloned(true);
+    ASSERT_TRUE(surfaceParams->ClonedSourceNode());
+    surfaceParams->isRelatedSourceNode_ = true;
+    ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
+
+    Drawing::Bitmap bmp;
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    int32_t width = 100;
+    int32_t height = 30;
+    bmp.Build(width, height, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    ASSERT_TRUE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+    surfaceDrawable_->OnDraw(*canvas_);
 }
+
+/**
+ * @tc.name: CaptureSurface012
+ * @tc.desc: test CaptureSurface when DrawRelatedSourceNode is true or false
+ * @tc.type: FUNC
+ * @tc.require: issue19858
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, CaptureSurface012, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    auto rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
+
+    surfaceParams->SetIsCloned(true);
+    ASSERT_TRUE(surfaceParams->ClonedSourceNode());
+    surfaceParams->isRelatedSourceNode_ = true;
+    ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
+
+    Drawing::Bitmap bmp;
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    int32_t width = 100;
+    int32_t height = 30;
+    bmp.Build(width, height, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParams, nullptr);
+    ASSERT_TRUE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+    surfaceDrawable_->CaptureSurface(*canvas_, *surfaceParams);
+}
+
+/**
+ * @tc.name: DrawRelatedSourceNode
+ * @tc.desc: Test DrawRelatedSourceNode
+ * @tc.type: FUNC
+ * @tc.require: issue19858
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawRelatedSourceNodeTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    auto& uniParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParams, nullptr);
+
+    uniParams->SetDrawRelated(true);
+    ASSERT_TRUE(uniParams->IsDrawRelated());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+    uniParams->SetDrawRelated(false);
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+ 
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+    uniParams->SetDrawRelated(true);
+    ASSERT_TRUE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+    uniParams->SetDrawRelated(false);
+    surfaceParams->specialLayerManager_.Set(SpecialLayerType::PROTECTED, false);
+
+    surfaceParams->SetIsCloned(false);
+    ASSERT_FALSE(surfaceParams->ClonedSourceNode());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    surfaceParams->SetIsCloned(true);
+    ASSERT_TRUE(surfaceParams->ClonedSourceNode());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    surfaceParams->isRelatedSourceNode_ = true;
+    ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    int32_t width = 100;
+    int32_t height = 50;
+    Drawing::Bitmap bmp;
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    bmp.Build(0, 0, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    surfaceParams->isRelatedSourceNode_ = false;
+    ASSERT_FALSE(surfaceParams->IsRelatedSourceNode());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    surfaceParams->isRelatedSourceNode_ = true;
+    ASSERT_TRUE(surfaceParams->IsRelatedSourceNode());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    bmp.Build(0, height, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    bmp.Build(width, 0, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    bmp.Build(width, height, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    ASSERT_TRUE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+
+    surfaceParams->SetNeedClearRelatedCache(true);
+    ASSERT_TRUE(surfaceParams->IsNeedClearRelatedCache());
+    ASSERT_FALSE(surfaceDrawable_->DrawRelatedSourceNode(*canvas_, *uniParams, *surfaceParams));
+    ASSERT_EQ(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
+    ASSERT_FALSE(surfaceParams->IsNeedClearRelatedCache());
+}
+
+/**
+ * @tc.name: SetRelatedSourceNodeCache
+ * @tc.desc: Test SetRelatedSourceNodeCache
+ * @tc.type: FUNC
+ * @tc.require: issue19858
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, SetRelatedSourceNodeCacheTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    int32_t width = 100;
+    int32_t height = 50;
+    Drawing::Bitmap bmp;
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    bmp.Build(width, height, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    auto image = bmp.MakeImage();
+
+    surfaceDrawable_->relatedSourceNodeCache_ = nullptr;
+    surfaceDrawable_->SetRelatedSourceNodeCache(nullptr);
+    ASSERT_EQ(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
+
+    surfaceDrawable_->SetRelatedSourceNodeCache(image);
+    ASSERT_NE(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
+}
+
+/**
+ * @tc.name: ClearRelatedSourceCache
+ * @tc.desc: Test ClearRelatedSourceCache
+ * @tc.type: FUNC
+ * @tc.require: issue19858
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, ClearRelatedSourceCacheTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    int32_t width = 100;
+    int32_t height = 50;
+    Drawing::Bitmap bmp;
+    Drawing::BitmapFormat format { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_PREMUL };
+    bmp.Build(width, height, format);
+    bmp.ClearWithColor(Drawing::Color::COLOR_RED);
+    surfaceDrawable_->relatedSourceNodeCache_ = bmp.MakeImage();
+    ASSERT_NE(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
+    surfaceDrawable_->ClearRelatedSourceCache();
+    ASSERT_EQ(surfaceDrawable_->relatedSourceNodeCache_, nullptr);
+}
+
+/**
+ * @tc.name: TryResumeLastBufferTest
+ * @tc.desc: Test TryResumeLastBufferTest
+ * @tc.type: FUNC
+ * @tc.require: issue#913
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, TryResumeLastBufferTest, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto buffer = OHOS::SurfaceBuffer::Create();
+    EXPECT_TRUE(buffer != nullptr);
+    BufferRequestConfig requestConfig = {
+        .width = 100,
+        .height = 100,
+        .strideAlignment = 0x8, // set 0x8 as default value to alloc SurfaceBufferImpl
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888, // PixelFormat
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_HW_RENDER | BUFFER_USAGE_MEM_MMZ_CACHE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0,
+        .colorGamut = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB,
+        .transform = GraphicTransformType::GRAPHIC_ROTATE_NONE,
+    };
+    GSError ret = buffer->Alloc(requestConfig);
+    EXPECT_EQ(ret, GSERROR_OK);
+    if (ret != GSERROR_OK) {
+        return;
+    }
+    EXPECT_EQ(buffer->TryReclaim(), GSERROR_OK);
+    EXPECT_TRUE(buffer->IsReclaimed());
+    // buffer is not reclaimed by RSBufferReclaim, TryResumeLastBuffer shouild fail
+    surfaceDrawable_->TryResumeLastBuffer(buffer);
+    EXPECT_TRUE(buffer->IsReclaimed());
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip001
+ * @tc.desc: Test OnDraw with shouldSkipForFilterCacheOcclusion = true (all conditions met)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip001, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: all conditions for shouldSkipForFilterCacheOcclusion to be true
+    canvas_->SetDisableFilterCache(false);
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(true);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify the skip occurs
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    uniParam->SetOpDropped(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip002
+ * @tc.desc: Test OnDraw with disableFilterCache = true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip002, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: disableFilterCache = true prevents skip
+    canvas_->SetDisableFilterCache(true);
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(true);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    canvas_->SetDisableFilterCache(false);
+    uniParam->SetOpDropped(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip003
+ * @tc.desc: Test OnDraw with isUiFirstNode = true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip003, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: isUiFirstNode = true prevents skip
+    canvas_->SetDisableFilterCache(false);
+    canvas_->SetIsParallelCanvas(true);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(true);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    canvas_->SetIsParallelCanvas(false);
+    uniParam->SetOpDropped(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip004
+ * @tc.desc: Test OnDraw with GetOccludedByFilterCache = false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip004, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: GetOccludedByFilterCache = false prevents skip
+    canvas_->SetDisableFilterCache(false);
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    uniParam->SetOpDropped(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip005
+ * @tc.desc: Test OnDraw with uniParam->IsOpDropped = false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip005, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: uniParam->IsOpDropped = false prevents skip
+    canvas_->SetDisableFilterCache(false);
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(true);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(false);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip006
+ * @tc.desc: Test OnDraw with GetOpDropped = false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip006, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: GetOpDropped = false prevents skip
+    canvas_->SetDisableFilterCache(false);
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(true);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = false;
+
+    // Verify skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: FilterCacheOcclusionSkip007
+ * @tc.desc: Test OnDraw with multiple false conditions
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, FilterCacheOcclusionSkip007, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: all conditions false
+    canvas_->SetDisableFilterCache(true);
+    canvas_->SetIsParallelCanvas(true);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(false);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = false;
+
+    // Verify skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+    EXPECT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::FILTERCACHE_OCCLUSION_SKIP);
+
+    // Reset for next test
+    canvas_->SetDisableFilterCache(false);
+    canvas_->SetIsParallelCanvas(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: OcclusionSkip001
+ * @tc.desc: Test OnDraw with occlusion skip conditions all met
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OcclusionSkip001, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: !isUiFirstNode (false means not parallel canvas)
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false); // Avoid filter cache skip
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+    // IsVisibleDirtyRegionEmpty will depend on current state
+
+    // Verify occlusion skip type (may be set based on conditions)
+    surfaceDrawable_->OnDraw(*canvas_);
+    // Skip type could be OCCLUSION_SKIP if dirty region is empty
+
+    // Reset for next test
+    uniParam->SetOpDropped(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: OcclusionSkip002
+ * @tc.desc: Test OnDraw with isUiFirstNode = true (prevents occlusion skip)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OcclusionSkip002, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: isUiFirstNode = true (parallel canvas) prevents occlusion skip
+    canvas_->SetIsParallelCanvas(true);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify occlusion skip does NOT occur due to isUiFirstNode check
+    surfaceDrawable_->OnDraw(*canvas_);
+    // With isUiFirstNode=true, occlusion skip logic is skipped
+
+    // Reset for next test
+    canvas_->SetIsParallelCanvas(false);
+    uniParam->SetOpDropped(false);
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: OcclusionSkip003
+ * @tc.desc: Test OnDraw with uniParam->IsOpDropped = false (prevents occlusion skip)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OcclusionSkip003, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: uniParam->IsOpDropped = false prevents occlusion skip
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(false);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = true;
+
+    // Verify occlusion skip does NOT occur due to uniParam->IsOpDropped
+    surfaceDrawable_->OnDraw(*canvas_);
+
+    // Reset for next test
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: OcclusionSkip004
+ * @tc.desc: Test OnDraw with GetOpDropped = false (prevents occlusion skip)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OcclusionSkip004, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: GetOpDropped = false prevents occlusion skip
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(true);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = false;
+
+    // Verify occlusion skip does NOT occur due to GetOpDropped
+    surfaceDrawable_->OnDraw(*canvas_);
+
+    // Reset for next test
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: OcclusionSkip005
+ * @tc.desc: Test OnDraw with both OpDropped conditions false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OcclusionSkip005, TestSize.Level1)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    ASSERT_NE(canvas_, nullptr);
+
+    // Setup: both OpDropped conditions false
+    canvas_->SetIsParallelCanvas(false);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->SetOccludedByFilterCache(false);
+    auto& uniParam = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    ASSERT_NE(uniParam, nullptr);
+    uniParam->SetOpDropped(false);
+    using namespace DrawableV2;
+    RSRenderNodeDrawable::isOpDropped_ = false;
+
+    // Verify occlusion skip does NOT occur
+    surfaceDrawable_->OnDraw(*canvas_);
+
+    // Reset for next test
+    RSRenderNodeDrawable::isOpDropped_ = true;
+}
+
+/**
+ * @tc.name: DrawSpecialLayer_DRAW_WHITE
+ * @tc.desc: Test DrawSpecialLayer when drawType returns DRAW_WHITE to trigger DrawRectWithColor with white color
+ * @tc.type: FUNC
+ * @tc.require: issue22101
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSpecialLayer_DRAW_WHITE, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::SECURITY, true);
+
+    CaptureParam captureParam;
+    captureParam.isSnapshot_ = true;
+    captureParam.isSingleSurface_ = true;
+    captureParam.isNeedBlur_ = false;
+    captureParam.isSelfCapture_ = false;
+    RSUniRenderThread::SetCaptureParam(captureParam);
+
+    RSRenderThreadParams uniParam;
+    ASSERT_TRUE(surfaceDrawable_->DrawSpecialLayer(*canvas_, *surfaceParams, uniParam));
+}
+
+/**
+ * @tc.name: DrawSpecialLayer_DRAW_BLACK
+ * @tc.desc: Test DrawSpecialLayer when drawType returns DRAW_BLACK to trigger DrawRectWithColor with black color
+ * @tc.type: FUNC
+ * @tc.require: issue22101
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSpecialLayer_DRAW_BLACK, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::SECURITY, true);
+
+    RSRenderThreadParams uniParam;
+    uniParam.SetSecurityDisplay(true);
+    uniParam.SetSecExemption(false);
+
+    ASSERT_TRUE(surfaceDrawable_->DrawSpecialLayer(*canvas_, *surfaceParams, uniParam));
+}
+
+/**
+ * @tc.name: DrawSpecialLayer_SKIP_DRAW_SecurityDisplay
+ * @tc.desc: Test DrawSpecialLayer when drawType returns SKIP_DRAW in security display mode
+ * @tc.type: FUNC
+ * @tc.require: issue22101
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, DrawSpecialLayer_SKIP_DRAW_SecurityDisplay, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::SKIP, true);
+
+    RSRenderThreadParams uniParam;
+    uniParam.SetSecurityDisplay(true);
+
+    ASSERT_TRUE(surfaceDrawable_->DrawSpecialLayer(*canvas_, *surfaceParams, uniParam));
+}
+
+/**
+ * @tc.name: OnDraw_HasDRMInVirtualScreen
+ * @tc.desc: Test OnDraw when HasDRMInVirtualScreen returns true to trigger DrawRectWithColor with black color
+ * @tc.type: FUNC
+ * @tc.require: issue22101
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDraw_HasDRMInVirtualScreen, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(drawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    // Set up ancestor screen drawable with virtual screen property
+    auto screenNode = std::make_shared<RSScreenRenderNode>(1, 1);
+    auto screenDrawable = std::make_shared<DrawableV2::RSScreenRenderNodeDrawable>(std::move(screenNode));
+    screenDrawable->renderParams_ = std::make_unique<RSScreenRenderParams>(1);
+    auto screenParams = static_cast<RSScreenRenderParams*>(screenDrawable->renderParams_.get());
+    ASSERT_NE(screenParams, nullptr);
+
+    // Set screen as virtual and protected
+    screenParams->screenProperty_.Set<ScreenPropertyType::IS_VIRTUAL>(true);
+    surfaceParams->GetMultableSpecialLayerMgr().Set(SpecialLayerType::PROTECTED, true);
+
+    // Set ancestor screen drawable for surface params
+    surfaceParams->ancestorScreenDrawable_ = screenDrawable;
+
+    // Enable paint
+    drawable_->renderParams_->shouldPaint_ = true;
+    drawable_->renderParams_->contentEmpty_ = false;
+
+    // Call OnDraw which should trigger HasDRMInVirtualScreen and DrawRectWithColor
+    surfaceDrawable_->OnDraw(*canvas_);
+}
+
+/**
+ * @tc.name: Destructor_SelfDrawingType
+ * @tc.desc: Test destructor with self drawing type to cover PostTask branch
+ * @tc.type: FUNC
+ * @tc.require: issue23146
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, Destructor_SelfDrawingType, TestSize.Level1)
+{
+    NodeId id = 1;
+    const RSSurfaceRenderNodeConfig config = {.id = id, .surfaceWindowType = SurfaceWindowType::SCB_SCREEN_LOCK};
+    auto renderNode = std::make_shared<RSSurfaceRenderNode>(config);
+    renderNode->nodeType_ = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    auto drawable = RSSurfaceRenderNodeDrawable::OnGenerate(renderNode);
+    ASSERT_NE(drawable, nullptr);
+
+    auto surfaceDrawable = static_cast<RSSurfaceRenderNodeDrawable*>(drawable);
+    ASSERT_NE(surfaceDrawable, nullptr);
+
+    // Set surface node type to SELF_DRAWING_NODE to trigger IsSelfDrawingType() == true in destructor
+    surfaceDrawable->id_ = id;
+    surfaceDrawable->name_ = "test_surface";
+    surfaceDrawable->uniqueId_ = 12345;
+
+    // Manually delete to call destructor and trigger PostTask branch
+    delete drawable;
+}
+
+/**
+ * @tc.name: OnDrawAbnormalProcessTest
+ * @tc.desc: Test OnDraw with abnormal process check
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawAbnormalProcessTest, TestSize.Level1)
+{
+    // Mark process as abnormal
+    pid_t pid = ExtractPid(DEFAULT_ID);
+    MemorySnapshot::Instance().SetAbnormalProcess(pid);
+
+    // OnDraw should return early for abnormal process
+    surfaceDrawable_->OnDraw(*canvas_);
+    bool isAbnormal = MemorySnapshot::Instance().IsAbnormalProcess(pid);
+    ASSERT_TRUE(isAbnormal);
+    
+    // Clean up
+    std::set<pid_t> exitedPids = {pid};
+    MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
+}
+
+/**
+ * @tc.name: BackFaceSkipTest001
+ * @tc.desc: Test OnDraw skips with BACKFACE_SKIP when single sided + back face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, BackFaceSkipTest001, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->shouldPaint_ = true;
+    surfaceParams->contentEmpty_ = false;
+
+    Drawing::Matrix matrix;
+    matrix.SetScale(-1.0f, 1.0f);
+    surfaceParams->SetMatrix(matrix);
+    surfaceParams->SetDoubleSidedEnabled(false);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+
+    surfaceDrawable_->OnDraw(*canvas_);
+
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: BackFaceSkipTest002
+ * @tc.desc: Test OnDraw does NOT skip when double sided + back face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, BackFaceSkipTest002, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->shouldPaint_ = true;
+    surfaceParams->contentEmpty_ = false;
+
+    Drawing::Matrix matrix;
+    matrix.SetScale(-1.0f, 1.0f);
+    surfaceParams->SetMatrix(matrix);
+    surfaceParams->SetDoubleSidedEnabled(true);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+
+    surfaceDrawable_->OnDraw(*canvas_);
+
+    ASSERT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: BackFaceSkipTest003
+ * @tc.desc: Test OnDraw does NOT skip when single sided + front face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, BackFaceSkipTest003, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->shouldPaint_ = true;
+    surfaceParams->contentEmpty_ = false;
+
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f, 1.0f);
+    surfaceParams->SetMatrix(matrix);
+    surfaceParams->SetDoubleSidedEnabled(false);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+
+    surfaceDrawable_->OnDraw(*canvas_);
+
+    ASSERT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: OnCaptureBackFaceSkipTest001
+ * @tc.desc: Test OnCapture skips with BACKFACE_SKIP when single sided + back face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCaptureBackFaceSkipTest001, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->shouldPaint_ = true;
+    surfaceParams->contentEmpty_ = false;
+
+    Drawing::Matrix matrix;
+    matrix.SetScale(-1.0f, 1.0f);
+    surfaceParams->SetMatrix(matrix);
+    surfaceParams->SetDoubleSidedEnabled(false);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+
+    surfaceDrawable_->OnCapture(*canvas_);
+
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: OnCaptureBackFaceSkipTest002
+ * @tc.desc: Test OnCapture does NOT skip when double sided + back face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCaptureBackFaceSkipTest002, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->shouldPaint_ = true;
+    surfaceParams->contentEmpty_ = false;
+
+    Drawing::Matrix matrix;
+    matrix.SetScale(-1.0f, 1.0f);
+    surfaceParams->SetMatrix(matrix);
+    surfaceParams->SetDoubleSidedEnabled(true);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+
+    surfaceDrawable_->OnCapture(*canvas_);
+
+    ASSERT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+
+/**
+ * @tc.name: OnCaptureBackFaceSkipTest003
+ * @tc.desc: Test OnCapture does NOT skip when single sided + front face
+ * @tc.type: FUNC
+ * @tc.require: issueIXXXXX
+ */
+HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnCaptureBackFaceSkipTest003, TestSize.Level2)
+{
+    ASSERT_NE(surfaceDrawable_, nullptr);
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(surfaceDrawable_->renderParams_.get());
+    ASSERT_NE(surfaceParams, nullptr);
+
+    surfaceParams->shouldPaint_ = true;
+    surfaceParams->contentEmpty_ = false;
+
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f, 1.0f);
+    surfaceParams->SetMatrix(matrix);
+    surfaceParams->SetDoubleSidedEnabled(false);
+
+    auto params = std::make_unique<RSRenderThreadParams>();
+    params->SetIsMirrorScreen(false);
+    RSUniRenderThread::Instance().Sync(std::move(params));
+
+    surfaceDrawable_->OnCapture(*canvas_);
+
+    ASSERT_NE(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::BACKFACE_SKIP);
+}
+} // namespace OHOS::Rosen

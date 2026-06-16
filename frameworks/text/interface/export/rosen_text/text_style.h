@@ -30,7 +30,9 @@
 
 #include "common/rs_macros.h"
 #include "typography_types.h"
+#include "text/font_types.h"
 #include "hm_symbol_txt.h"
+#include "text/typeface.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -63,6 +65,7 @@ enum class RelayoutTextStyleAttribute {
     SHADOWS = 19,
     HALF_LEADING = 20,
     FOREGROUND_BRUSH = 21,
+    FONT_EDGING = 22,
 
     TEXT_STYLE_ATTRIBUTE_BUTT,
 };
@@ -84,15 +87,15 @@ private:
 
 class RS_EXPORT FontVariations {
 public:
-    void SetAxisValue(const std::string& tag, float value);
-    const std::map<std::string, float>& GetAxisValues() const;
+    void SetAxisValue(const std::string& tag, float value, bool isNormalization = false);
+    const std::map<std::string, std::pair<float, bool>>& GetAxisValues() const;
     FontVariations() = default;
     FontVariations(const FontVariations& other) = default;
     FontVariations& operator=(const FontVariations& other) = default;
     bool operator ==(const FontVariations& rhs) const;
     void Clear();
 private:
-    std::map<std::string, float> axis_;
+    std::map<std::string, std::pair<float, bool>> axis_;
 };
 
 struct RS_EXPORT TextShadow {
@@ -150,12 +153,16 @@ struct RS_EXPORT TextStyle {
     RectStyle backgroundRect{0, 0.0, 0.0, 0.0, 0.0};
     int styleId{0};
     size_t textStyleUid{0};
+    // Priority font objects array for text shaping
+    std::vector<std::shared_ptr<Drawing::Typeface>> fontTypefaces;
     TextStyle() = default;
     TextStyle(const TextStyle& other) = default;
     TextStyle& operator=(const TextStyle& other) = default;
     bool operator ==(const TextStyle &rhs) const;
     bool EqualByFonts(const TextStyle &rhs) const;
     bool MatchOneAttribute(StyleType styleType, const TextStyle &rhs) const;
+    void SetFontTypefaces(const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces);
+    const std::vector<std::shared_ptr<Drawing::Typeface>>& GetFontTypefaces() const;
     // symbol glyph
     bool isSymbolGlyph{false};
     HMSymbolTxt symbol;
@@ -166,6 +173,7 @@ struct RS_EXPORT TextStyle {
     double maxLineHeight{std::numeric_limits<float>::max()};
     double minLineHeight{0.0f};
     LineHeightStyle lineHeightStyle{LineHeightStyle::kFontSize};
+    Drawing::FontEdging fontEdging{Drawing::FontEdging::ANTI_ALIAS};
 };
 } // namespace Rosen
 } // namespace OHOS

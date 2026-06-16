@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -93,6 +93,11 @@ pid_t Utils::GetPid()
 {
     return _getpid();
 }
+
+std::string Utils::GetProcessName(pid_t pid)
+{
+    return "";
+}
 #else
 // Cpu routines
 int32_t Utils::GetCpuId()
@@ -119,7 +124,19 @@ pid_t Utils::GetPid()
 {
     return getpid();
 }
+
+std::string Utils::GetProcessName(pid_t pid)
+{
+    std::string name;
+    LoadContent("/proc/" + std::to_string(pid) + "/cmdline", name);
+    return name;
+}
 #endif
+
+std::string Utils::GetCurrentProcessName()
+{
+    return GetProcessName(GetPid());
+}
 
 // String routines
 std::string Utils::Format(const char* format, va_list args)
@@ -322,12 +339,11 @@ std::string Utils::GetFileName(const std::string& path)
 #ifdef RENDER_PROFILER_APPLICATION
     return std::filesystem::path(path).filename().string();
 #else
-    std::string filename;
     const size_t lastSlashIdx = path.rfind('/');
     if (std::string::npos != lastSlashIdx) {
-        filename = path.substr(lastSlashIdx + 1);
+        return path.substr(lastSlashIdx + 1);
     }
-    return filename;
+    return path;
 #endif
 }
 
@@ -439,6 +455,7 @@ void Utils::LoadContent(const std::string& path, std::string& content)
         copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), std::back_inserter(content));
         Replace("\r", content);
         Replace("\n", content);
+        content = std::string(content.data(), std::strlen(content.data()));
     }
 }
 
@@ -603,23 +620,25 @@ void Utils::FileSeek(FILE* file, int64_t offset, int origin)
     }
 }
 
-void Utils::FileRead(FILE* file, void* data, size_t size)
+bool Utils::FileRead(FILE* file, void* data, size_t size)
 {
     if (size == 0) { // Avoid the frequent logging when size is zero
-        return;
+        return true;
     }
     if (!data) {
         HRPE("FileRead: Data is null"); // NOLINT
-        return;
+        return false;
     }
     if (file == g_recordInMemoryFile) {
         g_recordInMemory.read(reinterpret_cast<char*>(data), size);
         g_recordInMemory.seekp(g_recordInMemory.tellg());
-        return;
+        return true;
     }
     if (fread(data, size, 1, file) < 1) {
         HRPE("FileRead: Error while reading from file"); // NOLINT
+        return false;
     }
+    return true;
 }
 
 void Utils::FileWrite(FILE* file, const void* data, size_t size)
@@ -641,9 +660,9 @@ void Utils::FileWrite(FILE* file, const void* data, size_t size)
 }
 
 // deprecated
-void Utils::FileRead(void* data, size_t size, size_t count, FILE* file)
+bool Utils::FileRead(void* data, size_t size, size_t count, FILE* file)
 {
-    FileRead(file, data, size * count);
+    return FileRead(file, data, size * count);
 }
 
 // deprecated

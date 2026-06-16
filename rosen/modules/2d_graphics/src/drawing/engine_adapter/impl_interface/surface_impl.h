@@ -29,8 +29,13 @@
 #endif
 #endif
 #ifdef RS_ENABLE_VK
+#ifdef ROSEN_ARKUI_X
+#include "include/third_party/vulkan/vulkan/vulkan_core.h"
+#else
 #include "vulkan/vulkan.h"
 #endif
+#endif
+#include "include/core/SkSurface.h"
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
@@ -40,6 +45,7 @@ class Canvas;
 class Image;
 class Surface;
 struct FlushInfo;
+struct TileGranularity;
 #ifdef RS_ENABLE_GPU
 struct FrameBuffer;
 #endif
@@ -76,6 +82,8 @@ public:
     virtual float GetHeadroom() const = 0;
     virtual int Width() const = 0;
     virtual int Height() const = 0;
+    virtual TileGranularity GetRenderAreaGranularity() = 0;
+    virtual sk_sp<SkSurface> GetSkSurface() const = 0;
 };
 } // namespace Drawing
 } // namespace Rosen

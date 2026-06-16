@@ -76,6 +76,11 @@ struct RSSurfaceNodeConfig {
     bool isSkipCheckInMultiInstance = true;
 };
 
+enum class ShadowPropertyType : uint8_t {
+    BOUNDS = 0,
+    FRAME
+};
+
 /**
  * @class RSSurfaceNode
  *
@@ -103,6 +108,18 @@ public:
      */
     ~RSSurfaceNode() override;
 
+    /**
+     * @brief Creates a new instance of RSSurfaceNode with the specified configuration.
+     *
+     * @param surfaceNodeConfig The configuration settings for the surface node.
+     * @param isWindow Indicates whether the surface node is a window. Defaults to true.
+     * @return SharedPtr A shared pointer to the newly created RSSurfaceNode instance.
+     */
+    static SharedPtr CreateSurfaceNode(const RSSurfaceNodeConfig& surfaceNodeConfig, bool isWindow = true);
+
+    bool SendDataToRender(const RSSurfaceNodeConfig& surfaceNodeConfig,
+        RSSurfaceNodeType type, bool isWindow, bool unobscured);
+ 
     /**
      * @brief Creates a new instance of RSSurfaceNode with the specified configuration.
      *
@@ -178,7 +195,7 @@ public:
     bool SetBufferAvailableCallback(BufferAvailableCallback callback);
     bool IsBufferAvailable() const;
     void SetBoundsChangedCallback(BoundsChangedCallback callback) override;
-    void SetAnimationFinished();
+    void SetAlphaChangedCallback(AlphaChangedCallback&& callback) override;
 
     /**
      * @brief Serializes the RSSurfaceNode into a parcel.
@@ -245,7 +262,7 @@ public:
      */
     void SetSurfaceBufferOpaque(bool isOpaque);
 
-    SharedPtr CreateShadowSurfaceNode();
+    SharedPtr CreateShadowSurfaceNode(const std::set<ShadowPropertyType>& shadowPropertyTypes = {});
 
 #ifndef ROSEN_CROSS_PLATFORM
     sptr<OHOS::Surface> GetSurface() const;
@@ -258,7 +275,7 @@ public:
 
     /**
      * @brief Get the name of the node.
-     * 
+     *
      * @return A string representing the name of the node.
      */
     inline std::string GetName() const
@@ -285,7 +302,7 @@ public:
      *                - true: Freeze current frame into static texture
      *                - false: Resume normal buffer updates
      */
-    void SetFreeze(bool isFreeze) override;
+    void SetFreeze(bool isFreeze, bool isMarkedByUI = false) override;
     
     // codes for arkui-x
 #ifdef USE_SURFACE_TEXTURE
@@ -294,16 +311,30 @@ public:
     void SetSurfaceTextureAttachCallBack(const RSSurfaceTextureAttachCallBack& attachCallback);
     void SetSurfaceTextureUpdateCallBack(const RSSurfaceTextureUpdateCallBack& updateCallback);
     void SetSurfaceTextureInitTypeCallBack(const RSSurfaceTextureInitTypeCallBack& initTypeCallback);
+    void SetSurfaceCaptureCallback(std::function<std::shared_ptr<Media::PixelMap>()> callback);
 #endif
     void SetForeground(bool isForeground);
-    // [Attention] The function only used for unlocking screen for PC currently
-    void SetClonedNodeInfo(NodeId nodeId, bool needOffscreen = true);
+    // [Attention] The function now used for unlocking screen and other scenes for PC currrently,
+    /**
+     * @brief set the surface to be a cloneNode
+     *
+     * @param nodeId the sourcenode id
+     * @param needoffScrren enable cloneNode draw offscreen
+     * @param isReltaed if is related，is related needoffScrren force be true
+     * @note
+     *      - single clone node can only be related with one target node, subsequent cloned will overwrite
+     *      - clone cycles are prohibited
+     *      - Only supports cloned LeashWindow (when isRelated is true) and main window types
+     * @return return void
+     */
+    void SetClonedNodeInfo(NodeId nodeId, bool needOffscreen = true, bool isRelated = false);
     // Force enable UIFirst when set TRUE
     void SetForceUIFirst(bool forceUIFirst);
     void SetAncoFlags(uint32_t flags);
-    void SetHDRPresent(bool hdrPresent, NodeId id);
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
+    void SetDarkColorMode(bool isDark);
+    bool GetDarkColorMode() const;
     void SetWatermarkEnabled(const std::string& name, bool isEnabled);
     void SetAbilityState(RSSurfaceNodeAbilityState abilityState);
     RSSurfaceNodeAbilityState GetAbilityState() const;
@@ -341,6 +372,13 @@ public:
     void DetachFromWindowContainer(ScreenId screenId);
     void SetRegionToBeMagnified(const Vector4<int>& regionToBeMagnified);
     void SetContainerWindowTransparent(bool isContainerWindowTransparent);
+    void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
+    void SetHDRBrightnessWithType(const float& hdrBrightness, uint32_t hdrType);
+    void SetIsDepthResource(bool isDepthResource);
+
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer) override;
+    bool IsNodeSingleFrameComposer() const override { return isNodeSingleFrameComposer_; }
+
 protected:
     bool NeedForcedSendToRemote() const override;
     RSSurfaceNode(const RSSurfaceNodeConfig& config, bool isRenderServiceNode,
@@ -352,6 +390,8 @@ protected:
     RSSurfaceNode& operator=(const RSSurfaceNode&) = delete;
     RSSurfaceNode& operator=(const RSSurfaceNode&&) = delete;
 
+    // For RegisterBufferAvailableListener
+    BufferAvailableCallback BufferAvailableCallbackFunc();
 private:
 #ifdef USE_SURFACE_TEXTURE
     void CreateSurfaceExt(const RSSurfaceExtConfig& config);
@@ -362,12 +402,24 @@ private:
     /**
      * @brief Called when the bounds size of the surface node changes.
      */
-    void OnBoundsSizeChanged() const override;
+    void OnBoundsSizeChanged() override;
     // this function is only used in texture export
     void SetSurfaceIdToRenderNode();
     void CreateRenderNodeForTextureExportSwitch() override;
     void SetIsTextureExportNode(bool isTextureExportNode);
     void RegisterNodeMap() override;
+
+    void OnAlphaValueChanged() const override;
+
+    bool InitShadowModifiers(SharedPtr shadowNode, const std::set<ShadowPropertyType>& shadowPropertyTypes = {});
+
+    template<typename Modifier, typename ValueType>
+    std::shared_ptr<ModifierNG::RSModifier> CreateShadowModifierAndProperty(
+        SharedPtr shadowNode, ModifierNG::RSPropertyType propertyType);
+
+    void DumpSubClass(std::string& out) const override;
+    void SetHDRType(uint32_t hdrType);
+
     std::shared_ptr<RSSurface> surface_;
     std::string name_;
     std::string bundleName_;
@@ -375,7 +427,9 @@ private:
     BufferAvailableCallback callback_;
     bool bufferAvailable_ = false;
     BoundsChangedCallback boundsChangedCallback_;
-    bool isShadowNode_ = false;
+    AlphaChangedCallback alphaChangedCallback_;
+    // If has shadow node or itself is a shadow node, existsDuplicateModifier_ may be true.
+    bool existsDuplicateModifier_ = false;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
     bool isSecurityLayer_ = false;
     bool isSkipLayer_ = false;
@@ -388,8 +442,10 @@ private:
     RSSurfaceNodeAbilityState abilityState_ = RSSurfaceNodeAbilityState::FOREGROUND;
     bool isFrameGravityNewVersionEnabled_ = false;
     bool isSurfaceBufferOpaque_ = false;
+    bool isDarkColorMode_ = false;
     LeashPersistentId leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     RSSurfaceNodeType surfaceNodeType_ = RSSurfaceNodeType::DEFAULT;
+    bool isNodeSingleFrameComposer_ = false;
     std::shared_ptr<RSCompositeLayerUtils> compositeLayerUtils_;
 
     uint32_t windowId_ = 0;

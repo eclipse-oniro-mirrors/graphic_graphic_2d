@@ -14,23 +14,24 @@
  */
 
 #include "gtest/gtest.h"
+#include <parameters.h>
+#include <thread>
 
-#include "graphic_feature_param_manager.h"
-#include "params/rs_surface_render_params.h"
-#include "pipeline/render_thread/rs_base_render_engine.h"
-#include "pipeline/render_thread/rs_render_engine.h"
-#include "pipeline/render_thread/rs_uni_render_thread.h"
-#include "pipeline/main_thread/rs_main_thread.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
 #include "drawable/rs_render_node_drawable.h"
-#include <parameters.h>
-#include <thread>
 #include "feature/uifirst/rs_sub_thread.h"
-#include "ipc_callbacks/rs_surface_buffer_callback.h"
-#include "pipeline/rs_surface_buffer_callback_manager.h"
-#include "pipeline/rs_draw_cmd.h"
+#include "graphic_feature_param_manager.h"
 #include "memory/rs_memory_manager.h"
+#include "params/rs_surface_render_params.h"
+#include "pipeline/main_thread/rs_main_thread.h"
+#include "engine/rs_base_render_engine.h"
+#include "pipeline/render_thread/rs_render_engine.h"
+#include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "pipeline/rs_draw_cmd.h"
+#include "pipeline/rs_surface_buffer_callback_manager.h"
+#include "pipeline/rs_test_util.h"
+
 using namespace testing;
 using namespace testing::ext;
 using namespace OHOS::Rosen::DrawableV2;
@@ -364,7 +365,7 @@ HWTEST_F(RSUniRenderThreadTest, ResetClearMemoryTask001, TestSize.Level1)
 /**
  * @tc.name: ResetClearMemoryTask002
  * @tc.desc: Test ResetClearMemoryTask check new branch added by IfStatusBarDirtyOnly:
- *           isTimeToReclaimm and ifStatusBarDirtyOnly
+ *           isTimeToReclaim and ifStatusBarDirtyOnly
  * @tc.type: FUNC
  * @tc.require: issueICUBUG
  */
@@ -490,7 +491,7 @@ HWTEST_F(RSUniRenderThreadTest, UpdateScreenNodeScreenId001, TestSize.Level1)
     RSMainThread::Instance()->context_->globalRootRenderNode_->children_.clear();
     auto rsContext = std::make_shared<RSContext>();
     std::shared_ptr<RSScreenRenderNode> renderNode =
-            std::make_shared<RSScreenRenderNode>(0, 0, rsContext->weak_from_this());
+        std::make_shared<RSScreenRenderNode>(0, 0, rsContext->weak_from_this());
     RSMainThread::Instance()->context_->globalRootRenderNode_->children_.push_back(
         std::weak_ptr<RSScreenRenderNode>(renderNode));
     instance.UpdateScreenNodeScreenId();
@@ -562,7 +563,7 @@ HWTEST_F(RSUniRenderThreadTest, GetRefreshRate001, TestSize.Level1)
 {
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
     uint32_t res = instance.GetRefreshRate();
-    EXPECT_TRUE(res == 0);
+    EXPECT_TRUE(res == 60);
 }
 
 /**
@@ -579,47 +580,51 @@ HWTEST_F(RSUniRenderThreadTest, GetWatermarkImg, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReleaseSelfDrawingNodeBuffer001
- * @tc.desc: Test ReleaseSelfDrawingNodeBuffer
+ * @tc.name: GetWatermarkRowCount
+ * @tc.desc: Test GetWatermarkRowCount
  * @tc.type: FUNC
- * @tc.require: issueIB2I9E
+ * @tc.require:
  */
-HWTEST_F(RSUniRenderThreadTest, ReleaseSelfDrawingNodeBuffer001, TestSize.Level1)
+HWTEST_F(RSUniRenderThreadTest, GetWatermarkRowCount, TestSize.Level1)
 {
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
-    auto surfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(1);
-    auto adapter = std::static_pointer_cast<DrawableV2::RSSurfaceRenderNodeDrawable>(
-        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(surfaceRenderNode));
+    auto& renderThreadParams = instance.GetRSRenderThreadParams();
+    auto rowCount = renderThreadParams->GetWatermarkRowCount();
+    ASSERT_EQ(rowCount, 0);
 
-    adapter->consumerOnDraw_ = IConsumerSurface::Create();
-    RSRenderThreadParamsManager::Instance().renderThreadParams_ = std::make_unique<RSRenderThreadParams>();
-    auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
-    renderThreadParams->selfDrawables_.push_back(surfaceRenderNode->renderDrawable_);
-    instance.Sync(move(renderThreadParams));
-    auto params = static_cast<RSSurfaceRenderParams*>(surfaceRenderNode->GetRenderParams().get());
-    instance.ReleaseSelfDrawingNodeBuffer();
-    ASSERT_EQ(params->GetPreBuffer(), nullptr);
+    auto rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(true, nullptr, 2, 3);
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
+    rowCount = renderThreadParams->GetWatermarkRowCount();
+    ASSERT_EQ(rowCount, 2);
 
-    params->isOnTheTree_ = true;
-    params->isHardwareEnabled_ = false;
-    params->isLastFrameHardwareEnabled_ = true;
-    params->preBuffer_ = SurfaceBuffer::Create();
-    instance.ReleaseSelfDrawingNodeBuffer();
-    ASSERT_EQ(params->GetPreBuffer(), nullptr);
+    rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(false, nullptr, 0, 0);
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
+}
 
-    params->isOnTheTree_ = false;
-    params->isHardwareEnabled_ = true;
-    params->isLastFrameHardwareEnabled_ = true;
-    params->preBuffer_ = SurfaceBuffer::Create();
-    instance.ReleaseSelfDrawingNodeBuffer();
-    ASSERT_EQ(params->GetPreBuffer(), nullptr);
+/**
+ * @tc.name: GetWatermarkColCount
+ * @tc.desc: Test GetWatermarkColCount
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSUniRenderThreadTest, GetWatermarkColCount, TestSize.Level1)
+{
+    RSUniRenderThread& instance = RSUniRenderThread::Instance();
+    auto& renderThreadParams = instance.GetRSRenderThreadParams();
+    auto colCount = renderThreadParams->GetWatermarkColCount();
+    ASSERT_EQ(colCount, 0);
 
-    // RSHardwareThread::Instance().delayTime_ = 1;
-    instance.ReleaseSelfDrawingNodeBuffer();
-    params->isHardwareEnabled_ = true;
-    params->layerCreated_ = true;
-    instance.ReleaseSelfDrawingNodeBuffer();
-    EXPECT_TRUE(params->isHardwareEnabled_);
+    auto rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(true, nullptr, 2, 3);
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
+    colCount = renderThreadParams->GetWatermarkColCount();
+    ASSERT_EQ(colCount, 3);
+
+    rsRenderThreadParams = std::make_unique<RSRenderThreadParams>();
+    rsRenderThreadParams->SetWatermark(false, nullptr, 0, 0);
+    RSUniRenderThread::Instance().Sync(std::move(rsRenderThreadParams));
 }
 
 /**
@@ -730,19 +735,19 @@ HWTEST_F(RSUniRenderThreadTest, PostReclaimMemoryTaskTest001, TestSize.Level1)
     RSUniRenderThread& instance = RSUniRenderThread::Instance();
     ClearMemoryMoment moment = ClearMemoryMoment::RECLAIM_CLEAN;
     bool isReclaim = true;
-    system::SetParameter("persist.ace.testmode.enable", "0");
+    system::SetParameter("persist.ace.testmode.enabled", "0");
     instance.PostReclaimMemoryTask(moment, isReclaim);
 
     isReclaim = true;
-    system::SetParameter("persist.ace.testmode.enable", "1");
+    system::SetParameter("persist.ace.testmode.enabled", "1");
     instance.PostReclaimMemoryTask(moment, isReclaim);
 
     isReclaim = false;
-    system::SetParameter("persist.ace.testmode.enable", "0");
+    system::SetParameter("persist.ace.testmode.enabled", "0");
     instance.PostReclaimMemoryTask(moment, isReclaim);
 
     isReclaim = false;
-    system::SetParameter("persist.ace.testmode.enable", "1");
+    system::SetParameter("persist.ace.testmode.enabled", "1");
     instance.PostReclaimMemoryTask(moment, isReclaim);
     EXPECT_FALSE(instance.isTimeToReclaim_);
 }
@@ -890,7 +895,7 @@ HWTEST_F(RSUniRenderThreadTest, GetFastComposeTimeStampDiff, TestSize.Level1)
 HWTEST_F(RSUniRenderThreadTest, IsTaskQueueEmpty, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
-    auto atleastOneTimeQueueEmpty = false;
+    bool atleastOneTimeQueueEmpty = false;
     constexpr size_t loops = 1'000;
     for (size_t i = 0; i < loops; ++i) {
         std::this_thread::yield();
@@ -899,27 +904,30 @@ HWTEST_F(RSUniRenderThreadTest, IsTaskQueueEmpty, TestSize.Level1)
     EXPECT_TRUE(atleastOneTimeQueueEmpty) << "task queue was not empty " << loops << " times";
 }
 
-#ifdef ROSEN_OHOS
 /**
- * @tc.name: RSSurfaceBufferCallnackManagerTest
- * @tc.desc: Test RSSurfaceBufferCallnackManagerTest
+ * @tc.name: RSSurfaceBufferCallbackManagerTest
+ * @tc.desc: Test RSSurfaceBufferCallbackManagerTest
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSUniRenderThreadTest, RSSurfaceBufferCallnackManagerTest, TestSize.Level1)
+#ifdef ROSEN_OHOS
+HWTEST_F(RSUniRenderThreadTest, RSSurfaceBufferCallbackManagerTest, TestSize.Level1)
 {
     auto &surfaceBufferCallbackMgr = RSSurfaceBufferCallbackManager::Instance();
-    // Test No Callback
+    // Test No callback
     pid_t pid = 1000;
     uint64_t uid = 2000;
     surfaceBufferCallbackMgr.stagingSurfaceBufferIds_.insert({{pid, uid}, {}});
     surfaceBufferCallbackMgr.RunSurfaceBufferCallback();
     EXPECT_EQ(surfaceBufferCallbackMgr.stagingSurfaceBufferIds_.size(), 1);
     // Test No bufferIds
-    surfaceBufferCallbackMgr.RegisterSurfaceBufferCallback(pid, uid,
-        new (std::nothrow) RSDefaultSurfaceBufferCallback({
-            .OnFinish = [](const FinishCallbackRet& ret) { std::cout << "send in data"; },
-            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {},
+    surfaceBufferCallbackMgr.RegisterSurfaceBufferCallback(
+        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback({
+            .OnFinish = [](const FinishCallbackRet& ret) {
+                std::cout << "send in data";
+            },
+            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {
+            },
         }));
     surfaceBufferCallbackMgr.RunSurfaceBufferCallback();
 
@@ -932,14 +940,16 @@ HWTEST_F(RSUniRenderThreadTest, RSSurfaceBufferCallnackManagerTest, TestSize.Lev
     surfaceBufferCallbackMgr.RunSurfaceBufferCallback();
     EXPECT_EQ(surfaceBufferCallbackMgr.stagingSurfaceBufferIds_.size(), 0);
 }
+#endif
 
 /**
- * @tc.name: RegisterSurfaceBufferCallback
+ * @tc.name: RegisterSurfaceBufferCallbackTest
  * @tc.desc: Test RegisterSurfaceBufferCallback
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSUniRenderThreadTest, RegisterSurfaceBufferCallback, TestSize.Level1)
+#ifdef ROSEN_OHOS
+HWTEST_F(RSUniRenderThreadTest, RegisterSurfaceBufferCallbackTest, TestSize.Level1)
 {
     constexpr uint64_t SURFACE_BUFFER_CALLBACK_LIMIT = 100001;
     pid_t pid = 1000;
@@ -948,17 +958,23 @@ HWTEST_F(RSUniRenderThreadTest, RegisterSurfaceBufferCallback, TestSize.Level1)
     // Test01 limite callbackCount_
     surfaceBufferCallbackMgr.processCallbackCount_[pid] = SURFACE_BUFFER_CALLBACK_LIMIT;
     surfaceBufferCallbackMgr.RegisterSurfaceBufferCallback(
-        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback({
-            .OnFinish = [](const FinishCallbackRet& ret) { std::cout << "send in data"; },
-            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {},
+        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback ({
+            .OnFinish = [](const FinishCallbackRet& ret) {
+                std::cout << "send in data";
+            },
+            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {
+            },
     }));
     EXPECT_EQ(surfaceBufferCallbackMgr.processCallbackCount_[pid], SURFACE_BUFFER_CALLBACK_LIMIT);
     // Test02 normal unregister
     surfaceBufferCallbackMgr.UnregisterSurfaceBufferCallback(pid);
     surfaceBufferCallbackMgr.RegisterSurfaceBufferCallback(
-        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback({
-            .OnFinish = [](const FinishCallbackRet& ret) { std::cout << "send in data"; },
-            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {},
+        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback ({
+            .OnFinish = [](const FinishCallbackRet& ret) {
+                std::cout << "send in data";
+            },
+            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {
+            },
     }));
     EXPECT_EQ(surfaceBufferCallbackMgr.processCallbackCount_[pid], 1);
     surfaceBufferCallbackMgr.UnregisterSurfaceBufferCallback(pid, uid);
@@ -966,15 +982,19 @@ HWTEST_F(RSUniRenderThreadTest, RegisterSurfaceBufferCallback, TestSize.Level1)
     // Test03 Abnormal unregister
     surfaceBufferCallbackMgr.processCallbackCount_[pid] = 0;
     surfaceBufferCallbackMgr.RegisterSurfaceBufferCallback(
-        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback({
-            .OnFinish = [](const FinishCallbackRet& ret) { std::cout << "send in data"; },
-            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {},
+        pid, uid, new (std::nothrow) RSDefaultSurfaceBufferCallback ({
+            .OnFinish = [](const FinishCallbackRet& ret) {
+                std::cout << "send in data";
+            },
+            .OnAfterAcquireBuffer = [](const AfterAcquireBufferRet& ret) {
+            },
     }));
     int tmpCount = 0;
     surfaceBufferCallbackMgr.processCallbackCount_[pid] = tmpCount;
     surfaceBufferCallbackMgr.UnregisterSurfaceBufferCallback(pid, uid);
     EXPECT_EQ(surfaceBufferCallbackMgr.processCallbackCount_[pid], tmpCount);
 }
+#endif
 
 /**
  * @tc.name: ReleaseSurfaceOpItemBufferTest04
@@ -982,13 +1002,14 @@ HWTEST_F(RSUniRenderThreadTest, RegisterSurfaceBufferCallback, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require:
  */
+#ifdef ROSEN_OHOS
 HWTEST_F(RSUniRenderThreadTest, ReleaseSurfaceOpItemBufferTest04, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
     instance.ReleaseSurfaceOpItemBuffer();
-    sptr<SyncFence> tmpFence = new SyncFence(-1);
-    ASSERT_NE(tmpFence, nullptr);
-    instance.acquireFence_ = tmpFence;
+    sptr<SyncFence> tempFence = new SyncFence(-1);
+    ASSERT_NE(tempFence, nullptr);
+    instance.acquireFence_ = tempFence;
     instance.ReleaseSurfaceOpItemBuffer();
 }
 #endif
@@ -1019,6 +1040,7 @@ HWTEST_F(RSUniRenderThreadTest, SetScreenPowerOnChangedTest, TestSize.Level1)
 HWTEST_F(RSUniRenderThreadTest, CollectProcessNodeNumTest, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
+    instance.totalProcessNodeNum_ = 0;
     EXPECT_EQ(instance.totalProcessNodeNum_, 0);
 
     instance.CollectProcessNodeNum(10);
@@ -1035,10 +1057,11 @@ HWTEST_F(RSUniRenderThreadTest, CollectProcessNodeNumTest, TestSize.Level1)
 HWTEST_F(RSUniRenderThreadTest, NotifyScreenNodeBufferReleasedTest, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
+    instance.composerClientManager_ = std::make_shared<RSComposerClientManager>();
     uint32_t screenId = 0;
     instance.screenCond_[screenId] = std::make_shared<RSUniRenderThread::ScreenNodeBufferCond>();
     instance.NotifyScreenNodeBufferReleased(screenId);
-    EXPECT_EQ(instance.screenCond_[screenId]->screenNodeBufferReleased,  true);
+    EXPECT_EQ(instance.screenCond_[screenId]->screenNodeBufferReleased, true);
     screenId = 1;
     instance.screenCond_[screenId] = nullptr;
     instance.NotifyScreenNodeBufferReleased(screenId);
@@ -1054,7 +1077,8 @@ HWTEST_F(RSUniRenderThreadTest, DumpGpuMemTest001, TestSize.Level1)
 {
     auto& instance = RSUniRenderThread::Instance();
     DfxString log;
-    instance.DumpGpuMem(log);
+    std::vector<std::pair<NodeId, std::string>> nodeTags;
+    instance.DumpGpuMem(log, nodeTags);
     std::string dumpStr = log.GetString();
     ASSERT_TRUE(dumpStr.find("GPU") == std::string::npos);
 }
@@ -1071,9 +1095,8 @@ HWTEST_F(RSUniRenderThreadTest, DumpGpuMemTest002, TestSize.Level1)
     auto renderContext = RenderContext::Create();
     instance.uniRenderEngine_->renderContext_ = renderContext;
     DfxString log;
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
-    ASSERT_NE(renderNode, nullptr);
-    instance.DumpGpuMem(log);
+    std::vector<std::pair<NodeId, std::string>> nodeTags;
+    instance.DumpGpuMem(log, nodeTags);
     std::string dumpStr = log.GetString();
     ASSERT_TRUE(dumpStr.find("GPU") == std::string::npos);
 }

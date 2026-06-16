@@ -27,12 +27,18 @@
 #include "common/rs_macros.h"
 #include "common/rs_rect.h"
 #include "drawable/rs_property_drawable.h"
+#include "feature/render_group/rs_render_group_cache_adapter.h"
 #include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_simple_draw_cmd_list.h"
 #include "recording/recording_canvas.h"
+#include "screen_manager/screen_types.h"
 #include "utils/rect.h"
 
 #ifndef ROSEN_CROSS_PLATFORM
 #include <iconsumer_surface.h>
+#endif
+#ifdef USE_PRIMITIVE
+#include "foundation/graphic/graphic_2d_ext/subtree/primitive/primitive_dirty_type.h"
 #endif
 
 namespace OHOS::Rosen {
@@ -45,6 +51,7 @@ class RSContext;
 class RSDirtyRegionManager;
 class RSDrawWindowCache;
 class RSRenderNodeGC;
+class RSLayer;
 #ifdef SUBTREE_PARALLEL_ENABLE
 class RSParallelRBPolicy;
 struct RSSubtreeDrawElement;
@@ -60,7 +67,9 @@ class RSUseEffectRenderModifier;
 struct DrawCmdIndex {
     int8_t transitionIndex_            = -1;
     int8_t envForeGroundColorIndex_    = -1;
+    int8_t colorPickerIndex_           = -1;
     int8_t materialFilterIndex_        = -1;
+    int8_t materialShaderIndex_        = -1;
     int8_t shadowIndex_                = -1;
     int8_t renderGroupBeginIndex_      = -1;
     int8_t foregroundFilterBeginIndex_ = -1;
@@ -129,6 +138,7 @@ enum class DrawSkipType : uint8_t {
     NO_DISPLAY_NODE = 33,
     SCREEN_STATE_INVALID = 35,
     SCREEN_FREEZE = 36,
+    BACKFACE_SKIP = 37,
 };
 
 class RSB_EXPORT RSRenderNodeDrawableAdapter : public std::enable_shared_from_this<RSRenderNodeDrawableAdapter> {
@@ -162,26 +172,18 @@ public:
     static void ClearResource();
     using DrawableVec = std::vector<std::shared_ptr<RSRenderNodeDrawableAdapter>>;
     static void AddToClearDrawables(DrawableVec &vec);
-    using CmdListVec = std::vector<std::shared_ptr<Drawing::DrawCmdList>>;
+    using CmdListVec = std::vector<SimpleDrawCmdListPtr>;
     static void AddToClearCmdList(CmdListVec &vec);
     inline const std::unique_ptr<RSRenderParams>& GetRenderParams() const
     {
         return renderParams_;
     }
 
-    inline const std::unique_ptr<RSRenderParams>& GetUifirstRenderParams() const
-    {
-        return uifirstRenderParams_;
-    }
-
     inline NodeId GetId() const
     {
         return nodeId_;
     }
-    inline RSRenderNodeType GetNodeType() const
-    {
-        return nodeType_;
-    }
+    RSRenderNodeType GetNodeType() const;
     virtual std::shared_ptr<RSDirtyRegionManager> GetSyncDirtyManager() const
     {
         return nullptr;
@@ -192,10 +194,6 @@ public:
     void ResetClearSurfaceFunc();
     void TryClearSurfaceOnSync();
 
-#ifndef ROSEN_CROSS_PLATFORM
-    virtual void RegisterDeleteBufferListenerOnSync(sptr<IConsumerSurface> consumer) {}
-#endif
-
     virtual bool IsNeedDraw() const
     {
         return false;
@@ -204,52 +202,28 @@ public:
     void SetSkip(SkipType type) { skipType_ = type; }
     SkipType GetSkipType() { return skipType_; }
 
-    void SetSkipCacheLayer(bool hasSkipCacheLayer);
-
     bool IsFilterCacheValidForOcclusion() const;
+    bool IsFilterCacheValidForPartialRender() const;
     const RectI GetFilterCachedRegion() const;
 
-    size_t GetFilterNodeSize() const
-    {
-        return filterNodeSize_;
-    }
-    void ReduceFilterNodeSize()
-    {
-        if (filterNodeSize_ > 0) {
-            --filterNodeSize_;
-        }
-    }
-    struct FilterNodeInfo {
-        FilterNodeInfo(NodeId nodeId, Drawing::Matrix matrix, std::vector<Drawing::RectI> rectVec)
-            : nodeId_(nodeId), matrix_(matrix), rectVec_(rectVec) {};
-        NodeId nodeId_ = 0;
-        // Here, matrix_ and rectVec_ represent the transformation and FilterRect of the node relative to the off-screen
-        Drawing::Matrix matrix_;
-        std::vector<Drawing::RectI> rectVec_;
-    };
-
-    const std::vector<FilterNodeInfo>& GetfilterInfoVec() const
-    {
-        return filterInfoVec_;
-    }
-    const std::unordered_map<NodeId, Drawing::Matrix>& GetWithoutFilterMatrixMap() const
-    {
-        return withoutFilterMatrixMap_;
-    }
+    void SetFilterNodeSize(size_t size);
+    size_t GetFilterNodeSize() const;
+    void ReduceFilterNodeSize();
+    std::vector<FilterNodeInfo>& GetFilterInfoVec();
+    void ClearFilterInfoVec();
+    std::unordered_map<NodeId, Drawing::Matrix>& GetWithoutFilterMatrixMap();
+    void SetLastDrawnFilterNodeId(NodeId nodeId);
+    NodeId GetLastDrawnFilterNodeId() const;
 
     const std::unordered_map<NodeId, Drawing::Matrix>& GetUnobscuredUECMatrixMap() const
     {
         return unobscuredUECMatrixMap_;
     }
 
-    void SetLastDrawnFilterNodeId(NodeId nodeId)
+    virtual void SetShouldClipHole(bool value) {}
+    virtual bool ShouldClipHole() const
     {
-        lastDrawnFilterNodeId_ = nodeId;
-    }
-
-    NodeId GetLastDrawnFilterNodeId() const
-    {
-        return lastDrawnFilterNodeId_;
+        return false;
     }
 
     virtual void SetUIExtensionNeedToDraw(bool needToDraw) {}
@@ -295,21 +269,60 @@ public:
         return RSRenderNodeDrawableType::UNKNOW;
     }
 
+    // UIFirst draw commands sync - only SurfaceNodeDrawable has real implementation
+    virtual void SyncUifirstDrawCmds() {}
+
+    void SetRSLayer(ScreenId screenId, const std::shared_ptr<RSLayer>& layer)
+    {
+        std::lock_guard<std::mutex> lock(rsLayerMutex_);
+        rsLayersPerScreen_[screenId] = layer;
+    }
+
+    void ClearUnifiedFilterRegion();
+    void AddRectToUnifiedFilterRegion(const Drawing::RectI& rect);
+    bool IntersectsWithUnifiedRegion(const Drawing::RectI& rect) const;
+
+#ifdef USE_PRIMITIVE
+    PrimitiveDirtyBitmap* GetSelfPrimDirtyBitmap()
+    {
+        return &selfPrimDirtyBitmap_;
+    }
+    PrimitiveDirtyBitmap* GetInfectiousPrimDirtyBitmap()
+    {
+        return &infectiousPrimDirtyBitmap_;
+    }
+    void MergeInfectiousDirtyTypes(const PrimitiveDirtyBitmap* dirtyBitmap)
+    {
+        if (LIKELY(dirtyBitmap)) {
+            selfPrimDirtyBitmap_ |= *dirtyBitmap;
+            infectiousPrimDirtyBitmap_ |= *dirtyBitmap;
+        }
+    }
+    void ResetDirtyTypes()
+    {
+        selfPrimDirtyBitmap_.reset();
+        infectiousPrimDirtyBitmap_.reset();
+    }
+#endif
+
 protected:
     // Util functions
     std::string DumpDrawableVec(const std::shared_ptr<RSRenderNode>& renderNode) const;
     bool QuickReject(Drawing::Canvas& canvas, const RectF& localDrawRect);
-    bool HasFilterOrEffect() const;
+    bool HasFilterOrEffect(const RSRenderParams& params) const;
+    void AlignRectToDevicePixels(const Drawing::Matrix& matrix, Drawing::Rect& rect);
 
     // Draw functions
     void DrawAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
-    void DrawUifirstContentChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect);
+    void DrawClipBounds(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
+    void DrawBackgroundWithOutSaveAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawLeashWindowBackground(Drawing::Canvas& canvas, const Drawing::Rect& rect,
         bool isStencilPixelOcclusionCullingEnabled = false, int64_t stencilVal = -1) const;
     void DrawContent(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawChildren(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawForeground(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
+    void DrawForegroundWithOutRestoreAll(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void ApplyForegroundColorIfNeed(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
 
     // used for foreground filter
@@ -318,8 +331,7 @@ protected:
     void DrawAfterCacheWithForegroundFilter(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
 
     // used for render group
-    void DrawBackgroundWithoutFilterAndEffect(Drawing::Canvas& canvas, const RSRenderParams& params);
-    void CheckShadowRectAndDrawBackground(Drawing::Canvas& canvas, const RSRenderParams& params);
+    void SkipDrawSubtreeAndClipHole(Drawing::Canvas& canvas, const RSRenderParams& params);
     void DrawCacheWithProperty(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawBeforeCacheWithProperty(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
     void DrawAfterCacheWithProperty(Drawing::Canvas& canvas, const Drawing::Rect& rect) const;
@@ -333,6 +345,8 @@ protected:
     void DrawImpl(Drawing::Canvas& canvas, const Drawing::Rect& rect, int8_t index) const;
 
     virtual void DumpSubDrawableTree(std::string& out) const {}
+
+    virtual void ClearCustomResource() {}
 
     // Register utils
     using Generator = Ptr (*)(std::shared_ptr<const RSRenderNode>);
@@ -350,30 +364,34 @@ protected:
     std::weak_ptr<const RSRenderNode> renderNode_;
     NodeId nodeId_;
 
-    DrawCmdIndex uifirstDrawCmdIndex_;
     DrawCmdIndex drawCmdIndex_;
     std::unique_ptr<RSRenderParams> renderParams_;
     static std::unordered_map<NodeId, Drawing::Matrix> unobscuredUECMatrixMap_;
     std::shared_ptr<std::unordered_set<NodeId>> UECChildrenIds_ = std::make_shared<std::unordered_set<NodeId>>();
-    std::unique_ptr<RSRenderParams> uifirstRenderParams_;
-    std::vector<Drawing::RecordingCanvas::DrawFunc> uifirstDrawCmdList_;
-    std::vector<Drawing::RecordingCanvas::DrawFunc> drawCmdList_;
-    std::vector<FilterNodeInfo> filterInfoVec_;
-    std::unordered_map<NodeId, Drawing::Matrix> withoutFilterMatrixMap_;
-    size_t filterNodeSize_ = 0;
+    RSDrawable::DrawList drawCmdList_;
+    Drawing::Region unifiedFilterRegion_;
     std::shared_ptr<DrawableV2::RSFilterDrawable> backgroundFilterDrawable_ = nullptr;
     std::shared_ptr<DrawableV2::RSFilterDrawable> materialFilterDrawable_ = nullptr;
     std::shared_ptr<DrawableV2::RSFilterDrawable> compositingFilterDrawable_ = nullptr;
     std::function<void()> purgeFunc_;
+
+    // variables for renderGroup
+    std::unique_ptr<RSRenderGroupCacheAdapter> renderGroupCacheAdapter_ = nullptr;
 #ifdef ROSEN_OHOS
     static thread_local RSRenderNodeDrawableAdapter* curDrawingCacheRoot_;
 #else
     static RSRenderNodeDrawableAdapter* curDrawingCacheRoot_;
 #endif
-    // if the node needs to avoid drawing cache because of some layers, such as the security layer...
-    bool hasSkipCacheLayer_ = false;
-    
     ClearSurfaceTask clearSurfaceTask_ = nullptr;
+    // !variables for renderGroup
+
+    SkipType skipType_ = SkipType::NONE;
+    int8_t GetSkipIndex() const;
+
+#ifdef USE_PRIMITIVE
+    PrimitiveDirtyBitmap selfPrimDirtyBitmap_;
+    PrimitiveDirtyBitmap infectiousPrimDirtyBitmap_;
+#endif
 private:
     const static size_t MAX_FILTER_CACHE_TYPES = 3;
     using RSCacheDrawableArray = std::array<std::shared_ptr<DrawableV2::RSFilterDrawable>, MAX_FILTER_CACHE_TYPES>;
@@ -381,15 +399,14 @@ private:
                             std::shared_ptr<RSRenderNodeDrawableAdapter>& sharedPtr);
     static std::map<RSRenderNodeType, Generator> GeneratorMap;
     static std::map<NodeId, WeakPtr> RenderNodeDrawableCache_;
-    static inline std::mutex cacheMapMutex_;
+    static inline RS_HIDDEN std::mutex cacheMapMutex_;
     static DrawableVec toClearDrawableVec_;
     static CmdListVec toClearCmdListVec_;
-    SkipType skipType_ = SkipType::NONE;
-    int8_t GetSkipIndex() const;
     std::atomic<DrawSkipType> drawSkipType_ = DrawSkipType::NONE;
     static void RemoveDrawableFromCache(const NodeId nodeId);
-    NodeId lastDrawnFilterNodeId_ = 0;
     std::atomic<bool> isOnDraw_ = false;
+    mutable std::mutex rsLayerMutex_;
+    std::unordered_map<ScreenId, std::shared_ptr<RSLayer>> rsLayersPerScreen_;
     RSCacheDrawableArray filterDrawables_{};
 
     friend class OHOS::Rosen::RSRenderNode;

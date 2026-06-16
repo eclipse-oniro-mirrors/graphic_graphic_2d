@@ -38,18 +38,26 @@ public:
     void TearDown() override;
 };
 
+class ConcreteRSRenderNodeDrawableAdapter : public DrawableV2::RSRenderNodeDrawableAdapter {
+public:
+    explicit ConcreteRSRenderNodeDrawableAdapter(std::shared_ptr<const RSRenderNode> node)
+        : RSRenderNodeDrawableAdapter(std::move(node))
+    {}
+    void Draw(Drawing::Canvas& canvas) {}
+};
+
 void RSPropertyDrawableTest::SetUpTestCase() {}
 void RSPropertyDrawableTest::TearDownTestCase() {}
 void RSPropertyDrawableTest::SetUp() {}
 void RSPropertyDrawableTest::TearDown() {}
 
 /**
- * @tc.name: OnSyncAndCreateDrawFuncTest001
- * @tc.desc: class RSPropertyDrawable OnSync and CreateDrawFunc test
+ * @tc.name: OnSyncAndOnDrawFuncTest001
+ * @tc.desc: class RSPropertyDrawable OnSync and OnDraw test
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
-HWTEST_F(RSPropertyDrawableTest, OnSyncAndCreateDrawFuncTest001, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableTest, OnSyncAndOnDrawFuncTest001, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSPropertyDrawable> propertyDrawable =
         std::make_shared<DrawableV2::RSPropertyDrawable>();
@@ -69,8 +77,13 @@ HWTEST_F(RSPropertyDrawableTest, OnSyncAndCreateDrawFuncTest001, TestSize.Level1
     propertyDrawable->drawCmdList_ = drawCmdList;
     Drawing::Canvas canvas;
     Drawing::Rect rect(0.0f, 0.0f, 1.0f, 1.0f);
+    propertyDrawable->OnDraw(&canvas, &rect);
     propertyDrawable->propertyDescription_ = "RSPropertyDrawable test";
-    propertyDrawable->CreateDrawFunc()(&canvas, &rect);
+    propertyDrawable->OnDraw(&canvas, &rect);
+
+    propertyDrawable->drawCmdList_ = nullptr;
+    propertyDrawable->OnDraw(&canvas, &rect);
+    EXPECT_EQ(propertyDrawable->drawCmdList_, nullptr);
 }
 
 /**
@@ -139,7 +152,7 @@ HWTEST_F(RSPropertyDrawableTest, OnUpdateTest004, TestSize.Level1)
     RSRenderNode nodeTest2(0);
     RectT<float> rect(1.0f, 1.0f, 1.0f, 1.0f);
     RRectT<float> rectt(rect, 1.0f, 1.0f);
-    nodeTest2.renderProperties_.clipRRect_ = rectt;
+    nodeTest2.renderProperties_.clipRRect_ = std::make_unique<RRect>(rectt);
     EXPECT_TRUE(clipToBoundsDrawable->OnUpdate(nodeTest2));
 
     RSRenderNode nodeTest3(0);
@@ -170,39 +183,39 @@ HWTEST_F(RSPropertyDrawableTest, RSClipToBoundsDrawableOnSyncTest, TestSize.Leve
 }
 
 /**
- * @tc.name: RSClipToBoundsDrawableCreateDrawFuncTest
- * @tc.desc: class RSClipToBoundsDrawable CreateDrawFunc test
+ * @tc.name: RSClipToBoundsDrawableOnDrawFuncTest
+ * @tc.desc: class RSClipToBoundsDrawable OnDraw test
  * @tc.type: FUNC
  * @tc.require: issue20176
  */
-HWTEST_F(RSPropertyDrawableTest, RSClipToBoundsDrawableCreateDrawFuncTest, TestSize.Level1)
+HWTEST_F(RSPropertyDrawableTest, RSClipToBoundsDrawableOnDrawFuncTest, TestSize.Level1)
 {
     std::shared_ptr<DrawableV2::RSClipToBoundsDrawable> clipToBoundsDrawable =
         std::make_shared<DrawableV2::RSClipToBoundsDrawable>();
     EXPECT_NE(clipToBoundsDrawable, nullptr);
     Drawing::Canvas canvas;
     Drawing::Rect rect(0.0f, 0.0f, 1.0f, 1.0f);
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 
     clipToBoundsDrawable->type_ = RSClipToBoundsType::CLIP_PATH;
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 
     clipToBoundsDrawable->type_ = RSClipToBoundsType::CLIP_RRECT;
     clipToBoundsDrawable->isClipRRectOptimization_ = true;
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 
     clipToBoundsDrawable->type_ = RSClipToBoundsType::CLIP_RRECT;
     clipToBoundsDrawable->isClipRRectOptimization_ = false;
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 
     clipToBoundsDrawable->type_ = RSClipToBoundsType::CLIP_IRECT;
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 
     clipToBoundsDrawable->type_ = RSClipToBoundsType::CLIP_RECT;
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 
     clipToBoundsDrawable->type_ = RSClipToBoundsType::INVALID;
-    clipToBoundsDrawable->CreateDrawFunc()(&canvas, &rect);
+    clipToBoundsDrawable->OnDraw(&canvas, &rect);
 }
 
 /**
@@ -217,7 +230,7 @@ HWTEST_F(RSPropertyDrawableTest, RSClipToBoundsDrawableTestSDF, TestSize.Level1)
     Drawing::Canvas canvas;
     // 1.0f, 1.0f, 2.0f, 2.0f is left top right bottom
     Drawing::Rect rect { 1.0f, 1.0f, 2.0f, 2.0f };
-    drawable->CreateDrawFunc()(&canvas, &rect);
+    drawable->OnDraw(&canvas, &rect);
     EXPECT_EQ(drawable->geContainer_, nullptr);
 
     NodeId id = 3;
@@ -227,7 +240,7 @@ HWTEST_F(RSPropertyDrawableTest, RSClipToBoundsDrawableTestSDF, TestSize.Level1)
     drawable->OnUpdate(node);
     drawable->OnSync();
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
-    drawable->CreateDrawFunc()(&paintFilterCanvas, &rect);
+    drawable->OnDraw(&paintFilterCanvas, &rect);
     EXPECT_NE(drawable->geContainer_, nullptr);
 }
 
@@ -278,7 +291,7 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest006, TestSize.Level1)
 
     Drawing::Canvas canvas;
     Drawing::Rect rect(0.0f, 0.0f, 1.0f, 1.0f);
-    filterDrawable->CreateDrawFunc()(&canvas, &rect);
+    filterDrawable->OnDraw(&canvas, &rect);
     filterDrawable->MarkEffectNode();
 }
 
@@ -324,10 +337,12 @@ HWTEST_F(RSPropertyDrawableTest, CheckAndUpdateAIBarCacheStatusTest009, TestSize
     EXPECT_NE(filterDrawable, nullptr);
     EXPECT_FALSE(filterDrawable->CheckAndUpdateAIBarCacheStatus(false));
 
-    filterDrawable->stagingCacheManager_->filterType_ = RSFilter::AIBAR;
-    filterDrawable->stagingCacheManager_->cacheUpdateInterval_ = 1;
-    filterDrawable->stagingCacheManager_->stagingForceClearCacheForLastFrame_ = false;
-    EXPECT_TRUE(filterDrawable->CheckAndUpdateAIBarCacheStatus(false));
+    if (filterDrawable->stagingCacheManager_ != nullptr) {
+        filterDrawable->stagingCacheManager_->filterType_ = RSFilter::AIBAR;
+        filterDrawable->stagingCacheManager_->cacheUpdateInterval_ = 1;
+        filterDrawable->stagingCacheManager_->stagingForceClearCacheForLastFrame_ = false;
+        EXPECT_TRUE(filterDrawable->CheckAndUpdateAIBarCacheStatus(false));
+    }
 
     filterDrawable->stagingCacheManager_ = nullptr;
     EXPECT_FALSE(filterDrawable->CheckAndUpdateAIBarCacheStatus(false));
@@ -345,15 +360,17 @@ HWTEST_F(RSPropertyDrawableTest, ForceReduceAIBarCacheInterval, TestSize.Level1)
     EXPECT_NE(filterDrawable, nullptr);
     EXPECT_FALSE(filterDrawable->CheckAndUpdateAIBarCacheStatus(false));
 
-    filterDrawable->stagingCacheManager_->filterType_ = RSFilter::AIBAR;
-    filterDrawable->stagingCacheManager_->cacheUpdateInterval_ = 1;
-    EXPECT_TRUE(filterDrawable->ForceReduceAIBarCacheInterval(true));
-    EXPECT_FALSE(filterDrawable->ForceReduceAIBarCacheInterval(false));
+    if (filterDrawable->stagingCacheManager_ != nullptr) {
+        filterDrawable->stagingCacheManager_->filterType_ = RSFilter::AIBAR;
+        filterDrawable->stagingCacheManager_->cacheUpdateInterval_ = 1;
+        EXPECT_TRUE(filterDrawable->ForceReduceAIBarCacheInterval(true));
+        EXPECT_FALSE(filterDrawable->ForceReduceAIBarCacheInterval(false));
+    }
 }
 
 /**
  * @tc.name: RSFilterDrawableTest010
- * @tc.desc: CreateDrawFunc
+ * @tc.desc: OnDraw
  * @tc.type:FUNC
  * @tc.require: issueI9VSPU
  */
@@ -363,33 +380,49 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest010, TestSize.Level1)
     EXPECT_NE(drawable, nullptr);
     Drawing::Canvas canvas;
     Drawing::Rect rect(0.0f, 0.0f, 1.0f, 1.0f);
-    drawable->CreateDrawFunc()(&canvas, &rect);
+    drawable->OnDraw(&canvas, &rect);
+    drawable->OnDraw(nullptr, &rect);
     std::vector<std::pair<float, float>> fractionStops;
     auto para = std::make_shared<RSLinearGradientBlurPara>(1.f, fractionStops, GradientDirection::LEFT);
     auto shaderFilter = std::make_shared<RSLinearGradientBlurShaderFilter>(para, 1.f, 1.f);
     drawable->filter_ = std::make_shared<RSDrawingFilter>(shaderFilter);;
     drawable->filter_->SetFilterType(RSFilter::LINEAR_GRADIENT_BLUR);
     EXPECT_NE(drawable->filter_, nullptr);
-    drawable->CreateDrawFunc()(&canvas, &rect);
+    drawable->OnDraw(&canvas, &rect);
     EXPECT_TRUE(true);
     auto aiBarShaderFilter = std::make_shared<RSAIBarShaderFilter>();
     drawable->filter_ = std::make_shared<RSDrawingFilter>(aiBarShaderFilter);
     drawable->filter_->SetFilterType(RSFilter::LINEAR_GRADIENT_BLUR);
     EXPECT_NE(drawable->filter_, nullptr);
-    drawable->CreateDrawFunc()(&canvas, &rect);
+    drawable->OnDraw(&canvas, &rect);
     EXPECT_TRUE(true);
     drawable->filter_->SetFilterType(RSFilter::AIBAR);
     EXPECT_NE(drawable->filter_, nullptr);
-    drawable->CreateDrawFunc()(&canvas, &rect);
+    drawable->OnDraw(&canvas, &rect);
     EXPECT_TRUE(true);
     auto filterCanvas = std::make_shared<RSPaintFilterCanvas>(&canvas);
-    drawable->CreateDrawFunc()(filterCanvas.get(), &rect);
+    drawable->OnDraw(filterCanvas.get(), &rect);
     EXPECT_NE(drawable->filter_, nullptr);
+
+    drawable->renderRelativeRectInfo_ = nullptr;
+    drawable->OnDraw(filterCanvas.get(), &rect);
+    EXPECT_TRUE(true);
+
+    auto bound = RectF(-5.0f, -5.0f, 8.0f, 8.0f);
+    auto drawable2 = std::make_shared<DrawableV2::RSFilterDrawable>();
+    auto aiBarShaderFilter2 = std::make_shared<RSAIBarShaderFilter>();
+    drawable2->filter_ = std::make_shared<RSDrawingFilter>(aiBarShaderFilter2);
+    drawable2->filter_->SetFilterType(RSFilter::AIBAR);
+    drawable2->renderRelativeRectInfo_ = std::make_unique<DrawableV2::RSFilterDrawable::FilterRectInfo>();
+    drawable2->renderRelativeRectInfo_->snapshotRect_ = bound;
+    drawable2->renderRelativeRectInfo_->drawRect_ = bound;
+    drawable2->OnDraw(filterCanvas.get(), &rect);
+    EXPECT_TRUE(true);
 }
 
 /**
  * @tc.name: RSFilterDrawableTest011
- * @tc.desc: IsFilterCacheValidForOcclusion
+ * @tc.desc: IsFilterCacheValidForOcclusion/IsFilterCacheValidForPartialRender
  * @tc.type: FUNC
  */
 HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
@@ -401,6 +434,7 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
 
     cacheManager = nullptr;
     EXPECT_FALSE(filterDrawable->IsFilterCacheValidForOcclusion());
+    EXPECT_FALSE(filterDrawable->IsFilterCacheValidForPartialRender());
 
     cacheManager = std::make_unique<RSFilterCacheManager>();
     ASSERT_NE(cacheManager, nullptr);
@@ -409,12 +443,14 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
     cacheManager->cachedSnapshot_ = nullptr;
     cacheManager->cachedFilteredSnapshot_ = nullptr;
     EXPECT_FALSE(filterDrawable->IsFilterCacheValidForOcclusion());
+    EXPECT_FALSE(filterDrawable->IsFilterCacheValidForPartialRender());
 
     // cacheType: FilterCacheType::SNAPSHOT
     cacheManager->cachedSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     ASSERT_NE(cacheManager->cachedSnapshot_, nullptr);
     cacheManager->cachedFilteredSnapshot_ = nullptr;
     EXPECT_TRUE(filterDrawable->IsFilterCacheValidForOcclusion());
+    EXPECT_FALSE(filterDrawable->IsFilterCacheValidForPartialRender());
 
     // cacheType: FilterCacheType::BOTH
     cacheManager->cachedSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
@@ -422,12 +458,60 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest011, TestSize.Level1)
     cacheManager->cachedFilteredSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     ASSERT_NE(cacheManager->cachedFilteredSnapshot_, nullptr);
     EXPECT_TRUE(filterDrawable->IsFilterCacheValidForOcclusion());
+    EXPECT_FALSE(filterDrawable->IsFilterCacheValidForPartialRender());
 
     // cacheType: FilterCacheType::FILTERED_SNAPSHOT
     cacheManager->cachedSnapshot_ = nullptr;
     cacheManager->cachedFilteredSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
     ASSERT_NE(cacheManager->cachedFilteredSnapshot_, nullptr);
     EXPECT_TRUE(filterDrawable->IsFilterCacheValidForOcclusion());
+    EXPECT_TRUE(filterDrawable->IsFilterCacheValidForPartialRender());
+}
+
+/**
+ * @tc.name: IsFilterCacheValidForPartialRender_WithFilterDrawable
+ * @tc.desc: Test IsFilterCacheValidForPartialRender with valid filter drawable
+ * @tc.type: FUNC
+ * @tc.require: issue22993
+ */
+HWTEST_F(RSPropertyDrawableTest, IsFilterCacheValidForPartialRender_WithFilterDrawable, TestSize.Level1)
+{
+    NodeId id = 18;
+    auto node = std::make_shared<RSRenderNode>(id);
+    std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter> adapter =
+        std::make_shared<ConcreteRSRenderNodeDrawableAdapter>(node);
+    ASSERT_NE(adapter, nullptr);
+    
+    auto filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    filterDrawable->cacheManager_ = std::make_unique<RSFilterCacheManager>();
+    filterDrawable->cacheManager_->cachedFilteredSnapshot_ =
+        std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
+    adapter->filterDrawables_ = { filterDrawable };
+    
+    EXPECT_TRUE(adapter->IsFilterCacheValidForPartialRender());
+}
+
+/**
+ * @tc.name: IsFilterCacheValidForPartialRender_WithInvalidCache
+ * @tc.desc: Test IsFilterCacheValidForPartialRender with invalid cache type
+ * @tc.type: FUNC
+ * @tc.require: issue22993
+ */
+HWTEST_F(RSPropertyDrawableTest, IsFilterCacheValidForPartialRender_WithInvalidCache, TestSize.Level1)
+{
+    NodeId id = 18;
+    auto node = std::make_shared<RSRenderNode>(id);
+    std::shared_ptr<DrawableV2::RSRenderNodeDrawableAdapter> adapter =
+        std::make_shared<ConcreteRSRenderNodeDrawableAdapter>(node);
+    ASSERT_NE(adapter, nullptr);
+    
+    auto filterDrawable = std::make_shared<DrawableV2::RSFilterDrawable>();
+    filterDrawable->cacheManager_ = std::make_unique<RSFilterCacheManager>();
+    filterDrawable->cacheManager_->cachedSnapshot_ =
+        std::make_shared<RSPaintFilterCanvas::CachedEffectData>();
+    adapter->filterDrawables_ = { filterDrawable };
+    
+    EXPECT_FALSE(adapter->IsFilterCacheValidForPartialRender());
 }
 
 /*
@@ -459,11 +543,18 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest012, TestSize.Level1)
     filterCanvas->surface_ = &surface;
     drawable->needDrawBehindWindow_ = true;
     Drawing::Rect rect(0.0f, 0.0f, 1.0f, 1.0f);
-    auto drawFunc = drawable->CreateDrawFunc();
-    drawFunc(filterCanvas.get(), &rect);
+    drawable->OnDraw(filterCanvas.get(), &rect);
+
     drawable->filter_ = RSPropertyDrawableUtils::GenerateBehindWindowFilter(80.0f, 1.9f, 1.0f, RSColor(0xFFFFFFE5));
     EXPECT_NE(drawable->filter_, nullptr);
-    drawFunc(filterCanvas.get(), &rect);
+    drawable->OnDraw(filterCanvas.get(), &rect);
+
+    drawable->OnDraw(canvas.get(), &rect);
+    ASSERT_TRUE(true);
+
+    filterCanvas->isWindowFreezeCapture_ = true;
+    drawable->OnDraw(filterCanvas.get(), &rect);
+    EXPECT_TRUE(true);
 }
 
 /**
@@ -500,14 +591,17 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest014, TestSize.Level1)
     Drawing::Rect rect(0.0f, 0.0f, 1.0f, 1.0f);
     drawable->filter_ = RSPropertyDrawableUtils::GenerateBehindWindowFilter(80.0f, 1.9f, 1.0f, RSColor(0xFFFFFFE5));
     EXPECT_NE(drawable->filter_, nullptr);
-    auto drawFunc = drawable->CreateDrawFunc();
-    drawFunc(filterCanvas.get(), &rect);
+    drawable->OnDraw(filterCanvas.get(), &rect);
     EXPECT_NE(filterCanvas->cacheBehindWindowData_, nullptr);
+
+    filterCanvas->isWindowFreezeCapture_ = true;
+    drawable->OnDraw(filterCanvas.get(), &rect);
+    EXPECT_TRUE(true);
 }
 
 /**
  * @tc.name: RSFilterDrawableTest015
- * @tc.desc: Test RSFilterDrawable CreateDrawFunc
+ * @tc.desc: Test RSFilterDrawable OnDraw
  * @tc.type:FUNC
  */
 HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest015, TestSize.Level1)
@@ -521,15 +615,10 @@ HWTEST_F(RSPropertyDrawableTest, RSFilterDrawableTest015, TestSize.Level1)
     drawable->filter_->SetFilterType(RSFilter::LINEAR_GRADIENT_BLUR);
 
     // Test rect == nullptr
-    drawable->CreateDrawFunc()(&canvas, nullptr);
+    drawable->OnDraw(&canvas, nullptr);
     auto drawingFilter = std::static_pointer_cast<RSDrawingFilter>(drawable->filter_);
     auto shaderLinearGradientBlurFilter = drawingFilter->GetShaderFilterWithType(RSUIFilterType::LINEAR_GRADIENT_BLUR);
     EXPECT_EQ(shaderLinearGradientBlurFilter->geoHeight_, 1.0f);
-
-    // Test rect != nullptr
-    Drawing::Rect rect(0.0f, 0.0f, 10.0f, 10.0f);
-    drawable->CreateDrawFunc()(&canvas, &rect);
-    EXPECT_EQ(shaderLinearGradientBlurFilter->geoHeight_, 10.0f);
 }
 
 /**

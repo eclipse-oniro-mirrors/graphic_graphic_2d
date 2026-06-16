@@ -749,83 +749,6 @@ HWTEST_F(RSJankStatsTest, GetMaxJankInfoTest010, TestSize.Level1)
 }
 
 /**
- * @tc.name: AvcodecVideoDumpTest001
- * @tc.desc: AvcodecVideoDump test
- * @tc.type: FUNC
- * @tc.require: issueIA61E9
- */
-HWTEST_F(RSJankStatsTest, AvcodecVideoDumpTest001, TestSize.Level1)
-{
-    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
-    EXPECT_NE(rsJankStats, nullptr);
-    std::string avcodecVideo = "avcodecVideo";
-
-    std::string dumpString = "";
-    std::string type = "avcodecVideo";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump can not parse type to json.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : uniqueId.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":123,\"uniqueId\":123}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : uniqueId.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"\"}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : uniqueId.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"abc\"}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : uniqueId.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"123abc\"}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : uniqueId.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"-1\"}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : uniqueId.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"111\"}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : reportTime.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"111\","
-        "\"surfacename\":111,\"fps\":\"surface\",\"reportTime\":\"surface\"}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : reportTime.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"111\","
-        "\"surfacename\":\"surface\",\"fps\":-111,\"reportTime\":-16}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoDump param error : reportTime.") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"start\",\"uniqueId\":\"111\","
-        "\"surfacename\":\"surface\",\"fps\":111,\"reportTime\":16}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoStart") != std::string::npos);
-
-    dumpString = "";
-    type = "avcodecVideo{\"func\":\"11\",\"uniqueId\":\"111\","
-        "\"surfacename\":\"surface\",\"fps\":111,\"reportTime\":16}";
-    rsJankStats->AvcodecVideoDump(dumpString, type, avcodecVideo);
-    EXPECT_TRUE(dumpString.find("AvcodecVideoStop") != std::string::npos);
-}
-
-/**
  * @tc.name: AvcodecVideoStartTest001
  * @tc.desc: AvcodecVideoStart/AvcodecVideoStop test
  * @tc.type: FUNC
@@ -838,10 +761,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoStartTest001, TestSize.Level1)
     RSJankStats::GetInstance().AvcodecVideoStart({2222}, {"surfaceName"}, 60, 20);
     RSJankStats::GetInstance().AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
     RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60);
-    std::string dumpString = "";
-    std::string type = "avcodecVideo{\"func\":\"stop\",\"uniqueId\":\"2222\",\"surfacename\":\"surface\",\"fps\":111}";
-    RSJankStats::GetInstance().AvcodecVideoDump(dumpString, type, "avcodecVideo");
-    EXPECT_TRUE(dumpString.find("AvcodecVideoStop") != std::string::npos);
+    RSJankStats::GetInstance().AvcodecVideoStop({2222}, {"surfaceName"}, 60);
 }
 
 /**
@@ -857,10 +777,7 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoCollectFinishTest001, TestSize.Level1)
     for (int i = 0; i < 10; i++) {
         RSJankStats::GetInstance().AvcodecVideoCollectFinish();
     }
-    std::string dumpString = "";
-    std::string type = "avcodecVideo{\"func\":\"stop\",\"uniqueId\":\"1111\",\"surfacename\":\"surface\",\"fps\":111}";
-    RSJankStats::GetInstance().AvcodecVideoDump(dumpString, type, "avcodecVideo");
-    EXPECT_TRUE(dumpString.find("AvcodecVideoStop") != std::string::npos);
+    RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
 
 /**
@@ -881,40 +798,63 @@ HWTEST_F(RSJankStatsTest, AvcodecVideoCollectTest001, TestSize.Level1)
     RSJankStats::GetInstance().AvcodecVideoCollect(1111, 0113);
 
     RSJankStats::GetInstance().AvcodecVideoStop({1111}, {"surfaceName"}, 60);
-    std::string dumpString = "";
-    std::string type = "avcodecVideo{\"func\":\"stop\",\"uniqueId\":\"2222\",\"surfacename\":\"surface\",\"fps\":60}";
-    RSJankStats::GetInstance().AvcodecVideoDump(dumpString, type, "avcodecVideo");
-    EXPECT_TRUE(dumpString.find("AvcodecVideoStop") != std::string::npos);
 }
 
 /**
- * @tc.name: IsAnimationEmptyTest001
- * @tc.desc: test IsAnimationEmpty
- * @tc.type:FUNC
+ * @tc.name: AvcodecVideoGet001
+ * @tc.desc: AvcodecVideoGet test
+ * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, IsAnimationEmptyTest001, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, AvcodecVideoGet001, TestSize.Level1)
 {
-    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
-    EXPECT_NE(rsJankStats, nullptr);
-    rsJankStats->SetStartTime();
-    rsJankStats->SetEndTime(false, true);
-    EXPECT_TRUE(rsJankStats->IsAnimationEmpty());
+    auto& inst = RSJankStats::GetInstance();
+    inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
+    inst.AvcodecVideoGet(1111);
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
-
+ 
 /**
- * @tc.name: IsAnimationEmptyTest002
- * @tc.desc: test IsAnimationEmpty
- * @tc.type:FUNC
+ * @tc.name: AvcodecVideoGet002
+ * @tc.desc: AvcodecVideoGet test
+ * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSJankStatsTest, IsAnimationEmptyTest002, TestSize.Level1)
+HWTEST_F(RSJankStatsTest, AvcodecVideoGet002, TestSize.Level1)
 {
-    std::shared_ptr<RSJankStats> rsJankStats = std::make_shared<RSJankStats>();
-    EXPECT_NE(rsJankStats, nullptr);
-    rsJankStats->implicitAnimationTotal_ = 0;
-    rsJankStats->explicitAnimationTotal_ = 0;
-    EXPECT_EQ(rsJankStats->IsAnimationEmpty(), true);
+    auto& inst = RSJankStats::GetInstance();
+    inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
+    inst.AvcodecVideoGet(2222);
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
+}
+ 
+/**
+ * @tc.name: AvcodecVideoGetRecent001
+ * @tc.desc: AvcodecVideoGetRecent test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, AvcodecVideoGetRecent001, TestSize.Level1)
+{
+    auto& inst = RSJankStats::GetInstance();
+    inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
+    inst.AvcodecVideoGetRecent();
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
+}
+ 
+/**
+ * @tc.name: AvcodecVideoGetRecent002
+ * @tc.desc: AvcodecVideoGetRecent test
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSJankStatsTest, AvcodecVideoGetRecent002, TestSize.Level1)
+{
+    auto& inst = RSJankStats::GetInstance();
+    inst.AvcodecVideoStart({1111}, {"surfaceName"}, 60, 20);
+    inst.AvcodecVideoCollect(1111, 0111);
+    inst.AvcodecVideoGetRecent();
+    inst.AvcodecVideoStop({1111}, {"surfaceName"}, 60);
 }
 
 /**

@@ -83,7 +83,7 @@ public:
 #endif
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     bool MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer,
-        const Drawing::SamplingOptions& sampling,
+        const Drawing::SamplingOptions& sampling, Drawing::AlphaType alphaType,
         const std::shared_ptr<Drawing::ColorSpace>& colorSpace = nullptr);
     bool GetRsImageCache(Drawing::Canvas& canvas, const std::shared_ptr<Media::PixelMap>& pixelMap,
         SurfaceBuffer *surfaceBuffer, const Drawing::SamplingOptions& sampling,
@@ -238,7 +238,7 @@ private:
     std::shared_ptr<ExtendImageObject> objectHandle_;
 };
 
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
 class RSB_EXPORT DrawHybridPixelMapOpItem : public DrawWithPaintOpItem {
 public:
     struct ConstructorHandle : public OpItem {

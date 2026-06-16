@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +21,7 @@
 #include "ge_visual_effect_impl.h"
 #include "ge_visual_effect_container.h"
 
+#include "common/rs_optional_trace.h"
 #include "effect/rs_render_mask_base.h"
 #include "effect/rs_render_shape_base.h"
 #include "platform/common/rs_log.h"
@@ -28,10 +29,17 @@
 
 namespace OHOS {
 namespace Rosen {
+namespace {
+constexpr float MATERIAL_SKIP_BLUR_THRESHOLD = 25.0f;
+}
 using FilterCreator = std::function<std::shared_ptr<RSNGRenderFilterBase>()>;
 static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
     {RSNGEffectType::BLUR, [] {
             return std::make_shared<RSNGRenderBlurFilter>();
+        }
+    },
+    {RSNGEffectType::MATERIAL_BLUR, [] {
+            return std::make_shared<RSNGRenderMaterialBlurFilter>();
         }
     },
     {RSNGEffectType::DISPLACEMENT_DISTORT, [] {
@@ -74,6 +82,14 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
             return std::make_shared<RSNGRenderContentLightFilter>();
         }
     },
+    {RSNGEffectType::HEAT_DISTORTION, [] {
+            return std::make_shared<RSNGRenderHeatDistortionFilter>();
+        }
+    },
+    {RSNGEffectType::BLUR_BUBBLES_RISE, [] {
+            return std::make_shared<RSNGRenderBlurBubblesRiseFilter>();
+        }
+    },
     {RSNGEffectType::GASIFY_SCALE_TWIST, [] {
             return std::make_shared<RSNGRenderGasifyScaleTwistFilter>();
         }
@@ -86,27 +102,73 @@ static std::unordered_map<RSNGEffectType, FilterCreator> creatorLUT = {
             return std::make_shared<RSNGRenderGasifyFilter>();
         }
     },
-    {RSNGEffectType::FROSTED_GLASS, [] {
-            return std::make_shared<RSNGRenderFrostedGlassFilter>();
+    {RSNGEffectType::PARTICLE_ABLATION, [] {
+            return std::make_shared<RSNGRenderParticleAblationFilter>();
         }
     },
-    {RSNGEffectType::GRID_WARP, [] {
-            return std::make_shared<RSNGRenderGridWarpFilter>();
+#ifndef ROSEN_ARKUI_X
+    {RSNGEffectType::FROSTED_GLASS, [] {
+            return std::make_shared<RSNGRenderFrostedGlassFilter>();
         }
     },
     {RSNGEffectType::FROSTED_GLASS_BLUR, [] {
             return std::make_shared<RSNGRenderFrostedGlassBlurFilter>();
         }
     },
+#endif
+    {RSNGEffectType::GRID_WARP, [] {
+            return std::make_shared<RSNGRenderGridWarpFilter>();
+        }
+    },
+    {RSNGEffectType::SDF_EDGE_LIGHT, [] {
+            return std::make_shared<RSNGRenderSDFEdgeLightFilter>();
+        }
+    },
+    {RSNGEffectType::MAGNIFIER, [] {
+            return std::make_shared<RSNGRenderMagnifierFilter>();
+        }
+    },
+    {RSNGEffectType::DISTORTION_COLLAPSE, [] {
+            return std::make_shared<RSNGRenderDistortionCollapseFilter>();
+        }
+    },
+    {RSNGEffectType::MOTION_BLUR, [] {
+            return std::make_shared<RSNGRenderMotionBlurFilter>();
+        }
+    },
 };
 
 using FilterGetSnapshotRect = std::function<RectF(std::shared_ptr<RSNGRenderFilterBase>, RectF)>;
 static std::unordered_map<RSNGEffectType, FilterGetSnapshotRect> getSnapshotRectLUT = {
+#ifndef ROSEN_ARKUI_X
+    {
+        RSNGEffectType::FROSTED_GLASS, [](std::shared_ptr<RSNGRenderFilterBase> filter, RectF rect) {
+            auto frostedGlass = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(filter);
+            auto blurRadius = frostedGlass->Getter<OHOS::Rosen::FrostedGlassBlurParamsRenderTag>()->Get();
+            auto tmp = frostedGlass->Getter<OHOS::Rosen::FrostedGlassEnvLightParamsRenderTag>()->Get();
+            auto samplingScale = frostedGlass->Getter<OHOS::Rosen::FrostedGlassSamplingScaleRenderTag>()->Get();
+            auto weightsEmboss = frostedGlass->Getter<OHOS::Rosen::FrostedGlassWeightsEmbossRenderTag>()->Get();
+            if (ROSEN_LE(weightsEmboss[1], 0.0f)) {
+                return rect;
+            }
+            auto refractOutPx = tmp[0];
+            const float maxRefractOutPx = 500.0f;
+            float outStep = std::max(blurRadius[0] +
+                std::max(std::min(refractOutPx, maxRefractOutPx), 0.0f), 0.0f) * samplingScale;
+            auto snapshotRect = rect;
+            snapshotRect.SetAll(rect.GetLeft() - outStep, rect.GetTop() - outStep, rect.GetWidth() + outStep * 2,
+                rect.GetHeight() + outStep * 2);
+            return snapshotRect;
+        }
+    },
     {
         RSNGEffectType::FROSTED_GLASS_BLUR, [](std::shared_ptr<RSNGRenderFilterBase> filter, RectF rect) {
             auto frostedGlassBlur = std::static_pointer_cast<RSNGRenderFrostedGlassBlurFilter>(filter);
             auto blurRadius = frostedGlassBlur->Getter<OHOS::Rosen::FrostedGlassBlurRadiusRenderTag>()->Get();
             auto refractOutPx = frostedGlassBlur->Getter<OHOS::Rosen::FrostedGlassBlurRefractOutPxRenderTag>()->Get();
+            if (ROSEN_LE(refractOutPx, 0.0f)) {
+                return rect;
+            }
             const float maxRefractOutPx = 500.0f;
             float outStep = std::max(blurRadius + std::max(std::min(refractOutPx, maxRefractOutPx), 0.0f), 0.0f);
             auto snapshotRect = rect;
@@ -114,11 +176,112 @@ static std::unordered_map<RSNGEffectType, FilterGetSnapshotRect> getSnapshotRect
                 rect.GetWidth() + outStep * 2, rect.GetHeight() + outStep * 2);
             return snapshotRect;
         }
-    }
+    },
+#endif
+    {
+        RSNGEffectType::MAGNIFIER, [](std::shared_ptr<RSNGRenderFilterBase> filter, RectF rect) {
+            auto magnifier = std::static_pointer_cast<RSNGRenderMagnifierFilter>(filter);
+            auto offsetX = magnifier->Getter<OHOS::Rosen::MagnifierOffsetXRenderTag>()->Get();
+            auto offsetY = magnifier->Getter<OHOS::Rosen::MagnifierOffsetYRenderTag>()->Get();
+            auto snapshotRect = rect;
+            snapshotRect.SetAll(rect.GetLeft() + offsetX, rect.GetTop() + offsetY, rect.GetWidth(), rect.GetHeight());
+            return snapshotRect;
+        }
+    },
 };
 
 using FilterGetDrawRect = std::function<RectF(std::shared_ptr<RSNGRenderFilterBase>, RectF)>;
-static std::unordered_map<RSNGEffectType, FilterGetDrawRect> getDrawRectLUT = {};
+static std::unordered_map<RSNGEffectType, FilterGetDrawRect> getDrawRectLUT = {
+    {
+        RSNGEffectType::DISTORTION_COLLAPSE, [](std::shared_ptr<RSNGRenderFilterBase> filter, RectF rect) {
+            auto distortionFilter = std::static_pointer_cast<RSNGRenderDistortionCollapseFilter>(filter);
+            auto luCorner = distortionFilter->Getter<OHOS::Rosen::DistortionCollapseLUCornerRenderTag>()->Get();
+            auto ruCorner = distortionFilter->Getter<OHOS::Rosen::DistortionCollapseRUCornerRenderTag>()->Get();
+            auto rbCorner = distortionFilter->Getter<OHOS::Rosen::DistortionCollapseRBCornerRenderTag>()->Get();
+            auto lbCorner = distortionFilter->Getter<OHOS::Rosen::DistortionCollapseLBCornerRenderTag>()->Get();
+            auto distortion =
+                distortionFilter->Getter<OHOS::Rosen::DistortionCollapseBarrelDistortionRenderTag>()->Get();
+            float left = rect.GetLeft() + std::min(luCorner[0], lbCorner[0]) * rect.GetWidth();
+            float top = rect.GetTop() + std::min(luCorner[1], ruCorner[1]) * rect.GetHeight();
+            float right = std::max(ruCorner[0], rbCorner[0]) * rect.GetWidth();
+            float bottom = std::max(lbCorner[1], rbCorner[1]) * rect.GetHeight();
+            constexpr float halfUV = 0.5f;
+            constexpr float distortScale = 0.25f;
+            constexpr float tuneNum = 4.0f;
+            constexpr float tuneDenomBase = 2.0f;
+            if (distortion[0] > 0) {
+                left -= rect.GetWidth() *
+                    (halfUV - distortScale * (tuneNum + distortion[0]) / (tuneDenomBase + distortion[0]));
+            }
+            if (distortion[1] > 0) {
+                right += rect.GetWidth() *
+                    (halfUV - distortScale * (tuneNum + distortion[1]) / (tuneDenomBase + distortion[1]));
+            }
+            if (distortion[2] > 0) {
+                top -= rect.GetHeight() *
+                    (halfUV - distortScale * (tuneNum + distortion[2]) / (tuneDenomBase + distortion[2]));
+            }
+            if (distortion[3] > 0) {
+                bottom += rect.GetHeight() *
+                    (halfUV - distortScale * (tuneNum + distortion[3]) / (tuneDenomBase + distortion[3]));
+            }
+            return RectF(floor(left), floor(top), ceil(right) - floor(left), ceil(bottom) - floor(top));
+        }
+#ifndef ROSEN_ARKUI_X
+    },
+    {
+        RSNGEffectType::FROSTED_GLASS, [](std::shared_ptr<RSNGRenderFilterBase> filter, RectF rect) {
+            auto frostedGlassFilter = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(filter);
+            auto shape = frostedGlassFilter->Getter<OHOS::Rosen::FrostedGlassShapeRenderTag>()->Get();
+            if (shape && shape->GetTransformDrawRect().IsEmpty()) {
+                RSNGRenderShapeHelper::CalcRect(shape, rect);
+            }
+            return shape == nullptr ? rect : shape->GetTransformDrawRect();
+        }
+#endif
+    },
+    {
+        RSNGEffectType::BLUR, [](std::shared_ptr<RSNGRenderFilterBase> filter, RectF rect) {
+            auto blurFilter = std::static_pointer_cast<RSNGRenderBlurFilter>(filter);
+            bool expandDrawRect = blurFilter->Getter<OHOS::Rosen::BlurExpandDrawRegionRenderTag>()->Get();
+            if (!expandDrawRect) {
+                return rect;
+            }
+            constexpr float extensionScale = 3.f;
+            auto radius = blurFilter->Getter<OHOS::Rosen::BlurRadiusXRenderTag>()->Get();
+            float extension = std::ceil(extensionScale * radius);
+            return rect.MakeOutset(extension);
+        }
+    }
+};
+
+using CheckFilterSkipFrameFunc = std::function<bool(std::shared_ptr<RSNGRenderFilterBase>)>;
+static std::unordered_map<RSNGEffectType, CheckFilterSkipFrameFunc> checkFilterSkipLUT = {
+#ifndef ROSEN_ARKUI_X
+    {
+        RSNGEffectType::FROSTED_GLASS_BLUR, [](std::shared_ptr<RSNGRenderFilterBase> filter) {
+            auto frostedGlassBlur = std::static_pointer_cast<RSNGRenderFrostedGlassBlurFilter>(filter);
+            auto blurRadius = frostedGlassBlur->Getter<OHOS::Rosen::FrostedGlassBlurRadiusRenderTag>()->Get();
+            bool isSkipFrameEnable =
+                frostedGlassBlur->Getter<OHOS::Rosen::FrostedGlassBlurSkipFrameEnableRenderTag>()->Get();
+            RS_OPTIONAL_TRACE_NAME_FMT("FROSTED_GLASS_BLUR client set skip = %d", static_cast<int>(isSkipFrameEnable));
+            return isSkipFrameEnable && blurRadius > MATERIAL_SKIP_BLUR_THRESHOLD;
+        }
+    },
+    {
+        RSNGEffectType::FROSTED_GLASS, [](std::shared_ptr<RSNGRenderFilterBase> filter) {
+            auto frostedGlass = std::static_pointer_cast<RSNGRenderFrostedGlassFilter>(filter);
+            auto blurRadius = frostedGlass->Getter<OHOS::Rosen::FrostedGlassBlurParamsRenderTag>()->Get();
+            bool isSkipFrameEnable = frostedGlass->Getter<OHOS::Rosen::FrostedGlassSkipFrameEnableRenderTag>()->Get();
+            RS_OPTIONAL_TRACE_NAME_FMT("FROSTED_GLASS client set skip = %d", static_cast<int>(isSkipFrameEnable));
+            return isSkipFrameEnable && (blurRadius[0] > MATERIAL_SKIP_BLUR_THRESHOLD ||
+                blurRadius[0] * blurRadius[1] > MATERIAL_SKIP_BLUR_THRESHOLD);
+        }
+    },
+#endif
+};
+
+RSNGRenderFilterBase::~RSNGRenderFilterBase() = default;
 
 std::shared_ptr<RSNGRenderFilterBase> RSNGRenderFilterBase::Create(RSNGEffectType type)
 {
@@ -193,6 +356,7 @@ bool RSNGRenderFilterHelper::CheckEnableEDR(std::shared_ptr<RSNGRenderFilterBase
     auto current = filter;
     while (current) {
         if (RSEffectLuminanceManager::GetEnableHdrEffect(current)) {
+            RS_OPTIONAL_TRACE_NAME_FMT("CheckEnableEDR:find edr filter, type=%d", static_cast<int>(current->GetType()));
             return true;
         }
         current = current->nextEffect_;
@@ -211,6 +375,7 @@ void RSNGRenderFilterHelper::UpdateCacheData(std::shared_ptr<Drawing::GEVisualEf
         RS_LOGE("RSNGRenderFilterHelper::UpdateCacheData: dest is nullptr");
         return;
     }
+
     auto srcImpl = src->GetImpl();
     auto destImpl = dest->GetImpl();
     bool typeMismatch = srcImpl == nullptr || destImpl == nullptr ||
@@ -252,15 +417,84 @@ RectF RSNGRenderFilterHelper::CalcRect(const std::shared_ptr<RSNGRenderFilterBas
             return iter == getSnapshotRectLUT.end() ? bound : iter->second(filter, bound);
         }
         case EffectRectType::DRAW: {
+            auto drawRect = bound;
             auto current = filter;
-            while (current->nextEffect_) {
+            do {
+                auto iter = getDrawRectLUT.find(current->GetType());
+                if (iter != getDrawRectLUT.end()) {
+                    drawRect = iter->second(current, drawRect);
+                }
                 current = current->nextEffect_;
-            }
-            auto iter = getDrawRectLUT.find(current->GetType());
-            return iter == getDrawRectLUT.end() ? bound : iter->second(filter, bound);
+            }while (current);
+            return drawRect;
         }
         default:
             return RectF();
+    }
+}
+
+void RSNGRenderFilterHelper::GetDescription(std::shared_ptr<RSNGRenderFilterBase>& filter, std::string& filterString)
+{
+    if (!filter) {
+        return;
+    }
+    auto current = filter;
+    if (!filterString.empty()) {
+        filterString += "";
+    }
+    while (current) {
+        filterString += RSNGRenderEffectHelper::GetEffectTypeString(current->GetType());
+        current = current->nextEffect_;
+        if (current) {
+            filterString += "-";
+        }
+    }
+}
+
+bool RSNGRenderFilterTemplateHelper::CheckFilterSkipFrame(RSNGEffectType type,
+    const std::shared_ptr<RSNGRenderFilterBase>& filter)
+{
+    auto checkFunc = checkFilterSkipLUT.find(type);
+    return checkFunc != checkFilterSkipLUT.end() ? checkFunc->second(filter) : false;
+}
+
+bool RSNGRenderFilterHelper::HasCustomRegion(const std::shared_ptr<RSNGRenderFilterBase>& filter)
+{
+    if (filter == nullptr) {
+        return false;
+    }
+
+    // RSNGEffectType::FROSTED_GLASS_BLUR has been specially handled.
+    // therefore it is not included in the custom region currently.
+
+    auto current = filter;
+    auto snapshotIter = getSnapshotRectLUT.find(current->GetType());
+    if (current->GetType() != RSNGEffectType::FROSTED_GLASS_BLUR &&
+        snapshotIter != getSnapshotRectLUT.end()) {
+        return true;
+    }
+
+    do {
+        auto drawIter = getDrawRectLUT.find(current->GetType());
+        if (current->GetType() != RSNGEffectType::FROSTED_GLASS_BLUR &&
+            drawIter != getDrawRectLUT.end()) {
+            return true;
+        }
+        current = current->nextEffect_;
+    } while (current);
+
+    return false;
+}
+
+void RSNGRenderFilterHelper::PrepareForForeground(std::shared_ptr<RSNGRenderFilterBase>& filter)
+{
+    auto current = filter;
+    while (current) {
+        if (current->GetType() == RSNGEffectType::BLUR) {
+            auto blurFilter = std::static_pointer_cast<RSNGRenderBlurFilter>(current);
+            blurFilter->Setter<OHOS::Rosen::BlurExpandDrawRegionRenderTag>(true);
+        }
+        current = current->nextEffect_;
     }
 }
 } // namespace Rosen

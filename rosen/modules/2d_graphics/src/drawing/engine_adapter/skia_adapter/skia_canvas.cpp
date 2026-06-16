@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.. All rights reserved.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +25,7 @@
 #include "skia_path.h"
 #include "skia_image_info.h"
 #include "skia_data.h"
+#include "skia_font.h"
 #include "skia_text_blob.h"
 #include "skia_surface.h"
 #include "skia_canvas_autocache.h"
@@ -240,7 +241,9 @@ bool SkiaCanvas::AddSdfPara(SkRuntimeShaderBuilder& builder, const SDFShapeBase&
         }
     }
     std::vector<float> color = shape.GetColorPara();
-    builder.uniform("sdfalpha") = color[0]; // color_[0] is color alpha channel.
+    if (color.size() > 0) {
+        builder.uniform("sdfalpha") = color[0]; // color_[0] is color alpha channel.
+    }
     for (uint64_t i = 1; i < color.size(); i++) {
         char buf[MAX_PARA_LEN] = {0}; // maximum length of string needed is 15.
         if (sprintf_s(buf, sizeof(buf), "colpara%lu", i) != -1) {
@@ -471,6 +474,7 @@ void SkiaCanvas::DrawBackground(const Brush& brush)
 bool SkiaCanvas::GetLocalShadowBounds(const Matrix& ctm, const Path& path, const Point3& planeParams,
     const Point3& devLightPos, scalar lightRadius, ShadowFlags flag, bool isLimitElevation, Rect& rect)
 {
+#ifdef USE_M133_SKIA
     auto skiaMatrixImpl = ctm.GetImpl<SkiaMatrix>();
     if (skiaMatrixImpl == nullptr) {
         LOGE("skiaMatrixImpl is null, %{public}s return", __FUNCTION__);
@@ -491,6 +495,9 @@ bool SkiaCanvas::GetLocalShadowBounds(const Matrix& ctm, const Path& path, const
         return false;
     }
     return true;
+#else
+    return false;
+#endif
 }
 
 void SkiaCanvas::DrawShadow(const Path& path, const Point3& planeParams, const Point3& devLightPos, scalar lightRadius,
@@ -539,6 +546,22 @@ void SkiaCanvas::DrawColor(ColorQuad color, BlendMode mode)
     }
 
     skCanvas_->drawColor(static_cast<SkColor>(color), static_cast<SkBlendMode>(mode));
+}
+
+void SkiaCanvas::DrawUIColor(UIColor color, BlendMode mode)
+{
+    if (!skCanvas_) {
+        LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    Color generalColor;
+    generalColor.SetRgbF(color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha());
+    skCanvas_->drawColor(static_cast<SkColor>(generalColor.CastToColorQuad()), static_cast<SkBlendMode>(mode));
+}
+
+void SkiaCanvas::DrawParticle(std::shared_ptr<ParticleEffect> particle)
+{
+    LOGD("SKIA does not support Particle. %{public}d", __LINE__);
 }
 
 void SkiaCanvas::DrawRegion(const Region& region, const Paint& paint)
@@ -802,8 +825,8 @@ void SkiaCanvas::DrawAtlas(const Image* atlas, const RSXform xform[], const Rect
         return;
     }
 
-    SkRSXform skRSXform[count];
-    SkRect skTex[count];
+    std::vector<SkRSXform> skRSXform(count);
+    std::vector<SkRect> skTex(count);
     for (int i = 0; i < count; ++i) {
         SkiaConvertUtils::DrawingRSXformCastToSkXform(xform[i], skRSXform[i]);
         SkiaConvertUtils::DrawingRectCastToSkRect(tex[i], skTex[i]);
@@ -827,7 +850,7 @@ void SkiaCanvas::DrawAtlas(const Image* atlas, const RSXform xform[], const Rect
     const SkRect* skCullRect = reinterpret_cast<const SkRect*>(cullRect);
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
-    skCanvas_->drawAtlas(img.get(), skRSXform, skTex, skColors.empty() ? nullptr : skColors.data(), count,
+    skCanvas_->drawAtlas(img.get(), skRSXform.data(), skTex.data(), skColors.empty() ? nullptr : skColors.data(), count,
         static_cast<SkBlendMode>(mode), *samplingOptions, skCullRect, &skPaint_);
 }
 
@@ -1002,6 +1025,36 @@ void SkiaCanvas::DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom)
         return;
     }
     svgDom->render(skCanvas_);
+}
+
+void SkiaCanvas::DrawGlyphs(int count, const uint16_t glyphs[], const Point positions[],
+                            Point origin, const Font* font, const Paint& paint)
+{
+    if (!skCanvas_) {
+        LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    if (!font) {
+        LOGD("font is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    if (!glyphs || !positions) {
+        LOGD("array is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    auto skiaFont = font->GetImpl<SkiaFont>();
+    if (!skiaFont) {
+        LOGD("skiaFont is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    auto skFont = skiaFont->GetFont();
+    skPaint_ = defaultPaint_;
+    SkiaPaint::PaintToSkPaint(paint, skPaint_);
+    const SkPoint* skPts = reinterpret_cast<const SkPoint*>(positions);
+    SkPoint skOrigin;
+    skOrigin.fX = origin.GetX();
+    skOrigin.fY = origin.GetY();
+    skCanvas_->drawGlyphs(count, glyphs, skPts, skOrigin, skFont, skPaint_);
 }
 
 void SkiaCanvas::DrawTextBlob(const TextBlob* blob, const scalar x, const scalar y, const Paint& paint)
@@ -1463,6 +1516,37 @@ std::array<int, 2> SkiaCanvas::CalcHpsBluredImageDimension(const Drawing::HpsBlu
     SkBlurArg blurArg(srcRect, dstRect, blurParams.sigma, blurParams.saturation, blurParams.brightness);
     return skCanvas_->CalcHpsBluredImageDimension(blurArg);
 #endif
+}
+
+void SkiaCanvas::InsertOpaqueRegion(const std::vector<RectI>& opaqueRects)
+{
+    LOGD("skia does not support InsertOpaqueRegion");
+}
+
+bool SkiaCanvas::IsOpaque()
+{
+    if (!skCanvas_) {
+        LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return false;
+    }
+    return skCanvas_->isOpaque();
+}
+
+void SkiaCanvas::BeginPrimListCollecting(const Rect& bounds)
+{
+    LOGD("SkiaCanvas does not support BeginPrimListCollecting");
+}
+
+std::shared_ptr<PrimList> SkiaCanvas::EndPrimListCollecting()
+{
+    LOGD("SkiaCanvas does not support EndPrimListCollecting");
+    return nullptr;
+}
+
+bool SkiaCanvas::DrawPrimList(const PrimList& primList)
+{
+    LOGD("SkiaCanvas does not support DrawPrimList");
+    return false;
 }
 } // namespace Drawing
 } // namespace Rosen

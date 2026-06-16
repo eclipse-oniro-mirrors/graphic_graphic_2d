@@ -82,6 +82,7 @@ HWTEST_F(RSVulkanContextTest, CreateInstance001, TestSize.Level1)
 HWTEST_F(RSVulkanContextTest, SelectPhysicalDevice001, TestSize.Level1)
 {
     RsVulkanInterface rsVulkanInterface;
+    rsVulkanInterface.instance_ = nullptr;
     auto ret = rsVulkanInterface.SelectPhysicalDevice(true);
     EXPECT_TRUE(ret);
 }
@@ -693,7 +694,7 @@ HWTEST_F(RSVulkanContextTest, GetDrawingContext003, TestSize.Level2)
 {
     RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
     RsVulkanContext::GetSingleton().SetIsProtected(true);
-    
+
     RsVulkanContext::SaveNewDrawingContext(gettid(), nullptr);
     ASSERT_NE(RsVulkanContext::GetSingleton().GetDrawingContext(), nullptr);
 
@@ -711,7 +712,7 @@ HWTEST_F(RSVulkanContextTest, GetDrawingContext004, TestSize.Level2)
 {
     RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
     RsVulkanContext::GetSingleton().SetIsProtected(true);
-    
+
     auto protectedDrawingContext = std::make_shared<Drawing::GPUContext>();
     RsVulkanContext::SaveNewDrawingContext(gettid(), protectedDrawingContext);
     ASSERT_NE(RsVulkanContext::GetSingleton().GetDrawingContext(), nullptr);
@@ -748,7 +749,7 @@ HWTEST_F(RSVulkanContextTest, CreateDrawingContext005, TestSize.Level2)
 {
     RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
     RsVulkanContext::GetSingleton().SetIsProtected(true);
-    
+
     RsVulkanContext::SaveNewDrawingContext(gettid(), nullptr);
     ASSERT_NE(RsVulkanContext::GetSingleton().CreateDrawingContext(), nullptr);
 
@@ -766,7 +767,7 @@ HWTEST_F(RSVulkanContextTest, CreateDrawingContext006, TestSize.Level2)
 {
     RsVulkanContext::GetSingleton().InitVulkanContextForUniRender("");
     RsVulkanContext::GetSingleton().SetIsProtected(true);
-    
+
     auto protectedDrawingContext = std::make_shared<Drawing::GPUContext>();
     RsVulkanContext::SaveNewDrawingContext(gettid(), protectedDrawingContext);
     ASSERT_NE(RsVulkanContext::GetSingleton().CreateDrawingContext(), nullptr);

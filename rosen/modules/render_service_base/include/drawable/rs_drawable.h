@@ -27,6 +27,23 @@
 #include "modifier_ng/rs_modifier_ng_type.h"
 
 namespace OHOS::Rosen {
+
+enum DrawableVecStatus : uint8_t {
+    CLIP_TO_BOUNDS     = 1 << 0,
+    BG_BOUNDS_PROPERTY = 1 << 1,
+    FG_BOUNDS_PROPERTY = 1 << 2,
+    ENV_CHANGED        = 1 << 3,
+    // Used by skip logic in RSRenderNode::UpdateDisplayList
+    FRAME_NOT_EMPTY    = 1 << 4,
+    NODE_NOT_EMPTY     = 1 << 5,
+    DRAWABLE_VEC_NEED_CLEAR = 1 << 6,
+
+    // masks
+    BOUNDS_MASK  = CLIP_TO_BOUNDS | BG_BOUNDS_PROPERTY | FG_BOUNDS_PROPERTY,
+    FRAME_MASK   = FRAME_NOT_EMPTY,
+    OTHER_MASK   = ENV_CHANGED,
+};
+
 class RSRenderNode;
 
 // NOTE: MUST update DrawableGeneratorLut in rs_drawable_content.cpp when new slots are added
@@ -43,6 +60,7 @@ enum class RSDrawableSlot : int8_t {
     SHADOW,
     FOREGROUND_FILTER,
     OUTLINE,
+    MATERIAL_SHADER,
 
     // BG properties in Bounds Clip
     BG_SAVE_BOUNDS,
@@ -82,13 +100,14 @@ enum class RSDrawableSlot : int8_t {
     FG_RESTORE_BOUNDS,
 
     // No clip (unless ClipToBounds is set)
-    POINT_LIGHT,
+    OVERLAY_NG_SHADER,
     BORDER,
     OVERLAY,
     PARTICLE_EFFECT,
     PIXEL_STRETCH,
 
     // Restore state
+    RESTORE_CLIP_TO_BOUNDS,
     RESTORE_BLENDER,
     RESTORE_FOREGROUND_FILTER,
     RESTORE_ALL,
@@ -96,7 +115,7 @@ enum class RSDrawableSlot : int8_t {
     // Annotations: Please remember to update this when new slots are added.
     // properties before Background, not clipped
     TRANSITION_PROPERTIES_BEGIN = MASK,
-    TRANSITION_PROPERTIES_END   = OUTLINE,
+    TRANSITION_PROPERTIES_END   = MATERIAL_SHADER,
     // background properties, clipped by bounds by default
     BG_PROPERTIES_BEGIN         = BLENDER,
     BG_PROPERTIES_END           = ENV_FOREGROUND_COLOR_STRATEGY,
@@ -107,7 +126,7 @@ enum class RSDrawableSlot : int8_t {
     FG_PROPERTIES_BEGIN         = BINARIZATION,
     FG_PROPERTIES_END           = FG_RESTORE_BOUNDS - 1,
     // post-foreground properties, can be clipped by ClipToBounds
-    EXTRA_PROPERTIES_BEGIN      = POINT_LIGHT,
+    EXTRA_PROPERTIES_BEGIN      = OVERLAY_NG_SHADER,
     EXTRA_PROPERTIES_END        = PIXEL_STRETCH,
 
     MAX = RESTORE_ALL + 1,
@@ -129,6 +148,7 @@ public:
     using Ptr = std::shared_ptr<RSDrawable>;
     using Vec = std::map<int8_t, Ptr>;
     using Generator = std::function<Ptr(const RSRenderNode&)>;
+    using DrawList = std::vector<Ptr>;
 
     // UI methods: OnUpdate and OnGenerate (static method defined in every subclass) can only access the UI (staging)
     // members, else may cause crash.
@@ -141,12 +161,12 @@ public:
 
     // Render helper methods: This func is called in UI thread, but the generated DrawFunc will be called in RT thread,
     // they can only access the RT members, else may cause crash
-    virtual Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const = 0;
-
+    virtual void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const = 0;
+    
     // Sync methods, then can access all members and do UI->RT sync
     virtual void OnSync() = 0;
 
-    virtual void OnPurge() {};
+    virtual void OnPurge() {}
 
     virtual bool GetEnableEDR() const
     {
@@ -166,6 +186,25 @@ public:
     static void UpdateSaveRestore(RSRenderNode& node, Vec& drawableVec, uint8_t& drawableVecStatus);
     static void ResetPixelStretchSlot(const RSRenderNode &node, Vec &drawableVec);
     static bool CanFusePixelStretch(Vec &drawableVec);
+
+#ifdef USE_PRIMITIVE
+    virtual void OnDrawPrimitive(Drawing::Canvas* canvas, const Drawing::Rect* rect);
+    void SetDirty()
+    {
+        stagingIsDirty_ = true;
+    }
+    void OnPrimitiveSync();
+
+protected:
+    virtual bool UsePrimList() const
+    {
+        return false;
+    }
+
+    std::shared_ptr<Drawing::PrimList> primList_;
+    bool isDirty_ = false;
+    bool stagingIsDirty_ = true;
+#endif
 };
 } // namespace OHOS::Rosen
 #endif // RENDER_SERVICE_BASE_DRAWABLE_RS_DRAWABLE_H

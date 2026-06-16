@@ -28,9 +28,6 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-namespace {
-constexpr uint32_t DRAWCMDLIST_OPSIZE_COUNT_LIMIT = 50000;
-}
 
 std::shared_ptr<DrawCmdList> DrawCmdList::CreateFromData(const CmdListData& data, bool isCopy)
 {
@@ -196,6 +193,7 @@ void DrawCmdList::Dump(std::string& out)
     }
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::MarshallingDrawOps()
 {
     if (mode_ == DrawCmdList::UnmarshalMode::IMMEDIATE) {
@@ -231,6 +229,7 @@ void DrawCmdList::MarshallingDrawOps()
         replacedOpListForBuffer_.emplace_back(opIndexForCache[index], lastOpItemOffset_.value());
     }
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList* cmdlist) const
 {
@@ -246,6 +245,7 @@ void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList* cmdlist) cons
     }
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::CaculatePerformanceOpType()
 {
     size_t offset = offset_;
@@ -275,6 +275,7 @@ void DrawCmdList::CaculatePerformanceOpType()
         offset = curOpItemPtr->GetNextOpItemOffset();
     } while (offset != 0 && count <= MAX_OPITEMSIZE);
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
 {
@@ -451,10 +452,12 @@ void DrawCmdList::SetReplacedOpList(std::vector<std::pair<size_t, size_t>> repla
     replacedOpListForBuffer_ = replacedOpList;
 }
 
+// LCOV_EXCL_START
 DrawCmdList::HybridRenderType DrawCmdList::GetHybridRenderType() const
 {
     return hybridRenderType_;
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::SetHybridRenderType(DrawCmdList::HybridRenderType hybridRenderType)
 {
@@ -475,6 +478,7 @@ void DrawCmdList::UpdateNodeIdToPicture(NodeId nodeId)
     }
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::ClearCache()
 {
 #ifdef ROSEN_OHOS
@@ -487,6 +491,7 @@ void DrawCmdList::ClearCache()
     isCached_ = false;
 #endif
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::GenerateCacheByVector(Canvas* canvas, const Rect* rect)
 {
@@ -601,15 +606,9 @@ void DrawCmdList::PlaybackByVector(Canvas& canvas, const Rect* rect)
     if (drawOpItems_.empty()) {
         return;
     }
-    uint32_t opCount = 0;
     for (auto op : drawOpItems_) {
-        if (isCanvasDrawingOpLimitEnabled_ && opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
-            LOGE("DrawCmdList::PlaybackByVector Out of DrawOp limit, DrawOpCount: %{public}d", opCount);
-            break;
-        }
         if (op) {
             op->Playback(&canvas, rect);
-            ++opCount;
         }
     }
     canvas.DetachPaint();
@@ -635,7 +634,7 @@ bool DrawCmdList::UnmarshallingDrawOpsSimple(
             }
             uint32_t type = curOpItemPtr->GetType();
             if (auto op = player.Unmarshalling(type, itemPtr, opAllocator_.GetSize() - offset, isReplayMode)) {
-                drawOpItems_.emplace_back(op);
+                drawOpItems.emplace_back(op);
             }
             if (curOpItemPtr->GetNextOpItemOffset() < offset + sizeof(OpItem)) {
                 break;
@@ -647,20 +646,24 @@ bool DrawCmdList::UnmarshallingDrawOpsSimple(
     return true;
 }
 
+// LCOV_EXCL_START
+bool DrawCmdList::UnmarshallingDrawOpsSimple()
+{
+    if (mode_ == DrawCmdList::UnmarshalMode::DEFERRED) {
+        return true;
+    }
+    return UnmarshallingDrawOpsSimple(drawOpItems_, lastOpGenSize_);
+}
+// LCOV_EXCL_STOP
+
 void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
 {
     if (!UnmarshallingDrawOpsSimple(drawOpItems_, lastOpGenSize_)) {
         return;
     }
-    uint32_t opCount = 0;
     for (auto op : drawOpItems_) {
-        if (isCanvasDrawingOpLimitEnabled_ && opCount > DRAWCMDLIST_OPSIZE_COUNT_LIMIT) {
-            LOGE("DrawCmdList::PlaybackByBuffer Out of DrawOp limit, DrawOpCount: %{public}d", opCount);
-            break;
-        }
         if (op) {
             op->Playback(&canvas, rect);
-            ++opCount;
         }
     }
     canvas.DetachPaint();
@@ -756,6 +759,7 @@ void DrawCmdList::PatchTypefaceIds(std::shared_ptr<Drawing::DrawCmdList> refDraw
     } while (offset != 0 && offset < maxOffset && count <= MAX_OPITEMSIZE);
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::Purge()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -772,12 +776,14 @@ void DrawCmdList::Purge()
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::SetIsNeedUnmarshalOnDestruct(bool isNeedUnmarshalOnDestruct)
 {
     isNeedUnmarshalOnDestruct_ = isNeedUnmarshalOnDestruct;
 }
 
+// LCOV_EXCL_START
 size_t DrawCmdList::GetSize()
 {
     size_t totoalSize = sizeof(*this);
@@ -793,18 +799,17 @@ size_t DrawCmdList::GetSize()
     }
     return totoalSize;
 }
+// LCOV_EXCL_STOP
 
-void DrawCmdList::SetCanvasDrawingOpLimitEnable(bool isEnable)
-{
-    isCanvasDrawingOpLimitEnabled_ = isEnable;
-}
-
+// LCOV_EXCL_START
 const std::vector<std::shared_ptr<DrawOpItem>> DrawCmdList::GetDrawOpItems() const
 {
     std::vector<std::shared_ptr<DrawOpItem>> drawOpItems(drawOpItems_);
     return drawOpItems;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 RectF DrawCmdList::GetCmdlistDrawRegion()
 {
     Rect cmdlistDrawRegion;
@@ -838,6 +843,7 @@ RectF DrawCmdList::GetCmdlistDrawRegion()
     }
     return cmdlistDrawRegion;
 }
+// LCOV_EXCL_STOP
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

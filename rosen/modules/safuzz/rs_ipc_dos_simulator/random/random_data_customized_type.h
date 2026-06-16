@@ -41,7 +41,6 @@ public:
     static RSWaterRipplePara GetRandomRSWaterRipplePara();
     static RSFlyOutPara GetRandomRSFlyOutPara();
     static std::shared_ptr<MotionBlurParam> GetRandomMotionBlurParamSharedPtr();
-    static std::shared_ptr<RSMagnifierParams> GetRandomRSMagnifierParamsSharedPtr();
     static std::vector<std::shared_ptr<EmitterUpdater>> GetRandomEmitterUpdaterSharedPtrVector(
         const std::string& sizeType = "normal");
     static ShapeType GetRandomShapeType();
@@ -64,11 +63,11 @@ public:
     static std::shared_ptr<RSShader> GetRandomRSShaderSharedPtr();
     static Drawing::Matrix GetRandomDrawingMatrix();
     static std::shared_ptr<Drawing::DrawCmdList> GetRandomDrawingDrawCmdListPtr();
+    static DrawNodeType GetRandomDrawNodeType();
     static std::shared_ptr<RSNGRenderFilterBase> GetRandomRSNGFilterPtr();
     static std::shared_ptr<RSNGRenderMaskBase> GetRandomRSNGMaskPtr();
     static std::shared_ptr<RSNGRenderShaderBase> GetRandomRSNGShaderPtr();
     static std::shared_ptr<RSNGRenderShapeBase> GetRandomRSNGShapePtr();
-    static DrawNodeType GetRandomDrawNodeType();
 
     // RSDisplayNodeCommand params
     static RSDisplayNodeConfig GetRandomRSDisplayNodeConfig();
@@ -87,11 +86,15 @@ public:
     static RectF GetRandomRectF();
     static std::shared_ptr<RectF> GetRandomRectFSharedPtr();
     static RRect GetRandomRRect();
+    static std::shared_ptr<Drawing::DrawCmdList> GetRandomDrawCmdList();
+    static std::vector<float> GetRandomSmallFloatVector();
     static std::vector<Vector2f> GetRandomVectorVector2f();
     static std::vector<Vector2f> GetRandomSmallVectorVector2f();
-    static std::vector<float> GetRandomSmallFloatVector();
+    static std::vector<Vector4f> GetRandomSmallVectorVector4f();
     static std::shared_ptr<Media::PixelMap> GetRandomPixelMap();
     static RSShadowBlenderPara GetRandomRSShadowBlenderPara();
+    static RSHdrDarkenBlenderPara GetRandomRSHdrDarkenBlenderPara();
+
 #ifndef ROSEN_CROSS_PLATFORM
     static GraphicColorGamut GetRandomGraphicColorGamut();
 #endif

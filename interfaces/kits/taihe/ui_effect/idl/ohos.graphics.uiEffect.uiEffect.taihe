@@ -14,6 +14,8 @@
  */
 
 @!namespace("@ohos.graphics.uiEffect", "uiEffect")
+@!sts_export_default
+
 from ohos.graphics.uiEffect use BrightnessBlenderParam;
 from ohos.multimedia.image.image use PixelMap;
 
@@ -37,15 +39,48 @@ enum WaterRippleMode: i32 {
   MINI_RECV = 3
 }
 
-struct BrightnessBlender {
-  cubicRate: f64;
-  quadraticRate: f64;
-  linearRate: f64;
-  degree: f64;
-  saturation: f64;
-  positiveCoefficient: @sts_type("[double, double, double]") Opaque;
-  negativeCoefficient: @sts_type("[double, double, double]") Opaque;
-  fraction: f64;
+@tuple
+struct Tuple3F {
+  x: f64;
+  y: f64;
+  z: f64;
+}
+
+@class
+interface Blender {
+  getNativePtr(): i64;
+}
+
+@class
+interface BrightnessBlender: Blender {
+  @get getCubicRate(): f64;
+  @set setCubicRate(cubicRate: f64): void;
+  @get getQuadraticRate(): f64;
+  @set setQuadraticRate(quadraticRate: f64): void;
+  @get getLinearRate(): f64;
+  @set setLinearRate(linearRate: f64): void;
+  @get getDegree(): f64;
+  @set setDegree(degree: f64): void;
+  @get getSaturation(): f64;
+  @set setSaturation(saturation: f64): void;
+  @get getPositiveCoefficient(): Tuple3F;
+  @set setPositiveCoefficient(positiveCoefficient: Tuple3F): void;
+  @get getNegativeCoefficient(): Tuple3F;
+  @set setNegativeCoefficient(negativeCoefficient: Tuple3F): void;
+  @get getFraction(): f64;
+  @set setFraction(fraction: f64): void;
+}
+
+@class
+interface HdrBrightnessBlender: BrightnessBlender {
+}
+
+@class
+interface HdrDarkenBlender: Blender {
+  @get getHdrBrightnessRatio(): f64;
+  @set setHdrBrightnessRatio(hdrBrightnessRatio: f64): void;
+  @get getGrayscaleFactor(): Optional<Tuple3F>;
+  @set setGrayscaleFactor(grayscaleFactor: Optional<Tuple3F>): void;
 }
 
 struct Color {
@@ -53,6 +88,29 @@ struct Color {
   green: f64;
   blue: f64;
   alpha: f64;
+}
+
+struct LiquidMaterialEffectParam {
+  enable : bool;
+  distortProgress : f64;
+  distortFactor : f64;
+  rippleProgress : f64;
+  refractionFactor : f64;
+  reflectionFactor : f64;
+  materialFactor : f64;
+  tintColor : @sts_type("[double, double, double, double]") Opaque;
+  @optional ripplePosition: Optional<Array<@sts_type("[double, double]") Opaque>>;
+}
+
+struct BrightnessParam {
+  rate : f64;
+  lightUpDegree : f64;
+  cubicCoeff : f64;
+  quadCoeff : f64;
+  saturation : f64;
+  posRgb : @sts_type("[double, double, double]") Opaque;
+  negRgb : @sts_type("[double, double, double]") Opaque;
+  fraction : f64;
 }
 
 enum FlyMode : i32 {
@@ -83,6 +141,7 @@ interface Filter {
     @optional bloom: Optional<bool>): Filter;
   ColorGradient(colors: Array<Color>, positions: Array<@sts_type("common2D.Point") Opaque>, strengths: Array<f64>,
     @optional alphaMask: Optional<Mask>): Filter;
+  getNativePtr(): i64;
 }
 
 @class
@@ -94,8 +153,13 @@ function CreateRippleMask(center: @sts_type("common2D.Point") Opaque, radius: f6
   @optional offset: Optional<f64>): Mask;
 
 @static("Mask")
-function CreatePixelMapMask(pixelMap: PixelMap, srcRect: @sts_type("common2D.Rect") Opaque,
+@rename("createPixelMapMask")
+function CreatePixelMapMaskWithRect(pixelMap: PixelMap, srcRect: @sts_type("common2D.Rect") Opaque,
   dstRect: @sts_type("common2D.Rect") Opaque, @optional fillColor: Optional<Color>): Mask;
+
+@static("Mask")
+@rename("createPixelMapMask")
+function CreatePixelMapMaskOnly(pixelMap: PixelMap): Mask;
 
 @static("Mask")
 function CreateWaveGradientMask(center: @sts_type("common2D.Point") Opaque, width: f64, propagationRadius: f64,
@@ -105,6 +169,9 @@ function CreateWaveGradientMask(center: @sts_type("common2D.Point") Opaque, widt
 function CreateRadialGradientMask(center: @sts_type("common2D.Point") Opaque, radiusX: f64, radiusY: f64,
   gradients: Array<@sts_type("[double, double]") Opaque>): Mask;
 
+@static("Mask")
+function CreateUseEffectMask(useEffect: bool): Mask;
+
 
 interface VisualEffect {
   BackgroundColorBlender(blender: BrightnessBlender): VisualEffect;
@@ -112,14 +179,18 @@ interface VisualEffect {
     @optional alphaMask: Optional<Mask>): VisualEffect;
   BorderLight(lightPosition: @sts_type("common2D.Point3d") Opaque, lightColor: @sts_type("common2D.Color") Opaque,
     lightIntensity: f64, borderWidth: f64): VisualEffect;
+  LiquidMaterial(param : LiquidMaterialEffectParam, useEffectMask: Mask, @optional distortMask: Optional<Mask>,
+    @optional brightnessParam: Optional<BrightnessParam>): VisualEffect;
+  getNativePtr(): i64;
 }
+
+function CreateBlender(): Blender;
 
 function CreateBrightnessBlender(param: BrightnessBlenderParam): BrightnessBlender;
 
-struct HdrBrightnessBlender {
-  @extends brightnessBlender: BrightnessBlender;
-}
 function CreateHdrBrightnessBlender(param: BrightnessBlenderParam): HdrBrightnessBlender;
+
+function CreateHdrDarkenBlender(ratio: f64, factors: Optional<Tuple3F>): HdrDarkenBlender;
 
 function CreateFilter(): Filter;
 function CreateEffect(): VisualEffect;

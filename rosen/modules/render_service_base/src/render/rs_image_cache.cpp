@@ -63,8 +63,12 @@ void RSImageCache::ReleaseDrawingImageCache(uint64_t uniqueId)
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = drawingImageCache_.find(uniqueId);
     if (it != drawingImageCache_.end()) {
-        it->second.second--;
-        if (it->second.first == nullptr || it->second.second == 0) {
+        auto& [ptr, count] = it->second;
+        if (ptr == nullptr || count == 0) {
+            drawingImageCache_.erase(it);
+            return;
+        }
+        if (--count == 0) {
             drawingImageCache_.erase(it);
         }
     }
@@ -123,6 +127,7 @@ void RSImageCache::ReleaseUniqueIdList()
     for (const auto& uniqueId : clearList) {
         ReleasePixelMapCache(uniqueId);
     }
+    ReleaseEditablePixelMapCache();
 }
 
 bool RSImageCache::CheckUniqueIdIsEmpty()
@@ -186,6 +191,110 @@ bool RSImageCache::CheckRefCntAndReleaseImageCache(uint64_t uniqueId, std::share
     return true;
 }
 
+void RSImageCache::CacheEditablePixelMap(uint64_t uniqueId, std::shared_ptr<Media::PixelMap> pixelMap)
+{
+    if (pixelMap && uniqueId > 0) {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheMutex_);
+        editablePixelMapCache_.emplace(uniqueId, std::make_pair(pixelMap, 0));
+    }
+}
+
+std::shared_ptr<Media::PixelMap> RSImageCache::GetEditablePixelMapCache(uint64_t uniqueId) const
+{
+    std::lock_guard<std::mutex> lock(editablePixelMapCacheMutex_);
+    auto it = editablePixelMapCache_.find(uniqueId);
+    if (it != editablePixelMapCache_.end()) {
+        return it->second.first;
+    }
+    return nullptr;
+}
+
+void RSImageCache::IncreaseEditablePixelMapCacheRefCount(uint64_t uniqueId)
+{
+    std::lock_guard<std::mutex> lock(editablePixelMapCacheMutex_);
+    auto it = editablePixelMapCache_.find(uniqueId);
+    if (it != editablePixelMapCache_.end()) {
+        it->second.second++;
+    }
+}
+
+void RSImageCache::DiscardEditablePixelMapCache(uint64_t uniqueId)
+{
+    std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheMutex_);
+        auto it = editablePixelMapCache_.find(uniqueId);
+        if (it == editablePixelMapCache_.end()) {
+            return;
+        }
+        if (UNLIKELY(it->second.first == nullptr)) {
+            editablePixelMapCache_.erase(it);
+            return;
+        }
+        pixelMap = it->second.first;
+        editablePixelMapCache_.erase(it);
+    }
+    {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheToReleaseMutex_);
+        editablePixelMapCacheToRelease_.emplace_back(pixelMap);
+    }
+}
+
+void RSImageCache::DecreaseRefCountAndDiscardEditablePixelMapCache(uint64_t uniqueId)
+{
+    std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheMutex_);
+        auto it = editablePixelMapCache_.find(uniqueId);
+        if (it == editablePixelMapCache_.end()) {
+            return;
+        }
+        if (UNLIKELY(it->second.first == nullptr)) {
+            editablePixelMapCache_.erase(it);
+            return;
+        }
+        if (--it->second.second == 0) {
+            pixelMap = it->second.first;
+            editablePixelMapCache_.erase(it);
+        }
+    }
+    if (pixelMap != nullptr) {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheToReleaseMutex_);
+        editablePixelMapCacheToRelease_.emplace_back(pixelMap);
+    }
+}
+
+void RSImageCache::DecreaseRefCountAndReleaseEditablePixelMapCache(uint64_t uniqueId)
+{
+    std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheMutex_);
+        auto it = editablePixelMapCache_.find(uniqueId);
+        if (it == editablePixelMapCache_.end()) {
+            return;
+        }
+        if (UNLIKELY(it->second.first == nullptr)) {
+            editablePixelMapCache_.erase(it);
+            return;
+        }
+        if (--it->second.second == 0) {
+            pixelMap = it->second.first;
+            editablePixelMapCache_.erase(it);
+        }
+    }
+    pixelMap.reset();
+}
+
+void RSImageCache::ReleaseEditablePixelMapCache()
+{
+    std::vector<std::shared_ptr<Media::PixelMap>> editablePixelMapCacheToRelease;
+    {
+        std::lock_guard<std::mutex> lock(editablePixelMapCacheToReleaseMutex_);
+        std::swap(editablePixelMapCacheToRelease, editablePixelMapCacheToRelease_);
+    }
+    editablePixelMapCacheToRelease.clear();
+}
+
 void RSImageCache::CacheRenderDrawingImageByPixelMapId(uint64_t uniqueId,
     std::shared_ptr<Drawing::Image> img, pid_t tid)
 {
@@ -214,11 +323,13 @@ void RSImageCache::ReleaseDrawingImageCacheByPixelMapId(uint64_t uniqueId)
     auto it = pixelMapIdRelatedDrawingImageCache_.find(uniqueId);
     if (it != pixelMapIdRelatedDrawingImageCache_.end()) {
         pixelMapIdRelatedDrawingImageCache_.erase(it);
-        bool isEnable = RSImageDetailEnhancerThread::Instance().GetEnableStatus();
-        if (isEnable && RSImageDetailEnhancerThread::Instance().GetOutImage(uniqueId)) {
-            RSImageDetailEnhancerThread::Instance().ReleaseOutImage(uniqueId);
-            RSImageDetailEnhancerThread::Instance().SetProcessStatus(uniqueId, false);
+#ifdef RS_ENABLE_IMAGE_DETAIL_ENHANCER
+        // used for ScaleImageAsync
+        bool isEnabled = RSImageDetailEnhancerThread::Instance().GetEnabled();
+        if (isEnabled && RSImageDetailEnhancerThread::Instance().GetScaledImage(uniqueId)) {
+            RSImageDetailEnhancerThread::Instance().ReleaseScaledImage(uniqueId);
         }
+#endif
     }
 }
 
@@ -229,12 +340,26 @@ void RSImageCache::ReserveImageInfo(std::shared_ptr<RSImage> rsImage,
     if (!RSSystemProperties::GetDefaultMemClearEnabled()) {
         return;
     }
+
+    auto drawCmdShared = drawCmd.lock();
+    if (!drawCmdShared) {
+        return;
+    }
     if (rsImage != nullptr) {
         auto drawableAdapter = DrawableV2::RSRenderNodeDrawableAdapter::GetDrawableById(nodeId);
         if (drawableAdapter == nullptr) {
             return;
         }
         NodeId surfaceNodeId = drawableAdapter->GetRenderParams()->GetFirstLevelNodeId();
+        for (const auto& [existingImg, existingCmd] : rsImageInfoMap[surfaceNodeId]) {
+            auto existingImgShared = existingImg.lock();
+            auto existingCmdShared = existingCmd.lock();
+            if (existingImgShared && existingCmdShared &&
+                rsImage.get() == existingImgShared.get() &&
+                drawCmdShared.get() == existingCmdShared.get()) {
+                return;
+            }
+        }
         std::weak_ptr<RSImage> rsImage_weak = rsImage;
         rsImageInfoMap[surfaceNodeId].push_back(std::make_pair(rsImage_weak, drawCmd));
     }

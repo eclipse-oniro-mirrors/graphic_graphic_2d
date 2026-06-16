@@ -17,12 +17,13 @@
 #ifdef RS_ENABLE_UNI_RENDER
 #include "ability_manager_client.h"
 #include "platform/common/rs_hisysevent.h"
+#include "xcollie/process_kill_reason.h"
 #endif
 
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "rs_trace.h"
-#include <fstream>
+
 namespace OHOS {
 namespace Rosen {
 namespace {
@@ -37,12 +38,7 @@ constexpr uint32_t MEM_UID_STRING_LEN = 8;
 constexpr uint32_t MEM_SURNODE_STRING_LEN = 40;
 constexpr uint32_t MEM_FRAME_STRING_LEN = 35;
 constexpr uint32_t MEM_NODEID_STRING_LEN = 20;
-constexpr uint32_t NUM_OF_NODE_THRESHOLD = 40000;
-const std::string ASHMEM_INFO_PATH = "/proc/ashmem_process_info";
-const std::string DMABUF_INFO_PATH = "/proc/process_dmabuf_info";
-#ifdef RS_ENABLE_UNI_RENDER
-constexpr int KILL_PROCESS_TYPE = 301;
-#endif
+
 struct MemoryStats {
     int64_t totalSize = 0;
     int count = 0;
@@ -187,22 +183,6 @@ void MemoryTrack::AddNodeRecord(const NodeId id, const MemoryInfo& info)
     if (itr == memNodeMap_.end()) {
         memNodeMap_.emplace(id, info);
         memNodeOfPidMap_[info.pid].push_back(nodeInfoOfPid);
-        if (RSSystemProperties::GetRSNodeExceedKillEnabled()
-            && memNodeOfPidMap_[info.pid].size() > NUM_OF_NODE_THRESHOLD
-            && reportKillProcessSet_.find(info.pid) == reportKillProcessSet_.end()) {
-            std::string reason = "pid:[" + std::to_string(info.pid) + "], the number of node exceeds ths limit: "
-                + std::to_string(memNodeOfPidMap_[info.pid].size());
-            RS_LOGE("KillProcess, %{public}s", reason.c_str());
-            RS_TRACE_NAME_FMT("killProcess, %s", reason.c_str());
-#ifdef RS_ENABLE_UNI_RENDER
-            AAFwk::ExitReason killReason{AAFwk::Reason::REASON_RESOURCE_CONTROL, KILL_PROCESS_TYPE, reason};
-            int32_t ret =
-                (int32_t)AAFwk::AbilityManagerClient::GetInstance()->KillProcessWithReason(info.pid, killReason);
-            if (ret == ERR_OK) {
-                reportKillProcessSet_.insert(info.pid);
-            }
-#endif
-        }
         return;
     } else if (info.size > itr->second.size) {
         nodeInfoOfPid.SetMemSize(itr->second.size);
@@ -274,7 +254,6 @@ MemoryGraphic MemoryTrack::CountRSMemory(const pid_t pid)
     auto nodeInfoOfPid = memNodeOfPidMap_[pid];
     if (nodeInfoOfPid.empty()) {
         memNodeOfPidMap_.erase(pid);
-        reportKillProcessSet_.erase(pid);
     } else {
         uint64_t totalMemSize = 0;
         std::for_each(nodeInfoOfPid.begin(), nodeInfoOfPid.end(), [&totalMemSize](MemoryNodeOfPid& info) {
@@ -313,33 +292,27 @@ void MemoryTrack::DumpMemoryStatistics(DfxString& log,
 
 void MemoryTrack::DumpMemoryNodeStatistics(DfxString& log, bool isLite)
 {
+    if (!isLite) {
+        return;
+    }
+    RS_TRACE_NAME_FMT("MemoryTrack::DumpMemoryNodeStatistics record size:%d", memNodeMap_.size());
     log.AppendFormat("\nRSRenderNode:\n");
     uint64_t totalSize = 0;
     int count = 0;
-    if (!isLite) {
-        // calculate by byte
-        for (auto& [nodeId, info] : memNodeMap_) {
-            // total of all
-            totalSize += static_cast<uint64_t>(info.size);
-            count++;
-        }
-        log.AppendFormat("Total Node Size = %d KB (%d entries)\n", totalSize / BYTE_CONVERT, count);
-    } else {
-        std::unordered_map<int, int> pidCountMap;  // replace getNodeInfo
-        // calculate by byte
-        for (auto& [nodeId, info] : memNodeMap_) {
-            // total of all
-            totalSize += static_cast<uint64_t>(info.size);
-            count++;
-            pidCountMap[info.pid]++;
-        }
-        log.AppendFormat("Total Node Size = %d KB (%d entries)\n", totalSize / BYTE_CONVERT, count);
-        std::string log_str = "Pid" + std::string("\t") + "Count";
+    std::unordered_map<int, int> pidCountMap; // replace getNodeInfo
+    // calculate by byte
+    for (auto& [nodeId, info] : memNodeMap_) {
+        // total of all
+        totalSize += static_cast<uint64_t>(info.size);
+        count++;
+        pidCountMap[info.pid]++;
+    }
+    log.AppendFormat("Total Node Size = %d KB (%d entries)\n", totalSize / BYTE_CONVERT, count);
+    std::string log_str = "Pid" + std::string("\t") + "Count";
+    log.AppendFormat("%s\n", log_str.c_str());
+    for (const auto& [pid, pidCount] : pidCountMap) {
+        log_str = std::to_string(pid) + "\t" + std::to_string(pidCount);
         log.AppendFormat("%s\n", log_str.c_str());
-        for (const auto& [pid, pidCount] : pidCountMap) {
-            log_str = std::to_string(pid) + "\t" + std::to_string(pidCount);
-            log.AppendFormat("%s\n", log_str.c_str());
-        }
     }
 }
 
@@ -347,7 +320,6 @@ void MemoryTrack::RemovePidRecord(const pid_t pid)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     memNodeOfPidMap_.erase(pid);
-    reportKillProcessSet_.erase(pid);
 }
 
 void MemoryTrack::UpdatePictureInfo(const void* addr, NodeId nodeId, pid_t pid)
@@ -495,6 +467,7 @@ std::string MemoryTrack::GenerateDetail(MemoryInfo info, uint64_t wId, std::stri
 void MemoryTrack::DumpMemoryPicStatistics(DfxString& log,
     std::function<std::tuple<uint64_t, std::string, RectI, bool>(uint64_t)> func, bool isLite)
 {
+    RS_TRACE_NAME_FMT("MemoryTrack::DumpMemoryPicStatistics memPicRecord_ size:%d", memPicRecord_.size());
     log.AppendFormat("RSImageCache:\n");
     MemoryStats stats;
     if (!isLite) log.AppendFormat("%s:\n", GenerateDumpTitle().c_str());
@@ -545,123 +518,26 @@ void MemoryTrack::AddPictureRecord(const void* addr, MemoryInfo info)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     memPicRecord_.emplace(addr, info);
-    if (!(info.allocType == Media::AllocatorType::DMA_ALLOC ||
-        info.allocType ==Media::AllocatorType::SHARE_MEM_ALLOC) || info.type != MEM_PIXELMAP) {
-        return;
+    if (info.type == MEM_PIXELMAP) {
+        pixelMapFdTracker_.AddFdRecord(static_cast<int32_t>(info.pid), addr, info.allocType);
     }
-    fdNumOfPid_[info.pid].insert(addr);
 }
 
 void MemoryTrack::RemovePictureRecord(const void* addr)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t pid = 0;
-    if (memPicRecord_.find(addr) != memPicRecord_.end()) {
-        pid = static_cast<uint32_t>(memPicRecord_[addr].pid);
-    }
-    
-    fdNumOfPid_[pid].erase(addr);
-    memPicRecord_.erase(addr);
-}
-
-void MemoryTrack::KillProcessByPid(const pid_t pid, const std::string& reason)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (pid == 0) {
-        return;
-    }
-#ifdef RS_ENABLE_UNI_RENDER
-    FdOverReport(pid, RSEventName::RENDER_MEMORY_OVER_WARNING, "");
-    AAFwk::ExitReason killReason{AAFwk::Reason::REASON_RESOURCE_CONTROL, KILL_PROCESS_TYPE, reason};
-    int32_t ret = (int32_t)AAFwk::AbilityManagerClient::GetInstance()->KillProcessWithReason(pid, killReason);
-    if (ret == ERR_OK) {
-        auto it = fdNumOfPid_.find(pid);
-        if (it != fdNumOfPid_.end()) {
-            fdNumOfPid_.erase(it);
+    auto it = memPicRecord_.find(addr);
+    if (it != memPicRecord_.end()) {
+        if (it->second.type == MEM_PIXELMAP) {
+            pixelMapFdTracker_.RemoveFdRecord(static_cast<int32_t>(it->second.pid), addr, it->second.allocType);
         }
+        memPicRecord_.erase(it);
     }
-#endif
 }
 
-void MemoryTrack::FdOverReport(const pid_t pid, const std::string& reportName,
-    const std::string& hidumperReport)
+bool MemoryTrack::CheckPixelMapFdCountAndKillProcess(uint32_t pid)
 {
-#ifdef RS_ENABLE_UNI_RENDER
-    std::string ashmemInfo;
-    std::ifstream ashmemInfoFile;
-    ashmemInfoFile.open(ASHMEM_INFO_PATH);
-    if (ashmemInfoFile.is_open()) {
-        std::stringstream ashmemInfoStream;
-        ashmemInfoStream << ashmemInfoFile.rdbuf();
-        ashmemInfo = ashmemInfoStream.str();
-        ashmemInfoFile.close();
-    } else {
-        ashmemInfo = reportName;
-        RS_LOGE("MemoryTrack::FdOverReport can not open ashmemInfo");
-    }
-
-    std::string dmaBufInfo;
-    std::ifstream dmaBufInfoFile;
-    dmaBufInfoFile.open(DMABUF_INFO_PATH);
-    if (dmaBufInfoFile.is_open()) {
-        std::stringstream dmaBufInfoStream;
-        dmaBufInfoStream << dmaBufInfoFile.rdbuf();
-        dmaBufInfo = dmaBufInfoStream.str();
-        dmaBufInfoFile.close();
-    } else {
-        dmaBufInfo = reportName;
-        RS_LOGE("MemoryTrack::FdOverReport can not open dmaBufInfo");
-    }
-
-    std::string combinedInfo = "=== AshmemInfo ===\n" + ashmemInfo +
-        "\n\n=== DmaBufInfo ===\n" + dmaBufInfo;
-
-    std::string filePath = "/data/service/el0/render_service/renderservice_fdmem.txt";
-    WriteInfoToFile(filePath, combinedInfo, hidumperReport);
-
-    RS_TRACE_NAME("MemoryTrack::FdOverReport HiSysEventWrite");
-
-    int ret = RSHiSysEvent::EventWrite(reportName, RSEventType::RS_STATISTIC,
-        "PID", pid,
-        "TYPE", "FD",
-        "FILEPATH", filePath);
-    RS_LOGW("hisysevent writ result=%{public}d, send event [FRAMEWORK,PROCESS_KILL], "
-        "pid[%{public}d]", ret, pid);
-#endif
-}
-
-void MemoryTrack::WriteInfoToFile(std::string& filePath, std::string& memInfo, const std::string& hidumperReport)
-{
-#ifdef RS_ENABLE_UNI_RENDER
-    std::ofstream tempFile(filePath);
-    if (tempFile.is_open()) {
-        tempFile << "\n******************************\n";
-        tempFile << memInfo;
-        tempFile << "\n************ endl ************\n";
-    } else {
-        RS_LOGE("MemoryTrack::file open fail!");
-    }
-    if (!hidumperReport.empty()) {
-        if (tempFile.is_open()) {
-            tempFile << "\n******************************\n";
-            tempFile << "LOGGER_RENDER_SERVICE_MEM\n";
-            tempFile << hidumperReport;
-        } else {
-            RS_LOGE("MemoryTrack::file open fail!");
-        }
-    }
-    tempFile.close();
-#endif
-}
-
-uint32_t MemoryTrack::CountFdRecordOfPid(uint32_t pid)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = fdNumOfPid_.find(pid);
-    if (it != fdNumOfPid_.end()) {
-        return it->second.size();
-    }
-    return 0;
+    return pixelMapFdTracker_.CheckFdRecordAndKillProcess(static_cast<int32_t>(pid));
 }
 
 #ifdef RS_MEMORY_INFO_MANAGER
@@ -714,5 +590,37 @@ void MemoryTrack::SetNodeOnTreeStatus(NodeId nodeId, bool rootNodeStatusChangeFl
     itr->second.isOnTree = isOnTree;
 }
 #endif
+
+void MemoryTrack::DumpMemoryPicStatisticsForReport(DfxString& log, const pid_t pid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    log.AppendFormat("\nRSImageCache:\n");
+    log.AppendFormat("Size        Pid        NodeId        Type,Format");
+    for (auto& [addr, info] : memPicRecord_) {
+        if (static_cast<pid_t>(info.pid) != pid) {
+            continue;
+        }
+        int64_t size = static_cast<int64_t>(info.size / BYTE_CONVERT);
+        log.AppendFormat("\n%lld        %ld        %llu        %s",
+            size, pid, info.nid, PixelMapInfo2String(info).c_str());
+    }
+}
+
+size_t MemoryTrack::GetNodeNumOfPid(const pid_t pid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto itr = memNodeOfPidMap_.find(pid);
+    if (itr == memNodeOfPidMap_.end()) {
+        return 0;
+    }
+    return itr->second.size();
+}
+
+std::unordered_map<NodeId, MemoryInfo> MemoryTrack::GetMemNodeMap()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    RS_TRACE_NAME_FMT("MemoryTrack::GetMemNodeMap");
+    return memNodeMap_;
+}
 }
 }

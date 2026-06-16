@@ -25,11 +25,7 @@ config("egl_config") {
   defines = []
 
   # defines += [ "EGL_WRAPPER_DEBUG_ENABLE" ]
-  if (graphic_2d_feature_use_igraphics_extend_hooks) {
-    defines += [ "USE_IGRAPHICS_EXTENDS_HOOKS=1" ]
-  } else {
-    defines += [ "USE_IGRAPHICS_EXTENDS_HOOKS=0" ]
-  }
+  defines += [ "USE_IGRAPHICS_EXTENDS_HOOKS=1" ]
   if (egl_use_gameservice_plugin) {
     defines += [ "USE_IGAMESERVICE_PLUGIN" ]
   }
@@ -54,9 +50,6 @@ config("egl_public_config") {
     "include",
     "src/EGL/include/private/EGL",
   ]
-  if (graphic_2d_feature_use_igraphics_extend_hooks) {
-    include_dirs += egl_igraphics_extend_hooks_include_dirs
-  }
   if (egl_use_gameservice_plugin) {
     include_dirs += [ "../gameservice_plugin/include" ]
   }
@@ -90,13 +83,10 @@ if (current_os != "ohos") {
       "src/EGL/egl_wrapper_object.cpp",
       "src/EGL/egl_wrapper_surface.cpp",
       "src/thread_private_data_ctl.cpp",
+      "src/EGL/egl_wrapper_hook.cpp",
+      "src/EGL/egl_wrapper_custom.cpp"
     ]
-    if (graphic_2d_feature_use_igraphics_extend_hooks) {
-      sources += egl_igraphics_extend_hooks_sources
-    }
-    if (graphic_2d_feature_enable_opengl_to_vulkan) {
-      sources += [ "src/EGL/egl_wrapper_custom.cpp" ]
-    }
+
     if (graphic_2d_feature_product == "wearable") {
       defines += [ "PRELOAD_BLOB_CACHE" ]
     }
@@ -129,6 +119,7 @@ if (current_os != "ohos") {
     output_extension = "so"
     version_script = "EGL.versionscript"
 
+    innerapi_tags = [ "llndk" ]
     part_name = "graphic_2d"
     subsystem_name = "graphic"
   }
@@ -215,7 +206,10 @@ ohos_shared_library("GLESv2") {
 
   output_name = "GLESv2"
   output_extension = "so"
-  innerapi_tags = [ "ndk" ]
+  innerapi_tags = [
+      "ndk",
+      "llndk"
+  ]
   part_name = "graphic_2d"
   subsystem_name = "graphic"
 }
@@ -265,6 +259,7 @@ if (current_os != "ohos") {
     output_name = "GLESv3"
     output_extension = "so"
 
+    innerapi_tags = [ "llndk" ]
     part_name = "graphic_2d"
     subsystem_name = "graphic"
   }
@@ -293,7 +288,7 @@ config("glv4_public_config") {
   include_dirs = [ "include" ]
 }
 
-if (current_os != "ohos" || !graphic_2d_feature_enable_opengl_to_vulkan) {
+if (current_os != "ohos") {
   group("GLv4") {
     public_external_deps = [
       "egl:libEGL",
@@ -308,16 +303,23 @@ if (current_os != "ohos" || !graphic_2d_feature_enable_opengl_to_vulkan) {
 
     public_configs = [ ":glv4_public_config" ]
 
-    public_external_deps = [
+    external_deps = [
       "egl:libEGL",
       "opengles:libGLES",
-    ]
-
-    external_deps = [
       "hilog:libhilog",
-      "mesa3d:zink_opengl",
       "graphic_surface:surface",
     ]
+
+    if (graphic_2d_feature_enable_opengl_to_vulkan) {
+      external_deps += [
+        "mesa3d:zink_opengl"
+      ]
+    } else {
+      sanitize = {
+        cfi = true
+        cfi_cross_dso = true
+      }
+    }
 
     output_name = "GLv4"
     output_extension = "so"

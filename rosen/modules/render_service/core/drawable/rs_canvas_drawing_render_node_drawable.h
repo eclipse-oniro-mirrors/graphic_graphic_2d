@@ -57,12 +57,15 @@ public:
     {
         return curThreadInfo_.first;
     }
+
     void ResetSurface();
-    virtual bool IsNeedDraw() const override
+
+    bool IsNeedDraw() const override
     {
         return needDraw_;
     }
-    virtual void SetNeedDraw(bool flag) override
+
+    void SetNeedDraw(bool flag) override
     {
         needDraw_ = flag;
     }
@@ -80,6 +83,8 @@ public:
 protected:
     void DumpSubDrawableTree(std::string& out) const override;
 
+    void ClearCustomResource() override;
+
 private:
     explicit RSCanvasDrawingRenderNodeDrawable(std::shared_ptr<const RSRenderNode>&& node);
     using Registrar = RenderNodeDrawableRegistrar<RSRenderNodeType::CANVAS_DRAWING_NODE, OnGenerate>;
@@ -92,11 +97,20 @@ private:
     bool GpuContextResetVK(int width, int height, std::shared_ptr<Drawing::GPUContext>& gpuContext);
     Drawing::TextureOrigin GetTextureOrigin();
     void DrawRegionForDfx(Drawing::Canvas& canvas, const Drawing::Rect& bounds);
+    void ResetResource();
+    bool CreateCpuSurface(const Drawing::ImageInfo& imageInfo);
 #ifdef RS_ENABLE_VK
-    bool ReleaseSurfaceVK(int width, int height);
+    bool ReleaseSurfaceVK(int width, int height, bool& isDmaBackendTexture);
+
+    void CreateGpuSurface(const Drawing::ImageInfo& imageInfo, const std::shared_ptr<Drawing::GPUContext>& gpuContext,
+        bool& newVulkanCleanupHelper, bool needReleaseSurface);
+
+    bool CheckBackendTexture(bool needCreateFromGpu, int width, int height, pid_t pid);
 
 #ifdef ROSEN_OHOS
     bool CreateDmaBackendTexture(pid_t pid, int width, int height);
+
+    void ReleaseDmaSurfaceBuffer(bool notifyOnly);
 
     // DMA allocation statistics counter
     std::atomic<uint32_t> dmaAllocationCount_ = 0;
@@ -106,6 +120,8 @@ private:
 #endif // RS_ENABLE_VK
     bool ResetSurfaceforPlayback(int width, int height);
     bool GetCurrentContext(std::shared_ptr<Drawing::GPUContext>& grContext);
+    std::shared_ptr<Drawing::GPUContext> GetGpuContext();
+    NodeId GetNodeIdForMemTag();
     bool IsNeedResetSurface() const;
     void FlushForGL(float width, float height, std::shared_ptr<RSContext> context,
         NodeId nodeId, RSPaintFilterCanvas& rscanvas);
@@ -121,6 +137,7 @@ private:
         std::shared_ptr<Drawing::Image>& image, const uint64_t tid);
 #endif
     static Registrar instance_;
+    std::weak_ptr<const RSRenderNode> renderNode_;
     std::recursive_mutex drawableMutex_;
     std::shared_ptr<Drawing::Surface> surface_;
     std::shared_ptr<Drawing::Image> image_;
@@ -141,6 +158,14 @@ private:
 
     // setted in render thread, used and resetted in main thread
     std::atomic<bool> needDraw_ = false;
+
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+    inline static bool renderDmaEnabled_ =
+        RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled();
+
+    inline static bool preAllocateDmaEnabled_ =
+        RSUniRenderJudgement::IsUniRender() && RSSystemProperties::GetCanvasDrawingNodePreAllocateDmaEnabled();
+#endif
 };
 
 } // namespace OHOS::Rosen::DrawableV2

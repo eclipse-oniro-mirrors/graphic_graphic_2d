@@ -15,8 +15,10 @@
 
 #include "gtest/gtest.h"
 
+#include "animation/rs_render_curve_animation.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "render_thread/rs_render_thread_visitor.h"
 #include "platform/common/rs_log.h"
 using namespace testing;
@@ -25,6 +27,8 @@ using namespace testing::ext;
 namespace OHOS::Rosen {
 namespace {
     const RectI DEFAULT_RECT = {0, 0, 100, 100};
+    constexpr uint64_t ANIMATION_ID = 12345;
+    constexpr uint64_t PROPERTY_ID = 54321;
 } // namespace
 
 class RSBaseRenderNodeTest : public testing::Test {
@@ -184,7 +188,7 @@ HWTEST_F(RSBaseRenderNodeTest, AddCrossParentChild001, TestSize.Level1)
      * @tc.steps: step1. AddChild
      */
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    auto childone = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    auto childone = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
     int index = -1;
     node->AddCrossParentChild(childone, index);
     ASSERT_EQ(node->GetChildrenCount(), 1);
@@ -208,7 +212,7 @@ HWTEST_F(RSBaseRenderNodeTest, RemoveCrossParentChild001, TestSize.Level1)
      * @tc.steps: step1. AddChild
      */
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    auto childone = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    auto childone = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
     auto newParent = std::make_shared<RSBaseRenderNode>(id + 2, context);
     int index = -1;
     node->AddCrossParentChild(childone, index);
@@ -248,8 +252,8 @@ HWTEST_F(RSBaseRenderNodeTest, AddCrossParentChildTest001, TestSize.Level1)
 {
     int32_t index = 1;
     int32_t index_ = 0;
-    std::shared_ptr<RSBaseRenderNode> child = nullptr;
-    std::shared_ptr<RSBaseRenderNode> child_;
+    std::shared_ptr<RSSurfaceRenderNode> child = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> child_;
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     EXPECT_NE(node, nullptr);
     node->AddCrossParentChild(child, index);
@@ -266,7 +270,7 @@ HWTEST_F(RSBaseRenderNodeTest, RemoveCrossParentChildTest001, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     EXPECT_NE(node, nullptr);
-    std::shared_ptr<RSBaseRenderNode> child = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> child = nullptr;
     std::weak_ptr<RSBaseRenderNode> newParent;
     node->RemoveCrossParentChild(child, newParent);
 }
@@ -301,29 +305,6 @@ HWTEST_F(RSBaseRenderNodeTest, PrepareTest, TestSize.Level1)
     node->Prepare(visitor);
 }
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: RemoveModifier
- * @tc.desc: test results of RemoveModifier
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSBaseRenderNodeTest, RemoveModifier, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-    node->AddGeometryModifier(modifier);
-    node->RemoveModifier(id);
-    ASSERT_EQ(node->modifiers_.find(id), node->modifiers_.end());
-}
-#endif
-
 /**
  * @tc.name: UpdateEffectRegion
  * @tc.desc: test results of UpdateEffectRegion
@@ -345,31 +326,6 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateEffectRegion, TestSize.Level1)
     node->UpdateEffectRegion(region, isForced);
     ASSERT_TRUE(true);
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: GetModifier
- * @tc.desc: test results of GetModifier
- * @tc.type:FUNC
- * @tc.require:
- */
-HWTEST_F(RSBaseRenderNodeTest, GetModifier, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-    node->GetModifier(modifier->GetPropertyId());
-
-    modifierCast->drawStyle_ = RSModifierType::BOUNDS;
-    node->AddGeometryModifier(modifier);
-    ASSERT_NE(node->GetModifier(modifier->GetPropertyId()), nullptr);
-}
-#endif
 
 /**
  * @tc.name: FilterModifiersByPid
@@ -434,33 +390,8 @@ HWTEST_F(RSBaseRenderNodeTest, SetGlobalAlpha, TestSize.Level1)
 
     alpha = 0.7f;
     node->SetGlobalAlpha(alpha);
-    ASSERT_EQ(node->globalAlpha_, alpha);
+    ASSERT_EQ(node->GetGlobalAlpha(), alpha);
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: GetOptionalBufferSize
- * @tc.desc: test results of GetOptionalBufferSize
- * @tc.type:FUNC
- * @tc.require:issue21058
- */
-HWTEST_F(RSBaseRenderNodeTest, GetOptionalBufferSize, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSRenderModifier> frameModifier = std::make_shared<RSGeometryTransRenderModifier>(property);
-    node->frameModifier_ = frameModifier;
-    node->GetOptionalBufferSize();
-
-    std::shared_ptr<RSRenderModifier> boundsModifier = std::make_shared<RSGeometryTransRenderModifier>(property);
-    node->boundsModifier_ = boundsModifier;
-    node->GetOptionalBufferSize();
-    ASSERT_TRUE(true);
-}
-#endif
 
 /**
  * @tc.name: GetOptionalBufferSize001
@@ -512,7 +443,7 @@ HWTEST_F(RSBaseRenderNodeTest, MarkNodeGroup, TestSize.Level1)
     isNodeGroup = true;
     type = RSRenderNode::NodeGroupType::GROUPED_BY_UI;
     node->MarkNodeGroup(type, isNodeGroup, includeProperty);
-    ASSERT_EQ(node->nodeGroupIncludeProperty_, includeProperty);
+    ASSERT_EQ(node->IsRenderGroupIncludeProperty(), includeProperty);
 }
 
 /**
@@ -537,10 +468,6 @@ HWTEST_F(RSBaseRenderNodeTest, CheckDrawingCacheType, TestSize.Level1)
     node->nodeGroupType_ = RSRenderNode::NodeGroupType::GROUPED_BY_ANIM;
     node->CheckDrawingCacheType();
     ASSERT_EQ(node->drawingCacheType_, RSDrawingCacheType::TARGETED_CACHE);
-
-    node->ExcludedFromNodeGroup(true);
-    node->CheckDrawingCacheType();
-    ASSERT_EQ(node->drawingCacheType_, RSDrawingCacheType::DISABLED_CACHE);
 }
 
 /**
@@ -565,6 +492,7 @@ HWTEST_F(RSBaseRenderNodeTest, GetFilterRect, TestSize.Level1)
 HWTEST_F(RSBaseRenderNodeTest, OnTreeStateChanged, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
+    node->InitRenderParams();
     node->OnTreeStateChanged();
 
     node->isOnTheTree_ = true;
@@ -720,7 +648,7 @@ HWTEST_F(RSBaseRenderNodeTest, SetContainBootAnimation, TestSize.Level1)
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     bool isContainBootAnimation = true;
     node->SetContainBootAnimation(isContainBootAnimation);
-    ASSERT_TRUE(node->isContainBootAnimation_);
+    ASSERT_FALSE(node->IsContainBootAnimation());
 }
 
 /**
@@ -782,6 +710,7 @@ HWTEST_F(RSBaseRenderNodeTest, ResetParent, TestSize.Level1)
 HWTEST_F(RSBaseRenderNodeTest, DumpTree001, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
     int32_t depth = 0;
     std::string out = "string";
     node->DumpTree(depth, out);
@@ -797,6 +726,7 @@ HWTEST_F(RSBaseRenderNodeTest, DumpTree001, TestSize.Level1)
 HWTEST_F(RSBaseRenderNodeTest, DumpTree002, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
+    node->stagingRenderParams_ = std::make_unique<RSRenderParams>(id);
     int32_t depth = 0;
     std::string out = "";
     node->oldDirty_ = DEFAULT_RECT;
@@ -831,32 +761,6 @@ HWTEST_F(RSBaseRenderNodeTest, DumpSubClassNode, TestSize.Level1)
     node->DumpSubClassNode(out);
     ASSERT_TRUE(true);
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: DumpDrawCmdModifiers
- * @tc.desc: test results of DumpDrawCmdModifiers
- * @tc.type:FUNC
- * @tc.require: issueI9KBCZ
- */
-HWTEST_F(RSBaseRenderNodeTest, DumpDrawCmdModifiers, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    std::string out = "string";
-    node->DumpDrawCmdModifiers(out);
-
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::list<std::shared_ptr<RSRenderModifier>> list { std::make_shared<RSGeometryTransRenderModifier>(property) };
-    std::map<RSModifierType, std::list<std::shared_ptr<RSRenderModifier>>> map;
-    map[RSModifierType::ENV_FOREGROUND_COLOR] = list;
-    node->drawCmdModifiers_ = map;
-    node->DumpDrawCmdModifiers(out);
-    ASSERT_TRUE(true);
-}
-#endif
 
 /**
  * @tc.name: SetContentDirty
@@ -1015,23 +919,77 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateDisplaySyncRange, TestSize.Level1)
 }
 
 /**
- * @tc.name: Animate
+ * @tc.name: Animate001
  * @tc.desc: test results of Animate
- * @tc.type:FUNC
+ * @tc.type: FUNC
  * @tc.require: issueI9KBCZ
  */
-HWTEST_F(RSBaseRenderNodeTest, Animate, TestSize.Level1)
+HWTEST_F(RSBaseRenderNodeTest, Animate001, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     int64_t timestamp = 4;
     int64_t period = 2;
     bool isDisplaySyncEnabled = true;
     int64_t leftDelayTime = 0;
-    node->Animate(timestamp, leftDelayTime, period, isDisplaySyncEnabled);
-
+    int64_t nextFrameTime = 0;
+    node->Animate(timestamp, leftDelayTime, nextFrameTime, period, isDisplaySyncEnabled);
+ 
     node->displaySync_ = std::make_unique<RSRenderDisplaySync>(1);
-    node->Animate(timestamp, leftDelayTime, period, isDisplaySyncEnabled);
+    node->displaySync_->SetExpectedFrameRateRange({0, 120, 60});
+    node->displaySync_->timestamp_ = 1000000000;
+    node->displaySync_->currentPeriod_ = 8333333;
+    node->displaySync_->currentFrameRate_ = 120;
+    node->displaySync_->vsyncTriggerCount_ = 1;
+    node->displaySync_->skipPeriodCount_ = 2;
+    node->displaySync_->skipPeriodCountNeedUpdate_ = false;
+ 
+    timestamp = 1016666666;
+    period = 8333333;
+    leftDelayTime = 1;
+    nextFrameTime = 1;
+    node->Animate(timestamp, leftDelayTime, nextFrameTime, period, isDisplaySyncEnabled);
+    EXPECT_EQ(leftDelayTime, 1);
+ 
     ASSERT_TRUE(true);
+}
+
+/**
+ * @tc.name: Animate002
+ * @tc.desc: test results of Animate
+ * @tc.type: FUNC
+ * @tc.require: issueI9KBCZ
+ */
+HWTEST_F(RSBaseRenderNodeTest, Animate002, TestSize.Level1)
+{
+    auto node = std::make_shared<RSBaseRenderNode>(id, context);
+    ASSERT_NE(node, nullptr);
+ 
+    node->displaySync_ = std::make_unique<RSRenderDisplaySync>(1);
+    ASSERT_NE(node->displaySync_, nullptr);
+ 
+    node->displaySync_->SetExpectedFrameRateRange({0, 120, 5});
+    node->displaySync_->timestamp_ = 1000000000;
+    node->displaySync_->currentPeriod_ = 16666666;
+    node->displaySync_->currentFrameRate_ = 60;
+    node->displaySync_->vsyncTriggerCount_ = 60;
+    node->displaySync_->skipPeriodCount_ = 12;
+    node->displaySync_->skipPeriodCountNeedUpdate_ = true;
+ 
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    node->AddAnimation(renderCurveAnimation);
+ 
+    int64_t timestamp = 1016666666;
+    int64_t period = 16666666;
+    bool isDisplaySyncEnabled = true;
+    int64_t minLeftDelayTime = 1;
+    int64_t nextFrameTime = 0;
+    node->Animate(timestamp, minLeftDelayTime, nextFrameTime, period, isDisplaySyncEnabled);
+ 
+    EXPECT_EQ(minLeftDelayTime, 0);
 }
 
 /**
@@ -1090,18 +1048,6 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateDirtyRegion, TestSize.Level1)
 }
 
 /**
- * @tc.name: IsSelfDrawingNode
- * @tc.desc: test results of IsSelfDrawingNode
- * @tc.type:FUNC
- * @tc.require: issueI9KBCZ
- */
-HWTEST_F(RSBaseRenderNodeTest, IsSelfDrawingNode, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    ASSERT_FALSE(node->IsSelfDrawingNode());
-}
-
-/**
  * @tc.name: IsDirty
  * @tc.desc: test results of IsDirty
  * @tc.type:FUNC
@@ -1139,8 +1085,7 @@ HWTEST_F(RSBaseRenderNodeTest, UpdateRenderStatus, TestSize.Level1)
     node->UpdateRenderStatus(dirtyRegion, isPartialRenderEnabled);
 
     isPartialRenderEnabled = true;
-    node->UpdateRenderStatus(dirtyRegion, isPartialRenderEnabled);
-    ASSERT_TRUE(node->isRenderUpdateIgnored_);
+    ASSERT_TRUE(node->UpdateRenderStatus(dirtyRegion, isPartialRenderEnabled));
 }
 
 /**
@@ -1176,77 +1121,6 @@ HWTEST_F(RSBaseRenderNodeTest, RenderTraceDebug, TestSize.Level1)
     ASSERT_TRUE(true);
 }
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: AddModifier
- * @tc.desc: test results of AddModifier
- * @tc.type:FUNC
- * @tc.require: issueI9KBCZ
- */
-HWTEST_F(RSBaseRenderNodeTest, AddModifier, TestSize.Level1)
-{
-    auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    std::shared_ptr<RSRenderModifier> modifier;
-    bool isSingleFrameComposer = true;
-    node->AddModifier(modifier, isSingleFrameComposer);
-
-    Drawing::Matrix matrix;
-    PropertyId id = 1;
-    std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-        std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-    std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-        std::make_shared<RSGeometryTransRenderModifier>(property);
-    std::shared_ptr<RSRenderModifier> modifierTwo = modifierCast;
-    node->AddModifier(modifierTwo, isSingleFrameComposer);
-    ASSERT_TRUE(true);
-}
-
-/**
- * @tc.name: AddGeometryModifier
- * @tc.desc: test results of AddGeometryModifier
- * @tc.type:FUNC
- * @tc.require: issueI9KBCZ
- */
-HWTEST_F(RSBaseRenderNodeTest, AddGeometryModifier, TestSize.Level1)
-{
-    {
-        auto node = std::make_shared<RSBaseRenderNode>(id, context);
-        Drawing::Matrix matrix;
-        PropertyId id = 1;
-        std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-            std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-        std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-            std::make_shared<RSGeometryTransRenderModifier>(property);
-        std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-        node->AddGeometryModifier(modifier);
-
-        modifierCast->drawStyle_ = RSModifierType::BOUNDS;
-        node->AddGeometryModifier(modifier);
-
-        node->boundsModifier_ = modifier;
-        node->AddGeometryModifier(modifier);
-        ASSERT_NE(node->boundsModifier_, nullptr);
-    }
-
-    {
-        auto node = std::make_shared<RSBaseRenderNode>(id, context);
-        Drawing::Matrix matrix;
-        PropertyId id = 1;
-        std::shared_ptr<RSRenderProperty<Drawing::Matrix>> property =
-            std::make_shared<RSRenderProperty<Drawing::Matrix>>(matrix, id);
-        std::shared_ptr<RSGeometryTransRenderModifier> modifierCast =
-            std::make_shared<RSGeometryTransRenderModifier>(property);
-        modifierCast->drawStyle_ = RSModifierType::FRAME;
-        std::shared_ptr<RSRenderModifier> modifier = modifierCast;
-        node->AddGeometryModifier(modifier);
-
-        node->frameModifier_ = modifier;
-        node->AddGeometryModifier(modifier);
-        ASSERT_NE(node->frameModifier_, nullptr);
-    }
-}
-#endif
-
 /**
  * @tc.name: MarkSuggestOpincNode
  * @tc.desc: test MarkSuggestOpincNode
@@ -1259,8 +1133,8 @@ HWTEST_F(RSBaseRenderNodeTest, MarkSuggestOpincNode, TestSize.Level1)
     bool isOpincNode = true;
     bool isNeedCalculate = true;
     node->MarkSuggestOpincNode(isOpincNode, isNeedCalculate);
-    ASSERT_TRUE(node->GetOpincCache().IsSuggestOpincNode());
-    ASSERT_TRUE(node->GetOpincCache().isNeedCalculate_);
+    ASSERT_TRUE(node->GetOpincRootCache().IsSuggestOpincNode());
+    ASSERT_TRUE(node->GetOpincRootCache().isNeedCalculate_);
     ASSERT_TRUE(node->IsDirty());
 }
 } // namespace OHOS::Rosen

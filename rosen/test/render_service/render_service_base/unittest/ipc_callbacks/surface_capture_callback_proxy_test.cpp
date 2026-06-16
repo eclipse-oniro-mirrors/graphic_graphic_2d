@@ -37,6 +37,7 @@ void RSSurfaceCaptureCallbackProxyTest::TearDownTestCase() {}
 void RSSurfaceCaptureCallbackProxyTest::SetUp() {}
 void RSSurfaceCaptureCallbackProxyTest::TearDown() {}
 
+#ifdef RS_ENABLE_UNI_RENDER
 /**
  * @tc.name: OnSurfaceCapture001
  * @tc.desc: Verify the OnSurfaceCapture
@@ -91,7 +92,10 @@ HWTEST_F(RSSurfaceCaptureCallbackProxyTest, WriteSurfaceCaptureConfig, TestSize.
     ASSERT_TRUE(rsSurfaceCaptureCallbackProxy != nullptr);
     MessageParcel data;
     RSSurfaceCaptureConfig captureConfig;
+    captureConfig.isSyncRender = true;
+    captureConfig.windowSync = true;
     ASSERT_EQ(rsSurfaceCaptureCallbackProxy->WriteSurfaceCaptureConfig(captureConfig, data), true);
 }
+#endif
 } // namespace Rosen
 } // namespace OHOS

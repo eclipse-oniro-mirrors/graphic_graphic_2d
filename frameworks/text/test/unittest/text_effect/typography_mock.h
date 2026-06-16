@@ -50,9 +50,16 @@ public:
         (size_t left, size_t right, TextRectHeightStyle heightStyle, TextRectWidthStyle widthStyle), (override));
     MOCK_METHOD(std::vector<TextRect>, GetTextRectsOfPlaceholders, (), (override));
     MOCK_METHOD(IndexAndAffinity, GetGlyphIndexByCoordinate, (double x, double y), (override));
+    MOCK_METHOD(IndexAndAffinity, GetCharacterIndexByCoordinate, (double x, double y,
+        TextEncoding encodeType), (const, override));
+    MOCK_METHOD(Boundary, GetGlyphRangeForCharacterRange, (size_t charStart, size_t charEnd,
+        Boundary* actualCharRange, TextEncoding encodeType), (const, override));
+    MOCK_METHOD(Boundary, GetCharacterRangeForGlyphRange, (size_t glyphStart, size_t glyphEnd,
+        Boundary* actualGlyphRange, TextEncoding encodeType), (const, override));
     MOCK_METHOD(Boundary, GetWordBoundaryByIndex, (size_t index), (override));
     MOCK_METHOD(Boundary, GetActualTextRange, (int lineNumber, bool includeSpaces), (override));
-    MOCK_METHOD(Boundary, GetEllipsisTextRange, (), (override));
+    MOCK_METHOD(Boundary, GetEllipsisTextRange, (), (const, override));
+    MOCK_METHOD(std::vector<TextRange>, GetVisibleTextRanges, (), (const, override));
     MOCK_METHOD(double, GetLineHeight, (int lineNumber), (override));
     MOCK_METHOD(double, GetLineWidth, (int lineNumber), (override));
     MOCK_METHOD(void, SetAnimation,
@@ -81,9 +88,18 @@ public:
     MOCK_METHOD(bool, HasSkipTextBlobDrawing, (), (const, override));
     MOCK_METHOD(void, SetTextEffectAssociation, (bool association), (override));
     MOCK_METHOD(bool, GetTextEffectAssociation, (), (const, override));
+    MOCK_METHOD(void, SetForceReuseRasterResult, (bool flag), (override));
+    MOCK_METHOD(bool, GetForceReuseRasterResult, (), (const, override));
     MOCK_METHOD(std::vector<TextBlobRecordInfo>, GetTextBlobRecordInfo, (), (const, override));
     MOCK_METHOD(bool, CanPaintAllText, (), (const, override));
     MOCK_METHOD(std::string, GetDumpInfo, (), (const, override));
+    MOCK_METHOD(std::shared_ptr<OHOS::Media::PixelMap>, GetTextPathImageByIndex,
+        (size_t start, size_t end, const ImageOptions& options, bool fill), (const, override));
+    MOCK_METHOD((std::vector<TextPathInfo>), GetTextPathsByIndex, (size_t start, size_t end), (const, override));
+    MOCK_METHOD(TextLayoutResult, LayoutWithConstraints, (const TextRectSize& constraint));
+    MOCK_METHOD(TextProcessState, GetProcessState, (), (const, override));
+    MOCK_METHOD(TextDisplayState, GetTextDisplayState, (), (const, override));
+    MOCK_METHOD(TypographyStyle, GetParagraphStyle, (), (const, override));
 };
 } // namespace OHOS::Rosen
 #endif

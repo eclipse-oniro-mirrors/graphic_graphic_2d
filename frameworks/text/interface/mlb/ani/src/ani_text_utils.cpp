@@ -93,7 +93,14 @@ ani_object AniTextUtils::CreateAniArray(ani_env* env, size_t size)
 
 ani_object AniTextUtils::CreateAniMap(ani_env* env)
 {
-    return AniTextUtils::CreateAniObject(env, AniGlobalClass::GetInstance().aniMap, AniGlobalMethod::GetInstance().map);
+    ani_ref undefinedArgument = nullptr;
+    ani_status status = env->GetUndefined(&undefinedArgument);
+    if (status != ANI_OK) {
+        TEXT_LOGE("Failed to get undefined argument, status %{public}d", static_cast<int32_t>(status));
+        return CreateAniUndefined(env);
+    }
+    return AniTextUtils::CreateAniObject(
+        env, AniGlobalClass::GetInstance().aniMap, AniGlobalMethod::GetInstance().map, undefinedArgument);
 }
 
 ani_object AniTextUtils::CreateAniOptionalEnum(ani_env* env, const ani_enum enumType, std::optional<ani_size> index)
@@ -108,7 +115,10 @@ ani_object AniTextUtils::CreateAniOptionalEnum(ani_env* env, const ani_enum enum
 ani_enum_item AniTextUtils::CreateAniEnum(ani_env* env, const ani_enum enumType, ani_size index)
 {
     ani_enum_item enumItem;
-    env->Enum_GetEnumItemByIndex(enumType, index, &enumItem);
+    ani_status status = env->Enum_GetEnumItemByIndex(enumType, index, &enumItem);
+    if (status != ANI_OK) {
+        TEXT_LOGE("Failed to create ani enum");
+    }
     return enumItem;
 }
 
@@ -215,6 +225,10 @@ AniTextResult AniTextUtils::ReadFile(const std::string& filePath, size_t& dataLe
         TEXT_LOGE("Failed to get file length:%{public}s", filePath.c_str());
         file.close();
         return AniTextResult::Error(MLB::ERROR_FILE_SIZE_FAILED);
+    } else if (length == 0) {
+        TEXT_LOGE("File is empty: %{public}s", filePath.c_str());
+        file.close();
+        return AniTextResult::Error(MLB::ERROR_FILE_EMPTY);
     }
     dataLen = static_cast<size_t>(length);
     data = std::make_unique<uint8_t[]>(dataLen);
@@ -237,7 +251,7 @@ bool AniTextUtils::SplitAbsoluteFontPath(std::string& absolutePath)
     std::string head = absolutePath.substr(0, iter);
     if ((head == "file" && absolutePath.size() > FILE_HEAD_LENGTH)) {
         absolutePath = absolutePath.substr(iter + 3); // 3 means skip "://"
-        // the file format is like "file://system/fonts...",
+        // File path must start with 'file://', e.g., file:///path/to/font.ttf
         return true;
     }
 

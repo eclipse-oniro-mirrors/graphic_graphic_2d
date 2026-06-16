@@ -14,17 +14,28 @@
  */
 #include "gtest/gtest.h"
 
+#include "drawable/rs_render_node_drawable.h"
+#include "feature/opinc/rs_layer_part_draw_cache.h"
 #include "feature/opinc/rs_opinc_draw_cache.h"
+#include "feature/opinc/rs_opinc_draw_cache_helper.h"
 #include "feature/opinc/rs_opinc_manager.h"
 #include "params/rs_render_params.h"
+#include "pipeline/rs_paint_filter_canvas.h"
+#include "pipeline/rs_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS {
 namespace Rosen {
-constexpr NodeId DEFAULT_ID = 0xFFFF;
+const NodeId DEFAULT_ID = GenerateUniqueNodeIdForRS();
 constexpr int64_t CACHE_MEM = 100;
+constexpr int32_t LAYER_PART_RENDER_DIRTY_OFFSET = 10;
+constexpr int32_t LAYER_PART_RENDER_DIRTY_SIZE = 100;
+constexpr int32_t LAYER_PART_RENDER_NODE_COUNT = 5;
+constexpr int32_t LAYER_PART_RENDER_CACHE_SIZE = 200;
+constexpr int32_t ROOT_FIND_CACHE_SIZE_THRESHOLD = 50;
+constexpr float IS_TRANSLATE_SCALE_DELTA_FACTOR = 2.0f;
 
 class RSOpincDrawCacheTest : public testing::Test {
 public:
@@ -77,25 +88,25 @@ HWTEST_F(RSOpincDrawCacheTest, OpincCalculateBefore, TestSize.Level1)
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Canvas canvas;
     RSRenderParams params(id);
-    bool isOpincDropNodeExt = true;
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
     RSOpincManager::Instance().SetOPIncSwitch(true);
-    opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.OpincCalculateBefore(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
-    opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.OpincCalculateBefore(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
 
     RSOpincManager::Instance().SetOPIncSwitch(true);
-    opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
-    ASSERT_TRUE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.OpincCalculateBefore(canvas, params);
+    ASSERT_TRUE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
-    opincDrawCache.OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.OpincCalculateBefore(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 }
  
 /**
@@ -108,13 +119,13 @@ HWTEST_F(RSOpincDrawCacheTest, OpincCalculateAfter, TestSize.Level1)
 {
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Canvas canvas;
-    bool isOpincDropNodeExt = true;
-    opincDrawCache.OpincCalculateAfter(canvas, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    opincDrawCache.OpincCalculateAfter(canvas);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
-    opincDrawCache.isOpincCaculateStart_ = true;
-    opincDrawCache.OpincCalculateAfter(canvas, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.isOpincCalculateStart_ = true;
+    opincDrawCache.OpincCalculateAfter(canvas);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 }
  
 /**
@@ -129,13 +140,13 @@ HWTEST_F(RSOpincDrawCacheTest, PreDrawableCacheState, TestSize.Level1)
     RSRenderParams params(id);
     params.OpincSetCacheChangeFlag(true, true);
     opincDrawCache.isOpincRootNode_ = true;
-    bool isOpincDropNodeExt = true;
-    ASSERT_TRUE(opincDrawCache.PreDrawableCacheState(params, isOpincDropNodeExt));
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    ASSERT_TRUE(opincDrawCache.PreDrawableCacheState(params));
 
     params.OpincSetCacheChangeFlag(false, true);
     opincDrawCache.isOpincRootNode_ = false;
-    isOpincDropNodeExt = false;
-    ASSERT_FALSE(opincDrawCache.PreDrawableCacheState(params, isOpincDropNodeExt));
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(false);
+    ASSERT_FALSE(opincDrawCache.PreDrawableCacheState(params));
 }
  
 /**
@@ -215,12 +226,12 @@ HWTEST_F(RSOpincDrawCacheTest, IsOpListDrawAreaEnable, TestSize.Level1)
 }
  
 /**
- * @tc.name: IsTranslate
+ * @tc.name: IsTranslate001
  * @tc.desc: Test whether matrix is translate matrix
  * @tc.type: FUNC
  * @tc.require: issueI9SPVO
  */
-HWTEST_F(RSOpincDrawCacheTest, IsTranslate, TestSize.Level1)
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate001, TestSize.Level1)
 {
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Matrix matrix;
@@ -230,9 +241,65 @@ HWTEST_F(RSOpincDrawCacheTest, IsTranslate, TestSize.Level1)
     ASSERT_TRUE(opincDrawCache.IsTranslate(matrix));
 
     matrix.SetScale(2, 2);
-    ASSERT_FALSE(opincDrawCache.IsTranslate(matrix));
+    ASSERT_TRUE(opincDrawCache.IsTranslate(matrix));
 }
- 
+
+/**
+ * @tc.name: IsTranslate002
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate002, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f + ColorManager::COLOR_EPSILON * IS_TRANSLATE_SCALE_DELTA_FACTOR, 1.0f);
+    EXPECT_FALSE(opincDrawCache.IsTranslate(matrix));
+}
+
+/**
+ * @tc.name: IsTranslate003
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate003, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetScale(1.0f, 1.0f + ColorManager::COLOR_EPSILON * IS_TRANSLATE_SCALE_DELTA_FACTOR);
+    EXPECT_FALSE(opincDrawCache.IsTranslate(matrix));
+}
+
+/**
+ * @tc.name: IsTranslate004
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate004, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetSkew(1.0f + ColorManager::COLOR_EPSILON, 1.0f);
+    EXPECT_EQ(opincDrawCache.IsTranslate(matrix), false);
+}
+
+/**
+ * @tc.name: IsTranslate005
+ * @tc.desc: Test whether matrix is translate matrix
+ * @tc.type: FUNC
+ * @tc.require: issueI9SPVO
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslate005, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Matrix matrix;
+    matrix.SetSkew(1.0f, 1.0f + ColorManager::COLOR_EPSILON);
+    EXPECT_EQ(opincDrawCache.IsTranslate(matrix), false);
+}
+
 /**
  * @tc.name: NodeCacheStateDisable
  * @tc.desc: Test drawable state after disable cache state
@@ -293,27 +360,26 @@ HWTEST_F(RSOpincDrawCacheTest, BeforeDrawCacheFindRootNode, TestSize.Level1)
     Drawing::Canvas canvas;
     RSPaintFilterCanvas paintFilterCanvas(&canvas);
     RSRenderParams params(id);
-    bool isOpincDropNodeExt = true;
-
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
     params.SetCacheSize({100, 100});
     paintFilterCanvas.SetCacheType(Drawing::CacheType::ENABLED);
 
     RSOpincManager::Instance().SetOPIncSwitch(true);
     params.isOpincRootFlag_ = true;
-    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params, isOpincDropNodeExt);
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ != NodeRecordState::RECORD_CALCULATE);
 
     params.isOpincRootFlag_ = false;
-    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params, isOpincDropNodeExt);
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ != NodeRecordState::RECORD_CALCULATE);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
     params.isOpincRootFlag_ = true;
-    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params, isOpincDropNodeExt);
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ != NodeRecordState::RECORD_CALCULATE);
 
     params.isOpincRootFlag_ = false;
-    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params, isOpincDropNodeExt);
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ != NodeRecordState::RECORD_CALCULATE);
 }
  
@@ -328,30 +394,37 @@ HWTEST_F(RSOpincDrawCacheTest, BeforeDrawCache, TestSize.Level1)
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Canvas canvas;
     RSRenderParams params(id);
-    bool isOpincDropNodeExt = true;
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
     RSOpincManager::Instance().SetOPIncSwitch(true);
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
     opincDrawCache.nodeCacheType_ = NodeStrategyType::DDGR_OPINC_DYNAMIC;
-    opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.BeforeDrawCache(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
-    opincDrawCache.nodeCacheType_ =  NodeStrategyType::OPINC_AUTOCACHE;
+    opincDrawCache.nodeCacheType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
-    opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
-    ASSERT_TRUE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.BeforeDrawCache(canvas, params);
+    ASSERT_TRUE(opincDrawCache.isOpincCalculateStart_);
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
-    opincDrawCache.isOpincCaculateStart_ = false;
+    opincDrawCache.isOpincCalculateStart_ = false;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
     opincDrawCache.nodeCacheType_ = NodeStrategyType::DDGR_OPINC_DYNAMIC;
-    opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.BeforeDrawCache(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 
     opincDrawCache.nodeCacheType_ = NodeStrategyType::CACHE_NONE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
-    opincDrawCache.BeforeDrawCache(canvas, params, isOpincDropNodeExt);
-    ASSERT_FALSE(opincDrawCache.isOpincCaculateStart_);
+    opincDrawCache.BeforeDrawCache(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
+
+    RSOpincManager::Instance().SetOPIncSwitch(true);
+    opincDrawCache.nodeCacheType_ = NodeStrategyType::CACHE_NONE;
+    params.isOpincRootFlag_ = true;
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
+    opincDrawCache.BeforeDrawCache(canvas, params);
+    ASSERT_FALSE(opincDrawCache.isOpincCalculateStart_);
 }
 
 /**
@@ -383,35 +456,35 @@ HWTEST_F(RSOpincDrawCacheTest, AfterDrawCache, TestSize.Level1)
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Canvas canvas;
     RSRenderParams params(id);
-    bool isOpincDropNodeExt = true;
-    int opincRootTotalCount = 3;
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    DrawableV2::RSOpincDrawCache::opincRootNodeCount_ = 3;
 
     RSOpincManager::Instance().SetOPIncSwitch(false);
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHING;
-    opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(canvas, params);
     ASSERT_TRUE(!opincDrawCache.isOpincMarkCached_);
 
     RSOpincManager::Instance().SetOPIncSwitch(true);
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
-    opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(canvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
-    opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(canvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_DISABLE);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_INIT;
-    opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(canvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CALCULATE);
 
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHING;
-    opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(canvas, params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
     auto drawingCanvas = std::make_shared<Drawing::Canvas>();
@@ -423,13 +496,13 @@ HWTEST_F(RSOpincDrawCacheTest, AfterDrawCache, TestSize.Level1)
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CALCULATE);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
     opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_DISABLE);
 
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
@@ -438,30 +511,38 @@ HWTEST_F(RSOpincDrawCacheTest, AfterDrawCache, TestSize.Level1)
         static_cast<int64_t>(opincDrawCache.screenRectInfo_.GetHeight()) * SCREEN_RATIO + 1;
     RSOpincManager::Instance().AddOpincCacheMem(cacheMem);
     EXPECT_EQ(opincDrawCache.IsOpincCacheMemExceedThreshold(), true);
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
     RSOpincManager::Instance().ReduceOpincCacheMem(cacheMem);
     EXPECT_EQ(opincDrawCache.IsOpincCacheMemExceedThreshold(), false);
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
-    opincRootTotalCount = 0;
+    DrawableV2::RSOpincDrawCache::ClearOpincRootNodeCount();
     opincDrawCache.isOpincMarkCached_ = true;
     EXPECT_EQ(opincDrawCache.OpincGetCachedMark(), true);
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
     opincDrawCache.isOpincMarkCached_ = false;
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
 
-    opincDrawCache.screenRectInfo_ = {0, 0, 100, 200};
     RectI absRect = {10, 10, 100, 100};
     params.SetAbsDrawRect(absRect);
     EXPECT_EQ(opincDrawCache.IsOpincNodeInScreenRect(params), false);
-    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
     ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHING);
+
+    opincDrawCache.isOpincCalculateStart_ = false;
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 100, 200});
+    absRect = {50, 50, 100, 100};
+    params.SetAbsDrawRect(absRect);
+    EXPECT_EQ(opincDrawCache.IsOpincNodeInScreenRect(params), true);
+    opincDrawCache.AfterDrawCache(*canvasAlpha.get(), params);
+    ASSERT_TRUE(opincDrawCache.recordState_ == NodeRecordState::RECORD_CACHED);
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
 }
 
 /**
@@ -475,14 +556,14 @@ HWTEST_F(RSOpincDrawCacheTest, AfterDrawCacheWithScreen, TestSize.Level1)
     DrawableV2::RSOpincDrawCache opincDrawCache;
     Drawing::Canvas canvas;
     RSRenderParams params(id);
-    bool isOpincDropNodeExt = true;
-    int opincRootTotalCount = 0;
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    DrawableV2::RSOpincDrawCache::ClearOpincRootNodeCount();
     opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
     opincDrawCache.nodeCacheType_ = NodeStrategyType::CACHE_NONE;
     opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHING;
     RectI absRect = {10, 10, 10, 10};
     params.SetAbsDrawRect(absRect);
-    opincDrawCache.AfterDrawCache(canvas, params, isOpincDropNodeExt, opincRootTotalCount);
+    opincDrawCache.AfterDrawCache(canvas, params);
     ASSERT_TRUE(!opincDrawCache.isOpincMarkCached_);
 }
  
@@ -618,6 +699,492 @@ HWTEST_F(RSOpincDrawCacheTest, IsOpincCacheMemExceedThreshold, TestSize.Level1)
     RSOpincManager::Instance().AddOpincCacheMem(cacheMem);
     EXPECT_EQ(opincDrawCache.IsOpincCacheMemExceedThreshold(), true);
     RSOpincManager::Instance().ReduceOpincCacheMem(cacheMem);
+}
+
+/**
+ * @tc.name: IsAutoCacheEnable
+ * @tc.desc: Test IsAutoCacheEnable
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsAutoCacheEnable, TestSize.Level1)
+{
+    RSOpincManager::Instance().SetOPIncSwitch(true);
+    ASSERT_TRUE(DrawableV2::RSOpincDrawCache::IsAutoCacheEnable());
+
+    RSOpincManager::Instance().SetOPIncSwitch(false);
+    ASSERT_FALSE(DrawableV2::RSOpincDrawCache::IsAutoCacheEnable());
+}
+
+/**
+ * @tc.name: IsAutoCacheDebugEnable
+ * @tc.desc: Test IsAutoCacheDebugEnable
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsAutoCacheDebugEnable, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    RSOpincManager::Instance().SetOPIncSwitch(true);
+    bool debugEnable = opincDrawCache.IsAutoCacheDebugEnable();
+    ASSERT_EQ(debugEnable, RSSystemProperties::GetAutoCacheDebugEnabled() && true);
+
+    RSOpincManager::Instance().SetOPIncSwitch(false);
+    debugEnable = opincDrawCache.IsAutoCacheDebugEnable();
+    ASSERT_FALSE(debugEnable);
+}
+
+/**
+ * @tc.name: GetOpincCacheMaxWidthWithScreen
+ * @tc.desc: Test GetOpincCacheMaxWidth with screen rect set
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetOpincCacheMaxWidthWithScreen, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 1080, 1920});
+    int32_t width = opincDrawCache.GetOpincCacheMaxWidth();
+    ASSERT_GT(width, 0);
+    ASSERT_GT(width, 1080);
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+}
+
+/**
+ * @tc.name: GetOpincCacheMaxHeightWithScreen
+ * @tc.desc: Test GetOpincCacheMaxHeight with screen rect set
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetOpincCacheMaxHeightWithScreen, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 1080, 1920});
+    int32_t height = opincDrawCache.GetOpincCacheMaxHeight();
+    ASSERT_EQ(height, 1920);
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+}
+
+/**
+ * @tc.name: PushLayerPartRenderDirtyRegion
+ * @tc.desc: Test PushLayerPartRenderDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, PushLayerPartRenderDirtyRegion, TestSize.Level1)
+{
+    DrawableV2::RSLayerPartDrawCache layerPartDrawCache;
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    auto params = std::shared_ptr<RSRenderParams>(
+        new RSRenderParams(GenerateUniqueNodeIdForRS()), [](RSRenderParams*) {});
+
+    RectI dirtyRect = { LAYER_PART_RENDER_DIRTY_OFFSET, LAYER_PART_RENDER_DIRTY_OFFSET,
+        LAYER_PART_RENDER_DIRTY_SIZE, LAYER_PART_RENDER_DIRTY_SIZE };
+    params->SetLayerPartRenderCurrentFrameDirtyRegion(dirtyRect);
+    params->SetLayerPartRenderEnabled(true);
+    params->SetAbsDrawRect(dirtyRect);
+    params->SetCacheSize({ LAYER_PART_RENDER_CACHE_SIZE, LAYER_PART_RENDER_CACHE_SIZE });
+
+    layerPartDrawCache.PushLayerPartRenderDirtyRegion(*params,
+        paintFilterCanvas, paintFilterCanvas, LAYER_PART_RENDER_NODE_COUNT);
+    SUCCEED();
+}
+
+/**
+ * @tc.name: LayerPartRenderClipDirtyRegion
+ * @tc.desc: Test LayerPartRenderClipDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, LayerPartRenderClipDirtyRegion, TestSize.Level1)
+{
+    DrawableV2::RSLayerPartDrawCache layerPartDrawCache;
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSRenderParams params(id);
+
+    RectI dirtyRect = { LAYER_PART_RENDER_DIRTY_OFFSET, LAYER_PART_RENDER_DIRTY_OFFSET,
+        LAYER_PART_RENDER_DIRTY_SIZE, LAYER_PART_RENDER_DIRTY_SIZE };
+    params.SetLayerPartRenderCurrentFrameDirtyRegion(dirtyRect);
+    params.SetLayerPartRenderEnabled(true);
+
+    layerPartDrawCache.LayerPartRenderClipDirtyRegion(paintFilterCanvas);
+    ASSERT_TRUE(paintFilterCanvas.IsLayerPartRenderDirtyRegionStackEmpty());
+
+    params.SetLayerPartRenderEnabled(false);
+    layerPartDrawCache.LayerPartRenderClipDirtyRegion(paintFilterCanvas);
+    ASSERT_TRUE(paintFilterCanvas.IsLayerPartRenderDirtyRegionStackEmpty());
+}
+
+/**
+ * @tc.name: PopLayerPartRenderDirtyRegion
+ * @tc.desc: Test PopLayerPartRenderDirtyRegion
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, PopLayerPartRenderDirtyRegion, TestSize.Level1)
+{
+    DrawableV2::RSLayerPartDrawCache layerPartDrawCache;
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    auto params = std::shared_ptr<RSRenderParams>(
+        new RSRenderParams(GenerateUniqueNodeIdForRS()), [](RSRenderParams*) {});
+
+    params->SetLayerPartRenderEnabled(true);
+    params->SetLayerPartRenderCurrentFrameDirtyRegion(RectI(0, 0, 10, 10));
+    params->SetAbsDrawRect(RectI(0, 0, 10, 10));
+    params->SetCacheSize({ LAYER_PART_RENDER_CACHE_SIZE, LAYER_PART_RENDER_CACHE_SIZE });
+    ASSERT_TRUE(params->GetLayerPartRenderEnabled());
+
+    layerPartDrawCache.PushLayerPartRenderDirtyRegion(*params,
+        paintFilterCanvas, paintFilterCanvas, LAYER_PART_RENDER_NODE_COUNT);
+    layerPartDrawCache.PopLayerPartRenderDirtyRegion(paintFilterCanvas);
+    SUCCEED();
+}
+
+/**
+ * @tc.name: IsOpincNodeInScreenRectBoundary
+ * @tc.desc: Test IsOpincNodeInScreenRect with boundary conditions
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsOpincNodeInScreenRectBoundary, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    RSRenderParams params(id);
+
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 100, 100});
+
+    RectI absRect1 = {0, 0, 50, 50};
+    params.SetAbsDrawRect(absRect1);
+    ASSERT_TRUE(opincDrawCache.IsOpincNodeInScreenRect(params));
+
+    RectI absRect2 = {50, 50, 50, 50};
+    params.SetAbsDrawRect(absRect2);
+    ASSERT_TRUE(opincDrawCache.IsOpincNodeInScreenRect(params));
+
+    RectI absRect3 = {100, 100, 50, 50};
+    params.SetAbsDrawRect(absRect3);
+    ASSERT_TRUE(opincDrawCache.IsOpincNodeInScreenRect(params));
+
+    RectI absRect4 = {-10, -10, 5, 5};
+    params.SetAbsDrawRect(absRect4);
+    ASSERT_FALSE(opincDrawCache.IsOpincNodeInScreenRect(params));
+
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+}
+
+/**
+ * @tc.name: IsTranslateWithEdgeCases
+ * @tc.desc: Test IsTranslate with edge cases
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsTranslateWithEdgeCases, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+
+    Drawing::Matrix identityMatrix;
+    ASSERT_TRUE(opincDrawCache.IsTranslate(identityMatrix));
+
+    Drawing::Matrix translateMatrix;
+    translateMatrix.Translate(1000.0f, 2000.0f);
+    ASSERT_TRUE(opincDrawCache.IsTranslate(translateMatrix));
+
+    Drawing::Matrix scaleMatrix;
+    scaleMatrix.SetScale(1.0f, 1.0f);
+    ASSERT_TRUE(opincDrawCache.IsTranslate(scaleMatrix));
+
+    Drawing::Matrix rotateMatrix;
+    rotateMatrix.Rotate(45.0f, 0.0f, 0.0f);
+    ASSERT_FALSE(opincDrawCache.IsTranslate(rotateMatrix));
+
+    Drawing::Matrix skewMatrix;
+    skewMatrix.SetSkew(0.1f, 0.1f);
+    ASSERT_FALSE(opincDrawCache.IsTranslate(skewMatrix));
+}
+
+/**
+ * @tc.name: GetNodeCacheType
+ * @tc.desc: Test GetNodeCacheType
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetNodeCacheType, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache::SetNodeCacheType(NodeStrategyType::CACHE_NONE);
+    ASSERT_EQ(DrawableV2::RSOpincDrawCache::GetNodeCacheType(), NodeStrategyType::CACHE_NONE);
+
+    DrawableV2::RSOpincDrawCache::SetNodeCacheType(NodeStrategyType::OPINC_AUTOCACHE);
+    ASSERT_EQ(DrawableV2::RSOpincDrawCache::GetNodeCacheType(), NodeStrategyType::OPINC_AUTOCACHE);
+
+    DrawableV2::RSOpincDrawCache::SetNodeCacheType(NodeStrategyType::CACHE_DISABLE);
+    ASSERT_EQ(DrawableV2::RSOpincDrawCache::GetNodeCacheType(), NodeStrategyType::CACHE_DISABLE);
+}
+
+/**
+ * @tc.name: GetRecordState
+ * @tc.desc: Test GetRecordState
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetRecordState, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
+    ASSERT_EQ(opincDrawCache.GetRecordState(), NodeRecordState::RECORD_NONE);
+
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_CALCULATE;
+    ASSERT_EQ(opincDrawCache.GetRecordState(), NodeRecordState::RECORD_CALCULATE);
+
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHING;
+    ASSERT_EQ(opincDrawCache.GetRecordState(), NodeRecordState::RECORD_CACHING);
+
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_CACHED;
+    ASSERT_EQ(opincDrawCache.GetRecordState(), NodeRecordState::RECORD_CACHED);
+}
+
+/**
+ * @tc.name: GetRootNodeStrategyType
+ * @tc.desc: Test GetRootNodeStrategyType
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetRootNodeStrategyType, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+
+    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::CACHE_NONE;
+    ASSERT_EQ(opincDrawCache.GetRootNodeStrategyType(), NodeStrategyType::CACHE_NONE);
+
+    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::OPINC_AUTOCACHE;
+    ASSERT_EQ(opincDrawCache.GetRootNodeStrategyType(), NodeStrategyType::OPINC_AUTOCACHE);
+
+    opincDrawCache.rootNodeStragyType_ = NodeStrategyType::CACHE_DISABLE;
+    ASSERT_EQ(opincDrawCache.GetRootNodeStrategyType(), NodeStrategyType::CACHE_DISABLE);
+}
+
+/**
+ * @tc.name: IsOpCanCache
+ * @tc.desc: Test IsOpCanCache
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, IsOpCanCache, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+
+    opincDrawCache.opCanCache_ = false;
+    ASSERT_FALSE(opincDrawCache.IsOpCanCache());
+
+    opincDrawCache.opCanCache_ = true;
+    ASSERT_TRUE(opincDrawCache.IsOpCanCache());
+}
+
+/**
+ * @tc.name: GetDrawAreaEnableState
+ * @tc.desc: Test GetDrawAreaEnableState
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetDrawAreaEnableState, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_INIT;
+    ASSERT_EQ(opincDrawCache.GetDrawAreaEnableState(), DrawAreaEnableState::DRAW_AREA_INIT);
+
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
+    ASSERT_EQ(opincDrawCache.GetDrawAreaEnableState(), DrawAreaEnableState::DRAW_AREA_ENABLE);
+
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_DISABLE;
+    ASSERT_EQ(opincDrawCache.GetDrawAreaEnableState(), DrawAreaEnableState::DRAW_AREA_DISABLE);
+}
+
+/**
+ * @tc.name: GetOpincBlockNodeSkip
+ * @tc.desc: Test GetOpincBlockNodeSkip
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, GetOpincBlockNodeSkip, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(true);
+    ASSERT_TRUE(DrawableV2::RSOpincDrawCache::GetOpincBlockNodeSkip());
+
+    DrawableV2::RSOpincDrawCache::SetOpincBlockNodeSkip(false);
+    ASSERT_FALSE(DrawableV2::RSOpincDrawCache::GetOpincBlockNodeSkip());
+}
+
+/**
+ * @tc.name: BeforeDrawCacheFindRootNodeWithCacheSize
+ * @tc.desc: Test BeforeDrawCacheFindRootNode with various cache sizes
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, BeforeDrawCacheFindRootNodeWithCacheSize, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    RSRenderParams params(id);
+
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 1080, 1920});
+    RSOpincManager::Instance().SetOPIncSwitch(true);
+    params.OpincUpdateRootFlag(true);
+    paintFilterCanvas.SetCacheType(Drawing::CacheType::ENABLED);
+
+    params.SetCacheSize({51, 51});
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
+    const auto currentSize = params.GetCacheSize();
+    const bool isOffscreen = (paintFilterCanvas.GetCacheType() == RSPaintFilterCanvas::CacheType::OFFSCREEN);
+    const bool expectedCalculate =
+        (currentSize.x_ <= opincDrawCache.GetOpincCacheMaxWidth()) &&
+        (currentSize.y_ <= opincDrawCache.GetOpincCacheMaxHeight()) &&
+        !isOffscreen &&
+        (currentSize.x_ > ROOT_FIND_CACHE_SIZE_THRESHOLD) &&
+        (currentSize.y_ > ROOT_FIND_CACHE_SIZE_THRESHOLD);
+    if (expectedCalculate) {
+        ASSERT_EQ(opincDrawCache.recordState_, NodeRecordState::RECORD_CALCULATE);
+    } else {
+        ASSERT_EQ(opincDrawCache.recordState_, NodeRecordState::RECORD_NONE);
+    }
+
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
+    params.SetCacheSize({49, 49});
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
+    ASSERT_EQ(opincDrawCache.recordState_, NodeRecordState::RECORD_NONE);
+
+    opincDrawCache.recordState_ = NodeRecordState::RECORD_NONE;
+    params.SetCacheSize({2000, 2000});
+    opincDrawCache.BeforeDrawCacheFindRootNode(paintFilterCanvas, params);
+    ASSERT_EQ(opincDrawCache.recordState_, NodeRecordState::RECORD_NONE);
+
+    DrawableV2::RSOpincDrawCache::SetScreenRectInfo({0, 0, 0, 0});
+}
+
+/**
+ * @tc.name: DrawAutoCacheWithEmptyRects
+ * @tc.desc: Test DrawAutoCache with empty rects
+ * @tc.type: FUNC
+ * @tc.require: issueIC87OJ
+ */
+HWTEST_F(RSOpincDrawCacheTest, DrawAutoCacheWithEmptyRects, TestSize.Level1)
+{
+    DrawableV2::RSOpincDrawCache opincDrawCache;
+    Drawing::Canvas canvas;
+    RSPaintFilterCanvas paintFilterCanvas(&canvas);
+    Drawing::Image image;
+    Drawing::SamplingOptions samplingOptions;
+
+    opincDrawCache.opCanCache_ = true;
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
+
+    Drawing::OpListHandle::OpInfo opInfo1 = {
+        .unionRect = Drawing::Rect {},
+        .drawAreaRects = {}
+    };
+    opincDrawCache.opListDrawAreas_ = Drawing::OpListHandle(opInfo1);
+    ASSERT_FALSE(opincDrawCache.DrawAutoCache(paintFilterCanvas, image, samplingOptions,
+        Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT));
+
+    Drawing::OpListHandle::OpInfo opInfo2 = {
+        .unionRect = Drawing::Rect { 100, 100, 300, 300 },
+        .drawAreaRects = {}
+    };
+    opincDrawCache.opListDrawAreas_ = Drawing::OpListHandle(opInfo2);
+    ASSERT_FALSE(opincDrawCache.DrawAutoCache(paintFilterCanvas, image, samplingOptions,
+        Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT));
+}
+
+/**
+ * @tc.name: HelperPrepareAndFinishOpincSubtreeBranches
+ * @tc.desc: Cover PrepareOpincSubtree(30 true/35 false) and FinishOpincSubtree(46 true)
+ * @tc.type: FUNC
+ * @tc.require: issueTddCoverHelperBranches
+ */
+HWTEST_F(RSOpincDrawCacheTest, HelperPrepareAndFinishOpincSubtreeBranches, TestSize.Level1)
+{
+    auto renderNode = std::make_shared<RSRenderNode>(GenerateUniqueNodeIdForRS());
+    auto drawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode));
+    ASSERT_NE(drawable, nullptr);
+    ASSERT_EQ(drawable->TryGetOpincDrawCachePtr(), nullptr);
+
+    RSRenderParams suggestParams(GenerateUniqueNodeIdForRS());
+    suggestParams.OpincSetIsSuggest(true);
+    RSOpincDrawCacheHelper::PrepareOpincSubtree(*drawable, suggestParams);
+    ASSERT_NE(drawable->TryGetOpincDrawCachePtr(), nullptr);
+
+    RSOpincDrawCacheHelper::FinishOpincSubtree(suggestParams);
+
+    auto anotherNode = std::make_shared<RSRenderNode>(GenerateUniqueNodeIdForRS());
+    auto anotherDrawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(anotherNode));
+    ASSERT_NE(anotherDrawable, nullptr);
+    RSRenderParams normalParams(GenerateUniqueNodeIdForRS());
+    ASSERT_TRUE(RSOpincDrawCacheHelper::PrepareOpincSubtree(*anotherDrawable, normalParams));
+    ASSERT_EQ(anotherDrawable->TryGetOpincDrawCachePtr(), nullptr);
+}
+
+/**
+ * @tc.name: HelperProcessBeforeAfterDrawCacheBranches
+ * @tc.desc: Cover ProcessBeforeDrawCache(55 false) and ProcessAfterDrawCache(64 true)
+ * @tc.type: FUNC
+ * @tc.require: issueTddCoverHelperBranches
+ */
+HWTEST_F(RSOpincDrawCacheTest, HelperProcessBeforeAfterDrawCacheBranches, TestSize.Level1)
+{
+    auto renderNode = std::make_shared<RSRenderNode>(GenerateUniqueNodeIdForRS());
+    auto drawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode));
+    ASSERT_NE(drawable, nullptr);
+
+    Drawing::Canvas canvas;
+    RSRenderParams params(GenerateUniqueNodeIdForRS());
+
+    ASSERT_EQ(drawable->TryGetOpincDrawCachePtr(), nullptr);
+    RSOpincDrawCacheHelper::ProcessBeforeDrawCache(*drawable, canvas, params);
+    ASSERT_EQ(drawable->TryGetOpincDrawCachePtr(), nullptr);
+
+    (void)drawable->GetOpincDrawCache();
+    ASSERT_NE(drawable->TryGetOpincDrawCachePtr(), nullptr);
+    RSOpincDrawCacheHelper::ProcessAfterDrawCache(*drawable, canvas, params);
+    ASSERT_NE(drawable->TryGetOpincDrawCachePtr(), nullptr);
+}
+
+/**
+ * @tc.name: HelperTryDrawOpincAutoCacheAllTrue
+ * @tc.desc: Cover TryDrawOpincAutoCache with all true conditions at line 109
+ * @tc.type: FUNC
+ * @tc.require: issueTddCoverHelperBranches
+ */
+HWTEST_F(RSOpincDrawCacheTest, HelperTryDrawOpincAutoCacheAllTrue, TestSize.Level1)
+{
+    auto renderNode = std::make_shared<RSRenderNode>(GenerateUniqueNodeIdForRS());
+    auto drawable = std::static_pointer_cast<DrawableV2::RSRenderNodeDrawable>(
+        DrawableV2::RSRenderNodeDrawableAdapter::OnGenerate(renderNode));
+    ASSERT_NE(drawable, nullptr);
+
+    auto& opincDrawCache = drawable->GetOpincDrawCache();
+    opincDrawCache.isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
+    opincDrawCache.opCanCache_ = true;
+    Drawing::OpListHandle::OpInfo opInfo = {
+        .unionRect = Drawing::Rect(0.f, 0.f, 16.f, 16.f),
+        .drawAreaRects = { Drawing::Rect(0.f, 0.f, 8.f, 8.f) }
+    };
+    opincDrawCache.opListDrawAreas_ = Drawing::OpListHandle(opInfo);
+
+    Drawing::Canvas drawCanvas;
+    RSPaintFilterCanvas paintCanvas(&drawCanvas);
+    Drawing::Image cacheImage;
+    Drawing::SamplingOptions samplingOptions;
+    std::vector<std::pair<RectI, std::string>> autoCacheRenderNodeInfos;
+
+    ASSERT_TRUE(RSOpincDrawCacheHelper::TryDrawOpincAutoCache(
+        *drawable, paintCanvas, cacheImage, samplingOptions, autoCacheRenderNodeInfos));
 }
 } // namespace Rosen
 } // namespace OHOS

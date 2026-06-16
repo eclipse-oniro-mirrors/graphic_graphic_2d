@@ -121,33 +121,34 @@ void RSRenderNodeGC::ReleaseNodeBucket()
     bool vsyncArrived = false;
     uint32_t realDelNodeNum = 0;
     for (auto ptr : toDele) {
-        if (ptr) {
-            if (isEnable_.load() == false) {
-                AddNodeToBucket(ptr);
-                vsyncArrived = true;
-                continue;
-            }
-            if (RSRenderNodeAllocator::Instance().AddNodeToAllocator(ptr)) {
-                continue;
-            }
-#if defined(__aarch64__)
-            auto* hook = reinterpret_cast<MemoryHook*>(ptr);
-            hook->Protect();
-#endif
-            delete ptr;
-            ptr = nullptr;
-
-            ++realDelNodeNum;
+        if (ptr == nullptr) {
+            continue;
         }
+        if (isEnable_.load() == false) {
+            vsyncArrived = true;
+            if (remainBucketSize < GC_LEVEL_THR_HIGH) {
+                AddNodeToBucket(ptr);
+                continue;
+            }
+        }
+        ++realDelNodeNum;
+        if (RSRenderNodeAllocator::Instance().AddNodeToAllocator(ptr)) {
+            continue;
+        }
+#if defined(__aarch64__)
+        auto* hook = reinterpret_cast<MemoryHook*>(ptr);
+        hook->Protect();
+#endif
+        delete ptr;
+        ptr = nullptr;
     }
-    RS_TRACE_NAME_FMT("Actually ReleaseNode(not null) %u, VSync signal arrival interrupts release: %s",
+    RS_TRACE_NAME_FMT("ReleaseNodeMemory(not null) %u, VSync signal arrival interrupts release: %s",
         realDelNodeNum, vsyncArrived ? "true" : "false");
 }
 
 void RSRenderNodeGC::ReleaseNodeMemory(bool highPriority)
 {
     RS_TRACE_FUNC();
-#ifdef RS_ENABLE_MEMORY_DOWNTREE
     if (mainTask_) {
         mainTask_([this]() {
             ReleaseNodeMemNotOnTree();
@@ -155,7 +156,6 @@ void RSRenderNodeGC::ReleaseNodeMemory(bool highPriority)
     } else {
         ReleaseNodeMemNotOnTree();
     }
-#endif
     uint32_t remainBucketSize;
     {
         std::lock_guard<std::mutex> lock(nodeMutex_);
@@ -170,6 +170,9 @@ void RSRenderNodeGC::ReleaseNodeMemory(bool highPriority)
             if (isEnable_.load() == false &&
                 nodeGCLevel_ != GCLevel::IMMEDIATE) {
                 return;
+            }
+            if (nodeGCLevel_ == GCLevel::IMMEDIATE) {
+                RS_LOGI_LIMIT("RSRenderNodeGC::ReleaseNodeMemory IMMEDIATE");
             }
             ReleaseNodeBucket();
             if (highPriority && drawableReleaseFunc_) {
@@ -254,16 +257,16 @@ void RSRenderNodeGC::ReleaseDrawableMemory(bool highPriority)
         }
         remainBucketSize = drawableBucket_.size();
     }
-    drawableGCLevel_ = JudgeGCLevel(remainBucketSize);
+    auto drawableGCLevel = JudgeGCLevel(remainBucketSize);
     if (renderTask_) {
-        auto task = [this, highPriority]() {
+        auto task = [this, highPriority, drawableGCLevel]() {
             RSRenderNodeGC::Instance().ReleaseDrawableBucket();
             if (highPriority && imageReleaseFunc_) {
                 imageReleaseFunc_();
             }
             RSRenderNodeGC::Instance().ReleaseDrawableMemory(highPriority);
         };
-        renderTask_(task, DELETE_DRAWABLE_TASK, 0, static_cast<AppExecFwk::EventQueue::Priority>(drawableGCLevel_));
+        renderTask_(task, DELETE_DRAWABLE_TASK, 0, static_cast<AppExecFwk::EventQueue::Priority>(drawableGCLevel));
     } else {
         ReleaseDrawableBucket();
     }
@@ -378,13 +381,21 @@ void RSRenderNodeGC::ReleaseOffTreeNodeForBucketMap(const RSThresholdDetector<ui
     auto& subMap = toRemove.second;
     uint32_t count = 0;
     const size_t subMapSize = subMap.size();
-    uint64_t remainBucketSize = renderNodeNumsInBucketMap_ / OFF_TREE_BUCKET_MAX_SIZE +
-        (renderNodeNumsInBucketMap_ % OFF_TREE_BUCKET_MAX_SIZE == 0 ? 0 : 1);
+    const size_t rlsNodeNums = (subMapSize >= OFF_TREE_BUCKET_MAX_SIZE ? OFF_TREE_BUCKET_MAX_SIZE : subMapSize);
+    const uint64_t remainNodeNums = renderNodeNumsInBucketMap_ >= rlsNodeNums ?
+        renderNodeNumsInBucketMap_ - rlsNodeNums : renderNodeNumsInBucketMap_;
+    uint64_t remainBucketSize = remainNodeNums / OFF_TREE_BUCKET_MAX_SIZE +
+        (remainNodeNums % OFF_TREE_BUCKET_MAX_SIZE == 0 ? 0 : 1);
     offTreeBucketThrDetector_.Detect(remainBucketSize, callBack);
-    RS_TRACE_NAME_FMT("ReleaseOffTreeNodeForBucketMap %d, remain offTree buckets %u",
-        OFF_TREE_BUCKET_MAX_SIZE, subMapSize);
+#ifndef ROSEN_TRACE_DISABLE
+    RS_TRACE_NAME_FMT("ReleaseOffTreeNodeForBucketMap %zu, remain offTree buckets %llu",
+        rlsNodeNums, remainBucketSize);
+#endif
+
     for (auto subIter = subMap.begin(); subIter != subMap.end();) {
-        if (count++ >= OFF_TREE_BUCKET_MAX_SIZE) {
+        if (isEnable_.load() == false || count++ >= OFF_TREE_BUCKET_MAX_SIZE) {
+            RS_TRACE_NAME_FMT("ReleaseOffTreeNodeForBucketMap break: count=%u, isEnable=%s",
+                count, isEnable_.load() ? "true" : "false");
             break;
         }
         auto renderNode = subIter->second;
@@ -396,7 +407,9 @@ void RSRenderNodeGC::ReleaseOffTreeNodeForBucketMap(const RSThresholdDetector<ui
             parent->RemoveChildFromFulllist(renderNode->GetId());
         }
         renderNode->RemoveFromTree(false);
-        renderNode->GetAnimationManager().FilterAnimationByPid(pid);
+        if (auto animationManager = renderNode->GetAnimationManager()) {
+            animationManager->FilterAnimationByPid(pid);
+        }
         subIter = subMap.erase(subIter);
     }
     renderNodeNumsInBucketMap_ -= (subMapSize - subMap.size());
@@ -474,15 +487,20 @@ void RSRenderNodeGC::ReleaseNodeMemNotOnTree()
         }
         auto& nodeMap = mapIt->second;
         auto nodeIt = nodeMap.begin();
+        RS_TRACE_NAME_FMT("ReleaseNodeMemNotOnTree, pid: %" PRIu32 ", nodeMap size=%" PRIu32, *pidIt, nodeMap.size());
         while (nodeIt != nodeMap.end()) {
+            // VSync arrival or limit reached, break release early
+            if (isEnable_.load() == false || cnt > NODE_MEM_RELEASE_LIMIT) {
+                RS_TRACE_NAME_FMT("ReleaseNodeMemNotOnTree break: cnt=%" PRIu32 ", isEnable=%s",
+                    cnt, isEnable_.load() ? "true" : "false");
+                return;
+            }
             auto node = nodeIt->second.lock();
             if (node == nullptr || node->GetType() != RSRenderNodeType::CANVAS_NODE) {
                 nodeMap.erase(nodeIt++);
                 continue;
             }
-            if (cnt++ > NODE_MEM_RELEASE_LIMIT) {
-                return;
-            }
+            cnt++;
             node->ReleaseNodeMem();
             nodeMap.erase(nodeIt++);
         }

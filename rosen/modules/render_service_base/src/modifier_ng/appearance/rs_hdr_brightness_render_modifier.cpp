@@ -24,14 +24,18 @@ const RSHDRBrightnessRenderModifier::LegacyPropertyApplierMap
             RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetHDRUIBrightness> },
         { RSPropertyType::HDR_BRIGHTNESS_FACTOR,
             RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetHDRBrightnessFactor> },
+        { RSPropertyType::HDR_COLOR_HEADROOM,
+            RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetHDRColorHeadroom> },
     };
 
 void RSHDRBrightnessRenderModifier::ResetProperties(RSProperties& properties)
 {
     properties.SetHDRUIBrightness(1.0f);
     properties.SetHDRBrightnessFactor(1.0f);
+    properties.SetHDRColorHeadroom(1.0f);
 }
 
+// LCOV_EXCL_START
 void RSHDRBrightnessRenderModifier::OnSetDirty()
 {
     if (auto node = target_.lock()) {
@@ -39,4 +43,5 @@ void RSHDRBrightnessRenderModifier::OnSetDirty()
         node->SetContentDirty();
     }
 }
+// LCOV_EXCL_STOP
 } // namespace OHOS::Rosen::ModifierNG

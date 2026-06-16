@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2021-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -161,18 +161,15 @@ ohos_executable("render_service_client_gesture_interrupt_animation_demo") {
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
   ]
 
-  public_external_deps = [
-    "$public_deps_skia",
-    "window_manager:libwm",
-  ]
-
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "safwk:system_ability_fwk",
+    "window_manager:libwm",
     "zlib:libz",
+    "$public_deps_skia",
   ]
 
   defines = []
@@ -197,16 +194,13 @@ ohos_executable("render_service_client_gravity_demo") {
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
   ]
 
-  public_external_deps = [
-    "$public_deps_skia",
-    "window_manager:libwm",
-  ]
-
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "safwk:system_ability_fwk",
+    "window_manager:libwm",
     "zlib:libz",
+    "$public_deps_skia",
   ]
 
   part_name = "graphic_2d"
@@ -267,6 +261,10 @@ ohos_executable("render_service_client_ui_capture_demo") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
+    "$public_deps_skia",
+    "libpng:libpng",
+    "window_manager:libwm",
+    "zlib:libz",
   ]
 
   defines = []
@@ -278,10 +276,69 @@ ohos_executable("render_service_client_ui_capture_demo") {
     defines += [ "SUPPORT_ACCESS_TOKEN" ]
   }
 
-  public_external_deps = [
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_get_gpu_max_size_demo") {
+  sources = [ "render_service_client_get_gpu_max_size_demo.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "image_framework:image_native",
     "$public_deps_skia",
     "libpng:libpng",
     "window_manager:libwm",
+    "window_manager:libdm",
+    "zlib:libz",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_surface_capture_errcode_demo") {
+  sources = [ "render_service_client_surface_capture_errcode_demo.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "image_framework:image_native",
+    "$public_deps_skia",
+    "libpng:libpng",
+    "window_manager:libwm",
+    "window_manager:libdm",
     "zlib:libz",
   ]
 
@@ -395,16 +452,13 @@ ohos_executable("render_service_client_rs_animation_demo") {
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
   ]
 
-  public_external_deps = [
-    "$public_deps_skia",
-    "window_manager:libwm",
-  ]
-
   external_deps = [
+    "$public_deps_skia",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
     "safwk:system_ability_fwk",
+    "window_manager:libwm",
     "zlib:libz",
   ]
 
@@ -515,9 +569,9 @@ ohos_executable("render_service_client_watermark_demo") {
 
   deps = [ "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client" ]
 
-  public_external_deps = [ "skia:skia_canvaskit" ]
+  external_deps = [ "skia:skia_canvaskit" ]
 
-  external_deps = [
+  external_deps += [
     "c_utils:utils",
     "hilog:libhilog",
     "image_framework:image_native",
@@ -594,6 +648,75 @@ ohos_executable("rs_surface_watermark_demo") {
   subsystem_name = "graphic"
 }
 
+ohos_executable("rs_surface_watermark_rowcol_demo") {
+  sources = [ "rs_surface_watermark_rowcol_demo.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "image_framework:image_native",
+    "window_manager:libwm",
+  ]
+
+  defines = []
+  if (graphic_2d_support_access_token) {
+    external_deps += [
+      "access_token:libnativetoken",
+      "access_token:libtoken_setproc",
+    ]
+    defines += [ "SUPPORT_ACCESS_TOKEN" ]
+  }
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("rs_interface_frame_stability_demo") {
+  sources = [ 
+    "Interfacetest/rs_interface_frame_stability_demo.cpp",
+  ]
+  
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-g3",
+    "-Dprivate=public",
+    "-Dprotected=public",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
 ohos_executable("rs_interface_stable_demo") {
   sources = [ 
     "Interfacetest/rs_interface_stable_demo.cpp",
@@ -622,6 +745,7 @@ ohos_executable("rs_interface_stable_demo") {
     "hilog:libhilog",
     "image_framework:image_native",
     "window_manager:libwm",
+    "graphic_surface:surface",
   ]
 
   defines = []
@@ -699,13 +823,13 @@ ohos_executable("render_service_client_tunnel_handle_demo") {
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
   ]
 
-  public_external_deps = [ "window_manager:libwm" ]
-
   external_deps = [
     "c_utils:utils",
     "graphic_surface:surface",
     "hilog:libhilog",
     "zlib:libz",
+    "window_manager:libwm",
+    "window_manager:sms",
   ]
 
   part_name = "graphic_2d"
@@ -733,13 +857,71 @@ ohos_executable("render_service_client_overlay_demo") {
   subsystem_name = "graphic"
 }
 
+ohos_executable("render_service_client_pixelmap_get_demo") {
+    sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  sources = [ "render_service_client_pixelmap_get_demo.cpp" ]
+  include_dirs = [
+    # render_service_base include
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base/src",
+    "//foundation/graphic/graphic_2d/rosen/include",
+  ]
+
+  deps = [
+    "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_base:librender_service_base",
+    "//foundation/graphic/graphic_2d/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "libpng:libpng",
+    "zlib:libz",
+    "skia:skia_canvaskit",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
 ohos_executable("snapshot_surface") {
   sources = [ "snapshot_surface.cpp" ]
   include_dirs = [
-    "$graphic_2d_root/rosen/include",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/config",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/frame_rate_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/hgm_screen_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/soft_vsync_manager",
+    "$graphic_2d_root/rosen/modules/hyper_graphic_manager/core/utils",
+    "$graphic_2d_root/rosen/modules/render_service/main",
     "$graphic_2d_root/rosen/modules/render_service/core",
-    "$graphic_2d_root/rosen/modules/render_service_client/core",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param/extend_feature",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/feature_param/performance_feature",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser/extend_feature_parser",
+    "$graphic_2d_root/rosen/modules/render_service/core/feature_cfg/xml_parser/performance_feature_parser",
     "$graphic_2d_root/rosen/modules/render_service_base/src",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/connection/zidl",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/layer_backend",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/render_layer",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/transaction",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_client/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/connection",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/connection/zidl",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/external_depend/gpuComposition",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/layer_backend",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/pipeline",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/render_layer",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/transaction",
+    "$graphic_2d_root/rosen/modules/render_service/composer/composer_service/transaction/command",
+    "$graphic_2d_root/rosen/modules/render_service/vsync",
   ]
 
   deps = [
@@ -749,9 +931,8 @@ ohos_executable("snapshot_surface") {
     "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
   ]
 
-  public_external_deps = [ "libpng:libpng" ]
-
   external_deps = [
+    "libpng:libpng",
     "c_utils:utils",
     "hilog:libhilog",
   ]
@@ -990,6 +1171,121 @@ ohos_executable("render_service_client_surface_local_magnification_demo") {
 
 ohos_executable("render_service_client_content_transition_demo") {
   sources = [ "render_service_client_content_transition_demo.cpp" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+  
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "window_manager:libdm",
+    "window_manager:libwm",
+    "window_manager:sms",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("screen_special_layer_demo") {
+  sources = [
+    "screen_special_layer_demo_utils.cpp",
+    "screen_special_layer_demo.cpp"
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+  
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("magnifier_demo") {
+  sources = [ "render_service_client_magnifier_demo.cpp" ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+  
+  external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "image_framework:image_native",
+    "hilog:libhilog",
+    "window_manager:libdm",
+    "window_manager:libwm",
+    "window_manager:sms",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_spatial_point_light_demo") {
+  sources = [ "render_service_client_spatial_point_light_demo.cpp" ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+
+  deps = [
+    "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
+    "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
+    "$graphic_2d_root/rosen/modules/render_service_client:librender_service_client",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "safwk:system_ability_fwk",
+    "window_manager:libwm",
+    "zlib:libz",
+  ]
+
+  part_name = "graphic_2d"
+  subsystem_name = "graphic"
+}
+
+ohos_executable("render_service_client_group_animation_demo") {
+  sources = [ "render_service_client_group_animation_demo.cpp" ]
 
   sanitize = {
     cfi = true

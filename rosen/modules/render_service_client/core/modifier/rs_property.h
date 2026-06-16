@@ -35,7 +35,6 @@
 #include "animation/rs_animation_callback.h"
 #include "animation/rs_animation_trace_utils.h"
 #include "animation/rs_implicit_animator.h"
-#include "animation/rs_implicit_animator_map.h"
 #include "animation/rs_motion_path_option.h"
 #include "command/rs_node_showing_command.h"
 #include "common/rs_color.h"
@@ -44,6 +43,7 @@
 #include "common/rs_vector2.h"
 #include "common/rs_vector4.h"
 #include "modifier/rs_animatable_arithmetic.h"
+#include "modifier/rs_cmd_list_image_collector.h"
 #include "modifier/rs_render_property.h"
 #include "pipeline/rs_node_map.h"
 #include "transaction/rs_transaction_proxy.h"
@@ -81,10 +81,11 @@ class RSNGMaskBase;
 class RSNGShapeBase;
 class RSLinearGradientBlurPara;
 class MotionBlurParam;
-class RSMagnifierParams;
 class ParticleNoiseFields;
+class ParticleFieldCollection;
 class RSShader;
 class RSNGEffectUtils;
+class RSUIContext;
 
 /**
  * @brief Defines different types of thresholds for spring animation.
@@ -125,7 +126,7 @@ public:
     /**
      * @brief Destructor for RSPropertyBase.
      */
-    virtual ~RSPropertyBase() = default;
+    virtual ~RSPropertyBase();
 
     /**
      * @brief Gets the ID of the property.
@@ -218,6 +219,8 @@ protected:
         modifierNG_.reset();
     }
 
+    bool IsDeduplicationEnabled() const;
+    
     virtual void OnDetach() {}
 
     void MarkCustomModifierDirty();
@@ -281,6 +284,7 @@ private:
     friend class RSPathAnimation;
     friend class ModifierNG::RSModifier;
     friend class RSNode;
+    friend class RSSurfaceNode;
     friend class RSKeyframeAnimation;
     friend class RSInterpolatingSpringAnimation;
     friend class RSImplicitTransitionParam;
@@ -395,7 +399,10 @@ public:
 
     virtual void Set(const T& value)
     {
-        if (ROSEN_EQ(value, stagingValue_) || !IsValid(value)) {
+        if (!IsValid(value)) {
+            return;
+        }
+        if (ROSEN_EQ(value, stagingValue_) && !IsDeduplicationEnabled()) {
             return;
         }
 
@@ -478,6 +485,7 @@ protected:
 
     static constexpr RSPropertyType type_ = RSPropertyTypeTraits<T>::type;
     ModifierNG::RSPropertyType typeNG_ = ModifierNG::RSPropertyType::INVALID;
+    std::unique_ptr<CmdListImage> cmdListImages_ = nullptr;
 
     T stagingValue_ {};
     bool isCustom_ { false };
@@ -524,7 +532,10 @@ public:
 
     void Set(const T& value) override
     {
-        if (ROSEN_EQ(value, RSProperty<T>::stagingValue_) || !RSProperty<T>::IsValid(value)) {
+        if (!RSProperty<T>::IsValid(value)) {
+            return;
+        }
+        if (ROSEN_EQ(value, RSProperty<T>::stagingValue_) && !RSPropertyBase::IsDeduplicationEnabled()) {
             return;
         }
 
@@ -537,21 +548,22 @@ public:
         RSProperty<T>::MarkNodeDirty();
         RSProperty<T>::UpdateExtendModifierForGeometry(node);
         auto rsUIContext = node->GetRSUIContext();
-        auto implicitAnimator = rsUIContext ? rsUIContext->GetRSImplicitAnimator() :
-            RSImplicitAnimatorMap::Instance().GetAnimator();
-        if (implicitAnimator && implicitAnimator->NeedImplicitAnimation()) {
-            auto startValue = std::make_shared<RSAnimatableProperty<T>>(RSProperty<T>::stagingValue_);
-            auto endValue = std::make_shared<RSAnimatableProperty<T>>(value);
-            if (motionPathOption_ != nullptr) {
-                implicitAnimator->BeginImplicitPathAnimation(motionPathOption_);
-                implicitAnimator->CreateImplicitAnimation(
-                    node, RSProperty<T>::shared_from_this(), startValue, endValue);
-                implicitAnimator->EndImplicitPathAnimation();
-            } else {
-                implicitAnimator->CreateImplicitAnimation(
-                    node, RSProperty<T>::shared_from_this(), startValue, endValue);
+        if (rsUIContext) {
+            auto implicitAnimator = rsUIContext->GetRSImplicitAnimator();
+            if (implicitAnimator->NeedImplicitAnimation()) {
+                auto startValue = std::make_shared<RSAnimatableProperty<T>>(RSProperty<T>::stagingValue_);
+                auto endValue = std::make_shared<RSAnimatableProperty<T>>(value);
+                if (motionPathOption_ != nullptr) {
+                    implicitAnimator->BeginImplicitPathAnimation(motionPathOption_);
+                    implicitAnimator->CreateImplicitAnimation(
+                        node, RSProperty<T>::shared_from_this(), startValue, endValue);
+                    implicitAnimator->EndImplicitPathAnimation();
+                } else {
+                    implicitAnimator->CreateImplicitAnimation(
+                        node, RSProperty<T>::shared_from_this(), startValue, endValue);
+                }
+                return;
             }
-            return;
         }
 
         if (runningPathNum_ > 0) {
@@ -585,9 +597,11 @@ public:
             return;
         }
         auto rsUIContext = node->GetRSUIContext();
-        auto implicitAnimator = rsUIContext ? rsUIContext->GetRSImplicitAnimator()
-                                            : RSImplicitAnimatorMap::Instance().GetAnimator();
-        if (implicitAnimator && implicitAnimator->NeedImplicitAnimation()) {
+        if (rsUIContext == nullptr) {
+            return;
+        }
+        auto implicitAnimator = rsUIContext->GetRSImplicitAnimator();
+        if (implicitAnimator->NeedImplicitAnimation()) {
             implicitAnimator->CancelImplicitAnimation(node, RSProperty<T>::shared_from_this());
         }
     }
@@ -717,12 +731,11 @@ public:
             return {};
         }
         auto rsUIContext = node->GetRSUIContext();
-        const auto& implicitAnimator = rsUIContext ? rsUIContext->GetRSImplicitAnimator() :
-            RSImplicitAnimatorMap::Instance().GetAnimator();
-        if (!implicitAnimator) {
+        if (rsUIContext == nullptr) {
             RSProperty<T>::stagingValue_ = endValue->Get();
             return {};
         }
+        const auto& implicitAnimator = rsUIContext->GetRSImplicitAnimator();
 
         std::shared_ptr<AnimationFinishCallback> animationFinishCallback;
         if (finishCallback) {

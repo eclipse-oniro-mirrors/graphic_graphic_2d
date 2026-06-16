@@ -75,6 +75,27 @@ public:
         CUSTOMIZED = 1 << 4
     };
 
+    struct FontVariation {
+        std::string axis;
+        double value{0.0};
+    };
+
+    struct FontVariationAxis {
+        std::string key;
+        double minValue{0.0};
+        double maxValue{0.0};
+        double defaultValue{0.0};
+        int flags{0};
+        std::string name;
+        std::string localName;
+    };
+
+    struct FontVariationInstance {
+        std::string name;
+        std::string localName;
+        std::vector<FontVariation> coordinates;
+    };
+
     struct FontDescriptor {
         std::string path;
         std::string postScriptName;
@@ -102,6 +123,10 @@ public:
         std::string trademark;
         std::string license;
         int32_t index{0};
+        std::vector<FontVariationAxis> variationAxisRecords;
+        std::vector<FontVariationInstance> variationInstanceRecords;
+        std::vector<std::string> languages;
+        std::vector<std::string> fontFeatures;
         FontDescriptor() = default;
         FontDescriptor(const FontDescriptor&) = default;
         FontDescriptor& operator=(const FontDescriptor& other) = default;
@@ -135,7 +160,7 @@ private:
         FontDescriptor& fontDescriptor);
     static void ProcessTable(const CmapTables* cmapTable, FontDescriptor& fontDescriptor, size_t size);
     static void ProcessTable(const NameTable* nameTable, FontDescriptor& fontDescriptor, size_t size);
-    static void ProcessTable(const PostTable* postTable, FontDescriptor& fontDescriptor, size_t size);
+    static void ProcessTable(const PostTable* postTable, FontDescriptor& fontDescriptor, size_t /* size */);
     template<typename T>
     static bool ParseOneTable(std::shared_ptr<Drawing::Typeface> typeface, FontParser::FontDescriptor& fontDescriptor);
     template<typename Tuple, size_t... Is>
@@ -143,6 +168,11 @@ private:
         std::shared_ptr<Drawing::Typeface> typeface, FontDescriptor& fontDescriptor, std::index_sequence<Is...>);
     static bool ParseTable(std::shared_ptr<Drawing::Typeface> typeface, FontDescriptor& fontDescriptor);
     static void FillFontDescriptorWithLocalInfo(std::shared_ptr<Drawing::Typeface> typeface, FontDescriptor& desc);
+    static void FillFontDescriptorWithVariationInfo(std::shared_ptr<Drawing::Typeface> typeface,
+        FontDescriptor& desc, const std::vector<std::string>& bcpTagList);
+    static void FillFontDescriptorWithLanguageAndFeatures(std::shared_ptr<Drawing::Typeface> typeface,
+        FontDescriptor& desc);
+    static void FillFontDescriptorWithFallback(std::shared_ptr<Drawing::Typeface> typeface, FontDescriptor& desc);
     static std::vector<std::string> GetBcpTagList();
     bool SetFontDescriptor(const unsigned int languageId);
     std::unique_ptr<FontParser::FontDescriptor> ParseFontDescriptor(

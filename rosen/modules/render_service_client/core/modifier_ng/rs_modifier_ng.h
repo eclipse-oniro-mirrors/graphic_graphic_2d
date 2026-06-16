@@ -25,6 +25,7 @@ namespace OHOS::Rosen {
 class RSModifierExtractor;
 class RSNode;
 class RSCanvasDrawingNode;
+class RSSurfaceNode;
 class RSPropertyBase;
 
 namespace ModifierNG {
@@ -71,6 +72,11 @@ public:
         if (auto node = node_.lock()) {
             node->ResetExtendModifierDirty();
         }
+    }
+
+    virtual bool IsDeduplicationEnabled() const
+    {
+        return false;
     }
 
 protected:
@@ -154,6 +160,7 @@ private:
     friend class OHOS::Rosen::RSModifierManager;
     friend class OHOS::Rosen::RSNode;
     friend class OHOS::Rosen::RSCanvasDrawingNode;
+    friend class OHOS::Rosen::RSSurfaceNode;
     friend class OHOS::Rosen::RSPropertyBase;
 };
 } // namespace ModifierNG

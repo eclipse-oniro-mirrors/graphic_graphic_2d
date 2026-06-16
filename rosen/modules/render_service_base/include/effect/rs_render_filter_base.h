@@ -32,7 +32,7 @@ namespace Rosen {
  */
 class RSB_EXPORT RSNGRenderFilterBase : public RSNGRenderEffectBase<RSNGRenderFilterBase> {
 public:
-    ~RSNGRenderFilterBase() override = default;
+    ~RSNGRenderFilterBase() override;
 
     static std::shared_ptr<RSNGRenderFilterBase> Create(RSNGEffectType type);
 
@@ -46,11 +46,15 @@ protected:
     std::shared_ptr<Drawing::GEVisualEffect> geFilter_;
     static void UpdateCacheData(std::shared_ptr<Drawing::GEVisualEffect>& src,
                                 std::shared_ptr<Drawing::GEVisualEffect>& dest);
- 
 
 private:
     friend class RSNGFilterBase;
     friend class RSNGRenderFilterHelper;
+};
+
+class RSB_EXPORT RSNGRenderFilterTemplateHelper {
+public:
+    static bool CheckFilterSkipFrame(RSNGEffectType type, const std::shared_ptr<RSNGRenderFilterBase>& filter);
 };
 
 template<RSNGEffectType Type, typename... PropertyTags>
@@ -66,7 +70,7 @@ public:
 
     void GenerateGEVisualEffect() override
     {
-        RS_OPTIONAL_TRACE_FMT("RSNGRenderFilterTemplate::GenerateGEVisualEffect, Type: %s paramStr: %s",
+        RS_OPTIONAL_TRACE_FMT("RSRenderFilter, Type: %s paramStr: %s",
             RSNGRenderEffectHelper::GetEffectTypeString(Type).c_str(),
             EffectTemplateBase::DumpProperties().c_str());
         auto geFilter = RSNGRenderEffectHelper::CreateGEVisualEffect(Type);
@@ -87,6 +91,12 @@ public:
 
 protected:
     virtual void OnGenerateGEVisualEffect(std::shared_ptr<Drawing::GEVisualEffect>) {}
+
+    virtual bool CanCurrentFilterSkipFrame() override
+    {
+        return RSNGRenderFilterTemplateHelper::CheckFilterSkipFrame(Type,
+            std::enable_shared_from_this<RSNGRenderFilterBase>::shared_from_this());
+    }
 };
 
 class RSNGRenderFilterHelper {
@@ -113,6 +123,12 @@ public:
 
     static RectF CalcRect(const std::shared_ptr<RSNGRenderFilterBase>& filter, const RectF& bound,
         EffectRectType rectType);
+
+    static void GetDescription(std::shared_ptr<RSNGRenderFilterBase>& filter, std::string& filterString);
+
+    static bool HasCustomRegion(const std::shared_ptr<RSNGRenderFilterBase>& filter);
+
+    static void PrepareForForeground(std::shared_ptr<RSNGRenderFilterBase>& filter);
 };
 
 #define ADD_PROPERTY_TAG(Effect, Prop) Effect##Prop##RenderTag
@@ -121,6 +137,7 @@ public:
 
 #include "effect/rs_render_filter_def.in"
 
+// Note: if the definition is inconsistent with the client, place it here instead of in the .in file.
 DECLARE_FILTER(ColorGradient, COLOR_GRADIENT,
     ADD_PROPERTY_TAG(ColorGradient, Colors),
     ADD_PROPERTY_TAG(ColorGradient, Positions),

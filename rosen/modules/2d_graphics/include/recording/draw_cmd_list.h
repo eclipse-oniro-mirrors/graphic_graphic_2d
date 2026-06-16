@@ -239,8 +239,6 @@ public:
 
     size_t GetSize();
 
-    void SetCanvasDrawingOpLimitEnable(bool isEnable);
-
     /**
      * @brief Gets the pixelmap rect for hybrid render.
      */
@@ -262,6 +260,8 @@ public:
      * @brief Get cmdlist draw region from opItem.
      */
     RectF GetCmdlistDrawRegion();
+
+    bool UnmarshallingDrawOpsSimple();
 
 private:
     void ClearCache();
@@ -291,7 +291,6 @@ private:
     bool isNeedUnmarshalOnDestruct_ = false;
     bool noNeedUICaptured_ = false;
     bool isReplayMode = false;
-    bool isCanvasDrawingOpLimitEnabled_ = false;
 
     DrawCmdList::HybridRenderType hybridRenderType_ = DrawCmdList::HybridRenderType::NONE;
 };

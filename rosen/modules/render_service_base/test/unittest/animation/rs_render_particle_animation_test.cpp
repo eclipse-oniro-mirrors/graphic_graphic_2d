@@ -110,7 +110,7 @@ HWTEST_F(RSRenderParticleAnimationTest, Animate001, TestSize.Level1)
         std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
     ASSERT_TRUE(renderParticleAnimation != nullptr);
     int64_t leftDelayTime = 0;
-    auto particleAnimate = renderParticleAnimation->Animate(NS_TO_S, leftDelayTime);
+    auto particleAnimate = renderParticleAnimation->Animate(NS_TO_S, leftDelayTime, false, true);
     EXPECT_TRUE(particleAnimate);
 
     particleSystem_ = std::make_shared<RSRenderParticleSystem>(particlesRenderParams);
@@ -153,55 +153,6 @@ HWTEST_F(RSRenderParticleAnimationTest, Animate002, TestSize.Level1)
     ASSERT_TRUE(renderParticleAnimation != nullptr);
     GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest Animate002 end";
 }
-
-#ifndef MODIFIER_NG
-/**
- * @tc.name: Animate003
- * @tc.desc: Verify the Animate
- * @tc.type:FUNC
- * @tc.require: issueIA6IWR
- */
-HWTEST_F(RSRenderParticleAnimationTest, Animate003, TestSize.Level1)
-{
-    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest Animate003 start";
-    int emitRate = 20;
-    ShapeType emitShape = ShapeType::RECT;
-    Vector2f position = Vector2f(0.f, 0.f);
-    Vector2f emitSize = Vector2f(10.f, 20.f); // 10.f is width, 20.f is height
-    int particleCount = 0;
-    Range<int64_t> lifeTime = Range<int64_t>(0, 0); // 1000 is lifeTime range start, 3000 is lifeTime range end.
-    ParticleType type = ParticleType::POINTS;
-    float radius = 10.f;
-    std::shared_ptr<RSImage> image;
-    Vector2f imageSize = Vector2f(1.f, 1.f);
-    EmitterConfig emitterConfig =
-        EmitterConfig(emitRate, emitShape, position, emitSize, particleCount, lifeTime, type, radius, image, imageSize);
-
-    param = std::make_shared<ParticleRenderParams>(emitterConfig, velocity, acceleration, color, opacity, scale, spin);
-
-    std::vector<std::shared_ptr<ParticleRenderParams>> particlesRenderParams1;
-    particlesRenderParams1.push_back(param);
-
-    NodeId targetId = static_cast<NodeId>(PROPERTY_ID);
-    auto animation =
-        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, std::move(particlesRenderParams1));
-    OHOS::Rosen::RSContext context;
-    AnimationCommandHelper::CreateParticleAnimation(context, targetId, animation);
-    RSRenderParticleVector particles;
-    auto particleParams = std::make_shared<ParticleRenderParams>();
-    std::shared_ptr<RSRenderParticle> newParam = std::make_shared<RSRenderParticle>(particleParams);
-    particles.renderParticleVector_.push_back(newParam);
-    auto property = std::make_shared<RSRenderProperty<RSRenderParticleVector>>(particles, PROPERTY_ID);
-    ASSERT_TRUE(animation != nullptr);
-    animation->AttachRenderProperty(property);
-    int64_t leftDelayTime = 0;
-    EXPECT_TRUE(animation->Animate(NS_TO_S, leftDelayTime));
-    animation->particleSystem_ = nullptr;
-    animation->SetPropertyValue(nullptr);
-    EXPECT_TRUE(animation->Animate(NS_TO_S, leftDelayTime));
-    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest Animate003 end";
-}
-#endif // !MODIFIER_NG
 
 /**
  * @tc.name: UpdateEmitter001
@@ -656,20 +607,20 @@ HWTEST_F(RSRenderParticleAnimationTest, AnimateTest, TestSize.Level1)
 
     // case1: invisible
     renderNode->GetMutableRenderProperties().SetVisible(false);
-    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay));
+    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay, false, true));
 
     // case2: particleSystem_ is null
     renderNode->GetMutableRenderProperties().SetVisible(true);
-    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay));
+    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay, false, true));
 
     // case3: particleSystem_ not null
     renderParticleAnimation.particleSystem_ = std::make_shared<RSRenderParticleSystem>(particlesRenderParams);
     renderParticleAnimation.target_ = nullptr;
-    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay));
+    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay, false, true));
 
     // case4: property_ not null
     renderParticleAnimation.target_ = renderNode.get();
-    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay));
+    ASSERT_TRUE(renderParticleAnimation.Animate(time, delay, false, true));
 }
 
 /**
@@ -727,5 +678,152 @@ HWTEST_F(RSRenderParticleAnimationTest, OnDetachTest, TestSize.Level1)
     renderParticleAnimation.OnDetach();
     ASSERT_FALSE(renderParticleAnimation.particleSystem_);
 }
+/**
+ * @tc.name: SetParticleAnimationToken001
+ * @tc.desc: Verify SetParticleAnimationToken sets token correctly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, SetParticleAnimationToken001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest SetParticleAnimationToken001 start";
+    auto renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(renderParticleAnimation != nullptr);
+
+    uint64_t token = 123456;
+    renderParticleAnimation->SetParticleAnimationToken(token);
+    EXPECT_EQ(renderParticleAnimation->GetToken(), token);
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest SetParticleAnimationToken001 end";
+}
+
+/**
+ * @tc.name: SetParticleAnimationToken002
+ * @tc.desc: Verify SetParticleAnimationToken with zero token
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, SetParticleAnimationToken002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest SetParticleAnimationToken002 start";
+    auto renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(renderParticleAnimation != nullptr);
+
+    renderParticleAnimation->SetParticleAnimationToken(0);
+    EXPECT_EQ(renderParticleAnimation->GetToken(), 0);
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest SetParticleAnimationToken002 end";
+}
+
+/**
+ * @tc.name: MarshallingWithToken001
+ * @tc.desc: Verify token is preserved through Marshalling and Unmarshalling
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, MarshallingWithToken001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest MarshallingWithToken001 start";
+    auto renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(renderParticleAnimation != nullptr);
+
+    uint64_t token = 789012;
+    renderParticleAnimation->SetParticleAnimationToken(token);
+
+    Parcel parcel;
+    auto result = renderParticleAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+
+    auto unmarshalled = RSRenderParticleAnimation::Unmarshalling(parcel);
+    ASSERT_TRUE(unmarshalled != nullptr);
+    EXPECT_EQ(unmarshalled->GetToken(), token);
+    delete unmarshalled;
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest MarshallingWithToken001 end";
+}
+
+/**
+ * @tc.name: MarshallingWithToken002
+ * @tc.desc: Verify Marshalling with zero token
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, MarshallingWithToken002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest MarshallingWithToken002 start";
+    auto renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(renderParticleAnimation != nullptr);
+
+    // default token should be 0
+    Parcel parcel;
+    auto result = renderParticleAnimation->Marshalling(parcel);
+    EXPECT_TRUE(result);
+
+    auto unmarshalled = RSRenderParticleAnimation::Unmarshalling(parcel);
+    ASSERT_TRUE(unmarshalled != nullptr);
+    EXPECT_EQ(unmarshalled->GetToken(), 0);
+    delete unmarshalled;
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest MarshallingWithToken002 end";
+}
+
+/**
+ * @tc.name: ParseParamTokenFail001
+ * @tc.desc: Verify Unmarshalling fails with empty parcel
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, ParseParamTokenFail001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest ParseParamTokenFail001 start";
+
+    // empty parcel should cause Unmarshalling to fail
+    Parcel parcel;
+    auto unmarshalled = RSRenderParticleAnimation::Unmarshalling(parcel);
+    EXPECT_TRUE(unmarshalled == nullptr);
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest ParseParamTokenFail001 end";
+}
+
+/**
+ * @tc.name: OnAttach002
+ * @tc.desc: Verify OnAttach with non-null animationManager
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, OnAttach002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest OnAttach002 start";
+    auto renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(renderParticleAnimation != nullptr);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(ANIMATION_ID);
+    renderParticleAnimation->Attach(renderNode.get());
+    // Make animationManager_ non-null by adding an animation to the node
+    renderNode->AddAnimation(renderParticleAnimation);
+    auto animationManager = renderNode->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    // OnAttach with non-null animationManager: will register particle animation
+    renderParticleAnimation->OnAttach();
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest OnAttach002 end";
+}
+
+/**
+ * @tc.name: OnDetach003
+ * @tc.desc: Verify OnDetach with non-null animationManager unregisters particle animation
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderParticleAnimationTest, OnDetach003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest OnDetach003 start";
+    auto renderParticleAnimation =
+        std::make_shared<RSRenderParticleAnimation>(ANIMATION_ID, PROPERTY_ID, particlesRenderParams);
+    ASSERT_TRUE(renderParticleAnimation != nullptr);
+    auto renderNode = std::make_shared<RSCanvasRenderNode>(ANIMATION_ID);
+    renderParticleAnimation->Attach(renderNode.get());
+    // Make animationManager_ non-null
+    renderNode->AddAnimation(renderParticleAnimation);
+    auto animationManager = renderNode->GetAnimationManager();
+    ASSERT_NE(animationManager, nullptr);
+    // OnAttach registers particle animation
+    renderParticleAnimation->OnAttach();
+    // OnDetach with non-null animationManager: will unregister particle animation
+    renderParticleAnimation->OnDetach();
+    GTEST_LOG_(INFO) << "RSRenderParticleAnimationTest OnDetach003 end";
+}
+
 } // namespace Rosen
 } // namespace OHOS

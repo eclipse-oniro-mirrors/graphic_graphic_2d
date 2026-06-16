@@ -15,10 +15,11 @@
 
 #include "custom_symbol_config.h"
 
+#include <cJSON.h>
 #include <fstream>
-#include <json/json.h>
 
 #include "symbol_resource/symbol_config_parser.h"
+#include "utils/text_trace.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -30,26 +31,24 @@ CustomSymbolConfig* CustomSymbolConfig::GetInstance()
     return &singleton;
 }
 
-LoadSymbolErrorCode CustomSymbolConfig::ParseConfig(const std::string &familyName,
-    const uint8_t *data, size_t datalen)
+LoadSymbolErrorCode CustomSymbolConfig::ParseConfig(const std::string& familyName,
+    const uint8_t* data, size_t datalen)
 {
+    TEXT_TRACE_FUNC();
     if (data == nullptr) {
         return LoadSymbolErrorCode::LOAD_FAILED;
     }
-    
+
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     if (symbolConfig_.find(familyName) != symbolConfig_.end()) {
         return LoadSymbolErrorCode::SUCCESS;
     }
 
-    std::string srcString(data, data + datalen);
-    Json::Value root;
-    Json::Reader jsonReader;
-    bool isJson = jsonReader.parse(srcString, root);
-    if (!isJson) {
+    cJSON* root = cJSON_ParseWithLength(reinterpret_cast<const char*>(data), datalen);
+    if (root == nullptr) {
         return LoadSymbolErrorCode::JSON_ERROR;
     }
 
-    std::unique_lock<std::shared_mutex> lock(mutex_);
     std::unordered_map<uint16_t, RSSymbolLayersGroups> symbolConfigGroup;
     std::unordered_map<OHOS::Rosen::Drawing::DrawingAnimationType, OHOS::Rosen::Drawing::DrawingAnimationInfo>
         animationInfos;
@@ -59,11 +58,11 @@ LoadSymbolErrorCode CustomSymbolConfig::ParseConfig(const std::string &familyNam
         symbolConfig_.emplace(familyName, symbolConfigGroup);
         result = LoadSymbolErrorCode::SUCCESS;
     }
-    root.clear();
+    cJSON_Delete(root);
     return result;
 }
 
-std::optional<RSSymbolLayersGroups> CustomSymbolConfig::GetSymbolLayersGroups(const std::string &familyName,
+std::optional<RSSymbolLayersGroups> CustomSymbolConfig::GetSymbolLayersGroups(const std::string& familyName,
     uint16_t glyphId)
 {
     std::shared_lock<std::shared_mutex> lock(mutex_);

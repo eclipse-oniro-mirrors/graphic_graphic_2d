@@ -16,49 +16,45 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_DRAW_CMD_LIST_H
 #define RENDER_SERVICE_CLIENT_CORE_PIPELINE_RS_DRAW_CMD_LIST_H
 
-#include "recording/draw_cmd_list.h"
+#include <atomic>
 
 #include "draw/canvas.h"
+#include "pipeline/rs_simple_draw_cmd_list.h"
 #include "utils/rect.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
-class DrawCmdList;
 class Canvas;
 RSB_EXPORT DrawCmdListPtr operator+(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs);
 RSB_EXPORT DrawCmdListPtr operator-(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs);
 RSB_EXPORT DrawCmdListPtr operator*(const DrawCmdListPtr& lhs, float rhs);
 RSB_EXPORT bool operator==(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs);
 } // namespace Drawing
+RSB_EXPORT SimpleDrawCmdListPtr operator+(const SimpleDrawCmdListPtr& lhs, const SimpleDrawCmdListPtr& rhs);
+RSB_EXPORT SimpleDrawCmdListPtr operator-(const SimpleDrawCmdListPtr& lhs, const SimpleDrawCmdListPtr& rhs);
+RSB_EXPORT SimpleDrawCmdListPtr operator*(const SimpleDrawCmdListPtr& lhs, float rhs);
+RSB_EXPORT bool operator==(const SimpleDrawCmdListPtr& lhs, const SimpleDrawCmdListPtr& rhs);
 
 struct DrawCmdListOpacity {
     float startOpacity;
     float endOpacity;
-    float opacity;
-    float lastOpacity;
 
-    DrawCmdListOpacity() : startOpacity(0.f), endOpacity(1.f), opacity(0.f), lastOpacity(0.f) {}
-    DrawCmdListOpacity(float start, float end, float current, float last)
-        : startOpacity(start), endOpacity(end), opacity(current), lastOpacity(last)
-    {}
+    DrawCmdListOpacity() : startOpacity(0.f), endOpacity(1.f) {}
+    DrawCmdListOpacity(float start, float end) : startOpacity(start), endOpacity(end) {}
 };
 
-class RSB_EXPORT RSDrawCmdList : public Drawing::DrawCmdList {
+class RSB_EXPORT RSDrawCmdList : public RSSimpleDrawCmdList {
 public:
     /**
      * @brief   Creates a RSDrawCmdList
      */
-    RSDrawCmdList(
-        const std::shared_ptr<Drawing::DrawCmdList> startValue, const std::shared_ptr<Drawing::DrawCmdList> endValue);
+    RSDrawCmdList(const SimpleDrawCmdListPtr startValue, const SimpleDrawCmdListPtr endValue);
+
     /**
      * @brief   Destroy a RSDrawCmdList
      */
-    ~RSDrawCmdList() override
-    {
-        startValue_.first.reset();
-        endValue_.first.reset();
-    };
+    ~RSDrawCmdList() override = default;
 
     /**
      * @brief   Gets cmd list type.
@@ -66,7 +62,7 @@ public:
      */
     uint32_t GetType() const override
     {
-        return Type::RS_DRAW_CMD_LIST;
+        return Drawing::CmdList::Type::RS_DRAW_CMD_LIST;
     }
 
     bool IsEmpty() const override;
@@ -85,14 +81,12 @@ public:
 
     void Playback(Drawing::Canvas& canvas, const Drawing::Rect* rect = nullptr) override;
 
-    std::string ToString() const;
-
 private:
-    void CleanOpacity();
-    std::shared_ptr<Drawing::DrawCmdList> GetEndDrawCmdList() const;
+    SimpleDrawCmdListPtr GetEndDrawCmdList() const;
 
-    std::pair<std::shared_ptr<Drawing::DrawCmdList>, DrawCmdListOpacity> startValue_;
-    std::pair<std::shared_ptr<Drawing::DrawCmdList>, DrawCmdListOpacity> endValue_;
+    std::atomic<float> fraction_ = 0.0f;
+    std::pair<SimpleDrawCmdListPtr, DrawCmdListOpacity> startValue_;
+    std::pair<SimpleDrawCmdListPtr, DrawCmdListOpacity> endValue_;
 };
 using RSDrawCmdListPtr = std::shared_ptr<RSDrawCmdList>;
 } // namespace Rosen

@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "egl_blob_cache.h"
+#include <atomic>
+ #include "egl_blob_cache.h"
 #include "wrapper_log.h"
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -21,10 +22,42 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <thread>
+#include <type_traits>
 
 namespace OHOS {
 static const char* CACHE_MAGIC = "OSOH";
-BlobCache* BlobCache::blobCache_;
+BlobCache* BlobCache::blobCache_ = nullptr;
+namespace {
+    struct CacheDataInfo {
+        bool initStatus;
+        std::string cacheDir;
+        std::string ddkCacheDir;
+    };
+    static CacheDataInfo g_dirInfo = {false, "", ""};
+    /**
+     * Safe addition for unsigned integers only.
+     * Computes a + b and stores the result in result.
+     * @tparam T Unsigned integral type
+     * @return true  if overflow occurs (result wraps around)
+     *         false if the operation is safe, result holds the correct sum
+     */
+    template<typename T>
+    bool AddOverflow(T a, T b, T& result)
+    {
+        static_assert(std::is_unsigned_v<T>,
+                    "T must be an unsigned integral type; signed types are not allowed.");
+        // Prefer compiler built-in if available (most efficient)
+#if defined(__has_builtin) && __has_builtin(__builtin_add_overflow)
+        return __builtin_add_overflow(a, b, &result);
+#else
+        // Portable fallback: overflow occurs when the result wraps around.
+        result = a + b;
+        return result < a;
+#endif
+    }
+    static std::mutex blobCacheMutex_;
+    std::atomic<bool> saveSubThreadStatus_ = false;
+}
 
 BlobCache* BlobCache::Get()
 {
@@ -66,6 +99,7 @@ BlobCache::BlobCache()
     initStatus_ = false;
     fileName_ = std::string("/blobShader");
     saveStatus_ = false;
+    saveSubThreadStatus_ = false;
     blobSize_ = 0;
 }
 
@@ -78,10 +112,12 @@ BlobCache::~BlobCache()
 
 void BlobCache::Terminate()
 {
+    std::lock_guard<std::mutex> lock(blobCacheMutex_);
     if (blobCache_) {
         blobCache_->WriteToDisk();
+        delete blobCache_;
+        blobCache_ = nullptr;
     }
-    blobCache_ = nullptr;
 }
 
 int BlobCache::GetMapSize() const
@@ -94,13 +130,14 @@ int BlobCache::GetMapSize() const
 
 void BlobCache::Init(EglWrapperDisplay* display)
 {
-    if (!initStatus_) {
+    if (!g_dirInfo.initStatus) {
         return;
     }
     EglWrapperDispatchTablePtr table = &gWrapperHook;
     if (table->isLoad && table->egl.eglSetBlobCacheFuncsANDROID) {
         table->egl.eglSetBlobCacheFuncsANDROID(display->GetEglDisplay(),
                                                BlobCache::SetBlobFunc, BlobCache::GetBlobFunc);
+        WLOGD("BlobCache Init at %s", g_dirInfo.cacheDir.c_str());
     } else {
         WLOGE("eglSetBlobCacheFuncsANDROID not found.");
     }
@@ -120,13 +157,19 @@ EGLsizeiANDROID BlobCache::GetBlobFunc(const void *key, EGLsizeiANDROID keySize,
 void BlobCache::SetBlobLock(const void* key, EGLsizeiANDROID keySize, const void* value,
                             EGLsizeiANDROID valueSize)
 {
-    std::lock_guard<std::mutex> lock(blobmutex_);
+    std::lock_guard<std::mutex> lock(blobCacheMutex_);
+    if (!blobCache_) {
+        return;
+    }
     SetBlob(key, keySize, value, valueSize);
 }
 EGLsizeiANDROID BlobCache::GetBlobLock(const void *key, EGLsizeiANDROID keySize, void *value,
                                        EGLsizeiANDROID valueSize)
 {
-    std::lock_guard<std::mutex> lock(blobmutex_);
+    std::lock_guard<std::mutex> lock(blobCacheMutex_);
+    if (!blobCache_) {
+        return 0;
+    }
     return GetBlob(key, keySize, value, valueSize);
 }
 
@@ -176,14 +219,15 @@ void BlobCache::SetBlob(const void *key, EGLsizeiANDROID keySize, const void *va
     mBlobMap_.emplace(keyBlob, valueBlob);
     MoveToFront(keyBlob);
     ++blobSize_;
-    if (!saveStatus_) {
-        saveStatus_ = true;
-        std::thread deferSaveThread([this]() {
+    if (!saveSubThreadStatus_) {
+        saveSubThreadStatus_ = true;
+        std::thread deferSaveThread([]() {
             sleep(DEFER_SAVE_MIN);
+            std::lock_guard<std::mutex> lock(blobCacheMutex_);
             if (blobCache_) {
                 blobCache_->WriteToDisk();
             }
-            saveStatus_ = false;
+            saveSubThreadStatus_ = false;
         });
         deferSaveThread.detach();
     }
@@ -228,30 +272,30 @@ void BlobCache::SetCacheDir(const std::string dir)
     struct stat dirStat;
     if (stat(dir.c_str(), &dirStat) != 0) {
         WLOGE("inputdir not Create");
-        initStatus_ = false;
+        g_dirInfo.initStatus = false;
         return;
     }
 
     struct stat cachedirstat;
     struct stat ddkdirstat;
-    cacheDir_ = dir + std::string("/blobShader");
-    ddkCacheDir_ = dir + std::string("/ddkShader");
+    g_dirInfo.cacheDir = dir + std::string("/blobShader");
+    g_dirInfo.ddkCacheDir = dir + std::string("/ddkShader");
 
-    if (stat(cacheDir_.c_str(), &cachedirstat) != 0) {
-        initStatus_ = false;
-        int ret = mkdir(cacheDir_.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    if (stat(g_dirInfo.cacheDir.c_str(), &cachedirstat) != 0) {
+        g_dirInfo.initStatus = false;
+        int ret = mkdir(g_dirInfo.cacheDir.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
         if (ret == -1) {
-            initStatus_ = false;
+            g_dirInfo.initStatus = false;
             WLOGE("cacheDir_ not Create");
         } else {
-            initStatus_ = true;
+            g_dirInfo.initStatus = true;
         }
     } else {
-        initStatus_ = true;
+        g_dirInfo.initStatus = true;
     }
 
-    if (stat(ddkCacheDir_.c_str(), &ddkdirstat) != 0) {
-        int ret = mkdir(ddkCacheDir_.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
+    if (stat(g_dirInfo.ddkCacheDir.c_str(), &ddkdirstat) != 0) {
+        int ret = mkdir(g_dirInfo.ddkCacheDir.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH);
         if (ret == -1 && errno != EEXIST) {
             WLOGE("ddkCacheDir_ not Create");
         }
@@ -284,12 +328,14 @@ size_t BlobCache::GetCacheSize() const
 
 void BlobCache::WriteToDisk()
 {
-    std::lock_guard<std::mutex> lock(blobmutex_);
-    struct stat dirStat;
-    if (stat(cacheDir_.c_str(), &dirStat) != 0) {
+    if (!blobCache_) {
         return;
     }
-    std::string storefile = cacheDir_ + fileName_;
+    struct stat dirStat;
+    if (stat(g_dirInfo.cacheDir.c_str(), &dirStat) != 0) {
+        return;
+    }
+    std::string storefile = g_dirInfo.cacheDir + fileName_;
     int fd = open(storefile.c_str(), O_CREAT | O_EXCL | O_RDWR, 0);
     if (fd == -1) {
         if (errno == EEXIST) {
@@ -389,11 +435,14 @@ void BlobCache::BlobCacheReadFromDisk(const std::string filePath)
         const CacheHeader* eheader = reinterpret_cast<CacheHeader*>(&buf[byteoffset]);
         size_t keysize = eheader->keySize;
         size_t valuesize = eheader->valueSize;
-        if (byteoffset + headsize + keysize > filesize) {
+        size_t currentsize = byteoffset + headsize;
+        if (AddOverflow(currentsize, keysize, currentsize) || currentsize > filesize) {
+            WLOGE("invalid keysize in blobcache");
             break;
         }
         const uint8_t *key = eheader->mData;
-        if (byteoffset + headsize + keysize + valuesize > filesize) {
+        if (AddOverflow(currentsize, valuesize, currentsize) || currentsize > filesize) {
+            WLOGE("invalid valuesize in blobcache");
             break;
         }
         const uint8_t *value = eheader->mData + keysize;
@@ -411,7 +460,7 @@ void BlobCache::ReadFromDisk()
 #ifdef PRELOAD_BLOB_CACHE
     BlobCacheReadFromDisk(PRESET_BLOB_CACHE_PATH);
 #endif
-    std::string storefile = cacheDir_ + fileName_;
+    std::string storefile = g_dirInfo.cacheDir + fileName_;
     BlobCacheReadFromDisk(storefile);
 }
 

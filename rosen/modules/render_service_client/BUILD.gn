@@ -22,6 +22,7 @@ config("render_service_client_config") {
     "$graphic_2d_root/rosen/modules",
     "$graphic_2d_root/rosen/modules/render_service_client/core",
     "$graphic_2d_root/rosen/modules/render_service_base/include",
+    "$graphic_2d_root/utils/log",
     "$graphic_2d_root/interfaces/inner_api/common",
     "$graphic_2d_root/interfaces/inner_api/composer",
     "$graphic_2d_root/rosen/modules/2d_graphics",
@@ -31,6 +32,7 @@ config("render_service_client_config") {
   if (defined(is_arkui_x) && is_arkui_x) {
     include_dirs += [
       "$graphic_2d_root/utils/color_manager/export",
+      "//base/hiviewdfx/hitrace/interfaces/native/innerkits/include/hitrace_meter",
       "//foundation/multimedia/image_framework/interfaces/innerkits/include",
     ]
   }
@@ -67,7 +69,6 @@ template("render_service_client_source_set") {
       "$graphic_2d_root/rosen/modules/render_service_base/include",
       "$graphic_2d_root/rosen/modules/render_service_base/src",
       "$graphic_2d_root/utils/color_manager/export",
-      "$graphic_2d_root/rosen/modules/2d_engine/rosen_text/symbol/symbol_animation",
       "$graphic_2d_root/utils/log",
       "$graphic_2d_root/utils/sandbox",
     ]
@@ -89,7 +90,6 @@ template("render_service_client_source_set") {
       "core/animation/rs_curve_animation.cpp",
       "core/animation/rs_implicit_animation_param.cpp",
       "core/animation/rs_implicit_animator.cpp",
-      "core/animation/rs_implicit_animator_map.cpp",
       "core/animation/rs_interactive_implict_animator.cpp",
       "core/animation/rs_interpolating_spring_animation.cpp",
       "core/animation/rs_keyframe_animation.cpp",
@@ -106,6 +106,7 @@ template("render_service_client_source_set") {
       "core/feature/ui_capture/rs_divided_ui_capture.cpp",
 
       #modifier
+      "core/modifier/rs_cmd_list_image_collector.cpp",
       "core/modifier/rs_modifier_extractor.cpp",
       "core/modifier/rs_modifier_manager.cpp",
       "core/modifier/rs_modifier_manager_map.cpp",
@@ -125,10 +126,11 @@ template("render_service_client_source_set") {
       "core/modifier_ng/appearance/rs_hdr_brightness_modifier.cpp",
       "core/modifier_ng/appearance/rs_mask_modifier.cpp",
       "core/modifier_ng/appearance/rs_material_filter_modifier.cpp",
+      "core/modifier_ng/appearance/rs_material_shader_modifier.cpp",
       "core/modifier_ng/appearance/rs_outline_modifier.cpp",
       "core/modifier_ng/appearance/rs_particle_effect_modifier.cpp",
       "core/modifier_ng/appearance/rs_pixel_stretch_modifier.cpp",
-      "core/modifier_ng/appearance/rs_point_light_modifier.cpp",
+      "core/modifier_ng/appearance/rs_overlay_ng_shader_modifier.cpp",
       "core/modifier_ng/appearance/rs_shadow_modifier.cpp",
       "core/modifier_ng/appearance/rs_use_effect_modifier.cpp",
       "core/modifier_ng/appearance/rs_visibility_modifier.cpp",
@@ -152,6 +154,8 @@ template("render_service_client_source_set") {
       "core/modifier_ng/geometry/rs_transform_modifier.cpp",
       "core/modifier_ng/overlay/rs_overlay_style_modifier.cpp",
       "core/modifier_ng/rs_modifier_ng.cpp",
+      "core/modifier_ng/shadow_modifier/rs_bounds_shadow_modifier.cpp",
+      "core/modifier_ng/shadow_modifier/rs_frame_shadow_modifier.cpp",
 
       #pipeline
       "core/pipeline/rs_node_map.cpp",
@@ -184,6 +188,7 @@ template("render_service_client_source_set") {
       "core/ui/rs_canvas_callback_router.cpp",
       "core/ui/rs_canvas_drawing_node.cpp",
       "core/ui/rs_canvas_node.cpp",
+      "core/ui/rs_depth_node.cpp",
       "core/ui/rs_display_node.cpp",
       "core/ui/rs_effect_node.cpp",
       "core/ui/rs_node.cpp",
@@ -196,6 +201,17 @@ template("render_service_client_source_set") {
       "core/ui/rs_ui_context_manager.cpp",
       "core/ui/rs_ui_director.cpp",
       "core/ui/rs_union_node.cpp",
+      "core/ui/rs_ui_patten_vec.cpp",
+
+      #command_modifier
+      "core/command_modifier/rs_canvas_node_command_modifier.cpp",
+      "core/command_modifier/rs_command_modifier.cpp",
+      "core/command_modifier/rs_depth_node_command_modifier.cpp",
+      "core/command_modifier/rs_effect_node_command_modifier.cpp",
+      "core/command_modifier/rs_node_command_modifier.cpp",
+      "core/command_modifier/rs_root_node_command_modifier.cpp",
+      "core/command_modifier/rs_surface_node_command_modifier.cpp",
+      "core/command_modifier/rs_window_keyframe_node_command_modifier.cpp",
 
       #ui_effect
       "core/ui_effect/effect/src/visual_effect_para.cpp",
@@ -205,12 +221,15 @@ template("render_service_client_source_set") {
       "core/ui_effect/filter/src/filter_direction_light_para.cpp",
       "core/ui_effect/filter/src/filter_dispersion_para.cpp",
       "core/ui_effect/filter/src/filter_displacement_distort_para.cpp",
+      "core/ui_effect/filter/src/filter_frosted_glass_para.cpp",
+      "core/ui_effect/filter/src/filter_frosted_glass_blur_para.cpp",
       "core/ui_effect/filter/src/filter_mask_transition_para.cpp",
       "core/ui_effect/filter/src/filter_para.cpp",
       "core/ui_effect/filter/src/filter_unmarshalling_singleton.cpp",
       "core/ui_effect/filter/src/filter_water_ripple_para.cpp",
       "core/ui_effect/filter/src/filter.cpp",
       "core/ui_effect/mask/src/image_mask_para.cpp",
+      "core/ui_effect/mask/src/mask.cpp",
       "core/ui_effect/mask/src/mask_para.cpp",
       "core/ui_effect/mask/src/mask_unmarshalling_singleton.cpp",
       "core/ui_effect/mask/src/pixel_map_mask_para.cpp",
@@ -218,14 +237,21 @@ template("render_service_client_source_set") {
       "core/ui_effect/mask/src/use_effect_mask_para.cpp",
       "core/ui_effect/property/src/rs_ui_color_gradient_filter.cpp",
       "core/ui_effect/property/src/rs_ui_filter_base.cpp",
+      "core/ui_effect/property/src/rs_ui_filter_to_para.cpp",
       "core/ui_effect/property/src/rs_ui_mask_base.cpp",
+      "core/ui_effect/property/src/rs_ui_mask_to_para.cpp",
       "core/ui_effect/property/src/rs_ui_shape_base.cpp",
       "core/ui_effect/property/src/rs_ui_shader_base.cpp",
     ]
 
     if (is_cross_platform) {
       #ui
-      sources -= [ "core/ui/rs_display_node.cpp" ]
+      sources -= [ 
+        "core/ui/rs_display_node.cpp",
+        "core/feature/window_keyframe/rs_window_keyframe_node.cpp",
+        "core/feature/hyper_graphic_manager/rs_frame_rate_linker.cpp",
+        "core/ui_effect/property/src/rs_ui_mask_base.cpp",
+      ]
       defines += [ "CROSS_PLATFORM" ]
     }
 
@@ -263,8 +289,14 @@ template("render_service_client_source_set") {
 
     deps = [
       "$graphic_2d_root/rosen/modules/platform:ipc_core",
-      "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
     ]
+
+    if (!(is_ohos && is_clang && target_cpu == "arm64" && defined(build_ext_path))) {
+      deps += [
+        "$graphic_2d_root/rosen/modules/render_frame_trace:render_frame_trace",
+      ]
+    }
+
     public_deps = []
     if (enable_export_macro) {
       defines += [ "ENABLE_EXPORT_MACRO" ]
@@ -274,7 +306,6 @@ template("render_service_client_source_set") {
       defines += [ "USE_ROSEN_DRAWING" ]
       deps += [
         "$graphic_2d_root/rosen/modules/2d_graphics:2d_graphics",
-        "$rosen_text_root:rosen_text",
       ]
       if (rs_enable_gpu) {
         defines += [ "RS_ENABLE_GPU" ]
@@ -301,6 +332,7 @@ template("render_service_client_source_set") {
         "bundle_framework:appexecfwk_base",
         "bundle_framework:appexecfwk_core",
         "c_utils:utils",
+        "frame_aware_sched:frame_ui_intf",
         "ffrt:libffrt",
         "hisysevent:libhisysevent",
         "hitrace:hitrace_meter",
@@ -375,18 +407,24 @@ template("render_service_client_source_set") {
     }
 
     if (graphic_2d_feature_enable_vulkan) {
-      sources += [
-        "core/modifier_render_thread/rs_modifiers_draw.cpp",
-        "core/modifier_render_thread/rs_modifiers_draw_thread.cpp",
-      ]
-      external_deps += [
-        "ffrt:libffrt",
-        "qos_manager:qos",
-      ]
-      if (defined(graphic_2d_modifiers_draw_configs.vendor_root)) {
-        sources += graphic_2d_modifiers_draw_configs.librender_service_ext_modifiers_draw_sources
-        sources -= graphic_2d_modifiers_draw_configs.librender_service_ext_modifiers_draw_sources_del
+      if (!is_arkui_x) {
+        sources += [
+          "core/modifier_render_thread/rs_modifiers_draw.cpp",
+          "core/modifier_render_thread/rs_modifiers_draw_thread.cpp",
+        ]
+        external_deps += [
+          "ffrt:libffrt",
+          "qos_manager:qos",
+        ]
+        if (defined(graphic_2d_modifiers_draw_configs.vendor_root)) {
+          sources += graphic_2d_modifiers_draw_configs.librender_service_ext_modifiers_draw_sources
+          sources -= graphic_2d_modifiers_draw_configs.librender_service_ext_modifiers_draw_sources_del
+        }
       }
+    }
+
+    if (graphic_2d_feature_rs_modifiers_draw_enable) {
+      defines += [ "RS_MODIFIERS_DRAW_ENABLE" ]
     }
 
     if (rosen_is_ohos && defined(enable_ipc_security) && enable_ipc_security) {
@@ -420,6 +458,17 @@ config("render_service_client_link_config") {
       "-Wl,-wholeprogramdevirt-check=fallback",
       "-Wl,-Bsymbolic",
     ]
+    if (target_cpu == "arm64" && defined(build_ext_path)) {
+      render_service_client_version_script =
+        rebase_path("//foundation/graphic/graphic_2d/rosen/modules/render_service_client/librender_service_client.versionscript",
+                    root_build_dir)
+      ldflags += [
+        "-Wl,--version-script=${render_service_client_version_script}",
+        "-Wl,--emit-relocs",
+        "-Wl,--no-relax",
+        "-mno-fix-cortex-a53-843419"
+      ]
+    }
   }
 }
 

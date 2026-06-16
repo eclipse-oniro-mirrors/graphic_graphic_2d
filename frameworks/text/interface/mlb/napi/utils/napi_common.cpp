@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
+#include <cinttypes>
 #include <cstdint>
 
 #include "application_context.h"
 #include "font_collection_mgr.h"
+#include "font_napi/js_typeface.h"
 #include "napi_common.h"
 #include "text_style.h"
+#include "utils/text_log.h"
 
 namespace OHOS::Rosen {
 namespace {
@@ -248,15 +251,134 @@ void ReceiveFontVariation(napi_env env, napi_value argValue, TextStyle& textStyl
             break;
         }
 
-        int value = 0;
+        double value = 0;
         status = napi_get_named_property(env, singleElementValue, "value", &variationElement);
         if ((status != napi_ok) || !ConvertFromJsValue(env, variationElement, value)) {
             TEXT_LOGE("Failed to get value, ret %{public}d", static_cast<int>(status));
             break;
         }
-        textStyle.fontVariations.SetAxisValue(axis, value);
+        bool isNormalized = false;
+        SetBoolValueFromJS(env, singleElementValue, "isNormalized", isNormalized);
+        textStyle.fontVariations.SetAxisValue(axis, value, isNormalized);
     }
     return;
+}
+
+void ReceiveFontTypefaces(napi_env env, napi_value argValue, TextStyle& textStyle)
+{
+    napi_value fontTypefacesValue = nullptr;
+    napi_get_named_property(env, argValue, "fontTypefaces", &fontTypefacesValue);
+
+    // Check if fontTypefaces property exists and is valid
+    if (fontTypefacesValue == nullptr) {
+        return; // No fontTypefaces specified, use default behavior
+    }
+
+    napi_valuetype valueType = napi_undefined;
+    if (napi_typeof(env, fontTypefacesValue, &valueType) != napi_ok) {
+        TEXT_LOGW("Failed to get fontTypefaces type");
+        return;
+    }
+
+    // Handle undefined or null - clear fontTypefaces
+    if (valueType == napi_undefined || valueType == napi_null) {
+        textStyle.SetFontTypefaces({});
+        return;
+    }
+
+    // Must be an array
+    bool isArray = false;
+    if (napi_is_array(env, fontTypefacesValue, &isArray) != napi_ok || !isArray) {
+        TEXT_LOGW("FontTypefaces must be an array");
+        return;
+    }
+
+    uint32_t arrayLength = 0;
+    auto status = napi_get_array_length(env, fontTypefacesValue, &arrayLength);
+    if (status != napi_ok) {
+        TEXT_LOGE("Failed to get fontTypefaces array length, ret %{public}d", static_cast<int>(status));
+        return;
+    }
+
+    if (arrayLength == 0) {
+        // Empty array means clear priority settings
+        textStyle.SetFontTypefaces({});
+        return;
+    }
+
+    // Extract typefaces using helper function
+    std::vector<std::shared_ptr<Drawing::Typeface>> typefaces =
+        ExtractTypefacesFromArray(env, fontTypefacesValue, arrayLength);
+
+    // If we successfully parsed any valid typefaces, set them
+    if (!typefaces.empty()) {
+        textStyle.SetFontTypefaces(typefaces);
+    } else {
+        // If array was provided but no valid typefaces found, clear the setting
+        // This maintains the principle that explicit empty array = clear
+        textStyle.SetFontTypefaces({});
+    }
+}
+
+std::shared_ptr<Drawing::Typeface> ExtractTypefaceFromJS(napi_env env, napi_value jsObject)
+{
+    if (jsObject == nullptr) {
+        return nullptr;
+    }
+
+    void* nativeObject = nullptr;
+    napi_status unwrapStatus = napi_unwrap(env, jsObject, &nativeObject);
+    if (unwrapStatus == napi_ok && nativeObject != nullptr) {
+        auto* jsTypeface = static_cast<OHOS::Rosen::Drawing::JsTypeface*>(nativeObject);
+        if (jsTypeface != nullptr) {
+            auto typeface = jsTypeface->GetTypeface();
+            if (typeface != nullptr) {
+                return typeface;
+            }
+        }
+    }
+
+    TEXT_LOGW("Failed to extract Drawing::Typeface from JS object");
+    return nullptr;
+}
+
+// Helper function to extract an array of typefaces from a JS array
+std::vector<std::shared_ptr<Drawing::Typeface>> ExtractTypefacesFromArray(
+    napi_env env, napi_value typefacesArray, uint32_t arrayLength)
+{
+    std::vector<std::shared_ptr<Drawing::Typeface>> typefaces;
+    typefaces.reserve(arrayLength);
+
+    for (uint32_t i = 0; i < arrayLength; i++) {
+        napi_value elementValue = nullptr;
+        napi_status status = napi_get_element(env, typefacesArray, i, &elementValue);
+        if (status != napi_ok || elementValue == nullptr) {
+            TEXT_LOGW("Failed to get fontTypefaces element at index %{public}u", i);
+            continue;
+        }
+
+        // Check if element is null or undefined
+        napi_valuetype elementType = napi_undefined;
+        if (napi_typeof(env, elementValue, &elementType) != napi_ok) {
+            TEXT_LOGW("Failed to get fontTypefaces element type at index %{public}u", i);
+            continue;
+        }
+
+        if (elementType == napi_null || elementType == napi_undefined) {
+            TEXT_LOGD("FontTypefaces element at index %{public}u is null, skipping", i);
+            continue;
+        }
+
+        // Try to extract the typeface
+        auto typeface = ExtractTypefaceFromJS(env, elementValue);
+        if (typeface != nullptr) {
+            typefaces.push_back(typeface);
+        } else {
+            TEXT_LOGW("Failed to extract typeface at index %{public}u", i);
+        }
+    }
+
+    return typefaces;
 }
 
 void SetTextStyleBaseType(napi_env env, napi_value argValue, TextStyle& textStyle)
@@ -297,6 +419,12 @@ void SetTextStyleFontType(napi_env env, napi_value argValue, TextStyle& textStyl
         if (textStyle.fontStyle == FontStyle::OBLIQUE) {
             textStyle.fontStyle = FontStyle::ITALIC;
         }
+    }
+
+    napi_get_named_property(env, argValue, "fontEdging", &tempValue);
+    uint32_t fontEdging = 0;
+    if (tempValue != nullptr && napi_get_value_uint32(env, tempValue, &fontEdging) == napi_ok) {
+        textStyle.fontEdging = Drawing::FontEdging(fontEdging);
     }
 
     SetDoubleValueFromJS(env, argValue, "fontSize", textStyle.fontSize);
@@ -378,6 +506,7 @@ void ParsePartTextStyle(napi_env env, napi_value argValue, TextStyle& textStyle)
     SetTextStyleFontType(env, argValue, textStyle);
     ReceiveFontFeature(env, argValue, textStyle);
     ReceiveFontVariation(env, argValue, textStyle);
+    ReceiveFontTypefaces(env, argValue, textStyle);
     napi_get_named_property(env, argValue, "ellipsis", &tempValue);
     std::string text = "";
     if (tempValue != nullptr && ConvertFromJsValue(env, tempValue, text)) {
@@ -406,6 +535,29 @@ bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle)
     SetTextShadowProperty(env, argValue, textStyle);
     SetRectStyleFromJS(env, argValue, textStyle.backgroundRect);
     return true;
+}
+
+bool GetTextRectFromJS(napi_env env, napi_value argValue, TextRectSize& rect)
+{
+    napi_valuetype valueType = napi_undefined;
+    if (argValue == nullptr || napi_typeof(env, argValue, &valueType) != napi_ok || valueType != napi_object) {
+        return false;
+    }
+    SetDoubleValueFromJS(env, argValue, "width", rect.width);
+    SetDoubleValueFromJS(env, argValue, "height", rect.height);
+    return true;
+}
+
+napi_value CreateLayoutResultJsValue(napi_env env, const OHOS::Rosen::TextLayoutResult& layoutResult)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "fitStrRange",
+            CreateFitRangeArrayJsValue(env, layoutResult.fitStrRange));
+        napi_set_named_property(env, objValue, "correctRect", CreateLayoutRectJsValue(env, layoutResult.correctRect));
+    }
+    return objValue;
 }
 
 static void SetAlignValueForParagraphStyle(napi_env env, napi_value argValue, TypographyStyle& pographyStyle)
@@ -475,6 +627,30 @@ bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle&
     return true;
 }
 
+static void ParseDoubleArrayFromJsProperty(napi_env env, napi_value argValue, const std::string& propName,
+    std::vector<double>& target)
+{
+    napi_value arrayValue = nullptr;
+    if (!GetNamePropertyFromJS(env, argValue, propName, arrayValue) || arrayValue == nullptr) {
+        return;
+    }
+    bool isArray = false;
+    napi_is_array(env, arrayValue, &isArray);
+    if (!isArray) {
+        return;
+    }
+    uint32_t arrayLength = 0;
+    napi_get_array_length(env, arrayValue, &arrayLength);
+    for (uint32_t i = 0; i < arrayLength; ++i) {
+        napi_value element = nullptr;
+        napi_get_element(env, arrayValue, i, &element);
+        double value = 0.0;
+        if (element != nullptr && ConvertFromJsValue(env, element, value)) {
+            target.push_back(value);
+        }
+    }
+}
+
 void HandleExtentParagraphStyleProperties(napi_env env, napi_value argValue, TypographyStyle& pographyStyle)
 {
     SetEnumValueFromJS(env, argValue, "textHeightBehavior", pographyStyle.textHeightBehavior);
@@ -485,6 +661,11 @@ void HandleExtentParagraphStyleProperties(napi_env env, napi_value argValue, Typ
     SetDoubleValueFromJS(env, argValue, "lineSpacing", pographyStyle.lineSpacing);
     SetBoolValueFromJS(env, argValue, "includeFontPadding", pographyStyle.includeFontPadding);
     SetBoolValueFromJS(env, argValue, "fallbackLineSpacing", pographyStyle.fallbackLineSpacing);
+    SetBoolValueFromJS(env, argValue, "orphanCharOptimization", pographyStyle.orphanCharOptimization);
+    SetDoubleValueFromJS(env, argValue, "firstLineHeadIndent", pographyStyle.firstLineIndent);
+    ParseDoubleArrayFromJsProperty(env, argValue, "tailIndents", pographyStyle.tailIndents);
+    ParseDoubleArrayFromJsProperty(env, argValue, "headIndents", pographyStyle.headIndents);
+    SetBoolValueFromJS(env, argValue, "punctuationOverflow", pographyStyle.punctuationOverflow);
 }
 
 bool GetPlaceholderSpanFromJS(napi_env env, napi_value argValue, PlaceholderSpan& placeholderSpan)
@@ -646,6 +827,40 @@ napi_value CreateLineMetricsJsValue(napi_env env, OHOS::Rosen::LineMetrics& line
     return objValue;
 }
 
+napi_value CreateLayoutRectJsValue(napi_env env, const OHOS::Rosen::TextRectSize& rect)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "width", CreateJsNumber(env, rect.width));
+        napi_set_named_property(env, objValue, "height", CreateJsNumber(env, rect.height));
+    }
+    return objValue;
+}
+
+napi_value CreateFitRangeArrayJsValue(napi_env env, const std::vector<OHOS::Rosen::TextRange>& fitRangeArr)
+{
+    napi_value returnFitRangeArr = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &returnFitRangeArr));
+    int num = static_cast<int>(fitRangeArr.size());
+    for (int index = 0; index < num; ++index) {
+        napi_value tempValue = CreateFitRangeJsValue(env, fitRangeArr[index]);
+        napi_set_element(env, returnFitRangeArr, index, tempValue);
+    }
+    return returnFitRangeArr;
+}
+
+napi_value CreateFitRangeJsValue(napi_env env, const OHOS::Rosen::TextRange& fitRange)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "start", CreateJsNumber(env, (uint32_t)fitRange.start));
+        napi_set_named_property(env, objValue, "end", CreateJsNumber(env, (uint32_t)fitRange.end));
+    }
+    return objValue;
+}
+
 napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>& textShadows)
 {
     napi_value jsArray = nullptr;
@@ -677,7 +892,37 @@ napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>&
         }
         index++;
     }
-    
+
+    return jsArray;
+}
+
+napi_value CreateTypefaceArrayJsValue(napi_env env, const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces)
+{
+    napi_value jsArray = nullptr;
+    napi_status arrayStatus = napi_create_array_with_length(env, typefaces.size(), &jsArray);
+    if (arrayStatus != napi_ok) {
+        TEXT_LOGE("Failed to create typefaces array, ret %{public}d", arrayStatus);
+        return nullptr;
+    }
+    size_t index = 0;
+    for (const auto& typeface : typefaces) {
+        if (typeface == nullptr) {
+            TEXT_LOGW("Skipping null typeface at index %{public}zu", index);
+            continue;
+        }
+        napi_value typefaceObj = Drawing::JsTypeface::CreateJsTypeface(env, typeface);
+        if (typefaceObj == nullptr) {
+            TEXT_LOGE("Failed to create typeface JS object at index %{public}zu", index);
+            continue;
+        }
+        napi_status status = napi_set_element(env, jsArray, index, typefaceObj);
+        if (status != napi_ok) {
+            TEXT_LOGE("Failed to set typeface in array at index %{public}zu, ret %{public}d", index, status);
+            continue;
+        }
+        index++;
+    }
+
     return jsArray;
 }
 
@@ -735,6 +980,37 @@ napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontF
     return jsArray;
 }
 
+napi_value CreateFontVariationArrayJsValue(napi_env env, const FontVariations& fontVariations)
+{
+    napi_value jsArray;
+    napi_status arrayStatus = napi_create_array(env, &jsArray);
+    if (arrayStatus != napi_ok) {
+        TEXT_LOGE("Failed to create fontVariation array, ret %{public}d", arrayStatus);
+        return nullptr;
+    }
+    const std::map<std::string, std::pair<float, bool>>& variationSet = fontVariations.GetAxisValues();
+    size_t index = 0;
+    for (const auto& [axis, valPair] : variationSet) {
+        napi_value jsObject;
+        napi_status status = napi_create_object(env, &jsObject);
+        if (status != napi_ok) {
+            TEXT_LOGE("Failed to create fontVariation, ret %{public}d", status);
+            continue;
+        }
+        napi_set_named_property(env, jsObject, "axis", CreateStringJsValue(env, Str8ToStr16(axis)));
+        napi_set_named_property(env, jsObject, "value", CreateJsNumber(env, static_cast<double>(valPair.first)));
+        napi_set_named_property(env, jsObject, "isNormalized", CreateJsValue(env, valPair.second));
+        status = napi_set_element(env, jsArray, index, jsObject);
+        if (status != napi_ok) {
+            TEXT_LOGE("Failed to set fontVariation, ret %{public}d", status);
+            continue;
+        }
+        index++;
+    }
+
+    return jsArray;
+}
+
 napi_value CreateDecrationJsValue(napi_env env, TextStyle textStyle)
 {
     napi_value objValue = nullptr;
@@ -785,6 +1061,8 @@ napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle)
         napi_set_named_property(env, objValue, "textShadows", CreateShadowArrayJsValue(env, textStyle.shadows));
         napi_set_named_property(
             env, objValue, "fontFeatures", CreateFontFeatureArrayJsValue(env, textStyle.fontFeatures));
+        napi_set_named_property(
+            env, objValue, "fontVariations", CreateFontVariationArrayJsValue(env, textStyle.fontVariations));
         napi_set_named_property(env, objValue, "badgeType", CreateJsNumber(
             env, static_cast<size_t>(textStyle.badgeType)));
         napi_set_named_property(env, objValue, "lineHeightMaximum", CreateJsNumber(
@@ -793,6 +1071,105 @@ napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle)
             env, static_cast<double>(textStyle.minLineHeight)));
         napi_set_named_property(env, objValue, "lineHeightStyle", CreateJsNumber(
             env, static_cast<size_t>(textStyle.lineHeightStyle)));
+        napi_set_named_property(env, objValue, "fontEdging", CreateJsNumber(
+            env, static_cast<size_t>(textStyle.fontEdging)));
+        napi_set_named_property(env, objValue, "fontTypefaces",
+            CreateTypefaceArrayJsValue(env, textStyle.GetFontTypefaces()));
+    }
+    return objValue;
+}
+
+napi_value CreateStrutStyleJsValue(napi_env env, const TypographyStyle& typographyStyle)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "fontFamilies",
+            CreateArrayStringJsValue(env, typographyStyle.lineStyleFontFamilies));
+        napi_set_named_property(env, objValue, "fontStyle",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.lineStyleFontStyle)));
+        napi_set_named_property(env, objValue, "fontWidth",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.lineStyleFontWidth)));
+        napi_set_named_property(env, objValue, "fontWeight",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.lineStyleFontWeight)));
+        napi_set_named_property(env, objValue, "fontSize",
+            CreateJsNumber(env, typographyStyle.lineStyleFontSize));
+        napi_set_named_property(env, objValue, "height",
+            CreateJsNumber(env, typographyStyle.lineStyleHeightScale));
+        napi_set_named_property(env, objValue, "leading",
+            CreateJsNumber(env, typographyStyle.lineStyleSpacingScale));
+        napi_set_named_property(env, objValue, "forceHeight",
+            CreateJsValue(env, typographyStyle.lineStyleOnly));
+        napi_set_named_property(env, objValue, "enabled",
+            CreateJsValue(env, typographyStyle.useLineStyle));
+        napi_set_named_property(env, objValue, "heightOverride",
+            CreateJsValue(env, typographyStyle.lineStyleHeightOnly));
+        napi_set_named_property(env, objValue, "halfLeading",
+            CreateJsValue(env, typographyStyle.lineStyleHalfLeading));
+    }
+    return objValue;
+}
+
+napi_value CreateTextTabJsValue(napi_env env, const TextTab& textTab)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "alignment",
+            CreateJsNumber(env, static_cast<uint32_t>(textTab.alignment)));
+        napi_set_named_property(env, objValue, "location",
+            CreateJsNumber(env, textTab.location));
+    }
+    return objValue;
+}
+
+napi_value CreateTypographyStyleJsValue(napi_env env, const TypographyStyle& typographyStyle)
+{
+    napi_value objValue = nullptr;
+    napi_create_object(env, &objValue);
+    if (objValue != nullptr) {
+        napi_set_named_property(env, objValue, "textStyle",
+            CreateTextStyleJsValue(env, typographyStyle.insideTextStyle));
+        napi_set_named_property(env, objValue, "textDirection",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.textDirection)));
+        napi_set_named_property(env, objValue, "align",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.textAlign)));
+        napi_set_named_property(env, objValue, "wordBreak",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.wordBreakType)));
+        napi_set_named_property(env, objValue, "maxLines",
+            CreateJsNumber(env, static_cast<uint64_t>(typographyStyle.maxLines)));
+        napi_set_named_property(env, objValue, "breakStrategy",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.breakStrategy)));
+        napi_set_named_property(env, objValue, "strutStyle",
+            CreateStrutStyleJsValue(env, typographyStyle));
+        napi_set_named_property(env, objValue, "tab",
+            CreateTextTabJsValue(env, typographyStyle.tab));
+        napi_set_named_property(env, objValue, "textHeightBehavior",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.textHeightBehavior)));
+        napi_set_named_property(env, objValue, "trailingSpaceOptimized",
+            CreateJsValue(env, typographyStyle.isTrailingSpaceOptimized));
+        napi_set_named_property(env, objValue, "autoSpace",
+            CreateJsValue(env, typographyStyle.enableAutoSpace));
+        napi_set_named_property(env, objValue, "compressHeadPunctuation",
+            CreateJsValue(env, typographyStyle.compressHeadPunctuation));
+        napi_set_named_property(env, objValue, "punctuationOverflow",
+            CreateJsValue(env, typographyStyle.punctuationOverflow));
+        napi_set_named_property(env, objValue, "verticalAlign",
+            CreateJsNumber(env, static_cast<uint32_t>(typographyStyle.verticalAlignment)));
+        napi_set_named_property(env, objValue, "lineSpacing",
+            CreateJsNumber(env, typographyStyle.lineSpacing));
+        napi_set_named_property(env, objValue, "includeFontPadding",
+            CreateJsValue(env, typographyStyle.includeFontPadding));
+        napi_set_named_property(env, objValue, "fallbackLineSpacing",
+            CreateJsValue(env, typographyStyle.fallbackLineSpacing));
+        napi_set_named_property(env, objValue, "orphanCharOptimization",
+            CreateJsValue(env, typographyStyle.orphanCharOptimization));
+        napi_set_named_property(env, objValue, "firstLineHeadIndent",
+            CreateJsNumber(env, typographyStyle.firstLineIndent));
+        napi_set_named_property(env, objValue, "tailIndents",
+            CreateArrayDoubleJsValue(env, typographyStyle.tailIndents));
+        napi_set_named_property(env, objValue, "headIndents",
+            CreateArrayDoubleJsValue(env, typographyStyle.headIndents));
     }
     return objValue;
 }
@@ -1047,15 +1424,26 @@ bool GetStartEndParams(napi_env env, napi_value arg, int64_t &start, int64_t &en
 std::shared_ptr<Global::Resource::ResourceManager> GetResourceManager(const std::string& bundleName,
     const std::string& moduleName)
 {
+#if defined(CROSS_PLATFORM)
+    std::shared_ptr<AbilityRuntime::Platform::ApplicationContext> context =
+        AbilityRuntime::Platform::Context::GetApplicationContext();
+    TEXT_ERROR_CHECK(context != nullptr, return nullptr, "Failed to get application context");
+    auto moduleContext = context->CreateModuleContext(moduleName);
+#else
     std::shared_ptr<AbilityRuntime::ApplicationContext> context =
         AbilityRuntime::ApplicationContext::GetApplicationContext();
     TEXT_ERROR_CHECK(context != nullptr, return nullptr, "Failed to get application context");
     auto moduleContext = context->CreateModuleContext(bundleName, moduleName);
+#endif
     if (moduleContext != nullptr) {
         return moduleContext->GetResourceManager();
     } else {
         std::shared_ptr<Global::Resource::ResourceManager> manager(Global::Resource::CreateResourceManager(false));
         std::string hapPath = FontCollectionMgr::GetInstance().GetHapPath(bundleName, moduleName);
+        if (manager == nullptr) {
+            TEXT_LOGE("Failed to create Resource Mangager");
+            return nullptr;
+        }
         manager->AddResource(hapPath.c_str());
         TEXT_LOGI("Create Resource Mangager, bundle: %{public}s, module: %{public}s, hap path: %{public}s",
             bundleName.c_str(), moduleName.c_str(), hapPath.c_str());
@@ -1085,7 +1473,7 @@ NapiTextResult ProcessResource(ResourceInfo& info, std::function<NapiTextResult(
         return fileCB(rawData.get(), dataLen);
     }
     TEXT_LOGE("Invalid resource type %{public}d", info.type);
-    return NapiTextResult::Invalid();
+    return NapiTextResult::BusinessInvalid();
 }
 
 bool SplitAbsolutePath(std::string& absolutePath)
@@ -1098,7 +1486,7 @@ bool SplitAbsolutePath(std::string& absolutePath)
     std::string head = absolutePath.substr(0, iter);
     if ((head == "file" && absolutePath.size() > FILE_HEAD_LENGTH)) {
         absolutePath = absolutePath.substr(iter + 3); // 3 means skip "://"
-        // the file format is like "file:///system/fonts...",
+        // File path must start with 'file://', e.g., file:///path/to/font.ttf
         return true;
     }
 
@@ -1203,7 +1591,7 @@ bool ParseContextFilePath(napi_env env, napi_value* argv, sptr<FontPathResourceC
     } else if (valueType == napi_string) {
         if (!ConvertFromJsValue(env, argv[argvPathNum], context->filePath)) {
             std::string errMessage("Failed to convert file path:");
-            errMessage += context->filePath;
+            errMessage += context->filePath.value_or("");
             context->status = napi_invalid_arg;
             context->errMessage = errMessage;
             (context)->errCode = static_cast<int32_t>(TextErrorCode::ERROR_INVALID_PARAM);

@@ -30,27 +30,46 @@
 #include "util.h"
 #include "vsync_receiver.h"
 #include <map>
+#include <iremote_object.h>
 
 namespace OHOS {
 class BootCompileProgress {
 public:
-    void Init(const std::string& configPath, const BootAnimationConfig& config);
+    void Init(const std::string& configPath, const BootAnimationConfig& config,
+        sptr<IRemoteObject> connectToRender);
+    virtual ~BootCompileProgress();
 
 private:
+    class DeathRecipientInner : public IRemoteObject::DeathRecipient {
+    public:
+        void OnRemoteDied(const wptr<IRemoteObject> &remote) override;
+ 
+        DeathRecipientInner(std::shared_ptr<OHOS::AppExecFwk::EventRunner> compileRunner);
+ 
+        ~DeathRecipientInner() = default;
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> compileRunner_;
+    };
     void OnVsync();
     void DrawCompileProgress();
     void UpdateCompileProgress();
     bool CreateCanvasNode();
     bool RegisterVsyncCallback();
     Rosen::Drawing::Brush DrawProgressPoint(int32_t idx, int32_t frameNum);
-    bool IsBmsBundleReady();
+    virtual bool IsBmsBundleReady();
     void DrawMarginBrush(Rosen::Drawing::RecordingCanvas* canvas);
     void RecordDeviceType();
     void SetFrame();
+    void SetFrameForRog();
     void SetSpecialProgressFrame(int32_t maxLength, int32_t screenId);
+    void RegisterDeathRecipientInner();
+    virtual std::string GetFirmwareUpdateState();
+    void UpdateText();
+    void DrawCircle(Rosen::Drawing::RecordingCanvas* canvas);
 
     int32_t windowWidth_ = 0;
     int32_t windowHeight_ = 0;
+    int32_t rogWidth_ = 0;
+    int32_t rogHeight_ = 0;
     int32_t times_ = 0;
     int32_t rotateDegree_ = 0;
     int32_t progress_ = 0;
@@ -63,9 +82,10 @@ private:
     float currentRadius_ = 0.0f;
     int32_t screenStatus_ = -1;
 
-    volatile bool isUpdateOptEnd_ = false;
+    std::atomic<bool> isUpdateOptEnd_{false};
     bool isWearable_ = false;
     bool isOther_ = false;
+    bool isUpdateText_ = false;
 
     std::shared_ptr<Rosen::RSSurfaceNode> rsSurfaceNode_;
     std::shared_ptr<Rosen::RSCanvasNode> rsCanvasNode_;
@@ -76,6 +96,9 @@ private:
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> compileRunner_;
     std::shared_ptr<Rosen::RSInterpolator> sharpCurve_;
     std::map<int32_t, BootAnimationProgressConfig> progressConfigsMap_;
+    sptr<DeathRecipientInner> deathRecipient_ = nullptr;
+    sptr<IRemoteObject> renderObj_ = nullptr;
+    sptr<IRemoteObject> connectToRender_;
 };
 } // namespace OHOS
 

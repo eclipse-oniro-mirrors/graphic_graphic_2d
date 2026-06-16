@@ -29,8 +29,10 @@
 #include "common/rs_special_layer_manager.h"
 #include "common/rs_vector4.h"
 #include "display_engine/rs_luminance_control.h"
+#include "feature/uifirst/rs_uifirst_params.h"
 #include "ipc_callbacks/buffer_available_callback.h"
 #include "ipc_callbacks/buffer_clear_callback.h"
+#include "ipc_callbacks/surface_capture_callback.h"
 #include "memory/rs_memory_track.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node.h"
@@ -50,6 +52,8 @@
 #ifdef ENABLE_FULL_SCREEN_RECONGNIZE
 #include "monitor/aps_monitor_impl.h"
 #endif
+#include "transaction/rs_render_pipeline_client.h"
+#include "feature/vcld/rs_vcld_param.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -126,10 +130,20 @@ public:
     void PrepareRenderBeforeChildren(RSPaintFilterCanvas& canvas);
     void PrepareRenderAfterChildren(RSPaintFilterCanvas& canvas);
 
+    void SetClean() override
+    {
+        isNewOnTree_ = false;
+        RSRenderNode::SetClean();
+    }
+
+    void SetNewOnTree(bool isNewOnTree) override
+    {
+        isNewOnTree_ = isNewOnTree;
+    }
+
     void SetIsOnTheTree(bool onTree, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
-        NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
-        NodeId logicalDisplayNodeId = INVALID_NODEID) override;
+        NodeId firstLevelNodeId = INVALID_NODEID, NodeId uifirstRootNodeId = INVALID_NODEID,
+        NodeId screenNodeId = INVALID_NODEID, NodeId logicalDisplayNodeId = INVALID_NODEID) override;
     bool IsAppWindow() const
     {
         return nodeType_ == RSSurfaceNodeType::APP_WINDOW_NODE;
@@ -202,6 +216,13 @@ public:
         return isLayerTop_;
     }
 
+    void SetHdrForceHwcEnabled(bool isHdrForceHwcEnabled);
+
+    bool IsHdrForceHwcEnabled() const
+    {
+        return isHdrForceHwcEnabled_;
+    }
+
     bool IsTopLayerForceRefresh() const
     {
         return isTopLayerForceRefresh_;
@@ -228,7 +249,7 @@ public:
         return isHardwareEnableHint_;
     }
 
-    void SetSourceDisplayRenderNodeId(NodeId nodeId)
+    void SetSourceScreenRenderNodeId(NodeId nodeId)
     {
         sourceDisplayRenderNodeId_ = nodeId;
     }
@@ -306,8 +327,10 @@ public:
     }
 
 #ifndef ROSEN_CROSS_PLATFORM
-    void UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer, const Rect& damageRect,
-        const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer);
+    void UpdateBufferInfo(const sptr<SurfaceBuffer>& buffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect,
+        const sptr<SyncFence>& acquireFence, const sptr<SurfaceBuffer>& preBuffer,
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount);
 #endif
 
     bool IsLastFrameHardwareEnabled() const
@@ -343,6 +366,16 @@ public:
     void ResetRotateState()
     {
         isRotating_ = false;
+    }
+
+    bool IsScale() const
+    {
+        return isScale_;
+    }
+
+    void SetIsScale(bool isScale)
+    {
+        isScale_ = isScale;
     }
 
     void ResetCurrentFrameHardwareEnabledState()
@@ -404,6 +437,16 @@ public:
     bool GetIntersectWithAIBar() const
     {
         return intersectWithAIBar_;
+    }
+
+    void SetIntersectWithFilterNode(bool intersectOrNot)
+    {
+        intersectWithFilterNode_ = intersectOrNot;
+    }
+
+    bool GetIntersectWithFilterNode() const
+    {
+        return intersectWithFilterNode_;
     }
 
     bool IsHardwareForcedDisabledByFilter() const
@@ -562,6 +605,32 @@ public:
     {
         arsrTag_ = arsrTag;
     }
+
+    bool CheckIfDoArsrPre()
+    {
+#ifndef ROSEN_CROSS_PLATFORM
+        if (surfaceHandler_ == nullptr || surfaceHandler_->GetBuffer() == nullptr) {
+            return false;
+        }
+        auto format = surfaceHandler_->GetBuffer()->GetFormat();
+        if (format >= GRAPHIC_PIXEL_FMT_YUV_422_I && format != GRAPHIC_PIXEL_FMT_RGBA_1010102 &&
+            format <= GRAPHIC_PIXEL_FMT_YCRCB_P010) {
+            return true;
+        }
+        static const std::unordered_set<std::string> videoLayers {
+            "xcomponentIdSurface",
+            "componentIdSurface",
+            "SceneViewer Model totemweather0",
+            "UnityPlayerSurface",
+        };
+        if (videoLayers.count(GetName()) > 0) {
+            return true;
+        }
+        return false;
+#else
+        return false;
+#endif
+    }
     
     // hpae offline
     bool GetDeviceOfflineEnable() const { return deviceOfflineEnable_; }
@@ -653,9 +722,8 @@ public:
     void SetSkipLayer(bool isSkipLayer);
     void SetSnapshotSkipLayer(bool isSnapshotSkipLayer);
     void SetProtectedLayer(bool isProtectedLayer);
-    void UpdateBlackListStatus(ScreenId screenId);
-    void UpdateVirtualScreenWhiteListInfo(
-        const std::unordered_map<ScreenId, std::unordered_set<uint64_t>>& allWhiteListInfo);
+    void SetScreenSpecialLayerStatus(ScreenId screenId, uint32_t type, bool isSpecialLayer);
+    void UpdateVirtualScreenWhiteListInfo(const std::unordered_set<ScreenId>& screenIds);
 
     // get whether it is a security/skip layer itself
     LeashPersistentId GetLeashPersistentId() const
@@ -697,7 +765,13 @@ public:
     {
         return isCloneNode_;
     }
-    void SetClonedNodeInfo(NodeId id, bool needOffscreen);
+    bool IsRelated() const;
+    bool IsRelatedSourceNode() const;
+    void SetRelated(bool value);
+    void SetRelatedSourceNode(bool value);
+    void SetClonedNodeInfo(NodeId id, bool needOffscreen, bool isRelated);
+    bool CheckCloneCircle(std::shared_ptr<RSSurfaceRenderNode> currentNode,
+        std::shared_ptr<RSSurfaceRenderNode> clonedNode, RSContext& rsContext);
     void SetIsCloned(bool isCloned);
     void SetIsClonedNodeOnTheTree(bool isOnTheTree)
     {
@@ -707,25 +781,55 @@ public:
     void SetForceUIFirst(bool forceUIFirst);
     bool GetForceUIFirst() const
     {
-        return forceUIFirst_;
+        return uifirstState_.forceUIFirst;
     }
 
-    bool GetForceDrawWithSkipped() const;
-    void SetForceDrawWithSkipped(bool GetForceDrawWithSkipped)
+    // Mark uifirst leash node
+    void MarkUifirstNode(bool isForceFlag, bool isUifirstEnable);
+    bool GetUifirstNodeForceFlag() const;
+
+    MultiThreadCacheType GetLastFrameUifirstCacheType() const
     {
-        uifirstForceDrawWithSkipped_ = GetForceDrawWithSkipped;
+        return uifirstState_.lastFrameCacheType;
     }
 
-    void SetUIFirstIsPurge(bool IsPurge)
+    void SetLastFrameUifirstCacheType(MultiThreadCacheType cacheType)
     {
-        UIFirstIsPurge_ = IsPurge;
+        uifirstState_.lastFrameCacheType = cacheType;
     }
 
-    bool GetUIFirstIsPurge() const
+    bool GetForceUpdateByUifirst() const
     {
-        return UIFirstIsPurge_;
+        return uifirstState_.forceUpdate;
     }
-    void SetUifirstUseStarting(NodeId id); // only cache app window, first frame not wait
+
+    void SetForceUpdateByUifirst(bool b)
+    {
+        uifirstState_.forceUpdate = b;
+    }
+
+    RSUIFirstSwitch GetUIFirstSwitch() const
+    {
+        return uifirstState_.switchMode;
+    }
+
+    void SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
+    {
+        uifirstState_.switchMode = uiFirstSwitch;
+    }
+
+    bool GetForceDrawWithSkipped() const
+    {
+        return uifirstState_.forceDrawWithSkipped;
+    }
+
+    void SetForceDrawWithSkipped(bool forceDrawWithSkipped)
+    {
+        uifirstState_.forceDrawWithSkipped = forceDrawWithSkipped;
+    }
+
+    void SetUifirstStartingWindowId(NodeId id); // only cache app window, first frame not wait
+    NodeId GetUifirstStartingWindowId() const;
 
     void SetForceUIFirstChanged(bool forceUIFirstChanged);
     bool GetForceUIFirstChanged();
@@ -752,6 +856,16 @@ public:
         return hdrPhotoNum_ > 0 || hdrUIComponentNum_ > 0;
     }
 
+    bool GetHDRUIPresent() const
+    {
+        return hdrUIComponentNum_ > 0;
+    }
+
+    bool GetHDRImagePresent() const
+    {
+        return hdrPhotoNum_ > 0;
+    }
+
     void IncreaseHDRNum(HDRComponentType hdrType);
     void ReduceHDRNum(HDRComponentType hdrType);
 
@@ -759,6 +873,8 @@ public:
     void ReduceCanvasGamutNum(GraphicColorGamut gamut);
 
     bool IsHdrEffectColorGamut() const;
+
+    bool HDRColorHeadroomEnabled();
 
     const std::shared_ptr<RSDirtyRegionManager>& GetDirtyManager() const
     {
@@ -863,6 +979,9 @@ public:
     {
         isOcclusionVisibleWithoutFilter_ = visible;
     }
+
+    void SetIsParticipateInOcclusion(bool isParticipate);
+    bool GetIsParticipateInOcclusion() const;
 
     const Occlusion::Region& GetVisibleRegion() const
     {
@@ -973,7 +1092,7 @@ public:
 
     void UpdateSurfaceDefaultSize(float width, float height);
 
-    void UpdateInfoForClonedNode(NodeId nodeId);
+    void UpdateInfoForClonedNode(bool isClonedNode);
 
     // Only SurfaceNode in RS calls "RegisterBufferAvailableListener"
     // to save callback method sent by RT or UI which depends on the value of "isFromRenderThread".
@@ -982,7 +1101,7 @@ public:
     void RegisterBufferClearListener(sptr<RSIBufferClearCallback> callback);
 
     // Only SurfaceNode in RT calls "ConnectToNodeInRenderService" to send callback method to RS
-    void ConnectToNodeInRenderService();
+    void ConnectToNodeInRenderService(sptr<IRemoteObject> connectToRender);
 
     void NotifyRTBufferAvailable(bool isTextureExportNode = false);
     bool IsNotifyRTBufferAvailable() const;
@@ -1039,6 +1158,11 @@ public:
     inline bool IsEmptyAppWindow() const
     {
         return IsAppWindow() && (GetChildrenCount() == 0 || HasOnlyOneRootNode());
+    }
+
+    inline bool IsNewOnTree() const
+    {
+        return isNewOnTree_;
     }
 
     // Due to the BehindWindowFilter enabling ui-first, the condition is excluded.
@@ -1173,8 +1297,6 @@ public:
         const bool isFocusWindow, const Vector4<int>& cornerRadius);
     void DealWithDrawBehindWindowTransparentRegion();
 
-    bool IsStartAnimationFinished() const;
-    void SetStartAnimationFinished();
     // if surfacenode's buffer has been consumed, it should be set dirty
     bool UpdateDirtyIfFrameBufferConsumed();
 
@@ -1302,8 +1424,6 @@ public:
     void UpdateFilterCacheStatusWithVisible(bool visible);
     void UpdateFilterCacheStatusIfNodeStatic(const RectI& clipRect, bool isRotationChanged);
     void UpdateDrawingCacheNodes(const std::shared_ptr<RSRenderNode>& nodePtr);
-    // reset static node's drawing cache status as not changed and get filter rects
-    void ResetDrawingCacheStatusIfNodeStatic(std::unordered_map<NodeId, std::unordered_set<NodeId>>& allRects);
 
     void SetNotifyRTBufferAvailable(bool isNotifyRTBufferAvailable);
 
@@ -1322,19 +1442,9 @@ public:
 
     bool GetUifirstContentDirty()
     {
-        bool uifirstContentDirty = uifirstContentDirty_;
-        uifirstContentDirty_ = false;
+        bool uifirstContentDirty = uifirstState_.contentDirty;
+        uifirstState_.contentDirty = false;
         return uifirstContentDirty;
-    }
-
-    size_t GetLastFrameChildrenCnt()
-    {
-        return lastFrameChildrenCnt_;
-    }
-
-    void SetLastFrameChildrenCnt(size_t childrenCnt)
-    {
-        lastFrameChildrenCnt_ = childrenCnt;
     }
 
     bool GetUifirstSupportFlag() override
@@ -1356,6 +1466,14 @@ public:
 #ifdef USE_SURFACE_TEXTURE
     std::shared_ptr<RSSurfaceTexture> GetSurfaceTexture() const { return surfaceTexture_; };
     void SetSurfaceTexture(const std::shared_ptr<RSSurfaceTexture> &texture) { surfaceTexture_ = texture; }
+    std::function<std::shared_ptr<Media::PixelMap>()> GetSurfaceCaptureCallback() const
+    {
+        return surfaceCaptureCallback_;
+    }
+    void SetSurfaceCaptureCallback(const std::function<std::shared_ptr<Media::PixelMap>()>& callback)
+    {
+        surfaceCaptureCallback_ = callback;
+    }
 #endif
 
     void SetForeground(bool isForeground)
@@ -1373,21 +1491,27 @@ public:
         return surfaceId_;
     }
 
-    void SetTunnelLayerId(SurfaceId tunnelLayerId)
-    {
-        tunnelLayerId_ = tunnelLayerId;
-    }
-
-    SurfaceId GetTunnelLayerId() const
-    {
-        return tunnelLayerId_;
-    }
-
     bool GetIsForeground() const
     {
         return isForeground_;
     }
     bool GetNodeIsSingleFrameComposer() const override;
+    void MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer, pid_t pid = 0) override;
+    std::shared_ptr<RSSingleFrameComposer> GetSingleFrameComposer() const override
+    {
+        if (!singleFrameComposer_) {
+            singleFrameComposer_ = std::make_shared<RSSingleFrameComposer>();
+        }
+        return singleFrameComposer_;
+    }
+    bool HasSurfaceBuffer() const override
+    {
+        return hasSurfaceBuffer_;
+    }
+    void SetHasSurfaceBuffer(bool hasSurfaceBuffer) override
+    {
+        hasSurfaceBuffer_ = hasSurfaceBuffer;
+    }
 
     void SetAncestorScreenNode(const RSBaseRenderNode::WeakPtr& ancestorScreenNode)
     {
@@ -1402,12 +1526,47 @@ public:
 
     void SetUifirstStartTime(int64_t startTime)
     {
-        uifirstStartTime_ = startTime;
+        uifirstState_.uifirstStartTime = startTime;
     }
-
     int64_t GetUifirstStartTime() const
     {
-        return uifirstStartTime_;
+        return uifirstState_.uifirstStartTime;
+    }
+
+    void SetUifirstSkipPartialSync(bool skip)
+    {
+        uifirstState_.skipPartialSync = skip;
+    }
+    bool IsUifirstSkipPartialSync() const override
+    {
+        return uifirstState_.skipPartialSync;
+    }
+    void ClearUifirstSkipPartialSync() override
+    {
+        uifirstState_.skipPartialSync = false;
+    }
+
+    void SetUifirstNeedSync(bool needSync)
+    {
+        uifirstState_.needSync = needSync;
+    }
+
+    bool GetUifirstNeedSync() const override
+    {
+        return uifirstState_.needSync;
+    }
+    void ClearUifirstNeedSync() override
+    {
+        uifirstState_.needSync = false;
+    }
+
+    void SetUifirstHasContentAppWindow(bool hasAppWindow)
+    {
+        uifirstState_.hasAppWindow = hasAppWindow;
+    }
+    bool GetUifirstHasContentAppWindow() const
+    {
+        return uifirstState_.hasAppWindow;
     }
 
     void SetUIFirstVisibleFilterRect(const RectI& rect);
@@ -1503,6 +1662,14 @@ public:
 
     void SetSkipDraw(bool skip);
     bool GetSkipDraw() const;
+    void SetDarkColorMode(bool isDarkColorMode)
+    {
+        isDarkColorMode_ = isDarkColorMode;
+    }
+    bool GetDarkColorMode() const
+    {
+        return isDarkColorMode_;
+    }
     void SetHidePrivacyContent(bool needHidePrivacyContent);
     void SetNeedOffscreen(bool needOffscreen);
     void SetSdrNit(float sdrNit);
@@ -1546,6 +1713,13 @@ public:
         return drmCornerRadiusInfo_;
     }
 
+    void SetVcldInfo(const RSVcldParam& vcldInfo);
+    void ResetVcldInfo();
+    const RSVcldParam& GetVcldInfo() const
+    {
+        return vcldInfo_;
+    }
+
     // [Attention] The function only used for unlocking screen for PC currently
     NodeId GetClonedNodeId() const
     {
@@ -1567,6 +1741,8 @@ public:
         if (!containerDirty || !IsLeashOrMainWindow()) {
             return;
         }
+        RS_OPTIONAL_TRACE_FMT("%s: %s[%" PRIu64"] set dirty by container dirty",
+            __func__, GetName().c_str(), GetId());
         dirtyStatus_ = NodeDirty::DIRTY;
         containerDirty = false;
     }
@@ -1595,13 +1771,14 @@ public:
     }
 
     void SetNeedCacheSurface(bool needCacheSurface);
+    bool GetNeedCacheSurface() const;
     bool GetSubThreadAssignable() const
     {
-        return subThreadAssignable_;
+        return uifirstState_.subThreadAssignable;
     }
     void SetSubThreadAssignable(bool subThreadAssignable)
     {
-        subThreadAssignable_ = subThreadAssignable;
+        uifirstState_.subThreadAssignable = subThreadAssignable;
     }
     RSSpecialLayerManager& GetMultableSpecialLayerMgr()
     {
@@ -1634,6 +1811,43 @@ public:
     {
         crossNodeSkipDisplayConversionMatrices_.clear();
     }
+
+    void ClearCloneCrossNode();
+    void SetCrossNodeVisitedStatus(bool hasVisited);
+    void SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn);
+    void RecordCloneCrossNode(std::shared_ptr<RSSurfaceRenderNode> node)
+    {
+        cloneCrossNodeVec_.emplace_back(node);
+    }
+
+    void SetIsCrossNode(bool isCrossNode)
+    {
+        if (!isCrossNode) {
+            ClearCloneCrossNode();
+        }
+        isCrossNode_ = isCrossNode;
+    }
+
+    bool IsCrossNode() const override
+    {
+        return isCrossNode_ || isCloneCrossNode_;
+    }
+
+    bool IsCloneCrossNode() const
+    {
+        return isCloneCrossNode_;
+    }
+
+    bool HasVisitedCrossNode() const
+    {
+        return hasVisitedCrossNode_;
+    }
+
+    std::weak_ptr<RSSurfaceRenderNode> GetSourceCrossNode() const
+    {
+        return sourceCrossNode_;
+    }
+
     HdrStatus GetVideoHdrStatus() const
     {
         return hdrVideoSurface_;
@@ -1652,6 +1866,16 @@ public:
     void SetHDRBrightnessFactor(float hdrBrightnessFactor)
     {
         hdrBrightnessFactor_ = hdrBrightnessFactor;
+    }
+
+    float GetHDRDimmingFactor() const
+    {
+        return hdrDimmingFactor_;
+    }
+
+    void SetHDRDimmingFactor(float hdrDimmingFactor)
+    {
+        hdrDimmingFactor_ = hdrDimmingFactor;
     }
 
     void SetApiCompatibleVersion(uint32_t apiCompatibleVersion);
@@ -1679,12 +1903,12 @@ public:
     // [Attention] Used in uifirst for checking whether node and parent should paint or not
     void SetSelfAndParentShouldPaint(bool selfAndParentShouldPaint)
     {
-        selfAndParentShouldPaint_ = selfAndParentShouldPaint;
+        uifirstState_.selfAndParentShouldPaint = selfAndParentShouldPaint;
     }
 
     bool GetSelfAndParentShouldPaint() const
     {
-        return selfAndParentShouldPaint_;
+        return uifirstState_.selfAndParentShouldPaint;
     }
 
     inline bool IsHardwareDisabledBySrcRect() const
@@ -1735,7 +1959,20 @@ public:
     void SetSurfaceBufferOpaque(bool isOpaque);
     bool GetSurfaceBufferOpaque() const;
 
-    void AfterTreeStatueChanged() override;
+    bool IsAncestorScreenFrozen() const;
+
+    void AfterTreeStateChanged();
+
+    // only use for window capture when isSyncRender is true
+    void RegisterCaptureCallback(sptr<RSISurfaceCaptureCallback> callback, const RSSurfaceCaptureConfig& config);
+
+    void SetAppRotationCorrection(ScreenRotation appRotationCorrection);
+    void SetRotationCorrectionDegree(int32_t rotationCorrectionDegree);
+    void UpdateLayerPartRenderStatus(std::shared_ptr<RSDirtyRegionManager>& dirtyManager);
+
+    void SetHDRType(uint32_t hdrType);
+    uint32_t GetHDRType() const;
+
 protected:
     void OnSync() override;
     void OnSkipSync() override;
@@ -1773,12 +2010,24 @@ private:
     void UpdatePropertyFromConsumer();
 #endif
 
+    void EmplaceSameTypeModifier(
+        ModifierNGContainer& container, const std::shared_ptr<ModifierNG::RSRenderModifier>& modifier) override;
+
+    template<typename T>
+    void CopyModifierValue(ModifierNG::RSPropertyType propertyType,
+        std::shared_ptr<ModifierNG::RSRenderModifier> oldModifier,
+        std::shared_ptr<ModifierNG::RSRenderModifier> newModifier);
+    
+    void CountRelatedNode(bool isIncrement);
+    void ClearRelatedSourceCache(bool value);
+
     RSSpecialLayerManager specialLayerManager_;
     bool specialLayerChanged_ = false;
     bool isGlobalPositionEnabled_ = false;
     bool isHwcGlobalPositionEnabled_ = false;
     bool isHwcCrossNode_ = false;
     bool hasFingerprint_ = false;
+    bool isDarkColorMode_ = false;
     // hdr video
     HdrStatus hdrVideoSurface_ = HdrStatus::NO_HDR;
     bool zOrderChanged_ = false;
@@ -1787,6 +2036,7 @@ private:
     RSSurfaceNodeType nodeType_ = RSSurfaceNodeType::DEFAULT;
     uint32_t topLayerZOrder_ = 0;
     bool isLayerTop_ = false;
+    bool isHdrForceHwcEnabled_ = false;
     bool isTopLayerForceRefresh_ = false;
     bool isForceRefresh_ = false; // the self-drawing node need force refresh
     // Specifying hardware enable is only a 'hint' to RS that
@@ -1812,7 +2062,6 @@ private:
     bool isOccludedByFilterCache_ = false;
     bool isFilterCacheStatusChanged_ = false;
     bool isTreatedAsTransparent_ = false;
-    bool startAnimationFinished_ = false;
     bool isContainerWindowTransparent_ = false;
     // only used in hardware enabled pointer window, when gpu -> hardware composer
     bool isNodeDirtyInLastFrame_ = true;
@@ -1835,6 +2084,7 @@ private:
     bool isHardwareForcedDisabled_ = false;
     bool hardwareNeedMakeImage_ = false;
     bool intersectWithAIBar_ = false;
+    bool intersectWithFilterNode_ = false;
     bool isHardwareForcedDisabledByFilter_ = false;
     // For certain buffer format(YUV), dss restriction on src : srcRect % 2 == 0
     // To avoid switch between gpu and dss during sliding, we disable dss when srcHeight != bufferHeight
@@ -1843,6 +2093,7 @@ private:
     bool existTransparentHardwareEnabledNode_ = false;
     bool animateState_ = false;
     bool isRotating_ = false;
+    bool isScale_ = false;
     bool isParentScaling_ = false;
     bool needDrawAnimateProperty_ = false;
     bool prevVisible_ = false;
@@ -1850,21 +2101,19 @@ private:
     // mark if this self-drawing node do not consume buffer when gpu -> hwc
     bool hwcDelayDirtyFlag_ = false;
     bool isForeground_ = false;
-    bool UIFirstIsPurge_ = false;
-    bool isTargetUIFirstDfxEnabled_ = false;
     bool hasSharedTransitionNode_ = false;
     bool lastFrameShouldPaint_ = true;
-    bool uifirstContentDirty_ = false;
     // point window
     bool isHardCursor_ = false;
     bool isLastHardCursor_ = false;
     bool needDrawFocusChange_ = false;
-    bool forceUIFirstChanged_ = false;
-    bool forceUIFirst_ = false;
-    bool uifirstForceDrawWithSkipped_ = false;
     bool hasTransparentSurface_ = false;
+    bool hasSurfaceBuffer_ = false;
     bool isGpuOverDrawBufferOptimizeNode_ = false;
     bool isSubSurfaceNode_ = false;
+    bool isSelfAddedForSubSurface_ = false;
+    bool isNodeSingleFrameComposer_ = false;
+    mutable std::shared_ptr<RSSingleFrameComposer> singleFrameComposer_;
     bool isNodeToBeCaptured_ = false;
     bool doDirectComposition_ = true;
     bool isSkipDraw_ = false;
@@ -1872,11 +2121,18 @@ private:
     bool isHardwareForcedByBackgroundAlpha_ = false;
     bool arsrTag_ = true;
     bool copybitTag_ = false;
-    
+
+    // cross node
+    bool isCrossNode_ = false;
+    bool isCloneCrossNode_ = false;
+    bool autoClearCloneNode_ = false;
+    bool hasVisitedCrossNode_ = false;
+    std::weak_ptr<RSSurfaceRenderNode> sourceCrossNode_;
+    std::vector<std::shared_ptr<RSSurfaceRenderNode>> cloneCrossNodeVec_;
+
     // hpae offline
     bool deviceOfflineEnable_ = false;
-    
-    bool subThreadAssignable_ = false;
+
     bool oldNeedDrawBehindWindow_ = false;
     bool isStableSkipReached_ = false;
     RectI skipFrameDirtyRect_;
@@ -1886,8 +2142,6 @@ private:
     std::atomic_bool isBufferAvailable_ = false;
     std::atomic<CacheProcessStatus> cacheProcessStatus_ = CacheProcessStatus::WAITING;
     std::atomic<bool> isNeedSubmitSubThread_ = true;
-    // whether to wait uifirst first frame finished when buffer available callback invoked.
-    std::atomic<bool> isWaitUifirstFirstFrame_ = false;
     std::atomic<bool> hasUnSubmittedOccludedDirtyRegion_ = false;
     static inline std::atomic<bool> ancoForceDoDirect_ = false;
     float contextAlpha_ = 1.0f;
@@ -1896,6 +2150,7 @@ private:
     // Count the number of hdr UI components. If hdrUIComponentNum_ > 0, it means there are hdr UI components
     int hdrUIComponentNum_ = 0;
     int hdrEffectNum_ = 0;
+    int hdrColorNum_ = 0;
     int bt2020Num_ = 0;
     int p3Num_ = 0;
     int firstLevelNodeBt2020WindowNum_ = 0;
@@ -1918,6 +2173,7 @@ private:
     int32_t displayNit_ = 500; // default sdr luminance
     float brightnessRatio_ = 1.0f; // no ratio by default
     float hdrBrightnessFactor_ = 1.0f; // no discount by default
+    float hdrDimmingFactor_ = 1.0f; // no discount by default
     float localZOrder_ = 0.0f;
     uint32_t processZOrder_ = -1;
     int32_t nodeCost_ = 0;
@@ -1929,7 +2185,6 @@ private:
     Drawing::GPUContext* grContext_ = nullptr;
     ScreenId screenId_ = INVALID_SCREEN_ID;
     SurfaceId surfaceId_ = 0;
-    SurfaceId tunnelLayerId_ = 0;
     uint64_t leashPersistentId_ = INVALID_LEASH_PERSISTENTID;
     struct GamutCollector
     {
@@ -1954,8 +2209,7 @@ private:
     };
     GamutCollector gamutCollector_;
     // UIFirst
-    int64_t uifirstStartTime_ = -1;
-    size_t lastFrameChildrenCnt_ = 0;
+    RSUIFirstNodeState uifirstState_;
     sptr<RSIBufferAvailableCallback> callbackFromRT_ = nullptr;
     sptr<RSIBufferAvailableCallback> callbackFromUI_ = nullptr;
     sptr<RSIBufferClearCallback> clearBufferCallback_ = nullptr;
@@ -1964,6 +2218,7 @@ private:
     std::shared_ptr<RSSurfaceHandler> surfaceHandler_;
 #ifdef USE_SURFACE_TEXTURE
     std::shared_ptr<RSSurfaceTexture> surfaceTexture_ {};
+    std::function<std::shared_ptr<Media::PixelMap>()> surfaceCaptureCallback_ = nullptr;
 #endif
     RSBaseRenderNode::WeakPtr ancestorScreenNode_;
     RectI clipRegionFromParent_;
@@ -1981,7 +2236,6 @@ private:
     std::mutex mutexUI_;
     std::mutex mutexClear_;
     std::mutex mutex_;
-    std::mutex mutexHDR_;
     std::mutex parallelVisitMutex_;
     std::optional<Drawing::Matrix> contextMatrix_;
     std::optional<Drawing::Rect> contextClipRect_;
@@ -1990,10 +2244,12 @@ private:
     Drawing::Matrix totalMatrix_;
     std::vector<RectI> intersectedRoundCornerAABBs_;
     std::vector<float> drmCornerRadiusInfo_;
+    RSVcldParam vcldInfo_;
 
     std::string name_;
     std::string bundleName_;
     std::vector<NodeId> childSurfaceNodeIds_;
+    std::shared_ptr<RSRenderPipelineClient> rsRenderPipelineClient_;
     friend class RSRenderThreadVisitor;
     /*
         visibleRegion: appwindow visible region after occlusion, used for rs opdrop and other optimization.
@@ -2100,6 +2356,7 @@ private:
     NodeId clonedSourceNodeId_ = INVALID_NODEID;
     bool isClonedNodeOnTheTree_ = false;
     bool clonedSourceNodeNeedOffscreen_ = true;
+    int relatedNodeNum_ = 0;
 
     std::optional<std::pair<ScreenId, bool>> attachedInfo_ = std::nullopt;
     std::map<NodeId, RSSurfaceRenderNode::WeakPtr> childSubSurfaceNodes_;
@@ -2107,24 +2364,29 @@ private:
     std::unordered_set<NodeId> childrenBlurBehindWindow_ = {};
     std::unordered_map<NodeId, Drawing::Matrix> crossNodeSkipDisplayConversionMatrices_ = {};
 
-    // used in uifirst for checking whether node and parents should paint or not
-    bool selfAndParentShouldPaint_ = true;
+    bool isBootAnimation_ = false;
 
     bool isFrameGravityNewVersionEnabled_ = false;
 
     bool isSurfaceBufferOpaque_ = false;
 
+    uint32_t hdrType_ = 0;
+    RSPaintFilterCanvas::SaveStatus renderNodeSaveCount_;
+
+    bool isNewOnTree_ = false;
+
     // Used for control-level occlusion culling scene info and culled nodes transmission.
     std::shared_ptr<OcclusionParams> occlusionParams_ = nullptr;
 
     // UIExtension record, <UIExtension, hostAPP>
-    inline static std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
+    inline static RS_HIDDEN std::unordered_map<NodeId, NodeId> secUIExtensionNodes_ = {};
     friend class SurfaceNodeCommandHelper;
     friend class RSUifirstManager;
     friend class RSUniRenderVisitor;
     friend class RSRenderNode;
     friend class RSRenderService;
     friend class RSHdrUtil;
+    friend class RSPipelineDumper;
 #ifdef RS_PROFILER_ENABLED
     friend class RSProfiler;
 #endif

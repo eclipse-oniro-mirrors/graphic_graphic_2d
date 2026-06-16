@@ -76,11 +76,14 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
         case TAG_FILTER_CACHE :
             tagType = "filter_cache";
             break;
+        case TAG_FILTER_MATERIAL_CACHE :
+            tagType = "filter_material_cache";
+            break;
         case TAG_CAPTURE :
             tagType = "capture";
             break;
-        case TAG_UIFIRST :
-            tagType = "uifirst";
+        case TAG_SUB_THREAD :
+            tagType = "sub_thread";
             break;
         case TAG_ACQUIRE_SURFACE :
             tagType = "acquire_surface";
@@ -90,12 +93,6 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
             break;
         case TAG_SUBTREE_PARALLEL :
             tagType = "subtree_parallel";
-            break;
-        case TAG_HDR_OFFSCREEN :
-            tagType = "hdr_offscreen";
-            break;
-        case TAG_COMMON_OFFSCREEN :
-            tagType = "common_offscreen";
             break;
         case TAG_DRAW_SURFACENODE :
             tagType = "draw_surface_node";
@@ -108,6 +105,15 @@ std::string RSTagTracker::TagType2String(TAGTYPE type)
             break;
         case TAG_CANVAS_DRAWING_NODE :
             tagType = "canvas_drawing_node";
+            break;
+        case TAG_FROSTEDGLASS_GEN_FILTERED_SNAPSHOT :
+            tagType = "frostedglass_gen_filtered_snapshot";
+            break;
+        case TAG_FROSTEDGLASS_EFFECT :
+            tagType = "frostedglass_effect";
+            break;
+        case TAG_WINDOW_SURFACE_CACHE :
+            tagType = "window_surface_cache";
             break;
         case TAG_UNTAGGED :
             tagType = "untagged";
@@ -176,5 +182,14 @@ RSTagTracker::~RSTagTracker()
         gpuContext_->SetCurrentGpuResourceTag(tagEnd);
     }
 #endif
+}
+
+Drawing::GPUResourceTag RSTagTracker::GetCurrentGpuResourceTag(Drawing::GPUContext* gpuContext)
+{
+    Drawing::GPUResourceTag tag;
+#if defined (RS_ENABLE_GL) || defined (RS_ENABLE_VK)
+    tag = gpuContext->GetCurrentGpuResourceTag();
+#endif
+    return tag;
 }
 } // namespace OHOS::Rosen

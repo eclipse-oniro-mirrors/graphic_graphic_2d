@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.. All rights reserved.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,8 @@ enum class SrcRectConstraint {
     STRICT_SRC_RECT_CONSTRAINT,
     FAST_SRC_RECT_CONSTRAINT,
 };
+
+class PrimList;
 
 struct HpsBlurParameter {
     Rect src;
@@ -342,6 +344,19 @@ public:
     virtual void DrawColor(ColorQuad color, BlendMode mode = BlendMode::SRC_OVER);
 
     /**
+     * @brief Fills clip with color color. Mode determines how ARGB is combined with destination.
+     * @param color UIColor representing HDR color.
+     * @param mode  BlendMode used to combine source color and destination.
+     */
+    virtual void DrawUIColor(UIColor color, BlendMode mode = BlendMode::SRC_OVER);
+
+    /**
+     * @brief Draws Particle with a ParticleEffect.
+     * @param particle ParticleEffect to draw.
+     */
+    virtual void DrawParticle(std::shared_ptr<ParticleEffect> particle);
+
+    /**
      * @brief Draws Region on the Canvas.
      * @param region Region to draw.
      */
@@ -464,6 +479,24 @@ public:
     virtual void DrawSVGDOM(const sk_sp<SkSVGDOM>& svgDom);
 
     // text
+    /**
+     * @brief glyphs, their positions, and paint attributes specific to text:
+     * Typeface, text size, text scale x, text skew x, anti-alias, fake bold,
+     * font embedded bitmaps, pen/brush full hinting spacing, LCD text, linear text,
+     * and subpixel text. TextEncoding must be set to TextEncoding::GLYPH_ID.
+     * Elements of pen/brush: anti-alias, BlendMode, color including alpha,
+     * ColorFilter, MaskFilter, PathEffect, Shader, and Brush::Style; apply to blob.
+     * If attach pen to draw text, set Pen::Cap, Pen::Join, and stroke width;
+     * apply to Path created from blob.
+     * @param count Number of glyphs.
+     * @param glyphs Array of glyphIDs.
+     * @param positions offset of each glyph to origin.
+     * @param origin origin of all pos.
+     * @param font Typeface, font size, skew or more other styles.
+     */
+    virtual void DrawGlyphs(int count, const uint16_t glyphs[], const Point positions[],
+                            Point origin, const Font* font);
+
     /**
      * @brief blob contains glyphs, their positions, and paint attributes specific to text:
      * Typeface, text size, text scale x, text skew x, anti-alias, fake bold,
@@ -784,6 +817,44 @@ public:
      * @return {width, height}, if return {0, 0}, witch means something error.
      */
     virtual std::array<int, 2> CalcHpsBluredImageDimension(const Drawing::HpsBlurParameter& blurParams);
+
+    /**
+     * @brief Insert opaque region to canvas, which can help gpu enable overdraw optimize.
+     * @param opaqueRects the opaque rects to be inserted, which should be in device coordinate.
+     */
+    virtual void InsertOpaqueRegion(const std::vector<RectI>& opaqueRects);
+
+    /**
+     * @brief Check whether the current layer that drawn into the device is opaque.
+     * @return Return true if the current layer that drawn into the device is opaque, otherwise return false.
+     */
+    virtual bool IsOpaque() const;
+
+    /**
+     * @brief Begins collecting primitives into a PrimList.
+     *        After calling this, all drawing operations will be collected
+     *        into an internal PrimList instead of being drawn directly.
+     * @param bounds The bounding rect for collecting primitives.
+     *                Primitives outside this rect may be clipped or optimized.
+     */
+    virtual void BeginPrimListCollecting(const Rect& bounds);
+
+    /**
+     * @brief Ends collecting primitives and returns the PrimList.
+     *        After calling this, drawing operations will be drawn directly
+     *        again instead of being collected.
+     * @return Returns the collected PrimList containing all drawing operations.
+     */
+    virtual std::shared_ptr<PrimList> EndPrimListCollecting();
+
+    /**
+     * @brief Draws a collected PrimList onto the canvas.
+     *        The PrimList contains collected drawing operations that will be
+     *        replayed onto this canvas.
+     * @param primList The PrimList to draw.
+     * @return Returns true if drawing succeeded, false otherwise.
+     */
+    virtual bool DrawPrimList(const PrimList& primList);
 
 protected:
     CoreCanvas(int32_t width, int32_t height);

@@ -29,6 +29,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_CANVAS_NODE_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_CANVAS_NODE_H
 
+#include "modifier/rs_cmd_list_image_collector.h"
 #include "pipeline/rs_recording_canvas.h"
 #include "ui/rs_node.h"
 
@@ -126,7 +127,7 @@ public:
      *                - true: Freeze current content
      *                - false: Resume normal rendering pipeline
      */
-    void SetFreeze(bool isFreeze) override;
+    void SetFreeze(bool isFreeze, bool isMarkedByUI = false) override;
 
     /**
      * @brief Sets the HDR display properties.
@@ -180,6 +181,13 @@ public:
         std::shared_ptr<Drawing::DrawCmdList> drawCmdList = nullptr, const Drawing::Rect* rect = nullptr);
     
     /**
+     * @brief Set a pixel map.
+     *
+     * @param pixelMap A shared pointer to a Media::PixelMap object.
+     */
+    void SetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap);
+
+    /**
      * @brief Resets the surface with the specified width and height.
      *
      * @param width The new width of the surface.
@@ -200,6 +208,7 @@ protected:
 
     BoundsChangedCallback boundsChangedCallback_;
 
+    virtual void OnFinishRecording(Drawing::DrawCmdListPtr& drawCmdList, ModifierNG::RSModifierType modifierType);
 private:
     ExtendRecordingCanvas* recordingCanvas_ = nullptr;
     bool recordingUpdated_ = false;
@@ -211,11 +220,11 @@ private:
     friend class RSPropertyAnimation;
     friend class RSNodeMap;
     friend class RSNodeMapV2;
-    void OnBoundsSizeChanged() const override;
+    void OnBoundsSizeChanged() override;
     void CreateRenderNodeForTextureExportSwitch() override;
     void RegisterNodeMap() override;
 
-    Drawing::DrawCmdListPtr drawCmdList_ = nullptr;
+    std::unique_ptr<CmdListImage> cmdListImages_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

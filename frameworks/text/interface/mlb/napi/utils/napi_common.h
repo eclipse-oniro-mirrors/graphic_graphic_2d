@@ -49,7 +49,7 @@ struct ResourceInfo {
 };
 
 struct FontPathResourceContext : public ContextBase {
-    std::string filePath;
+    std::optional<std::string> filePath;
     ResourceInfo info;
 };
 
@@ -77,14 +77,13 @@ enum TextErrorCode : int32_t {
     ERROR_NO_MEMORY = 8800100, // no memory
 };
 
-#define GET_UNWRAP_PARAM(argc, value)                                                                                  \
-    do {                                                                                                               \
-        if ((napi_unwrap(env, argv[argc], reinterpret_cast<void**>(&value)) != napi_ok) || value == nullptr) {         \
-            return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM,                                          \
-                std::string("Incorrect ") + __FUNCTION__ + " parameter" + std::to_string(argc) + " type.");            \
-        }                                                                                                              \
+#define GET_UNWRAP_PARAM(argc, value)                                                                                \
+    do {                                                                                                             \
+        if ((napi_unwrap(env, argv[(argc)], reinterpret_cast<void**>(&(value))) != napi_ok) || (value) == nullptr) { \
+            return NapiThrowError(env, TextErrorCode::ERROR_INVALID_PARAM,                                           \
+                std::string("Incorrect ") + __FUNCTION__ + " parameter" + std::to_string(argc) + " type.");          \
+        }                                                                                                            \
     } while (0)
-
 
 #define NAPI_CHECK_AND_THROW_ERROR(ret, errorCode, errorMessage)   \
     do {                                                           \
@@ -106,7 +105,35 @@ enum TextErrorCode : int32_t {
 template<class T>
 T* CheckParamsAndGetThis(const napi_env env, napi_callback_info info, const char* name = nullptr)
 {
-    if (env == nullptr || info == nullptr) {
+    napi_value object = nullptr;
+    napi_value propertyNameValue = nullptr;
+    napi_value pointerValue = nullptr;
+    napi_get_cb_info(env, info, nullptr, nullptr, &object, nullptr);
+    if (object != nullptr && name != nullptr) {
+        napi_create_string_utf8(env, name, NAPI_AUTO_LENGTH, &propertyNameValue);
+    }
+    napi_value& resObject = propertyNameValue ? propertyNameValue : object;
+    if (resObject) {
+        return napi_unwrap(env, resObject, (void **)(&pointerValue)) == napi_ok ?
+            reinterpret_cast<T*>(pointerValue) : nullptr;
+    }
+    return nullptr;
+}
+
+/**
+ * @brief Check parameters and unwrap 'this' object with type tag validation (napi_unwrap_s mode)
+ * @tparam T Type of the wrapped native object
+ * @param env N-API environment
+ * @param info N-API callback info containing 'this'
+ * @param typeTag Pointer to type tag for validation
+ * @param name Optional property name to extract from 'this' before unwrap
+ * @return Pointer to unwrapped native object, or nullptr if failed
+ */
+template <class T>
+T* CheckParamsAndGetThisWithTag(
+    const napi_env env, napi_callback_info info, const napi_type_tag* typeTag, const char* name = nullptr)
+{
+    if (env == nullptr || info == nullptr || typeTag == nullptr) {
         return nullptr;
     }
     napi_value object = nullptr;
@@ -118,7 +145,7 @@ T* CheckParamsAndGetThis(const napi_env env, napi_callback_info info, const char
     }
     napi_value& resObject = propertyNameValue ? propertyNameValue : object;
     if (resObject) {
-        return napi_unwrap(env, resObject, (void **)(&pointerValue)) == napi_ok ?
+        return napi_unwrap_s(env, resObject, typeTag, (void**)(&pointerValue)) == napi_ok ?
             reinterpret_cast<T*>(pointerValue) : nullptr;
     }
     return nullptr;
@@ -179,6 +206,13 @@ inline napi_value CreateJsNumber(napi_env env, double value)
     return result;
 }
 
+#if defined(IOS_PLATFORM)
+inline napi_value CreateJsNumber(napi_env env, size_t value)
+{
+    return CreateJsNumber(env, static_cast<uint64_t>(value));
+}
+#endif
+
 template<class T>
 napi_value CreateJsValue(napi_env env, const T& value)
 {
@@ -238,13 +272,21 @@ inline bool ConvertFromJsNumber(napi_env env, napi_value jsValue, bool& value)
     return napi_get_value_bool(env, jsValue, &value) == napi_ok;
 }
 
+#if defined(IOS_PLATFORM)
+inline bool ConvertFromJsNumber(napi_env env, napi_value jsValue, size_t& value)
+{
+    uint64_t tempValue = 0;
+    if (ConvertFromJsNumber(env, jsValue, tempValue)) {
+        value = static_cast<size_t>(tempValue);
+        return true;
+    }
+    return false;
+}
+#endif
+
 template<class T>
 bool ConvertFromJsValue(napi_env env, napi_value jsValue, T& value)
 {
-    if (jsValue == nullptr) {
-        return false;
-    }
-
     using ValueType = std::remove_cv_t<std::remove_reference_t<T>>;
     if constexpr (std::is_same_v<ValueType, bool>) {
         return napi_get_value_bool(env, jsValue, &value) == napi_ok;
@@ -262,6 +304,13 @@ bool ConvertFromJsValue(napi_env env, napi_value jsValue, T& value)
             return true;
         }
         return false;
+    } else if constexpr (std::is_same_v<ValueType, std::optional<std::string>>) {
+        std::string temp;
+        if (ConvertFromJsValue(env, jsValue, temp)) {
+            value = temp;
+            return true;
+        }
+        return false;
     } else if constexpr (std::is_enum_v<ValueType>) {
         std::make_signed_t<ValueType> numberValue = 0;
         if (!ConvertFromJsNumber(env, jsValue, numberValue)) {
@@ -275,9 +324,6 @@ bool ConvertFromJsValue(napi_env env, napi_value jsValue, T& value)
 
 inline bool ConvertClampFromJsValue(napi_env env, napi_value jsValue, int32_t& value, int32_t lo, int32_t hi)
 {
-    if (jsValue == nullptr) {
-        return false;
-    }
     bool ret = napi_get_value_int32(env, jsValue, &value) == napi_ok;
     value = std::clamp(value, lo, hi);
     return ret;
@@ -439,6 +485,18 @@ inline napi_value CreateArrayStringJsValue(napi_env env, const std::vector<std::
     return jsArray;
 }
 
+inline napi_value CreateArrayDoubleJsValue(napi_env env, const std::vector<double>& vectorDouble)
+{
+    napi_value jsArray = nullptr;
+    if (napi_create_array_with_length(env, vectorDouble.size(), &jsArray) == napi_ok) {
+        size_t index = 0;
+        for (const auto& value : vectorDouble) {
+            napi_set_element(env, jsArray, index++, CreateJsNumber(env, value));
+        }
+    }
+    return jsArray;
+}
+
 inline napi_value CreateStringJsValue(napi_env env, const std::u16string& u16String)
 {
     napi_value jsStr = nullptr;
@@ -448,15 +506,21 @@ inline napi_value CreateStringJsValue(napi_env env, const std::u16string& u16Str
 
 napi_value CreateFontFeatureArrayJsValue(napi_env env, const FontFeatures& fontFeatures);
 
+napi_value CreateFontVariationArrayJsValue(napi_env env, const FontVariations& fontVariations);
+
 napi_value CreateRectStyleJsValue(napi_env env, RectStyle& rectStyle);
 
 napi_value CreatePointJsValue(napi_env env, const OHOS::Rosen::Drawing::PointF& point);
 
 napi_value CreateShadowArrayJsValue(napi_env env, const std::vector<TextShadow>& textShadows);
 
+napi_value CreateTypefaceArrayJsValue(napi_env env, const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces);
+
 napi_value CreateDecrationJsValue(napi_env env, TextStyle textStyle);
 
 napi_value CreateTextStyleJsValue(napi_env env, TextStyle textStyle);
+
+napi_value CreateTypographyStyleJsValue(napi_env env, const TypographyStyle& typographyStyle);
 
 napi_value CreateFontMetricsJsValue(napi_env env, Drawing::FontMetrics& fontMetrics);
 
@@ -474,6 +538,14 @@ inline napi_value CreateRunMetricsJsValue(napi_env env, RunMetrics runMetrics)
 napi_value ConvertMapToNapiMap(napi_env env, const std::map<size_t, RunMetrics>& map);
 
 napi_value CreateLineMetricsJsValue(napi_env env, OHOS::Rosen::LineMetrics& lineMetrics);
+
+napi_value CreateLayoutResultJsValue(napi_env env, const OHOS::Rosen::TextLayoutResult& layoutResult);
+
+napi_value CreateFitRangeJsValue(napi_env env, const OHOS::Rosen::TextRange& fitRange);
+
+napi_value CreateFitRangeArrayJsValue(napi_env env, const std::vector<OHOS::Rosen::TextRange>& fitRangeArr);
+
+napi_value CreateLayoutRectJsValue(napi_env env, const OHOS::Rosen::TextRectSize& rect);
 
 inline void SetFontMetricsFloatValueFromJS(napi_env env, napi_value argValue, const std::string& str, float& cValue)
 {
@@ -523,6 +595,8 @@ bool GetDecorationFromJSForUpdate(napi_env env, napi_value argValue, TextStyle& 
 
 bool GetTextStyleFromJS(napi_env env, napi_value argValue, TextStyle& textStyle);
 
+bool GetTextRectFromJS(napi_env env, napi_value argValue, TextRectSize& rect);
+
 bool GetParagraphStyleFromJS(napi_env env, napi_value argValue, TypographyStyle& pographyStyle);
 
 void HandleExtentParagraphStyleProperties(napi_env env, napi_value argValue, TypographyStyle& pographyStyle);
@@ -536,6 +610,14 @@ void SetTextStyleBaseType(napi_env env, napi_value argValue, TextStyle& textStyl
 void ReceiveFontFeature(napi_env env, napi_value argValue, TextStyle& textStyle);
 
 void ReceiveFontVariation(napi_env env, napi_value argValue, TextStyle& textStyle);
+
+void ReceiveFontTypefaces(napi_env env, napi_value argValue, TextStyle& textStyle);
+
+// Helper functions for fontTypefaces extraction
+std::shared_ptr<Drawing::Typeface> ExtractTypefaceFromJS(napi_env env, napi_value jsObject);
+
+std::vector<std::shared_ptr<Drawing::Typeface>> ExtractTypefacesFromArray(
+    napi_env env, napi_value typefacesArray, uint32_t arrayLength);
 
 size_t GetParamLen(napi_env env, napi_value param);
 

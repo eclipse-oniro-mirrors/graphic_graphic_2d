@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "screen_manager/screen_types.h"
-#include "screen_manager/rs_screen_manager.h"
 #include "feature/hwc/rs_uni_hwc_prevalidate_common.h"
 #include "feature/round_corner_display/rs_rcd_surface_render_node.h"
 #include "pipeline/rs_screen_render_node.h"
@@ -40,8 +39,8 @@ typedef struct RequestLayerInfo {
     int compressType;                     /**< CompressType of Surface Buffer */
     uint64_t bufferUsage;                 /**< Usage of Surface Buffer */
     uint64_t layerUsage;                  /**< Usage of RequestLayerInfo */
-    /**< Extra parameters of frame, format: [key, parameter] */
-    std::unordered_map<std::string, std::vector<int8_t>> perFrameParameters;
+    /**< Extra parameters of frame, format: [key, parameter], modified in 6.1 (unorded_map->map) */
+    std::map<std::string, std::vector<int8_t>> perFrameParameters;
     CldInfo cldInfo;
     uint32_t fps = 120;
     BufferHandle* bufferHandle = nullptr;
@@ -53,29 +52,38 @@ using RequestCompositionType = enum class RequestComposition : int32_t {
     DEVICE = 2,
     OFFLINE_DEVICE = 3,
     DEVICE_VSCF = 4,
+    DEVICE_VCLD_OFF = 5,
+    OFFLINE_VCLD_OFF = 6,
+};
+
+using OfflineDeviceType = enum class OfflineDevice : int32_t {
+    INVALID = 0,
+    HPAE_OFFLINE_DEVICE = 3,
+    GPU_OFFLINE_DEVICE = 7,
 };
 
 using PreValidateFunc = int32_t (*)(uint32_t,
     const std::vector<RequestLayerInfo> &, std::map<uint64_t, RequestCompositionType> &);
 using HandleEventFunc = int32_t (*)(uint32_t, uint32_t, const std::vector<int32_t>& eventData);
+using GetVcldEnabledInfoFunc = int32_t (*)(bool &);
 
 class RSUniHwcPrevalidateUtil {
 public:
     static RSUniHwcPrevalidateUtil& GetInstance();
-    void Init();
     bool PreValidate(
         ScreenId id, std::vector<RequestLayerInfo> infos, std::map<uint64_t, RequestCompositionType> &strategy);
     bool CreateSurfaceNodeLayerInfo(uint32_t zorder,
         RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform, uint32_t fps, RequestLayerInfo &info);
-    bool CreateScreenNodeLayerInfo(uint32_t zorder,
-        RSScreenRenderNode::SharedPtr node, const ScreenInfo &screenInfo, uint32_t fps, RequestLayerInfo &info);
-    bool CreateRCDLayerInfo(
-        RSRcdSurfaceRenderNode::SharedPtr node, const ScreenInfo &screenInfo, uint32_t fps, RequestLayerInfo &info);
-    static void OnHwcEvent(uint32_t devId, uint32_t eventId, const std::vector<int32_t>& eventData, void* data);
+    bool CreateScreenNodeLayerInfo(uint32_t zorder, RSScreenRenderNode::SharedPtr node,
+        const RSScreenProperty& screenProperty, uint32_t fps, RequestLayerInfo &info);
+    bool CreateRCDLayerInfo(RSRcdSurfaceRenderNode::SharedPtr node, const RSScreenProperty& screenProperty,
+        uint32_t fps, RequestLayerInfo &info);
+    void HandleHwcEvent(uint32_t deviceId, uint32_t eventId, const std::vector<int32_t>& eventData);
     bool IsPrevalidateEnable();
-    void CollectSurfaceNodeLayerInfo(
-        std::vector<RequestLayerInfo>& prevalidLayers, std::vector<RSBaseRenderNode::SharedPtr>& surfaceNodes,
-        uint32_t curFps, uint32_t& zOrder, const ScreenInfo& screenInfo);
+    void CollectSurfaceNodeLayerInfo(std::vector<RequestLayerInfo>& prevalidLayers,
+        std::vector<RSBaseRenderNode::SharedPtr>& surfaceNodes, uint32_t curFps, uint32_t& zOrder);
+    void UpdateVcldEnabledInfo();
+    bool IsVcldEnabled();
 private:
     RSUniHwcPrevalidateUtil();
     ~RSUniHwcPrevalidateUtil();
@@ -83,23 +91,25 @@ private:
     bool IsYUVBufferFormat(RSSurfaceRenderNode::SharedPtr node) const;
     bool IsNeedDssRotate(GraphicTransformType transform) const;
     void CopyCldInfo(const CldInfo& src, RequestLayerInfo& info);
-    void LayerRotate(
-        RequestLayerInfo& info, const sptr<IConsumerSurface>& surface, const ScreenInfo &screenInfo);
+    void LayerRotate(RequestLayerInfo& info, const sptr<IConsumerSurface>& surface);
     bool CheckIfDoArsrPre(const RSSurfaceRenderNode::SharedPtr node);
     void CheckIfDoCopybit(const RSSurfaceRenderNode::SharedPtr node, GraphicTransformType transform,
         RequestLayerInfo& info);
+    void UpdateLayerUsage(const RSSurfaceRenderNode::SharedPtr node,
+        RequestLayerInfo& info, bool isHwcEnabledBySolidLayer);
     static bool CheckHwcNode(const RSSurfaceRenderNode::SharedPtr& node);
     static bool IsPointerWindow(const RSSurfaceRenderNode::SharedPtr& node);
-    static void EmplaceSurfaceNodeLayer(
-        std::vector<RequestLayerInfo>& prevalidLayers, RSSurfaceRenderNode::SharedPtr node,
-        uint32_t curFps, uint32_t& zOrder, const ScreenInfo& screenInfo);
+    static void EmplaceSurfaceNodeLayer(std::vector<RequestLayerInfo>& prevalidLayers,
+        RSSurfaceRenderNode::SharedPtr node, uint32_t curFps, uint32_t& zOrder);
 
     void *preValidateHandle_ = nullptr;
     PreValidateFunc preValidateFunc_ = nullptr;
     HandleEventFunc handleEventFunc_ = nullptr;
+    GetVcldEnabledInfoFunc getVcldEnabledInfoFunc_ = nullptr;
     bool loadSuccess_ = false;
     bool arsrPreEnabled_ = false;
     bool isCopybitSupported_ = false;
+    bool isVcldEnabled_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

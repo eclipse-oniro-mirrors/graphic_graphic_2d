@@ -28,6 +28,7 @@
 #include "rosen_text/text_style.h"
 #include "symbol_engine/hm_symbol_txt.h"
 #include "text_types.h"
+#include "text/typeface.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -50,12 +51,12 @@ private:
 // attributes of variable fonts.
 class FontVariations {
 public:
-    void SetAxisValue(std::string tag, float value);
+    void SetAxisValue(std::string tag, float value, bool isNormalization = false);
 
-    const std::map<std::string, float>& GetAxisValues() const;
+    const std::map<std::string, std::pair<float, bool>>& GetAxisValues() const;
 
 private:
-    std::map<std::string, float> axis_;
+    std::map<std::string, std::pair<float, bool>> axis_;
 };
 
 // TextShadow contains parameters that control
@@ -111,6 +112,13 @@ public:
 
     bool operator==(TextStyle const& other) const;
 
+    bool operator!=(TextStyle const& other) const;
+
+    // FontTypefaces methods for priority font shaping
+    void SetFontTypefaces(const std::vector<std::shared_ptr<Drawing::Typeface>>& typefaces);
+
+    const std::vector<std::shared_ptr<Drawing::Typeface>>& GetFontTypefaces() const;
+
     void SetRelayoutBitMap(const std::bitset<static_cast<size_t>
         (RelayoutTextStyleAttribute::TEXT_STYLE_ATTRIBUTE_BUTT)> &relayoutChangeBitmap)
     {
@@ -150,6 +158,9 @@ public:
     FontFeatures fontFeatures;
     FontVariations fontVariations;
 
+    // Priority font objects array for text shaping
+    std::vector<std::shared_ptr<Drawing::Typeface>> fontTypefaces;
+
     // symbol glyph
     bool isSymbolGlyph{false};
     HMSymbolTxt symbol;
@@ -160,6 +171,8 @@ public:
     double maxLineHeight{std::numeric_limits<float>::max()};
     double minLineHeight{0.0f};
     LineHeightStyle lineHeightStyle{LineHeightStyle::kFontSize};
+    Drawing::FontEdging fontEdging{Drawing::FontEdging::ANTI_ALIAS};
+    bool isFakeBoldEnabled{true};
 };
 
 } // namespace SPText

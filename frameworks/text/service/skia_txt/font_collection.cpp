@@ -23,6 +23,8 @@
 #include "font_collection_mgr.h"
 #include "texgine/src/font_descriptor_mgr.h"
 #include "txt/platform.h"
+
+#include "text/font_event_callback.h"
 #include "text/typeface.h"
 #include "utils/text_log.h"
 #include "utils/text_trace.h"
@@ -48,7 +50,8 @@ std::shared_ptr<FontCollection> FontCollection::From(std::shared_ptr<txt::FontCo
 
 namespace AdapterTxt {
 FontCollection::FontCollection(std::shared_ptr<txt::FontCollection> fontCollection)
-    : fontCollection_(fontCollection), dfmanager_(Drawing::FontMgr::CreateDynamicFontMgr())
+    : fontCollection_(fontCollection),
+      dfmanager_(Drawing::FontMgr::CreateDynamicFontMgr())
 {
     if (fontCollection_ == nullptr) {
         fontCollection_ = std::make_shared<txt::FontCollection>();
@@ -73,12 +76,12 @@ FontCollection::~FontCollection()
 void FontCollection::EnableGlobalFontMgr()
 {
     fontCollection_->SetGlobalFontManager(FontCollection::Create()->GetFontMgr());
-    enableGlobalFontMgr_ = true;
+    enableGlobalFontMgr_.store(true);
 }
 
-bool FontCollection::IsLocalFontCollection()
+bool FontCollection::IsLocalFontCollection() const
 {
-    return enableGlobalFontMgr_;
+    return enableGlobalFontMgr_.load();
 }
 
 void FontCollection::DisableFallback()
@@ -101,7 +104,7 @@ bool FontCollection::CheckLocalFontCollectionSize(uint64_t size)
     if (!IsLocalFontCollection()) {
         return true;
     }
-    if (localRegisteredSizeCount_ + size <= FontCollectionMgr::GetInstance().GetLocalFontCollectionMaxSize()) {
+    if (localRegisteredSizeCount_.load() + size <= FontCollectionMgr::GetInstance().GetLocalFontCollectionMaxSize()) {
         return true;
     }
     return false;
@@ -113,9 +116,9 @@ void FontCollection::ChangeLocalFontCollectionSize(LocalActionType type, uint64_
         return;
     }
     if (type == LocalActionType::ADD) {
-        localRegisteredSizeCount_ += size;
+        localRegisteredSizeCount_.fetch_add(size);
     } else {
-        localRegisteredSizeCount_ -= size;
+        localRegisteredSizeCount_.fetch_sub(size);
     }
 }
 
@@ -131,7 +134,7 @@ RegisterError FontCollection::RegisterTypeface(TypefaceWithAlias& ta)
         return RegisterError::ALREADY_EXIST;
     }
 
-    auto typeface = TypefaceMap::GetTypefaceByHash(ta.GetTypeface()->GetHash());
+    auto typeface = Drawing::TypefaceMap::GetTypefaceByHash(ta.GetTypeface()->GetHash());
     if (typeface != nullptr) {
         typefaceSet_.insert(ta);
         return RegisterError::SUCCESS;
@@ -146,7 +149,7 @@ RegisterError FontCollection::RegisterTypeface(TypefaceWithAlias& ta)
     TEXT_LOGI("Succeed in registering typeface, family name: %{public}s, hash: %{public}u", ta.GetAlias().c_str(),
         ta.GetHash());
     typefaceSet_.insert(ta);
-    TypefaceMap::InsertTypeface(ta.GetTypeface()->GetHash(), ta.GetTypeface());
+    Drawing::TypefaceMap::InsertTypeface(ta.GetTypeface()->GetHash(), ta.GetTypeface());
     return RegisterError::SUCCESS;
 }
 
@@ -188,11 +191,11 @@ std::shared_ptr<Drawing::Typeface> FontCollection::LoadFont(
 LoadSymbolErrorCode FontCollection::LoadSymbolFont(const std::string& familyName, const uint8_t* data, size_t datalen)
 {
     TEXT_TRACE_FUNC();
+    std::unique_lock<std::shared_mutex> lock(mutex_);
     std::shared_ptr<Drawing::Typeface> typeface(dfmanager_->LoadDynamicFont(familyName, data, datalen));
     if (typeface == nullptr) {
         return LoadSymbolErrorCode::LOAD_FAILED;
     }
-    std::unique_lock<std::shared_mutex> lock(mutex_);
     TypefaceWithAlias ta(familyName, typeface);
     FontCallbackGuard cb(this, familyName, loadFontStartCallback_, loadFontFinishCallback_);
     if (typefaceSet_.count(ta)) {
@@ -212,7 +215,7 @@ std::shared_ptr<Drawing::Typeface> FontCollection::CreateTypeface(
     const std::string& familyName, const uint8_t* data, size_t datalen, uint32_t index)
 {
     uint32_t hash = Drawing::Typeface::CalculateHash(data, datalen, index);
-    auto typeface = TypefaceMap::GetTypefaceByHash(hash);
+    auto typeface = Drawing::TypefaceMap::GetTypefaceByHash(hash);
     if (typeface != nullptr) {
         TEXT_LOGI("Find same typeface local, family name: %{public}s", typeface->GetFamilyName().c_str());
         return typeface;
@@ -270,15 +273,26 @@ void FontCollection::ClearThemeFont()
             TypefaceWithAlias ta(themeFamily, face);
             typefaceSet_.erase(ta);
             fontCollection_->RemoveCacheByUniqueId(face->GetUniqueID());
+            fontCollection_->RemoveVariationCacheByOriginalUniqueId(face->GetUniqueID());
         }
         dfmanager_->LoadThemeFont("", themeFamily, nullptr, 0);
     }
     SPText::DefaultFamilyNameMgr::GetInstance().ModifyThemeFontFamilies(0);
 }
 
+void FontCollection::SetCachesEnabled(bool enable)
+{
+    fontCollection_->SetCachesEnabled(enable);
+}
+
 void FontCollection::ClearCaches()
 {
     fontCollection_->ClearFontFamilyCache();
+}
+
+void FontCollection::UpdateDefaultFamilies()
+{
+    fontCollection_->UpdateDefaultFamilies();
 }
 
 bool FontCollection::UnloadFont(const std::string& familyName)
@@ -304,6 +318,7 @@ bool FontCollection::UnloadFont(const std::string& familyName)
             FontDescriptorMgrInstance.DeleteDynamicTypefaceFromCache(familyName);
             fontCollection_->RemoveCacheByUniqueId(it->GetTypeface()->GetUniqueID());
             cb.AddTypefaceUniqueId(it->GetTypeface()->GetUniqueID());
+            fontCollection_->RemoveVariationCacheByOriginalUniqueId(it->GetTypeface()->GetUniqueID());
             ChangeLocalFontCollectionSize(LocalActionType::DEL, it->GetTypeface()->GetSize());
             typefaceSet_.erase(it++);
         } else {
@@ -324,6 +339,14 @@ FontCollection::FontCallbackGuard::FontCallbackGuard(
 FontCollection::FontCallbackGuard::~FontCallbackGuard()
 {
     end_.ExecuteCallback(fc_, info_);
+
+    Drawing::FontEventInfo drawingInfo;
+    drawingInfo.familyName = info_.familyName;
+    drawingInfo.uniqueIds = info_.uniqueIds;
+
+    if (&end_ == &::OHOS::Rosen::FontCollection::unloadFontFinishCallback_) {
+        Drawing::FontEventCallbackManager::GetInstance().OnUnloadFontFinish(drawingInfo);
+    }
 }
 
 void FontCollection::FontCallbackGuard::AddTypefaceUniqueId(uint32_t uniqueId)

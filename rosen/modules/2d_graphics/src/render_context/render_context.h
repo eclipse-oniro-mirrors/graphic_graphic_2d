@@ -18,8 +18,9 @@
 
 #include <memory>
 #include <mutex>
+#include <functional>
+#include <atomic>
 #include "common/rs_rect.h"
-
 #ifdef ROSEN_IOS
 #include "render_context_egl_defines.h"
 #else
@@ -45,6 +46,7 @@ public:
     virtual std::string GetShaderCacheSize() const = 0;
     virtual std::string CleanAllShaderCache() const = 0;
     virtual bool SetUpGpuContext(std::shared_ptr<Drawing::GPUContext> drawingContext = nullptr) = 0;
+    virtual bool QueryMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight) = 0;
 
     static std::shared_ptr<Drawing::ColorSpace> ConvertColorGamutToColorSpace(GraphicColorGamut colorGamut);
 
@@ -56,6 +58,14 @@ public:
     virtual void CreateShareContext() { return; }
     virtual void DestroyShareContext() { return; }
     virtual int32_t QueryEglBufferAge() { return 0; }
+    virtual void SetRenderContextType(uint8_t type) { return; }
+    virtual void ChangeProtectedState(bool isProtected) { return; }
+    #ifdef ROSEN_ARKUI_X
+    virtual void AddSurface() { return; }
+    virtual void DeleteSurface() { return; }
+    virtual void SetCleanUpHelper(std::function<void()> func) { return; }
+    virtual void DestroySharedSource() { return; }
+    #endif
 
     void SetUniRenderMode(bool isUni)
     {
@@ -96,7 +106,6 @@ public:
     {
         return colorSpace_;
     }
-
 #ifndef ROSEN_CROSS_PLATFORM
     void SetPixelFormat(int32_t pixelFormat)
     {
@@ -114,13 +123,19 @@ protected:
 
     std::shared_ptr<Drawing::GPUContext> drGPUContext_ = nullptr;
     std::shared_ptr<Drawing::Surface> surface_ = nullptr;
+
     std::mutex shareContextMutex_;
+
     bool isUniRender_ = false;
     bool isUniRenderMode_ = false;
     std::string cacheDir_ = "";
     std::shared_ptr<MemoryHandler> mHandler_ = nullptr;
     int32_t pixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
     GraphicColorGamut colorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    #ifdef ROSEN_ARKUI_X
+    std::atomic<int32_t> surface_count_ = 0;
+    std::function<void()> cleanUpHelper_ = nullptr;
+    #endif
 };
 } // namespace Rosen
 } // namespace OHOS

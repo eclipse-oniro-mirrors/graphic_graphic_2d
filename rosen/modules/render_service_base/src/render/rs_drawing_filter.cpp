@@ -23,6 +23,7 @@
 #include "common/rs_optional_trace.h"
 #include "draw/blend_mode.h"
 #include "effect/rs_render_filter_base.h"
+#include "memory/rs_tag_tracker.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 #include "property/rs_properties_painter.h"
@@ -38,7 +39,6 @@
 #ifdef USE_M133_SKIA
 #include "src/core/SkChecksum.h"
 #else
-#include "render/rs_shader_filter.h"
 #include "src/core/SkOpts.h"
 #endif
 
@@ -51,7 +51,6 @@ const std::map<int, std::string> FILTER_TYPE_MAP {
     { RSFilter::MATERIAL, "RSMaterialFilterBlur" },
     { RSFilter::AIBAR, "RSAIBarFilterBlur" },
     { RSFilter::LINEAR_GRADIENT_BLUR, "RSLinearGradientBlurFilterBlur" },
-    { RSFilter::MAGNIFIER, "RSMagnifierFilter" },
     { RSFilter::WATER_RIPPLE, "RSWaterRippleFilter" },
     { RSFilter::COMPOUND_EFFECT, "CompoundEffect" },
     { RSFilter::FLY_OUT, "FlyOut" },
@@ -140,7 +139,7 @@ std::string RSDrawingFilter::GetDescription()
                 break;
         }
     }
-
+    RSNGRenderFilterHelper::GetDescription(renderFilter_, filterString);
     return filterString;
 }
 
@@ -247,6 +246,13 @@ void RSDrawingFilter::SetDisplayHeadroom(float headroom)
     }
 }
 
+void RSDrawingFilter::SetDisableFilterCache(bool disableFilterCache)
+{
+    if (visualEffectContainer_) {
+        visualEffectContainer_->SetDisableFilterCache(disableFilterCache);
+    }
+}
+
 bool RSDrawingFilter::CanSkipFrame(float radius)
 {
     constexpr float HEAVY_BLUR_THRESHOLD = 25.0f;
@@ -257,6 +263,7 @@ void RSDrawingFilter::OnSync()
 {
     if (renderFilter_) {
         renderFilter_->OnSync();
+        SetHasCustomRegion(RSNGRenderFilterHelper::HasCustomRegion(renderFilter_));
     }
     GenerateAndUpdateGEVisualEffect();
 }
@@ -504,7 +511,7 @@ bool RSDrawingFilter::ApplyHpsImageEffect(Drawing::Canvas& canvas, const std::sh
     auto maskColor = maskColorForHPS.AsArgbInt();
     GraphicsEffectEngine::GERender::HpsGEImageEffectContext context = {
         image, attr.src, attr.dst, Drawing::SamplingOptions(), brush.GetColor().GetAlphaF() * attr.brushAlpha,
-        brush.GetFilter().GetColorFilter(), maskColor, saturationForHPS_, brightnessForHPS_};
+        brush.GetFilter().GetColorFilter(), maskColor, saturationForHPS_, brightnessForHPS_, attr.geCacheProvider};
 
     auto [hasDrawnOnCanvas, kawaseHpsProcess] = geRender->ApplyHpsGEImageEffect(canvas, *visualEffectContainer_,
         context, outImage, brush);
@@ -526,7 +533,7 @@ void RSDrawingFilter::DrawKawaseEffect(Drawing::Canvas& canvas, const std::share
     tmpFilter->GenerateGEVisualEffect(effectContainer);
     auto geRender = std::make_shared<GraphicsEffectEngine::GERender>();
     auto blurImage = geRender->ApplyImageEffect(
-        canvas, *effectContainer, outImage, attr.src, attr.src, Drawing::SamplingOptions());
+        canvas, *effectContainer, {outImage, attr.src, attr.src}, Drawing::SamplingOptions());
     if (blurImage == nullptr) {
         ROSEN_LOGE("RSDrawingFilter::DrawImageRect blurImage is null");
         return;
@@ -549,6 +556,7 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
     }
     std::shared_ptr<Drawing::Image> outImage = nullptr;
     auto brush = GetBrush(attr.brushAlpha);
+    Drawing::SamplingOptions samplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NONE);
     /*
      * When calling ApplyHpsImageEffect(),
        if outImage == nullptr means:
@@ -570,9 +578,15 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
     // RemoveFilterWithType because KAWASE_BLUR will excute in HPS 1.0 separately.
     visualEffectContainer->RemoveFilterWithType(
         static_cast<int32_t>(Drawing::GEVisualEffectImpl::FilterType::KAWASE_BLUR));
+    auto isFrostedGlassFilter = geRender->IsFrostedGlassFilter(*visualEffectContainer);
     if (outImage == nullptr) {
-        outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer, image, attr.src, attr.src,
-            Drawing::SamplingOptions());
+        if (isFrostedGlassFilter || HasCustomRegion()) {
+            outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer,
+                {image, attr.src, attr.dst, attr.geCacheProvider}, samplingOptions);
+        } else {
+            outImage = geRender->ApplyImageEffect(canvas, *visualEffectContainer,
+                {image, attr.src, attr.src, attr.geCacheProvider}, samplingOptions);
+        }
         ProfilerLogImageEffect(visualEffectContainer, image, attr.src, outImage);
         if (outImage == nullptr) {
             ROSEN_LOGE("RSDrawingFilter::DrawImageRect outImage is null");
@@ -599,18 +613,23 @@ void RSDrawingFilter::ApplyImageEffect(Drawing::Canvas& canvas, const std::share
         }
         return;
     }
-    if (geRender->IsGasifyFilter()) {
+    if (geRender->IsNeedExpansionFilter()) {
         Drawing::Rect rect;
         rect.SetTop(attr.dst.GetTop());
         rect.SetLeft(attr.dst.GetLeft());
         rect.SetRight(attr.src.GetWidth() + rect.GetLeft());
         rect.SetBottom(attr.src.GetHeight() + rect.GetTop());
         canvas.AttachBrush(brush);
-        canvas.DrawImageRect(*outImage, attr.src, rect, Drawing::SamplingOptions());
+        canvas.DrawImageRect(*outImage, attr.src, rect, samplingOptions);
+        canvas.DetachBrush();
+    } else if (isFrostedGlassFilter || HasCustomRegion()) {
+        Drawing::Rect rect(0, 0, outImage->GetWidth(), outImage->GetHeight());
+        canvas.AttachBrush(brush);
+        canvas.DrawImageRect(*outImage, rect, attr.dst, samplingOptions);
         canvas.DetachBrush();
     } else {
         canvas.AttachBrush(brush);
-        canvas.DrawImageRect(*outImage, attr.src, attr.dst, Drawing::SamplingOptions());
+        canvas.DrawImageRect(*outImage, attr.src, attr.dst, samplingOptions);
         canvas.DetachBrush();
     }
 }
@@ -656,7 +675,7 @@ void RSDrawingFilter::DrawImageRect(Drawing::Canvas& canvas, const std::shared_p
     const Drawing::Rect& src, const Drawing::Rect& dst, const DrawImageRectParams params)
 {
     float canvasAlpha = canvas.GetAlpha();
-    DrawImageRectAttributes attr = { src, dst, params.discardCanvas, 1.0f };
+    DrawImageRectAttributes attr = { src, dst, params.discardCanvas, 1.0f, params.geCacheProvider };
     if (params.offscreenDraw || ROSEN_EQ(canvasAlpha, 1.0f) || ROSEN_EQ(canvasAlpha, 0.0f)) {
         DrawImageRectInternal(canvas, image, attr);
         return;

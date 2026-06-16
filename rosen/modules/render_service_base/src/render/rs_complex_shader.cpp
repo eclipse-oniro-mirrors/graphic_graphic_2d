@@ -19,7 +19,7 @@
 #include "ge_visual_effect_impl.h"
 #include "platform/common/rs_log.h"
 #include "ge_external_dynamic_loader.h"
-#include "ext/gex_complex_shader.h"
+#include "gex_complex_shader.h"
   
 namespace OHOS {
 namespace Rosen {
@@ -53,7 +53,10 @@ bool RSComplexShader::Marshalling(Parcel &parcel)
   
 bool RSComplexShader::Unmarshalling(Parcel &parcel, bool &needReset)
 {
-    auto type = parcel.ReadUint32();
+    uint32_t type;
+    if (!parcel.ReadUint32(type)) {
+        return false;
+    }
     if (type < static_cast<uint32_t>(GexComplexShaderType::MAX)) {
         shaderType_ = static_cast<GexComplexShaderType>(type);
         return true;

@@ -26,6 +26,8 @@ namespace OHOS::Rosen {
 
 namespace {
 std::shared_ptr<Drawing::RuntimeEffect> g_greyShaderEffect_ = nullptr;
+constexpr int16_t HPAE_COLOR_MASK_SCALE = 4;
+constexpr int16_t COLOR_MASK_MAX = 255;
 }
 
 void BuildShaderMatrix(Drawing::Matrix &shaderMatrix, const Drawing::Rect &src, const float &greyWScaleRatio,
@@ -63,8 +65,9 @@ static void MakeGreyShaderEffect()
             float p = 0.816240163988;        // (3 * A * C - pow(B, 2)) / (3 * pow(A, 2));
             float q = -rgb / 106.5 + 0.262253485943; // -rgb/A - B * C/(3*pow(A, 2)) + 2 * pow(B, 3)/(27*pow(A,3))
             float s1 = -(q / 2.0);
-            float s2 = sqrt(pow(s1, 2) + pow(p / 3, 3));
-            return poww((s1 + s2), 1.0 / 3) + poww((s1 - s2), 1.0 / 3) - (B / (3 * A));
+            float s2 = sqrt(s1 * s1 + pow(p / 3, 3));
+            float res = poww((s1 + s2), 1.0 / 3) + poww((s1 - s2), 1.0 / 3) - (B / (3 * A));
+            return min(res, 1.0);
         }
 
         float calculateGreyAdjustY(float rgb) {
@@ -117,6 +120,10 @@ std::shared_ptr<Drawing::ShaderEffect> MakeGreyShader(
     builder->SetUniform("coefficient2", greyHigh);
     return builder->MakeShader(nullptr, false);
 }
+uint16_t HpaeMaskColorCast(int16_t v)
+{
+    return static_cast<uint16_t>(std::clamp<int16_t>(v, 0, COLOR_MASK_MAX) * HPAE_COLOR_MASK_SCALE);
+}
 
 HaePixel RSHpaeFusionOperator::GetHaePixel(const std::shared_ptr<RSDrawingFilter> &filter)
 {
@@ -126,10 +133,10 @@ HaePixel RSHpaeFusionOperator::GetHaePixel(const std::shared_ptr<RSDrawingFilter
             filter->GetShaderFilterWithType(RSUIFilterType::MASK_COLOR));
         if (maskColorShaderFilter) {
             RSColor maskColors = maskColorShaderFilter->GetMaskColor();
-            haePixel.a = static_cast<uint16_t>(maskColors.GetAlpha()) * 4;
-            haePixel.r = static_cast<uint16_t>(maskColors.GetRed()) * 4;
-            haePixel.g = static_cast<uint16_t>(maskColors.GetGreen()) * 4;
-            haePixel.b = static_cast<uint16_t>(maskColors.GetBlue()) * 4;
+            haePixel.a = HpaeMaskColorCast(maskColors.GetAlpha());
+            haePixel.r = HpaeMaskColorCast(maskColors.GetRed());
+            haePixel.g = HpaeMaskColorCast(maskColors.GetGreen());
+            haePixel.b = HpaeMaskColorCast(maskColors.GetBlue());
         }
     }
 

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "command/rs_base_node_command.h"
 #include "command/rs_canvas_node_command.h"
 #include "command/rs_command.h"
 #include "command/rs_command_factory.h"
@@ -31,8 +32,8 @@
 namespace OHOS {
 namespace Rosen {
 namespace {
-static constexpr size_t PARCEL_MAX_CPACITY = 4000 * 1024; // upper bound of parcel capacity
-static constexpr size_t PARCEL_SPLIT_THRESHOLD = 1800 * 1024; // should be < PARCEL_MAX_CPACITY
+static constexpr size_t PARCEL_MAX_CAPACITY = 4000 * 1024; // upper bound of parcel capacity
+static constexpr size_t PARCEL_SPLIT_THRESHOLD = 1800 * 1024; // should be < PARCEL_MAX_CAPACITY
 static constexpr uint64_t MAX_ADVANCE_TIME = 1000000000; // one second advance most
 #ifndef ROSEN_TRACE_DISABLE
 constexpr int TRACE_LEVEL_THREE = 3;
@@ -104,7 +105,7 @@ void RSTransactionData::AlarmRsNodeLog() const
 bool RSTransactionData::Marshalling(Parcel& parcel) const
 {
     bool success = true;
-    parcel.SetMaxCapacity(PARCEL_MAX_CPACITY);
+    parcel.SetMaxCapacity(PARCEL_MAX_CAPACITY);
     // to correct actual marshaled command size later, record its position in parcel
     size_t recordPosition = parcel.GetWritePosition();
     std::unique_lock<std::mutex> lock(commandMutex_);
@@ -127,12 +128,7 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             RS_LOGW("failed RSTransactionData::Marshalling, indexVerifier is wrong, SIGSEGV may have occurred");
         } else {
             parcel.WriteUint8(1);
-            if (!parcel.WriteUint32(static_cast<uint32_t>(parcel.GetWritePosition()))) {
-                RS_LOGE("RSTransactionData::Marshalling failed to write begin position marshallingIndex:%{public}zu",
-                    marshallingIndex_);
-                success = false;
-            }
-            if (RSTransactionDataCallbackManager::GetTransactionDataTestEnabled()) {
+            if (Rosen::RSAnimationTraceUtils::GetTestModeEnabled()) {
                 RS_OPTIONAL_TRACE_NAME_TESTMODE("RSTransactionData::Marshalling nodeId:%ld type:%s",
                     command->GetNodeId(), command->PrintType().c_str());
             }
@@ -150,25 +146,25 @@ bool RSTransactionData::Marshalling(Parcel& parcel) const
             success = success && command->Marshalling(parcel);
             if (isUiCapSyncCmd) {
                 RS_LOGW("OffScreenIsSync RSTransactionData::Marshalling, nodeId:[%{public}" PRIu64 "] "
-                    "%{public}s", command->GetNodeId(), success ? "success" : "failed");
-            }
-            if (!parcel.WriteUint32(static_cast<uint32_t>(parcel.GetWritePosition()))) {
-                RS_LOGE("RSTransactionData::Marshalling failed to write end position marshallingIndex:%{public}zu",
-                    marshallingIndex_);
-                success = false;
+                    "%{public}s", command->GetNodeId(), success ? "success" : "fail");
             }
         }
         if (!success) {
             if (command != nullptr) {
                 ROSEN_LOGE("failed RSTransactionData::Marshalling type:%{public}s", command->PrintType().c_str());
             } else {
-                ROSEN_LOGE("failed RSTransactionData::Marshalling, pparcel write error");
+                ROSEN_LOGE("failed RSTransactionData::Marshalling, parcel write error");
             }
             return false;
         }
         ++marshallingIndex_;
         ++marshaledSize;
-        if (parcel.GetDataSize() > PARCEL_SPLIT_THRESHOLD) {
+        bool transactionDataSplit = parcel.GetDataSize() > PARCEL_SPLIT_THRESHOLD ||
+            (RSSystemProperties::GetUnmarshalParallelEnabled() &&
+            parcel.GetDataSize() > RSSystemProperties::GetUnmarshalParallelMinDataSize() && !needSync_);
+        if (transactionDataSplit) {
+            // data split to several parcels, which will be parallel unmarshalled using FFRT.
+            RS_OPTIONAL_TRACE_NAME_FMT("RSTransactionData::Marshalling data split size: [%zu]", parcel.GetDataSize());
             break;
         }
     }
@@ -213,7 +209,6 @@ void RSTransactionData::ProcessBySingleFrameComposer(RSContext& context)
 
 void RSTransactionData::Process(RSContext& context)
 {
-    std::unique_lock<std::mutex> lock(commandMutex_);
     for (auto& [nodeId, followType, command] : payload_) {
         if (command != nullptr) {
             if (!command->IsCallingPidValid()) {
@@ -240,7 +235,6 @@ void RSTransactionData::Clear()
 
 void RSTransactionData::AddCommand(std::unique_ptr<RSCommand>& command, NodeId nodeId, FollowType followType)
 {
-    std::unique_lock<std::mutex> lock(commandMutex_);
     if (command) {
         command->indexVerifier_ = payload_.size();
         payload_.emplace_back(nodeId, followType, std::move(command));
@@ -272,6 +266,72 @@ void RSTransactionData::MoveCommandByNodeId(std::unique_ptr<RSTransactionData>& 
         ++indexVerifier;
         ++it;
     }
+}
+
+// Returns the set of command subtypes that modify the node tree hierarchy.
+// These commands should not be migrated across UIContext because the tree
+// structure needs to be regenerated in the new context.
+const std::set<uint16_t>& RSTransactionData::GetTreeHierarchyCommandSubTypes()
+{
+    static const std::set<uint16_t> treeHierarchySubTypes = {
+        RSBaseNodeCommandType::BASE_NODE_ADD_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_MOVE_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_ADD_CROSS_PARENT_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_REMOVE_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_REMOVE_CROSS_PARENT_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_ADD_CROSS_SCREEN_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_REMOVE_CROSS_SCREEN_CHILD,
+        RSBaseNodeCommandType::BASE_NODE_REMOVE_FROM_TREE,
+    };
+    return treeHierarchySubTypes;
+}
+
+// Checks whether a command is a tree hierarchy command by its type and subtype.
+bool RSTransactionData::IsTreeHierarchyCommand(uint16_t commandType, uint16_t commandSubType)
+{
+    return (commandType == RSCommandType::BASE_NODE) &&
+        (GetTreeHierarchyCommandSubTypes().count(commandSubType) > 0);
+}
+
+// Moves non-tree-hierarchy commands related to nodeId into transactionData.
+// Tree hierarchy commands that target nodeId are erased directly instead of
+// being moved, to prevent stale tree operations from executing in the wrong
+// UIContext after node migration.
+void RSTransactionData::MoveCommandByNodeIdExcludeTreeCommands(
+    std::unique_ptr<RSTransactionData>& transactionData, NodeId nodeId)
+{
+    size_t indexVerifier = 0;
+    size_t movedCount = 0;
+    size_t erasedCount = 0;
+    for (auto it = payload_.begin(); it != payload_.end();) {
+        auto& command = std::get<2>(*it);
+        if (!command) {
+            ++indexVerifier;
+            ++it;
+            continue;
+        }
+
+        bool isTargetTreeCommand = IsTreeHierarchyCommand(command->GetType(), command->GetSubType()) &&
+            command->GetTargetNodeId() == nodeId;
+        if (isTargetTreeCommand) {
+            it = payload_.erase(it);
+            ++erasedCount;
+            continue;
+        }
+
+        if (command->GetNodeId() == nodeId) {
+            transactionData->AddCommand(command, std::get<0>(*it), std::get<1>(*it));
+            it = payload_.erase(it);
+            ++movedCount;
+            continue;
+        }
+
+        command->indexVerifier_ = indexVerifier;
+        ++indexVerifier;
+        ++it;
+    }
+    RS_LOGD("MoveCommandByNodeIdExcludeTreeCommands nodeId:%{public}" PRIu64
+            " moved:%{public}zu erased:%{public}zu", nodeId, movedCount, erasedCount);
 }
 
 void RSTransactionData::MoveAllCommand(std::unique_ptr<RSTransactionData>& transactionData)
@@ -331,9 +391,6 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
             return false;
         }
         if (hasCommand) {
-            if (!RSMarshallingHelper::CheckReadPosition(parcel)) {
-                RS_LOGE("RSTransactionData::Unmarshalling, CheckReadPosition begin failed index:%{public}zu", i);
-            }
             RS_PROFILER_PUSH_OFFSET(commandOffsets_, parcel.GetReadPosition());
             if (!(parcel.ReadUint16(commandType) && parcel.ReadUint16(commandSubType))) {
                 return false;
@@ -349,21 +406,16 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
                 return false;
             }
             RS_PROFILER_PATCH_COMMAND(parcel, command);
-            if (!RSMarshallingHelper::CheckReadPosition(parcel)) {
-                RS_LOGE("RSTransactionData::Unmarshalling, CheckReadPosition end failed index:%{public}zu"
-                    " commandType:[%{public}u, %{public}u]", i, static_cast<uint32_t>(commandType),
-                    static_cast<uint32_t>(commandSubType));
-            }
             payloadLock.lock();
             RS_OPTIONAL_TRACE_NAME_FMT("UnmarshallingCommand [nodeId:%zu], cmd is [%s]", command->GetNodeId(),
                 command->PrintType().c_str());
-            payload_.emplace_back(nodeId, static_cast<FollowType>(followType), std::move(command));
             bool isUiCapSyncCmd = ((commandType == RSCommandType::RS_NODE) &&
                 (commandSubType == RSNodeCommandType::SET_TAKE_SURFACE_CAPTURE_FOR_UI_FLAG));
             if (isUiCapSyncCmd) {
                 RS_LOGW("OffScreenIsSync RSTransactionData::UnmarshallingCmd finished, cmdSize: [%{public}d], "
                     "nodeId:[%{public}" PRIu64 "]", commandSize, command->GetNodeId());
             }
+            payload_.emplace_back(nodeId, static_cast<FollowType>(followType), std::move(command));
             payloadLock.unlock();
         } else {
             continue;
@@ -384,13 +436,6 @@ bool RSTransactionData::UnmarshallingCommand(Parcel& parcel)
 
 bool RSTransactionData::IsCallingPidValid(pid_t callingPid, const RSRenderNodeMap& nodeMap) const
 {
-    // Since GetCallingPid interface always returns 0 in asynchronous binder in Linux kernel system,
-    // we temporarily add a white list to avoid abnormal functionality or abnormal display.
-    // The white list will be removed after GetCallingPid interface can return real PID.
-    if (callingPid == 0) {
-        return true;
-    }
-
     std::unordered_map<pid_t, std::unordered_map<NodeId, std::set<
         std::pair<uint16_t, uint16_t>>>> inaccessibleCommandMap;
     std::unique_lock<std::mutex> lock(commandMutex_);

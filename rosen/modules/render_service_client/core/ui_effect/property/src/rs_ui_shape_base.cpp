@@ -34,12 +34,32 @@ static thread_local std::unordered_map<RSNGEffectType, ShapeCreator> creatorLUT 
             return std::make_shared<RSNGSDFSmoothUnionOpShape>();
         }
     },
+    {RSNGEffectType::SDF_SUB_OP_SHAPE, [] {
+            return std::make_shared<RSNGSDFSubOpShape>();
+        }
+    },
+    {RSNGEffectType::SDF_SMOOTH_SUB_OP_SHAPE, [] {
+            return std::make_shared<RSNGSDFSmoothSubOpShape>();
+        }
+    },
     {RSNGEffectType::SDF_RRECT_SHAPE, [] {
             return std::make_shared<RSNGSDFRRectShape>();
         }
     },
+    {RSNGEffectType::SDF_TRIANGLE_SHAPE, [] {
+            return std::make_shared<RSNGSDFTriangleShape>();
+        }
+    },
+    {RSNGEffectType::SDF_ELLIPSE_SHAPE, [] {
+            return std::make_shared<RSNGSDFEllipseShape>();
+        }
+    },
     {RSNGEffectType::SDF_TRANSFORM_SHAPE, [] {
             return std::make_shared<RSNGSDFTransformShape>();
+        }
+    },
+    {RSNGEffectType::SDF_PATH_SHAPE, [] {
+            return std::make_shared<RSNGSDFPathShape>();
         }
     },
     {RSNGEffectType::SDF_PIXELMAP_SHAPE, [] {
@@ -48,6 +68,11 @@ static thread_local std::unordered_map<RSNGEffectType, ShapeCreator> creatorLUT 
     },
     {RSNGEffectType::SDF_EMPTY_SHAPE, [] {
             return std::make_shared<RSNGSDFEmptyShape>();
+        }
+    },
+    {RSNGEffectType::SDF_DISTORT_OP_SHAPE, [] {
+            ROSEN_LOGE("RSNGSDFDistortOpShape Created");
+            return std::make_shared<RSNGSDFDistortOpShape>();
         }
     },
 };

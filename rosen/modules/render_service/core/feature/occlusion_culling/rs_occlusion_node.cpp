@@ -16,6 +16,8 @@
 #include "feature/occlusion_culling/rs_occlusion_node.h"
 
 #include <sstream>
+#include "common/rs_optional_trace.h"
+#include "feature/opinc/rs_opinc_manager.h"
 #include "platform/common/rs_log.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_uni_render_judgement.h"
@@ -87,10 +89,14 @@ void OcclusionNode::RemoveSubTree(std::unordered_map<NodeId, std::shared_ptr<Occ
 
 void OcclusionNode::CollectNodeProperties(const RSRenderNode& node)
 {
+    // Nodes that do not participate in occlusion culling still need to collect filter information
     const auto& renderProperties = node.GetRenderProperties();
-    auto parentShared = parentOcNode_.lock();
+    needFilter_ = renderProperties.NeedFilter();
+    filterRect_ = ComputeOuter(node.GetFilterRegion());
 
-    isSubTreeIgnored_ = (parentShared == nullptr) || IsSubTreeShouldIgnored(node, renderProperties);
+    auto parentShared = parentOcNode_.lock();
+    isSubTreeIgnored_ = (parentShared == nullptr) || parentShared->isSubTreeIgnored_ ||
+        IsSubTreeShouldIgnored(node, renderProperties);
     if (isSubTreeIgnored_) {
         return;
     }
@@ -102,10 +108,11 @@ void OcclusionNode::CollectNodeProperties(const RSRenderNode& node)
     rootOcclusionNode_ = parentShared->rootOcclusionNode_;
     localScale_ = renderProperties.GetScale();
     localAlpha_ = renderProperties.GetAlpha();
-    isNeedClip_ = renderProperties.GetClipToBounds() || renderProperties.GetClipToFrame() ||
-        renderProperties.GetClipToRRect();
+    isNeedClip_ = renderProperties.GetClipToBounds();
+    isNeedClipFrame_ = renderProperties.GetClipToFrame();
+    clipRRect_ = renderProperties.GetClipToRRect() ?
+        std::make_unique<RRect>(renderProperties.GetClipRRect()) : nullptr;
     cornerRadius_ = renderProperties.GetCornerRadius();
-
     CalculateDrawRect(node, renderProperties);
 }
 
@@ -113,7 +120,7 @@ bool OcclusionNode::IsSubTreeShouldIgnored(const RSRenderNode& node, const RSPro
 {
     if (node.GetNodeGroupType() != RSRenderNode::NodeGroupType::NONE ||
         node.GetIsTextureExportNode() || node.GetSharedTransitionParam() != nullptr ||
-        const_cast<RSRenderNode&>(node).GetOpincCache().IsSuggestOpincNode()) {
+        RSOpincManager::IsSuggestOpincNode(const_cast<RSRenderNode&>(node))) {
         return true;
     }
 
@@ -122,7 +129,6 @@ bool OcclusionNode::IsSubTreeShouldIgnored(const RSRenderNode& node, const RSPro
     const auto& degree = renderProperties.GetRotation();
     const auto& degreeX = renderProperties.GetRotationX();
     const auto& degreeY = renderProperties.GetRotationY();
-
     // Skip this subtree if transformations (rotation/projection/skew/clip) make bounds non-rectangular.
     if (!ROSEN_EQ(skew[0], 0.f) || !ROSEN_EQ(skew[1], 0.f) ||
         !ROSEN_EQ(perspective[0], 0.f) || !ROSEN_EQ(perspective[1], 0.f) ||
@@ -130,10 +136,24 @@ bool OcclusionNode::IsSubTreeShouldIgnored(const RSRenderNode& node, const RSPro
         renderProperties.GetClipBounds()) {
         return true;
     }
-
-    // Skip this subtree if the node has any properties that may cause it to be drawn outside of its bounds.
+    // Skip this subtree if node has 3d transformations
+    if (Contains3dTransformation(renderProperties)) {
+        return true;
+    }
+    // Skip this subtree if node's frame is out of it's bounds
     const auto& originBounds = renderProperties.GetBounds();
     const auto drawRect = RectF(originBounds.x_, originBounds.y_, originBounds.z_, originBounds.w_);
+    const auto& originFrame = renderProperties.GetFrame();
+    const auto drawFrameRect = RectF(originFrame.x_, originFrame.y_, originFrame.z_, originFrame.w_);
+    if (!drawFrameRect.IsEmpty() && !drawFrameRect.IsInsideOf(drawRect)) {
+        return true;
+    }
+    // Skip this subtree if node has special clip operation
+    if (renderProperties.GetSDFShape() != nullptr ||
+        (renderProperties.GetClipToFrame() && drawRect != drawFrameRect)) {
+        return true;
+    }
+    // Skip this subtree if the node has any properties that may cause it to be drawn outside of its bounds.
     const auto& drawRegion = renderProperties.GetDrawRegion();
     const auto& outline = renderProperties.GetOutline();
     const auto& pixelStretch = renderProperties.GetPixelStretch();
@@ -141,7 +161,7 @@ bool OcclusionNode::IsSubTreeShouldIgnored(const RSRenderNode& node, const RSPro
     auto foregroundFilter = RSUniRenderJudgement::IsUniRender() ? renderProperties.GetForegroundFilterCache()
         : renderProperties.GetForegroundFilter();
     const bool hasOutBoundsProp = (drawRegion && !drawRegion->IsInsideOf(drawRect)) ||
-        renderProperties.IsShadowValid() || outline || pixelStretch.has_value() ||
+        renderProperties.IsShadowValid() || outline || !pixelStretch.IsZero() ||
         foregroundFilter || (distortionK.has_value() && *distortionK > 0);
 
     return hasOutBoundsProp;
@@ -149,6 +169,9 @@ bool OcclusionNode::IsSubTreeShouldIgnored(const RSRenderNode& node, const RSPro
 
 void OcclusionNode::CalculateDrawRect(const RSRenderNode& node, const RSProperties& renderProperties)
 {
+    if (isSubTreeIgnored_) {
+        return;
+    }
     const auto& originBounds = renderProperties.GetBounds();
     const auto& translate = renderProperties.GetTranslate();
     const auto& center = renderProperties.GetPivot();
@@ -159,50 +182,30 @@ void OcclusionNode::CalculateDrawRect(const RSRenderNode& node, const RSProperti
     if (isSubTreeIgnored_) {
         return;
     }
-
-    // calculate new pos.
-    auto centOffset = center * Vector2f(originBounds.z_, originBounds.w_);
-    localPosition_ = Vector2f(originBounds.x_, originBounds.y_);
-    localPosition_ += centOffset;
-    localPosition_ -= centOffset * localScale_;
-    localPosition_ += translate;
-
-    // calculate drawRect.
-    drawRect_ = RectF(localPosition_.x_, localPosition_.y_,
-        originBounds.z_ * localScale_.x_, originBounds.w_ * localScale_.y_);
-    if (isNeedClip_ && !clipRRect.IsEmpty()) {
-        clipRRect.Move(translate.x_, translate.y_);
-        drawRect_ = drawRect_.IntersectRect(clipRRect);
+    // When the bounds are empty (width and height are non-positive), translation and scaling are ineffective
+    if (originBounds.z_ <= 0 && originBounds.w_ <= 0) {
+        localScale_ = {1.f, 1.f};
+        localPosition_ = {0.f, 0.f};
+        drawRect_ = RectF();
+        return;
     }
-}
 
-static int16_t inline SafeCast(float value)
-{
-    return static_cast<int16_t>(std::clamp(value, static_cast<float>(INT16_MIN), static_cast<float>(INT16_MAX)));
-}
-
-static RectI16 inline ComputeOuter(RectF drawRect)
-{
-    if (drawRect.IsEmpty()) {
-        return RectI16();
+    auto centerPoint = Vector2f(originBounds.x_, originBounds.y_) +
+        center * Vector2f(originBounds.z_, originBounds.w_);
+    if (clipRRect_ != nullptr) {
+        clipRRect_->rect_.Move(originBounds.x_, originBounds.y_);
+        TransformByCenterScalingAndTranslation(clipRRect_->rect_, centerPoint, localScale_, translate);
     }
-    auto left = SafeCast(std::floor(drawRect.GetLeft()));
-    auto right = SafeCast(std::ceil(drawRect.GetRight()));
-    auto top = SafeCast(std::floor(drawRect.GetTop()));
-    auto bottom = SafeCast(std::ceil(drawRect.GetBottom()));
-    return (left >= right || top >= bottom) ? RectI16() : RectI16(left, top, right - left, bottom - top);
-}
-
-static RectI16 inline ComputeInner(RectF drawRect, Vector4f cornerRadius)
-{
-    if (drawRect.IsEmpty()) {
-        return RectI16();
+    drawRect_ = RectF(originBounds.x_, originBounds.y_, originBounds.z_, originBounds.w_);
+    TransformByCenterScalingAndTranslation(drawRect_, centerPoint, localScale_, translate);
+    // Frame position is used as the offset
+    localPosition_ = {drawRect_.GetLeft(), drawRect_.GetTop()};
+    if (renderProperties.GetFrameOffsetX() != 0) {
+        localPosition_.x_ += localScale_.x_ * renderProperties.GetFrameOffsetX();
     }
-    auto left = SafeCast(std::ceil(drawRect.GetLeft()));
-    auto right = SafeCast(std::floor(drawRect.GetRight()));
-    auto top = SafeCast(std::ceil(drawRect.GetTop() + std::max(cornerRadius.x_, cornerRadius.y_)));
-    auto bottom = SafeCast(std::floor(drawRect.GetBottom() - std::max(cornerRadius.w_, cornerRadius.z_)));
-    return (left >= right || top >= bottom) ? RectI16() : RectI16(left, top, right - left, bottom - top);
+    if (renderProperties.GetFrameOffsetY() != 0) {
+        localPosition_.y_ += localScale_.y_ * renderProperties.GetFrameOffsetY();
+    }
 }
 
 void OcclusionNode::CalculateNodeAllBounds()
@@ -217,23 +220,31 @@ void OcclusionNode::CalculateNodeAllBounds()
     isAlphaNeed_ = alpha < 1.f;
     accumulatedScale_ = parentShared->localScale_ * parentShared->accumulatedScale_;
     absPositions_ = parentShared->absPositions_ + localPosition_ * accumulatedScale_;
-    auto scaleDrawRect = RectF(drawRect_.GetLeft() * accumulatedScale_.x_,
-        drawRect_.GetTop() * accumulatedScale_.y_,
-        drawRect_.GetWidth() * accumulatedScale_.x_,
-        drawRect_.GetHeight() * accumulatedScale_.y_);
-    auto absDrawRect = scaleDrawRect.Offset(parentShared->absPositions_.x_, parentShared->absPositions_.y_);
+    auto absDrawRect = drawRect_;
+    TransformToAbsoluteCoord(absDrawRect, accumulatedScale_, parentShared->absPositions_);
+    std::unique_ptr<RRect> absClipRRect;
+    if (clipRRect_ != nullptr) {
+        absClipRRect = std::make_unique<RRect>(*clipRRect_);
+        TransformToAbsoluteCoord(absClipRRect->rect_, accumulatedScale_, parentShared->absPositions_);
+    }
     outerRect_ = ComputeOuter(absDrawRect);
     innerRect_ = ComputeInner(absDrawRect, cornerRadius_);
     clipOuterRect_ = parentShared->clipOuterRect_;
     clipInnerRect_ = parentShared->clipInnerRect_;
     outerRect_ = outerRect_.IntersectRect(clipOuterRect_);
     innerRect_ = innerRect_.IntersectRect(clipInnerRect_);
-
-    if (isNeedClip_) {
+    if (absClipRRect != nullptr) {
+        auto outerClipRRect = ComputeOuter(absClipRRect->rect_);
+        auto innerClipRRect = ComputeInner(*absClipRRect);
+        outerRect_ = outerRect_.IntersectRect(outerClipRRect);
+        innerRect_ = innerRect_.IntersectRect(innerClipRRect);
+        clipOuterRect_ = clipOuterRect_.IntersectRect(outerClipRRect);
+        clipInnerRect_ = clipInnerRect_.IntersectRect(innerClipRRect);
+    }
+    if (isNeedClipFrame_ || (absClipRRect == nullptr && isNeedClip_)) {
         clipOuterRect_ = outerRect_;
         clipInnerRect_ = innerRect_;
     }
-
     isOutOfRootRect_ = IsOutOfRootRect(outerRect_);
 }
 
@@ -262,11 +273,8 @@ void OcclusionNode::UpdateClipRect(const RSRenderNode& node)
 void OcclusionNode::UpdateSubTreeProp()
 {
     isValidInCurrentFrame_ = true;
-    if (isSubTreeIgnored_) {
-        return;
-    }
     auto parentShared = parentOcNode_.lock();
-    if (parentShared) {
+    if (parentShared && !isSubTreeIgnored_) {
         CalculateNodeAllBounds();
     }
     std::shared_ptr<OcclusionNode> child = lastChild_;
@@ -291,7 +299,8 @@ OcclusionCoverageInfo OcclusionNode::DetectOcclusionInner(OcclusionCoverageInfo&
     std::unordered_set<NodeId>& offTreeNodes)
 {
     isValidInCurrentFrame_ = false;
-    occludedById_ = 0;
+    occludedById_ = INVALID_NODEID;
+    occludedSubTreeById_ = INVALID_NODEID;
     // Process nodes with high z-order first
     std::shared_ptr<OcclusionNode> child = lastChild_;
     OcclusionCoverageInfo maxChildCoverage;
@@ -300,16 +309,14 @@ OcclusionCoverageInfo OcclusionNode::DetectOcclusionInner(OcclusionCoverageInfo&
     // This check can be optimized to cull the entire subtree in the future.
     CheckNodeOcclusion(globalCoverage, culledNodes, culledEntireSubtree);
     while (child) {
-        if (!child->isSubTreeIgnored_ && child->isValidInCurrentFrame_) {
+        if (child->isValidInCurrentFrame_) {
             const auto& childCoverInfo = child->DetectOcclusionInner(globalCoverage, culledNodes,
                 culledEntireSubtree, offTreeNodes);
             if (childCoverInfo.area_ > maxChildCoverage.area_) {
                 maxChildCoverage = childCoverInfo;
             }
-        } else if (!child->isValidInCurrentFrame_) {
-            offTreeNodes.insert(child->id_);
         } else {
-            child->isValidInCurrentFrame_ = false;
+            offTreeNodes.insert(child->id_);
         }
         child = child->leftSibling_.lock();
     }
@@ -324,6 +331,9 @@ OcclusionCoverageInfo OcclusionNode::DetectOcclusionInner(OcclusionCoverageInfo&
 
 void OcclusionNode::CheckNodeOcclusion(OcclusionCoverageInfo& coverageInfo, std::unordered_set<NodeId>& culledNodes)
 {
+    if (isSubTreeIgnored_) {
+        return;
+    }
     // Currently, only canvas nodes without clipping attributes can be culled
     if (type_ == RSRenderNodeType::CANVAS_NODE && !isNeedClip_) {
         if (isOutOfRootRect_ || outerRect_.IsInsideOf(coverageInfo.rect_)) {
@@ -336,30 +346,74 @@ void OcclusionNode::CheckNodeOcclusion(OcclusionCoverageInfo& coverageInfo, std:
 void OcclusionNode::CheckNodeOcclusion(OcclusionCoverageInfo& coverageInfo, std::unordered_set<NodeId>& culledNodes,
     std::unordered_set<NodeId>& culledEntireSubtree)
 {
-    if (type_ != RSRenderNodeType::CANVAS_NODE) {
+    if (type_ != RSRenderNodeType::CANVAS_NODE || isSubTreeIgnored_) {
         return;
     }
     if (isOutOfRootRect_ || outerRect_.IsInsideOf(coverageInfo.rect_)) {
         if (!hasChildrenOutOfRect_) {
             culledEntireSubtree.insert(id_);
+            occludedSubTreeById_ = coverageInfo.id_;
         } else if (!isNeedClip_) {
             culledNodes.insert(id_);
+            occludedById_ = coverageInfo.id_;
         }
-        occludedById_ = coverageInfo.id_;
     }
 }
 
 void OcclusionNode::UpdateCoverageInfo(OcclusionCoverageInfo& globalCoverage, OcclusionCoverageInfo& selfCoverage)
 {
-    // When the node is a opaque node, update the global coverage info
     if (IsOpaque()) {
+        // When the node is a opaque node, update the global coverage info
         selfCoverage.area_ = innerRect_.GetWidth() * innerRect_.GetHeight();
         selfCoverage.rect_ = innerRect_;
         selfCoverage.id_ = id_;
         if (selfCoverage.area_ > globalCoverage.area_) {
+            RS_TRACE_NAME_FMT("opaque node %" PRIu64 " became the largest coverage. rect: [%d, %d, %d, %d]",
+                id_, innerRect_.GetLeft(), innerRect_.GetTop(), innerRect_.GetWidth(), innerRect_.GetHeight());
             globalCoverage = selfCoverage;
         }
+    } else if (filterRect_.Intersect(globalCoverage.rect_) && occludedSubTreeById_ == INVALID_NODEID) {
+        // When the node is a filter node that intersects with the global coverage and not be occluded,
+        // clip global coverage rect by filter rect.
+        auto maxSubRect = FindMaxDisjointSubRect(globalCoverage.rect_, filterRect_);
+        RS_TRACE_NAME_FMT("coverage clipped by filter node %" PRIu64 ". src Rect: [%d, %d, %d, %d], "
+            "filter Rect: [%d, %d, %d, %d], dst Rect: [%d, %d, %d, %d]", id_, globalCoverage.rect_.GetLeft(),
+            globalCoverage.rect_.GetTop(), globalCoverage.rect_.GetWidth(), globalCoverage.rect_.GetHeight(),
+            filterRect_.GetLeft(), filterRect_.GetTop(), filterRect_.GetWidth(), filterRect_.GetHeight(),
+            maxSubRect.GetLeft(), maxSubRect.GetTop(), maxSubRect.GetWidth(), maxSubRect.GetHeight());
+        globalCoverage.rect_ = maxSubRect;
+        globalCoverage.area_ = maxSubRect.GetWidth() * maxSubRect.GetHeight();
     }
+}
+
+RectI16 OcclusionNode::FindMaxDisjointSubRect(const RectI16& baseRect, const RectI16& clipRect) const
+{
+    if (baseRect.IsInsideOf(clipRect)) {
+        return RectI16();
+    }
+
+    auto intersectRect = baseRect.IntersectRect(clipRect);
+    // Note: even when baseRect.Intersect(clipRect) returns true,
+    // the intersection rect returned by baseRect.IntersectRect(clipRect) may still be empty
+    if (intersectRect.IsEmpty()) {
+        return baseRect;
+    }
+    constexpr size_t subRectSize{4};
+    std::array<RectI16, subRectSize> subRects{
+        RectI16(baseRect.GetLeft(), baseRect.GetTop(),
+            intersectRect.GetLeft() - baseRect.GetLeft(), baseRect.GetHeight()), // left subrect
+        RectI16(intersectRect.GetRight(), baseRect.GetTop(),
+            baseRect.GetRight() - intersectRect.GetRight(), baseRect.GetHeight()), // right subrect
+        RectI16(baseRect.GetLeft(), baseRect.GetTop(),
+            baseRect.GetWidth(), intersectRect.GetTop() - baseRect.GetTop()), // top subrect
+        RectI16(baseRect.GetLeft(), intersectRect.GetBottom(),
+            baseRect.GetWidth(), baseRect.GetBottom() - intersectRect.GetBottom()) // bottom subrect
+    };
+
+    return *std::max_element(subRects.begin(), subRects.end(),
+        [](const RectI16& left, const RectI16& right) {
+            return left.GetWidth() * left.GetHeight() < right.GetWidth() * right.GetHeight();
+        });
 }
 
 // Used for debugging, comparing rs node tree and occlusion node tree
@@ -379,23 +433,21 @@ void OcclusionNode::PreorderTraversal(std::vector<std::shared_ptr<OcclusionNode>
 
 std::string OcclusionNode::GetOcclusionNodeInfoString()
 {
-    std::stringstream ss;
-    ss << "OcclusionNode id: " << std::to_string(id_)
-       << ", occludedBy id: " << std::to_string(occludedById_)
-       << ", outerRectCoords left: " << outerRect_.GetLeft()
-       << ", right: " << outerRect_.GetRight()
-       << ", top: " << outerRect_.GetTop()
-       << ", bottom: " << outerRect_.GetBottom()
-       << ", innerRectCoords left: " << innerRect_.GetLeft()
-       << ", right: " << innerRect_.GetRight()
-       << ", top: " << innerRect_.GetTop()
-       << ", bottom: " << innerRect_.GetBottom()
-       << ", subTreeIgnore: " << isSubTreeIgnored_
-       << ", outOfScreen: " << isOutOfRootRect_
-       << ", bgOpaque: " << isBgOpaque_
-       << ", alpha_: " << localAlpha_ * accumulatedAlpha_
-       << ", isNeedClip_: " << isNeedClip_
-       << ", hasChildrenOutOfRect_: " << hasChildrenOutOfRect_;
-    return ss.str();
+    std::ostringstream oss;
+    oss << "node:" << id_
+        << " occludedBy:" << occludedById_
+        << " occludedSubTreeBy:" << occludedSubTreeById_
+        << " outerRect:" << outerRect_.ToString()
+        << " innerRect:" << innerRect_.ToString()
+        << " needFilter:" << needFilter_
+        << " hasFilter:" << !filterRect_.IsEmpty()
+        << " filterRect:" << filterRect_.ToString()
+        << " bgOpaque:" << isBgOpaque_
+        << " alpha:" << localAlpha_ * accumulatedAlpha_
+        << " isNeedClip:" << isNeedClip_
+        << " hasChildrenOutOfRect:" << hasChildrenOutOfRect_
+        << " outOfRoot:" << isOutOfRootRect_
+        << " subTreeIgnore:" << isSubTreeIgnored_;
+    return oss.str();
 }
 } // namespace OHOS::Rosen

@@ -74,7 +74,7 @@ public:
         return false;
     }
 
-    virtual Drawing::DrawCmdListPtr GetPropertyDrawCmdList() const
+    virtual SimpleDrawCmdListPtr GetPropertySimpleDrawCmdList() const
     {
         return nullptr;
     }
@@ -82,9 +82,19 @@ public:
     void Dump(std::string& out, const std::string& splitStr) const
     {
         for (auto& [type, property] : properties_) {
-            out += RSModifierTypeString::GetPropertyTypeString(type) + (IsCustom() ? ":[" : "");
+            bool custom = IsCustom();
+            out += RSModifierTypeString::GetPropertyTypeString(type) + ":";
+            if (IsDeduplicationEnabled()) {
+                out += "[IsDeduplicationEnabled: true], ";
+            }
+            if (custom) {
+                out += "[";
+            }
             property->Dump(out);
-            out += (IsCustom() ? "]" : "") + splitStr;
+            if (custom) {
+                out += "]";
+            }
+            out += splitStr;
         }
     }
 
@@ -127,8 +137,39 @@ public:
         return it->second;
     }
 
-    bool Marshalling(Parcel& parcel) const;
-    [[nodiscard]] static std::shared_ptr<RSRenderModifier> Unmarshalling(Parcel& parcel);
+    // Virtual function to check if deduplication is enabled for this modifier type
+    // Default implementation returns false (deduplication not supported)
+    // Subclasses (RSBoundsRenderModifier, RSFrameRenderModifier) should override this
+    virtual bool IsDeduplicationEnabled() const
+    {
+        return false;
+    }
+
+    // Virtual function to set deduplication enabled status
+    // Default implementation does nothing (deduplication not supported)
+    // Subclasses (RSBoundsRenderModifier, RSFrameRenderModifier) should override this
+    virtual void SetDeduplicationEnabled(bool enable)
+    {
+        (void)enable;  // Default: do nothing, deduplication not supported
+    }
+
+    // Deduplication serialization methods
+    // Subclasses can override these to add custom serialization for deduplication-related fields
+    virtual bool DeduplicationMarshalling(Parcel& parcel) const
+    {
+        // Default: success (no fields to marshal)
+        return true;
+    }
+
+    virtual bool DeduplicationUnmarshalling(Parcel& parcel)
+    {
+        // Default: success (no fields to unmarshal)
+        return true;
+    }
+
+    bool Marshalling(Parcel& parcel, bool includeEnableDeduplication = true) const;
+    [[nodiscard]] static std::shared_ptr<RSRenderModifier> Unmarshalling(
+        Parcel& parcel, bool includeEnableDeduplication = true);
 
     inline bool HasProperty(RSPropertyType type) const
     {
@@ -170,6 +211,8 @@ public:
         }
         return renderModifier;
     }
+
+    virtual void ConvertDrawCmdListToSimple() {}
 
     using ResetFunc = void (*)(RSProperties& properties);
     static const std::unordered_map<RSModifierType, ResetFunc>& GetResetFuncMap();
@@ -268,6 +311,9 @@ private:
     friend class OHOS::Rosen::DrawableV2::RSEnvFGColorDrawable;
     friend class OHOS::Rosen::DrawableV2::RSEnvFGColorStrategyDrawable;
     friend class OHOS::Rosen::RSRenderNode;
+#ifdef RS_PROFILER_ENABLED
+    friend class OHOS::Rosen::RSProfiler;
+#endif
 };
 
 // =============================================
@@ -307,10 +353,12 @@ public:
         return isSingleFrameModifier_;
     }
 
-    Drawing::DrawCmdListPtr GetPropertyDrawCmdList() const override
+    SimpleDrawCmdListPtr GetPropertySimpleDrawCmdList() const override
     {
-        return Getter<Drawing::DrawCmdListPtr>(ModifierTypeConvertor::GetPropertyType(GetType()), nullptr);
+        return Getter<SimpleDrawCmdListPtr>(ModifierTypeConvertor::GetPropertyType(GetType()), nullptr);
     }
+
+    void ConvertDrawCmdListToSimple() override;
 
     void Apply(RSPaintFilterCanvas* canvas, RSProperties& properties) override;
 

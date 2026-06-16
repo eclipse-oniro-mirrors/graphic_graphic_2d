@@ -19,27 +19,47 @@
 #include "modifier_ng/custom/rs_custom_modifier.h"
 
 namespace OHOS::Rosen::ModifierNG {
+
+/**
+ * @class RSBackgroundStyleModifier
+ *
+ * @brief Draws the custom background content.
+ *
+ * @note It is prohibited to modify any properties of the node during the draw process, otherwise
+ * it may cause drawing abnormalities.
+ */
 class RSC_EXPORT RSBackgroundStyleModifier : public RSCustomModifier {
 public:
     RSBackgroundStyleModifier() = default;
     ~RSBackgroundStyleModifier() override = default;
 
     static inline constexpr auto Type = RSModifierType::BACKGROUND_STYLE;
+    // LCOV_EXCL_START
     RSModifierType GetType() const override
     {
         return Type;
     };
+    // LCOV_EXCL_STOP
 
+    /**
+     * @brief Draws the custom content.
+     *
+     * @param context The drawing context used to render the custom content.
+     * @note It is prohibited to modify any properties of the node in this function, otherwise
+     * it may cause drawing abnormalities.
+     */
     void Draw(RSDrawingContext& context) const override
     {
         return;
     };
 
 protected:
+    // LCOV_EXCL_START
     RSPropertyType GetInnerPropertyType() const override
     {
         return RSPropertyType::BACKGROUND_STYLE;
     }
+    // LCOV_EXCL_STOP
 };
 } // namespace OHOS::Rosen::ModifierNG
 #endif // RENDER_SERVICE_CLIENT_CORE_MODIFIER_NG_CUSTOM_RS_BACKGROUND_STYLE_MODIFIER_H

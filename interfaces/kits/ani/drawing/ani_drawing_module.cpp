@@ -14,6 +14,7 @@
  */
 
 #include "ani_drawing_utils.h"
+#include "ani_drawing_cache_utils.h"
 #include "lattice_ani/ani_lattice.h"
 #include "brush_ani/ani_brush.h"
 #include "canvas_ani/ani_canvas.h"
@@ -27,6 +28,7 @@
 #include "path_effect_ani/ani_path_effect.h"
 #include "shader_effect_ani/ani_shader_effect.h"
 #include "pen_ani/ani_pen.h"
+#include "point_utils_ani/ani_point_utils.h"
 #include "region_ani/ani_region.h"
 #include "round_rect_ani/ani_round_rect.h"
 #include "sampling_options_ani/ani_sampling_options.h"
@@ -133,7 +135,8 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm* vm, uint32_t* result)
         return ANI_ERROR;
     }
 
-    if (AniCleanerInit(env) != ANI_OK ||
+    if (OHOS::Rosen::Drawing::InitAniGlobalRef(env) != ANI_OK ||
+        AniCleanerInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniBrush::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniCanvas::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniColorFilter::AniInit(env) != ANI_OK ||
@@ -150,6 +153,7 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm* vm, uint32_t* result)
         OHOS::Rosen::Drawing::AniShaderEffect::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniRegion::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniRoundRect::AniInit(env) != ANI_OK ||
+        OHOS::Rosen::Drawing::AniPointUtils::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniTool::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniTypefaceArguments::AniInit(env) != ANI_OK ||
         OHOS::Rosen::Drawing::AniRectUtils::AniInit(env) != ANI_OK ||

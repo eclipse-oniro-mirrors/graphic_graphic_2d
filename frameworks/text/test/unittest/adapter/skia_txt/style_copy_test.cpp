@@ -108,9 +108,9 @@ HWTEST_F(OHDrawingStyleCopyTest, OH_Drawing_CopyTextStyle002, TestSize.Level0)
 
     EXPECT_EQ(textStyleCopy.symbol.GetSymbolUid(), 1);
     EXPECT_FALSE(textStyleCopy.fontVariations.GetAxisValues().empty());
-    const std::map<std::string, float>& axisValues = textStyleCopy.fontVariations.GetAxisValues();
+    const auto& axisValues = textStyleCopy.fontVariations.GetAxisValues();
     ASSERT_TRUE(axisValues.find("test") != axisValues.end()) << "Key 'test' not found in font variations axis";
-    EXPECT_FLOAT_EQ(axisValues.at("test"), FLOAT_TEST_SIZE_NOT_DEFAULT);
+    EXPECT_FLOAT_EQ(axisValues.at("test").first, FLOAT_TEST_SIZE_NOT_DEFAULT);
     EXPECT_EQ(textStyleCopy.fontFeatures.GetFontFeatures().at(0).first, "frac");
     EXPECT_EQ(textStyleCopy.fontFeatures.GetFontFeatures().at(0).second, 1);
     EXPECT_EQ(textStyleCopy.fontFeatures.GetFontFeatures().at(1).first, "sups");
@@ -140,6 +140,7 @@ HWTEST_F(OHDrawingStyleCopyTest, OH_Drawing_CopyParagraphStyle001, TestSize.Leve
     typographyStyle.paragraphSpacing = FLOAT_TEST_SIZE_NOT_DEFAULT;
     typographyStyle.isEndAddParagraphSpacing = true;
     typographyStyle.compressHeadPunctuation = true;
+    typographyStyle.punctuationOverflow = true;
     typographyStyle.verticalAlignment = TextVerticalAlign::BOTTOM;
     typographyStyle.textHeightBehavior = TextHeightBehavior::DISABLE_FIRST_ASCENT;
     std::bitset<static_cast<size_t>(RelayoutParagraphStyleAttribute::PARAGRAPH_STYLE_ATTRIBUTE_BUTT)>
@@ -166,6 +167,7 @@ HWTEST_F(OHDrawingStyleCopyTest, OH_Drawing_CopyParagraphStyle001, TestSize.Leve
     EXPECT_NEAR(typographyStyleCopy.paragraphSpacing, FLOAT_TEST_SIZE_NOT_DEFAULT, FLOAT_DATA_EPSILON);
     EXPECT_TRUE(typographyStyleCopy.isEndAddParagraphSpacing);
     EXPECT_TRUE(typographyStyleCopy.compressHeadPunctuation);
+    EXPECT_TRUE(typographyStyleCopy.punctuationOverflow);
     EXPECT_EQ(typographyStyleCopy.verticalAlignment, TextVerticalAlign::BOTTOM);
     EXPECT_EQ(typographyStyleCopy.textHeightBehavior, TextHeightBehavior::DISABLE_FIRST_ASCENT);
     EXPECT_EQ(typographyStyleCopy.relayoutChangeBitmap, myRelayoutChangeBitmap);

@@ -28,10 +28,6 @@
 
 namespace OHOS {
 namespace Rosen {
-namespace Drawing {
-class DrawCmdList;
-using DrawCmdListPtr = std::shared_ptr<DrawCmdList>;
-}
 class RSNGRenderFilterBase;
 class RSNGRenderMaskBase;
 class RSNGRenderShaderBase;
@@ -70,6 +66,8 @@ enum PropertyUpdateType : uint8_t {
     UPDATE_TYPE_OVERWRITE = 0,   // overwrite by given value
     UPDATE_TYPE_INCREMENTAL,     // incremental update by given value
     UPDATE_TYPE_FORCE_OVERWRITE, // overwrite and cancel all previous animations
+    UPDATE_TYPE_ONLY_VALUE,      // update value without marking dirty or attaching to modifier
+                                 // must use it after animation calculation in main thread
 };
 
 enum class RSPropertyType : uint8_t {
@@ -95,7 +93,6 @@ enum class RSPropertyType : uint8_t {
     GRAVITY,
     HRP_PLACEHOLDER_2, // HRP: delete it
     LINEAR_GRADIENT_BLUR_PARA,
-    MAGNIFIER_PARAMS,
     MOTION_BLUR_PARAM,
     VECTOR_EMITTER_UPDATER,
     PARTICLE_NOISE_FIELD,
@@ -112,12 +109,15 @@ enum class RSPropertyType : uint8_t {
     RS_RENDER_FILTER,
     VECTOR_FLOAT,
     VECTOR_VECTOR2F,
+    VECTOR_VECTOR4F,
     SHORT, // HRP: move it to the middle of FLOAT and INT
     RS_NG_RENDER_FILTER_BASE,
     RS_NG_RENDER_MASK_BASE,
     RS_NG_RENDER_SHADER_BASE,
     SHADOW_BLENDER_PARAMS,
-    RS_NG_RENDER_SHAPE_BASE
+    RS_NG_RENDER_SHAPE_BASE,
+    HDR_DARKEN_BLENDER_PARAMS,
+    PARTICLE_FIELDS,
 };
 
 enum class RSPropertyUnit : uint8_t {
@@ -164,7 +164,7 @@ public:
     RSRenderPropertyBase(const RSRenderPropertyBase&&) = delete;
     RSRenderPropertyBase& operator=(const RSRenderPropertyBase&) = delete;
     RSRenderPropertyBase& operator=(const RSRenderPropertyBase&&) = delete;
-    virtual ~RSRenderPropertyBase() = default;
+    virtual ~RSRenderPropertyBase();
 
     PropertyId GetId() const
     {
@@ -182,6 +182,10 @@ public:
 
     virtual void Dump(std::string& out) const = 0;
     virtual size_t GetSize() const = 0;
+
+    virtual bool IsDrawCmdListProperty() const = 0;
+
+    virtual std::shared_ptr<RSRenderPropertyBase> CreateSimpleProperty() const = 0;
 
 protected:
     virtual bool Marshalling(Parcel& parcel) = 0;
@@ -238,7 +242,7 @@ protected:
     std::weak_ptr<ModifierNG::RSRenderModifier> modifier_;
 
     using UnmarshallingFunc = std::function<bool (Parcel&, std::shared_ptr<RSRenderPropertyBase>&)>;
-    inline static std::unordered_map<uint16_t, UnmarshallingFunc> UnmarshallingFuncs_;
+    inline static RS_HIDDEN std::unordered_map<uint16_t, UnmarshallingFunc> UnmarshallingFuncs_;
 
     class RSPropertyUnmarshallingFuncRegister {
     public:
@@ -318,6 +322,9 @@ public:
             return;
         }
         stagingValue_ = value;
+        if (type == UPDATE_TYPE_ONLY_VALUE) {
+            return;
+        }
         OnChange();
         if (updateUIPropertyFunc_) {
             updateUIPropertyFunc_(shared_from_this());
@@ -345,6 +352,16 @@ public:
         const std::function<void(const std::shared_ptr<RSRenderPropertyBase>&)>& updateUIPropertyFunc)
     {
         updateUIPropertyFunc_ = updateUIPropertyFunc;
+    }
+
+    bool IsDrawCmdListProperty() const override
+    {
+        return false;
+    }
+
+    std::shared_ptr<RSRenderPropertyBase> CreateSimpleProperty() const override
+    {
+        return nullptr;
     }
 
 protected:
@@ -396,6 +413,10 @@ public:
 
     void Set(const T& value, PropertyUpdateType type = UPDATE_TYPE_OVERWRITE) override
     {
+        if (type == UPDATE_TYPE_ONLY_VALUE && !(value == RSRenderProperty<T>::stagingValue_)) {
+            RSRenderProperty<T>::stagingValue_ = value;
+            return;
+        }
         if (type == UPDATE_TYPE_OVERWRITE && value == RSRenderProperty<T>::stagingValue_) {
             return;
         }
@@ -405,6 +426,11 @@ public:
         if (RSRenderProperty<T>::updateUIPropertyFunc_) {
             RSRenderProperty<T>::updateUIPropertyFunc_(RSRenderProperty<T>::shared_from_this());
         }
+    }
+
+    std::shared_ptr<RSRenderPropertyBase> CreateSimpleProperty() const override
+    {
+        return nullptr;
     }
 
 protected:
@@ -563,6 +589,18 @@ template<>
 size_t RSRenderProperty<Drawing::DrawCmdListPtr>::GetSize() const;
 
 template<>
+bool RSRenderProperty<Drawing::DrawCmdListPtr>::IsDrawCmdListProperty() const;
+
+template<>
+std::shared_ptr<RSRenderPropertyBase> RSRenderProperty<Drawing::DrawCmdListPtr>::CreateSimpleProperty() const;
+template<>
+std::shared_ptr<RSRenderPropertyBase> RSRenderAnimatableProperty<Drawing::DrawCmdListPtr>::CreateSimpleProperty() const;
+
+template<>
+size_t RSRenderProperty<SimpleDrawCmdListPtr>::GetSize() const;
+template<>
+void RSRenderProperty<SimpleDrawCmdListPtr>::Dump(std::string& out) const;
+template<>
 void RSRenderProperty<std::shared_ptr<RSNGRenderFilterBase>>::OnAttach(RSRenderNode& node,
     std::weak_ptr<ModifierNG::RSRenderModifier> modifier);
 template<>
@@ -626,7 +664,8 @@ void RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>::Set(
 
 class RSRenderParticleVector;
 extern template class RSRenderProperty<RSRenderParticleVector>;
+extern template class PROPERTY_EXPORT RSRenderProperty<SimpleDrawCmdListPtr>;
+extern template class RSRenderAnimatableProperty<std::shared_ptr<RSSimpleDrawCmdList>>;
 } // namespace Rosen
 } // namespace OHOS
-
 #endif // RENDER_SERVICE_BASE_MODIFIER_RS_RENDER_PROPERTY_H

@@ -271,6 +271,20 @@ HWTEST_F(RSModifierExtractorTest, GetShadowIsFilled001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetShadowDisableSDFBlur
+ * @tc.desc: test results of GetShadowDisableSDFBlur
+ * @tc.type: FUNC
+ * @tc.require: issueI9VXLH
+ */
+HWTEST_F(RSModifierExtractorTest, GetShadowDisableSDFBlur, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSModifierExtractor extractor(id);
+    bool res = extractor.GetShadowDisableSDFBlur();
+    EXPECT_FALSE(res);
+}
+
+/**
  * @tc.name: GetShadowColorStrategy001
  * @tc.desc: test results of GetShadowColorStrategy
  * @tc.type: FUNC
@@ -550,5 +564,18 @@ HWTEST_F(RSModifierExtractorTest, GetOutlineDashGapTest, TestSize.Level1)
     RSModifierExtractor extractor(id);
     Vector4f vector = extractor.GetOutlineDashGap();
     EXPECT_EQ(vector, Vector4f(0.f));
+}
+
+/**
+ * @tc.name: GetCameraDistance001
+ * @tc.desc: Test GetCameraDistance returns default value
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSModifierExtractorTest, GetCameraDistance001, TestSize.Level1)
+{
+    NodeId id = 1;
+    RSModifierExtractor extractor(id);
+    float result = extractor.GetCameraDistance();
+    EXPECT_EQ(result, 0.f);
 }
 } // namespace OHOS::Rosen

@@ -1,0 +1,327 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "rsscreenmanager02_fuzzer.h"
+
+#include <fuzzer/FuzzedDataProvider.h>
+#include <memory>
+
+#include "screen_manager/rs_screen.h"
+#include "screen_manager/rs_screen_manager.h"
+#include "screen_manager/rs_surface_region_config.h"
+#include "screen_manager/screen_types.h"
+
+namespace OHOS {
+namespace Rosen {
+
+sptr<RSScreenManager> g_screenManager;
+
+namespace {
+constexpr uint8_t DO_CREATE_VIRTUAL_SCREEN = 0;
+constexpr uint8_t DO_REMOVE_VIRTUAL_SCREEN = 1;
+constexpr uint8_t DO_RESIZE_VIRTUAL_SCREEN = 2;
+constexpr uint8_t DO_SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION = 3;
+constexpr uint8_t DO_SET_VIRTUAL_SCREEN_AUTO_ROTATION = 4;
+constexpr uint8_t DO_SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE = 5;
+constexpr uint8_t DO_SET_VIRTUAL_SCREEN_STATUS = 6;
+constexpr uint8_t DO_SET_VIRTUAL_SCREEN_BLACK_LIST = 7;
+constexpr uint8_t DO_ADD_VIRTUAL_SCREEN_WHITE_LIST = 8;
+constexpr uint8_t DO_SET_MIRROR_SCREEN_VISIBLE_RECT = 9;
+constexpr uint8_t DO_ADD_VIRTUAL_SCREEN_SURFACE = 10;
+constexpr uint8_t DO_REMOVE_VIRTUAL_SCREEN_SURFACE = 11;
+constexpr uint8_t TARGET_SIZE = 12;
+
+constexpr uint8_t SCREEN_SCALE_MODE_SIZE = 3;
+constexpr uint8_t VIRTUAL_SCREEN_STATUS_SIZE = 3;
+constexpr uint8_t MAX_FUZZ_LIST_SIZE = 8;
+constexpr uint32_t FUZZ_VSCREEN_DEFAULT_DIMENSION = 100;
+constexpr uint32_t FUZZ_SCREEN_ID_RANGE_MAX = 255;
+constexpr uint32_t FUZZ_VSCREEN_NAME_MAX_LEN = 32;
+
+ScreenId FuzzConsumeScreenId(FuzzedDataProvider& fdp)
+{
+    bool useInvalidId = fdp.ConsumeBool();
+    if (useInvalidId) {
+        return INVALID_SCREEN_ID;
+    }
+    return fdp.ConsumeIntegral<ScreenId>();
+}
+
+void DoCreateVirtualScreen(FuzzedDataProvider& fdp)
+{
+    std::string name = fdp.ConsumeRandomLengthString(FUZZ_VSCREEN_NAME_MAX_LEN);
+    uint32_t width = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t height = fdp.ConsumeIntegral<uint32_t>();
+    sptr<Surface> surface;
+    ScreenId associatedScreenId = fdp.ConsumeIntegral<ScreenId>();
+    int32_t flags = fdp.ConsumeIntegral<int32_t>();
+    uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
+    std::vector<uint64_t> whiteList;
+    for (uint8_t i = 0; i < count; i++) {
+        whiteList.push_back(fdp.ConsumeIntegral<uint64_t>());
+    }
+    g_screenManager->CreateVirtualScreen(name, width, height, surface, associatedScreenId, flags, whiteList);
+}
+
+void DoRemoveVirtualScreen(FuzzedDataProvider& fdp)
+{
+    bool useExistingScreen = fdp.ConsumeBool();
+    ScreenId id;
+    if (useExistingScreen) {
+        std::string name = "fuzz_vscreen";
+        sptr<Surface> surface;
+        id = g_screenManager->CreateVirtualScreen(name, FUZZ_VSCREEN_DEFAULT_DIMENSION,
+            FUZZ_VSCREEN_DEFAULT_DIMENSION, surface, 0, 0, {});
+    } else {
+        id = fdp.ConsumeIntegral<ScreenId>();
+    }
+    g_screenManager->RemoveVirtualScreen(id);
+}
+
+void DoResizeVirtualScreen(FuzzedDataProvider& fdp)
+{
+    bool useExistingScreen = fdp.ConsumeBool();
+    ScreenId id;
+    if (useExistingScreen) {
+        std::string name = "fuzz_vscreen";
+        sptr<Surface> surface;
+        id = g_screenManager->CreateVirtualScreen(name, FUZZ_VSCREEN_DEFAULT_DIMENSION,
+            FUZZ_VSCREEN_DEFAULT_DIMENSION, surface, 0, 0, {});
+    } else {
+        id = fdp.ConsumeIntegralInRange<ScreenId>(0, FUZZ_SCREEN_ID_RANGE_MAX);
+    }
+    uint32_t width = fdp.ConsumeIntegral<uint32_t>();
+    uint32_t height = fdp.ConsumeIntegral<uint32_t>();
+    g_screenManager->ResizeVirtualScreen(id, width, height);
+    if (useExistingScreen) {
+        g_screenManager->RemoveVirtualScreen(id);
+    }
+}
+
+void DoSetVirtualMirrorScreenCanvasRotation(FuzzedDataProvider& fdp)
+{
+    bool useExistingScreen = fdp.ConsumeBool();
+    ScreenId id;
+    if (useExistingScreen) {
+        std::string name = "fuzz_vscreen";
+        sptr<Surface> surface;
+        id = g_screenManager->CreateVirtualScreen(name, FUZZ_VSCREEN_DEFAULT_DIMENSION,
+            FUZZ_VSCREEN_DEFAULT_DIMENSION, surface, 0, 0, {});
+    } else {
+        id = fdp.ConsumeIntegral<ScreenId>();
+    }
+    bool canvasRotation = fdp.ConsumeBool();
+    g_screenManager->SetVirtualMirrorScreenCanvasRotation(id, canvasRotation);
+    if (useExistingScreen) {
+        g_screenManager->RemoveVirtualScreen(id);
+    }
+}
+
+void DoSetVirtualScreenAutoRotation(FuzzedDataProvider& fdp)
+{
+    fdp.ConsumeIntegral<uint8_t>();
+    bool useExistingScreen = fdp.ConsumeBool();
+    ScreenId id;
+    if (useExistingScreen) {
+        std::string name = "fuzz_vscreen";
+        sptr<Surface> surface;
+        id = g_screenManager->CreateVirtualScreen(name, FUZZ_VSCREEN_DEFAULT_DIMENSION,
+            FUZZ_VSCREEN_DEFAULT_DIMENSION, surface, 0, 0, {});
+    } else {
+        id = fdp.ConsumeIntegral<ScreenId>();
+    }
+    bool isAutoRotation = fdp.ConsumeBool();
+    g_screenManager->SetVirtualScreenAutoRotation(id, isAutoRotation);
+    if (useExistingScreen) {
+        g_screenManager->RemoveVirtualScreen(id);
+    }
+}
+
+void DoSetVirtualMirrorScreenScaleMode(FuzzedDataProvider& fdp)
+{
+    bool useExistingScreen = fdp.ConsumeBool();
+    ScreenId id;
+    if (useExistingScreen) {
+        std::string name = "fuzz_vscreen";
+        sptr<Surface> surface;
+        id = g_screenManager->CreateVirtualScreen(name, FUZZ_VSCREEN_DEFAULT_DIMENSION,
+            FUZZ_VSCREEN_DEFAULT_DIMENSION, surface, 0, 0, {});
+    } else {
+        id = fdp.ConsumeIntegral<ScreenId>();
+    }
+    ScreenScaleMode scaleMode = static_cast<ScreenScaleMode>(
+        fdp.ConsumeIntegral<uint8_t>() % SCREEN_SCALE_MODE_SIZE);
+    g_screenManager->SetVirtualMirrorScreenScaleMode(id, scaleMode);
+    if (useExistingScreen) {
+        g_screenManager->RemoveVirtualScreen(id);
+    }
+}
+
+void DoSetVirtualScreenStatus(FuzzedDataProvider& fdp)
+{
+    bool useExistingScreen = fdp.ConsumeBool();
+    ScreenId id;
+    if (useExistingScreen) {
+        std::string name = "fuzz_vscreen";
+        sptr<Surface> surface;
+        id = g_screenManager->CreateVirtualScreen(name, FUZZ_VSCREEN_DEFAULT_DIMENSION,
+            FUZZ_VSCREEN_DEFAULT_DIMENSION, surface, 0, 0, {});
+    } else {
+        id = fdp.ConsumeIntegral<ScreenId>();
+    }
+    VirtualScreenStatus screenStatus = static_cast<VirtualScreenStatus>(
+        fdp.ConsumeIntegralInRange<uint8_t>(0, VIRTUAL_SCREEN_STATUS_SIZE));
+    g_screenManager->SetVirtualScreenStatus(id, screenStatus);
+    if (useExistingScreen) {
+        g_screenManager->RemoveVirtualScreen(id);
+    }
+}
+
+void DoSetVirtualScreenBlackList(FuzzedDataProvider& fdp)
+{
+    ScreenId id = FuzzConsumeScreenId(fdp);
+    uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
+    std::vector<uint64_t> bList;
+    for (uint8_t i = 0; i < count; i++) {
+        bList.push_back(fdp.ConsumeIntegral<uint64_t>());
+    }
+    g_screenManager->SetVirtualScreenBlackList(id, bList);
+}
+
+void DoAddVirtualScreenWhiteList(FuzzedDataProvider& fdp)
+{
+    fdp.ConsumeBool();
+    ScreenId id = fdp.ConsumeIntegral<ScreenId>();
+    uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
+    std::vector<NodeId> whiteList;
+    for (uint8_t i = 0; i < count; i++) {
+        whiteList.push_back(fdp.ConsumeIntegral<NodeId>());
+    }
+    g_screenManager->AddVirtualScreenWhiteList(id, whiteList);
+}
+
+void DoSetMirrorScreenVisibleRect(FuzzedDataProvider& fdp)
+{
+    ScreenId id = FuzzConsumeScreenId(fdp);
+    Rect mainScreenRect;
+    mainScreenRect.x = fdp.ConsumeIntegral<int32_t>();
+    mainScreenRect.y = fdp.ConsumeIntegral<int32_t>();
+    mainScreenRect.w = fdp.ConsumeIntegral<int32_t>();
+    mainScreenRect.h = fdp.ConsumeIntegral<int32_t>();
+    bool supportRotation = fdp.ConsumeBool();
+    g_screenManager->SetMirrorScreenVisibleRect(id, mainScreenRect, supportRotation);
+}
+
+void DoAddVirtualScreenSurface(FuzzedDataProvider& fdp)
+{
+    ScreenId id = fdp.ConsumeIntegral<ScreenId>();
+    uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
+    std::vector<SurfaceRegionConfig> configs;
+    for (uint8_t i = 0; i < count; i++) {
+        SurfaceRegionConfig config;
+        config.surface = nullptr;
+        config.region.left_ = fdp.ConsumeIntegral<int32_t>();
+        config.region.top_ = fdp.ConsumeIntegral<int32_t>();
+        config.region.width_ = fdp.ConsumeIntegral<int32_t>();
+        config.region.height_ = fdp.ConsumeIntegral<int32_t>();
+        configs.push_back(config);
+    }
+    g_screenManager->AddVirtualScreenSurface(id, configs);
+}
+
+void DoRemoveVirtualScreenSurface(FuzzedDataProvider& fdp)
+{
+    ScreenId id = fdp.ConsumeIntegral<ScreenId>();
+    uint8_t count = fdp.ConsumeIntegral<uint8_t>() % MAX_FUZZ_LIST_SIZE;
+    std::vector<sptr<Surface>> surfaces;
+    for (uint8_t i = 0; i < count; i++) {
+        surfaces.push_back(nullptr);
+    }
+    g_screenManager->RemoveVirtualScreenSurface(id, surfaces);
+}
+
+} // namespace
+
+} // namespace Rosen
+} // namespace OHOS
+
+/* Fuzzer environment initialization */
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
+{
+    OHOS::Rosen::g_screenManager = OHOS::sptr<OHOS::Rosen::RSScreenManager>::MakeSptr();
+    if (!OHOS::Rosen::g_screenManager) {
+        return -1;
+    }
+    auto runner = OHOS::AppExecFwk::EventRunner::Create(false);
+    auto handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    OHOS::Rosen::g_screenManager->Init(handler);
+    return 0;
+}
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+{
+    if (data == nullptr) {
+        return -1;
+    }
+    if (!OHOS::Rosen::g_screenManager) {
+        return -1;
+    }
+
+    FuzzedDataProvider fdp(data, size);
+
+    uint8_t tarPos = fdp.ConsumeIntegral<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
+    switch (tarPos) {
+        case OHOS::Rosen::DO_CREATE_VIRTUAL_SCREEN:
+            OHOS::Rosen::DoCreateVirtualScreen(fdp);
+            break;
+        case OHOS::Rosen::DO_REMOVE_VIRTUAL_SCREEN:
+            OHOS::Rosen::DoRemoveVirtualScreen(fdp);
+            break;
+        case OHOS::Rosen::DO_RESIZE_VIRTUAL_SCREEN:
+            OHOS::Rosen::DoResizeVirtualScreen(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_VIRTUAL_MIRROR_SCREEN_CANVAS_ROTATION:
+            OHOS::Rosen::DoSetVirtualMirrorScreenCanvasRotation(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_AUTO_ROTATION:
+            OHOS::Rosen::DoSetVirtualScreenAutoRotation(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_VIRTUAL_MIRROR_SCREEN_SCALE_MODE:
+            OHOS::Rosen::DoSetVirtualMirrorScreenScaleMode(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_STATUS:
+            OHOS::Rosen::DoSetVirtualScreenStatus(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_VIRTUAL_SCREEN_BLACK_LIST:
+            OHOS::Rosen::DoSetVirtualScreenBlackList(fdp);
+            break;
+        case OHOS::Rosen::DO_ADD_VIRTUAL_SCREEN_WHITE_LIST:
+            OHOS::Rosen::DoAddVirtualScreenWhiteList(fdp);
+            break;
+        case OHOS::Rosen::DO_SET_MIRROR_SCREEN_VISIBLE_RECT:
+            OHOS::Rosen::DoSetMirrorScreenVisibleRect(fdp);
+            break;
+        case OHOS::Rosen::DO_ADD_VIRTUAL_SCREEN_SURFACE:
+            OHOS::Rosen::DoAddVirtualScreenSurface(fdp);
+            break;
+        case OHOS::Rosen::DO_REMOVE_VIRTUAL_SCREEN_SURFACE:
+            OHOS::Rosen::DoRemoveVirtualScreenSurface(fdp);
+            break;
+        default:
+            return -1;
+    }
+    return 0;
+}

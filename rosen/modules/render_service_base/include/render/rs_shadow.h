@@ -29,7 +29,7 @@ const float DEFAULT_LIGHT_HEIGHT = 600.0f;
 const float DEFAULT_LIGHT_RADIUS = 800.0f;
 const float DEFAULT_SHADOW_OFFSET_X = 0.f;
 const float DEFAULT_SHADOW_OFFSET_Y = 0.f;
-const float DEFAULT_SHADOW_RADIUS = 0.f;
+const float DEFAULT_SHADOW_RADIUS = -1.f;
 const float DEFAULT_TRANSLATION_Z = 300.0f;
 const uint32_t DEFAULT_AMBIENT_COLOR = 0x0A000000;
 const uint32_t DEFAULT_SPOT_COLOR = 0x00000000;
@@ -60,6 +60,7 @@ public:
     void SetMask(int imageMask);
     void SetIsFilled(bool isFilled);
     void SetColorStrategy(int colorStrategy);
+    void SetDisableSDFBlur(bool disable);
 
     const Color& GetColor() const;
     float GetOffsetX() const;
@@ -71,6 +72,7 @@ public:
     int GetMask() const;
     bool GetIsFilled() const;
     int GetColorStrategy() const;
+    bool GetDisableSDFBlur() const;
 
     bool IsValid() const;
 
@@ -84,6 +86,10 @@ private:
     int imageMask_ = SHADOW_MASK_STRATEGY::MASK_NONE;
     bool isFilled_ = false;
     int colorStrategy_ = SHADOW_COLOR_STRATEGY::COLOR_STRATEGY_NONE;
+    // Used in Drawing::MaskFilter::CreateBlurMaskFilter (called when drawing radius shadows).
+    // SDFBlur approximates Gaussian blur with optimized performance (default: false = SDFBlur enabled for performance).
+    // Set to true only if higher visual quality or better consistency is required.
+    bool disableSDFBlur_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

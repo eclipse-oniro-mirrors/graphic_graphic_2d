@@ -267,14 +267,15 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, AddAnimationCreateTrace01, TestSize.Le
         MODIFIER_NG_TYPE, startValue, endValue, animationDelay, 0, repeatCount, INTERFACE_NAME, NODE_ID, INTERFACE_NAME,
         NODE_TYPE, frameRateRange);
     // interfaceName empty
+    FrameRateRange frameRateRange2 {0, 60, 120};
     RSAnimationTraceUtils::GetInstance().AddAnimationCreateTrace(NODE_ID, "", PROPERTY_ID, ANIMATION_ID, ANIMATION_TYPE,
         MODIFIER_NG_TYPE, startValue, endValue, animationDelay, 0, repeatCount, "",
-        NODE_ID, INTERFACE_NAME, NODE_TYPE, frameRateRange);
+        NODE_ID, INTERFACE_NAME, NODE_TYPE, frameRateRange2);
 
     RSAnimationTraceUtils::GetInstance().isDebugEnabled_ = false;
     RSAnimationTraceUtils::GetInstance().AddAnimationCreateTrace(NODE_ID, NODE_NAME, PROPERTY_ID, ANIMATION_ID,
         ANIMATION_TYPE, MODIFIER_NG_TYPE, startValue, endValue, 0, 0, repeatCount, INTERFACE_NAME, NODE_ID,
-        INTERFACE_NAME, NODE_TYPE, frameRateRange);
+        INTERFACE_NAME, NODE_TYPE, frameRateRange2);
     RSRenderNode renderNode(NODE_ID);
     RSAnimationTraceUtils::GetInstance().AddSpringInitialVelocityTrace(PROPERTY_ID, ANIMATION_ID, startValue, endValue);
     EXPECT_TRUE(renderNode.GetNodeName().empty());
@@ -341,20 +342,6 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, OnAnimationTraceEnabledChangedCallback
     EXPECT_FALSE(RSAnimationTraceUtils::isDebugEnabled_);
 }
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: GetModifierTypeString
- * @tc.desc: Verify the GetModifierTypeString
- * @tc.type:FUNC
- */
-HWTEST_F(RSRenderAnimationDebugTraceTest, GetModifierTypeString, TestSize.Level1)
-{
-    EXPECT_EQ(RSAnimationTraceUtils::GetInstance().GetModifierTypeString(RSModifierType::BOUNDS), "Bounds");
-
-    EXPECT_EQ(RSAnimationTraceUtils::GetInstance().GetModifierTypeString(RSModifierType::QUATERNION), "Quaternion");
-}
-#endif // !MODIFIER_NG
-
 /**
  * @tc.name: GetAnimationTypeString
  * @tc.desc: Verify the GetAnimationTypeString
@@ -416,6 +403,19 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, GetNodeTypeString, TestSize.Level1)
         RSAnimationTraceUtils::GetInstance().GetNodeTypeString(RSUINodeType::CANVAS_DRAWING_NODE), "CanvasDrawingNode");
 
     EXPECT_EQ(RSAnimationTraceUtils::GetInstance().GetNodeTypeString(static_cast<RSUINodeType>(-1)), "UNKNOW");
+}
+
+/**
+ * @tc.name: RemoveSystemPropertyWatchers_001
+ * @tc.desc: Verify RemoveSystemPropertyWatchers removes property
+ *           watchers without crash
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationDebugTraceTest, RemoveSystemPropertyWatchers_001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationDebugTraceTest RemoveSystemPropertyWatchers_001 start";
+    RSAnimationTraceUtils::GetInstance().RemoveSystemPropertyWatchers();
+    GTEST_LOG_(INFO) << "RSRenderAnimationDebugTraceTest RemoveSystemPropertyWatchers_001 end";
 }
 } // namespace Rosen
 } // namespace OHOS

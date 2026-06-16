@@ -31,6 +31,7 @@ public:
 
 private:
     static void LayoutSync(ani_env* env, ani_object object, ani_double width);
+    static ani_object LayoutWithConstraints(ani_env* env, ani_object object, ani_object constraint);
     static void Paint(ani_env* env, ani_object object, ani_object canvas, ani_double x, ani_double y);
     static void PaintOnPath(
         ani_env* env, ani_object object, ani_object canvas, ani_object path, ani_double hOffset, ani_double vOffset);
@@ -54,12 +55,34 @@ private:
     static ani_ref GetTextLines(ani_env* env, ani_object object);
     static ani_object GetActualTextRange(
         ani_env* env, ani_object object, ani_int lineNumber, ani_boolean includeSpaces);
+    static ani_ref GetVisibleTextRanges(ani_env* env, ani_object object);
     static ani_ref GetLineMetrics(ani_env* env, ani_object object);
     static ani_object GetLineMetricsAt(ani_env* env, ani_object object, ani_int lineNumber);
     static void UpdateColor(ani_env* env, ani_object object, ani_object color);
     static void UpdateDecoration(ani_env* env, ani_object object, ani_object decoration);
+    static ani_object GetProcessState(ani_env* env, ani_object object);
+    static ani_object GetTextDisplayState(ani_env* env, ani_object object);
+    static ani_object GetParagraphStyle(ani_env* env, ani_object object);
+    static void ForceReuseRasterResult(ani_env* env, ani_object object, ani_boolean isForce);
+    static ani_object GetCharacterRangeForGlyphRange(ani_env* env, ani_object object,
+        ani_object glyphRange, ani_object encoding);
+    static ani_object GetGlyphRangeForCharacterRange(ani_env* env, ani_object object,
+        ani_object characterRange, ani_object encoding);
+    static ani_object GetCharacterPositionAtCoordinate(ani_env* env, ani_object object,
+        ani_double x, ani_double y, ani_object encoding);
     static ani_object NativeTransferStatic(ani_env* env, ani_class cls, ani_object input);
     static ani_object NativeTransferDynamic(ani_env* env, ani_class cls, ani_long nativeObj);
+
+    // Helper functions for code refactoring
+    static ani_status SetArrayBoundaryElement(ani_env* env, ani_object array, int index,
+        const Rosen::Boundary& range, const char* errorMsg);
+
+    // Helper functions for InitMethods refactoring
+    static std::vector<ani_native_function> GetLayoutAndPaintMethods();
+    static std::vector<ani_native_function> GetSizeMethods();
+    static std::vector<ani_native_function> GetRangeAndPositionMethods();
+    static std::vector<ani_native_function> GetLineMethods();
+    static std::vector<ani_native_function> GetStyleAndStateMethods();
 
     std::shared_ptr<OHOS::Rosen::Typography> typography_{nullptr};
 };

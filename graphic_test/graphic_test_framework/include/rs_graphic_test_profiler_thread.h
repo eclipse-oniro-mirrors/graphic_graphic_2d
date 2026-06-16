@@ -25,6 +25,7 @@
 #include <sys/un.h>
 #include <thread>
 #include <unistd.h>
+#include <functional>
 
 namespace OHOS {
 namespace Rosen {
@@ -39,6 +40,9 @@ public:
     std::pair<double, double> ReceiveTimeInfo() const;
     bool HasSocketResult() const;
     uint32_t WaitForSocketResultWithTimeout(uint32_t timeoutMs);
+    using FailureCallback = std::function<void()>;
+    void SetReconnectRequestCallback(FailureCallback callback);
+
 private:
     void MainLoop();
     void SendMessage();
@@ -48,28 +52,39 @@ private:
     void ProcessLogMessage(const std::vector<char>& data);
     void SetResultAndNotify(uint32_t result);
     void CleanupSocket();
+    bool Reconnect();
+    void RestartRenderService();
 
 private:
     int32_t socket_ = -1;
     std::thread thread_;
     std::queue<std::string> message_queue_;
+    std::atomic<bool> running_{false};
     bool runnig_ = false;
     bool waitReceive_ = false;
     std::mutex queue_mutex_;
     std::mutex wait_mutex_;
-    std::condition_variable cv_;
-    std::pair<double, double> timeRange_{0.0, 0.0};
-    mutable std::mutex timeRange_mutex_;
+    std::condition_variable loopCv_;
+    std::condition_variable responseCv_;
 
     std::atomic<bool> hasSocketResult_ = false;
     uint32_t socketResult_ = 0;
     mutable std::mutex socketResultMutex_;
     std::condition_variable socketResultCV_;
+    std::pair<double, double> timeRange_{0.0, 0.0};
+    mutable std::mutex timeRange_mutex_;
+    std::atomic<int> recvFailCount_{0};
+    static constexpr int MAX_RECV_FAILS = 20;
+    FailureCallback failureCallback_;
 #else
+    using FailureCallback = std::function<void()>;
     void Start() {}
     void Stop() {}
     void SendCommand(const std::string command, int outTime) {}
-    std::pair<double, double> ReceiveTimeInfo() const { return std::make_pair(0.0, 0.0); }
+    std::pair<double, double> ReceiveTimeInfo() const { return {0.0, 0.0}; }
+    bool HasSocketResult() const { return false; }
+    uint32_t WaitForSocketResultWithTimeout(uint32_t timeoutMs) { return 0; }
+    void SetReconnectRequestCallback(FailureCallback callback) {}
 #endif
 };
 

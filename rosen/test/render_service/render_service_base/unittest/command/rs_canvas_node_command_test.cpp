@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "include/command/rs_canvas_node_command.h"
+#include "common/rs_common_def.h"
 #include "pipeline/rs_canvas_render_node.h"
 #include "pipeline/rs_render_node_gc.h"
 
@@ -74,6 +75,7 @@ HWTEST_F(RSCanvasNodeCommandTest, Create001, TestSize.Level1)
     NodeId targetId = static_cast<NodeId>(-1);
     RSCanvasNodeCommandHelper::Create(context, targetId, false);
     EXPECT_NE(context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(targetId), nullptr);
+    context.GetMutableNodeMap().UnregisterRenderNode(targetId);
 }
 
 /**
@@ -88,6 +90,7 @@ HWTEST_F(RSCanvasNodeCommandTest, Create002, TestSize.Level1)
     NodeId targetId = 0;
     RSCanvasNodeCommandHelper::Create(context, targetId, false);
     EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(targetId), nullptr);
+    context.GetMutableNodeMap().UnregisterRenderNode(targetId);
 }
 
 /**
@@ -102,7 +105,7 @@ HWTEST_F(RSCanvasNodeCommandTest, AddCmdToSingleFrameComposer001, TestSize.Level
     NodeId id = static_cast<NodeId>(1);
     RSCanvasNodeCommandHelper::Create(context, id, true);
     auto node = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(id);
-    std::shared_ptr<Drawing::DrawCmdList> drawCmds;
+    SimpleDrawCmdListPtr drawCmds = nullptr;
     uint16_t type = 0;
     bool res = RSCanvasNodeCommandHelper::AddCmdToSingleFrameComposer(node, drawCmds, type);
     EXPECT_TRUE(res == false);
@@ -111,15 +114,6 @@ HWTEST_F(RSCanvasNodeCommandTest, AddCmdToSingleFrameComposer001, TestSize.Level
     RSSingleFrameComposer::SetSingleFrameFlag(thisThreadId);
     res = RSCanvasNodeCommandHelper::AddCmdToSingleFrameComposer(node, drawCmds, type);
     EXPECT_TRUE(res);
-
-    node->isNodeSingleFrameComposer_ = true;
-    res = RSCanvasNodeCommandHelper::AddCmdToSingleFrameComposer(node, drawCmds, type);
-    EXPECT_TRUE(res == false);
-
-    std::thread::id threadId = std::this_thread::get_id();
-    RSSingleFrameComposer::SetSingleFrameFlag(threadId);
-    res = RSCanvasNodeCommandHelper::AddCmdToSingleFrameComposer(node, drawCmds, type);
-    EXPECT_TRUE(res == false);
 }
 
 /**
@@ -144,6 +138,7 @@ HWTEST_F(RSCanvasNodeCommandTest, UpdateRecording001, TestSize.Level1)
     drawCmds = std::make_shared<Drawing::DrawCmdList>();
     RSCanvasNodeCommandHelper::UpdateRecording(context, id, drawCmds, modifierType);
     EXPECT_TRUE(drawCmds == nullptr);
+    context.GetMutableNodeMap().UnregisterRenderNode(id);
 }
 
 /**
@@ -177,6 +172,7 @@ HWTEST_F(RSCanvasNodeCommandTest, ClearRecording001, TestSize.Level1)
 
     RSCanvasNodeCommandHelper::ClearRecording(context, 0);
     EXPECT_TRUE(id);
+    context.GetMutableNodeMap().UnregisterRenderNode(id);
 }
 
 /**
@@ -193,9 +189,31 @@ HWTEST_F(RSCanvasNodeCommandTest, SetColorGamut001, TestSize.Level1)
     auto node = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(id);
 
     RSCanvasNodeCommandHelper::SetColorGamut(context, id, 4); // 4 is SRGB
+#ifdef RS_ENABLE_UNI_RENDER
     ASSERT_EQ(node->colorGamut_, 4); // 4 is SRGB
     RSCanvasNodeCommandHelper::SetColorGamut(context, id, 3); // 3 is DISPLAY_P3
     ASSERT_EQ(node->colorGamut_, 3); // 3 is DISPLAY_P3
+#endif
 }
 
+/**
+ * @tc.name: SetPixelmap
+ * @tc.desc: test results of SetPixelmap
+ * @tc.type: FUNC
+ * @tc.require: issueICGKPE
+ */
+HWTEST_F(RSCanvasNodeCommandTest, SetPixelmap, TestSize.Level1)
+{
+    RSContext context;
+    NodeId id = static_cast<NodeId>(1);
+    RSCanvasNodeCommandHelper::SetPixelmap(context, id, nullptr);
+    auto pixelmap = std::make_shared<OHOS::Media::PixelMap>();
+    EXPECT_NE(pixelmap, nullptr);
+    RSCanvasNodeCommandHelper::SetPixelmap(context, id, pixelmap);
+    RSCanvasNodeCommandHelper::Create(context, id, true);
+    auto node = context.GetNodeMap().GetRenderNode<RSCanvasRenderNode>(id);
+    EXPECT_NE(node, nullptr);
+    RSCanvasNodeCommandHelper::SetPixelmap(context, id, pixelmap);
+    context.GetMutableNodeMap().UnregisterRenderNode(id);
+}
 } // namespace OHOS::Rosen

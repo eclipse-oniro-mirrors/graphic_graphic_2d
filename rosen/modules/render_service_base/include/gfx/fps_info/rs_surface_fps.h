@@ -32,14 +32,15 @@ struct FPSStat {
 
 class RSB_EXPORT RSSurfaceFps {
 public:
-    RSSurfaceFps(std::string name) : name_(name) {};
-    bool RecordFlushTime(uint64_t vsyncId, uint64_t timestamp);
-    bool RecordPresentFd(uint64_t vsyncId, int32_t presentFd);
-    bool RecordPresentTime(int32_t presentFd, uint64_t timestamp);
+    RSSurfaceFps(std::string name, uint64_t uniqueId) : name_(name), uniqueId_(uniqueId) {};
+    void RecordBufferTime(uint64_t flushTimestamp, uint64_t presentTimestamp);
     void Dump(std::string& result);
     void ClearDump();
     const std::string& GetName() const {
         return name_;
+    }
+    uint64_t GetUniqueId() {
+        return uniqueId_;
     }
 
 private:
@@ -49,15 +50,7 @@ private:
     uint32_t count_ = 0;
     std::mutex mutex_;
     std::string name_;
-
-    bool GetFlushTimeStampWithPresentFd(int32_t presentFd, uint64_t &flushTime);
-    bool GetFlushTimeStampWithVsyncId(uint64_t vsyncId, uint64_t &flushTime);
-    static const uint32_t MAX_VSYNC_ID_MAP_SIZE = 8; // the number of data in the map should not exceed 8 as RS runs
-    static const uint32_t MAX_PRESENT_FD_MAP_SIZE = 8; // the number of data in the map should not exceed 8 as RS runs
-    std::mutex vsyncIdMapMtx_;
-    std::unordered_map<uint32_t, int64_t> vsyncIdWithFlushTimeMap_ {};
-    std::mutex presentFdMapMtx_;
-    std::unordered_map<int32_t, uint64_t> presentFdWithFlushTimeMap_ {};
+    uint64_t uniqueId_ = 0;
 };
 }
 #endif

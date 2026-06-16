@@ -137,6 +137,22 @@ HWTEST_F(RSImageCacheTest, ReleaseDrawingImageCacheTest, TestSize.Level1)
     imageCache.CacheDrawingImage(1, img);
     imageCache.ReleaseDrawingImageCache(0);
     EXPECT_FALSE(imageCache.drawingImageCache_.empty());
+    imageCache.ReleaseDrawingImageCache(1);
+    EXPECT_TRUE(imageCache.drawingImageCache_.empty());
+
+    imageCache.CacheDrawingImage(1, img);
+    img = nullptr;
+    imageCache.ReleaseDrawingImageCache(1);
+    EXPECT_TRUE(imageCache.drawingImageCache_.empty());
+
+    auto img2 = std::make_shared<Drawing::Image>();
+    imageCache.CacheDrawingImage(2, img2);
+    imageCache.IncreaseDrawingImageCacheRefCount(2);
+    imageCache.IncreaseDrawingImageCacheRefCount(2);
+    imageCache.ReleaseDrawingImageCache(2);
+    EXPECT_FALSE(imageCache.drawingImageCache_.empty());
+    imageCache.ReleaseDrawingImageCache(2);
+    EXPECT_TRUE(imageCache.drawingImageCache_.empty());
     imageCache.drawingImageCache_.clear();
 }
 
@@ -206,6 +222,202 @@ HWTEST_F(RSImageCacheTest, CheckRefCntAndReleaseImageCacheTest, TestSize.Level1)
     imageCache.CheckRefCntAndReleaseImageCache(0, pixelMap);
     EXPECT_FALSE(imageCache.drawingImageCache_.empty());
     imageCache.drawingImageCache_.clear();
+}
+
+/**
+ * @tc.name: CacheEditablePixelMapTest
+ * @tc.desc: Verify function CacheEditablePixelMap
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, CacheEditablePixelMapTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t invalidUniqueId = 0;
+    uint64_t validUniqueId = 1;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap != nullptr);
+    imageCache.CacheEditablePixelMap(invalidUniqueId, nullptr);
+    imageCache.CacheEditablePixelMap(invalidUniqueId, pixelMap);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        EXPECT_FALSE(imageCache.editablePixelMapCache_.empty());
+    }
+}
+
+/**
+ * @tc.name: GetEditablePixelMapCacheTest
+ * @tc.desc: Verify function GetEditablePixelMapCache
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, GetEditablePixelMapCacheTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t invalidUniqueId = 0;
+    uint64_t validUniqueId = 1;
+    auto pixelMap = imageCache.GetEditablePixelMapCache(invalidUniqueId);
+    EXPECT_TRUE(pixelMap == nullptr);
+    pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    pixelMap = imageCache.GetEditablePixelMapCache(validUniqueId);
+    EXPECT_TRUE(pixelMap != nullptr);
+}
+
+/**
+ * @tc.name: IncreaseEditablePixelMapCacheRefCountTest
+ * @tc.desc: Verify function IncreaseEditablePixelMapCacheRefCount
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, IncreaseEditablePixelMapCacheRefCountTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t invalidUniqueId = 0;
+    uint64_t validUniqueId = 1;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap);
+    imageCache.IncreaseEditablePixelMapCacheRefCount(invalidUniqueId);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    imageCache.IncreaseEditablePixelMapCacheRefCount(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it != imageCache.editablePixelMapCache_.end());
+        EXPECT_TRUE(it->second.second > 0);
+    }
+}
+
+/**
+ * @tc.name: DiscardEditablePixelMapCacheTest
+ * @tc.desc: Verify function DiscardEditablePixelMapCache
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, DiscardEditablePixelMapCacheTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t invalidUniqueId = 0;
+    uint64_t validUniqueId = 1;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap);
+    imageCache.DiscardEditablePixelMapCache(invalidUniqueId);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    imageCache.DiscardEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it == imageCache.editablePixelMapCache_.end());
+        imageCache.editablePixelMapCache_.emplace(validUniqueId, std::make_pair(nullptr, 0));
+    }
+    imageCache.DiscardEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it == imageCache.editablePixelMapCache_.end());
+    }
+}
+
+/**
+ * @tc.name: DecreaseRefCountAndDiscardEditablePixelMapCacheTest
+ * @tc.desc: Verify function DecreaseRefCountAndDiscardEditablePixelMapCache
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, DecreaseRefCountAndDiscardEditablePixelMapCacheTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t invalidUniqueId = 0;
+    uint64_t validUniqueId = 1;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap);
+    imageCache.DecreaseRefCountAndDiscardEditablePixelMapCache(invalidUniqueId);
+    imageCache.DiscardEditablePixelMapCache(validUniqueId);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    imageCache.IncreaseEditablePixelMapCacheRefCount(validUniqueId);
+    imageCache.IncreaseEditablePixelMapCacheRefCount(validUniqueId);
+    imageCache.DecreaseRefCountAndDiscardEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it != imageCache.editablePixelMapCache_.end());
+        EXPECT_TRUE(it->second.second > 0);
+    }
+    imageCache.DecreaseRefCountAndDiscardEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it == imageCache.editablePixelMapCache_.end());
+        imageCache.editablePixelMapCache_.emplace(validUniqueId, std::make_pair(nullptr, 0));
+    }
+    imageCache.DecreaseRefCountAndDiscardEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it == imageCache.editablePixelMapCache_.end());
+    }
+}
+
+/**
+ * @tc.name: DecreaseRefCountAndReleaseEditablePixelMapCacheTest
+ * @tc.desc: Verify function DecreaseRefCountAndReleaseEditablePixelMapCache
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, DecreaseRefCountAndReleaseEditablePixelMapCacheTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t invalidUniqueId = 0;
+    uint64_t validUniqueId = 1;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap);
+    imageCache.DecreaseRefCountAndReleaseEditablePixelMapCache(invalidUniqueId);
+    imageCache.DiscardEditablePixelMapCache(validUniqueId);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    imageCache.IncreaseEditablePixelMapCacheRefCount(validUniqueId);
+    imageCache.IncreaseEditablePixelMapCacheRefCount(validUniqueId);
+    imageCache.DecreaseRefCountAndReleaseEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it != imageCache.editablePixelMapCache_.end());
+        EXPECT_TRUE(it->second.second > 0);
+    }
+    imageCache.DecreaseRefCountAndReleaseEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it == imageCache.editablePixelMapCache_.end());
+        imageCache.editablePixelMapCache_.emplace(validUniqueId, std::make_pair(nullptr, 0));
+    }
+    imageCache.DecreaseRefCountAndReleaseEditablePixelMapCache(validUniqueId);
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheMutex_);
+        auto it = imageCache.editablePixelMapCache_.find(validUniqueId);
+        EXPECT_TRUE(it == imageCache.editablePixelMapCache_.end());
+    }
+}
+
+/**
+ * @tc.name: ReleaseEditablePixelMapCacheTest
+ * @tc.desc: Verify function ReleaseEditablePixelMapCache
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageCacheTest, ReleaseEditablePixelMapCacheTest, TestSize.Level1)
+{
+    RSImageCache& imageCache = RSImageCache::Instance();
+    uint64_t validUniqueId = 1;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    EXPECT_TRUE(pixelMap);
+    imageCache.CacheEditablePixelMap(validUniqueId, pixelMap);
+    imageCache.ReleaseEditablePixelMapCache();
+    {
+        std::lock_guard<std::mutex> lock(imageCache.editablePixelMapCacheToReleaseMutex_);
+        EXPECT_TRUE(imageCache.editablePixelMapCacheToRelease_.empty());
+    }
 }
 
 /**
@@ -674,6 +886,7 @@ HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest008, TestSize.Level1)
     imageCache.pixelMapCache_.clear();
 }
 
+#ifdef RS_ENABLE_IMAGE_DETAIL_ENHANCER
 /**
  * @tc.name: ReleaseDrawingImageCacheByPixelMapIdTest002
  * @tc.desc: Verify function ReleaseDrawingImageCacheByPixelMapIdTest
@@ -683,22 +896,32 @@ HWTEST_F(RSImageCacheTest, ReleasePixelMapCacheTest008, TestSize.Level1)
 HWTEST_F(RSImageCacheTest, ReleaseDrawingImageCacheByPixelMapIdTest002, TestSize.Level1)
 {
     RSImageCache& imageCache = RSImageCache::Instance();
-    auto img = std::make_shared<Drawing::Image>();
-    imageCache.CacheRenderDrawingImageByPixelMapId(123, img, 0);
-    RSImageDetailEnhancerThread& rsImageDetailEnhancerThread = RSImageDetailEnhancerThread::Instance();
     auto type = system::GetParameter("rosen.isEnabledScaleImageAsync.enabled", "0");
-    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "1");
-    rsImageDetailEnhancerThread.SetOutImage(123, img);
-    imageCache.ReleaseDrawingImageCacheByPixelMapId(123);
-    EXPECT_TRUE(imageCache.pixelMapIdRelatedDrawingImageCache_.empty());
+    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "0");
+    auto img = std::make_shared<Drawing::Image>();
+    imageCache.CacheRenderDrawingImageByPixelMapId(1234, img, 0);
+    RSImageDetailEnhancerThread& rsImageDetailEnhancerThread = RSImageDetailEnhancerThread::Instance();
+    imageCache.ReleaseDrawingImageCacheByPixelMapId(1234);
 
+    auto img1 = std::make_shared<Drawing::Image>();
+    imageCache.CacheRenderDrawingImageByPixelMapId(2345, img1, 0);
+    rsImageDetailEnhancerThread.SetScaledImage(2345, img1);
+    imageCache.ReleaseDrawingImageCacheByPixelMapId(2345);
+
+    system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", "1");
     auto img2 = std::make_shared<Drawing::Image>();
-    imageCache.CacheRenderDrawingImageByPixelMapId(345, img2, 0);
-    imageCache.ReleaseDrawingImageCacheByPixelMapId(345);
+    imageCache.CacheRenderDrawingImageByPixelMapId(3456, img2, 0);
+    rsImageDetailEnhancerThread.SetScaledImage(3456, img2);
+    imageCache.ReleaseDrawingImageCacheByPixelMapId(3456);
+
+    auto img3 = std::make_shared<Drawing::Image>();
+    imageCache.CacheRenderDrawingImageByPixelMapId(4567, img3, 0);
+    imageCache.ReleaseDrawingImageCacheByPixelMapId(4567);
     EXPECT_TRUE(imageCache.pixelMapIdRelatedDrawingImageCache_.empty());
     imageCache.pixelMapIdRelatedDrawingImageCache_.clear();
     system::SetParameter("rosen.isEnabledScaleImageAsync.enabled", type);
 }
+#endif
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 /**

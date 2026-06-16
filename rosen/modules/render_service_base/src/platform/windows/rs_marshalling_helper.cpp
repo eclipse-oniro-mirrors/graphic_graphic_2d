@@ -24,6 +24,8 @@
 #include "animation/rs_particle_noise_field.h"
 #include "animation/rs_particle_ripple_field.h"
 #include "animation/rs_particle_velocity_field.h"
+#include "animation/rs_particle_field_factory.h"
+#include "animation/rs_particle_field_collection.h"
 #include "animation/rs_render_curve_animation.h"
 #include "animation/rs_render_interpolating_spring_animation.h"
 #include "animation/rs_render_keyframe_animation.h"
@@ -41,7 +43,6 @@
 #include "render/rs_gradient_blur_para.h"
 #include "render/rs_image.h"
 #include "render/rs_image_base.h"
-#include "render/rs_magnifier_para.h"
 #include "render/rs_motion_blur_filter.h"
 #include "render/rs_path.h"
 #include "render/rs_shader.h"
@@ -215,16 +216,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<MotionBl
     return {};
 }
 
-// MagnifierPara
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSMagnifierParams>& val)
-{
-    return {};
-}
-bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<RSMagnifierParams>& val)
-{
-    return {};
-}
-
 // Particle
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<EmitterUpdater>& val)
 {
@@ -286,50 +277,71 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<Particle
     return {};
 }
 
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<ParticleFieldCollection>& val)
+{
+    return {};
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<ParticleFieldCollection>& val)
+{
+    return {};
+}
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const EmitterConfig& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, EmitterConfig& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const ParticleVelocity& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, ParticleVelocity& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RenderParticleParaType<float>& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderParticleParaType<float>& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RenderParticleColorParaType& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RenderParticleColorParaType& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<ParticleRenderParams>& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::shared_ptr<ParticleRenderParams>& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::vector<std::shared_ptr<ParticleRenderParams>>& val)
 {
     return {};
 }
+
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, std::vector<std::shared_ptr<ParticleRenderParams>>& val)
 {
     return {};
@@ -567,11 +579,11 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSShader>)                    \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSLinearGradientBlurPara>)    \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<MotionBlurParam>)             \
-    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<RSMagnifierParams>)           \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<std::shared_ptr<EmitterUpdater>>) \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<ParticleNoiseFields>)         \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<ParticleRippleFields>)        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<ParticleVelocityFields>)      \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<ParticleFieldCollection>)    \
     EXPLICIT_INSTANTIATION(TEMPLATE, RSRenderParticleVector)                       \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector2f)                                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector3f)                                     \
@@ -580,6 +592,7 @@ MARSHALLING_AND_UNMARSHALLING(RSRenderAnimatableProperty)
     EXPLICIT_INSTANTIATION(TEMPLATE, Vector4f)                                     \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<float>)                           \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector2f>)                        \
+    EXPLICIT_INSTANTIATION(TEMPLATE, std::vector<Vector4f>)                        \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Media::PixelMap>)             \
     EXPLICIT_INSTANTIATION(TEMPLATE, std::shared_ptr<Drawing::DrawCmdList>)
 
@@ -630,18 +643,23 @@ bool RSMarshallingHelper::SkipFromParcel(Parcel& parcel, size_t size)
 {
     return {};
 }
+
 void RSMarshallingHelper::BeginNoSharedMem(std::thread::id tid) {}
+
 void RSMarshallingHelper::EndNoSharedMem() {}
+
 bool RSMarshallingHelper::GetUseSharedMem(std::thread::id tid)
 {
     return true;
 }
-bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
+
+void RSMarshallingHelper::SetCallingPid(pid_t callingPid) {}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)
 {
     return true;
 }
-void RSMarshallingHelper::SetCallingPid(pid_t callingPid) {}
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<RSRenderPropertyBase>& val)
+bool RSMarshallingHelper::CheckReadPosition(Parcel& parcel)
 {
     return true;
 }
@@ -676,6 +694,16 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RSRenderParticleVect
 }
 
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSRenderParticleVector& val)
+{
+    return false;
+}
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, sptr<Surface> surface)
+{
+    return false;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sptr<Surface>& surface)
 {
     return false;
 }

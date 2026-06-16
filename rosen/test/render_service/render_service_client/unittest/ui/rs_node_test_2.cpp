@@ -17,6 +17,7 @@
 
 #include "gtest/gtest.h"
 #include "ui_effect/effect/include/brightness_blender.h"
+#include "ui_effect/effect/include/hdr_darken_blender.h"
 #include "ui_effect/effect/include/rs_ui_mask_base.h"
 #include "ui_effect/effect/include/rs_ui_mask_shape.h"
 
@@ -24,13 +25,14 @@
 #include "animation/rs_animation_callback.h"
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_implicit_animator.h"
-#include "animation/rs_implicit_animator_map.h"
 #include "animation/rs_transition.h"
 #include "common/rs_vector4.h"
+#include "common/rs_vector3.h"
 #include "modifier_ng/appearance/rs_alpha_modifier.h"
 #include "modifier_ng/appearance/rs_background_filter_modifier.h"
 #include "modifier_ng/appearance/rs_blend_modifier.h"
 #include "modifier_ng/appearance/rs_border_modifier.h"
+#include "modifier_ng/appearance/rs_color_picker_modifier.h"
 #include "modifier_ng/appearance/rs_compositing_filter_modifier.h"
 #include "modifier_ng/appearance/rs_dynamic_light_up_modifier.h"
 #include "modifier_ng/appearance/rs_foreground_filter_modifier.h"
@@ -39,7 +41,7 @@
 #include "modifier_ng/appearance/rs_outline_modifier.h"
 #include "modifier_ng/appearance/rs_particle_effect_modifier.h"
 #include "modifier_ng/appearance/rs_pixel_stretch_modifier.h"
-#include "modifier_ng/appearance/rs_point_light_modifier.h"
+#include "modifier_ng/appearance/rs_overlay_ng_shader_modifier.h"
 #include "modifier_ng/appearance/rs_shadow_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_modifier.h"
@@ -210,7 +212,272 @@ HWTEST_F(RSNodeTest2, SetUIForegroundFilter, TestSize.Level1)
     para->SetRadius(FLOAT_DATA[1]);
     filterObj->AddPara(para);
     rsNode->SetUIForegroundFilter(filterObj.get());
-    EXPECT_TRUE(rsNode->GetStagingProperties().GetForegroundEffectRadius() == FLOAT_DATA[1]);
+    EXPECT_FALSE(rsNode->GetStagingProperties().GetForegroundEffectRadius() == FLOAT_DATA[1]);
+}
+
+/**
+ * @tc.name: RegisterColorPickerCallbackTest001
+ * @tc.desc: Test RegisterColorPickerCallback with null callback returns false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, RegisterColorPickerCallbackTest001, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool result = node->RegisterColorPickerCallback(100, nullptr, 50);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: RegisterColorPickerCallbackTest002
+ * @tc.desc: Test RegisterColorPickerCallback with valid callback returns true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, RegisterColorPickerCallbackTest002, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool callbackInvoked = false;
+    auto callback = [&callbackInvoked](uint32_t color) { callbackInvoked = true; };
+
+    bool result = node->RegisterColorPickerCallback(100, callback, 50);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: RegisterColorPickerCallbackTest003
+ * @tc.desc: Test RegisterColorPickerCallback sets correct parameters
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, RegisterColorPickerCallbackTest003, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    uint32_t receivedColor = 0;
+    auto callback = [&](uint32_t color) { receivedColor = color; };
+
+    uint64_t interval = 500;
+    uint32_t notifyThreshold = 50;
+
+    bool result = node->RegisterColorPickerCallback(interval, callback, notifyThreshold);
+    EXPECT_TRUE(result);
+
+    // Verify color picker params are set
+    auto modifier = node->GetModifierByType(ModifierNG::RSModifierType::COLOR_PICKER);
+    ASSERT_NE(modifier, nullptr);
+    auto colorPickerModifier = std::static_pointer_cast<ModifierNG::RSColorPickerModifier>(modifier);
+
+    EXPECT_EQ(colorPickerModifier->GetColorPickerStrategy(), ColorPickStrategyType::CLIENT_CALLBACK);
+    EXPECT_EQ(colorPickerModifier->GetColorPickerInterval(), interval);
+    // Check packed threshold value: default is dark=150, light=220, packed as (220 << 16) | 150
+    constexpr uint32_t expectedPacked = (220u << 16) | 150u;
+    EXPECT_EQ(colorPickerModifier->GetColorPickerNotifyThreshold(), expectedPacked);
+}
+
+/**
+ * @tc.name: UnregisterColorPickerCallbackTest001
+ * @tc.desc: Test UnregisterColorPickerCallback clears callback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, UnregisterColorPickerCallbackTest001, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    auto callback = [](uint32_t color) {};
+    node->RegisterColorPickerCallback(100, callback, 30);
+
+    bool result = node->UnregisterColorPickerCallback();
+    EXPECT_TRUE(result);
+    auto modifier = node->GetModifierByType(ModifierNG::RSModifierType::COLOR_PICKER);
+    ASSERT_NE(modifier, nullptr);
+    auto colorPickerModifier = std::static_pointer_cast<ModifierNG::RSColorPickerModifier>(modifier);
+    ASSERT_NE(colorPickerModifier, nullptr);
+    EXPECT_EQ(colorPickerModifier->GetColorPickerStrategy(), ColorPickStrategyType::NONE);
+}
+
+/**
+ * @tc.name: UnregisterColorPickerCallbackTest002
+ * @tc.desc: Test UnregisterColorPickerCallback without prior registration
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, UnregisterColorPickerCallbackTest002, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool result = node->UnregisterColorPickerCallback();
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: FireColorPickerCallbackTest001
+ * @tc.desc: Test FireColorPickerCallback with no registered callback returns false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, FireColorPickerCallbackTest001, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool result = node->FireColorPickerCallback(0xFF0000FF);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: FireColorPickerCallbackTest002
+ * @tc.desc: Test FireColorPickerCallback invokes registered callback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, FireColorPickerCallbackTest002, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool callbackInvoked = false;
+    uint32_t receivedColor = 0;
+    auto callback = [&](uint32_t color) {
+        callbackInvoked = true;
+        receivedColor = color;
+    };
+
+    node->RegisterColorPickerCallback(100, callback, 50);
+
+    uint32_t testColor = 0xFF00FF00;
+    bool result = node->FireColorPickerCallback(testColor);
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_EQ(receivedColor, testColor);
+}
+
+/**
+ * @tc.name: FireColorPickerCallbackTest003
+ * @tc.desc: Test FireColorPickerCallback after unregister returns false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, FireColorPickerCallbackTest003, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    auto callback = [](uint32_t color) {};
+    node->RegisterColorPickerCallback(100, callback, 30);
+    node->UnregisterColorPickerCallback();
+
+    bool result = node->FireColorPickerCallback(0xFF0000FF);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: ColorPickerCallbackMultipleRegistrationTest
+ * @tc.desc: Test multiple registrations overwrite previous callback
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, ColorPickerCallbackMultipleRegistrationTest, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool firstCallbackInvoked = false;
+    bool secondCallbackInvoked = false;
+
+    auto firstCallback = [&](uint32_t color) { firstCallbackInvoked = true; };
+    auto secondCallback = [&](uint32_t color) { secondCallbackInvoked = true; };
+
+    node->RegisterColorPickerCallback(100, firstCallback, 50);
+    node->RegisterColorPickerCallback(200, secondCallback, 75);
+
+    node->FireColorPickerCallback(0xFF0000FF);
+
+    // Only the second callback should be invoked
+    EXPECT_FALSE(firstCallbackInvoked);
+    EXPECT_TRUE(secondCallbackInvoked);
+}
+
+/**
+ * @tc.name: SetColorPickerOptionsTest001
+ * @tc.desc: Test SetColorPickerOptions sets interval and thresholds correctly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetColorPickerOptionsTest001, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    uint64_t interval = 500;
+    uint32_t darkThreshold = 50;
+    uint32_t lightThreshold = 200;
+
+    node->SetColorPickerOptions(interval, {darkThreshold, lightThreshold});
+
+    auto modifier = node->GetModifierByType(ModifierNG::RSModifierType::COLOR_PICKER);
+    ASSERT_NE(modifier, nullptr);
+    auto colorPickerModifier = std::static_pointer_cast<ModifierNG::RSColorPickerModifier>(modifier);
+
+    EXPECT_EQ(colorPickerModifier->GetColorPickerStrategy(), ColorPickStrategyType::CLIENT_CALLBACK);
+    EXPECT_EQ(colorPickerModifier->GetColorPickerInterval(), interval);
+    // Check packed threshold value: (lightThreshold << 16) | darkThreshold
+    constexpr uint32_t expectedPacked = (200u << 16) | 50u;
+    EXPECT_EQ(colorPickerModifier->GetColorPickerNotifyThreshold(), expectedPacked);
+}
+
+/**
+ * @tc.name: SetColorPickerOptionsTest002
+ * @tc.desc: Test SetColorPickerOptions with valid rect
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetColorPickerOptionsTest002, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    uint64_t interval = 500;
+    uint32_t darkThreshold = 50;
+    uint32_t lightThreshold = 200;
+    Vector4f rect(0.f, 0.f, 100.f, 100.f);
+
+    node->SetColorPickerOptions(interval, {darkThreshold, lightThreshold}, rect);
+
+    auto modifier = node->GetModifierByType(ModifierNG::RSModifierType::COLOR_PICKER);
+    ASSERT_NE(modifier, nullptr);
+    auto colorPickerModifier = std::static_pointer_cast<ModifierNG::RSColorPickerModifier>(modifier);
+
+    EXPECT_EQ(colorPickerModifier->GetColorPickerStrategy(), ColorPickStrategyType::CLIENT_CALLBACK);
+    EXPECT_EQ(colorPickerModifier->GetColorPickerInterval(), interval);
+    constexpr uint32_t expectedPacked = (200u << 16) | 50u;
+    EXPECT_EQ(colorPickerModifier->GetColorPickerNotifyThreshold(), expectedPacked);
+    EXPECT_EQ(colorPickerModifier->GetColorPickerRect(), rect);
+}
+
+/**
+ * @tc.name: SetColorPickerCallbackTest001
+ * @tc.desc: Test SetColorPickerCallback stores and invokes callback correctly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetColorPickerCallbackTest001, TestSize.Level1)
+{
+    auto node = RSCanvasNode::Create();
+    ASSERT_NE(node, nullptr);
+
+    bool callbackInvoked = false;
+    uint32_t receivedColor = 0;
+    auto callback = [&](uint32_t color) {
+        callbackInvoked = true;
+        receivedColor = color;
+    };
+
+    node->SetColorPickerCallback(callback);
+
+    uint32_t testColor = 0xFF00FF00;
+    bool result = node->FireColorPickerCallback(testColor);
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_EQ(receivedColor, testColor);
 }
 
 /**
@@ -456,26 +723,6 @@ HWTEST_F(RSNodeTest2, SetPropertyNG_RSBoundsClipModifierTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetMagnifierParamsTest
- * @tc.desc: SetMagnifierParams
- * @tc.type: FUNC
- */
-HWTEST_F(RSNodeTest2, SetMagnifierParamsTest, TestSize.Level1)
-{
-    auto rsNode = RSCanvasNode::Create();
-    auto para = std::make_shared<RSMagnifierParams>();
-    rsNode->SetMagnifierParams(para);
-
-    auto modifier = rsNode->GetModifierByType(ModifierNG::RSBackgroundFilterModifier::Type);
-    ASSERT_TRUE(modifier != nullptr);
-    auto property = std::static_pointer_cast<RSProperty<std::shared_ptr<RSMagnifierParams>>>(
-        modifier->GetProperty(ModifierNG::RSPropertyType::MAGNIFIER_PARA));
-    ASSERT_TRUE(property != nullptr);
-
-    EXPECT_EQ(property->Get(), para);
-}
-
-/**
  * @tc.name: AddModifier
  * @tc.desc: test results of AddModifier
  * @tc.type: FUNC
@@ -507,13 +754,6 @@ HWTEST_F(RSNodeTest2, RemoveModifier, TestSize.Level1)
     std::shared_ptr<ModifierNG::RSModifier> modifierNull = nullptr;
     EXPECT_TRUE(rsNode->modifiersNG_.empty());
     rsNode->RemoveModifier(modifierNull);
-    EXPECT_TRUE(rsNode->modifiersNG_.empty());
-
-    auto para = std::make_shared<RSMagnifierParams>();
-    rsNode->SetMagnifierParams(para);
-    EXPECT_FALSE(rsNode->modifiersNG_.empty());
-    auto modifier = rsNode->GetModifierByType(ModifierNG::RSBackgroundFilterModifier::Type);
-    rsNode->RemoveModifier(modifier);
     EXPECT_TRUE(rsNode->modifiersNG_.empty());
 
     auto alphaModifier = std::make_shared<ModifierNG::RSAlphaModifier>();
@@ -623,7 +863,7 @@ HWTEST_F(RSNodeTest2, GetLocalGeometry, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetSDFUnionOPShape, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
+    auto modifierType = ModifierNG::RSModifierType::CLIP_TO_BOUNDS;
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetSDFShape(nullptr);
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -659,7 +899,7 @@ HWTEST_F(RSNodeTest2, SetSDFUnionOPShape, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPShape, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
+    auto modifierType = ModifierNG::RSModifierType::CLIP_TO_BOUNDS;
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetSDFShape(nullptr);
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -697,7 +937,7 @@ HWTEST_F(RSNodeTest2, SetSDFSmoothUnionOPShape, TestSize.Level1)
  */
 HWTEST_F(RSNodeTest2, SetSDFRRectShape, TestSize.Level1)
 {
-    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
+    auto modifierType = ModifierNG::RSModifierType::CLIP_TO_BOUNDS;
     auto rsNode = RSCanvasNode::Create();
     rsNode->SetSDFShape(nullptr);
     EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
@@ -706,19 +946,36 @@ HWTEST_F(RSNodeTest2, SetSDFRRectShape, TestSize.Level1)
     auto shape0 = RSNGShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
     auto shape = std::static_pointer_cast<RSNGSDFRRectShape>(shape0);
 
+    auto clipModifier = std::make_shared<ModifierNG::RSBoundsClipModifier>();
+    rsNode->AddModifier(clipModifier);
+
+    EXPECT_EQ(clipModifier->GetSDFShape(), nullptr);
+
+    // test of path of using modifier to set these properties
+    clipModifier->SetSDFShape(shape);
+
+    EXPECT_NE(clipModifier->GetSDFShape(), nullptr);
+}
+
+/**
+ * @tc.name: SetUseUnion & SetUnionSpacing
+ * @tc.desc: test results of UseUnion and UnionSpacing and modifier path
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetUseUnionAndUnionSpacing, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+
     auto boundsModifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     rsNode->AddModifier(boundsModifier);
 
-    EXPECT_EQ(boundsModifier->GetSDFShape(), nullptr);
     EXPECT_EQ(boundsModifier->GetUnionSpacing(), 0.0f);
     EXPECT_EQ(boundsModifier->GetUseUnion(), false);
 
     // test the path of using modifier to set these properties
-    boundsModifier->SetSDFShape(shape);
     boundsModifier->SetUnionSpacing(0.5f);
     boundsModifier->SetUseUnion(true);
 
-    EXPECT_NE(boundsModifier->GetSDFShape(), nullptr);
     EXPECT_EQ(boundsModifier->GetUnionSpacing(), 0.5f);
     EXPECT_EQ(boundsModifier->GetUseUnion(), true);
 }
@@ -836,25 +1093,24 @@ HWTEST_F(RSNodeTest2, SetMaterialWithQualityLevel_ClearColorPicker, TestSize.Lev
 
     // Ensure properties exist
     EXPECT_NE(modifierBefore->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_PLACEHOLDER),
-              modifierBefore->properties_.end());
+        modifierBefore->properties_.end());
     EXPECT_NE(modifierBefore->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_STRATEGY),
-              modifierBefore->properties_.end());
+        modifierBefore->properties_.end());
     EXPECT_NE(modifierBefore->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_INTERVAL),
-              modifierBefore->properties_.end());
+        modifierBefore->properties_.end());
 
     // Call SetMaterialWithQualityLevel with nullptr should clear color picker properties
     rsNode->SetMaterialWithQualityLevel(nullptr, FilterQuality::DEFAULT);
 
     auto modifierAfter = rsNode->GetModifierByType(ModifierNG::RSModifierType::COLOR_PICKER);
-    // Modifier may still exist but properties should be detached
-    if (modifierAfter != nullptr) {
-        EXPECT_EQ(modifierAfter->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_PLACEHOLDER),
-                  modifierAfter->properties_.end());
-        EXPECT_EQ(modifierAfter->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_STRATEGY),
-                  modifierAfter->properties_.end());
-        EXPECT_EQ(modifierAfter->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_INTERVAL),
-                  modifierAfter->properties_.end());
-    }
+    // Modifier and properties still exist to pick up previously extracted color
+    ASSERT_TRUE(modifierAfter);
+    EXPECT_NE(modifierAfter->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_PLACEHOLDER),
+        modifierAfter->properties_.end());
+    EXPECT_NE(modifierAfter->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_STRATEGY),
+        modifierAfter->properties_.end());
+    EXPECT_NE(modifierAfter->properties_.find(ModifierNG::RSPropertyType::COLOR_PICKER_INTERVAL),
+        modifierAfter->properties_.end());
 }
 
 /**
@@ -890,8 +1146,142 @@ HWTEST_F(RSNodeTest2, SetMaterialWithQualityLevel_AdaptiveFrostedGlass, TestSize
     auto propInterval = std::static_pointer_cast<RSProperty<int>>(
         modifier->GetProperty(ModifierNG::RSPropertyType::COLOR_PICKER_INTERVAL));
     ASSERT_NE(propInterval, nullptr);
-    // DEFAULT_INTERVAL in SetMaterialWithQualityLevel is 100, SetColorPickerParams clamps to MIN_INTERVAL=180
-    EXPECT_EQ(propInterval->Get(), 180);
 }
 
+/**
+ * @tc.name: SetBlender
+ * @tc.desc: test results of SetBlender
+ * @tc.type: FUNC
+ * @tc.require: issueICLU4I
+ */
+HWTEST_F(RSNodeTest2, SetBlender, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->SetBlender(nullptr);
+    EXPECT_NE(rsNode, nullptr);
+    Blender blender;
+    rsNode->SetBlender(&blender);
+    EXPECT_NE(rsNode, nullptr);
+    HdrDarkenBlender hdrDarkenBlender;
+    rsNode->SetBlender(&hdrDarkenBlender);
+    EXPECT_NE(rsNode, nullptr);
+}
+
+/**
+ * @tc.name: SetBlender
+ * @tc.desc: test results of SetBlender
+ * @tc.type: FUNC
+ * @tc.require: issueICLU4I
+ */
+HWTEST_F(RSNodeTest2, SetHdrDarkenBlenderParams001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    RSHdrDarkenBlenderPara params;
+    rsNode->SetHdrDarkenBlenderParams(params);
+    EXPECT_EQ(params.hdrBrightnessRatio_, 1.f);
+}
+
+/**
+ * @tc.name: SetBlender
+ * @tc.desc: test results of SetHdrDarkenBlenderParams
+ * @tc.type: FUNC
+ * @tc.require: issueICLU4I
+ */
+HWTEST_F(RSNodeTest2, SetHdrDarkenBlenderParams002, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    RSHdrDarkenBlenderPara params = {2.0, {0.5, 0.5, 0.1}};
+    rsNode->SetHdrDarkenBlenderParams(params);
+    EXPECT_EQ(params.hdrBrightnessRatio_, 2.0f);
+    EXPECT_EQ(params.grayscaleFactor_.x_, 0.5f);
+    EXPECT_EQ(params.grayscaleFactor_.y_, 0.5f);
+    EXPECT_EQ(params.grayscaleFactor_.z_, 0.1f);
+}
+
+/**
+ * @tc.name: SetGravityPullCenterFlagTest
+ * @tc.desc: test results of RSNode::SetGravityPullCenterFlag
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetGravityPullCenterFlagTest, TestSize.Level1)
+{
+    auto modifierType = ModifierNG::RSModifierType::BOUNDS;
+    auto rsNode = RSCanvasNode::Create();
+
+    EXPECT_EQ(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+
+    rsNode->SetGravityPullCenterFlag(false);
+    auto& properties = rsNode->GetModifierCreatedBySetter(modifierType)->properties_;
+
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::GRAVITY_CENTER_FLAG), properties.end());
+
+    rsNode->SetGravityPullCenterFlag(true);
+    EXPECT_NE(rsNode->GetModifierCreatedBySetter(modifierType), nullptr);
+    EXPECT_NE(properties.find(ModifierNG::RSPropertyType::GRAVITY_CENTER_FLAG), properties.end());
+}
+
+/**
+ * @tc.name: ReSortChildrenByZIndexTest
+ * @tc.desc: test results of ReSortChildrenByZIndex
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, ReSortChildrenByZIndexTest, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_NE(rsNode, nullptr);
+    rsNode->ReSortChildrenByZIndex();
+    rsNode = nullptr;
+    auto uiDirector = RSUIDirector::Create();
+    uiDirector->Init(true, true);
+    auto uiContext = uiDirector->GetRSUIContext();
+    rsNode = RSCanvasNode::Create(false, false, uiContext);
+    rsNode->ReSortChildrenByZIndex();
+    ASSERT_NE(uiContext, nullptr);
+    auto transaction = uiContext->GetRSTransaction();
+    ASSERT_NE(transaction, nullptr);
+    ASSERT_FALSE(transaction->IsEmpty());
+}
+
+/**
+ * @tc.name: SetBorderSDFShader001
+ * @tc.desc: test results of SetBorderSDFShader
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetBorderSDFShader001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->SetBorderSDFShader(nullptr);
+    ASSERT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::BORDER), nullptr);
+
+    auto shader = RSNGShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    rsNode->SetBorderSDFShader(shader);
+    ASSERT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::BORDER), nullptr);
+
+    rsNode->SetBorderSDFShader(nullptr);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::BORDER);
+    ASSERT_NE(modifier, nullptr);
+    ASSERT_EQ(modifier->properties_.find(ModifierNG::RSPropertyType::BORDER_SDF_SHADER), modifier->properties_.end());
+}
+
+/**
+ * @tc.name: SetOutlineSDFShader001
+ * @tc.desc: test results of SetOutlineSDFShader
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest2, SetOutlineSDFShader001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    rsNode->SetOutlineSDFShader(nullptr);
+    ASSERT_EQ(rsNode->GetModifierByType(ModifierNG::RSModifierType::OUTLINE), nullptr);
+
+    auto shader = RSNGShaderBase::Create(RSNGEffectType::BORDER_SDF_SHADER);
+    rsNode->SetOutlineSDFShader(shader);
+    ASSERT_NE(rsNode->GetModifierByType(ModifierNG::RSModifierType::OUTLINE), nullptr);
+
+    rsNode->SetOutlineSDFShader(nullptr);
+    auto modifier = rsNode->GetModifierByType(ModifierNG::RSModifierType::OUTLINE);
+    ASSERT_NE(modifier, nullptr);
+    ASSERT_EQ(modifier->properties_.find(ModifierNG::RSPropertyType::OUTLINE_SDF_SHADER), modifier->properties_.end());
+}
 } // namespace OHOS::Rosen

@@ -15,6 +15,7 @@
 
 #include "rs_graphic_test_profiler.h"
 
+#include "ffrt.h"
 #include "rs_graphic_test_director.h"
 #include "rs_graphic_test_utils.h"
 #include "rs_parameter_parse.h"
@@ -22,6 +23,7 @@
 #include "transaction/rs_interfaces.h"
 #include "ui/rs_root_node.h"
 #include "ui/rs_surface_node.h"
+#include "rs_graphic_errors.h"
 
 #include <charconv>
 #include <chrono>
@@ -37,16 +39,19 @@ namespace OHOS {
 namespace Rosen {
 constexpr uint32_t SURFACE_COLOR = 0xffffffff;
 constexpr int FLUSH_RS_WAIT_TIME = 500;
-constexpr int LOAD_STATIC_WAIT_TIME = 3000;
+constexpr int NODETREE_TIMEOUT = 10000;
+constexpr int NODETREE_WAIT_TIME = 100;
+constexpr int LOAD_STATIC_WAIT_TIME = 100;
 constexpr int NORMAL_WAIT_TIME = 1000;
 constexpr int PLAYBACK_PREPARE_OUT_TIME = 10000;
-constexpr int PLAY_BACK_REPLAY_TIME_OUT_TIME = 10000;
-constexpr int DEFAULT_TIME_INTERVAL = 250;
-constexpr int PLAYBACK_PAUSE_OUT_TIME = 5000;
+constexpr int DEFAULT_TIME_INTERVAL = 50;
+
 constexpr int PLAYBACK_OPERATE_INTERVAL_TIME = 100;
+constexpr int PLAYBACK_FRAME_WAIT_TIME = 30;
 constexpr int SCREEN_WIDTH = 1316;
 constexpr int SCREEN_HEIGHT = 2832;
 constexpr int FRAME_WIDTH_NUM = 6;
+constexpr float MS_TO_S = 1000.0f;
 const std::string SAVE_IMAGE_PATH_NAME = "ScreenShot";
 const std::string OHR_CONFIG_FILE_NAME = "ohr_config.json";
 //json config
@@ -79,6 +84,11 @@ void RSGraphicTestProfiler::SetUseBufferDump(bool useBufferDump)
     useBufferDump_ = useBufferDump;
 }
 
+void RSGraphicTestProfiler::SetInterruptFlag(std::atomic<bool>* flag)
+{
+    interruptFlag_ = flag;
+}
+
 int RSGraphicTestProfiler::RunNodeTreeTest(const std::string& path)
 {
     if (!std::filesystem::exists(path)) {
@@ -91,6 +101,10 @@ int RSGraphicTestProfiler::RunNodeTreeTest(const std::string& path)
     rootPath_ = path;
     std::filesystem::path imagePath = GetImageSavePath();
     for (const auto& entry : std::filesystem::directory_iterator(rootPath_)) {
+        if (ShouldInterrupt()) {
+            std::cout << "Test interrupted by profiler failure" << std::endl;
+            return NODETREE_RESTART;
+        }
         const std::string fileName = entry.path().filename();
         if (fileName == SAVE_IMAGE_PATH_NAME) {
             continue;
@@ -160,7 +174,7 @@ void RSGraphicTestProfiler::AnalysePlaybackInfo(
     }
 
     if (info.ohrType == OHR_FOR_DISPLAY) {
-        PlaybackWithoutJson(filePath, savePath);
+        LoadPlaybackProfilerFileWithoutJson(filePath, savePath);
     } else if (info.ohrType == OHR_FOR_PERFORMANCE || checkNum == OHR_INFO_NUM) {
         LoadPlaybackProfilerFile(filePath, savePath, info);
     }
@@ -171,14 +185,20 @@ void RSGraphicTestProfiler::PlayBackPauseAtVsync(
 {
     int frame = 1;
     for (int time = startTime; time <= endTime; time += timeInterval) {
+        RS_TRACE_BEGIN("RSGraphicTestProfiler::LoadPlayBackProfilerFiles");
+        auto start = std::chrono::high_resolution_clock::now();
         if (frame != 1) {
             float pauseTime = static_cast<float>(time) / static_cast<float>(UNIT_SEC_TO_MS);
-            std::string command = "rsrecord_pause_at " + std::to_string(pauseTime);
+            std::string command = "rsrecord_pause_at " +  std::to_string(pauseTime);
             std::cout << "Playback Pause At: " << command << std::endl;
-            RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PAUSE_OUT_TIME);
+            RSGraphicTestDirector::Instance().SendProfilerCommand(command, NORMAL_WAIT_TIME);
         }
+        RS_TRACE_END();
+        WaitTimeout(PLAYBACK_FRAME_WAIT_TIME);
+        auto sendCommand_end = std::chrono::high_resolution_clock::now();
+        auto elapsed1 = std::chrono::duration_cast<std::chrono::microseconds>(sendCommand_end - start);
+        std::cout << "---------------SendProfilerCommand cost: " << elapsed1.count() / MS_TO_S << std::endl;
 
-        WaitTimeout(NORMAL_WAIT_TIME);
         std::string filename;
         size_t lastDotPos = savePath.find_last_of(".");
         if (lastDotPos == std::string::npos || lastDotPos == 0) {
@@ -194,35 +214,47 @@ void RSGraphicTestProfiler::PlayBackPauseAtVsync(
         } else {
             TestCaseCapture(true, filename);
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        std::cout << "---------------One Frame total cost: " << elapsed.count() / MS_TO_S << std::endl;
         frame++;
+        std::cout << "------------------------one frame end----------------------" << std::endl;
     }
 }
 
-void RSGraphicTestProfiler::PlaybackWithoutJson(
+void RSGraphicTestProfiler::LoadPlaybackProfilerFileWithoutJson(
     const std::string& filePath, const std::string& savePath)
 {
     runTestCaseNum_++;
     // NOT MODIFY THE COMMENTS
     cout << "[   RUN   ] " << filePath << std::endl;
 
-    // playback prepare and get time
+    // switch playback mode
     std::string command =
-        "rsrecord_replay_prepare VSYNC" + std::to_string(0) + " " + filePath;
+        "rsrecord_replay_immediate " + std::to_string(1);
     RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
     WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
+
+    // playback prepare and get time
+    command =
+        "rsrecord_replay_prepare VSYNC " + std::to_string(0) + " " + filePath;
+    RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
+    WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
+
+    // get replay start and end time
     command = "rsreplay_time";
-    RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAY_BACK_REPLAY_TIME_OUT_TIME);
+    RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
     pair<double, double> startAndEndTime = RSGraphicTestDirector::Instance().ReceiveProfilerTimeInfo();
     int startTime = static_cast<int>(startAndEndTime.first * UNIT_SEC_TO_MS);
     int endTime = static_cast<int>(startAndEndTime.second * UNIT_SEC_TO_MS);
     cout << startTime << " " << endTime << std::endl;
-    WaitTimeout(startTime + NORMAL_WAIT_TIME);
+    WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
 
     // playback start
     command = "rsrecord_replay";
     std::cout << "Playback Start: " << command << std::endl;
-    RSGraphicTestDirector::Instance().SendProfilerCommand(command);
-    WaitTimeout(startTime + NORMAL_WAIT_TIME);
+    RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
+    WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
 
     PlayBackPauseAtVsync(startTime, endTime, DEFAULT_TIME_INTERVAL, savePath);
 
@@ -237,9 +269,6 @@ void RSGraphicTestProfiler::PlaybackWithoutJson(
 
 cJSON* ParseFileConfig(const std::string& path)
 {
-    if (path.empty()) {
-        return nullptr;
-    }
     std::ifstream configFile;
     configFile.open(path);
     std::stringstream configStream;
@@ -270,16 +299,12 @@ int RSGraphicTestProfiler::RunPlaybackTest(const std::string& filePath)
         return 0;
     }
 
-    // read config json file
     cJSON* rootData = ParseFileConfig(configPath);
-
     if (rootData == nullptr) {
         cJSON_Delete(rootData);
         std::cout << "parse config file failed, check it path is:" << configPath << std::endl;
         return 0;
     }
-
-    // parse json file
     auto playbackConfig = cJSON_GetObjectItem(rootData, OHR_LIST.c_str());
     if (cJSON_IsArray(playbackConfig)) {
         int listSize = cJSON_GetArraySize(playbackConfig);
@@ -291,8 +316,6 @@ int RSGraphicTestProfiler::RunPlaybackTest(const std::string& filePath)
         }
     }
     cJSON_Delete(rootData);
-
-    // delete ScreenSurfaceNode
     TearDown();
     // NOT MODIFY THE COMMENTS
     cout << "[   PASSED   ] " << runTestCaseNum_ << " test." << std::endl;
@@ -328,12 +351,21 @@ void RSGraphicTestProfiler::NodeTreeTestSetUp()
     system("setenforce 0");
     RSSurfaceNodeConfig config;
     config.SurfaceNodeName = "TestSurface";
-    auto testSurface = RSSurfaceNode::Create(config, RSSurfaceNodeType::APP_WINDOW_NODE);
-
+    auto testSurface = RSSurfaceNode::Create(config, RSSurfaceNodeType::APP_WINDOW_NODE, true, false,
+        RSGraphicTestDirector::Instance().GetRSUIContext());
+    if (!testSurface) {
+        std::cout << "NodeTreeTestSetUp create test surface failed" << std::endl;
+        return;
+    }
     testSurface->SetBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     testSurface->SetFrame({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
     testSurface->SetBackgroundColor(SURFACE_COLOR);
-    GetRootNode()->SetTestSurface(testSurface);
+    auto rootNode = GetRootNode();
+    if (!rootNode) {
+        std::cout << "NodeTreeTestSetUp root node is null" << std::endl;
+        return;
+    }
+    rootNode->SetTestSurface(testSurface);
 
     RSGraphicTestDirector::Instance().SetScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
     RSGraphicTestDirector::Instance().SetScreenSurfaceBounds({0, 0, SCREEN_WIDTH, SCREEN_HEIGHT});
@@ -361,36 +393,48 @@ void RSGraphicTestProfiler::TearDown()
 
 void RSGraphicTestProfiler::LoadNodeTreeProfilerFile(const std::string& filePath, const std::string& savePath)
 {
+    RS_TRACE_NAME("RSGraphicTestProfiler::LoadNodeTreeProfilerFile");
+    std::cout << "                                                             " << std::endl;
+    std::cout << "------------------------one testcase begin----------------------" << std::endl;
+    auto timepoint1 = std::chrono::high_resolution_clock::now();
+    bool captureSuccess = true;
     runTestCaseNum_++;
     // NOT MODIFY THE COMMENTS
     cout << "[   RUN   ] " << filePath << std::endl;
-    // 1.add load client node to add file 
-    auto loadNode = RSCanvasNode::Create();
+    // 1.add load client node to add file
+    auto loadNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
     loadNode->SetBounds({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
     GetRootNode()->AddChild(loadNode);
     // need flush client node to rs firstly
-    RSGraphicTestDirector::Instance().FlushMessage();
-    WaitTimeout(FLUSH_RS_WAIT_TIME);
+    if (!RSGraphicTestDirector::Instance().FlushMessageAndWait(NODETREE_TIMEOUT)) {
+        std::cout << "Warning: FlushMessageAndWait timed out after adding loadNode." << std::endl;
+    }
+    WaitTimeout(NODETREE_WAIT_TIME);
 
     // 2.send load command
     std::cout << "load subbtree to node file path is " << filePath << std::endl;
     std::string command = "rssubtree_load " + std::to_string(loadNode->GetId()) + " " + filePath;
-    RSGraphicTestDirector::Instance().SendProfilerCommand(command);
-    WaitTimeout(LOAD_STATIC_WAIT_TIME);
+    RSGraphicTestDirector::Instance().SendProfilerCommand(command, NODETREE_TIMEOUT);
+    WaitTimeout(NODETREE_WAIT_TIME);
 
     // 3.testcase capture
-    WaitTimeout(NORMAL_WAIT_TIME);
     if (useBufferDump_) {
         TestCaseBufferDump(true, savePath);
     } else {
-        TestCaseCapture(false, savePath);
+        captureSuccess = TestCaseCapture(false, savePath);
     }
 
     // 4.clear
-    GetRootNode()->RemoveChild(loadNode);
-    RSGraphicTestDirector::Instance().SendProfilerCommand("rssubtree_clear");
-    RSGraphicTestDirector::Instance().FlushMessage();
-    WaitTimeout(NORMAL_WAIT_TIME);
+    std::filesystem::remove(filePath);
+    if (captureSuccess) {
+        RSGraphicTestDirector::Instance().SendProfilerCommand("rssubtree_clear", NODETREE_TIMEOUT);
+        WaitTimeout(NODETREE_WAIT_TIME);
+    }
+    WaitTimeout(NODETREE_WAIT_TIME);
+    auto timepoint2 = std::chrono::high_resolution_clock::now();
+    auto elapsed2 = std::chrono::duration_cast<std::chrono::microseconds>(timepoint2 - timepoint1);
+    std::cout << "-----------------------one testcase end, total cost: " <<
+        elapsed2.count() / MS_TO_S << " ms. ----------------------" << std::endl;
 }
 
 void RSGraphicTestProfiler::LoadPlaybackProfilerFile(
@@ -412,8 +456,8 @@ void RSGraphicTestProfiler::LoadPlaybackProfilerFile(
     // playback start
     command = "rsrecord_replay";
     std::cout << "Playback Start: " << command << std::endl;
-    RSGraphicTestDirector::Instance().SendProfilerCommand(command);
-    WaitTimeout(info.startTime + NORMAL_WAIT_TIME);
+    RSGraphicTestDirector::Instance().SendProfilerCommand(command, PLAYBACK_PREPARE_OUT_TIME);
+    WaitTimeout(PLAYBACK_OPERATE_INTERVAL_TIME);
 
     PlayBackPauseAtVsync(info.startTime, info.endTime, info.timeInterval, savePath);
 
@@ -426,8 +470,9 @@ void RSGraphicTestProfiler::LoadPlaybackProfilerFile(
     WaitTimeout(NORMAL_WAIT_TIME);
 }
 
-void RSGraphicTestProfiler::TestCaseCapture(bool isScreenshot, const std::string& savePath)
+bool RSGraphicTestProfiler::TestCaseCapture(bool isScreenshot, const std::string& savePath)
 {
+    RS_TRACE_NAME("RSGraphicTestProfiler::TestCaseCapture");
     auto pixelMap = RSGraphicTestDirector::Instance().TakeScreenCaptureAndWait(
         RSParameterParse::Instance().surfaceCaptureWaitTime, isScreenshot);
     if (pixelMap) {
@@ -442,17 +487,26 @@ void RSGraphicTestProfiler::TestCaseCapture(bool isScreenshot, const std::string
         if (std::filesystem::exists(filename)) {
             cout << "image has already exist " << filename << std::endl;
         }
-        if (!WriteToPngWithPixelMap(filename, *pixelMap)) {
-            // NOT MODIFY THE COMMENTS
-            cout << "[   FAILED   ] " << filename << std::endl;
-            return;
-        }
+        RS_TRACE_NAME("RSGraphicTestProfiler::WriteToPngWithPixelMap");
+        ffrt::submit(
+            [filename, pixelMap] {
+                if (!WriteToPngWithPixelMap(filename, *pixelMap)) {
+                    // NOT MODIFY THE COMMENTS
+                    cout << "[   FAILED   ] " << filename << std::endl;
+                    return false;
+                }
+                return true;
+            },
+            {},
+            {});
         std::cout << "png write to " << filename << std::endl;
         // NOT MODIFY THE COMMENTS
         cout << "[   OK   ] " << filename << std::endl;
+        return true;
     } else {
         // NOT MODIFY THE COMMENTS
         cout << "[   FAILED   ] " << savePath << std::endl;
+        return false;
     }
 }
 
@@ -642,6 +696,11 @@ std::string RSGraphicTestProfiler::GetImageSavePath()
         }
     }
     return savePath.string();
+}
+
+bool RSGraphicTestProfiler::ShouldInterrupt() const
+{
+    return interruptFlag_ && interruptFlag_->load();
 }
 } // namespace Rosen
 } // namespace OHOS

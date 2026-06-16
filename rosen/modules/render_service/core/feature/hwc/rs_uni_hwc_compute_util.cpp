@@ -19,6 +19,7 @@
 #include "property/rs_properties_painter.h"
 
 #include "common/rs_optional_trace.h"
+#include "feature/hwc/rs_uni_hwc_prevalidate_util.h"
 
 #undef LOG_TAG
 #define LOG_TAG "RSUniHwcComputeUtil"
@@ -169,7 +170,8 @@ void RSUniHwcComputeUtil::DealWithNodeGravity(RSSurfaceRenderNode& node, const D
     node.SetSrcRect({newSrcRect.GetLeft(), newSrcRect.GetTop(), newSrcRect.GetWidth(), newSrcRect.GetHeight()});
 }
 
-void RSUniHwcComputeUtil::DealWithNodeGravityOldVersion(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
+void RSUniHwcComputeUtil::DealWithNodeGravityOldVersion(RSSurfaceRenderNode& node,
+                                                        const RSScreenProperty& screenProperty)
 {
     auto buffer = node.GetRSSurfaceHandler()->GetBuffer();
     if (!buffer) {
@@ -197,14 +199,7 @@ void RSUniHwcComputeUtil::DealWithNodeGravityOldVersion(RSSurfaceRenderNode& nod
     (void)RSPropertiesPainter::GetGravityMatrix(frameGravity,
         RectF {0.0f, 0.0f, boundsWidth, boundsHeight}, frameWidth, frameHeight, gravityMatrix);
     // create a canvas to calculate new dstRect and new srcRect
-    int32_t screenWidth = screenInfo.phyWidth;
-    int32_t screenHeight = screenInfo.phyHeight;
-    const auto screenRotation = screenInfo.rotation;
-    if (screenRotation == ScreenRotation::ROTATION_90 || screenRotation == ScreenRotation::ROTATION_270) {
-        std::swap(screenWidth, screenHeight);
-    }
- 
-    auto canvas = std::make_unique<Drawing::Canvas>(screenWidth, screenHeight);
+    auto canvas = std::make_unique<Drawing::Canvas>(screenProperty.GetWidth(), screenProperty.GetHeight());
     canvas->ConcatMatrix(translateMatrix);
     canvas->ConcatMatrix(gravityMatrix);
     Drawing::Rect clipRect;
@@ -292,33 +287,7 @@ void RSUniHwcComputeUtil::DealWithScalingMode(RSSurfaceRenderNode& node, const D
     UpdateHwcNodeByScalingMode(node, totalMatrix, gravityMatrix, scalingModeMatrix);
 }
 
-void RSUniHwcComputeUtil::LayerRotate(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
-{
-    const auto screenWidth = static_cast<int32_t>(screenInfo.width);
-    const auto screenHeight = static_cast<int32_t>(screenInfo.height);
-    const auto screenRotation = screenInfo.rotation;
-    const auto rect = node.GetDstRect();
-    switch (screenRotation) {
-        case ScreenRotation::ROTATION_90: {
-            node.SetDstRect({rect.top_, screenHeight - rect.left_ - rect.width_, rect.height_, rect.width_});
-            break;
-        }
-        case ScreenRotation::ROTATION_180: {
-            node.SetDstRect({screenWidth - rect.left_ - rect.width_, screenHeight - rect.top_ - rect.height_,
-                rect.width_, rect.height_});
-            break;
-        }
-        case ScreenRotation::ROTATION_270: {
-            node.SetDstRect({screenWidth - rect.top_ - rect.height_, rect.left_, rect.height_, rect.width_});
-            break;
-        }
-        default:  {
-            break;
-        }
-    }
-}
-
-void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
+void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const RSScreenProperty& screenProperty)
 {
     if (node.GetHwcGlobalPositionEnabled()) {
         return;
@@ -328,12 +297,8 @@ void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const ScreenInfo&
     auto originSrcRect = srcRect;
 
     RectI dstRectI(dstRect.left_, dstRect.top_, dstRect.width_, dstRect.height_);
-    int32_t screenWidth = static_cast<int32_t>(screenInfo.phyWidth);
-    int32_t screenHeight = static_cast<int32_t>(screenInfo.phyHeight);
-    if (node.GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
-        screenWidth = static_cast<int32_t>(screenInfo.width);
-        screenHeight = static_cast<int32_t>(screenInfo.height);
-    }
+    auto screenWidth = static_cast<int32_t>(screenProperty.GetWidth());
+    auto screenHeight = static_cast<int32_t>(screenProperty.GetHeight());
     RectI screenRectI(0, 0, screenWidth, screenHeight);
     RectI resDstRect = dstRectI.IntersectRect(screenRectI);
     if (resDstRect == dstRectI) {
@@ -345,9 +310,9 @@ void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const ScreenInfo&
     }
     dstRect = {resDstRect.left_, resDstRect.top_, resDstRect.width_, resDstRect.height_};
     srcRect.left_ = (resDstRect.IsEmpty() || dstRectI.IsEmpty() || dstRectI.width_ == 0) ?
-        0 : std::floor((resDstRect.left_ - dstRectI.left_) * originSrcRect.width_ / dstRectI.width_);
+        0 : srcRect.left_ + std::floor((resDstRect.left_ - dstRectI.left_) * originSrcRect.width_ / dstRectI.width_);
     srcRect.top_ = (resDstRect.IsEmpty() || dstRectI.IsEmpty() || dstRectI.height_ == 0) ?
-        0 : std::floor((resDstRect.top_ - dstRectI.top_) * originSrcRect.height_ / dstRectI.height_);
+        0 : srcRect.top_ + std::floor((resDstRect.top_ - dstRectI.top_) * originSrcRect.height_ / dstRectI.height_);
     srcRect.width_ = (dstRectI.IsEmpty() || dstRectI.width_ == 0) ?
         0 : std::ceil(originSrcRect.width_ * resDstRect.width_ / dstRectI.width_);
     srcRect.height_ = (dstRectI.IsEmpty() || dstRectI.height_ == 0) ?
@@ -356,7 +321,7 @@ void RSUniHwcComputeUtil::LayerCrop(RSSurfaceRenderNode& node, const ScreenInfo&
     node.SetSrcRect(srcRect);
 }
 
-void RSUniHwcComputeUtil::CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
+void RSUniHwcComputeUtil::CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, const RSScreenProperty& screenProperty)
 {
     auto surfaceHandler = node.GetRSSurfaceHandler();
     auto consumer = surfaceHandler->GetConsumer();
@@ -374,7 +339,7 @@ void RSUniHwcComputeUtil::CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, con
         case GraphicTransformType::GRAPHIC_FLIP_H: {
             if (srcRect.left_ >= 0) {
                 srcRect.left_ = bufferWidth - srcRect.left_ - srcRect.width_;
-            } else if (dstRect.left_ + dstRect.width_ >= static_cast<int32_t>(screenInfo.width)) {
+            } else if (dstRect.left_ + dstRect.width_ >= static_cast<int32_t>(screenProperty.GetWidth())) {
                 srcRect.left_ = bufferWidth - srcRect.width_;
             }
             break;
@@ -382,7 +347,7 @@ void RSUniHwcComputeUtil::CalcSrcRectByBufferFlip(RSSurfaceRenderNode& node, con
         case GraphicTransformType::GRAPHIC_FLIP_V: {
             if (srcRect.top_ >= 0) {
                 srcRect.top_ = bufferHeight - srcRect.top_ - srcRect.height_;
-            } else if (dstRect.top_ + dstRect.height_ >= static_cast<int32_t>(screenInfo.height)) {
+            } else if (dstRect.top_ + dstRect.height_ >= static_cast<int32_t>(screenProperty.GetHeight())) {
                 srcRect.top_ = bufferHeight - srcRect.height_;
             }
             break;
@@ -594,6 +559,50 @@ void RSUniHwcComputeUtil::UpdateHwcEnableByProperty(const std::shared_ptr<RSSurf
     }
 }
 
+void RSUniHwcComputeUtil::UpdateHwcNodeVcldInfo(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
+    const std::shared_ptr<RSRenderNode>& parent)
+{
+    if (!RSUniHwcPrevalidateUtil::GetInstance().IsVcldEnabled()) {
+        return;
+    }
+    if (hwcNode->GetSpecialLayerMgr().Find(SpecialLayerType::PROTECTED)) {
+        return;
+    }
+    RSVcldParam vcldInfo;
+    auto& parentProperty = parent->GetRenderProperties();
+    auto cornerRadius = parentProperty.GetCornerRadius();
+    auto maxCornerRadius = *std::max_element(std::begin(cornerRadius.data_), std::end(cornerRadius.data_));
+    if (maxCornerRadius == 0) {
+        return;
+    }
+    auto parentGeo = parentProperty.GetBoundsGeometry();
+    auto parentAbsRect = parentGeo->GetAbsRect();
+    auto hwcGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
+    auto hwcAbsRect = hwcGeo->MapRect(hwcNode->GetSelfDrawRect(), hwcNode->GetTotalMatrix());
+    auto dstRect = hwcNode->GetDstRect();
+    if (parentAbsRect == hwcAbsRect && dstRect == parentAbsRect) {
+        auto ratio = GetMaxAbsoluteRatioFromMatrix(hwcNode->GetTotalMatrix());
+        auto maxRadius = maxCornerRadius * ratio;
+        if (maxRadius < hwcNode->GetVcldInfo().radius) {
+            return;
+        }
+        vcldInfo.enable = true;
+        vcldInfo.radius = maxRadius;
+        hwcNode->SetVcldInfo(vcldInfo);
+        auto surfaceParams = static_cast<RSSurfaceRenderParams*>(hwcNode->GetStagingRenderParams().get());
+        if (surfaceParams == nullptr) {
+            RS_LOGE("node[%{public}s] id[%{public}" PRIu64 "] GetStagingRenderParams is null.",
+                hwcNode->GetName().c_str(), hwcNode->GetId());
+            return;
+        }
+        RRect vcldRoundRect = RRect({0, 0, std::round(hwcGeo->GetWidth()), std::round(hwcGeo->GetHeight())},
+            {maxCornerRadius, maxCornerRadius, maxCornerRadius, maxCornerRadius});
+        surfaceParams->SetRRectForVCLD(vcldRoundRect);
+    }
+    RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64 " corner radius[%f]",
+        hwcNode->GetName().c_str(), hwcNode->GetId(), hwcNode->GetVcldInfo().radius);
+}
+
 void RSUniHwcComputeUtil::UpdateHwcNodeProperty(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode)
 {
     if (hwcNode == nullptr) {
@@ -601,6 +610,7 @@ void RSUniHwcComputeUtil::UpdateHwcNodeProperty(const std::shared_ptr<RSSurfaceR
         return;
     }
     std::vector<RectI> currIntersectedRoundCornerAABBs = {};
+    hwcNode->ResetVcldInfo();
     const auto& hwcNodeGeo = hwcNode->GetRenderProperties().GetBoundsGeometry();
     auto hwcNodeRect = hwcNodeGeo->GetAbsRect();
     HwcPropertyContext ctx;
@@ -614,6 +624,7 @@ void RSUniHwcComputeUtil::UpdateHwcNodeProperty(const std::shared_ptr<RSSurfaceR
         [&ctx](const std::shared_ptr<RSRenderNode>& parent) { UpdateHwcNodeAlpha(parent, ctx); },
         [&ctx](const std::shared_ptr<RSRenderNode>& parent) { UpdateHwcNodeTotalMatrix(parent, ctx); },
         [&ctx](const std::shared_ptr<RSRenderNode>& parent) { UpdateHwcNodeAbsRotation(parent, ctx); },
+        [&hwcNode](const std::shared_ptr<RSRenderNode>& parent) { UpdateHwcNodeVcldInfo(hwcNode, parent); },
         [&currIntersectedRoundCornerAABBs, hwcNodeRect](std::shared_ptr<RSRenderNode> parent) {
             auto& parentProperty = parent->GetRenderProperties();
             auto cornerRadius = parentProperty.GetCornerRadius();
@@ -696,7 +707,7 @@ bool RSUniHwcComputeUtil::HasNonZRotationTransform(const Drawing::Matrix& matrix
     return vectorZ < 0;
 }
 
-GraphicTransformType RSUniHwcComputeUtil::GetLayerTransform(RSSurfaceRenderNode& node, const ScreenInfo& screenInfo)
+GraphicTransformType RSUniHwcComputeUtil::GetLayerTransform(RSSurfaceRenderNode& node)
 {
     auto surfaceHandler = node.GetRSSurfaceHandler();
     if (!surfaceHandler) {
@@ -723,8 +734,7 @@ GraphicTransformType RSUniHwcComputeUtil::GetLayerTransform(RSSurfaceRenderNode&
     }
     int consumerTransform = RSBaseRenderUtil::RotateEnumToInt(RSBaseRenderUtil::GetRotateTransform(transformType));
     GraphicTransformType consumerFlip = RSBaseRenderUtil::GetFlipTransform(transformType);
-    int totalRotation =
-        (RSBaseRenderUtil::RotateEnumToInt(screenInfo.rotation) + surfaceNodeRotation + consumerTransform + 360) % 360;
+    int totalRotation = (surfaceNodeRotation + consumerTransform + 360) % 360;
     GraphicTransformType rotateEnum = RSBaseRenderUtil::RotateEnumToInt(totalRotation, consumerFlip);
 
     RS_OPTIONAL_TRACE_NAME_FMT("RSUniHwcComputeUtil::GetLayerTransform nodeId:[%llu] fixRotationByUser:[%s] "
@@ -839,6 +849,12 @@ float RSUniHwcComputeUtil::GetFloatRotationDegreeFromMatrix(const Drawing::Matri
     matrix.GetAll(value);
     return std::atan2(value[Drawing::Matrix::Index::SKEW_X], value[Drawing::Matrix::Index::SCALE_X]) *
         (RS_ROTATION_180 / PI);
+}
+
+float RSUniHwcComputeUtil::GetMaxAbsoluteRatioFromMatrix(const Drawing::Matrix& matrix)
+{
+    return std::max({std::abs(matrix.Get(Drawing::Matrix::SCALE_X)), std::abs(matrix.Get(Drawing::Matrix::SCALE_Y)),
+        std::abs(matrix.Get(Drawing::Matrix::SKEW_X)), std::abs(matrix.Get(Drawing::Matrix::SKEW_Y))});
 }
 
 #undef CHECK_NULL_VOID

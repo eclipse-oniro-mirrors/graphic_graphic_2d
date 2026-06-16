@@ -30,9 +30,12 @@
 #include "effect/shader_effect_lazy.h"
 #include "effect/image_filter.h"
 #include "effect/image_filter_lazy.h"
+#include "draw/ui_color.h"
 
 using namespace testing;
 using namespace testing::ext;
+
+#define TDD_PAINT_RADIUS 10
 
 namespace OHOS {
 namespace Rosen {
@@ -88,7 +91,7 @@ HWTEST_F(SkiaPaintTest, BrushToSkPaint002, TestSize.Level1)
 {
     Brush brush;
     brush.SetAntiAlias(true);
-    Color4f color;
+    Color4f color{0, 0, 0, 1};
     auto space = std::make_shared<ColorSpace>();
     brush.SetColor(color, space);
     brush.SetAlpha(100);
@@ -142,14 +145,14 @@ HWTEST_F(SkiaPaintTest, PenToSkPaint003, TestSize.Level1)
 {
     Pen pen;
     pen.SetAntiAlias(true);
-    Color4f color;
+    Color4f color{0, 0, 0, 1};
     auto space = std::make_shared<ColorSpace>();
     pen.SetColor(color, space);
     pen.SetBlendMode(BlendMode::CLEAR);
     pen.SetCapStyle(Pen::CapStyle::ROUND_CAP);
     pen.SetJoinStyle(Pen::JoinStyle::BEVEL_JOIN);
     pen.SetShaderEffect(ShaderEffect::CreateColorShader(0xFF000000));
-    pen.SetPathEffect(PathEffect::CreateCornerPathEffect(10));
+    pen.SetPathEffect(PathEffect::CreateCornerPathEffect(TDD_PAINT_RADIUS));
     SkPaint skPaint;
     SkiaPaint::PenToSkPaint(pen, skPaint);
     EXPECT_TRUE(skPaint.isAntiAlias());
@@ -166,7 +169,7 @@ HWTEST_F(SkiaPaintTest, PaintToSkPaint001, TestSize.Level1)
     Paint paint;
     paint.SetAntiAlias(true);
     auto space = std::make_shared<ColorSpace>();
-    Color4f color;
+    Color4f color{0, 0, 0, 1};
     paint.SetColor(color, space);
     paint.SetBlendMode(BlendMode::CLEAR);
     SkPaint skPaint;
@@ -186,7 +189,7 @@ HWTEST_F(SkiaPaintTest, ApplyStrokeParam001, TestSize.Level1)
     paint.SetStyle(Paint::PaintStyle::PAINT_FILL);
     paint.SetCapStyle(Pen::CapStyle::ROUND_CAP);
     paint.SetJoinStyle(Pen::JoinStyle::BEVEL_JOIN);
-    paint.SetPathEffect(PathEffect::CreateCornerPathEffect(10));
+    paint.SetPathEffect(PathEffect::CreateCornerPathEffect(TDD_PAINT_RADIUS));
     SkiaPaint skiaPaint;
     SkPaint skPaint;
     skiaPaint.ApplyStrokeParam(paint, skPaint);
@@ -195,7 +198,7 @@ HWTEST_F(SkiaPaintTest, ApplyStrokeParam001, TestSize.Level1)
     paint2.SetStyle(Paint::PaintStyle::PAINT_FILL);
     paint2.SetCapStyle(Pen::CapStyle::SQUARE_CAP);
     paint2.SetJoinStyle(Pen::JoinStyle::ROUND_JOIN);
-    paint2.SetPathEffect(PathEffect::CreateCornerPathEffect(10));
+    paint2.SetPathEffect(PathEffect::CreateCornerPathEffect(TDD_PAINT_RADIUS));
     skiaPaint.ApplyStrokeParam(paint2, skPaint);
     EXPECT_TRUE(skPaint.getStrokeCap() == SkPaint::Cap::kSquare_Cap);
 }
@@ -354,6 +357,63 @@ HWTEST_F(SkiaPaintTest, PaintWithLazyShader001, TestSize.Level1)
     SkPaint skPaint;
     SkiaPaint::PaintToSkPaint(paint, skPaint);
     EXPECT_TRUE(skPaint.getShader() != nullptr);
+}
+
+/**
+ * @tc.name: BrushToSkPaintWithUIColor001
+ * @tc.desc: Test BrushToSkPaint with UIColor and ColorSpace
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SkiaPaintTest, BrushToSkPaintWithUIColor001, TestSize.Level1)
+{
+    Brush brush;
+    UIColor uiColor(1.0f, 0.5f, 0.3f, 1.0f);
+    auto colorSpace = std::make_shared<ColorSpace>();
+    brush.SetUIColor(uiColor, colorSpace);
+    SkPaint skPaint;
+    SkiaPaint::BrushToSkPaint(brush, skPaint);
+    brush.SetUIColor(uiColor, nullptr);
+    SkiaPaint::BrushToSkPaint(brush, skPaint);
+    EXPECT_TRUE(brush.HasUIColor());
+}
+
+/**
+ * @tc.name: PenToSkPaintWithUIColor001
+ * @tc.desc: Test PenToSkPaint with UIColor and ColorSpace
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SkiaPaintTest, PenToSkPaintWithUIColor001, TestSize.Level1)
+{
+    Pen pen;
+    UIColor uiColor(0.7f, 0.5f, 0.2f, 1.0f);
+    auto colorSpace = std::make_shared<ColorSpace>();
+    pen.SetUIColor(uiColor, colorSpace);
+    SkPaint skPaint;
+    SkiaPaint::PenToSkPaint(pen, skPaint);
+    pen.SetUIColor(uiColor, nullptr);
+    SkiaPaint::PenToSkPaint(pen, skPaint);
+    EXPECT_TRUE(pen.HasUIColor());
+}
+
+/**
+ * @tc.name: PaintToSkPaintWithUIColor001
+ * @tc.desc: Test PaintToSkPaint with UIColor and ColorSpace
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SkiaPaintTest, PaintToSkPaintWithUIColor001, TestSize.Level1)
+{
+    Paint paint;
+    UIColor uiColor(0.9f, 0.4f, 0.2f, 1.0f);
+    auto colorSpace = std::make_shared<ColorSpace>();
+    paint.SetUIColor(uiColor, colorSpace);
+    SkPaint skPaint;
+    SkiaPaint::PaintToSkPaint(paint, skPaint);
+    paint.SetUIColor(uiColor, nullptr);
+    SkiaPaint::PaintToSkPaint(paint, skPaint);
+    EXPECT_TRUE(paint.HasUIColor());
 }
 } // namespace Drawing
 } // namespace Rosen

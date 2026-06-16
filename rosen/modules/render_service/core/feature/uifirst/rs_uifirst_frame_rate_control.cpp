@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+#include "feature/uifirst/rs_frame_control.h"
 #include "rs_uifirst_frame_rate_control.h"
+#include "feature_param/performance_feature/uifirst_param.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -23,12 +25,11 @@ void RSUifirstFrameRateControl::SetAnimationStartInfo(const DataBaseRs& eventInf
         return;
     }
     auto sceneId = GetSceneId(eventInfo.sceneId);
-
+    if (!IsSceneEnabled(sceneId)) {
+        return;
+    }
     switch (sceneId) {
         case SceneId::LAUNCHER_APP_LAUNCH_FROM_ICON:
-            forceRefreshOnce_ = true;
-            SetStartAnimation(true);
-            break;
         case SceneId::LAUNCHER_APP_LAUNCH_FROM_DOCK:
             forceRefreshOnce_ = true;
             SetStartAnimation(true);
@@ -39,7 +40,7 @@ void RSUifirstFrameRateControl::SetAnimationStartInfo(const DataBaseRs& eventInf
             break;
         case SceneId::GESTURE_TO_RECENTS:
             forceRefreshOnce_ = true;
-            SetMultTaskAnimation(true);
+            SetMultiTaskAnimation(true);
             break;
         case SceneId::LAUNCHER_APP_LAUNCH_FROM_RECENT:
             forceRefreshOnce_ = false;
@@ -48,7 +49,7 @@ void RSUifirstFrameRateControl::SetAnimationStartInfo(const DataBaseRs& eventInf
         case SceneId::LOCKSCREEN_TO_LAUNCHER:
             SetStartAnimation(false);
             SetStopAnimation(false);
-            SetMultTaskAnimation(false);
+            SetMultiTaskAnimation(false);
             break;
         default:
             break;
@@ -61,11 +62,11 @@ void RSUifirstFrameRateControl::SetAnimationEndInfo(const DataBaseRs& eventInfo)
         return;
     }
     auto sceneId = GetSceneId(eventInfo.sceneId);
-
+    if (!IsSceneEnabled(sceneId)) {
+        return;
+    }
     switch (sceneId) {
         case SceneId::LAUNCHER_APP_LAUNCH_FROM_ICON:
-            SetStartAnimation(false);
-            break;
         case SceneId::LAUNCHER_APP_LAUNCH_FROM_DOCK:
             SetStartAnimation(false);
             break;
@@ -74,12 +75,12 @@ void RSUifirstFrameRateControl::SetAnimationEndInfo(const DataBaseRs& eventInfo)
             break;
         case SceneId::LAUNCHER_APP_LAUNCH_FROM_RECENT:
             forceRefreshOnce_ = true;
-            SetMultTaskAnimation(false);
+            SetMultiTaskAnimation(false);
             break;
         case SceneId::EXIT_RECENT_2_HOME_ANI:
         case SceneId::CLEAR_1_RECENT_ANI:
         case SceneId::CLEAR_ALL_RECENT_ANI:
-            SetMultTaskAnimation(false);
+            SetMultiTaskAnimation(false);
             break;
         default:
             break;
@@ -93,7 +94,6 @@ bool RSUifirstFrameRateControl::JudgeMultiSubSurface(const RSSurfaceRenderNode& 
 
 bool RSUifirstFrameRateControl::GetUifirstFrameDropInternal(int frameInterval)
 {
-    std::lock_guard<std::mutex> lock(incrementCallCount_);
     callCount_++;
     if (callCount_ % (frameInterval + 1) == 0) {
         callCount_ = 0;
@@ -104,16 +104,59 @@ bool RSUifirstFrameRateControl::GetUifirstFrameDropInternal(int frameInterval)
 
 bool RSUifirstFrameRateControl::SubThreadFrameDropDecision(const RSSurfaceRenderNode& node)
 {
-    bool inAnimation = JudgeStartAnimation() || JudgeStopAnimation() || JudgeMultTaskAnimation();
+    bool inAnimation = JudgeStartAnimation() || JudgeStopAnimation() || JudgeMultiTaskAnimation();
     bool hasMultipleSubSurfaces = JudgeMultiSubSurface(node);
     bool canDropFrame = GetUifirstFrameDropInternal(RSSystemProperties::GetSubThreadDropFrameInterval());
     
-    return inAnimation && (forceRefreshOnce_ || (!hasMultipleSubSurfaces && canDropFrame));
+    bool isNeedFrameControl = true;
+    NodeId id = node.GetFirstLevelNodeId();
+    if (RSFrameControlTool::Instance().CheckAppWindowNodeId(id)) {
+        isNeedFrameControl = false;
+    }
+    return inAnimation && ((forceRefreshOnce_ && isNeedFrameControl) || (!hasMultipleSubSurfaces && canDropFrame));
 }
 
 bool RSUifirstFrameRateControl::NeedRSUifirstControlFrameDrop(const RSSurfaceRenderNode& node)
 {
     return SubThreadFrameDropDecision(node);
+}
+
+uint32_t RSUifirstFrameRateControl::GetSceneIdBit(SceneId sceneId)
+{
+    switch (sceneId) {
+        case SceneId::LAUNCHER_APP_LAUNCH_FROM_ICON:
+            return SCENE_APP_LAUNCH_FROM_ICON;
+        case SceneId::LAUNCHER_APP_LAUNCH_FROM_DOCK:
+            return SCENE_APP_LAUNCH_FROM_DOCK;
+        case SceneId::LAUNCHER_APP_SWIPE_TO_HOME:
+            return SCENE_APP_SWIPE_TO_HOME;
+        case SceneId::GESTURE_TO_RECENTS:
+            return SCENE_GESTURE_TO_RECENTS;
+        case SceneId::EXIT_RECENT_2_HOME_ANI:
+        case SceneId::CLEAR_1_RECENT_ANI:
+        case SceneId::CLEAR_ALL_RECENT_ANI:
+            return SCENE_EXIT_RECENT;
+        case SceneId::AOD_TO_LAUNCHER:
+            return SCENE_AOD_TO_LAUNCHER;
+        case SceneId::LOCKSCREEN_TO_LAUNCHER:
+            return SCENE_LOCKSCREEN_TO_LAUNCHER;
+        case SceneId::LAUNCHER_APP_LAUNCH_FROM_RECENT:
+            return 0;
+        default:
+            return 0;
+    }
+}
+
+uint32_t RSUifirstFrameRateControl::GetFrameControlScenesMask() const
+{
+    return UIFirstParam::GetSubThreadFrameRateControlByScene();
+}
+ 
+bool RSUifirstFrameRateControl::IsSceneEnabled(SceneId sceneId) const
+{
+    uint32_t scenesMask = GetFrameControlScenesMask();
+    uint32_t sceneBit = GetSceneIdBit(sceneId);
+    return (scenesMask & sceneBit) != 0;
 }
 }
 }

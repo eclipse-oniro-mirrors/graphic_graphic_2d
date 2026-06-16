@@ -24,7 +24,7 @@
 namespace OHOS {
 namespace Rosen {
 constexpr int DEFAULT_QUICK_SKIP_PREPARE_TYPE_VALUE = 3;
-int ConvertToInt(const char *originValue, int defaultValue)
+static int ConvertToInt(const char *originValue, int defaultValue)
 {
     return originValue == nullptr ? defaultValue : std::atoi(originValue);
 }
@@ -156,12 +156,11 @@ bool RSSystemParameters::GetRenderStop()
     return ConvertToInt(enable, 0) != 0;
 }
 
-bool RSSystemParameters::GetOcclusionCallBackToWMSDebugType()
+int RSSystemParameters::GetOcclusionCullingDebugLevel()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.occlusion.callbacktowms.debug.enabled", "0");
-    int changed = 0;
-    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(enable, 0) != 0;
+    static int occlusionCullingDebugLevel =
+        std::atoi((system::GetParameter("persist.sys.graphic.occlusionCulling.debugLevel", "0")).c_str());
+    return occlusionCullingDebugLevel;
 }
 
 bool RSSystemParameters::GetPrevalidateHwcNodeEnabled()
@@ -198,10 +197,18 @@ bool RSSystemParameters::GetHideNotchStatus()
 
 bool RSSystemParameters::GetHpaeBlurEnabled()
 {
-    static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.hpae.blur.enabled", "0");
+    static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.hpae.blur.enabled", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemParameters::GetHveBlurEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("debug.graphic.hve.blur.enabled", "0");
+    int changed = 0;
+    const char* enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
 }
 
 bool RSSystemParameters::GetTcacheEnabled()
@@ -246,12 +253,6 @@ bool RSSystemParameters::GetIsCopybitSupported()
     return flag;
 }
 
-bool RSSystemParameters::GetMultimediaEnableCameraRotationCompensation()
-{
-    static bool flag = system::GetBoolParameter("const.multimedia.enable_camera_rotation_compensation", 0);
-    return flag;
-}
-
 bool RSSystemParameters::GetArsrPreEnabled()
 {
     static bool flag = system::GetBoolParameter("const.display.enable_arsr_pre", true);
@@ -264,12 +265,6 @@ bool RSSystemParameters::GetCanvasDrawingNodeRegionEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 0) != 0;
-}
-
-int32_t RSSystemParameters::GetWindowScreenScanType()
-{
-    static int32_t screenScanType = system::GetIntParameter<int32_t>("const.window.screen.scan_type", 0);
-    return screenScanType;
 }
 
 int32_t RSSystemParameters::GetPurgeableResourceLimit()
@@ -287,20 +282,20 @@ bool RSSystemParameters::GetAnimationOcclusionEnabled()
     return ConvertToInt(enable, 0) != 0;
 }
 
+bool RSSystemParameters::GetDDGRSLREnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.DDGRSLR.enabled", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 1) != 0;
+}
+
 bool RSSystemParameters::GetUIFirstPurgeEnabled()
 {
     static CachedHandle g_Handle = CachedParameterCreate("rosen.uifirst.purge.enable", "1");
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 0) != 0;
-}
-
-bool RSSystemParameters::GetUIFirstOcclusionEnabled()
-{
-    static CachedHandle g_Handle = CachedParameterCreate("rosen.uni.uifirst.occlusion.enable", "1");
-    int changed = 0;
-    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
-    return ConvertToInt(enable, 0);
 }
 
 bool RSSystemParameters::GetUIFirstCaptrueReuseEnabled()
@@ -315,6 +310,29 @@ bool RSSystemParameters::GetUIFirstStartingWindowCacheEnabled()
     static bool enable =
         std::atoi((system::GetParameter("persist.sys.graphic.uifirst.startingWindow.cache.enable", "1")).c_str()) != 0;
     return enable;
+}
+
+bool RSSystemParameters::GetUIFirstOcclusionEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.uifirst.occlusion.enable", "1");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
+
+bool RSSystemParameters::GetUIFirstOcclusionDebugEnabled()
+{
+    static CachedHandle g_Handle = CachedParameterCreate("rosen.uifirst.occlusion.dfx.enable", "0");
+    int changed = 0;
+    const char *enable = CachedParameterGetChanged(g_Handle, &changed);
+    return ConvertToInt(enable, 0) != 0;
+}
+
+bool RSSystemParameters::GetCropRectDebugOverlayEnabled()
+{
+    static bool cropRectDebugOverlayEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.cropRectDebugOverlay.Enabled", "0")).c_str()) != 0;
+    return cropRectDebugOverlayEnabled;
 }
 } // namespace Rosen
 } // namespace OHOS

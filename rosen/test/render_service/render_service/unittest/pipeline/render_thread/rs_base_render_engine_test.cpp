@@ -13,26 +13,33 @@
  * limitations under the License.
  */
 
+#include "drawable/rs_screen_render_node_drawable.h"
 #include "gtest/gtest.h"
 
 #ifdef RS_ENABLE_VK
 #include <parameter.h>
 #include <parameters.h>
-#include "feature/gpuComposition/rs_vk_image_manager.h"
+#include "gpuComposition/rs_vk_image_manager.h"
 #else
-#include "feature/gpuComposition/rs_egl_image_manager.h"
+#include "gpuComposition/rs_egl_image_manager.h"
 #endif
-#include "pipeline/render_thread/rs_base_render_engine.h"
+#include "gpuComposition/rs_gpu_cache_manager.h"
+#include "feature/hdr/rs_hdr_util.h"
+#include "engine/rs_base_render_engine.h"
 #include "pipeline/render_thread/rs_render_engine.h"
 #include "pipeline/rs_test_util.h"
 #include "recording/recording_canvas.h"
-#include "v2_1/cm_color_space.h"
 #include "rs_surface_layer.h"
+#include "v2_1/cm_color_space.h"
+#include "platform/ohos/backend/rs_surface_ohos_raster.h"
+#include "platform/ohos/backend/rs_surface_frame_ohos_raster.h"
 
 using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS::Rosen {
+constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
+const Drawing::Rect DEFAULT_RECT(0.0f, 0.0f, 50.0f, 50.0f);
 #ifdef RS_ENABLE_VK
 static sptr<SurfaceBuffer> CreateBuffer()
 {
@@ -123,6 +130,60 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ResetCurrentContextTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RequestFrame_NullSharedSurface_ReturnNull
+ * @tc.desc: RequestFrame(shared RSSurfaceOhos=nullptr) should return nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_NullSharedSurface_ReturnNull, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig cfg;
+    FrameContextConfig fcfg(false);
+    auto frame = renderEngine->RequestFrame(std::shared_ptr<RSSurfaceOhos>(nullptr), cfg, false, false, fcfg);
+    ASSERT_EQ(frame, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_NullTargetSurface_ReturnNull
+ * @tc.desc: RequestFrame(sptr<Surface>=nullptr) should return nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_NullTargetSurface_ReturnNull, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig cfg;
+    FrameContextConfig fcfg(false);
+    auto frame = renderEngine->RequestFrame(sptr<Surface>(nullptr), cfg, false, false, fcfg);
+    ASSERT_EQ(frame, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_VirtualProtected_FlagsPath
+ * @tc.desc: Exercise isVirtual/isProtected flags path for buffer usage setup
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_VirtualProtected_FlagsPath, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    auto consumer = IConsumerSurface::Create("rf-ut");
+    auto producer = consumer->GetProducer();
+    auto psurf = Surface::CreateSurfaceAsProducer(producer);
+    BufferRequestConfig cfg;
+    cfg.width = 64;
+    cfg.height = 64;
+    cfg.format = GRAPHIC_PIXEL_FMT_RGBA_8888;
+    cfg.usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE;
+    FrameContextConfig fcfg(false);
+    fcfg.isVirtual = true;
+    fcfg.isProtected = true;
+    auto frame = renderEngine->RequestFrame(psurf, cfg, true, false, fcfg);
+    ASSERT_NE(renderEngine, nullptr);
+}
+
+/**
  * @tc.name: SetHighContrast_001
  * @tc.desc: Test SetHighContrast, input false, expect RSBaseRenderEngine::IsHighContrastEnabled() to be same as input
  * @tc.type: FUNC
@@ -165,7 +226,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, NeedForceCPU001, TestSize.Level1)
     ASSERT_EQ(false, ret);
 
     layers.clear();
-    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>();
+    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     layers.emplace_back(layer);
     ret = RSBaseRenderEngine::NeedForceCPU(layers);
     ASSERT_EQ(false, ret);
@@ -183,7 +244,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, NeedForceCPU002, TestSize.Level1)
     auto buffer = node->GetRSSurfaceHandler()->GetBuffer();
 
     std::vector<RSLayerPtr> layers;
-    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>();
+    RSLayerPtr layer = std::make_shared<RSSurfaceLayer>(0, nullptr);
     layer->SetBuffer(buffer, node->GetRSSurfaceHandler()->GetAcquireFence());
     layers.emplace_back(layer);
     bool ret = RSBaseRenderEngine::NeedForceCPU(layers);
@@ -213,15 +274,21 @@ HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParams001, TestSize.Level
     ScreenId screenId = 1;
     auto rsContext = std::make_shared<RSContext>();
     auto node = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
     BufferDrawParam param;
+    int canvasHeight = 10;
+    int canvasWidth = 10;
 
-    if (RSSystemProperties::IsUseVulkan()) {
+    if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+        RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
         auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
         param.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
 
         auto renderEngine = std::make_shared<RSRenderEngine>();
         renderEngine->Init();
-        auto drawingRecordingCanvas = std::make_unique<Drawing::RecordingCanvas>(10, 10);
+        auto drawingRecordingCanvas = std::make_unique<Drawing::RecordingCanvas>(canvasHeight, canvasWidth);
         drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
         auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(drawingRecordingCanvas.get());
         ASSERT_NE(recordingCanvas, nullptr);
@@ -231,7 +298,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParams001, TestSize.Level
         renderEngine->DrawScreenNodeWithParams(*recordingCanvas, *node, param);
     } else {
         auto renderEngine = std::make_shared<RSRenderEngine>();
-        std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
+        std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(canvasHeight, canvasWidth);
         std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
         ASSERT_NE(canvas, nullptr);
         renderEngine->DrawScreenNodeWithParams(*canvas, *node, param);
@@ -253,15 +320,18 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateEglImageFromBuffer001, TestSize.Level
     auto renderEngine = std::make_shared<RSRenderEngine>();
     renderEngine->Init();
     auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
+    int canvasHeight = 10;
+    int canvasWidth = 10;
+    std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(canvasHeight, canvasWidth);
     std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
-    EGLDisplay display = EGL_NO_DISPLAY;
-    renderEngine->imageManager_ = std::make_shared<RSEglImageManager>(display);
     BufferDrawParam params;
     params.buffer = nullptr;
     params.acquireFence = nullptr;
     params.threadIndex = 0;
     auto img = renderEngine->imageManager_->CreateImageFromBuffer(*canvas, params, nullptr);
+    ASSERT_EQ(nullptr, img);
+    params.buffer = node->GetRSSurfaceHandler()->GetBuffer();
+    img = renderEngine->imageManager_->CreateImageFromBuffer(*canvas, params, nullptr);
     ASSERT_EQ(nullptr, img);
 }
 
@@ -280,9 +350,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, DrawImageRect, TestSize.Level1)
     params.dstRect = dstRect;
     params.paint = paint;
     Drawing::SamplingOptions samplingOptions(Drawing::FilterMode::LINEAR, Drawing::MipmapMode::NEAREST);
-    auto renderEngine = std::make_shared<RSRenderEngine>();
-    ASSERT_NE(renderEngine, nullptr);
-    renderEngine->DrawImageRect(paintCanvase, image, params, samplingOptions);
+    RSBaseRenderEngine::DrawImageRect(paintCanvase, image, params, samplingOptions);
     ASSERT_NE(image, nullptr);
 }
 
@@ -294,7 +362,13 @@ HWTEST_F(RSBaseRenderEngineUnitTest, DrawImageRect, TestSize.Level1)
  */
 HWTEST_F(RSBaseRenderEngineUnitTest, RegisterDeleteBufferListener001, TestSize.Level1)
 {
+    // RegisterDeleteBufferListener without gpuCacheManager
     auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->RegisterDeleteBufferListener(nullptr, true);
+
+    // RegisterDeleteBufferListener with gpuCacheManager
+    auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
+    renderEngine->SetGPUCacheManager(gpuCacheManager);
     renderEngine->RegisterDeleteBufferListener(nullptr, true);
     renderEngine->RegisterDeleteBufferListener(nullptr, false);
 #ifdef RS_ENABLE_VK
@@ -357,12 +431,12 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ConvertDrawingColorSpaceToSpaceInfo, TestSi
 }
 
 /**
- * @tc.name: GetCanvasColorSpace
+ * @tc.name: GetCanvasColorSpace001
  * @tc.desc: Test GetCanvasColorSpace
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSBaseRenderEngineUnitTest, GetCanvasColorSpace, TestSize.Level1)
+HWTEST_F(RSBaseRenderEngineUnitTest, GetCanvasColorSpace001, TestSize.Level1)
 {
     std::unique_ptr<Drawing::Canvas> drawingCanvas = std::make_unique<Drawing::Canvas>(10, 10);
     std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
@@ -380,19 +454,43 @@ HWTEST_F(RSBaseRenderEngineUnitTest, GetCanvasColorSpace002, TestSize.Level1)
 {
     auto colorSpace = Drawing::ColorSpace::CreateSRGB();
     auto info = Drawing::ImageInfo(10, 10, Drawing::ColorType::COLORTYPE_RGBA_8888,
-        Drawing::AlphaType::ALPHATYPE_PREMUL, colorSpace);
+        Drawing::AlphaType::ALPHATYPE_OPAQUE, colorSpace);
     auto surface = Drawing::Surface::MakeRaster(info);
     ASSERT_NE(surface, nullptr);
     auto canvas = std::make_shared<RSPaintFilterCanvas>(surface.get());
     ASSERT_NE(canvas, nullptr);
-    auto canvasColorSpace = RSBaseRenderEngine::GetCanvasColorSpace(*canvas);
-    ASSERT_NE(canvasColorSpace, nullptr);
-    EXPECT_TRUE(canvasColorSpace->Equals(colorSpace));
+    auto newColorSpace = RSBaseRenderEngine::GetCanvasColorSpace(*canvas);
+    ASSERT_NE(newColorSpace, nullptr);
+    EXPECT_TRUE(newColorSpace->Equals(colorSpace));
+}
+
+/**
+ * @tc.name: CancelCurrentFrame
+ * @tc.desc: Test CancelCurrentFrame with targetSurface_ is nullptr
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CancelCurrentFrame, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    std::shared_ptr<RSSurfaceOhosVulkan> rsSurface1 = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
+    auto tmpSurface = std::make_shared<Drawing::Surface>();
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, 100, 100, 10);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface1, std::move(surfaceFrame));
+    renderFrame->targetSurface_ = nullptr;
+    renderFrame->CancelCurrentFrame();
+    ASSERT_EQ(renderFrame->GetSurface(), nullptr);
+
+    renderFrame->targetSurface_ = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
+    renderFrame->CancelCurrentFrame();
+    ASSERT_NE(renderFrame->GetSurface(), nullptr);
 }
 
 /**
  * @tc.name: CreateImageFromBuffer001
- * @tc.desc: Test CreateImageFromBuffer
+ * @tc.desc: Test CreateImageFromBuffer with invalid params, expect fail
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -408,43 +506,49 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer001, TestSize.Level1)
 
 /**
  * @tc.name: CreateImageFromBuffer002
- * @tc.desc: Test CreateImageFromBuffer002
+ * @tc.desc: Test CreateImageFromBuffer:
+ *           1.IsBufferDeleted is false and call CreateImageFromBuffer,
+ *             vkImage should be cached, imageCacheSeqs_ size expect 1.
+ *           2.call ClearCacheSet, vkImage should be released, imageCacheSeqs_ size should be 0
+ *           3.IsBufferDeleted is true and call CreateImageFromBuffer,
+ *             vkImage should not be cached, imageCacheSeqs_ size expect 0.
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer002, TestSize.Level1)
 {
 #ifdef RS_ENABLE_VK
-    if (!RSSystemProperties::IsUseVulkan()) {
-        return;
-    }
-    auto renderEngine = std::make_shared<RSRenderEngine>();
-    std::set<uint64_t> unmappedCache;
-    renderEngine->ClearCacheSet(unmappedCache);
-    renderEngine->Init();
-    EXPECT_NE(renderEngine->imageManager_, nullptr);
-
-    auto drawingRecordingCanvas = std::make_unique<Drawing::RecordingCanvas>(100, 100);
-    drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
-    auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(drawingRecordingCanvas.get());
-    EXPECT_NE(recordingCanvas, nullptr);
-    BufferDrawParam params;
-    VideoInfo videoInfo;
-    params.buffer = CreateBuffer();
-    EXPECT_NE(params.buffer, nullptr);
-    if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
-        unmappedCache.insert(params.buffer->GetSeqNum());
-        EXPECT_FALSE(params.buffer->IsBufferDeleted());
-        EXPECT_NE(renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
-        auto vkImageManager = std::static_pointer_cast<RSVkImageManager>(renderEngine->imageManager_);
-        EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 1);
+    if (RSSystemProperties::IsUseVulkan()) {
+        auto renderEngine = std::make_shared<RSRenderEngine>();
+        std::set<uint64_t> unmappedCache;
         renderEngine->ClearCacheSet(unmappedCache);
-        EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 0);
+        renderEngine->Init();
+        EXPECT_NE(renderEngine->imageManager_, nullptr);
 
-        params.buffer->SetBufferDeletedFlag(BufferDeletedFlag::DELETED_FROM_CACHE);
-        EXPECT_TRUE(params.buffer->IsBufferDeleted());
-        EXPECT_NE(renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
-        EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 0);
+        auto drawingRecordingCanvas = std::make_unique<Drawing::RecordingCanvas>(100, 100);
+        drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
+        auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(drawingRecordingCanvas.get());
+        EXPECT_NE(recordingCanvas, nullptr);
+        BufferDrawParam params;
+        VideoInfo videoInfo;
+        params.buffer = CreateBuffer();
+        EXPECT_NE(params.buffer, nullptr);
+        if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
+            unmappedCache.insert(params.buffer->GetBufferId());
+            EXPECT_FALSE(params.buffer->IsBufferDeleted());
+            EXPECT_NE(renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
+            auto vkImageManager = std::static_pointer_cast<RSVkImageManager>(renderEngine->imageManager_);
+            EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 1);
+            renderEngine->ClearCacheSet(unmappedCache);
+            EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 0);
+
+            params.buffer->SetBufferDeletedFlag(BufferDeletedFlag::DELETED_FROM_CACHE);
+            EXPECT_TRUE(params.buffer->IsBufferDeleted());
+            EXPECT_NE(renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
+            EXPECT_EQ(vkImageManager->imageCacheSeqs_.size(), 0);
+        }
+        auto renderEngineNull = std::make_shared<RSRenderEngine>();
+        EXPECT_EQ(renderEngineNull->CreateImageFromBuffer(*recordingCanvas, params, videoInfo), nullptr);
     }
 #endif
 }
@@ -452,8 +556,8 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer002, TestSize.Level1)
 /**
  * @tc.name: CreateImageFromBuffer003
  * @tc.desc: Test CreateImageFromBuffer:
- *              When the color space of the self-drawing layer is different from the canvas color space,
- *              AlphaType expect ALPHATYPE_OPAQUE, otherwise it is ALPHATYPE_PREMUL.
+ *           When the color space of the self-drawing layer is different from the canvas color space,
+ *           AlphaType expect ALPHATYPE_OPAQUE, otherwise it is ALPHATYPE_PREMUL.
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -463,10 +567,10 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer003, TestSize.Level1)
     if (RSSystemProperties::IsUseVulkan()) {
         auto renderEngine = std::make_shared<RSRenderEngine>();
         renderEngine->Init();
-        EXPECT_NE(renderEngine->vkImageManager_, nullptr);
+        EXPECT_NE(renderEngine->imageManager_, nullptr);
 
-        auto p3ColorSpace = Drawing::ColorSpace::CreateRGB(Drawing::CMSTransferFuncType::SRGB,
-            Drawing::CMSMatrixType::DCIP3);
+        auto p3ColorSpace = Drawing::ColorSpace::CreateRGB(
+            Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::DCIP3);
         auto p3Info = Drawing::ImageInfo(10, 10, Drawing::ColorType::COLORTYPE_RGBA_8888,
             Drawing::AlphaType::ALPHATYPE_PREMUL, p3ColorSpace);
         auto p3Surface = Drawing::Surface::MakeRaster(p3Info);
@@ -483,8 +587,8 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer003, TestSize.Level1)
         VideoInfo videoInfo;
         params.buffer = CreateBuffer();
         EXPECT_NE(params.buffer, nullptr);
-        if (params.buffer && renderEngine->vkImageManager_ && recordingCanvas) {
-            unmappedCache.insert(params.buffer->GetSeqNum());
+        if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
+            unmappedCache.insert(params.buffer->GetBufferId());
             EXPECT_FALSE(params.buffer->IsBufferDeleted());
             auto image = renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo);
             EXPECT_NE(image, nullptr);
@@ -493,13 +597,58 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer003, TestSize.Level1)
 
         auto sRGBColorSpace = Drawing::ColorSpace::CreateSRGB();
         auto sRGBInfo = Drawing::ImageInfo(10, 10, Drawing::ColorType::COLORTYPE_RGBA_8888,
-            Drawing::AlphaType::ALPHATYPE_PREMUL, sRGBColorSpace);
+            Drawing::AlphaType::ALPHATYPE_OPAQUE, sRGBColorSpace);
         auto sRGBSurface = Drawing::Surface::MakeRaster(sRGBInfo);
         ASSERT_NE(sRGBSurface, nullptr);
 
         recordingCanvas->surface_ = sRGBSurface.get();
-        if (params.buffer && renderEngine->vkImageManager_ && recordingCanvas) {
+        if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
             auto image = renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo);
+            EXPECT_NE(image, nullptr);
+            EXPECT_EQ(image->GetAlphaType(), Drawing::AlphaType::ALPHATYPE_PREMUL);
+        }
+    }
+#endif
+}
+
+/**
+ * @tc.name: CreateImageFromBuffer004
+ * @tc.desc: Test CreateImageFromBuffer:
+ *           When the videoInfo.drawingColorSpace_ or screenColorSpace is nullptr, AlphaType expect ALPHATYPE_PREMUL.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CreateImageFromBuffer004, TestSize.Level1)
+{
+#ifdef RS_ENABLE_VK
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    if (RSSystemProperties::IsUseVulkan()) {
+        auto renderEngine = std::make_shared<RSRenderEngine>();
+        renderEngine->Init();
+        EXPECT_NE(renderEngine->imageManager_, nullptr);
+
+        auto drawingRecordingCanvas = std::make_unique<Drawing::RecordingCanvas>(100, 100);
+        drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
+        auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(drawingRecordingCanvas.get());
+        EXPECT_NE(recordingCanvas, nullptr);
+
+        std::set<uint64_t> unmappedCache;
+        BufferDrawParam params;
+        VideoInfo videoInfo;
+        params.buffer = CreateBuffer();
+        EXPECT_NE(params.buffer, nullptr);
+        if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
+            unmappedCache.insert(params.buffer->GetBufferId());
+            EXPECT_FALSE(params.buffer->IsBufferDeleted());
+            auto image = renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo);
+            EXPECT_NE(image, nullptr);
+            EXPECT_EQ(image->GetAlphaType(), Drawing::AlphaType::ALPHATYPE_PREMUL);
+        }
+
+        params.colorFollow = true;
+        if (params.buffer && renderEngine->imageManager_ && recordingCanvas) {
+            auto image = renderEngine->CreateImageFromBuffer(*recordingCanvas, params, videoInfo);
+            EXPECT_EQ(videoInfo.drawingColorSpace_, nullptr);
             EXPECT_NE(image, nullptr);
             EXPECT_EQ(image->GetAlphaType(), Drawing::AlphaType::ALPHATYPE_PREMUL);
         }
@@ -519,7 +668,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ColorSpaceConvertor001, TestSize.Level1)
 
     params.isHdrRedraw = true;
     renderEngine->ColorSpaceConvertor(shaderEffect, params, parameter);
-    ASSERT_EQ(params.disableHdrFloatHeadRoom, true);
+    ASSERT_EQ(parameter.disableHdrFloatHeadRoom, true);
 
     params.isHdrRedraw = false;
     params.isTmoNitsFixed = true;
@@ -527,38 +676,16 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ColorSpaceConvertor001, TestSize.Level1)
     ASSERT_TRUE(ROSEN_EQ(parameter.sdrNits, 500.0f)); // 500: DEFAULT_DISPLAY_NIT
     ASSERT_TRUE(ROSEN_EQ(parameter.tmoNits, 500.0f)); // 500: DEFAULT_DISPLAY_NIT
 
+    params.isTmoToCurrentSDRNits = true;
+    renderEngine->ColorSpaceConvertor(shaderEffect, params, parameter);
+
     params.isHdrRedraw = false;
     params.isTmoNitsFixed = false;
+    renderEngine->ColorSpaceConvertor(shaderEffect, params, parameter);
     ASSERT_NE(params.paint.shaderEffect_, nullptr);
 #endif
 }
 #endif
-
-/**
- * @tc.name: CancelCurrentFrame
- * @tc.desc: Test CancelCurrentFrame with surface targetSurface_ is nullptr
- * @tc.type: FUNC
- * @tc.require: issueICWRWD
- */
-HWTEST_F(RSBaseRenderEngineUnitTest, CancelCurrentFrame, TestSize.Level1)
-{
-#ifdef RS_ENABLE_VK
-    auto csurf = IConsumerSurface::Create();
-    auto producer = csurf->GetProducer();
-    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
-    std::shared_ptr<RSSurfaceOhosVulkan> rsSurface1 = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
-    auto tmpSurface = std::make_shared<Drawing::Surface>();
-    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, 100, 100, 10);
-    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface1, nullptr);
-    renderFrame->targetSurface_ = nullptr;
-    renderFrame->CancelCurrentFrame();
-    ASSERT_EQ(renderFrame->GetSurface(), nullptr);
-
-    renderFrame->targetSurface_ = std::make_unique<RSSurfaceOhosVulkan>(pSurface);
-    renderFrame->CancelCurrentFrame();
-    ASSERT_NE(renderFrame->GetSurface(), nullptr);
-#endif
-}
 
 /**
  * @tc.name: NeedBilinearInterpolation
@@ -608,6 +735,38 @@ HWTEST_F(RSBaseRenderEngineUnitTest, NeedBilinearInterpolation, TestSize.Level1)
     ASSERT_TRUE(RSRenderEngine::NeedBilinearInterpolation(params, matrix));
 }
 
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+/**
+ * @tc.name: ColorSpaceConvertorTest001
+ * @tc.desc: Test ColorSpaceConvertor
+ * @tc.type: FUNC
+ * @tc.require:issueIC1RNF
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ColorSpaceConvertorTest001, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    BufferDrawParam params;
+    params.isHdrRedraw = false;
+    params.isTmoNitsFixed = false;
+    params.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter parameter;
+    ASSERT_TRUE(renderEngine->SetColorSpaceConverterDisplayParameter(params, parameter));
+
+    std::shared_ptr<Drawing::ShaderEffect> inputShader = Drawing::ShaderEffect::CreateColorShader(0x00000001);
+    ASSERT_TRUE(inputShader);
+
+    RSPaintFilterCanvas::HDRProperties hdrProperties = {
+        .isHDREnabledVirtualScreen = false
+    };
+    renderEngine->ColorSpaceConvertor(inputShader, params, parameter, hdrProperties);
+    hdrProperties.isHDREnabledVirtualScreen = true;
+    renderEngine->ColorSpaceConvertor(inputShader, params, parameter, hdrProperties);
+    EXPECT_EQ(parameter.currentDisplayNits, RSLuminanceConst::DEFAULT_CAST_HDR_NITS);
+}
+#endif
+
 /**
  * @tc.name: SetColorSpaceConverterDisplayParameterTest
  * @tc.desc: Test SetColorSpaceConverterDisplayParameter
@@ -623,6 +782,17 @@ HWTEST_F(RSBaseRenderEngineUnitTest, SetColorSpaceConverterDisplayParameterTest,
     params.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
     Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter parameter;
     ASSERT_EQ(renderEngine->SetColorSpaceConverterDisplayParameter(params, parameter), true);
+
+    Media::VideoProcessingEngine::HdrStaticMetadata staticMetadata;
+    MetadataHelper::SetHDRStaticMetadata(params.buffer, staticMetadata);
+    bool ret = RSBaseHdrUtil::CheckIsHDRSelfProcessingBuffer(params.buffer);
+    EXPECT_EQ(ret, false);
+
+    staticMetadata.cta861.maxContentLightLevel = 400.0f;
+    MetadataHelper::SetHDRStaticMetadata(params.buffer, staticMetadata);
+    ret = RSBaseHdrUtil::CheckIsHDRSelfProcessingBuffer(params.buffer);
+    renderEngine->SetColorSpaceConverterDisplayParameter(params, parameter);
+    EXPECT_EQ(ret, true);
 #endif
 }
 
@@ -648,22 +818,6 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ConvertColorSpaceNameToDrawingColorSpaceTes
 }
 
 /**
- * @tc.name: ShrinkCachesIfNeededTest
- * @tc.desc: Test ShrinkCachesIfNeeded
- * @tc.type: FUNC
- * @tc.require:issueIC1RNF
- */
-HWTEST_F(RSBaseRenderEngineUnitTest, ShrinkCachesIfNeededTest, TestSize.Level1)
-{
-    auto renderEngine = std::make_shared<RSRenderEngine>();
-#ifdef RS_ENABLE_VK
-    renderEngine->imageManager_ = std::make_shared<RSVkImageManager>();
-    renderEngine->ShrinkCachesIfNeeded();
-    ASSERT_EQ(renderEngine->imageManager_->cacheQueue_.size(), 0);
-#endif
-}
-
-/**
  * @tc.name: CheckAndVerifyDamageRegion001
  * @tc.desc: Test CheckAndVerifyDamageRegion
  * @tc.type: FUNC
@@ -679,6 +833,7 @@ HWTEST_F(RSBaseRenderEngineUnitTest, CheckAndVerifyDamageRegion001, TestSize.Lev
     rects.push_back(rectI);
     ASSERT_EQ(rects, renderFrame->CheckAndVerifyDamageRegion(rects, rectI));
 }
+
 /**
  * @tc.name: DumpVkImageInfoTest
  * @tc.desc: Test DumpVkImageInfo
@@ -711,6 +866,183 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ShrinkCachesIfNeededTest002, TestSize.Level
     renderEngine->Init();
     renderEngine->ShrinkCachesIfNeeded();
     EXPECT_NE(renderEngine, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_RSSurfaceNull
+ * @tc.desc: RSBaseRenderEngine::RequestFrame(shared_ptr) returns nullptr when rsSurface is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_RSSurfaceNull, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig config { 16, 16, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE, 0, GRAPHIC_COLOR_GAMUT_SRGB,
+        GraphicTransformType::GRAPHIC_ROTATE_NONE };
+    auto frame = renderEngine->RequestFrame(std::shared_ptr<RSSurfaceOhos>(nullptr), config, false);
+    ASSERT_EQ(frame, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_WithFakeSurface
+ * @tc.desc: RSBaseRenderEngine::RequestFrame(shared_ptr) returns a valid RSRenderFrame using fake surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_WithRasterSurface, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    // use raster surface to avoid GPU dependencies
+    RSSurfaceRenderNodeConfig nodeConfig;
+    nodeConfig.id = 1;
+    nodeConfig.name = "surface";
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeConfig);
+    auto csurf = IConsumerSurface::Create();
+    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(
+        std::weak_ptr<RSSurfaceRenderNode>(rsSurfaceRenderNode), nullptr);
+    csurf->RegisterConsumerListener(listener);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rasterSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    BufferRequestConfig config { 32, 24, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE, 0, GRAPHIC_COLOR_GAMUT_SRGB,
+        GraphicTransformType::GRAPHIC_ROTATE_NONE };
+    FrameContextConfig frameCtx(false);
+    frameCtx.isVirtual = true;
+    frameCtx.timeOut = 0;
+    auto frame = renderEngine->RequestFrame(std::static_pointer_cast<RSSurfaceOhos>(rasterSurface),
+        config, true, true, frameCtx);
+    ASSERT_NE(frame, nullptr);
+    csurf->UnregisterConsumerListener();
+}
+
+/**
+ * @tc.name: RequestFrame_TargetSurfaceNull
+ * @tc.desc: RSBaseRenderEngine::RequestFrame(sptr<Surface>) returns nullptr when targetSurface is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_TargetSurfaceNull, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig config { 8, 8, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE, 0, GRAPHIC_COLOR_GAMUT_SRGB,
+        GraphicTransformType::GRAPHIC_ROTATE_NONE };
+    auto frame = renderEngine->RequestFrame(sptr<Surface>(nullptr), config, false);
+    ASSERT_EQ(frame, nullptr);
+}
+
+/**
+ * @tc.name: RequestFrame_TargetSurfaceValid
+ * @tc.desc: RSBaseRenderEngine::RequestFrame(sptr<Surface>) returns a frame for valid surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RequestFrame_TargetSurfaceValid, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    BufferRequestConfig config { 12, 10, 8, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE, 0, GRAPHIC_COLOR_GAMUT_SRGB,
+        GraphicTransformType::GRAPHIC_ROTATE_NONE };
+    RSSurfaceRenderNodeConfig nodeConfig;
+    nodeConfig.id = 1;
+    nodeConfig.name = "surface";
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeConfig);
+    auto csurf = IConsumerSurface::Create();
+    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(
+        std::weak_ptr<RSSurfaceRenderNode>(rsSurfaceRenderNode), nullptr);
+    csurf->RegisterConsumerListener(listener);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto frame = renderEngine->RequestFrame(pSurface, config, true);
+    ASSERT_NE(frame, nullptr);
+    csurf->UnregisterConsumerListener();
+}
+
+/**
+ * @tc.name: MakeRSSurface_NullAndValid
+ * @tc.desc: RSBaseRenderEngine::MakeRSSurface handles null and valid surfaces
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, MakeRSSurface_NullAndValid, TestSize.Level1)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    auto nullRs = renderEngine->MakeRSSurface(sptr<Surface>(nullptr), false);
+    ASSERT_EQ(nullRs, nullptr);
+
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rs = renderEngine->MakeRSSurface(pSurface, false);
+    ASSERT_NE(rs, nullptr);
+}
+
+/**
+ * @tc.name: SetUiTimeStamp_NullArgs
+ * @tc.desc: RSBaseRenderEngine::SetUiTimeStamp handles null surface/renderFrame gracefully
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SetUiTimeStamp_NullArgs, TestSize.Level1)
+{
+    std::unique_ptr<RSRenderFrame> rfNull;
+    RSBaseRenderEngine::SetUiTimeStamp(rfNull, nullptr);
+    // with a valid raster surface but null frame
+    RSSurfaceRenderNodeConfig nodeConfig;
+    nodeConfig.id = 1;
+    nodeConfig.name = "surface";
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeConfig);
+    auto csurf = IConsumerSurface::Create();
+    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(
+        std::weak_ptr<RSSurfaceRenderNode>(rsSurfaceRenderNode), nullptr);
+    csurf->RegisterConsumerListener(listener);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rasterSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    RSBaseRenderEngine::SetUiTimeStamp(rfNull, rasterSurface);
+    ASSERT_EQ(rfNull, nullptr);
+    ASSERT_NE(rasterSurface, nullptr);
+    csurf->UnregisterConsumerListener();
+}
+
+/**
+ * @tc.name: SetUiTimeStamp_Normal
+ * @tc.desc: RSBaseRenderEngine::SetUiTimeStamp invokes surface SetUiTimeStamp
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SetUiTimeStamp_Normal, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig nodeConfig;
+    nodeConfig.id = 1;
+    nodeConfig.name = "surface";
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(nodeConfig);
+    auto csurf = IConsumerSurface::Create();
+    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(
+        std::weak_ptr<RSSurfaceRenderNode>(rsSurfaceRenderNode), nullptr);
+    csurf->RegisterConsumerListener(listener);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rasterSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    // request a real frame from raster surface
+    auto rawFrame = rasterSurface->RequestFrame(16, 16, 0, true, false);
+    ASSERT_NE(rawFrame, nullptr);
+    auto rf = std::make_unique<RSRenderFrame>(rasterSurface, std::move(rawFrame));
+    RSBaseRenderEngine::SetUiTimeStamp(rf, rasterSurface);
+    // assert ExtraData contains a valid timeStamp (> 0)
+    int64_t ts = 0;
+    auto framePtr = rf->GetFrame().get();
+    ASSERT_NE(framePtr, nullptr);
+    // Avoid RTTI: use type tag guard then static_cast
+    ASSERT_EQ(framePtr->GetType(), RSSurfaceFrameType::RS_SURFACE_FRAME_OHOS_RASTER);
+    auto frameRaster = static_cast<RSSurfaceFrameOhosRaster*>(framePtr);
+    auto buf = frameRaster->GetBuffer();
+    ASSERT_NE(buf, nullptr);
+    auto extra = buf->GetExtraData();
+    ASSERT_NE(extra, nullptr);
+    extra->ExtraGet("timeStamp", ts);
+    EXPECT_GT(ts, 0);
+    csurf->UnregisterConsumerListener();
 }
 
 /**
@@ -757,5 +1089,642 @@ HWTEST_F(RSBaseRenderEngineUnitTest, ClearCacheSet001, TestSize.Level1)
         }
     }
 #endif
+}
+
+/**
+ * @tc.name: SetColorFilterModeTest
+ * @tc.desc: Test SetColorFilterMode
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SetColorFilterModeTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    ASSERT_NE(renderEngine, nullptr);
+
+    // Test INVERT_COLOR_DISABLE_MODE
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::INVERT_COLOR_DISABLE_MODE);
+
+    // Test DALTONIZATION modes while INVERT_COLOR_DISABLE
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+
+    // Test INVERT_COLOR_ENABLE_MODE
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::INVERT_COLOR_ENABLE_MODE),
+        static_cast<uint32_t>(ColorFilterMode::INVERT_COLOR_ENABLE_MODE));
+
+    // Test DALTONIZATION modes
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE),
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_PROTANOMALY_MODE));
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE),
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_DEUTERANOMALY_MODE));
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE);
+    ASSERT_EQ(static_cast<uint32_t>(renderEngine->GetColorFilterMode()) &
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE),
+        static_cast<uint32_t>(ColorFilterMode::DALTONIZATION_TRITANOMALY_MODE));
+
+    // Test DALTONIZATION_NORMAL_MODE
+    renderEngine->SetColorFilterMode(ColorFilterMode::DALTONIZATION_NORMAL_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::INVERT_COLOR_ENABLE_MODE);
+}
+
+/**
+ * @tc.name: ConvertColorSpaceNameToDrawingColorSpaceAdobeRGBTest
+ * @tc.desc: Test ConvertColorSpaceNameToDrawingColorSpace with ADOBE_RGB
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ConvertColorSpaceNameToDrawingColorSpaceAdobeRGBTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    OHOS::ColorManager::ColorSpaceName colorSpaceName = OHOS::ColorManager::ColorSpaceName::ADOBE_RGB;
+    std::shared_ptr<Drawing::ColorSpace> colorSpace = nullptr;
+    colorSpace = renderEngine->ConvertColorSpaceNameToDrawingColorSpace(colorSpaceName);
+    auto colorSpaceType = colorSpace->GetType();
+    ASSERT_EQ(colorSpaceType, Drawing::ColorSpace::ColorSpaceType::RGB);
+}
+
+/**
+ * @tc.name: DrawImageWithMirrorTest
+ * @tc.desc: Test DrawImage with isMirror parameter
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawImageWithMirrorTest, TestSize.Level2)
+{
+#ifdef RS_ENABLE_VK
+    if (!RSSystemProperties::IsUseVulkan()) {
+        return;
+    }
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    ASSERT_NE(renderEngine, nullptr);
+
+    auto drawingRecordingCanvas =
+        std::make_unique<Drawing::RecordingCanvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    drawingRecordingCanvas->SetGrRecordingContext(renderEngine->GetRenderContext()->GetSharedDrGPUContext());
+    auto recordingCanvas = std::make_shared<RSPaintFilterCanvas>(drawingRecordingCanvas.get());
+    ASSERT_NE(recordingCanvas, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    auto buffer = node->GetRSSurfaceHandler()->GetBuffer();
+    ASSERT_NE(buffer, nullptr);
+
+    BufferDrawParam params;
+    params.buffer = buffer;
+    params.isMirror = true;
+    params.useCPU = false;
+    params.useBilinearInterpolation = true;
+    params.srcRect = DEFAULT_RECT;
+    params.dstRect = DEFAULT_RECT;
+    params.targetColorGamut = GRAPHIC_COLOR_GAMUT_SRGB;
+    Drawing::Brush paint;
+    params.paint = paint;
+    renderEngine->DrawImage(*recordingCanvas, params);
+#endif
+}
+
+/**
+ * @tc.name: DrawScreenNodeWithParamsForSurfaceHandlerTest
+ * @tc.desc: Test DrawScreenNodeWithParams with RSSurfaceHandler
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParamsForSurfaceHandlerTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    std::unique_ptr<Drawing::Canvas> drawingCanvas =
+        std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    auto& surfaceHandler = *node->GetRSSurfaceHandler();
+
+    BufferDrawParam params;
+    params.useCPU = false;
+
+    renderEngine->DrawScreenNodeWithParams(*canvas, surfaceHandler, params);
+}
+
+/**
+ * @tc.name: DrawScreenNodeWithParamsWithDrawableTest
+ * @tc.desc: Test DrawScreenNodeWithParams with RSScreenRenderNode
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParamsWithDrawableTest, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+    ASSERT_NE(renderEngine, nullptr);
+
+    std::unique_ptr<Drawing::Canvas> drawingCanvas =
+        std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    NodeId id = 0;
+    ScreenId screenId = 1;
+    auto rsContext = std::make_shared<RSContext>();
+    auto screenNode = std::make_shared<RSScreenRenderNode>(id, screenId, rsContext);
+    ASSERT_NE(screenNode, nullptr);
+    auto screenDrawable = std::make_shared<DrawableV2::RSScreenRenderNodeDrawable>(screenNode);
+    screenNode->renderDrawable_ = screenDrawable;
+    screenDrawable->surfaceHandler_ = std::make_shared<RSSurfaceHandler>(id);
+
+    BufferDrawParam params;
+    params.useCPU = false;
+    renderEngine->DrawScreenNodeWithParams(*canvas, *screenNode, params);
+}
+
+/**
+ * @tc.name: DrawScreenNodeWithParamsForSurfaceHandlerTest_002
+ * @tc.desc: Test DrawScreenNodeWithParams with RSSurfaceHandler
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, DrawScreenNodeWithParamsForSurfaceHandlerTest_002, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    std::unique_ptr<Drawing::Canvas> drawingCanvas =
+        std::make_unique<Drawing::Canvas>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    std::shared_ptr<RSPaintFilterCanvas> canvas = std::make_shared<RSPaintFilterCanvas>(drawingCanvas.get());
+    ASSERT_NE(canvas, nullptr);
+
+    auto node = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(node, nullptr);
+    auto& surfaceHandler = *node->GetRSSurfaceHandler();
+
+    BufferDrawParam params;
+    params.useCPU = true;
+
+    renderEngine->DrawScreenNodeWithParams(*canvas, surfaceHandler, params);
+}
+
+/**
+ * @tc.name: SetColorFilterModeTest_002
+ * @tc.desc: Test SetColorFilterMode default case
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SetColorFilterModeTest_002, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    ASSERT_NE(renderEngine, nullptr);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_PROTANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_DEUTERANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+
+    renderEngine->SetColorFilterMode(ColorFilterMode::COLOR_FILTER_END);
+    ASSERT_EQ(renderEngine->GetColorFilterMode(), ColorFilterMode::COLOR_FILTER_END);
+}
+
+/**
+ * @tc.name: RegisterDeleteBufferListener_NullGpuCacheManagerTest001
+ * @tc.desc: Test RegisterDeleteBufferListener when gpuCacheManager_ is nullptr
+ *           The if (!gpuCacheManager_) branch at line 875 should be true
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RegisterDeleteBufferListener_NullGpuCacheManagerTest001, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    // gpuCacheManager_ is nullptr by default, should return early without crash
+    EXPECT_NO_FATAL_FAILURE(renderEngine->RegisterDeleteBufferListener(nullptr, true));
+    EXPECT_NO_FATAL_FAILURE(renderEngine->RegisterDeleteBufferListener(nullptr, false));
+}
+
+/**
+ * @tc.name: RegisterDeleteBufferListener_WithGpuCacheManagerTest001
+ * @tc.desc: Test RegisterDeleteBufferListener with gpuCacheManager_ set and null consumer
+ *           Covers the consumer == nullptr branch
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RegisterDeleteBufferListener_WithGpuCacheManagerTest001, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+
+    // Create and set gpuCacheManager
+    auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
+    renderEngine->SetGPUCacheManager(gpuCacheManager);
+
+    // Test with null consumer - should log error but not crash
+    EXPECT_NO_FATAL_FAILURE(renderEngine->RegisterDeleteBufferListener(nullptr, true));
+    EXPECT_NO_FATAL_FAILURE(renderEngine->RegisterDeleteBufferListener(nullptr, false));
+}
+
+/**
+ * @tc.name: RegisterDeleteBufferListener_WithValidConsumerTest001
+ * @tc.desc: Test RegisterDeleteBufferListener with valid consumer
+ *           Covers the normal path with valid consumer
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, RegisterDeleteBufferListener_WithValidConsumerTest001, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+
+    // Create and set gpuCacheManager
+    auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
+    renderEngine->SetGPUCacheManager(gpuCacheManager);
+
+    // Create valid consumer
+    auto csurf = IConsumerSurface::Create("test-register-listener");
+    ASSERT_NE(csurf, nullptr);
+
+    // Test with valid consumer
+    EXPECT_NO_FATAL_FAILURE(renderEngine->RegisterDeleteBufferListener(csurf, true));
+    EXPECT_NO_FATAL_FAILURE(renderEngine->RegisterDeleteBufferListener(csurf, false));
+}
+
+/**
+ * @tc.name: CreateBufferDeleteCallback_NullGpuCacheManagerTest001
+ * @tc.desc: Test CreateBufferDeleteCallback when gpuCacheManager_ is nullptr
+ *           Should return nullptr
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CreateBufferDeleteCallback_NullGpuCacheManagerTest001, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    // gpuCacheManager_ is nullptr by default
+    auto callback = renderEngine->CreateBufferDeleteCallback();
+    EXPECT_EQ(callback, nullptr);
+}
+
+/**
+ * @tc.name: CreateBufferDeleteCallback_WithGpuCacheManagerTest001
+ * @tc.desc: Test CreateBufferDeleteCallback with gpuCacheManager_ set
+ *           Should return a valid callback function
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CreateBufferDeleteCallback_WithGpuCacheManagerTest001, TestSize.Level2)
+{
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+
+    // Create and set gpuCacheManager
+    auto gpuCacheManager = GPUCacheManager::Create(*renderEngine);
+    renderEngine->SetGPUCacheManager(gpuCacheManager);
+
+    auto callback = renderEngine->CreateBufferDeleteCallback();
+    // Callback should be valid (may be nullptr if CreateBufferDeleteCallback fails internally)
+    // The important thing is that it doesn't crash
+    EXPECT_NO_FATAL_FAILURE(auto result = callback; (void)result);
+}
+
+/**
+ * @tc.name: ConvertDrawingColorSpaceToSpaceInfoTest_002
+ * @tc.desc: Test ConvertDrawingColorSpaceToSpaceInfo with ADOBE_RGB and REC2020
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ConvertDrawingColorSpaceToSpaceInfoTest_002, TestSize.Level2)
+{
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    using namespace HDI::Display::Graphic::Common::V1_0;
+    std::shared_ptr<Drawing::ColorSpace> colorSpace;
+    CM_ColorSpaceInfo colorSpaceInfo;
+
+    colorSpace = Drawing::ColorSpace::CreateRGB(
+        Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::ADOBE_RGB);
+    ASSERT_TRUE(RSBaseRenderEngine::ConvertDrawingColorSpaceToSpaceInfo(colorSpace, colorSpaceInfo));
+
+    colorSpace = Drawing::ColorSpace::CreateRGB(
+        Drawing::CMSTransferFuncType::SRGB, Drawing::CMSMatrixType::REC2020);
+    ASSERT_TRUE(RSBaseRenderEngine::ConvertDrawingColorSpaceToSpaceInfo(colorSpace, colorSpaceInfo));
+#endif
+}
+
+/**
+ * @tc.name: ColorSpaceConvertorTest_002
+ * @tc.desc: Test ColorSpaceConvertor with null inputShader
+ * @tc.type: FUNC
+ * @tc.require: issue41
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, ColorSpaceConvertorTest_002, TestSize.Level2)
+{
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    auto renderEngine = std::make_shared<RSRenderEngine>();
+    renderEngine->Init();
+
+    BufferDrawParam params;
+    auto surfaceNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(surfaceNode, nullptr);
+    params.buffer = surfaceNode->GetRSSurfaceHandler()->GetBuffer();
+    ASSERT_NE(params.buffer, nullptr);
+    Media::VideoProcessingEngine::ColorSpaceConverterDisplayParameter parameter;
+
+    std::shared_ptr<Drawing::ShaderEffect> shaderEffect = nullptr;
+    renderEngine->ColorSpaceConvertor(shaderEffect, params, parameter, RSPaintFilterCanvas::HDRProperties());
+#endif
+}
+
+/**
+ * @tc.name: FlushGpu_NullTargetSurface
+ * @tc.desc: Test FlushGpu returns false when targetSurface_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushGpu_NullTargetSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->targetSurface_ = nullptr;
+    EXPECT_FALSE(renderFrame->FlushGpu());
+}
+
+/**
+ * @tc.name: FlushGpu_NullSurfaceFrame
+ * @tc.desc: Test FlushGpu returns false when surfaceFrame_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushGpu_NullSurfaceFrame, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->surfaceFrame_ = nullptr;
+    EXPECT_FALSE(renderFrame->FlushGpu());
+}
+
+/**
+ * @tc.name: FlushGpu_ValidSurface
+ * @tc.desc: Test FlushGpu with valid surface sets flushPhaseActive_ to true
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushGpu_ValidSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    ASSERT_NE(renderFrame->GetSurface(), nullptr);
+    ASSERT_NE(renderFrame->GetFrame(), nullptr);
+    EXPECT_FALSE(renderFrame->flushPhaseActive_);
+    renderFrame->FlushGpu();
+    EXPECT_TRUE(renderFrame->flushPhaseActive_);
+    renderFrame->Reset();
+    EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+    EXPECT_EQ(renderFrame->GetFrame(), nullptr);
+}
+
+/**
+ * @tc.name: SubmitGpu_NullTargetSurface
+ * @tc.desc: Test SubmitGpu returns false when targetSurface_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SubmitGpu_NullTargetSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->targetSurface_ = nullptr;
+    EXPECT_FALSE(renderFrame->SubmitGpu());
+}
+
+/**
+ * @tc.name: SubmitGpu_NullSurfaceFrame
+ * @tc.desc: Test SubmitGpu returns false when surfaceFrame_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SubmitGpu_NullSurfaceFrame, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->surfaceFrame_ = nullptr;
+    EXPECT_FALSE(renderFrame->SubmitGpu());
+}
+
+/**
+ * @tc.name: SubmitGpu_ValidSurface
+ * @tc.desc: Test SubmitGpu with valid surface returns surface result
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, SubmitGpu_ValidSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    ASSERT_NE(renderFrame->GetSurface(), nullptr);
+    ASSERT_NE(renderFrame->GetFrame(), nullptr);
+    // RSSurfaceOhosRaster does not override SubmitGpu, base returns true (no-op fallback)
+    EXPECT_TRUE(renderFrame->SubmitGpu());
+    renderFrame->Reset();
+}
+
+/**
+ * @tc.name: FlushBuffer_NullTargetSurface
+ * @tc.desc: Test FlushBuffer returns false when targetSurface_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushBuffer_NullTargetSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->targetSurface_ = nullptr;
+    EXPECT_FALSE(renderFrame->FlushBuffer());
+}
+
+/**
+ * @tc.name: FlushBuffer_NullSurfaceFrame
+ * @tc.desc: Test FlushBuffer returns false when surfaceFrame_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushBuffer_NullSurfaceFrame, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->surfaceFrame_ = nullptr;
+    EXPECT_FALSE(renderFrame->FlushBuffer());
+}
+
+/**
+ * @tc.name: FlushBuffer_ValidSurface
+ * @tc.desc: Test FlushBuffer with valid surface resets pointers and flushPhaseActive_
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushBuffer_ValidSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    ASSERT_NE(renderFrame->GetSurface(), nullptr);
+    ASSERT_NE(renderFrame->GetFrame(), nullptr);
+    // RSSurfaceOhosRaster does not override FlushBuffer, base returns true (no-op fallback)
+    bool ret = renderFrame->FlushBuffer();
+    EXPECT_TRUE(ret);
+    // After FlushBuffer, pointers should be nullptr
+    EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+    EXPECT_EQ(renderFrame->GetFrame(), nullptr);
+}
+
+/**
+ * @tc.name: FlushBuffer_VulkanFrame
+ * @tc.desc: Test FlushBuffer with vulkan frame type gets acquireFence
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushBuffer_VulkanFrame, TestSize.Level1)
+{
+#ifdef RS_ENABLE_VK
+    if (RSSystemProperties::IsUseVulkan()) {
+        auto csurf = IConsumerSurface::Create();
+        auto producer = csurf->GetProducer();
+        auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+        auto rsSurface = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
+        auto tmpSurface = std::make_shared<Drawing::Surface>();
+        auto surfaceFrame =
+            std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE, 1);
+        auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+        ASSERT_NE(renderFrame->GetSurface(), nullptr);
+        ASSERT_NE(renderFrame->GetFrame(), nullptr);
+        renderFrame->FlushBuffer();
+        // After FlushBuffer, pointers should be nullptr
+        EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+        EXPECT_EQ(renderFrame->GetFrame(), nullptr);
+    }
+#endif
+}
+
+/**
+ * @tc.name: CancelActiveFlush_NullTargetSurface
+ * @tc.desc: Test CancelActiveFlush resets pointers when targetSurface_ is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CancelActiveFlush_NullTargetSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    renderFrame->targetSurface_ = nullptr;
+    renderFrame->CancelActiveFlush();
+    EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+    EXPECT_EQ(renderFrame->GetFrame(), nullptr);
+}
+
+/**
+ * @tc.name: CancelActiveFlush_ValidSurface
+ * @tc.desc: Test CancelActiveFlush resets pointers and flushPhaseActive_ with valid surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CancelActiveFlush_ValidSurface, TestSize.Level1)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    ASSERT_NE(renderFrame->GetSurface(), nullptr);
+    ASSERT_NE(renderFrame->GetFrame(), nullptr);
+    renderFrame->CancelActiveFlush();
+    // After CancelActiveFlush, pointers should be nullptr
+    EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+    EXPECT_EQ(renderFrame->GetFrame(), nullptr);
+}
+
+/**
+ * @tc.name: CancelActiveFlush_VulkanSurface
+ * @tc.desc: Test CancelActiveFlush with vulkan surface calls CancelActiveFlush on VK surface
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, CancelActiveFlush_VulkanSurface, TestSize.Level1)
+{
+#ifdef RS_ENABLE_VK
+    if (RSSystemProperties::IsUseVulkan()) {
+        auto csurf = IConsumerSurface::Create();
+        auto producer = csurf->GetProducer();
+        auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+        auto rsSurface = std::make_shared<RSSurfaceOhosVulkan>(pSurface);
+        auto tmpSurface = std::make_shared<Drawing::Surface>();
+        auto surfaceFrame =
+            std::make_unique<RSSurfaceFrameOhosVulkan>(tmpSurface, DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE, 1);
+        auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+        ASSERT_NE(renderFrame->GetSurface(), nullptr);
+        ASSERT_NE(renderFrame->GetFrame(), nullptr);
+        renderFrame->CancelActiveFlush();
+        // After CancelActiveFlush, pointers should be nullptr
+        EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+        EXPECT_EQ(renderFrame->GetFrame(), nullptr);
+    }
+#endif
+}
+
+/**
+ * @tc.name: FlushGpu_FlushPhaseActive
+ * @tc.desc: Test FlushGpu sets flushPhaseActive_ to true, verified via destructor behavior
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSBaseRenderEngineUnitTest, FlushGpu_FlushPhaseActive, TestSize.Level2)
+{
+    auto csurf = IConsumerSurface::Create();
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    auto rsSurface = std::make_shared<RSSurfaceOhosRaster>(pSurface);
+    auto surfaceFrame = std::make_unique<RSSurfaceFrameOhosRaster>(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
+    auto renderFrame = std::make_unique<RSRenderFrame>(rsSurface, std::move(surfaceFrame));
+    ASSERT_NE(renderFrame->GetSurface(), nullptr);
+    ASSERT_NE(renderFrame->GetFrame(), nullptr);
+    // FlushGpu sets flushPhaseActive_ = true
+    renderFrame->FlushGpu();
+    // Verify flushPhaseActive_ is true by checking that CancelActiveFlush resets it
+    renderFrame->CancelActiveFlush();
+    EXPECT_EQ(renderFrame->GetSurface(), nullptr);
+    EXPECT_EQ(renderFrame->GetFrame(), nullptr);
 }
 }

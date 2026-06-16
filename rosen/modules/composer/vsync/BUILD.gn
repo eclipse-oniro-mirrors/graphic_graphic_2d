@@ -25,10 +25,6 @@ config("vsync_config") {
     "-g3",
   ]
 
-  if (graphic_2d_feature_enable_dvsync) {
-    gpu_defines += [ "RS_ENABLE_DVSYNC_2" ]
-  }
-
   defines = []
   defines += gpu_defines
 
@@ -51,6 +47,20 @@ config("vsync_config") {
         }
       }
     }
+    if (target_cpu == "arm64" && defined(build_ext_path)) {
+      libvsync_version_script =
+          rebase_path("//foundation/graphic/graphic_2d/rosen/modules/composer/vsync/libvsync.versionscript",
+                      root_build_dir)
+      ldflags += [
+        "-Wl,--version-script=${libvsync_version_script}",
+        "-Wl,--emit-relocs",
+        "-Wl,--no-relax",
+        "-mno-fix-cortex-a53-843419",
+        "-Wl,--exclude-libs=libunwind.a",
+        "-Wl,--exclude-libs=libunwind_llvm.a",
+        "-Wl,--exclude-libs=libc++_static.a"
+      ]
+    }
   }
 }
 
@@ -60,10 +70,10 @@ config("vsync_public_config") {
     "$graphic_2d_root/rosen/include/common",
     "$graphic_2d_root/rosen/modules/composer/vsync/include",
     "$graphic_2d_root/utils/sandbox",
+    "$graphic_2d_root/utils/socketpair/export",
+    "$graphic_2d_root/utils/log",
   ]
-  if (graphic_2d_feature_enable_dvsync) {
-    include_dirs += [ "$graphic_2d_ext_root/dvsync/dvsync_2/include" ]
-  }
+
   if (defined(global_parts_info) &&
       defined(global_parts_info.resourceschedule_resource_schedule_service)) {
     include_dirs += [ "$graphic_2d_root/rosen/modules/ressched/include" ]
@@ -86,13 +96,15 @@ ohos_shared_library("libvsync") {
     "src/vsync_receiver.cpp",
     "src/vsync_sampler.cpp",
     "src/vsync_system_ability_listener.cpp",
+    "src/dvsync_lib_manager.cpp"
   ]
 
   include_dirs = [
     "$graphic_2d_root/utils/log",
     "$graphic_2d_root/interfaces/inner_api/common",
     "$graphic_2d_root/rosen/modules/composer/vsync/include",
-    "$graphic_2d_root/utils/rs_frame_report_ext/include",
+    "$graphic_2d_root/rosen/modules/frame_report/include",
+    "$graphic_2d_root/rosen/modules/render_service_base/include",
   ]
 
   defines = []
@@ -102,7 +114,6 @@ ohos_shared_library("libvsync") {
   public_configs = [ ":vsync_public_config" ]
 
   deps = [
-    "$graphic_2d_root/utils:rs_frame_report_ext",
     "$graphic_2d_root/utils:sandbox_utils",
     "$graphic_2d_root/utils:scoped_bytrace",
     "$graphic_2d_root/utils:socketpair",
@@ -128,13 +139,6 @@ ohos_shared_library("libvsync") {
     "samgr:samgr_proxy",
   ]
 
-  if (graphic_2d_feature_enable_dvsync) {
-    external_deps += [ "graphic_2d_ext:libdvsync" ]
-    include_dirs += [ "$graphic_2d_ext_root/dvsync/dvsync_2/include" ]
-    sources +=
-        [ "$graphic_2d_ext_root/dvsync/dvsync_2/src/dvsync_controller.cpp" ]
-  }
-
   if (defined(global_parts_info) &&
       defined(global_parts_info.resourceschedule_resource_schedule_service)) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
@@ -142,6 +146,13 @@ ohos_shared_library("libvsync") {
     sources += [
       "$graphic_2d_root/rosen/modules/ressched/src/ressched_event_listener.cpp",
     ]
+  }
+
+  if (is_ohos) {
+    sources += [ "$rosen_root/modules/frame_report/src/rs_frame_report.cpp" ]
+    external_deps += [ "frame_aware_sched:frame_ui_intf"]
+  } else {
+    sources += [ "$rosen_root/modules/frame_report/src/mingw/rs_frame_report.cpp" ]
   }
 
   part_name = "graphic_2d"

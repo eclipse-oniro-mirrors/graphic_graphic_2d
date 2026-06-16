@@ -58,9 +58,16 @@ public:
         TextRectHeightStyle heightStyle, TextRectWidthStyle widthStyle) override;
     std::vector<TextRect> GetTextRectsOfPlaceholders() override;
     IndexAndAffinity GetGlyphIndexByCoordinate(double x, double y) override;
+    IndexAndAffinity GetCharacterIndexByCoordinate(double x, double y,
+        TextEncoding encodeType = TextEncoding::UTF8) const override;
+    Boundary GetCharacterRangeForGlyphRange(size_t glyphStart, size_t glyphEnd, Boundary* actualGlyphRange,
+        TextEncoding encodeType = TextEncoding::UTF8) const override;
+    Boundary GetGlyphRangeForCharacterRange(size_t charStart, size_t charEnd, Boundary* actualCharRange,
+        TextEncoding encodeType = TextEncoding::UTF8) const override;
     Boundary GetWordBoundaryByIndex(size_t index) override;
     Boundary GetActualTextRange(int lineNumber, bool includeSpaces) override;
-    Boundary GetEllipsisTextRange() override;
+    Boundary GetEllipsisTextRange() const override;
+    std::vector<TextRange> GetVisibleTextRanges() const override;
     double GetLineHeight(int lineNumber) override;
     double GetLineWidth(int lineNumber) override;
     void SetAnimation(
@@ -90,12 +97,25 @@ public:
     bool GetTextEffectAssociation() const override { return textEffectAssociation_; }
     bool CanPaintAllText() const override;
     std::string GetDumpInfo() const override;
+    TextProcessState GetProcessState() const override;
+    TextDisplayState GetTextDisplayState() const override;
+    TypographyStyle GetParagraphStyle() const override;
+    TextLayoutResult LayoutWithConstraints(const TextRectSize& constraint) override;
+    void SetForceReuseRasterResult(bool flag) override;
+    bool GetForceReuseRasterResult() const override;
+#ifdef ENABLE_OHOS_ENHANCE
+    std::shared_ptr<OHOS::Media::PixelMap> GetTextPathImageByIndex(
+        size_t start, size_t end, const ImageOptions& options, bool fill) const override;
+    std::vector<TextPathInfo> GetTextPathsByIndex(size_t start = 0, size_t end = SIZE_MAX) const override;
+#endif
+
 private:
     std::unique_ptr<SPText::Paragraph> paragraph_ = nullptr;
     std::vector<TextStyle> lineMetricsStyles_;
     std::optional<std::vector<LineMetrics>> lineMetrics_;
     bool textEffectAssociation_{false};
     mutable std::shared_mutex mutex_;
+    std::vector<LineMetrics> GetAllLineMetrics();
 };
 } // namespace AdapterTxt
 } // namespace Rosen

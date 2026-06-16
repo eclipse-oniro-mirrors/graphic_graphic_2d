@@ -26,6 +26,7 @@ class RSDisplayNodeCommandUtils {
 public:
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeCreate, Uint64, RSDisplayNodeConfig);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeSetScreenId, Uint64, Uint64);
+    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeSetDisplayContentRect, Uint64, Rect);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeSetSecurityDisplay, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeSetVirtualScreenMuteStatus, Uint64, Bool);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeSetDisplayMode, Uint64, RSDisplayNodeConfig);
@@ -34,7 +35,6 @@ public:
     ADD_RANDOM_COMMAND_WITH_PARAM_1(RSDisplayNodeAddToTree, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_1(RSDisplayNodeRemoveFromTree, Uint64);
     ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeClearModifiersByPid, Uint64, Int32);
-    ADD_RANDOM_COMMAND_WITH_PARAM_2(RSDisplayNodeForceCloseHdr, Uint64, Bool);
 };
 } // namespace Rosen
 } // namespace OHOS

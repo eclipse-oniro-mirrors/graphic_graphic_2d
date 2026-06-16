@@ -55,6 +55,16 @@ bool RsCommonHook::IsAdaptiveColorGamutEnabled() const
     return isAdaptiveColorGamutEnable_;
 }
 
+void RsCommonHook::SetForceSRGBOutput(bool isForceSRGBOutput)
+{
+    isForceSRGBOutput_ = isForceSRGBOutput;
+}
+
+bool RsCommonHook::IsForceSRGBOutputEnabled() const
+{
+    return isForceSRGBOutput_;
+}
+
 // skip hwcnode hardware state updating
 void RsCommonHook::SetHardwareEnabledByHwcnodeBelowSelfInAppFlag(bool hardwareEnabledByHwcnodeSkippedFlag)
 {
@@ -99,16 +109,6 @@ void RsCommonHook::GetComponentPowerFps(FrameRateRange& range)
 }
 
 // DISPLAY ENGINE
-void RsCommonHook::SetCurrentPkgName(const std::string& pkgName)
-{
-    pkgName_ = pkgName;
-}
-
-std::string RsCommonHook::GetCurrentPkgName() const
-{
-    return pkgName_;
-}
-
 void RsCommonHook::SetImageEnhancePidList(const std::unordered_set<pid_t>& imageEnhancePidList)
 {
     std::lock_guard<std::mutex> setMutex(mutexLock_);
@@ -152,6 +152,7 @@ RSImageDetailEnhanceAlgoParams RsCommonHook::GetImageEnhanceAlgoParams(const std
 
 bool RsCommonHook::IsImageEnhanceParamsValid()
 {
+    std::lock_guard<std::mutex> setMutex(mutexLock_);
     if (imageEnhanceAlgoParams_.find("SLR") == imageEnhanceAlgoParams_.end() ||
         imageEnhanceAlgoParams_.find("ESR") == imageEnhanceAlgoParams_.end()) {
         return false;
@@ -220,5 +221,18 @@ std::string RsCommonHook::GetOverlappedHwcNodeInAppEnabledConfig(const std::stri
         return it->second;
     }
     return "";
+}
+
+void RsCommonHook::SetLayerPartRenderWhiteList(const std::unordered_set<std::string>& whiteList)
+{
+    std::lock_guard<std::mutex> setMutex(mutexLock_);
+    layerPartRenderWhiteList_ = whiteList;
+}
+
+bool RsCommonHook::IsInLayerPartRenderWhiteList(const std::string& bundleName) const
+{
+    std::lock_guard<std::mutex> setMutex(mutexLock_);
+    return layerPartRenderWhiteList_.empty() ||
+        layerPartRenderWhiteList_.find(bundleName) != layerPartRenderWhiteList_.end();
 }
 } // namespace OHOS::Rosen

@@ -17,20 +17,25 @@
 #define RENDER_SERVICE_DRAWABLE_RS_SCREEN_RENDER_NODE_DRAWABLE_H
 
 #include <memory>
+#include <unordered_map>
 
 #include "common/rs_common_def.h"
 #include "common/rs_occlusion_region.h"
 #include "drawable/rs_render_node_drawable.h"
+#include "engine/rs_base_render_engine.h"
 #include "params/rs_render_thread_params.h"
-#include "pipeline/render_thread/rs_base_render_engine.h"
 #include "pipeline/render_thread/rs_uni_render_virtual_processor.h"
 #include "pipeline/rs_processor_factory.h"
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_surface_handler.h"
-#include "screen_manager/rs_screen_manager.h"
+#include "rs_composer_client_manager.h"
+
+inline const std::string RENDER_NODE_NAME = "ScreenNode";
 
 namespace OHOS::Rosen {
 namespace DrawableV2 {
+class RSMultiScreenUtil;
+
 class RSScreenRenderNodeDrawable : public RSRenderNodeDrawable {
 public:
     ~RSScreenRenderNodeDrawable() override;
@@ -41,15 +46,12 @@ public:
 
     std::shared_ptr<Drawing::Image> GetCacheImgForCapture() const
     {
-        return cacheImgForMultiScreenView_;
+        return cacheImgForCapture_;
     }
 
-    void SetCacheImgForCapture(std::shared_ptr<Drawing::Image> cacheImgForCapture)
+    std::shared_ptr<Drawing::Image> GetCacheImgForMultiScreenView() const
     {
-        if (cacheImgForMultiScreenView_ == cacheImgForCapture) {
-            return;
-        }
-        cacheImgForMultiScreenView_ = cacheImgForCapture;
+        return cacheImgForMultiScreenView_;
     }
 
     const std::shared_ptr<RSSurfaceHandler> GetRSSurfaceHandlerOnDraw() const
@@ -100,16 +102,24 @@ public:
     {
         return surface_;
     }
-    void SetVirtualSurface(std::shared_ptr<RSSurface>& virtualSurface, uint64_t pSurfaceUniqueId)
+    void SetVirtualSurface(const std::shared_ptr<RSSurface>& virtualSurface, uint64_t pSurfaceUniqueId)
     {
-        virtualSurface_ = virtualSurface;
-        virtualSurfaceUniqueId_ = pSurfaceUniqueId;
+        if (virtualSurface == nullptr) {
+            virtualSurfaces_.erase(pSurfaceUniqueId);
+            return;
+        }
+        virtualSurfaces_.insert_or_assign(pSurfaceUniqueId, virtualSurface);
     }
-    std::shared_ptr<RSSurface> GetVirtualSurface(uint64_t pSurfaceUniqueId)
+    std::shared_ptr<RSSurface> GetVirtualSurface(uint64_t pSurfaceUniqueId) const
     {
-        return virtualSurfaceUniqueId_ != pSurfaceUniqueId ? nullptr : virtualSurface_;
+        auto it = virtualSurfaces_.find(pSurfaceUniqueId);
+        return it != virtualSurfaces_.end() ? it->second : nullptr;
     }
-    bool SkipFrame(uint32_t refreshRate, ScreenInfo screenInfo);
+    void ClearVirtualSurfaces()
+    {
+        virtualSurfaces_.clear();
+    }
+    bool SkipFrame(uint32_t refreshRate, const RSScreenProperty& screenProperty);
     bool IsRenderSkipIfScreenOff() const
     {
         return isRenderSkipIfScreenOff_;
@@ -178,15 +188,15 @@ private:
     static Registrar instance_;
     std::shared_ptr<RSSurfaceHandler> surfaceHandler_ = nullptr;
     mutable std::shared_ptr<RSPaintFilterCanvas> curCanvas_ = nullptr;
-    std::unique_ptr<RSRenderFrame> expandRenderFrame_ = nullptr;
+    std::unique_ptr<RSRenderFrame> wiredMirrorRenderFrame_ = nullptr;
     std::shared_ptr<Drawing::Surface> offscreenSurface_ = nullptr; // temporarily holds offscreen surface
     std::shared_ptr<RSPaintFilterCanvas> canvasBackup_ = nullptr; // backup current canvas before offscreen render
+    std::shared_ptr<Drawing::Image> cacheImgForCapture_ = nullptr;
     std::shared_ptr<Drawing::Image> cacheImgForMultiScreenView_ = nullptr;
     GraphicPixelFormat lastPixelFormat_ = GraphicPixelFormat::GRAPHIC_PIXEL_FMT_RGBA_8888;
     bool isScreenNodeSkip_ = false;
     bool isScreenNodeSkipStatusChanged_ = false;
     bool useFixedOffscreenSurfaceSize_ = false;
-    uint64_t virtualSurfaceUniqueId_ = 0;
     // dirty manager
     std::shared_ptr<RSDirtyRegionManager> syncDirtyManager_ = nullptr;
     std::vector<RectI> dirtyRects_;
@@ -195,7 +205,7 @@ private:
     static constexpr uint32_t BUFFER_SIZE = 4;
     bool surfaceCreated_ = false;
     std::shared_ptr<RSSurface> surface_ = nullptr;
-    std::shared_ptr<RSSurface> virtualSurface_ = nullptr;
+    std::unordered_map<uint64_t, std::shared_ptr<RSSurface>> virtualSurfaces_ = {};
     ScreenRotation firstBufferRotation_ = ScreenRotation::INVALID_SCREEN_ROTATION;
 
     bool isMirrorSLRCopy_ = false;
@@ -213,6 +223,13 @@ private:
     bool filterCacheOcclusionUpdated_ = false;
 
     bool accumulateDirtyInSkipFrame_ = false;
+
+#ifdef USE_PRIMITIVE
+    std::vector<RectI> lastDamageRegionrects_;
+    bool lastIsRegionClipped_ = false;
+#endif
+
+    friend class RSMultiScreenUtil;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

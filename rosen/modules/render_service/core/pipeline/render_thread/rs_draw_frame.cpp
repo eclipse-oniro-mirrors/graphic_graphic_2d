@@ -21,10 +21,11 @@
 #include "rs_trace.h"
 
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
-#include "feature/hdr/hetero_hdr/rs_hetero_hdr_manager.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
 #include "feature/hpae/rs_hpae_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
+#include "gpuComposition/rs_gpu_cache_manager.h"
 #include "memory/rs_memory_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_render_node_gc.h"
@@ -34,6 +35,9 @@
 #include "rs_profiler.h"
 #ifdef SUBTREE_PARALLEL_ENABLE
 #include "rs_parallel_manager.h"
+#endif
+#ifdef HETERO_HDR_ENABLE
+#include "rs_hetero_hdr_manager.h"
 #endif
 #ifdef MHC_ENABLE
 #include "rs_mhc_manager.h"
@@ -80,29 +84,37 @@ void RSDrawFrame::RenderFrame()
     HitracePerfScoped perfTrace(RSDrawFrame::debugTraceEnabled_, HITRACE_TAG_GRAPHIC_AGP, "OnRenderFramePerfCount");
     RS_TRACE_NAME_FMT("RenderFrame");
     StartCheck();
-    // The destructor of GPUCompositonCacheGuard, a memory release check will be performed
-    RSMainThread::GPUCompositonCacheGuard guard;
-    RsFrameReport::GetInstance().UniRenderStart();
+
+    auto renderEngine = unirenderInstance_.GetRenderEngine();
+    // Use GPUGuard to manage GPU draw lifecycle (RAII-based)
+    // The guard will automatically call EndGPUDraw() when destroyed
+    GPUGuard gpuGuard(renderEngine->GetGPUCacheManager());
+
+    RsFrameReport::UniRenderStart();
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsStart();
     unirenderInstance_.IncreaseFrameCount();
     RSUifirstManager::Instance().ProcessSubDoneNode();
     Sync();
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsAfterSync(unirenderInstance_.GetRSRenderThreadParams(),
-        GetMinAccumulatedBufferCount());
+        unirenderInstance_.GetMinAccumulatedBufferCount());
     unirenderInstance_.UpdateScreenNodeScreenId();
     RSMainThread::Instance()->ProcessUiCaptureTasks();
+#ifdef HETERO_HDR_ENABLE
     RSHeteroHDRManager::Instance().PostHDRSubTasks();
+#endif
 #ifdef MHC_ENABLE
     RSMhcManager::Instance().UpdateFrameId();
 #endif
-    RSUifirstManager::Instance().PostUifistSubTasks();
+    RSUifirstManager::Instance().PostUifirstSubTasks();
+    RSMainThread::Instance()->CheckWindowCapTasks();
+    RSMainThread::Instance()->ProcessWindowCapTasks();
     UnblockMainThread();
-    RsFrameReport::GetInstance().CheckUnblockMainThreadPoint();
+    RsFrameReport::CheckUnblockMainThreadPoint();
     Render();
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Clear();
 #endif
-    ReleaseDrawingNodeBuffer();
+    ReleaseSelfDrawingNodeBuffer();
     NotifyClearGpuCache();
     RSMainThread::Instance()->CallbackDrawContextStatusToWMS(true);
     RSRenderNodeGC::Instance().ReleaseDrawableMemory();
@@ -110,12 +122,11 @@ void RSDrawFrame::RenderFrame()
         unirenderInstance_.PurgeCacheBetweenFrames();
     }
     unirenderInstance_.MemoryManagementBetweenFrames();
-    unirenderInstance_.PurgeShaderCacheAfterAnimate();
     MemoryManager::MemoryOverCheck(unirenderInstance_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsEnd(unirenderInstance_.GetDynamicRefreshRate());
     SetEarlyZEnabled(unirenderInstance_.GetRenderEngine()->GetRenderContext()->GetDrGPUContext());
     RSPerfMonitorReporter::GetInstance().ReportAtRsFrameEnd();
-    RsFrameReport::GetInstance().UniRenderEnd();
+    RsFrameReport::UniRenderEnd();
     EndCheck();
 }
 
@@ -153,19 +164,6 @@ void RSDrawFrame::EndCheck()
     timer_ = nullptr;
 }
 
-int32_t RSDrawFrame::GetMinAccumulatedBufferCount() const
-{
-    // Report minimum buffer count across all screens
-    int32_t minAccumulatedBufferCount = 4;
-    RSRenderComposerManager::GetInstance().ForEachScreen(
-        [&minAccumulatedBufferCount](ScreenId screenId, std::shared_ptr<RSRenderComposer> composer) {
-        auto renderComposerAgent = std::make_shared<RSRenderComposerAgent>(composer);
-        int32_t accumulatedBufferCount = renderComposerAgent->GetAccumulatedBufferCount();
-        minAccumulatedBufferCount = std::min(minAccumulatedBufferCount, accumulatedBufferCount);
-    });
-    return minAccumulatedBufferCount;
-}
-
 void RSDrawFrame::NotifyClearGpuCache()
 {
     if (RSFilterCacheManager::GetFilterInvalid()) {
@@ -174,27 +172,24 @@ void RSDrawFrame::NotifyClearGpuCache()
     }
 }
 
-void RSDrawFrame::ReleaseDrawingNodeBuffer()
+void RSDrawFrame::ReleaseSelfDrawingNodeBuffer()
 {
-    unirenderInstance_.ReleaseSelfDrawingNodeBuffer();
     unirenderInstance_.ReleaseSurfaceOpItemBuffer();
 }
 
 void RSDrawFrame::PostAndWait()
 {
     RS_TRACE_NAME_FMT("PostAndWait, parallel type %d", static_cast<int>(rsParallelType_));
-    RsFrameReport& fr = RsFrameReport::GetInstance();
-    if (fr.GetEnable()) {
-        fr.SendCommandsStart();
-        fr.RenderEnd();
-    }
+
+    RsFrameReport::SendCommandsStart();
+    RsFrameReport::RenderEnd();
  
     uint32_t renderFrameNumber = RS_PROFILER_GET_FRAME_NUMBER();
     switch (rsParallelType_) {
         case RsParallelType::RS_PARALLEL_TYPE_SYNC: { // wait until render finish in render thread
             unirenderInstance_.PostSyncTask([this, renderFrameNumber]() {
                 unirenderInstance_.SetMainLooping(true);
-                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN();
+                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber);
                 RenderFrame();
                 unirenderInstance_.ClearResource();
                 RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
@@ -213,7 +208,7 @@ void RSDrawFrame::PostAndWait()
             canUnblockMainThread = false;
             unirenderInstance_.PostTask([this, renderFrameNumber]() {
                 unirenderInstance_.SetMainLooping(true);
-                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN();
+                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber);
                 RSMainThread::Instance()->GetRSVsyncRateReduceManager().FrameDurationBegin();
                 RenderFrame();
                 unirenderInstance_.ClearResource();
@@ -241,6 +236,30 @@ void RSDrawFrame::ClearDrawableResource()
         case RsParallelType::RS_PARALLEL_TYPE_ASYNC: // wait until sync finish in render thread
         default: {
             unirenderInstance_.PostTask([]() { DrawableV2::RSRenderNodeDrawableAdapter::ClearResource(); });
+        }
+    }
+}
+
+void RSDrawFrame::ClearDrawableMemory(bool highPriority)
+{
+    switch (rsParallelType_) {
+        case RsParallelType::RS_PARALLEL_TYPE_SYNC: { // wait until render finish in render thread
+            auto task = [highPriority]() {
+                RSRenderNodeGC::Instance().ReleaseDrawableMemory(highPriority);
+            };
+            unirenderInstance_.PostSyncTask(task);
+            break;
+        }
+        case RsParallelType::RS_PARALLEL_TYPE_SINGLE_THREAD: { // render in main thread
+            RSRenderNodeGC::Instance().ReleaseDrawableMemory(highPriority);
+            break;
+        }
+        case RsParallelType::RS_PARALLEL_TYPE_ASYNC: // wait until sync finish in render thread
+        default: {
+            auto task = [highPriority]() {
+                RSRenderNodeGC::Instance().ReleaseDrawableMemory(highPriority);
+            };
+            unirenderInstance_.PostTask(task);
         }
     }
 }
@@ -302,6 +321,7 @@ void RSDrawFrame::Sync()
         pendingSyncNodes.emplace(id, weakPtr);
     }
     stagingSyncCanvasDrawingNodes_.clear();
+    RSLayerCacheManagerBase::layerDrawables_.clear();
     for (auto& [id, weakPtr] : pendingSyncNodes) {
         if (auto node = weakPtr.lock()) {
             if (!CheckCanvasSkipSync(node)) {
@@ -316,9 +336,10 @@ void RSDrawFrame::Sync()
         }
     }
     pendingSyncNodes.clear();
-    HveFilter::GetHveFilter().ClearSurfaceNodeInfo();
+    HveFilter::GetHveFilter().Sync();
 
     unirenderInstance_.Sync(std::move(stagingRenderThreadParams_));
+    RSMainThread::Instance()->GetRSVsyncRateReduceManager().SyncOneFramePeriod();
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Sync();
 #endif

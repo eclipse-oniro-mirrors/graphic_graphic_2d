@@ -16,7 +16,14 @@
 #include "gtest/gtest.h"
 #include "include/command/rs_canvas_node_command.h"
 #include "include/command/rs_node_command.h"
+#include "include/command/rs_surface_node_command.h"
+#include "include/pipeline/rs_surface_render_node.h"
+#include "params/rs_canvas_drawing_render_params.h"
 #include "params/rs_render_params.h"
+#include "parameters.h"
+#include "platform/common/rs_system_properties.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
+#include "pipeline/rs_canvas_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -35,36 +42,6 @@ void RSNodeCommandTest::TearDownTestCase() {}
 void RSNodeCommandTest::SetUp() {}
 void RSNodeCommandTest::TearDown() {}
 
-#ifndef MODIFIER_NG
-/**
- * @tc.name: TestRSBaseNodeCommand001
- * @tc.desc: RemoveModifier test.
- * @tc.type: FUNC
- */
-HWTEST_F(RSNodeCommandTest, TestRSNodeCommand001, TestSize.Level1)
-{
-    RSContext context;
-    NodeId nodeId = static_cast<NodeId>(-1);
-    PropertyId propertyId = static_cast<PropertyId>(1);
-    RSNodeCommandHelper::RemoveModifier(context, nodeId, propertyId);
-    EXPECT_TRUE(nodeId != -2);
-}
-
-/**
- * @tc.name: TestRSBaseNodeCommand002
- * @tc.desc: AddModifier test.
- * @tc.type: FUNC
- */
-HWTEST_F(RSNodeCommandTest, TestRSBaseNodeCommand002, TestSize.Level1)
-{
-    RSContext context;
-    NodeId nodeId = static_cast<NodeId>(-1);
-    std::shared_ptr<RSRenderModifier> modifier = nullptr;
-    RSNodeCommandHelper::AddModifier(context, nodeId, modifier);
-    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
-}
-#endif
-
 /**
  * @tc.name: TestRSBaseNodeCommand003
  * @tc.desc: SetFreeze test.
@@ -74,7 +51,7 @@ HWTEST_F(RSNodeCommandTest, TestRSBaseNodeCommand003, TestSize.Level1)
 {
     RSContext context;
     NodeId nodeId = static_cast<NodeId>(-1);
-    RSNodeCommandHelper::SetFreeze(context, nodeId, true);
+    RSNodeCommandHelper::SetFreeze(context, nodeId, true, false);
     EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
 }
 
@@ -96,6 +73,114 @@ HWTEST_F(RSNodeCommandTest, MarkNodeGroupTest, TestSize.Level1)
     auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
     ASSERT_NE(canvasNode, nullptr);
     EXPECT_EQ(canvasNode->GetNodeGroupType(), RSRenderNode::GROUPED_BY_USER);
+}
+
+/**
+ * @tc.name: MarkLayerTest
+ * @tc.desc: TEST MarkLayer.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkLayerTest, TestSize.Level1)
+{
+    const std::string debugKey = "rosen.graphic.layerEnabled";
+    const std::string oldDebugValue = system::GetParameter(debugKey, "0");
+    (void)system::SetParameter(debugKey, "0");
+    EXPECT_TRUE(RSSystemProperties::GetLayerEnabled());
+
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(-1);
+    bool isLayer = false;
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    isLayer = true;
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    (void)system::SetParameter(debugKey, oldDebugValue);
+    ASSERT_NE(canvasNode, nullptr);
+}
+
+/**
+ * @tc.name: MarkLayerTest001
+ * @tc.desc: TEST MarkLayer.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkLayerTest001, TestSize.Level1)
+{
+    const std::string key = "rosen.graphic.layerEnabled";
+    const std::string oldValue = system::GetParameter(key, "1");
+    (void)system::SetParameter(key, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerEnabled());
+
+    const std::string debugKey = "rosen.graphic.layerDebugEnabled";
+    const std::string oldDebugValue = system::GetParameter(debugKey, "0");
+    (void)system::SetParameter(debugKey, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerDebugEnabled());
+
+    RSContext context;
+    bool isLayer = false;
+    NodeId nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    isLayer = false;
+
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    constexpr NodeId parentNodeId = 2;
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    parent->AddChild(node);
+
+    bool isCanvasNode = (node != nullptr) && (node->GetType() == RSRenderNodeType::CANVAS_NODE);
+    node->GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(true);
+    bool isSupportLayer = isLayer && isCanvasNode && !RSLayerCacheManagerBase::IsNodeUnSupportLayer(node);
+    EXPECT_FALSE(isSupportLayer);
+
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    (void)system::SetParameter(debugKey, oldDebugValue);
+    (void)system::SetParameter(key, oldValue);
+    ASSERT_NE(canvasNode, nullptr);
+}
+
+/**
+ * @tc.name: MarkLayerTest002
+ * @tc.desc: TEST MarkLayer.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkLayerTest002, TestSize.Level1)
+{
+    const std::string key = "rosen.graphic.layerEnabled";
+    const std::string oldValue = system::GetParameter(key, "1");
+    (void)system::SetParameter(key, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerEnabled());
+
+    const std::string debugKey = "rosen.graphic.layerDebugEnabled";
+    const std::string oldDebugValue = system::GetParameter(debugKey, "0");
+    (void)system::SetParameter(debugKey, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerDebugEnabled());
+
+    RSContext context;
+    bool isLayer = false;
+    NodeId nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    isLayer = true;
+
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSCanvasRenderNode>(nodeId);
+    constexpr NodeId parentNodeId = 2;
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    parent->AddChild(node);
+
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    (void)system::SetParameter(debugKey, oldDebugValue);
+    (void)system::SetParameter(key, oldValue);
+    ASSERT_NE(canvasNode, nullptr);
 }
 
 /**
@@ -135,6 +220,42 @@ HWTEST_F(RSNodeCommandTest, MarkUifirstNodeTest, TestSize.Level1)
     auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
     ASSERT_NE(canvasNode, nullptr);
     EXPECT_TRUE(canvasNode->isUifirstNode_);
+}
+
+/**
+ * @tc.name: MarkNodeColorSpaceTest001
+ * @tc.desc: MarkNodeColorSpace test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkNodeColorSpaceTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(-1);
+    RSNodeCommandHelper::MarkNodeColorSpace(context, nodeId, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    nodeId = 100;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    RSNodeCommandHelper::MarkNodeColorSpace(context, nodeId, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    ASSERT_NE(canvasNode, nullptr);
+    EXPECT_EQ(canvasNode->GetNodeColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+}
+
+/**
+ * @tc.name: MarkNodeColorSpaceTest002
+ * @tc.desc: MarkNodeColorSpace test.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkNodeColorSpaceTest002, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(-1);
+    RSNodeCommandHelper::MarkNodeColorSpace(context, nodeId, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    nodeId = 101;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    RSNodeCommandHelper::MarkNodeColorSpace(context, nodeId, GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DISPLAY_P3);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    ASSERT_NE(canvasNode, nullptr);
+    EXPECT_EQ(canvasNode->GetNodeColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
 }
 
 /**
@@ -180,67 +301,58 @@ HWTEST_F(RSNodeCommandTest, RegisterGeometryTransitionPairTest, TestSize.Level1)
     EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId) == nullptr);
 }
 
-#ifndef MODIFIER_NG
 /**
- * @tc.name: AddModifier001
- * @tc.desc: test results of AddModifier
+ * @tc.name: SetFreezeTest001
+ * @tc.desc: Test SetFreeze with invalid node IDs
  * @tc.type: FUNC
- * @tc.require: issueI9P2KH
  */
-HWTEST_F(RSNodeCommandTest, AddModifier001, TestSize.Level1)
+HWTEST_F(RSNodeCommandTest, SetFreezeTest001, TestSize.Level1)
 {
     RSContext context;
-    NodeId nodeId = 1;
-    RSNodeCommandHelper::AddModifier(context, nodeId, nullptr);
-    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
-
-    nodeId = 0;
-    RSNodeCommandHelper::AddModifier(context, nodeId, nullptr);
-    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId)->singleFrameComposer_, nullptr);
+    
+    RSNodeCommandHelper::SetFreeze(context, 999, true, true);
+    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(999), nullptr);
+    
+    RSNodeCommandHelper::SetFreeze(context, static_cast<NodeId>(-1), true, true);
+    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(static_cast<NodeId>(-1)), nullptr);
 }
 
 /**
- * @tc.name: RemoveModifier001
- * @tc.desc: test results of RemoveModifier
+ * @tc.name: SetFreezeTest002
+ * @tc.desc: Test SetFreeze with valid nodes and all parameter combinations
  * @tc.type: FUNC
- * @tc.require: issueI9P2KH
  */
-HWTEST_F(RSNodeCommandTest, RemoveModifier001, TestSize.Level1)
+HWTEST_F(RSNodeCommandTest, SetFreezeTest002, TestSize.Level1)
 {
     RSContext context;
-    NodeId nodeId = 1;
-    PropertyId propertyId = 0;
-    RSNodeCommandHelper::RemoveModifier(context, nodeId, propertyId);
-    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
-
-    nodeId = 0;
-    RSNodeCommandHelper::RemoveModifier(context, nodeId, propertyId);
-    ASSERT_NE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
-}
-#endif
-
-/**
- * @tc.name: SetFreeze001
- * @tc.desc: test results of SetFreeze
- * @tc.type: FUNC
- * @tc.require: issueIA61E9
- */
-HWTEST_F(RSNodeCommandTest, SetFreeze001, TestSize.Level1)
-{
-    RSContext context;
-    NodeId nodeId = 1;
-    pid_t pid = ExtractPid(nodeId);
-    RSNodeCommandHelper::SetFreeze(context, nodeId, true);
-    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
-
-    nodeId = 0;
-    std::unique_ptr<RSRenderParams> stagingRenderParams = std::make_unique<RSRenderParams>(0);
-    std::shared_ptr<RSBaseRenderNode> renderNode = std::make_shared<RSBaseRenderNode>(0);
-
-    renderNode->stagingRenderParams_ = std::move(stagingRenderParams);
-    context.nodeMap.renderNodeMap_[pid][nodeId] = renderNode;
-    RSNodeCommandHelper::SetFreeze(context, nodeId, true);
-    ASSERT_NE(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
+    
+    RSCanvasNodeCommandHelper::Create(context, 0, false);
+    RSCanvasNodeCommandHelper::Create(context, 1, false);
+    RSCanvasNodeCommandHelper::Create(context, 2, false);
+    RSCanvasNodeCommandHelper::Create(context, 3, false);
+    
+    RSNodeCommandHelper::SetFreeze(context, 0, true, true);
+    RSNodeCommandHelper::SetFreeze(context, 1, true, false);
+    RSNodeCommandHelper::SetFreeze(context, 2, false, true);
+    RSNodeCommandHelper::SetFreeze(context, 3, false, false);
+    
+    auto node0 = context.GetNodeMap().GetRenderNode<RSRenderNode>(0);
+    auto node1 = context.GetNodeMap().GetRenderNode<RSRenderNode>(1);
+    auto node2 = context.GetNodeMap().GetRenderNode<RSRenderNode>(2);
+    auto node3 = context.GetNodeMap().GetRenderNode<RSRenderNode>(3);
+    
+    ASSERT_NE(node0, nullptr);
+    ASSERT_NE(node1, nullptr);
+    ASSERT_NE(node2, nullptr);
+    ASSERT_NE(node3, nullptr);
+    
+    EXPECT_TRUE(node0->IsStaticCached());
+    EXPECT_TRUE(node1->IsStaticCached());
+    EXPECT_FALSE(node2->IsStaticCached());
+    EXPECT_FALSE(node3->IsStaticCached());
+    
+    RSNodeCommandHelper::SetFreeze(context, 0, false, false);
+    EXPECT_FALSE(node0->IsStaticCached());
 }
 
 /**
@@ -381,46 +493,167 @@ HWTEST_F(RSNodeCommandTest, RegisterGeometryTransitionPair001, TestSize.Level1)
 
 /**
  * @tc.name: UnregisterGeometryTransitionPair001
- * @tc.desc: test results of UnregisterGeometryTransitionPair
+ * @tc.desc: test UnregisterGeometryTransitionPair when both nodes don't exist
  * @tc.type: FUNC
- * @tc.require: issueI9P2KH
  */
 HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair001, TestSize.Level1)
 {
     RSContext context;
-    NodeId inNodeId = 0;
-    NodeId outNodeId = 0;
+    NodeId inNodeId = 100;
+    NodeId outNodeId = 101;
     RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, outNodeId);
-    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId)->sharedTransitionParam_, nullptr);
-    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
-    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
-    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
-    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, outNodeId);
-    ASSERT_NE(inNode, nullptr);
-    EXPECT_EQ(inNode->sharedTransitionParam_, nullptr);
+    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId), nullptr);
+    EXPECT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId), nullptr);
 }
 
-#ifndef MODIFIER_NG
 /**
- * @tc.name: RemoveAllModifiers
- * @tc.desc: test results of RemoveAllModifiers
+ * @tc.name: UnregisterGeometryTransitionPair002
+ * @tc.desc: test UnregisterGeometryTransitionPair when both nodes are properly paired and unregistered
  * @tc.type: FUNC
- * @tc.require: issueIB209E
  */
-HWTEST_F(RSNodeCommandTest, RemoveAllModifiersTest, TestSize.Level1)
+HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair002, TestSize.Level1)
 {
     RSContext context;
-    NodeId nodeId = static_cast<NodeId>(-1);
-    RSNodeCommandHelper::RemoveAllModifiers(context, nodeId);
-    ASSERT_EQ(context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId), nullptr);
-    nodeId = 1;
-    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
-    RSNodeCommandHelper::RemoveAllModifiers(context, nodeId);
-    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
-    ASSERT_NE(canvasNode, nullptr);
-    EXPECT_TRUE(canvasNode->modifiers_.empty());
+    NodeId inNodeId = 1;
+    NodeId outNodeId = 2;
+    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, outNodeId, false);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
+    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
+    auto outNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId);
+    ASSERT_NE(inNode, nullptr);
+    ASSERT_NE(outNode, nullptr);
+    ASSERT_NE(inNode->GetSharedTransitionParam(), nullptr);
+    ASSERT_NE(outNode->GetSharedTransitionParam(), nullptr);
+
+    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    EXPECT_EQ(inNode->GetSharedTransitionParam(), nullptr);
+    EXPECT_EQ(outNode->GetSharedTransitionParam(), nullptr);
 }
-#endif
+
+/**
+ * @tc.name: UnregisterGeometryTransitionPair003
+ * @tc.desc: test UnregisterGeometryTransitionPair when nodes exist but have no param
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair003, TestSize.Level1)
+{
+    RSContext context;
+    NodeId inNodeId = 1;
+    NodeId outNodeId = 2;
+    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, outNodeId, false);
+
+    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
+    auto outNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId);
+    ASSERT_NE(inNode, nullptr);
+    ASSERT_NE(outNode, nullptr);
+    EXPECT_EQ(inNode->GetSharedTransitionParam(), nullptr);
+    EXPECT_EQ(outNode->GetSharedTransitionParam(), nullptr);
+}
+
+/**
+ * @tc.name: UnregisterGeometryTransitionPair004
+ * @tc.desc: test UnregisterGeometryTransitionPair when inNode has param but outNode param is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair004, TestSize.Level1)
+{
+    RSContext context;
+    NodeId inNodeId = 1;
+    NodeId outNodeId = 2;
+    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, outNodeId, false);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
+    auto outNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId);
+    ASSERT_NE(outNode, nullptr);
+    outNode->SetSharedTransitionParam(nullptr);
+
+    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
+    ASSERT_NE(inNode, nullptr);
+    ASSERT_NE(inNode->GetSharedTransitionParam(), nullptr);
+
+    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    EXPECT_EQ(inNode->GetSharedTransitionParam(), nullptr);
+    EXPECT_EQ(outNode->GetSharedTransitionParam(), nullptr);
+}
+
+/**
+ * @tc.name: UnregisterGeometryTransitionPair005
+ * @tc.desc: test UnregisterGeometryTransitionPair when outNode has param but inNode param is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair005, TestSize.Level1)
+{
+    RSContext context;
+    NodeId inNodeId = 1;
+    NodeId outNodeId = 2;
+    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, outNodeId, false);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
+    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
+    ASSERT_NE(inNode, nullptr);
+    inNode->SetSharedTransitionParam(nullptr);
+
+    auto outNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId);
+    ASSERT_NE(outNode, nullptr);
+    ASSERT_NE(outNode->GetSharedTransitionParam(), nullptr);
+
+    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, outNodeId);
+    EXPECT_EQ(inNode->GetSharedTransitionParam(), nullptr);
+    EXPECT_EQ(outNode->GetSharedTransitionParam(), nullptr);
+}
+
+/**
+ * @tc.name: UnregisterGeometryTransitionPair006
+ * @tc.desc: test UnregisterGeometryTransitionPair when inNode param outNodeId_ does not match
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair006, TestSize.Level1)
+{
+    RSContext context;
+    NodeId inNodeId = 1;
+    NodeId outNodeId = 2;
+    NodeId wrongOutNodeId = 3;
+    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, outNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, wrongOutNodeId, false);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
+    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
+    auto outNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId);
+    ASSERT_NE(inNode, nullptr);
+    ASSERT_NE(outNode, nullptr);
+
+    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, inNodeId, wrongOutNodeId);
+    EXPECT_NE(inNode->GetSharedTransitionParam(), nullptr);
+    EXPECT_NE(outNode->GetSharedTransitionParam(), nullptr);
+}
+
+/**
+ * @tc.name: UnregisterGeometryTransitionPair007
+ * @tc.desc: test UnregisterGeometryTransitionPair when outNode param inNodeId_ does not match
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, UnregisterGeometryTransitionPair007, TestSize.Level1)
+{
+    RSContext context;
+    NodeId inNodeId = 1;
+    NodeId outNodeId = 2;
+    NodeId wrongInNodeId = 3;
+    RSCanvasNodeCommandHelper::Create(context, inNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, outNodeId, false);
+    RSCanvasNodeCommandHelper::Create(context, wrongInNodeId, false);
+    RSNodeCommandHelper::RegisterGeometryTransitionPair(context, inNodeId, outNodeId, true);
+    auto inNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(inNodeId);
+    auto outNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(outNodeId);
+    ASSERT_NE(inNode, nullptr);
+    ASSERT_NE(outNode, nullptr);
+
+    RSNodeCommandHelper::UnregisterGeometryTransitionPair(context, wrongInNodeId, outNodeId);
+    EXPECT_NE(inNode->GetSharedTransitionParam(), nullptr);
+    EXPECT_NE(outNode->GetSharedTransitionParam(), nullptr);
+}
 
 /**
  * @tc.name: CommitDumpClientNodeTree
@@ -505,6 +738,29 @@ HWTEST_F(RSNodeCommandTest, SetNeedUseCmdlistDrawRegion, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetHDRUIBrightness
+ * @tc.desc: SetHDRUIBrightness test
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetHDRUIBrightness, TestSize.Level1)
+{
+    auto context = std::make_shared<RSContext>();
+    ASSERT_NE(context, nullptr);
+    NodeId nodeId = static_cast<NodeId>(1);
+    float brightness = 2.0F;
+    RSNodeCommandHelper::SetHDRUIBrightness(*context, nodeId, brightness);
+
+    auto node = std::make_shared<RSRenderNode>(nodeId, context);
+    ASSERT_NE(node, nullptr);
+    context->nodeMap.RegisterRenderNode(node);
+    uint32_t incorrectHeadroom = static_cast<uint32_t>(-1);
+    node->SetHdrUIComponentHeadroom(incorrectHeadroom);
+    RSNodeCommandHelper::SetHDRUIBrightness(*context, nodeId, brightness);
+    ASSERT_NE(node->headroomInfo_, nullptr);
+    ASSERT_NE(node->GetHdrUIComponentHeadroom(), incorrectHeadroom);
+}
+
+/**
  * @tc.name: MarkRepaintBoundary
  * @tc.desc: test results of MarkRepaintBoundary
  * @tc.type: FUNC
@@ -519,5 +775,138 @@ HWTEST_F(RSNodeCommandTest, MarkRepaintBoundary002, TestSize.Level1)
 
     nodeId = 1;
     RSNodeCommandHelper::MarkRepaintBoundary(context, nodeId, false);
+}
+
+/**
+ * @tc.name: ColorPickerCallbackTest001
+ * @tc.desc: Test ColorPickerCallback with null processor (no-op branch)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, ColorPickerCallbackTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    pid_t pid = 0;
+    uint64_t token = 100;
+    uint32_t color = 0xFF0000FF;
+
+    // Ensure processor is null
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(nullptr);
+
+    // Should not crash, just no-op
+    RSNodeCommandHelper::ColorPickerCallback(context, nodeId, pid, token, color);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: ColorPickerCallbackTest002
+ * @tc.desc: Test ColorPickerCallback with valid processor
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, ColorPickerCallbackTest002, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    pid_t pid = 0;
+    uint64_t token = 100;
+    uint32_t color = 0xFF0000FF;
+
+    // Use static variables to capture test state
+    static bool callbackInvoked = false;
+    static NodeId receivedNodeId = 0;
+    static uint32_t receivedColor = 0;
+
+    // Reset state
+    callbackInvoked = false;
+    receivedNodeId = 0;
+    receivedColor = 0;
+
+    // Define a static function pointer
+    auto processor = [](NodeId nid, uint64_t token, uint32_t c) {
+        callbackInvoked = true;
+        receivedNodeId = nid;
+        receivedColor = c;
+    };
+
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(processor);
+    RSNodeCommandHelper::ColorPickerCallback(context, nodeId, pid, token, color);
+
+    EXPECT_TRUE(callbackInvoked);
+    EXPECT_EQ(receivedNodeId, nodeId);
+    EXPECT_EQ(receivedColor, color);
+
+    // Cleanup
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(nullptr);
+}
+
+/**
+ * @tc.name: SetColorPickerCallbackProcessorTest
+ * @tc.desc: Test SetColorPickerCallbackProcessor sets processor correctly
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetColorPickerCallbackProcessorTest, TestSize.Level1)
+{
+    static bool called = false;
+    called = false;
+
+    auto processor = [](NodeId, uint64_t, uint32_t) { called = true; };
+
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(processor);
+
+    RSContext context;
+    RSNodeCommandHelper::ColorPickerCallback(context, 1, 0, 0, 0);
+
+    EXPECT_TRUE(called);
+
+    // Cleanup
+    RSNodeCommandHelper::SetColorPickerCallbackProcessor(nullptr);
+}
+
+/**
+ * @tc.name: ReSortChildrenByZIndexTest
+ * @tc.desc: Test ReSortChildrenByZIndex
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, ReSortChildrenByZIndexTest, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    RSNodeCommandHelper::ReSortChildrenByZIndex(context, nodeId);
+    ASSERT_NE(canvasNode, nullptr);
+    ASSERT_FALSE(canvasNode->isFullChildrenListValid_);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest001
+ * @tc.desc: SetUIFirstSwitch test with valid RSSurfaceRenderNode.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetUIFirstSwitchTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    SurfaceNodeCommandHelper::Create(context, nodeId);
+    RSNodeCommandHelper::SetUIFirstSwitch(context, nodeId, RSUIFirstSwitch::FORCE_ENABLE);
+    auto surfaceNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    ASSERT_NE(surfaceNode, nullptr);
+    EXPECT_EQ(surfaceNode->GetUIFirstSwitch(), RSUIFirstSwitch::FORCE_ENABLE);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest002
+ * @tc.desc: SetUIFirstSwitch test with RSRenderNode (not RSSurfaceRenderNode).
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetUIFirstSwitchTest002, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 2;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    RSNodeCommandHelper::SetUIFirstSwitch(context, nodeId, RSUIFirstSwitch::FORCE_DISABLE);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    ASSERT_NE(canvasNode, nullptr);
+    auto surfaceNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    ASSERT_EQ(surfaceNode, nullptr);
 }
 } // namespace OHOS::Rosen

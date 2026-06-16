@@ -116,6 +116,24 @@ namespace effectKit {
     * @since 12
     */
     getEffectPixelMap(): Promise<image.PixelMap>;
+
+    /**
+    * Gets the PixelMap where all filter effects have been added to the image.
+    * @param { boolean } useCpuRender - The value indicates whether to use CPU rendering.
+    * @returns { Promise<image.PixelMap> } - returns the PixelMap generated.
+    * @syscap SystemCapability.Multimedia.Image.Core
+    * @since 11
+    */
+    /**
+    * Gets the PixelMap where all filter effects have been added to the image.
+    * @param { boolean } useCpuRender - The value indicates whether to use CPU rendering.
+    * @returns { Promise<image.PixelMap> } - returns the PixelMap generated.
+    * @syscap SystemCapability.Multimedia.Image.Core
+    * @form
+    * @atomicservice
+    * @since 12
+    */
+    getEffectPixelMap(useCpuRender: boolean): Promise<image.PixelMap>;
     
     /**
      * Adds the blur effect to the filter linked list, and returns the head node of the linked list.
@@ -224,7 +242,7 @@ namespace effectKit {
 
     public native grayscaleNative(): Filter;
 
-    public native getEffectPixelMapNative(): image.PixelMap;
+    public native getEffectPixelMapNative(useCpuRender: boolean): image.PixelMap;
 
     public native blurNative(radius: double, tileMode: TileMode): Filter;
 
@@ -252,7 +270,21 @@ namespace effectKit {
       return new Promise<image.PixelMap>((resolve: (value: image.PixelMap) => void,
         reject: (error: BusinessError) => void) => {
         taskpool.execute((): image.PixelMap => {
-          let pixelMap = this.getEffectPixelMapNative();
+          let pixelMap = this.getEffectPixelMapNative(false);
+          return pixelMap;
+        }).then((ret: Any) => {
+          resolve(ret as image.PixelMap);
+        }).catch((err: Any) => {
+          reject(err as BusinessError);
+        });
+      });
+    }
+
+    public getEffectPixelMap(useCpuRender: boolean): Promise<image.PixelMap> {
+      return new Promise<image.PixelMap>((resolve: (value: image.PixelMap) => void,
+        reject: (error: BusinessError) => void) => {
+        taskpool.execute((): image.PixelMap => {
+          let pixelMap = this.getEffectPixelMapNative(useCpuRender);
           return pixelMap;
         }).then((ret: Any) => {
           resolve(ret as image.PixelMap);
@@ -296,6 +328,22 @@ namespace effectKit {
     getHighestSaturationColor(): Color;
     getAverageColor(): Color;
     isBlackOrWhiteOrGrayColor(color: long): boolean;
+    getMorandiShadowColor(): Color;
+    getDeepenImmersionColor(): Color;
+    getImmersiveBackgroundColor(): Color;
+    getImmersiveForegroundColor(): Color;
+    discriminatePictureLightDegree(): PictureLightDegree;
+    getReverseColor(): Color;
+  }
+
+  export enum PictureLightDegree {
+    UNKOWN_LIGHT_COLOR_DEGREE_PICTURE = 0,
+    EXTREMELY_LIGHT_COLOR_PICTURE = 1,
+    LIGHT_COLOR_PICTURE = 2,
+    DARK_COLOR_PICTURE = 3,
+    EXTREMELY_DARK_COLOR_PICTURE = 4,
+    FLOWERY_PICTURE = 5,
+    EXTREMELY_FLOWERY_PICTURE = 6,
   }
 
   export class ColorPickerInternal implements ColorPicker {
@@ -315,6 +363,12 @@ namespace effectKit {
     public native getHighestSaturationColorNative(): Color;
     public native getAverageColorNative(): Color;
     public native isBlackOrWhiteOrGrayColorNative(color: long): boolean;
+    public native getMorandiShadowColorNative(): Color;
+    public native getDeepenImmersionColorNative(): Color;
+    public native getImmersiveBackgroundColorNative(): Color;
+    public native getImmersiveForegroundColorNative(): Color;
+    public native discriminatePictureLightDegreeNative(): PictureLightDegree;
+    public native getReverseColorNative(): Color;
     private static native kitTransferStaticNative(input: ESValue): Object;
 	private static native kitTransferDynamicNative(nativeObj: long): ESValue;
 
@@ -348,6 +402,24 @@ namespace effectKit {
     }
     public isBlackOrWhiteOrGrayColor(color: long): boolean {
       return this.isBlackOrWhiteOrGrayColorNative(color);
+    }
+    public getMorandiShadowColor(): Color {
+      return this.getMorandiShadowColorNative();
+    }
+    public getDeepenImmersionColor(): Color {
+      return this.getDeepenImmersionColorNative();
+    }
+    public getImmersiveBackgroundColor(): Color {
+      return this.getImmersiveBackgroundColorNative();
+    }
+    public getImmersiveForegroundColor(): Color {
+      return this.getImmersiveForegroundColorNative();
+    }
+    public discriminatePictureLightDegree(): PictureLightDegree {
+      return this.discriminatePictureLightDegreeNative();
+    }
+    public getReverseColor(): Color {
+      return this.getReverseColorNative();
     }
     public static kitTransferStatic(input: Any): Object {
 	  return ColorPickerInternal.kitTransferStaticNative(ESValue.wrap(input));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +34,10 @@
 namespace OHOS {
 namespace Rosen {
 class RSFilter;
+struct IGECacheProvider;
+#ifdef USE_PRIMITIVE
+class PrimListAdapter;
+#endif
 
 class RSB_EXPORT RSPaintFilterCanvasBase : public Drawing::Canvas {
 public:
@@ -103,6 +107,8 @@ public:
     void DrawImageRect(const Drawing::Image& image,
         const Drawing::Rect& dst, const Drawing::SamplingOptions& sampling) override;
     void DrawPicture(const Drawing::Picture& picture) override;
+    void DrawGlyphs(int count, const uint16_t glyphs[], const Drawing::Point positions[],
+                    Drawing::Point origin, const Drawing::Font* font) override;
     void DrawTextBlob(const Drawing::TextBlob* blob, const Drawing::scalar x, const Drawing::scalar y) override;
 
     void ClearStencil(const Drawing::RectI& rect, uint32_t stencilVal) override;
@@ -197,6 +203,13 @@ public:
      */
     std::array<int, 2> CalcHpsBluredImageDimension(const Drawing::HpsBlurParameter& blurParams) override;
 
+    /**
+     * @brief insert opaque region to canvas, which can help gpu enable overdraw optimize
+     *
+     * @param opaqueRects the opaque rects to be inserted, which should be in device coordinate.
+     */
+    void InsertOpaqueRegion(const std::vector<Drawing::RectI>& opaqueRects) override;
+
     bool IsClipRect() override;
 
 protected:
@@ -207,7 +220,6 @@ protected:
     void DrawCustomFunc(Drawing::Canvas* canvas, DrawFunc drawFunc);
 
     Drawing::Canvas* canvas_ = nullptr;
-    std::stack<std::pair<uint32_t, DrawFunc>> customStack_;
 };
 
 // This class is used to filter the paint before drawing. currently, it is used to filter the alpha and foreground
@@ -223,6 +235,11 @@ public:
     void PopDirtyRegion();
     bool IsDirtyRegionStackEmpty();
     Drawing::Region& GetCurDirtyRegion();
+
+    void PushLayerPartRenderDirtyRegion(Drawing::Region& dirtyRegion);
+    void PopLayerPartRenderDirtyRegion();
+    bool IsLayerPartRenderDirtyRegionStackEmpty();
+    Drawing::Region& GetCurLayerPartRenderDirtyRegion();
 
     // alpha related
     void MultiplyAlpha(float alpha);
@@ -240,7 +257,7 @@ public:
     void RestoreEnv();
     int GetEnvSaveCount() const;
     void RestoreEnvToCount(int count);
-    void SetColorPicked(ColorPlaceholder placeholder, Drawing::ColorQuad color);
+    void SetColorPicked(Drawing::ColorQuad color);
     Drawing::ColorQuad GetColorPicked(ColorPlaceholder placeholder) const;
 
     // blendmode and blender related
@@ -271,14 +288,18 @@ public:
         NON_SHOT = 0,
         SDR_SCREENSHOT,
         SDR_WINDOWSHOT,
+        SDR_UICAPTURE,
         HDR_SCREENSHOT,
         HDR_WINDOWSHOT,
+        HDR_UICAPTURE,
     };
 
     struct HDRProperties {
         bool isHDREnabledVirtualScreen = false;
         float hdrBrightness = 1.0f; // Default 1.0f means max available headroom
         ScreenshotType screenshotType = ScreenshotType::NON_SHOT;
+        bool isEDRSurface = false;
+        DisplayIntent displayIntent = DisplayIntent::CANONICAL;
     };
 
     enum SaveType : uint8_t {
@@ -297,6 +318,11 @@ public:
     void RestoreStatus(const SaveStatus& status);
 
     Drawing::Surface* GetSurface() const override;
+
+    void SetCanvasReplacable(bool replacable);
+    void ConvertToType(Drawing::ColorType colorType, Drawing::AlphaType alphaType,
+        std::shared_ptr<Drawing::ColorSpace> colorSpace);
+    void ReplaceSurface(Drawing::Surface* surface);
 
     // high contrast
     void SetHighContrast(bool enabled);
@@ -317,6 +343,10 @@ public:
     CoreCanvas& AttachPen(const Drawing::Pen& pen) override;
     CoreCanvas& AttachBrush(const Drawing::Brush& brush) override;
     CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
+
+#ifdef RS_ENABLE_VK
+    void AttachPaintWithColor(const Drawing::Paint& paint);
+#endif
 
     void SetParallelThreadIdx(uint32_t idx);
     uint32_t GetParallelThreadIdx() const;
@@ -351,13 +381,18 @@ public:
     // effect cache data relate
     struct CachedEffectData {
         CachedEffectData() = default;
-        CachedEffectData(std::shared_ptr<Drawing::Image>&& image, const Drawing::RectI& rect);
-        CachedEffectData(const std::shared_ptr<Drawing::Image>& image, const Drawing::RectI& rect);
+        CachedEffectData(std::shared_ptr<Drawing::Image> image, const Drawing::RectI& rect);
+        CachedEffectData(std::shared_ptr<Drawing::Image> image, const Drawing::RectI& rect,
+                         std::shared_ptr<IGECacheProvider> cacheProvider);
         ~CachedEffectData() = default;
         std::string GetInfo() const;
         std::shared_ptr<Drawing::Image> cachedImage_ = nullptr;
         Drawing::RectI cachedRect_ = {};
         Drawing::Matrix cachedMatrix_ = Drawing::Matrix();
+        float refractOut_ = 0.f;
+        std::shared_ptr<IGECacheProvider> geCacheProvider_ = nullptr;
+
+        std::shared_ptr<Drawing::Image> GetProviderDataChecked();
     };
     void SetEffectData(const std::shared_ptr<CachedEffectData>& effectData);
     const std::shared_ptr<CachedEffectData>& GetEffectData() const;
@@ -396,6 +431,8 @@ public:
         return offscreenDataList_;
     }
 
+    std::vector<std::shared_ptr<Drawing::Canvas>> GetOffscreenCanvasVector() const;
+
     void StoreCanvas()
     {
         if (storeMainCanvas_ == nullptr) {
@@ -425,17 +462,24 @@ public:
     void CopyHDRConfiguration(const RSPaintFilterCanvas& other);
     bool GetHdrOn() const;
     void SetHdrOn(bool isHdrOn);
+    bool IsEDRSurface() const;
+    void SetEDRSurface(bool isEDRSurface);
     bool GetHDREnabledVirtualScreen() const;
     void SetHDREnabledVirtualScreen(bool isHDREnabledVirtualScreen);
+    void SetDisplayIntent(DisplayIntent displayIntent);
     const HDRProperties& GetHDRProperties() const;
     bool GetIsWindowFreezeCapture() const;
     void SetIsWindowFreezeCapture(bool isWindowFreezeCapture);
     bool GetIsDrawingCache() const;
     void SetIsDrawingCache(bool isDrawingCache);
+    bool GetIsDrawingOffscreenMirror() const;
+    void SetIsDrawingOffscreenMirror(bool isDrawingOffscreenMirror);
     void SetEffectIntersectWithDRM(bool intersect);
     bool GetEffectIntersectWithDRM() const;
     void SetDarkColorMode(bool isDark);
     bool GetDarkColorMode() const;
+    void SetFilterClipBounds(const Drawing::RectI& rect);
+    const Drawing::RectI GetFilterClipBounds() const;
 
     struct CacheBehindWindowData {
         CacheBehindWindowData() = default;
@@ -473,13 +517,21 @@ public:
 
     void SaveDamageRegionrects(const std::vector<RectI>& drawAreas)
     {
-        damageRegionRects = drawAreas;
+        damageRegionrects = drawAreas;
     }
 
     const std::vector<RectI>& GetDamageRegionrects() const
     {
-        return damageRegionRects;
+        return damageRegionrects;
     }
+
+#ifdef USE_PRIMITIVE
+    std::shared_ptr<PrimListAdapter> primListAdapter_ = nullptr;
+    Drawing::Canvas* GetCanvas()
+    {
+        return canvas_;
+    }
+#endif
 
 protected:
     using Env = struct {
@@ -488,7 +540,11 @@ protected:
         std::shared_ptr<CachedEffectData> behindWindowData_;
         std::shared_ptr<Drawing::Blender> blender_;
         bool hasOffscreenLayer_;
-        std::map<ColorPlaceholder, Drawing::ColorQuad> pickedColorMap_;
+        Drawing::ColorQuad fractionColor_;
+        bool fractionColorReady_;
+        // use as the clip bounds of the filter with a custom snapshot/drawing rect
+        // the value is the clip bounds of the surface render node
+        Drawing::RectI filterClipBounds_;
     };
 
     bool OnFilter() const override;
@@ -522,6 +578,11 @@ protected:
 
     bool CopyCachedEffectData(std::shared_ptr<CachedEffectData>& dstEffectData,
         const std::shared_ptr<CachedEffectData>& srcEffectData, const RSPaintFilterCanvas& srcCanvas);
+    
+    inline bool NeedReplaceColor(Drawing::Color color)
+    {
+        return color.IsPlaceholder() && !envStack_.empty() && envStack_.top().fractionColorReady_;
+    }
 
 private:
     bool isParallelCanvas_ = false;
@@ -530,9 +591,7 @@ private:
     bool recordDrawable_ = false;
     bool multipleScreen_ = false;
     bool isHdrOn_ = false;
-    bool isWindowFreezeCapture_ = false;
-    // Drawing window cache or uifirst cache
-    bool isDrawingCache_ = false;
+    bool isReplacable_ = false;
     bool isIntersectWithDRM_ = false;
     bool isDarkColorMode_ = false;
     CacheType cacheType_ { RSPaintFilterCanvas::CacheType::UNDEFINED };
@@ -553,6 +612,7 @@ private:
 
     // save every dirty region of the current surface for quick reject
     std::stack<Drawing::Region> dirtyRegionStack_;
+    std::stack<Drawing::Region> layerPartRenderDirtyRegionStack_;
 
     // greater than 0 indicates canvas currently is drawing on a new layer created offscreen blendmode
     // std::stack<bool> blendOffscreenStack_;
@@ -562,38 +622,41 @@ private:
     std::stack<OffscreenData> offscreenDataList_; // store offscreen canvas & surface
     std::stack<Drawing::Surface*> storeMainScreenSurface_; // store surface_
     std::stack<Drawing::Canvas*> storeMainScreenCanvas_; // store canvas_
-
+    bool isWindowFreezeCapture_ = false;
+    // Drawing window cache or uifirst cache
+    bool isDrawingCache_ = false;
+    bool isDrawingOffscreenMirror_ = false;
     std::shared_ptr<CacheBehindWindowData> cacheBehindWindowData_ = nullptr;
     Occlusion::Region drawnRegion_;
     uint32_t threadId_;
     std::weak_ptr<Drawing::Surface> weakSurface_;
     uint8_t subTreeDrawStatus_ = DEFAULT_STATE;
-    std::vector<RectI> damageRegionRects;
+    std::vector<RectI> damageRegionrects;
 };
 
 #ifdef RS_ENABLE_VK
-class RSHybridRenderPaintFilterCanvas : public RSPaintFilterCanvas {
+class RSB_EXPORT RSHybridRenderPaintFilterCanvas : public RSPaintFilterCanvas {
 public:
-    RSHybridRenderPaintFilterCanvas(Drawing::Canvas* canvas, float alpha = 1.0f) : RSPaintFilterCanvas(canvas, alpha)
-    {}
+    RSHybridRenderPaintFilterCanvas(Drawing::Canvas* canvas, float alpha = 1.0f) :
+        RSPaintFilterCanvas(canvas, alpha) {}
 
-    RSHybridRenderPaintFilterCanvas(Drawing::Surface* surface, float alpha = 1.0f) : RSPaintFilterCanvas(surface, alpha)
-    {}
+    RSHybridRenderPaintFilterCanvas(Drawing::Surface* surface, float alpha = 1.0f) :
+        RSPaintFilterCanvas(surface, alpha) {}
 
     //Override the AttachPaint method
     CoreCanvas& AttachPaint(const Drawing::Paint& paint) override;
 
     bool IsRenderWithForegroundColor() const
     {
-        return isRenderWithForegroundColor;
+        return isRenderWithForegroundColor_;
     }
 
     void SetRenderWithForegroundColor(bool renderFilterStatus)
     {
-        isRenderWithForegroundColor = renderFilterStatus;
+        isRenderWithForegroundColor_ = renderFilterStatus;
     }
 private:
-    bool isRenderWithForegroundColor = false;
+    bool isRenderWithForegroundColor_ = false;
 };
 #endif
 

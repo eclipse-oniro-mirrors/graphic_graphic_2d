@@ -16,16 +16,12 @@
 
 #include <algorithm>
 #include <sstream>
-
-#include "draw/canvas.h"
 #include "pipeline/rs_paint_filter_canvas.h"
-#include "recording/draw_cmd_list.h"
 #include "recording/recording_canvas.h"
 namespace OHOS {
 namespace Rosen {
 
-RSDrawCmdList::RSDrawCmdList(
-    const std::shared_ptr<Drawing::DrawCmdList> startValue, const std::shared_ptr<Drawing::DrawCmdList> endValue)
+RSDrawCmdList::RSDrawCmdList(const SimpleDrawCmdListPtr startValue, const SimpleDrawCmdListPtr endValue)
 {
     if (startValue && startValue->GetType() == Drawing::CmdList::Type::RS_DRAW_CMD_LIST) {
         auto rsDrawCmdList = std::static_pointer_cast<RSDrawCmdList>(startValue);
@@ -35,21 +31,24 @@ RSDrawCmdList::RSDrawCmdList(
     }
     endValue_.first = endValue;
 
-    startValue_.second = DrawCmdListOpacity(1.f, 0.f, 1.f, 1.f);
-    endValue_.second = DrawCmdListOpacity();
+    startValue_.second = DrawCmdListOpacity(1.f, 0.f);
+    endValue_.second = DrawCmdListOpacity(0.f, 1.f);
 }
 
 void RSDrawCmdList::Playback(Drawing::Canvas& canvas, const Drawing::Rect* rect)
 {
     auto& paintFilterCanvas = static_cast<RSPaintFilterCanvas&>(canvas);
-    auto processValue = [&paintFilterCanvas, rect](const auto& valuePair) {
-        if (!valuePair.first)
+    auto processValue = [&paintFilterCanvas, rect, fraction = fraction_.load(std::memory_order_relaxed)](
+        const auto& valuePair) {
+        if (!valuePair.first) {
             return;
-        paintFilterCanvas.SaveAlpha();
-        const float clampedOpacity = std::clamp(valuePair.second.opacity, 0.0f, 1.0f);
+        }
+        RSAutoCanvasRestore autoRestore(&paintFilterCanvas, RSPaintFilterCanvas::SaveType::kAlpha);
+        const float clampedOpacity = std::clamp(
+            valuePair.second.startOpacity * (1.0f - fraction) + valuePair.second.endOpacity * fraction,
+            0.0f, 1.0f);
         paintFilterCanvas.MultiplyAlpha(clampedOpacity);
         valuePair.first->Playback(paintFilterCanvas, rect);
-        paintFilterCanvas.RestoreAlpha();
     };
 
     processValue(startValue_);
@@ -61,7 +60,7 @@ int32_t RSDrawCmdList::GetWidth() const
     if (endValue_.first) {
         return endValue_.first->GetWidth();
     }
-    return Drawing::DrawCmdList::GetWidth();
+    return RSSimpleDrawCmdList::GetWidth();
 }
 
 int32_t RSDrawCmdList::GetHeight() const
@@ -69,7 +68,7 @@ int32_t RSDrawCmdList::GetHeight() const
     if (endValue_.first) {
         return endValue_.first->GetHeight();
     }
-    return Drawing::DrawCmdList::GetHeight();
+    return RSSimpleDrawCmdList::GetHeight();
 }
 
 bool RSDrawCmdList::IsEmpty() const
@@ -82,54 +81,46 @@ bool RSDrawCmdList::IsEmpty() const
 
 void RSDrawCmdList::Estimate(float fraction)
 {
-    if (ROSEN_EQ<float>(fraction, 1.0f)) {
-        CleanOpacity();
-        return;
-    }
-    startValue_.second.lastOpacity = startValue_.second.opacity;
-    startValue_.second.opacity =
-        startValue_.second.startOpacity * (1.0f - fraction) + startValue_.second.endOpacity * fraction;
-
-    endValue_.second.lastOpacity = endValue_.second.opacity;
-    endValue_.second.opacity =
-        endValue_.second.startOpacity * (1.0f - fraction) + endValue_.second.endOpacity * fraction;
+    fraction_.store(fraction, std::memory_order_relaxed);
 }
 
-std::string RSDrawCmdList::ToString() const
-{
-    std::ostringstream oss;
-    oss << "endOpacity:" << endValue_.second.opacity;
-
-    if (startValue_.first) {
-        oss << ", startOpacity:" << startValue_.second.opacity;
-    }
-
-    return oss.str();
-}
-
-void RSDrawCmdList::CleanOpacity()
-{
-    startValue_.first.reset();
-    endValue_.second.opacity = 1.0f;
-}
-
-std::shared_ptr<Drawing::DrawCmdList> RSDrawCmdList::GetEndDrawCmdList() const
+SimpleDrawCmdListPtr RSDrawCmdList::GetEndDrawCmdList() const
 {
     return endValue_.first;
+}
+
+RSB_EXPORT SimpleDrawCmdListPtr operator+(const SimpleDrawCmdListPtr& lhs, const SimpleDrawCmdListPtr& rhs)
+{
+    return lhs;
+}
+RSB_EXPORT SimpleDrawCmdListPtr operator-(const SimpleDrawCmdListPtr& lhs, const SimpleDrawCmdListPtr& rhs)
+{
+    return lhs;
+}
+RSB_EXPORT SimpleDrawCmdListPtr operator*(const SimpleDrawCmdListPtr& lhs, float rhs)
+{
+    return lhs;
+}
+RSB_EXPORT bool operator==(const SimpleDrawCmdListPtr& lhs, const SimpleDrawCmdListPtr& rhs)
+{
+    return false;
 }
 namespace Drawing {
 RSB_EXPORT DrawCmdListPtr operator+(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs)
 {
     return lhs;
 }
+
 RSB_EXPORT DrawCmdListPtr operator-(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs)
 {
     return lhs;
 }
+
 RSB_EXPORT DrawCmdListPtr operator*(const DrawCmdListPtr& lhs, float rhs)
 {
     return lhs;
 }
+
 RSB_EXPORT bool operator==(const DrawCmdListPtr& lhs, const DrawCmdListPtr& rhs)
 {
     return false;

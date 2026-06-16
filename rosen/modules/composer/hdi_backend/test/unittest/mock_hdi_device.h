@@ -49,6 +49,8 @@ public:
     MOCK_METHOD2(SetScreenPowerStatus, int32_t(uint32_t, GraphicDispPowerStatus));
     MOCK_METHOD2(GetScreenBacklight, int32_t(uint32_t, uint32_t&));
     MOCK_METHOD2(SetScreenBacklight, int32_t(uint32_t, uint32_t));
+    MOCK_METHOD5(GetScreenVCPFeature, int32_t(uint32_t, uint8_t, uint16_t&, uint16_t&, int32_t&));
+    MOCK_METHOD3(SetScreenVCPFeature, int32_t(uint32_t, uint8_t, uint16_t));
     MOCK_METHOD2(PrepareScreenLayers, int32_t(uint32_t, bool&));
     MOCK_METHOD3(GetScreenCompChange, int32_t(uint32_t, std::vector<uint32_t>&, std::vector<int32_t>&));
     MOCK_METHOD4(SetScreenClientBuffer, int32_t(uint32_t, const BufferHandle*, uint32_t, const sptr<SyncFence>&));
@@ -70,6 +72,7 @@ public:
                  int32_t(uint32_t, const std::string&, const std::vector<int8_t>&));
     MOCK_METHOD2(RegHwcEventCallback, int32_t(const RSHwcEventCallback&, void*));
     MOCK_METHOD2(GetScreenConnectionType, int32_t(uint32_t, GraphicDisplayConnectionType&));
+    MOCK_METHOD3(GetDisplayClientTargetProperty, int32_t(uint32_t, int32_t&, int32_t&));
     /* set & get device screen info end */
 
     /* set & get device layer info begin */
@@ -98,6 +101,8 @@ public:
     MOCK_METHOD3(SetLayerTunnelHandle, int32_t(uint32_t, uint32_t, GraphicExtDataHandle *));
     MOCK_METHOD3(SetTunnelLayerId, int32_t(uint32_t, uint32_t, uint64_t));
     MOCK_METHOD3(SetTunnelLayerProperty, int32_t(uint32_t, uint32_t, uint32_t));
+    MOCK_METHOD4(SetTunnelLayerBuffer, int32_t(uint32_t, uint64_t, const BufferHandle*, const int32_t));
+    MOCK_METHOD3(CommitTunnelLayer, int32_t(uint32_t, uint64_t, int32_t&));
     MOCK_METHOD3(GetSupportedPresentTimestampType, int32_t(uint32_t, uint32_t, GraphicPresentTimestampType&));
     MOCK_METHOD3(GetPresentTimestamp, int32_t(uint32_t, uint32_t, GraphicPresentTimestamp&));
     MOCK_METHOD3(SetLayerMaskInfo, int32_t(uint32_t, uint32_t, uint32_t));

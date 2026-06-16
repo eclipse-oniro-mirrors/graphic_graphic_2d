@@ -133,6 +133,9 @@ int32_t XMLParser::ParseParam(xmlNode& node)
 
         HGM_LOGD("HgmXMLParser ParseParam default_refreshrate_mode %{public}s",
                  mParsedData_->defaultRefreshRateMode_.c_str());
+    } else if (paraName == "ability_enable") {
+        mParsedData_->hgmAbilityEnabled_ = ExtractPropertyValue("value", node) == "1";
+        HGM_LOGD("ability_enable %{public}d", mParsedData_->hgmAbilityEnabled_);
     }
 
     return EXEC_SUCCESS;
@@ -169,6 +172,8 @@ int32_t XMLParser::ParseSubSequentParams(xmlNode& node, std::string& paraName)
         setResult = ParseSimplex(node, mParsedData_->videoCallLayerConfig_);
     } else if (paraName == "vrate_control_config") {
         setResult = ParseSimplex(node, mParsedData_->vRateControlList_);
+    } else if (paraName == "hover_frame_up_config") {
+        mParsedData_->hoverFrameUpSwitch_ = ExtractPropertyValue("switch", node) == "1";
     } else {
         setResult = EXEC_SUCCESS;
     }
@@ -713,7 +718,7 @@ int32_t XMLParser::ParsePerformanceConfig(
 std::string XMLParser::ExtractPropertyValue(const std::string& propName, xmlNode& node)
 {
     HGM_LOGD("XMLParser extracting value : %{public}s", propName.c_str());
-    std::string propValue = "";
+    std::string propValue;
     xmlChar* tempValue = nullptr;
 
     if (xmlHasProp(&node, reinterpret_cast<const xmlChar*>(propName.c_str()))) {
@@ -732,7 +737,7 @@ std::string XMLParser::ExtractPropertyValue(const std::string& propName, xmlNode
 
 bool XMLParser::IsNumber(const std::string& str)
 {
-    if (str.length() == 0 || str.length() > XML_STRING_MAX_LENGTH) {
+    if (str.length() == 0 || str.length() > XML_STRING_MAX_LENGTH || str == "-") {
         return false;
     }
     auto number = static_cast<uint32_t>(std::count_if(str.begin(), str.end(), [](unsigned char c) {
@@ -803,7 +808,7 @@ int32_t XMLParser::ParsePageUrlStrategy(xmlNode& node,
     return EXEC_SUCCESS;
 }
 
-bool XMLParser::BuildStrategyConfig(xmlNode &currNode, PolicyConfigData::StrategyConfig &strategy)
+bool XMLParser::BuildStrategyConfig(xmlNode& currNode, PolicyConfigData::StrategyConfig& strategy)
 {
     auto min = ExtractPropertyValue("min", currNode);
     auto max = ExtractPropertyValue("max", currNode);

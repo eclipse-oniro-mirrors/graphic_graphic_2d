@@ -24,25 +24,31 @@ public:
     MEMParam() = default;
     ~MEMParam() = default;
 
-    static std::string GetRSWatchPoint();
+    std::string GetRSWatchPoint() const;
     static bool IsReclaimEnabled();
     static int GetRSCacheLimitsResourceSize();
-    static bool IsDeeplyRelGpuResEnable();
     static bool IsKillScbEnabled();
+    static bool IsKernelReportEnabled();
+    static int GetKernelReportAvailableMemLimit();
+    static int GetKernelReportMemInterval();
 
 protected:
-    static void SetRSWatchPoint(std::string rsWatchPoint);
+    void SetRSWatchPoint(std::string rsWatchPoint);
     static void SetReclaimEnabled(bool isEnabled);
     static void SetRSCacheLimitsResourceSize(int rsCacheLimitsResourceSize);
-    static void SetDeeplyRelGpuResEnable(bool isDeeplyRelGpuResEnable);
     static void SetKillScbEnabled(bool isEnabled);
+    static void SetKernelReportEnabled(bool isEnabled);
+    static void SetKernelReportAvailableMemLimit(int kernelReportAvailableMemLimit);
+    static void SetKernelReportMemInterval(int kernelReportMemInterval);
 
 private:
-    inline static std::string rsWatchPoint_ = "";
+    std::string rsWatchPoint_ = "";
     inline static bool isReclaimEnabled_ = false;
     inline static int rsCacheLimitsResourceSize_ = 0;
-    inline static bool isDeeplyRelGpuResEnable_ = false;
     inline static bool isKillScbEnabled_ = true;
+    inline static bool isKernelReportEnabled_ = false;  // enable gpu report from kernel.
+    inline static int kernelReportAvailableMemLimit_ = 10000;
+    inline static int kernelReportMemInterval_ = 0;
 
     friend class MEMParamParse;
 };

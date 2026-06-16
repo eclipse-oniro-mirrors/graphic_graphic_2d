@@ -24,6 +24,7 @@
 #include "common/rs_rect.h"
 #include "memory/rs_dfx_string.h"
 #include "memory/rs_memory_graphic.h"
+#include "memory/rs_pixelmap_fd_track.h"
 #include "pixel_map.h"
 
 namespace OHOS {
@@ -90,17 +91,13 @@ public:
         std::function<std::tuple<uint64_t, std::string, RectI, bool> (uint64_t)> func, bool isLite = false);
     void AddPictureRecord(const void* addr, MemoryInfo info);
     void RemovePictureRecord(const void* addr);
-    uint32_t CountFdRecordOfPid(uint32_t pid);
-    void KillProcessByPid(const pid_t pid, const std::string& reason);
-    void FdOverReport(const pid_t pid, const std::string& reportName,
-        const std::string& hidumperReport);
-    void WriteInfoToFile(std::string& filePath,  std::string& memInfo, const std::string& hidumperReport);
     void UpdatePictureInfo(const void* addr, NodeId nodeId, pid_t pid);
+    bool CheckPixelMapFdCountAndKillProcess(uint32_t pid);
     // count memory for hidumper
     MemoryGraphic CountRSMemory(const pid_t pid);
     void RemovePidRecord(const pid_t pid);
     float GetAppMemorySizeInMB();
-    const std::unordered_map<NodeId, MemoryInfo>& GetMemNodeMap() { return memNodeMap_; }
+    std::unordered_map<NodeId, MemoryInfo> GetMemNodeMap();
 #ifdef RS_MEMORY_INFO_MANAGER
     void SetGlobalRootNodeStatusChangeFlag(bool flag);
     bool GetGlobalRootNodeStatusChangeFlag();
@@ -110,6 +107,8 @@ public:
     void RegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type);
     void UnRegisterNodeMem(const pid_t pid, size_t size, MEMORY_TYPE type);
     size_t GetNodeMemoryOfPid(const pid_t pid, MEMORY_TYPE type);
+    void DumpMemoryPicStatisticsForReport(DfxString& log, const pid_t pid);
+    size_t GetNodeNumOfPid(const pid_t pid);
 
 private:
     MemoryTrack() = default;
@@ -133,14 +132,13 @@ private:
     std::unordered_map<NodeId, MemoryInfo> memNodeMap_;
     std::unordered_map<const void*, MemoryInfo> memPicRecord_;
 
-    std::unordered_map<uint32_t, std::unordered_set<const void*>> fdNumOfPid_;
+    RSPixelMapFdTrack pixelMapFdTracker_;
 
     // Data to statistic information of Pid
     std::unordered_map<pid_t, std::vector<MemoryNodeOfPid>> memNodeOfPidMap_;
     // RS Node Size [pid, RenderNodeMemSize, DrawableNodeMemSize]
     std::unordered_map<pid_t, std::pair<size_t, size_t>> nodeMemOfPid_;
-    // number of node exceeds limit, report kill
-    std::unordered_set<pid_t> reportKillProcessSet_;
+
 #ifdef RS_MEMORY_INFO_MANAGER
     std::atomic<bool> globalRootNodeStatusChangeFlag{false};
 #endif

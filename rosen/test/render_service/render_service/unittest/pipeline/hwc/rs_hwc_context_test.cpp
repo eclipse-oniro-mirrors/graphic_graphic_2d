@@ -55,7 +55,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList001, TestSize.Level1)
     std::unordered_map<std::string, std::string> solidLayerConfig = {{"com.youku.next", "1"}};
     auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
     std::vector<std::string> pkgs;
-    pkgs.push_back("com.youku.next");
+    pkgs.push_back("com.youku.next:00");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
     hwcContext->solidLayerConfig_["com.youku.next"] = "1";
@@ -101,7 +101,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList002, TestSize.Level1)
     std::unordered_map<std::string, std::string> sourceTuningConfig = {{"com.youku.next", "1"}};
     std::unordered_map<std::string, std::string> solidLayerConfig = {{"com.youku.next", "1"}};
     auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
-    std::vector<std::string> pkgs = {"com.youku.next", "yylx.danmaku.bili"};
+    std::vector<std::string> pkgs = {"com.youku.next:00", "yylx.danmaku.bili:01"};
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->CheckPackageInConfigList(pkgs);
     EXPECT_FALSE(rsCommonHook.GetVideoSurfaceFlag());
@@ -122,7 +122,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList003, TestSize.Level1)
     std::unordered_map<std::string, std::string> solidLayerConfig = {{"com.youku.next", "1"}};
     auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
     std::vector<std::string> pkgs;
-    pkgs.push_back("com.youku.next");
+    pkgs.push_back("com.youku.next:00");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
     hwcContext->solidLayerConfig_["com.youku.next"] = "2";
@@ -176,7 +176,7 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList004, TestSize.Level1)
     std::unordered_map<std::string, std::string> solidLayerConfig = {{"com.youku.next", "1"}};
     auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
     std::vector<std::string> pkgs;
-    pkgs.push_back("yylx.danmaku.bili");
+    pkgs.push_back("yylx.danmaku.bili:00");
     auto& rsCommonHook = RsCommonHook::Instance();
     hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
     hwcContext->solidLayerConfig_["com.youku.next"] = "1";
@@ -185,5 +185,124 @@ HWTEST_F(RSHwcContextTest, CheckPackageInConfigList004, TestSize.Level1)
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
     EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByBackgroundAlphaFlag());
     EXPECT_FALSE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
+}
+
+/**
+ * @tc.name: CheckPackageInConfigList005
+ * @tc.desc: Test CheckPackageInConfigList
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSHwcContextTest, CheckPackageInConfigList005, TestSize.Level1)
+{
+    std::unordered_map<std::string, std::string> sourceTuningConfig = {{"com.youku.next", "1"}};
+    std::unordered_map<std::string, std::string> solidLayerConfig = {{"com.youku.next", "1"}};
+    auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
+    std::vector<std::string> pkgs;
+    pkgs.push_back("com.youku.next");
+    auto& rsCommonHook = RsCommonHook::Instance();
+    hwcContext->sourceTuningConfig_["com.youku.next"] = "1";
+    hwcContext->solidLayerConfig_["com.youku.next"] = "1";
+    hwcContext->CheckPackageInConfigList(pkgs);
+    EXPECT_FALSE(rsCommonHook.GetVideoSurfaceFlag());
+    EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByHwcnodeBelowSelfInAppFlag());
+    EXPECT_FALSE(rsCommonHook.GetHardwareEnabledByBackgroundAlphaFlag());
+    EXPECT_FALSE(rsCommonHook.GetIsWhiteListForSolidColorLayerFlag());
+}
+
+/**
+ * @tc.name: GetMutableSourceTuningConfig001
+ * @tc.desc: Test GetMutableSourceTuningConfig
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSHwcContextTest, GetMutableSourceTuningConfig001, TestSize.Level1)
+{
+    std::unordered_map<std::string, std::string> sourceTuningConfig;
+    std::unordered_map<std::string, std::string> solidLayerConfig;
+    auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
+    ASSERT_NE(hwcContext, nullptr);
+
+    auto& mutableConfig = hwcContext->GetMutableSourceTuningConfig();
+    EXPECT_EQ(mutableConfig.size(), 0);
+
+    mutableConfig["com.test.app1"] = "1";
+    mutableConfig["com.test.app2"] = "2";
+    EXPECT_EQ(mutableConfig.size(), 2);
+    EXPECT_EQ(mutableConfig["com.test.app1"], "1");
+    EXPECT_EQ(mutableConfig["com.test.app2"], "2");
+}
+
+/**
+ * @tc.name: GetMutableSourceTuningConfig002
+ * @tc.desc: Test GetMutableSourceTuningConfig modify config
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSHwcContextTest, GetMutableSourceTuningConfig002, TestSize.Level1)
+{
+    std::unordered_map<std::string, std::string> sourceTuningConfig;
+    std::unordered_map<std::string, std::string> solidLayerConfig;
+    auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
+    ASSERT_NE(hwcContext, nullptr);
+
+    auto& mutableConfig = hwcContext->GetMutableSourceTuningConfig();
+    mutableConfig["com.test.default"] = "0";
+    EXPECT_EQ(mutableConfig.size(), 1);
+    EXPECT_EQ(mutableConfig["com.test.default"], "0");
+
+    mutableConfig["com.test.default"] = "3";
+    EXPECT_EQ(mutableConfig["com.test.default"], "3");
+
+    mutableConfig.erase("com.test.default");
+    EXPECT_EQ(mutableConfig.size(), 0);
+}
+
+/**
+ * @tc.name: GetMutableSolidLayerConfig001
+ * @tc.desc: Test GetMutableSolidLayerConfig
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSHwcContextTest, GetMutableSolidLayerConfig001, TestSize.Level1)
+{
+    std::unordered_map<std::string, std::string> sourceTuningConfig;
+    std::unordered_map<std::string, std::string> solidLayerConfig;
+    auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
+    ASSERT_NE(hwcContext, nullptr);
+
+    auto& mutableConfig = hwcContext->GetMutableSolidLayerConfig();
+    EXPECT_EQ(mutableConfig.size(), 0);
+
+    mutableConfig["com.test.solid1"] = "1";
+    mutableConfig["com.test.solid2"] = "2";
+    EXPECT_EQ(mutableConfig.size(), 2);
+    EXPECT_EQ(mutableConfig["com.test.solid1"], "1");
+    EXPECT_EQ(mutableConfig["com.test.solid2"], "2");
+}
+
+/**
+ * @tc.name: GetMutableSolidLayerConfig002
+ * @tc.desc: Test GetMutableSolidLayerConfig modify config
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSHwcContextTest, GetMutableSolidLayerConfig002, TestSize.Level1)
+{
+    std::unordered_map<std::string, std::string> sourceTuningConfig;
+    std::unordered_map<std::string, std::string> solidLayerConfig;
+    auto hwcContext = std::make_shared<RSHwcContext>(sourceTuningConfig, solidLayerConfig);
+    ASSERT_NE(hwcContext, nullptr);
+
+    auto& mutableConfig = hwcContext->GetMutableSolidLayerConfig();
+    mutableConfig["com.test.solid_default"] = "1";
+    EXPECT_EQ(mutableConfig.size(), 1);
+    EXPECT_EQ(mutableConfig["com.test.solid_default"], "1");
+
+    mutableConfig["com.test.solid_default"] = "2";
+    EXPECT_EQ(mutableConfig["com.test.solid_default"], "2");
+
+    mutableConfig.erase("com.test.solid_default");
+    EXPECT_EQ(mutableConfig.size(), 0);
 }
 } // namespace OHOS::Rosen

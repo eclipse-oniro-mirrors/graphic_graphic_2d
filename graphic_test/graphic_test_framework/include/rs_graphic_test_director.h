@@ -16,6 +16,12 @@
 #ifndef RS_GRAPHIC_TEST_DIRECTOR_H
 #define RS_GRAPHIC_TEST_DIRECTOR_H
 
+#include <cstdint>
+#include <functional>
+#include <mutex>
+#include <utility>
+#include <vector>
+
 #include "common/rs_rect.h"
 #include "pixel_map.h"
 #include "rs_graphic_rootnode.h"
@@ -28,10 +34,13 @@ namespace Rosen {
 class VSyncWaiter;
 class RSGraphicTestDirector {
 public:
+    using AnimationFrameCallback = std::function<void()>;
+
     ~RSGraphicTestDirector();
 
     void Run();
     void FlushMessage();
+    bool FlushMessageAndWait(int timeoutMs);
     std::shared_ptr<Media::PixelMap> TakeScreenCaptureAndWait(int ms, bool isScreenShot = false);
     void ResetImagePath();
 
@@ -44,23 +53,36 @@ public:
     bool IsSingleTest();
     void SetSingleTest(bool IsSingleTest);
     void SetProfilerTest(bool isProfilerTest);
+    void SetDynamicTest(bool isDynamicTest);
+    bool IsDynamicTest();
+    float GetMainWindowZ() const;
 
     void StartRunUIAnimation();
     bool HasUIRunningAnimation();
     void FlushAnimation(int64_t time);
     void RequestNextVSync();
     void OnVSync(int64_t time);
+    uint64_t AddAnimationFrameCallback(AnimationFrameCallback callback);
+    void RemoveAnimationFrameCallback(uint64_t callbackId);
 
     void SendProfilerCommand(const std::string command, int outTime = 0);
 
     static RSGraphicTestDirector& Instance();
     std::pair<double, double> ReceiveProfilerTimeInfo();
     void ReleaseRootNode();
+    using FailureCallback = std::function<void()>;
+    void SetProfilerFailureCallback(FailureCallback callback);
+    void Reset();
+    std::shared_ptr<RSUIContext> GetRSUIContext() const;
 private:
+    void InitProfilerThread();
+    void NotifyAnimationFrameCallbacks();
+
     ScreenId screenId_ = 0;
     RectF screenBounds_;
     bool isSingleTest_ = false;
     bool isProfilerTest_ = false;
+    bool isDynamicTest_ = false;
     std::shared_ptr<RSGraphicRootNode> rootNode_;
     std::shared_ptr<RSUIDirector> rsUiDirector_;
 
@@ -70,6 +92,10 @@ private:
 
     std::shared_ptr<RSGraphicTestProfilerThread> profilerThread_;
 
+    FailureCallback pendingFailureCallback_;
+    std::mutex animationFrameCallbackMutex_;
+    uint64_t nextAnimationFrameCallbackId_ = 1;
+    std::vector<std::pair<uint64_t, AnimationFrameCallback>> animationFrameCallbacks_;
     friend class RSGraphicTest;
     friend class TestDefManager;
 };

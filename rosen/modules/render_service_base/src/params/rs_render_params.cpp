@@ -64,11 +64,11 @@ void RSRenderParams::SetMatrix(const Drawing::Matrix& matrix)
 void RSRenderParams::ApplyAlphaAndMatrixToCanvas(RSPaintFilterCanvas& canvas, bool applyMatrix) const
 {
     if (UNLIKELY(HasSandBox())) {
-        if (applyMatrix) {
-            canvas.SetMatrix(parentSurfaceMatrix_);
-            canvas.ConcatMatrix(matrix_);
-        }
         canvas.SetAlpha(alpha_);
+        if (!applyMatrix) {
+            return;
+        }
+        ApplySandboxMatrixToCanvas(canvas);
     } else {
         if (applyMatrix) {
             canvas.ConcatMatrix(matrix_);
@@ -132,6 +132,15 @@ void RSRenderParams::SetShouldPaint(bool shouldPaint)
     needSync_ = true;
 }
 
+void RSRenderParams::SetDoubleSidedEnabled(bool isDoubleSided)
+{
+    if (isDoubleSided_ == isDoubleSided) {
+        return;
+    }
+    isDoubleSided_ = isDoubleSided;
+    needSync_ = true;
+}
+
 void RSRenderParams::SetContentEmpty(bool empty)
 {
     if (contentEmpty_ == empty) {
@@ -161,11 +170,20 @@ void RSRenderParams::SetChildHasVisibleEffect(bool val)
 
 void RSRenderParams::SetCacheSize(Vector2f size)
 {
-    if (cacheSize_ == size) {
-        return;
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
     }
-    cacheSize_ = size;
-    needSync_ = true;
+    if (renderGroupCache_ && renderGroupCache_->SetCacheSize(size)) {
+        needSync_ = true;
+    }
+}
+
+Vector2f RSRenderParams::GetCacheSize() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->GetCacheSize();
+    }
+    return Vector2f();
 }
 
 void RSRenderParams::SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced)
@@ -183,15 +201,6 @@ void RSRenderParams::SetDrawingCacheChanged(bool isChanged, bool lastFrameSynced
         needSync_ = needSync_ || (isDrawingCacheChanged_ || (isDrawingCacheChanged_ != isChanged));
         isDrawingCacheChanged_ = isDrawingCacheChanged_ || isChanged;
     }
-}
-
-void RSRenderParams::SetForceDisableNodeGroup(bool forceDisable)
-{
-    if (isForceDisableNodeGroup_ == forceDisable) {
-        return;
-    }
-    isForceDisableNodeGroup_ = forceDisable;
-    needSync_ = true;
 }
 
 void RSRenderParams::SetDrawingCacheType(RSDrawingCacheType cacheType)
@@ -242,22 +251,170 @@ bool RSRenderParams::HasChildExcludedFromNodeGroup() const
     return false;
 }
 
-void RSRenderParams::SetDrawingCacheIncludeProperty(bool includeProperty)
+void RSRenderParams::SetRenderGroupExcludedStateChanged(bool isChanged)
 {
-    if (drawingCacheIncludeProperty_ == includeProperty) {
-        return;
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
     }
-    drawingCacheIncludeProperty_ = includeProperty;
-    needSync_ = true;
+    if (renderGroupCache_ && renderGroupCache_->SetRenderGroupExcludedStateChanged(isChanged)) {
+        needSync_ = true;
+    }
 }
 
-void RSRenderParams::SetRSFreezeFlag(bool freezeFlag)
+bool RSRenderParams::IsRenderGroupExcludedStateChanged() const
 {
-    if (freezeFlag_ == freezeFlag) {
+    if (renderGroupCache_) {
+        return renderGroupCache_->IsRenderGroupExcludedStateChanged();
+    }
+    return false;
+}
+
+void RSRenderParams::SetRenderGroupSubTreeDirty(bool isDirty)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetCachedSubTreeDirty(isDirty)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::IsRenderGroupSubTreeDirty() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->IsCachedSubTreeDirty();
+    }
+    return false;
+}
+
+void RSRenderParams::SetChildHasTranslateOnSqueeze(bool val)
+{
+    if (ChildHasTranslateOnSqueeze() == val) {
         return;
     }
-    freezeFlag_ = freezeFlag;
-    needSync_ = true;
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetChildHasTranslateOnSqueeze(val)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::ChildHasTranslateOnSqueeze() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->ChildHasTranslateOnSqueeze();
+    }
+    return false;
+}
+
+void RSRenderParams::SetNodeGroupHasChildInBlacklist(bool inBlacklist)
+{
+    if (NodeGroupHasChildInBlacklist() == inBlacklist) {
+        return;
+    }
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetNodeGroupHasChildInBlacklist(inBlacklist)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::NodeGroupHasChildInBlacklist() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->NodeGroupHasChildInBlacklist();
+    }
+    return false;
+}
+
+void RSRenderParams::SetNeedClipHoleForFilter(bool val)
+{
+    if (NeedClipHoleForFilter() == val) {
+        return;
+    }
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetNeedClipHoleForFilter(val)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::NeedClipHoleForFilter() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->NeedClipHoleForFilter();
+    }
+    return false;
+}
+
+void RSRenderParams::SetNeedClearRenderGroupCache(bool needClear)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_->SetNeedClearRenderGroupCache(needClear)) {
+        needSync_ = true;
+    }
+}
+bool RSRenderParams::NeedClearRenderGroupCache() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->NeedClearRenderGroupCache();
+    }
+    return false;
+}
+
+void RSRenderParams::SetRenderGroupIncludeProperty(bool includeProperty)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_ && renderGroupCache_->SetRenderGroupIncludeProperty(includeProperty)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::IsRenderGroupIncludeProperty() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->IsRenderGroupIncludeProperty();
+    }
+    return false;
+}
+
+void RSRenderParams::SetRSFreezeFlag(bool freezeFlag, bool isMarkedByUI)
+{
+    if (GetRSFreezeFlag() == freezeFlag) {
+        return;
+    }
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    if (renderGroupCache_->SetRSFreezeFlag(freezeFlag, isMarkedByUI)) {
+        needSync_ = true;
+    }
+}
+
+bool RSRenderParams::GetRSFreezeFlag() const
+{
+    return GetRSFreezeFlagType() != RSRenderGroupCache::RSFreezeFlag::NONE;
+}
+
+RSRenderGroupCache::RSFreezeFlag RSRenderParams::GetRSFreezeFlagType() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->GetRSFreezeFlag();
+    }
+    return RSRenderGroupCache::RSFreezeFlag::NONE;
+}
+
+bool RSRenderParams::IsFreezedByUser() const
+{
+    return (GetRSFreezeFlagType() & RSRenderGroupCache::RSFreezeFlag::FREEZED_BY_USER) !=
+            RSRenderGroupCache::RSFreezeFlag::NONE;
 }
 
 void RSRenderParams::OpincSetIsSuggest(bool isSuggest)
@@ -298,6 +455,60 @@ void RSRenderParams::OpincSetCacheChangeFlag(bool state, bool lastFrameSynced)
     }
 }
 
+void RSRenderParams::ApplySandboxMatrixToCanvas(RSPaintFilterCanvas& canvas) const
+{
+    auto paintFilterCanvas = static_cast<RSPaintFilterCanvas*>(&canvas);
+    auto originalCanvas = paintFilterCanvas->GetOriginalCanvas();
+    if (!originalCanvas || paintFilterCanvas->GetOffscreenDataList().empty()) {
+        canvas.SetMatrix(parentSurfaceMatrix_);
+        canvas.ConcatMatrix(matrix_);
+        return;
+    }
+    Drawing::Matrix combinedMatrix;
+    Drawing::Matrix invertMatrix;
+    auto offscreenCanvasVector = paintFilterCanvas->GetOffscreenCanvasVector();
+    // skip current canvas, concat all stacked offscreen canvas
+    for (size_t i = 1; i < offscreenCanvasVector.size(); ++i) {
+        if (const auto& offscreenCanvas = offscreenCanvasVector[i]) {
+            offscreenCanvas->GetTotalMatrix().Invert(invertMatrix);
+            combinedMatrix.PreConcat(invertMatrix);
+        }
+    }
+    originalCanvas->GetTotalMatrix().Invert(invertMatrix);
+    combinedMatrix.PreConcat(invertMatrix);
+    canvas.SetMatrix(combinedMatrix);
+    canvas.ConcatMatrix(parentSurfaceMatrix_);
+    canvas.ConcatMatrix(matrix_);
+}
+
+void RSRenderParams::SetLayerPartRenderEnabled(bool enable)
+{
+    if (isLayerPartRenderEnable_ == enable) {
+        return;
+    }
+    isLayerPartRenderEnable_ = enable;
+    needSync_ = true;
+}
+
+bool RSRenderParams::GetLayerPartRenderEnabled() const
+{
+    return isLayerPartRenderEnable_;
+}
+
+void RSRenderParams::SetLayerPartRenderCurrentFrameDirtyRegion(const RectI& dirtyRegion)
+{
+    if (layerPartRenderCurrentFrameDirtyRegion_ == dirtyRegion) {
+        return;
+    }
+    layerPartRenderCurrentFrameDirtyRegion_ = dirtyRegion;
+    needSync_ = true;
+}
+
+const RectI& RSRenderParams::GetLayerPartRenderCurrentFrameDirtyRegion() const
+{
+    return layerPartRenderCurrentFrameDirtyRegion_;
+}
+
 void RSRenderParams::SetShadowRect(Drawing::Rect rect)
 {
     if (shadowRect_ == rect) {
@@ -305,6 +516,22 @@ void RSRenderParams::SetShadowRect(Drawing::Rect rect)
     }
     shadowRect_ = rect;
     needSync_ = true;
+}
+
+void RSRenderParams::SetRealShadowRect(const Drawing::Rect& rect)
+{
+    if (!renderGroupCache_) {
+        renderGroupCache_ = std::make_unique<RSRenderGroupCache>();
+    }
+    renderGroupCache_->SetRealShadowRect(rect);
+}
+
+Drawing::Rect RSRenderParams::GetRealShadowRect() const
+{
+    if (renderGroupCache_) {
+        return renderGroupCache_->GetRealShadowRect();
+    }
+    return Drawing::Rect();
 }
 
 void RSRenderParams::SetNeedSync(bool needSync)
@@ -352,7 +579,8 @@ void RSRenderParams::SetNodeColorSpace(GraphicColorGamut colorSpace)
 void RSRenderParams::ClearHDRVideoStatus()
 {
     HdrStatus newStatus = static_cast<HdrStatus>(
-        hdrStatus_ & ~(HdrStatus::HDR_VIDEO | HdrStatus::AI_HDR_VIDEO_GTM | HdrStatus::AI_HDR_VIDEO_GAINMAP));
+        hdrStatus_ & ~(HdrStatus::HDR_VIDEO | HdrStatus::AI_HDR_VIDEO_GTM
+            | HdrStatus::AI_HDR_VIDEO_GAINMAP | HdrStatus::AI_HDR_VIDEO_AI2020));
     if (newStatus == hdrStatus_) {
         return;
     }
@@ -423,37 +651,13 @@ void RSRenderParams::SetGlobalAlpha(float alpha)
     needSync_ = true;
 }
 
-void RSRenderParams::SetVirtualScreenWhiteListInfo(const std::unordered_map<ScreenId, bool>& info)
+void RSRenderParams::SetScreensWithSubTreeWhitelist(const std::unordered_set<ScreenId>& screenIds)
 {
-    if (info == hasVirtualScreenWhiteList_) {
+    if (screensWithSubTreeWhitelist_ == screenIds) {
         return;
     }
-    hasVirtualScreenWhiteList_ = info;
+    screensWithSubTreeWhitelist_ = screenIds;
     needSync_ = true;
-}
-
-void RSRenderParams::OnCanvasDrawingSurfaceChange(const std::unique_ptr<RSRenderParams>& target)
-{
-    if (!canvasDrawingNodeSurfaceChanged_) {
-        return;
-    }
-    target->canvasDrawingNodeSurfaceChanged_ = true;
-    target->surfaceParams_.width = surfaceParams_.width;
-    target->surfaceParams_.height = surfaceParams_.height;
-    target->surfaceParams_.colorSpace = surfaceParams_.colorSpace;
-    target->canvasDrawingResetSurfaceIndex_ = canvasDrawingResetSurfaceIndex_.load();
-    if (GetParamsType() == RSRenderParamsType::RS_PARAM_OWNED_BY_DRAWABLE) {
-        return;
-    }
-    canvasDrawingNodeSurfaceChanged_ = false;
-}
-
-void RSRenderParams::SetCanvasDrawingSurfaceChanged(bool changeFlag)
-{
-    if (changeFlag) {
-        needSync_ = true;
-    }
-    canvasDrawingNodeSurfaceChanged_ = changeFlag;
 }
 
 bool RSRenderParams::IsRepaintBoundary() const
@@ -466,15 +670,6 @@ void RSRenderParams::MarkRepaintBoundary(bool isRepaintBoundary)
     isRepaintBoundary_ = isRepaintBoundary;
 }
 
-void RSRenderParams::SetCanvasDrawingResetSurfaceIndex(uint32_t index)
-{
-    if (index == canvasDrawingResetSurfaceIndex_) {
-        return;
-    }
-    canvasDrawingResetSurfaceIndex_.store(index);
-    needSync_ = true;
-}
-
 void RSRenderParams::SetForegroundFilterCache(const std::shared_ptr<RSFilter>& foregroundFilterCache)
 {
     if (foregroundFilterCache_ == foregroundFilterCache) {
@@ -482,13 +677,6 @@ void RSRenderParams::SetForegroundFilterCache(const std::shared_ptr<RSFilter>& f
     }
     foregroundFilterCache_ = foregroundFilterCache;
     needSync_ = true;
-}
-
-void RSRenderParams::SetCanvasDrawingSurfaceParams(int width, int height, GraphicColorGamut colorSpace)
-{
-    surfaceParams_.width = width;
-    surfaceParams_.height = height;
-    surfaceParams_.colorSpace = colorSpace;
 }
 
 void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
@@ -509,26 +697,22 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     target->hasSandBox_ = hasSandBox_;
     target->localDrawRect_ = localDrawRect_;
     target->id_ = id_;
-    target->cacheSize_ = cacheSize_;
     target->frameGravity_ = frameGravity_;
     target->childHasVisibleFilter_ = childHasVisibleFilter_;
     target->childHasVisibleEffect_ = childHasVisibleEffect_;
     // use flag in render param and staging render param to determine if cache should be updated
     // (flag in render param may be not used because of occlusion skip, so we need to update cache in next frame)
     target->isDrawingCacheChanged_ = target->isDrawingCacheChanged_ || isDrawingCacheChanged_;
-    target->isForceDisableNodeGroup_ = isForceDisableNodeGroup_;
     target->shadowRect_ = shadowRect_;
-    target->drawingCacheIncludeProperty_ = drawingCacheIncludeProperty_;
-    target->isNodeGroupHasChildInBlacklist_ = isNodeGroupHasChildInBlacklist_;
     if (renderGroupCache_) {
         target->renderGroupCache_ = std::make_unique<RSRenderGroupCache>(*renderGroupCache_);
     }
-    target->dirtyRegionInfoForDFX_ = dirtyRegionInfoForDFX_;
     target->isRepaintBoundary_ = isRepaintBoundary_;
     target->alphaOffScreen_ = alphaOffScreen_;
     target->hdrBrightness_ = hdrBrightness_;
     target->hdrStatus_ = hdrStatus_;
     target->childHasVisibleHDRContent_ = childHasVisibleHDRContent_;
+    target->nodeColorSpace_ = nodeColorSpace_;
     target->needFilter_ = needFilter_;
     target->renderNodeType_ = renderNodeType_;
     target->globalAlpha_ = globalAlpha_;
@@ -539,21 +723,19 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     if (target->foregroundFilterCache_) {
         target->foregroundFilterCache_->OnSync();
     }
-    OnCanvasDrawingSurfaceChange(target);
     target->isOpincSuggestFlag_ = isOpincSuggestFlag_;
     target->isOpincSupportFlag_ = isOpincSupportFlag_;
     target->isOpincRootFlag_ = isOpincRootFlag_;
     target->isOpincStateChanged_ = target->isOpincStateChanged_ || isOpincStateChanged_;
+    target->isLayerPartRenderEnable_ = isLayerPartRenderEnable_;
+    target->layerPartRenderCurrentFrameDirtyRegion_ = layerPartRenderCurrentFrameDirtyRegion_;
     target->startingWindowFlag_ = startingWindowFlag_;
-    target->freezeFlag_ = freezeFlag_;
+    target->isDoubleSided_ = isDoubleSided_;
     target->absDrawRect_ = absDrawRect_;
     target->firstLevelNodeId_ = firstLevelNodeId_;
     target->uifirstRootNodeId_ = uifirstRootNodeId_;
     target->instanceRootNodeId_ = instanceRootNodeId_;
     target->instanceRootNodeName_ = instanceRootNodeName_;
-    target->isFirstLevelCrossNode_ = isFirstLevelCrossNode_;
-    target->cloneSourceDrawable_ = cloneSourceDrawable_;
-    target->isCrossNodeOffscreenOn_ = isCrossNodeOffscreenOn_;
     target->absRotation_ = absRotation_;
     target->hasUnobscuredUEC_ = hasUnobscuredUEC_;
 
@@ -563,7 +745,7 @@ void RSRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target)
     // used for DFX
     target->isOnTheTree_ = isOnTheTree_;
 
-    target->hasVirtualScreenWhiteList_ = hasVirtualScreenWhiteList_;
+    target->screensWithSubTreeWhitelist_ = screensWithSubTreeWhitelist_;
     needSync_ = false;
 }
 
@@ -654,11 +836,6 @@ DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr RSRenderParams::GetMirrorSource
     return defaultPtr;
 }
 
-void RSRenderParams::SetCloneSourceDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
-{
-    cloneSourceDrawable_ = drawable;
-}
-
 // [Attention] Only used in PC window resize scene now
 void RSRenderParams::SetWindowKeyFrameNodeDrawable(DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr drawable)
 {
@@ -681,5 +858,11 @@ void RSRenderParams::SetIsOnTheTree(bool isOnTheTree)
 bool RSRenderParams::GetIsOnTheTree() const
 {
     return isOnTheTree_;
+}
+
+void RSRenderParams::SwapRelatedRenderParams(RSRenderParams& relatedRenderParams)
+{
+    matrix_.Swap(relatedRenderParams.matrix_);
+    std::swap(shouldPaint_, relatedRenderParams.shouldPaint_);
 }
 } // namespace OHOS::Rosen

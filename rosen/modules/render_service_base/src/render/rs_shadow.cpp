@@ -73,6 +73,11 @@ void RSShadow::SetColorStrategy(int colorStrategy)
     colorStrategy_ = colorStrategy;
 }
 
+void RSShadow::SetDisableSDFBlur(bool disable)
+{
+    disableSDFBlur_ = disable;
+}
+
 const Color& RSShadow::GetColor() const
 {
     return color_;
@@ -123,9 +128,14 @@ int RSShadow::GetColorStrategy() const
     return colorStrategy_;
 }
 
+bool RSShadow::GetDisableSDFBlur() const
+{
+    return disableSDFBlur_;
+}
+
 bool RSShadow::IsValid() const
 {
-    return (ROSEN_GNE(GetElevation(), 0.f) && ROSEN_GNE(GetAlpha(), 0.f)) || (ROSEN_GNE(GetRadius(), 0.f));
+    return (ROSEN_GNE(GetElevation(), 0.f) && ROSEN_GNE(GetAlpha(), 0.f)) || (ROSEN_GE(GetRadius(), 0.f));
 }
 
 } // namespace Rosen

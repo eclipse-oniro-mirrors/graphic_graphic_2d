@@ -59,7 +59,7 @@ void RSLuminanceControl::DimmingIncrease(ScreenId screenId)
     // Update HDR dimming index.
 }
 
-void RSLuminanceControl::SetSdrLuminance(ScreenId screenId, uint32_t level)
+void RSLuminanceControl::SetSdrLuminance(const RsScreenBrightnessData& brightnessData)
 {
     // Update SDR brightness.
 }
@@ -141,7 +141,7 @@ float RSLuminanceControl::ConvertScalerFromLevelToFloat(uint32_t& level) const
 }
 
 void RSLuminanceControl::SetCurDisplayHdrBrightnessScaler(ScreenId screenId,
-    std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler)
+    const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler)
 {
     return;
 }
@@ -150,5 +150,33 @@ bool RSLuminanceControl::IsHardwareHdrDisabled(bool checkBrightnessRatio, Screen
 {
     return false;
 }
+
+double RSLuminanceControl::GetConfigScaler(ScreenId screenId, HdrStatus type) const
+{
+    return 1.0; // 1.0 means no headroom
+}
+
+void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus)
+{
+    // Set dual screen coordination status
+}
+
+float RSLuminanceControl::HdrDimmingProcess(ScreenId screenId, uint64_t nodeId)
+{
+    return 1.0f;
+}
+
+void RSLuminanceControl::HdrDimmingPostProcess(ScreenId screenId)
+{
+    return;
+}
+
+#ifndef ROSEN_CROSS_PLATFORM
+int32_t RSLuminanceControl::UpdateMetadataBasedOnScaler(const sptr<SurfaceBuffer>& input, float scaler,
+    HdrStatus hdrStatus)
+{
+    return 0;
+}
+#endif
 } // namespace Rosen
 } // namespace OHOS

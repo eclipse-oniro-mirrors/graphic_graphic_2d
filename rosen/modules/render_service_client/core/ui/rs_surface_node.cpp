@@ -22,11 +22,16 @@
 #include "command/rs_base_node_command.h"
 #include "command/rs_node_command.h"
 #include "command/rs_surface_node_command.h"
+#include "command_modifier/rs_node_command_modifier.h"
+#include "command_modifier/rs_surface_node_command_modifier.h"
 #include "common/rs_optional_trace.h"
 #include "ipc_callbacks/rs_rt_refresh_callback.h"
+#include "modifier_ng/shadow_modifier/rs_bounds_shadow_modifier.h"
+#include "modifier_ng/shadow_modifier/rs_frame_shadow_modifier.h"
 #include "pipeline/rs_node_map.h"
 #include "pipeline/rs_render_thread.h"
 #include "platform/common/rs_log.h"
+#include "sandbox_utils.h"
 #ifndef ROSEN_CROSS_PLATFORM
 #include "platform/drawing/rs_surface_converter.h"
 #endif
@@ -63,7 +68,117 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(
     if (!isWindow) {
         return Create(surfaceNodeConfig, RSSurfaceNodeType::SELF_DRAWING_NODE, isWindow, false, rsUIContext);
     }
-    return Create(surfaceNodeConfig, RSSurfaceNodeType::DEFAULT, isWindow);
+    return Create(surfaceNodeConfig, RSSurfaceNodeType::DEFAULT, isWindow, false, rsUIContext);
+}
+
+RSSurfaceNode::SharedPtr RSSurfaceNode::CreateSurfaceNode(const RSSurfaceNodeConfig &surfaceNodeConfig, bool isWindow)
+{
+    SharedPtr node(new RSSurfaceNode(surfaceNodeConfig, isWindow));
+    return node;
+}
+ 
+bool RSSurfaceNode::SendDataToRender(const RSSurfaceNodeConfig& surfaceNodeConfig,
+    RSSurfaceNodeType type, bool isWindow, bool unobscured)
+{
+    auto rsUIContext = GetRSUIContext();
+    if (rsUIContext == nullptr) {
+        ROSEN_LOGE("RSSurfaceNode::SendDataToRender rsUIContext is nullptr");
+        return false;
+    }
+    rsUIContext->GetMutableNodeMap().RegisterNode(shared_from_this());
+    SetSkipCheckInMultiInstance(surfaceNodeConfig.isSkipCheckInMultiInstance);
+ 
+    // create node in RS
+    RSSurfaceRenderNodeConfig config = {
+        .id = GetId(),
+        .name = name_,
+        .additionalData = surfaceNodeConfig.additionalData,
+        .isTextureExportNode = surfaceNodeConfig.isTextureExportNode,
+        .isSync = surfaceNodeConfig.isSync,
+        .surfaceWindowType = surfaceNodeConfig.surfaceWindowType,
+    };
+    if (!isWindow) {
+        config.nodeType = RSSurfaceNodeType::SELF_DRAWING_NODE;
+    } else {
+        config.nodeType = type;
+    }
+    surfaceNodeType_ = config.nodeType;
+    RS_TRACE_NAME_FMT("RSSurfaceNode::SendDataToRender name: %s type: %hhu, id: %lu, token:%lu", name_.c_str(),
+        config.nodeType, GetId(), rsUIContext ? rsUIContext->GetToken() : 0);
+    RS_LOGD("RSSurfaceNode::SendDataToRender name: %{public}s type: %{public}hhu, id: %{public}" PRIu64, name_.c_str(),
+        config.nodeType, GetId());
+    if (type == RSSurfaceNodeType::LEASH_WINDOW_NODE && IsUniRenderEnabled()) {
+        std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeCreateWithConfig>(
+            config.id, config.name, static_cast<uint8_t>(config.nodeType), config.surfaceWindowType);
+        AddCommand(command, isWindow);
+    } else {
+#ifndef SCREENLESS_DEVICE
+        if (!CreateNodeAndSurface(config, surfaceNodeConfig.surfaceId, unobscured)) {
+            ROSEN_LOGE("RSSurfaceNode::SendDataToRender, create node and surface failed");
+            return false;
+        }
+#endif
+    }
+ 
+    SetClipToFrame(true);
+    // create node in RT (only when in divided render and isRenderServiceNode_ == false)
+    // create node in RT if is TextureExport node
+    if (!IsRenderServiceNode()) {
+        std::unique_ptr<RSCommand> command =
+            std::make_unique<RSSurfaceNodeCreate>(GetId(), config.nodeType, surfaceNodeConfig.isTextureExportNode);
+        if (surfaceNodeConfig.isTextureExportNode) {
+            AddCommand(command, false);
+            SetSurfaceIdToRenderNode();
+        } else {
+            AddCommand(command, isWindow);
+        }
+#ifdef ROSEN_OHOS
+        if (rsUIContext != nullptr) {
+            command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(
+                GetId(), rsUIContext->GetConnectToRender());
+            AddCommand(command, isWindow);
+        } else {
+            ROSEN_LOGE("RSSurfaceNode::SendDataToRender,"
+                "RSSurfaceNodeConnectToNodeInRenderService rsUIContext is nullptr");
+        }
+#endif
+ 
+        RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
+        command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(GetId(), true);
+        AddCommand(command, isWindow);
+        SetFrameGravity(Gravity::RESIZE);
+        // codes for arkui-x
+#if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_ANDROID) && !defined(SCREENLESS_DEVICE)
+        if (type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) {
+            RSSurfaceExtConfig config = {
+                .type = RSSurfaceExtType::SURFACE_TEXTURE,
+                .additionalData = nullptr,
+            };
+            CreateSurfaceExt(config);
+        }
+#endif
+        // codes for arkui-x
+#if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS) && !defined(SCREENLESS_DEVICE)
+        if ((type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) &&
+            (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface")) {
+            RSSurfaceExtConfig config = {
+                .type = RSSurfaceExtType::SURFACE_PLATFORM_TEXTURE,
+                .additionalData = nullptr,
+            };
+            CreateSurfaceExt(config);
+        }
+#endif
+    }
+    if (GetName().find("battery_panel") != std::string::npos ||
+        GetName().find("sound_panel") != std::string::npos ||
+        GetName().find("RosenWeb") != std::string::npos) {
+        SetFrameGravity(Gravity::TOP_LEFT);
+    } else if (!isWindow) {
+        SetFrameGravity(Gravity::RESIZE);
+    }
+    ROSEN_LOGI("RsDebug RSSurfaceNode::SendDataToRender id:%{public}" PRIu64, GetId());
+    SetUIContextToken();
+    return true;
 }
 
 RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfaceNodeConfig,
@@ -120,9 +235,16 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
         } else {
             node->AddCommand(command, isWindow);
         }
-        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(node->GetId());
+#ifdef ROSEN_OHOS
+    if (rsUIContext != nullptr) {
+        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(
+            node->GetId(), rsUIContext->GetConnectToRender());
         node->AddCommand(command, isWindow);
-
+    } else {
+        ROSEN_LOGE("RSSurfaceNode::Create,"
+ 	        "RSSurfaceNodeConnectToNodeInRenderService rsUIContext is nullptr");
+    }
+#endif
         RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
         command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(node->GetId(), true);
         node->AddCommand(command, isWindow);
@@ -139,9 +261,9 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
 #endif
         // codes for arkui-x
 #if defined(USE_SURFACE_TEXTURE) && defined(ROSEN_IOS) && !defined(SCREENLESS_DEVICE)
-        if ((type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE) &&
-            (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface") ||
-            (surfaceNodeConfig.SurfaceNodeName == "xcomponentSurface")) {
+        if (type == RSSurfaceNodeType::SURFACE_TEXTURE_NODE &&
+            (surfaceNodeConfig.SurfaceNodeName == "PlatformViewSurface" ||
+            surfaceNodeConfig.SurfaceNodeName == "xcomponentSurface")) {
             RSSurfaceExtConfig config = {
                 .type = RSSurfaceExtType::SURFACE_PLATFORM_TEXTURE,
                 .additionalData = nullptr,
@@ -158,7 +280,7 @@ RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfac
     } else if (!isWindow) {
         node->SetFrameGravity(Gravity::RESIZE);
     }
-    ROSEN_LOGD("RsDebug RSSurfaceNode::Create id:%{public}" PRIu64, node->GetId());
+    ROSEN_LOGI("RsDebug RSSurfaceNode::Create id:%{public}" PRIu64, node->GetId());
     node->SetUIContextToken();
     return node;
 }
@@ -182,9 +304,11 @@ void RSSurfaceNode::CreateNodeInRenderThread()
         command = std::make_unique<RSSurfaceNodeCreate>(GetId(), RSSurfaceNodeType::ABILITY_COMPONENT_NODE, false);
         AddCommand(command, false);
 
-        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(GetId());
-        AddCommand(command, false);
-
+#ifdef ROSEN_OHOS
+    command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(
+        GetId(), GetRSUIContext()->GetConnectToRender());
+    AddCommand(command, false);
+#endif
         RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
         command = std::make_unique<RSSurfaceNodeSetCallbackForRenderThreadRefresh>(GetId(), true);
         AddCommand(command, false);
@@ -247,12 +371,12 @@ void RSSurfaceNode::MarkUIHidden(bool isHidden)
     }
 }
 
-void RSSurfaceNode::OnBoundsSizeChanged() const
+void RSSurfaceNode::OnBoundsSizeChanged()
 {
     auto bounds = GetStagingProperties().GetBounds();
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeUpdateSurfaceDefaultSize>(
-        GetId(), bounds.z_, bounds.w_);
-    AddCommand(command, true);
+    SetRSCmdProperty<SurfaceDefaultSizeCmdModifier>(SurfaceDefaultSizeCmdParam{
+        bounds.z_, bounds.w_
+    });
 #ifdef ROSEN_CROSS_PLATFORM
     if (!IsRenderServiceNode()) {
         std::unique_ptr<RSCommand> commandRt = std::make_unique<RSSurfaceNodeUpdateSurfaceDefaultSize>(
@@ -268,12 +392,23 @@ void RSSurfaceNode::OnBoundsSizeChanged() const
     }
 }
 
+void RSSurfaceNode::OnAlphaValueChanged() const
+{
+    auto alpha = GetStagingProperties().GetAlpha();
+    ROSEN_LOGI("RSSurfaceNode::OnAlphaValueChanged, node=[%{public}" PRIu64 ", %{public}s], alpha=%{public}f",
+        GetId(), GetName().c_str(), alpha);
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (alphaChangedCallback_) {
+        alphaChangedCallback_(alpha);
+    }
+}
+
 void RSSurfaceNode::SetLeashPersistentId(LeashPersistentId leashPersistentId)
 {
     leashPersistentId_ = leashPersistentId;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSurfaceNodeSetLeashPersistentId>(GetId(), leashPersistentId);
-    AddCommand(command, true);
+    SetRSCmdProperty<LeashPersistentIdCmdModifier>(LeashPersistentIdCmdParam{
+        leashPersistentId
+    });
     ROSEN_LOGD("RSSurfaceNode::SetLeashPersistentId, \
         surfaceNodeId:[%{public}" PRIu64 "] leashPersistentId:[%{public}" PRIu64 "]", GetId(), leashPersistentId);
 }
@@ -286,9 +421,9 @@ LeashPersistentId RSSurfaceNode::GetLeashPersistentId() const
 void RSSurfaceNode::SetSecurityLayer(bool isSecurityLayer)
 {
     isSecurityLayer_ = isSecurityLayer;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSecurityLayer>(GetId(), isSecurityLayer);
-    AddCommand(command, true);
+    SetRSCmdProperty<SecurityLayerCmdModifier>(SecurityLayerCmdParam{
+        isSecurityLayer
+    });
     ROSEN_LOGI("RSSurfaceNode::SetSecurityLayer, surfaceNodeId:[%{public}" PRIu64 "] isSecurityLayer:%{public}s",
         GetId(), isSecurityLayer ? "true" : "false");
 }
@@ -301,9 +436,9 @@ bool RSSurfaceNode::GetSecurityLayer() const
 void RSSurfaceNode::SetSkipLayer(bool isSkipLayer)
 {
     isSkipLayer_ = isSkipLayer;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSkipLayer>(GetId(), isSkipLayer);
-    AddCommand(command, true);
+    SetRSCmdProperty<SkipLayerCmdModifier>(SkipLayerCmdParam{
+        isSkipLayer
+    });
     ROSEN_LOGD("RSSurfaceNode::SetSkipLayer, surfaceNodeId:[%" PRIu64 "] isSkipLayer:%s", GetId(),
         isSkipLayer ? "true" : "false");
 }
@@ -316,9 +451,9 @@ bool RSSurfaceNode::GetSkipLayer() const
 void RSSurfaceNode::SetSnapshotSkipLayer(bool isSnapshotSkipLayer)
 {
     isSnapshotSkipLayer_ = isSnapshotSkipLayer;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSnapshotSkipLayer>(GetId(), isSnapshotSkipLayer);
-    AddCommand(command, true);
+    SetRSCmdProperty<SnapshotSkipLayerCmdModifier>(SnapshotSkipLayerCmdParam{
+        isSnapshotSkipLayer
+    });
     ROSEN_LOGD("RSSurfaceNode::SetSnapshotSkipLayer, surfaceNodeId:[%" PRIu64 "] isSnapshotSkipLayer:%s", GetId(),
         isSnapshotSkipLayer ? "true" : "false");
 }
@@ -331,9 +466,9 @@ bool RSSurfaceNode::GetSnapshotSkipLayer() const
 void RSSurfaceNode::SetFingerprint(bool hasFingerprint)
 {
     hasFingerprint_ = hasFingerprint;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetFingerprint>(GetId(), hasFingerprint);
-    AddCommand(command, true);
+    SetRSCmdProperty<HasFingerprintCmdModifier>(HasFingerprintCmdParam{
+        hasFingerprint
+    });
     ROSEN_LOGD("RSSurfaceNode::SetFingerprint, surfaceNodeId:[%{public}" PRIu64 "] hasFingerprint:%{public}s", GetId(),
         hasFingerprint ? "true" : "false");
 }
@@ -346,9 +481,9 @@ bool RSSurfaceNode::GetFingerprint() const
 void RSSurfaceNode::SetColorSpace(GraphicColorGamut colorSpace)
 {
     colorSpace_ = colorSpace;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetColorSpace>(GetId(), colorSpace);
-    AddCommand(command, true);
+    SetRSCmdProperty<ColorSpaceCmdModifier>(ColorSpaceCmdParam{
+        colorSpace
+    });
 }
 
 void RSSurfaceNode::CreateRenderNodeForTextureExportSwitch()
@@ -358,7 +493,8 @@ void RSSurfaceNode::CreateRenderNodeForTextureExportSwitch()
     AddCommand(command, IsRenderServiceNode());
     if (!IsRenderServiceNode()) {
         hasCreateRenderNodeInRT_ = true;
-        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(GetId());
+        command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(
+            GetId(), GetRSUIContext()->GetConnectToRender());
         AddCommand(command, false);
 
         RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
@@ -401,16 +537,16 @@ void RSSurfaceNode::SetTextureExport(bool isTextureExportNode)
 
 void RSSurfaceNode::SetAbilityBGAlpha(uint8_t alpha)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetAbilityBGAlpha>(GetId(), alpha);
-    AddCommand(command, true);
+    SetRSCmdProperty<AbilityBGAlphaCmdModifier>(AbilityBGAlphaCmdParam{
+        alpha
+    });
 }
 
 void RSSurfaceNode::SetIsNotifyUIBufferAvailable(bool available)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetIsNotifyUIBufferAvailable>(GetId(), available);
-    AddCommand(command, true);
+    SetRSCmdProperty<NotifyUIBufferAvailableCmdModifier>(NotifyUIBufferAvailableCmdParam{
+        available
+    });
 }
 
 bool RSSurfaceNode::SetBufferAvailableCallback(BufferAvailableCallback callback)
@@ -419,12 +555,15 @@ bool RSSurfaceNode::SetBufferAvailableCallback(BufferAvailableCallback callback)
         std::lock_guard<std::mutex> lock(mutex_);
         callback_ = callback;
     }
-    auto renderServiceClient =
-        std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
-    if (renderServiceClient == nullptr) {
-        return false;
-    }
-    return renderServiceClient->RegisterBufferAvailableListener(GetId(), [weakThis = weak_from_this()]() {
+    auto result = SetRSCmdPropertyWithResult<BufferAvailableCallbackCmdModifier>(BufferAvailableCallbackCmdParam{
+        BufferAvailableCallbackFunc()
+    });
+    return std::holds_alternative<bool>(result) ? std::get<bool>(result) : false;
+}
+ 
+RSSurfaceNode::BufferAvailableCallback RSSurfaceNode::BufferAvailableCallbackFunc()
+{
+    return [weakThis = weak_from_this()]() {
         auto rsSurfaceNode = RSBaseNode::ReinterpretCast<RSSurfaceNode>(weakThis.lock());
         if (rsSurfaceNode == nullptr) {
             ROSEN_LOGE("RSSurfaceNode::SetBufferAvailableCallback this == null");
@@ -439,7 +578,7 @@ bool RSSurfaceNode::SetBufferAvailableCallback(BufferAvailableCallback callback)
         if (actualCallback) {
             actualCallback();
         }
-    });
+    };
 }
 
 bool RSSurfaceNode::IsBufferAvailable() const
@@ -453,20 +592,12 @@ void RSSurfaceNode::SetBoundsChangedCallback(BoundsChangedCallback callback)
     boundsChangedCallback_ = callback;
 }
 
-void RSSurfaceNode::SetAnimationFinished()
+void RSSurfaceNode::SetAlphaChangedCallback(AlphaChangedCallback&& callback)
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetAnimationFinished>(GetId());
-    auto transaction = GetRSTransaction();
-    if (transaction != nullptr) {
-        transaction->AddCommand(command, true);
-        transaction->FlushImplicitTransaction();
-    } else {
-        auto transactionProxy = RSTransactionProxy::GetInstance();
-        if (transactionProxy != nullptr) {
-            transactionProxy->AddCommand(command, true);
-            transactionProxy->FlushImplicitTransaction();
-        }
-    }
+    ROSEN_LOGI("RSSurfaceNode::SetAlphaChangedCallback, node=[%{public}" PRIu64 ", %{public}s]",
+        GetId(), GetName().c_str());
+    std::lock_guard<std::mutex> lock(mutex_);
+    alphaChangedCallback_ = callback;
 }
 
 bool RSSurfaceNode::Marshalling(Parcel& parcel) const
@@ -505,16 +636,106 @@ std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
     return surfaceNode;
 }
 
-RSSurfaceNode::SharedPtr RSSurfaceNode::CreateShadowSurfaceNode()
+RSSurfaceNode::SharedPtr RSSurfaceNode::CreateShadowSurfaceNode(const std::set<ShadowPropertyType>& shadowPropertyTypes)
 {
+    bool hasShadowProperty = !shadowPropertyTypes.empty();
+    if (hasShadowProperty && modifiersNGCreatedBySetter_.empty()) {
+        RS_LOGE("RSSurfaceNode::CreateShadowSurfaceNode, no source modifiers, nodeId=%{public}" PRIu64, GetId());
+        return nullptr;
+    }
+
     RSSurfaceNodeConfig config = { GetName() };
-    SharedPtr surfaceNode(new RSSurfaceNode(config, isRenderServiceNode_, GetId()));
-    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext();
-    surfaceNode->SetRSUIContext(rsUIContext);
-    surfaceNode->isShadowNode_ = true;
-    surfaceNode->SetSkipCheckInMultiInstance(true);
-    surfaceNode->skipDestroyCommandInDestructor_ = true;
-    return surfaceNode;
+    SharedPtr shadowNode(new RSSurfaceNode(config, isRenderServiceNode_, GetId()));
+    sptr<IRemoteObject> connectToRender;
+    auto preContext = GetRSUIContext();
+    if (preContext) {
+        connectToRender = preContext->GetConnectToRender();
+    }
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRender);
+    shadowNode->SetRSUIContext(rsUIContext);
+    shadowNode->isShadowNode_ = true;
+    shadowNode->SetSkipCheckInMultiInstance(true);
+    shadowNode->skipDestroyCommandInDestructor_ = true;
+    if (!hasShadowProperty) {
+        RS_LOGW("RSSurfaceNode::CreateShadowSurfaceNode, shadowPropertyTypes empty, nodeId=%{public}" PRIu64, GetId());
+        return shadowNode;
+    }
+    if (!InitShadowModifiers(shadowNode, shadowPropertyTypes)) {
+        return nullptr;
+    }
+
+    shadowNode->existsDuplicateModifier_ = true;
+    existsDuplicateModifier_ = true;
+    return shadowNode;
+}
+
+bool RSSurfaceNode::InitShadowModifiers(SharedPtr shadowNode, const std::set<ShadowPropertyType>& shadowPropertyTypes)
+{
+    std::map<ModifierId, std::shared_ptr<ModifierNG::RSModifier>> modifierMap;
+    for (const auto& type : shadowPropertyTypes) {
+        std::shared_ptr<ModifierNG::RSModifier> modifier = nullptr;
+        switch (type) {
+            case ShadowPropertyType::BOUNDS:
+                modifier = CreateShadowModifierAndProperty<ModifierNG::RSBoundsShadowModifier, Vector4f>(
+                    shadowNode, ModifierNG::RSPropertyType::BOUNDS);
+                break;
+            case ShadowPropertyType::FRAME:
+                modifier = CreateShadowModifierAndProperty<ModifierNG::RSFrameShadowModifier, Vector4f>(
+                    shadowNode, ModifierNG::RSPropertyType::FRAME);
+                break;
+            default:
+                break;
+        }
+
+        if (modifier != nullptr) {
+            modifierMap.emplace(modifier->GetId(), modifier);
+        }
+    }
+
+    if (modifierMap.empty()) {
+        return false;
+    }
+
+    for (auto& [_, modifier] : modifierMap) {
+        std::unique_ptr<RSCommand> command =
+            std::make_unique<RSAddModifierNG>(shadowNode->GetId(), modifier->CreateRenderModifier());
+        shadowNode->AddCommand(
+            command, shadowNode->IsRenderServiceNode(), shadowNode->GetFollowType(), shadowNode->GetId());
+    }
+    return true;
+}
+
+template<typename Modifier, typename ValueType>
+std::shared_ptr<ModifierNG::RSModifier> RSSurfaceNode::CreateShadowModifierAndProperty(
+    SharedPtr shadowNode, ModifierNG::RSPropertyType propertyType)
+{
+    auto srcModifier = GetModifierCreatedBySetter(Modifier::Type);
+    if (srcModifier == nullptr) {
+        RS_LOGE("RSSurfaceNode::CreateShadowModifierAndProperty, no source modifier, nodeId=%{public}" PRIu64
+            ", propertyType=%{public}hu", GetId(), propertyType);
+        return nullptr;
+    }
+    auto srcProperty = srcModifier->GetProperty(propertyType);
+    if (srcProperty == nullptr) {
+        RS_LOGE("RSSurfaceNode::CreateShadowModifierAndProperty, no source property, nodeId=%{public}" PRIu64
+            ", propertyType=%{public}hu", GetId(), propertyType);
+        return nullptr;
+    }
+
+    auto shadowModifier = shadowNode->GetModifierCreatedBySetter(Modifier::Type);
+    if (shadowModifier == nullptr) {
+        shadowModifier = std::make_shared<Modifier>();
+        shadowModifier->id_ = srcModifier->GetId();
+        shadowModifier->OnAttach(*shadowNode);
+        std::unique_lock<std::recursive_mutex> lock(shadowNode->propertyMutex_);
+        shadowNode->modifiersNG_.emplace(shadowModifier->GetId(), shadowModifier);
+        shadowNode->modifiersNGCreatedBySetter_.emplace(shadowModifier->GetType(), shadowModifier);
+    }
+    auto shadowProperty =
+        std::make_shared<RSProperty<ValueType>>(std::static_pointer_cast<RSProperty<ValueType>>(srcProperty)->Get());
+    shadowProperty->id_ = srcProperty->GetId();
+    shadowModifier->AttachProperty(propertyType, shadowProperty);
+    return shadowModifier;
 }
 
 void RSSurfaceNode::SetSurfaceIdToRenderNode()
@@ -545,15 +766,26 @@ RSNode::SharedPtr RSSurfaceNode::UnmarshallingAsProxyNode(Parcel& parcel)
 
 bool RSSurfaceNode::CreateNode(const RSSurfaceRenderNodeConfig& config)
 {
-    return std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())->
-        CreateNode(config);
+    auto rsUIContext = GetRSUIContext();
+    if (rsUIContext == nullptr || rsUIContext->GetRSRenderInterface() == nullptr) {
+        ROSEN_LOGE("RSDisplayNode::CreateNode uiContext is nullptr");
+        return false;
+    }
+    return rsUIContext->GetRSRenderInterface()->CreateNode(config);
 }
 
 bool RSSurfaceNode::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config, SurfaceId surfaceId, bool unobscured)
 {
     if (surfaceId == 0) {
-        surface_ = std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient())->
-        CreateNodeAndSurface(config, unobscured);
+        auto rsUIContext = GetRSUIContext();
+        if (rsUIContext == nullptr || rsUIContext->GetRSRenderInterface() == nullptr) {
+            ROSEN_LOGW("RSSurfaceNode::CreateNode uiContext is nullptr");
+            std::shared_ptr<RSRenderInterface> rsRenderInterface =
+                std::shared_ptr<RSRenderInterface>(new RSRenderInterface());
+            surface_ = rsRenderInterface->CreateNodeAndSurface(config, unobscured);
+        } else {
+            surface_ = rsUIContext->GetRSRenderInterface()->CreateNodeAndSurface(config, unobscured);
+        }
     } else {
 #ifndef ROSEN_CROSS_PLATFORM
         sptr<Surface> surface = SurfaceUtils::GetInstance()->GetSurface(surfaceId);
@@ -563,7 +795,7 @@ bool RSSurfaceNode::CreateNodeAndSurface(const RSSurfaceRenderNodeConfig& config
                 GetId(), surfaceId);
             return false;
         }
-        surface_ = std::static_pointer_cast<RSRenderServiceClient>(
+        surface_ = std::static_pointer_cast<RSRenderPipelineClient>(
             RSIRenderClient::CreateRenderServiceClient())->CreateRSSurface(surface);
         if (surface_ == nullptr) {
             ROSEN_LOGE(
@@ -609,9 +841,9 @@ void RSSurfaceNode::ResetContextAlpha() const
 
 void RSSurfaceNode::SetContainerWindow(bool hasContainerWindow, RRect rrect)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetContainerWindow>(GetId(), hasContainerWindow, rrect);
-    AddCommand(command, true);
+    SetRSCmdProperty<ContainerWindowCmdModifier>(ContainerWindowCmdParam{
+        hasContainerWindow, rrect
+    });
 }
 
 void RSSurfaceNode::SetWindowId(uint32_t windowId)
@@ -619,15 +851,16 @@ void RSSurfaceNode::SetWindowId(uint32_t windowId)
     windowId_ = windowId;
 }
 
-void RSSurfaceNode::SetFreeze(bool isFreeze)
+void RSSurfaceNode::SetFreeze(bool isFreeze, bool isMarkedByUI)
 {
     if (!IsUniRenderEnabled()) {
         ROSEN_LOGE("SetFreeze is not supported in separate render");
         return;
     }
     RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceNode::SetFreeze id:%llu", GetId());
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSetFreeze>(GetId(), isFreeze);
-    AddCommand(command, true);
+    SetRSCmdProperty<FreezeCmdModifier>(FreezeCmdParam{
+        isFreeze, isMarkedByUI
+    });
 }
 
 RSSurfaceNode::RSSurfaceNode(
@@ -642,6 +875,9 @@ RSSurfaceNode::RSSurfaceNode(
 
 RSSurfaceNode::~RSSurfaceNode()
 {
+#ifdef ROSEN_ARKUI_X
+    RSRenderThread::Instance().PostTask([surface = std::move(surface_)]() {});
+#endif
     if (isShadowNode_) {
         auto rsUIContext = GetRSUIContext();
         if (rsUIContext) {
@@ -651,10 +887,9 @@ RSSurfaceNode::~RSSurfaceNode()
     }
     RS_LOGI("RSSurfaceNode::~RSSurfaceNode, Node: %{public}" PRIu64 ", Name: %{public}s", GetId(), GetName().c_str());
     // both divided and unirender need to unregister listener when surfaceNode destroy
-    auto renderServiceClient =
-        std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
-    if (renderServiceClient != nullptr) {
-        renderServiceClient->UnregisterBufferAvailableListener(GetId());
+    auto rsUIContext = GetRSUIContext();
+    if (rsUIContext != nullptr && rsUIContext->GetRSRenderInterface() != nullptr) {
+        rsUIContext->GetRSRenderInterface()->UnregisterBufferAvailableListener(GetId());
 #ifdef USE_VIDEO_PROCESSING_ENGINE
         RSVpeManager::GetInstance().ReleaseVpeVideo(GetId());
 #endif
@@ -704,25 +939,24 @@ void RSSurfaceNode::DetachToDisplay(uint64_t screenId)
 
 void RSSurfaceNode::SetHardwareEnabled(bool isEnabled, SelfDrawingNodeType selfDrawingType, bool dynamicHardwareEnable)
 {
-    auto renderServiceClient =
-        std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
-    if (renderServiceClient != nullptr) {
-        renderServiceClient->SetHardwareEnabled(GetId(), isEnabled, selfDrawingType, dynamicHardwareEnable);
-    }
+    SetRSCmdPropertyWithResult<HardwareEnabledCmdModifier>(HardwareEnabledCmdParam{
+        isEnabled, selfDrawingType, dynamicHardwareEnable
+    });
 }
 
 void RSSurfaceNode::SetForceHardwareAndFixRotation(bool flag)
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetHardwareAndFixRotation>(GetId(), flag);
-    AddCommand(command, true);
+    SetRSCmdProperty<ForceHardwareAndFixRotationCmdModifier>(ForceHardwareAndFixRotationCmdParam{
+        flag
+    });
 }
 
 void RSSurfaceNode::SetBootAnimation(bool isBootAnimation)
 {
     isBootAnimation_ = isBootAnimation;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetBootAnimation>(GetId(), isBootAnimation);
-    AddCommand(command, true);
+    SetRSCmdProperty<BootAnimationCmdModifier>(BootAnimationCmdParam{
+        isBootAnimation
+    });
     ROSEN_LOGD("RSSurfaceNode::SetBootAnimation, surfaceNodeId:[%" PRIu64 "] isBootAnimation:%s",
         GetId(), isBootAnimation ? "true" : "false");
 }
@@ -734,14 +968,14 @@ bool RSSurfaceNode::GetBootAnimation() const
 
 void RSSurfaceNode::SetGlobalPositionEnabled(bool isEnabled)
 {
-    if (isGlobalPositionEnabled_ == isEnabled) {
+    if (isGlobalPositionEnabled_ == isEnabled && !existsDuplicateModifier_) {
         return;
     }
 
     isGlobalPositionEnabled_ = isEnabled;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetGlobalPositionEnabled>(GetId(), isEnabled);
-    AddCommand(command, true);
+    SetRSCmdProperty<GlobalPositionEnabledCmdModifier>(GlobalPositionEnabledCmdParam{
+        isEnabled
+    });
     ROSEN_LOGI("RSSurfaceNode::SetGlobalPositionEnabled, surfaceNodeId:[%{public}" PRIu64 "] isEnabled:%{public}s",
         GetId(), isEnabled ? "true" : "false");
 }
@@ -847,7 +1081,33 @@ void RSSurfaceNode::SetSurfaceTextureInitTypeCallBack(const RSSurfaceTextureInit
     if (texture) {
         texture->SetInitTypeCallback(initTypeCallback);
     }
+#else
+    RSSurfaceTextureConfig config = {
+        .type = RSSurfaceExtType::SURFACE_TEXTURE,
+        .additionalData = nullptr
+    };
+    auto texture = surface_->GetSurfaceExt(config);
+    if (texture) {
+        texture->SetInitTypeCallback(initTypeCallback);
+    }
 #endif // ROSEN_IOS
+}
+
+void RSSurfaceNode::SetSurfaceCaptureCallback(std::function<std::shared_ptr<Media::PixelMap>()> callback)
+{
+    std::unique_ptr<RSCommand> command =
+        std::make_unique<RSSurfaceNodeSetSurfaceCaptureCallBack>(GetId(), callback);
+    auto transaction = GetRSTransaction();
+    if (transaction != nullptr) {
+        transaction->AddCommand(command, false);
+        transaction->FlushImplicitTransaction();
+    } else {
+        auto transactionProxy = RSTransactionProxy::GetInstance();
+        if (transactionProxy != nullptr) {
+            transactionProxy->AddCommand(command, false);
+            transactionProxy->FlushImplicitTransaction();
+        }
+    }
 }
 #endif
 
@@ -863,32 +1123,25 @@ void RSSurfaceNode::SetForeground(bool isForeground)
     AddCommand(commandRT, false);
 }
 
-void RSSurfaceNode::SetClonedNodeInfo(NodeId nodeId, bool needOffscreen)
+void RSSurfaceNode::SetClonedNodeInfo(NodeId nodeId, bool needOffscreen, bool isRelated)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetClonedNodeId>(GetId(), nodeId, needOffscreen);
-    AddCommand(command, true);
+    SetRSCmdProperty<ClonedNodeInfoCmdModifier>(ClonedNodeInfoCmdParam{
+        nodeId, needOffscreen, isRelated
+    });
 }
 
 void RSSurfaceNode::SetForceUIFirst(bool forceUIFirst)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetForceUIFirst>(GetId(), forceUIFirst);
-    AddCommand(command, true);
+    SetRSCmdProperty<ForceUIFirstCmdModifier>(ForceUIFirstCmdParam{
+        forceUIFirst
+    });
 }
 
 void RSSurfaceNode::SetAncoFlags(uint32_t flags)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetAncoFlags>(GetId(), flags);
-    AddCommand(command, true);
-}
-void RSSurfaceNode::SetHDRPresent(bool hdrPresent, NodeId id)
-{
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetHDRPresent>(id, hdrPresent);
-    ROSEN_LOGD("SetHDRPresent  RSSurfaceNode");
-    AddCommand(command, true);
+    SetRSCmdProperty<AncoFlagsCmdModifier>(AncoFlagsCmdParam{
+        flags
+    });
 }
 
 void RSSurfaceNode::SetSkipDraw(bool skip)
@@ -897,16 +1150,32 @@ void RSSurfaceNode::SetSkipDraw(bool skip)
         return;
     }
     isSkipDraw_ = skip;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSkipDraw>(GetId(), skip);
-    AddCommand(command, true);
-    ROSEN_LOGD("RSSurfaceNode::SetSkipDraw, surfaceNodeId:[%" PRIu64 "] skipdraw:%s", GetId(),
-        skip ? "true" : "false");
+    SetRSCmdProperty<SkipDrawCmdModifier>(SkipDrawCmdParam{
+        skip
+    });
 }
 
 bool RSSurfaceNode::GetSkipDraw() const
 {
     return isSkipDraw_;
+}
+
+void RSSurfaceNode::SetDarkColorMode(bool isDark)
+{
+    if (isDarkColorMode_ == isDark) {
+        return;
+    }
+    isDarkColorMode_ = isDark;
+    SetRSCmdProperty<DarkColorModeCmdModifier>(DarkColorModeCmdParam{
+        isDark
+    });
+    ROSEN_LOGD("RSSurfaceNode::SetDarkColorMode, surfaceNodeId:[%" PRIu64 "] isDarkColorMode:%s", GetId(),
+        isDark ? "true" : "false");
+}
+
+bool RSSurfaceNode::GetDarkColorMode() const
+{
+    return isDarkColorMode_;
 }
 
 void RSSurfaceNode::RegisterNodeMap()
@@ -926,11 +1195,9 @@ void RSSurfaceNode::SetWatermarkEnabled(const std::string& name, bool isEnabled)
         ROSEN_LOGE("SetWatermarkEnabled name[%{public}s] is error.", name.c_str());
         return;
     }
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetWatermarkEnabled>(GetId(), name, isEnabled);
-    ROSEN_LOGI("SetWatermarkEnabled[%{public}s, %{public}" PRIu64 " watermark:%{public}s]",
-        GetName().c_str(), GetId(), name.c_str());
-    AddCommand(command, true);
+    SetRSCmdProperty<WatermarkEnabledCmdModifier>(WatermarkEnabledCmdParam{
+        name, isEnabled
+    });
 #endif
 }
 
@@ -941,12 +1208,10 @@ void RSSurfaceNode::SetAbilityState(RSSurfaceNodeAbilityState abilityState)
             "ability state same with before: %{public}s",
             GetId(), abilityState == RSSurfaceNodeAbilityState::FOREGROUND ? "foreground" : "background");
     }
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetAbilityState>(GetId(), abilityState);
-    AddCommand(command, true);
     abilityState_ = abilityState;
-    ROSEN_LOGI("RSSurfaceNode::SetAbilityState, surfaceNodeId:[%{public}" PRIu64 "], ability state: %{public}s",
-        GetId(), abilityState_ == RSSurfaceNodeAbilityState::FOREGROUND ? "foreground" : "background");
+    SetRSCmdProperty<AbilityStateCmdModifier>(AbilityStateCmdParam{
+        abilityState
+    });
 }
 
 RSSurfaceNodeAbilityState RSSurfaceNode::GetAbilityState() const
@@ -956,59 +1221,53 @@ RSSurfaceNodeAbilityState RSSurfaceNode::GetAbilityState() const
 
 RSInterfaceErrorCode RSSurfaceNode::SetHidePrivacyContent(bool needHidePrivacyContent)
 {
-    auto renderServiceClient =
-        std::static_pointer_cast<RSRenderServiceClient>(RSIRenderClient::CreateRenderServiceClient());
-    if (renderServiceClient != nullptr) {
-        return static_cast<RSInterfaceErrorCode>(
-            renderServiceClient->SetHidePrivacyContent(GetId(), needHidePrivacyContent));
-    }
-    return RSInterfaceErrorCode::UNKNOWN_ERROR;
+    auto result = SetRSCmdPropertyWithResult<HidePrivacyContentCmdModifier>(HidePrivacyContentCmdParam{
+        needHidePrivacyContent
+    });
+    return std::holds_alternative<RSInterfaceErrorCode>(result) ?
+        std::get<RSInterfaceErrorCode>(result) : RSInterfaceErrorCode::UNKNOWN_ERROR;
 }
 
 void RSSurfaceNode::SetHardwareEnableHint(bool enable)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetHardwareEnableHint>(GetId(), enable);
-    AddCommand(command, true);
+    SetRSCmdProperty<HardwareEnableHintCmdModifier>(HardwareEnableHintCmdParam{
+        enable
+    });
 }
 
 void RSSurfaceNode::SetApiCompatibleVersion(uint32_t version)
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSurfaceNodeSetApiCompatibleVersion>(GetId(), version);
-    AddCommand(command, true);
-    RS_LOGD("RSSurfaceNode::SetApiCompatibleVersion: Node: %{public}" PRIu64 ", version: %{public}u", GetId(), version);
+    SetRSCmdProperty<ApiCompatibleVersionCmdModifier>(ApiCompatibleVersionCmdParam{
+        version
+    });
 }
 
 void RSSurfaceNode::SetSourceVirtualDisplayId(ScreenId screenId)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSourceVirtualDisplayId>(GetId(), screenId);
-    AddCommand(command, true);
+    SetRSCmdProperty<VirtualDisplayIdCmdModifier>(VirtualDisplayIdCmdParam{
+        screenId
+    });
 }
 
 void RSSurfaceNode::AttachToWindowContainer(ScreenId screenId)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeAttachToWindowContainer>(GetId(), screenId);
-    AddCommand(command, true);
-    RS_LOGD("RSSurfaceNode::AttachToWindowContainer: Node: %{public}" PRIu64 ", screenId: %{public}" PRIu64,
-        GetId(), screenId);
+    SetRSCmdProperty<AttachToWindowContainerCmdModifier>(AttachToWindowContainerCmdParam{
+        screenId
+    });
 }
 
 void RSSurfaceNode::DetachFromWindowContainer(ScreenId screenId)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeDetachFromWindowContainer>(GetId(), screenId);
-    AddCommand(command, true);
-    RS_LOGD("RSSurfaceNode::DetachFromWindowContainer: Node: %{public}" PRIu64 ", screenId: %{public}" PRIu64,
-        GetId(), screenId);
+    SetRSCmdProperty<DetachFromWindowContainerCmdModifier>(DetachFromWindowContainerCmdParam{
+        screenId
+    });
 }
 
 void RSSurfaceNode::SetRegionToBeMagnified(const Vector4<int>& regionToBeMagnified)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetRegionToBeMagnified>(GetId(), regionToBeMagnified);
-    AddCommand(command, true);
+    SetRSCmdProperty<RegionToBeMagnifiedCmdModifier>(RegionToBeMagnifiedCmdParam{
+        regionToBeMagnified
+    });
 }
 
 bool RSSurfaceNode::IsSelfDrawingNode() const
@@ -1017,6 +1276,17 @@ bool RSSurfaceNode::IsSelfDrawingNode() const
         return true;
     } else {
         return false;
+    }
+}
+
+void RSSurfaceNode::MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer)
+{
+    CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
+    if (isNodeSingleFrameComposer_ != isNodeSingleFrameComposer) {
+        isNodeSingleFrameComposer_ = isNodeSingleFrameComposer;
+        SetRSCmdProperty<MarkNodeSingleFrameComposerCmdModifier>(MarkNodeSingleFrameComposerCmdParam{
+            isNodeSingleFrameComposer, GetRealPid()
+        });
     }
 }
 
@@ -1029,7 +1299,9 @@ bool RSSurfaceNode::SetCompositeLayer(TopLayerZOrder zOrder)
     uint32_t topLayerZOrder = static_cast<uint32_t>(zOrder);
     if (IsSelfDrawingNode()) {
         RS_LOGI("RSSurfaceNode::SetCompositeLayer selfDrawingNode %{public}" PRIu64 " setLayerTop directly", GetId());
-        RSInterfaces::GetInstance().SetLayerTopForHWC(GetId(), true, topLayerZOrder);
+        SetRSCmdPropertyWithResult<CompositeLayerCmdModifier>(CompositeLayerCmdParam{
+            true, topLayerZOrder
+        });
         return true;
     }
     compositeLayerUtils_ = std::make_shared<RSCompositeLayerUtils>(shared_from_this(), topLayerZOrder);
@@ -1056,9 +1328,9 @@ void RSSurfaceNode::SetFrameGravityNewVersionEnabled(bool isEnabled)
     }
 
     isFrameGravityNewVersionEnabled_ = isEnabled;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetFrameGravityNewVersionEnabled>(GetId(), isEnabled);
-    AddCommand(command, true);
+    SetRSCmdProperty<FrameGravityNewVersionEnabledCmdModifier>(FrameGravityNewVersionEnabledCmdParam{
+        isEnabled
+    });
 }
 
 bool RSSurfaceNode::GetFrameGravityNewVersionEnabled() const
@@ -1073,16 +1345,78 @@ void RSSurfaceNode::SetSurfaceBufferOpaque(bool isOpaque)
     }
 
     isSurfaceBufferOpaque_ = isOpaque;
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetSurfaceBufferOpaque>(GetId(), isOpaque);
-    AddCommand(command, true);
+    SetRSCmdProperty<SurfaceBufferOpaqueCmdModifier>(SurfaceBufferOpaqueCmdParam{
+        isOpaque
+    });
 }
 
 void RSSurfaceNode::SetContainerWindowTransparent(bool isContainerWindowTransparent)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSurfaceNodeSetContainerWindowTransparent>(GetId(), isContainerWindowTransparent);
-    AddCommand(command, true);
+    SetRSCmdProperty<ContainerWindowTransparentCmdModifier>(ContainerWindowTransparentCmdParam{
+        isContainerWindowTransparent
+    });
 }
+
+void RSSurfaceNode::SetAppRotationCorrection(ScreenRotation appRotationCorrection)
+{
+    if (appRotationCorrection > ScreenRotation::INVALID_SCREEN_ROTATION) {
+        RS_LOGE(
+            "RSSurfaceNode::SetAppRotationCorrection %{public}" PRIu64 " set invalid AppRotationCorrection", GetId());
+        return;
+    }
+    SetRSCmdProperty<AppRotationCorrectionCmdModifier>(AppRotationCorrectionCmdParam{
+        appRotationCorrection
+    });
+    RS_LOGI("RSSurfaceNode::SetAppRotationCorrection: Node: %{public}" PRIu64 ", appRotationCorrection: %{public}u",
+        GetId(), appRotationCorrection);
+}
+
+void RSSurfaceNode::SetHDRType(uint32_t hdrType)
+{
+    SetRSCmdProperty<HDRTypeCmdModifier>(HDRTypeCmdParam{
+        hdrType
+    });
+}
+void RSSurfaceNode::SetHDRBrightnessWithType(const float& hdrBrightness, uint32_t hdrType)
+{
+    RSNode::SetHDRBrightness(hdrBrightness);
+    SetHDRType(hdrType);
+    RS_LOGD("SurfaceNode::SetHDRBrightnessWithType set with hdrType:%{public}d", hdrType);
+#ifdef USE_VIDEO_PROCESSING_ENGINE
+    switch (static_cast<HDRType>(hdrType)) {
+        case HDRType::DEFAULT: {
+            RSSurfaceRenderNodeConfig config = {
+                .id = GetId(),
+                .name = GetName(),
+            };
+            RSVpeManager::GetInstance().DisableVpeVideo(config);
+            break;
+        }
+        case HDRType::AIHDR: {
+            RSSurfaceRenderNodeConfig config = {
+                .id = GetId(),
+                .name = GetName(),
+            };
+            RSVpeManager::GetInstance().EnableVpeVideo(config);
+            break;
+        }
+        default:
+            break;
+    }
+#endif
+}
+
+void RSSurfaceNode::DumpSubClass(std::string& out) const
+{
+    if (isShadowNode_) {
+        out += "], isShadowNode[true";
+    }
+
+    if (existsDuplicateModifier_) {
+        out += "], existsDuplicateModifier[true";
+    }
+}
+
+void RSSurfaceNode::SetIsDepthResource(bool isDepthResource) {}
 } // namespace Rosen
 } // namespace OHOS

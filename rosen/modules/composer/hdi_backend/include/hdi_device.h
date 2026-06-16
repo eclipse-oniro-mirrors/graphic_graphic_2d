@@ -17,7 +17,7 @@
 #define HDI_BACKEND_HDI_DEVICE_H
 
 #include <vector>
-#include <refbase.h>
+#include "refbase.h"
 #include <unordered_map>
 #include <sync_fence.h>
 #include "hdi_display_type.h"
@@ -44,10 +44,14 @@ public:
     virtual int32_t SetScreenMode(uint32_t screenId, uint32_t modeId) = 0;
     virtual int32_t SetScreenActiveRect(uint32_t screenId, const GraphicIRect& activeRect) = 0;
     virtual int32_t SetScreenOverlayResolution(uint32_t screenId, uint32_t width, uint32_t height) = 0;
+    virtual int32_t GetPanelPowerStatus(uint32_t devId, GraphicPanelPowerStatus& status) = 0;
     virtual int32_t GetScreenPowerStatus(uint32_t screenId, GraphicDispPowerStatus &status) = 0;
     virtual int32_t SetScreenPowerStatus(uint32_t screenId, GraphicDispPowerStatus status) = 0;
     virtual int32_t GetScreenBacklight(uint32_t screenId, uint32_t &level) = 0;
     virtual int32_t SetScreenBacklight(uint32_t screenId, uint32_t level) = 0;
+    virtual int32_t GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) = 0;
+    virtual int32_t SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue) = 0;
     virtual int32_t PrepareScreenLayers(uint32_t screenId, bool &needFlushFb) = 0;
     virtual int32_t GetScreenCompChange(uint32_t screenId, std::vector<uint32_t> &layersId,
                                         std::vector<int32_t> &types) = 0;
@@ -117,8 +121,10 @@ public:
     virtual int32_t ClearClientBuffer(uint32_t screenId) = 0;
     virtual void Destroy() = 0;
     virtual int32_t RegHwcEventCallback(const RSHwcEventCallback& callback, void *data) = 0;
-    virtual int32_t GetPanelPowerStatus(uint32_t devId, GraphicPanelPowerStatus& status) = 0;
-
+    virtual int32_t GetDisplayClientTargetProperty(uint32_t screenId, int32_t& pixelFormat, int32_t& dataspace) = 0;
+    virtual int32_t SetTunnelLayerBuffer(uint32_t screenId, uint64_t tunnleId, const BufferHandle* inHandle,
+        const int32_t acquireFence) = 0;
+    virtual int32_t CommitTunnelLayer(uint32_t screenId, uint64_t tunnleId, int32_t& releaseFence) = 0;
 private:
     HdiDevice(const HdiDevice& rhs) = delete;
     HdiDevice& operator=(const HdiDevice& rhs) = delete;

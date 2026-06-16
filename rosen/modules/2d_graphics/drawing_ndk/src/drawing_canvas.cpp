@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,6 +42,11 @@ static std::unordered_map<void*, std::shared_ptr<Media::PixelMap>> g_canvasMap;
 static Canvas* CastToCanvas(OH_Drawing_Canvas* cCanvas)
 {
     return reinterpret_cast<Canvas*>(cCanvas);
+}
+
+static const Canvas* CastToCanvasConst(const OH_Drawing_Canvas* cCanvas)
+{
+    return reinterpret_cast<const Canvas*>(cCanvas);
 }
 
 static const Path& CastToPath(const OH_Drawing_Path& cPath)
@@ -386,31 +391,20 @@ void OH_Drawing_CanvasDrawVertices(OH_Drawing_Canvas* cCanvas, OH_Drawing_Vertex
         return;
     }
 
-    std::unique_ptr<Point[]> positionsPoint = std::unique_ptr<Point[]>(new(std::nothrow) Point[vertexCount]);
-    if (positionsPoint == nullptr) {
-        LOGE("OH_Drawing_CanvasDrawVertices: new position point failed.");
-        return;
-    }
+    std::unique_ptr<Point[]> positionsPoint = std::make_unique<Point[]>(vertexCount);
     for (int32_t i = 0; i < vertexCount; ++i) {
         positionsPoint[i] = CastToPoint(positions[i]);
     }
 
     std::unique_ptr<Point[]> texsPoint = nullptr;
     if (texs != nullptr) {
-        texsPoint = std::unique_ptr<Point[]>(new(std::nothrow) Point[vertexCount]);
-        if (texsPoint == nullptr) {
-            LOGE("OH_Drawing_CanvasDrawVertices: new texs point failed.");
-            return;
-        }
+        texsPoint = std::make_unique<Point[]>(vertexCount);
         for (int32_t i = 0; i < vertexCount; i++) {
             texsPoint[i] = CastToPoint(texs[i]);
         }
     }
 
-    std::unique_ptr<Vertices> vertices = std::unique_ptr<Vertices>(new(std::nothrow) Vertices());
-    if (vertices == nullptr) {
-        return;
-    }
+    std::unique_ptr<Vertices> vertices = std::make_unique<Vertices>();
     bool result = vertices->MakeCopy(static_cast<VertexMode>(vertexMode), vertexCount, positionsPoint.get(),
         texsPoint.get(), colors, indices ? indexCount : 0, indices);
     if (result) {
@@ -845,6 +839,67 @@ void OH_Drawing_CanvasDrawTextBlob(OH_Drawing_Canvas* cCanvas, const OH_Drawing_
 #endif
 }
 
+int32_t GlyphSafeAdd(int32_t a, int32_t b)
+{
+    const int32_t maxInt32 = std::numeric_limits<int32_t>::max();
+    const int32_t minInt32 = std::numeric_limits<int32_t>::min();
+    if (b > 0) {
+        if (a > maxInt32 - b) {
+            return maxInt32;
+        }
+    } else if (b < 0) {
+        if (a < minInt32 - b) {
+            return minInt32;
+        }
+    }
+    return a + b;
+}
+
+OH_Drawing_ErrorCode OH_Drawing_CanvasDrawGlyphs(const OH_Drawing_Canvas* cCanvas,
+                                                 const int* glyphIds,
+                                                 int glyphIdCount,
+                                                 int glyphIdOffset,
+                                                 const OH_Drawing_Point2D* positions,
+                                                 int positionCount,
+                                                 int positionOffset,
+                                                 int glyphCount,
+                                                 const OH_Drawing_Font* cFont)
+{
+    Canvas* canvas = CastToCanvas(const_cast<OH_Drawing_Canvas*>(cCanvas));
+    const Font* font = CastToFont(cFont);
+    if (canvas == nullptr || font == nullptr || glyphIds == nullptr || positions == nullptr) {
+        return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
+    }
+    std::shared_ptr<Font> themeFont = DrawingFontUtils::GetThemeFont(font);
+    if (themeFont != nullptr) {
+        font = themeFont.get();
+    }
+    if ((glyphCount <= 0) || (glyphIdOffset < 0) || (positionOffset < 0) ||
+        (glyphIdCount < GlyphSafeAdd(glyphCount, glyphIdOffset)) ||
+        (positionCount < GlyphSafeAdd(glyphCount, positionOffset))) {
+        return OH_DRAWING_ERROR_PARAMETER_OUT_OF_RANGE;
+    }
+    const Point* glyphPositions = reinterpret_cast<const Point*>(positions);
+    std::vector<uint16_t> safeGlyphs;
+    safeGlyphs.reserve(glyphIdCount);
+    for (size_t i = 0; i < glyphIdCount; ++i) {
+        safeGlyphs.push_back(static_cast<uint16_t>(glyphIds[i]));
+    }
+    Drawing::Point origin = Drawing::Point(0, 0);
+    canvas->DrawGlyphs(glyphCount,
+                       safeGlyphs.data() + glyphIdOffset,
+                       glyphPositions + positionOffset,
+                       origin,
+                       font);
+    #ifdef OHOS_PLATFORM
+        auto iter = g_canvasMap.find(canvas);
+        if (iter != g_canvasMap.end() && iter->second != nullptr) {
+            iter->second->MarkDirty();
+        }
+    #endif
+    return OH_DRAWING_SUCCESS;
+}
+
 void OH_Drawing_CanvasClipRect(OH_Drawing_Canvas* cCanvas, const OH_Drawing_Rect* cRect,
     OH_Drawing_CanvasClipOp cClipOp, bool doAntiAlias)
 {
@@ -1057,6 +1112,16 @@ void OH_Drawing_CanvasResetMatrix(OH_Drawing_Canvas* cCanvas)
     canvas->ResetMatrix();
 }
 
+OH_Drawing_ErrorCode OH_Drawing_CanvasResetClip(OH_Drawing_Canvas* cCanvas)
+{
+    Canvas* canvas = CastToCanvas(cCanvas);
+    if (canvas == nullptr) {
+        return OH_DRAWING_ERROR_INVALID_PARAMETER;
+    }
+    canvas->ResetClip();
+    return OH_DRAWING_SUCCESS;
+}
+
 void OH_Drawing_CanvasDrawImageRectWithSrc(OH_Drawing_Canvas* cCanvas, const OH_Drawing_Image* cImage,
     const OH_Drawing_Rect* src, const OH_Drawing_Rect* dst, const OH_Drawing_SamplingOptions* cSampling,
     OH_Drawing_SrcRectConstraint constraint)
@@ -1259,5 +1324,18 @@ OH_Drawing_ErrorCode OH_Drawing_CanvasQuickRejectRect(OH_Drawing_Canvas* cCanvas
         return OH_DRAWING_ERROR_INVALID_PARAMETER;
     }
     *quickReject = canvas->QuickReject(CastToRect(*cRect));
+    return OH_DRAWING_SUCCESS;
+}
+
+OH_Drawing_ErrorCode OH_Drawing_CanvasIsOpaque(const OH_Drawing_Canvas* cCanvas, bool* isOpaque)
+{
+    if (isOpaque == nullptr) {
+        return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
+    }
+    const Canvas* canvas = CastToCanvasConst(cCanvas);
+    if (canvas == nullptr) {
+        return OH_DRAWING_ERROR_INCORRECT_PARAMETER;
+    }
+    *isOpaque = canvas->IsOpaque();
     return OH_DRAWING_SUCCESS;
 }

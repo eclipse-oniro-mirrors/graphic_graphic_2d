@@ -19,6 +19,7 @@
 #include <bitset>
 #include <string>
 #include <unordered_map>
+#include "common/rs_macros.h"
 
 namespace OHOS::Rosen::ModifierNG {
 enum class RSModifierType : uint16_t {
@@ -47,7 +48,7 @@ enum class RSModifierType : uint16_t {
     USE_EFFECT = 18,
     BLENDER = 19,
 
-    POINT_LIGHT = 20,
+    OVERLAY_NG_SHADER = 20,
     PARTICLE_EFFECT = 21,
     COMPOSITING_FILTER = 22,
     BACKGROUND_FILTER = 23,
@@ -67,6 +68,7 @@ enum class RSModifierType : uint16_t {
     FOREGROUND_SHADER = 35,
     MATERIAL_FILTER = 36,
     COLOR_PICKER = 37,
+    MATERIAL_SHADER = 38,
 
     CHILDREN, // PLACEHOLDER, no such modifier, but we need a dirty flag
 
@@ -91,7 +93,7 @@ public:
     }
 
 private:
-    static inline std::unordered_map<RSModifierType, RSPropertyType> modifierToPropertyMap_ = {
+    static inline RS_HIDDEN std::unordered_map<RSModifierType, RSPropertyType> modifierToPropertyMap_ = {
         { RSModifierType::TRANSITION_STYLE, RSPropertyType::TRANSITION_STYLE },
         { RSModifierType::BACKGROUND_STYLE, RSPropertyType::BACKGROUND_STYLE },
         { RSModifierType::CONTENT_STYLE, RSPropertyType::CONTENT_STYLE },
@@ -126,7 +128,7 @@ public:
             case RSModifierType::PIXEL_STRETCH: return "PixelStretch";
             case RSModifierType::USE_EFFECT: return "UseEffect";
             case RSModifierType::BLENDER: return "Blender";
-            case RSModifierType::POINT_LIGHT: return "PointLight";
+            case RSModifierType::OVERLAY_NG_SHADER: return "OverlayNGShader";
             case RSModifierType::PARTICLE_EFFECT: return "ParticleEffect";
             case RSModifierType::COMPOSITING_FILTER: return "CompositingFilter";
             case RSModifierType::BACKGROUND_FILTER: return "BackgroundFilter";
@@ -143,6 +145,7 @@ public:
             case RSModifierType::BACKGROUND_NG_SHADER: return "BackgroundNgShader";
             case RSModifierType::FOREGROUND_SHADER: return "ForegroundShader";
             case RSModifierType::MATERIAL_FILTER: return "MaterialFilter";
+            case RSModifierType::MATERIAL_SHADER: return "MaterialShader";
             case RSModifierType::COLOR_PICKER : return "ColorPicker";
             case RSModifierType::CHILDREN: return "Children";
             default: return "Invalid";
@@ -192,6 +195,7 @@ public:
             case RSPropertyType::BORDER_STYLE: return "BorderStyle";
             case RSPropertyType::BORDER_DASH_WIDTH: return "BorderDashWidth";
             case RSPropertyType::BORDER_DASH_GAP: return "BorderDashGap";
+            case RSPropertyType::BORDER_SDF_SHADER: return "BorderSDFShader";
             case RSPropertyType::BACKGROUND_FILTER: return "BackgroundFilter";
             case RSPropertyType::LINEAR_GRADIENT_BLUR_PARA: return "LinearGradientBlurPara";
             case RSPropertyType::DYNAMIC_LIGHT_UP_RATE: return "DynamicLightUpRate";
@@ -208,6 +212,7 @@ public:
             case RSPropertyType::BG_BRIGHTNESS_NEGCOEFF: return "BgBrightnessNegcoeff";
             case RSPropertyType::BG_BRIGHTNESS_FRACTION: return "BgBrightnessFraction";
             case RSPropertyType::SHADOW_BLENDER_PARAMS: return "ShadowBlenderParams";
+            case RSPropertyType::HDR_DARKEN_BLENDER_PARAMS: return "HdrDarkenBlenderParams";
             case RSPropertyType::FRAME_GRAVITY: return "FrameGravity";
             case RSPropertyType::CLIP_RRECT: return "ClipRrect";
             case RSPropertyType::CLIP_BOUNDS: return "ClipBounds";
@@ -247,12 +252,14 @@ public:
             case RSPropertyType::COLOR_BLEND: return "ColorBlend";
             case RSPropertyType::PARTICLE: return "Particle";
             case RSPropertyType::SHADOW_IS_FILLED: return "ShadowIsFilled";
+            case RSPropertyType::SHADOW_DISABLE_SDF_BLUR: return "ShadowDisableSDFBlur";
             case RSPropertyType::OUTLINE_COLOR: return "OutlineColor";
             case RSPropertyType::OUTLINE_WIDTH: return "OutlineWidth";
             case RSPropertyType::OUTLINE_STYLE: return "OutlineStyle";
             case RSPropertyType::OUTLINE_DASH_WIDTH: return "OutlineDashWidth";
             case RSPropertyType::OUTLINE_DASH_GAP: return "OutlineDashGap";
             case RSPropertyType::OUTLINE_RADIUS: return "OutlineRadius";
+            case RSPropertyType::OUTLINE_SDF_SHADER: return "OutlineSDFShader";
             case RSPropertyType::GREY_COEF: return "GreyCoef";
             case RSPropertyType::LIGHT_INTENSITY: return "LightIntensity";
             case RSPropertyType::LIGHT_COLOR: return "LightColor";
@@ -267,11 +274,11 @@ public:
             case RSPropertyType::PARTICLE_NOISE_FIELD: return "ParticleNoiseField";
             case RSPropertyType::PARTICLE_RIPPLE_FIELD: return "ParticleRippleField";
             case RSPropertyType::PARTICLE_VELOCITY_FIELD: return "ParticleVelocityField";
+            case RSPropertyType::PARTICLE_FIELDS: return "ParticleFields";
             case RSPropertyType::FLY_OUT_DEGREE: return "FlyOutDegree";
             case RSPropertyType::FLY_OUT_PARAMS: return "FlyOutParams";
             case RSPropertyType::DISTORTION_K: return "DistortionK";
             case RSPropertyType::DYNAMIC_DIM_DEGREE: return "DynamicDimDegree";
-            case RSPropertyType::MAGNIFIER_PARA: return "MagnifierPara";
             case RSPropertyType::BACKGROUND_BLUR_RADIUS: return "BackgroundBlurRadius";
             case RSPropertyType::BACKGROUND_BLUR_SATURATION: return "BackgroundBlurSaturation";
             case RSPropertyType::BACKGROUND_BLUR_BRIGHTNESS: return "BackgroundBlurBrightness";
@@ -306,19 +313,28 @@ public:
             case RSPropertyType::HDR_BRIGHTNESS: return "HdrBrightness";
             case RSPropertyType::HDR_UI_BRIGHTNESS: return "HDRUIBrightness";
             case RSPropertyType::HDR_BRIGHTNESS_FACTOR: return "HdrBrightnessFactor";
+            case RSPropertyType::HDR_COLOR_HEADROOM: return "HDRColorHeadroom";
             case RSPropertyType::BEHIND_WINDOW_FILTER_RADIUS: return "BehindWindowFilterRadius";
             case RSPropertyType::BEHIND_WINDOW_FILTER_SATURATION: return "BehindWindowFilterSaturation";
             case RSPropertyType::BEHIND_WINDOW_FILTER_BRIGHTNESS: return "BehindWindowFilterBrightness";
             case RSPropertyType::BEHIND_WINDOW_FILTER_MASK_COLOR: return "BehindWindowFilterMaskColor";
             case RSPropertyType::FOREGROUND_SHADER: return "ForegroundShader";
+            case RSPropertyType::COMPOSITING_NG_FILTER: return "CompositingNGFilter";
             case RSPropertyType::USE_UNION: return "UseUnion";
             case RSPropertyType::UNION_SPACING: return "UnionSpacing";
+            case RSPropertyType::SDF_UNION_MODE: return "SDFUnionMode";
+            case RSPropertyType::GRAVITY_UNION_STRENGTH: return "UnionGravityStrength";
+            case RSPropertyType::GRAVITY_CENTER_FLAG: return "UnionGravityCenter";
             case RSPropertyType::SDF_SHAPE: return "SDFShape";
             case RSPropertyType::MATERIAL_NG_FILTER: return "MaterialNGFilter";
             case RSPropertyType::COLOR_PICKER_PLACEHOLDER : return "ColorPickerPlaceholder";
             case RSPropertyType::COLOR_PICKER_STRATEGY : return "ColorPickerStrategy";
             case RSPropertyType::COLOR_PICKER_INTERVAL : return "ColorPickerInterval";
+            case RSPropertyType::COLOR_PICKER_NOTIFY_THRESHOLD : return "ColorPickerNotifyThreshold";
+            case RSPropertyType::COLOR_ADAPTIVE : return "ColorAdaptive";
+            case RSPropertyType::DOUBLE_SIDED: return "DoubleSided";
             case RSPropertyType::CHILDREN: return "Children";
+            case RSPropertyType::MATERIAL_SHADER: return "MaterialShader";
             default: return "Unknown";
         }
         return "Unknown";

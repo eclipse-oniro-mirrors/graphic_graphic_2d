@@ -35,13 +35,6 @@ namespace OHOS::Rosen {
 constexpr int32_t DEFAULT_CANVAS_SIZE = 100;
 constexpr NodeId DEFAULT_ID = 0xFFFF;
 
-class MockRSPaintFilterCanvas : public RSPaintFilterCanvas {
-public:
-    explicit MockRSPaintFilterCanvas(Drawing::Canvas* canvas) : RSPaintFilterCanvas(canvas) {}
-    explicit MockRSPaintFilterCanvas(Drawing::Surface* surface) : RSPaintFilterCanvas(surface) {}
-    MOCK_METHOD(Drawing::Surface*, GetSurface, (), (const));
-};
-
 class RSWindowKeyFrameDrawableTest : public testing::Test {
 public:
     static void SetUpTestCase();
@@ -190,7 +183,7 @@ HWTEST_F(RSWindowKeyFrameDrawableTest, OnLinkedNodeDraw, TestSize.Level1)
     keyframeDrawable_->renderParams_->SetBoundsRect(Drawing::RectF(0.0f, 0.0f, 1.0f, 1.0f));
     EXPECT_TRUE(keyframeDrawable_->OnLinkedNodeDraw(canvas, *rootDrawable, *rootDrawable->renderParams_));
 
-    keyframeDrawable_->renderParams_->freezeFlag_ = true;
+    keyframeDrawable_->renderParams_->SetRSFreezeFlag(true);
     EXPECT_TRUE(keyframeDrawable_->OnLinkedNodeDraw(canvas, *rootDrawable, *rootDrawable->renderParams_));
 }
 
@@ -210,15 +203,13 @@ HWTEST_F(RSWindowKeyFrameDrawableTest, OnLinkedNodeDrawWithNullSurface, TestSize
     ASSERT_NE(rootDrawable, nullptr);
     ASSERT_NE(rootDrawable->renderParams_, nullptr);
 
-    Drawing::Canvas canvas(DEFAULT_CANVAS_SIZE, DEFAULT_CANVAS_SIZE);
-    MockRSPaintFilterCanvas mockRSPaintFilterCanvas(&canvas);
-    EXPECT_CALL(mockRSPaintFilterCanvas, GetSurface()).Times(AnyNumber()).WillOnce(Return(nullptr));
+    Drawing::Surface* nullSurface = nullptr;
+    RSPaintFilterCanvas nullSurfaceCanvas(nullSurface);
 
     auto renderThreadParams = std::make_unique<RSRenderThreadParams>();
     ASSERT_NE(renderThreadParams, nullptr);
     RSUniRenderThread::Instance().Sync(std::move(renderThreadParams));
-    EXPECT_FALSE(keyframeDrawable_->OnLinkedNodeDraw(mockRSPaintFilterCanvas,
-        *rootDrawable, *rootDrawable->renderParams_));
+    EXPECT_FALSE(keyframeDrawable_->OnLinkedNodeDraw(nullSurfaceCanvas, *rootDrawable, *rootDrawable->renderParams_));
 }
 
 /**

@@ -151,7 +151,8 @@ napi_value ColorPickerNapi::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getDeepenImmersionColor", GetDeepenImmersionColor),
         DECLARE_NAPI_FUNCTION("getImmersiveBackgroundColor", GetImmersiveBackgroundColor),
         DECLARE_NAPI_FUNCTION("getImmersiveForegroundColor", GetImmersiveForegroundColor),
-        DECLARE_NAPI_FUNCTION("discriminatePitureLightDegree", DiscriminatePitureLightDegree),
+        DECLARE_NAPI_FUNCTION("discriminatePictureLightDegree", DiscriminatePictureLightDegree),
+        DECLARE_NAPI_FUNCTION("discriminatePitureLightDegree", DiscriminatePictureLightDegree), // To be deprecated
         DECLARE_NAPI_FUNCTION("getComplexityDegree", ComplexityDegree),
         DECLARE_NAPI_FUNCTION("getShadeDegree", ShadeDegree),
         DECLARE_NAPI_FUNCTION("getReverseColor", GetReverseColor),
@@ -218,7 +219,8 @@ napi_value ColorPickerNapi::Constructor(napi_env env, napi_callback_info info)
     pColorPickerNapi->env_ = env;
     pColorPickerNapi->nativeColorPicker_ = sColorPicker_;
 
-    status = napi_wrap(env, thisVar, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr, nullptr);
+    status = napi_wrap_s(env, thisVar, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr,
+        &ColorPickerNapi::NAPI_TYPE_TAG, nullptr);
     EFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, undefineVar, pColorPickerNapi,
         EFFECT_LOG_E("ColorPickerNapi Constructor wrap fail"));
 
@@ -247,7 +249,8 @@ napi_value ColorPickerNapi::CreateColorPickerFromPtr(napi_env env, std::shared_p
     }
     pColorPickerNapi->env_ = env;
     pColorPickerNapi->nativeColorPicker_ = picker;
-    auto status = napi_wrap(env, objValue, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr, nullptr);
+    auto status = napi_wrap_s(env, objValue, pColorPickerNapi, ColorPickerNapi::Destructor, nullptr,
+        &ColorPickerNapi::NAPI_TYPE_TAG, nullptr);
     EFFECT_NAPI_CHECK_RET_DELETE_POINTER(status == napi_ok, nullptr, pColorPickerNapi,
         EFFECT_LOG_E("ColorPickerNapi CreateColorPickerFromPtr wrap fail"));
     return objValue;
@@ -494,6 +497,9 @@ napi_value ColorPickerNapi::CreateColorPicker(napi_env env, napi_callback_info i
         }
         EFFECT_LOG_E("ColorPickerNapi CreateColorPicker creating async work fail");
     }
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.createColorPicker", 1);
+#endif
     return result;
 }
 
@@ -589,6 +595,9 @@ napi_value ColorPickerNapi::GetMainColor(napi_env env, napi_callback_info info)
         EFFECT_LOG_E("ColorPickerNapi GetMainColor creating async work fail");
     }
 
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getMainColor", 1);
+#endif
     return result;
 }
 
@@ -651,6 +660,10 @@ napi_value ColorPickerNapi::GetMainColorSync(napi_env env, napi_callback_info in
     } else {
         napi_get_undefined(env, &result);
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getMainColorSync", 1);
+#endif
     return result;
 }
 
@@ -682,6 +695,10 @@ napi_value ColorPickerNapi::GetLargestProportionColor(napi_env env, napi_callbac
     } else {
         napi_get_undefined(env, &result);
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getLargestProportionColor", 1);
+#endif
     return result;
 }
 
@@ -712,6 +729,10 @@ napi_value ColorPickerNapi::GetHighestSaturationColor(napi_env env, napi_callbac
     } else {
         napi_get_undefined(env, &result);
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getHighestSaturationColor", 1);
+#endif
     return result;
 }
 
@@ -742,6 +763,10 @@ napi_value ColorPickerNapi::GetAverageColor(napi_env env, napi_callback_info inf
     } else {
         napi_get_undefined(env, &result);
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getAverageColor", 1);
+#endif
     return result;
 }
 
@@ -774,6 +799,10 @@ napi_value ColorPickerNapi::IsBlackOrWhiteOrGrayColor(napi_env env, napi_callbac
     bool rst = thisColorPicker->nativeColorPicker_->IsBlackOrWhiteOrGrayColor(color);
     napi_value result = nullptr;
     napi_get_boolean(env, rst, &result);
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.isBlackOrWhiteOrGrayColor", 1);
+#endif
     return result;
 }
 
@@ -927,7 +956,7 @@ napi_value ColorPickerNapi::GetImmersiveForegroundColor(napi_env env, napi_callb
     return result;
 }
 
-napi_value ColorPickerNapi::DiscriminatePitureLightDegree(napi_env env, napi_callback_info info)
+napi_value ColorPickerNapi::DiscriminatePictureLightDegree(napi_env env, napi_callback_info info)
 {
     napi_status status;
     napi_value thisVar = nullptr;
@@ -935,20 +964,20 @@ napi_value ColorPickerNapi::DiscriminatePitureLightDegree(napi_env env, napi_cal
     size_t argCount = 1;
     EFFECT_JS_ARGS(env, info, status, argCount, argValue, thisVar);
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok, nullptr,
-        EFFECT_LOG_E("ColorPickerNapi DiscriminatePitureLightDegree parsing input fail"));
+        EFFECT_LOG_E("ColorPickerNapi DiscriminatePictureLightDegree parsing input fail"));
 
     ColorPickerNapi *thisColorPicker = nullptr;
 
     status = napi_unwrap(env, thisVar, reinterpret_cast<void**>(&thisColorPicker));
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok && thisColorPicker != nullptr &&
         thisColorPicker->nativeColorPicker_ != nullptr, nullptr,
-        EFFECT_LOG_E("ColorPickerNapi DiscriminatePitureLightDegree unwrap native ColorPicker fail"));
+        EFFECT_LOG_E("ColorPickerNapi DiscriminatePictureLightDegree unwrap native ColorPicker fail"));
 
     uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
 
     napi_value result;
     PictureLightColorDegree rst;
-    errorCode = thisColorPicker->nativeColorPicker_->DiscriminatePitureLightDegree(rst);
+    errorCode = thisColorPicker->nativeColorPicker_->DiscriminatePictureLightDegree(rst);
     if (errorCode == SUCCESS) {
         napi_create_int32(env, rst, &result);
     } else {
@@ -1021,6 +1050,10 @@ napi_value ColorPickerNapi::GetTopProportionColors(napi_env env, napi_callback_i
         napi_value colorValue = i >= colors.size() ?  nullptr : BuildJsColor(env, colors[i]);
         napi_set_element(env, arrayValue, i, colorValue);
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getTopProportionColors", 1);
+#endif
     return arrayValue;
 }
 
@@ -1064,6 +1097,10 @@ napi_value ColorPickerNapi::GetTopProportionColorsAndPercentage(napi_env env, na
         }
         napi_map_set_property(env, mapNapiValue, colorValue, percentageValue);
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getTopProportionColorsAndPercentage", 1);
+#endif
     return mapNapiValue;
 }
 
@@ -1096,6 +1133,10 @@ napi_value ColorPickerNapi::ComplexityDegree(napi_env env, napi_callback_info in
         napi_create_int32(env, rst, &result);
         EFFECT_LOG_E("ERR_EFFECT_INVALID_VALUE: ColorPickerNapi::ComplexityDegree get degree fail");
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getComplexityDegree", 1);
+#endif
     return result;
 }
  
@@ -1128,6 +1169,10 @@ napi_value ColorPickerNapi::ShadeDegree(napi_env env, napi_callback_info info)
         napi_create_int32(env, rst, &result);
         EFFECT_LOG_E("ERR_EFFECT_INVALID_VALUE: ColorPickerNapi::ShadeDegree get degree fail");
     }
+
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getShadeDegree", 1);
+#endif
     return result;
 }
 
@@ -1155,6 +1200,9 @@ napi_value ColorPickerNapi::GetAlphaZeroTransparentProportion(napi_env env, napi
     EFFECT_NAPI_CHECK_RET_D(status == napi_ok && percentageValue != nullptr, nullptr,
         EFFECT_LOG_E("ColorPickerNapi GetFullyTransparentProportion create map fail"));
 
+#ifndef CROSS_PLATFORM
+    HISTOGRAM_BOOLEAN("Arkgraphics2d.EffectKit.getAlphaZeroTransparentProportion", 1);
+#endif
     return percentageValue;
 }
 

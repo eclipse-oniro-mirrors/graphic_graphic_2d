@@ -20,7 +20,9 @@
 
 #include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include "EGL/egl.h"
 #include "drawable/rs_surface_render_node_drawable.h"
@@ -28,8 +30,15 @@
 #include "render_context/render_context.h"
 
 namespace OHOS::Rosen {
+
+// Forward declarations
+class GPUCacheManager;
+
 class RSSubThreadManager {
 public:
+    // Callback type to get GPU cache manager (dependency injection)
+    using GetGPUCacheManagerFunc = std::function<std::shared_ptr<GPUCacheManager>()>;
+
     static RSSubThreadManager *Instance();
     void Start(std::shared_ptr<RenderContext> context);
     void PostTask(const std::function<void()>& task, uint32_t threadIndex, bool isSyncTask = false);
@@ -42,7 +51,7 @@ public:
     void CancelReleaseTextureTask();
     void ForceReleaseResource();
     void DumpMem(DfxString& log, bool isLite = false);
-    void DumpGpuMem(DfxString& log);
+    void DumpGpuMem(DfxString& log, const std::vector<std::pair<NodeId, std::string>>& nodeTags);
     float GetAppGpuMemoryInMB();
     void ReleaseSurface(uint32_t threadIndex) const;
     void AddToReleaseQueue(std::shared_ptr<Drawing::Surface>&& surface, uint32_t threadIndex);
@@ -50,6 +59,9 @@ public:
     void ScheduleRenderNodeDrawable(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable);
     void ScheduleReleaseCacheSurfaceOnly(std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable> nodeDrawable);
     std::shared_ptr<Drawing::GPUContext> GetGrContextFromSubThread(pid_t tid);
+
+    // Set callback to get GPU cache manager (dependency injection, avoids singleton access)
+    void SetGetGPUCacheManagerFunc(GetGPUCacheManagerFunc func);
 
 private:
     RSSubThreadManager() = default;
@@ -70,6 +82,9 @@ private:
     bool needResetContext_ = false;
     bool needCancelTask_ = false;
     bool needCancelReleaseTextureTask_ = false;
+
+    // Callback to get GPU cache manager (dependency injection)
+    GetGPUCacheManagerFunc getGPUCacheManagerCallback_ = []() -> std::shared_ptr<GPUCacheManager> { return nullptr; };
 };
 }
 #endif // RENDER_SERVICE_CORE_PIPELINE_PARALLEL_RENDER_RS_SUB_THREAD_MANAGER_H

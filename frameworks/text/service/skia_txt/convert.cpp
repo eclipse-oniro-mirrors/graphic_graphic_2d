@@ -16,15 +16,18 @@
 #include "convert.h"
 
 #include "draw/color.h"
+#include "text_config.h"
 #include "txt/paint_record.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace AdapterTxt {
+namespace {
 const std::string WGHT_AXIS = "wght";
 constexpr float FONT_WEIGHT_MULTIPLE = 100.0;
 const std::string SUPS{"sups"};
 const std::string SUBS{"subs"};
+}
 
 std::shared_ptr<OHOS::Rosen::AdapterTxt::FontCollection> Convert(
     const std::shared_ptr<OHOS::Rosen::FontCollection>& fontCollection)
@@ -101,6 +104,7 @@ SPText::ParagraphStyle Convert(const TypographyStyle& style)
     paragraphStyle.paragraphSpacing = style.paragraphSpacing;
     paragraphStyle.isEndAddParagraphSpacing = style.isEndAddParagraphSpacing;
     paragraphStyle.compressHeadPunctuation = style.compressHeadPunctuation;
+    paragraphStyle.punctuationOverflow = style.punctuationOverflow;
     paragraphStyle.relayoutChangeBitmap = style.relayoutChangeBitmap;
     paragraphStyle.defaultTextStyleUid = style.defaultTextStyleUid;
     paragraphStyle.halfLeading = style.halfLeading;
@@ -110,9 +114,15 @@ SPText::ParagraphStyle Convert(const TypographyStyle& style)
     paragraphStyle.maxLineHeight = style.maxLineHeight;
     paragraphStyle.minLineHeight= style.minLineHeight;
     paragraphStyle.lineSpacing = style.lineSpacing;
+    paragraphStyle.firstLineIndent = style.firstLineIndent;
+    paragraphStyle.tailIndents = style.tailIndents;
+    paragraphStyle.headIndents = style.headIndents;
     paragraphStyle.lineHeightStyle = style.lineHeightStyle;
     paragraphStyle.includeFontPadding = style.includeFontPadding;
     paragraphStyle.fallbackLineSpacing = style.fallbackLineSpacing;
+    paragraphStyle.orphanCharOptimization = style.orphanCharOptimization;
+    paragraphStyle.useLocaleForTextBreak = style.useLocaleForTextBreak ||
+        TextConfig::IsLocaleTextBreakEnabled();
     ConvertStrutStyle(style, paragraphStyle);
 
     return paragraphStyle;
@@ -188,8 +198,10 @@ void SplitTextStyleConvert(SPText::TextStyle& textStyle, const TextStyle& style)
     textStyle.fontVariations.SetAxisValue(WGHT_AXIS,
         (static_cast<float>(style.fontWeight) + 1.0) * FONT_WEIGHT_MULTIPLE);
 
-    for (const auto& [axis, value] : style.fontVariations.GetAxisValues()) {
-        textStyle.fontVariations.SetAxisValue(axis, value);
+    const auto& axisValues = style.fontVariations.GetAxisValues();
+    for (const auto& [axis, pairInfo] : axisValues) {
+        auto [value, isNormalization] = pairInfo;
+        textStyle.fontVariations.SetAxisValue(axis, value, isNormalization);
     }
 }
 
@@ -230,6 +242,9 @@ SPText::TextStyle Convert(const TextStyle& style)
     textStyle.maxLineHeight = style.maxLineHeight;
     textStyle.minLineHeight = style.minLineHeight;
     textStyle.lineHeightStyle = style.lineHeightStyle;
+    textStyle.fontEdging = style.fontEdging;
+    // Copy fontTypefaces for priority font shaping
+    textStyle.fontTypefaces = style.fontTypefaces;
     SplitTextStyleConvert(textStyle, style);
 
     return textStyle;
@@ -277,13 +292,16 @@ void SplitTextStyleConvert(TextStyle& textStyle, const SPText::TextStyle& style)
     }
 
     if (!style.fontVariations.GetAxisValues().empty()) {
-        for (const auto& [axis, value] : style.fontVariations.GetAxisValues()) {
-            textStyle.fontVariations.SetAxisValue(axis, value);
+        for (const auto& [axis, pairInfo] : style.fontVariations.GetAxisValues()) {
+            auto [value, isNormalization] = pairInfo;
+            textStyle.fontVariations.SetAxisValue(axis, value, isNormalization);
         }
     }
     textStyle.lineHeightStyle = style.lineHeightStyle;
     textStyle.minLineHeight = style.minLineHeight;
     textStyle.maxLineHeight = style.maxLineHeight;
+    textStyle.fontEdging = style.fontEdging;
+    textStyle.fontTypefaces = style.fontTypefaces;
 }
 
 TextStyle Convert(const SPText::TextStyle& style)
@@ -319,9 +337,88 @@ TextStyle Convert(const SPText::TextStyle& style)
     textStyle.baseLineShift = style.baseLineShift;
     textStyle.isPlaceholder = style.isPlaceholder;
     textStyle.badgeType = style.badgeType;
+    textStyle.fontEdging = style.fontEdging;
     SplitTextStyleConvert(textStyle, style);
 
     return textStyle;
+}
+
+void ConvertStrutStyle(const SPText::ParagraphStyle& style, TypographyStyle& typoStyle)
+{
+    typoStyle.useLineStyle = style.strutEnabled;
+    typoStyle.lineStyleFontFamilies = style.strutFontFamilies;
+    typoStyle.lineStyleFontStyle = static_cast<FontStyle>(style.strutFontStyle);
+    typoStyle.lineStyleFontWidth = static_cast<FontWidth>(style.strutFontWidth);
+    typoStyle.lineStyleFontWeight = static_cast<FontWeight>(style.strutFontWeight);
+    typoStyle.lineStyleFontSize = style.strutFontSize;
+    typoStyle.lineStyleHeightScale = style.strutHeight;
+    typoStyle.lineStyleHeightOnly = style.strutHeightOverride;
+    typoStyle.lineStyleHalfLeading = style.strutHalfLeading;
+    typoStyle.lineStyleSpacingScale = style.strutLeading;
+    typoStyle.lineStyleOnly = style.forceStrutHeight;
+}
+
+void ConvertParagraphFields(const SPText::ParagraphStyle& style, TypographyStyle& typoStyle)
+{
+    typoStyle.fontWeight = static_cast<FontWeight>(style.fontWeight);
+    typoStyle.fontWidth = static_cast<FontWidth>(style.fontWidth);
+    typoStyle.fontStyle = static_cast<FontStyle>(style.fontStyle);
+    typoStyle.wordBreakType = static_cast<WordBreakType>(style.wordBreakType);
+    typoStyle.fontFamily = style.fontFamily;
+    typoStyle.fontSize = style.fontSize;
+    typoStyle.heightScale = style.height;
+    typoStyle.heightOnly = style.heightOverride;
+    typoStyle.lineStyleOnly = style.forceStrutHeight;
+    typoStyle.textAlign = static_cast<TextAlign>(style.textAlign);
+    typoStyle.textDirection = static_cast<TextDirection>(style.textDirection);
+    typoStyle.ellipsisModal = static_cast<EllipsisModal>(style.ellipsisModal);
+    typoStyle.maxLines = style.maxLines;
+    typoStyle.ellipsis = style.ellipsis;
+    typoStyle.locale = style.locale;
+    typoStyle.textSplitRatio = style.textSplitRatio;
+    typoStyle.customTextStyle = style.customSpTextStyle;
+    typoStyle.textHeightBehavior = static_cast<TextHeightBehavior>(style.textHeightBehavior);
+    typoStyle.hintingIsOn = style.hintingIsOn;
+    typoStyle.breakStrategy = static_cast<BreakStrategy>(style.breakStrategy);
+    typoStyle.paragraphSpacing = style.paragraphSpacing;
+    typoStyle.isEndAddParagraphSpacing = style.isEndAddParagraphSpacing;
+    typoStyle.compressHeadPunctuation = style.compressHeadPunctuation;
+    typoStyle.punctuationOverflow = style.punctuationOverflow;
+    typoStyle.relayoutChangeBitmap = style.relayoutChangeBitmap;
+    typoStyle.defaultTextStyleUid = style.defaultTextStyleUid;
+    typoStyle.halfLeading = style.halfLeading;
+    typoStyle.isTrailingSpaceOptimized = style.isTrailingSpaceOptimized;
+    typoStyle.enableAutoSpace = style.enableAutoSpace;
+    typoStyle.verticalAlignment = style.verticalAlignment;
+    typoStyle.maxLineHeight = style.maxLineHeight;
+    typoStyle.minLineHeight = style.minLineHeight;
+    typoStyle.lineSpacing = style.lineSpacing;
+    typoStyle.lineHeightStyle = style.lineHeightStyle;
+    typoStyle.includeFontPadding = style.includeFontPadding;
+    typoStyle.fallbackLineSpacing = style.fallbackLineSpacing;
+    typoStyle.orphanCharOptimization = style.orphanCharOptimization;
+    typoStyle.firstLineIndent = style.firstLineIndent;
+    typoStyle.tailIndents = style.tailIndents;
+    typoStyle.headIndents = style.headIndents;
+    typoStyle.tab.alignment = static_cast<TextAlign>(style.tab.alignment);
+    typoStyle.tab.location = style.tab.location;
+}
+
+TypographyStyle Convert(const SPText::ParagraphStyle& style)
+{
+    TypographyStyle typoStyle;
+    ConvertParagraphFields(style, typoStyle);
+
+    // Strut style
+    ConvertStrutStyle(style, typoStyle);
+
+    // Text style
+    OHOS::Rosen::TextStyle textStyle = Convert(style.spTextStyle);
+    textStyle.ellipsis = style.ellipsis;
+    textStyle.ellipsisModal = static_cast<EllipsisModal>(style.ellipsisModal);
+    typoStyle.SetTextStyle(textStyle);
+
+    return typoStyle;
 }
 
 SPText::TextTab Convert(const TextTab& tab)

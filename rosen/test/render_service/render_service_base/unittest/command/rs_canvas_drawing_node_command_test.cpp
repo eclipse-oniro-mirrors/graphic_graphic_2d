@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "command/rs_canvas_drawing_node_command.h"
+#include "common/rs_common_def.h"
 #include "pipeline/rs_canvas_drawing_render_node.h"
 
 using namespace testing;

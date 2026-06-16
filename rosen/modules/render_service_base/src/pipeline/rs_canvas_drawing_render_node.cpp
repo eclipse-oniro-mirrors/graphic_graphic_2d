@@ -54,8 +54,6 @@ constexpr uint32_t DRAWCMDLIST_COUNT_LIMIT = 300; // limit of the drawcmdlists.
 constexpr uint32_t DRAWCMDLIST_OPSIZE_TOTAL_COUNT_LIMIT = 10000;
 constexpr uint32_t OP_COUNT_LIMIT_PER_FRAME = 10000;
 constexpr uint32_t OP_COUNT_LIMIT_FOR_CACHE = 200000;
-constexpr size_t DRAWCMDLIST_DUMP_LIMIT = 10; // limit of the DrawCmdListDump.
-constexpr size_t OP_DUMP_LIMIT_PER_CMD = 15; // limit of the DrawOpItemsDump.
 }
 RSCanvasDrawingRenderNode::RSCanvasDrawingRenderNode(
     NodeId id, const std::weak_ptr<RSContext>& context, bool isTextureExportNode)
@@ -156,7 +154,7 @@ void RSCanvasDrawingRenderNode::ProcessRenderContents(RSPaintFilterCanvas& canva
     } else {
         auto cmds = recordingCanvas_->GetDrawCmdList();
         if (cmds && !cmds->IsEmpty()) {
-            recordingCanvas_ = std::make_shared<ExtendRecordingCanvas>(width, height, false);
+            recordingCanvas_ = std::make_unique<ExtendRecordingCanvas>(width, height, false);
             canvas_ = std::make_unique<RSPaintFilterCanvas>(recordingCanvas_.get());
         }
     }
@@ -195,7 +193,7 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
     // update content_style when node not on tree, need check (waitSync_ false, not on tree, never on tree
     // not texture exportnode, unirender mode)
     // if canvas drawing node never on tree, should not update, it will lost renderParams->localDrawRect_
-    if (IsWaitSync() || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
+    if (waitSync_ || IsOnTheTree() || isNeverOnTree_ || !stagingRenderParams_ ||
         !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
         return;
     }
@@ -204,7 +202,8 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
         return;
     }
 #ifdef RS_ENABLE_GPU
-    auto surfaceParams = GetStagingRenderParams()->GetCanvasDrawingSurfaceParams();
+    auto stagingRenderParams = static_cast<RSCanvasDrawingRenderParams*>(GetStagingRenderParams().get());
+    auto surfaceParams = stagingRenderParams->GetCanvasDrawingSurfaceParams();
     if (surfaceParams.width == 0 || surfaceParams.height == 0) {
         RS_LOGI_LIMIT("RSCanvasDrawingRenderNode::ContentStyleSlotUpdate Area Size Error, NodeId[%{public}" PRIu64 "]"
             "width[%{public}d], height[%{public}d]", GetId(), surfaceParams.width, surfaceParams.height);
@@ -220,7 +219,7 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
 
     UpdateDrawableVecV2();
 
-    if (!IsWaitSync()) {
+    if (!waitSync_) {
         RS_LOGE("RSCanvasDrawingRenderNode::ContentStyleSlotUpdate NodeId[%{public}" PRIu64
                 "] UpdateDrawableVecV2 failed, dirtySlots empty", GetId());
         return;
@@ -229,11 +228,13 @@ void RSCanvasDrawingRenderNode::ContentStyleSlotUpdate()
     RS_LOGI_LIMIT("RSCanvasDrawingRenderNode::ContentStyleSlotUpdate NodeId[%{public}" PRIu64 "]", GetId());
     RS_OPTIONAL_TRACE_NAME_FMT("canvas drawing node[%llu] ContentStyleSlotUpdate", GetId());
 
-    // clear content_style drawcmdlist
-    std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
-    auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
-    if (contentCmdList != drawCmdListsNG_.end()) {
-        contentCmdList->second.clear();
+    {
+        // clear content_style drawcmdlist
+        std::lock_guard<std::mutex> lock(drawCmdListsMutex_);
+        auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
+        if (contentCmdList != drawCmdListsNG_.end()) {
+            contentCmdList->second.clear();
+        }
     }
     saveDirtyTypesNG.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), false);
     dirtyTypesNG_ = saveDirtyTypesNG;
@@ -284,7 +285,7 @@ bool RSCanvasDrawingRenderNode::ResetSurface(int width, int height, RSPaintFilte
                 RS_LOGE("RSCanvasDrawingRenderNode::ResetSurface surface is nullptr");
                 return false;
             }
-            recordingCanvas_ = std::make_shared<ExtendRecordingCanvas>(width, height, false);
+            recordingCanvas_ = std::make_unique<ExtendRecordingCanvas>(width, height, false);
             canvas_ = std::make_unique<RSPaintFilterCanvas>(recordingCanvas_.get());
             return true;
         }
@@ -462,7 +463,7 @@ bool RSCanvasDrawingRenderNode::GetSizeFromDrawCmdModifiers(int& width, int& hei
         return false;
     }
     for (const auto& modifier : contentModifiers) {
-        if (auto cmd = modifier->Getter<Drawing::DrawCmdListPtr>(ModifierNG::RSPropertyType::CONTENT_STYLE, nullptr)) {
+        if (auto cmd = modifier->Getter<SimpleDrawCmdListPtr>(ModifierNG::RSPropertyType::CONTENT_STYLE, nullptr)) {
             width = std::max(width, cmd->GetWidth());
             height = std::max(height, cmd->GetHeight());
         }
@@ -506,79 +507,6 @@ CM_INLINE void RSCanvasDrawingRenderNode::ApplyModifiers()
         SetNeedProcess(true);
     }
     RSRenderNode::ApplyModifiers();
-}
-
-void RSCanvasDrawingRenderNode::DumpSubClassNode(std::string& out) const
-{
-    out += ", lastResetSurfaceTime: " + std::to_string(lastResetSurfaceTime_);
-    out += ", opCountAfterReset: " + std::to_string(opCountAfterReset_);
-    out += ", drawOpInfo: [";
-
-    for (auto it = cachedReversedOpTypes_.begin(); it != cachedReversedOpTypes_.end(); ++it) {
-        const auto& cachedReversedOpType = *it;
-        const auto& drawOpTypes = cachedReversedOpType.drawOpTypes;
-
-        out += "[";
-        out += std::to_string(cachedReversedOpType.width) + ",";
-        out += std::to_string(cachedReversedOpType.height) + ",";
-        auto opItemSize = cachedReversedOpType.opItemSize;
-        out += std::to_string(opItemSize) + "][";
-
-        if (opItemSize == 0) {
-            out += "],";
-            continue;
-        }
-        // Restore the original order of the drawOp
-        for (auto drawOpTypeIt = drawOpTypes.rbegin(); drawOpTypeIt != drawOpTypes.rend(); ++drawOpTypeIt) {
-            out += std::to_string(*drawOpTypeIt);
-            out += ",";
-        }
-        if (!drawOpTypes.empty()) {
-            out.pop_back();
-        }
-        out += "],";
-    }
-    if (!cachedReversedOpTypes_.empty()) {
-        out.pop_back();
-    }
-    out += "]";
-}
-
-void RSCanvasDrawingRenderNode::GetDrawOpItemInfo(const Drawing::DrawCmdListPtr& drawCmdList, size_t opItemSize)
-{
-    // not nullptr when called by AddDirtyType
-    if (drawCmdList == nullptr) {
-        return;
-    }
-    auto cachedReversedOpTypesSize = cachedReversedOpTypes_.size();
-    RS_OPTIONAL_TRACE_NAME_FMT("RSCanvasDrawingRenderNode::GetDrawOpItemInfo, nodeId:[%" PRIu64 "] opItemSize:[%zu] "
-        "cachedReversedOpTypes_ size:[%zu]", GetId(), opItemSize, cachedReversedOpTypesSize);
-    if (cachedReversedOpTypesSize >= DRAWCMDLIST_DUMP_LIMIT) {
-        cachedReversedOpTypes_.pop_front();
-    }
-    auto& opInfo = cachedReversedOpTypes_.emplace_back();
-    opInfo.width = drawCmdList->GetWidth();
-    opInfo.height = drawCmdList->GetHeight();
-    opInfo.opItemSize = opItemSize;
-
-    size_t opItemDumpSize = opItemSize < OP_DUMP_LIMIT_PER_CMD ? opItemSize : OP_DUMP_LIMIT_PER_CMD;
-    if (opItemDumpSize == 0) {
-        return;
-    }
-    size_t index = 0;
-    opInfo.drawOpTypes.reserve(opItemDumpSize);
-    const auto& drawOpItems = drawCmdList->GetDrawOpItems();
-    for (auto itemIt = drawOpItems.rbegin(); itemIt != drawOpItems.rend(); ++itemIt) {
-        if (index >= opItemDumpSize) {
-            break;
-        }
-        const auto& item = *itemIt;
-        if (item == nullptr) {
-            continue;
-        }
-        opInfo.drawOpTypes.emplace_back(item->GetType());
-        ++index;
-    }
 }
 
 void RSCanvasDrawingRenderNode::CheckDrawCmdListSizeNG(ModifierNG::RSModifierType type)
@@ -635,14 +563,12 @@ void RSCanvasDrawingRenderNode::AddDirtyType(ModifierNG::RSModifierType modifier
     }
     size_t opCount = ApplyCachedCmdList();
     for (const auto& modifier : contentModifiers) {
-        auto drawCmdList = modifier->Getter<Drawing::DrawCmdListPtr>(
+        auto drawCmdList = modifier->Getter<SimpleDrawCmdListPtr>(
             ModifierNG::ModifierTypeConvertor::GetPropertyType(modifierType), nullptr);
         if (drawCmdList == nullptr) {
             continue;
         }
         auto opItemSize = drawCmdList->GetOpItemSize();
-        GetDrawOpItemInfo(drawCmdList, opItemSize);
-
         if (opCount > OP_COUNT_LIMIT_PER_FRAME) {
             outOfLimitCmdList_.emplace_back(drawCmdList);
             cachedOpCount_ += opItemSize;
@@ -684,16 +610,15 @@ size_t RSCanvasDrawingRenderNode::ApplyCachedCmdList()
 }
 
 void RSCanvasDrawingRenderNode::SplitDrawCmdList(
-    size_t firstOpCount, Drawing::DrawCmdListPtr drawCmdList, bool splitOrigin)
+    size_t firstOpCount, SimpleDrawCmdListPtr drawCmdList, bool splitOrigin)
 {
     if (splitOrigin && cachedOpCount_ > OP_COUNT_LIMIT_FOR_CACHE) {
         drawCmdList->ClearOp();
         RS_LOGE("RSCanvasDrawingRenderNode::SplitDrawCmdList: OP count(%{public}zu) out of limit", cachedOpCount_);
         return;
     }
-    auto firstCmdList = std::make_shared<Drawing::DrawCmdList>(
-        drawCmdList->GetWidth(), drawCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
-    Drawing::DrawCmdListPtr cmdList = nullptr;
+    auto firstCmdList = std::make_shared<RSSimpleDrawCmdList>(drawCmdList->GetWidth(), drawCmdList->GetHeight());
+    SimpleDrawCmdListPtr cmdList = nullptr;
     auto drawOpItems = drawCmdList->GetDrawOpItems();
     auto opCount = drawOpItems.size();
     size_t splitCount = 0;
@@ -703,8 +628,7 @@ void RSCanvasDrawingRenderNode::SplitDrawCmdList(
             continue;
         }
         if (cmdList == nullptr) {
-            cmdList = std::make_shared<Drawing::DrawCmdList>(
-                drawCmdList->GetWidth(), drawCmdList->GetHeight(), Drawing::DrawCmdList::UnmarshalMode::DEFERRED);
+            cmdList = std::make_shared<RSSimpleDrawCmdList>(drawCmdList->GetWidth(), drawCmdList->GetHeight());
         }
         cmdList->AddDrawOp(std::move(drawOpItems[index]));
         if (((index - firstOpCount) % OP_COUNT_LIMIT_PER_FRAME == OP_COUNT_LIMIT_PER_FRAME - 1) ||
@@ -736,7 +660,7 @@ void RSCanvasDrawingRenderNode::SplitDrawCmdList(
     drawCmdList->ClearOp();
 }
 
-void RSCanvasDrawingRenderNode::ReportOpCount(const std::list<Drawing::DrawCmdListPtr>& cmdLists) const
+void RSCanvasDrawingRenderNode::ReportOpCount(const std::list<SimpleDrawCmdListPtr>& cmdLists) const
 {
     size_t totalOpCount = 0;
     for (const auto& cmdList : cmdLists) {
@@ -773,11 +697,12 @@ void RSCanvasDrawingRenderNode::ResetSurface(int width, int height, uint32_t res
         colorSpace = appSurfaceNode->GetColorSpace();
     }
 #endif
+    auto stagingRenderParams = static_cast<RSCanvasDrawingRenderParams*>(stagingRenderParams_.get());
 #ifdef RS_ENABLE_GPU
-    stagingRenderParams_->SetCanvasDrawingSurfaceChanged(true);
-    stagingRenderParams_->SetCanvasDrawingSurfaceParams(width, height, colorSpace);
+    stagingRenderParams->SetCanvasDrawingSurfaceChanged(true);
+    stagingRenderParams->SetCanvasDrawingSurfaceParams(width, height, colorSpace);
 #endif
-    stagingRenderParams_->SetCanvasDrawingResetSurfaceIndex(resetSurfaceIndex);
+    stagingRenderParams->SetCanvasDrawingResetSurfaceIndex(resetSurfaceIndex);
     lastResetSurfaceTime_ = std::chrono::time_point_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now()).time_since_epoch().count();
     opCountAfterReset_ = 0;
@@ -786,6 +711,33 @@ void RSCanvasDrawingRenderNode::ResetSurface(int width, int height, uint32_t res
 const std::map<ModifierNG::RSModifierType, ModifierCmdList>& RSCanvasDrawingRenderNode::GetDrawCmdListsNG() const
 {
     return drawCmdListsNG_;
+}
+
+void RSCanvasDrawingRenderNode::OnApplyModifiers()
+{
+    modifiersApplied_ = true;
+}
+
+void RSCanvasDrawingRenderNode::AfterSync()
+{
+    if (modifiersApplied_) {
+        modifiersApplied_ = false;
+        ClearResource();
+    }
+
+    // Reset Sync Flag
+    if (waitSync_) {
+        renderDrawable_->SetNeedDraw(true);
+    }
+    waitSync_ = false;
+}
+
+void RSCanvasDrawingRenderNode::AccumulateLastDirtyTypes()
+{
+    if (GetLastFrameSync() || !RSUniRenderJudgement::IsUniRender() || GetIsTextureExportNode()) {
+        return;
+    }
+    dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
 }
 
 void RSCanvasDrawingRenderNode::ClearResource()
@@ -811,7 +763,7 @@ void RSCanvasDrawingRenderNode::CheckCanvasDrawingPostPlaybacked()
     dirtyTypesNG_.set(static_cast<int>(ModifierNG::RSModifierType::CONTENT_STYLE), true);
     auto contentCmdList = drawCmdListsNG_.find(ModifierNG::RSModifierType::CONTENT_STYLE);
     if (contentCmdList != drawCmdListsNG_.end()) {
-        auto cmd = std::make_shared<Drawing::DrawCmdList>();
+        auto cmd = std::make_shared<RSSimpleDrawCmdList>();
         contentCmdList->second.emplace_back(cmd);
     }
     isPostPlaybacked_ = false;

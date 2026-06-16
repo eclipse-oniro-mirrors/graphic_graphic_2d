@@ -28,6 +28,8 @@ BackendTexture::BackendTexture() noexcept
 BackendTexture::BackendTexture(bool isValid) noexcept
     : isValid_(isValid) {}
 
+BackendTexture::~BackendTexture() = default;
+
 bool BackendTexture::IsValid() const
 {
     return isValid_;
@@ -46,6 +48,8 @@ const TextureInfo& BackendTexture::GetTextureInfo() const
 Image::Image() noexcept : imageImplPtr(ImplFactory::CreateImageImpl()) {}
 
 Image::Image(void* rawImg) noexcept : imageImplPtr(ImplFactory::CreateImageImpl(rawImg)) {}
+
+Image::~Image() = default;
 
 bool Image::BuildFromBitmap(const Bitmap& bitmap, bool ignoreAlpha)
 {
@@ -81,18 +85,12 @@ bool Image::BuildFromBitmap(GPUContext& gpuContext, const Bitmap& bitmap, bool i
 {
     return imageImplPtr->BuildFromBitmap(gpuContext, bitmap, ignoreAlpha);
 }
-#endif
 
 bool Image::MakeFromEncoded(const std::shared_ptr<Data>& data)
 {
-#ifdef RS_ENABLE_GPU
     return imageImplPtr->MakeFromEncoded(data);
-#else
-    return false;
-#endif
 }
 
-#ifdef RS_ENABLE_GPU
 bool Image::BuildFromCompressed(GPUContext& gpuContext, const std::shared_ptr<Data>& data, int width, int height,
     CompressedType type, const std::shared_ptr<ColorSpace>& colorSpace)
 {
@@ -144,20 +142,26 @@ int Image::GetHeight() const
     return imageImplPtr->GetHeight();
 }
 
+// LCOV_EXCL_START
 ColorType Image::GetColorType() const
 {
     return imageImplPtr->GetColorType();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 AlphaType Image::GetAlphaType() const
 {
     return imageImplPtr->GetAlphaType();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 std::shared_ptr<ColorSpace> Image::GetColorSpace() const
 {
     return imageImplPtr->GetColorSpace();
 }
+// LCOV_EXCL_STOP
 
 uint32_t Image::GetUniqueID() const
 {
@@ -210,25 +214,33 @@ bool Image::GetROPixels(Bitmap& bitmap) const
     return imageImplPtr->GetROPixels(bitmap);
 }
 
+// LCOV_EXCL_START
 std::shared_ptr<Image> Image::MakeRasterImage() const
 {
     return imageImplPtr->MakeRasterImage();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool Image::CanPeekPixels() const
 {
     return imageImplPtr->CanPeekPixels();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 bool Image::IsOpaque() const
 {
     return imageImplPtr->IsOpaque();
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 void Image::HintCacheGpuResource() const
 {
     imageImplPtr->HintCacheGpuResource();
 }
+// LCOV_EXCL_STOP
 
 std::shared_ptr<Data> Image::Serialize() const
 {

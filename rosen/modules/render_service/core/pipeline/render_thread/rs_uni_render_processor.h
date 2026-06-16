@@ -22,7 +22,7 @@
 
 namespace OHOS {
 namespace Rosen {
-class RSRenderComposerClient;
+class RSComposerClient;
 class RSUniRenderProcessor : public RSProcessor {
 public:
     static inline constexpr RSProcessorType Type = RSProcessorType::UNIRENDER_PROCESSOR;
@@ -31,12 +31,12 @@ public:
         return Type;
     }
 
-    RSUniRenderProcessor();
+    RSUniRenderProcessor() = default;
+    explicit RSUniRenderProcessor(ScreenId screenId);
     ~RSUniRenderProcessor() noexcept override;
 
-    bool Init(RSScreenRenderNode& node, int32_t offsetX, int32_t offsetY, ScreenId mirroredId,
-              std::shared_ptr<RSBaseRenderEngine> renderEngine) override;
-    void CreateLayer(const RSSurfaceRenderNode& node, RSSurfaceRenderParams& params,
+    bool Init(RSScreenRenderNode& node, std::shared_ptr<RSBaseRenderEngine> renderEngine) override;
+    void CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRenderParams& params,
         const std::shared_ptr<ProcessOfflineResult>& offlineResult = nullptr) override;
     void ProcessSurface(RSSurfaceRenderNode& node) override;
     void ProcessScreenSurface(RSScreenRenderNode& node) override;
@@ -45,7 +45,6 @@ public:
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
     std::vector<RSLayerPtr> GetLayers() const;
 #endif
-
     // called by render thread
     bool InitForRenderThread(DrawableV2::RSScreenRenderNodeDrawable& screenDrawable,
         std::shared_ptr<RSBaseRenderEngine> renderEngine) override;
@@ -64,10 +63,12 @@ private:
         sptr<SurfaceBuffer>& prebuffer, const sptr<IConsumerSurface>& consumer, const sptr<SyncFence>& acquireFence,
         const std::shared_ptr<ProcessOfflineResult>& offlineResult = nullptr);
     void CreateSolidColorLayer(RSLayerPtr layer, RSSurfaceRenderParams& params);
-    void HandleTunnelLayerParameters(RSSurfaceRenderParams& params, RSLayerPtr& layer);
+    void HandleTunnelLayerParameters(NodeId nodeId, RSLayerPtr& layer);
     std::unique_ptr<RSUniRenderComposerAdapter> uniComposerAdapter_;
-    std::vector<RSLayerPtr> layers_;
-    std::shared_ptr<RSRenderComposerClient> composerClient_;
+    std::vector<std::weak_ptr<RSLayer>> layers_;
+    RSLayerPtr uniLayer_ = nullptr;
+    std::shared_ptr<RSComposerClient> composerClient_ = nullptr;
+    bool hasTunnelLayer_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

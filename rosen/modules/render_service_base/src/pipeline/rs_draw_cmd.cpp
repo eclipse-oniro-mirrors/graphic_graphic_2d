@@ -18,11 +18,11 @@
 #include "common/rs_optional_trace.h"
 #include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_recording_canvas.h"
+#include "pipeline/rs_surface_buffer_callback_manager.h"
 #include "platform/common/rs_log.h"
 #include "render/rs_pixel_map_util.h"
 #include "render/rs_image_cache.h"
 #include "recording/cmd_list_helper.h"
-#include "recording/draw_cmd_list.h"
 #include "rs_trace.h"
 #include "utils/system_properties.h"
 #include "pipeline/rs_task_dispatcher.h"
@@ -39,8 +39,12 @@
 #else
 #include "include/gpu/GrBackendSemaphore.h"
 #endif
+#ifndef ROSEN_ARKUI_X
 #include "platform/ohos/backend/native_buffer_utils.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
+#else
+#include "rs_vulkan_context.h"
+#endif
 #endif
 
 #ifdef USE_M133_SKIA
@@ -84,7 +88,7 @@ Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat)
             return Drawing::COLORTYPE_RGBA_8888;
     }
 }
-
+#ifndef ROSEN_ARKUI_X
 bool WaitFence(const sptr<SyncFence>& fence)
 {
     if (fence == nullptr) {
@@ -97,6 +101,7 @@ bool WaitFence(const sptr<SyncFence>& fence)
     }
     return true;
 }
+#endif
 #endif
 
 RSExtendImageObject::RSExtendImageObject(const std::shared_ptr<Drawing::Image>& image,
@@ -287,10 +292,12 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
         }
 #endif
 #if defined(RS_ENABLE_VK)
-        if (RSSystemProperties::IsUseVukan() &&
-            GetRsImageCache(canvas, pixelMap, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()),
-                            sampling, colorSpace)) {
-            rsImage_->SetDmaImage(image_);
+        if (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
+            RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR) {
+            if (GetRsImageCache(canvas, pixelMap, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()),
+                                sampling, colorSpace)) {
+                rsImage_->SetDmaImage(image_);
+            }
         }
 #endif
         return;
@@ -302,7 +309,7 @@ void RSExtendImageObject::PreProcessPixelMap(Drawing::Canvas& canvas, const std:
             (RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN ||
             RSSystemProperties::GetGpuApiType() == GpuApiType::DDGR)) {
             if (!nativeWindowBuffer_) {
-                sptr<SurfaceBuffer> sfBuffer(reinterpret_cast<SurfaceBuffer *>(pixelMap->GetFd()));
+                sptr<SurfaceBuffer> sfBuffer(reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()));
                 nativeWindowBuffer_ = CreateNativeWindowBufferFromSurfaceBuffer(&sfBuffer);
             }
             OH_NativeBuffer* nativeBuffer = OH_NativeBufferFromNativeWindowBuffer(nativeWindowBuffer_);
@@ -342,20 +349,26 @@ bool RSExtendImageObject::GetRsImageCache(Drawing::Canvas& canvas, const std::sh
     std::shared_ptr<Drawing::Image> imageCache = nullptr;
     pid_t threadId = gettid();
 #ifdef SUBTREE_PARALLEL_ENABLE
-    // Adapt to the subtree feature to ensure the correct thread ID(TID) is set.
+    // Adapt to the subtree feature to ensure the correct thread ID (TID) is set.
     RSParallelMisc::AdaptSubTreeThreadId(canvas, threadId);
 #endif
     if (!pixelMap->IsEditable()) {
         imageCache = RSImageCache::Instance().GetRenderDrawingImageCacheByPixelMapId(
             rsImage_->GetUniqueId(), threadId);
     }
-    bool needMakeFromTexture = !imageCache || (imageCache && pixelmap->IsHdr() &&
-        !colorSpace->Equals(imageCache->GetImageInfo().GetColorSpace()))
+    bool needMakeFromTexture = !imageCache || (imageCache && pixelMap->IsHdr() &&
+        !colorSpace->Equals(imageCache->GetImageInfo().GetColorSpace()));
     if (!needMakeFromTexture) {
         this->image_ = imageCache;
+#if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
+        if (sampling.GetMipmapMode() != Drawing::MipmapMode::NONE) {
+            RSImageCache::Instance().ReserveImageInfo(rsImage_, nodeId_, weak_from_this());
+        }
+#endif
     } else {
+        Drawing::AlphaType alphaType = RSPixelMapUtil::AlphaTypeToDrawingAlphaType(pixelMap->GetAlphaType());
         bool ret = MakeFromTextureForVK(
-            canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), sampling, colorSpace);
+            canvas, reinterpret_cast<SurfaceBuffer*>(pixelMap->GetFd()), sampling, alphaType, colorSpace);
         if (ret && image_ && !pixelMap->IsEditable()) {
             SKResourceManager::Instance().HoldResource(image_);
             RSImageCache::Instance().CacheRenderDrawingImageByPixelMapId(
@@ -385,11 +398,7 @@ bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canv
             return false;
         }
     }
-    EGLint attrs[] = {
-        EGL_IMAGE_PRESERVED,
-        EGL_TRUE,
-        EGL_NONE,
-    };
+    EGLint attrs[] = { EGL_IMAGE_PRESERVED, EGL_TRUE, EGL_NONE };
 
     auto disp = eglGetDisplay(EGL_DEFAULT_DISPLAY);
     if (eglImage_ == EGL_NO_IMAGE_KHR) {
@@ -440,7 +449,7 @@ bool RSExtendImageObject::GetDrawingImageFromSurfaceBuffer(Drawing::Canvas& canv
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceBuffer *surfaceBuffer,
-    const Drawing::SamplingOptions& sampling,
+    const Drawing::SamplingOptions& sampling, Drawing::AlphaType alphaType,
     const std::shared_ptr<Drawing::ColorSpace>& colorSpace)
 {
     if (!RSSystemProperties::IsUseVulkan()) {
@@ -485,7 +494,7 @@ bool RSExtendImageObject::MakeFromTextureForVK(Drawing::Canvas& canvas, SurfaceB
         return false;
     }
     Drawing::ColorType colorType = GetColorTypeFromVKFormat(vkTextureInfo->format);
-    Drawing::BitmapFormat bitmapFormat = { colorType, Drawing::AlphaType::ALPHATYPE_PREMUL };
+    Drawing::BitmapFormat bitmapFormat = { colorType, alphaType };
     if (!image_->BuildFromTexture(*context, backendTexture_.GetTextureInfo(),
         Drawing::TextureOrigin::TOP_LEFT, bitmapFormat, colorSpace,
         NativeBufferUtils::DeleteVkImage,
@@ -840,11 +849,11 @@ void DrawPixelMapWithParmOpItem::DumpItems(std::string& out) const
     }
 }
 
-#ifdef RS_ENABLE_VK
+#if defined (RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
 /* DrawHybridPixelMapOpItem */
 UNMARSHALLING_REGISTER(DrawHybridPixelMapOpItem, DrawOpItem::HYBRID_RENDER_PIXELMAP_OPITEM,
     DrawHybridPixelMapOpItem::Unmarshalling, sizeof(DrawHybridPixelMapOpItem::ConstructorHandle));
- 
+
 DrawHybridPixelMapOpItem::DrawHybridPixelMapOpItem(
     const DrawCmdList& cmdList, DrawHybridPixelMapOpItem::ConstructorHandle* handle)
     : DrawWithPaintOpItem(cmdList, handle->paintHandle, HYBRID_RENDER_PIXELMAP_OPITEM), sampling_(handle->sampling),
@@ -863,7 +872,7 @@ DrawHybridPixelMapOpItem::DrawHybridPixelMapOpItem(const std::shared_ptr<Media::
 {
     objectHandle_ = std::make_shared<RSExtendImageObject>(pixelMap, rsImageInfo);
 }
- 
+
 void DrawHybridPixelMapOpItem::Marshalling(DrawCmdList& cmdList)
 {
     PaintHandle paintHandle;
@@ -873,13 +882,13 @@ void DrawHybridPixelMapOpItem::Marshalling(DrawCmdList& cmdList)
         std::make_shared<SurfaceBufferEntry>(nullptr, fence_));
     cmdList.AddOp<ConstructorHandle>(objectHandle, sampling_, paintHandle, entryId, isRenderForeground_);
 }
- 
+
 std::shared_ptr<DrawOpItem> DrawHybridPixelMapOpItem::Unmarshalling(const DrawCmdList& cmdList, void* handle)
 {
     return std::make_shared<DrawHybridPixelMapOpItem>(
         cmdList, static_cast<DrawHybridPixelMapOpItem::ConstructorHandle*>(handle));
 }
- 
+
 void DrawHybridPixelMapOpItem::SetNodeId(NodeId id)
 {
     if (objectHandle_ == nullptr) {
@@ -888,7 +897,7 @@ void DrawHybridPixelMapOpItem::SetNodeId(NodeId id)
     }
     objectHandle_->SetNodeId(id);
 }
- 
+
 void DrawHybridPixelMapOpItem::Playback(Canvas* canvas, const Rect* rect)
 {
     if (objectHandle_ == nullptr) {
@@ -918,7 +927,7 @@ void DrawHybridPixelMapOpItem::Playback(Canvas* canvas, const Rect* rect)
     }
     objectHandle_->Playback(*paintCanvas, *rect, sampling_, false);
 }
- 
+
 void DrawHybridPixelMapOpItem::DumpItems(std::string& out) const
 {
     out += " sampling";
@@ -1142,6 +1151,12 @@ void DrawFuncOpItem::Playback(Canvas* canvas, const Rect* rect)
 }
 
 #ifdef ROSEN_OHOS
+namespace {
+    std::function<void(const DrawSurfaceBufferFinishCbData&)> surfaceBufferFinishCb;
+    std::function<void(const DrawSurfaceBufferAfterAcquireCbData&)> surfaceBufferAfterAcquireCb;
+    std::function<NodeId()> getRootNodeIdForRT;
+    bool contextIsUniRender = true;
+}
 /* DrawSurfaceBufferOpItem */
 UNMARSHALLING_REGISTER(DrawSurfaceBuffer, DrawOpItem::SURFACEBUFFER_OPITEM,
     DrawSurfaceBufferOpItem::Unmarshalling, sizeof(DrawSurfaceBufferOpItem::ConstructorHandle));
@@ -1161,6 +1176,11 @@ DrawSurfaceBufferOpItem::DrawSurfaceBufferOpItem(
     if (surfaceBufferEntry) {
         surfaceBufferInfo_.surfaceBuffer_ = surfaceBufferEntry->surfaceBuffer_;
         surfaceBufferInfo_.acquireFence_ = surfaceBufferEntry->acquireFence_;
+
+        // Store the surfaceBufferInfo in RSSurfaceBufferCallbackManager
+        if (contextIsUniRender && surfaceBufferInfo_.pid_ != 0) {
+            RSSurfaceBufferCallbackManager::Instance().StoreSurfaceBufferInfo(surfaceBufferInfo_);
+        }
     }
 }
 
@@ -1187,13 +1207,6 @@ void DrawSurfaceBufferOpItem::Marshalling(DrawCmdList& cmdList)
         surfaceBufferInfo_.dstRect_.GetWidth(), surfaceBufferInfo_.dstRect_.GetHeight(), surfaceBufferInfo_.pid_,
         surfaceBufferInfo_.uid_, surfaceBufferInfo_.transform_, surfaceBufferInfo_.srcRect_,
         surfaceBufferInfo_.isIgnoreAlpha_, paintHandle);
-}
-
-namespace {
-    std::function<void(const DrawSurfaceBufferFinishCbData&)> surfaceBufferFinishCb;
-    std::function<void(const DrawSurfaceBufferAfterAcquireCbData&)> surfaceBufferAfterAcquireCb;
-    std::function<NodeId()> getRootNodeIdForRT;
-    bool contextIsUniRender = true;
 }
 
 void DrawSurfaceBufferOpItem::OnDestruct()

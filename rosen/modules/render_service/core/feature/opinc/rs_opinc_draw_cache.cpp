@@ -36,6 +36,10 @@ constexpr float RECT_PEN_ALPHA = 0.2f;
 constexpr float DFX_FONT_SIZE = 30.f;
 }
 
+RectI RSOpincDrawCache::screenRectInfo_ = {0, 0, 0, 0};
+thread_local bool RSOpincDrawCache::opincBlockNodeSkip_ = true;
+thread_local int RSOpincDrawCache::opincRootNodeCount_ = 0;
+
 bool RSOpincDrawCache::IsAutoCacheEnable()
 {
     return RSOpincManager::Instance().GetOPIncSwitch();
@@ -57,23 +61,22 @@ int32_t RSOpincDrawCache::GetOpincCacheMaxHeight() const
     return screenRectInfo_.GetHeight();
 }
 
-void RSOpincDrawCache::OpincCalculateBefore(Drawing::Canvas& canvas,
-    const RSRenderParams& params, bool& isOpincDropNodeExt)
+void RSOpincDrawCache::OpincCalculateBefore(Drawing::Canvas& canvas, const RSRenderParams& params)
 {
 #ifdef RS_ENABLE_GPU
-    isOpincDropNodeExtTemp_ = isOpincDropNodeExt;
-    isOpincCaculateStart_ = false;
+    opincBlockNodeSkipTemp_ = opincBlockNodeSkip_;
+    isOpincCalculateStart_ = false;
     if (IsAutoCacheEnable() && IsOpListDrawAreaEnable()) {
-        isOpincCaculateStart_ = canvas.OpCalculateBefore(params.GetMatrix());
-        isOpincDropNodeExt = false;
+        isOpincCalculateStart_ = canvas.OpCalculateBefore(params.GetMatrix());
+        opincBlockNodeSkip_ = false;
     }
 #endif
 }
 
-void RSOpincDrawCache::OpincCalculateAfter(Drawing::Canvas& canvas, bool& isOpincDropNodeExt)
+void RSOpincDrawCache::OpincCalculateAfter(Drawing::Canvas& canvas)
 {
-    if (isOpincCaculateStart_) {
-        isOpincCaculateStart_ = false;
+    if (isOpincCalculateStart_) {
+        isOpincCalculateStart_ = false;
         auto localBound = Drawing::Rect(0.f, 0.f, static_cast<float>(GetOpincCacheMaxWidth()),
             static_cast<float>(GetOpincCacheMaxHeight()));
         auto drawAreaTemp = canvas.OpCalculateAfter(localBound);
@@ -86,18 +89,20 @@ void RSOpincDrawCache::OpincCalculateAfter(Drawing::Canvas& canvas, bool& isOpin
             opListDrawAreas_ = std::move(*drawAreaTemp);
             isDrawAreaEnable_ = DrawAreaEnableState::DRAW_AREA_ENABLE;
         }
+        RS_OPTIONAL_TRACE_NAME_FMT("canvas OpCalculateAfter isDrawAreaEnable:%d, opCanCache:%d",
+            isDrawAreaEnable_, opCanCache_);
     }
-    isOpincDropNodeExt = isOpincDropNodeExtTemp_;
+    opincBlockNodeSkip_ = opincBlockNodeSkipTemp_;
 }
 
-bool RSOpincDrawCache::PreDrawableCacheState(RSRenderParams& params, bool& isOpincDropNodeExt)
+bool RSOpincDrawCache::PreDrawableCacheState(RSRenderParams& params)
 {
 #ifdef RS_ENABLE_GPU
     if (params.OpincGetCacheChangeState()) {
         RS_OPTIONAL_TRACE_NAME_FMT("OpincGetCacheChangeState Changed %llx", params.GetId());
         DrawableCacheStateReset(params);
     }
-    return isOpincDropNodeExt && (!IsOpincRootNode());
+    return opincBlockNodeSkip_ && (!IsOpincRootNode());
 #else
     return false;
 #endif
@@ -141,8 +146,9 @@ bool RSOpincDrawCache::IsOpListDrawAreaEnable()
 
 bool RSOpincDrawCache::IsTranslate(Drawing::Matrix& mat)
 {
-    return (mat.Get(Drawing::Matrix::SCALE_X) == 1.0f) && (mat.Get(Drawing::Matrix::SCALE_Y) == 1.0f) &&
-        (mat.Get(Drawing::Matrix::SKEW_X) == 0.0f) && (mat.Get(Drawing::Matrix::SKEW_Y) == 0.0f);
+    return ColorManager::FloatEqual(mat.Get(Drawing::Matrix::SCALE_X), mat.Get(Drawing::Matrix::SCALE_Y)) &&
+        ColorManager::FloatEqual(mat.Get(Drawing::Matrix::SKEW_X), 0.0f) &&
+        ColorManager::FloatEqual(mat.Get(Drawing::Matrix::SKEW_Y), 0.0f);
 }
 
 void RSOpincDrawCache::NodeCacheStateDisable()
@@ -181,8 +187,7 @@ bool RSOpincDrawCache::BeforeDrawCacheProcessChildNode(RSRenderParams& params)
 #endif
 }
 
-void RSOpincDrawCache::BeforeDrawCacheFindRootNode(Drawing::Canvas& canvas,
-    const RSRenderParams& params, bool& isOpincDropNodeExt)
+void RSOpincDrawCache::BeforeDrawCacheFindRootNode(Drawing::Canvas& canvas, const RSRenderParams& params)
 {
 #ifdef RS_ENABLE_GPU
     if (IsAutoCacheEnable() && !params.OpincGetRootFlag()) {
@@ -206,20 +211,20 @@ void RSOpincDrawCache::BeforeDrawCacheFindRootNode(Drawing::Canvas& canvas,
 #endif
 }
 
-void RSOpincDrawCache::BeforeDrawCache(Drawing::Canvas& canvas, RSRenderParams& params, bool& isOpincDropNodeExt)
+void RSOpincDrawCache::BeforeDrawCache(Drawing::Canvas& canvas, RSRenderParams& params)
 {
     if (!IsAutoCacheEnable()) {
         return;
     }
     temNodeStragyType_ = nodeCacheType_;
     if (!BeforeDrawCacheProcessChildNode(params)) {
-        OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
+        OpincCalculateBefore(canvas, params);
         return;
     }
     switch (recordState_) {
         case NodeRecordState::RECORD_NONE:
             // find root node
-            BeforeDrawCacheFindRootNode(canvas, params, isOpincDropNodeExt);
+            BeforeDrawCacheFindRootNode(canvas, params);
             break;
         case NodeRecordState::RECORD_CALCULATE:
             // cal img
@@ -234,7 +239,7 @@ void RSOpincDrawCache::BeforeDrawCache(Drawing::Canvas& canvas, RSRenderParams& 
             break;
     }
     nodeCacheType_ = rootNodeStragyType_;
-    OpincCalculateBefore(canvas, params, isOpincDropNodeExt);
+    OpincCalculateBefore(canvas, params);
 }
 
 bool RSOpincDrawCache::IsOpincNodeInScreenRect(RSRenderParams& params)
@@ -283,13 +288,12 @@ bool RSOpincDrawCache::IsOpincCacheMemExceedThreshold()
     return isExceed;
 }
 
-void RSOpincDrawCache::AfterDrawCache(Drawing::Canvas& canvas, RSRenderParams& params, bool& isOpincDropNodeExt,
-    int& opincRootTotalCount)
+void RSOpincDrawCache::AfterDrawCache(Drawing::Canvas& canvas, RSRenderParams& params)
 {
     if (!IsAutoCacheEnable()) {
         return;
     }
-    OpincCalculateAfter(canvas, isOpincDropNodeExt);
+    OpincCalculateAfter(canvas);
     if (rootNodeStragyType_ == NodeStrategyType::OPINC_AUTOCACHE && recordState_ == NodeRecordState::RECORD_CALCULATE) {
         bool isOnlyTranslate = false;
         auto totalMatrix = canvas.GetTotalMatrix();
@@ -297,6 +301,7 @@ void RSOpincDrawCache::AfterDrawCache(Drawing::Canvas& canvas, RSRenderParams& p
         if (IsTranslate(totalMatrix) && (ROSEN_EQ(rootAlpha, 0.0f) || ROSEN_EQ(rootAlpha, 1.0f))) {
             isOnlyTranslate = true;
         }
+        RS_OPTIONAL_TRACE_NAME_FMT("isDrawAreaEnable:%d, isOnlyTranslate:%d", isDrawAreaEnable_, isOnlyTranslate);
         if (isDrawAreaEnable_ == DrawAreaEnableState::DRAW_AREA_ENABLE && isOnlyTranslate) {
             recordState_ = NodeRecordState::RECORD_CACHING;
         } else if (isDrawAreaEnable_ == DrawAreaEnableState::DRAW_AREA_DISABLE) {
@@ -305,9 +310,9 @@ void RSOpincDrawCache::AfterDrawCache(Drawing::Canvas& canvas, RSRenderParams& p
     } else if (rootNodeStragyType_ == NodeStrategyType::OPINC_AUTOCACHE &&
         recordState_ == NodeRecordState::RECORD_CACHING) {
         if (!IsOpincCacheMemExceedThreshold() &&
-            (opincRootTotalCount < OPINC_ROOT_TOTAL_MAX) && (!OpincGetCachedMark()) &&
+            (opincRootNodeCount_ < OPINC_ROOT_TOTAL_MAX) && (!OpincGetCachedMark()) &&
             IsOpincNodeInScreenRect(params)) {
-            opincRootTotalCount++;
+            opincRootNodeCount_++;
             isOpincMarkCached_ = true;
             recordState_ = NodeRecordState::RECORD_CACHED;
             reuseCount_ = 0;
@@ -410,4 +415,5 @@ void RSOpincDrawCache::DrawOpincDisabledDfx(Drawing::Canvas& canvas, RSRenderPar
     canvas.DrawTextBlob(textBlob.get(), 10.f, 20.f);
     canvas.DetachBrush();
 }
+
 } // namespace OHOS::Rosen::DrawableV2

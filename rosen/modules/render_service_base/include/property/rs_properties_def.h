@@ -21,7 +21,9 @@
 
 #include "common/rs_color_palette.h"
 #include "common/rs_rect.h"
+#include "common/rs_vector3.h"
 #include "common/rs_vector4.h"
+#include "property/rs_spatial_effect_def.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -201,6 +203,29 @@ struct RSShadowBlenderPara {
     }
 };
 
+struct RSHdrDarkenBlenderPara {
+    float hdrBrightnessRatio_ = 1.0f;
+    Vector3f grayscaleFactor_ = {0.299f, 0.587f, 0.114f}; // default value
+
+    RSHdrDarkenBlenderPara() = default;
+
+    RSHdrDarkenBlenderPara(float hdrBrightnessRatio, Vector3f grayscaleFactor = {0.299f, 0.587f, 0.114f})
+    {
+        hdrBrightnessRatio_ = ROSEN_GE(hdrBrightnessRatio, 1.0f) ? hdrBrightnessRatio : 1.0f;
+        grayscaleFactor_ = grayscaleFactor;
+    }
+
+    inline bool IsValid() const
+    {
+        return ROSEN_GE(hdrBrightnessRatio_, 1.0);
+    }
+
+    bool operator==(const RSHdrDarkenBlenderPara& other) const
+    {
+        return (hdrBrightnessRatio_ == other.hdrBrightnessRatio_ && grayscaleFactor_ == other.grayscaleFactor_);
+    }
+};
+
 struct RSWaterRipplePara {
     uint32_t waveCount = 0;
     float rippleCenterX = 0.5f;
@@ -277,18 +302,9 @@ public:
     {
         lightColor_ = lightColor;
     }
-    void SetAbsLightPosition(const Vector4f& absLightPosition)
-    {
-        absLightPosition_ = absLightPosition;
-    }
-
     const Vector4f& GetLightPosition() const
     {
         return lightPosition_;
-    }
-    const Vector4f& GetAbsLightPosition() const
-    {
-        return absLightPosition_;
     }
     float GetLightIntensity() const
     {
@@ -325,7 +341,6 @@ private:
         return lightPosZ * tan;
     }
     Vector4f lightPosition_ = Vector4f();
-    Vector4f absLightPosition_ = Vector4f(); // absolute light Position;
     float intensity_ = 0.f;
     float preIntensity_ = 0.f;
     Color lightColor_ = RgbPalette::White();
@@ -414,6 +429,68 @@ enum class EffectRectType : uint8_t {
     TOTAL = 0,
     SNAPSHOT = 1,
     DRAW = 2,
+};
+
+struct RSDynamicLightUpPara {
+    float rate = 0.f;
+    float degree = 0.f;
+    bool operator==(const RSDynamicLightUpPara& other) const
+    {
+        return ROSEN_EQ(rate, other.rate) && ROSEN_EQ(degree, other.degree);
+    }
+};
+
+struct RSPixelStretchPara {
+    Vector4f size {};
+    Vector4f percent {};
+    int tileMode = 0;
+    bool operator==(const RSPixelStretchPara& other) const
+    {
+        return size == other.size && percent == other.percent && tileMode == other.tileMode;
+    }
+};
+
+struct RSDistortionPara {
+    float distortionK = 0.f;
+    bool dirty = false;
+    bool operator==(const RSDistortionPara& other) const
+    {
+        return distortionK == other.distortionK && dirty == other.dirty;
+    }
+};
+
+struct RSBackgroundBlurPara {
+    float radius = 0.f;
+    float saturation = 1.f;
+    float brightness = 1.f;
+    int colorMode = 0; // BLUR_COLOR_MODE::DEFAULT
+    float radiusX = 0.f;
+    float radiusY = 0.f;
+    Color maskColor {};
+    bool operator==(const RSBackgroundBlurPara& other) const
+    {
+        return ROSEN_EQ(radius, other.radius) && ROSEN_EQ(saturation, other.saturation) &&
+               ROSEN_EQ(brightness, other.brightness) && colorMode == other.colorMode &&
+               ROSEN_EQ(radiusX, other.radiusX) && ROSEN_EQ(radiusY, other.radiusY) &&
+               maskColor == other.maskColor;
+    }
+};
+
+struct RSForegroundBlurPara {
+    float radius = 0.f;
+    float saturation = 1.f;
+    float brightness = 1.f;
+    int colorMode = 0; // BLUR_COLOR_MODE::DEFAULT
+    float radiusX = 0.f;
+    float radiusY = 0.f;
+    Color maskColor {};
+    bool operator==(const RSForegroundBlurPara& other) const
+    {
+        return ROSEN_EQ(radius, other.radius) && ROSEN_EQ(saturation, other.saturation) &&
+               ROSEN_EQ(brightness, other.brightness) && colorMode == other.colorMode &&
+               ROSEN_EQ(radiusX, other.radiusX) && ROSEN_EQ(radiusY, other.radiusY) &&
+               maskColor == other.maskColor;
+    }
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "rs_trace.h"
 
 #include "pipeline/rs_logical_display_render_node.h"
 #include "params/rs_logical_display_render_params.h"
+#include "property/rs_point_light_manager.h"
 #include "visitor/rs_node_visitor.h"
 
 namespace OHOS::Rosen {
@@ -32,6 +32,7 @@ RSLogicalDisplayRenderNode::RSLogicalDisplayRenderNode(NodeId id,
 RSLogicalDisplayRenderNode::~RSLogicalDisplayRenderNode()
 {
     RS_LOGI("%{public}s, NodeId:[%{public}" PRIu64 "]", __func__, GetId());
+    RSPointLightManager::ReleaseInstance(GetLogicalDisplayNodeId());
 }
 
 void RSLogicalDisplayRenderNode::InitRenderParams()
@@ -56,6 +57,7 @@ void RSLogicalDisplayRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisito
     }
     ApplyModifiers();
     visitor->QuickPrepareLogicalDisplayRenderNode(*this);
+    RSPointLightManager::Instance(GetLogicalDisplayNodeId())->PrepareLight();
 }
 
 void RSLogicalDisplayRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -65,6 +67,7 @@ void RSLogicalDisplayRenderNode::Prepare(const std::shared_ptr<RSNodeVisitor>& v
     }
     ApplyModifiers();
     visitor->PrepareLogicalDisplayRenderNode(*this);
+    RSPointLightManager::Instance(GetLogicalDisplayNodeId())->PrepareLight();
 }
 
 void RSLogicalDisplayRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
@@ -84,6 +87,7 @@ void RSLogicalDisplayRenderNode::UpdateRenderParams()
         return;
     }
     logicalDisplayRenderParam->screenId_ = screenId_;
+    logicalDisplayRenderParam->SetDisplayContentRect(contentRect_);
     logicalDisplayRenderParam->SetTopSurfaceOpaqueRects(std::move(topSurfaceOpaqueRects_));
     logicalDisplayRenderParam->screenRotation_ = GetScreenRotation();
     logicalDisplayRenderParam->nodeRotation_ = GetRotation();
@@ -127,6 +131,21 @@ Occlusion::Region RSLogicalDisplayRenderNode::GetTopSurfaceOpaqueRegion() const
     return topSurfaceOpaqueRegion;
 }
 
+void RSLogicalDisplayRenderNode::SetBootAnimation(bool isBootAnimation)
+{
+    ROSEN_LOGD("SetBootAnimation:: id:%{public}" PRIu64 "isBootAnimation %{public}d",
+        GetId(), isBootAnimation);
+    isBootAnimation_ = isBootAnimation;
+    if (auto parent = GetParent().lock()) {
+        parent->SetBootAnimation(isBootAnimation);
+    }
+}
+
+bool RSLogicalDisplayRenderNode::GetBootAnimation() const
+{
+    return isBootAnimation_;
+}
+
 void RSLogicalDisplayRenderNode::ClearModifiersByPid(pid_t pid)
 {
     RS_LOGI("RSLogicalDisplayRenderNode::ClearModifiersByPid %{public}u", static_cast<uint32_t>(pid));
@@ -145,12 +164,9 @@ void RSLogicalDisplayRenderNode::ClearModifiersByPid(pid_t pid)
 }
 
 void RSLogicalDisplayRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
-    NodeId cacheNodeId, NodeId uifirstRootNodeId, NodeId screenNodeId, NodeId logicalDisplayNodeId)
+    NodeId uifirstRootNodeId, NodeId screenNodeId, NodeId logicalDisplayNodeId)
 {
-    // if node is marked as cacheRoot, update subtree status when update surface
-    // in case prepare stage upper cacheRoot cannot specify dirty subnode
-    RSRenderNode::SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, cacheNodeId, uifirstRootNodeId,
-        screenNodeId, GetId());
+    RSRenderNode::SetIsOnTheTree(flag, instanceRootNodeId, firstLevelNodeId, uifirstRootNodeId, screenNodeId, GetId());
 }
 
 void RSLogicalDisplayRenderNode::SetWindowContainer(std::shared_ptr<RSBaseRenderNode> container)
@@ -171,17 +187,50 @@ std::shared_ptr<RSBaseRenderNode> RSLogicalDisplayRenderNode::GetWindowContainer
     return windowContainer_;
 }
 
-void RSLogicalDisplayRenderNode::SetScreenStatusNotifyTask(ScreenStatusNotifyTask task)
+bool RSLogicalDisplayRenderNode::IsOnlyHDRAnimation()
 {
-    screenStatusNotifyTask_ = task;
+    auto modifiers = GetModifiersNG(ModifierNG::RSModifierType::HDR_BRIGHTNESS);
+    if (modifiers.empty()) {
+        return false;
+    }
+    if (!GetAnimationManager()) {
+        return false;
+    }
+    const auto& animationsMap = GetAnimationManager()->GetAnimations();
+    for (const auto& modifier : modifiers) {
+        if (!modifier) {
+            continue;
+        }
+        auto hdrBrightnessFactor = modifier->GetProperty(ModifierNG::RSPropertyType::HDR_BRIGHTNESS_FACTOR);
+        if (!hdrBrightnessFactor) {
+            continue;
+        }
+        PropertyId id = hdrBrightnessFactor->GetId();
+        for (const auto& [_, animation] : animationsMap) {
+            if (!animation) {
+                continue;
+            }
+            if (animation->GetPropertyId() != id) {
+                return false;
+            }
+        }
+        RS_TRACE_NAME_FMT("RSLogicalDisplayRenderNode::IsOnlyHDRAnimation return true");
+        return true;
+    }
+    return false;
 }
 
-void RSLogicalDisplayRenderNode::NotifyScreenNotSwitching()
+void RSLogicalDisplayRenderNode::SetScreenSwitchFinishTask(ScreenSwitchFinishTask task)
 {
-    if (screenStatusNotifyTask_) {
-        screenStatusNotifyTask_(false);
-        ROSEN_LOGI("RSLogicalDisplayRenderNode::NotifyScreenNotSwitching SetScreenSwitchStatus false");
-        RS_TRACE_NAME_FMT("NotifyScreenNotSwitching");
+    screenSwitchFinishTask_ = task;
+}
+
+void RSLogicalDisplayRenderNode::NotifyScreenSwitchFinish(ScreenId id)
+{
+    if (screenSwitchFinishTask_ && id != INVALID_SCREEN_ID) {
+        screenSwitchFinishTask_(id);
+        ROSEN_LOGI("RSLogicalDisplayRenderNode::NotifyScreenSwitchFinish ScreenId: %{public}" PRIu64, id);
+        RS_TRACE_NAME_FMT("NotifyScreenSwitchFinish");
     }
 }
 
@@ -288,10 +337,10 @@ void RSLogicalDisplayRenderNode::SetIsMirrorDisplay(bool isMirror)
         isMirrorDisplayChanged_ = true;
     }
     isMirrorDisplay_ = isMirror;
-    RS_TRACE_NAME_FMT("RSLogicalDisplayRenderNode::SetIsMirrorDisplay, node id:[%" PRIu64 "], isMirrorDisplay: [%d]",
-        GetId(), IsMirrorDisplay());
-    RS_LOGI("RSLogicalDisplayRenderNode::SetIsMirrorDisplay, node id:[%{public}" PRIu64
-        "], isMirrorDisplay: [%{public}d]", GetId(), IsMirrorDisplay());
+    RS_TRACE_NAME_FMT("RSLogicalDisplayRenderNode::%s, node id:[%" PRIu64 "], isMirrorDisplay: [%d]", __func__,
+        GetId(), isMirrorDisplay_);
+    RS_LOGI("RSLogicalDisplayRenderNode::%{public}s, node id:[%{public}" PRIu64 "], isMirrorDisplay: [%{public}d]",
+        __func__, GetId(), isMirrorDisplay_);
 }
 
 bool RSLogicalDisplayRenderNode::IsMirrorDisplay() const
@@ -404,12 +453,12 @@ void RSLogicalDisplayRenderNode::UpdateFixedSize()
     }
 }
 
-uint32_t RSLogicalDisplayRenderNode::GetFixedWidth() const
+float RSLogicalDisplayRenderNode::GetFixedWidth() const
 {
     return fixedWidth_;
 }
 
-uint32_t RSLogicalDisplayRenderNode::GetFixedHeight() const
+float RSLogicalDisplayRenderNode::GetFixedHeight() const
 {
     return fixedHeight_;
 }

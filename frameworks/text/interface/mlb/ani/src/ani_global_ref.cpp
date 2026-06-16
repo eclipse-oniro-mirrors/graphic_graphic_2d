@@ -17,16 +17,17 @@
 
 #include "ani_common.h"
 #include "ani_cache_manager.h"
+#include "ani_drawing_common.h"
 #include "utils/text_log.h"
 
 namespace OHOS::Text::ANI {
 namespace {
 constexpr std::string_view RUNMETRICS_SIGN = "C{" ANI_INTERFACE_TEXT_STYLE "}C{" ANI_INTERFACE_FONT_METRICS "}:";
 constexpr CacheKey RUNMETRICS_KEY{ANI_CLASS_RUNMETRICS, "<ctor>", RUNMETRICS_SIGN};
-constexpr CacheKey MAP_SET_KEY{ANI_MAP, "set", "C{std.core.Object}C{std.core.Object}:C{std.core.Map}"};
-constexpr CacheKey BUSINESS_ERROR_KEY{ANI_BUSINESS_ERROR, "<ctor>", "C{std.core.String}C{escompat.ErrorOptions}:"};
+constexpr CacheKey MAP_SET_KEY{ANI_MAP, "set", "YY:C{std.core.Map}"};
+constexpr CacheKey BUSINESS_ERROR_KEY{ANI_BUSINESS_ERROR, "<ctor>", "C{std.core.String}C{std.core.ErrorOptions}:"};
 constexpr CacheKey ARRAY_KEY{ANI_ARRAY, "<ctor>", "i:"};
-constexpr CacheKey MAP_KEY{ANI_MAP, "<ctor>", ":"};
+constexpr CacheKey MAP_KEY{ANI_MAP, "<ctor>", "X{C{std.core.Iterable}C{std.core.Null}C{std.core.ReadonlyArray}}:"};
 constexpr CacheKey DOUBLE_KEY{ANI_DOUBLE, "<ctor>", "d:"};
 constexpr CacheKey INT_KEY{ANI_INT, "<ctor>", "i:"};
 constexpr CacheKey BOOLEAN_KEY{ANI_BOOLEAN, "<ctor>", "z:"};
@@ -46,7 +47,7 @@ constexpr CacheKey TEXT_LINE_GET_NATIVE_KEY{ANI_CLASS_TEXT_LINE, TEXT_GET_NATIVE
 constexpr const std::string_view FONT_DESCRIPTOR_SIGN = "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}"
     "C{" ANI_STRING "}" "C{" ANI_STRING "}" "E{" ANI_ENUM_FONT_WEIGHT "}iizz" "C{" ANI_STRING "}" "C{" ANI_STRING "}"
     "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}" "C{" ANI_STRING "}"
-    "C{" ANI_STRING "}" "C{" ANI_STRING "}" "i:";
+    "C{" ANI_STRING "}" "C{" ANI_STRING "}" "iC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_ARRAY "}:";
 constexpr CacheKey FONT_DESCRIPTOR_KEY{ANI_CLASS_FONT_DESCRIPTOR, "<ctor>", FONT_DESCRIPTOR_SIGN};
 constexpr CacheKey FONT_DESCRIPTOR_GET_PATH_KEY{
     ANI_INTERFACE_FONT_DESCRIPTOR, "<get>path", ANI_WRAP_RETURN_C(ANI_STRING)};
@@ -66,11 +67,15 @@ constexpr CacheKey FONT_DESCRIPTOR_MONO_SPACE_KEY{
     ANI_INTERFACE_FONT_DESCRIPTOR, "<get>monoSpace", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
 constexpr CacheKey FONT_DESCRIPTOR_SYMBOLIC_KEY{
     ANI_INTERFACE_FONT_DESCRIPTOR, "<get>symbolic", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey FONT_DESCRIPTOR_VARIATION_AXIS_RECORDS_KEY{
+    ANI_INTERFACE_FONT_DESCRIPTOR, "<get>variationAxisRecords", ANI_WRAP_RETURN_C(ANI_ARRAY)};
+constexpr CacheKey FONT_DESCRIPTOR_VARIATION_INSTANCE_RECORDS_KEY{
+    ANI_INTERFACE_FONT_DESCRIPTOR, "<get>variationInstanceRecords", ANI_WRAP_RETURN_C(ANI_ARRAY)};
 constexpr CacheKey LINE_TYPESET_KEY{ANI_CLASS_LINE_TYPESET, "<ctor>", ":"};
 constexpr CacheKey PARAGRAPH_BUILDER_KEY{ANI_CLASS_PARAGRAPH_BUILDER, "<ctor>", ":"};
 constexpr CacheKey CANVAS_GET_NATIVE_KEY{ANI_CLASS_CANVAS, TEXT_GET_NATIVE, ":l"};
 constexpr CacheKey PATH_GET_NATIVE_KEY{ANI_CLASS_PATH, TEXT_GET_NATIVE, ":l"};
-constexpr CacheKey ARRAY_SET_KEY{ANI_ARRAY, "$_set", "iC{std.core.Object}:"};
+constexpr CacheKey ARRAY_SET_KEY{ANI_ARRAY, "$_set", "iY:"};
 constexpr CacheKey POSITION_WITH_AFFINITY_KEY{ANI_CLASS_POSITION_WITH_AFFINITY, "<ctor>", "iE{" ANI_ENUM_AFFINITY "}:"};
 
 constexpr CacheKey PARAGRAPH_STYLE_MAX_LINES_KEY{
@@ -97,12 +102,24 @@ constexpr CacheKey PARAGRAPH_STYLE_AUTO_SPACE_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>autoSpace", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
 constexpr CacheKey PARAGRAPH_STYLE_COMPRESS_HEAD_PUNCTUATION_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>compressHeadPunctuation", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey PARAGRAPH_STYLE_PUNCTUATION_OVERFLOW_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>punctuationOverflow", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
 constexpr CacheKey PARAGRAPH_STYLE_VERTICAL_ALIGN_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>verticalAlign", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_VERTICAL_ALIGN)};
 constexpr CacheKey PARAGRAPH_STYLE_INCLUDE_FONT_PADDING_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>includeFontPadding", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
 constexpr CacheKey PARAGRAPH_STYLE_FALLBACK_LINE_SPACING_KEY{
     ANI_INTERFACE_PARAGRAPH_STYLE, "<get>fallbackLineSpacing", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey PARAGRAPH_STYLE_ORPHAN_CHAR_OPTIMIZATION_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>orphanCharOptimization", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+constexpr CacheKey PARAGRAPH_STYLE_LINE_SPACING_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>lineSpacing", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
+constexpr CacheKey PARAGRAPH_STYLE_FIRST_LINE_INDENT_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>firstLineHeadIndent", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
+constexpr CacheKey PARAGRAPH_STYLE_TAIL_INDENTS_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>tailIndents", ANI_WRAP_RETURN_C(ANI_ARRAY)};
+constexpr CacheKey PARAGRAPH_STYLE_HEAD_INDENTS_KEY{
+    ANI_INTERFACE_PARAGRAPH_STYLE, "<get>headIndents", ANI_WRAP_RETURN_C(ANI_ARRAY)};
 
 constexpr CacheKey STRUT_STYLE_FONT_STYLE_KEY{
     ANI_INTERFACE_STRUT_STYLE, "<get>fontStyle", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_STYLE)};
@@ -130,12 +147,16 @@ constexpr CacheKey LINEMETRICS_KEY{ANI_CLASS_LINEMETRICS, "<ctor>", "iiddddddidC
 constexpr CacheKey TEXT_STYLE_COLOR_KEY{ANI_INTERFACE_TEXT_STYLE, "<get>color", ANI_WRAP_RETURN_C(ANI_INTERFACE_COLOR)};
 constexpr CacheKey TEXT_STYLE_FONT_WEIGHT_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontWeight", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_WEIGHT)};
+constexpr CacheKey TEXT_STYLE_FONT_WIDTH_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>fontWidth", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_WIDTH)};
 constexpr CacheKey TEXT_STYLE_FONT_STYLE_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontStyle", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_STYLE)};
 constexpr CacheKey TEXT_STYLE_BASELINE_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>baseline", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_BASELINE)};
 constexpr CacheKey TEXT_STYLE_FONT_FAMILIES_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontFamilies", ANI_WRAP_RETURN_C(ANI_ARRAY)};
+constexpr CacheKey TEXT_STYLE_FONT_TYPEFACES_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>fontTypefaces", ANI_WRAP_RETURN_C(ANI_ARRAY)};
 constexpr CacheKey TEXT_STYLE_FONT_SIZE_KEY{ANI_INTERFACE_TEXT_STYLE, "<get>fontSize", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
 constexpr CacheKey TEXT_STYLE_LETTER_SPACING_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>letterSpacing", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
@@ -153,6 +174,10 @@ constexpr CacheKey TEXT_STYLE_ELLIPSIS_MODE_KEY{
 constexpr CacheKey TEXT_STYLE_LOCALE_KEY{ANI_INTERFACE_TEXT_STYLE, "<get>locale", ANI_WRAP_RETURN_C(ANI_STRING)};
 constexpr CacheKey TEXT_STYLE_BASELINE_SHIFT_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>baselineShift", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
+constexpr CacheKey TEXT_STYLE_MAX_LINE_HEIGHT_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>lineHeightMaximum", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
+constexpr CacheKey TEXT_STYLE_MIN_LINE_HEIGHT_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>lineHeightMinimum", ANI_WRAP_RETURN_C(ANI_DOUBLE)};
 constexpr CacheKey TEXT_STYLE_BACKGROUND_RECT_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>backgroundRect", ANI_WRAP_RETURN_C(ANI_INTERFACE_RECT_STYLE)};
 constexpr CacheKey TEXT_STYLE_DECORATION_KEY{
@@ -165,6 +190,10 @@ constexpr CacheKey TEXT_STYLE_FONT_VARIATIONS_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>fontVariations", ANI_WRAP_RETURN_C(ANI_ARRAY)};
 constexpr CacheKey TEXT_STYLE_BADGE_TYPE_KEY{
     ANI_INTERFACE_TEXT_STYLE, "<get>badgeType", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_BADGE_TYPE)};
+constexpr CacheKey TEXT_STYLE_LINE_HEIGHT_STYLE_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>lineHeightStyle", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE)};
+constexpr CacheKey TEXT_STYLE_FONT_EDGING_KEY{
+    ANI_INTERFACE_TEXT_STYLE, "<get>fontEdging", ANI_WRAP_RETURN_E(ANI_ENUM_FONT_EDGING)};
 
 constexpr CacheKey DECORATION_DECORATION_TYPE_KEY{
     ANI_INTERFACE_DECORATION, "<get>textDecoration", ANI_WRAP_RETURN_E(ANI_ENUM_TEXT_DECORATION_TYPE)};
@@ -188,6 +217,18 @@ constexpr CacheKey FONT_FEATURE_VALUE_KEY{ANI_INTERFACE_FONT_FEATURE, "<get>valu
 
 constexpr CacheKey FONT_VARIATION_AXIS_KEY{ANI_INTERFACE_FONT_VARIATION, "<get>axis", ANI_WRAP_RETURN_C(ANI_STRING)};
 constexpr CacheKey FONT_VARIATION_VALUE_KEY{ANI_INTERFACE_FONT_VARIATION, "<get>value", ":d"};
+constexpr CacheKey FONT_VARIATION_IS_NORMALIZED_KEY{
+    ANI_INTERFACE_FONT_VARIATION, "<get>isNormalized", ANI_WRAP_RETURN_C(ANI_BOOLEAN)};
+
+constexpr std::string_view FONT_VARIATION_AXIS_SIGN =
+    "C{" ANI_STRING "}dddiC{" ANI_STRING "}C{" ANI_STRING "}:";
+constexpr CacheKey FONT_VARIATION_AXIS_KEY_CTOR{
+    ANI_CLASS_FONT_VARIATION_AXIS, "<ctor>", FONT_VARIATION_AXIS_SIGN};
+
+constexpr std::string_view FONT_VARIATION_INSTANCE_SIGN =
+    "C{" ANI_STRING "}C{" ANI_STRING "}C{" ANI_ARRAY "}:";
+constexpr CacheKey FONT_VARIATION_INSTANCE_KEY_CTOR{
+    ANI_CLASS_FONT_VARIATION_INSTANCE, "<ctor>", FONT_VARIATION_INSTANCE_SIGN};
 
 constexpr CacheKey RECT_STYLE_COLOR_KEY{ANI_INTERFACE_RECT_STYLE, "<get>color", ANI_WRAP_RETURN_C(ANI_INTERFACE_COLOR)};
 constexpr CacheKey RECT_STYLE_LEFT_TOP_RADIUS_KEY{ANI_INTERFACE_RECT_STYLE, "<get>leftTopRadius", ":d"};
@@ -198,7 +239,9 @@ constexpr CacheKey RECT_STYLE_LEFT_BOTTOM_RADIUS_KEY{ANI_INTERFACE_RECT_STYLE, "
 constexpr std::string_view TEXT_STYLE_SIGN =
     "C{" ANI_INTERFACE_DECORATION "}C{" ANI_INTERFACE_COLOR "}E{" ANI_ENUM_FONT_WEIGHT "}E{" ANI_ENUM_FONT_STYLE
     "}E{" ANI_ENUM_TEXT_BASELINE "}C{" ANI_ARRAY "}ddddzzC{" ANI_STRING "}E{" ANI_ENUM_ELLIPSIS_MODE "}C{" ANI_STRING
-    "}dC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_INTERFACE_RECT_STYLE "}E{" ANI_ENUM_TEXT_BADGE_TYPE "}:";
+    "}dC{" ANI_ARRAY "}C{" ANI_ARRAY "}C{" ANI_INTERFACE_RECT_STYLE "}C{" ANI_ARRAY "}E{" ANI_ENUM_TEXT_BADGE_TYPE
+    "}ddE{" ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE "}E{" ANI_ENUM_FONT_WIDTH "}E{" ANI_ENUM_FONT_EDGING
+    "}C{" ANI_ARRAY "}:";
 constexpr CacheKey TEXT_STYLE_KEY{ANI_CLASS_TEXT_STYLE, "<ctor>", TEXT_STYLE_SIGN};
 
 constexpr std::string_view TEXT_SHADOW_SIGN = "C{" ANI_INTERFACE_COLOR "}C{" ANI_INTERFACE_POINT "}d:";
@@ -211,7 +254,7 @@ constexpr CacheKey DECORATION_KEY{ANI_CLASS_DECORATION, "<ctor>", DECORATION_SIG
 constexpr CacheKey RECT_STYLE_KEY{ANI_CLASS_RECT_STYLE, "<ctor>", "C{" ANI_INTERFACE_COLOR "}dddd:"};
 
 constexpr CacheKey FONT_FEATURE_KEY{ANI_CLASS_FONT_FEATURE, "<ctor>", "C{" ANI_STRING "}i:"};
-constexpr CacheKey FONT_VARIATION_KEY{ANI_CLASS_FONT_VARIATION, "<ctor>", ":"};
+constexpr CacheKey FONT_VARIATION_KEY{ANI_CLASS_FONT_VARIATION, "<ctor>", "C{" ANI_STRING "}dC{" ANI_BOOLEAN "}:"};
 
 constexpr CacheKey FONT_KEY{ANI_CLASS_FONT, "<ctor>", ":"};
 
@@ -233,13 +276,35 @@ constexpr CacheKey GLOBAL_RESOURCE_TYPE_KEY{ANI_GLOBAL_RESOURCE, "<get>type", AN
 
 constexpr CacheKey RANGE_START_KEY{ANI_INTERFACE_RANGE, "<get>start", ":i"};
 constexpr CacheKey RANGE_END_KEY{ANI_INTERFACE_RANGE, "<get>end", ":i"};
+constexpr CacheKey TEXT_RECT_SIZE_WIDTH_KEY{ANI_INTERFACE_TEXT_RECT_SIZE, "<get>width", ":d"};
+constexpr CacheKey TEXT_RECT_SIZE_HEIGHT_KEY{ANI_INTERFACE_TEXT_RECT_SIZE, "<get>height", ":d"};
+constexpr CacheKey TEXT_RECT_SIZE_KEY{ANI_CLASS_TEXT_RECT_SIZE, "<ctor>", "dd:"};
 constexpr CacheKey TEXT_BOX_KEY{
     ANI_CLASS_TEXT_BOX, "<ctor>", "C{" ANI_INTERFACE_RECT "}C{" ANI_ENUM_TEXT_DIRECTION "}:"};
 constexpr CacheKey RANGE_KEY{ANI_CLASS_RANGE, "<ctor>", "ii:"};
 
 constexpr CacheKey TYPOGRAPHIC_BOUNDS_KEY{ANI_CLASS_TYPOGRAPHIC_BOUNDS, "<ctor>", "dddd:"};
 
+constexpr std::string_view TEXT_LAYOUT_RESULT_SIGN = "C{std.core.Array}C{" ANI_INTERFACE_TEXT_RECT_SIZE "}:";
+constexpr CacheKey TEXT_LAYOUT_RESULT_KEY{ANI_CLASS_TEXT_LAYOUT_RESULT, "<ctor>", TEXT_LAYOUT_RESULT_SIGN};
+
 constexpr CacheKey LINE_TYPESET_GET_NATIVE_KEY{ANI_CLASS_LINE_TYPESET, TEXT_GET_NATIVE, ":l"};
+
+constexpr CacheKey TEXT_TAB_INTERNAL_KEY{ANI_CLASS_TEXT_TAB_INTERNAL, "<ctor>", "E{" ANI_ENUM_TEXT_ALIGN "}d:"};
+
+constexpr std::string_view STRUT_STYLE_INTERNAL_SIGN =
+    "C{std.core.Array}E{" ANI_ENUM_FONT_STYLE "}E{" ANI_ENUM_FONT_WIDTH "}E{" ANI_ENUM_FONT_WEIGHT "}C{" ANI_DOUBLE
+    "}C{" ANI_DOUBLE "}C{" ANI_DOUBLE "}C{" ANI_BOOLEAN "}C{" ANI_BOOLEAN "}C{" ANI_BOOLEAN "}C{" ANI_BOOLEAN "}:";
+constexpr CacheKey STRUT_STYLE_INTERNAL_KEY{ANI_CLASS_STRUT_STYLE_INTERNAL, "<ctor>", STRUT_STYLE_INTERNAL_SIGN};
+
+constexpr std::string_view PARAGRAPH_STYLE_INTERNAL_SIGN =
+    "C{" ANI_BOOLEAN "}C{" ANI_BOOLEAN "}C{" ANI_BOOLEAN "}C{" ANI_INTERFACE_TEXT_STYLE "}E{" ANI_ENUM_TEXT_DIRECTION
+    "}E{" ANI_ENUM_TEXT_ALIGN "}E{" ANI_ENUM_WORD_BREAK "}C{" ANI_INT "}E{" ANI_ENUM_BREAK_STRATEGY
+    "}C{" ANI_INTERFACE_STRUT_STYLE "}E{" ANI_ENUM_TEXT_HEIGHT_BEHAVIOR "}C{" ANI_INTERFACE_TEXT_TAB "}C{" ANI_BOOLEAN
+    "}C{" ANI_BOOLEAN "}E{" ANI_ENUM_TEXT_VERTICAL_ALIGN "}C{" ANI_BOOLEAN "}C{" ANI_BOOLEAN "}C{" ANI_DOUBLE
+    "}C{" ANI_DOUBLE "}C{" ANI_ARRAY "}C{" ANI_ARRAY "}:";
+constexpr CacheKey PARAGRAPH_STYLE_INTERNAL_KEY{
+    ANI_CLASS_PARAGRAPH_STYLE_INTERNAL, "<ctor>", PARAGRAPH_STYLE_INTERNAL_SIGN};
 } // namespace
 
 void AniGlobalNamespace::Init(ani_env* env)
@@ -276,20 +341,29 @@ void AniGlobalClass::Init(ani_env* env)
     rectStyle = AniFindClass(env, ANI_CLASS_RECT_STYLE);
     fontFeature = AniFindClass(env, ANI_CLASS_FONT_FEATURE);
     fontVariation = AniFindClass(env, ANI_CLASS_FONT_VARIATION);
+    fontVariationAxis = AniFindClass(env, ANI_CLASS_FONT_VARIATION_AXIS);
+    fontVariationInstance = AniFindClass(env, ANI_CLASS_FONT_VARIATION_INSTANCE);
     typographicBounds = AniFindClass(env, ANI_CLASS_TYPOGRAPHIC_BOUNDS);
     cleaner = AniFindClass(env, ANI_CLASS_CLEANER);
     canvas = AniFindClass(env, ANI_CLASS_CANVAS);
     paragraphStyle = AniFindClass(env, ANI_INTERFACE_PARAGRAPH_STYLE);
     strutStyle = AniFindClass(env, ANI_INTERFACE_STRUT_STYLE);
     textTab = AniFindClass(env, ANI_INTERFACE_TEXT_TAB);
+    textTabInternal = AniFindClass(env, ANI_CLASS_TEXT_TAB_INTERNAL);
+    strutStyleInternal = AniFindClass(env, ANI_CLASS_STRUT_STYLE_INTERNAL);
+    paragraphStyleInternal = AniFindClass(env, ANI_CLASS_PARAGRAPH_STYLE_INTERNAL);
     point = AniFindClass(env, ANI_INTERFACE_POINT);
     path = AniFindClass(env, ANI_CLASS_PATH);
     placeholderSpan = AniFindClass(env, ANI_INTERFACE_PLACEHOLDER_SPAN);
+    textLayoutResult = AniFindClass(env, ANI_CLASS_TEXT_LAYOUT_RESULT);
+    textRectSize = AniFindClass(env, ANI_CLASS_TEXT_RECT_SIZE);
 }
 
 void AniGlobalEnum::Init(ani_env* env)
 {
     fontWeight = AniFindEnum(env, ANI_ENUM_FONT_WEIGHT);
+    fontWidth = AniFindEnum(env, ANI_ENUM_FONT_WIDTH);
+    fontEdging = AniFindEnum(env, ANI_ENUM_FONT_EDGING);
     affinity = AniFindEnum(env, ANI_ENUM_AFFINITY);
     textDirection = AniFindEnum(env, ANI_ENUM_TEXT_DIRECTION);
     fontStyle = AniFindEnum(env, ANI_ENUM_FONT_STYLE);
@@ -298,6 +372,14 @@ void AniGlobalEnum::Init(ani_env* env)
     textDecorationType = AniFindEnum(env, ANI_ENUM_TEXT_DECORATION_TYPE);
     textDecorationStyle = AniFindEnum(env, ANI_ENUM_TEXT_DECORATION_STYLE);
     textBadgeType = AniFindEnum(env, ANI_ENUM_TEXT_BADGE_TYPE);
+    lineHeightStyle = AniFindEnum(env, ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE);
+    textProcessState = AniFindEnum(env, ANI_ENUM_TEXT_PROCESS_STATE);
+    textDisplayState = AniFindEnum(env, ANI_ENUM_TEXT_DISPLAY_STATE);
+    textAlign = AniFindEnum(env, ANI_ENUM_TEXT_ALIGN);
+    wordBreak = AniFindEnum(env, ANI_ENUM_WORD_BREAK);
+    breakStrategy = AniFindEnum(env, ANI_ENUM_BREAK_STRATEGY);
+    textHeightBehavior = AniFindEnum(env, ANI_ENUM_TEXT_HEIGHT_BEHAVIOR);
+    textVerticalAlign = AniFindEnum(env, ANI_ENUM_TEXT_VERTICAL_ALIGN);
 }
 
 void AniGlobalMethod::Init(ani_env* env)
@@ -312,12 +394,17 @@ void AniGlobalMethod::Init(ani_env* env)
     InitTextShadowMethod(env);
     InitFontFeatureMethod(env);
     InitFontVariationMethod(env);
+    InitFontVariationAxisMethod(env);
+    InitFontVariationInstanceMethod(env);
     InitRectStyleMethod(env);
     InitPlaceholderMethod(env);
     InitGlobalResourceMethod(env);
     InitRangeMethod(env);
     InitPointMethod(env);
     InitTextTabMethod(env);
+    InitTextLayoutResultMethod(env);
+    InitTextRectSizeMethod(env);
+    InitParagraphStyleInternalMethod(env);
 }
 
 void AniGlobalMethod::InitBaseMethod(ani_env* env)
@@ -388,6 +475,10 @@ void AniGlobalMethod::InitFontDescriptorMethod(ani_env* env)
         AniClassFindMethod(env, AniGlobalClass::GetInstance().fontDescriptor, FONT_DESCRIPTOR_MONO_SPACE_KEY);
     fontDescriptorGetSymbolic =
         AniClassFindMethod(env, AniGlobalClass::GetInstance().fontDescriptor, FONT_DESCRIPTOR_SYMBOLIC_KEY);
+    fontDescriptorGetVariationAxisRecords = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().fontDescriptor, FONT_DESCRIPTOR_VARIATION_AXIS_RECORDS_KEY);
+    fontDescriptorGetVariationInstanceRecords = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().fontDescriptor, FONT_DESCRIPTOR_VARIATION_INSTANCE_RECORDS_KEY);
 }
 void AniGlobalMethod::InitParagraphStyleMethod(ani_env* env)
 {
@@ -415,12 +506,24 @@ void AniGlobalMethod::InitParagraphStyleMethod(ani_env* env)
         env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_AUTO_SPACE_KEY);
     paragraphStyleCompressHeadPunctuation = AniClassFindMethod(
         env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_COMPRESS_HEAD_PUNCTUATION_KEY);
+    paragraphStylePunctuationOverflow = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_PUNCTUATION_OVERFLOW_KEY);
     paragraphStyleVerticalAlign = AniClassFindMethod(
         env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_VERTICAL_ALIGN_KEY);
     paragraphStyleIncludeFontPadding = AniClassFindMethod(
         env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_INCLUDE_FONT_PADDING_KEY);
     paragraphStyleFallbackLineSpacing = AniClassFindMethod(
         env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_FALLBACK_LINE_SPACING_KEY);
+    paragraphStyleOrphanCharOptimization = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_ORPHAN_CHAR_OPTIMIZATION_KEY);
+    paragraphStyleLineSpacing = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_LINE_SPACING_KEY);
+    paragraphStyleFirstLineIndent = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_FIRST_LINE_INDENT_KEY);
+    paragraphStyleTailIndents = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_TAIL_INDENTS_KEY);
+    paragraphStyleHeadIndents = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().paragraphStyle, PARAGRAPH_STYLE_HEAD_INDENTS_KEY);
 }
 void AniGlobalMethod::InitStrutStyleMethod(ani_env* env)
 {
@@ -446,10 +549,13 @@ void AniGlobalMethod::InitTextStyleMethod(ani_env* env)
     textStyleCtor = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_KEY);
     textStyleColor = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_COLOR_KEY);
     textStyleFontWeight = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_WEIGHT_KEY);
+    textStyleFontWidth = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_WIDTH_KEY);
     textStyleFontStyle = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_STYLE_KEY);
     textStyleBaseline = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_BASELINE_KEY);
     textStyleFontFamilies =
         AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_FAMILIES_KEY);
+    textStyleFontTypefaces =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_TYPEFACES_KEY);
     textStyleFontSize = AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_SIZE_KEY);
     textStyleLetterSpacing =
         AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_LETTER_SPACING_KEY);
@@ -477,6 +583,14 @@ void AniGlobalMethod::InitTextStyleMethod(ani_env* env)
         AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_BACKGROUND_RECT_KEY);
     textStyleBadgeType =
         AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_BADGE_TYPE_KEY);
+    textStyleLineHeightStyle =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_LINE_HEIGHT_STYLE_KEY);
+    textStyleFontEdging =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_FONT_EDGING_KEY);
+    textStyleMaxLineHeight =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_MAX_LINE_HEIGHT_KEY);
+    textStyleMinLineHeight =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().textStyle, TEXT_STYLE_MIN_LINE_HEIGHT_KEY);
 }
 
 void AniGlobalMethod::InitDecorationMethod(ani_env* env)
@@ -513,6 +627,20 @@ void AniGlobalMethod::InitFontVariationMethod(ani_env* env)
     fontVariationCtor = AniClassFindMethod(env, AniGlobalClass::GetInstance().fontVariation, FONT_VARIATION_KEY);
     fontVariationAxis = AniClassFindMethod(env, AniGlobalClass::GetInstance().fontVariation, FONT_VARIATION_AXIS_KEY);
     fontVariationValue = AniClassFindMethod(env, AniGlobalClass::GetInstance().fontVariation, FONT_VARIATION_VALUE_KEY);
+    fontVariationIsNormalized =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().fontVariation, FONT_VARIATION_IS_NORMALIZED_KEY);
+}
+
+void AniGlobalMethod::InitFontVariationAxisMethod(ani_env* env)
+{
+    fontVariationAxisCtor = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().fontVariationAxis, FONT_VARIATION_AXIS_KEY_CTOR);
+}
+
+void AniGlobalMethod::InitFontVariationInstanceMethod(ani_env* env)
+{
+    fontVariationInstanceCtor = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().fontVariationInstance, FONT_VARIATION_INSTANCE_KEY_CTOR);
 }
 
 void AniGlobalMethod::InitRectStyleMethod(ani_env* env)
@@ -574,6 +702,28 @@ void AniGlobalMethod::InitTextTabMethod(ani_env* env)
     textTabLocation = AniClassFindMethod(env, AniGlobalClass::GetInstance().textTab, TEXT_TAB_LOCATION_KEY);
 }
 
+void AniGlobalMethod::InitTextLayoutResultMethod(ani_env* env)
+{
+    textLayoutResultCtor = AniClassFindMethod(
+        env, AniGlobalClass::GetInstance().textLayoutResult, TEXT_LAYOUT_RESULT_KEY);
+}
+
+void AniGlobalMethod::InitTextRectSizeMethod(ani_env* env)
+{
+    textRectSizeCtor = AniClassFindMethod(env, AniGlobalClass::GetInstance().textRectSize, TEXT_RECT_SIZE_KEY);
+    textRectSizeWidth = AniClassFindMethod(env, AniGlobalClass::GetInstance().textRectSize, TEXT_RECT_SIZE_WIDTH_KEY);
+    textRectSizeHeight = AniClassFindMethod(env, AniGlobalClass::GetInstance().textRectSize, TEXT_RECT_SIZE_HEIGHT_KEY);
+}
+
+void AniGlobalMethod::InitParagraphStyleInternalMethod(ani_env* env)
+{
+    textTabInternalCtor = AniClassFindMethod(env, AniGlobalClass::GetInstance().textTabInternal, TEXT_TAB_INTERNAL_KEY);
+    strutStyleInternalCtor =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().strutStyleInternal, STRUT_STYLE_INTERNAL_KEY);
+    paragraphStyleInternalCtor =
+        AniClassFindMethod(env, AniGlobalClass::GetInstance().paragraphStyleInternal, PARAGRAPH_STYLE_INTERNAL_KEY);
+}
+
 ani_status InitAniGlobalRef(ani_vm* vm)
 {
     ani_env* env = nullptr;
@@ -586,6 +736,18 @@ ani_status InitAniGlobalRef(ani_vm* vm)
     AniGlobalClass::GetInstance().Init(env);
     AniGlobalEnum::GetInstance().Init(env);
     AniGlobalMethod::GetInstance().Init(env);
+    AniGlobalField::GetInstance().Init(env);
     return ANI_OK;
 }
+
+void AniGlobalField::Init(ani_env* env)
+{
+    ani_class typefaceCls = AniFindClass(env, ANI_CLASS_TYPEFACE_NAME);
+    if (typefaceCls == nullptr) {
+        TEXT_LOGE("Failed to find Typeface class for field caching");
+        return;
+    }
+    typefaceNativeObj = AniClassFindField(env, typefaceCls, "nativeObj");
+}
+
 } // namespace OHOS::Text::ANI

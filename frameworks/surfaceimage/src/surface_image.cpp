@@ -328,7 +328,7 @@ EGLImageKHR SurfaceImage::CreateEGLImage(EGLDisplay disp, const sptr<SurfaceBuff
     EGLImageKHR img = eglCreateImageKHR(disp, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_OHOS, nBuffer, attrs);
     if (img == EGL_NO_IMAGE_KHR) {
         EGLint error = eglGetError();
-        BLOGE("failed, error %{public}d, uniqueId: %{public}" PRIu64 ".", error, uniqueId_);
+        BLOGE("eglCreateImageKHR failed, error %{public}d, uniqueId: %{public}" PRIu64 ".", error, uniqueId_);
         eglTerminate(disp);
     }
     DestroyNativeWindowBuffer(nBuffer);
@@ -578,8 +578,8 @@ SurfaceError SurfaceImage::OnBufferAvailable()
         std::lock_guard<std::mutex> lockGuard(opMutex_);
         // check here maybe a messagequeue, flag instead now
         OnUpdateBufferAvailableState(true);
-        if (listener_ == nullptr || context_ == nullptr) {
-            BLOGE("SurfaceImage::OnBufferAvailable listener or context is nullptr");
+        if (listener_ == nullptr) {
+            BLOGE("SurfaceImage::OnBufferAvailable listener is nullptr");
             return GSERROR_INVALID_OPERATING;
         }
         listener = listener_;

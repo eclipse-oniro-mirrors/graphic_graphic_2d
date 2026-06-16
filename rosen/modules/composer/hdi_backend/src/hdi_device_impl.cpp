@@ -15,12 +15,13 @@
 
 #include "hdi_device_impl.h"
 #include "hdi_log.h"
+#include <cinttypes>
 #include <cstddef>
 #include <cstdlib>
 #include <mutex>
 #include <scoped_bytrace.h>
 #include <securec.h>
-#include "v1_4/include/idisplay_composer_interface.h"
+#include "v1_5/include/idisplay_composer_interface.h"
 
 #define CHECK_FUNC(composerSptr)                                     \
     do {                                                             \
@@ -38,7 +39,8 @@ using namespace OHOS::HDI::Display::Composer::V1_1;
 using namespace OHOS::HDI::Display::Composer::V1_2;
 using namespace OHOS::HDI::Display::Composer::V1_3;
 using namespace OHOS::HDI::Display::Composer::V1_4;
-using IDisplayComposerInterfaceSptr = sptr<Composer::V1_4::IDisplayComposerInterface>;
+using namespace OHOS::HDI::Display::Composer::V1_5;
+using IDisplayComposerInterfaceSptr = sptr<Composer::V1_5::IDisplayComposerInterface>;
 static IDisplayComposerInterfaceSptr g_composer;
 }
 
@@ -70,7 +72,7 @@ HdiDeviceImpl::~HdiDeviceImpl()
 bool HdiDeviceImpl::Init()
 {
     if (g_composer == nullptr) {
-        g_composer = Composer::V1_4::IDisplayComposerInterface::Get();
+        g_composer = Composer::V1_5::IDisplayComposerInterface::Get();
         if (g_composer == nullptr) {
             HLOGE("IDisplayComposerInterface::Get return nullptr.");
             return false;
@@ -135,6 +137,8 @@ int32_t HdiDeviceImpl::SetScreenConstraint(uint32_t screenId, uint64_t frameId, 
 
 int32_t HdiDeviceImpl::SetDisplayProperty(uint32_t screenId, uint32_t propertyId, uint64_t propertyValue)
 {
+    HLOGI("SetDisplayProperty, screenId:%{public}u, propertyId:%{public}u, propertyValue:%{public}" PRIu64 "",
+          screenId, propertyId, propertyValue);
     CHECK_FUNC(g_composer);
     return g_composer->SetDisplayProperty(screenId, propertyId, propertyValue);
 }
@@ -270,6 +274,19 @@ int32_t HdiDeviceImpl::SetScreenBacklight(uint32_t screenId, uint32_t level)
 {
     CHECK_FUNC(g_composer);
     return g_composer->SetDisplayBacklight(screenId, level);
+}
+
+int32_t HdiDeviceImpl::GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    CHECK_FUNC(g_composer);
+    return g_composer->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
+{
+    CHECK_FUNC(g_composer);
+    return g_composer->SetDisplayVCPFeature(screenId, vcpCode, currentValue);
 }
 
 int32_t HdiDeviceImpl::PrepareScreenLayers(uint32_t screenId, bool &needFlush)
@@ -703,13 +720,13 @@ int32_t HdiDeviceImpl::SetLayerTunnelHandle(uint32_t screenId, uint32_t layerId,
 int32_t HdiDeviceImpl::SetTunnelLayerId(uint32_t devId, uint32_t layerId, uint64_t tunnelId)
 {
     CHECK_FUNC(g_composer);
-    return GRAPHIC_DISPLAY_SUCCESS;
+    return g_composer->SetTunnelLayerId(devId, layerId, tunnelId);
 }
 
 int32_t HdiDeviceImpl::SetTunnelLayerProperty(uint32_t devId, uint32_t layerId, uint32_t property)
 {
     CHECK_FUNC(g_composer);
-    return GRAPHIC_DISPLAY_SUCCESS;
+    return g_composer->SetTunnelLayerProperty(devId, layerId, property);
 }
 
 int32_t HdiDeviceImpl::GetSupportedPresentTimestampType(uint32_t screenId, uint32_t layerId,
@@ -779,6 +796,25 @@ int32_t HdiDeviceImpl::RegHwcEventCallback(const RSHwcEventCallback& callback, v
 {
     CHECK_FUNC(g_composer);
     return g_composer->RegHwcEventCallback(callback, data);
+}
+
+int32_t HdiDeviceImpl::GetDisplayClientTargetProperty(uint32_t screenId, int32_t& pixelFormat, int32_t& dataspace)
+{
+    CHECK_FUNC(g_composer);
+    return g_composer->GetDisplayClientTargetProperty(screenId, pixelFormat, dataspace);
+}
+
+int32_t HdiDeviceImpl::SetTunnelLayerBuffer(uint32_t screenId, uint64_t tunnleId, const BufferHandle* inHandle,
+    const int32_t acquireFence)
+{
+    CHECK_FUNC(g_composer);
+    return g_composer->SetTunnelLayerBuffer(screenId, tunnleId, inHandle, acquireFence);
+}
+
+int32_t HdiDeviceImpl::CommitTunnelLayer(uint32_t screenId, uint64_t tunnleId, int32_t& releaseFence)
+{
+    CHECK_FUNC(g_composer);
+    return g_composer->CommitTunnelLayer(screenId, tunnleId, releaseFence);
 }
 
 } // namespace Rosen

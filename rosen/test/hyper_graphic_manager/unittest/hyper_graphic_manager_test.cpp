@@ -68,6 +68,14 @@ HWTEST_F(HyperGraphicManagerTest, Instance, Function | SmallTest | Level0)
             auto& instance1 = HgmCore::Instance();
             auto& instance2 = HgmCore::Instance();
             STEP("2. check the result of configuration") {
+                auto& hgmCore = HgmCore::Instance();
+                hgmCore.mPolicyConfigData_->defaultRefreshRateMode_ = "errMode";
+                hgmCore.mPolicyConfigVisitor_ = nullptr;
+                hgmCore.Init();
+                RSSystemProperties::SetHgmRefreshRateModesEnabled("1");
+                hgmCore.Init();
+                RSSystemProperties::SetHgmRefreshRateModesEnabled("-1");
+                hgmCore.Init();
                 STEP_ASSERT_EQ(&instance1, &instance2);
             }
         }
@@ -91,6 +99,56 @@ HWTEST_F(HyperGraphicManagerTest, Instance2, Function | SmallTest | Level0)
             RSSystemProperties::SetHgmRefreshRateModesEnabled(defaultRateMode);
             auto& instance2 = HgmCore::Instance();
             STEP_ASSERT_EQ(&instance1, &instance2);
+        }
+    }
+}
+
+/**
+ * @tc.name: SetMaxTEConfigTest
+ * @tc.desc: Verify the independency of HgmCore SetMaxTEConfigTest
+ * @tc.type: FUNC
+ * @tc.require: I7DMS1
+ */
+HWTEST_F(HyperGraphicManagerTest, SetMaxTEConfigTest, Function | SmallTest | Level0)
+{
+    PART("CaseDescription") {
+        STEP("1. call GetInstance twice") {
+            auto& instance1 = HgmCore::Instance();
+            if (instance1.hgmFrameRateMgr_ == nullptr) {
+                return;
+            }
+            auto curScreenStrategyId = instance1.hgmFrameRateMgr_->GetCurScreenStrategyId();
+            if (instance1.mPolicyConfigData_ == nullptr) {
+                return;
+            }
+            auto& curScreenSetting = instance1.mPolicyConfigData_->screenConfigs_[
+                curScreenStrategyId][std::to_string(instance1.customFrameRateMode_)];
+            auto& ltpoConfig = curScreenSetting.ltpoConfig;
+
+            if (auto iter = ltpoConfig.find("maxTE"); iter != ltpoConfig.end()) {
+                auto maxTEConfig = iter->second;
+                ltpoConfig.erase("maxTE");
+                instance1.SetMaxTEConfig(curScreenSetting);
+                STEP_ASSERT_EQ(instance1.maxTE_, 0);
+                ltpoConfig["maxTE"] = "errMaxTE";
+                instance1.SetMaxTEConfig(curScreenSetting);
+                STEP_ASSERT_EQ(instance1.maxTE_, 0);
+                ltpoConfig["maxTE"] = maxTEConfig;
+            }
+
+            if (auto iter = ltpoConfig.find("maxTE144"); iter != ltpoConfig.end()) {
+                auto maxTE144Config = iter->second;
+                ltpoConfig.erase("maxTE144");
+                instance1.SetMaxTEConfig(curScreenSetting);
+                STEP_ASSERT_EQ(instance1.maxTE144_, 0);
+                ltpoConfig["maxTE144"] = "errMaxTE144";
+                instance1.SetMaxTEConfig(curScreenSetting);
+                STEP_ASSERT_EQ(instance1.maxTE144_, 0);
+                ltpoConfig["maxTE144"] = "360";
+                instance1.SetMaxTEConfig(curScreenSetting);
+                STEP_ASSERT_EQ(instance1.maxTE144_, 0);
+                ltpoConfig["maxTE144"] = maxTE144Config;
+            }
         }
     }
 }
@@ -127,6 +185,99 @@ HWTEST_F(HyperGraphicManagerTest, SetAsConfigTest, Function | SmallTest | Level0
     }
 }
 
+/**
+ * @tc.name: SetLtpoConfigTest
+ * @tc.desc: Verify the independency of HgmCore SetLtpoConfigTest
+ * @tc.type: FUNC
+ * @tc.require: I7DMS1
+ */
+HWTEST_F(HyperGraphicManagerTest, SetLtpoConfigTest, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto hgmFrameRateMgr = hgmCore.hgmFrameRateMgr_;
+    auto mPolicyConfigData = hgmCore.mPolicyConfigData_;
+
+    hgmCore.hgmFrameRateMgr_ = nullptr;
+    hgmCore.SetLtpoConfig();
+    EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+    hgmCore.mPolicyConfigData_ = nullptr;
+    hgmCore.SetLtpoConfig();
+    EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+    hgmCore.hgmFrameRateMgr_ = hgmFrameRateMgr;
+    hgmCore.SetLtpoConfig();
+    EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+    hgmCore.mPolicyConfigData_ = mPolicyConfigData;
+    hgmCore.SetLtpoConfig();
+    EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+    auto curScreenStrategyId = hgmCore.hgmFrameRateMgr_->GetCurScreenStrategyId();
+    auto screenConfigIter = mPolicyConfigData->screenConfigs_.find(curScreenStrategyId);
+    if (screenConfigIter != mPolicyConfigData->screenConfigs_.end()) {
+        auto screenConfig = screenConfigIter->second;
+        mPolicyConfigData->screenConfigs_.erase(curScreenStrategyId);
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+        mPolicyConfigData->screenConfigs_[curScreenStrategyId] = screenConfig;
+    }
+}
+
+/**
+ * @tc.name: SetLtpoConfigTest2
+ * @tc.desc: Verify the independency of HgmCore SetLtpoConfigTest
+ * @tc.type: FUNC
+ * @tc.require: I7DMS1
+ */
+HWTEST_F(HyperGraphicManagerTest, SetLtpoConfigTest2, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto hgmFrameRateMgr = hgmCore.hgmFrameRateMgr_;
+    auto mPolicyConfigData = hgmCore.mPolicyConfigData_;
+    auto screenConfigIter = mPolicyConfigData->screenConfigs_.find(hgmFrameRateMgr->GetCurScreenStrategyId());
+    if (screenConfigIter == mPolicyConfigData->screenConfigs_.end()) {
+        return;
+    }
+    auto screenStrategyIter = screenConfigIter->second.find(std::to_string(hgmCore.customFrameRateMode_));
+    if (screenStrategyIter == screenConfigIter->second.end()) {
+        return;
+    }
+    auto& curScreenSetting = screenStrategyIter->second;
+    auto& ltpoConfig = curScreenSetting.ltpoConfig;
+
+    if (auto iter = ltpoConfig.find("switch"); iter != ltpoConfig.end()) {
+        auto switchConfig = iter->second;
+        ltpoConfig.erase("switch");
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+        ltpoConfig["switch"] = "errSwitch";
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.ltpoEnabled_, 0);
+        ltpoConfig["switch"] = switchConfig;
+    }
+
+    if (auto iter = ltpoConfig.find("alignRate"); iter != ltpoConfig.end()) {
+        auto alignRateConfig = iter->second;
+        ltpoConfig.erase("alignRate");
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.alignRate_, 0);
+        ltpoConfig["alignRate"] = "errAlignRate";
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.alignRate_, 0);
+        ltpoConfig["alignRate"] = alignRateConfig;
+    }
+
+    if (auto iter = ltpoConfig.find("pipelineOffsetPulseNum"); iter != ltpoConfig.end()) {
+        auto pipelineOffsetPulseNum = iter->second;
+        ltpoConfig.erase("pipelineOffsetPulseNum");
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.pipelineOffsetPulseNum_, 0);
+        ltpoConfig["pipelineOffsetPulseNum"] = "errPipelineOffsetPulseNum";
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.pipelineOffsetPulseNum_, 0);
+        ltpoConfig["pipelineOffsetPulseNum"] = "10";
+        hgmCore.SetLtpoConfig();
+        EXPECT_GE(hgmCore.pipelineOffsetPulseNum_, 0);
+        ltpoConfig["pipelineOffsetPulseNum"] = pipelineOffsetPulseNum;
+    }
+}
 
 /**
  * @tc.name: GetActiveScreenTest
@@ -186,6 +337,7 @@ HWTEST_F(HyperGraphicManagerTest, AddScreen, Function | MediumTest | Level0)
     int sizeListBefore = 0;
     int sizeListAfter = 0;
     int sizeScreenIds = 0;
+    bool isSelfOwnedScreen = false;
 
     PART("CaseDescription") {
         STEP("1. mark screenList_ size before add") {
@@ -195,7 +347,7 @@ HWTEST_F(HyperGraphicManagerTest, AddScreen, Function | MediumTest | Level0)
 
         STEP("2. add new screen") {
             ScreenId screenId = 2;
-            auto addScreen = instance.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
             STEP_ASSERT_EQ(addScreen, 0);
         }
 
@@ -211,6 +363,15 @@ HWTEST_F(HyperGraphicManagerTest, AddScreen, Function | MediumTest | Level0)
             sizeScreenIds  = instance.GetScreenIds().size();
             STEP_ASSERT_EQ(sizeScreenIds, sizeListAfter);
         }
+
+        STEP("5. mark screenIds Size") {
+            ScreenId screenId = 2;
+            auto mPolicyConfigData = instance.mPolicyConfigData_;
+            instance.mPolicyConfigData_ = nullptr;
+            auto addScreen = instance.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
+            STEP_ASSERT_EQ(addScreen, 0);
+            instance.mPolicyConfigData_ = mPolicyConfigData;
+        }
     }
 }
 
@@ -225,10 +386,11 @@ HWTEST_F(HyperGraphicManagerTest, GetScreen, Function | SmallTest | Level0)
     auto& instance5 = HgmCore::Instance();
     sptr<HgmScreen> screen = nullptr;
     ScreenId screenId = 3;
+    bool isSelfOwnedScreen = false;
 
     PART("EnvConditions") {
         STEP("get Instance and call Init and add a screen") {
-            auto addScreen = instance5.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance5.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
             auto activeScreen = instance5.GetActiveScreen();
 
             activeScreen = instance5.GetActiveScreen();
@@ -259,10 +421,11 @@ HWTEST_F(HyperGraphicManagerTest, AddScreenModeInfo, Function | SmallTest | Leve
     auto& instance6 = HgmCore::Instance();
     int addMode = 0;
     ScreenId screenId = 4;
+    bool isSelfOwnedScreen = false;
 
     PART("EnvConditions") {
         STEP("get Instance and add a screen") {
-            auto addScreen = instance6.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance6.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
             STEP_ASSERT_GE(addScreen, 0);
         }
     }
@@ -274,7 +437,7 @@ HWTEST_F(HyperGraphicManagerTest, AddScreenModeInfo, Function | SmallTest | Leve
         }
 
         STEP("2. add a supported config to the new screen") {
-            addMode = instance6.AddScreen(screenId, addMode, screenSize);
+            addMode = instance6.AddScreen(screenId, addMode, screenSize, isSelfOwnedScreen);
         }
 
         STEP("3. verify adding result") {
@@ -295,10 +458,11 @@ HWTEST_F(HyperGraphicManagerTest, RemoveScreen, Function | MediumTest | Level0)
     int sizeListBefore = 0;
     int sizeListAfter = 0;
     ScreenId screenId = 6;
+    bool isSelfOwnedScreen = false;
 
     PART("EnvConditions") {
         STEP("get Instance and call Init and add a screen") {
-            auto addScreen = instance7.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance7.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
             STEP_ASSERT_EQ(addScreen, 0);
         }
     }
@@ -345,13 +509,14 @@ HWTEST_F(HyperGraphicManagerTest, SetScreenRefreshRate, Function | MediumTest | 
     uint32_t rate0 = 60;
     int32_t mode0 = 0;
     int32_t timestamp = 1704038400; // 2024-01-01 00:00:00
+    bool isSelfOwnedScreen = false;
 
     PART("CaseDescription") {
         STEP("1. add a new screen") {
-            std::vector<GraphicDisplayModeInfo> modeList;
+            std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
             modeList.push_back({width0, height0, rate0, mode0});
             modeList.push_back({width, height, rate, mode});
-            auto addScreen = instance8.AddScreen(screenId, 0, screenSize, modeList);
+            auto addScreen = instance8.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen, modeList);
             STEP_ASSERT_EQ(addScreen, 0);
             auto setRate500 = instance8.SetScreenRefreshRate(screenId, 0, 500);
             STEP_ASSERT_EQ(setRate500, -1);
@@ -393,13 +558,14 @@ HWTEST_F(HyperGraphicManagerTest, SetScreenRefreshRate_002, Function | MediumTes
     int32_t height0 = 2772;
     uint32_t rate0 = 60;
     int32_t mode0 = 0;
+    bool isSelfOwnedScreen = false;
 
     PART("CaseDescription") {
         STEP("1. add a new screen") {
-            std::vector<GraphicDisplayModeInfo> modeList;
+            std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
             modeList.push_back({width0, height0, rate0, mode0});
             modeList.push_back({width, height, rate, mode});
-            auto addScreen = instance.AddScreen(screenId, 0, screenSize, modeList);
+            auto addScreen = instance.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen, modeList);
             STEP_ASSERT_EQ(addScreen, 0);
             bool shouldSendCallback = false;
             auto setRate120 = instance.SetScreenRefreshRate(screenId, 0, 120, shouldSendCallback);
@@ -431,16 +597,15 @@ HWTEST_F(HyperGraphicManagerTest, SetRefreshRateMode, Function | SmallTest | Lev
     uint32_t rate = 120;
     int32_t mode = 1;
     int32_t modeToSet = 2;
+    bool isSelfOwnedScreen = false;
 
     PART("CaseDescription") {
         STEP("1. add a new screen") {
-            std::vector<GraphicDisplayModeInfo> modeList;
+            std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
             modeList.push_back({width, height, rate, mode});
-            auto addScreen = instance.AddScreen(screenId, 0, screenSize);
+            auto addScreen = instance.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen);
             STEP_ASSERT_GE(addScreen, 0);
         }
-
-
         STEP("2. set the refreshrate mode") {
             auto setMode2 = instance.SetRefreshRateMode(modeToSet);
             STEP_ASSERT_EQ(setMode2, 0);
@@ -470,14 +635,15 @@ HWTEST_F(HyperGraphicManagerTest, HgmScreenTests, Function | MediumTest | Level0
     uint32_t rate5 = 80;
     int32_t mode = 1;
     int32_t mode2 = 2;
-    std::vector<GraphicDisplayModeInfo> modeList;
+    bool isSelfOwnedScreen = false;
+    std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
     modeList.push_back({width, height, rate, mode});
     modeList.push_back({width, height, rate2, mode2});
-    instance.AddScreen(screenId2, 1, screenSize, modeList);
+    instance.AddScreen(screenId2, 1, screenSize, isSelfOwnedScreen, modeList);
     sptr<HgmScreen> screen = instance.GetScreen(screenId1);
     sptr<HgmScreen> screen2 = instance.GetScreen(screenId2);
 
-    instance.AddScreen(screenId1, 0, screenSize);
+    instance.AddScreen(screenId1, 0, screenSize, isSelfOwnedScreen);
     EXPECT_GE(screen->GetActiveRefreshRate(), 0);
     EXPECT_EQ(screen2->SetActiveRefreshRate(screenId2, rate), 0);
     EXPECT_EQ(screen2->SetActiveRefreshRate(screenId2, rate2), 1);
@@ -558,10 +724,13 @@ HWTEST_F(HyperGraphicManagerTest, HgmCoreTests, Function | MediumTest | Level0)
     uint32_t rate3 = -1;
     int32_t mode = 1;
     int32_t mode2 = 2;
-    std::vector<GraphicDisplayModeInfo> modeList;
+    int32_t mode3 = 3;
+    bool isSelfOwnedScreen = false;
+    std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
     modeList.push_back({width, height, rate, mode});
     modeList.push_back({width, height, rate2, mode2});
-    instance.AddScreen(screenId2, 1, screenSize, modeList);
+    modeList.push_back({width, height, rate3, mode3});
+    instance.AddScreen(screenId2, 1, screenSize, isSelfOwnedScreen, modeList);
 
     PART("HgmCore") {
         STEP("1. set active mode") {
@@ -580,7 +749,7 @@ HWTEST_F(HyperGraphicManagerTest, HgmCoreTests, Function | MediumTest | Level0)
         }
 
         STEP("3. set rate and resolution") {
-            int32_t addResult = instance.AddScreen(screenId2, 1, screenSize);
+            int32_t addResult = instance.AddScreen(screenId2, 1, screenSize, isSelfOwnedScreen);
             STEP_ASSERT_GE(addResult, -1);
         }
 
@@ -609,10 +778,11 @@ HWTEST_F(HyperGraphicManagerTest, SetRefreshRateMode002, Function | MediumTest |
     uint32_t rate2 = 60;
     int32_t mode = 1;
     int32_t mode2 = 2;
-    std::vector<GraphicDisplayModeInfo> modeList;
+    bool isSelfOwnedScreen = false;
+    std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
     modeList.push_back({width, height, rate, mode});
     modeList.push_back({width, height, rate2, mode2});
-    instance.AddScreen(screenId2, 1, screenSize, modeList);
+    instance.AddScreen(screenId2, 1, screenSize, isSelfOwnedScreen, modeList);
 
     PART("HgmCore") {
         STEP("1. set active mode") {
@@ -660,14 +830,93 @@ HWTEST_F(HyperGraphicManagerTest, GetLtpoEnabled, Function | SmallTest | Level0)
     auto& instance = HgmCore::Instance();
     instance.isLtpoMode_.store(true);
     instance.SetSupportedMaxTE(360);
+    instance.SetSupportedMaxTE144(432);
+    EXPECT_EQ(instance.GetSupportedMaxTE(), 360);
+    EXPECT_EQ(instance.GetSupportedMaxTE144(), 432);
     instance.SetRefreshRateMode(HGM_REFRESHRATE_MODE_AUTO);
     if (instance.IsLTPOSwitchOn() != true) {
         return;
     }
     EXPECT_EQ(instance.IsLTPOSwitchOn(), true);
-    EXPECT_EQ(instance.GetSupportedMaxTE(), 360);
     EXPECT_EQ(instance.GetCurrentRefreshRateMode(), static_cast<int32_t>(HGM_REFRESHRATE_MODE_AUTO));
     EXPECT_EQ(instance.GetLtpoEnabled(), true);
+}
+
+/**
+ * @tc.name: SetPerformanceConfigTest001
+ * @tc.desc: Test SetPerformanceConfigTest001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HyperGraphicManagerTest, SetPerformanceConfigTest001, Function | SmallTest | Level0)
+{
+    int64_t customizedOffset = 500;
+    int64_t invalidOffset = 16000001;
+    auto& instance = HgmCore::Instance();
+    auto curScrnStrategyId = instance.hgmFrameRateMgr_->GetCurScreenStrategyId();
+    if (instance.mPolicyConfigData_->screenConfigs_.count(curScrnStrategyId) == 0 ||
+        instance.mPolicyConfigData_->screenConfigs_[curScrnStrategyId].count(
+            std::to_string(instance.customFrameRateMode_)) == 0) {
+        return;
+    }
+
+    // backup
+    bool orgIsVsyncOffsetCustomized = instance.isVsyncOffsetCustomized_.load();
+    int64_t orgRsPhaseOffset = instance.rsPhaseOffset_.load();
+    int64_t orgAppPhaseOffset = instance.appPhaseOffset_.load();
+
+    // set value not equal to target value, ensure that SetPerformanceConfig works
+    instance.isVsyncOffsetCustomized_.store(false);
+    instance.rsPhaseOffset_.store(customizedOffset + 1);
+    instance.appPhaseOffset_.store(customizedOffset + 1);
+
+    EXPECT_NE(instance.mPolicyConfigData_, nullptr);
+    EXPECT_NE(instance.hgmFrameRateMgr_, nullptr);
+
+    auto& curScreenSetting =
+        instance.mPolicyConfigData_->screenConfigs_[curScrnStrategyId][std::to_string(instance.customFrameRateMode_)];
+    auto it = curScreenSetting.performanceConfig.find("rsPhaseOffset");
+    std::string orgRsPhaseOffsetStr;
+    if (it != curScreenSetting.performanceConfig.end()) {
+        orgRsPhaseOffsetStr = it->second;
+    }
+    std::string orgAppPhaseOffsetStr;
+    it = curScreenSetting.performanceConfig.find("appPhaseOffset");
+    if (it != curScreenSetting.performanceConfig.end()) {
+        orgAppPhaseOffsetStr = it->second;
+    }
+    curScreenSetting.performanceConfig["rsPhaseOffset"] = std::to_string(customizedOffset);
+    curScreenSetting.performanceConfig["appPhaseOffset"] = std::to_string(customizedOffset);
+    instance.SetPerformanceConfig(curScreenSetting);
+    EXPECT_TRUE(instance.isVsyncOffsetCustomized_.load());
+    int64_t offset = 0;
+    EXPECT_EQ(instance.GetRsPhaseOffset(), customizedOffset);
+    EXPECT_EQ(instance.GetAppPhaseOffset(), customizedOffset);
+
+    curScreenSetting.performanceConfig.erase("rsPhaseOffset");
+    curScreenSetting.performanceConfig.erase("appPhaseOffset");
+    curScreenSetting.performanceConfig["rsPhaseOffset"] = std::to_string(invalidOffset);
+    curScreenSetting.performanceConfig["appPhaseOffset"] = std::to_string(invalidOffset);
+    instance.SetPerformanceConfig(curScreenSetting);
+    EXPECT_TRUE(instance.isVsyncOffsetCustomized_.load());
+    EXPECT_EQ(instance.GetRsPhaseOffset(), 0);
+    EXPECT_EQ(instance.GetAppPhaseOffset(), 0);
+    EXPECT_EQ(instance.rsPhaseOffset_.load(), 0);
+    EXPECT_EQ(instance.appPhaseOffset_.load(), 0);
+
+    // recover
+    instance.isVsyncOffsetCustomized_.store(orgIsVsyncOffsetCustomized);
+    instance.rsPhaseOffset_.store(orgRsPhaseOffset);
+    instance.appPhaseOffset_.store(orgAppPhaseOffset);
+    curScreenSetting.performanceConfig.erase("rsPhaseOffset");
+    curScreenSetting.performanceConfig.erase("appPhaseOffset");
+    if (!orgRsPhaseOffsetStr.empty()) {
+        curScreenSetting.performanceConfig["rsPhaseOffset"] = orgRsPhaseOffsetStr;
+    }
+    if (!orgAppPhaseOffsetStr.empty()) {
+        curScreenSetting.performanceConfig["appPhaseOffset"] = orgAppPhaseOffsetStr;
+    }
+    instance.SetPerformanceConfig(curScreenSetting);
 }
 
 /**
@@ -758,65 +1007,6 @@ HWTEST_F(HyperGraphicManagerTest, TestAbnormalCase, Function | SmallTest | Level
 }
 
 /**
- * @tc.name: SetActualTimestamp
- * @tc.desc: Verify the result of SetActualTimestamp function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, SetActualTimestamp, Function | SmallTest | Level0)
-{
-    auto& hgmCore = HgmCore::Instance();
-    int64_t timestamp = 1700;
-    hgmCore.SetActualTimestamp(timestamp);
-    EXPECT_EQ(hgmCore.GetActualTimestamp() == timestamp, true);
-}
-
-/**
- * @tc.name: SetVsyncId
- * @tc.desc: Verify the result of SetVsyncId function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, SetVsyncId, Function | SmallTest | Level0)
-{
-    auto& hgmCore = HgmCore::Instance();
-    uint64_t vsyncId = 1800;
-    hgmCore.SetVsyncId(vsyncId);
-    EXPECT_EQ(hgmCore.GetVsyncId() == vsyncId, true);
-}
-
-/**
- * @tc.name: SetForceRefreshFlag
- * @tc.desc: Verify the result of SetForceRefreshFlag function
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HyperGraphicManagerTest, SetForceRefreshFlag, Function | SmallTest | Level0)
-{
-    auto& hgmCore = HgmCore::Instance();
-    bool isForceRefresh = false;
-    hgmCore.SetForceRefreshFlag(isForceRefresh);
-    EXPECT_EQ(hgmCore.GetForceRefreshFlag() == isForceRefresh, true);
-}
-
-/**
- * @tc.name: SetFastComposeTimeStampDiff
- * @tc.desc: Verify the result of SetFastComposeTimeStampDiff function
- * @tc.type: FUNC
- * @tc.require: issueIBGV2W
- */
-HWTEST_F(HyperGraphicManagerTest, SetFastComposeTimeStampDiff, Function | SmallTest | Level0)
-{
-    auto &hgmCore = HgmCore::Instance();
-    uint64_t fastComposeTimeStampDiff = UINT64_MAX;
-    hgmCore.SetFastComposeTimeStampDiff(fastComposeTimeStampDiff);
-    EXPECT_EQ(hgmCore.GetFastComposeTimeStampDiff(), fastComposeTimeStampDiff);
-    fastComposeTimeStampDiff = 0;
-    hgmCore.SetFastComposeTimeStampDiff(fastComposeTimeStampDiff);
-    EXPECT_EQ(hgmCore.GetFastComposeTimeStampDiff(), fastComposeTimeStampDiff);
-}
-
-/**
  * @tc.name: SetIdealPipelineOffset
  * @tc.desc: Verify the result of SetIdealPipelineOffset function
  * @tc.type: FUNC
@@ -829,6 +1019,88 @@ HWTEST_F(HyperGraphicManagerTest, SetIdealPipelineOffset, Function | SmallTest |
     int64_t idealPipelineOffset = pipelineOffsetPulseNum * IDEAL_PULSE;
     hgmCore.SetIdealPipelineOffset(pipelineOffsetPulseNum);
     EXPECT_EQ(hgmCore.GetIdealPipelineOffset(), idealPipelineOffset);
+}
+
+/**
+ * @tc.name: SetIdealPipelineOffset144
+ * @tc.desc: Verify the result of SetIdealPipelineOffset144 function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HyperGraphicManagerTest, SetIdealPipelineOffset144, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    int32_t pipelineOffsetPulseNum = 6;
+    int64_t idealPipelineOffset144 = pipelineOffsetPulseNum * IDEAL_PULSE144;
+    hgmCore.SetIdealPipelineOffset144(pipelineOffsetPulseNum);
+    EXPECT_EQ(hgmCore.GetIdealPipelineOffset144(), idealPipelineOffset144);
+}
+
+/**
+ * @tc.name: AddScreenAddScreenModeInfoFailed
+ * @tc.desc: Test AddScreen when AddScreenModeInfo fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HyperGraphicManagerTest, AddScreenModeFail, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    ScreenId screenId = 12;
+    bool isSelfOwnedScreen = false;
+    std::vector<OHOS::Rosen::RSScreenModeInfo> modeList;
+    modeList.push_back({0, 0, 0, 0});
+    modeList.push_back({width, height, 60, 0});
+    int32_t result = hgmCore.AddScreen(screenId, 0, screenSize, isSelfOwnedScreen, modeList);
+    EXPECT_EQ(result, -1);
+}
+
+/**
+ * @tc.name: SetPerformanceConfigPiplineDelayModeEnable
+ * @tc.desc: Test SetPerformanceConfig with piplineDelayModeEnable
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HyperGraphicManagerTest, SetPerformanceConfigPiplineDelayModeEnable, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    if (hgmCore.hgmFrameRateMgr_ == nullptr || hgmCore.mPolicyConfigData_ == nullptr) {
+        return;
+    }
+    auto curScreenStrategyId = hgmCore.hgmFrameRateMgr_->GetCurScreenStrategyId();
+    auto screenConfigsIter = hgmCore.mPolicyConfigData_->screenConfigs_.find(curScreenStrategyId);
+    if (screenConfigsIter == hgmCore.mPolicyConfigData_->screenConfigs_.end()) {
+        return;
+    }
+    auto screenStrategyIter = screenConfigsIter->second.find(std::to_string(hgmCore.customFrameRateMode_));
+    if (screenStrategyIter == screenConfigsIter->second.end()) {
+        return;
+    }
+    auto& curScreenSetting = screenStrategyIter->second;
+    bool orgIsDelayMode = hgmCore.isDelayMode_;
+    curScreenSetting.performanceConfig["piplineDelayModeEnable"] = "1";
+    hgmCore.SetPerformanceConfig(curScreenSetting);
+    EXPECT_TRUE(hgmCore.isDelayMode_);
+    curScreenSetting.performanceConfig["piplineDelayModeEnable"] = "0";
+    hgmCore.SetPerformanceConfig(curScreenSetting);
+    EXPECT_FALSE(hgmCore.isDelayMode_);
+    hgmCore.isDelayMode_ = orgIsDelayMode;
+}
+
+/**
+ * @tc.name: SetScreenRefreshRateNotEnabled
+ * @tc.desc: Test SetScreenRefreshRate when IsEnabled returns false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HyperGraphicManagerTest, SetScreenRefreshRateNotEnabled, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    auto mPolicyConfigData = hgmCore.mPolicyConfigData_;
+    hgmCore.mPolicyConfigData_ = nullptr;
+    ScreenId screenId = 10;
+    int32_t result = hgmCore.SetScreenRefreshRate(screenId, 0, 60);
+    EXPECT_EQ(result, -1);
+    hgmCore.mPolicyConfigData_ = mPolicyConfigData;
 }
 } // namespace Rosen
 } // namespace OHOS

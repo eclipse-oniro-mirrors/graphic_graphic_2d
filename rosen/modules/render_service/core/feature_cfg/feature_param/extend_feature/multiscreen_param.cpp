@@ -57,26 +57,6 @@ void MultiScreenParam::SetMirrorDisplayCloseP3(bool isEnabled)
     isMirrorDisplayCloseP3_ = isEnabled;
 }
 
-Drawing::MipmapMode MultiScreenParam::GetMipmapMode()
-{
-    return mipMapModeValue_;
-}
- 
-void MultiScreenParam::SetMipmapMode(Drawing::MipmapMode modeValue)
-{
-    mipMapModeValue_ = modeValue;
-}
-
-bool MultiScreenParam::IsSkipFrameByActiveRefreshRate()
-{
-    return isSkipFrameByActiveRefreshRate_;
-}
-
-void MultiScreenParam::SetSkipFrameByActiveRefreshRate(bool isEnabled)
-{
-    isSkipFrameByActiveRefreshRate_ = isEnabled;
-}
-
 bool MultiScreenParam::IsForceRenderForMirror()
 {
     return isForceRenderForMirror_;

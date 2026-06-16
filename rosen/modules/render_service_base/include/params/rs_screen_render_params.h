@@ -25,6 +25,7 @@
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_render_node.h"
 #include "screen_manager/rs_screen_info.h"
+#include "screen_manager/rs_screen_property.h"
 #include "pipeline/rs_surface_render_node.h"
 namespace OHOS::Rosen {
 class RSB_EXPORT RSScreenRenderParams : public RSRenderParams {
@@ -97,6 +98,10 @@ public:
 
     void SetExistHWCNode(bool isExistHWCNode);
     bool GetExistHWCNode() const;
+
+    void CollectHdrStatus(HdrStatus hdrStatus);
+    void ResetDisplayHdrStatus();
+    HdrStatus GetScreenHDRStatus() const;
 
     void SetHDRPresent(bool hasHdrPresent);
     bool GetHDRPresent() const;
@@ -179,11 +184,6 @@ public:
         isAccumulatedSpecialLayerStatusChanged_ = false;
     }
 
-    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr>& GetRoundCornerDrawables()
-    {
-        return roundCornerSurfaceDrawables_;
-    }
-
     void SetNeedForceUpdateHwcNodes(bool needForceUpdateHwcNodes);
     bool GetNeedForceUpdateHwcNodes() const;
 
@@ -222,19 +222,23 @@ public:
     bool GetHasMirroredScreenChanged() const;
     void SetHasMirroredScreenChanged(bool hasMirroredScreenChanged);
 
-    bool IsVirtualSurfaceChanged() const
+    void SetVirtualSurfaceChanged(bool isChanged) { isVirtualSurfaceChanged_ = isChanged; }
+    bool IsVirtualSurfaceChanged() const { return isVirtualSurfaceChanged_; }
+
+    void SetActiveRectChanged(bool isChanged) { isActiveRectChanged_ = isChanged; }
+    bool IsActiveRectChanged() const { return isActiveRectChanged_; }
+
+    void SetIsEqualVsyncPeriod(bool isEqualVsyncPeriod) { isEqualVsyncPeriod_ = isEqualVsyncPeriod; }
+    bool IsEqualVsyncPeriod() const { return isEqualVsyncPeriod_; }
+    void SetLogicalCameraRotationCorrection(ScreenRotation logicalCorrection);
+    ScreenRotation GetLogicalCameraRotationCorrection() const;
+    LayerSkipContext& GetLayerSkipContext()
     {
-        return isVirtualSurfaceChanged_;
+        return layerSkipContext_;
     }
 
-    void SetIsEqualVsyncPeriod(bool isEqualVsyncPeriod)
-    {
-        isEqualVsyncPeriod_ = isEqualVsyncPeriod;
-    }
-    bool IsEqualVsyncPeriod() const
-    {
-        return isEqualVsyncPeriod_;
-    }
+    void SetHasForceHwcHdrSurface(bool hasForceHwcHdrSurface);
+    bool GetHasForceHwcHdrSurface() const;
 
 private:
 
@@ -247,6 +251,7 @@ private:
     RSScreenProperty screenProperty_;
     CompositeType compositeType_ = CompositeType::HARDWARE_COMPOSITE;
     uint32_t childDisplayCount_ = 0;
+    HdrStatus screenHDRStatus_ = HdrStatus::NO_HDR;
     bool isMirrorScreen_ = false;
     bool isFirstVisitCrossNodeDisplay_ = false;
     bool hasChildCrossNode_ = false;
@@ -262,6 +267,7 @@ private:
     bool isAccumulatedHdrStatusChanged_ = false;
     bool isAccumulatedSpecialLayerStatusChanged_ = false;
     bool isVirtualSurfaceChanged_ = false;
+    bool isActiveRectChanged_ = false;
     bool isEqualVsyncPeriod_ = true;
     std::unordered_set<NodeId> lastBlackList_ = {};
     bool lastSecExemption_ = false;
@@ -271,9 +277,8 @@ private:
     bool isZoomed_ = false;
     uint32_t mirrorDstCount_ = 0;
     bool hasMirrorScreen_ = false;
+    LayerSkipContext layerSkipContext_;
     Drawing::Matrix slrMatrix_;
-    // vector of rcd drawable, should be removed in OH 6.0 rcd refactoring
-    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> roundCornerSurfaceDrawables_;
     DrawableV2::RSRenderNodeDrawableAdapter::WeakPtr targetSurfaceRenderNodeDrawable_;
     friend class RSUniRenderVisitor;
     friend class RSScreenRenderNode;
@@ -282,6 +287,8 @@ private:
     Occlusion::Region drawnRegion_;
     bool forceFreeze_ = false;
     bool hasMirroredScreenChanged_ = false;
+    ScreenRotation logicalCameraRotationCorrection_ = ScreenRotation::ROTATION_0;
+    bool hasForceHwcHdrSurface_ = false;
 };
 } // namespace OHOS::Rosen
 

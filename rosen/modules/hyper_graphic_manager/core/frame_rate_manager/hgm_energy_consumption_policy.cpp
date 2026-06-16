@@ -17,14 +17,13 @@
 
 #include <functional>
 
+#include "common/rs_common_hook.h"
 #include "hgm_core.h"
 #include "hgm_log.h"
 #include "hgm_task_handle_thread.h"
 #include "rs_frame_rate_vote.h"
 #include "rs_trace.h"
 #include "xml_parser.h"
-
-#include "common/rs_common_hook.h"
 
 namespace OHOS::Rosen {
 namespace {
@@ -43,17 +42,16 @@ constexpr int32_t UNKNOWN_IDLE_FPS = -1;
 constexpr int64_t DESCISION_VIDEO_CALL_TIME = 500;
 }
 
-HgmEnergyConsumptionPolicy::HgmEnergyConsumptionPolicy()
-{
-    RsCommonHook::Instance().RegisterStartNewAnimationListener([this](const std::string& componentName) {
-        // called by RSMainthread
-        if (isAnimationEnergyConsumptionAssuranceMode_) {
-            StartNewAnimation(componentName);
-        }
-    });
-    RsCommonHook::Instance().SetComponentPowerFpsFunc(
-        std::bind(&HgmEnergyConsumptionPolicy::GetComponentFps, this, std::placeholders::_1));
-}
+#define BIND_HANDLER_TO_ENERGY_POLICY(func_name) \
+    std::bind(&HgmEnergyConsumptionPolicy::func_name, &HgmEnergyConsumptionPolicy::Instance(), std::placeholders::_1)
+
+const std::unordered_map<EnergyEvent, HandleRPFunc> HgmEnergyConsumptionPolicy::commonDataMapFunc_ = {
+    { EnergyEvent::VOTER_VIDEO_RATE, BIND_HANDLER_TO_ENERGY_POLICY(VoterVideoFrameRate) },
+    { EnergyEvent::START_NEW_ANIMATION, BIND_HANDLER_TO_ENERGY_POLICY(StartNewAnimation) },
+    { EnergyEvent::ANIMATION_EXEC_TIME, BIND_HANDLER_TO_ENERGY_POLICY(StatisticAnimationTime) }
+};
+
+HgmEnergyConsumptionPolicy::HgmEnergyConsumptionPolicy() {}
 
 HgmEnergyConsumptionPolicy& HgmEnergyConsumptionPolicy::Instance()
 {
@@ -145,25 +143,34 @@ void HgmEnergyConsumptionPolicy::SetAnimationEnergyConsumptionAssuranceMode(bool
     lastAnimationTimestamp_ = firstAnimationTimestamp_.load();
 }
 
-void HgmEnergyConsumptionPolicy::StatisticAnimationTime(uint64_t timestamp)
+void HgmEnergyConsumptionPolicy::StatisticAnimationTime(const std::unordered_map<std::string, std::string>& commonData)
 {
-    if (!isAnimationEnergyAssuranceEnable_ || !isAnimationEnergyConsumptionAssuranceMode_) {
+    if (!isAnimationEnergyAssuranceEnable_.load() || !isAnimationEnergyConsumptionAssuranceMode_.load()) {
         return;
     }
-    lastAnimationTimestamp_ = timestamp;
+    auto timeIter = commonData.find("STATIC_ANIMATION_TIME");
+    if (timeIter == commonData.end()) {
+        return;
+    }
+    lastAnimationTimestamp_.store(HgmCore::Instance().GetCurrentTimestamp() / NS_PER_MS);
 }
 
-void HgmEnergyConsumptionPolicy::StartNewAnimation(const std::string& componentName)
+void HgmEnergyConsumptionPolicy::StartNewAnimation(const std::unordered_map<std::string, std::string>& commonData)
 {
+    auto componentIter = commonData.find("COMPONENT_NAME");
+    std::string componentName;
+    if (componentIter != commonData.end()) {
+        componentName = componentIter->second;
+    }
     auto idleFps = GetComponentEnergyConsumptionConfig(componentName);
     if (idleFps != UNKNOWN_IDLE_FPS) {
         return;
     }
-    if (!isAnimationEnergyAssuranceEnable_ || !isAnimationEnergyConsumptionAssuranceMode_) {
+    if (!isAnimationEnergyAssuranceEnable_.load() || !isAnimationEnergyConsumptionAssuranceMode_.load()) {
         return;
     }
-    firstAnimationTimestamp_ = HgmCore::Instance().GetActualTimestamp() / NS_PER_MS;
-    lastAnimationTimestamp_ = firstAnimationTimestamp_.load();
+    firstAnimationTimestamp_.store(HgmCore::Instance().GetCurrentTimestamp() / NS_PER_MS);
+    lastAnimationTimestamp_.store(firstAnimationTimestamp_.load());
 }
 
 void HgmEnergyConsumptionPolicy::SetTouchState(TouchState touchState)
@@ -182,17 +189,6 @@ void HgmEnergyConsumptionPolicy::SetTouchState(TouchState touchState)
         HgmTaskHandleThread::Instance().PostEvent(
             RS_ENERGY_ASSURANCE_TASK_ID, [this]() { SetAnimationEnergyConsumptionAssuranceMode(true); },
             rsAnimationTouchIdleTime_);
-    }
-}
-
-void HgmEnergyConsumptionPolicy::GetComponentFps(FrameRateRange& range)
-{
-    if (!isTouchIdle_) {
-        return;
-    }
-    auto idleFps = GetComponentEnergyConsumptionConfig(range.GetComponentName());
-    if (idleFps != UNKNOWN_IDLE_FPS) {
-        SetEnergyConsumptionRateRange(range, idleFps);
     }
 }
 
@@ -289,7 +285,7 @@ void HgmEnergyConsumptionPolicy::PrintEnergyConsumptionLog(const FrameRateRange&
     HGM_LOGD("change power policy is %{public}s", lastAssuranceLog.c_str());
 }
 
-void HgmEnergyConsumptionPolicy::SetVideoCallSceneInfo(const EventInfo &eventInfo)
+void HgmEnergyConsumptionPolicy::SetVideoCallSceneInfo(const EventInfo& eventInfo)
 {
     if (isEnableVideoCall_.load() && !eventInfo.eventStatus) {
         videoCallVsyncName_ = "";
@@ -400,20 +396,20 @@ void HgmEnergyConsumptionPolicy::SetCurrentPkgName(const std::vector<std::string
     bool hasVideoApp = false;
     const auto& videoCallLayerConfig = configData->videoCallLayerConfig_;
     const auto& videoFrameRateList = configData->videoFrameRateList_;
-    std::string videoCallLayerNameStr = "";
-    for (const auto& pkg: pkgs) {
+    std::string videoCallLayerNameStr;
+    std::lock_guard<std::mutex> lock(videoCallLock_);
+    for (const auto& pkg : pkgs) {
         std::string pkgName = pkg.substr(0, pkg.find(":"));
-        if (videoCallLayerName_ == "") {
-            if (const auto& videoCallLayerName = videoCallLayerConfig.find(pkgName);
-                videoCallLayerName != videoCallLayerConfig.end()) {
-                videoCallLayerNameStr = videoCallLayerName->second;
+        if (videoCallLayerNameStr.empty()) {
+            if (const auto& iter = videoCallLayerConfig.find(pkgName);
+                iter != videoCallLayerConfig.end()) {
+                videoCallLayerNameStr = iter->second;
             }
         }
         bool isVideoApp = videoFrameRateList.find(pkgName) != videoFrameRateList.end();
         hasVideoApp = hasVideoApp || isVideoApp;
     }
     RSFrameRateVote::isVideoApp_.store(hasVideoApp);
-    std::lock_guard<std::mutex> lock(videoCallLock_);
     videoCallLayerName_ = videoCallLayerNameStr;
 }
 
@@ -437,4 +433,49 @@ int32_t HgmEnergyConsumptionPolicy::GetComponentEnergyConsumptionConfig(const st
     return UNKNOWN_IDLE_FPS;
 }
 
+void HgmEnergyConsumptionPolicy::HandleEnergyCommonData(const EnergyCommonDataMap& commonData)
+{
+    for (const auto& dataIter : commonData) {
+        auto energyDataFunc = commonDataMapFunc_.find(dataIter.first);
+        if (energyDataFunc != commonDataMapFunc_.end()) {
+            energyDataFunc->second(dataIter.second);
+        }
+    }
+}
+
+void HgmEnergyConsumptionPolicy::VoterVideoFrameRate(const std::unordered_map<std::string, std::string>& commonData)
+{
+    RS_TRACE_NAME_FMT("HgmEnergyConsumptionPolicy::VoterVideoFrameRate");
+    auto pidIter = commonData.find("PID");
+    auto eventNameIter = commonData.find("EVENT_NAME");
+    auto eventStatusIter = commonData.find("EVENT_STATUS");
+    auto refreshRateIter = commonData.find("REFRESH_RATE");
+    if (pidIter == commonData.end() || !XMLParser::IsNumber(pidIter->second) || eventNameIter == commonData.end() ||
+        eventStatusIter == commonData.end()) {
+        return;
+    }
+    pid_t pid = std::stoi(pidIter->second.c_str());
+    std::string eventName = eventNameIter->second;
+    bool eventStatus = eventStatusIter->second == "true";
+    uint32_t refreshRate = 0;
+    if (refreshRateIter != commonData.end() && XMLParser::IsNumber(refreshRateIter->second)) {
+        refreshRate = std::stoi(refreshRateIter->second.c_str());
+    }
+    EventInfo eventInfo = {
+        .eventName = std::move(eventName),
+        .eventStatus = eventStatus,
+        .minRefreshRate = refreshRate,
+        .maxRefreshRate = refreshRate,
+    };
+    HgmTaskHandleThread::Instance().PostTask([eventInfo = std::move(eventInfo), pid]() {
+        if (auto frameRateMgr = HgmCore::Instance().GetFrameRateMgr()) {
+            frameRateMgr->HandleRefreshRateEvent(pid, eventInfo);
+        }
+    });
+}
+
+bool HgmEnergyConsumptionPolicy::GetPowerIdle()
+{
+    return isTouchIdle_;
+}
 } // namespace OHOS::Rosen

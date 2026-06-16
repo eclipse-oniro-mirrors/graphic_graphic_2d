@@ -150,13 +150,6 @@ int FontConfig::ParseConfig(const char* fname)
     return result;
 }
 
-void FontConfig::Dump() const
-{
-    for (auto it : fontSet_) {
-        TEXT_LOGI("File name: %{public}s", it.c_str());
-    }
-}
-
 std::vector<std::string> FontConfig::GetFontSet() const
 {
     return fontSet_;
@@ -170,16 +163,17 @@ int FontConfigJson::ParseFile(const char* fname)
         fname = FONT_DEFAULT_CONFIG;
     }
 
-    TEXT_LOGI("ParseFile fname is: %{public}s", fname);
     fontPtr = std::make_shared<FontConfigJsonInfo>();
     indexMap = std::make_shared<std::unordered_map<std::string, size_t>>();
     fontPtr->fallbackGroupSet.emplace_back();
     fontPtr->fallbackGroupSet[0].groupName = "";
     int err = ParseConfigList(fname);
-    // only for compatible with old version
-    fontPtr->genericSet[0].adjustSet = { { 50, 100 }, { 80, 400 }, { 100, 700 }, { 200, 900 } };
+    if (!fontPtr->genericSet.empty()) {
+        // only for compatible with old version
+        fontPtr->genericSet[0].adjustSet = { { 50, 100 }, { 80, 400 }, { 100, 700 }, { 200, 900 } };
+    }
     if (err != 0) {
-        TEXT_LOGE("Failed to ParseFile ParseConfigList");
+        TEXT_LOGE("Failed to ParseFile ParseConfigList, fname: %{public}s", fname);
         return err;
     }
     return SUCCESSED;
@@ -418,8 +412,8 @@ int FontConfigJson::ParseInstallFont(const cJSON* root, FullNameToPath& fontPath
         }
         std::vector<std::string> fullNameList;
         ParseFullName(item, fullNameList);
-        for (size_t i = 0; i < fullNameList.size(); i += 1) {
-            fontPathList.emplace(fullNameList[i], std::make_pair(i, fullPath->valuestring));
+        for (size_t j = 0; j < fullNameList.size(); j += 1) {
+            fontPathList.emplace(fullNameList[j], std::make_pair(j, fullPath->valuestring));
         }
     }
     return SUCCESSED;
@@ -449,102 +443,7 @@ int FontConfigJson::ParseInstallConfig(const char* fontPath, T& fontPathList)
 template int FontConfigJson::ParseInstallConfig(const char* fontPath, FullNameToPath& fontPathList);
 template int FontConfigJson::ParseInstallConfig(const char* fontPath, std::vector<std::string>& fontPathList);
 
-void FontConfigJson::DumpAlias(const AliasSet& aliasSet) const
-{
-    if (!aliasSet.empty()) {
-        const char* space = "    ";
-        TEXT_LOGI("  \"alias\": [");
-        for (auto it : aliasSet) {
-            TEXT_LOGI("  {");
-            TEXT_LOGI("%{public}s  \"%{public}s\" : %{public}d", space, it.familyName.c_str(), it.weight);
-            TEXT_LOGI("   },");
-        }
-        TEXT_LOGI("  ],");
-    }
-}
 
-void FontConfigJson::DumpAjdust(const AdjustSet& adjustSet) const
-{
-    if (!adjustSet.empty()) {
-        TEXT_LOGI("  \"adjust\": [");
-        const char* space = "    ";
-        for (auto it : adjustSet) {
-            TEXT_LOGI("   {");
-            TEXT_LOGI("%{public}s  \"weght\" :%{public}d , \"to\" :%{public}d", space, it.origValue, it.newValue);
-            TEXT_LOGI("   },");
-        }
-        TEXT_LOGI("  ],");
-    }
-}
-
-void FontConfigJson::DumpGeneric() const
-{
-    TEXT_LOGI("Generic : [");
-    if (!fontPtr->genericSet.empty()) {
-        for (auto it : fontPtr->genericSet) {
-            TEXT_LOGI("  \"family\": [\"%{public}s\"],", it.familyName.c_str());
-            DumpAlias(it.aliasSet);
-            DumpAjdust(it.adjustSet);
-        }
-    }
-    TEXT_LOGI("]");
-}
-
-void FontConfigJson::DumpForbak() const
-{
-    if (!fontPtr->fallbackGroupSet.empty()) {
-        TEXT_LOGI("\"fallback\": [");
-        TEXT_LOGI("{");
-        for (auto group : fontPtr->fallbackGroupSet) {
-            TEXT_LOGI(" \"%{public}s\" : [", group.groupName.c_str());
-            if (group.fallbackInfoSet.empty())
-                continue;
-            const char* space = "    ";
-            for (auto it : group.fallbackInfoSet) {
-                TEXT_LOGI("  {");
-                TEXT_LOGI("%{public}s%{public}s\" : \"%{public}s\"", space, it.font.c_str(), it.familyName.c_str());
-                TEXT_LOGI("   },");
-            }
-            TEXT_LOGI(" ]");
-        }
-        TEXT_LOGI("}");
-        TEXT_LOGI("]");
-    }
-}
-
-void FontConfigJson::DumpFontDir() const
-{
-    TEXT_LOGI("Fontdir : [");
-    if (!fontPtr->fontDirSet.empty()) {
-        for (auto it : fontPtr->fontDirSet) {
-            TEXT_LOGI("\"%{public}s\",", it.c_str());
-        }
-    }
-    TEXT_LOGI("]");
-}
-
-void FontConfigJson::DumpFontFileMap() const
-{
-    for (auto it : (*fontFileMap)) {
-        TEXT_LOGI("\"%{public}s\": \"%{public}s\"", it.first.c_str(), it.second.c_str());
-    }
-}
-
-void FontConfigJson::Dump() const
-{
-    if (fontPtr != nullptr) {
-        TEXT_LOGI("Font config dump fontPtr in");
-        DumpFontDir();
-        DumpGeneric();
-        DumpForbak();
-        TEXT_LOGI("Font config dump fontPtr out");
-    }
-    if (fontFileMap != nullptr) {
-        TEXT_LOGI("Font config dump fontFileMap in");
-        DumpFontFileMap();
-        TEXT_LOGI("Font config dump fontFileMap out");
-    }
-}
 } // namespace TextEngine
 } // namespace Rosen
 } // namespace OHOS

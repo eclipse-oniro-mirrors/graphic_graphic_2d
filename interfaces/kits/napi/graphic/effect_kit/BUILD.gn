@@ -12,8 +12,17 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/graphic/graphic_2d/graphic_config.gni")
 
 ## Build effect_kit.so
+
+declare_args() {
+  arkgraphic2d_api_metrics = true
+}
+if (defined(global_parts_info) &&
+    !defined(global_parts_info.hiviewdfx_api_metrics)) {
+  arkgraphic2d_api_metrics = false
+}
 
 config("graphic_napi_effect_kit_config") {
   visibility = [ ":*" ]
@@ -51,10 +60,22 @@ if (is_arkui_x) {
       "//foundation/multimedia/image_framework/interfaces/kits/js/common/include",
       "//foundation/multimedia/image_framework/interfaces/innerkits/include",
       "//foundation/graphic/graphic_surface/interfaces/inner_api/common",
+      "//foundation/graphic/graphics_effect/include",
+      "//foundation/graphic/graphics_effect/include/core",
+      "//foundation/graphic/graphics_effect/include/pipeline",
+      "//foundation/graphic/graphics_effect/include/hps",
+      "//foundation/graphic/graphics_effect/include/ext",
+      "//foundation/graphic/graphics_effect/include/effect",
+      "//foundation/graphic/graphics_effect/include/effect/filter",
+      "//foundation/graphic/graphics_effect/include/effect/shader",
+      "//foundation/graphic/graphics_effect/include/effect/mask",
+      "//foundation/graphic/graphics_effect/include/effect/shape",
+      "//foundation/graphic/graphics_effect/include/util",
     ]
 
+    defines = ["CROSS_PLATFORM"]
     if(target_os == "ios") {
-      defines = ["ROSEN_IOS"]
+      defines += ["ROSEN_IOS"]
     }
 
     sources = [
@@ -65,6 +86,8 @@ if (is_arkui_x) {
     ]
 
     deps = [
+      "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:EGL",
+      "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
       "//foundation/graphic/graphic_2d/rosen/modules/effect/color_picker:color_picker",
       "//foundation/graphic/graphic_2d/rosen/modules/effect/skia_effectChain:skeffectchain",
     ]
@@ -92,17 +115,26 @@ if (is_arkui_x) {
     ]
 
     deps = [
+      "//foundation/graphic/graphic_2d/frameworks/opengl_wrapper:EGL",
+      "//foundation/graphic/graphic_2d/rosen/modules/2d_graphics:2d_graphics",
       "//foundation/graphic/graphic_2d/rosen/modules/effect/color_picker:color_picker",
       "//foundation/graphic/graphic_2d/rosen/modules/effect/skia_effectChain:skeffectchain",
     ]
 
     external_deps = [
       "c_utils:utils",
+      "graphics_effect:graphics_effect_core",
       "hilog:libhilog",
       "image_framework:image",
       "image_framework:image_native",
       "napi:ace_napi",
+      "graphic_surface:surface",
     ]
+    
+    if (defined(arkgraphic2d_api_metrics) && arkgraphic2d_api_metrics) {
+      external_deps += [ "api_metrics:histogrammanager" ]
+      defines = [ "HISTOGRAM_MANAGEMENT_ENABLE=1" ]
+    }
 
     cflags_cc = [ "-std=c++17" ]
 

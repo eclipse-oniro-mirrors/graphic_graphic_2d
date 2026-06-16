@@ -40,6 +40,7 @@ namespace Rosen {
 // modify the RSTypefaceCache instance as global to extend life cycle, fix destructor crash
 static RSTypefaceCache gRSTypefaceCacheInstance;
 static const int MAX_CHUNK_SIZE = 20000;
+static constexpr int INVALID_FD = -1;
 
 RSTypefaceCache& RSTypefaceCache::Instance()
 {
@@ -145,8 +146,26 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId, std::shared_ptr<Dr
     if (typefaceHashCode_.find(uniqueId) != typefaceHashCode_.end()) {
         return;
     }
+    uint64_t fullHash = 0;
+    if (typeface->GetFd() != INVALID_FD) {
+        fullHash = CalculateTypefaceFullHash(typeface);
+    } else {
+        fullHash = typeface->GetHash();
+        if (!fullHash) { // fallback to slow path if the adapter does not provide hash
+            std::shared_ptr<Drawing::Data> data = typeface->Serialize();
+            if (!data) {
+                return;
+            }
+            const void* stream = data->GetData();
+            size_t size = data->GetSize();
+#ifdef USE_M133_SKIA
+            fullHash = SkChecksum::Hash32(stream, std::min(size, static_cast<size_t>(MAX_CHUNK_SIZE)));
+#else
+            fullHash = SkOpts::hash_fn(stream, std::min(size, static_cast<size_t>(MAX_CHUNK_SIZE)), 0);
+#endif
+        }
+    }
 
-    uint64_t fullHash = CalculateTypefaceFullHash(typeface);
     typefaceHashCode_[uniqueId] = fullHash;
     pid_t pid = GetTypefacePid(uniqueId);
     if (typefaceHashMap_.find(fullHash) != typefaceHashMap_.end()) {
@@ -168,7 +187,20 @@ void RSTypefaceCache::CacheDrawingTypeface(uint64_t uniqueId, std::shared_ptr<Dr
     if (pid) {
         MemorySnapshot::Instance().AddCpuMemory(pid, typeface->GetSize());
     }
-    typefaceBaseHashMap_[typeface->GetHash()] = typeface;
+    typefaceBaseHashMap_[typeface->GetHash()] = std::make_tuple(typeface, 1);
+    if (typeface->GetFd() != INVALID_FD) {
+        return;
+    }
+    // register queued entries old ipc
+    auto iterator = typefaceHashQueue_.find(fullHash);
+    if (iterator != typefaceHashQueue_.end()) {
+        for (const uint64_t cacheId: iterator->second) {
+            if (cacheId != uniqueId) {
+                AddIfFound(cacheId, fullHash);
+            }
+        }
+        typefaceHashQueue_.erase(iterator);
+    }
 }
 
 void RemoveHashQueue(
@@ -190,14 +222,23 @@ void RSTypefaceCache::RemoveHashMap(pid_t pid, std::unordered_map<uint64_t, Type
     uint64_t hash_value)
 {
     if (typefaceHashMap.find(hash_value) != typefaceHashMap.end()) {
-        auto [typeface, ref] = typefaceHashMap[hash_value];
+        auto& [typeface, ref] = typefaceHashMap[hash_value];
         if (pid) {
             MemorySnapshot::Instance().RemoveCpuMemory(pid, typeface->GetSize());
         }
-        if (ref <= 1) {
-            typefaceHashMap.erase(hash_value);
-        } else {
-            typefaceHashMap[hash_value] = std::make_tuple(typeface, ref - 1);
+        ref -= 1;
+        if (ref != 0) {
+            return;
+        }
+        typefaceHashMap.erase(hash_value);
+        uint32_t baseHash = static_cast<uint32_t>(0xFFFFFFFF & hash_value);
+        auto baseTypefaceItem = typefaceBaseHashMap_.find(baseHash);
+        if (baseTypefaceItem != typefaceBaseHashMap_.end()) {
+            auto& [baseTypeface, baseRef] = baseTypefaceItem->second;
+            baseRef -= 1;
+            if (baseRef == 0) {
+                typefaceBaseHashMap_.erase(baseHash);
+            }
         }
     }
 }
@@ -236,7 +277,7 @@ std::shared_ptr<Drawing::Typeface> RSTypefaceCache::UpdateDrawingTypefaceRef(Dra
 {
     std::lock_guard lock(mapMutex_);
     uint64_t fullHash = static_cast<uint64_t>(sharedTypeface.hash_);
-    if (sharedTypeface.hasFontArgs_) {
+    if (sharedTypeface.hasFontArgs_ && sharedTypeface.fd_ != INVALID_FD) {
         uint32_t fontArgsHash = CalculateFontArgsHash(sharedTypeface.coords_);
         fullHash = AssembleFullHash(fontArgsHash, sharedTypeface.hash_);
     }
@@ -253,19 +294,52 @@ std::shared_ptr<Drawing::Typeface> RSTypefaceCache::UpdateDrawingTypefaceRef(Dra
         uint32_t baseHash = static_cast<uint32_t>(0xFFFFFFFF & fullHash);
         auto baseTypeface = typefaceBaseHashMap_.find(baseHash);
         if (baseTypeface != typefaceBaseHashMap_.end()) {
+            RS_LOGD("UpdateDrawingTypefaceRef: Find same typeface in base cache, use existed base typeface.");
             Drawing::FontArguments fontArgs;
             fontArgs.SetCollectionIndex(sharedTypeface.index_);
             fontArgs.SetVariationDesignPosition({sharedTypeface.coords_.data(), sharedTypeface.coords_.size()});
-            auto clonedTypeface = baseTypeface->second->MakeClone(fontArgs);
+            auto clonedTypeface = std::get<0>(baseTypeface->second)->MakeClone(fontArgs);
             if(!clonedTypeface) {
                 RS_LOGE("UpdateDrawingTypefaceRef: Typeface clone failed");
+                return nullptr;
             }
+            std::get<1>(baseTypeface->second)++;
+            clonedTypeface->SetFd(std::get<0>(baseTypeface->second)->GetFd());
             typefaceHashCode_[sharedTypeface.id_] = fullHash;
             typefaceHashMap_[fullHash] = std::make_tuple(clonedTypeface, 1);
             return clonedTypeface;
         }
     }
     return nullptr;
+}
+
+int32_t RSTypefaceCache::InsertVariationTypeface(Drawing::SharedTypeface& sharedTypeface)
+{
+    auto variationTypeface = GetDrawingTypefaceCache(sharedTypeface.id_);
+    if (variationTypeface != nullptr) {
+        RS_LOGD("InsertVariationTypeface: variationTypefaceId found in cache");
+        return variationTypeface->GetFd();
+    }
+    RS_LOGD("InsertVariationTypeface: variationTypefaceId not found in cache");
+
+    // Validate source typefaceId
+    auto typeface = GetDrawingTypefaceCache(sharedTypeface.originId_);
+    if (typeface == nullptr) {
+        RS_LOGE("InsertVariationTypeface: originId_ not found in cache");
+        return -1;
+    }
+
+    Drawing::FontArguments fontArgs;
+    fontArgs.SetCollectionIndex(typeface->GetIndex());
+    fontArgs.SetVariationDesignPosition({sharedTypeface.coords_.data(), sharedTypeface.coords_.size()});
+    auto clonedTypeface = typeface->MakeClone(fontArgs);
+    if (clonedTypeface == nullptr) {
+        RS_LOGE("UpdateDrawingTypefaceRef: Typeface clone failed");
+        return -1;
+    }
+    clonedTypeface->SetFd(typeface->GetFd());
+    CacheDrawingTypeface(sharedTypeface.id_, clonedTypeface);
+    return clonedTypeface->GetFd();
 }
 
 void PurgeMapWithPid(pid_t pid, std::unordered_map<uint32_t, std::unordered_set<uint64_t>>& map)
@@ -334,160 +408,130 @@ void RSTypefaceCache::HandleDelayDestroyQueue()
     }
 }
 
-void RSTypefaceCache::Dump() const
-{
-    RS_LOGI("RSTypefaceCache Dump: [");
-    RS_LOGI("RSTypefaceCache Dump: "
-            "%{public}-6s %{public}-16s %{public}-16s %{public}-4s %{public}-26s %{public}10s %{public}10s",
-            "pid", "typefaceID", "hash_value", "ref", "familyname", "size(B)", "size(MB)");
-    constexpr double KB = 1024.0;
-    constexpr double MB = KB * KB;
-    for (auto co : typefaceHashCode_) {
-        auto iter = typefaceHashMap_.find(co.second);
-        if (iter != typefaceHashMap_.end()) {
-            auto [typeface, ref] = iter->second;
-
-            int pid = GetTypefacePid(co.first);
-            uint64_t typefaceId = co.first;
-            uint64_t hash = co.second;
-            const std::string& family = typeface->GetFamilyName();
-            double sizeMB = static_cast<double>(typeface->GetSize()) / MB;
-            RS_LOGI("RSTypefaceCache Dump: "
-                    "%{public}6d %{public}16" PRIu64 " %{public}16" PRIu64
-                    " %{public}4u %{public}26s %{public}10u %{public}10.2f",
-                    pid, typefaceId, hash, ref, family.c_str(), typeface->GetSize(), sizeMB);
-        }
-    }
-    RS_LOGI("RSTypefaceCache Dump ]");
-}
-
-uint32_t CalcCustomFontPss()
-{
-    std::string s;
-#ifdef IS_OHOS
-    LoadStringFromFile("/proc/self/smaps", s);
-#endif
-    std::stringstream iss(s);
-    std::string line;
-    bool inCustomFont = false;
-    uint32_t pss = 0;
-
-    while (std::getline(iss, line)) {
-        if (line.find('-') != std::string::npos && line.find("dev/ashmem/") != std::string::npos) {
-            inCustomFont = (line.find("[custom font]") != std::string::npos);
-            continue;
-        }
-
-        if (inCustomFont && line.rfind("Pss:", 0) == 0) {
-            std::istringstream pssLine(line);
-            std::string key;
-            std::string unit;
-            uint32_t value = 0;
-            pssLine >> key >> value >> unit;
-            pss += value;
-            inCustomFont = false;
-        }
-    }
-
-    return pss;
-}
-
 void RSTypefaceCache::Dump(DfxString& log) const
 {
+    RS_TRACE_NAME_FMT("RSTypefaceCache::Dump typefaceHashCode size:%d", typefaceHashCode_.size());
     std::lock_guard<std::mutex> lock(mapMutex_);
     uint32_t totalMem = std::accumulate(typefaceHashMap_.begin(), typefaceHashMap_.end(), 0u,
         [](uint32_t sum, const auto& item) { return sum + std::get<0>(item.second)->GetSize(); });
     constexpr double KB = 1024.0;
     constexpr double MB = KB * KB;
-    log.AppendFormat("------------------------------------\n");
-    log.AppendFormat("RSTypefaceCache Dump:\nTotal: %.2fKB, %.2fMB\n",
-        static_cast<double>(totalMem) / KB, static_cast<double>(totalMem) / MB);
-    double pssMem = static_cast<double>(CalcCustomFontPss());
-    log.AppendFormat("Pss:   %.2fKB %.2fMB\n", pssMem, pssMem / KB);
-    log.AppendFormat("%-6s %-16s %-4s %-26s %-10s %-10s\n",
-        "pid", "hash_value", "ref", "familyname", "size(B)", "size(MB)");
-    std::set<std::pair<int, uint64_t>> processedPairs;
-    for (auto co : typefaceHashCode_) {
-        auto iter = typefaceHashMap_.find(co.second);
-        if (iter == typefaceHashMap_.end()) {
-            continue;
-        }
-        auto [typeface, ref] = iter->second;
+    log.AppendFormat("RSTypefaceCache Dump:\n");
+    log.AppendFormat(
+        "  Total: %.2fKB (%.2fMB)\n", static_cast<double>(totalMem) / KB, static_cast<double>(totalMem) / MB);
+    log.AppendFormat("  Entries: %zu\n", typefaceHashMap_.size());
+    log.AppendFormat("%-6s %-16s %-16s %-4s %-26s %-20s\n", "PID", "UniqueId", "Hash", "Ref", "FamilyName", "Size");
 
-        int pid = GetTypefacePid(co.first);
-        uint64_t hash = co.second;
+    std::unordered_map<uint64_t, std::vector<uint64_t>> hashToUniqueIds;
+    for (const auto& [uniqueId, hash] : typefaceHashCode_) {
+        hashToUniqueIds[hash].push_back(uniqueId);
+    }
+
+    for (const auto& [hash, tuple] : typefaceHashMap_) {
+        auto [typeface, ref] = tuple;
         const std::string& family = typeface->GetFamilyName();
         double sizeMB = static_cast<double>(typeface->GetSize()) / MB;
-        
-        std::pair<int, uint64_t> currentPair = {pid, hash};
-        if (processedPairs.find(currentPair) == processedPairs.end()) {
-            log.AppendFormat("%-6d %-16" PRIu64 " %-4u %-26s %-10u %-10.2f\n",
-                pid, hash, ref, family.c_str(), typeface->GetSize(), sizeMB);
-            processedPairs.insert(currentPair);
+
+        auto it = hashToUniqueIds.find(hash);
+        if (it == hashToUniqueIds.end() || it->second.empty()) {
+            log.AppendFormat("%-6s %-16s %016" PRIx64 " %-4u %-26s %-10u (%.2fMB)\n", "-", "-", hash, ref,
+                family.c_str(), typeface->GetSize(), sizeMB);
+            continue;
+        }
+        for (uint64_t uniqueId : it->second) {
+            int32_t pid = static_cast<int32_t>(GetTypefacePid(uniqueId));
+            log.AppendFormat("%-6d %-16u %016" PRIx64 " %-4u %-26s %-10u (%.2fMB)\n", pid, GetTypefaceId(uniqueId),
+                hash, ref, family.c_str(), typeface->GetSize(), sizeMB);
         }
     }
+    log.AppendFormat("------------------------------------\n");
 }
 
-void RSTypefaceCache::ReplaySerialize(std::stringstream& ss)
+void RSTypefaceCache::ReplaySerialize(std::stringstream& stream)
 {
-    size_t fontCount = 0;
-    ss.write(reinterpret_cast<const char*>(&fontCount), sizeof(fontCount));
+    mapMutex_.lock();
+    const auto hashCode = typefaceHashCode_;
+    const auto hashMap = typefaceHashMap_;
+    mapMutex_.unlock();
 
-    std::lock_guard<std::mutex> lock(mapMutex_);
-    for (auto co : typefaceHashCode_) {
-        if (typefaceHashMap_.find(co.second) != typefaceHashMap_.end()) {
-            auto [typeface, ref] = typefaceHashMap_.at(co.second);
-
-            if (auto data = typeface->Serialize()) {
-                const void* stream = data->GetData();
-                size_t size = data->GetSize();
-
-                ss.write(reinterpret_cast<const char*>(&co.first), sizeof(co.first));
-                ss.write(reinterpret_cast<const char*>(&size), sizeof(size));
-                ss.write(reinterpret_cast<const char*>(stream), size);
-                fontCount++;
-            }
+    std::unordered_map<std::shared_ptr<Drawing::Typeface>, std::vector<uint64_t>> fonts;
+    for (const auto& [id, hash] : hashCode) {
+        const auto entry = hashMap.find(hash);
+        const auto font = (entry != hashMap.end()) ? std::get<0>(entry->second) : nullptr;
+        if (font) {
+            fonts[font].push_back(id);
         }
     }
 
-    ss.seekp(0, std::ios_base::beg);
-    ss.write(reinterpret_cast<const char*>(&fontCount), sizeof(fontCount));
-    ss.seekp(0, std::ios_base::end);
+    size_t count = 0;
+    stream.write(reinterpret_cast<const char*>(&count), sizeof(count));
+
+    for (const auto& [font, ids] : fonts) {
+        const auto blob = font->Serialize();
+        const auto data = blob ? blob->GetData() : nullptr;
+        const size_t size = blob ? blob->GetSize() : 0;
+        if (!data || !size) {
+            continue;
+        }
+
+        stream.write(reinterpret_cast<const char*>(&ids[0]), sizeof(ids[0]));
+        stream.write(reinterpret_cast<const char*>(&size), sizeof(size));
+        stream.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size));
+
+        constexpr size_t dummy = std::numeric_limits<size_t>::max();
+        for (size_t index = 1; index < ids.size(); index++) {
+            stream.write(reinterpret_cast<const char*>(&ids[index]), sizeof(ids[index]));
+            stream.write(reinterpret_cast<const char*>(&dummy), sizeof(dummy));
+        }
+
+        count += ids.size();
+    }
+
+    stream.seekp(0, std::ios_base::beg);
+    stream.write(reinterpret_cast<const char*>(&count), sizeof(count));
+    stream.seekp(0, std::ios_base::end);
 }
 
-std::string RSTypefaceCache::ReplayDeserialize(std::stringstream& ss)
+std::string RSTypefaceCache::ReplayDeserialize(std::stringstream& stream)
 {
-    constexpr int bitNumber = 30 + 32;
-    uint64_t replayMask = (uint64_t)1 << bitNumber;
-    size_t fontCount;
-    uint64_t uniqueId;
-    size_t dataSize;
+    constexpr size_t maxSize = 40'000'000;
+    constexpr uint32_t bitNumber = 30 + 32;
+    constexpr uint64_t replayMask = uint64_t(1) << bitNumber;
+
+    size_t count = 0;
+    stream.read(reinterpret_cast<char*>(&count), sizeof(count));
+
+    std::shared_ptr<Drawing::Typeface> typeface;
     std::vector<uint8_t> data;
-    constexpr size_t maxTypefaceDataSize = 40'000'000;
+    for (size_t i = 0; i < count; i++) {
+        uint64_t uniqueId = 0;
+        stream.read(reinterpret_cast<char*>(&uniqueId), sizeof(uniqueId));
 
-    ss.read(reinterpret_cast<char*>(&fontCount), sizeof(fontCount));
-    for (size_t i = 0; i < fontCount; i++) {
-        ss.read(reinterpret_cast<char*>(&uniqueId), sizeof(uniqueId));
-        ss.read(reinterpret_cast<char*>(&dataSize), sizeof(dataSize));
+        size_t size = 0;
+        stream.read(reinterpret_cast<char*>(&size), sizeof(size));
 
-        if (dataSize > maxTypefaceDataSize) {
+        constexpr size_t dummy = std::numeric_limits<size_t>::max();
+        if (dummy == size) {
+            CacheDrawingTypeface(uniqueId | replayMask, typeface);
+            continue;
+        }
+
+        if (size > maxSize) {
             return "Typeface serialized data is over 40MB";
         }
-        data.resize(dataSize);
-        ss.read(reinterpret_cast<char*>(data.data()), data.size());
 
-        if (ss.eof()) {
-            return "Typeface track damaged";
+        data.resize(size);
+        stream.read(reinterpret_cast<char*>(data.data()), data.size());
+
+        if (stream.eof()) {
+            return "Typeface track is damaged";
         }
 
-        std::shared_ptr<Drawing::Typeface> typeface;
         typeface = Drawing::Typeface::Deserialize(data.data(), data.size());
-        if (typeface) {
-            uniqueId |= replayMask;
-            CacheDrawingTypeface(uniqueId, typeface);
-        } else {
+        if (!typeface) {
             return "Typeface unmarshalling failed";
         }
+        CacheDrawingTypeface(uniqueId | replayMask, typeface);
     }
     return {};
 }

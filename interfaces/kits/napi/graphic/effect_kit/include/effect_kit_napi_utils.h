@@ -87,6 +87,13 @@ do \
 
 #define EFFECT_ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
 
+#if defined(HISTOGRAM_MANAGEMENT_ENABLE) && (HISTOGRAM_MANAGEMENT_ENABLE==1)
+#include "histogram_plugin_macros.h"
+#define API_STATS_HISTOGRAM(...) HISTOGRAM_BOOLEAN(__VA_ARGS__)
+#else
+#define API_STATS_HISTOGRAM(...)
+#endif
+
 namespace OHOS {
 namespace Rosen {
 class EffectKitNapiUtils {
@@ -104,7 +111,7 @@ public:
     template<typename T>
     napi_status CreateAsyncWork(napi_env& env, napi_status& status, const char* workName,
         napi_async_execute_callback exec, napi_async_complete_callback complete, std::unique_ptr<T>& aContext,
-        napi_async_work& work)
+        napi_async_work& work, napi_qos_t qos = napi_qos_default)
     {
         napi_value resource = nullptr;
         status = napi_create_string_utf8(env, workName, NAPI_AUTO_LENGTH, &resource);
@@ -112,7 +119,11 @@ public:
             status = napi_create_async_work(
                 env, nullptr, resource, exec, complete, static_cast<void*>(aContext.get()), &work);
             if (status == napi_ok) {
-                status = napi_queue_async_work(env, work);
+                if (qos == napi_qos_default) {
+                    status = napi_queue_async_work(env, work);
+                } else {
+                    status = napi_queue_async_work_with_qos(env, work, qos);
+                }
             }
         }
         aContext.release();

@@ -14,6 +14,8 @@
  */
 
 #include "feature/color_picker/rs_color_picker_thread.h"
+
+#include "common/rs_optional_trace.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
 
@@ -42,11 +44,13 @@ RSColorPickerThread::RSColorPickerThread()
     handler_ = std::make_shared<AppExecFwk::EventHandler>(runner_);
 }
 
-void RSColorPickerThread::PostTask(const std::function<void()>& task, int64_t delayTime)
+bool RSColorPickerThread::PostTask(const std::function<void()>& task, int64_t delayTime)
 {
-    if (handler_) {
-        handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    if (!handler_) {
+        return false;
     }
+    handler_->PostTask(task, delayTime, AppExecFwk::EventQueue::Priority::IMMEDIATE);
+    return true;
 }
 
 void RSColorPickerThread::RegisterNodeDirtyCallback(const NodeDirtyCallback& callback)
@@ -57,6 +61,14 @@ void RSColorPickerThread::RegisterNodeDirtyCallback(const NodeDirtyCallback& cal
     callback_ = callback;
 }
 
+void RSColorPickerThread::RegisterNotifyClientCallback(const NotifyClientCallback& callback)
+{
+    if (callback == nullptr) {
+        RS_LOGE("RSColorPickerThread RegisterColorPickerCallback, callback invalid!");
+    }
+    notifyClient_ = callback;
+}
+
 void RSColorPickerThread::NotifyNodeDirty(uint64_t nodeId)
 {
     if (callback_) {
@@ -64,19 +76,27 @@ void RSColorPickerThread::NotifyNodeDirty(uint64_t nodeId)
     }
 }
 
+void RSColorPickerThread::NotifyClient(uint64_t nodeId, uint32_t color)
+{
+    if (notifyClient_) {
+        notifyClient_(nodeId, color);
+    }
+}
+
 #if defined(RS_ENABLE_UNI_RENDER) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 void RSColorPickerThread::InitRenderContext(std::shared_ptr<RenderContext> context)
 {
     renderContext_ = context;
-    PostTask([this]() {
-        gpuContext_ = CreateShareGPUContext();
-        if (gpuContext_ == nullptr) {
-            return;
-        }
-        gpuContext_->RegisterPostFunc([](const std::function<void()>& task) {
-            RSColorPickerThread::Instance().PostTask(task);
-        });
-    });
+    PostTask(
+        [this]() {
+            gpuContext_ = CreateShareGPUContext();
+            if (gpuContext_ == nullptr) {
+                return;
+            }
+            gpuContext_->RegisterPostFunc(
+                [](const std::function<void()>& task) { RSColorPickerThread::Instance().PostTask(task, 0); });
+        },
+        0);
 }
 
 std::shared_ptr<Drawing::GPUContext> RSColorPickerThread::GetShareGPUContext() const
@@ -121,4 +141,4 @@ std::shared_ptr<Drawing::GPUContext> RSColorPickerThread::CreateShareGPUContext(
     return nullptr;
 }
 #endif
-} // OHOS::Rosen
+} // namespace OHOS::Rosen

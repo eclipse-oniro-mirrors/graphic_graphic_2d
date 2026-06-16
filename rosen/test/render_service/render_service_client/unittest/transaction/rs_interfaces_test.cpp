@@ -59,7 +59,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUI001, TestSize.Level1)
         void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelMap,
             std::shared_ptr<Media::PixelMap> pixelMapHDR) override {}
     };
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     auto callback = std::make_shared<TestSurfaceCapture>();
     bool res = instance.TakeSurfaceCaptureForUI(nullptr, callback, 1.f, 1.f, true);
     EXPECT_TRUE(res == false);
@@ -89,7 +89,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUI002, TestSize.Level1)
 {
     std::shared_ptr<RSNode> node = nullptr;
     std::shared_ptr<SurfaceCaptureCallback> callback = nullptr;
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     bool res = instance.TakeSurfaceCaptureForUI(node, callback, 1.f, 1.f, true);
     EXPECT_TRUE(res == false);
 
@@ -108,7 +108,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUI003, TestSize.Level1)
 {
     std::shared_ptr<RSNode> node = nullptr;
     std::shared_ptr<SurfaceCaptureCallback> callback = nullptr;
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     Drawing::Rect specifiedAreaRect(0.f, 0.f, 0.f, 0.f);
     bool res = instance.TakeSurfaceCaptureForUI(node, callback, 1.f, 1.f, true, specifiedAreaRect);
     EXPECT_TRUE(res == false);
@@ -118,6 +118,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUI003, TestSize.Level1)
     EXPECT_TRUE(res == false);
 }
 
+#ifdef RS_ENABLE_UNI_RENDER
 /**
  * @tc.name: RegisterTransactionDataCallback001
  * @tc.desc: RegisterTransactionDataCallback Test callback does not exist
@@ -128,8 +129,7 @@ HWTEST_F(RSInterfacesTest, RegisterTransactionDataCallback001, TestSize.Level1)
 {
     uint64_t token = 123;
     uint64_t timeStamp = 456;
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
-    instance.renderPiplineClient_ = std::make_unique<RSRenderPipelineClient>();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     bool res = instance.RegisterTransactionDataCallback(token, timeStamp, nullptr);
     EXPECT_TRUE(res == false);
 }
@@ -144,12 +144,12 @@ HWTEST_F(RSInterfacesTest, RegisterTransactionDataCallback002, TestSize.Level1)
 {
     uint64_t token = 123;
     uint64_t timeStamp = 456;
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
-    instance.renderPiplineClient_ = std::make_unique<RSRenderPipelineClient>();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     std::function<void()> callback = []() {};
     bool res = instance.RegisterTransactionDataCallback(token, timeStamp, callback);
     EXPECT_TRUE(res == true);
 }
+#endif
 
 /**
  * @tc.name: TakeSurfaceCaptureSoloNodeList001
@@ -160,24 +160,10 @@ HWTEST_F(RSInterfacesTest, RegisterTransactionDataCallback002, TestSize.Level1)
 HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureSoloNodeList001, TestSize.Level1)
 {
     std::shared_ptr<RSNode> node = nullptr;
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     std::vector<std::pair<NodeId, std::shared_ptr<Media::PixelMap>>> res =
         instance.TakeSurfaceCaptureSoloNodeList(node);
     EXPECT_TRUE(res.size() == 0);
-}
-
-/**
- * @tc.name: SetHwcNodeBoundsTest
- * @tc.desc: test results of SetHwcNodeBounds
- * @tc.type: FUNC
- * @tc.require: issueIB2QCC
- */
-HWTEST_F(RSInterfacesTest, SetHwcNodeBoundsTest, TestSize.Level1)
-{
-    NodeId nodeId = 1;
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
-    bool res = instance.SetHwcNodeBounds(nodeId, 1.0f, 1.0f, 1.0f, 1.0f);
-    EXPECT_TRUE(res);
 }
 
 /**
@@ -197,7 +183,7 @@ HWTEST_F(RSInterfacesTest, RegisterTypeface001, TestSize.Level1)
     RSTypefaceCache& typefaceCache = RSTypefaceCache::Instance();
     typefaceCache.typefaceHashCode_.emplace(globalUniqueId, 0);
     instance.RegisterTypeface(typeface);
-    EXPECT_NE(TypefaceMap::GetTypefaceByUniqueId(typeface->GetUniqueID()), nullptr);
+    EXPECT_NE(Drawing::TypefaceMap::GetTypefaceByUniqueId(typeface->GetUniqueID()), nullptr);
     typeface = nullptr;
     EXPECT_EQ(instance.RegisterTypeface(typeface), -1);
     typefaceCache.typefaceHashCode_.clear();
@@ -218,7 +204,7 @@ HWTEST_F(RSInterfacesTest, RegisterTypeface002, TestSize.Level1)
     ASSERT_NE(typeface, nullptr);
     int32_t result = instance.RegisterTypeface(typeface);
     EXPECT_EQ(result, typeface->GetFd());
-    EXPECT_NE(TypefaceMap::GetTypefaceByUniqueId(typeface->GetUniqueID()), nullptr);
+    EXPECT_NE(Drawing::TypefaceMap::GetTypefaceByUniqueId(typeface->GetUniqueID()), nullptr);
     EXPECT_TRUE(instance.UnRegisterTypeface(typeface->GetHash()));
 }
 
@@ -247,7 +233,11 @@ HWTEST_F(RSInterfacesTest, RegisterTypeface003, TestSize.Level1)
     typeface->UpdateStream(std::move(stream));
     typeface->SetFd(fd);
     int32_t result = instance.RegisterTypeface(typeface);
-    EXPECT_EQ(result, -1);
+    if (RSSystemProperties::GetUniRenderEnabled()) {
+        EXPECT_EQ(result, INVALID_FD);
+    } else {
+        EXPECT_EQ(result, fd);
+    }
 }
 
 
@@ -299,20 +289,6 @@ HWTEST_F(RSInterfacesTest, GetTotalAppMemSize001, TestSize.Level1)
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     bool res = instance.GetTotalAppMemSize(cpuMemSize, gpuMemSize);
     EXPECT_TRUE(res);
-}
-
-/**
- * @tc.name: SetAppWindowNum001
- * @tc.desc: test results of SetAppWindowNum
- * @tc.type: FUNC
- * @tc.require: issueI9N0I9
- */
-HWTEST_F(RSInterfacesTest, SetAppWindowNum001, TestSize.Level1)
-{
-    RSInterfaces& instance = RSInterfaces::GetInstance();
-    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
-    instance.SetAppWindowNum(1);
-    EXPECT_TRUE(instance.renderServiceClient_ != nullptr);
 }
 
 /**
@@ -552,6 +528,20 @@ HWTEST_F(RSInterfacesTest, GetRefreshInfoToSP001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetRefreshInfoByPidAndUniqueId001
+ * @tc.desc: test results of GetRefreshInfoByPidAndUniqueId
+ * @tc.type: FUNC
+ * @tc.require: issueI97N4E
+ */
+HWTEST_F(RSInterfacesTest, GetRefreshInfoByPidAndUniqueId001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    GameStateData info;
+    std::string str = instance.GetRefreshInfoByPidAndUniqueId(info.pid, 0L);
+    EXPECT_TRUE(str == "");
+}
+
+/**
  * @tc.name: SetWatermark001
  * @tc.desc: test results of SetWatermark
  * @tc.type: FUNC
@@ -615,6 +605,7 @@ HWTEST_F(RSInterfacesTest, SetWatermark002, TestSize.Level1)
  */
 HWTEST_F(RSInterfacesTest, SetWatermark003, TestSize.Level1)
 {
+#if defined(RS_ENABLE_UNI_RENDER)
     RSInterfaces& instance = RSInterfaces::GetInstance();
     int width = 10;
     int height = 10;
@@ -629,6 +620,7 @@ HWTEST_F(RSInterfacesTest, SetWatermark003, TestSize.Level1)
     pixelmap->SetAstc(false);
     res = instance.SetWatermark("test", pixelmap);
     EXPECT_FALSE(res);
+#endif
 }
 
 /**
@@ -665,13 +657,13 @@ HWTEST_F(RSInterfacesTest, SetWatermark004, TestSize.Level1)
  */
 HWTEST_F(RSInterfacesTest, RegisterSurfaceBufferCallback001, TestSize.Level1)
 {
+#ifdef RS_ENABLE_UNI_RENDER
     class TestSurfaceBufferCallback : public SurfaceBufferCallback {
     public:
         void OnFinish(const FinishCallbackRet& ret) {}
         void OnAfterAcquireBuffer(const AfterAcquireBufferRet& ret) {}
     };
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
-    instance.renderPiplineClient_ = std::make_unique<RSRenderPipelineClient>();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
 
     bool res = instance.RegisterSurfaceBufferCallback(1, 1, nullptr);
     EXPECT_FALSE(res);
@@ -679,20 +671,9 @@ HWTEST_F(RSInterfacesTest, RegisterSurfaceBufferCallback001, TestSize.Level1)
     auto callback = std::make_shared<TestSurfaceBufferCallback>();
     res = instance.RegisterSurfaceBufferCallback(1, 1, callback);
     EXPECT_TRUE(res);
-}
-
-/**
- * @tc.name: UnregisterSurfaceBufferCallback001
- * @tc.desc: test results of UnregisterSurfaceBufferCallback
- * @tc.type: FUNC
- * @tc.require: issueIASMZG
- */
-HWTEST_F(RSInterfacesTest, UnregisterSurfaceBufferCallback001, TestSize.Level1)
-{
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
-    instance.renderPiplineClient_ = std::make_unique<RSRenderPipelineClient>();
-    bool res = instance.UnregisterSurfaceBufferCallback(1, 1);
-    EXPECT_FALSE(res);
+    res = instance.UnregisterSurfaceBufferCallback(1, 1);
+    EXPECT_TRUE(res);
+#endif
 }
 
 /**
@@ -709,21 +690,6 @@ HWTEST_F(RSInterfacesTest, RegisterAndUnRegisterFirstFrameCommitCallback001, Tes
     auto callback = [](uint64_t, int64_t) {};
     EXPECT_EQ(instance.RegisterFirstFrameCommitCallback(callback), 0);
     EXPECT_EQ(instance.UnRegisterFirstFrameCommitCallback(), 0);
-}
-
-/**
- * @tc.name: SetWindowContainer001
- * @tc.desc: test results of SetWindowContainer
- * @tc.type: FUNC
- * @tc.require: issueIBIK1X
- */
-HWTEST_F(RSInterfacesTest, SetWindowContainer001, TestSize.Level1)
-{
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
-    instance.renderPiplineClient_ = std::make_unique<RSRenderPipelineClient>();
-    NodeId nodeId = {};
-    instance.SetWindowContainer(nodeId, false);
-    EXPECT_TRUE(instance.renderPiplineClient_ != nullptr);
 }
 
 /**
@@ -766,16 +732,20 @@ HWTEST_F(RSInterfacesTest, SetOverlayDisplayMode001, TestSize.Level1)
 #endif
 
 /**
- * @tc.name: GetHighContrastTextState001
- * @tc.desc: test results of GetHighContrastTextState
+ * @tc.name: SetVideoRateInfo001
+ * @tc.desc: test results of SendVideoRateInfo
  * @tc.type: FUNC
- * @tc.require: issueIC3FUZ
+ * @tc.require:
  */
-HWTEST_F(RSInterfacesTest, GetHighContrastTextState001, TestSize.Level1)
+HWTEST_F(RSInterfacesTest, SetVideoRateInfo001, TestSize.Level1)
 {
     RSInterfaces& instance = RSInterfaces::GetInstance();
-    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
-    EXPECT_EQ(instance.GetHighContrastTextState(), false);
+ 
+    std::unordered_map<std::string, std::string> videoRateInfo;
+    videoRateInfo["rate"] = "60";
+    videoRateInfo["decSpeed"] = "1";
+    int32_t res = instance.SendVideoRateInfo(videoRateInfo);
+    EXPECT_EQ(res, SUCCESS);
 }
 
 /**
@@ -829,6 +799,7 @@ HWTEST_F(RSInterfacesTest, GetPidGpuMemoryInMBTest001, TestSize.Level1)
  */
 HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUITest, TestSize.Level1)
 {
+#ifdef RS_ENABLE_UNI_RENDER
     class TestSurfaceCapture : public SurfaceCaptureCallback {
     public:
         TestSurfaceCapture() {}
@@ -841,13 +812,14 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUITest, TestSize.Level1)
     auto canvasNode = RSCanvasNode::Create(false, true);
     bool backupProperty = RSSystemProperties::isUniRenderEnabled_;
     RSSystemProperties::isUniRenderEnabled_ = true;
-    auto res = RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1.f, 1.f, false);
+    auto res = RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1.f, 1.f, false);
     EXPECT_EQ(res, true);
-    res = RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1.f, 1.f, true);
+    res = RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(canvasNode, callback, 1.f, 1.f, true);
     EXPECT_EQ(res, true);
-    res = RSRenderInterface::GetInstance().TakeSurfaceCaptureForUI(nullptr, callback);
+    res = RSInterfaces::GetInstance().TakeSurfaceCaptureForUI(nullptr, callback);
     EXPECT_EQ(res, false);
     RSSystemProperties::isUniRenderEnabled_ = backupProperty;
+#endif
 }
 
 /**
@@ -858,6 +830,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureForUITest, TestSize.Level1)
  */
 HWTEST_F(RSInterfacesTest, TakeUICaptureInRangeTest, TestSize.Level1)
 {
+#ifdef RS_ENABLE_UNI_RENDER
     class TestSurfaceCapture : public SurfaceCaptureCallback {
     public:
         TestSurfaceCapture() {}
@@ -871,16 +844,17 @@ HWTEST_F(RSInterfacesTest, TakeUICaptureInRangeTest, TestSize.Level1)
     auto canvasNodeEnd = RSCanvasNode::Create(false, true);
     bool backupProperty = RSSystemProperties::isUniRenderEnabled_;
     RSSystemProperties::isUniRenderEnabled_ = true;
-    auto res = RSRenderInterface::GetInstance().TakeUICaptureInRange(
+    auto res = RSInterfaces::GetInstance().TakeUICaptureInRange(
         nullptr, canvasNodeEnd, false, callback, 1.f, 1.f, false);
     EXPECT_EQ(res, false);
-    res = RSRenderInterface::GetInstance().TakeUICaptureInRange(
+    res = RSInterfaces::GetInstance().TakeUICaptureInRange(
         canvasNodeBegin, canvasNodeEnd, false, callback, 1.f, 1.f, false);
     EXPECT_EQ(res, true);
-    res = RSRenderInterface::GetInstance().TakeUICaptureInRange(
+    res = RSInterfaces::GetInstance().TakeUICaptureInRange(
         canvasNodeBegin, canvasNodeEnd, false, callback, 1.f, 1.f, true);
     EXPECT_EQ(res, true);
     RSSystemProperties::isUniRenderEnabled_ = backupProperty;
+#endif
 }
 
 /**
@@ -891,6 +865,7 @@ HWTEST_F(RSInterfacesTest, TakeUICaptureInRangeTest, TestSize.Level1)
  */
 HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureWithAllWindowsTest001, TestSize.Level1)
 {
+#ifdef RS_ENABLE_UNI_RENDER
     class TestSurfaceCapture : public SurfaceCaptureCallback {
     public:
         TestSurfaceCapture() {}
@@ -899,7 +874,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureWithAllWindowsTest001, TestSize.Lev
         void OnSurfaceCaptureHDR(std::shared_ptr<Media::PixelMap> pixelMap,
             std::shared_ptr<Media::PixelMap> pixelMapHDR) override {}
     };
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     std::shared_ptr<RSDisplayNode> displayNode;
     std::shared_ptr<TestSurfaceCapture> callback;
     RSSurfaceCaptureConfig captureConfig;
@@ -912,6 +887,7 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureWithAllWindowsTest001, TestSize.Lev
     callback = std::make_shared<TestSurfaceCapture>();
     ret = instance.TakeSurfaceCaptureWithAllWindows(displayNode, callback, captureConfig, checkDrmAndSurfaceLock);
     EXPECT_EQ(ret, true);
+#endif
 }
 
 /**
@@ -922,7 +898,8 @@ HWTEST_F(RSInterfacesTest, TakeSurfaceCaptureWithAllWindowsTest001, TestSize.Lev
  */
 HWTEST_F(RSInterfacesTest, FreezeScreenTest001, TestSize.Level1)
 {
-    RSRenderInterface& instance = RSRenderInterface::GetInstance();
+#ifdef RS_ENABLE_UNI_RENDER
+    RSInterfaces& instance = RSInterfaces::GetInstance();
     std::shared_ptr<RSDisplayNode> displayNode;
     bool isFreeze = true;
     bool ret = instance.FreezeScreen(displayNode, isFreeze);
@@ -932,6 +909,7 @@ HWTEST_F(RSInterfacesTest, FreezeScreenTest001, TestSize.Level1)
     displayNode = RSDisplayNode::Create(config);
     ret = instance.FreezeScreen(displayNode, isFreeze);
     EXPECT_EQ(ret, true);
+#endif
 }
 
 /**
@@ -942,6 +920,7 @@ HWTEST_F(RSInterfacesTest, FreezeScreenTest001, TestSize.Level1)
  */
 HWTEST_F(RSInterfacesTest, SurfaceWatermarkTest001, TestSize.Level1)
 {
+#ifdef RS_ENABLE_UNI_RENDER
     RSInterfaces& instance = RSInterfaces::GetInstance();
     instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
     int width = 10;
@@ -971,6 +950,7 @@ HWTEST_F(RSInterfacesTest, SurfaceWatermarkTest001, TestSize.Level1)
     res = instance.SetSurfaceWatermark(0, "name", pixelmap, {}, SurfaceWatermarkType::INVALID_WATER_MARK);
     EXPECT_EQ(SurfaceWatermarkStatusCode::WATER_MARK_INVALID_WATERMARK_TYPE, res);
     instance.ClearSurfaceWatermark(0, "name");
+#endif
 }
 
 /**
@@ -1016,4 +996,147 @@ HWTEST_F(RSInterfacesTest, ClearSurfaceWatermarkForNodes001, TestSize.Level1)
 
     instance.ClearSurfaceWatermarkForNodes(0, "name", {});
 }
+
+/**
+ * @tc.name: GetMaxGpuBufferSize001
+ * @tc.desc: test GetMaxGpuBufferSize with zero initial values
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, GetMaxGpuBufferSize001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    uint32_t maxWidth = 0;
+    uint32_t maxHeight = 0;
+    int32_t ret = instance.GetMaxGpuBufferSize(maxWidth, maxHeight);
+    EXPECT_GE(ret, -1);
+}
+
+/**
+ * @tc.name: GetMaxGpuBufferSize002
+ * @tc.desc: test GetMaxGpuBufferSize with preset values
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, GetMaxGpuBufferSize002, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    uint32_t maxWidth = 2048;
+    uint32_t maxHeight = 2048;
+    int32_t ret = instance.GetMaxGpuBufferSize(maxWidth, maxHeight);
+    EXPECT_GE(ret, -1);
+}
+
+/**
+ * @tc.name: GetMaxGpuBufferSize003
+ * @tc.desc: test GetMaxGpuBufferSize with UINT32_MAX
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, GetMaxGpuBufferSize003, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    uint32_t maxWidth = UINT32_MAX;
+    uint32_t maxHeight = UINT32_MAX;
+    int32_t ret = instance.GetMaxGpuBufferSize(maxWidth, maxHeight);
+    EXPECT_GE(ret, -1);
+}
+
+/**
+ * @tc.name: GetMaxGpuBufferSize004
+ * @tc.desc: test GetMaxGpuBufferSize multiple calls consistency
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, GetMaxGpuBufferSize004, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    uint32_t maxWidth1 = 0;
+    uint32_t maxHeight1 = 0;
+    int32_t ret1 = instance.GetMaxGpuBufferSize(maxWidth1, maxHeight1);
+
+    uint32_t maxWidth2 = 0;
+    uint32_t maxHeight2 = 0;
+    int32_t ret2 = instance.GetMaxGpuBufferSize(maxWidth2, maxHeight2);
+    EXPECT_GE(ret1, -1);
+    EXPECT_GE(ret2, -1);
+}
+
+/**
+ * @tc.name: GetMaxGpuBufferSize005
+ * @tc.desc: test GetMaxGpuBufferSize with different initial values
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, GetMaxGpuBufferSize005, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    uint32_t maxWidth1 = 1024;
+    uint32_t maxHeight1 = 768;
+    int32_t ret1 = instance.GetMaxGpuBufferSize(maxWidth1, maxHeight1);
+
+    uint32_t maxWidth2 = 4096;
+    uint32_t maxHeight2 = 4096;
+    int32_t ret2 = instance.GetMaxGpuBufferSize(maxWidth2, maxHeight2);
+    EXPECT_GE(ret1, -1);
+    EXPECT_GE(ret2, -1);
+}
+
+/**
+ * @tc.name: SetLogicalCameraRotationCorrection
+ * @tc.desc: SetLogicalCameraRotationCorrection
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetLogicalCameraRotationCorrectionTest001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    ScreenId screenId = 0;
+    ScreenRotation logicalRotation = ScreenRotation::ROTATION_90;
+    EXPECT_EQ(instance.SetLogicalCameraRotationCorrection(screenId, logicalRotation), SUCCESS);
+}
+
+/**
+ * @tc.name: SetWatermarkGrid001
+ * @tc.desc: test results of SetWatermark with rowCount and colCount
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetWatermarkGrid001, TestSize.Level1)
+{
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    std::shared_ptr<Media::PixelMap> pixelmap = std::make_shared<Media::PixelMap>();
+    instance.renderServiceClient_ = nullptr;
+    bool res = instance.SetWatermark("test", pixelmap, SaSurfaceWatermarkMaxSize::SA_WATER_MARK_DEFAULT_SIZE, 2, 3);
+    EXPECT_FALSE(res);
+
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    res = instance.SetWatermark("test", pixelmap, SaSurfaceWatermarkMaxSize::SA_WATER_MARK_DEFAULT_SIZE, 2, 3);
+    EXPECT_FALSE(res);
+}
+
+/**
+ * @tc.name: SetSurfaceWatermarkGrid001
+ * @tc.desc: test results of SetSurfaceWatermark with rowCount and colCount
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSInterfacesTest, SetSurfaceWatermarkGrid001, TestSize.Level1)
+{
+#ifdef RS_ENABLE_UNI_RENDER
+    RSInterfaces& instance = RSInterfaces::GetInstance();
+    instance.renderServiceClient_ = std::make_unique<RSRenderServiceClient>();
+    int width = 10;
+    int height = 10;
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    std::shared_ptr<Media::PixelMap> pixelmap = Media::PixelMap::Create(opts);
+
+    auto res = instance.SetSurfaceWatermark(0, "name", pixelmap, {},
+        SurfaceWatermarkType::CUSTOM_WATER_MARK, 2, 2);
+    EXPECT_EQ(SurfaceWatermarkStatusCode::WATER_MARK_RENDER_SERVICE_NULL, res);
+#endif
+}
+
 } // namespace OHOS::Rosen

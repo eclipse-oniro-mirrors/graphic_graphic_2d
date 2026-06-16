@@ -45,6 +45,7 @@ public:
     void PostDirectCompositionJankStats(const JankDurationParams& rsParams, bool optimizeLoad);
 
     void ClearDrawableResource();
+    void ClearDrawableMemory(bool highPriority);
 
 private:
     void RenderFrame();
@@ -52,12 +53,11 @@ private:
     void UnblockMainThread();
     void Sync();
     void Render();
-    void ReleaseDrawingNodeBuffer();
+    void ReleaseSelfDrawingNodeBuffer();
     void NotifyClearGpuCache();
     bool CheckCanvasSkipSync(std::shared_ptr<RSRenderNode>);
     void StartCheck();
     void EndCheck();
-    int32_t GetMinAccumulatedBufferCount() const;
 
     RSUniRenderThread& unirenderInstance_;
 

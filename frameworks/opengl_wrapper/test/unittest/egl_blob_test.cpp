@@ -97,10 +97,12 @@ HWTEST_F(EglBlobTest, EglBlobInit003, Level1)
     EGLsizeiANDROID valuesize = 4;
     EGLsizeiANDROID valuesize2 = 3;
     void *value2 = malloc(4);
+    ASSERT_NE(value2, nullptr);
+    *static_cast<int *>(value2) = -1;
     BlobCache::SetBlobFunc(key, keysize, value, valuesize);
     BlobCache::GetBlobFunc(key, keysize, value2, valuesize2);
     int c = *static_cast<int *>(value2);
-    ASSERT_EQ(c, 0);
+    ASSERT_EQ(c, -1);
 }
 
 /**
@@ -126,10 +128,12 @@ HWTEST_F(EglBlobTest, EglBlobInit004, Level1)
     EGLsizeiANDROID keysize = -1;
     EGLsizeiANDROID valuesize = -1;
     void *value2 = malloc(4);
+    ASSERT_NE(value2, nullptr);
+    *static_cast<int *>(value2) = -1;
     BlobCache::SetBlobFunc(key, keysize, value, valuesize);
     BlobCache::GetBlobFunc(key, keysize, value2, valuesize);
     int c = *static_cast<int *>(value2);
-    ASSERT_EQ(c, 0);
+    ASSERT_EQ(c, -1);
 }
 
 /**
@@ -277,12 +281,101 @@ HWTEST_F(EglBlobTest, EglBlobInit005, Level1)
     BlobCache* ret = BlobCache::Get();
     EXPECT_NE(ret, nullptr);
     std::vector<uint8_t> longBuffer(32);
-    std::string magic = "CACHE_MAGIC";
-    std::copy(magic.begin(), magic.begin() + 8, longBuffer.begin());
-    uint32_t crc = 0x12345678;
-    std::copy(reinterpret_cast<uint8_t*>(&crc), reinterpret_cast<uint8_t*>(&crc) + 4, longBuffer.begin() + 8);
-    std::fill(longBuffer.begin() + 12, longBuffer.end(), 0xAA);
-    bool result = ret->ValidFile(longBuffer.data(), sizeof(longBuffer));
+    std::array<uint8_t, 4> magicBytes = { 'O', 'S', 'O', 'H' };
+    std::copy(magicBytes.begin(), magicBytes.end(), longBuffer.begin());
+    std::fill(longBuffer.begin() + 8, longBuffer.end(), 0xAA);
+    uint32_t computerCrc = ret->CrcGen(longBuffer.data() + CACHE_HEAD, longBuffer.size() - CACHE_HEAD);
+    std::copy(reinterpret_cast<uint8_t*>(&computerCrc), reinterpret_cast<uint8_t*>(&computerCrc) + 4,
+        longBuffer.begin() + 4);
+    bool result = ret->ValidFile(longBuffer.data(), longBuffer.size());
     EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: DeferSaveThreadTest001
+ * @tc.desc:
+ * @tc.type: FUNC
+ */
+ HWTEST_F(EglBlobTest, DeferSaveThreadTest001, Level1)
+{
+    BlobCache* cache = BlobCache::Get();
+    ASSERT_NE(cache, nullptr);
+    cache->Terminate();
+    cache = BlobCache::Get();
+    ASSERT_NE(cache, nullptr);
+    void* key = malloc(4);
+    void* value = malloc(4);
+    ASSERT_NE(key, nullptr);
+    ASSERT_NE(value, nullptr);
+    *(static_cast<int*>(key)) = 9999;
+    *(static_cast<int*>(value)) = 8888;
+    cache->SetBlob(key, 4, value, 4);
+    free(key);
+    free(value);
+    ASSERT_EQ(cache->GetMapSize(), 1);
+}
+
+/**
+ * @tc.name: DeferSaveThreadTest002
+ * @tc.desc:
+ * @tc.type: FUNC
+ */
+ HWTEST_F(EglBlobTest, DeferSaveThreadTest002, Level1)
+{
+    BlobCache* cache = BlobCache::Get();
+    ASSERT_NE(cache, nullptr);
+    cache->Terminate();
+    cache = BlobCache::Get();
+    ASSERT_NE(cache, nullptr);
+    for (int i = 0; i < 3; ++i) {
+        void* key = malloc(4);
+        void* value = malloc(4);
+        ASSERT_NE(key, nullptr);
+        ASSERT_NE(value, nullptr);
+        *(static_cast<int*>(key)) = i;
+        *(static_cast<int*>(value)) = i * 100;
+        cache->SetBlob(key, 4, value, 4);
+        free(key);
+        free(value);
+    }
+    ASSERT_EQ(cache->GetMapSize(), 3);
+}
+
+/**
+ * @tc.name: WriteToDiskNullptrTest
+ * @tc.desc: Test WriteToDisk when blobCache_ is nullptr
+ * @tc.type: FUNC
+ */
+ HWTEST_F(EglBlobTest, WriteToDiskNullptrTest, Level1)
+{
+    BlobCache* cache = BlobCache::Get();
+    ASSERT_NE(cache, nullptr);
+    cache->Terminate();
+    ASSERT_EQ(BlobCache::blobCache_, nullptr);
+    cache->WriteToDisk();
+}
+
+/**
+ * @tc.name: BlobLockNullptrTest
+ * @tc.desc: Test SetBlobLock and GetBlobLock when blobCache_ is nullptr
+ * @tc.type: FUNC
+ */
+ HWTEST_F(EglBlobTest, BlobLockNullptrTest, Level1)
+{
+    BlobCache* cache = BlobCache::Get();
+    ASSERT_NE(cache, nullptr);
+    cache->Terminate();
+    ASSERT_EQ(BlobCache::blobCache_, nullptr);
+    void* key = malloc(4);
+    void* value = malloc(4);
+    ASSERT_NE(key, nullptr);
+    ASSERT_NE(value, nullptr);
+    *(static_cast<int*>(key)) = 1;
+    *(static_cast<int*>(value)) = 2;
+    cache->SetBlobLock(key, 4, value, 4);
+    auto ret = cache->GetBlobLock(key, 4, value, 4);
+    ASSERT_EQ(ret, 0);
+    free(key);
+    free(value);
 }
 } // OHOS::Rosen

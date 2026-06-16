@@ -19,6 +19,9 @@
 #include <memory>
 #include <mutex>
 
+#include "ge_shader_filter_params.h"
+#include "ge_shader_filter_params_for_kits.h"
+#include "ge_shader_mask.h"
 #include "include/draw/canvas.h"
 #include "include/draw/surface.h"
 #include "include/effect/image_filter.h"
@@ -70,28 +73,49 @@ public:
     ~EffectImageChain();
 
     DrawingError Prepare(const std::shared_ptr<Media::PixelMap>& srcPixelMap, bool forceCPU);
-
+    DrawingError PrepareNativeBuffer(
+        const std::shared_ptr<Media::PixelMap> &srcPixelMap, std::shared_ptr<OH_NativeBuffer> &dstNativeBuffer);
     DrawingError ApplyDrawingFilter(const std::shared_ptr<Drawing::ImageFilter>& filter);
-    DrawingError ApplyBlur(float radius, const Drawing::TileMode& tileMode);
+    DrawingError ApplyBlur(float radius, const Drawing::TileMode& tileMode,
+        bool isDirection = false, float angle = 0.0);
+    DrawingError ApplyMapColorByBrightness(const std::vector<Vector4f>& colors, const std::vector<float>& positions);
+    DrawingError ApplyGammaCorrection(float gamma);
+    DrawingError ApplyScale(float scaleX, float scaleY, Drawing::FilterMode filterMode, Drawing::MipmapMode mipmapMode);
     DrawingError ApplyEllipticalGradientBlur(float blurRadius, float centerX, float centerY,
         float maskRadiusX, float maskRadiusY, const std::vector<float> &positions, const std::vector<float> &degrees);
+    DrawingError ApplySDFCreation(int spreadFactor, bool generateDerivs);
+    DrawingError ApplyWaterGlass(const std::shared_ptr<Drawing::GEWaterGlassDataParams>& waterGlassDate);
+    DrawingError ApplyReededGlass(const std::shared_ptr<Drawing::GEReededGlassDataParams>& reededGlassDate);
+    DrawingError ApplyMaskTransitionFilter(const std::shared_ptr<Media::PixelMap>& topLayerMap,
+        const std::shared_ptr<Drawing::GEShaderMask>& mask, float factor, bool inverse);
+    DrawingError ApplyWaterDropletTransitionFilter(const std::shared_ptr<Media::PixelMap>& topLayerMap,
+        const std::shared_ptr<Drawing::GEWaterDropletTransitionFilterParams>& geWaterDropletParams);
 
     DrawingError Draw();
+    DrawingError DrawNativeBuffer();
+    int32_t GetfenceId();
 
     std::shared_ptr<Media::PixelMap> GetPixelMap();
+    void SetForceReleaseGpuContext(bool releaseGpuContext);
 
 private:
     bool CheckPixelMap(const std::shared_ptr<Media::PixelMap>& pixelMap);
     DrawingError InitWithoutCanvas(const std::shared_ptr<Media::PixelMap>& srcPixelMap);
     std::shared_ptr<Drawing::Surface> CreateSurface(bool forceCPU);
-    DrawingError ApplyMesaBlur(float radius, const Drawing::TileMode& tileMode);
+    DrawingError ApplyMesaBlur(float radius, const Drawing::TileMode& tileMode,
+        bool isDirection = false, float angle = 0.0);
     DrawingError ApplyHpsBlur(float radius);
     void DrawOnFilter();
+    std::shared_ptr<Drawing::Image> ConvertPixelMapToDrawingImage(const std::shared_ptr<Media::PixelMap>& pixelMap);
+    void UpdateCanvas();
+    void ScaleCanvas(float scaleX, float scaleY);
+    void UpdateImage();
 
     std::mutex apiMutex_;
 
     bool prepared_ = false;
     bool forceCPU_ = true;
+    bool forceReleaseGpuContext_ = true;
 
     Drawing::ImageInfo imageInfo_ = {};
     std::shared_ptr<Drawing::Image> image_ = nullptr;
@@ -102,8 +126,14 @@ private:
 
     std::shared_ptr<RenderContext> renderContext_ = nullptr;
     std::shared_ptr<Drawing::GPUContext> gpuContext_ = nullptr;
+    int32_t fenceId_ = -1;
     std::shared_ptr<Drawing::Canvas> canvas_ = nullptr;
     std::shared_ptr<Drawing::Surface> surface_ = nullptr;
+    Drawing::Rect imageRec_{};
+    Drawing::Rect canvasRec_{};
+    Drawing::Rect surfaceRec_{};
+    Drawing::FilterMode filterMode_ = Drawing::FilterMode::LINEAR;
+    Drawing::MipmapMode mipmapMode_ = Drawing::MipmapMode::LINEAR;
 };
 } // namespace OHOS::Rosen
-#endif // EFFECT_IMAGE_CHAIN_H
+#endif /* EFFECT_IMAGE_CHAIN_H */

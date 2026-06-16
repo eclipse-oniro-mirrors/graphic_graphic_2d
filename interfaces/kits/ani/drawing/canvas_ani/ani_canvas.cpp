@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -263,40 +263,8 @@ void DrawingPixelMapMesh(std::shared_ptr<Media::PixelMap> pixelMap, int column, 
 #endif
 
 namespace Drawing {
-namespace {
-ani_field gNativeObjField = nullptr;
-}
 
-const char* ANI_CLASS_CANVAS_NAME = "@ohos.graphics.drawing.drawing.Canvas";
-const char* ANI_CLASS_POINT_NAME = "@ohos.graphics.common2D.common2D.Point";
 static constexpr int VERTEX_COUNT_MIN_SIZE = 3;
-
-bool GetNativeObj(ani_env* env, ani_object obj, ani_long& nativeObj)
-{
-    if (env->Object_GetField_Long(obj, gNativeObjField, &nativeObj) == ANI_OK) {
-        return true;
-    }
-    if (env->Object_GetFieldByName_Long(obj, NATIVE_OBJ, &nativeObj) == ANI_OK) {
-        return true;
-    }
-    return false;
-}
-
-AniCanvas* UnwrapAniCanvas(ani_env* env, ani_object obj)
-{
-    ani_long nativeObj;
-    if (!GetNativeObj(env, obj, nativeObj)) {
-        ROSEN_LOGE("[ANI] UnwrapAniCanvas get nativeobj failed");
-        return nullptr;
-    }
-    AniCanvas* aniCanvas = reinterpret_cast<AniCanvas*>(nativeObj);
-    if (!aniCanvas) {
-        ROSEN_LOGE("[ANI] object is null");
-        return nullptr;
-    }
-
-    return aniCanvas;
-}
 
 static const std::array g_methods = {
     ani_native_function { "constructorNative", nullptr, reinterpret_cast<void*>(AniCanvas::Constructor) },
@@ -370,19 +338,23 @@ static const std::array g_methods = {
     ani_native_function { "isClipEmpty", nullptr, reinterpret_cast<void*>(AniCanvas::IsClipEmpty) },
     ani_native_function { "setMatrix", nullptr, reinterpret_cast<void*>(AniCanvas::SetMatrix) },
     ani_native_function { "resetMatrix", nullptr, reinterpret_cast<void*>(AniCanvas::ResetMatrix) },
+    ani_native_function { "resetClip", nullptr, reinterpret_cast<void*>(AniCanvas::ResetClip) },
     ani_native_function { "quickRejectPath", nullptr, reinterpret_cast<void*>(AniCanvas::QuickRejectPath) },
     ani_native_function { "quickRejectRect", nullptr, reinterpret_cast<void*>(AniCanvas::QuickRejectRect) },
+    ani_native_function { "isOpaque", nullptr, reinterpret_cast<void*>(AniCanvas::IsOpaque) },
+    ani_native_function { "drawSingleCharacterWithFeatures", nullptr,
+        reinterpret_cast<void*>(AniCanvas::DrawSingleCharacterWithFeatures) },
+    ani_native_function { "drawGlyphs", nullptr, reinterpret_cast<void*>(AniCanvas::DrawGlyphs) },
 };
 
 ani_status AniCanvas::AniInit(ani_env *env)
 {
-    ani_class cls = nullptr;
-    ani_status ret = env->FindClass(ANI_CLASS_CANVAS_NAME, &cls);
-    if (ret != ANI_OK) {
+    ani_class cls = AniGlobalClass::GetInstance().canvas;
+    if (cls == nullptr) {
         ROSEN_LOGE("[ANI] can't find class: %{public}s", ANI_CLASS_CANVAS_NAME);
         return ANI_NOT_FOUND;
     }
-    ret = env->Class_BindNativeMethods(cls, g_methods.data(), g_methods.size());
+    ani_status ret = env->Class_BindNativeMethods(cls, g_methods.data(), g_methods.size());
     if (ret != ANI_OK) {
         ROSEN_LOGE("[ANI] bind methods fail: %{public}s", ANI_CLASS_CANVAS_NAME);
         return ANI_NOT_FOUND;
@@ -401,10 +373,6 @@ ani_status AniCanvas::AniInit(ani_env *env)
         return ANI_NOT_FOUND;
     }
 
-    if (env->Class_FindField(cls, NATIVE_OBJ, &gNativeObjField) != ANI_OK) {
-        ROSEN_LOGE("[ANI] FindFiled nativeObj failed");
-    }
-
     return ANI_OK;
 }
 
@@ -419,11 +387,10 @@ void AniCanvas::NotifyDirty()
 
 void AniCanvas::Constructor(ani_env* env, ani_object obj, ani_object pixelmapObj)
 {
-    ani_boolean isUndefined = ANI_TRUE;
-    env->Reference_IsUndefined(pixelmapObj, &isUndefined);
-    if (isUndefined) {
+    if (IsUndefined(env, pixelmapObj)) {
         AniCanvas *aniCanvas = new AniCanvas();
-        if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
+        if (ANI_OK != env->Object_SetField_Long(
+            obj, AniGlobalField::GetInstance().canvasNativeObj, reinterpret_cast<ani_long>(aniCanvas))) {
             ROSEN_LOGE("AniCanvas::Constructor failed create AniCanvas with nullptr");
             delete aniCanvas;
         }
@@ -433,7 +400,6 @@ void AniCanvas::Constructor(ani_env* env, ani_object obj, ani_object pixelmapObj
     std::shared_ptr<PixelMap> pixelMap = PixelMapTaiheAni::GetNativePixelMap(env, pixelmapObj);
     if (!pixelMap) {
         ROSEN_LOGE("AniCanvas::Constructor get pixelMap failed");
-        AniThrowError(env, "Invalid params.");
         return;
     }
     Bitmap bitmap;
@@ -446,7 +412,8 @@ void AniCanvas::Constructor(ani_env* env, ani_object obj, ani_object pixelmapObj
     AniCanvas *aniCanvas = new AniCanvas(canvas, true);
     aniCanvas->mPixelMap_ = pixelMap;
 
-    if (ANI_OK != env->Object_SetFieldByName_Long(obj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
+    if (ANI_OK != env->Object_SetField_Long(
+        obj, AniGlobalField::GetInstance().canvasNativeObj, reinterpret_cast<ani_long>(aniCanvas))) {
         ROSEN_LOGE("AniCanvas::Constructor failed create aniCanvas");
         delete aniCanvas;
         return;
@@ -457,9 +424,9 @@ void AniCanvas::Constructor(ani_env* env, ani_object obj, ani_object pixelmapObj
 void AniCanvas::DrawRect(ani_env* env, ani_object obj,
     ani_double left, ani_double top, ani_double right, ani_double bottom)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawRect canvas is nullptr.");
         return;
     }
 
@@ -472,16 +439,17 @@ void AniCanvas::DrawRect(ani_env* env, ani_object obj,
 
 void AniCanvas::DrawRectWithRect(ani_env* env, ani_object obj, ani_object aniRect)
 {
-    auto aniCanvas = UnwrapAniCanvas(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::DrawRectWithRect canvas is nullptr.");
         return;
     }
 
     Drawing::Rect drawingRect;
     if (!GetRectFromAniRectObj(env, aniRect, drawingRect)) {
         ROSEN_LOGE("AniCanvas::DrawRectWithRect get drawingRect failed");
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "DrawRectWithRect incorrect type rect.");
         return;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -492,13 +460,14 @@ void AniCanvas::DrawRectWithRect(ani_env* env, ani_object obj, ani_object aniRec
 
 void AniCanvas::DrawRoundRect(ani_env* env, ani_object obj, ani_object roundRectObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawRoundRect canvas is nullptr.");
         return;
     }
-    auto aniRoundRect = GetNativeFromObj<AniRoundRect>(env, roundRectObj);
+    auto aniRoundRect = GetNativeFromObj<AniRoundRect>(env, roundRectObj,
+        AniGlobalField::GetInstance().roundRectNativeObj);
     if (aniRoundRect == nullptr || aniRoundRect->GetRoundRect() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawRoundRect roundRect is nullptr.");
@@ -510,20 +479,22 @@ void AniCanvas::DrawRoundRect(ani_env* env, ani_object obj, ani_object roundRect
 
 void AniCanvas::DrawNestedRoundRect(ani_env* env, ani_object obj, ani_object outerObj, ani_object innerObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawNestedRoundRect canvas is nullptr.");
         return;
     }
 
-    auto aniOuterRoundRect = GetNativeFromObj<AniRoundRect>(env, outerObj);
+    auto aniOuterRoundRect = GetNativeFromObj<AniRoundRect>(env, outerObj,
+        AniGlobalField::GetInstance().roundRectNativeObj);
     if (aniOuterRoundRect == nullptr || aniOuterRoundRect->GetRoundRect() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawNestedRoundRect outerRoundRect is nullptr.");
         return;
     }
-    auto aniInnerRoundRect = GetNativeFromObj<AniRoundRect>(env, innerObj);
+    auto aniInnerRoundRect = GetNativeFromObj<AniRoundRect>(env, innerObj,
+        AniGlobalField::GetInstance().roundRectNativeObj);
     if (aniInnerRoundRect == nullptr || aniInnerRoundRect->GetRoundRect() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawNestedRoundRect innerRoundRect is nullptr.");
@@ -536,14 +507,18 @@ void AniCanvas::DrawNestedRoundRect(ani_env* env, ani_object obj, ani_object out
 
 void AniCanvas::DrawBackground(ani_env* env, ani_object obj, ani_object brushObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawBackground canvas is nullptr.");
         return;
     }
-    auto aniBrush = GetNativeFromObj<AniBrush>(env, brushObj);
+    auto aniBrush = GetNativeFromObj<AniBrush>(env, brushObj, AniGlobalField::GetInstance().brushNativeObj);
     if (aniBrush == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawBackground brush is nullptr.");
+        return;
+    }
+    if (aniBrush->GetBrush() == nullptr) {
+        ROSEN_LOGE("AniCanvas::OnDrawBackground brush is nullptr");
         return;
     }
     aniCanvas->GetCanvas()->DrawBackground(*aniBrush->GetBrush());
@@ -554,12 +529,12 @@ void AniCanvas::DrawShadow(ani_env* env, ani_object obj, ani_object pathObj,
     ani_object planeParams, ani_object devLightPos, ani_double lightRadius,
     ani_object ambientColor, ani_object spotColor, ani_enum_item flagEnum)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawShadow canvas is nullptr.");
         return;
     }
-    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj);
+    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj, AniGlobalField::GetInstance().pathNativeObj);
     if (aniPath == nullptr || aniPath->GetPath() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawShadow path is nullptr.");
         return;
@@ -600,13 +575,13 @@ void AniCanvas::DrawShadowWithOption(ani_env* env, ani_object obj, ani_object pa
     ani_object planeParams, ani_object devLightPos, ani_double lightRadius,
     ani_object ambientColorOps, ani_object spotColorOps, ani_enum_item flagEnum)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawShadowWithOption canvas is nullptr.");
         return;
     }
-    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj);
+    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj, AniGlobalField::GetInstance().pathNativeObj);
     if (aniPath == nullptr || aniPath->GetPath() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawShadowWithOption path is nullptr.");
@@ -646,7 +621,7 @@ void AniCanvas::DrawShadowWithOption(ani_env* env, ani_object obj, ani_object pa
 
 void AniCanvas::DrawCircle(ani_env* env, ani_object obj, ani_double x, ani_double y, ani_double radius)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawCircle canvas is nullptr.");
         return;
@@ -661,7 +636,7 @@ void AniCanvas::DrawImage(ani_env* env, ani_object obj, ani_object pixelmapObj,
     ani_double left, ani_double top, ani_object samplingOptionsObj)
 {
 #ifdef ROSEN_OHOS
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawImage canvas is nullptr.");
         return;
@@ -674,10 +649,9 @@ void AniCanvas::DrawImage(ani_env* env, ani_object obj, ani_object pixelmapObj,
     }
 
     Drawing::SamplingOptions samplingOptions;
-    ani_boolean isUndefined;
-    env->Reference_IsUndefined(samplingOptionsObj, &isUndefined);
-    if (!isUndefined) {
-        AniSamplingOptions* aniSamplingOptions = GetNativeFromObj<AniSamplingOptions>(env, samplingOptionsObj);
+    if (!IsUndefined(env, samplingOptionsObj)) {
+        AniSamplingOptions* aniSamplingOptions = GetNativeFromObj<AniSamplingOptions>(env, samplingOptionsObj,
+            AniGlobalField::GetInstance().samplingOptionsNativeObj);
         if (aniSamplingOptions == nullptr || aniSamplingOptions->GetSamplingOptions() == nullptr) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
                 "AniCanvas::DrawImage samplingOptions is nullptr.");
@@ -709,7 +683,7 @@ void AniCanvas::DrawImageLattice(ani_env* env, ani_object obj, ani_object pixelm
     ani_object latticeObj, ani_object dstRectObj, ani_enum_item filterModeEnum)
 {
 #ifdef ROSEN_OHOS
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawImageLattice canvas is nullptr.");
@@ -722,7 +696,7 @@ void AniCanvas::DrawImageLattice(ani_env* env, ani_object obj, ani_object pixelm
         return;
     }
 
-    auto aniLattice = GetNativeFromObj<AniLattice>(env, latticeObj);
+    auto aniLattice = GetNativeFromObj<AniLattice>(env, latticeObj, AniGlobalField::GetInstance().latticeNativeObj);
     if (aniLattice == nullptr || aniLattice->GetLattice() == nullptr) {
         ROSEN_LOGE("AniCanvas::DrawImageLattice lattice is nullptr");
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
@@ -763,7 +737,7 @@ void AniCanvas::DrawImageNine(ani_env* env, ani_object obj, ani_object pixelmapO
     ani_object centerRectObj, ani_object dstRectObj, ani_enum_item filterModeEnum)
 {
 #ifdef ROSEN_OHOS
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawImageNine canvas is nullptr.");
         return;
@@ -800,7 +774,7 @@ void AniCanvas::DrawImageNine(ani_env* env, ani_object obj, ani_object pixelmapO
             "AniCanvas::DrawImageNine filterMode is out of range.");
         return;
     }
-    
+
     Canvas* canvas = aniCanvas->GetCanvas();
     if (canvas->GetDrawingType() == Drawing::DrawingType::RECORDING) {
         ExtendRecordingCanvas* canvas_ = reinterpret_cast<ExtendRecordingCanvas*>(canvas);
@@ -816,32 +790,31 @@ void AniCanvas::DrawImageNine(ani_env* env, ani_object obj, ani_object pixelmapO
 void AniCanvas::DrawImageRect(ani_env* env, ani_object obj,
     ani_object pixelmapObj, ani_object rectObj, ani_object samplingOptionsObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawImageRect canvas is nullptr.");
         return;
     }
 #ifdef ROSEN_OHOS
     std::shared_ptr<PixelMap> pixelMap = PixelMapTaiheAni::GetNativePixelMap(env, pixelmapObj);
     if (!pixelMap) {
         ROSEN_LOGE("AniCanvas::DrawImageRect get pixelMap failed");
-        AniThrowError(env, "Invalid params.");
         return;
     }
     Drawing::Rect drawingRect;
     if (!GetRectFromAniRectObj(env, rectObj, drawingRect)) {
         ROSEN_LOGE("AniCanvas::DrawImageRect get drawingRect failed");
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawImageRect incorrect type rect.");
         return;
     }
 
     AniSamplingOptions* aniSamplingOptions = nullptr;
-    ani_boolean isUndefined;
-    env->Reference_IsUndefined(samplingOptionsObj, &isUndefined);
-    if (!isUndefined) {
-        aniSamplingOptions = GetNativeFromObj<AniSamplingOptions>(env, samplingOptionsObj);
+    if (!IsUndefined(env, samplingOptionsObj)) {
+        aniSamplingOptions = GetNativeFromObj<AniSamplingOptions>(env, samplingOptionsObj,
+            AniGlobalField::GetInstance().samplingOptionsNativeObj);
         if (aniSamplingOptions == nullptr || aniSamplingOptions->GetSamplingOptions() == nullptr) {
-            AniThrowError(env, "Invalid params.");
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+                "AniCanvas::DrawImageRect samplingOptions is nullptr");
             return;
         }
     }
@@ -899,15 +872,14 @@ void AniCanvas::DrawImageRectWithSrcInner(std::shared_ptr<Media::PixelMap> pixel
 #endif
 
 #ifdef ROSEN_OHOS
-bool AniCanvas::GetVertices(ani_env* env, ani_object verticesObj, float* vertices, uint32_t verticesSize)
+bool AniCanvas::GetVertices(ani_env* env, ani_array verticesObj, float* vertices, uint32_t verticesSize)
 {
     for (uint32_t i = 0; i < verticesSize; i++) {
         ani_double vertex;
         ani_ref vertexRef;
-        if (ANI_OK !=  env->Object_CallMethodByName_Ref(
-            verticesObj, "$_get", "i:Y", &vertexRef, (ani_int)i) ||
-            ANI_OK !=  env->Object_CallMethodByName_Double(
-                static_cast<ani_object>(vertexRef), "toDouble", ":d", &vertex)) {
+        if (ANI_OK !=  env->Array_Get(verticesObj, static_cast<ani_size>(i), &vertexRef) ||
+            ANI_OK !=  env->Object_CallMethod_Double(
+                static_cast<ani_object>(vertexRef), AniGlobalMethod::GetInstance().doubleGet, &vertex)) {
             delete []vertices;
             return false;
         }
@@ -916,15 +888,15 @@ bool AniCanvas::GetVertices(ani_env* env, ani_object verticesObj, float* vertice
     return true;
 }
 
-bool AniCanvas::GetVerticesUint16(ani_env* env, ani_object verticesObj, uint16_t* vertices, uint32_t verticesSize)
+bool AniCanvas::GetVerticesUint16(ani_env* env, ani_array verticesObj, uint16_t* vertices, uint32_t verticesSize)
 {
     for (uint32_t i = 0; i < verticesSize; i++) {
         ani_int vertex;
         ani_ref vertexRef;
-        if (ANI_OK != env->Object_CallMethodByName_Ref(
-            verticesObj, "$_get", "i:Y", &vertexRef, (ani_int)i) ||
-            ANI_OK != env->Object_CallMethodByName_Int(
-                static_cast<ani_object>(vertexRef), "toInt", ":i", &vertex)) {
+        if (ANI_OK != env->Array_Get(
+            verticesObj, static_cast<ani_size>(i), &vertexRef) ||
+            ANI_OK != env->Object_CallMethod_Int(
+                static_cast<ani_object>(vertexRef), AniGlobalMethod::GetInstance().intGet, &vertex)) {
             ROSEN_LOGE("AniCanvas::GetVerticesUint16 vertices is invalid");
             return false;
         }
@@ -937,15 +909,14 @@ bool AniCanvas::GetVerticesUint16(ani_env* env, ani_object verticesObj, uint16_t
     return true;
 }
 
-bool AniCanvas::GetColorsUint32(ani_env* env, ani_object colorsObj, uint32_t* colors, uint32_t colorsSize)
+bool AniCanvas::GetColorsUint32(ani_env* env, ani_array colorsObj, uint32_t* colors, uint32_t colorsSize)
 {
     for (uint32_t i = 0; i < colorsSize; i++) {
         ani_int color;
         ani_ref colorRef;
-        if (ANI_OK != env->Object_CallMethodByName_Ref(
-            colorsObj, "$_get", "i:Y", &colorRef, (ani_int)i) ||
-            ANI_OK != env->Object_CallMethodByName_Int(
-                static_cast<ani_object>(colorRef), "unboxed", ":i", &color)) {
+        if (ANI_OK != env->Array_Get(colorsObj, static_cast<ani_size>(i), &colorRef) ||
+            ANI_OK != env->Object_CallMethod_Int(
+                static_cast<ani_object>(colorRef), AniGlobalMethod::GetInstance().intGet, &color)) {
             ROSEN_LOGE("AniCanvas::GetColorsUint32 colors is invalid");
             return false;
         }
@@ -959,21 +930,25 @@ bool AniCanvas::GetColorsUint32(ani_env* env, ani_object colorsObj, uint32_t* co
 void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t colorOffset,
     DrawPixelMapMeshArgs& args, AniCanvas* aniCanvas)
 {
+    uint32_t colorsSize = 0;
     float* verticesMesh = args.verticesSize ? (args.vertices + args.vertOffset * 2) : nullptr;
-    ani_int aniLength;
-    if (ANI_OK != env->Object_GetPropertyByName_Int(colorsObj, "length", &aniLength)) {
-        AniThrowError(env, "Invalid params.");
-        return;
-    }
-    uint32_t colorsSize = static_cast<uint32_t>(aniLength);
-    int64_t tempColorsSize = (args.column + 1) * (args.row + 1) + colorOffset;
-    if (colorsSize != 0 && colorsSize != tempColorsSize) {
-        ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors are invalid");
-        AniThrowError(env, "Incorrect parameter5 type");
-        return;
+    if (!IsNull(env, colorsObj)) {
+        ani_size aniLength = 0;
+        if (env->Array_GetLength(reinterpret_cast<ani_array>(colorsObj), &aniLength) != ANI_OK) {
+            ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors Array_GetLength failed");
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid colors params.");
+            return;
+        }
+        colorsSize = static_cast<uint32_t>(aniLength);
+        int64_t tempColorsSize = (args.column + 1) * (args.row + 1) + colorOffset;
+        if (colorsSize != 0 && colorsSize != tempColorsSize) {
+            ROSEN_LOGE("AniCanvas::GetColorsAndDraw colors are invalid");
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter5 type");
+            return;
+        }
     }
     auto canvas = aniCanvas->GetCanvas();
-    
+
     if (colorsSize == 0) {
         DrawingPixelMapMesh(args.pixelMap, args.column, args.row, verticesMesh, nullptr, canvas);
         aniCanvas->NotifyDirty();
@@ -983,17 +958,18 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
     auto colors = new (std::nothrow) uint32_t[colorsSize];
     if (!colors) {
         ROSEN_LOGE("AniCanvas::GetColorsAndDraw create array with size of colors failed");
-        AniThrowError(env, "Size of colors exceed memory limit.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Size of colors exceed memory limit.");
         return;
     }
     for (uint32_t i = 0; i < colorsSize; i++) {
         ani_int color;
         ani_ref colorRef;
-        if (ANI_OK != env->Object_CallMethodByName_Ref(
-            colorsObj, "$_get", "i:Y", &colorRef, (ani_int)i) ||
-            ANI_OK != env->Object_CallMethodByName_Int(static_cast<ani_object>(colorRef), "toInt", ":i", &color)) {
+        if (ANI_OK != env->Array_Get(reinterpret_cast<ani_array>(colorsObj), static_cast<ani_size>(i), &colorRef) ||
+            ANI_OK != env->Object_CallMethod_Int(
+                static_cast<ani_object>(colorRef), AniGlobalMethod::GetInstance().intGet, &color)) {
             delete []colors;
-            AniThrowError(env, "Incorrect DrawPixelMapMesh parameter color type.");
+            ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+                "Incorrect DrawPixelMapMesh parameter color type.");
             return;
         }
         colors[i] = static_cast<uint32_t>(color);
@@ -1007,18 +983,17 @@ void AniCanvas::GetColorsAndDraw(ani_env* env, ani_object colorsObj, int32_t col
 
 void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
     ani_object pixelmapObj, ani_int aniMeshWidth, ani_int aniMeshHeight,
-    ani_object verticesObj, ani_int aniVertOffset, ani_object colorsObj, ani_int aniColorOffset)
+    ani_array verticesObj, ani_int aniVertOffset, ani_object colorsObj, ani_int aniColorOffset)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPixelMapMesh canvas is null");
         return;
     }
 #ifdef ROSEN_OHOS
     std::shared_ptr<PixelMap> pixelMap = PixelMapTaiheAni::GetNativePixelMap(env, pixelmapObj);
     if (!pixelMap) {
         ROSEN_LOGE("AniCanvas::DrawImageRect get pixelMap failed");
-        AniThrowError(env, "Invalid params.");
         return;
     }
 
@@ -1027,13 +1002,13 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
     int32_t vertOffset = aniVertOffset;
     if (column == 0 || row == 0) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh column or row is invalid");
-        AniThrowError(env, "Invalid column or row params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid column or row params.");
         return;
     }
 
-    ani_int aniLength;
-    if (ANI_OK != env->Object_GetPropertyByName_Int(verticesObj, "length", &aniLength)) {
-        AniThrowError(env, "Invalid params.");
+    ani_size aniLength;
+    if (ANI_OK != env->Array_GetLength(verticesObj, &aniLength)) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid param vertices.");
         return;
     }
 
@@ -1041,17 +1016,18 @@ void AniCanvas::DrawPixelMapMesh(ani_env* env, ani_object obj,
     int64_t tempVerticesSize = ((column + 1) * (row + 1) + vertOffset) * 2; // x and y two coordinates
     if (verticesSize != tempVerticesSize) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh vertices are invalid");
-        AniThrowError(env, "Incorrect parameter3 type.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter3 type.");
         return;
     }
     auto vertices = new (std::nothrow) float[verticesSize];
     if (!vertices) {
         ROSEN_LOGE("AniCanvas::DrawPixelMapMesh create array with size of vertices failed");
-        AniThrowError(env, "Size of vertices exceed memory limit.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Size of vertices exceed memory limit.");
         return;
     }
     if (!GetVertices(env, verticesObj, vertices, verticesSize)) {
-        AniThrowError(env, "Incorrect DrawPixelMapMesh parameter vertex type.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "Incorrect DrawPixelMapMesh parameter vertex type.");
         return;
     }
     DrawPixelMapMeshArgs args {pixelMap, vertices, verticesSize, vertOffset, column, row};
@@ -1075,15 +1051,15 @@ bool AniCanvas::CheckDrawVerticesParams(ani_env* env, ani_int& vertexCount, ani_
 }
 
 bool AniCanvas::GetPositions(ani_env* env, ani_int vertexCount,
-    ani_object positionsObj, std::vector<Drawing::Point>& pointPositions)
+    ani_array positionsObj, std::vector<Drawing::Point>& pointPositions)
 {
-    ani_int aniPositionsLength = 0;
-    if (ANI_OK != env->Object_GetPropertyByName_Int(positionsObj, "length", &aniPositionsLength)) {
+    ani_size aniPositionsLength = 0;
+    if (ANI_OK != env->Array_GetLength(positionsObj, &aniPositionsLength)) {
         ROSEN_LOGE("AniCanvas::DrawVertices positions is invalid");
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid positions params.");
         return false;
     }
-    if (aniPositionsLength != vertexCount) {
+    if (static_cast<ani_int>(aniPositionsLength) != vertexCount) {
         ROSEN_LOGE("AniCanvas::DrawVertices positionsSize is invalid");
         ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid positions params.");
         return false;
@@ -1101,17 +1077,29 @@ bool AniCanvas::GetPositions(ani_env* env, ani_int vertexCount,
 bool AniCanvas::GetTexs(ani_env* env, ani_int vertexCount,
     ani_object texsObj, std::vector<Drawing::Point>& pointTexs)
 {
-    ani_int aniTexsLength = 0;
-    env->Object_GetPropertyByName_Int(texsObj, "length", &aniTexsLength);
+    ani_boolean isNull = ANI_TRUE;
+    if (env->Reference_IsNull(texsObj, &isNull) != ANI_OK) {
+        ROSEN_LOGE("Reference_IsNull failed");
+        return false;
+    }
+    if (isNull) {
+        return true;
+    }
+    ani_size aniTexsLength = 0;
+    ani_array arrayObj = reinterpret_cast<ani_array>(texsObj);
+    if (env->Array_GetLength(arrayObj, &aniTexsLength) != ANI_OK) {
+        ROSEN_LOGE("Array_GetLength failed");
+        return false;
+    }
     uint32_t texsSize = static_cast<uint32_t>(aniTexsLength);
     if (texsSize != 0) {
-        if (aniTexsLength != vertexCount) {
+        if (static_cast<ani_int>(aniTexsLength) != vertexCount) {
             ROSEN_LOGE("AniCanvas::DrawVertices texsSize is invalid");
             ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED, "Invalid texsObj params.");
             return false;
         }
         pointTexs.resize(texsSize);
-        if (!ConvertFromAniPointsArray(env, texsObj, pointTexs.data(), texsSize)) {
+        if (!ConvertFromAniPointsArray(env, arrayObj, pointTexs.data(), texsSize)) {
             ROSEN_LOGE("AniCanvas::DrawVertices GetTexsPoints is invalid");
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid texsObj params.");
             return false;
@@ -1123,9 +1111,21 @@ bool AniCanvas::GetTexs(ani_env* env, ani_int vertexCount,
 bool AniCanvas::GetColors(ani_env* env, ani_int vertexCount,
     ani_object colorsObj, std::unique_ptr<uint32_t[]>& colors)
 {
-    ani_int aniColorsLength = 0;
-    env->Object_GetPropertyByName_Int(colorsObj, "length", &aniColorsLength);
-    int32_t colorsSize = aniColorsLength;
+    ani_boolean isNull = ANI_TRUE;
+    if (env->Reference_IsNull(colorsObj, &isNull) != ANI_OK) {
+        ROSEN_LOGE("Reference_IsNull failed");
+        return false;
+    }
+    if (isNull) {
+        return true;
+    }
+    ani_size aniColorsLength = 0;
+    ani_array arrayObj = reinterpret_cast<ani_array>(colorsObj);
+    if (env->Array_GetLength(arrayObj, &aniColorsLength) != ANI_OK) {
+        ROSEN_LOGE("Array_GetLength failed");
+        return false;
+    }
+    int32_t colorsSize = static_cast<int32_t>(aniColorsLength);
     if (colorsSize != 0) {
         if (colorsSize != vertexCount) {
             ROSEN_LOGE("AniCanvas::DrawVertices colorsSize is invalid");
@@ -1133,7 +1133,7 @@ bool AniCanvas::GetColors(ani_env* env, ani_int vertexCount,
             return false;
         }
         colors = std::make_unique<uint32_t[]>(colorsSize);
-        if (!GetColorsUint32(env, colorsObj, colors.get(), colorsSize)) {
+        if (!GetColorsUint32(env, arrayObj, colors.get(), colorsSize)) {
             ROSEN_LOGE("AniCanvas::DrawVertices GetColors is invalid");
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid colors params.");
             return false;
@@ -1145,9 +1145,21 @@ bool AniCanvas::GetColors(ani_env* env, ani_int vertexCount,
 bool AniCanvas::GetIndices(ani_env* env, ani_int indexCount,
     ani_object indicesObj, std::unique_ptr<uint16_t[]>& indices)
 {
-    ani_int aniIndicesLength = 0;
-    env->Object_GetPropertyByName_Int(indicesObj, "length", &aniIndicesLength);
-    int32_t indicesSize = aniIndicesLength;
+    ani_boolean isNull = ANI_TRUE;
+    if (env->Reference_IsNull(indicesObj, &isNull) != ANI_OK) {
+        ROSEN_LOGE("Reference_IsNull failed");
+        return false;
+    }
+    if (isNull) {
+        return true;
+    }
+    ani_size aniIndicesLength = 0;
+    ani_array arrayObj = reinterpret_cast<ani_array>(indicesObj);
+    if (env->Array_GetLength(arrayObj, &aniIndicesLength) != ANI_OK) {
+        ROSEN_LOGE("Array_GetLength failed");
+        return false;
+    }
+    int32_t indicesSize = static_cast<int32_t>(aniIndicesLength);
     if (indicesSize != 0) {
         if (indicesSize != indexCount) {
             ROSEN_LOGE("AniCanvas::DrawVertices indicesSize is Invalid");
@@ -1155,7 +1167,7 @@ bool AniCanvas::GetIndices(ani_env* env, ani_int indexCount,
             return false;
         }
         indices = std::make_unique<uint16_t[]>(indicesSize);
-        if (!GetVerticesUint16(env, indicesObj, indices.get(), indicesSize)) {
+        if (!GetVerticesUint16(env, arrayObj, indices.get(), indicesSize)) {
             ROSEN_LOGE("AniCanvas::DrawVertices GetIndices is invalid");
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid indices params.");
             return false;
@@ -1185,10 +1197,10 @@ bool AniCanvas::GetVertexModeAndBlendMode(ani_env* env, ani_enum_item aniVertexM
 }
 
 void AniCanvas::DrawVertices(ani_env* env, ani_object obj, ani_enum_item aniVertexMode,
-    ani_int aniVertexCount, ani_object positionsObj, ani_object texsObj, ani_object colorsObj,
+    ani_int aniVertexCount, ani_array positionsObj, ani_object texsObj, ani_object colorsObj,
     ani_int aniIndexCount, ani_object indicesObj, ani_enum_item aniBlendMode)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid Canvas params.");
         return;
@@ -1222,7 +1234,7 @@ void AniCanvas::DrawVertices(ani_env* env, ani_object obj, ani_enum_item aniVert
 void AniCanvas::DrawImageRectWithSrc(ani_env* env, ani_object obj, ani_object pixelmapObj,
     ani_object srcRectObj, ani_object dstRectObj, ani_object samplingOptionsObj, ani_object constraintObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "DrawImageRectWithSrc canvas is nullptr.");
         return;
@@ -1241,10 +1253,9 @@ void AniCanvas::DrawImageRectWithSrc(ani_env* env, ani_object obj, ani_object pi
     }
 
     AniSamplingOptions* aniSamplingOptions = nullptr;
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(samplingOptionsObj, &isUndefined);
-    if (!isUndefined) {
-        aniSamplingOptions = GetNativeFromObj<AniSamplingOptions>(env, samplingOptionsObj);
+    if (!IsUndefined(env, samplingOptionsObj)) {
+        aniSamplingOptions = GetNativeFromObj<AniSamplingOptions>(env, samplingOptionsObj,
+            AniGlobalField::GetInstance().samplingOptionsNativeObj);
         if (aniSamplingOptions == nullptr || aniSamplingOptions->GetSamplingOptions() == nullptr) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
                 "DrawImageRectWithSrc samplingOptions is nullptr.");
@@ -1252,10 +1263,8 @@ void AniCanvas::DrawImageRectWithSrc(ani_env* env, ani_object obj, ani_object pi
         }
     }
 
-    isUndefined = true;
     int32_t srcRectConstraint = 0;
-    env->Reference_IsUndefined(constraintObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, constraintObj)) {
         ani_int constraint;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(constraintObj), &constraint)) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
@@ -1276,7 +1285,7 @@ void AniCanvas::DrawImageRectWithSrc(ani_env* env, ani_object obj, ani_object pi
 
 void AniCanvas::DrawColorWithObject(ani_env* env, ani_object obj, ani_object colorObj, ani_object aniBlendMode)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawColorWithObject canvas is nullptr.");
@@ -1291,9 +1300,7 @@ void AniCanvas::DrawColorWithObject(ani_env* env, ani_object obj, ani_object col
     }
 
     Canvas* canvas = aniCanvas->GetCanvas();
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aniBlendMode, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aniBlendMode)) {
         ani_int blendMode;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(aniBlendMode), &blendMode)) {
             ROSEN_LOGE("AniCanvas::DrawColor failed cause by blendMode");
@@ -1318,7 +1325,7 @@ void AniCanvas::DrawColorWithObject(ani_env* env, ani_object obj, ani_object col
 void AniCanvas::DrawColorWithArgb(ani_env* env, ani_object obj, ani_int alpha, ani_int red,
     ani_int green, ani_int blue, ani_object aniBlendMode)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawColorWithArgb canvas is nullptr.");
@@ -1344,9 +1351,7 @@ void AniCanvas::DrawColorWithArgb(ani_env* env, ani_object obj, ani_int alpha, a
     auto color = Drawing::Color::ColorQuadSetARGB(alpha, red, green, blue);
 
     Canvas* canvas = aniCanvas->GetCanvas();
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aniBlendMode, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aniBlendMode)) {
         ani_int blendMode;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(aniBlendMode), &blendMode)) {
             ROSEN_LOGE("AniCanvas::DrawColor failed cause by blendMode");
@@ -1370,16 +1375,14 @@ void AniCanvas::DrawColorWithArgb(ani_env* env, ani_object obj, ani_int alpha, a
 
 void AniCanvas::DrawColor(ani_env* env, ani_object obj, ani_int color, ani_object aniBlendMode)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawColor canvas is nullptr.");
         return;
     }
 
     Canvas* canvas = aniCanvas->GetCanvas();
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aniBlendMode, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aniBlendMode)) {
         ani_int blendMode;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(aniBlendMode), &blendMode)) {
             ROSEN_LOGE("AniCanvas::DrawColor failed cause by blendMode");
@@ -1403,12 +1406,12 @@ void AniCanvas::DrawColor(ani_env* env, ani_object obj, ani_int color, ani_objec
 
 void AniCanvas::DrawPath(ani_env* env, ani_object obj, ani_object pathObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPath canvas is nullptr.");
         return;
     }
-    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj);
+    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj, AniGlobalField::GetInstance().pathNativeObj);
     if (aniPath == nullptr || aniPath->GetPath() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPath path is nullptr.");
         return;
@@ -1421,7 +1424,7 @@ void AniCanvas::DrawPath(ani_env* env, ani_object obj, ani_object pathObj)
 void AniCanvas::DrawLine(ani_env* env, ani_object obj, ani_double x0,
     ani_double y0, ani_double x1, ani_double y1)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawLine canvas is nullptr.");
         return;
@@ -1433,13 +1436,13 @@ void AniCanvas::DrawLine(ani_env* env, ani_object obj, ani_double x0,
 void AniCanvas::DrawSingleCharacter(ani_env* env, ani_object obj, ani_string text,
     ani_object fontObj, ani_double x, ani_double y)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawSingleCharacter canvas is nullptr.");
         return;
     }
-    auto aniFont = GetNativeFromObj<AniFont>(env, fontObj);
+    auto aniFont = GetNativeFromObj<AniFont>(env, fontObj, AniGlobalField::GetInstance().fontNativeObj);
     if (aniFont == nullptr || aniFont->GetFont() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawSingleCharacter font is nullptr.");
@@ -1447,7 +1450,10 @@ void AniCanvas::DrawSingleCharacter(ani_env* env, ani_object obj, ani_string tex
     }
 
     ani_size len = 0;
-    env->String_GetUTF8Size(text, &len);
+    if (env->String_GetUTF8Size(text, &len) != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter0 type.");
+        return;
+    }
     if (len == 0 || len > 4) { // 4 is the maximum length of a character encoded in UTF8.
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawSingleCharacter Parameter verification failed. text should be single character.");
@@ -1456,7 +1462,10 @@ void AniCanvas::DrawSingleCharacter(ani_env* env, ani_object obj, ani_string tex
 
     char str[len + 1];
     ani_size realLen = 0;
-    env->String_GetUTF8(text, str, len + 1, &realLen);
+    if (env->String_GetUTF8(text, str, len + 1, &realLen) != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Incorrect parameter0 type.");
+        return;
+    }
     str[realLen] = '\0';
     const char* currentStr = str;
     int32_t unicode = SkUTF::NextUTF8(&currentStr, currentStr + len);
@@ -1477,12 +1486,12 @@ void AniCanvas::DrawSingleCharacter(ani_env* env, ani_object obj, ani_string tex
 
 void AniCanvas::DrawTextBlob(ani_env* env, ani_object obj, ani_object textBlobObj, ani_double x, ani_double y)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawTextBlob canvas is nullptr.");
         return;
     }
-    auto aniTextBlob = GetNativeFromObj<AniTextBlob>(env, textBlobObj);
+    auto aniTextBlob = GetNativeFromObj<AniTextBlob>(env, textBlobObj, AniGlobalField::GetInstance().textBlobNativeObj);
     if (aniTextBlob == nullptr || aniTextBlob->GetTextBlob() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawTextBlob textBlob is nullptr.");
         return;
@@ -1493,7 +1502,7 @@ void AniCanvas::DrawTextBlob(ani_env* env, ani_object obj, ani_object textBlobOb
 
 void AniCanvas::DrawOval(ani_env* env, ani_object obj, ani_object rectObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawOval canvas is nullptr.");
         return;
@@ -1512,7 +1521,7 @@ void AniCanvas::DrawOval(ani_env* env, ani_object obj, ani_object rectObj)
 void AniCanvas::DrawArc(ani_env* env, ani_object obj, ani_object rectObj,
     ani_double startAngle, ani_double sweepAngle)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawArc canvas is nullptr.");
         return;
@@ -1531,7 +1540,7 @@ void AniCanvas::DrawArc(ani_env* env, ani_object obj, ani_object rectObj,
 void AniCanvas::DrawArcWithCenter(ani_env* env, ani_object obj, ani_object rectObj,
     ani_double startAngle, ani_double sweepAngle, ani_boolean useCenter)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::DrawArcWithCenter canvas is nullptr.");
@@ -1558,7 +1567,7 @@ void AniCanvas::DrawArcWithCenter(ani_env* env, ani_object obj, ani_object rectO
 
 void AniCanvas::DrawPoint(ani_env* env, ani_object obj, ani_double x, ani_double y)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPoint canvas is nullptr.");
         return;
@@ -1567,25 +1576,25 @@ void AniCanvas::DrawPoint(ani_env* env, ani_object obj, ani_double x, ani_double
     aniCanvas->NotifyDirty();
 }
 
-bool GetPoints(ani_env* env, ani_object pointsObj, uint32_t size, Drawing::Point* point)
+bool GetPoints(ani_env* env, ani_array pointsObj, uint32_t size, Drawing::Point* point)
 {
     ani_boolean isPointClass = false;
     for (uint32_t i = 0; i < size; i++) {
         ani_ref pointRef;
-        if (ANI_OK != env->Object_CallMethodByName_Ref(
-            pointsObj, "$_get", "i:Y", &pointRef, (ani_int)i)) {
+        if (ANI_OK != env->Array_Get(pointsObj, static_cast<ani_size>(i), &pointRef)) {
             ROSEN_LOGE("GetPoints get points failed");
             return false;
         }
         if (i == 0) {
-            ani_class pointClass;
-            ani_status ret = env->FindClass(ANI_CLASS_POINT_NAME, &pointClass);
-            if (ret != ANI_OK) {
-                ROSEN_LOGE("[ANI] can't find class %{public}s, status = %{public}d",
-                    ANI_CLASS_POINT_NAME, static_cast<int>(ret));
+            ani_class pointClass = AniGlobalClass::GetInstance().pointInterface;
+            if (pointClass == nullptr) {
+                ROSEN_LOGE("[ANI] can't find class %{public}s", ANI_CLASS_POINT_NAME);
                 return false;
             }
-            env->Object_InstanceOf(static_cast<ani_object>(pointRef), pointClass, &isPointClass);
+            if (env->Object_InstanceOf(static_cast<ani_object>(pointRef), pointClass, &isPointClass) != ANI_OK) {
+                ROSEN_LOGE("GetPoints Object_InstanceOf failed");
+                return false;
+            }
         }
         if (!isPointClass || GetPointFromPointObj(env, static_cast<ani_object>(pointRef), point[i]) != ANI_OK) {
             ROSEN_LOGE("GetPoints points are invalid");
@@ -1595,15 +1604,15 @@ bool GetPoints(ani_env* env, ani_object pointsObj, uint32_t size, Drawing::Point
     return true;
 }
 
-void AniCanvas::DrawPoints(ani_env* env, ani_object obj, ani_object pointsObj, ani_object aniPointMode)
+void AniCanvas::DrawPoints(ani_env* env, ani_object obj, ani_array pointsObj, ani_object aniPointMode)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPoints canvas is nullptr.");
         return;
     }
-    ani_int aniLength;
-    if (ANI_OK != env->Object_GetPropertyByName_Int(pointsObj, "length", &aniLength) || aniLength == 0) {
+    ani_size aniLength;
+    if (ANI_OK != env->Array_GetLength(pointsObj, &aniLength) || aniLength == 0) {
         ROSEN_LOGE("AniCanvas::DrawPoints points are invalid");
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPoints incorrect type points.");
         return;
@@ -1624,9 +1633,7 @@ void AniCanvas::DrawPoints(ani_env* env, ani_object obj, ani_object pointsObj, a
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawPoints get points failed.");
         return;
     }
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aniPointMode, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aniPointMode)) {
         ani_int pointMode;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(aniPointMode), &pointMode)) {
             delete [] points;
@@ -1648,14 +1655,155 @@ void AniCanvas::DrawPoints(ani_env* env, ani_object obj, ani_object pointsObj, a
     delete [] points;
 }
 
+bool AniCanvas::GetGlyphIds(ani_env* env, ani_int glyphsIDCountLimit, ani_size aniLength,
+                            ani_array& glyphIdsObj, std::unique_ptr<uint16_t[]>& glyphIds)
+{
+    if (static_cast<ani_int>(aniLength) < glyphsIDCountLimit) {
+        ROSEN_LOGE("AniCanvas::DrawGlyphs glyphs input is out of range");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+                           "AniCanvas::DrawGlyphs glyphs input out of range.");
+        return false;
+    }
+    uint32_t size = static_cast<uint32_t>(aniLength);
+    if (size > MAX_ELEMENTSIZE) {
+        ROSEN_LOGE("AniCanvas::DrawGlyphs glyphIds size exceeds the upper limit");
+        return false;
+    }
+    glyphIds = std::make_unique<uint16_t[]>(size);
+    if (glyphIds == nullptr) {
+        ROSEN_LOGE("AniCanvas::DrawGlyphs glyphIds size is %{public}u", size);
+        return false;
+    }
+    for (uint32_t i = 0; i < size; i++) {
+        ani_int glyphId;
+        ani_ref glyphIdsRef;
+        if (ANI_OK != env->Array_Get(glyphIdsObj, static_cast<ani_size>(i), &glyphIdsRef) ||
+            ANI_OK != env->Object_CallMethod_Int(
+                static_cast<ani_object>(glyphIdsRef), AniGlobalMethod::GetInstance().intGet, &glyphId)) {
+            glyphIds[i] = 0;
+            continue;
+        }
+        if (glyphId > std::numeric_limits<uint16_t>::max() || glyphId < 0) {
+            ROSEN_LOGE("AniCanvas::GetGlyphIds id = %{public}d out of uint16_t range [0, 65535], will set to 0",
+                       glyphId);
+            glyphIds[i] = 0;
+            continue;
+        }
+        glyphIds[i] = static_cast<uint16_t>(glyphId);
+    }
+    return true;
+}
+
+bool AniCanvas::GetGlyphPositions(ani_env* env, ani_int positionCountLimit, ani_size aniLength,
+                                  ani_array& positionsObj, std::unique_ptr<Drawing::Point[]>& positions)
+{
+    if (static_cast<ani_int>(aniLength) < positionCountLimit) {
+        ROSEN_LOGE("AniCanvas::DrawGlyphs positions input is out of range");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+                           "AniCanvas::DrawGlyphs position input out of range.");
+        return false;
+    }
+    uint32_t size = static_cast<uint32_t>(aniLength);
+    if (size > MAX_ELEMENTSIZE) {
+        ROSEN_LOGE("AniCanvas::DrawGlyphs positions size exceeds the upper limit");
+        return false;
+    }
+    positions = std::make_unique<Drawing::Point[]>(size);
+    if (positions == nullptr) {
+        ROSEN_LOGE("AniCanvas::DrawGlyphs positions size is %{public}u", size);
+        return false;
+    }
+    if (!GetPoints(env, positionsObj, size, positions.get())) {
+        return false;
+    }
+    return true;
+}
+
+int32_t GlyphSafeAdd(int32_t a, int32_t b)
+{
+    const int32_t maxInt32 = std::numeric_limits<int32_t>::max();
+    const int32_t minInt32 = std::numeric_limits<int32_t>::min();
+    if (b > 0) {
+        if (a > maxInt32 - b) {
+            return maxInt32;
+        }
+    } else if (b < 0) {
+        if (a < minInt32 - b) {
+            return minInt32;
+        }
+    }
+    return a + b;
+}
+
+std::shared_ptr<Font> GetValidFont(const std::shared_ptr<Font>& font)
+{
+    if (font == nullptr) {
+        ROSEN_LOGE("GetValidFont: font is nullptr");
+        return nullptr;
+    }
+    std::shared_ptr<Font> themeFont = GetThemeFont(font);
+    return themeFont ? themeFont : font;
+}
+
+void AniCanvas::DrawGlyphs(ani_env* env, ani_object obj,
+                           ani_array glyphIdsObj, ani_int glyphIdOffset,
+                           ani_array positionsObj, ani_int positionOffset,
+                           ani_int glyphCount, ani_object fontObj)
+{
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
+    if (!aniCanvas || !aniCanvas->GetCanvas()) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawGlyphs canvas is nullptr.");
+        return;
+    }
+    auto aniFont = GetNativeFromObj<AniFont>(env, fontObj, AniGlobalField::GetInstance().fontNativeObj);
+    if (aniFont == nullptr || aniFont->GetFont() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawGlyphs font is nullptr.");
+        return;
+    }
+    ani_size lenGlyph;
+    if (ANI_OK != env->Array_GetLength(glyphIdsObj, &lenGlyph) || lenGlyph == 0) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawGlyphs incorrect glyphIds.");
+        return;
+    }
+    ani_size lenPosition;
+    if (ANI_OK != env->Array_GetLength(positionsObj, &lenPosition) || lenPosition == 0) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawGlyphs incorrect positions.");
+        return;
+    }
+    std::unique_ptr<uint16_t[]> glyphIds;
+    std::unique_ptr<Drawing::Point[]> positions;
+    if (glyphCount <= 0) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+                           "AniCanvas::DrawGlyphs glyphCount out of range.");
+        return;
+    }
+    if (glyphIdOffset < 0 || positionOffset < 0) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+                           "AniCanvas::DrawGlyphs array offset is out of range.");
+        return;
+    }
+    if (!GetGlyphIds(env, GlyphSafeAdd(glyphIdOffset, glyphCount), lenGlyph, glyphIdsObj, glyphIds) ||
+        !GetGlyphPositions(env, GlyphSafeAdd(positionOffset, glyphCount), lenPosition, positionsObj, positions)) {
+        return;
+    }
+    std::shared_ptr<Font> font = GetValidFont(aniFont->GetFont());
+    Drawing::Point origin = Drawing::Point(0, 0);
+    aniCanvas->GetCanvas()->DrawGlyphs(glyphCount,
+                                       glyphIds.get() + glyphIdOffset,
+                                       positions.get() + positionOffset,
+                                       origin,
+                                       font.get());
+    aniCanvas->NotifyDirty();
+}
+
 void AniCanvas::DrawRegion(ani_env* env, ani_object obj, ani_object regionObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawRegion canvas is nullptr.");
         return;
     }
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, regionObj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, regionObj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DrawRegion region is nullptr.");
         return;
@@ -1666,15 +1814,19 @@ void AniCanvas::DrawRegion(ani_env* env, ani_object obj, ani_object regionObj)
 
 void AniCanvas::AttachBrush(ani_env* env, ani_object obj, ani_object brushObj)
 {
-    auto aniCanvas = UnwrapAniCanvas(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::AttachBrush canvas is nullptr.");
         return;
     }
 
-    auto aniBrush = GetNativeFromObj<AniBrush>(env, brushObj);
+    auto aniBrush = GetNativeFromObj<AniBrush>(env, brushObj, AniGlobalField::GetInstance().brushNativeObj);
     if (aniBrush == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid param brush.");
+        return;
+    }
+    if (aniBrush->GetBrush() == nullptr) {
+        ROSEN_LOGE("AniCanvas::AttachBrush brush is nullptr");
         return;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1683,15 +1835,19 @@ void AniCanvas::AttachBrush(ani_env* env, ani_object obj, ani_object brushObj)
 
 void AniCanvas::AttachPen(ani_env* env, ani_object obj, ani_object penObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::AttachPen canvas is nullptr.");
         return;
     }
 
-    auto aniPen = GetNativeFromObj<AniPen>(env, penObj);
+    auto aniPen = GetNativeFromObj<AniPen>(env, penObj, AniGlobalField::GetInstance().penNativeObj);
     if (aniPen == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid param pen.");
+        return;
+    }
+    if (aniPen->GetPen() == nullptr) {
+        ROSEN_LOGE("AniCanvas::AttachPen pen is nullptr");
         return;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1700,9 +1856,9 @@ void AniCanvas::AttachPen(ani_env* env, ani_object obj, ani_object penObj)
 
 void AniCanvas::DetachBrush(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = UnwrapAniCanvas(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DetachBrush canvas is nullptr.");
         return;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1711,9 +1867,9 @@ void AniCanvas::DetachBrush(ani_env* env, ani_object obj)
 
 void AniCanvas::DetachPen(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::DetachPen canvas is nullptr.");
         return;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1722,9 +1878,9 @@ void AniCanvas::DetachPen(ani_env* env, ani_object obj)
 
 ani_int AniCanvas::Save(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Save canvas is nullptr.");
         return -1;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1734,35 +1890,31 @@ ani_int AniCanvas::Save(ani_env* env, ani_object obj)
 
 ani_long AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj, ani_object brushObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::SaveLayer canvas is nullptr.");
         return -1;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
 
-    ani_boolean rectIsUndefined = ANI_TRUE;
-    env->Reference_IsUndefined(rectObj, &rectIsUndefined);
-    if (rectIsUndefined) {
+    if (IsUndefined(env, rectObj)) {
         ani_long ret = canvas->GetSaveCount();
         canvas->SaveLayer(SaveLayerOps());
         return ret;
     }
 
-    ani_boolean brushIsUndefined = ANI_TRUE;
-    env->Reference_IsUndefined(brushObj, &brushIsUndefined);
-
     Drawing::Rect drawingRect;
     Drawing::Rect* drawingRectPtr = GetRectFromAniRectObj(env, rectObj, drawingRect) ?  &drawingRect : nullptr;
 
-    if (brushIsUndefined) {
+    if (IsUndefined(env, brushObj)) {
         ani_long ret = canvas->GetSaveCount();
         canvas->SaveLayer(SaveLayerOps(drawingRectPtr, nullptr));
         return ret;
     }
 
-    Drawing::AniBrush* aniBrush = GetNativeFromObj<AniBrush>(env, brushObj);
-    Drawing::Brush* drawingBrushPtr = aniBrush ? aniBrush->GetBrush().get() : nullptr;
+    Drawing::AniBrush* aniBrush = GetNativeFromObj<AniBrush>(env, brushObj,
+        AniGlobalField::GetInstance().brushNativeObj);
+    Drawing::Brush* drawingBrushPtr = aniBrush && aniBrush->GetBrush() ? aniBrush->GetBrush().get() : nullptr;
 
     ani_long ret = canvas->GetSaveCount();
     SaveLayerOps saveLayerOps = SaveLayerOps(drawingRectPtr, drawingBrushPtr);
@@ -1772,7 +1924,7 @@ ani_long AniCanvas::SaveLayer(ani_env* env, ani_object obj, ani_object rectObj, 
 
 void AniCanvas::Clear(ani_env* env, ani_object obj, ani_object objColor)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Clear canvas is nullptr.");
         return;
@@ -1791,7 +1943,7 @@ void AniCanvas::Clear(ani_env* env, ani_object obj, ani_object objColor)
 
 void AniCanvas::ClearWithOption(ani_env* env, ani_object obj, ani_object objColor)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::ClearWithOption canvas is nullptr.");
@@ -1812,9 +1964,9 @@ void AniCanvas::ClearWithOption(ani_env* env, ani_object obj, ani_object objColo
 
 void AniCanvas::Restore(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Restore canvas is nullptr.");
         return;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1823,9 +1975,9 @@ void AniCanvas::Restore(ani_env* env, ani_object obj)
 
 ani_int AniCanvas::GetSaveCount(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
-        AniThrowError(env, "Invalid params.");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::GetSaveCount canvas is nullptr.");
         return -1;
     }
     Canvas* canvas = aniCanvas->GetCanvas();
@@ -1834,7 +1986,7 @@ ani_int AniCanvas::GetSaveCount(ani_env* env, ani_object obj)
 
 void AniCanvas::RestoreToCount(ani_env* env, ani_object obj, ani_int count)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr || count < 0) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::RestoreToCount canvas is nullptr.");
         return;
@@ -1845,7 +1997,7 @@ void AniCanvas::RestoreToCount(ani_env* env, ani_object obj, ani_int count)
 
 ani_int AniCanvas::GetWidth(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::GetWidth canvas is nullptr.");
         return -1;
@@ -1856,7 +2008,7 @@ ani_int AniCanvas::GetWidth(ani_env* env, ani_object obj)
 
 ani_int AniCanvas::GetHeight(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::GetHeight canvas is nullptr.");
         return -1;
@@ -1868,13 +2020,13 @@ ani_int AniCanvas::GetHeight(ani_env* env, ani_object obj)
 ani_object AniCanvas::GetLocalClipBounds(ani_env* env, ani_object obj)
 {
     ani_object aniObj = CreateAniUndefined(env);
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::GetLocalClipBounds canvas is nullptr.");
         return aniObj;
     }
-    
+
     Drawing::Rect rect = aniCanvas->GetCanvas()->GetLocalClipBounds();
     CreateRectObj(env, rect, aniObj);
     return aniObj;
@@ -1883,7 +2035,7 @@ ani_object AniCanvas::GetLocalClipBounds(ani_env* env, ani_object obj)
 ani_object AniCanvas::GetTotalMatrix(ani_env* env, ani_object obj)
 {
     ani_object aniObj = CreateAniUndefined(env);
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::GetTotalMatrix canvas is nullptr.");
@@ -1893,10 +2045,11 @@ ani_object AniCanvas::GetTotalMatrix(ani_env* env, ani_object obj)
     Drawing::Matrix matrix = aniCanvas->GetCanvas()->GetTotalMatrix();
     std::shared_ptr<Drawing::Matrix> matrixPtr = std::make_shared<Drawing::Matrix>(matrix);
     AniMatrix* aniMatrix = new AniMatrix(matrixPtr);
-    aniObj = CreateAniObject(env, ANI_CLASS_MATRIX_NAME, ":");
-    if (ANI_OK != env->Object_SetFieldByName_Long(aniObj,
-        NATIVE_OBJ, reinterpret_cast<ani_long>(aniMatrix))) {
-        ROSEN_LOGE("AniCanvas::GetTotalMatrix failed cause by Object_SetFieldByName_Long");
+    aniObj = CreateAniObject(env, AniGlobalClass::GetInstance().matrix,
+        AniGlobalMethod::GetInstance().matrixCtor);
+    if (ANI_OK != env->Object_SetField_Long(aniObj,
+        AniGlobalField::GetInstance().matrixNativeObj, reinterpret_cast<ani_long>(aniMatrix))) {
+        ROSEN_LOGE("AniCanvas::GetTotalMatrix failed cause by Object_SetField_Long");
         delete aniMatrix;
         return CreateAniUndefined(env);
     }
@@ -1905,7 +2058,7 @@ ani_object AniCanvas::GetTotalMatrix(ani_env* env, ani_object obj)
 
 void AniCanvas::Scale(ani_env* env, ani_object obj, ani_double sx, ani_double sy)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Scale canvas is nullptr.");
         return;
@@ -1915,7 +2068,7 @@ void AniCanvas::Scale(ani_env* env, ani_object obj, ani_double sx, ani_double sy
 
 void AniCanvas::Skew(ani_env* env, ani_object obj, ani_double sx, ani_double sy)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Skew canvas is nullptr.");
         return;
@@ -1925,7 +2078,7 @@ void AniCanvas::Skew(ani_env* env, ani_object obj, ani_double sx, ani_double sy)
 
 void AniCanvas::Rotate(ani_env* env, ani_object obj, ani_double degrees, ani_double sx, ani_double sy)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Rotate canvas is nullptr.");
         return;
@@ -1936,14 +2089,18 @@ void AniCanvas::Rotate(ani_env* env, ani_object obj, ani_double degrees, ani_dou
 
 void AniCanvas::ConcatMatrix(ani_env* env, ani_object obj, ani_object matrixObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ConcatMatrix canvas is nullptr.");
         return;
     }
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, matrixObj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, matrixObj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ConcatMatrix matrix is nullptr.");
+        return;
+    }
+    if (aniMatrix->GetMatrix() == nullptr) {
+        ROSEN_LOGE("AniCanvas::ConcatMatrix matrix is nullptr");
         return;
     }
 
@@ -1952,7 +2109,7 @@ void AniCanvas::ConcatMatrix(ani_env* env, ani_object obj, ani_object matrixObj)
 
 void AniCanvas::Translate(ani_env* env, ani_object obj, ani_double dx, ani_double dy)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::Translate canvas is nullptr.");
         return;
@@ -1962,12 +2119,12 @@ void AniCanvas::Translate(ani_env* env, ani_object obj, ani_double dx, ani_doubl
 
 void AniCanvas::ClipPath(ani_env* env, ani_object obj, ani_object pathObj, ani_object clipOpObj, ani_object aaObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ClipPath canvas is nullptr.");
         return;
     }
-    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj);
+    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj, AniGlobalField::GetInstance().pathNativeObj);
     if (aniPath == nullptr || aniPath->GetPath() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ClipPath path is nullptr.");
         return;
@@ -1975,11 +2132,10 @@ void AniCanvas::ClipPath(ani_env* env, ani_object obj, ani_object pathObj, ani_o
 
     Drawing::Canvas* canvas = aniCanvas->GetCanvas();
     bool doAntiAlias = false;
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aaObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aaObj)) {
         ani_boolean aniDoAntiAlias;
-        ani_status result = env->Object_CallMethodByName_Boolean(aaObj, "toBoolean", ":z", &aniDoAntiAlias);
+        ani_status result = env->Object_CallMethod_Boolean(
+            aaObj, AniGlobalMethod::GetInstance().booleanGet, &aniDoAntiAlias);
         if (result != ANI_OK) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
                 "AniCanvas::ClipPath incorrect type antiAlias.");
@@ -1988,9 +2144,7 @@ void AniCanvas::ClipPath(ani_env* env, ani_object obj, ani_object pathObj, ani_o
         doAntiAlias = static_cast<bool>(aniDoAntiAlias);
     }
 
-    isUndefined = true;
-    env->Reference_IsUndefined(clipOpObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, clipOpObj)) {
         ani_int clipOp;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(clipOpObj), &clipOp)) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
@@ -2010,7 +2164,7 @@ void AniCanvas::ClipPath(ani_env* env, ani_object obj, ani_object pathObj, ani_o
 
 void AniCanvas::ClipRect(ani_env* env, ani_object obj, ani_object rectObj, ani_object clipOpObj, ani_object aaObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ClipRect canvas is nullptr.");
         return;
@@ -2025,11 +2179,10 @@ void AniCanvas::ClipRect(ani_env* env, ani_object obj, ani_object rectObj, ani_o
 
     Drawing::Canvas* canvas = aniCanvas->GetCanvas();
     bool doAntiAlias = false;
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aaObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aaObj)) {
         ani_boolean aniDoAntiAlias;
-        ani_status result = env->Object_CallMethodByName_Boolean(aaObj, "toBoolean", ":z", &aniDoAntiAlias);
+        ani_status result = env->Object_CallMethod_Boolean(
+            aaObj, AniGlobalMethod::GetInstance().booleanGet, &aniDoAntiAlias);
         if (result != ANI_OK) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
                 "AniCanvas::ClipRect incorrect type antiAlias.");
@@ -2038,9 +2191,7 @@ void AniCanvas::ClipRect(ani_env* env, ani_object obj, ani_object rectObj, ani_o
         doAntiAlias = static_cast<bool>(aniDoAntiAlias);
     }
 
-    isUndefined = true;
-    env->Reference_IsUndefined(clipOpObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, clipOpObj)) {
         ani_int clipOp;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(clipOpObj), &clipOp)) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
@@ -2060,21 +2211,19 @@ void AniCanvas::ClipRect(ani_env* env, ani_object obj, ani_object rectObj, ani_o
 
 void AniCanvas::ClipRegion(ani_env* env, ani_object obj, ani_object regionObj, ani_object clipOpObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ClipRegion canvas is nullptr.");
         return;
     }
-    auto aniRegion = GetNativeFromObj<AniRegion>(env, regionObj);
+    auto aniRegion = GetNativeFromObj<AniRegion>(env, regionObj, AniGlobalField::GetInstance().regionNativeObj);
     if (aniRegion == nullptr || aniRegion->GetRegion() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ClipRegion canvas is nullptr.");
         return;
     }
 
     Drawing::Canvas* canvas = aniCanvas->GetCanvas();
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(clipOpObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, clipOpObj)) {
         ani_int clipOp;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(clipOpObj), &clipOp)) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
@@ -2095,12 +2244,13 @@ void AniCanvas::ClipRegion(ani_env* env, ani_object obj, ani_object regionObj, a
 void AniCanvas::ClipRoundRect(ani_env* env, ani_object obj, ani_object roundRectObj,
     ani_object clipOpObj, ani_object aaObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ClipRoundRect canvas is nullptr.");
         return;
     }
-    auto aniRoundRect = GetNativeFromObj<AniRoundRect>(env, roundRectObj);
+    auto aniRoundRect = GetNativeFromObj<AniRoundRect>(env, roundRectObj,
+        AniGlobalField::GetInstance().roundRectNativeObj);
     if (aniRoundRect == nullptr || aniRoundRect->GetRoundRect() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::ClipRoundRect roundRect is nullptr.");
@@ -2109,11 +2259,10 @@ void AniCanvas::ClipRoundRect(ani_env* env, ani_object obj, ani_object roundRect
 
     Drawing::Canvas* canvas = aniCanvas->GetCanvas();
     bool doAntiAlias = false;
-    ani_boolean isUndefined = true;
-    env->Reference_IsUndefined(aaObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, aaObj)) {
         ani_boolean aniDoAntiAlias;
-        ani_status result = env->Object_CallMethodByName_Boolean(aaObj, "toBoolean", ":z", &aniDoAntiAlias);
+        ani_status result = env->Object_CallMethod_Boolean(
+            aaObj, AniGlobalMethod::GetInstance().booleanGet, &aniDoAntiAlias);
         if (result != ANI_OK) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
                 "AniCanvas::ClipRoundRect incorrect type antiAlias.");
@@ -2122,9 +2271,7 @@ void AniCanvas::ClipRoundRect(ani_env* env, ani_object obj, ani_object roundRect
         doAntiAlias = static_cast<bool>(aniDoAntiAlias);
     }
 
-    isUndefined = true;
-    env->Reference_IsUndefined(clipOpObj, &isUndefined);
-    if (!isUndefined) {
+    if (!IsUndefined(env, clipOpObj)) {
         ani_int clipOp;
         if (ANI_OK != env->EnumItem_GetValue_Int(reinterpret_cast<ani_enum_item>(clipOpObj), &clipOp)) {
             ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
@@ -2144,7 +2291,7 @@ void AniCanvas::ClipRoundRect(ani_env* env, ani_object obj, ani_object roundRect
 
 ani_boolean AniCanvas::IsClipEmpty(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::IsClipEmpty canvas is nullptr.");
         return ANI_FALSE;
@@ -2157,14 +2304,18 @@ ani_boolean AniCanvas::IsClipEmpty(ani_env* env, ani_object obj)
 
 void AniCanvas::SetMatrix(ani_env* env, ani_object obj, ani_object matrixObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::SetMatrix canvas is nullptr.");
         return;
     }
-    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, matrixObj);
+    auto aniMatrix = GetNativeFromObj<AniMatrix>(env, matrixObj, AniGlobalField::GetInstance().matrixNativeObj);
     if (aniMatrix == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::SetMatrix matrix is nullptr.");
+        return;
+    }
+    if (aniMatrix->GetMatrix() == nullptr) {
+        ROSEN_LOGE("AniCanvas::SetMatrix matrix is nullptr");
         return;
     }
 
@@ -2173,7 +2324,7 @@ void AniCanvas::SetMatrix(ani_env* env, ani_object obj, ani_object matrixObj)
 
 void AniCanvas::ResetMatrix(ani_env* env, ani_object obj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ResetMatrix canvas is nullptr.");
         return;
@@ -2182,16 +2333,27 @@ void AniCanvas::ResetMatrix(ani_env* env, ani_object obj)
     aniCanvas->GetCanvas()->ResetMatrix();
 }
 
+void AniCanvas::ResetClip(ani_env* env, ani_object obj)
+{
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
+    if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::ResetClip canvas is nullptr.");
+        return;
+    }
+
+    aniCanvas->GetCanvas()->ResetClip();
+}
+
 ani_boolean AniCanvas::QuickRejectPath(ani_env* env, ani_object obj, ani_object pathObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::QuickRejectPath canvas is nullptr.");
         return ANI_FALSE;
     }
 
-    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj);
+    auto aniPath = GetNativeFromObj<AniPath>(env, pathObj, AniGlobalField::GetInstance().pathNativeObj);
     if (aniPath == nullptr || aniPath->GetPath() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::QuickRejectPath path is nullptr.");
@@ -2201,10 +2363,86 @@ ani_boolean AniCanvas::QuickRejectPath(ani_env* env, ani_object obj, ani_object 
     bool result = canvas->QuickReject(*aniPath->GetPath());
     return static_cast<ani_boolean>(result);
 }
+std::shared_ptr<Drawing::DrawingFontFeatures> ParseFontFeatures(ani_env* env, ani_array featuresobj)
+{
+    ani_size aniLength;
+    if (ANI_OK != env->Array_GetLength(featuresobj, &aniLength)) {
+        ROSEN_LOGE("AniCanvas::ParseFontFeatures featuresobj are invalid");
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::ParseFontFeatures incorrect type points.");
+        return nullptr;
+    }
+    uint32_t size = static_cast<uint32_t>(aniLength);
+
+    std::shared_ptr<Drawing::DrawingFontFeatures> drawingFontFeatures =
+                std::make_shared<Drawing::DrawingFontFeatures>();
+    if (!MakeFontFeaturesFromAniObjArray(env, drawingFontFeatures, size, featuresobj)) {
+        ROSEN_LOGE("AniCanvas::ParseFontFeatures MakeFontFeaturesFromAniObjArray is fail");
+        return nullptr;
+    }
+    return drawingFontFeatures;
+}
+
+void AniCanvas::DrawSingleCharacterWithFeatures(ani_env* env, ani_object obj, ani_string text, ani_object fontobj,
+    ani_double x, ani_double y, ani_array featuresobj)
+{
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
+    if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::drawSingleCharacterWithFeatures canvas is nullptr.");
+        return;
+    }
+
+    auto aniFont = GetNativeFromObj<AniFont>(env, fontobj, AniGlobalField::GetInstance().fontNativeObj);
+    if (aniFont == nullptr || aniFont->GetFont() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::DrawSingleCharacterWithFeatures font is nullptr.");
+        return;
+    }
+
+    ani_size len = 0;
+    ani_status status = env->String_GetUTF8Size(text, &len);
+    if (status != ANI_OK || len == 0 || len > 4) { // 4 is the maximum length of a character encoded in UTF8.
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+            "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed");
+        return;
+    }
+
+    std::vector<char> str(len + 1);
+    ani_size realLen = 0;
+    if (env->String_GetUTF8(text, str.data(), len + 1, &realLen) != ANI_OK) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "Invalid parameter0 type.");
+        return;
+    }
+    str[realLen] = '\0';
+    const char* currentStr = str.data();
+    int32_t unicode = SkUTF::NextUTF8(&currentStr, currentStr + len);
+
+    std::shared_ptr<Font> font = aniFont->GetFont();
+    std::shared_ptr<Font> themeFont = MatchThemeFont(font, unicode);
+    if (themeFont != nullptr) {
+        font = themeFont;
+    }
+    size_t byteLen = currentStr - str.data();
+    if (byteLen != len) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_PARAM_VERIFICATION_FAILED,
+            "AniCanvas::DrawSingleCharacterWithFeatures Parameter verification failed");
+        return;
+    }
+    auto drawingFontFeatures = ParseFontFeatures(env, featuresobj);
+    if (!drawingFontFeatures) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
+            "AniCanvas::DrawSingleCharacterWithFeatures drawingFontFeatures is nullptr");
+        return;
+    }
+
+    aniCanvas->GetCanvas()->DrawSingleCharacterWithFeatures(str.data(), *font, x, y, drawingFontFeatures);
+    aniCanvas->NotifyDirty();
+}
 
 ani_boolean AniCanvas::QuickRejectRect(ani_env* env, ani_object obj, ani_object rectObj)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM,
             "AniCanvas::QuickRejectRect canvas is nullptr.");
@@ -2223,6 +2461,18 @@ ani_boolean AniCanvas::QuickRejectRect(ani_env* env, ani_object obj, ani_object 
     return static_cast<ani_boolean>(result);
 }
 
+ani_boolean AniCanvas::IsOpaque(ani_env* env, ani_object obj)
+{
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, obj, AniGlobalField::GetInstance().canvasNativeObj);
+    if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
+        ThrowBusinessError(env, DrawingErrorCode::ERROR_INVALID_PARAM, "AniCanvas::IsOpaque canvas is nullptr.");
+        return ANI_FALSE;
+    }
+    Drawing::Canvas* canvas = aniCanvas->GetCanvas();
+    bool result = canvas->IsOpaque();
+    return static_cast<ani_boolean>(result);
+}
+
 Canvas* AniCanvas::GetCanvas()
 {
     return m_canvas;
@@ -2236,11 +2486,27 @@ ani_object AniCanvas::CreateAniCanvas(ani_env* env, Canvas* canvas)
     }
 
     ani_ref aniRef;
-    env->GetUndefined(&aniRef);
+    if (env->GetUndefined(&aniRef) != ANI_OK) {
+        ROSEN_LOGE("CreateAniCanvas GetUndefined failed");
+        return CreateAniUndefined(env);
+    }
+    ani_class aniClass;
+    if (env->FindClass(ANI_CLASS_CANVAS_NAME, &aniClass) != ANI_OK) {
+        ROSEN_LOGE("CreateAniCanvas FindClass failed");
+        return CreateAniUndefined(env);
+    }
+    ani_method aniConstructor;
+    if (env->Class_FindMethod(aniClass, "<ctor>", nullptr, &aniConstructor) != ANI_OK) {
+        ROSEN_LOGE("CreateAniCanvas Class_FindMethod failed");
+        return CreateAniUndefined(env);
+    }
+    ani_object aniObj;
+    if (env->Object_New(aniClass, aniConstructor, &aniObj, aniRef) != ANI_OK) {
+        ROSEN_LOGE("CreateAniCanvas Object_New failed");
+        return CreateAniUndefined(env);
+    }
     auto aniCanvas = new AniCanvas(canvas);
-    ani_object aniObj = CreateAniObject(env, ANI_CLASS_CANVAS_NAME, nullptr, aniRef);
-    if (ANI_OK != env->Object_SetFieldByName_Long(aniObj,
-        NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
+    if (ANI_OK != env->Object_SetFieldByName_Long(aniObj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
         ROSEN_LOGE("aniCanvas failed cause by Object_SetFieldByName_Long");
         delete aniCanvas;
         return CreateAniUndefined(env);
@@ -2276,8 +2542,16 @@ ani_object AniCanvas::CanvasTransferStatic(ani_env* env, [[maybe_unused]]ani_obj
 #ifdef ROSEN_OHOS
     aniCanvas->mPixelMap_ = jsCanvas->GetPixelMap();
 #endif
-    ani_object aniCanvasObj = CreateAniObject(env, ANI_CLASS_CANVAS_NAME, nullptr, nullptr);
-    if (ANI_OK != env->Object_SetFieldByName_Long(aniCanvasObj, NATIVE_OBJ, reinterpret_cast<ani_long>(aniCanvas))) {
+    ani_ref aniRef;
+    if (env->GetUndefined(&aniRef) != ANI_OK) {
+        ROSEN_LOGE("AniCanvas::CanvasTransferStatic GetUndefined failed");
+        delete aniCanvas;
+        return CreateAniUndefined(env);
+    }
+    ani_object aniCanvasObj = CreateAniObject(env, AniGlobalClass::GetInstance().canvas,
+        AniGlobalMethod::GetInstance().canvasCtor, aniRef);
+    if (ANI_OK != env->Object_SetField_Long(
+        aniCanvasObj, AniGlobalField::GetInstance().canvasNativeObj, reinterpret_cast<ani_long>(aniCanvas))) {
         ROSEN_LOGE("AniCanvas::CanvasTransferStatic failed create aniBrush");
         delete aniCanvas;
         return CreateAniUndefined(env);
@@ -2287,7 +2561,7 @@ ani_object AniCanvas::CanvasTransferStatic(ani_env* env, [[maybe_unused]]ani_obj
 
 ani_long AniCanvas::GetCanvasAddr(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, input);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, input, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ROSEN_LOGE("AniCanvas::GetCanvasAddr aniCanvas is null");
         return 0;
@@ -2298,7 +2572,7 @@ ani_long AniCanvas::GetCanvasAddr(ani_env* env, [[maybe_unused]]ani_object obj, 
 ani_long AniCanvas::GetPixelMapAddr(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input)
 {
 #ifdef ROSEN_OHOS
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, input);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, input, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ROSEN_LOGE("AniCanvas::GetPixelMapAddr aniCanvas is null");
         return 0;
@@ -2314,7 +2588,7 @@ ani_long AniCanvas::GetPixelMapAddr(ani_env* env, [[maybe_unused]]ani_object obj
 
 ani_boolean AniCanvas::GetCanvasOwned(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input)
 {
-    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, input);
+    auto aniCanvas = GetNativeFromObj<AniCanvas>(env, input, AniGlobalField::GetInstance().canvasNativeObj);
     if (aniCanvas == nullptr || aniCanvas->GetCanvas() == nullptr) {
         ROSEN_LOGE("AniCanvas::GetPixelMapAddr aniCanvas is null");
         return false;

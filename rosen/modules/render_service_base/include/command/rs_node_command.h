@@ -52,7 +52,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_VECTOR4_COLOR = 0x0113,
     UPDATE_MODIFIER_VECTOR4F = 0x0114,
     UPDATE_MODIFIER_RRECT = 0x0115,
-    // UPDATE_MODIFIER_DRAW_CMD_LIST = 0x0116,
+    // 0x0116 deleted, do not use this value never
     UPDATE_MODIFIER_DRAWING_MATRIX = 0x0117,
     UPDATE_MODIFIER_VECTOR_FLOAT = 0X0118,
     UPDATE_MODIFIER_UI_FILTER_PTR = 0X0119,
@@ -64,10 +64,13 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_SHADOW_BLENDER_PARA = 0x0125,
     UPDATE_MODIFIER_VECTOR_VECTOR2F = 0x0126,
     UPDATE_MODIFIER_SHORT = 0x0127,
-    UPDATE_MODIFIER_RIPPLE_FIELD_PTR = 0x0128,
-    UPDATE_MODIFIER_VELOCITY_FIELD_PTR = 0x0129,
-    UPDATE_MODIFIER_DRAW_CMD_LIST = 0x012A,
+    UPDATE_MODIFIER_DRAW_CMD_LIST = 0x0128,
+    UPDATE_MODIFIER_RIPPLE_FIELD_PTR = 0x0129,
+    UPDATE_MODIFIER_VELOCITY_FIELD_PTR = 0x012A,
     UPDATE_MODIFIER_NG_SHAPE_BASE_PTR = 0x012B,
+    UPDATE_MODIFIER_VECTOR_VECTOR4F = 0x012C,
+    UPDATE_MODIFIER_HDR_DARKEN_BLENDER_PARA = 0x012D,
+    UPDATE_MODIFIER_PARTICLE_FIELDS_PTR = 0x0131,
 
     SET_FREEZE = 0x0200,
     SET_DRAW_REGION = 0x0201,
@@ -76,6 +79,8 @@ enum RSNodeCommandType : uint16_t {
     SET_UIFIRST_SWITCH = 0x0204,
     SET_ENABLE_HDR_EFFECT = 0x0205,
     SET_NEED_USE_CMDLIST_DRAW_REGION = 0x0206,
+    SET_HDR_UI_BRIGHTNESS = 0x0207,
+    SET_LAYER_MARK = 0x0208,
 
     REGISTER_GEOMETRY_TRANSITION = 0x0300,
     UNREGISTER_GEOMETRY_TRANSITION = 0x0301,
@@ -84,13 +89,14 @@ enum RSNodeCommandType : uint16_t {
     MARK_NODE_SINGLE_FRAME_COMPOSER = 0x0401,
     MARK_SUGGEST_OPINC_NODE = 0x0402,
     EXCLUDED_FROM_NODE_GROUP = 0x403,
+    MARK_LAYER_PART_RENDER = 0x0404,
 
     MARK_UIFIRST_NODE = 0x0500,
     MARK_UIFIRST_NODE_FORCE = 0x0501,
 
     SET_NODE_NAME = 0x0600,
     UPDATE_MODIFIER_MOTION_BLUR_PTR = 0x0601,
-    UPDATE_MODIFIER_MAGNIFIER_PTR = 0x0602,
+
     UPDATE_MODIFIER_WATER_RIPPLE = 0x0603,
     UPDATE_MODIFIER_FLY_OUT = 0x0604,
     REMOVE_ALL_MODIFIERS = 0x0605,
@@ -111,6 +117,12 @@ enum RSNodeCommandType : uint16_t {
     REMOVE_ALL_MODIFIERS_NG = 0x0b04,
 
     MARK_REPAINT_BOUNDARY = 0x0c00,
+
+    MARK_NODE_COLORSPACE = 0x0d00,
+
+    COLOR_PICKER_CALLBACK = 0x0e00,
+
+    SORT_CHILDREN_BY_INDEX = 0x0f00,
 };
 
 class RSB_EXPORT RSNodeCommandHelper {
@@ -124,16 +136,21 @@ public:
             return;
         }
         if (type == UPDATE_TYPE_FORCE_OVERWRITE) {
-            node->GetAnimationManager().CancelAnimationByPropertyId(id);
+            if (auto animationManager = node->GetAnimationManager()) {
+                animationManager->CancelAnimationByPropertyId(id);
+            }
         }
         if (auto property = node->GetProperty(id)) {
             std::static_pointer_cast<RSRenderProperty<T>>(property)->Set(value, type);
         }
     }
 
+    static void UpdatePropertyDrawCmdList(
+        RSContext& context, NodeId nodeId, Drawing::DrawCmdListPtr drawCmdList, PropertyId id, PropertyUpdateType type);
+
     static void UpdateModifierNGDrawCmdList(
         RSContext& context, NodeId nodeId, Drawing::DrawCmdListPtr value, PropertyId propertyId);
-    static void SetFreeze(RSContext& context, NodeId nodeId, bool isFreeze);
+    static void SetFreeze(RSContext& context, NodeId nodeId, bool isFreeze, bool isMarkedByUi);
     static void SetNodeName(RSContext& context, NodeId nodeId, std::string& nodeName);
     static void MarkNodeGroup(RSContext& context, NodeId nodeId, bool isNodeGroup, bool isForced,
         bool includeProperty);
@@ -141,14 +158,18 @@ public:
     static void MarkRepaintBoundary(RSContext& context, NodeId nodeId, bool isRepaintBoundary);
     static void MarkNodeSingleFrameComposer(RSContext& context, NodeId nodeId, bool isNodeFasterDraw, pid_t pid);
     static void MarkSuggestOpincNode(RSContext& context, NodeId nodeId, bool isOpincNode, bool isNeedCalculate);
+    static void MarkLayerPartRender(RSContext& context, NodeId nodeId, bool isLayerPartRender);
 
     static void MarkUifirstNode(RSContext& context, NodeId nodeId, bool isUifirstNode);
     static void ForceUifirstNode(RSContext& context, NodeId nodeId, bool isForceFlag, bool isUifirstEnable);
     static void SetUIFirstSwitch(RSContext& context, NodeId nodeId, RSUIFirstSwitch uiFirstSwitch);
+    static void MarkNodeColorSpace(RSContext& context, NodeId nodeId, int8_t colorSpace);
     static void SetDrawRegion(RSContext& context, NodeId nodeId, std::shared_ptr<RectF> rect);
     static void SetOutOfParent(RSContext& context, NodeId nodeId, OutOfParentType outOfParent);
     static void SetTakeSurfaceForUIFlag(RSContext& context, NodeId nodeId);
     static void SetNeedUseCmdlistDrawRegion(RSContext &context, NodeId nodeId, bool needUseCmdlistDrawRegion);
+    static void SetHDRUIBrightness(RSContext& context, NodeId nodeId, float brightness);
+    static void MarkLayer(RSContext& context, NodeId nodeId, bool isLayer);
 
     static void RegisterGeometryTransitionPair(RSContext& context, NodeId inNodeId, NodeId outNodeId,
         const bool isInSameWindow);
@@ -176,6 +197,12 @@ public:
     static void ModifierNGDetachProperty(RSContext& context, NodeId nodeId, ModifierId modifierId,
         ModifierNG::RSModifierType modifierType, ModifierNG::RSPropertyType type);
     static void RemoveAllModifiersNG(RSContext& context, NodeId nodeId);
+
+    using ColorPickerCallbackProcessor = void (*)(NodeId, uint64_t, uint32_t);
+    static void ColorPickerCallback(RSContext& context, NodeId nodeId, pid_t pid, uint64_t token, uint32_t color);
+    static RSB_EXPORT void SetColorPickerCallbackProcessor(ColorPickerCallbackProcessor processor);
+
+    static void ReSortChildrenByZIndex(RSContext& context, NodeId nodeId);
 };
 
 ADD_COMMAND(RSUpdatePropertyBool,
@@ -246,10 +273,6 @@ ADD_COMMAND(RSUpdatePropertyMotionBlurPara,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_MOTION_BLUR_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<MotionBlurParam>>,
         NodeId, std::shared_ptr<MotionBlurParam>, PropertyId, PropertyUpdateType))
-ADD_COMMAND(RSUpdatePropertyMagnifierPara,
-    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_MAGNIFIER_PTR,
-        RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSMagnifierParams>>,
-        NodeId, std::shared_ptr<RSMagnifierParams>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyEmitterUpdater,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_EMITTER_UPDATER_PTR,
         RSNodeCommandHelper::UpdateProperty<std::vector<std::shared_ptr<EmitterUpdater>>>,
@@ -266,6 +289,10 @@ ADD_COMMAND(RSUpdatePropertyParticleVelocityFields,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_VELOCITY_FIELD_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<ParticleVelocityFields>>,
         NodeId, std::shared_ptr<ParticleVelocityFields>, PropertyId, PropertyUpdateType))
+ADD_COMMAND(RSUpdatePropertyParticleFields,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_PARTICLE_FIELDS_PTR,
+        RSNodeCommandHelper::UpdateProperty<std::shared_ptr<ParticleFieldCollection>>,
+        NodeId, std::shared_ptr<ParticleFieldCollection>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyShader,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_SHADER_PTR,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<RSShader>>,
@@ -290,21 +317,16 @@ ADD_COMMAND(RSUpdatePropertyRRect,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_RRECT,
         RSNodeCommandHelper::UpdateProperty<RRect>, NodeId, RRect, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyDrawCmdList,
-    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST,
-        RSNodeCommandHelper::UpdateProperty<Drawing::DrawCmdListPtr>,
-        NodeId, Drawing::DrawCmdListPtr, PropertyId, PropertyUpdateType))
-
-// =============================================================================
-// Planning: Remove the following commands after deprecating complex shader
-ADD_COMMAND(RSUpdatePropertyVectorFloat,
-    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_VECTOR_FLOAT,
-        RSNodeCommandHelper::UpdateProperty<std::vector<float>>,
-        NodeId, std::vector<float>, PropertyId, PropertyUpdateType))
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_DRAW_CMD_LIST, RSNodeCommandHelper::UpdatePropertyDrawCmdList, NodeId,
+        Drawing::DrawCmdListPtr, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyVectorVector2f,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_VECTOR_VECTOR2F,
         RSNodeCommandHelper::UpdateProperty<std::vector<Vector2f>>,
         NodeId, std::vector<Vector2f>, PropertyId, PropertyUpdateType))
-// =============================================================================
+ADD_COMMAND(RSUpdatePropertyVectorVector4f,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_VECTOR_VECTOR4F,
+        RSNodeCommandHelper::UpdateProperty<std::vector<Vector4f>>,
+        NodeId, std::vector<Vector4f>, PropertyId, PropertyUpdateType))
 ADD_COMMAND(RSUpdatePropertyPixelMap,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_PIXEL_MAP,
         RSNodeCommandHelper::UpdateProperty<std::shared_ptr<Media::PixelMap>>, NodeId,
@@ -313,13 +335,25 @@ ADD_COMMAND(RSUpdatePropertyShadowBlenderPara,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_SHADOW_BLENDER_PARA,
         RSNodeCommandHelper::UpdateProperty<RSShadowBlenderPara>, NodeId,
         RSShadowBlenderPara, PropertyId, PropertyUpdateType))
+
+ADD_COMMAND(RSUpdatePropertyHdrDarkenBlenderPara,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_HDR_DARKEN_BLENDER_PARA,
+        RSNodeCommandHelper::UpdateProperty<RSHdrDarkenBlenderPara>, NodeId,
+        RSHdrDarkenBlenderPara, PropertyId, PropertyUpdateType))
+
 ADD_COMMAND(RSUpdatePropertyShort,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_SHORT, RSNodeCommandHelper::UpdateProperty<short>, NodeId, short,
         PropertyId, PropertyUpdateType))
 
+// Planning: Remove the following commands after deprecating complex shader
+ADD_COMMAND(RSUpdatePropertyVectorFloat,
+    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_VECTOR_FLOAT,
+        RSNodeCommandHelper::UpdateProperty<std::vector<float>>,
+        NodeId, std::vector<float>, PropertyId, PropertyUpdateType))
+
 ADD_COMMAND(RSSetFreeze,
     ARG(PERMISSION_APP, RS_NODE, SET_FREEZE,
-        RSNodeCommandHelper::SetFreeze, NodeId, bool))
+        RSNodeCommandHelper::SetFreeze, NodeId, bool, bool))
 ADD_COMMAND(RSSetNodeName,
     ARG(PERMISSION_APP, RS_NODE, SET_NODE_NAME,
         RSNodeCommandHelper::SetNodeName, NodeId, std::string))
@@ -341,6 +375,9 @@ ADD_COMMAND(RSMarkNodeSingleFrameComposer,
 ADD_COMMAND(RSMarkSuggestOpincNode,
     ARG(PERMISSION_APP, RS_NODE, MARK_SUGGEST_OPINC_NODE,
         RSNodeCommandHelper::MarkSuggestOpincNode, NodeId, bool, bool))
+ADD_COMMAND(RSMarkLayerPartRender,
+    ARG(PERMISSION_APP, RS_NODE, MARK_LAYER_PART_RENDER,
+        RSNodeCommandHelper::MarkLayerPartRender, NodeId, bool))
 
 ADD_COMMAND(RSMarkUifirstNode,
     ARG(PERMISSION_APP, RS_NODE, MARK_UIFIRST_NODE,
@@ -353,6 +390,10 @@ ADD_COMMAND(RSForceUifirstNode,
 ADD_COMMAND(RSSetUIFirstSwitch,
     ARG(PERMISSION_APP, RS_NODE, SET_UIFIRST_SWITCH,
         RSNodeCommandHelper::SetUIFirstSwitch, NodeId, RSUIFirstSwitch))
+
+ADD_COMMAND(RSMarkNodeColorSpace,
+    ARG(PERMISSION_APP, RS_NODE, MARK_NODE_COLORSPACE,
+        RSNodeCommandHelper::MarkNodeColorSpace, NodeId, int8_t))
 
 ADD_COMMAND(RSSetDrawRegion,
     ARG(PERMISSION_APP, RS_NODE, SET_DRAW_REGION,
@@ -368,6 +409,13 @@ ADD_COMMAND(RSSetTakeSurfaceForUIFlag,
 ADD_COMMAND(RSSetNeedUseCmdlistDrawRegion,
     ARG(PERMISSION_APP, RS_NODE, SET_NEED_USE_CMDLIST_DRAW_REGION,
         RSNodeCommandHelper::SetNeedUseCmdlistDrawRegion, NodeId, bool))
+
+ADD_COMMAND(RSSetHDRUIBrightness,
+    ARG(PERMISSION_APP, RS_NODE, SET_HDR_UI_BRIGHTNESS,
+        RSNodeCommandHelper::SetHDRUIBrightness, NodeId, float))
+
+ADD_COMMAND(
+    RSMarkLayer, ARG(PERMISSION_APP, RS_NODE, SET_LAYER_MARK, RSNodeCommandHelper::MarkLayer, NodeId, bool))
 
 ADD_COMMAND(RSRegisterGeometryTransitionNodePair,
     ARG(PERMISSION_APP, RS_NODE, REGISTER_GEOMETRY_TRANSITION,
@@ -407,6 +455,14 @@ ADD_COMMAND(RSModifierNGDetachProperty,
 ADD_COMMAND(RSRemoveAllModifiersNG,
     ARG(PERMISSION_APP, RS_NODE, REMOVE_ALL_MODIFIERS_NG,
         RSNodeCommandHelper::RemoveAllModifiersNG, NodeId))
+
+ADD_COMMAND(RSColorPickerCallback,
+    ARG(PERMISSION_APP, RS_NODE, COLOR_PICKER_CALLBACK,
+        RSNodeCommandHelper::ColorPickerCallback, NodeId, pid_t, uint64_t, uint32_t))
+
+ADD_COMMAND(RSSortChildrenByZIndex,
+    ARG(PERMISSION_APP, RS_NODE, SORT_CHILDREN_BY_INDEX,
+        RSNodeCommandHelper::ReSortChildrenByZIndex, NodeId))
 } // namespace Rosen
 } // namespace OHOS
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_NODE_COMMAND_H

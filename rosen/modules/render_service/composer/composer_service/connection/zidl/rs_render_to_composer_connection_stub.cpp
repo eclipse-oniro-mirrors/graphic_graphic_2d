@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "rs_render_to_composer_connection_stub.h"
+#include <unistd.h>
+#include "accesstoken_kit.h"
+#include "buffer_utils.h"
+#include "graphic_common.h"
+#include "ipc_skeleton.h"
+#include "platform/common/rs_log.h"
+#include "rs_trace.h"
+
+#undef LOG_TAG
+#define LOG_TAG "RSRenderToComposerConnectionStub"
+namespace OHOS {
+namespace Rosen {
+int32_t RSRenderToComposerConnectionStub::OnRemoteRequest(uint32_t code, OHOS::MessageParcel& data,
+    OHOS::MessageParcel& reply, MessageOption& option)
+{
+    auto remoteDescriptor = data.ReadInterfaceToken();
+    if (GetDescriptor() != remoteDescriptor) {
+        RS_LOGE("%{public}s ReadInterfaceToken failed.", __func__);
+        return ERR_INVALID_STATE;
+    }
+    int32_t ret = COMPOSITOR_ERROR_OK;
+    switch (code) {
+        case IRENDER_TO_COMPOSER_CONNECTION_COMMIT_LAYERS: {
+            auto transactionData = ParseTransactionData(data);
+            if (!transactionData || !CommitLayers(transactionData)) {
+                ret = COMPOSITOR_ERROR_BINDER_ERROR;
+            }
+            reply.WriteInt32(ret);
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_CLEAR_FRAME_BUFFERS: {
+            ClearFrameBuffers();
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_CLEAN_LAYER_BUFFER_BY_SURFACE_ID: {
+            uint64_t surfaceId = 0;
+            if (GetCleanLayerBufferSurfaceId(data, surfaceId) == COMPOSITOR_ERROR_OK) {
+                CleanLayerBufferBySurfaceId(surfaceId);
+            }
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_COMMIT_TUNNEL_LAYER_BY_SURFACE_ID: {
+            ret = CommitTunnelLayerBySurfaceIdStub(data, reply);
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_CLEAR_REDRAW_GPU_COMPOSITION_CACHE: {
+            auto bufferIds = ParseClearRedrawCacheBufferIds(data);
+            ClearRedrawGPUCompositionCache(bufferIds);
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_SET_BACKLIGHT_LEVEL: {
+            uint32_t level = 0;
+            if (GetBacklightLevel(data, level) == COMPOSITOR_ERROR_OK) {
+                SetScreenBacklight(level);
+            } else {
+                ret = COMPOSITOR_ERROR_BINDER_ERROR;
+            }
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_SET_LINEAR_MATRIX: {
+            std::vector<float> matrix;
+            if (GetLinearMatrix(data, matrix) == COMPOSITOR_ERROR_OK) {
+                SetScreenLinearMatrix(matrix);
+            } else {
+                ret = COMPOSITOR_ERROR_BINDER_ERROR;
+            }
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_SET_COMPOSER_TO_RENDER_CONNECTION: {
+            ret = SetComposerToRenderConnectionStub(data);
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_PREALLOC_PROTECTED_FRAME_BUFFERS: {
+            ret = PreAllocProtectedFrameBuffersStub(data);
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_MARK_TUNNEL_SURFACE_INVALID: {
+            ret = MarkTunnelSurfaceInvalidSurfaceIdStub(data);
+            break;
+        }
+        default: {
+            ret = COMPOSITOR_ERROR_BINDER_ERROR;
+            break;
+        }
+    }
+    return ret;
+}
+
+std::unique_ptr<RSLayerTransactionData> RSRenderToComposerConnectionStub::ParseTransactionData(
+    OHOS::MessageParcel& parcel)
+{
+    RS_TRACE_NAME("ParseTransactionData data size:" + std::to_string(parcel.GetDataSize()));
+    auto transactionData = RSLayerTransactionData::Unmarshalling(parcel);
+    if (!transactionData) {
+        RS_LOGE("RSLayerTransactionData::Unmarshalling failed.");
+        return nullptr;
+    }
+    lastSendingPid_ = transactionData->GetSendingPid();
+    std::unique_ptr<RSLayerTransactionData> transData(transactionData);
+    return transData;
+}
+
+int32_t RSRenderToComposerConnectionStub::GetCleanLayerBufferSurfaceId(OHOS::MessageParcel& parcel,
+    uint64_t& surfaceId)
+{
+    if (!parcel.ReadUint64(surfaceId)) {
+        RS_LOGE("%{public}s read surface id failed.", __func__);
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    return COMPOSITOR_ERROR_OK;
+}
+
+int32_t RSRenderToComposerConnectionStub::CommitTunnelLayerBySurfaceIdStub(OHOS::MessageParcel& data,
+    OHOS::MessageParcel& reply)
+{
+    uint64_t surfaceId = 0;
+    uint64_t tunnelLayerId = 0;
+    if (!data.ReadUint64(surfaceId) || !data.ReadUint64(tunnelLayerId)) {
+        RS_LOGE("%{public}s read tunnel info failed", __func__);
+        reply.WriteInt32(GRAPHIC_DISPLAY_PARAM_ERR);
+        reply.WriteBool(false);
+        return COMPOSITOR_ERROR_OK;
+    }
+
+    uint32_t sequence = 0;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    auto readSafeFdFunc = [](OHOS::MessageParcel& messageParcel,
+                             std::function<int(OHOS::MessageParcel&)> readFdDefaultFunc) -> int {
+        return messageParcel.ReadFileDescriptor();
+    };
+    if (ReadSurfaceBufferImpl(data, sequence, buffer, readSafeFdFunc) != GSERROR_OK) {
+        RS_LOGE("%{public}s read surface buffer failed", __func__);
+        reply.WriteInt32(GRAPHIC_DISPLAY_FAILURE);
+        reply.WriteBool(false);
+        return COMPOSITOR_ERROR_OK;
+    }
+
+    bool hasAcquireFence = data.ReadBool();
+    sptr<SyncFence> acquireFence = SyncFence::InvalidFence();
+    if (hasAcquireFence) {
+        acquireFence = new SyncFence(data.ReadFileDescriptor());
+    }
+
+    sptr<SyncFence> releaseFence = SyncFence::InvalidFence();
+    int32_t ret = CommitTunnelLayerBySurfaceId(surfaceId, tunnelLayerId, buffer, acquireFence, releaseFence);
+    reply.WriteInt32(ret);
+    if (ret != GRAPHIC_DISPLAY_SUCCESS || releaseFence == nullptr || releaseFence->Get() < 0) {
+        reply.WriteBool(false);
+        return COMPOSITOR_ERROR_OK;
+    }
+    reply.WriteBool(true);
+    if (!reply.WriteFileDescriptor(releaseFence->Get())) {
+        RS_LOGE("%{public}s write release fence failed", __func__);
+    }
+    return COMPOSITOR_ERROR_OK;
+}
+
+std::unordered_set<uint64_t> RSRenderToComposerConnectionStub::ParseClearRedrawCacheBufferIds(
+    OHOS::MessageParcel& parcel)
+{
+    std::vector<uint64_t> bufferIdsVector;
+    std::unordered_set<uint64_t> bufferIds;
+    if (!parcel.ReadUInt64Vector(&bufferIdsVector)) {
+        RS_LOGE("%{public}s read buffer ids failed.", __func__);
+        return bufferIds;
+    }
+    bufferIds.insert(bufferIdsVector.begin(), bufferIdsVector.end());
+    return bufferIds;
+}
+
+int32_t RSRenderToComposerConnectionStub::GetBacklightLevel(OHOS::MessageParcel& parcel, uint32_t& level)
+{
+    if (!parcel.ReadUint32(level)) {
+        RS_LOGE("%{public}s failed.", __func__);
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    return COMPOSITOR_ERROR_OK;
+}
+
+int32_t RSRenderToComposerConnectionStub::GetLinearMatrix(OHOS::MessageParcel& parcel, std::vector<float>& matrix)
+{
+    if (!parcel.ReadFloatVector(&matrix)) {
+        RS_LOGE("%{public}s failed.", __func__);
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    return COMPOSITOR_ERROR_OK;
+}
+
+int32_t RSRenderToComposerConnectionStub::SetComposerToRenderConnectionStub(OHOS::MessageParcel& parcel)
+{
+    sptr<IRemoteObject> composerToRenderObject = parcel.ReadRemoteObject();
+    if (composerToRenderObject == nullptr) {
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    sptr<IRSComposerToRenderConnection> composerToRenderConn =
+        iface_cast<IRSComposerToRenderConnection>(composerToRenderObject);
+    if (composerToRenderConn == nullptr) {
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    SetComposerToRenderConnection(composerToRenderConn);
+    return COMPOSITOR_ERROR_OK;
+}
+
+int32_t RSRenderToComposerConnectionStub::PreAllocProtectedFrameBuffersStub(OHOS::MessageParcel& parcel)
+{
+    uint32_t sequence;
+    sptr<SurfaceBuffer> buffer = nullptr;
+    auto readSafeFdFunc = [](OHOS::MessageParcel& messageParcel,
+                             std::function<int(OHOS::MessageParcel&)> readFdDefaultFunc) -> int {
+        return messageParcel.ReadFileDescriptor();
+    };
+    if (ReadSurfaceBufferImpl(parcel, sequence, buffer, readSafeFdFunc) != GSERROR_OK) {
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    PreAllocProtectedFrameBuffers(buffer);
+    return COMPOSITOR_ERROR_OK;
+}
+
+int32_t RSRenderToComposerConnectionStub::MarkTunnelSurfaceInvalidSurfaceIdStub(OHOS::MessageParcel& parcel)
+{
+    uint64_t surfaceId = 0;
+    if (!parcel.ReadUint64(surfaceId)) {
+        RS_LOGE("%{public}s read surface id failed.", __func__);
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    MarkTunnelSurfaceInvalid(surfaceId);
+    return COMPOSITOR_ERROR_OK;
+}
+} // namespace Rosen
+} // namespace OHOS

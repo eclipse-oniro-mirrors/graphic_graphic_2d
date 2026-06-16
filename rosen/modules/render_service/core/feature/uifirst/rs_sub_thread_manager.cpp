@@ -20,6 +20,7 @@
 
 #include "common/rs_singleton.h"
 #include "common/rs_optional_trace.h"
+#include "gpuComposition/rs_gpu_cache_manager.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_task_dispatcher.h"
 #include "memory/rs_memory_manager.h"
@@ -86,7 +87,7 @@ void RSSubThreadManager::DumpMem(DfxString& log, bool isLite)
     }
 }
 
-void RSSubThreadManager::DumpGpuMem(DfxString& log)
+void RSSubThreadManager::DumpGpuMem(DfxString& log, const std::vector<std::pair<NodeId, std::string>>& nodeTags)
 {
     if (threadList_.empty()) {
         return;
@@ -95,7 +96,7 @@ void RSSubThreadManager::DumpGpuMem(DfxString& log)
         if (!subThread) {
             continue;
         }
-        subThread->DumpGpuMem(log);
+        subThread->DumpGpuMem(log, nodeTags);
     }
 }
 
@@ -306,21 +307,24 @@ void RSSubThreadManager::ScheduleRenderNodeDrawable(
     subThread->DoingCacheProcessNumInc();
     rsSubThreadCache.SetCacheSurfaceProcessedStatus(CacheProcessStatus::WAITING);
 
-    // The destructor of GPUCompositonCacheGuard, a memory release check will be performed
-    auto guard = std::make_shared<RSMainThread::GPUCompositonCacheGuard>();
+    // Use GPUGuard to manage GPU draw lifecycle (RAII-based)
+    // Use dependency injection callback to get GPUCacheManager (avoids singleton access)
+    auto gpuGuard = std::make_shared<GPUGuard>(getGPUCacheManagerCallback_());
+
     subThread->PostTask([subThread, nodeDrawable, tid, submittedFrameCount,
-                            uniParam = new RSRenderThreadParams(*rtUniParam), guard]() mutable {
+        uniParam = new RSRenderThreadParams(*rtUniParam), gpuGuard]() mutable {
         if (UNLIKELY(!uniParam)) {
             RS_LOGE("ScheduleRenderNodeDrawable subThread param is nullptr");
             return;
         }
         std::unique_ptr<RSRenderThreadParams> uniParamUnique(uniParam);
-        /* Task run in SubThread, the uniParamUnique which is copyed from uniRenderThread will sync to SubTread */
+        /* Task run in SubThread, the uniParamUnique which is copied from uniRenderThread will sync to SubThread */
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(std::move(uniParamUnique));
         nodeDrawable->GetRsSubThreadCache().SetLastFrameUsedThreadIndex(tid);
         nodeDrawable->GetRsSubThreadCache().SetTaskFrameCount(submittedFrameCount);
         subThread->DrawableCache(nodeDrawable);
         RSRenderThreadParamsManager::Instance().SetRSRenderThreadParams(nullptr);
+        // gpuGuard automatically destroyed here, triggering EndGPUDraw()
     });
     needResetContext_ = true;
 }
@@ -344,5 +348,10 @@ void RSSubThreadManager::ScheduleReleaseCacheSurfaceOnly(
 
     auto subThread = threadList_[nowIdx];
     subThread->PostTask([subThread, nodeDrawable]() { subThread->ReleaseCacheSurfaceOnly(nodeDrawable); });
+}
+
+void RSSubThreadManager::SetGetGPUCacheManagerFunc(GetGPUCacheManagerFunc func)
+{
+    getGPUCacheManagerCallback_ = std::move(func);
 }
 } // namespace OHOS::Rosen

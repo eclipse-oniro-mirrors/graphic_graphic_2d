@@ -27,17 +27,21 @@ public:
     static constexpr char ZH_CN_TTF[] = "/system/fonts/HarmonyOS_Sans_SC.ttf";
 
     explicit AniTypeface(std::shared_ptr<Typeface> typeface) : typeface_(typeface) {}
-    ~AniTypeface() = default;
+    ~AniTypeface();
 
     static ani_status AniInit(ani_env *env);
 
     static void CreateAniTypeface(ani_env* env, ani_object obj, ani_long typeface);
+    static ani_object CreateAniTypeface(ani_env* env, std::shared_ptr<Typeface> typeface);
     static void Constructor(ani_env* env, ani_object obj);
     static ani_string GetFamilyName(ani_env* env, ani_object obj);
     static ani_object MakeFromFile(ani_env* env, ani_object obj, ani_string filePath);
     static ani_object MakeFromRawFile(ani_env* env, ani_object obj, ani_object resource);
     static ani_object MakeFromFileWithArguments(ani_env* env, ani_object obj, ani_string filePath,
         ani_object argumentsObj);
+    static ani_object MakeFromRawFileWithArguments(ani_env* env, ani_object obj, ani_object resource,
+        ani_object argumentsObj);
+    static ani_object MakeFromCurrent(ani_env* env, ani_object obj, ani_object argumentsObj);
 
     static std::shared_ptr<Typeface> GetZhCnTypeface();
 
@@ -47,7 +51,6 @@ public:
     std::shared_ptr<Typeface> GetTypeface();
 
 private:
-    static ani_object CreateAniTypeface(ani_env* env, std::shared_ptr<Typeface> typeface);
     static ani_object TypefaceTransferStatic(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input);
     static ani_long GetTypefaceAddr(ani_env* env, [[maybe_unused]]ani_object obj, ani_object input);
     std::shared_ptr<Typeface>* GetTypefacePtrAddr();

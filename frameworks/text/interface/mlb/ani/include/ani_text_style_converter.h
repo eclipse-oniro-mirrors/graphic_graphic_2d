@@ -26,8 +26,12 @@ namespace OHOS::Text::ANI {
 class AniTextStyleConverter final {
 public:
     static ani_status ParseTextStyleToNative(ani_env* env, ani_object obj, OHOS::Rosen::TextStyle& textStyle);
+    static void ParseDoubleTextStyleToNative(ani_env* env, ani_object obj, OHOS::Rosen::TextStyle& textStyle);
+    static void ParseEnumTextStyleToNative(ani_env* env, ani_object obj, OHOS::Rosen::TextStyle& textStyle);
+    static void ParseBoolTextStyleToNative(ani_env* env, ani_object obj, OHOS::Rosen::TextStyle& textStyle);
     static void ParseFontFeatureToNative(ani_env* env, ani_object obj, OHOS::Rosen::FontFeatures& fontFeatures);
     static void ParseFontVariationToNative(ani_env* env, ani_object obj, OHOS::Rosen::FontVariations& fontVariations);
+    static void ParseFontTypefacesToNative(ani_env* env, ani_object obj, OHOS::Rosen::TextStyle& textStyle);
     static void ParseTextShadowToNative(ani_env* env, ani_object obj, std::vector<OHOS::Rosen::TextShadow>& textShadow);
     static void ParseRectStyleToNative(ani_env* env, ani_object obj, OHOS::Rosen::RectStyle& rectStyle);
     static void ParseTextStyleDecorationToNative(
@@ -40,6 +44,7 @@ public:
     static ani_object ParseRectStyleToAni(ani_env* env, const OHOS::Rosen::RectStyle& rectStyle);
     static ani_object ParseFontFeaturesToAni(ani_env* env, const OHOS::Rosen::FontFeatures& fontFeatures);
     static ani_object ParseFontVariationsToAni(ani_env* env, const OHOS::Rosen::FontVariations& fontVariations);
+    static ani_object ParseFontTypefacesToAni(ani_env* env, const OHOS::Rosen::TextStyle& textStyle);
 };
 } // namespace OHOS::Text::ANI
 #endif // OHOS_TEXT_ANI_TEXT_STYLE_CONVERTER_H

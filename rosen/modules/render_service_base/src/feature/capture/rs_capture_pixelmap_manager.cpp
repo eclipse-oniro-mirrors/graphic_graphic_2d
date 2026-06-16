@@ -31,7 +31,9 @@
 #endif
 
 #ifdef RS_ENABLE_VK
+#ifndef ROSEN_ARKUI_X
 #include "platform/ohos/backend/native_buffer_utils.h"
+#endif
 #endif
 
 namespace OHOS {
@@ -65,6 +67,7 @@ void RSCapturePixelMapManager::LoadCheckFunc()
     checkHandle_[uint32UniRenderEnableType_][uint32UiCaptureType_] = [](const Drawing::Rect& areaRect,
         const RSSurfaceCaptureConfig& captureConfig) {
 #ifdef RS_ENABLE_VK
+#ifndef ROSEN_ARKUI_X
         int32_t width = ceil(areaRect.GetWidth() * captureConfig.scaleX);
         int32_t height = ceil(areaRect.GetHeight() * captureConfig.scaleY);
         if (width > 0 && static_cast<int32_t>(OHOS::Rosen::NativeBufferUtils::VKIMAGE_LIMIT_SIZE) / width < height) {
@@ -72,6 +75,7 @@ void RSCapturePixelMapManager::LoadCheckFunc()
                 width, height);
             return false;
         }
+#endif
 #endif
         return true;
     };
@@ -87,7 +91,7 @@ void RSCapturePixelMapManager::LoadSetMemFunc()
 }
 
 bool RSCapturePixelMapManager::SetCapturePixelMapMem(const std::unique_ptr<Media::PixelMap>& pixelmap,
-    const SurfaceCaptureType& captureType, const UniRenderEnabledType& uniRenderEnabledType, bool useDma)
+    const RSSurfaceCaptureConfig& captureConfig, const UniRenderEnabledType& uniRenderEnabledType)
 {
     if (pixelmap == nullptr) {
         return false;
@@ -99,11 +103,11 @@ bool RSCapturePixelMapManager::SetCapturePixelMapMem(const std::unique_ptr<Media
         RSCapturePixelMapManager::LoadSetMemFunc();
     });
 
-    auto tempCaptureType = static_cast<uint32_t>(captureType);
+    auto tempCaptureType = static_cast<uint32_t>(captureConfig.captureType);
     auto tmpUniRenderType = static_cast<uint32_t>(uniRenderEnabledType);
     auto iter = funcHandle_.find(tmpUniRenderType);
     if (iter != funcHandle_.end() && iter->second.find(tempCaptureType) != iter->second.end()) {
-        return funcHandle_[tmpUniRenderType][tempCaptureType](pixelmap, useDma);
+        return funcHandle_[tmpUniRenderType][tempCaptureType](pixelmap, captureConfig.useDma);
     }
     return false;
 }
@@ -200,7 +204,7 @@ std::unique_ptr<Media::PixelMap> RSCapturePixelMapManager::GetClientCapturePixel
     if (pixelMap == nullptr) {
         return nullptr;
     }
-    if (!SetCapturePixelMapMem(pixelMap, captureConfig.captureType, uniRenderEnabledType, captureConfig.useDma)) {
+    if (!SetCapturePixelMapMem(pixelMap, captureConfig, uniRenderEnabledType)) {
         RS_LOGE("RSCapturePixelMapManager::GetClientCapturePixelMap SetCapturePixelMapMem failed");
         return nullptr;
     }

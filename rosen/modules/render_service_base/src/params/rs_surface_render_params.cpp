@@ -237,20 +237,6 @@ int32_t RSSurfaceRenderParams::GetLayerSourceTuning() const
     return layerSource_;
 }
 
-void RSSurfaceRenderParams::SetTunnelLayerId(const uint64_t& tunnelLayerId)
-{
-    if (tunnelLayerId_ == tunnelLayerId) {
-        return;
-    }
-    tunnelLayerId_ = tunnelLayerId;
-    needSync_ = true;
-}
-
-uint64_t RSSurfaceRenderParams::GetTunnelLayerId() const
-{
-    return tunnelLayerId_;
-}
-
 bool RSSurfaceRenderParams::GetLastFrameHardwareEnabled() const
 {
     return isLastFrameHardwareEnabled_;
@@ -285,10 +271,12 @@ bool RSSurfaceRenderParams::IsInFixedRotation() const
 }
 
 #ifndef ROSEN_CROSS_PLATFORM
-void RSSurfaceRenderParams::SetBuffer(const sptr<SurfaceBuffer>& buffer, const Rect& damageRect)
+void RSSurfaceRenderParams::SetBuffer(const sptr<SurfaceBuffer>& buffer,
+    std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount, const Rect& damageRect)
 {
     buffer_ = buffer;
     damageRect_ = damageRect;
+    bufferOwnerCount_ = bufferOwnerCount;
     needSync_ = true;
     if (GetParamsType() == RSRenderParamsType::RS_PARAM_OWNED_BY_DRAWABLE) {
         return;
@@ -301,14 +289,28 @@ sptr<SurfaceBuffer> RSSurfaceRenderParams::GetBuffer() const
     return buffer_;
 }
 
+std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceRenderParams::GetBufferOwnerCount() const
+{
+    return bufferOwnerCount_;
+}
+
+std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceRenderParams::GetPreBufferOwnerCount() const
+{
+    return preBufferOwnerCount_;
+}
+
 const Rect& RSSurfaceRenderParams::GetBufferDamage() const
 {
     return damageRect_;
 }
 
-void RSSurfaceRenderParams::SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer)
+void RSSurfaceRenderParams::SetPreBuffer(const sptr<SurfaceBuffer>& preBuffer,
+    std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> preBufferOwnerCount)
 {
     preBuffer_ = preBuffer;
+    if (preBufferOwnerCount) {
+        preBufferOwnerCount_ = preBufferOwnerCount;
+    }
     needSync_ = true;
     if (GetParamsType() == RSRenderParamsType::RS_PARAM_OWNED_BY_DRAWABLE) {
         return;
@@ -469,6 +471,11 @@ bool RSSurfaceRenderParams::IsCloneNode() const
     return isCloneNode_;
 }
 
+bool RSSurfaceRenderParams::IsRelated() const
+{
+    return isRelated_;
+}
+
 bool RSSurfaceRenderParams::GetSkipDraw() const
 {
     return isSkipDraw_;
@@ -581,15 +588,19 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
 #ifndef ROSEN_CROSS_PLATFORM
     if (dirtyType_.test(RSRenderParamsDirtyType::BUFFER_INFO_DIRTY)) {
         targetSurfaceParams->buffer_ = buffer_;
+        targetSurfaceParams->bufferOwnerCount_ = bufferOwnerCount_;
         targetSurfaceParams->preBuffer_ = preBuffer_;
+        targetSurfaceParams->preBufferOwnerCount_ = preBufferOwnerCount_;
         targetSurfaceParams->acquireFence_ = acquireFence_;
         targetSurfaceParams->damageRect_ = damageRect_;
-        if (layerInfo_.useDeviceOffline && isHardwareEnabled_) {
-            // hpae offline: while using hpae offline and going directly composition, set to false
-            bufferSynced_ = offlineOriginBufferSynced_;
-        } else {
-            bufferSynced_ = true;
+        RS_OPTIONAL_TRACE_NAME_FMT("RSSurfaceRenderParams::OnSync RSSurfaceRenderNode RSBufferManager::DecRef ");
+        if (preBufferOwnerCount_ != nullptr && bufferSynced_ == false && preBufferOwnerCount_->DecRef()) {
+            targetSurfaceParams->preBuffer_ = nullptr;
+            preBuffer_ = nullptr;
+            targetSurfaceParams->preBufferOwnerCount_ = nullptr;
+            preBufferOwnerCount_ = nullptr;
         }
+        bufferSynced_ = true;
         dirtyType_.reset(RSRenderParamsDirtyType::BUFFER_INFO_DIRTY);
     }
 #endif
@@ -602,6 +613,9 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->clonedNodeRenderDrawable_ = clonedNodeRenderDrawable_;
     targetSurfaceParams->isClonedNodeOnTheTree_ = isClonedNodeOnTheTree_;
     targetSurfaceParams->isCloneNode_ = isCloneNode_;
+    targetSurfaceParams->isRelated_ = isRelated_;
+    targetSurfaceParams->isRelatedSourceNode_ = isRelatedSourceNode_;
+    targetSurfaceParams->needClearRelatedCache_ = needClearRelatedCache_;
     targetSurfaceParams->clonedSourceNode_ = clonedSourceNode_;
     targetSurfaceParams->alpha_ = alpha_;
     targetSurfaceParams->isSpherizeValid_ = isSpherizeValid_;
@@ -609,6 +623,9 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->isAttractionAnimation_ = isAttractionAnimation_;
     targetSurfaceParams->isParentScaling_ = isParentScaling_;
     targetSurfaceParams->isCrossNode_ = isCrossNode_;
+    targetSurfaceParams->isFirstLevelCrossNode_ = isFirstLevelCrossNode_;
+    targetSurfaceParams->cloneSourceDrawable_ = cloneSourceDrawable_;
+    targetSurfaceParams->isCrossNodeOffscreenOn_ = isCrossNodeOffscreenOn_;
     targetSurfaceParams->needBilinearInterpolation_ = needBilinearInterpolation_;
     targetSurfaceParams->backgroundColor_ = backgroundColor_;
     targetSurfaceParams->rrect_ = rrect_;
@@ -625,10 +642,10 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->subHighPriorityType_ = subHighPriorityType_;
     targetSurfaceParams->isFixRotationByUser_ = isFixRotationByUser_;
     targetSurfaceParams->isInFixedRotation_ = isInFixedRotation_;
-    targetSurfaceParams->uiFirstFlag_ = uiFirstFlag_;
-    targetSurfaceParams->uiFirstParentFlag_ = uiFirstParentFlag_;
-    targetSurfaceParams->uifirstUseStarting_ = uifirstUseStarting_;
-    targetSurfaceParams->childrenDirtyRect_ = childrenDirtyRect_;
+    targetSurfaceParams->uifirstParams_.cacheType = uifirstParams_.cacheType;
+    targetSurfaceParams->uifirstParams_.parentEnabled = uifirstParams_.parentEnabled;
+    targetSurfaceParams->uifirstParams_.startingWindowId = uifirstParams_.startingWindowId;
+    targetSurfaceParams->uifirstParams_.childrenDirtyRect = uifirstParams_.childrenDirtyRect;
     targetSurfaceParams->isOccludedByFilterCache_ = isOccludedByFilterCache_;
     targetSurfaceParams->leashPersistentId_ = leashPersistentId_;
     targetSurfaceParams->drmCornerRadiusInfo_ = drmCornerRadiusInfo_;
@@ -660,7 +677,6 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->roundedCornerRegion_ = roundedCornerRegion_;
     targetSurfaceParams->needOffscreen_ = needOffscreen_;
     targetSurfaceParams->layerSource_ = layerSource_;
-    targetSurfaceParams->tunnelLayerId_ = tunnelLayerId_;
     targetSurfaceParams->hasHdrPresent_ = hasHdrPresent_;
     targetSurfaceParams->totalMatrix_ = totalMatrix_;
     targetSurfaceParams->visibleFilterChild_ = visibleFilterChild_;
@@ -689,11 +705,24 @@ void RSSurfaceRenderParams::OnSync(const std::unique_ptr<RSRenderParams>& target
     targetSurfaceParams->colorFollow_ = colorFollow_;
     targetSurfaceParams->screenRect_ = screenRect_;
     targetSurfaceParams->dirtyRegionMatrix_ = dirtyRegionMatrix_;
-    targetSurfaceParams->uiFirstFrameGravity_ = uiFirstFrameGravity_;
+    targetSurfaceParams->uifirstParams_.frameGravity = uifirstParams_.frameGravity;
     targetSurfaceParams->regionToBeMagnified_ = regionToBeMagnified_;
     targetSurfaceParams->isFrameGravityNewVersionEnabled_ = isFrameGravityNewVersionEnabled_;
     targetSurfaceParams->isSurfaceBufferOpaque_ = isSurfaceBufferOpaque_;
-    targetSurfaceParams->uiFirstVisibleFilterRect_ = uiFirstVisibleFilterRect_;
+    targetSurfaceParams->uifirstParams_.visibleFilterRect = uifirstParams_.visibleFilterRect;
+    if (captureConfig_ && captureConfig_->isConfigTriggered == false) {
+        // avoid being double moved by uifirstRenderParams_
+        captureConfig_->isConfigTriggered = true;
+        targetSurfaceParams->captureConfig_ = std::move(captureConfig_);
+        targetSurfaceParams->captureCallback_ = std::move(captureCallback_);
+    }
+    targetSurfaceParams->appRotationCorrection_ = appRotationCorrection_;
+    targetSurfaceParams->rotationCorrectionDegree_ = rotationCorrectionDegree_;
+    targetSurfaceParams->vcldInfo_ = vcldInfo_;
+    targetSurfaceParams->vcldRoundRect_ = vcldRoundRect_;
+    targetSurfaceParams->isParticipateInOcclusion_ = isParticipateInOcclusion_;
+    targetSurfaceParams->uifirstParams_.leashAllEnabled = uifirstParams_.leashAllEnabled;
+    targetSurfaceParams->uifirstParams_.isPartialSynced = uifirstParams_.isPartialSynced;
     RSRenderParams::OnSync(target);
 }
 
@@ -781,5 +810,82 @@ void RSSurfaceRenderParams::SetScreenId(ScreenId screenId)
 ScreenId RSSurfaceRenderParams::GetScreenId() const
 {
     return screenId_;
+}
+
+void RSSurfaceRenderParams::SetAppRotationCorrection(ScreenRotation appRotationCorrection)
+{
+    if (appRotationCorrection_ == appRotationCorrection) {
+        return;
+    }
+    appRotationCorrection_ = appRotationCorrection;
+    needSync_ = true;
+}
+
+ScreenRotation RSSurfaceRenderParams::GetAppRotationCorrection() const
+{
+    return appRotationCorrection_;
+}
+
+void RSSurfaceRenderParams::SetRotationCorrectionDegree(int32_t rotationCorrectionDegree)
+{
+    if (rotationCorrectionDegree_ == rotationCorrectionDegree) {
+        return;
+    }
+    rotationCorrectionDegree_ = rotationCorrectionDegree;
+    needSync_ = true;
+}
+
+int32_t RSSurfaceRenderParams::GetRotationCorrectionDegree() const
+{
+    return rotationCorrectionDegree_;
+}
+
+void RSSurfaceRenderParams::SetIsParticipateInOcclusion(bool isParticipateInOcclusion)
+{
+    if (isParticipateInOcclusion_ == isParticipateInOcclusion) {
+        return;
+    }
+    isParticipateInOcclusion_ = isParticipateInOcclusion;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::GetIsParticipateInOcclusion() const
+{
+    return isParticipateInOcclusion_;
+}
+
+void RSSurfaceRenderParams::SetUIFirstLeashAllEnable(bool enable)
+{
+    if (uifirstParams_.leashAllEnabled == enable) {
+        return;
+    }
+    uifirstParams_.leashAllEnabled = enable;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::IsUIFirstLeashAllEnable() const
+{
+    return uifirstParams_.leashAllEnabled;
+}
+
+void RSSurfaceRenderParams::SetPartialSynced(bool isPartialSynced)
+{
+    if (uifirstParams_.isPartialSynced == isPartialSynced) {
+        return;
+    }
+    uifirstParams_.isPartialSynced = isPartialSynced;
+    needSync_ = true;
+}
+
+bool RSSurfaceRenderParams::IsPartialSynced() const
+{
+    return uifirstParams_.isPartialSynced;
+}
+
+void RSSurfaceRenderParams::SwapRelatedRenderParams(RSSurfaceRenderParams& relatedRenderParams)
+{
+    std::swap(isOccludedByFilterCache_, relatedRenderParams.isOccludedByFilterCache_);
+    std::swap(isSkipDraw_, relatedRenderParams.isSkipDraw_);
+    RSRenderParams::SwapRelatedRenderParams(relatedRenderParams);
 }
 } // namespace OHOS::Rosen

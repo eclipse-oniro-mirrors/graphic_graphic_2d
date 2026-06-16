@@ -38,8 +38,6 @@ namespace Rosen {
 using namespace OHOS::HDI::Display::Composer::V1_0;
 using namespace OHOS::HDI::Display::Composer::V1_1;
 using namespace OHOS::HDI::Display::Composer::V1_2;
-constexpr size_t MATRIX_SIZE = 9;
-const std::string GENERIC_METADATA_KEY_DISPLAY_LINEAR_MATRIX = "DisplayLinearMatrix";
 
 std::unique_ptr<HdiScreen> HdiScreen::CreateHdiScreen(uint32_t screenId)
 {
@@ -151,13 +149,6 @@ int32_t HdiScreen::SetScreenMode(uint32_t modeId)
     return ret;
 }
 
-int32_t HdiScreen::SetScreenActiveRect(const GraphicIRect& activeRect)
-{
-    std::unique_lock<std::mutex> locker(mutex_);
-    CHECK_DEVICE_NULL(device_);
-    return device_->SetScreenActiveRect(screenId_, activeRect);
-}
-
 int32_t HdiScreen::SetScreenOverlayResolution(uint32_t width, uint32_t height) const
 {
     CHECK_DEVICE_NULL(device_);
@@ -182,24 +173,28 @@ int32_t HdiScreen::GetScreenBacklight(uint32_t &level) const
     return device_->GetScreenBacklight(screenId_, level);
 }
 
-int32_t HdiScreen::SetScreenBacklight(uint32_t level) const
+int32_t HdiScreen::GetScreenVCPFeature(uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const
 {
     CHECK_DEVICE_NULL(device_);
-    return device_->SetScreenBacklight(screenId_, level);
+    return device_->GetScreenVCPFeature(screenId_, vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t HdiScreen::SetScreenVCPFeature(uint8_t vcpCode, uint16_t currentValue)
+{
+    CHECK_DEVICE_NULL(device_);
+    return device_->SetScreenVCPFeature(screenId_, vcpCode, currentValue);
 }
 
 int32_t HdiScreen::SetScreenVsyncEnabled(bool enabled) const
 {
     CHECK_DEVICE_NULL(device_);
-    int32_t ret = device_->SetScreenVsyncEnabled(screenId_, enabled);
+    auto sampler = CreateVSyncSampler();
+    int32_t ret = device_->SetScreenVsyncEnabled(screenId_, (enabled || sampler->GetAdaptive()));
     if (ret != HDF_SUCCESS) {
         HLOGE("SetScreenVsyncEnabled Failed, screenId:%{public}u, enabled:%{public}d, ret:%{public}d",
             screenId_, enabled, ret);
         RS_TRACE_NAME_FMT("SetScreenVsyncEnabled Failed, screenId:%u, enabled:%d, ret:%d", screenId_, enabled, ret);
-    }
-    auto sampler = CreateVSyncSampler();
-    if (sampler == nullptr) {
-        return ret;
     }
     if (ret == HDF_SUCCESS) {
         sampler->SetHardwareVSyncStatus(enabled);
@@ -244,22 +239,6 @@ int32_t HdiScreen::SetScreenColorTransform(const std::vector<float>& matrix) con
 {
     CHECK_DEVICE_NULL(device_);
     return device_->SetScreenColorTransform(screenId_, matrix);
-}
-
-int32_t HdiScreen::SetScreenLinearMatrix(const std::vector<float> &matrix) const
-{
-    CHECK_DEVICE_NULL(device_);
-    if (matrix.size() != MATRIX_SIZE) {
-        HLOGE("[%{public}s]: ScreenLinearMatrix size is invalid.", __func__);
-        return -1;
-    }
-    std::vector<int8_t> valueBlob(MATRIX_SIZE * sizeof(float));
-    if (memcpy_s(valueBlob.data(), valueBlob.size(), matrix.data(),
-        MATRIX_SIZE * sizeof(float)) != EOK) {
-        return -1;
-    }
-    return device_->SetDisplayPerFrameParameterSmq(
-        screenId_, GENERIC_METADATA_KEY_DISPLAY_LINEAR_MATRIX, valueBlob);
 }
 
 int32_t HdiScreen::GetHDRCapabilityInfos(GraphicHDRCapability &info) const

@@ -19,7 +19,20 @@
 #include <functional>
 #include <memory>
 #include <cstdint>
+#include <sstream>
 #include <vector>
+
+#ifdef REGISTERING
+#undef REGISTERING
+#endif
+
+#ifdef REGISTERED
+#undef REGISTERED
+#endif
+
+#ifdef NO_REGISTER
+#undef NO_REGISTER
+#endif
 
 #include "impl_interface/typeface_impl.h"
 #include "text/font_arguments.h"
@@ -30,15 +43,29 @@
 namespace OHOS {
 namespace Rosen {
 namespace Drawing {
+
+struct DRAWING_API MappedFile {
+    const void* data = nullptr;
+    size_t size = 0;
+    int fd = -1;
+
+    MappedFile() = default;
+    explicit MappedFile(const std::string& path);
+    ~MappedFile();
+    MappedFile(const MappedFile&) = delete;
+    MappedFile& operator=(const MappedFile&) = delete;
+};
+
 const uint8_t NO_REGISTER = 0;
 const uint8_t REGISTERING = 1;
 const uint8_t REGISTERED = 2;
 using TypefaceRegisterCallback = std::function<int32_t(std::shared_ptr<Typeface>)>;
+using GetByUniqueIdCallback = std::function<std::shared_ptr<Typeface>(uint64_t)>;
 struct SharedTypeface;
 class DRAWING_API Typeface {
 public:
     explicit Typeface(std::shared_ptr<TypefaceImpl> typefaceImpl) noexcept;
-    virtual ~Typeface() = default;
+    virtual ~Typeface();
 
     static std::shared_ptr<Typeface> MakeDefault();
     static std::shared_ptr<Typeface> MakeFromFile(const char path[], int index = 0);
@@ -55,6 +82,8 @@ public:
     static std::shared_ptr<Typeface> MakeFromAshmem(
         const uint8_t* data, uint32_t size, uint32_t hash, const std::string& name, const FontArguments& fontArguments);
     static std::shared_ptr<Typeface> MakeFromAshmem(std::unique_ptr<MemoryStream> memoryStream, uint32_t index = 0);
+    static std::shared_ptr<Typeface> MakeFromAshmem(std::unique_ptr<MemoryStream> memoryStream,
+        const FontArguments& fontArguments);
 
     static std::shared_ptr<Typeface> MakeFromName(const char familyName[], FontStyle fontStyle);
     static void RegisterCallBackFunc(TypefaceRegisterCallback func);
@@ -109,6 +138,18 @@ public:
     bool GetItalic() const;
 
     /**
+     * @brief   Get fontStyle is monospace.
+     * @return  If fontStyle is monospace, return true.
+     */
+    bool GetMonospace() const;
+
+    /**
+     * @brief   Get fontStyle is IsColored.
+     * @return  If fontStyle is IsColored, return false.
+     */
+    bool IsColored() const;
+
+    /**
      * @brief   Get a 32bit value for this typeface, unique for the underlying font data.
      * @return  UniqueID.
      */
@@ -119,7 +160,9 @@ public:
     std::shared_ptr<Typeface> MakeClone(const FontArguments&) const;
 
     bool IsCustomTypeface() const;
+    void SetIsCustomTypeface(bool isCustom);
     bool IsThemeTypeface() const;
+    void SetIsThemeTypeface(bool isTheme);
 
     std::shared_ptr<Data> Serialize() const;
     static std::shared_ptr<Typeface> Deserialize(const void* data, size_t size);
@@ -181,16 +224,30 @@ public:
         int coordinateCount) const;
 
     uint32_t GetIndex() const;
+
+    static uint32_t CalculateFontArgsHash(const FontArguments::VariationPosition& coords);
+
+    static uint64_t AssembleFullHash(uint32_t fontArgsHash, uint32_t baseHash);
+
+    void SetFullHash(uint64_t fullHash);
+
+    uint64_t GetFullHash() const;
+    uint32_t GetRawUniqueId() const { return rawUniqueId_; }
+    void SetRawUniqueId(uint32_t rawUniqueId) { rawUniqueId_ = rawUniqueId; }
 private:
     std::shared_ptr<TypefaceImpl> typefaceImpl_;
-    static TypefaceRegisterCallback registerTypefaceCallBack_;
-    static std::function<std::shared_ptr<Typeface>(uint64_t)> uniqueIdCallBack_;
     uint32_t size_ = 0;
     uint32_t index_ = 0;
+    uint64_t fullHash_ = 0;
+    uint32_t rawUniqueId_ = 0;
 };
 
 struct SharedTypeface {
+    // id_ layout: high 32 bits = pid, low 32 bits = typeface uniqueId
+    static constexpr int TYPEFACE_ID_SHIFT = 32;
+
     uint64_t id_ = 0;
+    uint64_t originId_ = 0;
     uint32_t size_ = 0;
     int32_t fd_ = -1;
     uint32_t hash_ = 0;
@@ -198,15 +255,37 @@ struct SharedTypeface {
     bool hasFontArgs_ = false;
     std::vector<FontArguments::VariationPosition::Coordinate> coords_;
     SharedTypeface() {};
-    SharedTypeface(uint64_t id, std::shared_ptr<Typeface>& typeface) : id_(id), size_(typeface->GetSize()),
-        fd_(typeface->GetFd()), hash_(typeface->GetHash()), index_(typeface->GetIndex()) {
-            int coordsCount = typeface->GetVariationDesignPosition(nullptr, 0);
-            if (coordsCount > 0) {
-                hasFontArgs_ = true;
-                coords_.resize(coordsCount);
-                typeface->GetVariationDesignPosition(coords_.data(), coordsCount);
-            }
+    SharedTypeface(uint64_t id, std::shared_ptr<Typeface>& typeface)
+        : id_(id),
+          size_(typeface->GetSize()),
+          fd_(typeface->GetFd()),
+          hash_(typeface->GetHash()),
+          index_(typeface->GetIndex())
+    {
+        int coordsCount = typeface->GetVariationDesignPosition(nullptr, 0);
+        if (coordsCount > 0) {
+            hasFontArgs_ = true;
+            coords_.resize(coordsCount);
+            typeface->GetVariationDesignPosition(coords_.data(), coordsCount);
         }
+    }
+
+    std::string ToString() const
+    {
+        std::stringstream ss;
+        ss << "SharedTypeface {\n"
+           << "  pid: " << static_cast<uint32_t>(id_ >> TYPEFACE_ID_SHIFT) << "\n"
+           << "  uniqueId: " << static_cast<uint32_t>(UINT32_MAX & id_) << "\n"
+           << "  originId: " << originId_ << "\n"
+           << "  size: " << size_ << "\n"
+           << "  fd: " << fd_ << "\n"
+           << "  hash: " << std::hex << hash_ << std::dec << "\n"
+           << "  index: " << index_ << "\n"
+           << "  hasFontArgs: " << (hasFontArgs_ ? "true" : "false") << "\n"
+           << "  coordsCount: " << coords_.size() << "\n"
+           << "}";
+        return ss.str();
+    }
 };
 
 } // namespace Drawing

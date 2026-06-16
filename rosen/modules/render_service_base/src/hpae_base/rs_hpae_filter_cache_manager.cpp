@@ -78,11 +78,17 @@ int RSHpaeFilterCacheManager::DrawFilter(RSPaintFilterCanvas& canvas, const std:
 
     auto filter = std::static_pointer_cast<RSDrawingFilter>(rsFilter);
 
-    int32_t radiusI = (int)RSHpaeBaseData::GetInstance().GetBlurRadius();
+    int32_t radiusI = static_cast<int32_t>(RSHpaeBaseData::GetInstance().GetBlurRadius());
     curRadius_ = radiusI; // use int radius
 
     if (!IsCacheValid()) {
         TakeSnapshot(canvas, filter, src);
+    }
+
+    // SKEW_Y is the sin of the rotation angle. (sin0 = 0, sin90 = 1, sin180 = 0, sin270 = -1)
+    auto skewY = canvas.GetTotalMatrix().Get(Drawing::Matrix::SKEW_Y);
+    if (!FloatEqual(skewY, 0)) { // has rotation
+        RSHpaeBaseData::GetInstance().SwapPixelStretch();
     }
 
     drawUsingGpu_ = CheckIfUsingGpu();
@@ -170,7 +176,7 @@ void RSHpaeFilterCacheManager::ResetFilterCache(std::shared_ptr<RSPaintFilterCan
         cachedSnapshot_.reset();
     }
     if (cachedFilteredSnapshot) {
-        cachedFilteredSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData> (
+        cachedFilteredSnapshot_ = std::make_shared<RSPaintFilterCanvas::CachedEffectData>(
             cachedFilteredSnapshot->cachedImage_, cachedFilteredSnapshot->cachedRect_);
     } else {
         cachedFilteredSnapshot_.reset();
@@ -303,7 +309,7 @@ int RSHpaeFilterCacheManager::ProcessHpaeBlur(const Drawing::RectI& clipBounds,
     RS_TRACE_NAME_FMT("ProcessHpaeBlur. radius=%f", curRadius_);
 
     HpaeBackgroundCacheItem blurItem;
-    float radius = curRadius_ / 2.0f; // HpaeBlur using half image size
+    float radius = curRadius_ / RSHpaeBaseData::GetInstance().GetScaleFactor(); // scale radius
     if (radius < 1.0f) {
         // directly process to outputbuffer if radius == 0
         HPAE_LOGD("SmallRadius: %f", radius);
@@ -394,7 +400,7 @@ int RSHpaeFilterCacheManager::ProcessGpuBlur(const HpaeBufferInfo &inputBuffer,
             std::make_shared<RSKawaseBlurShaderFilter>(radius);
         kawaseBlurFilter->GenerateGEVisualEffect(effectContainer);
         auto blurImage = geRender->ApplyImageEffect(
-            *outCanvas, *effectContainer, image, srcRect, srcRect, Drawing::SamplingOptions());
+            *outCanvas, *effectContainer, {image, srcRect, srcRect}, Drawing::SamplingOptions());
         if (blurImage == nullptr) {
             ROSEN_LOGE("ProcessGpuBlur::DrawImageRect blurImage is null");
             return -1;
@@ -426,6 +432,8 @@ HpaeTask RSHpaeFilterCacheManager::GenerateHianimationTask(const HpaeBufferInfo 
         return resultTask;
     }
 
+    outputBuffer.canvas->Clear(Drawing::Color::COLOR_TRANSPARENT); // notify GetImageSnapshot()
+
     int32_t srcWidth = inputBuffer.canvas->GetWidth();
     int32_t srcHeight = inputBuffer.canvas->GetHeight();
 
@@ -436,18 +444,13 @@ HpaeTask RSHpaeFilterCacheManager::GenerateHianimationTask(const HpaeBufferInfo 
         return resultTask;
     }
 
-    struct HaeImage srcLayer;
-    struct HaeImage dstLayer;
-    srcLayer.handle = inputBuffer.bufferHandle;
-    srcLayer.rect = HaeRect(0, 0, srcWidth, srcHeight);
-    dstLayer.handle = outputBuffer.bufferHandle;
-    dstLayer.rect = HaeRect(0, 0, outputBuffer.canvas->GetWidth(), outputBuffer.canvas->GetHeight());
-
     HaeBlurBasicAttr basicInfo;
-    basicInfo.srcLayer = &srcLayer;
-    basicInfo.dstLayer = &dstLayer;
-    basicInfo.perfLevel = 1; // 4 for the highest level, 1 for the lowest level
-    basicInfo.expectRunTime = 2000; // us, -1 means unlimited
+    basicInfo.srcLayer.handle = inputBuffer.bufferHandle;
+    basicInfo.srcLayer.rect = HaeRect(0, 0, srcWidth, srcHeight);
+    basicInfo.dstLayer.handle = outputBuffer.bufferHandle;
+    basicInfo.dstLayer.rect = HaeRect(0, 0, outputBuffer.canvas->GetWidth(), outputBuffer.canvas->GetHeight());
+    basicInfo.perfLevel = 1;        // 4 for the highest level, 1 for low level
+    basicInfo.expectRunTime = 2000; // us
     basicInfo.timeoutMs = 0;
     basicInfo.sigmaNum = radius;
     basicInfo.enablePremult = false;
@@ -457,12 +460,16 @@ HpaeTask RSHpaeFilterCacheManager::GenerateHianimationTask(const HpaeBufferInfo 
     effectInfo.effectCaps = BLPP_COLOR_MASK_EN | BLPP_COLOR_MATRIX_EN | BLPP_NOISE_EN;
     effectInfo.alphaReplaceVal = 0;
     effectInfo.colorMaskPara = RSHpaeFusionOperator::GetHaePixel(filter);
-    RSHpaeFusionOperator::GetColorMatrixCoef(filter, effectInfo.colorMatrixCoef);
+    float colorMatrix[HAE_COLOR_MATRIX_COEF_COUNT];
+    RSHpaeFusionOperator::GetColorMatrixCoef(filter, colorMatrix);
+    for (uint32_t i = 0; i < HAE_COLOR_MATRIX_COEF_COUNT; ++i) {
+        effectInfo.colorMatrixCoef.push_back(colorMatrix[i]);
+    }
 
     HianimationManager::GetInstance().HianimationBuildTask(
         &basicInfo, &effectInfo, &resultTask.taskId, &resultTask.taskPtr);
-        RS_OPTIONAL_TRACE_NAME_FMT("Hianimation: taskId: %d, hpae radius=%f",
-            resultTask.taskId, radius);
+    RS_OPTIONAL_TRACE_NAME_FMT("Hianimation: taskId: %d, hpae radius=%f",
+        resultTask.taskId, radius);
 
     return resultTask;
 }
@@ -502,19 +509,9 @@ HpaeBackgroundCacheItem RSHpaeFilterCacheManager::GetBlurOutput()
             }
             auto headSurface = headIter->surface_.lock();
             if (headIter->blurImage_ == nullptr && headSurface) {
-                auto blurImage = std::make_shared<Drawing::Image>();
-                Drawing::BitmapFormat blurInfo = Drawing::BitmapFormat{
-                    headSurface->GetImageInfo().GetColorType(), headSurface->GetImageInfo().GetAlphaType()};
-                if (hpaeBlurOutputQueue_.size() != 1 && blurImage->BuildFromSurface(
-                    *(headSurface->GetCanvas()->GetGPUContext()), *headSurface, Drawing::TextureOrigin::TOP_LEFT,
-                    blurInfo, headSurface->GetImageInfo().GetColorSpace())) {
-                    RS_OPTIONAL_TRACE_NAME("UseBuildFroSurface");
-                    headIter->blurImage_ = blurImage;
-                } else {
-                    RS_OPTIONAL_TRACE_NAME("UseImageSnapshot");
-                    auto snapshotIBounds = Drawing::RectI(0, 0, headSurface->Width(), headSurface->Height());
-                    headIter->blurImage_ = headSurface->GetImageSnapshot(snapshotIBounds, false);
-                }
+                auto snapshotIBounds = Drawing::RectI(0, 0, headSurface->Width(), headSurface->Height());
+                headIter->blurImage_ = headSurface->GetImageSnapshot(snapshotIBounds, false);
+                RS_OPTIONAL_TRACE_NAME("UseSnapshot");
             } else {
                 headIter->gpFrameId_ = 0; // avoid submit with FFTS
                 useCacheImage_ = true;
@@ -546,8 +543,8 @@ static void ClipVisibleRect(RSPaintFilterCanvas& canvas)
 {
     auto visibleRectF = canvas.GetVisibleRect();
     visibleRectF.Round();
-    Drawing::RectI visibleIRect = {(int)visibleRectF.GetLeft(), (int)visibleRectF.GetTop(),
-        (int)visibleRectF.GetRight(), (int)visibleRectF.GetBottom()};
+    Drawing::RectI visibleIRect = {static_cast<int>(visibleRectF.GetLeft()), static_cast<int>(visibleRectF.GetTop()),
+        static_cast<int>(visibleRectF.GetRight()), static_cast<int>(visibleRectF.GetBottom())};
     auto deviceClipRect = canvas.GetDeviceClipBounds();
     if (!visibleIRect.IsEmpty() && deviceClipRect.Intersect(visibleIRect)) {
         canvas.ClipIRect(visibleIRect, Drawing::ClipOp::INTERSECT);

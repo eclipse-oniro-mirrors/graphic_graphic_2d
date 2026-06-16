@@ -14,26 +14,33 @@
  */
 
 #include "rs_hpae_offline_thread_manager.h"
-#include "rs_hpae_offline_util.h"
+#include "rs_offline_util.h"
 #include "platform/common/rs_system_properties.h"
 #include "rs_trace.h"
 #if defined(ROSEN_OHOS)
 #include "ffrt_inner.h"
 
 namespace {
-ffrt::mutex g_ffrtThreadMutex;
 constexpr uint32_t FFRT_QOS_LEVEL = 5;
 }
 #endif
 
 namespace OHOS::Rosen {
+RSHpaeOfflineThreadManager::RSHpaeOfflineThreadManager()
+{
+#if defined(ROSEN_OHOS)
+    queue_ = std::make_unique<ffrt::queue>("RSHpaeOfflineThread", ffrt::queue_attr().qos(FFRT_QOS_LEVEL));
+#endif
+}
+
+RSHpaeOfflineThreadManager::~RSHpaeOfflineThreadManager() = default;
+
 bool RSHpaeOfflineThreadManager::PostTask(const std::function<void()>& task)
 {
 #if defined(ROSEN_OHOS)
-    ffrt::submit_h([this, task]() {
-        std::unique_lock<ffrt::mutex> lock(g_ffrtThreadMutex);
-        task();
-    }, {}, {}, ffrt::task_attr().qos(FFRT_QOS_LEVEL));
+    if (queue_) {
+        queue_->submit(task);
+    }
 #endif
     return true;
 }

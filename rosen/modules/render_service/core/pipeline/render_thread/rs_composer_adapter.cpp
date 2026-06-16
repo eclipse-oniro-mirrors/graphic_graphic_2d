@@ -26,40 +26,36 @@
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "drawable/rs_screen_render_node_drawable.h"
 #include "drawable/rs_surface_render_node_drawable.h"
+#include "gpuComposition/rs_gpu_cache_manager.h"
 #include "pipeline/render_thread/rs_divided_render_util.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_surface_handler.h"
 #include "pipeline/rs_surface_render_node.h"
+#include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
 #include "platform/common/rs_log.h"
-#include "rs_render_composer_manager.h"
-#include "rs_surface_layer.h"
+#include "rs_render_surface_layer.h"
 #include "rs_trace.h"
 #include "string_utils.h"
 
 namespace OHOS {
 namespace Rosen {
-bool RSComposerAdapter::Init(const ScreenInfo& screenInfo, int32_t offsetX, int32_t offsetY,
-    float mirrorAdaptiveCoefficient, const FallbackCallback& cb)
+bool RSComposerAdapter::Init(const ScreenInfo& screenInfo, float mirrorAdaptiveCoefficient, const FallbackCallback& cb,
+    const std::shared_ptr<HdiOutput>& output)
 {
-    auto screenManager = CreateOrGetScreenManager();
-    if (screenManager == nullptr) {
-        RS_LOGE("RSComposerAdapter::Init: ScreenManager is nullptr");
-        return false;
-    }
-    output_ = screenManager->GetOutput(ToScreenPhysicalId(screenInfo.id));
-    if (output_ == nullptr) {
+    if (output == nullptr) {
         RS_LOGE("RSComposerAdapter::Init: output_ is nullptr");
         return false;
     }
 
+    output_ = output;
     fallbackCb_ = cb;
     auto onPrepareCompleteFunc = [this](auto& surface, const auto& param, void* data) {
         OnPrepareComplete(surface, param, data);
     };
     output_->RegPrepareComplete(onPrepareCompleteFunc, this);
 
-    offsetX_ = offsetX;
-    offsetY_ = offsetY;
+    offsetX_ = screenInfo.offsetX;
+    offsetY_ = screenInfo.offsetY;
     mirrorAdaptiveCoefficient_ = mirrorAdaptiveCoefficient;
     screenInfo_ = screenInfo;
 
@@ -68,68 +64,20 @@ bool RSComposerAdapter::Init(const ScreenInfo& screenInfo, int32_t offsetX, int3
     damageRects.emplace_back(damageRect);
     output_->SetOutputDamages(damageRects);
 
-    // Initialize composerClient
-    composerClient_ = RSRenderComposerManager::GetInstance().CreateRSRenderComposerClient(screenInfo.id);
-    if (composerClient_ == nullptr) {
-        return false;
-    }
-
-    return true;
-}
-
-bool RSComposerAdapter::Init(const RSScreenRenderNode& node, const ScreenInfo& screenInfo,
-    const ScreenInfo& mirroredScreenInfo, float mirrorAdaptiveCoefficient, const FallbackCallback& cb)
-{
-    auto screenManager = CreateOrGetScreenManager();
-    if (screenManager == nullptr) {
-        RS_LOGE("RSComposerAdapter::Init: ScreenManager is nullptr");
-        return false;
-    }
-    output_ = screenManager->GetOutput(ToScreenPhysicalId(screenInfo.id));
-    if (output_ == nullptr) {
-        RS_LOGE("RSComposerAdapter::Init: output_ is nullptr");
-        return false;
-    }
-
-    fallbackCb_ = cb;
-    auto onPrepareCompleteFunc = [this](auto& surface, const auto& param, void* data) {
-        OnPrepareComplete(surface, param, data);
-    };
-    output_->RegPrepareComplete(onPrepareCompleteFunc, this);
-
-    const auto& screenProperty = node.GetScreenProperty();
-    offsetX_ = screenProperty.GetOffsetX();
-    offsetY_ = screenProperty.GetOffsetY();
-    screenInfo_ = screenInfo;
-    mirroredScreenInfo_ = mirroredScreenInfo;
-    mirrorAdaptiveCoefficient_ = mirrorAdaptiveCoefficient;
-
-    GraphicIRect damageRect { 0, 0, static_cast<int32_t>(screenInfo_.width), static_cast<int32_t>(screenInfo_.height) };
-    std::vector<GraphicIRect> damageRects;
-    damageRects.emplace_back(damageRect);
-    output_->SetOutputDamages(damageRects);
-
-    // Initialize composerClient
-    composerClient_ = RSRenderComposerManager::GetInstance().CreateRSRenderComposerClient(screenInfo.id);
-    if (composerClient_ == nullptr) {
-        return false;
-    }
     return true;
 }
 
 void RSComposerAdapter::CommitLayers(const std::vector<RSLayerPtr>& layers)
 {
-    if (output_ == nullptr || composerClient_ == nullptr) {
+    if (output_ == nullptr) {
         RS_LOGE("RSComposerAdapter::CommitLayers: output or composerClient is nullptr");
         return;
     }
-
     DumpLayersToFile(layers);
 
     // do composition.
     output_->SetRSLayers(layers);
     output_->Repaint();
-    composerClient_->ClearAllLayers();
 
     // get present timestamp from and set present timestamp to surface
     for (const auto& layer : layers) {
@@ -330,25 +278,14 @@ bool RSComposerAdapter::GetComposerInfoNeedClient(const ComposeInfo& info, RSSur
 // private func, for RSSurfaceRenderNode.
 ComposeInfo RSComposerAdapter::BuildComposeInfo(RSSurfaceRenderNode& node, bool isTunnelCheck) const
 {
-    float offsetX = 0.0f;
-    float offsetY = 0.0f;
-    if (mirroredScreenInfo_.id != INVALID_SCREEN_ID) {
-        // align center
-        offsetX =
-            (screenInfo_.GetRotatedWidth() - mirroredScreenInfo_.GetRotatedWidth() * mirrorAdaptiveCoefficient_) / 2.0f;
-        offsetY =
-            (screenInfo_.GetRotatedHeight() - mirroredScreenInfo_.GetRotatedHeight() * mirrorAdaptiveCoefficient_) /
-            2.0f;
-    }
-
     const auto& dstRect = node.GetDstRect();
     const auto& srcRect = node.GetSrcRect();
     ComposeInfo info {};
     auto surfaceHandler = node.GetRSSurfaceHandler();
     info.srcRect = GraphicIRect {srcRect.left_, srcRect.top_, srcRect.width_, srcRect.height_};
     info.dstRect = GraphicIRect {
-        static_cast<int32_t>(static_cast<float>(dstRect.left_) * mirrorAdaptiveCoefficient_ + offsetX),
-        static_cast<int32_t>(static_cast<float>(dstRect.top_) * mirrorAdaptiveCoefficient_ + offsetY),
+        static_cast<int32_t>(static_cast<float>(dstRect.left_) * mirrorAdaptiveCoefficient_),
+        static_cast<int32_t>(static_cast<float>(dstRect.top_) * mirrorAdaptiveCoefficient_),
         static_cast<int32_t>(static_cast<float>(dstRect.width_) * mirrorAdaptiveCoefficient_),
         static_cast<int32_t>(static_cast<float>(dstRect.height_) * mirrorAdaptiveCoefficient_)
     };
@@ -418,6 +355,8 @@ void RSComposerAdapter::SetComposeInfoToLayer(
         return;
     }
     layer->SetSurface(surface);
+    // Buffer delete listener should be registered during RSSurfaceHandler initialization.
+    // No need to register here again.
     layer->SetBuffer(info.buffer, info.fence);
     layer->SetZorder(info.zOrder);
     layer->SetAlpha(info.alpha);
@@ -440,6 +379,12 @@ void RSComposerAdapter::SetComposeInfoToLayer(
         return;
     }
     SetMetaDataInfoToLayer(layer, info, surface);
+    uint32_t cycleBufferNum = 0;
+    surface->GetCycleBuffersNumber(cycleBufferNum);
+    layer->SetCycleBuffersNum(cycleBufferNum);
+    layer->SetSurfaceName(surface->GetName());
+    layer->SetSurfaceUniqueId(surface->GetUniqueId());
+    layer->SetIsNeedComposition(true);
 }
 
 void RSComposerAdapter::SetMetaDataInfoToLayer(const RSLayerPtr& layer, const ComposeInfo& info,
@@ -537,12 +482,13 @@ RSLayerPtr RSComposerAdapter::CreateBufferLayer(RSSurfaceRenderNode& node) const
         info.srcRect.w, info.srcRect.h, info.buffer->GetWidth(), info.buffer->GetHeight(),
         info.buffer->GetSurfaceBufferWidth(), info.buffer->GetSurfaceBufferHeight(),
         surfaceHandler->GetGlobalZOrder(), info.zOrder, info.blendType);
-    RSLayerPtr layer = RSSurfaceLayer::CreateLayer(composerClient_);
+    RSLayerPtr layer = std::make_shared<RSRenderSurfaceLayer>();
     if (layer == nullptr) {
         RS_LOGE("RSComposerAdapter::CreateBufferLayer failed to create layer");
         return nullptr;
     }
     layer->SetNodeId(node.GetId());  // node id only for dfx
+    layer->SetRSLayerId(node.GetId());
     SetComposeInfoToLayer(layer, info, surfaceHandler->GetConsumer(), &node);
     LayerRotate(layer, node);
     LayerCrop(layer);
@@ -567,12 +513,14 @@ RSLayerPtr RSComposerAdapter::CreateTunnelLayer(RSSurfaceRenderNode& node) const
     AppendFormat(traceInfo, "ProcessSurfaceNode:%s XYWH[%d %d %d %d]", node.GetName().c_str(),
         info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h);
     RS_TRACE_NAME(traceInfo.c_str());
-    RSLayerPtr layer = RSSurfaceLayer::CreateLayer(composerClient_);
+    RSLayerPtr layer = std::make_shared<RSRenderSurfaceLayer>();
     if (layer == nullptr) {
         RS_LOGE("RSComposerAdapter::CreateTunnelLayer failed to create layer");
         return nullptr;
     }
     layer->SetNodeId(node.GetId());  // node id only for dfx
+    layer->SetRSLayerId(node.GetId());
+    layer->SetTunnelLayerGeneration(RSTunnelRuntimeStore::GetTunnelLayerGeneration(node.GetId()));
     SetComposeInfoToLayer(layer, info, surfaceHandler->GetConsumer(), &node);
     LayerRotate(layer, node);
     RS_LOGD("RsDebug RSComposerAdapter::CreateTunnelLayer surfaceNode id:%{public}" PRIu64 " name:[%{public}s] dst"
@@ -610,7 +558,7 @@ RSLayerPtr RSComposerAdapter::CreateLayer(RSScreenRenderNode& node) const
     }
     auto screenDrawable = std::static_pointer_cast<DrawableV2::RSScreenRenderNodeDrawable>(drawable);
     auto surfaceHandler = screenDrawable->GetMutableRSSurfaceHandlerOnDraw();
-    if (!RSBaseRenderUtil::ConsumeAndUpdateBuffer(*surfaceHandler)) {
+    if (!RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(*surfaceHandler)) {
         RS_LOGE("RSComposerAdapter::CreateLayer consume buffer failed.");
         return nullptr;
     }
@@ -627,12 +575,13 @@ RSLayerPtr RSComposerAdapter::CreateLayer(RSScreenRenderNode& node) const
         node.GetId(), info.dstRect.x, info.dstRect.y, info.dstRect.w, info.dstRect.h, info.srcRect.w, info.srcRect.h,
         info.buffer->GetWidth(), info.buffer->GetHeight(), info.buffer->GetSurfaceBufferWidth(),
         info.buffer->GetSurfaceBufferHeight(), info.zOrder, info.blendType);
-    RSLayerPtr layer = RSSurfaceLayer::CreateLayer(composerClient_);
+    RSLayerPtr layer = std::make_shared<RSRenderSurfaceLayer>();
     if (layer == nullptr) {
         RS_LOGE("RSComposerAdapter::CreateLayer failed to create layer");
         return nullptr;
     }
     layer->SetNodeId(node.GetId());  // node id only for dfx
+    layer->SetRSLayerId(node.GetId());
     SetComposeInfoToLayer(layer, info, surfaceHandler->GetConsumer(), &node);
     LayerRotate(layer, node);
     // do not crop or scale down for screenNode's layer.
@@ -823,7 +772,7 @@ void RSComposerAdapter::LayerScaleDown(const RSLayerPtr& layer)
 // private func, guarantee the layer and surface are valid
 void RSComposerAdapter::LayerPresentTimestamp(const RSLayerPtr& layer, const sptr<IConsumerSurface>& surface)
 {
-    if (!layer->IsSupportedPresentTimestamp()) {
+    if (!layer->GetIsSupportedPresentTimestamp()) {
         return;
     }
     const auto& buffer = layer->GetBuffer();
@@ -855,11 +804,5 @@ void RSComposerAdapter::SetHdiBackendDevice(HdiDevice* device)
         hdiBackend_->SetHdiBackendDevice(device);
     }
 }
-
-void RSComposerAdapter::SetMirroredScreenInfo(const ScreenInfo& mirroredScreenInfo)
-{
-    mirroredScreenInfo_ = mirroredScreenInfo;
-}
-
 } // namespace Rosen
 } // namespace OHOS

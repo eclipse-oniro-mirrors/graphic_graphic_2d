@@ -20,6 +20,7 @@
 #include "common/rs_vector2.h"
 #include "common/rs_vector3.h"
 #include "common/rs_vector4.h"
+#include "ui_effect/mask/include/mask_para.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -30,16 +31,6 @@ public:
         this->type_ = VisualEffectPara::ParaType::FROSTED_GLASS_EFFECT;
     }
     ~FrostedGlassEffectPara() override = default;
-
-    void SetBlurParam(float blurParam)
-    {
-        blurParam_ = blurParam;
-    }
-
-    float GetBlurParam() const
-    {
-        return blurParam_;
-    }
 
     void SetWeightsEmboss(Vector2f& weightsEmboss)
     {
@@ -59,6 +50,16 @@ public:
     const Vector2f GetWeightsEdl() const
     {
         return weightsEdl_;
+    }
+
+    void SetAntiAlias(Vector2f& antiAlias)
+    {
+        antiAlias_ = antiAlias;
+    }
+
+    const Vector2f GetAntiAlias() const
+    {
+        return antiAlias_;
     }
 
     void SetBgRates(Vector2f& bgRates)
@@ -99,6 +100,16 @@ public:
     const Vector3f GetBgNeg() const
     {
         return bgNeg_;
+    }
+
+    void SetBgAlpha(float bgAlpha)
+    {
+        bgAlpha_ = bgAlpha;
+    }
+
+    float GetBgAlpha() const
+    {
+        return bgAlpha_;
     }
 
     void SetRefractParams(Vector3f& refractParams)
@@ -291,15 +302,26 @@ public:
         return materialColor_;
     }
 
+    void SetMask(std::shared_ptr<MaskPara> maskPara)
+    {
+        maskPara_ = maskPara;
+    }
+
+    const std::shared_ptr<MaskPara>& GetMask() const
+    {
+        return maskPara_;
+    }
+
 private:
-    float blurParam_ = 0.0f; // K times downsample
     Vector2f weightsEmboss_ = Vector2f(0.0f, 0.0f);
     Vector2f weightsEdl_ = Vector2f(0.0f, 0.0f);
+    Vector2f antiAlias_ = Vector2f(-1.0f, 1.0f);
     // Background darken parameters
     Vector2f bgRates_ = Vector2f(0.0f, 0.0f);
     Vector3f bgKBS_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f bgPos_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f bgNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
+    float bgAlpha_ = 1.0f; // the alpha of brackground color
     // Refraction parameters
     Vector3f refractParams_ = Vector3f(0.0f, 0.0f, 0.0f);
     // Inner shadow parameters
@@ -316,13 +338,14 @@ private:
     Vector3f envLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
     // Edge highlights parameters
     Vector2f edLightParams_ = Vector2f(0.0f, 0.0f);
-    Vector2f edLightAngles_ = Vector2f(0.0f, 30.0f);
+    Vector2f edLightAngles_ = Vector2f(0.0f, 0.0f);
     Vector2f edLightDir_ = Vector2f(0.0f, 0.0f);
     Vector2f edLightRates_ = Vector2f(0.0f, 0.0f);
     Vector3f edLightKBS_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightPos_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f edLightNeg_ = Vector3f(0.0f, 0.0f, 0.0f);
     Vector4f materialColor_ = Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    std::shared_ptr<MaskPara> maskPara_ = nullptr;
 };
 } // namespace Rosen
 } // namespace OHOS

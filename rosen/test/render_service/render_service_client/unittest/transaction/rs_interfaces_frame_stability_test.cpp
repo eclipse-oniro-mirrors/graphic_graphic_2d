@@ -1,0 +1,199 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#include "gtest/gtest.h"
+#include "transaction/rs_interfaces.h"
+
+using namespace testing;
+using namespace testing::ext;
+
+namespace OHOS::Rosen {
+constexpr uint64_t DEFAULT_ID = 100;
+constexpr FrameStabilityTarget DEFAULT_TARGET = { .id = DEFAULT_ID, .type = FrameStabilityTargetType::SCREEN };
+class RSInterfacesFrameStabilityTest : public testing::Test {
+public:
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    void SetUp() override;
+    void TearDown() override;
+
+    static inline std::shared_ptr<OHOS::Rosen::RSRenderInterface> rsRenderInterface_ = nullptr;
+};
+
+void RSInterfacesFrameStabilityTest::SetUpTestCase()
+{
+    auto screenId = RSInterfaces::GetInstance().GetDefaultScreenId();
+    auto connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+    rsRenderInterface_ = std::make_shared<RSRenderInterface>(connectToRender);
+}
+void RSInterfacesFrameStabilityTest::TearDownTestCase() {}
+void RSInterfacesFrameStabilityTest::SetUp() {}
+void RSInterfacesFrameStabilityTest::TearDown() {}
+/*
+ * @tc.name: RegisterFrameStabilityDetection001
+ * @tc.desc: Test RegisterFrameStabilityDetection with valid screenId
+ * @tc.type: FUNC
+ * @tc.require: issues22734
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, RegisterFrameStabilityDetection001, Function | SmallTest | Level2)
+{
+    FrameStabilityConfig config = {
+        .stableDuration = 200,
+        .changePercent = 0.1f
+    };
+    FrameStabilityCallback callback = [](bool isStable) {};
+    int32_t ret = rsRenderInterface_->RegisterFrameStabilityDetection(DEFAULT_TARGET, config, callback);
+    EXPECT_EQ(ret, 0);
+}
+
+/*
+ * @tc.name: RegisterFrameStabilityDetection002
+ * @tc.desc: Test RegisterFrameStabilityDetection with invalid stableDuration
+ * @tc.type: FUNC
+ * @tc.require: 22984
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, RegisterFrameStabilityDetection002, Function | SmallTest | Level2)
+{
+    FrameStabilityConfig config = {
+        .stableDuration = MIN_STABLE_DURATION - 1,
+        .changePercent = 0.5f
+    };
+    FrameStabilityCallback callback = [](bool isStable) {};
+    int32_t ret = rsRenderInterface_->RegisterFrameStabilityDetection(DEFAULT_TARGET, config, callback);
+    EXPECT_NE(ret, 0);
+
+    config.stableDuration = MAX_STABLE_DURATION + 1;
+    ret = rsRenderInterface_->RegisterFrameStabilityDetection(DEFAULT_TARGET, config, callback);
+    EXPECT_NE(ret, 0);
+}
+
+/*
+ * @tc.name: RegisterFrameStabilityDetection003
+ * @tc.desc: Test RegisterFrameStabilityDetection with invalid changePercent
+ * @tc.type: FUNC
+ * @tc.require: 22984
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, RegisterFrameStabilityDetection003, Function | SmallTest | Level2)
+{
+    FrameStabilityConfig config = {
+        .stableDuration = 200,
+        .changePercent = MIN_CHANGE_PERCENT -0.1f
+    };
+    FrameStabilityCallback callback = [](bool isStable) {};
+    int32_t ret = rsRenderInterface_->RegisterFrameStabilityDetection(DEFAULT_TARGET, config, callback);
+    EXPECT_NE(ret, 0);
+
+    config.changePercent = MAX_CHANGE_PERCENT + 0.1f;
+    ret = rsRenderInterface_->RegisterFrameStabilityDetection(DEFAULT_TARGET, config, callback);
+    EXPECT_NE(ret, 0);
+}
+
+/*
+ * @tc.name: UnregisterFrameStabilityDetection001
+ * @tc.desc: Test UnregisterFrameStabilityDetection with valid screenId
+ * @tc.type: FUNC
+ * @tc.require: issues22734
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, UnregisterFrameStabilityDetection001, Function | SmallTest | Level2)
+{
+    int32_t ret = rsRenderInterface_->UnregisterFrameStabilityDetection(DEFAULT_TARGET);
+    EXPECT_EQ(ret, 0);
+}
+
+/*
+ * @tc.name: StartFrameStabilityCollection001
+ * @tc.desc: Test StartFrameStabilityCollection with valid screenId
+ * @tc.type: FUNC
+ * @tc.require: issues22734
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, StartFrameStabilityCollection001, Function | SmallTest | Level2)
+{
+    FrameStabilityConfig config = {
+        .stableDuration = 200,
+        .changePercent = 0.1f
+    };
+    int32_t ret = rsRenderInterface_->StartFrameStabilityCollection(DEFAULT_TARGET, config);
+    EXPECT_EQ(ret, 0);
+}
+
+/*
+ * @tc.name: StartFrameStabilityCollection002
+ * @tc.desc: Test StartFrameStabilityCollection with invalid stableDuration
+ * @tc.type: FUNC
+ * @tc.require: 22984
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, StartFrameStabilityCollection002, Function | SmallTest | Level2)
+{
+    FrameStabilityConfig config = {
+        .stableDuration = MIN_STABLE_DURATION - 1,
+        .changePercent = 0.5f
+    };
+    int32_t ret = rsRenderInterface_->StartFrameStabilityCollection(DEFAULT_TARGET, config);
+    EXPECT_NE(ret, 0);
+
+    config.stableDuration = MAX_STABLE_DURATION + 1;
+    ret = rsRenderInterface_->StartFrameStabilityCollection(DEFAULT_TARGET, config);
+    EXPECT_NE(ret, 0);
+}
+
+/*
+ * @tc.name: StartFrameStabilityCollection003
+ * @tc.desc: Test StartFrameStabilityCollection with invalid changePercent
+ * @tc.type: FUNC
+ * @tc.require: 22984
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, StartFrameStabilityCollection003, Function | SmallTest | Level2)
+{
+    FrameStabilityConfig config = {
+        .stableDuration = 100,
+        .changePercent = MIN_CHANGE_PERCENT - 0.1f
+    };
+    int32_t ret = rsRenderInterface_->StartFrameStabilityCollection(DEFAULT_TARGET, config);
+    EXPECT_NE(ret, 0);
+
+    config.changePercent = MAX_CHANGE_PERCENT + 0.1f;
+    ret = rsRenderInterface_->StartFrameStabilityCollection(DEFAULT_TARGET, config);
+    EXPECT_NE(ret, 0);
+}
+
+/*
+ * @tc.name: GetFrameStabilityResult001
+ * @tc.desc: Test GetFrameStabilityResult with valid screenId
+ * @tc.type: FUNC
+ * @tc.require: issues22734
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, GetFrameStabilityResult001, Function | SmallTest | Level2)
+{
+    FrameStabilityTarget target = { .id = DEFAULT_ID + 1, .type = FrameStabilityTargetType::SCREEN };
+    bool result = false;
+    int32_t ret = rsRenderInterface_->GetFrameStabilityResult(target, result);
+    EXPECT_NE(ret, 0);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name: UpdateFrameStabilityDetection001
+ * @tc.desc: Test UpdateFrameStabilityDetection with valid parameters
+ * @tc.type: FUNC
+ * @tc.require: issue23671
+ */
+HWTEST_F(RSInterfacesFrameStabilityTest, UpdateFrameStabilityDetection001, TestSize.Level1)
+{
+    ASSERT_NE(rsRenderInterface_, nullptr);
+    FrameStabilityTarget oldTarget = { .id = 100, .type = FrameStabilityTargetType::SCREEN };
+    FrameStabilityTarget newTarget = { .id = 200, .type = FrameStabilityTargetType::WINDOW };
+    int32_t ret = rsRenderInterface_->UpdateFrameStabilityDetection(oldTarget, newTarget);
+    EXPECT_EQ(ret, 0);
+}
+} // namespace OHOS::Rosen

@@ -59,8 +59,23 @@ public:
     void QuickMarkStableNode(RSRenderNode& node, bool& unchangeMarkInApp, bool& unchangeMarkEnable,
         bool isAccessibilityConfigChanged);
     void UpdateRootFlag(RSRenderNode& node, bool& unchangeMarkEnable);
+    void QuickCheckOpincStable(
+        RSRenderNode& node, bool& unchangeMarkInApp, bool& unchangeMarkEnable, bool& hasUnstableOpincNode);
     OpincUnsupportType GetUnsupportReason(RSRenderNode& node);
     std::string QuickGetNodeDebugInfo(RSRenderNode& node);
+
+    // static helper functions
+    static void OpincSetInAppStateEnd(RSRenderNode& node, bool& unchangeMarkInApp);
+    static void OpincSetInAppStateStart(RSRenderNode& node, bool& unchangeMarkInApp);
+    static bool IsSuggestOpincNode(RSRenderNode& node);
+    static bool OpincGetRootFlag(RSRenderNode& node);
+    static bool IsOpincUnchangeState(RSRenderNode& node);
+
+    void InitLayerPartRenderNode(bool isCCMLayerPartRenderEnables, RSRenderNode& node,
+        std::shared_ptr<RSDirtyRegionManager>& layerPartRenderDirtyManager);
+    void CalculateAndUpdateLayerPartRenderDirtyRegion(RSRenderNode& node,
+        std::shared_ptr<RSDirtyRegionManager>& layerPartRenderDirtyManager, const RectI& visibleFilterRect,
+        bool isDisableAnimation);
 
 private:
     RSOpincManager() = default;
@@ -71,6 +86,9 @@ private:
     RSOpincManager& operator=(const RSOpincManager&&);
 
     bool OpincGetCanvasNodeSupportFlag(RSRenderNode& node);
+    bool CalculateLayerPartRenderDirtyRegion(RSRenderNode& node,
+        std::shared_ptr<RSDirtyRegionManager>& layerPartRenderDirtyManager, const RectI& visibleFilterRect,
+        RectI& layerCurDirty);
 
     bool isOPIncOn_ = false;
     std::mutex mutex_;

@@ -18,6 +18,7 @@
 
 #include "common/rs_obj_abs_geometry.h"
 #include "common/rs_optional_trace.h"
+#include "effect/rs_render_shader_base.h"
 #include "pipeline/rs_effect_render_node.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_root_render_node.h"
@@ -31,7 +32,6 @@
 #include "render/rs_render_kawase_blur_filter.h"
 #include "render/rs_render_linear_gradient_blur_filter.h"
 #include "render/rs_skia_filter.h"
-#include "render/rs_render_magnifier_filter.h"
 #include "render/rs_material_filter.h"
 #include "platform/common/rs_system_properties.h"
 
@@ -42,6 +42,7 @@
 #include "draw/clip.h"
 #include "drawing/draw/core_canvas.h"
 #include "effect/rs_render_filter_base.h"
+#include "effect/rs_render_shape_base.h"
 #include "effect/runtime_blender_builder.h"
 #include "effect/runtime_effect.h"
 #include "effect/runtime_shader_builder.h"
@@ -52,13 +53,9 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 bool g_forceBgAntiAlias = true;
+constexpr int ONE_PIXEL = 1;
 constexpr int PARAM_DOUBLE = 2;
 constexpr int TRACE_LEVEL_TWO = 2;
-constexpr float MIN_TRANS_RATIO = 0.0f;
-constexpr float MAX_TRANS_RATIO = 0.95f;
-constexpr float MIN_SPOT_RATIO = 1.0f;
-constexpr float MAX_SPOT_RATIO = 1.95f;
-constexpr float MAX_AMBIENT_RADIUS = 150.0f;
 } // namespace
 
 const bool RSPropertiesPainter::BLUR_ENABLED = RSSystemProperties::GetBlurEnabled();
@@ -287,29 +284,26 @@ void RSPropertiesPainter::GetShadowDirtyRect(RectI& dirtyShadow, const RSPropert
 
     Drawing::Rect shadowRect = path.GetBounds();
     if (properties.GetShadowElevation() > 0.f) {
-        float elevation = properties.GetShadowElevation() + DEFAULT_TRANSLATION_Z;
-
-        float userTransRatio =
-            (elevation != DEFAULT_LIGHT_HEIGHT) ? elevation / (DEFAULT_LIGHT_HEIGHT - elevation) : MAX_TRANS_RATIO;
-        float transRatio = std::max(MIN_TRANS_RATIO, std::min(userTransRatio, MAX_TRANS_RATIO));
-
-        float userSpotRatio = (elevation != DEFAULT_LIGHT_HEIGHT)
-                                  ? DEFAULT_LIGHT_HEIGHT / (DEFAULT_LIGHT_HEIGHT - elevation)
-                                  : MAX_SPOT_RATIO;
-        float spotRatio = std::max(MIN_SPOT_RATIO, std::min(userSpotRatio, MAX_SPOT_RATIO));
-
-        Drawing::Rect ambientRect = path.GetBounds();
-        Drawing::Rect spotRect = Drawing::Rect(ambientRect.GetLeft() * spotRatio, ambientRect.GetTop() * spotRatio,
-            ambientRect.GetRight() * spotRatio, ambientRect.GetBottom() * spotRatio);
-        spotRect.Offset(-transRatio * DEFAULT_LIGHT_POSITION_X, -transRatio * DEFAULT_LIGHT_POSITION_Y);
-        spotRect.MakeOutset(transRatio * DEFAULT_LIGHT_RADIUS, transRatio * DEFAULT_LIGHT_RADIUS);
-
-        shadowRect = ambientRect;
-        float ambientBlur = std::min(elevation * 0.5f, MAX_AMBIENT_RADIUS);
-        shadowRect.MakeOutset(ambientBlur, ambientBlur);
-
-        shadowRect.Join(spotRect);
-    } else {
+        auto emptyCanvas = GetEmptyCanvas();
+        if (emptyCanvas == nullptr) {
+            ROSEN_LOGE("RSPropertiesPainter::GetShadowDirtyRect emptyCanvas null");
+            return;
+        }
+        Drawing::Matrix matrix;
+        Drawing::Point3 planeParams = { 0.0f, 0.0f, properties.GetShadowElevation() };
+        std::vector<Drawing::Point> pt{{ shadowRect.GetLeft() + shadowRect.GetWidth() / 2,
+            shadowRect.GetTop() + shadowRect.GetHeight() / 2 }};
+        emptyCanvas->GetTotalMatrix().MapPoints(pt, pt, 1);
+        Drawing::Point3 lightPos = { pt[0].GetX(), pt[0].GetY(), DEFAULT_LIGHT_HEIGHT };
+        emptyCanvas->GetLocalShadowBounds(matrix, path, planeParams, lightPos, DEFAULT_LIGHT_RADIUS,
+            Drawing::ShadowFlags::TRANSPARENT_OCCLUDER, true, shadowRect);
+    } else if (ROSEN_GNE(properties.GetShadowRadius(), 0.f)) {
+        if (properties.GetSDFShape()) {
+            OHOS::Rosen::RectF bound = OHOS::Rosen::RectF(
+                shadowRect.GetLeft(), shadowRect.GetTop(), shadowRect.GetWidth(), shadowRect.GetHeight());
+            bound = RSNGRenderShapeHelper::CalcRect(properties.GetSDFShape(), bound, false);
+            shadowRect.Join(Drawing::Rect(bound.GetLeft(), bound.GetTop(), bound.GetRight(), bound.GetBottom()));
+        }
         Drawing::Brush brush;
         brush.SetAntiAlias(true);
         Drawing::Filter filter;
@@ -589,13 +583,6 @@ void RSPropertiesPainter::DrawFilter(const RSProperties& properties, RSPaintFilt
 
     auto clipIBounds = canvas.GetDeviceClipBounds();
     auto imageClipIBounds = clipIBounds;
-    auto magnifierShaderFilter = filter->GetShaderFilterWithType(RSUIFilterType::MAGNIFIER);
-    if (magnifierShaderFilter != nullptr) {
-        auto tmpFilter = std::static_pointer_cast<RSMagnifierShaderFilter>(magnifierShaderFilter);
-        auto canvasMatrix = canvas.GetTotalMatrix();
-        tmpFilter->SetMagnifierOffset(canvasMatrix);
-        imageClipIBounds.Offset(tmpFilter->GetMagnifierOffsetX(), tmpFilter->GetMagnifierOffsetY());
-    }
 
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     // Optional use cacheManager to draw filter
@@ -661,7 +648,7 @@ void RSPropertiesPainter::DrawBackgroundImageAsEffect(const RSProperties& proper
         canvas.ClipRect(RSPropertiesPainter::Rect2DrawingRect(boundsRect));
         auto filter = std::static_pointer_cast<RSDrawingFilter>(properties.GetBackgroundFilter());
         // extract cache data from cacheManager
-        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter);
+        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, properties.GetRenderNodeId());
         canvas.SetEffectData(data);
         return;
     }
@@ -724,7 +711,8 @@ void RSPropertiesPainter::DrawBackgroundEffect(
             ROSEN_LOGE("DrawBackgroundEffect::node reinterpret cast failed.");
             return;
         }
-        auto&& data = cacheManager->GeneratedCachedEffectData(canvas, filter, bounds, bounds);
+        auto&& data = cacheManager->GeneratedCachedEffectData(
+            canvas, filter, properties.GetRenderNodeId(), bounds, bounds);
         canvas.SetEffectData(data);
         return;
     }
@@ -764,13 +752,13 @@ void RSPropertiesPainter::GetPixelStretchDirtyRect(RectI& dirtyPixelStretch,
     const RSProperties& properties, const bool isAbsCoordinate)
 {
     auto& pixelStretch = properties.GetPixelStretch();
-    if (!pixelStretch.has_value()) {
+    if (pixelStretch.IsZero()) {
         return;
     }
     auto boundsRect = properties.GetBoundsRect();
-    auto scaledBounds = RectF(boundsRect.left_ - pixelStretch->x_, boundsRect.top_ - pixelStretch->y_,
-        boundsRect.width_ + pixelStretch->x_ + pixelStretch->z_,
-        boundsRect.height_ + pixelStretch->y_ + pixelStretch->w_);
+    auto scaledBounds = RectF(boundsRect.left_ - pixelStretch.x_, boundsRect.top_ - pixelStretch.y_,
+        boundsRect.width_ + pixelStretch.x_ + pixelStretch.z_,
+        boundsRect.height_ + pixelStretch.y_ + pixelStretch.w_);
     auto geoPtr = properties.GetBoundsGeometry();
     Drawing::Matrix matrix = (geoPtr && isAbsCoordinate) ? geoPtr->GetAbsMatrix() : Drawing::Matrix();
     auto drawingRect = Rect2DrawingRect(scaledBounds);
@@ -833,6 +821,41 @@ void RSPropertiesPainter::GetForegroundNGFilterDirtyRect(RectI& dirtyForegroundE
         dirtyForegroundEffect.top_ = std::floor(drawingRect.GetTop());
         dirtyForegroundEffect.width_ = scale.x_;
         dirtyForegroundEffect.height_ = scale.y_;
+        return;
+    }
+
+    if (RSNGRenderFilterHelper::HasCustomRegion(foregroundNGFilter)) {
+        auto boundsRect = properties.GetBoundsRect();
+        auto& geoPtr = properties.GetBoundsGeometry();
+
+        boundsRect = RSNGRenderFilterHelper::CalcRect(foregroundNGFilter, boundsRect, EffectRectType::TOTAL);
+        Drawing::Matrix matrix = (geoPtr && isAbsCoordinate) ? geoPtr->GetAbsMatrix() : Drawing::Matrix();
+        auto drawingRect = Rect2DrawingRect(boundsRect);
+        matrix.MapRect(drawingRect, drawingRect);
+        auto filter = std::static_pointer_cast<RSNGRenderParticleAblationFilter>(foregroundNGFilter);
+        auto scale = filter->Getter<ParticleAblationExpansionSizeRenderTag>()->Get();
+        auto offsetx = (scale.x_ - drawingRect.GetWidth()) / 2; //2 : half width
+        auto offsety = (scale.y_ - drawingRect.GetHeight()) / 2; //2 : half height
+        dirtyForegroundEffect.left_ = std::floor(drawingRect.GetLeft()) - offsetx;
+        dirtyForegroundEffect.top_ = std::floor(drawingRect.GetTop()) - offsety;
+        dirtyForegroundEffect.width_ = scale.x_;
+        dirtyForegroundEffect.height_ = scale.y_;
+        return;
+    }
+    
+    if (RSNGRenderFilterHelper::HasCustomRegion(foregroundNGFilter)) {
+        auto boundsRect = properties.GetBoundsRect();
+        auto& geoPtr = properties.GetBoundsGeometry();
+
+        boundsRect = RSNGRenderFilterHelper::CalcRect(foregroundNGFilter, boundsRect, EffectRectType::TOTAL);
+        Drawing::Matrix matrix = (geoPtr && isAbsCoordinate) ? geoPtr->GetAbsMatrix() : Drawing::Matrix();
+        auto drawingRect = Rect2DrawingRect(boundsRect);
+        matrix.MapRect(drawingRect, drawingRect);
+
+        dirtyForegroundEffect.left_ = std::floor(drawingRect.GetLeft());
+        dirtyForegroundEffect.top_ = std::floor(drawingRect.GetTop());
+        dirtyForegroundEffect.width_ = std::ceil(drawingRect.GetWidth()) + 1;
+        dirtyForegroundEffect.height_ = std::ceil(drawingRect.GetHeight()) + 1;
     }
 }
 
@@ -849,23 +872,6 @@ void RSPropertiesPainter::GetDistortionEffectDirtyRect(RectI& dirtyDistortionEff
         dirtyDistortionEffect.width_ = dirtyWidth;
         dirtyDistortionEffect.height_ = dirtyWidth;
     }
-}
-
-// calculate the magnifier effect's dirty area
-void RSPropertiesPainter::GetMagnifierEffectDirtyRect(RectI& dirtyMagnifierEffect, const RSProperties& properties)
-{
-    const auto& magnifierPara = properties.GetMagnifierPara();
-    if (!magnifierPara) {
-        return;
-    }
-    auto boundsRect = properties.GetBoundsRect();
-    auto scaledBounds = RectF(boundsRect.left_ + magnifierPara->offsetX_, boundsRect.top_ + magnifierPara->offsetY_,
-        boundsRect.width_, boundsRect.height_);
-    auto drawingRect = Rect2DrawingRect(scaledBounds);
-        dirtyMagnifierEffect.left_ = static_cast<int>(std::floor(drawingRect.GetLeft()));
-    dirtyMagnifierEffect.top_ = static_cast<int>(std::floor(drawingRect.GetTop()));
-    dirtyMagnifierEffect.width_ = static_cast<int>(std::ceil(drawingRect.GetRight())) - dirtyMagnifierEffect.left_ ;
-    dirtyMagnifierEffect.height_ = static_cast<int>(std::ceil(drawingRect.GetBottom())) - dirtyMagnifierEffect.top_;
 }
 
 Drawing::ColorQuad RSPropertiesPainter::CalcAverageColor(std::shared_ptr<Drawing::Image> imageSnapshot)
@@ -950,7 +956,7 @@ bool RSPropertiesPainter::GetBgAntiAlias()
 }
 
 void RSPropertiesPainter::DrawFrame(
-    const RSProperties& properties, RSPaintFilterCanvas& canvas, Drawing::DrawCmdListPtr& cmds)
+    const RSProperties& properties, RSPaintFilterCanvas& canvas, SimpleDrawCmdListPtr& cmds)
 {
     if (cmds == nullptr) {
         ROSEN_LOGE("RSPropertiesPainter::DrawFrame cmds null");
@@ -965,16 +971,36 @@ void RSPropertiesPainter::DrawFrame(
     cmds->Playback(canvas, &frameRect);
 }
 
-RRect RSPropertiesPainter::GetRRectForDrawingBorder(const RSProperties& properties,
-    const std::shared_ptr<RSBorder>& border, const bool isOutline)
+RRect RSPropertiesPainter::GetRRectForDrawingBorder(
+    const RSProperties& properties, const std::shared_ptr<RSBorder>& border, const bool isOutline)
 {
     if (!border) {
         return RRect();
     }
 
-    return isOutline ?
-        RRect(properties.GetRRect().rect_.MakeOutset(border->GetWidthFour()), border->GetRadiusFour()) :
-        properties.GetRRect();
+    if (!isOutline) {
+        return properties.GetRRect();
+    }
+
+    auto shader = border->GetSDFShader();
+    if (!shader) {
+        return RRect(properties.GetRRect().rect_.MakeOutset(border->GetWidthFour()), border->GetRadiusFour());
+    }
+
+    float outlineWidth = 0.f;
+    switch (shader->GetType()) {
+        case RSNGEffectType::BORDER_SDF_SHADER:
+            outlineWidth = std::static_pointer_cast<RSNGRenderBorderSDFShader>(shader)
+                               ->Getter<BorderSDFShaderWidthRenderTag>()->Get();
+            break;
+        case RSNGEffectType::BORDER_SDF_LG_COLOR:
+            outlineWidth = std::static_pointer_cast<RSNGRenderBorderSDFLGColor>(shader)
+                               ->Getter<BorderSDFLGColorWidthRenderTag>()->Get();
+            break;
+        default:
+            break;
+    }
+    return RRect(properties.GetRRect().rect_.MakeOutset(outlineWidth), border->GetRadiusFour());
 }
 
 RRect RSPropertiesPainter::GetInnerRRectForDrawingBorder(const RSProperties& properties,
@@ -1164,6 +1190,29 @@ bool RSPropertiesPainter::IsDangerousBlendMode(int blendMode, int blendApplyType
         return tmp & fastDangerousBit;
     }
     return tmp & offscreenDangerousBit;
+}
+
+std::shared_ptr<Drawing::Canvas> RSPropertiesPainter::GetEmptyCanvas()
+{
+    static thread_local std::shared_ptr<Drawing::Surface> offscreenSurface = nullptr;
+    static thread_local std::shared_ptr<Drawing::Canvas> offscreenCanvas = nullptr;
+    if (offscreenCanvas == nullptr) {
+        if (offscreenSurface == nullptr) {
+            Drawing::ImageInfo offscreenInfo { ONE_PIXEL, ONE_PIXEL, Drawing::COLORTYPE_RGBA_8888,
+                Drawing::ALPHATYPE_PREMUL, nullptr };
+            offscreenSurface = Drawing::Surface::MakeRaster(offscreenInfo);
+            if (offscreenSurface == nullptr) {
+                ROSEN_LOGE("RSPropertiesPainter::GetEmptyCanvas offscreenSurface null");
+                return nullptr;
+            }
+        }
+        offscreenCanvas = std::make_shared<RSPaintFilterCanvas>(offscreenSurface.get());
+        if (offscreenCanvas == nullptr) {
+            ROSEN_LOGE("RSPropertiesPainter::GetEmptyCanvas offscreenCanvas null");
+            return nullptr;
+        }
+    }
+    return offscreenCanvas;
 }
 } // namespace Rosen
 } // namespace OHOS

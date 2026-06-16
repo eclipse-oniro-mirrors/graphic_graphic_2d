@@ -49,8 +49,13 @@ namespace OHOS::Text::ANI {
 #define ANI_INTERFACE_TEXT_STYLE "@ohos.graphics.text.text.TextStyle"
 #define ANI_INTERFACE_STRUT_STYLE "@ohos.graphics.text.text.StrutStyle"
 #define ANI_INTERFACE_TEXT_TAB "@ohos.graphics.text.text.TextTab"
+#define ANI_CLASS_TEXT_TAB_INTERNAL "@ohos.graphics.text.text.TextTabInternal"
+#define ANI_CLASS_STRUT_STYLE_INTERNAL "@ohos.graphics.text.text.StrutStyleInternal"
+#define ANI_CLASS_PARAGRAPH_STYLE_INTERNAL "@ohos.graphics.text.text.ParagraphStyleInternal"
 #define ANI_INTERFACE_FONT_FEATURE "@ohos.graphics.text.text.FontFeature"
 #define ANI_INTERFACE_FONT_VARIATION "@ohos.graphics.text.text.FontVariation"
+#define ANI_INTERFACE_FONT_VARIATION_AXIS "@ohos.graphics.text.text.FontVariationAxis"
+#define ANI_INTERFACE_FONT_VARIATION_INSTANCE "@ohos.graphics.text.text.FontVariationInstance"
 #define ANI_INTERFACE_TEXTSHADOW "@ohos.graphics.text.text.TextShadow"
 #define ANI_INTERFACE_RECT_STYLE "@ohos.graphics.text.text.RectStyle"
 #define ANI_INTERFACE_TEXT_BOX "@ohos.graphics.text.text.TextBox"
@@ -64,9 +69,13 @@ namespace OHOS::Text::ANI {
 #define ANI_INTERFACE_FONT_DESCRIPTOR "@ohos.graphics.text.text.FontDescriptor"
 #define ANI_INTERFACE_DECORATION "@ohos.graphics.text.text.Decoration"
 #define ANI_INTERFACE_FONT_METRICS "@ohos.graphics.drawing.drawing.FontMetrics"
+#define ANI_INTERFACE_TEXT_RECT_SIZE "@ohos.graphics.text.text.TextRectSize"
+#define ANI_INTERFACE_TEXT_LAYOUT_RESULT "@ohos.graphics.text.text.TextLayoutResult"
 /**
  * define class
  */
+#define ANI_CLASS_TEXT_RECT_SIZE "@ohos.graphics.text.text.TextRectSizeInternal"
+#define ANI_CLASS_TEXT_LAYOUT_RESULT "@ohos.graphics.text.text.TextLayoutResultInternal"
 #define ANI_CLASS_CLEANER "@ohos.graphics.text.text.Cleaner"
 #define ANI_CLASS_PARAGRAPH "@ohos.graphics.text.text.Paragraph"
 #define ANI_CLASS_PARAGRAPH_BUILDER "@ohos.graphics.text.text.ParagraphBuilder"
@@ -76,6 +85,8 @@ namespace OHOS::Text::ANI {
 #define ANI_CLASS_FONT_COLLECTION "@ohos.graphics.text.text.FontCollection"
 #define ANI_CLASS_FONT_FEATURE "@ohos.graphics.text.text.FontFeatureInternal"
 #define ANI_CLASS_FONT_VARIATION "@ohos.graphics.text.text.FontVariationInternal"
+#define ANI_CLASS_FONT_VARIATION_AXIS "@ohos.graphics.text.text.FontVariationAxisInternal"
+#define ANI_CLASS_FONT_VARIATION_INSTANCE "@ohos.graphics.text.text.FontVariationInstanceInternal"
 #define ANI_CLASS_CANVAS "@ohos.graphics.drawing.drawing.Canvas"
 #define ANI_CLASS_PATH "@ohos.graphics.drawing.drawing.Path"
 #define ANI_CLASS_FONT_METRICS "@ohos.graphics.drawing.drawing.FontMetricsInner"
@@ -111,10 +122,15 @@ namespace OHOS::Text::ANI {
 #define ANI_ENUM_BREAK_STRATEGY "@ohos.graphics.text.text.BreakStrategy"
 #define ANI_ENUM_TEXT_HEIGHT_BEHAVIOR "@ohos.graphics.text.text.TextHeightBehavior"
 #define ANI_ENUM_FONT_WIDTH "@ohos.graphics.text.text.FontWidth"
+#define ANI_ENUM_FONT_EDGING "@ohos.graphics.drawing.drawing.FontEdging"
 #define ANI_ENUM_TEXT_VERTICAL_ALIGN "@ohos.graphics.text.text.TextVerticalAlign"
 #define ANI_ENUM_TEXT_BADGE_TYPE "@ohos.graphics.text.text.TextBadgeType"
 #define ANI_ENUM_TEXT_HIGH_CONTRAST "@ohos.graphics.text.text.TextHighContrast"
 #define ANI_ENUM_TEXT_UNDEFINED_GLYPH_DISPLAY "@ohos.graphics.text.text.TextUndefinedGlyphDisplay"
+#define ANI_ENUM_TEXT_LINE_HEIGHT_STYLE_TYPE "@ohos.graphics.text.text.LineHeightStyle"
+#define ANI_ENUM_TEXT_PROCESS_STATE "@ohos.graphics.text.text.TextProcessState"
+#define ANI_ENUM_TEXT_DISPLAY_STATE "@ohos.graphics.text.text.TextDisplayState"
+#define ANI_ENUM_TEXT_ENCODING "@ohos.graphics.drawing.drawing.TextEncoding"
 
 enum class TextErrorCode : int32_t {
     OK = 0,

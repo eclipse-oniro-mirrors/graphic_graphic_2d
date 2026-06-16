@@ -17,6 +17,9 @@
 #include "limit_number.h"
 #include "parameters.h"
 
+#include "common/rs_common_def.h"
+#include "modifier_ng/shadow_modifier/rs_bounds_shadow_modifier.h"
+#include "modifier_ng/shadow_modifier/rs_frame_shadow_modifier.h"
 #include "pipeline/rs_uni_render_judgement.h"
 #include "ui/rs_canvas_node.h"
 #include "ui/rs_surface_node.h"
@@ -117,28 +120,6 @@ HWTEST_F(RSSurfaceNodeTest, SetBufferAvailableCallback001, TestSize.Level1)
         std::cout << "SetBufferAvailableCallback" << std::endl;
     });
     ASSERT_TRUE(isSuccess);
-}
-
-/**
- * @tc.name: CreateShadowSurfaceNode
- * @tc.desc:
- * @tc.type:FUNC
- */
-HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    ASSERT_TRUE(surfaceNode != nullptr);
-    {
-        RSSurfaceNode::SharedPtr shadowNode = surfaceNode->CreateShadowSurfaceNode();
-        EXPECT_TRUE(shadowNode->isShadowNode_);
-    }
-    {
-        RSSurfaceNode::SharedPtr shadowNode2 = surfaceNode->CreateShadowSurfaceNode();
-        auto rsUIContext = shadowNode2->GetRSUIContext();
-        ASSERT_TRUE(shadowNode2->isShadowNode_);
-        RSUIContextManager::MutableInstance().DestroyContext(rsUIContext->GetToken());
-    }
 }
 
 /**
@@ -822,54 +803,6 @@ HWTEST_F(RSSurfaceNodeTest, SetFilter003, TestSize.Level3)
 }
 
 /**
- * @tc.name: SetCompositingFilter001
- * @tc.desc:
- * @tc.type: FUNC
- * @tc.require: issueI5J8R1
- */
-HWTEST_F(RSSurfaceNodeTest, SetCompositingFilter001, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    ASSERT_TRUE(surfaceNode != nullptr);
-    auto compositingFilter = RSFilter::CreateBlurFilter(floatData[0],
-    floatData[1]);
-    surfaceNode->SetCompositingFilter(compositingFilter);
-}
-
-/**
- * @tc.name: SetCompositingFilter002
- * @tc.desc:
- * @tc.type: FUNC
- * @tc.require: issueI5J8R1
- */
-HWTEST_F(RSSurfaceNodeTest, SetCompositingFilter002, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    ASSERT_TRUE(surfaceNode != nullptr);
-    auto compositingFilter = RSFilter::CreateBlurFilter(floatData[1],
-    floatData[2]);
-    surfaceNode->SetCompositingFilter(compositingFilter);
-}
-
-/**
- * @tc.name: SetCompositingFilter003
- * @tc.desc:
- * @tc.type: FUNC
- * @tc.require: issueI5J8R1
- */
-HWTEST_F(RSSurfaceNodeTest, SetCompositingFilter003, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    ASSERT_TRUE(surfaceNode != nullptr);
-    auto compositingFilter = RSFilter::CreateBlurFilter(floatData[2],
-    floatData[3]);
-    surfaceNode->SetCompositingFilter(compositingFilter);
-}
-
-/**
  * @tc.name: SetShadowOffset001
  * @tc.desc:
  * @tc.type: FUNC
@@ -1195,6 +1128,22 @@ HWTEST_F(RSSurfaceNodeTest, SetContainerWindow001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetWindowId001
+ * @tc.desc:
+ * @tc.type: FUNC
+ * @tc.require: issueI5J8R1
+ */
+HWTEST_F(RSSurfaceNodeTest, SetWindowId001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    uint32_t windowId = 1;
+    surfaceNode->SetWindowId(windowId);
+    ASSERT_EQ(surfaceNode->windowId_, 1);
+}
+
+/**
  * @tc.name: SetIsNotifyUIBufferAvailable001
  * @tc.desc:
  * @tc.type: FUNC
@@ -1329,6 +1278,18 @@ HWTEST_F(RSSurfaceNodeTest, SetGlobalPositionEnabled, TestSize.Level1)
     ASSERT_EQ(true, surfaceNode->GetGlobalPositionEnabled());
     surfaceNode->SetGlobalPositionEnabled(false);
     ASSERT_EQ(false, surfaceNode->GetGlobalPositionEnabled());
+    surfaceNode->isGlobalPositionEnabled_ = true;
+    surfaceNode->existsDuplicateModifier_ = false;
+    surfaceNode->SetGlobalPositionEnabled(true);
+    ASSERT_EQ(true, surfaceNode->GetGlobalPositionEnabled());
+    surfaceNode->isGlobalPositionEnabled_ = true;
+    surfaceNode->existsDuplicateModifier_ = true;
+    surfaceNode->SetGlobalPositionEnabled(false);
+    ASSERT_EQ(false, surfaceNode->GetGlobalPositionEnabled());
+    surfaceNode->isGlobalPositionEnabled_ = true;
+    surfaceNode->existsDuplicateModifier_ = true;
+    surfaceNode->SetGlobalPositionEnabled(true);
+    ASSERT_EQ(true, surfaceNode->GetGlobalPositionEnabled());
 }
 
 /**
@@ -1486,20 +1447,6 @@ HWTEST_F(RSSurfaceNodeTest, AttachToDisplay, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetAnimationFinished Test
- * @tc.desc: SetAnimationFinished
- * @tc.type: FUNC
- * @tc.require:SR000HSUII
- */
-HWTEST_F(RSSurfaceNodeTest, SetAnimationFinished, TestSize.Level1)
-{
-    RSSurfaceNodeConfig c;
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
-    surfaceNode->SetAnimationFinished();
-    ASSERT_FALSE(surfaceNode->isSkipLayer_);
-}
-
-/**
  * @tc.name: SetForceHardwareAndFixRotation Test
  * @tc.desc: SetForceHardwareAndFixRotation and SetTextureExport
  * @tc.type: FUNC
@@ -1564,7 +1511,7 @@ HWTEST_F(RSSurfaceNodeTest, SetClonedNodeInfo, TestSize.Level1)
 
 /**
  * @tc.name: SetForeground Test
- * @tc.desc: SetForeground and SetForceUIFirst and SetAncoFlags and SetHDRPresent
+ * @tc.desc: SetForeground and SetForceUIFirst and SetAncoFlags
  * @tc.type: FUNC
  * @tc.require:issueI9MWJR
  */
@@ -1576,7 +1523,6 @@ HWTEST_F(RSSurfaceNodeTest, SetForeground, TestSize.Level1)
     surfaceNode->SetForeground(true);
     surfaceNode->SetForceUIFirst(true);
     surfaceNode->SetAncoFlags(1);
-    surfaceNode->SetHDRPresent(true, 0);
     ASSERT_NE(RSTransactionProxy::GetInstance()->implicitRemoteTransactionData_, nullptr);
 }
 
@@ -1638,6 +1584,51 @@ HWTEST_F(RSSurfaceNodeTest, SetIsNotifyUIBufferAvailable, TestSize.Level1)
     bool available = true;
     surfaceNode->SetIsNotifyUIBufferAvailable(available);
     ASSERT_NE(surfaceNode, nullptr);
+}
+
+/**
+ * @tc.name: SetHDRBrightnessWithType_AIHDR
+ * @tc.desc: Test SetHDRBrightnessWithType with AIHDR type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetHDRBrightnessWithType_AIHDR, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    float hdrBrightness = 1.0f;
+    surfaceNode->SetHDRBrightnessWithType(hdrBrightness, static_cast<uint32_t>(HDRType::AIHDR));
+    EXPECT_EQ(hdrBrightness, 1.0f);
+}
+
+/**
+ * @tc.name: SetHDRBrightnessWithType_DEFAULT
+ * @tc.desc: Test SetHDRBrightnessWithType with DEFAULT type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetHDRBrightnessWithType_DEFAULT, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    float hdrBrightness = 1.0f;
+    surfaceNode->SetHDRBrightnessWithType(hdrBrightness, static_cast<uint32_t>(HDRType::DEFAULT));
+    EXPECT_EQ(hdrBrightness, 1.0f);
+}
+
+/**
+ * @tc.name: SetHDRBrightnessWithType_OtherType
+ * @tc.desc: Test SetHDRBrightnessWithType with other HDR type
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetHDRBrightnessWithType_OtherType, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    float hdrBrightness = 1.0f;
+    surfaceNode->SetHDRBrightnessWithType(hdrBrightness, 100);
+    EXPECT_EQ(hdrBrightness, 1.0f);
 }
 
 /**
@@ -1712,6 +1703,22 @@ HWTEST_F(RSSurfaceNodeTest, OnBoundsSizeChanged, TestSize.Level1)
     RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
     surfaceNode->OnBoundsSizeChanged();
     ASSERT_NE(surfaceNode, nullptr);
+}
+
+/**
+ * @tc.name: OnAlphaValueChanged Test
+ * @tc.desc: OnAlphaValueChanged
+ * @tc.type: FUNC
+ * @tc.require:SR000HSUII
+ */
+HWTEST_F(RSSurfaceNodeTest, OnAlphaValueChanged, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetAlphaChangedCallback([](float alpha) {});
+    surfaceNode->SetAlpha(0.1f);
+    surfaceNode->OnAlphaValueChanged();
 }
 
 /**
@@ -1805,6 +1812,27 @@ HWTEST_F(RSSurfaceNodeTest, GetSkipDraw, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetDarkColorMode
+ * @tc.desc: Test function SetDarkColorMode
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetDarkColorMode, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+
+    surfaceNode->SetDarkColorMode(true);
+    EXPECT_TRUE(surfaceNode->GetDarkColorMode());
+
+    surfaceNode->SetDarkColorMode(false);
+    EXPECT_FALSE(surfaceNode->GetDarkColorMode());
+
+    surfaceNode->SetDarkColorMode(false);
+    EXPECT_FALSE(surfaceNode->GetDarkColorMode());
+}
+
+/**
  * @tc.name: SetAbilityState
  * @tc.desc: Test function SetAbilityState
  * @tc.type: FUNC
@@ -1847,6 +1875,22 @@ HWTEST_F(RSSurfaceNodeTest, SetHardwareEnableHint, TestSize.Level1)
     surfaceNode->SetHardwareEnableHint(true);
     surfaceNode->SetHardwareEnableHint(false);
     ASSERT_NE(surfaceNode, nullptr);
+}
+
+/**
+ * @tc.name: SetApiCompatibleVersion
+ * @tc.desc: Test function SetApiCompatibleVersion
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetApiCompatibleVersion, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetApiCompatibleVersion(0);
+    surfaceNode->SetApiCompatibleVersion(1);
+    surfaceNode->SetApiCompatibleVersion(100);
+    surfaceNode->SetApiCompatibleVersion(UINT32_MAX);
 }
 
 /**
@@ -1946,5 +1990,388 @@ HWTEST_F(RSSurfaceNodeTest, SetSurfaceBufferOpaqueTest, TestSize.Level1)
     if (transactionProxy != nullptr) {
         transactionProxy->FlushImplicitTransaction();
     }
+}
+
+/**
+ * @tc.name: SetContainerWindowTransparentTest
+ * @tc.desc: Test function SetContainerWindowTransparent
+ * @tc.type: FUNC
+ * @tc.require: issue21291
+ */
+HWTEST_F(RSSurfaceNodeTest, SetContainerWindowTransparentTest, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetContainerWindowTransparent(true);
+}
+
+/**
+ * @tc.name: SetAppRotationCorrectionTest
+ * @tc.desc: Test function SetAppRotationCorrection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SetAppRotationCorrectionTest, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    surfaceNode->SetAppRotationCorrection(ScreenRotation::ROTATION_90);
+    ASSERT_NE(surfaceNode, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode001
+ * @tc.desc: Test CreateShadowSurfaceNode with empty shadowPropertyTypes
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    std::set<ShadowPropertyType> emptyTypes;
+    auto shadowNode = surfaceNode->CreateShadowSurfaceNode(emptyTypes);
+    EXPECT_NE(shadowNode, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode002
+ * @tc.desc: Test CreateShadowSurfaceNode with BOUNDS shadowPropertyType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::BOUNDS };
+    auto shadowNode = surfaceNode->CreateShadowSurfaceNode(shadowTypes);
+    EXPECT_EQ(shadowNode, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode003
+ * @tc.desc: Test CreateShadowSurfaceNode with FRAME shadowPropertyType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::FRAME };
+    auto shadowNode = surfaceNode->CreateShadowSurfaceNode(shadowTypes);
+    EXPECT_EQ(shadowNode, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode004
+ * @tc.desc: Test CreateShadowSurfaceNode with both shadowPropertyTypes
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode004, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::BOUNDS, ShadowPropertyType::FRAME };
+    auto shadowNode = surfaceNode->CreateShadowSurfaceNode(shadowTypes);
+    EXPECT_EQ(shadowNode, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode005
+ * @tc.desc: Test CreateShadowSurfaceNode with modifiers present
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode005, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetBounds({ 0, 0, 1, 1 });
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::BOUNDS };
+    auto shadowNode = surfaceNode->CreateShadowSurfaceNode(shadowTypes);
+    EXPECT_NE(shadowNode, nullptr);
+    EXPECT_TRUE(shadowNode->isShadowNode_);
+}
+
+/**
+ * @tc.name: CreateShadowSurfaceNode006
+ * @tc.desc: Test CreateShadowSurfaceNode
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowSurfaceNode006, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->modifiersNGCreatedBySetter_.clear();
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::BOUNDS };
+    auto shadowNode = surfaceNode->CreateShadowSurfaceNode(shadowTypes);
+    EXPECT_EQ(shadowNode, nullptr);
+    shadowTypes = {};
+    surfaceNode->modifiersNGCreatedBySetter_.clear();
+    shadowNode = surfaceNode->CreateShadowSurfaceNode(shadowTypes);
+    EXPECT_NE(shadowNode, nullptr);
+}
+
+/**
+ * @tc.name: InitShadowModifiers001
+ * @tc.desc: Test InitShadowModifiers with empty shadowPropertyTypes
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, InitShadowModifiers001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    std::set<ShadowPropertyType> emptyTypes;
+    auto result = surfaceNode->InitShadowModifiers(surfaceNode, emptyTypes);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: InitShadowModifiers002
+ * @tc.desc: Test InitShadowModifiers with BOUNDS shadowPropertyType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, InitShadowModifiers002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetBounds({ 0, 0, 1, 1 });
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::BOUNDS };
+    auto result = surfaceNode->InitShadowModifiers(surfaceNode, shadowTypes);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: InitShadowModifiers003
+ * @tc.desc: Test InitShadowModifiers with FRAME shadowPropertyType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, InitShadowModifiers003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetFrame({ 0, 0, 1, 1 });
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::FRAME };
+    auto result = surfaceNode->InitShadowModifiers(surfaceNode, shadowTypes);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: InitShadowModifiers004
+ * @tc.desc: Test InitShadowModifiers with both shadowPropertyTypes
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, InitShadowModifiers004, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetBounds({ 0, 0, 1, 1 });
+    surfaceNode->SetFrame({ 0, 0, 1, 1 });
+    std::set<ShadowPropertyType> shadowTypes = { ShadowPropertyType::BOUNDS, ShadowPropertyType::FRAME,
+        static_cast<ShadowPropertyType>(9) };
+    auto result = surfaceNode->InitShadowModifiers(surfaceNode, shadowTypes);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name: CreateShadowModifierAndProperty001
+ * @tc.desc: Test CreateShadowModifierAndProperty with
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowModifierAndProperty001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetBounds({ 0, 0, 1, 1 });
+    auto shadowModifier = surfaceNode->CreateShadowModifierAndProperty<ModifierNG::RSBoundsShadowModifier, Vector4f>(
+        surfaceNode, ModifierNG::RSPropertyType::BOUNDS);
+    EXPECT_NE(shadowModifier, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowModifierAndProperty002
+ * @tc.desc: Test CreateShadowModifierAndProperty with FRAME shadowPropertyType
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowModifierAndProperty002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetFrame({ 0, 0, 1, 1 });
+    auto shadowModifier = surfaceNode->CreateShadowModifierAndProperty<ModifierNG::RSFrameShadowModifier, Vector4f>(
+        surfaceNode, ModifierNG::RSPropertyType::FRAME);
+    EXPECT_NE(shadowModifier, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowModifierAndProperty003
+ * @tc.desc: Test CreateShadowModifierAndProperty without source modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowModifierAndProperty003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    auto shadowModifier = surfaceNode->CreateShadowModifierAndProperty<ModifierNG::RSBoundsShadowModifier, Vector4f>(
+        surfaceNode, ModifierNG::RSPropertyType::BOUNDS);
+    EXPECT_EQ(shadowModifier, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowModifierAndProperty004
+ * @tc.desc: Test CreateShadowModifierAndProperty without source property
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowModifierAndProperty004, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->SetBounds({ 0, 0, 1, 1 });
+    auto shadowModifier = surfaceNode->CreateShadowModifierAndProperty<ModifierNG::RSBoundsShadowModifier, Vector4f>(
+        surfaceNode, ModifierNG::RSPropertyType::FRAME);
+    EXPECT_EQ(shadowModifier, nullptr);
+}
+
+/**
+ * @tc.name: CreateShadowModifierAndProperty005
+ * @tc.desc: Test CreateShadowModifierAndProperty
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, CreateShadowModifierAndProperty005, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    RSSurfaceNode::SharedPtr shadowNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_NE(shadowNode, nullptr);
+    surfaceNode->SetFrame({ 0, 0, 1, 1 });
+    auto shadowModifier = surfaceNode->CreateShadowModifierAndProperty<ModifierNG::RSFrameShadowModifier, Vector4f>(
+        shadowNode, ModifierNG::RSPropertyType::BOUNDS);
+    EXPECT_EQ(shadowModifier, nullptr);
+    shadowModifier = surfaceNode->CreateShadowModifierAndProperty<ModifierNG::RSFrameShadowModifier, Vector4f>(
+        shadowNode, ModifierNG::RSPropertyType::FRAME);
+    EXPECT_NE(shadowModifier, nullptr);
+}
+
+/**
+ * @tc.name: DumpSubClass001
+ * @tc.desc: Test DumpSubClass with normal node
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, DumpSubClass001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    std::string out;
+    surfaceNode->DumpSubClass(out);
+    EXPECT_TRUE(out.empty());
+}
+
+/**
+ * @tc.name: DumpSubClass002
+ * @tc.desc: Test DumpSubClass with shadow node
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, DumpSubClass002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->isShadowNode_ = true;
+    std::string out;
+    surfaceNode->DumpSubClass(out);
+    EXPECT_FALSE(out.empty());
+    EXPECT_TRUE(out.find("isShadowNode[true") != std::string::npos);
+}
+
+/**
+ * @tc.name: DumpSubClass003
+ * @tc.desc: Test DumpSubClass with duplicate modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, DumpSubClass003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->existsDuplicateModifier_ = true;
+    std::string out;
+    surfaceNode->DumpSubClass(out);
+    EXPECT_FALSE(out.empty());
+    EXPECT_TRUE(out.find("existsDuplicateModifier[true") != std::string::npos);
+}
+
+/**
+ * @tc.name: DumpSubClass004
+ * @tc.desc: Test DumpSubClass with both shadow node and duplicate modifier
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, DumpSubClass004, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    surfaceNode->isShadowNode_ = true;
+    surfaceNode->existsDuplicateModifier_ = true;
+    std::string out;
+    surfaceNode->DumpSubClass(out);
+    EXPECT_FALSE(out.empty());
+    EXPECT_TRUE(out.find("isShadowNode[true") != std::string::npos);
+    EXPECT_TRUE(out.find("existsDuplicateModifier[true") != std::string::npos);
+}
+
+/**
+ * @tc.name: SendDataToRender001
+ * @tc.desc: Test SendDataToRender returns false when rsUIContext is nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender001, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::DEFAULT, true, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SendDataToRender002
+ * @tc.desc: Test SendDataToRender returns false when rsUIContext is nullptr with isWindow=false
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender002, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::DEFAULT, false, false);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name: SendDataToRender003
+ * @tc.desc: Test SendDataToRender returns false with LEASH_WINDOW_NODE type and rsUIContext nullptr
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeTest, SendDataToRender003, TestSize.Level1)
+{
+    RSSurfaceNodeConfig c;
+    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::CreateSurfaceNode(c);
+    ASSERT_NE(surfaceNode, nullptr);
+    bool result = surfaceNode->SendDataToRender(c, RSSurfaceNodeType::LEASH_WINDOW_NODE, true, false);
+    EXPECT_FALSE(result);
 }
 } // namespace OHOS::Rosen

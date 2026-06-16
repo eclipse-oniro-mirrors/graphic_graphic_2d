@@ -78,30 +78,6 @@ HWTEST_F(RSSurfaceNodeCommandTest, TestCreateWithConfig, TestSize.Level1)
 }
 
 /**
- * @tc.name: TestCreateWithConfigInRS
- * @tc.desc: CreateWithConfigInRS test.
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceNodeCommandTest, TestCreateWithConfigInRS, TestSize.Level1)
-{
-    RSContext context;
-    NodeId nodeId = 13;
-    NodeId childNodeId = 15;
-    int32_t index = static_cast<int32_t>(0);
-    RSSurfaceRenderNodeConfig config = { .id = nodeId, .nodeType = RSSurfaceNodeType::DEFAULT };
-    std::string name2 = "name2";
-    RSSurfaceNodeType nodeType = RSSurfaceNodeType::DEFAULT;
-    RSSurfaceRenderNodeConfig config2;
-    config2.id = childNodeId;
-    config2.name = name2;
-    config2.nodeType = nodeType;
-    SurfaceNodeCommandHelper::Create(context, nodeId);
-    BaseNodeCommandHelper::AddChild(context, nodeId, childNodeId, index);
-    SurfaceNodeCommandHelper::CreateWithConfigInRS(config2, context);
-    ASSERT_EQ(childNodeId, static_cast<NodeId>(15));
-}
-
-/**
  * @tc.name: TestRSSurfaceNodeCommand002
  * @tc.desc: ConnectToNodeInRenderService test.
  * @tc.type: FUNC
@@ -110,11 +86,11 @@ HWTEST_F(RSSurfaceNodeCommandTest, TestRSSurfaceNodeCommand002, TestSize.Level1)
 {
     RSContext context;
     NodeId id = static_cast<NodeId>(-1);
-    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(context, id);
+    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(context, id, nullptr);
     NodeId id2 = 10;
     auto context2 = std::make_shared<RSContext>();
     SurfaceNodeCommandHelper::Create(*context2, id2);
-    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(*context2, id2);
+    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(*context2, id2, nullptr);
     ASSERT_EQ(id2, static_cast<NodeId>(10));
 }
 
@@ -243,11 +219,11 @@ HWTEST_F(RSSurfaceNodeCommandTest, TestRSSurfaceNodeCommand007, TestSize.Level1)
 {
     RSContext context;
     NodeId id = static_cast<NodeId>(-1);
-    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(context, id);
+    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(context, id, nullptr);
     NodeId id2 = 10;
     auto context2 = std::make_shared<RSContext>();
     SurfaceNodeCommandHelper::Create(*context2, id2);
-    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(*context2, id2);
+    SurfaceNodeCommandHelper::ConnectToNodeInRenderService(*context2, id2, nullptr);
     ASSERT_EQ(id2, static_cast<NodeId>(10));
 }
 
@@ -523,7 +499,7 @@ HWTEST_F(RSSurfaceNodeCommandTest, AttachToDisplay001, TestSize.Level1)
     context.nodeMap.logicalDisplayNodeMap_[0]->isOnTheTree_ = false;
     SurfaceNodeCommandHelper::AttachToDisplay(context, 0, 1);
 
-    context.nodeMap.logicalDisplayNodeMap_[0]->isOnTheTree_ = false;
+    context.nodeMap.logicalDisplayNodeMap_[0]->isOnTheTree_ = true;
     SurfaceNodeCommandHelper::AttachToDisplay(context, 0, 1);
     EXPECT_EQ(context.nodeMap.logicalDisplayNodeMap_[0]->children_.size(), 0);
 }
@@ -598,23 +574,6 @@ HWTEST_F(RSSurfaceNodeCommandTest, MarkUIHidden001, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetAnimationFinished001
- * @tc.desc: SetIsNotifyUIBufferAvailable test.
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceNodeCommandTest, SetAnimationFinished001, TestSize.Level1)
-{
-    RSContext context;
-    NodeId id = -10;
-    SurfaceNodeCommandHelper::SetAnimationFinished(context, id);
-    ASSERT_EQ(id, static_cast<NodeId>(-10));
-    NodeId id2 = 10;
-    SurfaceNodeCommandHelper::Create(context, id2);
-    SurfaceNodeCommandHelper::SetAnimationFinished(context, id2);
-    ASSERT_EQ(id2, static_cast<NodeId>(10));
-}
-
-/**
  * @tc.name: SetForeground001
  * @tc.desc: SetIsNotifyUIBufferAvailable test.
  * @tc.type: FUNC
@@ -630,6 +589,26 @@ HWTEST_F(RSSurfaceNodeCommandTest, SetForeground001, TestSize.Level1)
     SurfaceNodeCommandHelper::Create(context, id2);
     SurfaceNodeCommandHelper::SetForeground(context, id2, available);
     ASSERT_EQ(id2, static_cast<NodeId>(2));
+}
+
+/**
+ * @tc.name: SetDarkColorModeTest
+ * @tc.desc: Verify function SetDarkColorMode
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeCommandTest, SetDarkColorModeTest, TestSize.Level1)
+{
+    RSContext context;
+    SurfaceNodeCommandHelper::SetDarkColorMode(context, 0, true);
+    SurfaceNodeCommandHelper::Create(context, 1);
+    SurfaceNodeCommandHelper::SetDarkColorMode(context, 1, true);
+
+    auto surfaceNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(1);
+    ASSERT_NE(surfaceNode, nullptr);
+    EXPECT_TRUE(surfaceNode->GetDarkColorMode());
+
+    SurfaceNodeCommandHelper::SetDarkColorMode(context, 1, false);
+    EXPECT_FALSE(surfaceNode->GetDarkColorMode());
 }
 
 /**
@@ -728,21 +707,6 @@ HWTEST_F(RSSurfaceNodeCommandTest, SetAncoSrcCropTest, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetHDRPresentTest
- * @tc.desc: Verify function SetHDRPresent
- * @tc.type:FUNC
- * @tc.require: issueI9SBEZ
- */
-HWTEST_F(RSSurfaceNodeCommandTest, SetHDRPresentTest, TestSize.Level1)
-{
-    RSContext context;
-    SurfaceNodeCommandHelper::SetHDRPresent(context, 0, false);
-    SurfaceNodeCommandHelper::Create(context, 1);
-    SurfaceNodeCommandHelper::SetHDRPresent(context, 1, false);
-    EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(1) != nullptr);
-}
-
-/**
  * @tc.name: SetSkipDraw
  * @tc.desc: Verify function SetSkipDraw
  * @tc.type: FUNC
@@ -788,18 +752,18 @@ HWTEST_F(RSSurfaceNodeCommandTest, SetHardwareEnableHint, TestSize.Level1)
 }
 
 /**
- * @tc.name: SetSourceVirtualDisplayId
- * @tc.desc: Verify function SetSourceVirtualDisplayId
+ * @tc.name: SetSourceVirtualScreenId
+ * @tc.desc: Verify function SetSourceVirtualScreenId
  * @tc.type:FUNC
  * @tc.require: issueIAHFXD
  */
-HWTEST_F(RSSurfaceNodeCommandTest, SetSourceVirtualDisplayId, TestSize.Level1)
+HWTEST_F(RSSurfaceNodeCommandTest, SetSourceVirtualScreenId, TestSize.Level1)
 {
     RSContext context;
     NodeId nodeId = 1;
     ScreenId screenId = {};
     SurfaceNodeCommandHelper::Create(context, nodeId);
-    SurfaceNodeCommandHelper::SetSourceVirtualDisplayId(context, nodeId, screenId);
+    SurfaceNodeCommandHelper::SetSourceVirtualScreenId(context, nodeId, screenId);
     EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId) != nullptr);
 }
 
@@ -835,6 +799,7 @@ HWTEST_F(RSSurfaceNodeCommandTest, DetachFromWindowContainer001, TestSize.Level1
     EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId) != nullptr);
 }
 
+#ifdef RS_ENABLE_UNI_RENDER
 /**
  * @tc.name: DetachFromWindowContainer002
  * @tc.desc: Verify function DetachFromWindowContainer002
@@ -880,6 +845,7 @@ HWTEST_F(RSSurfaceNodeCommandTest, DetachFromWindowContainer002, TestSize.Level1
     SurfaceNodeCommandHelper::DetachFromWindowContainer(context, 0, 1);
     EXPECT_EQ(context.nodeMap.logicalDisplayNodeMap_[0]->children_.size(), 0);
 }
+#endif
 
 /**
  * @tc.name: SetRegionToBeMagnified
@@ -945,6 +911,40 @@ HWTEST_F(RSSurfaceNodeCommandTest, SetContainerWindowTransparent, TestSize.Level
 
     NodeId InvalidNodeId = 2;
     SurfaceNodeCommandHelper::SetContainerWindowTransparent(context, InvalidNodeId, false);
+    ASSERT_TRUE(context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(InvalidNodeId) == nullptr);
+}
+
+/**
+ * @tc.name: SetAppRotationCorrectionTest
+ * @tc.desc: Verify function SetAppRotationCorrection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeCommandTest, SetAppRotationCorrectionTest, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    SurfaceNodeCommandHelper::Create(context, nodeId);
+    SurfaceNodeCommandHelper::SetAppRotationCorrection(context, nodeId, ScreenRotation::ROTATION_180);
+    EXPECT_TRUE(context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId) != nullptr);
+}
+
+/**
+ * @tc.name: SetHDRType
+ * @tc.desc: Verify function when map can find id and can't find id
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSSurfaceNodeCommandTest, SetHDRTypeTest, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    SurfaceNodeCommandHelper::Create(context, nodeId);
+    SurfaceNodeCommandHelper::SetHDRType(context, nodeId, 1);
+    auto surfaceNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    ASSERT_NE(surfaceNode, nullptr);
+    ASSERT_EQ(surfaceNode->GetHDRType(), 1);
+
+    NodeId InvalidNodeId = 2;
+    SurfaceNodeCommandHelper::SetHDRType(context, InvalidNodeId, 0);
     ASSERT_TRUE(context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(InvalidNodeId) == nullptr);
 }
 } // namespace OHOS::Rosen

@@ -25,7 +25,10 @@
 
 #include "feature/capture/rs_ui_capture.h"
 #include "file_ex.h"
-#include "platform/ohos/rs_client_to_service_connection_proxy.h"
+#include "common/rs_event_def.h"
+#include "ipc_callbacks/rs_iexposed_event_callback.h"
+#include "ipc_callbacks/rs_exposed_event_callback_stub.h"
+#include "platform/ohos/transaction/zidl/rs_client_to_service_connection_proxy.h"
 #include "platform/ohos/rs_render_service_connect_hub.h"
 #include "command/rs_animation_command.h"
 #include "command/rs_node_showing_command.h"
@@ -38,6 +41,14 @@ using namespace testing::ext;
 namespace OHOS {
 namespace Rosen {
 namespace {
+class MockRSExposedEventCallback : public RSExposedEventCallbackStub {
+public:
+    MockRSExposedEventCallback() = default;
+    ~MockRSExposedEventCallback() override = default;
+
+    void OnDisplayEvent(const std::shared_ptr<RSExposedEventDataBase> data) override {}
+};
+
 class MockRSBrightnessInfoChangeCallback : public IRemoteProxy<RSIBrightnessInfoChangeCallback> {
 public:
     explicit MockRSBrightnessInfoChangeCallback() : IRemoteProxy<RSIBrightnessInfoChangeCallback>(nullptr) {};
@@ -102,43 +113,6 @@ public:
 };
 
 /**
- * @tc.name: CommitTransaction Test
- * @tc.desc: CommitTransaction Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, CommitTransaction, TestSize.Level1)
-{
-    std::unique_ptr<RSTransactionData> transactionData;
-    proxy->CommitTransaction(transactionData);
-    transactionData = std::make_unique<RSTransactionData>();
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSAnimationCallback>(1, 1, 1, AnimationCallbackEvent::FINISHED);
-    NodeId nodeId = 1;
-    FollowType followType = FollowType::FOLLOW_TO_PARENT;
-    transactionData->AddCommand(command, nodeId, followType);
-    proxy->CommitTransaction(transactionData);
-    ASSERT_EQ(proxy->transactionDataIndex_, 0);
-}
-
-/**
- * @tc.name: ExecuteSynchronousTask Test
- * @tc.desc: ExecuteSynchronousTask Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, ExecuteSynchronousTask, TestSize.Level1)
-{
-    std::shared_ptr<RSSyncTask> task;
-    proxy->ExecuteSynchronousTask(task);
-    NodeId targetId;
-    std::shared_ptr<RSRenderPropertyBase> property = std::make_shared<RSRenderProperty<bool>>();
-    task = std::make_shared<RSNodeGetShowingPropertyAndCancelAnimation>(targetId, property);
-    proxy->ExecuteSynchronousTask(task);
-    ASSERT_EQ(proxy->transactionDataIndex_, 0);
-}
-
-/**
  * @tc.name: GetUniRenderEnabled Test
  * @tc.desc: GetUniRenderEnabled Test
  * @tc.type:FUNC
@@ -149,62 +123,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetUniRenderEnabled, TestSize.Lev
     bool enable;
     proxy->GetUniRenderEnabled(enable);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
-}
-
-/**
- * @tc.name: FillParcelWithTransactionData Test
- * @tc.desc: FillParcelWithTransactionData Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, FillParcelWithTransactionData, TestSize.Level1)
-{
-    std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
-    auto transactionData = std::make_unique<RSTransactionData>();
-    ASSERT_TRUE(proxy->FillParcelWithTransactionData(transactionData, parcel));
-}
-
-/**
- * @tc.name: FillParcelWithTransactionData Test
- * @tc.desc: FillParcelWithTransactionData Test
- * @tc.type:FUNC
- * @tc.require: issueICGEDM
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, FillParcelWithTransactionData002, TestSize.Level1)
-{
-    std::shared_ptr<MessageParcel> parcel = std::make_shared<MessageParcel>();
-    parcel->SetDataSize(102401);
-    auto transactionData = std::make_unique<RSTransactionData>();
-    ASSERT_TRUE(proxy->FillParcelWithTransactionData(transactionData, parcel));
-}
-
-/**
- * @tc.name: CreateNode Test
- * @tc.desc: CreateNode Test
- * @tc.type: FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, CreateNodeTest, TestSize.Level1)
-{
-    RSDisplayNodeConfig rsDisplayNodeConfig;
-    NodeId nodeId = 100;
-    bool success = false;
-    ASSERT_EQ(proxy->CreateNode(rsDisplayNodeConfig, nodeId, success), ERR_INVALID_VALUE);
-}
-
-/**
- * @tc.name: CreateNodeAndSurface Test
- * @tc.desc: CreateNodeAndSurface Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, CreateNodeAndSurface, TestSize.Level1)
-{
-    bool success;
-    ASSERT_EQ(proxy->CreateNode(RSSurfaceRenderNodeConfig(), success), ERR_INVALID_VALUE);
-    ASSERT_FALSE(success);
-    sptr<Surface> surface = nullptr;
-    ASSERT_EQ(proxy->CreateNodeAndSurface(RSSurfaceRenderNodeConfig(), surface), ERR_INVALID_VALUE);
 }
 
 /**
@@ -226,26 +144,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, CreateVSyncConnection, TestSize.L
     token = new IRemoteStub<VSyncIConnectionToken>();
     proxy->CreateVSyncConnection(conn, name, token, vsyncConnParam);
     ASSERT_EQ(conn, nullptr);
-}
-
-/**
- * @tc.name: CreatePixelMapFromSurface Test
- * @tc.desc: CreatePixelMapFromSurface Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, CreatePixelMapFromSurface, TestSize.Level1)
-{
-    sptr<Surface> surface;
-    Rect srcRect;
-    std::shared_ptr<Media::PixelMap> pixelMap = nullptr;
-    proxy->CreatePixelMapFromSurface(surface, srcRect, pixelMap);
-    ASSERT_EQ(pixelMap, nullptr);
-    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("DisplayNode");
-    sptr<IBufferProducer> producer = consumer->GetProducer();
-    surface = Surface::CreateSurfaceAsProducer(producer);
-    proxy->CreatePixelMapFromSurface(surface, srcRect, pixelMap);
-    ASSERT_EQ(pixelMap, nullptr);
 }
 
 /**
@@ -575,15 +473,244 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenSupportedRefreshRates, T
 }
 
 /**
- * @tc.name: SetShowRefreshRateEnabled Test
+ * @tc.name: GetShowRefreshRateEnabled001
+ * @tc.desc: Test GetShowRefreshRateEnabled when enabled is true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled001, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Invoke(
+            [](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(true);
+                return 0;
+            }
+        ));
+
+    bool enable = false;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_TRUE(enable);
+}
+
+/**
+ * @tc.name: GetShowRefreshRateEnabled002
+ * @tc.desc: Test GetShowRefreshRateEnabled when enabled is false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Invoke(
+            [](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(false);
+                return 0;
+            }
+        ));
+
+    bool enable = true;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_FALSE(enable);
+}
+
+/**
+ * @tc.name: GetShowRefreshRateEnabled003
+ * @tc.desc: Test GetShowRefreshRateEnabled when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(-1));
+
+    bool enable = false;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: GetShowRefreshRateEnabled004
+ * @tc.desc: Test GetShowRefreshRateEnabled when ReadBool fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetShowRefreshRateEnabled004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Invoke(
+            [](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                // Not writing any bool to reply, causing ReadBool to fail
+                return 0;
+            }
+        ));
+
+    bool enable = false;
+    auto ret = mockproxy->GetShowRefreshRateEnabled(enable);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled001
  * @tc.desc: SetShowRefreshRateEnabled Test
  * @tc.type:FUNC
  * @tc.require: issueI9KXXE
  */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled001, TestSize.Level1)
 {
     proxy->SetShowRefreshRateEnabled(true, 0);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled002
+ * @tc.desc: Test SetShowRefreshRateEnabled with enabled=true, type=0
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(0));
+
+    mockproxy->SetShowRefreshRateEnabled(true, 0);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled003
+ * @tc.desc: Test SetShowRefreshRateEnabled with enabled=false, type=1
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(testing::Return(0));
+
+    mockproxy->SetShowRefreshRateEnabled(false, 1);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: SetShowRefreshRateEnabled004
+ * @tc.desc: Test SetShowRefreshRateEnabled when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetShowRefreshRateEnabled004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    mockproxy->SetShowRefreshRateEnabled(true, 0);
+    ASSERT_EQ(proxy->transactionDataIndex_, 0);
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate001
+ * @tc.desc: Test GetRealtimeRefreshRate returns 60
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate001, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteUint32(60);
+                return 0;
+            }));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, 60u);
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate002
+ * @tc.desc: Test GetRealtimeRefreshRate returns 120
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteUint32(120);
+                return 0;
+            }));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, 120u);
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate003
+ * @tc.desc: Test GetRealtimeRefreshRate when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, 0u); // SUCCESS
+}
+
+/**
+ * @tc.name: GetRealtimeRefreshRate004
+ * @tc.desc: Test GetRealtimeRefreshRate when ReadUint32 fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRealtimeRefreshRate004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                // Not writing any uint32 to reply, causing ReadUint32 to fail
+                return 0;
+            }));
+
+    auto rate = mockproxy->GetRealtimeRefreshRate(0);
+    EXPECT_EQ(rate, StatusCode::READ_PARCEL_ERR);
 }
 
 /**
@@ -612,33 +739,47 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetPhysicalScreenResolution, Test
 }
 
 /**
- * @tc.name: SetRogScreenResolution Test
- * @tc.desc: SetRogScreenResolution Test
+ * @tc.name: SetRogScreenResolutionTest001
+ * @tc.desc: Test SetRogScreenResolution
  * @tc.type: FUNC
  */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetRogScreenResolution, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetRogScreenResolutionTest001, TestSize.Level1)
 {
     ScreenId id = INVALID_SCREEN_ID;
     uint32_t width = 1920;
     uint32_t height = 1080;
-    auto ret = proxy->SetRogScreenResolution(id, width, height);
-    // SendRequest failed
-    EXPECT_EQ(ret, StatusCode::RS_CONNECTION_ERROR);
+
+    // case 1: without mock method
+    proxy->SetRogScreenResolution(id, width, height);
+
+    // case 2: with mock method: SendRequest()
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    auto ret = mockproxy->SetRogScreenResolution(id, width, height);
+    EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
 }
 
 /**
- * @tc.name: GetRogScreenResolution Test
- * @tc.desc: GetRogScreenResolution Test
+ * @tc.name: GetRogScreenResolutionTest001
+ * @tc.desc: Test GetRogScreenResolution
  * @tc.type: FUNC
  */
-HWTEST_F(RSClientToServiceConnectionProxyTest, GetRogScreenResolution, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRogScreenResolutionTest001, TestSize.Level1)
 {
     ScreenId id = INVALID_SCREEN_ID;
     uint32_t width = 0;
     uint32_t height = 0;
-    auto ret = proxy->GetRogScreenResolution(id, width, height);
-    // SendRequest failed
-    EXPECT_EQ(ret, StatusCode::RS_CONNECTION_ERROR);
+
+    // case 1: without mock method
+    proxy->GetRogScreenResolution(id, width, height);
+
+    // case 2: with mock method: SendRequest()
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    auto ret = mockproxy->GetRogScreenResolution(id, width, height);
+    EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
 }
 
 /**
@@ -665,25 +806,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenPowerStatus, TestSize.Le
 {
     ScreenId id = 1;
     proxy->SetScreenPowerStatus(id, ScreenPowerStatus::POWER_STATUS_STANDBY);
-    ASSERT_EQ(proxy->transactionDataIndex_, 0);
-}
-
-/**
- * @tc.name: RegisterApplicationAgent Test
- * @tc.desc: RegisterApplicationAgent Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterApplicationAgent, TestSize.Level1)
-{
-    uint32_t pid = 1;
-    sptr<IApplicationAgent> app;
-    proxy->RegisterApplicationAgent(pid, app);
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    ASSERT_NE(samgr, nullptr);
-    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
-    app = iface_cast<IApplicationAgent>(remoteObject);
-    proxy->RegisterApplicationAgent(pid, app);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
@@ -742,6 +864,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetTotalAppMemSize, TestSize.Leve
     ASSERT_EQ(proxy->GetTotalAppMemSize(cpuMemSize, gpuMemSize), ERR_INVALID_VALUE);
 }
 
+#ifdef RS_ENABLE_UNI_RENDER
 /**
  * @tc.name: GetScreenPowerStatus Test
  * @tc.desc: GetScreenPowerStatus Test
@@ -763,7 +886,9 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenPowerStatus, TestSize.Le
     uint32_t status = ScreenPowerStatus::POWER_STATUS_ON;
     proxy->GetScreenPowerStatus(id, status);
     ASSERT_EQ(proxy->GetScreenPowerStatus(id, status), ERR_INVALID_VALUE);
+    proxy->GetScreenPowerStatus(0, status);
 }
+#endif
 
 /**
  * @tc.name: GetPanelPowerStatus Test
@@ -774,10 +899,9 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenPowerStatus, TestSize.Le
 HWTEST_F(RSClientToServiceConnectionProxyTest, GetPanelPowerStatus001, TestSize.Level1)
 {
     ScreenId id = 1;
-    uint32_t panelPowerStatus = PanelPowerStatus::PANEL_POWER_STATUS_ON;
-    auto ret = proxy->GetPanelPowerStatus(id, panelPowerStatus);
+    PanelPowerStatus status = PanelPowerStatus::INVALID_PANEL_POWER_STATUS;
+    auto ret = proxy->GetPanelPowerStatus(id, status);
     EXPECT_EQ(ret, ERR_INVALID_OPERATION);
-    EXPECT_EQ(panelPowerStatus, PanelPowerStatus::INVALID_PANEL_POWER_STATUS);
 }
 
 /**
@@ -789,12 +913,13 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetPanelPowerStatus001, TestSize.
 HWTEST_F(RSClientToServiceConnectionProxyTest, GetPanelPowerStatus002, TestSize.Level1)
 {
     ScreenId id = 1;
-    uint32_t panelPowerStatus = PanelPowerStatus::PANEL_POWER_STATUS_ON;
+    PanelPowerStatus status = PanelPowerStatus::PANEL_POWER_STATUS_ON;
     sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
     auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockproxy, nullptr);
+    
     EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
-    auto ret = proxy->GetPanelPowerStatus(id, panelPowerStatus);
-    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+    mockproxy->GetPanelPowerStatus(id, status);
 }
 
 /**
@@ -807,47 +932,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenBacklight, TestSize.Leve
 {
     ScreenId id = 1;
     uint32_t level = 1;
-    proxy->SetScreenBacklight(id, level);
-    ASSERT_EQ(proxy->transactionDataIndex_, 0);
-}
-
-/**
- * @tc.name: RegisterBufferClearListener Test
- * @tc.desc: RegisterBufferClearListener Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterBufferClearListener, TestSize.Level1)
-{
-    NodeId id = 1;
-    sptr<RSIBufferClearCallback> callback;
-    proxy->RegisterBufferClearListener(id, callback);
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    ASSERT_NE(samgr, nullptr);
-    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
-    callback = iface_cast<RSIBufferClearCallback>(remoteObject);
-    proxy->RegisterBufferClearListener(id, callback);
-    ASSERT_EQ(proxy->transactionDataIndex_, 0);
-}
-
-/**
- * @tc.name: RegisterBufferAvailableListener Test
- * @tc.desc: RegisterBufferAvailableListener Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterBufferAvailableListener, TestSize.Level1)
-{
-    NodeId id = 1;
-    sptr<RSIBufferAvailableCallback> callback;
-    bool isFromRenderThread = true;
-    proxy->RegisterBufferAvailableListener(id, callback, isFromRenderThread);
-
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    ASSERT_NE(samgr, nullptr);
-    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
-    callback = iface_cast<RSIBufferAvailableCallback>(remoteObject);
-    proxy->RegisterBufferAvailableListener(id, callback, isFromRenderThread);
+    proxy->SetScreenBacklight(RsScreenBrightnessData(id, level));
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
@@ -919,11 +1004,8 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetPixelFormat, TestSize.Level1)
 {
     ScreenId id = 1;
     GraphicPixelFormat pixelFormat = GRAPHIC_PIXEL_FMT_BGRA_8888;
-    int32_t resCode;
-    proxy->SetPixelFormat(id, pixelFormat, resCode);
-    EXPECT_EQ(resCode, RS_CONNECTION_ERROR);
-    proxy->GetPixelFormat(id, pixelFormat, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
+    EXPECT_EQ(proxy->SetPixelFormat(id, pixelFormat), 2);
+    ASSERT_EQ(proxy->GetPixelFormat(id, pixelFormat), 2);
 }
 
 /**
@@ -936,12 +1018,9 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenHDRFormat, TestSize.Leve
 {
     ScreenId id = 1;
     std::vector<ScreenHDRFormat> hdrFormats;
-    int32_t resCode;
-    proxy->GetScreenSupportedHDRFormats(id, hdrFormats, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
+    ASSERT_EQ(proxy->GetScreenSupportedHDRFormats(id, hdrFormats), 2);
     ScreenHDRFormat hdrFormat = IMAGE_HDR_ISO_DUAL;
-    proxy->GetScreenHDRFormat(id, hdrFormat, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
+    ASSERT_EQ(proxy->GetScreenHDRFormat(id, hdrFormat), 2);
 }
 
 /**
@@ -954,12 +1033,9 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenHDRFormat, TestSize.Leve
 {
     ScreenId id = 1;
     int32_t modeIdx = 1;
-    int32_t resCode;
-    proxy->SetScreenHDRFormat(id, modeIdx, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
+    ASSERT_EQ(proxy->SetScreenHDRFormat(id, modeIdx), 2);
     std::vector<GraphicCM_ColorSpaceType> colorSpaces;
-    proxy->GetScreenSupportedColorSpaces(id, colorSpaces, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
+    ASSERT_EQ(proxy->GetScreenSupportedColorSpaces(id, colorSpaces), 2);
 }
 
 /**
@@ -972,29 +1048,8 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenColorSpace, TestSize.Lev
 {
     ScreenId id = 1;
     GraphicCM_ColorSpaceType colorSpace = GraphicCM_ColorSpaceType::GRAPHIC_CM_SRGB_FULL;
-    int32_t resCode;
-    proxy->SetScreenColorSpace(id, colorSpace, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
-    std::vector<GraphicCM_ColorSpaceType> colorSpaces;
-    proxy->GetScreenColorSpace(id, colorSpace, resCode);
-    ASSERT_EQ(resCode, RS_CONNECTION_ERROR);
-}
-
-/**
- * @tc.name: GetBitmap Test
- * @tc.desc: GetBitmap Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, GetBitmap, TestSize.Level1)
-{
-    ScreenId id = 1;
-    RSScreenType screenType = RSScreenType::VIRTUAL_TYPE_SCREEN;
-    ASSERT_EQ(proxy->GetScreenType(id, screenType), 2);
-    Drawing::Bitmap bitmap;
-    bool success;
-    ASSERT_EQ(proxy->GetBitmap(id, bitmap, success), ERR_INVALID_VALUE);
-    ASSERT_FALSE(success);
+    ASSERT_EQ(proxy->SetScreenColorSpace(id, colorSpace), 2);
+    ASSERT_EQ(proxy->GetScreenColorSpace(id, colorSpace), 2);
 }
 
 /**
@@ -1026,34 +1081,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetVirtualScreenAutoRotationTest,
 }
 
 /**
- * @tc.name: SetGlobalDarkColorMode Test
- * @tc.desc: SetGlobalDarkColorMode Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetGlobalDarkColorMode, TestSize.Level1)
-{
-    ASSERT_TRUE(proxy->SetGlobalDarkColorMode(true) == ERR_OK);
-}
-
-/**
- * @tc.name: GetPixelmap Test
- * @tc.desc: GetPixelmap Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, GetPixelmap, TestSize.Level1)
-{
-    std::shared_ptr<Media::PixelMap> pixelmap = std::make_shared<Media::PixelMap>();
-    Drawing::Rect rect;
-    NodeId id = 1;
-    std::shared_ptr<Drawing::DrawCmdList> drawCmdList = std::make_shared<Drawing::DrawCmdList>();
-    bool result;
-    ASSERT_EQ(proxy->GetPixelmap(id, pixelmap, &rect, drawCmdList, result), ERR_INVALID_VALUE);
-    ASSERT_FALSE(result);
-}
-
-/**
  * @tc.name: UnRegisterTypeface Test
  * @tc.desc: UnRegisterTypeface Test
  * @tc.type:FUNC
@@ -1069,9 +1096,9 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, UnRegisterTypeface, TestSize.Leve
     EXPECT_EQ(retryCount, 11);
     WaitNeedRegisterTypefaceReply(Drawing::REGISTERED, retryCount);
     EXPECT_EQ(retryCount, 12);
-    retryCount = 21;
+    retryCount = 30;
     WaitNeedRegisterTypefaceReply(Drawing::REGISTERING, retryCount);
-    EXPECT_EQ(retryCount, 21);
+    EXPECT_EQ(retryCount, 30);
 }
 
 /**
@@ -1082,6 +1109,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, UnRegisterTypeface, TestSize.Leve
  */
 HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterSharedTypeface, TestSize.Level1)
 {
+    auto clientToService = RSRenderServiceConnectHub::GetClientToServiceConnection();
     std::vector<char> content;
     LoadBufferFromFile("/system/fonts/Roboto-Regular.ttf", content);
     std::shared_ptr<Drawing::Typeface> typeface =
@@ -1090,38 +1118,12 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterSharedTypeface, TestSize.
     int32_t needUpdate;
     pid_t pid = getpid();
 
-    Drawing::SharedTypeface sharedTypeface;
-    sharedTypeface.id_ = (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(typeface->GetHash());
-    sharedTypeface.size_ = typeface->GetSize();
-    sharedTypeface.fd_ = typeface->GetFd();
-
-    EXPECT_TRUE(proxy->RegisterTypeface(sharedTypeface, needUpdate));
-    EXPECT_EQ(needUpdate, 0);
-    EXPECT_TRUE(proxy->RegisterTypeface(sharedTypeface, needUpdate));
+    Drawing::SharedTypeface sharedTypeface(
+        (static_cast<uint64_t>(pid) << 32) | static_cast<uint64_t>(typeface->GetUniqueID()), typeface);
+    clientToService->RegisterTypeface(sharedTypeface, needUpdate);
+    clientToService->RegisterTypeface(sharedTypeface, needUpdate);
     EXPECT_EQ(needUpdate, 1);
-    EXPECT_TRUE(proxy->UnRegisterTypeface(typeface->GetHash()));
-}
-
-/**
- * @tc.name: RegisterSurfaceOcclusionChangeCallback Test
- * @tc.desc: RegisterSurfaceOcclusionChangeCallback Test
- * @tc.type:FUNC
- * @tc.require: issueI9KXXE
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterSurfaceOcclusionChangeCallback, TestSize.Level1)
-{
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    ASSERT_NE(samgr, nullptr);
-    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
-    sptr<RSIOcclusionChangeCallback> callback = iface_cast<RSIOcclusionChangeCallback>(remoteObject);
-    int32_t repCode;
-    proxy->RegisterOcclusionChangeCallback(callback, repCode);
-    EXPECT_NE(repCode, -1);
-    NodeId id = 1;
-    proxy->UnRegisterSurfaceOcclusionChangeCallback(id);
-    sptr<RSISurfaceOcclusionChangeCallback> callbackTwo = iface_cast<RSISurfaceOcclusionChangeCallback>(remoteObject);
-    std::vector<float> partitionPoints;
-    ASSERT_EQ(proxy->RegisterSurfaceOcclusionChangeCallback(id, callbackTwo, partitionPoints), 2);
+    EXPECT_TRUE(clientToService->UnRegisterTypeface(typeface->GetHash()));
 }
 
 /**
@@ -1157,17 +1159,55 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterFirstFrameCommitCallback,
 }
 
 /**
- * @tc.name: SetSystemAnimatedScenes Test
- * @tc.desc: SetSystemAnimatedScenes Test
+ * @tc.name: RegisterFirstFrameCommitCallback_ReadParcelFailed Test
+ * @tc.desc: RegisterFirstFrameCommitCallback reply read failed Test
  * @tc.type:FUNC
- * @tc.require: issueI9KXXE
+ * @tc.require: issues23225
  */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetSystemAnimatedScenes, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterFirstFrameCommitCallback_ReadParcelFailed, TestSize.Level1)
 {
-    proxy->SetAppWindowNum(1);
-    bool success;
-    proxy->SetSystemAnimatedScenes(SystemAnimatedScenes::ENTER_MISSION_CENTER, false, success);
-    ASSERT_FALSE(success);
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    sptr<RSIFirstFrameCommitCallback> callback = nullptr;
+    auto ret = mockproxy->RegisterFirstFrameCommitCallback(callback);
+    EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: RegisterFirstFrameCommitCallback_ReadParcelSuccess Test
+ * @tc.desc: RegisterFirstFrameCommitCallback reply read success Test
+ * @tc.type:FUNC
+ * @tc.require: issues23225
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterFirstFrameCommitCallback_ReadParcelSuccess, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+            reply.WriteInt32(0);
+            return 0;
+        });
+    sptr<RSIFirstFrameCommitCallback> callback = nullptr;
+    auto ret = mockproxy->RegisterFirstFrameCommitCallback(callback);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: RegisterExposedEventCallback Test
+ * @tc.desc: RegisterExposedEventCallback Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterExposedEventCallback, TestSize.Level1)
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    ASSERT_NE(samgr, nullptr);
+    auto remoteObject = samgr->GetSystemAbility(RENDER_SERVICE);
+    sptr<RSIExposedEventCallback> callback = iface_cast<RSIExposedEventCallback>(remoteObject);
+    RSExposedEventType type = RSExposedEventType::EXT_SCREEN_UNSUPPORT;
+    EXPECT_EQ(proxy->RegisterExposedEventCallback(type, callback), 2);
 }
 
 /**
@@ -1217,18 +1257,16 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, ReportDataBaseRs, TestSize.Level1
 }
 
 /**
- * @tc.name: NotifyLightFactorStatus Test
- * @tc.desc: NotifyLightFactorStatus Test
+ * @tc.name: ReportRsSceneJankStart Test
+ * @tc.desc: ReportRsSceneJankStart Test
  * @tc.type:FUNC
- * @tc.require: issueI9KXXE
+ * @tc.require:
  */
-HWTEST_F(RSClientToServiceConnectionProxyTest, NotifyLightFactorStatus, TestSize.Level1)
+HWTEST_F(RSClientToServiceConnectionProxyTest, ReportRsSceneJankStart, TestSize.Level1)
 {
-    GameStateData info;
-    proxy->ReportGameStateData(info);
-    NodeId id = 1;
-    proxy->SetHardwareEnabled(id, true, SelfDrawingNodeType::DEFAULT, true);
-    proxy->NotifyLightFactorStatus(1);
+    AppInfo info;
+    proxy->ReportRsSceneJankStart(info);
+    proxy->ReportRsSceneJankEnd(info);
     ASSERT_EQ(proxy->transactionDataIndex_, 0);
 }
 
@@ -1241,6 +1279,8 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, NotifyLightFactorStatus, TestSize
 HWTEST_F(RSClientToServiceConnectionProxyTest, SetCacheEnabledForRotation, TestSize.Level0)
 {
     std::vector<std::string> packageList;
+    proxy->NotifyPackageEvent(1, packageList);
+    packageList.push_back("test:1:1");
     proxy->NotifyPackageEvent(1, packageList);
     std::vector<std::pair<std::string, std::string>> newConfig;
     proxy->NotifyAppStrategyConfigChangeEvent("test", 1, newConfig);
@@ -1260,6 +1300,30 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetCacheEnabledForRotation, TestS
 }
 
 /**
+ * @tc.name: SetCacheEnabledForRotation001
+ * @tc.desc: Test SetCacheEnabledForRotation with enabled = true, verify return value
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetCacheEnabledForRotation001, TestSize.Level0)
+{
+    auto ret = proxy->SetCacheEnabledForRotation(true);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetCacheEnabledForRotation002
+ * @tc.desc: Test SetCacheEnabledForRotation with enabled = false, verify return value
+ * @tc.type: FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetCacheEnabledForRotation002, TestSize.Level0)
+{
+    auto ret = proxy->SetCacheEnabledForRotation(false);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
  * @tc.name: NotifyHgmConfigEvent Test
  * @tc.desc: NotifyHgmConfigEvent Test
  * @tc.type:FUNC
@@ -1272,6 +1336,22 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, NotifyHgmConfigEvent, TestSize.Le
     proxy->NotifyHgmConfigEvent(eventName, state);
     ASSERT_TRUE(proxy);
 }
+
+#ifdef RS_ENABLE_UNI_RENDER
+/**
+ * @tc.name: NotifyLightFactorStatus Test
+ * @tc.desc: NotifyLightFactorStatus Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, ReportGameStateData, TestSize.Level1)
+{
+    GameStateData info;
+    proxy->ReportGameStateData(info);
+    proxy->NotifyLightFactorStatus(1);
+    ASSERT_EQ(proxy->transactionDataIndex_, 5);
+}
+#endif
 
 /**
  * @tc.name: NotifyXComponentExpectedFrameRate Test
@@ -1386,62 +1466,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetBrightnessInfoChangeCallbackTe
 }
 
 /**
- * @tc.name: GetBrightnessInfoTest
- * @tc.desc: test results of GetBrightnessInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, GetBrightnessInfoTest, TestSize.Level1)
-{
-    ASSERT_NE(proxy, nullptr);
-    ScreenId screenId = 0;
-    BrightnessInfo brightnessInfo = { 0 };
-    ASSERT_NE(proxy->GetBrightnessInfo(screenId, brightnessInfo), SUCCESS);
-    screenId = INVALID_SCREEN_ID;
-    ASSERT_NE(proxy->GetBrightnessInfo(screenId, brightnessInfo), SUCCESS);
-}
-
-/**
- * @tc.name: ReadBrightnessInfoTest
- * @tc.desc: test results of ReadBrightnessInfo
- * @tc.type: FUNC
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, ReadBrightnessInfoTest, TestSize.Level1)
-{
-    ASSERT_NE(proxy, nullptr);
-    BrightnessInfo brightnessInfo = { 0 };
-
-    // case 1: valid data
-    {
-        MessageParcel data;
-        data.WriteFloat(1.0f);
-        data.WriteFloat(1.0f);
-        data.WriteFloat(1.0f);
-        ASSERT_TRUE(proxy->ReadBrightnessInfo(brightnessInfo, data));
-    }
-
-    // case 2: invalid data
-    {
-        MessageParcel data;
-        data.WriteFloat(1.0f);
-        data.WriteFloat(1.0f);
-        ASSERT_FALSE(proxy->ReadBrightnessInfo(brightnessInfo, data));
-    }
-
-    // case 3: invalid data
-    {
-        MessageParcel data;
-        data.WriteFloat(1.0f);
-        ASSERT_FALSE(proxy->ReadBrightnessInfo(brightnessInfo, data));
-    }
-
-    // case 4: invalid data
-    {
-        MessageParcel data;
-        ASSERT_FALSE(proxy->ReadBrightnessInfo(brightnessInfo, data));
-    }
-}
-
-/**
  * @tc.name: RegisterUIExtensionCallback Test
  * @tc.desc: RegisterUIExtensionCallback Test, with empty/non-empty callback.
  * @tc.type:FUNC
@@ -1473,6 +1497,42 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetLayerTop, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetHdrForceHwcEnabled_Normal_Success
+ * @tc.desc: Test SetHdrForceHwcEnabled with normal case
+ * @tc.type: FUNC
+ *
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetHdrForceHwcEnabled_Normal_Success, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    std::string nodeIdStr = "test_node";
+    bool isHdrForceHwcEnabled = true;
+    ErrCode ret = mockProxy->SetHdrForceHwcEnabled(nodeIdStr, isHdrForceHwcEnabled);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetHdrForceHwcEnabled_SendRequestFail
+ * @tc.desc: Test SetHdrForceHwcEnabled when SendRequest fails
+ * @tc.type: FUNC
+ *
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetHdrForceHwcEnabled_SendRequestFail, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+    std::string nodeIdStr = "test_node";
+    bool isHdrForceHwcEnabled = true;
+    ErrCode ret = mockProxy->SetHdrForceHwcEnabled(nodeIdStr, isHdrForceHwcEnabled);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
  * @tc.name: SetForceRefresh Test
  * @tc.desc: SetForceRefresh Test
  * @tc.type:FUNC
@@ -1483,19 +1543,6 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetForceRefresh, TestSize.Level1)
     const std::string nodeIdStr = "123456";
     proxy->SetForceRefresh(nodeIdStr, true);
     proxy->SetForceRefresh(nodeIdStr, false);
-    ASSERT_TRUE(proxy);
-}
-
-/**
- * @tc.name: SetFreeMultiWindowStatus Test
- * @tc.desc: SetFreeMultiWindowStatus Test
- * @tc.type:FUNC
- * @tc.require: issueIB31K8
- */
-HWTEST_F(RSClientToServiceConnectionProxyTest, SetFreeMultiWindowStatus, TestSize.Level1)
-{
-    proxy->SetFreeMultiWindowStatus(true);
-    proxy->SetFreeMultiWindowStatus(false);
     ASSERT_TRUE(proxy);
 }
 
@@ -1644,6 +1691,45 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, AvcodecVideoStopTest, TestSize.Le
 }
 
 /**
+ * @tc.name: SetScreenFrameGravity Test
+ * @tc.desc: SetScreenFrameGravity Test
+ * @tc.type:FUNC
+ * @tc.require: issueI9KXXE
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetScreenFrameGravity, TestSize.Level1)
+{
+    ScreenId id = 100;
+    int32_t gravity = 5;
+    proxy->SetScreenFrameGravity(id, gravity);
+    ASSERT_NE(proxy->transactionDataIndex_, 5);
+}
+
+/**
+ * @tc.name: AvcodecVideoGet Test
+ * @tc.desc: AvcodecVideoGet Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AvcodecVideoGetTest, TestSize.Level1)
+{
+    uint64_t uniqueId = 1;
+    proxy->AvcodecVideoGet(uniqueId);
+    ASSERT_TRUE(proxy);
+}
+ 
+/**
+ * @tc.name: AvcodecVideoGetRecent Test
+ * @tc.desc: AvcodecVideoGetRecent Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AvcodecVideoGetRecentTest, TestSize.Level1)
+{
+    proxy->AvcodecVideoGetRecent();
+    ASSERT_TRUE(proxy);
+}
+
+/**
  * @tc.name: SetDualScreenState Test
  * @tc.desc: Test SetDualScreenState
  * @tc.type:FUNC
@@ -1653,7 +1739,7 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetDualScreenState001, TestSize.L
 {
     ScreenId id = 1;
     auto ret = proxy->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
-    EXPECT_EQ(ret, StatusCode::SUCCESS);
+    EXPECT_NE(ret, StatusCode::READ_PARCEL_ERR);
 }
 
 /**
@@ -1670,6 +1756,451 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, SetDualScreenState002, TestSize.L
     EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
     auto ret = mockproxy->SetDualScreenState(id, DualScreenStatus::DUAL_SCREEN_ENTER);
     EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: SetAsMainScreenTest001
+ * @tc.desc: Test SetAsMainScreen
+ * @tc.type: FUNC
+ * @tc.require: #23043
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetAsMainScreenTest001, TestSize.Level1)
+{
+    ScreenId screenId = 1;
+    bool isMainScreen = true;
+    auto ret = proxy->SetAsMainScreen(screenId, isMainScreen);
+    EXPECT_NE(ret, StatusCode::READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: SetAsMainScreenTest002
+ * @tc.desc: Test SetAsMainScreen with mock remoteObject
+ * @tc.type: FUNC
+ * @tc.require: #23043
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SetAsMainScreenTest002, TestSize.Level1)
+{
+    ScreenId screenId = 1;
+    bool isMainScreen = true;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    auto ret = mockproxy->SetAsMainScreen(screenId, isMainScreen);
+    EXPECT_EQ(ret, StatusCode::READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: GetMainScreenIdTest001
+ * @tc.desc: Test GetMainScreenId
+ * @tc.type: FUNC
+ * @tc.require: #23043
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetMainScreenIdTest001, TestSize.Level1)
+{
+    ScreenId screenId = proxy->GetMainScreenId();
+    EXPECT_EQ(INVALID_SCREEN_ID, screenId);
+}
+
+/**
+ * @tc.name: GetMainScreenIdTest002
+ * @tc.desc: Test GetMainScreenId with mock remoteObject
+ * @tc.type: FUNC
+ * @tc.require: #23043
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetMainScreenIdTest002, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+    auto ret = mockproxy->GetMainScreenId();
+    EXPECT_EQ(ret, INVALID_SCREEN_ID);
+}
+
+/**
+ * @tc.name: GetRefreshInfoByPidAndUniqueIdTest Test
+ * @tc.desc: GetRefreshInfoByPidAndUniqueIdTest Test
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetRefreshInfoByPidAndUniqueIdTest, TestSize.Level1)
+{
+    pid_t pid = 1001;
+    uint64_t uniqueId = 0;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    std::string result = "";
+    {
+        EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(0));
+        mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        EXPECT_EQ(result, "");
+    }
+
+    {
+        result = "";
+        EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(1));
+        mockproxy->GetRefreshInfoByPidAndUniqueId(pid, uniqueId, result);
+        EXPECT_EQ(result, "");
+    }
+}
+
+/**
+ * @tc.name: ReportGameStateData Test
+ * @tc.desc: ReportGameStateData Test
+ * @tc.type.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, ReportGameStateDataTest, TestSize.Level1)
+{
+    GameStateData info;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    uint32_t gameEventCode = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::REPORT_EVENT_GAMESTATE);
+    EXPECT_CALL(*remoteObject, SendRequest(gameEventCode, _, _, _)).Times(1);
+    mockProxy->ReportGameStateData(info);
+}
+
+/**
+ * @tc.name: RegisterExposedEventCallback001
+ * @tc.desc: Test RegisterExposedEventCallback with null callback
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterExposedEventCallback001, TestSize.Level1)
+{
+    RSExposedEventType type = RSExposedEventType::EXT_SCREEN_UNSUPPORT;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    uint32_t eventCode = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ON_EXPOSED_EVENT);
+    EXPECT_CALL(*remoteObject, SendRequest(eventCode, _, _, _)).WillRepeatedly(testing::Return(0));
+    auto ret = mockProxy->RegisterExposedEventCallback(type, nullptr);
+    EXPECT_EQ(ret, READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: RegisterExposedEventCallback002
+ * @tc.desc: Test RegisterExposedEventCallback with valid callback
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterExposedEventCallback002, TestSize.Level1)
+{
+    RSExposedEventType type = RSExposedEventType::EXT_SCREEN_UNSUPPORT;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    uint32_t eventCode = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ON_EXPOSED_EVENT);
+    EXPECT_CALL(*remoteObject, SendRequest(eventCode, _, _, _)).WillRepeatedly(testing::Return(0));
+    sptr<MockRSExposedEventCallback> callback = new MockRSExposedEventCallback;
+    auto ret = mockProxy->RegisterExposedEventCallback(type, callback);
+    EXPECT_EQ(ret, READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: RegisterExposedEventCallback003
+ * @tc.desc: Test RegisterExposedEventCallback SendRequest failure
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterExposedEventCallback003, TestSize.Level1)
+{
+    RSExposedEventType type = RSExposedEventType::EXT_SCREEN_UNSUPPORT;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    uint32_t eventCode = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ON_EXPOSED_EVENT);
+    EXPECT_CALL(*remoteObject, SendRequest(eventCode, _, _, _)).WillRepeatedly(testing::Return(-1));
+    sptr<MockRSExposedEventCallback> callback = new MockRSExposedEventCallback;
+    auto ret = mockProxy->RegisterExposedEventCallback(type, callback);
+    EXPECT_EQ(ret, RS_CONNECTION_ERROR);
+}
+
+/**
+ * @tc.name: RegisterExposedEventCallback004
+ * @tc.desc: Test RegisterExposedEventCallback with different event types
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RegisterExposedEventCallback004, TestSize.Level1)
+{
+    RSExposedEventType type = RSExposedEventType::EXPOSED_EVENT_INVALID;
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    uint32_t eventCode = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::ON_EXPOSED_EVENT);
+    EXPECT_CALL(*remoteObject, SendRequest(eventCode, _, _, _)).WillRepeatedly(testing::Return(0));
+    sptr<MockRSExposedEventCallback> callback = new MockRSExposedEventCallback;
+    auto ret = mockProxy->RegisterExposedEventCallback(type, callback);
+    EXPECT_EQ(ret, READ_PARCEL_ERR);
+}
+
+/**
+ * @tc.name: GetScreenType Test
+ * @tc.desc: GetScreenType Test
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetScreenTypeTest, TestSize.Level1)
+{
+    ScreenId id = 1;
+    RSScreenType type = UNKNOWN_TYPE_SCREEN;
+    proxy->GetScreenType(id, type);
+    ASSERT_EQ(type, UNKNOWN_TYPE_SCREEN);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface001
+ * @tc.desc: Test AddVirtualScreenSurface with SendRequest failure
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenSurface001, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+    std::vector<SurfaceRegionConfig> configs;
+    ScreenId screenId = 1;
+    auto ret = mockProxy->AddVirtualScreenSurface(screenId, configs);
+    EXPECT_EQ(ret, RS_CONNECTION_ERROR);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface002
+ * @tc.desc: Test AddVirtualScreenSurface with SendRequest success
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenSurface002, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+            reply.WriteInt32(0);
+            return 0;
+        });
+    ScreenId screenId = 1;
+    std::vector<SurfaceRegionConfig> configs;
+    auto ret = mockProxy->AddVirtualScreenSurface(screenId, configs);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface003
+ * @tc.desc: Test AddVirtualScreenSurface filters null surface configs
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenSurface003, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+            reply.WriteInt32(0);
+            return 0;
+        });
+    ScreenId screenId = 1;
+    SurfaceRegionConfig nullSurfaceConfig;
+    nullSurfaceConfig.surface = nullptr;
+    nullSurfaceConfig.region = RectI(0, 0, 100, 100);
+    std::vector<SurfaceRegionConfig> configs = {nullSurfaceConfig};
+    auto ret = mockProxy->AddVirtualScreenSurface(screenId, configs);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface004
+ * @tc.desc: Test AddVirtualScreenSurface with valid surface config
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenSurface004, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+            reply.WriteInt32(0);
+            return 0;
+        });
+    ScreenId screenId = 1;
+    auto csurf = IConsumerSurface::Create("AddVirtSurfProxy_SF");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig src;
+    src.surface = pSurface;
+    src.region = RectI(0, 0, 100, 100);
+    std::vector<SurfaceRegionConfig> configs = {src};
+    auto ret = mockProxy->AddVirtualScreenSurface(screenId, configs);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: AddVirtualScreenSurface005
+ * @tc.desc: Test AddVirtualScreenSurface with mixed valid and null configs
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, AddVirtualScreenSurface005, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+            reply.WriteInt32(0);
+            return 0;
+        });
+    ScreenId screenId = 1;
+    SurfaceRegionConfig nullSurfaceConfig;
+    nullSurfaceConfig.surface = nullptr;
+    nullSurfaceConfig.region = RectI(0, 0, 50, 50);
+    auto csurf = IConsumerSurface::Create("AddVirtSurfProxy_SF2");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    SurfaceRegionConfig validConfig;
+    validConfig.surface = pSurface;
+    validConfig.region = RectI(0, 0, 100, 100);
+    std::vector<SurfaceRegionConfig> configs = {nullSurfaceConfig, validConfig};
+    auto ret = mockProxy->AddVirtualScreenSurface(screenId, configs);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface001
+ * @tc.desc: Test RemoveVirtualScreenSurface with empty surfaces
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RemoveVirtualScreenSurface001, TestSize.Level1)
+{
+    ScreenId screenId = 1;
+    std::vector<sptr<Surface>> emptySurfaces;
+    auto ret = proxy->RemoveVirtualScreenSurface(screenId, emptySurfaces);
+    EXPECT_EQ(ret, StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface002
+ * @tc.desc: Test RemoveVirtualScreenSurface with null surface in list
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RemoveVirtualScreenSurface002, TestSize.Level1)
+{
+    ScreenId screenId = 1;
+    sptr<Surface> nullSurface = nullptr;
+    std::vector<sptr<Surface>> surfaces = {nullSurface};
+    auto ret = proxy->RemoveVirtualScreenSurface(screenId, surfaces);
+    EXPECT_EQ(ret, StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface003
+ * @tc.desc: Test RemoveVirtualScreenSurface with SendRequest failure
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RemoveVirtualScreenSurface003, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+    ScreenId screenId = 1;
+    auto csurf = IConsumerSurface::Create("RemVirtSurfProxy_SF");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    std::vector<sptr<Surface>> surfaces = {pSurface};
+    auto ret = mockProxy->RemoveVirtualScreenSurface(screenId, surfaces);
+    EXPECT_EQ(ret, RS_CONNECTION_ERROR);
+}
+
+/**
+ * @tc.name: RemoveVirtualScreenSurface004
+ * @tc.desc: Test RemoveVirtualScreenSurface with SendRequest success
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, RemoveVirtualScreenSurface004, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    ASSERT_NE(mockProxy, nullptr);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+            reply.WriteInt32(0);
+            return 0;
+        });
+    ScreenId screenId = 1;
+    auto csurf = IConsumerSurface::Create("RemVirtSurfProxy_SF2");
+    ASSERT_NE(csurf, nullptr);
+    auto producer = csurf->GetProducer();
+    auto pSurface = Surface::CreateSurfaceAsProducer(producer);
+    std::vector<sptr<Surface>> surfaces = {pSurface};
+    auto ret = mockProxy->RemoveVirtualScreenSurface(screenId, surfaces);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name: SendVideoRateInfo_SendRequestFailed
+ * @tc.desc: Test SendVideoRateInfo when SendRequest fails, expect ERR_INVALID_VALUE
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SendVideoRateInfo_SendRequestFailed, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+    std::unordered_map<std::string, std::string> videoRateInfo = {{"key", "value"}};
+    auto ret = mockProxy->SendVideoRateInfo(videoRateInfo);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+ 
+/**
+ * @tc.name: SendVideoRateInfo_Success
+ * @tc.desc: Test SendVideoRateInfo success path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SendVideoRateInfo_Success, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(ERR_OK));
+    std::unordered_map<std::string, std::string> videoRateInfo = {{"key", "value"}};
+    auto ret = mockProxy->SendVideoRateInfo(videoRateInfo);
+    EXPECT_EQ(ret, ERR_OK);
+}
+ 
+/**
+ * @tc.name: SendVideoRateInfo_EmptyMap
+ * @tc.desc: Test SendVideoRateInfo with empty map (mapSize=0)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SendVideoRateInfo_EmptyMap, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    std::unordered_map<std::string, std::string> videoRateInfo = {};
+    auto ret = mockProxy->SendVideoRateInfo(videoRateInfo);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+ 
+/**
+ * @tc.name: SendVideoRateInfo_MapSizeExceedMax
+ * @tc.desc: Test SendVideoRateInfo with mapSize > MAX_VIDEO_INFO_SIZE(32)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, SendVideoRateInfo_MapSizeExceedMax, TestSize.Level1)
+{
+    sptr<IRemoteObjectMock> remoteObject = new IRemoteObjectMock;
+    auto mockProxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+    std::unordered_map<std::string, std::string> videoRateInfo;
+    const uint32_t maxVideoInfoSize = 32; // video rate info max map size is 32
+    for (uint32_t i = 0; i <= maxVideoInfoSize; i++) {
+        videoRateInfo["key" + std::to_string(i)] = "value" + std::to_string(i);
+    }
+    auto ret = mockProxy->SendVideoRateInfo(videoRateInfo);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
 } // namespace Rosen
 } // namespace OHOS

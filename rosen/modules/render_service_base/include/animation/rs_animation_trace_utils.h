@@ -27,11 +27,7 @@ namespace OHOS {
 namespace Rosen {
 class RSB_EXPORT RSAnimationTraceUtils {
 public:
-    static RSAnimationTraceUtils& GetInstance()
-    {
-        static RSAnimationTraceUtils instance;
-        return instance;
-    };
+    static RSAnimationTraceUtils& GetInstance();
     void AddAnimationNameTrace(const std::string& str) const;
     void AddAnimationFinishTrace(
         const std::string info, const uint64_t nodeId, const uint64_t animationId, bool isAddLogInfo) const;
@@ -60,11 +56,11 @@ public:
     void AddAnimationCancelTrace(const uint64_t nodeId, const uint64_t propertyId) const;
     void AddChangeAnimationValueTrace(
         const uint64_t propertyId, const std::shared_ptr<RSRenderPropertyBase>& endValue) const;
-    static bool GetAnimationEnabled();
+    static bool GetTestModeEnabled();
 
 private:
     RSAnimationTraceUtils();
-    ~RSAnimationTraceUtils() = default;
+    ~RSAnimationTraceUtils();
     RSAnimationTraceUtils(const RSAnimationTraceUtils&) = delete;
     RSAnimationTraceUtils& operator=(const RSAnimationTraceUtils&) = delete;
 
@@ -73,10 +69,12 @@ private:
     std::string GetColorString(const Color& value) const;
 
     static void OnAnimationTraceEnabledChangedCallback(const char* key, const char* value, void* context);
+    static void RemoveSystemPropertyWatchers();
     std::string GetAnimationTypeString(ImplicitAnimationParamType type) const;
     std::string GetNodeTypeString(RSUINodeType type) const;
 
     static bool isDebugEnabled_;
+    static bool isTestModeEnabled_;
 };
 } // namespace Rosen
 } // namespace OHOS

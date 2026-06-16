@@ -22,6 +22,7 @@
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
 #include "property/rs_properties_def.h"
+#include "render/rs_shadow.h"
 
 #if defined(ROSEN_OHOS) && (defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK))
 #include "external_window.h"
@@ -51,7 +52,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     bool needSync_ = false;
@@ -63,14 +64,18 @@ private:
     float stagingOffsetY_ = 0.0f;
     float elevation_ = 0.0f;
     float stagingElevation_ = 0.0f;
-    float radius_ = 0.0f;
-    float stagingRadius_ = 0.0f;
+    float radius_ = DEFAULT_SHADOW_RADIUS;
+    float stagingRadius_ = DEFAULT_SHADOW_RADIUS;
     int colorStrategy_ = 0;
     int stagingColorStrategy_ = 0;
+    bool disableSDFBlur_ = false;
+    bool stagingDisableSDFBlur_ = false;
     Drawing::Path path_;
     Drawing::Path stagingPath_;
     Color color_;
     Color stagingColor_;
+    std::unique_ptr<Drawing::Rect> sdfTransformRect_;
+    std::unique_ptr<Drawing::Rect> stagingSdfTransformRect_;
     std::shared_ptr<Drawing::GEVisualEffectContainer> stagingGeContainer_ = nullptr;
     std::shared_ptr<Drawing::GEVisualEffectContainer> geContainer_ = nullptr;
 };
@@ -107,6 +112,12 @@ public:
     bool OnUpdate(const RSRenderNode& node) override;
 
 private:
+#ifdef USE_PRIMITIVE
+    bool UsePrimList() const override
+    {
+        return true;
+    }
+#endif
 };
 
 class RSBackgroundNGShaderDrawable : public RSDrawable {
@@ -117,7 +128,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 private:
     bool needSync_ = false;
     std::shared_ptr<Drawing::GEVisualEffectContainer> visualEffectContainer_;
@@ -136,7 +147,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 private:
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
     static Drawing::ColorType GetColorTypeFromVKFormat(VkFormat vkFormat);
@@ -181,7 +192,7 @@ public:
 
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 private:
     Drawing::RectI GetAbsRenderEffectRect(const Drawing::Canvas& canvas,
         EffectRectType type, const RectF& bound) const override;
@@ -199,7 +210,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     bool needSync_ = false;
@@ -216,7 +227,7 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
     void OnSync() override;
-    Drawing::RecordingCanvas::DrawFunc CreateDrawFunc() const override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
 
 private:
     static std::shared_ptr<Drawing::Blender> MakeDynamicLightUpBlender(float rate, float degree, float alpha);
@@ -226,6 +237,13 @@ private:
     float dynamicLightUpDeg_ = 0.0f;
     float stagingDynamicLightUpRate_ = 0.0f;
     float stagingDynamicLightUpDeg_ = 0.0f;
+
+#ifdef USE_PRIMITIVE
+    bool UsePrimList() const override
+    {
+        return true;
+    }
+#endif
 };
 
 class RSMaterialFilterDrawable : public RSFilterDrawable {
@@ -235,10 +253,16 @@ public:
 
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
+    void OnSync() override;
+    void OnDraw(Drawing::Canvas* canvas, const Drawing::Rect* rect) const override;
+
     Drawing::RectI GetAbsRenderEffectRect(const Drawing::Canvas& canvas,
         EffectRectType type, const RectF& bound) const override;
-    void CalVisibleRect(const Drawing::Matrix& absMatrix, const std::optional<RectI>& clipRect,
-        const RectF& defaultRelativeRect) override;
+private:
+    bool stagingEmptyShape_ = false;
+    bool emptyShape_ = false;
+    std::shared_ptr<Drawing::Path> stagingClipPath_;
+    std::shared_ptr<Drawing::Path> clipPath_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

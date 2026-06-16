@@ -15,7 +15,18 @@
 
 DECLARE_FILTER(Blur, BLUR,
     ADD_PROPERTY_TAG(Blur, RadiusX),
-    ADD_PROPERTY_TAG(Blur, RadiusY)
+    ADD_PROPERTY_TAG(Blur, RadiusY),
+    ADD_PROPERTY_TAG(Blur, DisableSystemAdaptation),
+    ADD_PROPERTY_TAG(Blur, ExpandDrawRegion)
+);
+
+DECLARE_FILTER(MaterialBlur, MATERIAL_BLUR,
+    ADD_PROPERTY_TAG(MaterialBlur, Radius),
+    ADD_PROPERTY_TAG(MaterialBlur, Saturation),
+    ADD_PROPERTY_TAG(MaterialBlur, Brightness),
+    ADD_PROPERTY_TAG(MaterialBlur, MaskColor),
+    ADD_PROPERTY_TAG(MaterialBlur, ColorMode),
+    ADD_PROPERTY_TAG(MaterialBlur, DisableSystemAdaptation)
 );
 
 DECLARE_FILTER(DispDistort, DISPLACEMENT_DISTORT,
@@ -112,6 +123,24 @@ DECLARE_FILTER(Gasify, GASIFY,
     ADD_PROPERTY_TAG(Gasify, Mask)
 );
 
+DECLARE_FILTER(ParticleAblation, PARTICLE_ABLATION,
+    ADD_PROPERTY_TAG(ParticleAblation, Progress),
+    ADD_PROPERTY_TAG(ParticleAblation, AblationRate),
+    ADD_PROPERTY_TAG(ParticleAblation, Centers0),
+    ADD_PROPERTY_TAG(ParticleAblation, Centers1),
+    ADD_PROPERTY_TAG(ParticleAblation, Centers2),
+    ADD_PROPERTY_TAG(ParticleAblation, Centers3),
+    ADD_PROPERTY_TAG(ParticleAblation, GlowLevel),
+    ADD_PROPERTY_TAG(ParticleAblation, GlowBrightness),
+    ADD_PROPERTY_TAG(ParticleAblation, MaxParticleCount),
+    ADD_PROPERTY_TAG(ParticleAblation, Wind),
+    ADD_PROPERTY_TAG(ParticleAblation, TurbScale),
+    ADD_PROPERTY_TAG(ParticleAblation, TurbEvo),
+    ADD_PROPERTY_TAG(ParticleAblation, TurbAmp),
+    ADD_PROPERTY_TAG(ParticleAblation, ExpansionSize)
+);
+
+#ifndef ROSEN_ARKUI_X
 DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, BlurParams),
     ADD_PROPERTY_TAG(FrostedGlass, WeightsEmboss),
@@ -120,6 +149,7 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, BgKBS),
     ADD_PROPERTY_TAG(FrostedGlass, BgPos),
     ADD_PROPERTY_TAG(FrostedGlass, BgNeg),
+    ADD_PROPERTY_TAG(FrostedGlass, BgAlpha),
     ADD_PROPERTY_TAG(FrostedGlass, RefractParams),
     ADD_PROPERTY_TAG(FrostedGlass, SdParams),
     ADD_PROPERTY_TAG(FrostedGlass, SdRates),
@@ -139,22 +169,20 @@ DECLARE_FILTER(FrostedGlass, FROSTED_GLASS,
     ADD_PROPERTY_TAG(FrostedGlass, EdLightPos),
     ADD_PROPERTY_TAG(FrostedGlass, EdLightNeg),
     ADD_PROPERTY_TAG(FrostedGlass, Shape),
+    ADD_PROPERTY_TAG(FrostedGlass, WaveMask),
     ADD_PROPERTY_TAG(FrostedGlass, BaseVibrancyEnabled),
     ADD_PROPERTY_TAG(FrostedGlass, BaseMaterialType),
     ADD_PROPERTY_TAG(FrostedGlass, MaterialColor),
-    ADD_PROPERTY_TAG(FrostedGlass, RefractEnabled),
-    ADD_PROPERTY_TAG(FrostedGlass, InnerShadowEnabled),
-    ADD_PROPERTY_TAG(FrostedGlass, EnvLightEnabled),
-    ADD_PROPERTY_TAG(FrostedGlass, HighLightEnabled),
     ADD_PROPERTY_TAG(FrostedGlass, SamplingScale),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBlurParams),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeWeightsEmboss),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgRates),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgKBS),
     ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgPos),
-    ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgNeg)
+    ADD_PROPERTY_TAG(FrostedGlass, DarkModeBgNeg),
+    ADD_PROPERTY_TAG(FrostedGlass, SkipFrameEnable)
 );
-
+#endif
 DECLARE_FILTER(GridWarp, GRID_WARP,
     ADD_PROPERTY_TAG(GridWarp, GridPoint0),
     ADD_PROPERTY_TAG(GridWarp, GridPoint1),
@@ -176,7 +204,73 @@ DECLARE_FILTER(GridWarp, GRID_WARP,
     ADD_PROPERTY_TAG(GridWarp, RotationAngle8)
 );
 
+DECLARE_FILTER(HeatDistortion, HEAT_DISTORTION,
+    ADD_PROPERTY_TAG(HeatDistortion, Intensity),
+    ADD_PROPERTY_TAG(HeatDistortion, NoiseScale),
+    ADD_PROPERTY_TAG(HeatDistortion, RiseWeight),
+    ADD_PROPERTY_TAG(HeatDistortion, Progress)
+);
+
+DECLARE_FILTER(BlurBubblesRise, BLUR_BUBBLES_RISE,
+    ADD_PROPERTY_TAG(BlurBubblesRise, BlurIntensity),
+    ADD_PROPERTY_TAG(BlurBubblesRise, MixStrength),
+    ADD_PROPERTY_TAG(BlurBubblesRise, Progress),
+    ADD_PROPERTY_TAG(BlurBubblesRise, MaskImage)
+);
+
+DECLARE_FILTER(Magnifier, MAGNIFIER,
+    ADD_PROPERTY_TAG(Magnifier, Factor),
+    ADD_PROPERTY_TAG(Magnifier, Width),
+    ADD_PROPERTY_TAG(Magnifier, Height),
+    ADD_PROPERTY_TAG(Magnifier, CornerRadius),
+    ADD_PROPERTY_TAG(Magnifier, BorderWidth),
+    ADD_PROPERTY_TAG(Magnifier, OffsetX),
+    ADD_PROPERTY_TAG(Magnifier, OffsetY),
+    ADD_PROPERTY_TAG(Magnifier, ZoomOffsetX),
+    ADD_PROPERTY_TAG(Magnifier, ZoomOffsetY),
+    ADD_PROPERTY_TAG(Magnifier, ShadowOffsetX),
+    ADD_PROPERTY_TAG(Magnifier, ShadowOffsetY),
+    ADD_PROPERTY_TAG(Magnifier, ShadowSize),
+    ADD_PROPERTY_TAG(Magnifier, ShadowStrength),
+    ADD_PROPERTY_TAG(Magnifier, GradientMaskColor1),
+    ADD_PROPERTY_TAG(Magnifier, GradientMaskColor2),
+    ADD_PROPERTY_TAG(Magnifier, OuterContourColor1),
+    ADD_PROPERTY_TAG(Magnifier, OuterContourColor2),
+    ADD_PROPERTY_TAG(Magnifier, SDFShape)
+);
+#ifndef ROSEN_ARKUI_X
 DECLARE_FILTER(FrostedGlassBlur, FROSTED_GLASS_BLUR,
     ADD_PROPERTY_TAG(FrostedGlassBlur, Radius),
-    ADD_PROPERTY_TAG(FrostedGlassBlur, RefractOutPx)
+    ADD_PROPERTY_TAG(FrostedGlassBlur, RadiusScaleK),
+    ADD_PROPERTY_TAG(FrostedGlassBlur, RefractOutPx),
+    ADD_PROPERTY_TAG(FrostedGlassBlur, SkipFrameEnable)
+);
+#endif
+DECLARE_FILTER(SDFEdgeLight, SDF_EDGE_LIGHT,
+    ADD_PROPERTY_TAG(SDFEdgeLight, SpreadFactor),
+    ADD_PROPERTY_TAG(SDFEdgeLight, BloomIntensityCutoff),
+    ADD_PROPERTY_TAG(SDFEdgeLight, LightMaxIntensity),
+    ADD_PROPERTY_TAG(SDFEdgeLight, MaxBloomIntensity),
+    ADD_PROPERTY_TAG(SDFEdgeLight, BloomFalloffPow),
+    ADD_PROPERTY_TAG(SDFEdgeLight, MinBorderWidth),
+    ADD_PROPERTY_TAG(SDFEdgeLight, MaxBorderWidth),
+    ADD_PROPERTY_TAG(SDFEdgeLight, InnerBorderBloomWidth),
+    ADD_PROPERTY_TAG(SDFEdgeLight, OuterBorderBloomWidth),
+    ADD_PROPERTY_TAG(SDFEdgeLight, SDFImage),
+    ADD_PROPERTY_TAG(SDFEdgeLight, LightMask),
+    ADD_PROPERTY_TAG(SDFEdgeLight, SDFShape)
+);
+
+DECLARE_FILTER(DistortionCollapse, DISTORTION_COLLAPSE,
+    ADD_PROPERTY_TAG(DistortionCollapse, LUCorner),
+    ADD_PROPERTY_TAG(DistortionCollapse, RUCorner),
+    ADD_PROPERTY_TAG(DistortionCollapse, RBCorner),
+    ADD_PROPERTY_TAG(DistortionCollapse, LBCorner),
+    ADD_PROPERTY_TAG(DistortionCollapse, BarrelDistortion)
+);
+
+DECLARE_FILTER(MotionBlur, MOTION_BLUR,
+    ADD_PROPERTY_TAG(MotionBlur, Radius),
+    ADD_PROPERTY_TAG(MotionBlur, Anchor),
+    ADD_PROPERTY_TAG(MotionBlur, SampleCount)
 );

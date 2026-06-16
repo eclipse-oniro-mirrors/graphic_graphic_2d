@@ -21,6 +21,7 @@
 #include "ui_effect/property/include/rs_ui_shader_base.h"
 #include "ui_effect/property/include/rs_ui_shape_base.h"
 
+#include "animation/rs_particle_field_collection.h"
 #include "command/rs_node_command.h"
 #include "modifier/rs_modifier_manager_map.h"
 #include "modifier_ng/rs_modifier_ng.h"
@@ -75,6 +76,8 @@ PropertyId GeneratePropertyId()
 RSPropertyBase::RSPropertyBase() : id_(GeneratePropertyId())
 {}
 
+RSPropertyBase::~RSPropertyBase() = default;
+
 // LCOV_EXCL_START
 void RSPropertyBase::MarkCustomModifierDirty()
 {
@@ -104,6 +107,12 @@ void RSPropertyBase::UpdateExtendModifierForGeometry(const std::shared_ptr<RSNod
             node->MarkAllExtendModifierDirty();
         }
     }
+}
+ 
+bool RSPropertyBase::IsDeduplicationEnabled() const
+{
+    auto modifier = modifierNG_.lock();
+    return modifier && modifier->IsDeduplicationEnabled();
 }
 
 float RSPropertyBase::GetThresholdByThresholdType(ThresholdType thresholdType) const
@@ -222,6 +231,7 @@ void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnAttach(RSNode& node, std::we
     }
 }
 
+// LCOV_EXCL_START
 template<>
 void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnDetach()
 {
@@ -229,6 +239,7 @@ void RSProperty<std::shared_ptr<RSNGFilterBase>>::OnDetach()
         stagingValue_->Detach();
     }
 }
+// LCOV_EXCL_STOP
 
 template<>
 void RSProperty<std::shared_ptr<RSNGFilterBase>>::Set(const std::shared_ptr<RSNGFilterBase>& value)
@@ -257,6 +268,7 @@ void RSProperty<std::shared_ptr<RSNGFilterBase>>::Set(const std::shared_ptr<RSNG
     UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
 }
 
+// LCOV_EXCL_START
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGFilterBase>>::GetRenderProperty()
 {
@@ -271,7 +283,9 @@ void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnAttach(RSNode& node, std::we
         stagingValue_->Attach(node, modifier);
     }
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 template<>
 void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach()
 {
@@ -279,6 +293,7 @@ void RSProperty<std::shared_ptr<RSNGShaderBase>>::OnDetach()
         stagingValue_->Detach();
     }
 }
+// LCOV_EXCL_STOP
 
 template<>
 void RSProperty<std::shared_ptr<RSNGShaderBase>>::Set(const std::shared_ptr<RSNGShaderBase>& value)
@@ -307,12 +322,14 @@ void RSProperty<std::shared_ptr<RSNGShaderBase>>::Set(const std::shared_ptr<RSNG
     UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
 }
 
+// LCOV_EXCL_START
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGShaderBase>>::GetRenderProperty()
 {
     std::shared_ptr<RSNGRenderShaderBase> renderProp = stagingValue_ ? stagingValue_->GetRenderEffect() : nullptr;
     return std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderShaderBase>>>(renderProp, id_);
 }
+// LCOV_EXCL_STOP
 
 template<>
 void RSProperty<std::shared_ptr<RSNGMaskBase>>::OnAttach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier)
@@ -357,12 +374,14 @@ void RSProperty<std::shared_ptr<RSNGMaskBase>>::Set(const std::shared_ptr<RSNGMa
     UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
 }
 
+// LCOV_EXCL_START
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGMaskBase>>::GetRenderProperty()
 {
     std::shared_ptr<RSNGRenderMaskBase> renderProp = stagingValue_ ? stagingValue_->GetRenderEffect() : nullptr;
     return std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderMaskBase>>>(renderProp, id_);
 }
+// LCOV_EXCL_STOP
 
 template<>
 void RSProperty<std::shared_ptr<RSNGShapeBase>>::OnAttach(RSNode& node, std::weak_ptr<ModifierNG::RSModifier> modifier)
@@ -372,6 +391,7 @@ void RSProperty<std::shared_ptr<RSNGShapeBase>>::OnAttach(RSNode& node, std::wea
     }
 }
 
+// LCOV_EXCL_START
 template<>
 void RSProperty<std::shared_ptr<RSNGShapeBase>>::OnDetach()
 {
@@ -379,6 +399,7 @@ void RSProperty<std::shared_ptr<RSNGShapeBase>>::OnDetach()
         stagingValue_->Detach();
     }
 }
+// LCOV_EXCL_STOP
 
 template<>
 void RSProperty<std::shared_ptr<RSNGShapeBase>>::Set(const std::shared_ptr<RSNGShapeBase>& value)
@@ -407,16 +428,19 @@ void RSProperty<std::shared_ptr<RSNGShapeBase>>::Set(const std::shared_ptr<RSNGS
     UpdateToRender(stagingValue_, UPDATE_TYPE_OVERWRITE);
 }
 
+// LCOV_EXCL_START
 template<>
 RSC_EXPORT std::shared_ptr<RSRenderPropertyBase> RSProperty<std::shared_ptr<RSNGShapeBase>>::GetRenderProperty()
 {
     std::shared_ptr<RSNGRenderShapeBase> renderProp = stagingValue_ ? stagingValue_->GetRenderEffect() : nullptr;
     return std::make_shared<RSRenderProperty<std::shared_ptr<RSNGRenderShapeBase>>>(renderProp, id_);
 }
+// LCOV_EXCL_STOP
 
 #define UPDATE_TO_RENDER(Command, value, type)                                                                       \
     auto node = target_.lock();                                                                                      \
     if (node != nullptr) {                                                                                           \
+        node->LoadRenderNodeIfNeed();                                                                                \
         auto transaction = node->GetRSTransaction();                                                                 \
         if (!transaction) {                                                                                          \
             do {                                                                                                     \
@@ -469,6 +493,12 @@ void RSProperty<std::vector<Vector2f>>::UpdateToRender(
     UPDATE_TO_RENDER(RSUpdatePropertyVectorVector2f, value, type);
 }
 // =============================================================================
+template<>
+void RSProperty<std::vector<Vector4f>>::UpdateToRender(
+    const std::vector<Vector4f>& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyVectorVector4f, value, type);
+}
 template<>
 void RSProperty<int>::UpdateToRender(const int& value, PropertyUpdateType type) const
 {
@@ -548,12 +578,6 @@ void RSProperty<std::shared_ptr<MotionBlurParam>>::UpdateToRender(
     UPDATE_TO_RENDER(RSUpdatePropertyMotionBlurPara, value, type);
 }
 template<>
-void RSProperty<std::shared_ptr<RSMagnifierParams>>::UpdateToRender(
-    const std::shared_ptr<RSMagnifierParams>& value, PropertyUpdateType type) const
-{
-    UPDATE_TO_RENDER(RSUpdatePropertyMagnifierPara, value, type);
-}
-template<>
 void RSProperty<std::vector<std::shared_ptr<EmitterUpdater>>>::UpdateToRender(
     const std::vector<std::shared_ptr<EmitterUpdater>>& value, PropertyUpdateType type) const
 {
@@ -576,6 +600,12 @@ void RSProperty<std::shared_ptr<ParticleVelocityFields>>::UpdateToRender(
     const std::shared_ptr<ParticleVelocityFields>& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyParticleVelocityFields, value, type);
+}
+template<>
+void RSProperty<std::shared_ptr<ParticleFieldCollection>>::UpdateToRender(
+    const std::shared_ptr<ParticleFieldCollection>& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyParticleFields, value, type);
 }
 template<>
 void RSProperty<std::shared_ptr<RSShader>>::UpdateToRender(
@@ -629,6 +659,13 @@ void RSProperty<RSShadowBlenderPara>::UpdateToRender(
     const RSShadowBlenderPara& value, PropertyUpdateType type) const
 {
     UPDATE_TO_RENDER(RSUpdatePropertyShadowBlenderPara, value, type);
+}
+
+template<>
+void RSProperty<RSHdrDarkenBlenderPara>::UpdateToRender(
+    const RSHdrDarkenBlenderPara& value, PropertyUpdateType type) const
+{
+    UPDATE_TO_RENDER(RSUpdatePropertyHdrDarkenBlenderPara, value, type);
 }
 
 template<>

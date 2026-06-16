@@ -21,6 +21,7 @@
 #include "effect_errors.h"
 #include "hilog/log.h"
 #include "test_picture_files.h"
+#include <vector>
 
 using namespace testing;
 using namespace testing::ext;
@@ -33,6 +34,32 @@ static constexpr OHOS::HiviewDFX::HiLogLabel LABEL_TEST = {
 
 namespace OHOS {
 namespace Rosen {
+
+namespace {
+constexpr int32_t REGION_TEST_WIDTH = 4;
+constexpr int32_t REGION_TEST_HEIGHT = 4;
+constexpr int32_t REGION_TEST_HALF_HEIGHT = 2;
+constexpr uint32_t REGION_TEST_COLOR_RED = 0xFFFF0000;
+constexpr uint32_t REGION_TEST_COLOR_BLUE = 0xFF0000FF;
+
+std::shared_ptr<PixelMap> CreateTwoColorPixelMap()
+{
+    Media::InitializationOptions opts;
+    opts.size.width = REGION_TEST_WIDTH;
+    opts.size.height = REGION_TEST_HEIGHT;
+    opts.pixelFormat = PixelFormat::ARGB_8888;
+    opts.alphaType = AlphaType::IMAGE_ALPHA_TYPE_OPAQUE;
+    opts.editable = true;
+
+    std::vector<uint32_t> colors(REGION_TEST_WIDTH * REGION_TEST_HEIGHT, REGION_TEST_COLOR_BLUE);
+    for (int32_t y = 0; y < REGION_TEST_HALF_HEIGHT; y++) {
+        for (int32_t x = 0; x < REGION_TEST_WIDTH; x++) {
+            colors[static_cast<size_t>(y * REGION_TEST_WIDTH + x)] = REGION_TEST_COLOR_RED;
+        }
+    }
+    return std::shared_ptr<PixelMap>(PixelMap::Create(colors.data(), colors.size(), opts).release());
+}
+}
 
 std::shared_ptr<ColorPicker> ColorPickerUnittest::CreateColorPicker()
 {
@@ -359,6 +386,64 @@ HWTEST_F(ColorPickerUnittest, GetMainColorTest003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: GetMainColorWithRegionTest001
+ * @tc.desc: Ensure GetMainColor honors the selected region.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(ColorPickerUnittest, GetMainColorWithRegionTest001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "ColorPickerUnittest GetMainColorWithRegionTest001 start";
+
+    uint32_t errorCode = SUCCESS;
+    double topRegion[4] = {0.0, 0.0, 1.0, 0.5};
+    std::shared_ptr<ColorPicker> topPicker =
+        ColorPicker::CreateColorPicker(CreateTwoColorPixelMap(), topRegion, errorCode);
+    ASSERT_EQ(errorCode, SUCCESS);
+    ASSERT_NE(topPicker, nullptr);
+
+    ColorManager::Color topColor;
+    errorCode = topPicker->GetMainColor(topColor);
+    ASSERT_EQ(errorCode, SUCCESS);
+    EXPECT_TRUE(topColor.ColorEqual(ColorManager::Color(1.0f, 0.0f, 0.0f, 1.0f)));
+
+    double bottomRegion[4] = {0.0, 0.5, 1.0, 1.0};
+    std::shared_ptr<ColorPicker> bottomPicker =
+        ColorPicker::CreateColorPicker(CreateTwoColorPixelMap(), bottomRegion, errorCode);
+    ASSERT_EQ(errorCode, SUCCESS);
+    ASSERT_NE(bottomPicker, nullptr);
+
+    ColorManager::Color bottomColor;
+    errorCode = bottomPicker->GetMainColor(bottomColor);
+    ASSERT_EQ(errorCode, SUCCESS);
+    EXPECT_TRUE(bottomColor.ColorEqual(ColorManager::Color(0.0f, 0.0f, 1.0f, 1.0f)));
+}
+
+/**
+ * @tc.name: GetMainColorWithRegionTest002
+ * @tc.desc: Ensure collapsed regions do not fall back to the full image.
+ * @tc.type: FUNC
+ * @tc.require:
+ * @tc.author:
+ */
+HWTEST_F(ColorPickerUnittest, GetMainColorWithRegionTest002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "ColorPickerUnittest GetMainColorWithRegionTest002 start";
+
+    uint32_t errorCode = SUCCESS;
+    double collapsedRegion[4] = {0.0, 0.0, 0.005, 1.0};
+    std::shared_ptr<ColorPicker> picker =
+        ColorPicker::CreateColorPicker(CreateTwoColorPixelMap(), collapsedRegion, errorCode);
+    ASSERT_EQ(errorCode, SUCCESS);
+    ASSERT_NE(picker, nullptr);
+
+    ColorManager::Color color;
+    errorCode = picker->GetMainColor(color);
+    EXPECT_EQ(errorCode, ERR_EFFECT_INVALID_VALUE);
+}
+
+/**
  * @tc.name: GetLargestProportionColor
  * @tc.desc: Ensure the ability of creating effect chain from config file.
  * @tc.type: FUNC
@@ -626,13 +711,13 @@ HWTEST_F(ColorPickerUnittest, CalcContrastRatioWithWhite001, TestSize.Level1)
 }
 
 /**
- * @tc.name: DiscriminatePitureLightDegreee001
- * @tc.desc: DiscriminatePitureLightDegree degree is DARK_COLOR_PICTURE
+ * @tc.name: DiscriminatePictureLightDegreee001
+ * @tc.desc: DiscriminatePictureLightDegree degree is DARK_COLOR_PICTURE
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(ColorPickerUnittest, DiscriminatePitureLightDegreee001, TestSize.Level1)
+HWTEST_F(ColorPickerUnittest, DiscriminatePictureLightDegreee001, TestSize.Level1)
 {
     size_t bufferSize = 0;
     uint8_t* buffer = GetJpgBuffer(bufferSize);
@@ -658,18 +743,18 @@ HWTEST_F(ColorPickerUnittest, DiscriminatePitureLightDegreee001, TestSize.Level1
     pColorPicker->grayMsd_ = 5000;
     pColorPicker->contrastToWhite_ = 9;
     PictureLightColorDegree degree = EXTREMELY_LIGHT_COLOR_PICTURE;
-    pColorPicker->DiscriminatePitureLightDegree(degree);
+    pColorPicker->DiscriminatePictureLightDegree(degree);
     EXPECT_EQ(degree, DARK_COLOR_PICTURE);
 }
 
 /**
- * @tc.name: DiscriminatePitureLightDegreee002
- * @tc.desc: DiscriminatePitureLightDegree degree is ERR_EFFECT_INVALID_VALUE
+ * @tc.name: DiscriminatePictureLightDegreee002
+ * @tc.desc: DiscriminatePictureLightDegree degree is ERR_EFFECT_INVALID_VALUE
  * @tc.type: FUNC
  * @tc.require:
  * @tc.author:
  */
-HWTEST_F(ColorPickerUnittest, DiscriminatePitureLightDegreee002, TestSize.Level1)
+HWTEST_F(ColorPickerUnittest, DiscriminatePictureLightDegreee002, TestSize.Level1)
 {
     size_t bufferSize = 0;
     uint8_t* buffer = GetJpgBuffer(bufferSize);
@@ -696,7 +781,7 @@ HWTEST_F(ColorPickerUnittest, DiscriminatePitureLightDegreee002, TestSize.Level1
     pColorPicker->grayMsd_ = 5000;
     pColorPicker->contrastToWhite_ = 9;
     PictureLightColorDegree degree = EXTREMELY_LIGHT_COLOR_PICTURE;
-    uint32_t ret = pColorPicker->DiscriminatePitureLightDegree(degree);
+    uint32_t ret = pColorPicker->DiscriminatePictureLightDegree(degree);
     EXPECT_EQ(ret, ERR_EFFECT_INVALID_VALUE);
 }
 
@@ -1554,7 +1639,7 @@ HWTEST_F(ColorPickerUnittest, GetTopProportionColors, TestSize.Level1)
     ASSERT_EQ(errorCode, SUCCESS);
     EXPECT_NE(pColorPicker, nullptr);
 
-    std::vector<ColorManager::Color> colors = pColorPicker->GetTopProportionColors(10); // the color num limit is 10
+    std::vector<ColorManager::Color> colors = pColorPicker->GetTopProportionColors(20); // the color num limit is 20
     HiLog::Info(LABEL_TEST, "get top proportion colors[0][rgba]=%{public}f,%{public}f,%{public}f,%{public}f",
                 colors[0].r, colors[0].g, colors[0].b, colors[0].a);
     ASSERT_EQ(colors.size(), 1);
@@ -1606,7 +1691,7 @@ HWTEST_F(ColorPickerUnittest, GetTopProportion, TestSize.Level1)
     ASSERT_EQ(errorCode, SUCCESS);
     EXPECT_NE(pColorPicker, nullptr);
 
-    std::vector<double> percentages = pColorPicker->GetTopProportion(1); // the color num limit is 10
+    std::vector<double> percentages = pColorPicker->GetTopProportion(1); // the color num limit is 20
     ASSERT_EQ(percentages.size(), 1);
     pColorPicker->featureColors_.clear();
     percentages = pColorPicker->GetTopProportion(1);
@@ -2035,7 +2120,7 @@ HWTEST_F(ColorPickerUnittest, Rgb2Gray, TestSize.Level1)
 {
     unsigned int color = 0xfedcba98; // normal value
     uint8_t ret = ColorExtract::Rgb2Gray(color, Media::PixelFormat::RGBA_1010102);
-    EXPECT_EQ(static_cast<uint32_t>(ret), 22); // 22: Result of converting to gray
+    EXPECT_EQ(ret, 22); // 22: Result of converting to gray
 }
 
 /**

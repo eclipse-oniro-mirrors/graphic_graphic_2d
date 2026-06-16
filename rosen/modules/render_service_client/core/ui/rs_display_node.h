@@ -50,13 +50,15 @@ public:
 
     /**
      * @brief Get the type of the RSUINode.
-     * 
+     *
      * @return The type of the RSUINode.
      */
+    // LCOV_EXCL_START
     RSUINodeType GetType() const override
     {
         return Type;
     }
+    // LCOV_EXCL_STOP
 
     /**
      * @brief Destructor for RSDisplayNode.
@@ -106,10 +108,17 @@ public:
 
     /**
      * @brief Sets the screen ID.
-     * 
+     *
      * @param screenId Indicates the unique identifier of the screen.
      */
     void SetScreenId(uint64_t screenId);
+
+    /**
+     * @brief Sets the display content rect.
+     *
+     * @param contentRect Indicates the content rect of the display.
+     */
+    void SetDisplayContentRect(const Rect& contentRect);
 
     /**
      * @brief Sets whether it is a security screen.
@@ -142,13 +151,6 @@ public:
      * @return true if the screen is security; false otherwise.
      */
     bool GetSecurityDisplay() const;
-
-    /**
-     * @brief Set whether to forcibly close HDR.
-     *
-     * @param isForceCloseHdr true if HDR should be forcibly closed; false otherwise.
-     */
-    void SetForceCloseHdr(bool isForceCloseHdr);
 
     /**
      * @brief Gets whether the screen mode is mirroring.
@@ -189,8 +191,8 @@ protected:
     RSDisplayNode& operator=(const RSDisplayNode&&) = delete;
 
 private:
-    bool CreateNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
-    void OnBoundsSizeChanged() const override;
+    bool CreateDisplayNode(const RSDisplayNodeConfig& displayNodeConfig, NodeId nodeId);
+    void OnBoundsSizeChanged() override;
     void RegisterNodeMap() override;
     uint64_t screenId_;
     bool isSecurityDisplay_ = false;

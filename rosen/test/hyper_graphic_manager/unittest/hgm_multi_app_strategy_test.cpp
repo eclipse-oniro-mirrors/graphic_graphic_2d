@@ -257,9 +257,11 @@ HWTEST_F(HgmMultiAppStrategyTest, SingleAppTouch003, Function | SmallTest | Leve
 {
     PART("CaseDescription") {
         std::string unConfigPkgName = "com.pkg.other";
+        std::string sceneBoard = "com.ohos.sceneboard";
+        constexpr pid_t resPid = 110;
         auto& pkgParam = pkgParams_[0]; // first pkg
         std::vector<std::string> voteParam = { pkgParam.pkgName + ":" + std::to_string(pkgParam.pid), };
-
+        std::vector<std::string> sceneBoardParam = { sceneBoard + ":" + strategyName0, };
         PolicyConfigData::StrategyConfig strategyConfig;
         VoteInfo touchVoteInfo;
         HgmErrCode res;
@@ -273,6 +275,8 @@ HWTEST_F(HgmMultiAppStrategyTest, SingleAppTouch003, Function | SmallTest | Leve
             ASSERT_EQ(res, EXEC_SUCCESS);
             multiAppStrategy_->HandlePkgsEvent({ unConfigPkgName, });
             ASSERT_EQ(res, EXEC_SUCCESS);
+            multiAppStrategy_->HandlePkgsEvent(sceneBoardParam);
+            ASSERT_EQ(multiAppStrategy_->sceneBoardPid_, resPid);
             res = multiAppStrategy_->GetVoteRes(strategyConfig);
             ASSERT_EQ(res, EXEC_SUCCESS);
             ASSERT_EQ(strategyConfig.min, OLED_NULL_HZ);
@@ -515,7 +519,7 @@ HWTEST_F(HgmMultiAppStrategyTest, AppType, Function | SmallTest | Level0)
         multiAppStrategy_->GetVoteRes(strategyConfig);
         ASSERT_EQ(strategyConfig.min, fps0);
         ASSERT_EQ(strategyConfig.max, fps0);
-        
+
         multiAppStrategy_->HandlePkgsEvent({ otherPkgName + ":" + defaultPidStr + ":" + std::to_string(appType1) });
         multiAppStrategy_->GetVoteRes(strategyConfig);
         ASSERT_EQ(strategyConfig.min, fps1);
@@ -604,30 +608,6 @@ HWTEST_F(HgmMultiAppStrategyTest, HandleLowAmbientStatus, Function | SmallTest |
 }
 
 /**
- * @tc.name: CheckImageEnhanceListTest
- * @tc.desc: Verify the result of CheckImageEnhanceList
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(HgmMultiAppStrategyTest, CheckImageEnhanceListTest, Function | SmallTest | Level0)
-{
-    auto& hgmCore = HgmCore::Instance();
-    std::unordered_set<pid_t> imageEnhancePidList;
-    const pid_t pid = 1234;
-    std::string pkgName = "com.other.app";
-    hgmCore.mImageEnhanceScene_.clear();
-    multiAppStrategy_->CheckImageEnhanceList(pkgName, pid, imageEnhancePidList);
-    EXPECT_TRUE(imageEnhancePidList.empty());
-    hgmCore.mImageEnhanceScene_.insert("com.example.app");
-    multiAppStrategy_->CheckImageEnhanceList(pkgName, pid, imageEnhancePidList);
-    EXPECT_TRUE(imageEnhancePidList.empty());
-    pkgName = "com.example.app";
-    multiAppStrategy_->CheckImageEnhanceList(pkgName, pid, imageEnhancePidList);
-    EXPECT_FALSE(imageEnhancePidList.empty());
-    EXPECT_NE(imageEnhancePidList.find(pid), imageEnhancePidList.end());
-}
-
-/**
  * @tc.name: BackgroundApp
  * @tc.desc: Verify the result of BackgroundApp
  * @tc.type: FUNC
@@ -640,7 +620,7 @@ HWTEST_F(HgmMultiAppStrategyTest, BackgroundApp, Function | SmallTest | Level0)
         multiAppStrategy_->HandlePkgsEvent({ pkgName0 + ":" + std::to_string(pid0) });
         auto foregroundPidAppMap = multiAppStrategy_->GetForegroundPidApp();
         ASSERT_TRUE(foregroundPidAppMap.find(pid0) != foregroundPidAppMap.end());
-        
+
         multiAppStrategy_->HandlePkgsEvent({ pkgName1 + ":" + std::to_string(pid1) + ":" + std::to_string(gameType0) });
         foregroundPidAppMap = multiAppStrategy_->GetForegroundPidApp();
         auto backgroundPid = multiAppStrategy_->GetBackgroundPid();

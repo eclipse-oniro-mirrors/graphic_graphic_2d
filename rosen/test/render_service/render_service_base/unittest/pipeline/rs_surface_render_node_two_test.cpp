@@ -239,6 +239,8 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, IsYUVBufferFormatTest, TestSize.Level1)
     renderNode->GetRSSurfaceHandler()->buffer_.buffer = surfaceBufferImpl;
     EXPECT_FALSE(renderNode->IsYUVBufferFormat());
     auto handle = new BufferHandle();
+    ASSERT_NE(handle, nullptr);
+    handle->fd = -1;
     handle->format = 20;
     surfaceBufferImpl->handle_ = handle;
     EXPECT_FALSE(renderNode->IsYUVBufferFormat());
@@ -567,9 +569,9 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, SetForceUIFirstTest, TestSize.Level1)
 {
     auto renderNode = std::make_shared<RSSurfaceRenderNode>(0);
     renderNode->SetForceUIFirst(false);
-    EXPECT_FALSE(renderNode->forceUIFirst_);
+    EXPECT_FALSE(renderNode->uifirstState_.forceUIFirst);
     renderNode->SetForceUIFirst(true);
-    EXPECT_TRUE(renderNode->forceUIFirstChanged_);
+    EXPECT_TRUE(renderNode->uifirstState_.forceStateChanged);
 }
 
 /**
@@ -682,23 +684,6 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, UpdateSurfaceSubTreeDirtyFlag, TestSize.Lev
 }
 
 /**
- * @tc.name: ResetDrawingCacheStatusIfNodeStatic
- * @tc.desc: test results of ResetDrawingCacheStatusIfNodeStatic
- * @tc.type: FUNC
- * @tc.require: issueIA4VTS
- */
-HWTEST_F(RSSurfaceRenderNodeTwoTest, ResetDrawingCacheStatusIfNodeStatic, TestSize.Level1)
-{
-    auto renderNode = std::make_shared<RSSurfaceRenderNode>(id);
-    std::unordered_map<NodeId, std::unordered_set<NodeId>> allRects;
-    renderNode->ResetDrawingCacheStatusIfNodeStatic(allRects);
-    auto node = std::make_shared<RSRenderNode>(1);
-    renderNode->UpdateDrawingCacheNodes(node);
-    renderNode->ResetDrawingCacheStatusIfNodeStatic(allRects);
-    EXPECT_EQ(renderNode->drawingCacheNodes_.size(), 0);
-}
-
-/**
  * @tc.name: UpdateFilterCacheStatusWithVisible
  * @tc.desc: test results of UpdateFilterCacheStatusWithVisible
  * @tc.type: FUNC
@@ -744,7 +729,7 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, UpdateFilterCacheStatusIfNodeStatic, TestSi
 HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion, TestSize.Level1)
 {
     std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
-    auto rsnode = std::make_shared<RSRenderNode>(0);
+    auto rsnode = std::make_shared<RSSurfaceRenderNode>(++id);
     rsnode->SetIsScale(true);
     node->parent_ = rsnode;
     node->CheckParticipateInOcclusion(false);
@@ -792,6 +777,24 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion002, TestSize.Le
     EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
     NodeId idOne = 1;
     node->AddChildBlurBehindWindow(idOne);
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
+}
+
+/**
+ * @tc.name: CheckParticipateInOcclusion003
+ * @tc.desc: test all results of CheckParticipateInOcclusion
+ * @tc.type: FUNC
+ * @tc.require: issue20843
+ */
+HWTEST_F(RSSurfaceRenderNodeTwoTest, CheckParticipateInOcclusion003, TestSize.Level1)
+{
+    std::shared_ptr<RSSurfaceRenderNode> node = std::make_shared<RSSurfaceRenderNode>(id);
+    auto parent1 = std::make_shared<RSCanvasRenderNode>(++id);
+    node->parent_ = parent1;
+    EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
+
+    auto parent2 = std::make_shared<RSSurfaceRenderNode>(++id);
+    node->parent_ = parent2;
     EXPECT_FALSE(node->CheckParticipateInOcclusion(false));
 }
 
@@ -969,7 +972,7 @@ HWTEST_F(RSSurfaceRenderNodeTwoTest, GetNodeIsSingleFrameComposer, TestSize.Leve
     ASSERT_FALSE(res);
     system::SetParameter("persist.sys.graphic.singleFrame", "1");
     ASSERT_FALSE(node->GetNodeIsSingleFrameComposer());
-    node->isNodeSingleFrameComposer_ = true;
+    node->MarkNodeSingleFrameComposer(true);
     node->name_ = "hwstylusfeature";
     EXPECT_TRUE(node->GetNodeIsSingleFrameComposer());
 }

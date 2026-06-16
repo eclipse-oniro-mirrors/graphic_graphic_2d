@@ -33,6 +33,7 @@ namespace Rosen {
 
 static const std::string ANI_CLASS_COLOR_PICKER = "@ohos.effectKit.effectKit.ColorPickerInternal";
 static const std::string ANI_CLASS_COLOR = "@ohos.effectKit.effectKit.ColorInternal";
+static const char* ANI_CLASS_PICTURE_LIGHT_COLOR_DEGREE = "@ohos.effectKit.effectKit.PictureLightDegree";
 constexpr int REGION_COORDINATE_NUM = 4;
 
 struct AniColorPickerAsyncContext {
@@ -51,7 +52,7 @@ struct AniColorPickerAsyncContext {
           rColorPicker(nullptr) {}
 };
 
-static ani_object BuildColor(ani_env *env, const ColorManager::Color &color)
+static ani_object BuildColor(ani_env* env, const ColorManager::Color &color)
 {
     ani_object result{};
     if (env == nullptr) {
@@ -59,7 +60,7 @@ static ani_object BuildColor(ani_env *env, const ColorManager::Color &color)
         return result;
     }
     static const char *className = ANI_CLASS_COLOR.c_str();
-    
+
     result = AniEffectKitUtils::CreateAniObject(env, className, nullptr, reinterpret_cast<ani_long>(nullptr));
     ani_boolean resultIsUndefined = ANI_TRUE;
     env->Reference_IsUndefined(result, &resultIsUndefined);
@@ -71,15 +72,16 @@ static ani_object BuildColor(ani_env *env, const ColorManager::Color &color)
     ani_int colorGreen = static_cast<ani_int>(color.g * 255.0f);
     ani_int colorBlue = static_cast<ani_int>(color.b * 255.0f);
     ani_int colorAlpha = static_cast<ani_int>(color.a * 255.0f);
-    env->Object_SetPropertyByName_Int(result, "red", colorRed);
-    env->Object_SetPropertyByName_Int(result, "green", colorGreen);
-    env->Object_SetPropertyByName_Int(result, "blue", colorBlue);
-    env->Object_SetPropertyByName_Int(result, "alpha", colorAlpha);
-
+    if ((env->Object_SetPropertyByName_Int(result, "red", colorRed) != ANI_OK) ||
+        (env->Object_SetPropertyByName_Int(result, "green", colorGreen) != ANI_OK) ||
+        (env->Object_SetPropertyByName_Int(result, "blue", colorBlue) != ANI_OK) ||
+        (env->Object_SetPropertyByName_Int(result, "alpha", colorAlpha) != ANI_OK)) {
+        EFFECT_LOG_E("build color is fail, set color value fail.");
+    }
     return result;
 }
 
-ani_object AniColorPicker::GetMainColorSync(ani_env *env, ani_object obj)
+ani_object AniColorPicker::GetMainColorSync(ani_env* env, ani_object obj)
 {
     AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
     if (!thisColorPicker) {
@@ -100,7 +102,7 @@ ani_object AniColorPicker::GetMainColorSync(ani_env *env, ani_object obj)
     return BuildColor(env, color);
 }
 
-ani_object AniColorPicker::GetLargestProportionColor(ani_env *env, ani_object obj)
+ani_object AniColorPicker::GetLargestProportionColor(ani_env* env, ani_object obj)
 {
     AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
     if (!thisColorPicker) {
@@ -122,7 +124,7 @@ ani_object AniColorPicker::GetLargestProportionColor(ani_env *env, ani_object ob
     return BuildColor(env, color);
 }
 
-ani_object AniColorPicker::GetTopProportionColors(ani_env *env, ani_object obj, ani_int param)
+ani_object AniColorPicker::GetTopProportionColors(ani_env* env, ani_object obj, ani_int param)
 {
     AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
     if (!thisColorPicker) {
@@ -133,7 +135,7 @@ ani_object AniColorPicker::GetTopProportionColors(ani_env *env, ani_object obj, 
         EFFECT_LOG_E("[GetTopProportionColors] Error2, failed to retrieve native ColorPicker wrapper");
         return AniEffectKitUtils::CreateAniUndefined(env);
     }
-    constexpr int PROPORTION_COLORS_NUM_LIMIT = 10;
+    constexpr int PROPORTION_COLORS_NUM_LIMIT = 20;
     unsigned int colorsNum = static_cast<unsigned int>(std::clamp(param, 0, PROPORTION_COLORS_NUM_LIMIT));
     std::vector<ColorManager::Color> colors;
     colors = thisColorPicker->nativeColorPicker_->GetTopProportionColors(colorsNum);
@@ -165,7 +167,7 @@ ani_object AniColorPicker::GetTopProportionColors(ani_env *env, ani_object obj, 
     return static_cast<ani_object>(arrayValue);
 }
 
-ani_object AniColorPicker::GetHighestSaturationColor(ani_env *env, ani_object obj)
+ani_object AniColorPicker::GetHighestSaturationColor(ani_env* env, ani_object obj)
 {
     AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
     if (!thisColorPicker) {
@@ -187,7 +189,7 @@ ani_object AniColorPicker::GetHighestSaturationColor(ani_env *env, ani_object ob
     return BuildColor(env, color);
 }
 
-ani_object AniColorPicker::GetAverageColor(ani_env *env, ani_object obj)
+ani_object AniColorPicker::GetAverageColor(ani_env* env, ani_object obj)
 {
     AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
     if (!thisColorPicker) {
@@ -208,7 +210,7 @@ ani_object AniColorPicker::GetAverageColor(ani_env *env, ani_object obj)
     return BuildColor(env, color);
 }
 
-ani_boolean AniColorPicker::IsBlackOrWhiteOrGrayColor(ani_env *env, ani_object obj, ani_long colorValue)
+ani_boolean AniColorPicker::IsBlackOrWhiteOrGrayColor(ani_env* env, ani_object obj, ani_long colorValue)
 {
     if (colorValue < 0) {
         return false;
@@ -225,11 +227,156 @@ ani_boolean AniColorPicker::IsBlackOrWhiteOrGrayColor(ani_env *env, ani_object o
 
     uint32_t color = static_cast<uint32_t>(colorValue);
     ani_boolean rst = thisColorPicker->nativeColorPicker_->IsBlackOrWhiteOrGrayColor(color);
-    
+
     return rst;
 }
 
-ani_object AniColorPicker::CreateColorPickerNormal(ani_env *env, ani_object para)
+ani_object AniColorPicker::GetMorandiShadowColor(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[GetMorandiShadowColor] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[GetMorandiShadowColor] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
+    ColorManager::Color color;
+    errorCode = thisColorPicker->nativeColorPicker_->GetMorandiShadowColor(color);
+    if (errorCode != SUCCESS) {
+        EFFECT_LOG_E("[GetMorandiShadowColor] Error3, failed to get Morandi shadow color (error code: %u)", errorCode);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    return BuildColor(env, color);
+}
+
+ani_object AniColorPicker::GetDeepenImmersionColor(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[GetDeepenImmersionColor] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[GetDeepenImmersionColor] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
+    ColorManager::Color color;
+    errorCode = thisColorPicker->nativeColorPicker_->GetDeepenImmersionColor(color);
+    if (errorCode != SUCCESS) {
+        EFFECT_LOG_E("[GetDeepenImmersionColor] Error3, failed to get deepen immersion color "
+                     "(error code: %u)", errorCode);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    return BuildColor(env, color);
+}
+
+ani_object AniColorPicker::GetImmersiveBackgroundColor(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[GetImmersiveBackgroundColor] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[GetImmersiveBackgroundColor] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
+    ColorManager::Color color;
+    errorCode = thisColorPicker->nativeColorPicker_->GetImmersiveBackgroundColor(color);
+    if (errorCode != SUCCESS) {
+        EFFECT_LOG_E("[GetImmersiveBackgroundColor] Error3, failed to get immersive background "
+                     "color (error code: %u)", errorCode);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    return BuildColor(env, color);
+}
+
+ani_object AniColorPicker::GetImmersiveForegroundColor(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[GetImmersiveForegroundColor] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[GetImmersiveForegroundColor] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
+    ColorManager::Color color;
+    errorCode = thisColorPicker->nativeColorPicker_->GetImmersiveForegroundColor(color);
+    if (errorCode != SUCCESS) {
+        EFFECT_LOG_E("[GetImmersiveForegroundColor] Error3, failed to get immersive foreground "
+                     "color (error code: %u)", errorCode);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    return BuildColor(env, color);
+}
+
+ani_object AniColorPicker::DiscriminatePictureLightDegree(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[DiscriminatePictureLightDegree] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[DiscriminatePictureLightDegree] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
+    ani_enum pictureLightColorDegree;
+    ani_status status = env->FindEnum(ANI_CLASS_PICTURE_LIGHT_COLOR_DEGREE, &pictureLightColorDegree);
+    if (status != ANI_OK) {
+        EFFECT_LOG_E("[DiscriminatePictureLightDegree] Error3, FindEnum failed with error code: %d", status);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    ani_enum_item aniDegree;
+    PictureLightColorDegree degree;
+    
+    errorCode = thisColorPicker->nativeColorPicker_->DiscriminatePictureLightDegree(degree);
+    if (errorCode != SUCCESS) {
+        EFFECT_LOG_E("[DiscriminatePictureLightDegree] Error4, failed to discriminate picture light "
+                     "degree (error code: %u)", errorCode);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    status = env->Enum_GetEnumItemByIndex(pictureLightColorDegree, static_cast<ani_size>(degree), &aniDegree);
+    if (status != ANI_OK) {
+        EFFECT_LOG_E("[DiscriminatePictureLightDegree] Error5, "
+                     "Enum_GetEnumItemByIndex failed with error code: %d", status);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+
+    return aniDegree;
+}
+
+ani_object AniColorPicker::GetReverseColor(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[GetReverseColor] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[GetReverseColor] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    uint32_t errorCode = ERR_EFFECT_INVALID_VALUE;
+    ColorManager::Color color;
+    errorCode = thisColorPicker->nativeColorPicker_->GetReverseColor(color);
+    if (errorCode != SUCCESS) {
+        EFFECT_LOG_E("[GetReverseColor] Error3, failed to get reverse color (error code: %u)", errorCode);
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    return BuildColor(env, color);
+}
+
+ani_object AniColorPicker::CreateColorPickerNormal(ani_env* env, ani_object para)
 {
     auto colorPicker = std::make_unique<AniColorPicker>();
 
@@ -271,11 +418,11 @@ ani_object AniColorPicker::CreateColorPickerWithRegion(ani_env* env, ani_object 
     if (int(length) >= REGION_COORDINATE_NUM) {
         for (int i = 0; i < REGION_COORDINATE_NUM; i++) {
             ani_ref doubleValueRef{};
-            ani_status status = env->Object_CallMethodByName_Ref(region, "$_get", "i:C{std.core.Object}",
+            ani_status status = env->Object_CallMethodByName_Ref(region, "$_get", "i:Y",
                 &doubleValueRef, (ani_int)i);
             ani_double doubleValue;
             status = env->Object_CallMethodByName_Double(static_cast<ani_object>(doubleValueRef),
-                "unboxed", ":d", &doubleValue);
+                "toDouble", ":d", &doubleValue);
             if (status != ANI_OK) {
                 EFFECT_LOG_E("[CreateColorPicker] region Object_CallMethodByName_Double failed at i=%d", i);
                 return AniEffectKitUtils::CreateAniUndefined(env);
@@ -305,6 +452,33 @@ ani_object AniColorPicker::CreateColorPickerWithRegion(ani_env* env, ani_object 
     const char* methodSig = "l:";
     return AniEffectKitUtils::CreateAniObject(env, className, methodSig,
         reinterpret_cast<ani_long>(colorPicker.release()));
+}
+
+ani_ref AniColorPicker::GetAlphaZeroTransparentProportion(ani_env* env, ani_object obj)
+{
+    AniColorPicker *thisColorPicker = AniEffectKitUtils::GetColorPickerFromEnv(env, obj);
+    if (!thisColorPicker) {
+        EFFECT_LOG_E("[GetAverageColor] Error1, failed to retrieve ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    if (!thisColorPicker->nativeColorPicker_) {
+        EFFECT_LOG_E("[GetAverageColor] Error2, failed to retrieve native ColorPicker wrapper");
+        return AniEffectKitUtils::CreateAniUndefined(env);
+    }
+    ani_double ret = thisColorPicker->nativeColorPicker_->GetAlphaZeroTransparentProportion();
+    static constexpr const char *className = "std.core.Double";
+    ani_class doubleCls {};
+    env->FindClass(className, &doubleCls);
+    ani_method ctor {};
+    env->Class_FindMethod(doubleCls, "<ctor>", "d:", &ctor);
+    ani_object obj_ret {};
+    if (env->Object_New(doubleCls, ctor, &obj_ret, ret) != ANI_OK) {
+        std::cerr << "Failed to allocate Double!" << std::endl;
+        ani_ref undefinedRef;
+        env->GetUndefined(&undefinedRef);
+        return undefinedRef;
+    }
+    return static_cast<ani_ref>(obj_ret);
 }
 
 ani_object AniColorPicker::CreateColorPickerFromPtr(ani_env* env, std::shared_ptr<Media::PixelMap> pixelMap)
@@ -385,15 +559,8 @@ ani_object AniColorPicker::kitTransferDynamicColorPicker(ani_env* env, ani_class
     return result;
 }
 
-ani_status AniColorPicker::Init(ani_env *env)
+ani_status AniColorPicker::BindNativeMethods(ani_env* env, ani_class cls)
 {
-    static const char *className = ANI_CLASS_COLOR_PICKER.c_str();
-    ani_class cls;
-    if (env->FindClass(className, &cls) != ANI_OK) {
-        EFFECT_LOG_E("Not found @ohos.effectKit.effectKit.ColorPickerInternal");
-        return ANI_NOT_FOUND;
-    }
-
     std::array methods = {
         ani_native_function{"getMainColorSyncNative", nullptr,
                             reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetMainColorSync)},
@@ -407,23 +574,62 @@ ani_status AniColorPicker::Init(ani_env *env)
                             reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetAverageColor)},
         ani_native_function{"isBlackOrWhiteOrGrayColorNative", nullptr,
                             reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::IsBlackOrWhiteOrGrayColor)},
+        ani_native_function{"getMorandiShadowColorNative", nullptr,
+                            reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetMorandiShadowColor)},
+        ani_native_function{"getDeepenImmersionColorNative", nullptr,
+                            reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetDeepenImmersionColor)},
+        ani_native_function{"getImmersiveBackgroundColorNative", nullptr,
+                            reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetImmersiveBackgroundColor)},
+        ani_native_function{"getImmersiveForegroundColorNative", nullptr,
+                            reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetImmersiveForegroundColor)},
+        ani_native_function{"discriminatePictureLightDegreeNative", nullptr,
+                            reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::DiscriminatePictureLightDegree)},
+        ani_native_function{"getReverseColorNative", nullptr,
+                            reinterpret_cast<void *>(OHOS::Rosen::AniColorPicker::GetReverseColor)},
     };
     ani_status ret = env->Class_BindNativeMethods(cls, methods.data(), methods.size());
     if (ret != ANI_OK) {
         EFFECT_LOG_E("AniColorPicker Class_BindNativeMethods ret : %{public}d", ret);
         return ANI_ERROR;
     }
+    return ANI_OK;
+}
+
+ani_status AniColorPicker::BindStaticNativeMethods(ani_env* env, ani_class cls)
+{
     std::array static_methods = {
         ani_native_function { "kitTransferStaticNative", "C{std.interop.ESValue}:C{std.core.Object}",
             reinterpret_cast<void*>(OHOS::Rosen::AniColorPicker::KitTransferStaticColorPicker) },
         ani_native_function { "kitTransferDynamicNative", "l:C{std.interop.ESValue}",
             reinterpret_cast<void*>(OHOS::Rosen::AniColorPicker::kitTransferDynamicColorPicker) }
     };
-    ret = env->Class_BindStaticNativeMethods(cls, static_methods.data(), static_methods.size());
+    ani_status ret = env->Class_BindStaticNativeMethods(cls, static_methods.data(), static_methods.size());
     if (ret != ANI_OK) {
         EFFECT_LOG_E("AniColorPicker Class_BindStaticNativeMethods ret : %{public}d", ret);
         return ANI_ERROR;
     }
+    return ANI_OK;
+}
+
+ani_status AniColorPicker::Init(ani_env *env)
+{
+    static const char *className = ANI_CLASS_COLOR_PICKER.c_str();
+    ani_class cls;
+    if (env->FindClass(className, &cls) != ANI_OK) {
+        EFFECT_LOG_E("Not found @ohos.effectKit.effectKit.ColorPickerInternal");
+        return ANI_NOT_FOUND;
+    }
+
+    ani_status ret = BindNativeMethods(env, cls);
+    if (ret != ANI_OK) {
+        return ret;
+    }
+
+    ret = BindStaticNativeMethods(env, cls);
+    if (ret != ANI_OK) {
+        return ret;
+    }
+
     return ANI_OK;
 }
 

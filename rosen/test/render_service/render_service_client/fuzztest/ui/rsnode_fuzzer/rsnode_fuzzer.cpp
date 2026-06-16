@@ -98,7 +98,7 @@ bool Init(const uint8_t* data, size_t size)
     return true;
 }
 
-bool RSSurfaceNodeFuzzTest(const uint8_t* data, size_t size)
+bool RSSurfaceNodeFuzzTest()
 {
     RSSurfaceNodeConfig surfaceNodeConfig = GetRSSurfaceNodeConfigFromData();
     std::shared_ptr<RSBaseNode> child = RSCanvasNode::Create();
@@ -111,6 +111,9 @@ bool RSSurfaceNodeFuzzTest(const uint8_t* data, size_t size)
     bool isAppFreeze = GetData<bool>();
     bool hasContainerWindow = GetData<bool>();
     RRect rrect = GetData<RRect>();
+    NodeId id = GetData<NodeId>();
+    bool needOffscreen = GetData<bool>();
+    bool isRelated = GetData<bool>();
 
     std::shared_ptr<RSSurfaceNode> surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
     if (!surfaceNode) {
@@ -122,6 +125,7 @@ bool RSSurfaceNodeFuzzTest(const uint8_t* data, size_t size)
     surfaceNode->SetSecurityLayer(isSecurityLayer);
     surfaceNode->SetAbilityBGAlpha(alpha);
     surfaceNode->SetIsNotifyUIBufferAvailable(available);
+    surfaceNode->SetClonedNodeInfo(id, needOffscreen, isRelated);
     surfaceNode->Marshalling(parcel);
     RSSurfaceNode::Unmarshalling(parcel);
     RSSurfaceNode::UnmarshallingAsProxyNode(parcel);
@@ -249,7 +253,39 @@ void RSNodeFuzzTestInner02(std::shared_ptr<RSSurfaceNode> surfaceNode)
     surfaceNode->UpdateOcclusionCullingStatus(GetData<bool>(), GetData<NodeId>());
 }
 
-bool RSNodeFuzzTest(const uint8_t* data, size_t size)
+void RSNodeFuzzTestInner03(std::shared_ptr<RSSurfaceNode> surfaceNode)
+{
+    if (!surfaceNode) {
+        return;
+    }
+
+    /* Test MarkLayerPartRender with fuzzed data */
+    bool isLayerPartRender = GetData<bool>();
+    surfaceNode->MarkLayerPartRender(isLayerPartRender);
+
+    /* Test with various boolean values */
+    surfaceNode->MarkLayerPartRender(true);
+    surfaceNode->MarkLayerPartRender(false);
+    surfaceNode->MarkLayerPartRender(isLayerPartRender);
+}
+
+void RSNodeFuzzTestInner06(std::shared_ptr<RSSurfaceNode> surfaceNode)
+{
+    if (!surfaceNode) {
+        return;
+    }
+
+    /* Test MarkLayer with fuzzed data */
+    bool isLayer = GetData<bool>();
+    surfaceNode->MarkLayer(isLayer);
+
+    /* Test with various boolean values */
+    surfaceNode->MarkLayer(true);
+    surfaceNode->MarkLayer(false);
+    surfaceNode->MarkLayer(isLayer);
+}
+
+bool RSNodeFuzzTest()
 {
     RSSurfaceNodeConfig surfaceNodeConfig;
     std::shared_ptr<RSSurfaceNode> surfaceNode = RSSurfaceNode::Create(surfaceNodeConfig);
@@ -260,6 +296,8 @@ bool RSNodeFuzzTest(const uint8_t* data, size_t size)
 
     RSNodeFuzzTestInner01(surfaceNode);
     RSNodeFuzzTestInner02(surfaceNode);
+    RSNodeFuzzTestInner03(surfaceNode); // Test for MarkLayerPartRender
+    RSNodeFuzzTestInner06(surfaceNode); // Test for MarkLayer
 
     return true;
 }
@@ -275,7 +313,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
 
     /* Run your code on data */
-    OHOS::Rosen::RSSurfaceNodeFuzzTest(data, size);
-    OHOS::Rosen::RSNodeFuzzTest(data, size);
+    OHOS::Rosen::RSSurfaceNodeFuzzTest();
+    OHOS::Rosen::RSNodeFuzzTest();
     return 0;
 }

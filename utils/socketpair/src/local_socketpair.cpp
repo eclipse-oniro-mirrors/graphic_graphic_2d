@@ -57,6 +57,11 @@ LocalSocketPair::~LocalSocketPair()
     CloseFd(receiveFd_);
 }
 
+void LocalSocketPair::CloseReceiveDataFd()
+{
+    CloseFd(receiveFd_);
+}
+
 int32_t LocalSocketPair::SetSockopt(size_t sendSize, size_t receiveSize, int32_t* socketPair, int32_t socketPairSize)
 {
     for (int i = 0; i < socketPairSize; ++i) {
@@ -95,7 +100,7 @@ int32_t LocalSocketPair::CreateChannel(size_t sendSize, size_t receiveSize)
     int32_t socketPair[SOCKET_PAIR_SIZE] = { 0 };
     if (socketpair(AF_UNIX, SOCK_SEQPACKET, 0, socketPair) != 0) {
         ScopedBytrace func("Create socketpair failed, errno = " + std::to_string(errno));
-        LOGE("%{public}s create socketpair failed", __func__);
+        LOGE("%{public}s create socketpair failed, erron:%{public}d", __func__, errno);
         return -1;
     }
     fdsan_exchange_owner_tag(socketPair[0], 0, LOG_DOMAIN);
@@ -107,7 +112,7 @@ int32_t LocalSocketPair::CreateChannel(size_t sendSize, size_t receiveSize)
         CloseFd(unusedFds[1]);
         if (err != 0) {
             ScopedBytrace func2("Create socketpair failed for the second time, errno = " + std::to_string(errno));
-            LOGE("%{public}s create socketpair failed", __func__);
+            LOGE("%{public}s create socketpair failed, erron:%{public}d", __func__, errno);
             return -1;
         }
         fdsan_exchange_owner_tag(socketPair[0], 0, LOG_DOMAIN);

@@ -23,6 +23,9 @@
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
 #include "screen_manager/screen_types.h"
+#ifndef ROSEN_CROSS_PLATFORM
+#include "surface_buffer.h"
+#endif
 
 namespace OHOS {
 namespace Rosen {
@@ -43,6 +46,7 @@ enum HDRComponentType : uint32_t {
     IMAGE = 0,
     UICOMPONENT,
     EFFECT,
+    HDRCOLOR,
 };
 
 enum HdrStatus : uint32_t {
@@ -53,17 +57,21 @@ enum HdrStatus : uint32_t {
     HDR_EFFECT = 0x1000,
     AI_HDR_VIDEO_GAINMAP = 0x10000,
     HDR_UICOMPONENT = 0x100000,
+    HDR_COLOR = 0x1000000,
+    AI_HDR_VIDEO_AI2020 = 0x10000000,
 };
 
 struct BrightnessInfo {
     float currentHeadroom = 1.0f;
     float maxHeadroom = 1.0f;
     float sdrNits = 500.0f;
+    float brightnessPosition = 0.0f;
 
     bool operator==(const BrightnessInfo& other) const
     {
-        return ROSEN_EQ(currentHeadroom, other.currentHeadroom) &&
-            ROSEN_EQ(maxHeadroom, other.maxHeadroom) && ROSEN_EQ(sdrNits, other.sdrNits);
+        return this == &other || (ROSEN_EQ(currentHeadroom, other.currentHeadroom) &&
+            ROSEN_EQ(maxHeadroom, other.maxHeadroom) && ROSEN_EQ(sdrNits, other.sdrNits) &&
+            ROSEN_EQ(brightnessPosition, other.brightnessPosition));
     }
 
     bool operator!=(const BrightnessInfo& other) const
@@ -81,7 +89,7 @@ public:
     virtual bool IsHdrOn(ScreenId screenId) const = 0;
     virtual bool IsDimmingOn(ScreenId screenId) = 0;
     virtual void DimmingIncrease(ScreenId screenId) = 0;
-    virtual void SetSdrLuminance(ScreenId screenId, uint32_t level) = 0;
+    virtual void SetSdrLuminance(const RsScreenBrightnessData& brightnessData) = 0;
     virtual uint32_t GetNewHdrLuminance(ScreenId screenId) = 0;
     virtual void SetNowHdrLuminance(ScreenId screenId, uint32_t level) = 0;
     virtual bool IsNeedUpdateLuminance(ScreenId screenId) = 0;
@@ -102,7 +110,15 @@ public:
     virtual uint32_t ConvertScalerFromFloatToLevel(float& scaler) const = 0;
     virtual float ConvertScalerFromLevelToFloat(uint32_t& level) const = 0;
     virtual void SetCurDisplayHdrBrightnessScaler(ScreenId screenId,
-        std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler) = 0;
+        const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler) = 0;
+    virtual double GetConfigScaler(ScreenId screenId, HdrStatus type) const = 0;
+    virtual void SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus) = 0;
+    virtual float HdrDimmingProcess(ScreenId screenId, uint64_t nodeId) = 0;
+    virtual void HdrDimmingPostProcess(ScreenId screenId) = 0;
+#ifndef ROSEN_CROSS_PLATFORM
+    virtual int32_t UpdateMetadataBasedOnScaler(const sptr<SurfaceBuffer>& input, float scaler,
+        HdrStatus hdrStatus) = 0;
+#endif
 };
 
 class RSB_EXPORT RSLuminanceControl {
@@ -121,7 +137,7 @@ public:
     RSB_EXPORT bool IsDimmingOn(ScreenId screenId);
     RSB_EXPORT void DimmingIncrease(ScreenId screenId);
 
-    RSB_EXPORT void SetSdrLuminance(ScreenId screenId, uint32_t level);
+    RSB_EXPORT void SetSdrLuminance(const RsScreenBrightnessData& brightnessData);
     RSB_EXPORT uint32_t GetNewHdrLuminance(ScreenId screenId);
     RSB_EXPORT void SetNowHdrLuminance(ScreenId screenId, uint32_t level);
     RSB_EXPORT bool IsNeedUpdateLuminance(ScreenId screenId);
@@ -143,7 +159,14 @@ public:
     RSB_EXPORT uint32_t ConvertScalerFromFloatToLevel(float& scaler) const;
     RSB_EXPORT float ConvertScalerFromLevelToFloat(uint32_t& level) const;
     RSB_EXPORT void SetCurDisplayHdrBrightnessScaler(ScreenId screenId,
-        std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler);
+        const std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>& curDisplayHdrBrightnessScaler);
+    RSB_EXPORT double GetConfigScaler(ScreenId screenId, HdrStatus type) const;
+    RSB_EXPORT void SetDualScreenStatus(ScreenId screenId, DualScreenStatus dualScreenStatus);
+    RSB_EXPORT float HdrDimmingProcess(ScreenId screenId, uint64_t nodeId);
+    RSB_EXPORT void HdrDimmingPostProcess(ScreenId screenId);
+#ifndef ROSEN_CROSS_PLATFORM
+    RSB_EXPORT int32_t UpdateMetadataBasedOnScaler(const sptr<SurfaceBuffer>& input, float scaler, HdrStatus hdrStatus);
+#endif
 
 private:
     RSLuminanceControl() = default;

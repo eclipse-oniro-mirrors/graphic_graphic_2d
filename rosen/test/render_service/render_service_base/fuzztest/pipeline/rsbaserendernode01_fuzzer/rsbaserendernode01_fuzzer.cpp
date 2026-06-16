@@ -26,7 +26,6 @@
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_draw_cmd.h"
 #include "pipeline/rs_draw_cmd_list.h"
-#include "pipeline/rs_occlusion_config.h"
 #include "pipeline/rs_paint_filter_canvas.h"
 #include "pipeline/rs_render_node_gc.h"
 #include "pipeline/rs_render_node_map.h"
@@ -81,8 +80,8 @@ bool RSBaseRenderNode01FuzzTest(const uint8_t* data, size_t size)
     NodeId idChild = GetData<NodeId>();
     NodeId idChildOne = GetData<NodeId>();
     NodeId idChildTwo = GetData<NodeId>();
-    RSBaseRenderNode::SharedPtr child = std::make_shared<RSCanvasRenderNode>(idChild, context);
-    RSBaseRenderNode::SharedPtr childOne = std::make_shared<RSCanvasRenderNode>(idChildOne, context);
+    auto child = std::make_shared<RSSurfaceRenderNode>(idChild, context);
+    auto childOne = std::make_shared<RSSurfaceRenderNode>(idChildOne, context);
     RSBaseRenderNode::SharedPtr childTwo = std::make_shared<RSCanvasRenderNode>(idChildTwo, context);
 
     int indexChild = GetData<int>();
@@ -100,6 +99,7 @@ bool RSBaseRenderNode01FuzzTest(const uint8_t* data, size_t size)
     bool onlyFirstLevel = GetData<bool>();
     bool isContainBootAnimation = GetData<bool>();
     bool isBootAnimation = GetData<bool>();
+    int64_t nextFrameTime = 0;
 
     // test
     std::shared_ptr<RSRenderNode> node = std::make_shared<RSRenderNode>(id, true, context);
@@ -120,7 +120,7 @@ bool RSBaseRenderNode01FuzzTest(const uint8_t* data, size_t size)
     node->AddCrossParentChild(child, indexChild);
     node->SetContainBootAnimation(isContainBootAnimation);
     node->SetBootAnimation(isBootAnimation);
-    node->Animate(timestamp, delayTime);
+    node->Animate(timestamp, delayTime, nextFrameTime);
     node->HasDisappearingTransition(recursive);
     node->SetTunnelHandleChange(change);
     node->UpdateChildrenOutOfRectFlag(flag);

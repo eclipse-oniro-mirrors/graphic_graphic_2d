@@ -25,6 +25,12 @@
 namespace OHOS {
 namespace Rosen {
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+    const std::string& desc, int value)
+{
+    geFilter.SetParam(desc, value);
+}
+
+void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
     const std::string& desc, float value)
 {
     geFilter.SetParam(desc, value);
@@ -66,12 +72,18 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
     const std::string& desc, std::shared_ptr<RSNGRenderShapeBase> value)
 {
     std::shared_ptr<Drawing::GEVisualEffect> geVisualEffect = value ? value->GenerateGEVisualEffect() : nullptr;
-    std::shared_ptr<Drawing::GEShaderShape> geShap = geVisualEffect ? geVisualEffect->GenerateShaderShape() : nullptr;
-    geFilter.SetParam(desc, geShap);
+    std::shared_ptr<Drawing::GEShaderShape> geShape = geVisualEffect ? geVisualEffect->GenerateShaderShape() : nullptr;
+    geFilter.SetParam(desc, geShape);
 }
 
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
     const std::string& desc, const std::vector<Vector2f>& value)
+{
+    geFilter.SetParam(desc, value);
+}
+
+void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+    const std::string& desc, const std::vector<Vector4f>& value)
 {
     geFilter.SetParam(desc, value);
 }
@@ -90,26 +102,27 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
 }
 
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
-    const std::string& desc, const RRect& value)
-{
-    OHOS::Rosen::Drawing::GERRect geRRect(value.rect_.left_, value.rect_.top_,
-                                          value.rect_.width_, value.rect_.height_,
-                                          value.radius_->x_, value.radius_->y_);
-
-    geFilter.SetParam(desc, geRRect);
-}
-
-void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
     const std::string& desc, std::shared_ptr<Drawing::Image> value)
 {
     geFilter.SetParam(desc, value);
 }
 
 void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+    const std::string& desc, const RRect& value)
+{
+    OHOS::Rosen::Drawing::GERRect geRRect{value.rect_.left_, value.rect_.top_,
+                                          value.rect_.width_, value.rect_.height_};
+    for (uint32_t i = 0; i < OHOS::Rosen::Drawing::GERRect::CORNER_COUNT; i++) {
+        geRRect.radius_[i] = value.radius_[i];
+    }
+
+    geFilter.SetParam(desc, geRRect);
+}
+
+void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
     const std::string& desc, const Matrix3f& value)
 {
-    Matrix3f matrix = value;
-    const auto matrixData = matrix.GetData();
+    const auto& matrixData = value.GetConstData();
     Drawing::Matrix drawingMatrix;
     drawingMatrix.SetMatrix(matrixData[Matrix3f::Index::SCALE_X], matrixData[Matrix3f::Index::SKEW_X],
                             matrixData[Matrix3f::Index::TRANS_X], matrixData[Matrix3f::Index::SKEW_Y],
@@ -117,6 +130,24 @@ void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect
                             matrixData[Matrix3f::Index::PERSP_0], matrixData[Matrix3f::Index::PERSP_1],
                             matrixData[Matrix3f::Index::PERSP_2]);
     geFilter.SetParam(desc, drawingMatrix);
+}
+
+void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+    const std::string& desc, std::shared_ptr<RSPath> value)
+{
+    Drawing::Path path = value ? value->GetDrawingPath() : Drawing::Path();
+    geFilter.SetParam(desc, path);
+}
+
+void RSNGRenderEffectHelper::UpdateVisualEffectParamImpl(Drawing::GEVisualEffect& geFilter,
+    const std::string& desc, const RSColor& value)
+{
+    geFilter.SetParam(desc, value.AsRgbaInt());
+}
+
+void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, int value)
+{
+    hash = hashFunc_(&value, sizeof(value), hash);
 }
 
 void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, float value)
@@ -171,6 +202,13 @@ void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const std:
     }
 }
 
+void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const std::vector<Vector4f>& value)
+{
+    for (const auto& vec : value) {
+        hash = hashFunc_(vec.data_, Vector4f::DATA_SIZE, hash);
+    }
+}
+
 void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<Media::PixelMap> value)
 {
     auto image = RSPixelMapUtil::ExtractDrawingImage(value);
@@ -189,24 +227,41 @@ void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const std:
     }
 }
 
-void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const RRect& value)
-{
-    hash = hashFunc_(&value, sizeof(RRect), hash);
-}
-
 void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<Drawing::Image> value)
 {
+    if (value == nullptr) {
+        return;
+    }
     auto imageUniqueID = value->GetUniqueID();
     hash = hashFunc_(&imageUniqueID, sizeof(imageUniqueID), hash);
 }
 
+void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const RRect& value)
+{
+    hash = hashFunc_(&value, sizeof(value), hash);
+}
+
 void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const Matrix3f& value)
 {
-    Matrix3f matrix = value;
-    const auto matrixData = matrix.GetData();
+    const auto& matrixData = value.GetConstData();
     for (size_t i = 0; i < Matrix3f::MATRIX3_SIZE; i++) {
         hash = hashFunc_(&matrixData[i], sizeof(float), hash);
     }
+}
+
+void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, const RSColor& value)
+{
+    uint32_t color = value.AsRgbaInt();
+    hash = hashFunc_(&color, sizeof(color), hash);
+}
+
+void RSNGRenderEffectHelper::CalculatePropTagHashImpl(uint32_t& hash, std::shared_ptr<RSPath> value)
+{
+    if (!value) {
+        return;
+    }
+    uint32_t pathDistance = value->GetDistance();
+    hash = hashFunc_(&pathDistance, sizeof(pathDistance), hash);
 }
 
 std::shared_ptr<Drawing::GEVisualEffect> RSNGRenderEffectHelper::CreateGEVisualEffect(RSNGEffectType type)

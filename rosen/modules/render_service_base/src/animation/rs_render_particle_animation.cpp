@@ -36,9 +36,9 @@ void RSRenderParticleAnimation::DumpAnimationInfo(std::string& out) const
     out.append("Type:RSRenderParticleAnimation");
 }
 
-bool RSRenderParticleAnimation::Animate(int64_t time, int64_t& minLeftDelayTime)
+bool RSRenderParticleAnimation::Animate(int64_t time, int64_t& minLeftDelayTime, bool isCustom, bool isOnTree)
 {
-    RS_OPTIONAL_TRACE_NAME("RSRenderParticleAnimation::Animate");
+    RS_TRACE_NAME("RSRenderParticleAnimation::Animate");
     minLeftDelayTime = 0;
     auto target = GetTarget();
     if (!target) {
@@ -150,6 +150,19 @@ void RSRenderParticleAnimation::UpdateVelocityField(
     }
 }
 
+void RSRenderParticleAnimation::UpdateFields(const std::shared_ptr<ParticleFieldCollection>& fields)
+{
+    if (fields == nullptr) {
+        return;
+    } else if (particleFields_ != nullptr && *particleFields_ == *fields) {
+        return;
+    }
+    particleFields_ = fields;
+    if (particleSystem_) {
+        particleSystem_->UpdateFields(fields);
+    }
+}
+
 void RSRenderParticleAnimation::OnAttach()
 {
     auto target = GetTarget();
@@ -157,7 +170,11 @@ void RSRenderParticleAnimation::OnAttach()
         ROSEN_LOGE("RSRenderParticleAnimation::OnAttach, target is nullptr");
         return;
     }
-    auto particleAnimations = target->GetAnimationManager().GetParticleAnimations();
+    auto animationManager = target->GetAnimationManager();
+    if (!animationManager) {
+        return;
+    }
+    auto particleAnimations = animationManager->GetParticleAnimations();
     if (!particleAnimations.empty()) {
         for (const auto& pair : particleAnimations) {
             auto property = target->GetProperty(pair.first);
@@ -165,11 +182,11 @@ void RSRenderParticleAnimation::OnAttach()
             if (modifierNG != nullptr) {
                 target->RemoveModifierNG(modifierNG->GetId());
             }
-            target->GetAnimationManager().RemoveAnimation(pair.second);
-            target->GetAnimationManager().UnregisterParticleAnimation(pair.first, pair.second);
+            animationManager->RemoveAnimation(pair.second);
+            animationManager->UnregisterParticleAnimation(pair.first, pair.second);
         }
     }
-    target->GetAnimationManager().RegisterParticleAnimation(GetPropertyId(), GetAnimationId());
+    animationManager->RegisterParticleAnimation(GetPropertyId(), GetAnimationId());
 }
 
 void RSRenderParticleAnimation::OnDetach()
@@ -185,7 +202,9 @@ void RSRenderParticleAnimation::OnDetach()
     }
     auto propertyId = GetPropertyId();
     auto id = GetAnimationId();
-    target->GetAnimationManager().UnregisterParticleAnimation(propertyId, id);
+    if (auto animationManager = target->GetAnimationManager()) {
+        animationManager->UnregisterParticleAnimation(propertyId, id);
+    }
 }
 
 bool RSRenderParticleAnimation::Marshalling(Parcel& parcel) const
@@ -201,6 +220,11 @@ bool RSRenderParticleAnimation::Marshalling(Parcel& parcel) const
     }
     if (!RSMarshallingHelper::Marshalling(parcel, particlesRenderParams_)) {
         ROSEN_LOGE("RSRenderParticleAnimation::Marshalling, write particlesRenderParams failed");
+        return false;
+    }
+    // token for finding ui instance when executing animation callback in client
+    if (!parcel.WriteUint64(GetToken())) {
+        ROSEN_LOGE("multi-instance, RSRenderParticleAnimation::Marshalling, write token failed");
         return false;
     }
     return true;
@@ -231,6 +255,12 @@ bool RSRenderParticleAnimation::ParseParam(Parcel& parcel)
         return false;
     }
     particleSystem_ = std::make_shared<RSRenderParticleSystem>(particlesRenderParams_);
+    uint64_t token = 0;
+    if (!parcel.ReadUint64(token)) {
+        ROSEN_LOGE("RSRenderParticleAnimation::ParseParam, Unmarshalling token failed");
+        return false;
+    }
+    SetToken(token);
     return true;
 }
 

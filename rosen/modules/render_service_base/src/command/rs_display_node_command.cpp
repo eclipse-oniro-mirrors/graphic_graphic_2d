@@ -26,10 +26,10 @@ namespace Rosen {
 
 /**
  * @brief This function is used to set the display node by screen id.
- * @param context The context of the render service
- * @param id The screen id of the display node
+ * @param context The context of the render service.
+ * @param id The screen id of the display node.
  * @param lambda The lambda function to set the display node.
- * @return Returns true if the display node is set successfully, otherwise returns false;
+ * @return Returns true if the display node is set successfully, otherwise returns false.
  */
 template <class Lambda>
 bool TrySetScreenNodeByScreenId(RSContext& context, ScreenId id, Lambda&& lambda)
@@ -78,7 +78,7 @@ void DisplayNodeCommandHelper::AddDisplayNodeToTree(RSContext& context, NodeId i
     }
     auto screenId = logicalDisplayNode->GetScreenId();
     if (screenId == INVALID_SCREEN_ID) {
-        RS_LOGE("%{public}s failed, screenId must be set before display node add to true", __func__);
+        RS_LOGE("%{public}s failed, screenId must be set before display node add to tree", __func__);
         return;
     }
     auto lambda = [&logicalDisplayNode](const std::shared_ptr<RSScreenRenderNode>& screenRenderNode) {
@@ -115,16 +115,16 @@ void DisplayNodeCommandHelper::RemoveDisplayNodeFromTree(RSContext& context, Nod
 
 void DisplayNodeCommandHelper::SetScreenId(RSContext& context, NodeId id, uint64_t screenId)
 {
-    auto& nodeMap = context.GetMutableNodeMap();
+    const auto& nodeMap = context.GetNodeMap();
     auto logicalDisplayNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(id);
     if (logicalDisplayNode == nullptr) {
-        RS_LOGE("DisplayNodeCommandHelper::%{public}s, displayNode node found, id:[%{public}" PRIu64
+        RS_LOGE("DisplayNodeCommandHelper::%{public}s, displayNode not found, id:[%{public}" PRIu64
             "], screenId:[%{public}" PRIu64 "]", __func__, id, screenId);
         return;
     }
 
+    logicalDisplayNode->NotifyScreenSwitchFinish(logicalDisplayNode->GetScreenId());
     logicalDisplayNode->SetScreenId(screenId);
-    logicalDisplayNode->NotifyScreenNotSwitching();
     for (auto& child : *(logicalDisplayNode->GetChildren())) {
         if (!child) {
             continue;
@@ -133,11 +133,12 @@ void DisplayNodeCommandHelper::SetScreenId(RSContext& context, NodeId id, uint64
         if (!surfaceChild) {
             continue;
         }
-        auto info = surfaceChild->GetAttachedInfo();
+        auto& info = surfaceChild->GetAttachedInfo();
         if (info.has_value()) {
             info->first = screenId;
         }
     }
+    logicalDisplayNode->RemoveFromTree();
     auto lambda = [&logicalDisplayNode](auto& screenRenderNode) {
         screenRenderNode->AddChild(logicalDisplayNode);
     };
@@ -147,17 +148,14 @@ void DisplayNodeCommandHelper::SetScreenId(RSContext& context, NodeId id, uint64
     }
 }
 
-void DisplayNodeCommandHelper::SetForceCloseHdr(RSContext& context, NodeId id, bool isForceCloseHdr)
+void DisplayNodeCommandHelper::SetDisplayContentRect(RSContext& context, NodeId id,
+    const Rect& contentRect)
 {
+    RS_LOGI("DisplayNodeCommandHelper::SetDisplayContentRect node:[%{public}" PRIu64 "], "
+             "rect:[%{public}d,%{public}d,%{public}d,%{public}d]",
+             id, contentRect.x, contentRect.y, contentRect.w, contentRect.h);
     if (auto node = context.GetNodeMap().GetRenderNode<RSLogicalDisplayRenderNode>(id)) {
-        auto screenId = node->GetScreenId();
-        auto lambda = [isForceCloseHdr] (auto& node) {
-            node->SetForceCloseHdr(isForceCloseHdr);
-        };
-        if (!TrySetScreenNodeByScreenId(context, screenId, lambda)) {
-            RS_LOGE("%{public}s Invalid ScreenId NodeId: %{public}" PRIu64
-                ", curNodeId: %{public}" PRIu64, __func__, screenId, id);
-        }
+        node->SetDisplayContentRect(contentRect);
     } else {
         RS_LOGE("%{public}s Invalid NodeId curNodeId: %{public}" PRIu64, __func__, id);
     }
@@ -196,7 +194,7 @@ void DisplayNodeCommandHelper::SetDisplayMode(RSContext& context, NodeId id, con
         auto& nodeMap = context.GetNodeMap();
         auto mirrorSourceNode = nodeMap.GetRenderNode<RSLogicalDisplayRenderNode>(mirroredNodeId);
         if (mirrorSourceNode == nullptr) {
-            ROSEN_LOGW("DisplayNodeCommandHelper::SetDisplayMode fail, displayNodeId:[%{public}" PRIu64 "]"
+            RS_LOGW("DisplayNodeCommandHelper::SetDisplayMode fail, displayNodeId:[%{public}" PRIu64 "]"
                 "mirroredNodeId:[%{public}" PRIu64 "]", id, mirroredNodeId);
             return;
         }

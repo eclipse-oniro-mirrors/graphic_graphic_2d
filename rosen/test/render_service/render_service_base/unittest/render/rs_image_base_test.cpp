@@ -34,12 +34,43 @@ public:
 };
 
 void RSImageBaseTest::SetUpTestCase() {}
-void RSImageBaseTest::TearDownTestCase() {}
+void RSImageBaseTest::TearDownTestCase() {
+    RSImageCache::Instance().pixelMapCache_.clear();
+    RSImageCache::Instance().editablePixelMapCache_.clear();
+    RSImageCache::Instance().editablePixelMapCacheToRelease_.clear();
+}
 void RSImageBaseTest::SetUp() {}
 void RSImageBaseTest::TearDown() {}
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 Drawing::ColorType GetColorTypeWithVKFormat(VkFormat vkFormat);
 #endif
+
+static void GenRSMarshallingParcelHeader(Parcel& parcel)
+{
+    parcel.WriteInt32(0);
+    RSMarshallingHelper::MarshallingTransactionVer(parcel);
+    const auto headerLen = parcel.GetWritePosition();
+    parcel.SkipBytes(headerLen);
+}
+
+static std::shared_ptr<Media::PixelMap> CreatePixelMap(int width, int height)
+{
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    auto pixelMap = Media::PixelMap::Create(opts);
+    return pixelMap;
+}
+
+static std::shared_ptr<Drawing::Image> CreateDrawingImage(int width, int height)
+{
+    Drawing::Bitmap bitmap;
+    Drawing::BitmapFormat bitmapFormat { Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_OPAQUE };
+    bitmap.Build(width, height, bitmapFormat);
+    auto image = std::make_shared<Drawing::Image>();
+    image->BuildFromBitmap(bitmap);
+    return image;
+}
 
 /**
  * @tc.name: DrawImageTest
@@ -57,6 +88,56 @@ HWTEST_F(RSImageBaseTest, DrawImageTest, TestSize.Level1)
     imageBase->SetImage(image);
     imageBase->DrawImage(canvas, samplingOptions);
     EXPECT_NE(imageBase->image_, nullptr);
+}
+
+/**
+ * @tc.name: RSImageBaseDestructorTest001
+ * @tc.desc: Verify function ~RSImageBase
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, RSImageBaseDestructorTest001, TestSize.Level1)
+{
+    RSImageBase* imageBase = new RSImageBase();
+    EXPECT_TRUE(imageBase != nullptr);
+    imageBase->pixelMap_ = std::make_shared<Media::PixelMap>();
+    imageBase->uniqueId_ = 1;
+    imageBase->renderServiceImage_ = true;
+    delete imageBase;
+}
+
+/**
+ * @tc.name: RSImageBaseDestructorTest002
+ * @tc.desc: Verify function ~RSImageBase
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, RSImageBaseDestructorTest002, TestSize.Level1)
+{
+    RSImageBase* imageBase = new RSImageBase();
+    EXPECT_TRUE(imageBase != nullptr);
+    imageBase->pixelMap_ = std::make_shared<Media::PixelMap>();
+    imageBase->uniqueId_ = 1;
+    imageBase->renderServiceImage_ = false;
+    imageBase->isDrawn_ = true;
+    delete imageBase;
+}
+
+/**
+ * @tc.name: RSImageBaseDestructorTest003
+ * @tc.desc: Verify function ~RSImageBase
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, RSImageBaseDestructorTest003, TestSize.Level1)
+{
+    RSImageBase* imageBase = new RSImageBase();
+    EXPECT_TRUE(imageBase != nullptr);
+    imageBase->pixelMap_ = std::make_shared<Media::PixelMap>();
+    imageBase->uniqueId_ = 1;
+    imageBase->renderServiceImage_ = false;
+    imageBase->isDrawn_ = false;
+    delete imageBase;
 }
 
 /**
@@ -85,23 +166,6 @@ HWTEST_F(RSImageBaseTest, SetPixelMapTest, TestSize.Level1)
     auto pixelmap = std::make_shared<Media::PixelMap>();
     imageBase->SetPixelMap(pixelmap);
     EXPECT_EQ(imageBase->pixelMap_, pixelmap);
-}
-
-/**
- * @tc.name: DumpPictureTest
- * @tc.desc: Verify function DumpPicture
- * @tc.type: FUNC
- * @tc.require: issueI9I9D1
- */
-HWTEST_F(RSImageBaseTest, DumpPictureTest, TestSize.Level1)
-{
-    auto imageBase = std::make_shared<RSImageBase>();
-    DfxString info;
-    imageBase->DumpPicture(info);
-    auto pixelmap = std::make_shared<Media::PixelMap>();
-    imageBase->SetPixelMap(pixelmap);
-    imageBase->DumpPicture(info);
-    EXPECT_NE(imageBase->pixelMap_, nullptr);
 }
 
 /**
@@ -724,6 +788,18 @@ HWTEST_F(RSImageBaseTest, GetColorTypeWithVKFormatTest004, TestSize.Level1)
     VkFormat vkFormat = VK_FORMAT_R32_SFLOAT;
     EXPECT_EQ(GetColorTypeWithVKFormat(vkFormat), Drawing::COLORTYPE_RGBA_8888);
 }
+
+/**
+ * @tc.name: GetColorTypeWithVKFormatTest005
+ * @tc.desc: Verify function GetColorTypeWithVKFormat
+ * @tc.type: FUNC
+ * @tc.require: issue#23950
+ */
+HWTEST_F(RSImageBaseTest, GetColorTypeWithVKFormatTest005, TestSize.Level1)
+{
+    VkFormat vkFormat = VK_FORMAT_B8G8R8A8_UNORM;
+    EXPECT_EQ(GetColorTypeWithVKFormat(vkFormat), Drawing::COLORTYPE_BGRA_8888);
+}
 #endif
 
 /**
@@ -882,6 +958,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest, TestSize.Lev
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = 1;
     bool useSKImage = false;
@@ -903,6 +980,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest001, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(1);
     uint64_t uniqueId = 1;
     bool useSKImage = false;
@@ -923,6 +1001,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest002, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(1);
     uint64_t uniqueId = 1;
     bool useSKImage = true;
@@ -1169,6 +1248,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest003, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = -1;
     bool useSKImage = false;
@@ -1189,6 +1269,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest004, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = -1;
     bool useSKImage = false;
@@ -1209,6 +1290,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest005, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = -1;
     bool useSKImage = false;
@@ -1230,6 +1312,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest006, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = -1;
     bool useSKImage = false;
@@ -1251,6 +1334,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest007, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = -1;
     bool useSKImage = true;
@@ -1273,6 +1357,7 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest008, TestSize.
 {
     auto imageBase = std::make_shared<RSImageBase>();
     Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
     parcel.WriteInt32(-1);
     uint64_t uniqueId = -1;
     bool useSKImage = true;
@@ -1281,6 +1366,176 @@ HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest008, TestSize.
     void* addr = nullptr;
     bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSKImage, image, pixelMap, addr);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: UnmarshallingDrawingImageAndPixelMapTest009
+ * @tc.desc: Verify function UnmarshallingDrawingImageAndPixelMap
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest009, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
+    uint64_t uniqueId = 1;
+    bool useSkImage = false;
+    bool isPropertiesDirty = false;
+    int width = 200;
+    int height = 300;
+    auto image = CreateDrawingImage(width, height);
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    opts.editable = true;
+    opts.allocatorType = Media::AllocatorType::DMA_ALLOC;
+    opts.useDMA = true;
+    opts.pixelFormat = Media::PixelFormat::ALPHA_8;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->isAstc_ = false;
+    void* addr = nullptr;
+    EXPECT_TRUE(parcel.WriteBool(useSkImage));
+    EXPECT_TRUE(RSMarshallingHelper::CompatibleMarshalling(parcel, isPropertiesDirty, RSPARCELVER_ADD_ISPROPDIRTY));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, image));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, pixelMap));
+    RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+    bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSkImage, image, pixelMap, addr);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name: UnmarshallingDrawingImageAndPixelMapTest010
+ * @tc.desc: Verify function UnmarshallingDrawingImageAndPixelMap
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest010, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
+    uint64_t uniqueId = 1;
+    bool useSkImage = false;
+    bool isPropertiesDirty = false;
+    int width = 200;
+    int height = 300;
+    auto image = CreateDrawingImage(width, height);
+    Media::InitializationOptions opts;
+    opts.size.width = width;
+    opts.size.height = height;
+    opts.editable = true;
+    opts.allocatorType = Media::AllocatorType::SHARE_MEM_ALLOC;
+    opts.useDMA = false;
+    opts.pixelFormat = Media::PixelFormat::YCBCR_P010;
+    std::shared_ptr<Media::PixelMap> pixelMap = Media::PixelMap::Create(opts);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->isAstc_ = false;
+    void* addr = nullptr;
+    EXPECT_TRUE(parcel.WriteBool(useSkImage));
+    EXPECT_TRUE(RSMarshallingHelper::CompatibleMarshalling(parcel, isPropertiesDirty, RSPARCELVER_ADD_ISPROPDIRTY));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, image));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, pixelMap));
+    RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+    bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSkImage, image, pixelMap, addr);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name: UnmarshallingDrawingImageAndPixelMapTest011
+ * @tc.desc: Verify function UnmarshallingDrawingImageAndPixelMap
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest011, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
+    uint64_t uniqueId = 1;
+    bool useSkImage = false;
+    bool isPropertiesDirty = false;
+    int width = 200;
+    int height = 300;
+    auto image = CreateDrawingImage(width, height);
+    auto pixelMap = CreatePixelMap(width, height);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->editable_ = true;
+    void* addr = nullptr;
+    EXPECT_TRUE(parcel.WriteBool(useSkImage));
+    EXPECT_TRUE(RSMarshallingHelper::CompatibleMarshalling(parcel, isPropertiesDirty, RSPARCELVER_ADD_ISPROPDIRTY));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, image));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, pixelMap));
+    RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+    RSImageCache::Instance().CacheEditablePixelMap(uniqueId, pixelMap);
+    bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSkImage, image, pixelMap, addr);
+    EXPECT_TRUE(ret);
+    RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+}
+
+/**
+ * @tc.name: UnmarshallingDrawingImageAndPixelMapTest012
+ * @tc.desc: Verify function UnmarshallingDrawingImageAndPixelMap
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest012, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
+    uint64_t uniqueId = 1;
+    bool useSkImage = false;
+    bool isPropertiesDirty = true;
+    int width = 200;
+    int height = 300;
+    auto image = CreateDrawingImage(width, height);
+    auto pixelMap = CreatePixelMap(width, height);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->editable_ = true;
+    void* addr = nullptr;
+    EXPECT_TRUE(parcel.WriteBool(useSkImage));
+    EXPECT_TRUE(RSMarshallingHelper::CompatibleMarshalling(parcel, isPropertiesDirty, RSPARCELVER_ADD_ISPROPDIRTY));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, image));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, pixelMap));
+    RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+    RSImageCache::Instance().CacheEditablePixelMap(uniqueId, pixelMap);
+    bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSkImage, image, pixelMap, addr);
+    EXPECT_TRUE(ret);
+    RSImageCache::Instance().DiscardEditablePixelMapCache(uniqueId);
+}
+
+/**
+ * @tc.name: UnmarshallingDrawingImageAndPixelMapTest013
+ * @tc.desc: Verify function UnmarshallingDrawingImageAndPixelMap
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, UnmarshallingDrawingImageAndPixelMapTest013, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    Parcel parcel;
+    GenRSMarshallingParcelHeader(parcel);
+    uint64_t uniqueId = 1;
+    bool useSkImage = false;
+    bool isPropertiesDirty = false;
+    int width = 200;
+    int height = 300;
+    auto image = CreateDrawingImage(width, height);
+    auto pixelMap = CreatePixelMap(width, height);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->editable_ = false;
+    void* addr = nullptr;
+    EXPECT_TRUE(parcel.WriteBool(useSkImage));
+    EXPECT_TRUE(RSMarshallingHelper::CompatibleMarshalling(parcel, isPropertiesDirty, RSPARCELVER_ADD_ISPROPDIRTY));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, image));
+    EXPECT_TRUE(RSMarshallingHelper::Marshalling(parcel, pixelMap));
+    RSImageCache::Instance().CachePixelMap(uniqueId, pixelMap);
+    RSImageCache::Instance().IncreasePixelMapCacheRefCount(uniqueId);
+    bool ret = imageBase->UnmarshallingDrawingImageAndPixelMap(parcel, uniqueId, useSkImage, image, pixelMap, addr);
+    EXPECT_TRUE(ret);
+    RSImageCache::Instance().ReleasePixelMapCache(uniqueId);
 }
 
 /**
@@ -1335,6 +1590,98 @@ HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: IncreaseCacheRefCountTest003
+ * @tc.desc: Verify function IncreaseCacheRefCount
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest003, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    EXPECT_NE(imageBase, nullptr);
+    uint64_t uniqueId = 1;
+    bool useSKImage = false;
+    imageBase->IncreaseCacheRefCount(uniqueId, useSKImage, nullptr);
+}
+
+/**
+ * @tc.name: IncreaseCacheRefCountTest004
+ * @tc.desc: Verify function IncreaseCacheRefCount
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest004, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    EXPECT_NE(imageBase, nullptr);
+    uint64_t uniqueId = 1;
+    bool useSKImage = false;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    pixelMap->editable_ = true;
+    pixelMap->allocatorType_ = Media::AllocatorType::SHARE_MEM_ALLOC;
+    imageBase->IncreaseCacheRefCount(uniqueId, useSKImage, pixelMap);
+}
+
+/**
+ * @tc.name: IncreaseCacheRefCountTest005
+ * @tc.desc: Verify function IncreaseCacheRefCount
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest005, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    EXPECT_NE(imageBase, nullptr);
+    uint64_t uniqueId = 1;
+    bool useSKImage = false;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    pixelMap->editable_ = true;
+    pixelMap->allocatorType_ = Media::AllocatorType::DMA_ALLOC;
+    pixelMap->isAstc_ = true;
+    imageBase->IncreaseCacheRefCount(uniqueId, useSKImage, pixelMap);
+}
+
+/**
+ * @tc.name: IncreaseCacheRefCountTest006
+ * @tc.desc: Verify function IncreaseCacheRefCount
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest006, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    EXPECT_NE(imageBase, nullptr);
+    uint64_t uniqueId = 1;
+    bool useSKImage = false;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    pixelMap->editable_ = true;
+    pixelMap->allocatorType_ = Media::AllocatorType::DMA_ALLOC;
+    pixelMap->isAstc_ = false;
+    pixelMap->imageInfo_.pixelFormat = Media::PixelFormat::YCBCR_P010;
+    imageBase->IncreaseCacheRefCount(uniqueId, useSKImage, pixelMap);
+}
+
+/**
+ * @tc.name: IncreaseCacheRefCountTest007
+ * @tc.desc: Verify function IncreaseCacheRefCount
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, IncreaseCacheRefCountTest007, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    EXPECT_NE(imageBase, nullptr);
+    uint64_t uniqueId = 1;
+    bool useSKImage = false;
+    auto pixelMap = std::make_shared<Media::PixelMap>();
+    pixelMap->editable_ = true;
+    pixelMap->allocatorType_ = Media::AllocatorType::DMA_ALLOC;
+    pixelMap->isAstc_ = false;
+    pixelMap->imageInfo_.pixelFormat = Media::PixelFormat::UNKNOWN;
+    imageBase->IncreaseCacheRefCount(uniqueId, useSKImage, pixelMap);
+}
+
+/**
  * @tc.name: DrawImageNineTest001
  * @tc.desc: Verify DrawImageNine
  * @tc.type: FUNC
@@ -1385,5 +1732,71 @@ HWTEST_F(RSImageBaseTest, GetUniqueIdTest001, TestSize.Level1)
     auto imageBase = std::make_shared<RSImageBase>();
     auto uniqueId = imageBase->GetUniqueId();
     EXPECT_EQ(uniqueId, 0);
+}
+
+/**
+ * @tc.name: MarshallingTest
+ * @tc.desc: Verify Marshalling
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSImageBaseTest, MarshallingTest, TestSize.Level1)
+{
+    auto imageBase = std::make_shared<RSImageBase>();
+    auto pixelmap = std::make_shared<Media::PixelMap>();
+    imageBase->SetPixelMap(pixelmap);
+    EXPECT_NE(imageBase->pixelMap_, nullptr);
+    Parcel parcel;
+    EXPECT_EQ(imageBase->Marshalling(parcel), false);
+}
+
+/**
+ * @tc.name: RSImageBaseMarshallingTest001
+ * @tc.desc: Verify function Marshalling
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, RSImageBaseMarshallingTest001, TestSize.Level1)
+{
+    auto rsImageBase = std::make_shared<RSImageBase>();
+    MessageParcel parcel;
+    EXPECT_TRUE(rsImageBase->Marshalling(parcel));
+}
+
+/**
+ * @tc.name: RSImageBaseMarshallingTest002
+ * @tc.desc: Verify function Marshalling
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, RSImageBaseMarshallingTest002, TestSize.Level1)
+{
+    auto rsImageBase = std::make_shared<RSImageBase>();
+    int width = 200;
+    int height = 300;
+    auto pixelMap = CreatePixelMap(width, height);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->isPropertiesDirty_ = false;
+    rsImageBase->SetPixelMap(pixelMap);
+    MessageParcel parcel;
+    EXPECT_TRUE(rsImageBase->Marshalling(parcel));
+}
+
+/**
+ * @tc.name: RSImageBaseMarshallingTest003
+ * @tc.desc: Verify function Marshalling
+ * @tc.type: FUNC
+ * @tc.require: issue#21888
+ */
+HWTEST_F(RSImageBaseTest, RSImageBaseMarshallingTest003, TestSize.Level1)
+{
+    auto rsImageBase = std::make_shared<RSImageBase>();
+    int width = 200;
+    int height = 300;
+    auto pixelMap = CreatePixelMap(width, height);
+    EXPECT_TRUE(pixelMap != nullptr);
+    pixelMap->MarkPropertiesDirty();
+    rsImageBase->SetPixelMap(pixelMap);
+    MessageParcel parcel;
+    EXPECT_TRUE(rsImageBase->Marshalling(parcel));
 }
 } // namespace OHOS::Rosen

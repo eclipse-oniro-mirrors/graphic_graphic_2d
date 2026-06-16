@@ -44,6 +44,8 @@ public:
     void UpdateHwcNodeEnableByBufferSize(RSSurfaceRenderNode& node);
     void UpdateHwcNodeEnableByAlpha(const std::shared_ptr<RSSurfaceRenderNode>& node);
     void UpdateHwcNodeEnableByRotate(const std::shared_ptr<RSSurfaceRenderNode>& node);
+    void CollectHdrForceHwcNodes(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
+        std::unordered_set<pid_t>& hdrForceHwcNodes);
     void UpdateHwcNodeEnable();
     void UpdateHwcNodeEnableByNodeBelow();
     void UpdateHwcNodeEnableByHwcNodeBelowSelf(std::vector<RectI>& hwcRects,
@@ -65,10 +67,12 @@ public:
     void UpdateHwcNodeEnableByFilterRect(std::shared_ptr<RSSurfaceRenderNode>& node,
         RSRenderNode& filterNode, uint32_t filterZOrder = 0);
     void UpdateHwcNodeEnableByGlobalFilter(std::shared_ptr<RSSurfaceRenderNode>& node);
+    bool IsHveBlurFilterEnabled(const RSRenderNode& filterNode, const RectI& filterRect, RSSurfaceRenderNode& hwcNode);
     void UpdateHwcNodeEnableByGlobalCleanFilter(const std::vector<std::pair<NodeId, RectI>>& cleanFilter,
         RSSurfaceRenderNode& hwcNode);
     void UpdateHwcNodeEnableByGlobalDirtyFilter(const std::vector<std::pair<NodeId, RectI>>& dirtyFilter,
         RSSurfaceRenderNode& hwcNode);
+    void UpdateHwcNodeEnableByColorPicker();
     void UpdateHwcNodeRectInSkippedSubTree(const RSRenderNode& rootNode);
     void UpdatePrepareClip(RSRenderNode& node);
     void UpdateTopSurfaceSrcRect(RSSurfaceRenderNode& node,
@@ -89,6 +93,7 @@ public:
 
     // DRM
     void UpdateCrossInfoForProtectedHwcNode(RSSurfaceRenderNode& hwcNode);
+    void UpdateHwcNodeEnableByGlobalPosition(RSSurfaceRenderNode& hwcNode);
     void UpdateHwcNodeInfo(RSSurfaceRenderNode& node, const Drawing::Matrix& absMatrix,
         bool subTreeSkipped = false);
 
@@ -97,7 +102,6 @@ public:
 
     void IncreaseSolidLayerHwcEnableCount() { solidLayerHwcEnableCount_++; }
     size_t GetSolidLayerHwcEnableCount() const { return solidLayerHwcEnableCount_; }
-    bool IsTargetSolidLayer(RSSurfaceRenderNode& node);
 
 private:
     friend class RSUniRenderVisitor;
@@ -112,6 +116,10 @@ private:
     void UpdateHwcNodeClipRectAndMatrix(const std::shared_ptr<RSSurfaceRenderNode>& hwcNodePtr,
         const RSRenderNode& rootNode, RectI& clipRect, Drawing::Matrix& matrix);
 
+    // Solid Layer
+    bool IsTargetSolidLayer(RSSurfaceRenderNode& node);
+    bool IsScaleSceneHwcEnabled(RSSurfaceRenderNode& node);
+
     // indicates if hardware composer is totally disabled
     bool isHardwareForcedDisabled_ = false;
 
@@ -119,6 +127,9 @@ private:
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, RectI>>> transparentHwcCleanFilter_;
     // record nodes which has transparent dirty filter
     std::unordered_map<NodeId, std::vector<std::pair<NodeId, RectI>>> transparentHwcDirtyFilter_;
+
+    // Track surfaces that have ColorPicker tasks this frame with their rects for intersection checking
+    std::unordered_map<NodeId, std::pair<NodeId, RectI>> colorPickerHwcDisabledSurfaces_;
 
     uint32_t curZOrderForHwcEnableByFilter_ = 0;
 

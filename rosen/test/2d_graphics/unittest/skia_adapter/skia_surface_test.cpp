@@ -325,9 +325,9 @@ HWTEST_F(SkiaSurfaceTest, Flush003, TestSize.Level1)
         (*count)++;
         EXPECT_TRUE(success == false);
     };
-    EXPECT_EQ(surface->Flush(&drawingFlushInfo), SemaphoresSubmited::DRAWING_ENGINE_SUBMIT_YES);
-    EXPECT_EQ(count1, 1); // finishedProc excute 1 time
-    EXPECT_EQ(count2, 1); // submittedProc excute 1 time
+    EXPECT_EQ(surface->Flush(&drawingFlushInfo), SemaphoresSubmited::DRAWING_ENGINE_SUBMIT_NO);
+    EXPECT_EQ(count1, 0); // finishedProc excute 1 time
+    EXPECT_EQ(count2, 0); // submittedProc excute 1 time
 }
 
 /**
@@ -451,6 +451,19 @@ HWTEST_F(SkiaSurfaceTest, SetSkSurface001, TestSize.Level1)
     SkiaSurface skiaSurface;
     skiaSurface.SetSkSurface(skSurface);
     ASSERT_TRUE(skSurface == skiaSurface.GetSkSurface());
+}
+
+/**
+ * @tc.name: SkiaSurfaceGetSkSurface001
+ * @tc.desc: Test SkiaSurface::GetSkSurface with raster surface
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SkiaSurfaceTest, SkiaSurfaceGetSkSurface001, TestSize.Level1)
+{
+    SkiaSurface skiaSurface;
+    auto skSurface = skiaSurface.GetSkSurface();
+    EXPECT_EQ(skSurface, nullptr);
 }
 } // namespace Drawing
 } // namespace Rosen

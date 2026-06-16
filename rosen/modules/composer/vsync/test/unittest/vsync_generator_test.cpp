@@ -663,6 +663,51 @@ HWTEST_F(VSyncGeneratorTest, ChangeGeneratorRefreshRateModelTest002, Function | 
 }
 
 /*
+ * Function: ChangeVSyncTETest
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Test ChangeVSyncTE for LTPO 144hz
+ */
+HWTEST_F(VSyncGeneratorTest, ChangeVSyncTETest, Function | MediumTest | Level0)
+{
+    // Test ChangeVSyncTE for LTPO 144hz config error, skip and not support
+    VsyncError ret = vsyncGenerator_->SetVSyncMode(VSYNC_MODE_LTPO);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
+    VSyncGenerator::ListenerRefreshRateData listenerRefreshRates = {};
+    VSyncGenerator::ListenerPhaseOffsetData listenerPhaseOffset = {};
+    int64_t refreshRate = 144; // 144hz
+    int64_t rsVsyncCount = 0;
+    ret = vsyncGenerator_->ChangeGeneratorRefreshRateModel(
+        listenerRefreshRates, listenerPhaseOffset, refreshRate, rsVsyncCount, 0);
+    ASSERT_EQ(ret, VSYNC_ERROR_NOT_SUPPORT);
+    // Test ChangeVSyncTE for LTPO 144hz config ok, other to 144hz, change TE
+    ret = vsyncGenerator_->SetVSyncMaxTE144(432);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
+    ret = vsyncGenerator_->ChangeGeneratorRefreshRateModel(
+        listenerRefreshRates, listenerPhaseOffset, refreshRate, rsVsyncCount, 0);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
+    ASSERT_EQ(vsyncGenerator_->GetVSyncMaxRefreshRate(), 432);
+    ASSERT_EQ(vsyncGenerator_->GetVSyncPulse(), 2314814);
+    // Test ChangeVSyncTE for LTPO 144hz config ok, 144hz to other, change TE back
+    refreshRate = 120; // 120hz
+    ret = vsyncGenerator_->ChangeGeneratorRefreshRateModel(
+        listenerRefreshRates, listenerPhaseOffset, refreshRate, rsVsyncCount, 0);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
+    ASSERT_EQ(vsyncGenerator_->GetVSyncMaxRefreshRate(), 360);
+    ASSERT_EQ(vsyncGenerator_->GetVSyncPulse(), 2777777);
+    // Test ChangeVSyncTE for LTPO 144hz config ok, 120hz to 60hz, skip
+    refreshRate = 60; // 60hz
+    listenerPhaseOffset = {
+        .cb = rsController,
+        .phaseByPulseNum = 3,
+    };
+    ret = vsyncGenerator_->ChangeGeneratorRefreshRateModel(
+        listenerRefreshRates, listenerPhaseOffset, refreshRate, rsVsyncCount, 0);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
+}
+
+/*
 * Function: SetVSyncModeTest
 * Type: Function
 * Rank: Important(2)
@@ -707,6 +752,34 @@ HWTEST_F(VSyncGeneratorTest, SetVSyncMaxRefreshRateTest, Function | MediumTest| 
     ASSERT_EQ(ret, VSYNC_ERROR_OK);
     uint32_t vsyncMaxRefreshRate = vsyncGenerator_->GetVSyncMaxRefreshRate();
     ASSERT_EQ(vsyncMaxRefreshRate, 240);
+}
+
+/*
+ * Function: SetVSyncMaxTETest
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Test SetVSyncMaxTETest and SetVSyncMaxTE144Test
+ */
+HWTEST_F(VSyncGeneratorTest, SetVSyncMaxTETest, Function | MediumTest | Level0)
+{
+    // set invalid value 30 smaller than VSYNC_MAX_REFRESHRATE_RANGE_MIN
+    VsyncError ret = vsyncGenerator_->SetVSyncMaxTE(30);
+    ASSERT_EQ(ret, VSYNC_ERROR_INVALID_ARGUMENTS);
+    ret = vsyncGenerator_->SetVSyncMaxTE144(30);
+    ASSERT_EQ(ret, VSYNC_ERROR_INVALID_ARGUMENTS);
+
+    // set invalid value 600 greater than VSYNC_MAX_REFRESHRATE_RANGE_MAX
+    ret = vsyncGenerator_->SetVSyncMaxTE(600);
+    ASSERT_EQ(ret, VSYNC_ERROR_INVALID_ARGUMENTS);
+    ret = vsyncGenerator_->SetVSyncMaxTE144(600);
+    ASSERT_EQ(ret, VSYNC_ERROR_INVALID_ARGUMENTS);
+
+    // set valid value
+    ret = vsyncGenerator_->SetVSyncMaxTE(360);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
+    ret = vsyncGenerator_->SetVSyncMaxTE144(360);
+    ASSERT_EQ(ret, VSYNC_ERROR_OK);
 }
 
 /*
@@ -844,8 +917,29 @@ HWTEST_F(VSyncGeneratorTest, AddListener005, Function | MediumTest| Level0)
     ASSERT_TRUE(generatorImpl->isUseFfrt_);
     ASSERT_NE(generatorImpl->ffrtThread_, nullptr);
     sptr<VSyncGeneratorTestCallback> callback = new VSyncGeneratorTestCallback;
-    ASSERT_EQ(generatorImpl->AddListener(callback, false, false), VSYNC_ERROR_OK);
+    ASSERT_EQ(generatorImpl->AddListener(callback, false, false, 0), VSYNC_ERROR_OK);
     ASSERT_EQ(generatorImpl->listeners_.size(), 1);
+    generatorImpl = nullptr;
+}
+
+/*
+* Function: AddListenerForAS
+* Type: Function
+* Rank: Important(2)
+* EnvConditions: N/A
+* CaseDescription: 1. call AddListener
+ */
+HWTEST_F(VSyncGeneratorTest, AddListenerForAS, Function | MediumTest| Level0)
+{
+    sptr<impl::VSyncGenerator> generatorImpl = new impl::VSyncGenerator(true);
+    generatorImpl->period_ = 8300000;
+    sptr<VSyncGeneratorTestCallback> callback = new VSyncGeneratorTestCallback;
+    int64_t now = SystemTime();
+    int64_t lastVsyncTime = now - 2700000;
+    ASSERT_EQ(generatorImpl->AddListener(callback, true, true, lastVsyncTime), VSYNC_ERROR_OK);
+    ASSERT_EQ(generatorImpl->listeners_.size(), 1);
+    ASSERT_EQ(generatorImpl->listeners_[0].isRS_, true);
+    ASSERT_EQ(generatorImpl->listeners_[0].lastTime_, now - 2700000);
     generatorImpl = nullptr;
 }
 
@@ -1358,6 +1452,24 @@ HWTEST_F(VSyncGeneratorTest, WaitForTimeoutConNotifyLockedForRefreshRate001, Fun
 }
 
 /*
+ * @tc.name: IsNeedAdaptiveAfterUpdateMode001
+ * @tc.desc: Test For IsNeedAdaptiveAfterUpdateMode
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(VSyncGeneratorTest, IsNeedAdaptiveAfterUpdateMode001, Function | MediumTest| Level0)
+{
+    auto vsyncGeneratorImpl = static_cast<impl::VSyncGenerator*>(VSyncGeneratorTest::vsyncGenerator_.GetRefPtr());
+    vsyncGeneratorImpl->period_ = 8333333; // 8333333ns
+    vsyncGeneratorImpl->updateModeTimeForAS_ = SystemTime();
+    usleep(8300);
+    ASSERT_EQ(vsyncGeneratorImpl->IsNeedAdaptiveAfterUpdateMode(), false);
+
+    usleep(8400);
+    ASSERT_EQ(vsyncGeneratorImpl->IsNeedAdaptiveAfterUpdateMode(), true);
+}
+
+/*
  * @tc.name: NeedPreexecuteAndUpdateTs001
  * @tc.desc: Test For NeedPreexecuteAndUpdateTs
  * @tc.type: FUNC
@@ -1372,11 +1484,11 @@ HWTEST_F(VSyncGeneratorTest, NeedPreexecuteAndUpdateTs001, Function | MediumTest
     int64_t lastVsyncTime = SystemTime();
     int64_t offset = 0;
     usleep(10000);
-    ASSERT_EQ(vsyncGeneratorImpl->NeedPreexecuteAndUpdateTs(timestamp, period, offset, lastVsyncTime), true);
+    ASSERT_EQ(vsyncGeneratorImpl->NeedPreexecuteAndUpdateTs(timestamp, period, lastVsyncTime), true);
 
     lastVsyncTime = SystemTime();
     usleep(9100);
-    ASSERT_EQ(vsyncGeneratorImpl->NeedPreexecuteAndUpdateTs(timestamp, period, offset, lastVsyncTime), false);
+    ASSERT_EQ(vsyncGeneratorImpl->NeedPreexecuteAndUpdateTs(timestamp, period, lastVsyncTime), false);
 }
 } // namespace
 } // namespace Rosen

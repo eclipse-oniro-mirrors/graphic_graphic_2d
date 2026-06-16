@@ -33,6 +33,7 @@ const std::string VOTER_NAME[] = {
     "VOTER_LOW",
 };
 const std::string VRATE_CONTROL_MINIFPS = "minifps";
+const std::string DISABLE_APP_FRAME_SPLIT_MODE = "DISABLE_FRAME_SPLIT";
 }
 
 // LCOV_EXCL_START
@@ -61,6 +62,8 @@ void HgmSoftVSyncManager::DeliverSoftVote(FrameRateLinkerId linkerId, const Vote
         linkerVoteMap_.try_emplace(linkerId, std::make_shared<HgmVoter>(voters));
     }
     RS_TRACE_NAME_FMT("DeliverSoftVote linkerId=%" PRIu64 " min=%d max=%d status=%d extInfo=%s",
+        linkerId, voteInfo.min, voteInfo.max, eventStatus, voteInfo.extInfo.c_str());
+    HGM_LOGI("linkerId=%{public}" PRIu64 " min=%{public}d max=%{public}d status=%{public}d extInfo=%{public}s",
         linkerId, voteInfo.min, voteInfo.max, eventStatus, voteInfo.extInfo.c_str());
     if (auto hgmVoter = linkerVoteMap_[linkerId]; hgmVoter && hgmVoter->DeliverVote(voteInfo, eventStatus)) {
         if (std::optional<VoteInfo> resultVoteInfo = hgmVoter->ProcessVote()) {
@@ -129,6 +132,19 @@ void HgmSoftVSyncManager::SetWindowExpectedRefreshRate(pid_t pid,
     for (const auto& voter : voters) {
         const VsyncName& vsyncName = voter.first;
         const EventInfo& eventInfo = voter.second;
+
+        if (eventInfo.description == DISABLE_APP_FRAME_SPLIT_MODE) {
+            if (eventInfo.eventStatus) {
+                disableAppFrameVsyncNames_.insert(vsyncName);
+            } else {
+                disableAppFrameVsyncNames_.erase(vsyncName);
+            }
+            RS_TRACE_NAME_FMT("disable frame split update, vsyncName:%s, status:%d",
+                vsyncName.c_str(), eventInfo.eventStatus);
+            HGM_LOGI("disable frame split update, vsyncName:%{public}s, status:%{public}d",
+                vsyncName.c_str(), eventInfo.eventStatus);
+            continue;
+        }
 
         if (auto vsyncLinker = vsyncLinkerMap_.find(vsyncName); vsyncLinker != vsyncLinkerMap_.end()) {
             const std::vector<FrameRateLinkerId>& linkerIds = vsyncLinker->second;
@@ -208,6 +224,10 @@ void HgmSoftVSyncManager::CalcAppFrameRate(
     auto appFrameRate =
         isPerformanceFirst_ && !isForceUseAppVSync && expectedRange.type_ != NATIVE_VSYNC_FRAME_RATE_TYPE ?
         OLED_NULL_HZ : HgmSoftVSyncManager::GetDrawingFrameRate(currRefreshRate, expectedRange);
+    if (appFrameRate != OLED_NULL_HZ && (expectedRange.type_ & NATIVE_VSYNC_FRAME_RATE_TYPE) != 0) {
+        appFrameRate = disableAppFrameVsyncNames_.find(linker.second->GetVsyncName()) !=
+            disableAppFrameVsyncNames_.end() ? OLED_NULL_HZ : appFrameRate;
+    }
     if (CollectGameRateDiscountChange(linker.first, expectedRange, currRefreshRate)) {
         appFrameRate = static_cast<uint32_t>(expectedRange.preferred_);
     }
@@ -252,20 +272,20 @@ uint32_t HgmSoftVSyncManager::GetDrawingFrameRate(const uint32_t refreshRate, co
 void HgmSoftVSyncManager::GetVRateMiniFPS(const std::shared_ptr<PolicyConfigData>& configData)
 {
     if (configData == nullptr) {
-        HGM_LOGE("GetVRateMiniFPS configData is nullptr use dafault value");
+        HGM_LOGE("GetVRateMiniFPS configData is nullptr use default value");
         return;
     }
     if (configData->vRateControlList_.find(VRATE_CONTROL_MINIFPS) == configData->vRateControlList_.end()) {
-        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is invalid use dafault value");
+        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is invalid use default value");
         return;
     }
     if (!XMLParser::IsNumber(configData->vRateControlList_[VRATE_CONTROL_MINIFPS])) {
-        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is Is Not Number use dafault value");
+        HGM_LOGE("GetVRateMiniFPS VRATE_CONTROL_MINIFPS config is Is Not Number use default value");
         return;
     }
 
     vrateControlMinifpsValue_ = static_cast<int32_t>(std::stoi(configData->vRateControlList_[VRATE_CONTROL_MINIFPS]));
-    HGM_LOGI("GetVRateMiniFPS vrateControlMinifpsValue:%{public}d", vrateControlMinifpsValue_);
+    HGM_LOGI("GetVRateMiniFPS vrateControlMinifpsValue: %{public}d", vrateControlMinifpsValue_);
 }
 
 bool HgmSoftVSyncManager::CollectVRateChange(uint64_t linkerId, FrameRateRange& finalRange)
@@ -294,8 +314,8 @@ bool HgmSoftVSyncManager::CollectVRateChange(uint64_t linkerId, FrameRateRange& 
         RS_OPTIONAL_TRACE_NAME_FMT("CollectVRateChange pid = %d , linkerId = %" PRIu64 ", vrate = %d return because "
             "appFrameRate[%d] changed by self, not arkui vote[%u], not invisble window", ExtractPid(linkerId),
             linkerId, iter->second, appFrameRate, finalRange.type_);
-        HGM_LOGD("CollectVRateChange linkerId = %{public}" PRIu64 ",vrate = %{public}d return "
-            "appFrameRate[%{public}d]  because changed by self, not arkui vote[%{public}u], not invisble window",
+        HGM_LOGD("CollectVRateChange linkerId = %{public}" PRIu64 ", vrate = %{public}d return "
+            "appFrameRate[%{public}d] because changed by self, not arkui vote[%{public}u], not invisble window",
             linkerId, iter->second, appFrameRate, finalRange.type_);
         return false;
     }
@@ -314,10 +334,10 @@ bool HgmSoftVSyncManager::CollectVRateChange(uint64_t linkerId, FrameRateRange& 
     finalRange.min_ = OLED_NULL_HZ;
     finalRange.max_ = OLED_144_HZ;
 
-    RS_TRACE_NAME_FMT("CollectVRateChange modification pid = %d , linkerIdS = %" PRIu64 ",appFrameRate = %d,"
-        " vrate = %d, rsFrameRate = %u", ExtractPid(linkerId), linkerId, appFrameRate, iter->second, controllerRate_);
-    HGM_LOGD("CollectVRateChange modification linkerId = %{public}" PRIu64 ",appFrameRate = %{public}d,"
-        " vrate = %{public}d, rsFrameRate = %{public}u", linkerId, appFrameRate, iter->second, controllerRate_);
+    RS_TRACE_NAME_FMT("CollectVRateChange modification pid = %d, linkerIdS = %" PRIu64 ", appFrameRate = %d, "
+        "vrate = %d, rsFrameRate = %u", ExtractPid(linkerId), linkerId, appFrameRate, iter->second, controllerRate_);
+    HGM_LOGD("CollectVRateChange modification linkerId = %{public}" PRIu64 ", appFrameRate = %{public}d, "
+        "vrate = %{public}d, rsFrameRate = %{public}u", linkerId, appFrameRate, iter->second, controllerRate_);
     return true;
 }
 
@@ -347,7 +367,7 @@ void HgmSoftVSyncManager::SetQosVSyncRate(const uint32_t currRefreshRate,
     for (const auto& data : appChangeData_) {
         auto linkerId = data.first;
         auto prefer = data.second;
-        
+
         auto linker = appFrameRateLinkers.find(linkerId);
         if (linker != appFrameRateLinkers.end()  && appDistributor_ != nullptr && linker->second != nullptr) {
             // perfer equals 0 means keeping the original rhythm without skipping, just pass 1
@@ -385,10 +405,10 @@ bool HgmSoftVSyncManager::CollectGameRateDiscountChange(uint64_t linkerId, Frame
     int32_t drawingFrameRate = static_cast<int32_t>(GetDrawingFrameRate(currRefreshRate, expectedRange));
     if (drawingFrameRate != expectedRange.preferred_) {
         RS_TRACE_NAME_FMT("CollectGameRateDiscountChange failed, linkerId=%" PRIu64
-            ", rateDiscount=%u, preferred=%d drawingFrameRate=%d currRefreshRate=%d",
+            " rateDiscount=%u preferred=%d drawingFrameRate=%d currRefreshRate=%d",
             linkerId, iter->second, expectedRange.preferred_, drawingFrameRate, static_cast<int32_t>(currRefreshRate));
         HGM_LOGD("CollectGameRateDiscountChange failed, linkerId=%{public}" PRIu64
-            ", rateDiscount=%{public}u, preferred=%{public}d drawingFrameRate=%{public}d currRefreshRate=%{public}d",
+            " rateDiscount=%{public}u preferred=%{public}d drawingFrameRate=%{public}d currRefreshRate=%{public}d",
             linkerId, iter->second, expectedRange.preferred_, drawingFrameRate, static_cast<int32_t>(currRefreshRate));
         expectedRange.preferred_ = tmpPreferred;
         expectedRange.min_ = tmpMin;
@@ -396,10 +416,10 @@ bool HgmSoftVSyncManager::CollectGameRateDiscountChange(uint64_t linkerId, Frame
         return false;
     }
     RS_TRACE_NAME_FMT("CollectGameRateDiscountChange linkerId=%" PRIu64
-        ", rateDiscount=%u, preferred=%d currRefreshRate=%d",
+        " rateDiscount=%u preferred=%d currRefreshRate=%d",
         linkerId, iter->second, expectedRange.preferred_, static_cast<int32_t>(currRefreshRate));
     HGM_LOGD("CollectGameRateDiscountChange succeed, linkerId=%{public}" PRIu64
-        ", rateDiscount=%{public}u, preferred=%{public}d currRefreshRate=%{public}d",
+        " rateDiscount=%{public}u preferred=%{public}d currRefreshRate=%{public}d",
         linkerId, iter->second, expectedRange.preferred_, static_cast<int32_t>(currRefreshRate));
     return true;
 }
