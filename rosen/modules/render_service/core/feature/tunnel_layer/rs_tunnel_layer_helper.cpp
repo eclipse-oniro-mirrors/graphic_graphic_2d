@@ -262,6 +262,16 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
         return false;
     }
     auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(node->GetId());
+
+    if (surfaceHandler->GetBufferOwnerCount()) {
+        surfaceHandler->GetBufferOwnerCount()->DecRef();
+    }
+
+    if (surfaceHandler->GetBuffer() &&
+        tunnelRuntime->IsBufferSizeChanged(surfaceHandler->GetBuffer()->GetSize())) {
+        return false;
+    }
+
     RSSurfaceHandler::SurfaceBufferEntry pendingBuffer;
     if (!tunnelRuntime.TakePendingBuffer(pendingBuffer)) {
         return false;
@@ -301,7 +311,15 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
     RSUniRenderThread::Instance().AddPendingReleaseBuffer(
         consumer, pendingBuffer.buffer, pendingReleaseFence, pendingBuffer.bufferOwnerCount_);
     tunnelRuntime.SetCommittedTunnelBufferId(pendingBuffer.buffer->GetBufferId());
+    if (pendingBuffer.bufferOwnerCount_) {
+        pendingBuffer.bufferOwnerCount_->isTunnelCommit_ = true;
+        pendingBuffer.bufferOwnerCount_->isLastTunnelRelease_ = true;
+    }
+    ToTunnelBufferStatus(true, tunnelRuntime.lastBufferStatus_);
     surfaceHandler->ConsumeAndUpdateBuffer(pendingBuffer);
+    if (surfaceHandler->GetBufferOwnerCount()) {
+        surfaceHandler->GetBufferOwnerCount()->AddRef();
+    }
     auto preBuffer = surfaceHandler->GetPreBuffer();
     auto preBufferOwnerCount = surfaceHandler->GetPreBufferOwnerCount();
     if (preBuffer != nullptr && preBufferOwnerCount != nullptr) {

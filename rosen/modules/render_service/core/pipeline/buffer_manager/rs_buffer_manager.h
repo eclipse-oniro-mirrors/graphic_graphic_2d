@@ -62,6 +62,11 @@ public:
     RSBufferManager() = default;
     ~RSBufferManager() = default;
 
+    struct TunnelBufferInfo {
+        std::shared_ptr<RSSurfaceHandler::BufferOwnerCount>& bufferOwnerCount_ = nullptr;
+        uint64_t vsyncId = 0;
+    }
+
     void AddPendingReleaseBuffer(sptr<IConsumerSurface> consumer, sptr<SurfaceBuffer> buffer, sptr<SyncFence> fence,
         std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> bufferOwnerCount = nullptr);
 
@@ -104,6 +109,14 @@ public:
         sptr<SyncFence>& uniFence, std::set<uint64_t>& decedSet,
         std::unordered_map<RSLayerId, std::weak_ptr<RSLayer>>& rsLayers, uint64_t screenId);
     void ReleaseBufferById(uint64_t bufferId);
+    void SetTunnelBufferInfo(const TunnelBufferInfo& tunnelBufferInfo)
+    {
+        tunnelBufferInfo_ = tunnelBufferInfo;
+    }
+    TunnelBufferInfo& GetTunnelBufferInfo()
+    {
+        return tunnelBufferInfo_;
+    }
 
 private:
     struct PendingReleaseBufferInfo {
@@ -127,6 +140,8 @@ private:
     std::map<uint64_t, PendingReleaseBufferInfo> pendingReleaseBuffers_;
 
     static inline thread_local std::unique_ptr<RSBufferCollectorHelper> bufferCollector_ = nullptr;
+
+    TunnelBufferInfo& tunnelBufferInfo;
 };
 } // OHOS
 } // Rosen

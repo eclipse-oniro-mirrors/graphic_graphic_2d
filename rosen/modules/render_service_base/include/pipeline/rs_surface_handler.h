@@ -84,6 +84,8 @@ public:
         uint64_t bufferId_ = 0;
         OnReleaseBufferFunc bufferReleaseCb_ = nullptr;
         std::map<uint64_t, uint64_t> uniBufferOwnerSeqNumMap_;
+        std::atomic<bool> isTunnel_ {false};
+        std::atomic<bool> isLastTunnelRelease_ {false};
     };
 
     struct SurfaceBufferEntry {

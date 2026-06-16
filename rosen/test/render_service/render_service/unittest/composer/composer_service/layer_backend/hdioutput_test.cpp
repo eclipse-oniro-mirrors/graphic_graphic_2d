@@ -24,7 +24,7 @@
 #include "rs_surface_layer.h"
 #include "rs_render_surface_layer.h"
 
-using namespace testing;
+using namespace testing; 
 using namespace testing::ext;
 
 namespace OHOS {

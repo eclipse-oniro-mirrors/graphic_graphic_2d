@@ -40,7 +40,7 @@
 #include "pipeline/rs_surface_handler.h"
 #include "screen_manager/rs_screen_property.h"
 
-using namespace testing::ext;
+using namespace testing::ext; 
 
 namespace OHOS {
 namespace Rosen {

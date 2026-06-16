@@ -24,7 +24,7 @@ using namespace testing;
 using namespace testing::ext;
 
 #define WIDTH_VAL 50
-#define HEIGHT_VAL 50
+#define HEIGHT_VAL 50 
 
 namespace OHOS {
 namespace Rosen {
