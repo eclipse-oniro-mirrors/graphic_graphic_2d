@@ -2587,7 +2587,7 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
                 offlineNodeIds.push_back(elem.first);
             }
         }
-        RSOffineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask(
+        RSOfflineProcessor::GetOfflineProcessor().CheckAndPostClearOfflineResourceTask(
             OfflineDeviceType::HPAE_OFFLINE_DEVICE, offlineNodeIds);
     }
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
