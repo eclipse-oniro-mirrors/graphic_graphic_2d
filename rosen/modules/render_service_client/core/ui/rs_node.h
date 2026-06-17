@@ -2031,6 +2031,8 @@ public:
 
     void ReSortChildrenByZIndex();
 
+    static NodeId GenerateId();
+
     // Set RSCmdModifier property (reuse existing modifier or create new one)
     template<typename ModifierType, typename ParamType>
     void SetRSCmdProperty(const ParamType& param)
@@ -2081,6 +2083,7 @@ public:
         }
         return false;
     }
+
 
 protected:
     explicit RSNode(
@@ -2266,7 +2269,6 @@ protected:
 
     virtual bool SetNodeState(RSNodeState state);
 private:
-    static NodeId GenerateId();
     static void InitUniRenderEnabled();
 
     static const std::array<std::pair<uint16_t, uint16_t>, 3> lazyLoadCommandTypes_; // <CommandType, CommandSubType>

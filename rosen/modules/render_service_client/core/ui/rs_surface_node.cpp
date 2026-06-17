@@ -184,7 +184,13 @@ bool RSSurfaceNode::SendDataToRender(const RSSurfaceNodeConfig& surfaceNodeConfi
 RSSurfaceNode::SharedPtr RSSurfaceNode::Create(const RSSurfaceNodeConfig& surfaceNodeConfig,
     RSSurfaceNodeType type, bool isWindow, bool unobscured, std::shared_ptr<RSUIContext> rsUIContext)
 {
-    SharedPtr node(new RSSurfaceNode(surfaceNodeConfig, isWindow, rsUIContext));
+    SharedPtr node;
+    if (surfaceNodeConfig.nodeId == 0) {
+        node.reset(new RSSurfaceNode(surfaceNodeConfig, isWindow, rsUIContext));
+    } else {
+        node.reset(new RSSurfaceNode(surfaceNodeConfig, isWindow, surfaceNodeConfig.nodeId, rsUIContext));
+        node->skipDestroyCommandInDestructor_ = true;
+    }
     if (rsUIContext != nullptr) {
         rsUIContext->GetMutableNodeMap().RegisterNode(node);
     } else {
@@ -609,7 +615,7 @@ bool RSSurfaceNode::Marshalling(Parcel& parcel) const
     return flag;
 }
 
-std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
+std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel, bool skip)
 {
     uint64_t id = UINT64_MAX;
     std::string name;
@@ -631,7 +637,9 @@ std::shared_ptr<RSSurfaceNode> RSSurfaceNode::Unmarshalling(Parcel& parcel)
     RSNodeMap::MutableInstance().RegisterNode(surfaceNode);
 
     // for nodes constructed by unmarshalling, we should not destroy the corresponding render node on destruction
-    surfaceNode->skipDestroyCommandInDestructor_ = true;
+    if (skip) {
+        surfaceNode->skipDestroyCommandInDestructor_ = true;
+    }
 
     return surfaceNode;
 }
