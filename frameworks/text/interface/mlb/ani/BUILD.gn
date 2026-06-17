@@ -90,6 +90,7 @@ ohos_shared_library("text_engine_ani") {
     "ability_runtime:napi_common",
     "bundle_framework:appexecfwk_core",
     "hilog:libhilog",
+    "image_framework:image_native",
     "ipc:ipc_single",
     "napi:ace_napi",
     "resource_management:global_resmgr",
