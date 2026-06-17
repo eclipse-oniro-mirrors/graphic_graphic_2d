@@ -32,9 +32,13 @@
 #include "surface_buffer.h"
 
 #ifdef RS_ENABLE_VK
+#ifndef ROSEN_ARKUI_X
 #include "platform/ohos/backend/native_buffer_utils.h"
 #include "platform/ohos/backend/rs_vulkan_context.h"
 #include "include/gpu/ganesh/vk/GrVkBackendSemaphore.h"
+#else
+#include "rs_vulkan_context.h"
+#endif
 #endif
 
 namespace OHOS::Rosen {
@@ -175,7 +179,7 @@ void EffectImageChain::UpdateCanvas()
     }
 }
 
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
 DrawingError EffectImageChain::PrepareNativeBuffer(
     const std::shared_ptr<Media::PixelMap> &srcPixelMap, std::shared_ptr<OH_NativeBuffer> &dstNativeBuffer)
 {
