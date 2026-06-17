@@ -722,7 +722,7 @@ DrawingError EffectImageChain::Draw()
     return ret;
 }
 
-#ifdef RS_ENABLE_VK
+#if defined(RS_ENABLE_VK) && !defined(ROSEN_ARKUI_X)
 DrawingError EffectImageChain::DrawNativeBuffer()
 {
     std::lock_guard<std::mutex> lock(apiMutex_);
