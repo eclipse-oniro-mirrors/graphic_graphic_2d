@@ -23,7 +23,7 @@
 #include "gtest/gtest.h"
 #include "limit_number.h"
 #include "pipeline/rs_test_util.h"
-#include "consumer_surface.h" 
+#include "consumer_surface.h"
 
 #include "command/rs_base_node_command.h"
 #include "common/rs_tunnel_layer_utils.h"
@@ -1718,6 +1718,52 @@ HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes002, TestSize.Level1)
     mainThread->isUniRender_ = false;
     mainThread->ConsumeAndUpdateAllNodes();
     mainThread->isUniRender_ = isUniRender;
+}
+
+/**
+
+@tc.name: ConsumeAndUpdateAllNodes_ToTunnelBufferStatusTransition
+
+@tc.desc: Test ConsumeAndUpdateAllNodes transitions TunnelBufferStatus from TUNNEL to FIRST_NORMAL
+
+@tc.type: FUNC
+
+@tc.require: issueI7HDVG
+*/
+HWTEST_F(RSMainThreadTest, ConsumeAndUpdateAllNodes_ToTunnelBufferStatusTransition, TestSize.Level1)
+{
+    auto mainThread = RSMainThread::Instance();
+    ASSERT_NE(mainThread, nullptr);
+    bool isUniRender = mainThread->isUniRender_;
+    mainThread->isUniRender_ = true;
+    mainThread->timestamp_ = 1000;
+    mainThread->context_->GetMutableNodeMap().renderNodeMap_.clear();
+    mainThread->context_->GetMutableNodeMap().surfaceNodeMap_.clear();
+
+    auto rsSurfaceRenderNode = RSTestUtil::CreateSurfaceNodeWithBuffer();
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    rsSurfaceRenderNode->SetIsOnTheTree(true);
+    mainThread->context_->GetMutableNodeMap().RegisterRenderNode(rsSurfaceRenderNode);
+
+    auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(rsSurfaceRenderNode->GetId());
+    tunnelRuntime.lastBufferStatus_ = RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS;
+
+    auto surfaceHandler = rsSurfaceRenderNode->GetMutableRSSurfaceHandler();
+    ASSERT_NE(surfaceHandler, nullptr);
+    auto surfaceBuffer = surfaceHandler->GetBuffer();
+    ASSERT_NE(surfaceBuffer, nullptr);
+    auto acquireFence = surfaceHandler->GetAcquireFence();
+    auto damageRegion = surfaceHandler->GetDamageRegion();
+    auto timestamp = surfaceHandler->GetTimestamp();
+    auto bufferOwnerCount = std::make_sharedRSSurfaceHandler::BufferOwnerCount();
+    surfaceHandler->SetBuffer(surfaceBuffer, acquireFence, damageRegion, timestamp, bufferOwnerCount);
+
+    mainThread->ConsumeAndUpdateAllNodes();
+
+    EXPECT_EQ(tunnelRuntime.lastBufferStatus_, RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS);
+
+    mainThread->isUniRender_ = isUniRender;
+    RSTunnelRuntimeStore::GetOrCreate(rsSurfaceRenderNode->GetId()).Clear();
 }
 
 /**
