@@ -68,7 +68,7 @@ RSHpaeOfflineContext::~RSHpaeOfflineContext()
 {
 }
 
-RSHpaeOfflineContext::isSkipDraw()
+bool RSHpaeOfflineContext::isSkipDraw()
 {
     return contextType == OfflineContextType::AI2020 ? skipDraw.load() : false;
 }
@@ -162,7 +162,7 @@ bool RSHpaeOfflineDevice::GetOutputConfig(std::shared_ptr<RSHpaeOfflineContext>&
         .timeout = outputInfo.bufferConfig.timeout,
         .colorGamut = static_cast<GraphicColorGamut>(outputInfo.bufferConfig.colorGamut),
     };
-    if (context->layerConfig.width <= 0 || lcontext->layerConfig.height <= 0) {
+    if (context->layerConfig.width <= 0 || context->layerConfig.height <= 0) {
         RS_OFFLINE_LOGW("Layer config is invalid! Width/height is zero");
         return false;
     }
@@ -172,7 +172,7 @@ bool RSHpaeOfflineDevice::GetOutputConfig(std::shared_ptr<RSHpaeOfflineContext>&
         "offline rect: [%{public}d, %{public}d, %{public}d, %{public}d]",
         context->layerConfig.width, context->layerConfig.height,
         context->layerConfig.format,
-        context->ayerConfig.colorGamut,
+        context->layerConfig.colorGamut,
         context->layerConfig.timeout,
         context->offlineRect.x, context->offlineRect.y,
         context->offlineRect.w, context->offlineRect.h);
@@ -181,19 +181,19 @@ bool RSHpaeOfflineDevice::GetOutputConfig(std::shared_ptr<RSHpaeOfflineContext>&
 
 bool RSHpaeOfflineDevice::IsRSOfflineDeviceReady(std::shared_ptr<RSSurfaceRenderNode>& surfaceNode)
 {
-    bool offlineProcessEnable = RSSystemProperties::GetHpaeOfflineEnabled();
-    if (!offlineProcessEnable) {
-        RS_OFFLINE_LOGD("RSHpaeOfflineDevice::HpaeOffline is not open, offlineProcessorEnabled: %{public}d.",
-            offlineProcessEnable);
+    bool offlineDeviceEnable = RSSystemProperties::GetHpaeOfflineEnabled();
+    if (!offlineDeviceEnable) {
+        RS_OFFLINE_LOGD("HpaeOffline is not open, offlineProcessorEnabled: %{public}d.",
+            offlineDeviceEnable);
             return false;
     }
     if (!loadSuccess_) {
-        RS_OFFLINE_LOGW("hape so is not loaded.");
+        RS_OFFLINE_LOGW("hpae so is not loaded.");
         return false;
     }
-    std:shared_ptr<RSHpaeOfflineContext> context = GetOrCreateOfflineContext(surfaceNode);
+    std::shared_ptr<RSHpaeOfflineContext> context = GetOrCreateOfflineContext(surfaceNode);
     if (context == nullptr) {
-        RS_OFFLINE_LOGD("RSHpaeOfflineDevice::context is nullptr, banned offline!");
+        RS_OFFLINE_LOGI("context is nullptr, banned offline!");
         return false;
     }
     if (context->timeout) {
@@ -473,7 +473,7 @@ bool RSHpaeOfflineDevice::PostProcessOfflineTask(
     std::shared_ptr<RSSurfaceRenderNode>& surfaceNode, offlineTaskId taskId)
 {
     if (!loadSuccess_) {
-        RS_OFFLINE_LOGW("hape so is not loaded.");
+        RS_OFFLINE_LOGW("hpae so is not loaded.");
         return false;
     }
     if (!isInitOfflineFuncSucc_) {
@@ -496,16 +496,15 @@ bool RSHpaeOfflineDevice::PostProcessOfflineTask(
     }
     auto* params = surfaceNode->GetStagingRenderParams().get();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(params);
-    RS_OFFLINE_LOGD("post offline task[%{public}" PRIu64 "-%{public}" PRIu64 "] by node",
-        taskId.first, taskId.second);
-    return PostOfflineTaskCommon(context, surfaceParams, taskId, nodeId);
+    RS_OFFLINE_LOGD("post offline task[%{public}" PRIu64 "-%{public}" PRIu64 "] by node", taskId.first, taskId.second);
+    return PostOfflineTaskCommon(context, surfaceParams, taskId);
 }
 
 bool RSHpaeOfflineDevice::PostProcessOfflineTask(
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& surfaceDrawable, offlineTaskId taskId)
 {
     if (!loadSuccess_) {
-        RS_OFFLINE_LOGW("hape so is not loaded.");
+        RS_OFFLINE_LOGW("hpae so is not loaded.");
         return false;
     }
     if (!isInitOfflineFuncSucc_) {
@@ -517,7 +516,7 @@ bool RSHpaeOfflineDevice::PostProcessOfflineTask(
     if (context == nullptr) {
         return false;
     }
-    auto *params = surfaceDrawable->GetRenderParams.get();
+    auto *params = surfaceDrawable->GetRenderParams().get();
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(params);
     RS_OFFLINE_LOGD("post offline task[%{public}" PRIu64 "-%{public}" PRIu64 "] by drawable",
         taskId.first, taskId.second);
@@ -555,7 +554,7 @@ bool RSHpaeOfflineDevice::PostOfflineTaskCommon(std::shared_ptr<RSHpaeOfflineCon
 bool RSHpaeOfflineDevice::SetResultWhenSkipDraw(std::shared_ptr<RSHpaeOfflineContext>& context,
     RSSurfaceRenderParams* surfaceParams, offlineTaskId taskId)
 {
-    RS_OFFLINE_LOGD("RSHpaeOfflineDevice::skipDraw: skip offline task[%{public}"PRIu64 "-%{public}"PRIu64 "]",
+    RS_OFFLINE_LOGD("RSHpaeOfflineDevice::skipDraw: skip offline task[%{public}" PRIu64 "-%{public}" PRIu64 "]",
         taskId.first, taskId.second);
     ProcessOfflineResult result;
     auto offlineSurfaceHandler = context->offlineLayer->GetMutableRSSurfaceHandler();
@@ -572,7 +571,7 @@ bool RSHpaeOfflineDevice::SetResultWhenSkipDraw(std::shared_ptr<RSHpaeOfflineCon
         RS_OFFLINE_LOGW("RSHpaeOfflineDevice::FillOfflineResult failed");
         return false;
     }
-    result.preBuffer = nullptr; // need to set nullptr in skiwdraw
+    result.preBuffer = nullptr;  // need to set nullptr in skiwdraw
     result.taskSuccess = true;
     offlineResultSync_.SetDirectResult(taskId, result);
 
@@ -585,7 +584,7 @@ bool RSHpaeOfflineDevice::SetResultWhenSkipDraw(std::shared_ptr<RSHpaeOfflineCon
 void RSHpaeOfflineDevice::CheckAndPostClearOfflineResourceTask(const std::vector<uint64_t>& offlineNodeIds)
 {
     if (!loadSuccess_) {
-        RS_OFFLINE_LOGD("hape so is not loaded.");
+        RS_OFFLINE_LOGD("hpae so is not loaded.");
         return;
     }
 
@@ -594,7 +593,7 @@ void RSHpaeOfflineDevice::CheckAndPostClearOfflineResourceTask(const std::vector
     // deinit
     if (GetContextPoolSize() == 0 && offlineNodeIds.empty()) {
         offlineThreadManager_.PostTask([this]() mutable {
-            RS_TRACE_NAME("hpae_offline: Post deinit task.");
+            RS_TRACE_NAME("hpae_offline: Post deInit task.");
             deInitOfflineFunc_();
             isInitOfflineFuncSucc_ = false;
         });
@@ -605,7 +604,7 @@ void RSHpaeOfflineDevice::CheckAndPostClearOfflineResourceTask(const std::vector
     ClearOfflineContext(offlineNodeIds);
 }
 
-void RSHpaeOfflineDevice::SetArsrTag(const std::vector<uint64_t>& offlineNodeIds)
+void RSHpaeOfflineDevice::SetNodeArsrTag(const std::vector<uint64_t>& offlineNodeIds)
 {
     if (offlineNodeIds.size() < DISABLE_ARSR_NODE_NUM) {
         return;
@@ -614,7 +613,7 @@ void RSHpaeOfflineDevice::SetArsrTag(const std::vector<uint64_t>& offlineNodeIds
     for (const auto& nodeId : offlineNodeIds) {
         auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(nodeId);
         if (node != nullptr) {
-            node->SetArsrTag(false);
+            node->SetNodeArsrTag(false);
         }
     }
 }
@@ -623,13 +622,13 @@ bool RSHpaeOfflineDevice::WaitForProcessOfflineResult(offlineTaskId taskId,
     std::chrono::milliseconds timeout, ProcessOfflineResult& processOfflineResult)
 {
     if (!loadSuccess_) {
-        RS_OFFLINE_LOGW("hape so is not loaded.");
+        RS_OFFLINE_LOGW("hpae so is not loaded.");
         return false;
     }
     RS_TRACE_NAME("hpae_offline: Wait for node offline process");
     RS_OFFLINE_LOGD("start to wait for offline result, task[%{public}" PRIu64 "-%{public}" PRIu64 "]",
         taskId.first, taskId.second);
-    bool waitSuccess. = offlineResultSync_.WaitForTaskAndGetResult(taskId, timeout, processOfflineResult);
+    bool waitSuccess = offlineResultSync_.WaitForTaskAndGetResult(taskId, timeout, processOfflineResult);
     auto context = GetOfflineContext(taskId.second);
     if (context == nullptr) {
         return waitSuccess;
@@ -652,7 +651,7 @@ void RSHpaeOfflineDevice::ClearOfflineContext(const std::vector<uint64_t>& offli
     {
         // step 1. get contexts need be cleared
         std::lock_guard<std::mutex> lock(contextPoolMutex_);
-        for (auto it = hpaeOfflineContextPool_.begin; it != hpaeOfflineContextPool_.end(); ++it) {
+        for (auto it = hpaeOfflineContextPool_.begin(); it != hpaeOfflineContextPool_.end(); ++it) {
             if (std::find(offlineNodeIds.begin(), offlineNodeIds.end(), it->first) == offlineNodeIds.end()) {
                 auto context = it->second;
                 context->invalidFrames++;
@@ -681,7 +680,7 @@ void RSHpaeOfflineDevice::ClearOfflineContext(const std::vector<uint64_t>& offli
 }
 
 std::shared_ptr<RSHpaeOfflineContext> RSHpaeOfflineDevice::GetOrCreateOfflineContext(
-    std::shared_ptr<rsSurfaceRenderNode>& node)
+    std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     std::lock_guard<std::mutex> lock(contextPoolMutex_);
     auto nodeId = node->GetId();
@@ -693,7 +692,7 @@ std::shared_ptr<RSHpaeOfflineContext> RSHpaeOfflineDevice::GetOrCreateOfflineCon
         RS_OFFLINE_LOGI("RSHpaeOfflineDevice::can't create new context!");
         return nullptr;
     }
-    std::shared_ptr<RSHpaeOfflineContext>m context;
+    std::shared_ptr<RSHpaeOfflineContext> context;
     HdrStatus hdrStatus = RSHdrUtil::CheckIsHdrSurface(*node);
     if (hdrStatus == HdrStatus::AI_HDR_VIDEO_AI2020 || hdrStatus == HdrStatus::AI_HDR_VIDEO_GAINMAP) {
         context = std::make_shared<RSHpaeOfflineContext>(OfflineContextType::AI2020);
@@ -724,10 +723,10 @@ bool RSHpaeOfflineDevice::UpdateContext(std::shared_ptr<RSSurfaceRenderNode>& no
     }
     auto surfaceParams = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
     auto surfaceHandler = node->GetRSSurfaceHandler();
-    if (!surfaceParams || !surfaceHandler) {
+    if (!surfaceHandler || !surfaceParams) {
         return false;
     }
-    // skipDraw: buffer consumed + previous frame drawn
+    // skipDraw: buffer not consumed + previous frame drawn
     bool bufferConsumed = surfaceHandler->IsCurrentFrameBufferConsumed();
     if (!bufferConsumed && context->hasDrawn) {
         context->skipDraw = true;

@@ -73,7 +73,7 @@ struct HpaeOfflineSubThreadData {
     BufferRequestConfig layerConfig = {
         .width = 0,
         .height = 0,
-        .strideAlignment = 0x88,
+        .strideAlignment = 0x08,
         .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
         .usage = BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_CPU_READ,
         .timeout = 0,
@@ -102,7 +102,7 @@ public:
     BufferRequestConfig layerConfig = {
         .width = 0,
         .height = 0,
-        .strideAlignment = 0x88,
+        .strideAlignment = 0x08,
         .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
         .usage = BUFFER_USAGE_HW_COMPOSER | BUFFER_USAGE_MEM_DMA | BUFFER_USAGE_CPU_READ,
         .timeout = 0,
@@ -167,7 +167,7 @@ private:
     bool FillOfflineResult(ProcessOfflineResult& processOfflineResult, HpaeOfflineSubThreadData& taskData,
         RSSurfaceRenderParams& params, std::shared_ptr<RSSurfaceHandler>& offlineSurfaceHandler);
     bool PostOfflineTaskCommon(std::shared_ptr<RSHpaeOfflineContext>& context,
-        RSSurfaceRenderParams& params, offlineTaskId taskId);
+        RSSurfaceRenderParams* surfaceParams, offlineTaskId taskId);
     bool SetResultWhenSkipDraw(std::shared_ptr<RSHpaeOfflineContext>& context,
         RSSurfaceRenderParams* surfaceParams, offlineTaskId taskId);
     void SetNodeArsrTag(const std::vector<uint64_t>& offlineNodeIds);
