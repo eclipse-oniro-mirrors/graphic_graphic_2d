@@ -613,7 +613,7 @@ void RSHpaeOfflineDevice::SetNodeArsrTag(const std::vector<uint64_t>& offlineNod
     for (const auto& nodeId : offlineNodeIds) {
         auto node = nodeMap.GetRenderNode<RSSurfaceRenderNode>(nodeId);
         if (node != nullptr) {
-            node->SetNodeArsrTag(false);
+            node->SetArsrTag(false);
         }
     }
 }
