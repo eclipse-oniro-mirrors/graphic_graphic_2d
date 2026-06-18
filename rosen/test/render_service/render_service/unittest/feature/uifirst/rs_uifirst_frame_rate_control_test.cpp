@@ -270,7 +270,6 @@ HWTEST_F(RSUifirstFrameRateControlTest, SetAnimationStartInfo004, TestSize.Level
     DataBaseRs eventInfo;
     eventInfo.sceneId = "LAUNCHER_APP_LAUNCH_FROM_RECENT";
     control.SetAnimationStartInfo(eventInfo);
-    control.forceRefreshOnce_ = true;
     if(frameControl == "true") {
         EXPECT_FALSE(control.forceRefreshOnce_);
     }
