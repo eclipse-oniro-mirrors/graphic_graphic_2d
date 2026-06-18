@@ -66,8 +66,6 @@
 #endif
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
 #include "feature/hyper_graphic_manager/rs_render_frame_rate_linker_map.h"
-#include "rs_frame_rate_vote.h"
-#include "singleton.h"
 #include "pipeline/rs_render_node_map.h"
 #include "pipeline/main_thread/rs_render_service_listener.h"
 #include "pipeline/main_thread/rs_main_thread.h"
@@ -99,6 +97,9 @@
 #include "app_mgr_client.h"
 #include "surface_utils.h"
 #include "pipeline/rs_surface_buffer_callback_manager.h"
+
+#include "rs_frame_rate_vote.h"
+#include "singleton.h"
 
 namespace OHOS {
 namespace Rosen {
