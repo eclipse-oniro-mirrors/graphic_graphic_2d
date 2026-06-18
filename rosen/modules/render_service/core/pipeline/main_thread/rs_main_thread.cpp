@@ -5976,9 +5976,9 @@ void RSMainThread::ProcessSplitTransactionCommands()
  
     RS_TRACE_NAME("ProcessSplitTransactionCommands: start processing rebuild transactions");
  
-    constexpr float MAX_PROCESS_TIME_MS = RSSystemProperties::GetSplitTransactionMaxProcessTimeMs();
+    const float MAX_PROCESS_TIME_MS = RSSystemProperties::GetSplitTransactionMaxProcessTimeMs();
     const float startTime = GetCurrentSteadyTimeMs();
-    constexpr size_t CHECK_INTERVAL = RSSystemProperties::GetSplitTransactionCheckInterval();
+    const size_t CHECK_INTERVAL = RSSystemProperties::GetSplitTransactionCheckInterval();
     bool isRemain = false;
  
     while (!pendingSplitTransactions_.empty()) {
