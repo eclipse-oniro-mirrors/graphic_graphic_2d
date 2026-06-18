@@ -14,6 +14,7 @@
  */
 
 #include <charconv>
+
 #include "rs_profiler.h"
 #include "rs_client_to_service_connection.h"
 
@@ -2483,8 +2484,7 @@ ErrCode RSClientToServiceConnection::SendVideoRateInfo(
         }
     }
 #else
-    auto pidIt = videoRateInfo.find("pid");
-    if (pidIt != videoRateInfo.end()) {
+    if (auto pidIt = videoRateInfo.find("pid"); pidIt != videoRateInfo.end()) {
         pid_t pid = 0;
         auto resultPid = std::from_chars(pidIt->second.data(), pidIt->second.data() + pidIt->second.size(), pid);
         if (resultPid.ec == std::errc() && pid > 0) {
