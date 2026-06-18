@@ -38,8 +38,8 @@ public:
     enum class HybridRenderType : uint32_t {
         NONE,
         // HybridDraw other components start
-        TEXT, 
-        SVG, 
+        TEXT,
+        SVG,
         HMSYMBOL,
         // HybridDraw other components end
         CANVAS,
