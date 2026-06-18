@@ -788,7 +788,8 @@ bool RSRenderNode::IsPixelStretchValid() const
     if (GetRenderProperties().GetPixelStretch().IsZero()) {
         return false;
     }
-    const auto drawablePtr = findMapValueRef(GetDrawableVec(__func__), static_cast<int8_t>(RSDrawableSlot::PIXEL_STRETCH));
+    const auto drawablePtr = findMapValueRef(GetDrawableVec(__func__),
+        static_cast<int8_t>(RSDrawableSlot::PIXEL_STRETCH));
     const auto pixelStretchDrawable = std::static_pointer_cast<const DrawableV2::RSPixelStretchDrawable>(drawablePtr);
     if (pixelStretchDrawable == nullptr) {
         return false;
