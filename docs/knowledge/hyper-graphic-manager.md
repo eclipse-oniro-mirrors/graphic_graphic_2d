@@ -98,11 +98,12 @@ Render Service 启动时，`RSRenderService::Init()` 只执行一次，并调用
 外部事件 / per-frame 数据
   -> HgmContext 投递到 HgmTaskHandleThread
   -> HgmFrameRateManager 收集场景和 linker
-  -> HgmFrameVoter / HgmVoter 合并 min/max/preferred
+  -> HgmFrameVoter 刷新率合并 min/max/preferred
   -> HgmFrameRateManager::ProcessLtpoVote()
   -> HgmFrameRateManager::CalcRefreshRate()
   -> HgmVSyncGeneratorController / 硬件刷新率设置
   -> HgmSoftVSyncManager::CollectFrameRateChange()
+  -> HgmVoter 软VSync合并 min/max/preferred
 ```
 
 决策树检查点：
