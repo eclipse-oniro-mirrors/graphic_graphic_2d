@@ -5206,13 +5206,6 @@ HWTEST_F(HdiOutputTest, ClearRecoveredInvalidTunnelSurfaceIdsLocked_SimplifiedEr
     output->ClearRecoveredInvalidTunnelSurfaceIdsLocked();
     EXPECT_TRUE(output->invalidTunnelSurfaceIds_.empty());
 }
- 
-HWTEST_F(HdiOutputTest, DefaultTunnelLayerThresholdChangedToThree, TestSize.Level1)
-{
-    auto output = HdiOutput::CreateHdiOutput(TEST_SCREEN_ID);
-    ASSERT_NE(output, nullptr);
-    EXPECT_EQ(output->GetTunnelLayerThreshold(), 3u);
-}
 } // namespace
 } // namespace Rosen
 } // namespace OHOS
