@@ -1847,6 +1847,8 @@ bool RSSystemProperties::RebuildDebugEnabled()
 {
     static bool rebuildDebugEnabled = OHOS::system::GetBoolParameter("persist.sys.graphic.rebuildscene.enabled", false);
     return rebuildDebugEnabled;
+}
+
 bool RSSystemProperties::GetRsDelegateCompositeCleanCacheDfxEnable()
 {
     static bool enable = system::GetBoolParameter("persist.graphic.enable_delegate_composite_dfx", false);
