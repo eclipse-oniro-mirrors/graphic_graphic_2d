@@ -43,7 +43,7 @@ private:
         const sptr<IConsumerSurface> &consumer, bool doFastCompose = false);
     bool CheckFastCompose(const sptr<IConsumerSurface>& consumer);
     std::weak_ptr<RSSurfaceBufferInterface> surfaceBufferInterface_;
- 	std::weak_ptr<RSSurfaceHandler> surfaceHandler_;
+    std::weak_ptr<RSSurfaceHandler> surfaceHandler_;
     void CleanLayerBufferCache();
     std::shared_ptr<RSComposerClientManager> composerClientManager_;
     uint64_t nodeId_ = 0;

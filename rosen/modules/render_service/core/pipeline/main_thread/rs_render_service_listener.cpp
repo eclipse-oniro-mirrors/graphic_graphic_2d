@@ -296,8 +296,11 @@ void RSRenderServiceListener::ConsumeBufferToKeepQueueRunning(std::shared_ptr<RS
             surfaceBuffer->buffer = returnValue.buffer;
             surfaceBuffer->acquireFence = returnValue.fence;
             surfaceBuffer->timestamp = returnValue.timestamp;
-            surfaceBuffer->RegisterReleaseBufferListener([](uint64_t bufferId) { RSUniRenderThread::Instance().ReleaseBufferById(bufferId); });
-            RSUniRenderThread::Instance().AddPendingReleaseBuffer(consumer, surfaceBuffer->buffer, SyncFence::InvalidFence(), surfaceBuffer->bufferOwnerCount_);
+            surfaceBuffer->RegisterReleaseBufferListener([](uint64_t bufferId) {
+                RSUniRenderThread::Instance().ReleaseBufferById(bufferId);
+            });
+            RSUniRenderThread::Instance().AddPendingReleaseBuffer(consumer, surfaceBuffer->buffer,
+                SyncFence::InvalidFence(), surfaceBuffer->bufferOwnerCount_);
             handler->ConsumeAndUpdateBuffer(*surfaceBuffer);
 
             ret = consumer->ReleaseBuffer(returnValue.buffer, returnValue.fence);

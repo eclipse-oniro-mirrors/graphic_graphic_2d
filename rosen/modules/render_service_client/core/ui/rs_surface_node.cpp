@@ -923,7 +923,7 @@ void RSSurfaceNode::SetBootAnimation(bool isBootAnimation)
     SetRSCmdProperty<BootAnimationCmdModifier>(BootAnimationCmdParam{
         isBootAnimation
     });
-    ROSEN_LOGD("RSSurfaceNode::SetBootAnimation, surfaceNodeId:[%{public}" PRIu64 "] isBootAnimation:%s", 
+    ROSEN_LOGD("RSSurfaceNode::SetBootAnimation, surfaceNodeId:[%{public}" PRIu64 "] isBootAnimation:%s",
         GetId(), isBootAnimation ? "true" : "false");
 }
 
@@ -1345,8 +1345,8 @@ void RSSurfaceNode::CreateRenderNode()
     const auto& node = this;
     RS_TRACE_NAME_FMT("RSSurfaceNode::CreateRenderNode name: %s type: %hhu, id: %lu, token:%lu", node->name_.c_str(),
         creationConfig_.nodeType, node->GetId(), GetRSUIContext() ? GetRSUIContext()->GetToken() : 0);
-    RS_LOGD("RSSurfaceNode::CreateRenderNode name: %{public}s type: %{public}hhu, id: %{public}" PRIu64, node->name_.c_str(),
-        creationConfig_.nodeType, node->GetId());
+    RS_LOGD("RSSurfaceNode::CreateRenderNode name: %{public}s type: %{public}hhu, id: %{public}" PRIu64,
+        node->name_.c_str(), creationConfig_.nodeType, node->GetId());
     
     bool isWindow = creationConfig_.nodeType == RSSurfaceNodeType::SELF_DRAWING_NODE;
 
@@ -1448,7 +1448,8 @@ void RSSurfaceNode::CreateRenderThreadNode(RSSurfaceNodeType type, bool isWindow
     } else {
         AddCommand(command, isWindow);
     }
-    command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(GetId(), GetRSUIContext()->GetConnectToRender());
+    command = std::make_unique<RSSurfaceNodeConnectToNodeInRenderService>(GetId(),
+        GetRSUIContext()->GetConnectToRender());
     AddCommand(command, isWindow);
 
     RSRTRefreshCallback::Instance().SetRefresh([] { RSRenderThread::Instance().RequestNextVSync(); });
@@ -1472,7 +1473,7 @@ void RSSurfaceNode::CreateRenderThreadNode(RSSurfaceNodeType type, bool isWindow
             .type = RSSurfaceExtType::SURFACE_PLATFORM_TEXTURE,
             .additionalData = nullptr,
         };
-        CreateSurfaceExt(config);        
+        CreateSurfaceExt(config);
     }
 #endif
 }

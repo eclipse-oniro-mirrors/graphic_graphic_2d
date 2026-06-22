@@ -4160,23 +4160,24 @@ void RSSurfaceRenderNode::CopyModifierValue(ModifierNG::RSPropertyType propertyT
     }
 }
 
-void RSSurfaceRenderNode::CountRelatedNode(bool isIncrement) 
-{ 
-    relatedNodeNum_ += isIncrement ? 1 : -1; 
-    SetRelatedSourceNode(relatedNodeNum_ > 0); 
-    if (!IsRelatedSourceNode()) { 
-        ClearRelatedSourceCache(true); 
+void RSSurfaceRenderNode::CountRelatedNode(bool isIncrement)
+{
+    relatedNodeNum_ += isIncrement ? 1 : -1;
+    SetRelatedSourceNode(relatedNodeNum_ > 0);
+    if (!IsRelatedSourceNode()) {
+        ClearRelatedSourceCache(true);
     }
 }
 
-void RSSurfaceRenderNode::ClearRelatedSourceCache(bool value) 
-{ 
-    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get()); 
-    if (surfaceParams == nullptr) { 
-        return; 
-    } 
-    surfaceParams->SetNeedClearRelatedCache(value); 
-    AddToPendingSyncList(); 
+void RSSurfaceRenderNode::ClearRelatedSourceCache(bool value)
+{
+    auto surfaceParams = static_cast<RSSurfaceRenderParams*>(stagingRenderParams_.get());
+    if (surfaceParams == nullptr) {
+        return;
+    }
+    surfaceParams->SetNeedClearRelatedCache(value);
+    AddToPendingSyncList();
+}
 }
 
 void RSSurfaceRenderNode::SetCrossNodeOffScreenStatus(CrossNodeOffScreenRenderDebugType isCrossNodeOffscreenOn)

@@ -5965,7 +5965,8 @@ void RSMainThread::AddSplitTransaction(std::unique_ptr<RSTransactionData> transa
     }
     pendingSplitPid_ = transaction->GetSendingPid();
     pendingSplitTransactions_.push_back(std::move(transaction));
-    RS_TRACE_NAME_FMT("AddSplitTransaction: pending rebuild transactions count = %zu", pendingSplitTransactions_.size());
+    RS_TRACE_NAME_FMT("AddSplitTransaction: pending rebuild transactions count = %zu",
+        pendingSplitTransactions_.size());
 }
  
 void RSMainThread::ProcessSplitTransactionCommands()
@@ -5992,7 +5993,7 @@ void RSMainThread::ProcessSplitTransactionCommands()
         size_t commandCount = payload.size();
  
         for (size_t i = 0; i < commandCount; ++i) {
-            if (i % CHECK_INTERVAL == 0) {
+            if (CHECK_INTERVAL != 0 && i % CHECK_INTERVAL == 0) {
                 const float currentTime = GetCurrentSteadyTimeMs();
                 if (currentTime - startTime >= MAX_PROCESS_TIME_MS) {
                     RS_TRACE_NAME_FMT("ProcessSplitTransactionCommands: time limit reached, processed %zu/%zu "

@@ -965,7 +965,8 @@ void RSUIDirector::AnimationDestroyInRenderCallbackProcessor(
     }
     auto nodePtr = rsUIContext->GetNodeMap().GetNode<RSNode>(nodeId);
     if (nodePtr == nullptr) {
-        ROSEN_LOGE("RSUIDirector::AnimationDestroyInRenderCallbackProcessor, could not find node %{public}" PRIu64, nodeId);
+        ROSEN_LOGE("RSUIDirector::AnimationDestroyInRenderCallbackProcessor, could not find node %{public}" PRIu64,
+            nodeId);
         return;
     }
     nodePtr->AnimationDestroyInRenderCallback(animId, fraction, isReverseCycle);

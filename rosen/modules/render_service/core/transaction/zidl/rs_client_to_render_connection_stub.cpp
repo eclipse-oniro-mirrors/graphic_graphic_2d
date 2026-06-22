@@ -362,7 +362,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
                     RSMarshallingHelper::UnmarshallingTransactionVer(data);
 
                     if (!RSMarshallingHelper::CompatibleUnmarshalling(
-                            data, waitUnmarshalling, false, RSPARCELVER_ADD_NONEED)) {
+                        data, waitUnmarshalling, false, RSPARCELVER_ADD_NONEED)) {
                         RS_LOGE("RSClientToRenderConnectionStub::COMMIT_TRANSACTION read parcel failed");
                         return ERR_INVALID_DATA;
                     }
@@ -393,7 +393,7 @@ int RSClientToRenderConnectionStub::OnRemoteRequest(
             }
             RSMarshallingHelper::UnmarshallingTransactionVer(*parsedParcel);
             if (!RSMarshallingHelper::CompatibleUnmarshalling(
-                    *parsedParcel, waitUnmarshalling, false, RSPARCELVER_ADD_NONEED)) {
+                *parsedParcel, waitUnmarshalling, false, RSPARCELVER_ADD_NONEED)) {
                 RS_LOGE("RSClientToRenderConnectionStub::COMMIT_TRANSACTION read parcel failed");
                 return ERR_INVALID_DATA;
             }

@@ -581,7 +581,6 @@ void SurfaceNodeCommandHelper::SetHidePrivacyContent(RSContext& context, NodeId 
     RS_TRACE_NAME_FMT("SurfaceNodeCommandHelper::RecreateNodeAndSurface nodeId : %" PRId64 " , uniqueId : %" PRId64,
         nodeId, consumer->GetUniqueId());
 
-
     context.InvokeRecreateNodeCallBack(nodeId, std::weak_ptr<RSSurfaceBufferInterface>(node));
     context.GetMutableNodeMap().RegisterRenderNode(node);
     node->UpdateBufferInfo(surfaceHandler->GetBuffer(), surfaceHandler->GetBufferOwnerCount(),

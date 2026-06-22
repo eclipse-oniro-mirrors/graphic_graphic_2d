@@ -757,12 +757,12 @@ enum DrawNodeType : uint32_t {
 };
 
 // HybridDraw Start
-enum class ComponentEnableSwitch : uint8_t { 
-    TEXTBLOB = 0, 
-    SVG, 
-    HMSYMBOL, 
-    CANVAS, 
-    MAX_VALUE, 
+enum class ComponentEnableSwitch : uint8_t {
+    TEXTBLOB = 0,
+    SVG,
+    HMSYMBOL,
+    CANVAS,
+    MAX_VALUE,
 };
 // HybridDraw End
 
