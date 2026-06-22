@@ -2490,7 +2490,7 @@ void RSUniRenderVisitor::ProcessAncoNode(const std::shared_ptr<RSSurfaceRenderNo
             HwcDisabledReasons::DISABLED_BY_ANCO_HAS_GPU, hwcNodePtr->GetName());
     }
     if (hwcNodePtr->IsHardwareForcedDisabled()) {
-        auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(surfaceNode->GetId());
+        auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(hwcNodePtr->GetId());
         if (tunnelRuntime.lastBufferStatus_ == RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS) {
             RSBufferManager::TunnelBufferInfo tunnelBufferInfo;
             tunnelBufferInfo.bufferOwnerCount_ = hwcNodePtr->GetRSSurfaceHandler()->GetBufferOwnerCount();
