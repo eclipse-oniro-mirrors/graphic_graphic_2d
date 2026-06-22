@@ -1956,7 +1956,6 @@ void RSClientToRenderConnectionProxy::SetFreeMultiWindowStatus(bool enable)
 
 #ifdef RS_MODIFIERS_DRAW_ENABLE
 sptr<Surface> RSClientToRenderConnectionProxy::GetCanvasSurface(NodeId nodeId)
-bool RSClientToRenderConnectionProxy::SetDelegateMode(NodeId id, bool isDelegate, pid_t pid)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1990,6 +1989,35 @@ bool RSClientToRenderConnectionProxy::SetDelegateMode(NodeId id, bool isDelegate
 }
  
 void RSClientToRenderConnectionProxy::RemoveCanvasSurface(NodeId nodeId)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+ 
+    option.SetFlags(MessageOption::TF_SYNC);
+    if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
+        ROSEN_LOGE("RemoveCanvasSurface: WriteInterfaceToken GetDescriptor err.");
+        return nullptr;
+    }
+ 
+    if (!data.WriteUint64(nodeId)) {
+        ROSEN_LOGE("RemoveCanvasSurface: WriteUint64 nodeId err.");
+        return nullptr;
+    }
+ 
+    uint32_t code = static_cast<uint32_t>(RSIClientToRenderConnectionInterfaceCode::REMOVE_CANVAS_SURFACE);
+    int32_t err = SendRequest(code, data, reply, option);
+    if (err != NO_ERROR) {
+        ROSEN_LOGE("RemoveCanvasSurface: Send Request err.");
+    }
+}
+
+bool RSClientToRenderConnectionProxy::SetDelegateMode(NodeId id, bool isDelegate, pid_t pid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    
     if (!data.WriteInterfaceToken(RSIClientToRenderConnection::GetDescriptor())) {
         ROSEN_LOGE("DelegateModeDebugTag:SetDelegateMode: WriteInterfaceToken GetDescriptor err.");
         return false;

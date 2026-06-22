@@ -4288,6 +4288,8 @@ void RSSurfaceRenderNode::OnTransformChange()
     RS_LOGD("RsDebug RSSurfaceRenderNode::OnTransformChange node id:%{public}" PRIu64, GetId());
     SetContentDirty();
     SetDoDirectComposition(false);
+}
+
 void RSSurfaceRenderNode::SetDelegateDstRect(float positionX, float positionY, float positionZ, float positionW)
 {
     if (!delegateCompositeParams_) {
