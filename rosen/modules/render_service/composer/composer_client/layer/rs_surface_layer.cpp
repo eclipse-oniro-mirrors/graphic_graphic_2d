@@ -1085,7 +1085,7 @@ void RSSurfaceLayer::SetBufferOwnerCount(const std::shared_ptr<RSSurfaceHandler:
     }
     std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);
     if ((bufferOwnerCounts_.find(bufferOwnerCount->bufferId_) == bufferOwnerCounts_.end() ||
-        bufferOwnerCount->isLastTunnelRelease_.load()) && !bufferOwnerCount->isTunnel_) {
+        bufferOwnerCount->isLastTunnelRelease_) && !bufferOwnerCount->isTunnel_) {
         bufferOwnerCount->AddRef();
     }
     bufferOwnerCounts_[bufferOwnerCount->bufferId_] = bufferOwnerCount;
