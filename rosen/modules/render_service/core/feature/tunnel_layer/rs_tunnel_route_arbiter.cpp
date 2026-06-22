@@ -26,7 +26,7 @@
 #include "pipeline/rs_screen_render_node.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "feature/tunnel_layer/rs_tunnel_runtime_state.h"
-#include "rs_trace.h"
+#include "rs_trace.h" 
 
 namespace OHOS {
 namespace Rosen {

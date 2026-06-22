@@ -209,8 +209,7 @@ HWTEST_F(RSTunnelLayerManagerTest, MarkTunnelBufferConsumedForNormal001, TestSiz
     ASSERT_TRUE(consumedContext.surfaceHandler->IsCurrentFrameBufferConsumed());
     tunnelLayerManager.MarkTunnelBufferConsumedForNormal(consumedContext.node, nullptr);
     EXPECT_TRUE(consumedContext.surfaceHandler->IsCurrentFrameBufferConsumed());
-    EXPECT_TRUE(RSTunnelRuntimeStore::GetOrCreate(consumedContext.node->GetId()).IsCommittedTunnelBuffer(
-        consumedBufferId));
+    EXPECT_TRUE(RSTunnelRuntimeStore::GetOrCreate(consumedContext.node->GetId()).IsCommittedTunnelBuffer());
 
     auto context = CreateTunnelContext();
     ASSERT_TRUE(context.IsProducerReady());
@@ -230,12 +229,12 @@ HWTEST_F(RSTunnelLayerManagerTest, MarkTunnelBufferConsumedForNormal001, TestSiz
     RSTunnelRuntimeStore::GetOrCreate(context.node->GetId()).SetCommittedTunnelBufferId(bufferId + 1);
     tunnelLayerManager.MarkTunnelBufferConsumedForNormal(context.node, nullptr);
     EXPECT_FALSE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
-    EXPECT_FALSE(RSTunnelRuntimeStore::GetOrCreate(context.node->GetId()).IsCommittedTunnelBuffer(bufferId));
+    EXPECT_FALSE(RSTunnelRuntimeStore::GetOrCreate(context.node->GetId()).IsCommittedTunnelBuffer());
 
     RSTunnelRuntimeStore::GetOrCreate(context.node->GetId()).SetCommittedTunnelBufferId(bufferId);
     tunnelLayerManager.MarkTunnelBufferConsumedForNormal(context.node, nullptr);
     EXPECT_TRUE(context.surfaceHandler->IsCurrentFrameBufferConsumed());
-    EXPECT_FALSE(RSTunnelRuntimeStore::GetOrCreate(context.node->GetId()).IsCommittedTunnelBuffer(bufferId));
+    EXPECT_FALSE(RSTunnelRuntimeStore::GetOrCreate(context.node->GetId()).IsCommittedTunnelBuffer());
 }
 
 /**

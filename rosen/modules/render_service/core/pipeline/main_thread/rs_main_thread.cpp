@@ -1811,12 +1811,7 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                 comsumeResult = RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(
                     *surfaceHandler, timestamp_, dropFrameConfig,
                     parentNode ? parentNode->GetId() : 0, surfaceNode->IsAncestorScreenFrozen());
-                if (comsumeResult) {
-                    tunnelLayerManager_->MarkTunnelBufferConsumedForNormal(surfaceNode, composerClientManager_);
-                }
-                if (!comsumeResult) {
-                    tunnelRouteArbiter_->AbandonNormalClaim(surfaceNode);
-                }
+                tunnelLayerManager_->MarkTunnelBufferConsumedForNormal(surfaceNode, composerClientManager_);
             } else if (outcome == RSTunnelRouteArbiter::MainThreadOutcome::KEEP_DIRECT) {
                 comsumeResult = true;
             }
@@ -1849,8 +1844,6 @@ void RSMainThread::ConsumeAndUpdateAllNodes()
                         "sourceType changed", surfaceNode->GetName().c_str(), surfaceNode->GetId());
                 }
                 if (isUniRender_ && surfaceHandler->IsCurrentFrameBufferConsumed()) {
-                    auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(surfaceNode->GetId());
-                    ToTunnelBufferStatus(false, tunnelRuntime.lastBufferStatus_);
 #ifdef RS_ENABLE_GPU
                     auto buffer = surfaceHandler->GetBuffer();
                     auto bufferOwnerCount = surfaceHandler->GetBufferOwnerCount();
@@ -2949,7 +2942,6 @@ bool RSMainThread::DoDirectComposition(std::shared_ptr<RSBaseRenderNode> rootNod
                 processor->CreateLayer(*surfaceNode, *params);
                 // buffer is synced to directComposition
                 params->SetBufferSynced(true);
-                RSTunnelRuntimeStore::GetOrCreate(surfaceNode->GetId()).OnRenderCommitDone();
             }
         }
         rsLuminance.SetHdrStatus(screenId,

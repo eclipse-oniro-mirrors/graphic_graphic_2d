@@ -74,7 +74,7 @@
 #include "pipeline/rs_render_node_gc.h"
 #include "app_mgr_client.h"
 #undef LOG_TAG
-#define LOG_TAG "RSRenderPipelineAgent"
+#define LOG_TAG "RSRenderPipelineAgent" 
 
 namespace OHOS {
 namespace Rosen {

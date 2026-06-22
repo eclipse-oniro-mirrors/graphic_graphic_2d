@@ -61,7 +61,6 @@ bool RSSurfaceHandler::BufferOwnerCount::DecRef()
         }
         bufferReleaseCb_(bufferId_);
         bufferReleaseCb_ = nullptr;
-        isTunnel_ = false;
     }
     return bufferReleaseCb_ == nullptr;
 }

@@ -23,6 +23,7 @@
 #include "common/rs_common_def.h"
 #include "surface_buffer.h"
 #include "sync_fence.h"
+#include "rs_surface_layer.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -54,6 +55,10 @@ private:
     static bool TryCommitPendingBuffer(const std::shared_ptr<RSSurfaceRenderNode>& node,
         const std::shared_ptr<RSComposerClientManager>& composerClientManager, bool fallbackOnFailure,
         bool previousFrameWasRs = false);
+    static RSLayerPtr CreateTunnelLayer(const std::shared_ptr<RSSurfaceRenderNode>& node,
+        const std::shared_ptr<RSComposerClientManager>& composerClientManager,
+        const RSSurfaceHandler::SurfaceBufferEntry& bufferEntry);
+    static void ReleaseTunnelLayer(const RSLayerPtr& layer, uint64_t bufferId);
 };
 } // namespace Rosen
 } // namespace OHOS

@@ -6711,36 +6711,6 @@ HWTEST_F(RSUniRenderVisitorTest, ProcessAncoNode002, TestSize.Level2)
 }
 
 /**
-
-@tc.name: ProcessAncoNode005
-
-@tc.desc: Test ProcessAncoNode transitions TunnelBufferStatus from TUNNEL to FIRST_NORMAL when HardwareForcedDisabled
-
-@tc.type: FUNC
-
-@tc.require: issueI7HDVG
-*/
-HWTEST_F(RSUniRenderVisitorTest, ProcessAncoNode005, TestSize.Level1)
-{
-    auto hwcNodePtr = RSTestUtil::CreateSurfaceNodeWithBuffer();
-    ASSERT_NE(hwcNodePtr, nullptr);
-    hwcNodePtr->SetAncoFlags(static_cast<uint32_t>(AncoFlags::IS_ANCO_NODE));
-    hwcNodePtr->SetHardwareForcedDisabledState(true);
-
-    auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(hwcNodePtr->GetId());
-    tunnelRuntime.lastBufferStatus_ = RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS;
-
-    auto rsUniRenderVisitor = std::make_shared();
-    ASSERT_NE(rsUniRenderVisitor, nullptr);
-    bool ancoHasGpu = false;
-    rsUniRenderVisitor->ProcessAncoNode(hwcNodePtr, ancoHasGpu);
-
-    EXPECT_EQ(tunnelRuntime.lastBufferStatus_, RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS);
-
-    RSTunnelRuntimeStore::GetOrCreate(hwcNodePtr->GetId()).Clear();
-}
-
-/**
  * @tc.name: IsFirstFrameOfOverdrawSwitch
  * @tc.desc: Test IsFirstFrameOfOverdrawSwitch
  * @tc.type: FUNC

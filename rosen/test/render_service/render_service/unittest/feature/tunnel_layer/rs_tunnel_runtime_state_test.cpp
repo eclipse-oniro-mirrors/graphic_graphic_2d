@@ -366,18 +366,18 @@ HWTEST_F(RSTunnelRuntimeStateTest, TryClaimByListenerReturnsClaimedPhase, TestSi
 HWTEST_F(RSTunnelRuntimeStateTest, CommittedTunnelBufferIdLifecycle, TestSize.Level1)
 {
     RSTunnelRuntimeState state;
-    EXPECT_FALSE(state.IsCommittedTunnelBuffer(FIRST_BUFFER_ID));
+    EXPECT_FALSE(state.IsCommittedTunnelBuffer());
 
     state.SetCommittedTunnelBufferId(FIRST_BUFFER_ID);
-    EXPECT_TRUE(state.IsCommittedTunnelBuffer(FIRST_BUFFER_ID));
-    EXPECT_FALSE(state.IsCommittedTunnelBuffer(SECOND_BUFFER_ID));
+    EXPECT_TRUE(state.IsCommittedTunnelBuffer());
+    EXPECT_FALSE(state.IsCommittedTunnelBuffer());
 
     state.ClearCommittedTunnelBuffer();
-    EXPECT_FALSE(state.IsCommittedTunnelBuffer(FIRST_BUFFER_ID));
+    EXPECT_FALSE(state.IsCommittedTunnelBuffer());
 
     state.SetCommittedTunnelBufferId(SECOND_BUFFER_ID);
     state.Clear();
-    EXPECT_FALSE(state.IsCommittedTunnelBuffer(SECOND_BUFFER_ID));
+    EXPECT_FALSE(state.IsCommittedTunnelBuffer());
 }
 
 /**
@@ -471,90 +471,5 @@ HWTEST_F(RSTunnelRuntimeStateTest, RuntimeStoreNonCreatingQueries001, TestSize.L
     EXPECT_TRUE(RSTunnelRuntimeStore::IsTunnelActive(TEST_NODE_ID));
 
     RSTunnelRuntimeStore::Erase(TEST_NODE_ID);
-}
-
-/**
- * @tc.name: ToTunnelBufferStatus_InvalidToFirstNormal
- * @tc.desc: test ToTunnelBufferStatus transitions from INVALID to FIRST_NORMAL when isTunnel=false
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSTunnelRuntimeStateTest, ToTunnelBufferStatus_InvalidToFirstNormal, TestSize.Level1)
-{
-    RSTunnelRuntimeState::TunnelBufferStatus status = RSTunnelRuntimeState::TunnelBufferStatus::INVALID_STATUS;
-    ToTunnelBufferStatus(false, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS);
-}
- 
-/**
- * @tc.name: ToTunnelBufferStatus_FirstNormalToNormal
- * @tc.desc: test ToTunnelBufferStatus transitions from FIRST_NORMAL to NORMAL when isTunnel=false
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSTunnelRuntimeStateTest, ToTunnelBufferStatus_FirstNormalToNormal, TestSize.Level1)
-{
-    RSTunnelRuntimeState::TunnelBufferStatus status = RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS;
-    ToTunnelBufferStatus(false, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::NORMAL_STATUS);
-}
- 
-/**
- * @tc.name: ToTunnelBufferStatus_NormalToNormal
- * @tc.desc: test ToTunnelBufferStatus stays at NORMAL when isTunnel=false and already NORMAL
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSTunnelRuntimeStateTest, ToTunnelBufferStatus_NormalToNormal, TestSize.Level1)
-{
-    RSTunnelRuntimeState::TunnelBufferStatus status = RSTunnelRuntimeState::TunnelBufferStatus::NORMAL_STATUS;
-    ToTunnelBufferStatus(false, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::NORMAL_STATUS);
-}
- 
-/**
- * @tc.name: ToTunnelBufferStatus_TunnelTransitions
- * @tc.desc: test ToTunnelBufferStatus transitions to TUNNEL_STATUS when isTunnel=true
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSTunnelRuntimeStateTest, ToTunnelBufferStatus_TunnelTransitions, TestSize.Level1)
-{
-    RSTunnelRuntimeState::TunnelBufferStatus status = RSTunnelRuntimeState::TunnelBufferStatus::INVALID_STATUS;
-    ToTunnelBufferStatus(true, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS);
- 
-    status = RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS;
-    ToTunnelBufferStatus(true, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS);
- 
-    status = RSTunnelRuntimeState::TunnelBufferStatus::NORMAL_STATUS;
-    ToTunnelBufferStatus(true, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS);
-}
- 
-/**
- * @tc.name: ToTunnelBufferStatus_TunnelToFirstNormal
- * @tc.desc: test ToTunnelBufferStatus transitions from TUNNEL to FIRST_NORMAL when isTunnel=false
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSTunnelRuntimeStateTest, ToTunnelBufferStatus_TunnelToFirstNormal, TestSize.Level1)
-{
-    RSTunnelRuntimeState::TunnelBufferStatus status = RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS;
-    ToTunnelBufferStatus(false, status);
-    EXPECT_EQ(status, RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS);
-}
- 
-/**
- * @tc.name: LastBufferStatusInitialized
- * @tc.desc: test lastBufferStatus_ is initialized to INVALID_STATUS
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(RSTunnelRuntimeStateTest, LastBufferStatusInitialized, TestSize.Level1)
-{
-    RSTunnelRuntimeState state;
-    EXPECT_EQ(state.lastBufferStatus_, RSTunnelRuntimeState::TunnelBufferStatus::INVALID_STATUS);
 }
 } // namespace OHOS::Rosen

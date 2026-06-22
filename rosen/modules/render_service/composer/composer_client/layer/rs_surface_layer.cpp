@@ -19,7 +19,7 @@
 #include "rs_composer_context.h"
 #include "rs_layer_parcel.h"
 #include "rs_surface_layer_parcel.h"
-#include "surface_type.h"
+#include "surface_type.h" 
 
 #undef LOG_TAG
 #define LOG_TAG "RSSurfaceLayer"
@@ -1084,8 +1084,7 @@ void RSSurfaceLayer::SetBufferOwnerCount(const std::shared_ptr<RSSurfaceHandler:
         return;
     }
     std::lock_guard<std::mutex> lockGuard(ownerCountMutex_);
-    if ((bufferOwnerCounts_.find(bufferOwnerCount->bufferId_) == bufferOwnerCounts_.end() ||
-        bufferOwnerCount->isLastTunnelRelease_) && !bufferOwnerCount->isTunnel_) {
+    if (bufferOwnerCounts_.find(bufferOwnerCount->bufferId_) == bufferOwnerCounts_.end()) {
         bufferOwnerCount->AddRef();
     }
     bufferOwnerCounts_[bufferOwnerCount->bufferId_] = bufferOwnerCount;
@@ -1100,7 +1099,6 @@ std::shared_ptr<RSSurfaceHandler::BufferOwnerCount> RSSurfaceLayer::PopBufferOwn
     auto iter = bufferOwnerCounts_.find(bufferId);
     if (iter != bufferOwnerCounts_.end()) {
         auto bufferOwnerCount = iter->second;
-        bufferOwnerCount->isLastTunnelRelease_ = false;
         bufferOwnerCounts_.erase(iter);
         return bufferOwnerCount;
     }

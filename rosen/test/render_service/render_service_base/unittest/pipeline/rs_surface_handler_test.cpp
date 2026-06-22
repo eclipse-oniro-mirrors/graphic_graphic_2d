@@ -667,33 +667,5 @@ HWTEST_F(RSSurfaceHandlerTest, GetAndSetBufferDropped001, TestSize.Level1)
     rSSurfaceHandlerPtr_->SetBufferDropped(false);
     EXPECT_FALSE(rSSurfaceHandlerPtr_->GetBufferDropped());
 }
-
-/**
-
-@tc.name: BufferOwnerCountDecRef_SetsIsTunnelFalse
-
-@tc.desc: Test BufferOwnerCount::DecRef sets isTunnel_ to false when refCount reaches 1
-
-@tc.type: FUNC
-
-@tc.require: issueI7HDVG
-*/
-HWTEST_F(RSSurfaceHandlerTest, BufferOwnerCountDecRef_SetsIsTunnelFalse, TestSize.Level1)
-{
-    RSSurfaceHandler::BufferOwnerCount ownerCount;
-    ownerCount.bufferId_ = 1;
-    ownerCount.refCount_.store(1);
-    ownerCount.isTunnel_.store(true);
-
-    bool callbackCalled = false;
-    ownerCount.bufferReleaseCb_ = [&callbackCalled](uint64_t bufferId) {
-    callbackCalled = true;
-    };
-
-    bool result = ownerCount.DecRef();
-    EXPECT_TRUE(callbackCalled);
-    EXPECT_FALSE(ownerCount.isTunnel_.load());
-    EXPECT_EQ(result, true);
-}
 #endif
 } // namespace OHOS::Rosen

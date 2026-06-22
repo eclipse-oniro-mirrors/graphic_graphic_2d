@@ -20,7 +20,7 @@
 #include "platform/common/rs_log.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "feature/tunnel_layer/rs_tunnel_layer_helper.h"
-#include "sync_fence.h"
+#include "sync_fence.h" 
 namespace OHOS {
 namespace Rosen {
 

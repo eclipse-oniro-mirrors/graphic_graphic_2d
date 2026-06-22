@@ -116,7 +116,7 @@ void RSTunnelLayerManager::MarkTunnelBufferConsumedForNormal(
         return;
     }
     auto surfaceHandler = surfaceNode->GetMutableRSSurfaceHandler();
-    if (surfaceHandler == nullptr || surfaceHandler->IsCurrentFrameBufferConsumed()) {
+    if (surfaceHandler == nullptr) {
         return;
     }
     auto buffer = surfaceHandler->GetBuffer();
@@ -125,7 +125,7 @@ void RSTunnelLayerManager::MarkTunnelBufferConsumedForNormal(
     if (buffer == nullptr || bufferOwnerCount == nullptr || consumer == nullptr) {
         return;
     }
-    if (!tunnelRuntime.IsCommittedTunnelBuffer(buffer->GetBufferId())) {
+    if (!tunnelRuntime.IsCommittedTunnelBuffer()) {
         return;
     }
     if (clientManager) {

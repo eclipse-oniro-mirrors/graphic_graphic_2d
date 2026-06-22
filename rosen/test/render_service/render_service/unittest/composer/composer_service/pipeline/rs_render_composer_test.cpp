@@ -9371,31 +9371,31 @@ HWTEST_F(RsRenderComposerTest, MarkTunnelSurfaceInvalid_ValidSurfaceId_ForwardsT
 */
 HWTEST_F(RsRenderComposerTest, HandleTunnelCommitFailure_DoesNotDestroyLayer, TestSize.Level1)
 {
-constexpr uint32_t screenId = 0;
-auto output = std::make_shared<HdiOutPut>(screenId);
-output->Init();
-sptr<RSScreenProperty> screenProperty = new RSScreenProperty();
-auto composer = std::make_shared<RSRenderComposer>(output, screenProperty);
+    constexpr uint32_t screenId = 0;
+    auto output = std::make_shared<HdiOutput>(screenId);
+    output->Init();
+    sptr<RSScreenProperty> screenProperty = new RSScreenProperty();
+    auto composer = std::make_shared<RSRenderComposer>(output, screenProperty);
 
-constexpr uint64_t surfaceId = 90003;
-constexpr uint64_t nodeId = 80003;
-constexpr uint64_t tunnelLayerGeneration = 100;
+    constexpr uint64_t surfaceId = 90003;
+    constexpr uint64_t nodeId = 80003;
+    constexpr uint64_t tunnelLayerGeneration = 100;
 
-auto rsLayer = std::make_shared<RSRenderSurfaceLayer>();
-rsLayer->SetSurfaceUniqueId(surfaceId);
-rsLayer->SetNodeId(nodeId);
-auto hdiLayer = HdiLayer::CreateHdiLayer(0);
-ASSERT_NE(hdiLayer, nullptr);
-output->SetTunnelLayerGeneration(tunnelLayerGeneration);
-output->RegisterCreatedLayerLocked(surfaceId, hdiLayer, rsLayer, false);
-ASSERT_EQ(output->layerIdMap_.count(surfaceId), 1u);
+    auto rsLayer = std::make_shared<RSRenderSurfaceLayer>();
+    rsLayer->SetSurfaceUniqueId(surfaceId);
+    rsLayer->SetNodeId(nodeId);
+    auto hdiLayer = HdiLayer::CreateHdiLayer(0);
+    ASSERT_NE(hdiLayer, nullptr);
+    rsLayer->SetTunnelLayerGeneration(tunnelLayerGeneration);
+    output->RegisterCreatedLayerLocked(surfaceId, hdiLayer, rsLayer, false);
+    ASSERT_EQ(output->layerIdMap_.count(surfaceId), 1u);
 
-composer->HandleTunnelCommitFailure(surfaceId);
+    composer->HandleTunnelCommitFailure(surfaceId);
 
-EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId) > 0);
-EXPECT_EQ(output->layerIdMap_.count(surfaceId), 1u);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId) > 0);
+    EXPECT_EQ(output->layerIdMap_.count(surfaceId), 1u);
 
-composer->uniRenderEngine_ = nullptr;
+    composer->uniRenderEngine_ = nullptr;
 }
 } // namespace Rosen
 } // namespace OHOS

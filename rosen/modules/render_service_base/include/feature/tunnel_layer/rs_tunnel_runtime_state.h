@@ -30,6 +30,7 @@
 
 namespace OHOS {
 namespace Rosen {
+class RSLayer;
 class RSB_EXPORT RSTunnelRuntimeState {
 public:
     enum class TunnelState : uint32_t {
@@ -47,13 +48,6 @@ public:
     enum class ClaimResult : uint32_t {
         GO_NORMAL,
         KEEP_DIRECT,
-    };
-
-    enum class TunnelBufferStatus : uint32_t {
-        INVALID_STATUS,
-        FIRST_NORMAL_STATUS,
-        NORMAL_STATUS,
-        TUNNEL_STATUS,
     };
 
     RSTunnelRuntimeState() = default;
@@ -94,7 +88,7 @@ public:
 #endif
 
     void SetCommittedTunnelBufferId(uint64_t bufferId);
-    bool IsCommittedTunnelBuffer(uint64_t bufferId) const;
+    bool IsCommittedTunnelBuffer() const;
     void ClearCommittedTunnelBuffer();
 
     Phase GetPhase() const;
@@ -111,7 +105,14 @@ public:
     void UpdateLastFrameRouteSnapshot(const LastFrameRouteSnapshot& snapshot);
 #endif
     bool IsBufferSizeChanged(const uint32_t bufferSize) const;
-    TunnelBufferStatus lastBufferStatus_ = TunnelBufferStatus::INVALID_STATUS;
+    void SetTunnelLayer(std::shared_ptr<RSLayer> tunnelLayer)
+    {
+        tunnelLayer_ = tunnelLayer;
+    }
+    std::shared_ptr<RSLayer> GetTunnelLayer()
+    {
+        return tunnelLayer_;
+    }
 
 private:
 #ifndef ROSEN_CROSS_PLATFORM
@@ -127,6 +128,7 @@ private:
     std::atomic<Phase> phase_ { Phase::TUNNEL_IDLE };
     std::atomic_bool pendingParam_ { false };
     std::atomic<uint64_t> committedTunnelBufferId_ { 0 };
+    std::shared_ptr<RSLayer> tunnelLayer_ { nullptr };
 
 #ifndef ROSEN_CROSS_PLATFORM
     RSSurfaceHandler::SurfaceBufferEntry pendingBuffer_;
@@ -171,26 +173,6 @@ inline const char* ToClaimResultName(RSTunnelRuntimeState::ClaimResult result)
             return "KEEP_DIRECT";
         default:
             return "UNKNOWN";
-    }
-}
-
-inline void ToTunnelBufferStatus(bool isTunnel, RSTunnelRuntimeState::TunnelBufferStatus& result)
-{
-    if (isTunnel) {
-        status = RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS;
-        return;
-    }
-    switch (status) {
-        case RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS:
-        case RSTunnelRuntimeState::TunnelBufferStatus::NORMAL_STATUS:
-            status = RSTunnelRuntimeState::TunnelBufferStatus::NORMAL_STATUS;
-            break;
-        case RSTunnelRuntimeState::TunnelBufferStatus::INVALID_STATUS:
-        case RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS:
-            status = RSTunnelRuntimeState::TunnelBufferStatus::FIRST_NORMAL_STATUS;
-            break;
-        default:
-            status = RSTunnelRuntimeState::TunnelBufferStatus::INVALID_STATUS;
     }
 }
 

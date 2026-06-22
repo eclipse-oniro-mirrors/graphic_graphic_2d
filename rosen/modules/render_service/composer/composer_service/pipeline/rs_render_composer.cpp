@@ -46,7 +46,6 @@
 #include "platform/ohos/backend/rs_surface_ohos_gl.h"
 #include "platform/ohos/backend/rs_surface_ohos_raster.h"
 #include "pipeline/hardware_thread/rs_realtime_refresh_rate_manager.h"
-#include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "pipeline/render_thread/rs_uni_render_util.h"
 #include "rcd/rs_render_rcd_draw.h"
 #include "rs_frame_report.h"
@@ -320,15 +319,6 @@ void RSRenderComposer::ProcessComposerFrame(uint32_t currentRate, const Pipeline
     ReleaseLayerBuffersInfo releaseLayerInfo;
     releaseLayerInfo.screenId = screenId_;
     hdiOutput_->ReleaseLayers(releaseLayerInfo);
-
-    auto& bufferManager = RSUniRenderThread::Instance().GetBufferManager();
-    auto& tunnelBufferInfo = bufferManager.GetTunnelBufferInfo();
-    if (tunnelBufferInfo.bufferOwnerCount_ != nullptr && pipelineParam.vsyncId > tunnelBufferInfo.vsyncId_) {
-        tunnelBufferInfo.bufferOwnerCount_->DecRef();
-        tunnelBufferInfo.bufferOwnerCount_ = nullptr;
-        tunnelBufferInfo.vsyncId_ = 0;
-    }
-
     int64_t endTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count();
     releaseLayerInfo.lastSwapBufferTime = endTimeNs - startTimeNs;
@@ -1302,7 +1292,6 @@ void RSRenderComposer::HandleTunnelCommitFailure(uint64_t surfaceId)
     uint64_t nodeId = hdiOutput_->GetNodeIdBySurfaceId(surfaceId);
     uint64_t tunnelLayerGeneration = hdiOutput_->GetTunnelLayerGenerationBySurfaceId(surfaceId);
     hdiOutput_->MarkTunnelSurfaceInvalid(surfaceId);
-    hdiOutput_->DestroyLayerBySurfaceId(surfaceId);
     if (nodeId == 0) {
         RS_LOGW("%{public}s can not find nodeId, surfaceId:%{public}" PRIu64, __func__, surfaceId);
         return;

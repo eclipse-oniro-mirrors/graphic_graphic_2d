@@ -160,9 +160,9 @@ void RSTunnelRuntimeState::SetCommittedTunnelBufferId(uint64_t bufferId)
     committedTunnelBufferId_.store(bufferId, std::memory_order_release);
 }
 
-bool RSTunnelRuntimeState::IsCommittedTunnelBuffer(uint64_t bufferId) const
+bool RSTunnelRuntimeState::IsCommittedTunnelBuffer() const
 {
-    return bufferId != 0 && committedTunnelBufferId_.load(std::memory_order_acquire) == bufferId;
+    return committedTunnelBufferId_.load(std::memory_order_acquire) != 0;
 }
 
 void RSTunnelRuntimeState::ClearCommittedTunnelBuffer()
@@ -283,6 +283,19 @@ RSTunnelRuntimeState& RSTunnelRuntimeStore::GetOrCreate(NodeId nodeId)
     return *tunnelRuntime;
 }
 
+bool RSTunnelRuntimeState::IsBufferSizeChanged(const uint32_t bufferSize) const
+{
+#ifdef ROSEN_CROSS_PLATFORM
+    return false;
+#else
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!(pendingBuffer_.buffer)) {
+        return false;
+    }
+    return bufferSize != pendingBuffer_.buffer->GetSize();
+#endif
+}
+
 bool RSTunnelRuntimeStore::GetLayerInfoIfPresent(NodeId nodeId, uint64_t& tunnelLayerId, uint32_t& property)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -358,19 +371,6 @@ void RSTunnelRuntimeStore::Erase(NodeId nodeId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     tunnelRuntimeStates_.erase(nodeId);
-}
-
-bool RSTunnelRuntimeState::IsBufferSizeChanged(const uint32_t bufferSize) const
-{
-#ifdef ROSEN_CROSS_PLATFORM
-    return false;
-#else
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (!(pendingBuffer_.buffer)) {
-        return false;
-    }
-    return bufferSize != pendingBuffer_.buffer->GetSize();
-#endif
 }
 } // namespace Rosen
 } // namespace OHOS

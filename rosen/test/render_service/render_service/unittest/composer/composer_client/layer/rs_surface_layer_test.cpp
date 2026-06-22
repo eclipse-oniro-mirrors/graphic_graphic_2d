@@ -742,46 +742,6 @@ HWTEST_F(RSSurfaceLayerTest, BufferOwnerCount_UnknownSeq_NoRemoval, Function | S
 }
 
 /**
- * @tc.name: BufferOwnerCount_SetBufferOwnerCount_AddRefOnIsLastTunnelRelease
- * @tc.desc: Verify SetBufferOwnerCount calls AddRef when isLastTunnelRelease_ is true
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceLayerTest, BufferOwnerCount_SetBufferOwnerCount_AddRefOnIsLastTunnelRelease, Function | SmallTest | Level2)
-{
-    auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
-    ASSERT_NE(lyr, nullptr);
- 
-    auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
-    boc->bufferId_ = 100u;
-    boc->isLastTunnelRelease_.store(true);
- 
-    int initialRef = boc->refCount_.load();
-    lyr->SetBufferOwnerCount(boc, true);
- 
-    EXPECT_EQ(boc->refCount_.load(), initialRef + 1);
-}
- 
-/**
- * @tc.name: BufferOwnerCount_SetBufferOwnerCount_NoAddRefForTunnelBuffer
- * @tc.desc: Verify SetBufferOwnerCount does NOT call AddRef when isTunnel_ is true
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceLayerTest, BufferOwnerCount_SetBufferOwnerCount_NoAddRefForTunnelBuffer, Function | SmallTest | Level2)
-{
-    auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
-    ASSERT_NE(lyr, nullptr);
- 
-    auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
-    boc->bufferId_ = 101u;
-    boc->isTunnel_ = true;
- 
-    int initialRef = boc->refCount_.load();
-    lyr->SetBufferOwnerCount(boc, true);
- 
-    EXPECT_EQ(boc->refCount_.load(), initialRef);
-}
- 
-/**
  * @tc.name: SetOriginalBufferOwnerCount_BasicTest
  * @tc.desc: Verify SetOriginalBufferOwnerCount stores and AddRefs for new buffer
  * @tc.type: FUNC
@@ -833,27 +793,6 @@ HWTEST_F(RSSurfaceLayerTest, SetOriginalBufferOwnerCount_NullptrIgnored, Functio
  
     lyr->SetOriginalBufferOwnerCount(nullptr);
     EXPECT_EQ(lyr->GetOriginalBufferOwnerCount(), nullptr);
-}
- 
-/**
- * @tc.name: PopBufferOwnerCountById_ResetsIsLastTunnelRelease
- * @tc.desc: Verify PopBufferOwnerCountById resets isLastTunnelRelease_ to false
- * @tc.type: FUNC
- */
-HWTEST_F(RSSurfaceLayerTest, PopBufferOwnerCountById_ResetsIsLastTunnelRelease, Function | SmallTest | Level2)
-{
-    auto lyr = std::make_shared<RSSurfaceLayer>(0, nullptr);
-    ASSERT_NE(lyr, nullptr);
- 
-    auto boc = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
-    boc->bufferId_ = 300u;
-    boc->isLastTunnelRelease_.store(true);
-    lyr->SetBufferOwnerCount(boc, false);
- 
-    ASSERT_EQ(boc->isLastTunnelRelease_.load(), true);
-    auto got = lyr->PopBufferOwnerCountById(300u);
-    ASSERT_NE(got, nullptr);
-    EXPECT_EQ(got->isLastTunnelRelease_.load(), false);
 }
 } // namespace Rosen
 } // namespace OHOS

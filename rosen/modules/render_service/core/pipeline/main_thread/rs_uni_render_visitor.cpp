@@ -109,7 +109,7 @@
 #include "drawable/rs_misc_drawable.h"
 
 #undef LOG_TAG
-#define LOG_TAG "RSUniRenderVisitor"
+#define LOG_TAG "RSUniRenderVisitor" 
 
 namespace OHOS {
 namespace Rosen {
@@ -2488,16 +2488,6 @@ void RSUniRenderVisitor::ProcessAncoNode(const std::shared_ptr<RSSurfaceRenderNo
         hwcNodePtr->SetHardwareForcedDisabledState(true);
         hwcVisitor_->Statistics().UpdateHwcDisabledReasonForDFX(hwcNodePtr->GetId(),
             HwcDisabledReasons::DISABLED_BY_ANCO_HAS_GPU, hwcNodePtr->GetName());
-    }
-    if (hwcNodePtr->IsHardwareForcedDisabled()) {
-        auto& tunnelRuntime = RSTunnelRuntimeStore::GetOrCreate(hwcNodePtr->GetId());
-        if (tunnelRuntime.lastBufferStatus_ == RSTunnelRuntimeState::TunnelBufferStatus::TUNNEL_STATUS) {
-            RSBufferManager::TunnelBufferInfo tunnelBufferInfo;
-            tunnelBufferInfo.bufferOwnerCount_ = hwcNodePtr->GetRSSurfaceHandler()->GetBufferOwnerCount();
-            tunnelBufferInfo.vsyncId_ = RSUniRenderThread::Instance().GetVsyncId();
-            RSUniRenderThread::Instance().GetBufferManager().SetTunnelBufferInfo(tunnelBufferInfo);
-        }
-        ToTunnelBufferStatus(false, tunnelRuntime.lastBufferStatus_);
     }
 }
 
