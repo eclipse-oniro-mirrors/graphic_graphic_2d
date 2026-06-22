@@ -360,13 +360,17 @@ void RSTunnelRuntimeStore::Erase(NodeId nodeId)
     tunnelRuntimeStates_.erase(nodeId);
 }
 
-bool RSTunnelRuntimeStore::IsBufferSizeChanged(const uint32_t bufferSize) const
+bool RSTunnelRuntimeState::IsBufferSizeChanged(const uint32_t bufferSize) const
 {
+#ifdef ROSEN_CROSS_PLATFORM
+    return false;
+#else
     std::lock_guard<std::mutex> lock(mutex_);
     if (!(pendingBuffer_.buffer)) {
         return false;
     }
     return bufferSize != pendingBuffer_.buffer->GetSize();
+#endif
 }
 } // namespace Rosen
 } // namespace OHOS
