@@ -9365,31 +9365,29 @@ HWTEST_F(RsRenderComposerTest, MarkTunnelSurfaceInvalid_ValidSurfaceId_ForwardsT
 }
 
 /**
-@tc.name: HandleTunnelCommitFailure_DoesNotDestroyLayer
-
-@tc.desc: Test HandleTunnelCommitFailure marks surface invalid but does NOT destroy layer
-
-@tc.type: FUNC
+ @ tc.name: HandleTunnelCommitFailure_DoesNotDestroyLayer
+ @ tc.desc: Test HandleTunnelCommitFailure marks surface invalid but does NOT destroy layer
+ @ tc.type: FUNC
 */
 HWTEST_F(RsRenderComposerTest, HandleTunnelCommitFailure_DoesNotDestroyLayer, TestSize.Level1)
 {
 constexpr uint32_t screenId = 0;
-auto output = std::make_shared(screenId);
+auto output = std::make_shared<HdiOutPut>(screenId);
 output->Init();
-sptr screenProperty = new RSScreenProperty();
-auto composer = std::make_shared(output, screenProperty);
+sptr<RSScreenProperty> screenProperty = new RSScreenProperty();
+auto composer = std::make_shared<RSRenderComposer>(output, screenProperty);
 
 constexpr uint64_t surfaceId = 90003;
 constexpr uint64_t nodeId = 80003;
 constexpr uint64_t tunnelLayerGeneration = 100;
 
-auto rsLayer = std::make_shared();
+auto rsLayer = std::make_shared<RSRenderSurfaceLayer>();
 rsLayer->SetSurfaceUniqueId(surfaceId);
 rsLayer->SetNodeId(nodeId);
 auto hdiLayer = HdiLayer::CreateHdiLayer(0);
 ASSERT_NE(hdiLayer, nullptr);
+output->SetTunnelLayerGeneration(tunnelLayerGeneration);
 output->RegisterCreatedLayerLocked(surfaceId, hdiLayer, rsLayer, false);
-output->SetTunnelLayerGenerationBySurfaceId(surfaceId, tunnelLayerGeneration);
 ASSERT_EQ(output->layerIdMap_.count(surfaceId), 1u);
 
 composer->HandleTunnelCommitFailure(surfaceId);
