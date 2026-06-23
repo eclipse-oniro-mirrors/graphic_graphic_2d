@@ -426,6 +426,28 @@ public:
     const RSShowingPropertiesFreezer& GetShowingProperties() const;
 
     /**
+     * @brief Sets the bounds and frame of the node.
+     *
+     * @param positionX The X coordinate of the new bounds.
+     * @param positionY The Y coordinate of the new bounds.
+     * @param width The width of the new bounds and the new frame.
+     * @param height The height of the new bounds and the new frame.
+     * @param frameX The X coordinate of the new frame.
+     * @param frameY The Y coordinate of the new frame.
+     */
+    void SetBoundsAndFrame(float positionX, float positionY, float width, float height, float frameX, float frameY);
+ 
+    /**
+     * @brief Sets the bounds and frame of the node without mutex.
+     *
+     * The bounds typically define the position and size of the node within its parent.
+     *
+     * @param bounds A Vector4f representing the new bounds (X, Y, width, height).
+     * @param frame A Vector4f representing the new frame, containing values for x, y, width, and height.
+     */
+    void SetBoundsAndFrame(const Vector4f& bounds, const Vector4f& frame);
+
+    /**
      * @brief Sets the bounds of the node.
      *
      * The bounds typically define the position and size of the node within its parent.
@@ -2360,6 +2382,9 @@ private:
     bool AddCommandInner(std::unique_ptr<RSCommand>& command, bool isRenderServiceCommand,
         FollowType followType, NodeId nodeId) const;
 
+    void SetBoundsInner(const Vector4f& bounds);
+    void SetFrameInner(const Vector4f& frame);
+    
     uint32_t dirtyType_ = static_cast<uint32_t>(NodeDirtyType::NOT_DIRTY);
 
     std::shared_ptr<RSObjAbsGeometry> localGeometry_;

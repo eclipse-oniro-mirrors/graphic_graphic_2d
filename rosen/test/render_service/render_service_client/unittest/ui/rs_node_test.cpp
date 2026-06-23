@@ -8926,4 +8926,103 @@ HWTEST_F(RSNodeTest, SetMaterialShaderDetachPropertyTest, TestSize.Level1)
 
     EXPECT_TRUE(true);
 }
+
+/**
+ * @tc.name: SetBoundsAndFrame001
+ * @tc.desc: Test SetBoundsAndFrame with float and Vector4f parameters
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBoundsAndFrame001, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_NE(rsNode, nullptr);
+
+    rsNode->SetBoundsAndFrame(10.0f, 20.0f, 100.0f, 200.0f, 5.0f, 15.0f);
+    auto bounds = rsNode->GetStagingProperties().GetBounds();
+    auto frame = rsNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, 10.0f));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, 20.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, 5.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.y_, 15.0f));
+
+    Vector4f newBounds(50.0f, 60.0f, 300.0f, 400.0f);
+    Vector4f newFrame(25.0f, 35.0f, 300.0f, 400.0f);
+    rsNode->SetBoundsAndFrame(newBounds, newFrame);
+    bounds = rsNode->GetStagingProperties().GetBounds();
+    frame = rsNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, 50.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, 25.0f));
+}
+
+/**
+ * @tc.name: SetBoundsAndFrame002
+ * @tc.desc: Test SetBoundsAndFrame with zero values and origin positions
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBoundsAndFrame002, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_NE(rsNode, nullptr);
+
+    rsNode->SetBoundsAndFrame(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    auto bounds = rsNode->GetStagingProperties().GetBounds();
+    auto frame = rsNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, 0.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, 0.0f));
+
+    rsNode->SetBoundsAndFrame(100.0f, 100.0f, 200.0f, 200.0f, 0.0f, 0.0f);
+    bounds = rsNode->GetStagingProperties().GetBounds();
+    frame = rsNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, 100.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, 0.0f));
+}
+
+/**
+ * @tc.name: SetBoundsAndFrame003
+ * @tc.desc: Test SetBoundsAndFrame called multiple times (modifier exists branch)
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBoundsAndFrame003, TestSize.Level1)
+{
+    auto rsNode = RSCanvasNode::Create();
+    ASSERT_NE(rsNode, nullptr);
+
+    rsNode->SetBoundsAndFrame(10.0f, 10.0f, 50.0f, 50.0f, 5.0f, 5.0f);
+    rsNode->SetBoundsAndFrame(20.0f, 20.0f, 100.0f, 100.0f, 10.0f, 10.0f);
+    rsNode->SetBoundsAndFrame(30.0f, 30.0f, 150.0f, 150.0f, 15.0f, 15.0f);
+
+    auto bounds = rsNode->GetStagingProperties().GetBounds();
+    auto frame = rsNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, 30.0f));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, 30.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, 15.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.y_, 15.0f));
+}
+
+/**
+ * @tc.name: SetBoundsAndFrame004
+ * @tc.desc: Test SetBoundsAndFrame with RSSurfaceNode and negative values
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeTest, SetBoundsAndFrame004, TestSize.Level1)
+{
+    RSSurfaceNodeConfig config;
+    config.isTextureExportNode = false;
+    auto surfaceNode = RSSurfaceNode::Create(config);
+    ASSERT_NE(surfaceNode, nullptr);
+
+    surfaceNode->SetBoundsAndFrame(10.0f, 20.0f, 100.0f, 200.0f, 5.0f, 15.0f);
+    auto bounds = surfaceNode->GetStagingProperties().GetBounds();
+    auto frame = surfaceNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, 10.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, 5.0f));
+
+    surfaceNode->SetBoundsAndFrame(-10.0f, -20.0f, 100.0f, 200.0f, -5.0f, -15.0f);
+    bounds = surfaceNode->GetStagingProperties().GetBounds();
+    frame = surfaceNode->GetStagingProperties().GetFrame();
+    EXPECT_TRUE(ROSEN_EQ(bounds.x_, -10.0f));
+    EXPECT_TRUE(ROSEN_EQ(bounds.y_, -20.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.x_, -5.0f));
+    EXPECT_TRUE(ROSEN_EQ(frame.y_, -15.0f));
+}
 } // namespace OHOS::Rosen
