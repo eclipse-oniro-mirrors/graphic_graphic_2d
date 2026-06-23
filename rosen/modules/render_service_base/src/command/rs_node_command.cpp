@@ -439,5 +439,22 @@ void RSNodeCommandHelper::ReSortChildrenByZIndex(RSContext& context, NodeId node
         node->ReSortChildrenByZIndex();
     }
 }
+
+bool RSNodeCommandHelper::CheckPropertyType(RSRenderPropertyBase& prop,
+    RSPropertyType updateType, NodeId nodeId)
+{
+    if (prop.GetPropertyType() != updateType) {
+        TypeErrorInfoPrint(nodeId, prop.GetId(), updateType, prop.GetPropertyType());
+        return false;
+    }
+    return true;
+}
+
+__attribute__((noinline)) void RSNodeCommandHelper::TypeErrorInfoPrint(NodeId nodeId,
+    PropertyId propId, RSPropertyType updateType, RSPropertyType propType)
+{
+    ROSEN_LOGE("UpdateProperty type mismatch, nodeId=%{public}" PRIu64 ", propertyId=%{public}" PRIu64
+        " update type:%{public}hhu, property type:%{public}hhu", nodeId, propId, updateType, propType);
+}
 } // namespace Rosen
 } // namespace OHOS
