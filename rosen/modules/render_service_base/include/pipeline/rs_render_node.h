@@ -43,6 +43,7 @@
 #include "drawable/rs_drawable.h"
 #include "drawable/rs_property_drawable.h"
 #include "drawable/rs_render_node_drawable_adapter.h"
+#include "effect/rs_render_effect_common_def.h"
 #include "image/gpu_context.h"
 #include "memory/rs_dfx_string.h"
 #include "memory/rs_memory_snapshot.h"
@@ -586,7 +587,7 @@ public:
     void RemoveAllModifiersNG();
     std::shared_ptr<ModifierNG::RSRenderModifier> GetModifierNG(
         ModifierNG::RSModifierType type, ModifierId id = 0) const;
-    ModifierNGContainer GetModifiersNG(ModifierNG::RSModifierType type) const;
+    const ModifierNGContainer& GetModifiersNG(ModifierNG::RSModifierType type) const;
     const ModifiersNGMap& GetAllModifiers() const;
     bool HasDrawCmdModifiers() const;
     bool HasValidDrawCmd() const;
@@ -693,6 +694,9 @@ public:
     void UpdateFilterRegionInSkippedSubTree(RSDirtyRegionManager& dirtyManager,
         const RSRenderNode& subTreeRoot, RectI& filterRect, const RectI& clipRect,
         const std::optional<RectI>& surfaceClipRect);
+    void UpdateFilterRenderContextInSkippedSubTree(const RSRenderNode& subTreeRoot,
+        NodeId offscreenNodeId, const RectI& clipRect, const std::optional<RectI>& surfaceClipRect,
+        FilterRenderContext& context);
     void FilterRectMergeDirtyRectInSkippedSubtree(RSDirtyRegionManager& dirtyManager,
         const RectI& filterRect);
     void MarkFilterStatusChanged(std::shared_ptr<DrawableV2::RSFilterDrawable>& filterDrawable,

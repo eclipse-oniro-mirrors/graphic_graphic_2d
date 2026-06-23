@@ -2412,6 +2412,7 @@ private:
     bool isForceFlag_ = false;
     bool isUifirstEnable_ = false;
     int8_t collectColorSpace_ = GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB;
+    float lastHDRColorHeadroom_ = 1.0f;
     bool isSkipCheckInMultiInstance_ = true;
     RSUIFirstSwitch uiFirstSwitch_ = RSUIFirstSwitch::NONE;
     std::shared_ptr<RSUIContext> rsUIContext_;

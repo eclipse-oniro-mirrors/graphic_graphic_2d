@@ -2841,6 +2841,10 @@ void RSNode::SetHDRColorHeadroom(const float& headroom)
         ROSEN_LOGE("SetHDRColorHeadroom only can be greater than or equal to one");
         return;
     }
+    if (std::fabs(lastHDRColorHeadroom_ - headroom) < FLT_EPSILON) {
+        return;
+    }
+    lastHDRColorHeadroom_ = headroom;
     SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRColorHeadroom>(
         headroom);
 }
