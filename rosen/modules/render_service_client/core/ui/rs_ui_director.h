@@ -356,7 +356,7 @@ public:
         return false;
     }
 
-    static uint32_t GetHybridRenderTextBlodLenCount()
+    static uint32_t GetHybridRenderTextBlobLenCount()
     {
         return 0;
     }
