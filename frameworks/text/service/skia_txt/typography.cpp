@@ -583,6 +583,15 @@ Drawing::RectI Typography::GeneratePaintRegion(double x, double y) const
     return paragraph_->GeneratePaintRegion(x, y);
 }
 
+bool Typography::IsLayoutDone() const
+{
+    std::shared_lock<std::shared_mutex> readLock(mutex_);
+    if (paragraph_ == nullptr) {
+        return false;
+    }
+    return paragraph_->IsLayoutDone();
+}
+
 std::vector<TextBlobRecordInfo> Typography::GetTextBlobRecordInfo() const
 {
     std::shared_lock<std::shared_mutex> readLock(mutex_);
@@ -685,6 +694,7 @@ std::vector<TextPathInfo> Typography::GetTextPathsByIndex(size_t start, size_t e
 
 TextLayoutResult Typography::LayoutWithConstraints(const TextRectSize &constraint)
 {
+    std::unique_lock<std::shared_mutex> writeLock(mutex_);
     return paragraph_->LayoutWithConstraints(constraint);
 }
 
