@@ -26,6 +26,7 @@
 
 #include "drawing_canvas_utils.h"
 #include "drawing_font_utils.h"
+#include "drawing_metrics.h"
 
 #include "text/typeface.h"
 #include "utils/log.h"
@@ -140,6 +141,7 @@ OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFile(const char* path, int ind
     }
     OH_Drawing_Typeface* drawingTypeface = reinterpret_cast<OH_Drawing_Typeface*>(typeface.get());
     TypefaceMgr::GetInstance().Insert(drawingTypeface, typeface);
+    API_STATS_HISTOGRAM("Arkgraphics2d.Typeface.OH_Drawing_TypefaceCreateFromFile", 1);
     return drawingTypeface;
 }
 
@@ -162,6 +164,7 @@ OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromFileWithArguments(const char* 
         LOGE("OH_Drawing_TypefaceCreateFromFileWithArguments: read typeface file failed, path is %{public}s.", path);
         return nullptr;
     }
+    API_STATS_HISTOGRAM("Arkgraphics2d.Typeface.OH_Drawing_TypefaceCreateFromFileWithArguments", 1);
     return RegisterAndConvertTypeface(typeface);
 }
 
@@ -190,6 +193,7 @@ OH_Drawing_Typeface* OH_Drawing_TypefaceCreateFromCurrent(const OH_Drawing_Typef
         typeface = Typeface::MakeFromAshmem(
             currentTypeface->GetFd(), currentTypefaceSize, currentTypeface->GetHash(), fontArguments);
     }
+    API_STATS_HISTOGRAM("Arkgraphics2d.Typeface.OH_Drawing_TypefaceCreateFromCurrent", 1);
     return RegisterAndConvertTypeface(typeface);
 }
 
