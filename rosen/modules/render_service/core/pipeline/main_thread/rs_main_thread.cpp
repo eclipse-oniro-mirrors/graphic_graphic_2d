@@ -901,7 +901,7 @@ void RSMainThread::CleanResources(pid_t pid, bool forRefresh)
 
 bool RSMainThread::GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight)
 {
-    RS_LOGI("GetMaxGpuBufferSize: start query GPU buffer size limits");
+    RS_LOGD("GetMaxGpuBufferSize: start query GPU buffer size limits");
 
 #if !defined(RS_ENABLE_GL) && !defined(RS_ENABLE_VK)
     RS_LOGE("GetMaxGpuBufferSize: No GPU backend enabled");
