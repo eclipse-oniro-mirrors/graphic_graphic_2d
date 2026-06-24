@@ -22,6 +22,7 @@
 #include "ipc_callbacks/rs_iexposed_event_callback.h"
 #include "ipc_callbacks/active_screen_id_changed_callback.h"
 #include "screen_manager/rs_screen_manager.h"
+#include "screen_manager/rs_surface_region_config.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -78,6 +79,11 @@ public:
     RSScreenData GetScreenData(ScreenId id) const;
     int32_t GetScreenBacklight(ScreenId id) const;
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData);
+
+    int32_t GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const;
+    int32_t SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
+
     void DisablePowerOffRenderControl(ScreenId id);
     int32_t GetScreenType(ScreenId id, RSScreenType& type) const;
     int32_t GetDisplayIdentificationData(ScreenId id, uint8_t& outPort, std::vector<uint8_t>& edidData) const;
@@ -140,6 +146,10 @@ public:
     int32_t SetAsMainScreen(ScreenId screenId, bool isMainScreen);
     ScreenId GetMainScreenId();
     PanelPowerStatus GetPanelPowerStatus(ScreenId id) const;
+
+    // Multi-surface virtual screen management
+    int32_t AddVirtualScreenSurface(ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs);
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces);
 
 private:
     sptr<RSScreenManager> screenManager_;

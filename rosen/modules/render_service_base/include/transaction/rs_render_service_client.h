@@ -27,6 +27,7 @@
 #include <surface_type.h>
 #ifndef ROSEN_CROSS_PLATFORM
 #include <surface.h>
+#include <transaction/transaction.h>
 #include <utility>
 #endif
 
@@ -38,11 +39,14 @@
 #include "ipc_callbacks/screen_change_callback.h"
 #include "ipc_callbacks/screen_supported_hdr_formats_callback.h"
 #include "ipc_callbacks/screen_switching_notify_callback.h"
+#include "ipc_callbacks/rs_transaction_callback.h"
 #include "ipc_callbacks/rs_transaction_data_callback.h"
+#include "ipc_callbacks/rs_delegate_composite_callback.h"
 #include "memory/rs_memory_graphic.h"
 #include "platform/drawing/rs_surface.h"
 #endif
 #include "rs_render_service_client_info.h"
+#include "screen_manager/screen_types.h"
 #ifndef ENABLE_RS_PROXY
 #include "rs_hrp_service.h"
 #include "rs_irender_client.h"
@@ -51,6 +55,7 @@
 #include "screen_manager/rs_screen_data.h"
 #include "screen_manager/rs_screen_hdr_capability.h"
 #include "screen_manager/rs_screen_mode_info.h"
+#include "screen_manager/rs_surface_region_config.h"
 #include "screen_manager/screen_types.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "vsync_receiver.h"
@@ -136,6 +141,11 @@ public:
 
     int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface);
 
+    // Multi-surface virtual screen APIs
+    int32_t AddVirtualScreenSurface(
+        ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs);
+    int32_t RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces);
+
     // blacklist
     int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
     int32_t AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList);
@@ -158,6 +168,8 @@ public:
 
     bool SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         uint32_t rowCount = 0, uint32_t colCount = 0);
+
+    bool SetUifirstScale(float scaleFactor);
 
     void RemoveVirtualScreen(ScreenId id);
 
@@ -244,6 +256,11 @@ public:
     int32_t GetScreenBacklight(ScreenId id);
 
     void SetScreenBacklight(const RsScreenBrightnessData& brightnessData);
+
+    int32_t GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode);
+
+    int32_t SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue);
 
     int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode);
 
@@ -359,6 +376,9 @@ public:
     void SetCacheEnabledForRotation(bool isEnabled);
 #endif
     void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback);
+
+    int32_t SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo);
+
 #ifndef ENABLE_RS_PROXY
     std::vector<ActiveDirtyRegionInfo> GetActiveDirtyRegionInfo();
  
@@ -407,6 +427,8 @@ public:
     bool SetBehindWindowFilterEnabled(bool enabled);
 
     bool GetBehindWindowFilterEnabled(bool& enabled);
+
+    bool SetApsConfigParams(ApsEventType event, const std::unordered_map<std::string, std::string>& params);
 
     int32_t GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB);
 

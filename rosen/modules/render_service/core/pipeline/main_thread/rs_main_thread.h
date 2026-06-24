@@ -131,7 +131,7 @@ public:
     void ResetAnimateNodeFlag();
     void GetAppMemoryInMB(float& cpuMemSize, float& gpuMemSize);
     void ClearMemoryCache(ClearMemoryMoment moment, bool deeply = false, pid_t pid = -1);
-    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, RectI rect);
+    void AddWhiteListRect(const std::unordered_set<ScreenId>& screenIds, const Drawing::Rect& rect);
 
     void SetForceRsDVsync(const std::string& sceneId);
     void GetNodeInfo(std::unordered_map<int, std::pair<int, int>>& node_info,
@@ -160,6 +160,11 @@ public:
         return *context_;
     }
 
+    std::weak_ptr<RSContext> GetWeakContext()
+    {
+        return context_;
+    }
+
     bool HasContext() const
     {
         return context_ != nullptr;
@@ -179,6 +184,7 @@ public:
 
     void RegisterApplicationAgent(uint32_t pid, sptr<IApplicationAgent> app);
     void UnRegisterApplicationAgent(sptr<IApplicationAgent> app);
+    sptr<IApplicationAgent> UnRegisterApplicationAgent(uint32_t pid);
 
     void RegisterOcclusionChangeCallback(pid_t pid, sptr<RSIOcclusionChangeCallback> callback);
     void UnRegisterOcclusionChangeCallback(pid_t pid);
@@ -208,6 +214,15 @@ public:
     void CheckWindowCapTasks();
     void ProcessWindowCapTasks();
     bool IsSnapshotPendingThisFrame() const;
+    bool IsLastFrameGpuComposition() const { return directComposeHelper_.lastFrameDidGpuRender_; }
+    uint32_t GetConsecutiveDoCompSuccessCount() const
+    {
+        return directComposeHelper_.consecutiveDoCompSuccessCount_.load(std::memory_order_acquire);
+    }
+    void ResetConsecutiveDoCompSuccessCount()
+    {
+        directComposeHelper_.consecutiveDoCompSuccessCount_.store(0, std::memory_order_release);
+    }
 
     void SetDirtyFlag(bool isDirty = true);
     bool GetDirtyFlag();
@@ -240,6 +255,16 @@ public:
         std::shared_ptr<Media::PixelMap> watermark, const std::vector<NodeId>& nodeIdList,
         SurfaceWatermarkType watermarkType, bool isSystemCalling = false,
         uint32_t rowCount = 0, uint32_t colCount = 0);
+    // for uifirst
+    void SetUifirstScale(float scaleFactor)
+    {
+        // scaleFactor must in (0,1]
+        if (ROSEN_LE(scaleFactor, 0.0f) || ROSEN_GNE(scaleFactor, 1.0f)) {
+            uifirstScale_ = 1.0f;
+        } else {
+            uifirstScale_ = scaleFactor;
+        }
+    }
     void ClearSurfaceWatermark(pid_t pid, const std::string& name, bool isSystemCalling);
     void ClearSurfaceWatermark(pid_t pid);
     void ClearSurfaceWatermarkForNodes(pid_t pid, const std::string& name,
@@ -257,7 +282,7 @@ public:
 
     bool IsWatermarkFlagChanged() const
     {
-        return lastWatermarkFlag_ != watermarkFlag_;
+        return lastWatermarkFlag_ != watermarkFlag_ || lastWatermarkImg_ != watermarkImg_;
     }
 
     uint64_t GetFrameCount() const
@@ -411,6 +436,7 @@ public:
     }
     void SetAnimationOcclusionInfo(const std::string& sceneId, bool isStart);
     void InitVulkanErrorCallback(Drawing::GPUContext* gpuContext);
+    void InitCreatePipelineTimeCallback(Drawing::GPUContext* gpuContext);
 #ifdef RS_ENABLE_GPU
     void InitGPUCacheManager();
 #endif
@@ -444,7 +470,7 @@ public:
     void TransitionDataMutexUnlock();
     void CleanResources(pid_t pid, bool forRefresh = false);
     bool GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight);
-    
+
     const std::shared_ptr<RSHwcContext>& GetHwcContext() const { return hwcContext_; }
 
     std::unordered_map<ScreenId, RSRenderNode::WeakPtrSet>& GetMutableAIBarNodes()
@@ -458,6 +484,12 @@ public:
     void AddSurfaceFpsOp(const SurfaceFpsOp& op);
     std::vector<SurfaceFpsOp> GetSurfaceFpsOpList();
     void RmvSurfaceFpsOp(const std::vector<SurfaceFpsOp>& rmvList);
+
+    // for rebuild transaction
+    bool IsRebuildTransactionInProgress() const;
+    void AddSplitTransaction(std::unique_ptr<RSTransactionData> transaction);
+    void ProcessSplitTransactionCommands(); // 在 ProcessCommand 中调用，处理分帧事务的一部分命令
+    pid_t GetPendingSplitPid() const;
 
 private:
     // TransactionDataIndexMap is Pid to {index of RSTransactionData, vector of std::unique_ptr<RSTransactionData>}
@@ -516,6 +548,8 @@ private:
 
     bool DoParallelComposition(std::shared_ptr<RSBaseRenderNode> rootNode);
 
+    bool CheckIfNeedSplitTransaction(std::unique_ptr<RSTransactionData>& rsTransactionData);
+
     void ClassifyRSTransactionData(std::shared_ptr<RSTransactionData> rsTransactionData);
     void ProcessRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
     void ProcessSyncRSTransactionData(std::unique_ptr<RSTransactionData>& rsTransactionData, pid_t pid);
@@ -538,10 +572,9 @@ private:
     uint32_t GetForceCommitReason() const;
 
     void TraverseCanvasDrawingNodes();
+    bool CheckIfNeedSplitTransaction();
 
     void SetFocusLeashWindowId();
-    RSVisibleLevel GetRegionVisibleLevel(const Occlusion::Region& curRegion,
-        const Occlusion::Region& visibleRegion);
     void PrintCurrentStatus();
     void UpdateGpuContextCacheSize();
 #ifdef RES_SCHED_ENABLE
@@ -604,6 +637,14 @@ private:
     void ProcessNeedAttachedNodes();
     void PostTryReclaimLastBuffer(const std::shared_ptr<RSSurfaceRenderNode>& surfaceNode,
         std::shared_ptr<RSSurfaceHandler> surfaceHandler);
+
+    void UpdateDoDirectCompositionFlagForDelegateMode(std::shared_ptr<TransactionDataMap>& transactionDataEffective);
+    void UpdateDoDirectCompositionFlagForDelegateMode(std::unique_ptr<RSTransactionData>& transactionData);
+    void UpdateNodeInfoForDelegateMode(const int64_t &rsNodeId, const std::shared_ptr<RSNodeVisitor> &uniVisitor);
+    void TraverseNodeForDelegateMode();
+    void UpdateZorderForDelegateMode();
+    void ProcessDelegateCompositeCommand();
+
     bool isUniRender_ = RSUniRenderJudgement::IsUniRender();
     bool needWaitUnmarshalFinished_ = true;
     bool clearMemoryFinished_ = true;
@@ -628,6 +669,7 @@ private:
     bool isNeedResetClearMemoryTask_ = false;
     bool watermarkFlag_ = false;
     bool lastWatermarkFlag_ = false;
+    std::shared_ptr<Drawing::Image> lastWatermarkImg_ = nullptr;
     bool hasProtectedLayer_ = false;
     bool hasSurfaceLockLayer_ = false;
     DeviceType deviceType_ = DeviceType::PHONE;
@@ -661,10 +703,11 @@ private:
     std::atomic_bool discardJankFrames_ = false;
     std::atomic_bool skipJankAnimatorFrame_ = false;
     bool isImplicitAnimationEnd_ = false;
+    float uifirstScale_ = 1.0f;
 
     pid_t lastCleanCachePid_ = -1;
     int32_t unmarshalFinishedCount_ = 0;
-    pid_t desktopPidForRotationScene_ = 0;
+    std::atomic<pid_t> desktopPidForRotationScene_ = 0;
     int32_t subscribeFailCount_ = 0;
     SystemAnimatedScenes systemAnimatedScenes_ = SystemAnimatedScenes::OTHERS; // guard by systemAndRegularMutex_
     bool isRegularAnimation_ = false; // guard by systemAndRegularMutex_
@@ -753,6 +796,7 @@ private:
 #ifdef RS_ENABLE_GPU
     std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> selfDrawables_;
 #endif
+    std::vector<DrawableV2::RSRenderNodeDrawableAdapter::SharedPtr> canvasDrawingSelfDrawables_;
 
     // Enable HWCompose
     std::vector<std::shared_ptr<RSSurfaceRenderNode>> hardwareEnabledNodes_;
@@ -846,6 +890,7 @@ private:
     std::unique_ptr<RSTunnelRouteArbiter> tunnelRouteArbiter_ = nullptr;
     std::mutex dumpInfoMutex_;
 
+    bool isWebCommandOnly_ = false;
     bool hasCanvasDrawingNodeCachedOp_ = false;
 
     std::shared_ptr<HgmRenderContext> hgmRenderContext_ = nullptr;
@@ -855,6 +900,10 @@ private:
     // for surface fps op
     std::unordered_map<NodeId, SurfaceFpsOp> addSurfaceFpsOpMap_;
     std::unordered_map<NodeId, SurfaceFpsOp> rmvSurfaceFpsOpMap_;
+
+    // for rebuild transaction
+    std::deque<std::unique_ptr<RSTransactionData>> pendingSplitTransactions_;
+    pid_t pendingSplitPid_ = -1;
 };
 } // namespace OHOS::Rosen
 #endif // RS_MAIN_THREAD

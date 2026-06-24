@@ -109,11 +109,6 @@ HWTEST_F(RSTransactionHandlerTest, FlushImplicitTransactionHybridRender002, Test
     std::unique_ptr<RSCommand> command =
         std::make_unique<RSAnimationCallback>(nodeId, 1, 1, AnimationCallbackEvent::FINISHED);
     transaction->AddRemoteCommand(command, nodeId, FollowType::NONE);
-    CommitTransactionCallback callback =
-        [] (std::shared_ptr<OHOS::Rosen::RSRenderPipelineClient> &rsRenderPipelineClient,
-        std::unique_ptr<RSTransactionData>&& rsTransactionData, uint32_t& transactionDataIndex,
-        std::shared_ptr<RSTransactionHandler>) {};
-    RSTransactionHandler::SetCommitTransactionCallback(callback);
     transaction->FlushImplicitTransaction(timestamp);
 }
 
@@ -1353,6 +1348,7 @@ HWTEST_F(RSTransactionHandlerTest, TestPostTask, TestSize.Level1)
  */
 HWTEST_F(RSTransactionHandlerTest, DumpCommandTest, TestSize.Level1)
 {
+#ifdef RS_ENABLE_UNI_RENDER
     auto transaction = std::make_shared<RSTransactionHandler>();
     auto renderThreadClient = CreateRenderThreadClient();
     transaction->SetRenderThreadClient(renderThreadClient);
@@ -1382,6 +1378,7 @@ HWTEST_F(RSTransactionHandlerTest, DumpCommandTest, TestSize.Level1)
     ASSERT_TRUE(dumpString.find("ImplicitCommonTransactionData") == std::string::npos);
     ASSERT_TRUE(dumpString.find("ImplicitRemoteTransactionDataStack") == std::string::npos);
     ASSERT_TRUE(dumpString.find("ImplicitCommonTransactionDataStack") == std::string::npos);
+#endif
 }
 
 /**

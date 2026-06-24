@@ -305,6 +305,25 @@ void RSScreenManagerAgent::SetScreenBacklight(const RsScreenBrightnessData& brig
     screenManager_->SetScreenBacklight(brightnessData);
 }
 
+int32_t RSScreenManagerAgent::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->GetScreenVCPFeature(id, vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t RSScreenManagerAgent::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->SetScreenVCPFeature(id, vcpCode, currentValue);
+}
+
 void RSScreenManagerAgent::DisablePowerOffRenderControl(ScreenId id)
 {
     if (!screenManager_) {
@@ -826,5 +845,23 @@ PanelPowerStatus RSScreenManagerAgent::GetPanelPowerStatus(ScreenId id) const
     return screenManager_->GetPanelPowerStatus(id);
 }
 
+int32_t RSScreenManagerAgent::AddVirtualScreenSurface(
+    ScreenId id, const std::vector<SurfaceRegionConfig>& surfaceConfigs)
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->AddVirtualScreenSurface(id, surfaceConfigs);
+}
+
+int32_t RSScreenManagerAgent::RemoveVirtualScreenSurface(ScreenId id, const std::vector<sptr<Surface>>& surfaces)
+{
+    if (!screenManager_) {
+        RS_LOGW("%{public}s screenManager_ is nullptr", __func__);
+        return StatusCode::SCREEN_NOT_FOUND;
+    }
+    return screenManager_->RemoveVirtualScreenSurface(id, surfaces);
+}
 } // namespace Rosen
 } // namespace OHOS

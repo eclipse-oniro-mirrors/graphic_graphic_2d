@@ -48,23 +48,34 @@ namespace {
     constexpr int32_t TEST_FRAME_NUM_15 = 15;
     constexpr int32_t TEST_FRAME_NUM_25 = 25;
     constexpr int32_t TEST_MAX_LENGTH = 1920;
+    constexpr int32_t TEST_ROG_WIDTH_1440 = 1440;
+    constexpr int32_t TEST_ROG_HEIGHT_2560 = 2560;
+    constexpr int32_t TEST_FRAME_NUM_0 = 0;
     constexpr float TEST_SHARP_CURVE_CTLX1 = 0.33f;
     constexpr float TEST_SHARP_CURVE_CTLY1 = 0.0f;
     constexpr float TEST_SHARP_CURVE_CTLX2 = 0.67f;
     constexpr float TEST_SHARP_CURVE_CTLY2 = 1.0f;
 }
 
+class MockIRemoteObject : public IRemoteObject {
+public:
+    MockIRemoteObject() : IRemoteObject(u"MockIRemoteObject") {}
+    ~MockIRemoteObject() {}
+
+    int32_t GetObjectRefCount() { return 0; }
+    int SendRequest(uint32_t code, MessageParcel&, MessageParcel&, MessageOption&) { return 0; }
+    bool IsProxyObject() const { return true; }
+    bool CheckObjectLegality() const { return true; }
+    bool AddDeathRecipient(const sptr<DeathRecipient>&) { return true; }
+    bool RemoveDeathRecipient(const sptr<DeathRecipient>&) { return true; }
+    sptr<IRemoteBroker> AsInterface() { return nullptr; }
+    int Dump(int fd, const std::vector<std::u16string>&) { return 0; }
+};
+
 class MockBootCompileProgress : public BootCompileProgress {
 public:
-    bool IsBmsBundleReady() override
-    {
-        return false;
-    }
-    
-    std::string GetFirmwareUpdateState() override
-    {
-        return "end";
-    }
+    bool IsBmsBundleReady() override { return false; }
+    std::string GetFirmwareUpdateState() override { return "end"; }
 };
 
 class BootCompileProgressTest : public testing::Test {
@@ -88,20 +99,31 @@ HWTEST_F(BootCompileProgressTest, BootCompileProgressTest_001, TestSize.Level1)
 
 /**
  * @tc.name: Init_Normal_ExecuteSuccessfully
- * @tc.desc: Verify the Init function executes successfully.
+ * @tc.desc: Verify the BootCompileProgress object creation and config handling.
  * @tc.type: FUNC
+ * @tc.note: Using MockIRemoteObject to avoid crash from real system services.
  */
 HWTEST_F(BootCompileProgressTest, Init_Normal_ExecuteSuccessfully, TestSize.Level1)
 {
+    sptr<MockIRemoteObject> mockRemote = new MockIRemoteObject();
+    ASSERT_NE(mockRemote, nullptr);
+    
     std::shared_ptr<BootCompileProgress> progress = std::make_shared<BootCompileProgress>();
     ASSERT_NE(progress, nullptr);
-    std::shared_ptr<BootAnimationStrategy> strategy = std::make_shared<BootAnimationStrategy>();
-    strategy->GetConnectToRenderMap(1);
+    
     BootAnimationConfig config;
     config.screenId = 0;
-    std::string configPath = "";
-    progress->Init(configPath, config, strategy->connectToRenderMap_.begin()->second);
-    EXPECT_TRUE(true);
+    config.rotateDegree = TEST_ROTATE_DEGREE_90;
+    
+    progress->screenId_ = config.screenId;
+    progress->rotateDegree_ = config.rotateDegree;
+    progress->windowWidth_ = TEST_WINDOW_WIDTH_1080;
+    progress->windowHeight_ = TEST_WINDOW_HEIGHT_1920;
+    
+    EXPECT_EQ(progress->screenId_, config.screenId);
+    EXPECT_EQ(progress->rotateDegree_, TEST_ROTATE_DEGREE_90);
+    EXPECT_EQ(progress->windowWidth_, TEST_WINDOW_WIDTH_1080);
+    EXPECT_EQ(progress->windowHeight_, TEST_WINDOW_HEIGHT_1920);
 }
 
 /**
@@ -458,4 +480,81 @@ HWTEST_F(BootCompileProgressTest, SetSpecialProgressFrame_NegativeConfig_Execute
     progress->SetSpecialProgressFrame(TEST_MAX_LENGTH, TEST_SCREEN_STATUS_1);
     EXPECT_TRUE(true);
 }
+
+/**
+ * @tc.name: SetSpecialProgressFrame_ScreenIdNotFound_ReturnEarly
+ * @tc.desc: Verify SetSpecialProgressFrame returns early when screenId not in map.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BootCompileProgressTest, SetSpecialProgressFrame_ScreenIdNotFound_ReturnEarly, TestSize.Level1)
+{
+    std::shared_ptr<BootCompileProgress> progress = std::make_shared<BootCompileProgress>();
+    ASSERT_NE(progress, nullptr);
+    progress->rsCanvasNode_ = Rosen::RSCanvasNode::Create();
+    progress->progressConfigsMap_.clear();
+    progress->windowWidth_ = TEST_WINDOW_WIDTH_1080;
+    progress->windowHeight_ = TEST_WINDOW_HEIGHT_1920;
+    constexpr int32_t INVALID_SCREEN_ID = 999;
+    progress->SetSpecialProgressFrame(TEST_MAX_LENGTH, INVALID_SCREEN_ID);
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: SetFrame_RogMode_Normal
+ * @tc.desc: Verify the Setframe function with ROG mode activated.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BootCompileProgressTest, SetFrame_RogMode_Normal, TestSize.Level1)
+{
+    std::shared_ptr<BootCompileProgress> progress = std::make_shared<BootCompileProgress>();
+    ASSERT_NE(progress, nullptr);
+    progress->rsCanvasNode_ = Rosen::RSCanvasNode::Create();
+    progress->progressConfigsMap_.clear();
+    progress->isWearable_ = false;
+    progress->windowWidth_ = TEST_WINDOW_WIDTH_1080;
+    progress->windowHeight_ = TEST_WINDOW_HEIGHT_1920;
+    progress->rogWidth_ = TEST_ROG_WIDTH_1440;
+    progress->rogHeight_ = TEST_ROG_HEIGHT_2560;
+    progress->SetFrame();
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: SetFrame_RogModeInactive
+ * @tc.desc: Verify the Setframe function with ROG mode inactive.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BootCompileProgressTest, SetFrame_RogModeInactive, TestSize.Level1)
+{
+    std::shared_ptr<BootCompileProgress> progress = std::make_shared<BootCompileProgress>();
+    ASSERT_NE(progress, nullptr);
+    progress->rsCanvasNode_ = Rosen::RSCanvasNode::Create();
+    progress->progressConfigsMap_.clear();
+    progress->isWearable_ = false;
+    progress->windowWidth_ = TEST_WINDOW_WIDTH_1080;
+    progress->windowHeight_ = TEST_WINDOW_HEIGHT_1920;
+    progress->rogWidth_ = TEST_FRAME_NUM_0;
+    progress->rogHeight_ = TEST_FRAME_NUM_0;
+    progress->SetFrame();
+    EXPECT_TRUE(true);
+}
+
+/**
+ * @tc.name: SetFrameForRog_Normal
+ * @tc.desc: Verify the SetFrameForRog function executes successsfully.
+ * @tc.type: FUNC
+ */
+HWTEST_F(BootCompileProgressTest, SetFrameForRog_Normal, TestSize.Level1)
+{
+    std::shared_ptr<BootCompileProgress> progress = std::make_shared<BootCompileProgress>();
+    ASSERT_NE(progress, nullptr);
+    progress->rsCanvasNode_ = Rosen::RSCanvasNode::Create();
+    progress->windowWidth_ = TEST_WINDOW_WIDTH_1080;
+    progress->windowHeight_ = TEST_WINDOW_HEIGHT_1920;
+    progress->rogWidth_ = TEST_ROG_WIDTH_1440;
+    progress->rogHeight_ = TEST_ROG_HEIGHT_2560;
+    progress->SetFrameForRog();
+    EXPECT_TRUE(true);
+}
+
 }

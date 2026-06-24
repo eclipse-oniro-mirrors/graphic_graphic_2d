@@ -19,17 +19,47 @@
 
 #include "feature/hyper_graphic_manager/rs_ui_display_soloist.h"
 #include "native_display_soloist.h"
+#include "transaction/rs_interfaces.h"
+#include "ui/rs_ui_context.h"
+#include "ui/rs_ui_context_manager.h"
 
 namespace OHOS {
 namespace Rosen {
 namespace {
 const uint8_t DO_CREATE = 0;
-const uint8_t DO_START = 1;
-const uint8_t DO_STOP = 2;
-const uint8_t DO_SET_EXPECTED_FRAME_RATE_RANGE = 3;
-const uint8_t TARGET_SIZE = 4;
+const uint8_t DO_DESTROY = 1;
+const uint8_t DO_START = 2;
+const uint8_t DO_STOP = 3;
+const uint8_t DO_SET_EXPECTED_FRAME_RATE_RANGE = 4;
+const uint8_t TARGET_SIZE = 5;
 
+std::shared_ptr<RSUIContext> g_rsUIContext = nullptr;
 OH_DisplaySoloist* g_displaySoloist = nullptr;
+OH_DisplaySoloist* g_displaySoloist_1 = nullptr;
+
+std::shared_ptr<RSUIContext> CreateRSUIContext()
+{
+    auto screenId = RSInterfaces::GetInstance().GetDefaultScreenId();
+    sptr<IRemoteObject> connectToRender = RSInterfaces::GetInstance().GetConnectToRenderToken(screenId);
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRender);
+    return rsUIContext;
+}
+
+struct OH_DisplaySoloistLayout {
+    std::shared_ptr<SoloistId> soloistId_;
+};
+
+OH_DisplaySoloist* OH_DisplaySoloist_Create_1()
+{
+    std::shared_ptr<SoloistId> soloistId = SoloistId::Create();
+    RSDisplaySoloistManager& soloistManager = RSDisplaySoloistManager::GetInstance();
+    soloistManager.InsertUseExclusiveThreadFlag(soloistId->GetId(), false);
+
+    OH_DisplaySoloistLayout* displaySoloist = new OH_DisplaySoloistLayout({ soloistId });
+    g_displaySoloist_1 = reinterpret_cast<OH_DisplaySoloist*>(displaySoloist);
+    return g_displaySoloist_1;
+}
+
 
 void DoCreate(FuzzedDataProvider& fdp)
 {
@@ -44,10 +74,23 @@ void DoCreate(FuzzedDataProvider& fdp)
     g_displaySoloist = nullptr;
 }
 
+void DoDestroy(FuzzedDataProvider& fdp)
+{
+    bool useNullSoloist = fdp.ConsumeBool();
+    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist_1;
+    OH_DisplaySoloist_Destroy(soloist);
+    soloist = OH_DisplaySoloist_Create_1();
+    reinterpret_cast<OH_DisplaySoloistLayout*>(soloist)->soloistId_ = nullptr;
+    OH_DisplaySoloist_Destroy(soloist);
+    if (!useNullSoloist) {
+        g_displaySoloist = nullptr;
+    }
+}
+
 void DoStart(FuzzedDataProvider& fdp)
 {
     bool useNullSoloist = fdp.ConsumeBool();
-    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist;
+    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist_1;
     bool useNullCallback = fdp.ConsumeBool();
     OH_DisplaySoloist_FrameCallback callback = nullptr;
 
@@ -59,19 +102,25 @@ void DoStart(FuzzedDataProvider& fdp)
         };
     }
     OH_DisplaySoloist_Start(soloist, callback, nullptr);
+    soloist = OH_DisplaySoloist_Create_1();
+    reinterpret_cast<OH_DisplaySoloistLayout*>(soloist)->soloistId_ = nullptr;
+    OH_DisplaySoloist_Start(soloist, callback, nullptr);
 }
 
 void DoStop(FuzzedDataProvider& fdp)
 {
     bool useNullSoloist = fdp.ConsumeBool();
-    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist;
+    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist_1;
+    OH_DisplaySoloist_Stop(soloist);
+    soloist = OH_DisplaySoloist_Create_1();
+    reinterpret_cast<OH_DisplaySoloistLayout*>(soloist)->soloistId_ = nullptr;
     OH_DisplaySoloist_Stop(soloist);
 }
 
 void DoSetExpectedFrameRateRange(FuzzedDataProvider& fdp)
 {
     bool useNullSoloist = fdp.ConsumeBool();
-    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist;
+    OH_DisplaySoloist* soloist = useNullSoloist ? nullptr : g_displaySoloist_1;
 
     bool useNullRange = fdp.ConsumeBool();
     if (useNullRange) {
@@ -83,6 +132,9 @@ void DoSetExpectedFrameRateRange(FuzzedDataProvider& fdp)
     range.min = fdp.ConsumeIntegral<int32_t>();
     range.max = fdp.ConsumeIntegral<int32_t>();
     range.expected = fdp.ConsumeIntegral<int32_t>();
+    OH_DisplaySoloist_SetExpectedFrameRateRange(soloist, &range);
+    soloist = OH_DisplaySoloist_Create_1();
+    reinterpret_cast<OH_DisplaySoloistLayout*>(soloist)->soloistId_ = nullptr;
     OH_DisplaySoloist_SetExpectedFrameRateRange(soloist, &range);
 }
 } // namespace
@@ -97,10 +149,17 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     FuzzedDataProvider fdp(data, size);
 
+    auto& soloistManager = OHOS::Rosen::RSDisplaySoloistManager::GetInstance();
+    OHOS::Rosen::g_rsUIContext = OHOS::Rosen::CreateRSUIContext();
+    soloistManager.frameRateLinker_->rsUIContext_ = OHOS::Rosen::g_rsUIContext;
+
     uint8_t tarPos = fdp.ConsumeIntegral<uint8_t>() % OHOS::Rosen::TARGET_SIZE;
     switch (tarPos) {
         case OHOS::Rosen::DO_CREATE:
             OHOS::Rosen::DoCreate(fdp);
+            break;
+        case OHOS::Rosen::DO_DESTROY:
+            OHOS::Rosen::DoDestroy(fdp);
             break;
         case OHOS::Rosen::DO_START:
             OHOS::Rosen::DoStart(fdp);

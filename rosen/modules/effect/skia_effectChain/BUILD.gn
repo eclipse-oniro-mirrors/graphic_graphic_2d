@@ -93,10 +93,10 @@ if (is_arkui_x) {
     ]
 
     if (target_os == "android") {
-      defines = [
+      defines = [ 
         "ANDROID_PLATFORM",
         "ROSEN_ARKUI_X",
-      ]
+        ]
     } else if (target_os == "ios") {
       defines = [
         "IOS_PLATFORM",
@@ -142,7 +142,7 @@ if (is_arkui_x) {
       "$graphic_2d_root/rosen/modules/render_service_base:librender_service_base",
     ]
 
-    if (rs_enable_gpu) {
+    if (ace_enable_gpu) {
       defines = gpu_defines
       deps += [
         "$graphic_2d_root/frameworks/opengl_wrapper:EGL",

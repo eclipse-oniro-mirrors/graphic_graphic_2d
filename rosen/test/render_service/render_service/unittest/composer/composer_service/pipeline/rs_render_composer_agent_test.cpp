@@ -261,6 +261,27 @@ HWTEST_F(RsRenderComposerAgentTest, SetScreenBacklight_Branches, TestSize.Level1
 }
 
 /**
+ * Function: SetScreenLinearMatrix_Branches
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. null composer → early return
+ *                  2. non-null composer → forward task
+ */
+HWTEST_F(RsRenderComposerAgentTest, SetScreenLinearMatrix_Branches, TestSize.Level1)
+{
+    std::vector<float> matrix = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+
+    auto nullAgent = std::make_shared<RSRenderComposerAgent>(nullptr);
+    nullAgent->SetScreenLinearMatrix(matrix);
+
+    auto agent = std::make_shared<RSRenderComposerAgent>(rsRenderComposer_);
+    ASSERT_NE(agent->rsRenderComposer_, nullptr);
+    agent->SetScreenLinearMatrix(matrix);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+/**
  * Function: MiscForwarding_WithNonNull_Composer
  * Type: Function
  * Rank: Important(2)
@@ -1141,6 +1162,74 @@ HWTEST_F(RsRenderComposerAgentTest, CommitTunnelLayerBySurfaceId_OutputNull_Retu
         GRAPHIC_DISPLAY_FAILURE);
 
     agent->rsRenderComposer_->hdiOutput_ = oldOutput;
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_NullComposer_NoCrash
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with null rsRenderComposer_ returns early.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerAgentTest, MarkTunnelSurfaceInvalid_NullComposer_NoCrash, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderComposer> nullComposer = nullptr;
+    auto agent = std::make_shared<RSRenderComposerAgent>(nullComposer);
+    ASSERT_TRUE(agent->rsRenderComposer_ == nullptr);
+
+    constexpr uint64_t surfaceId = 91001;
+    EXPECT_NO_FATAL_FAILURE(agent->MarkTunnelSurfaceInvalid(surfaceId));
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_ValidComposer_ForwardsTask
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with valid composer forwards task and marks surface.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerAgentTest, MarkTunnelSurfaceInvalid_ValidComposer_ForwardsTask, TestSize.Level1)
+{
+    auto agent = std::make_shared<RSRenderComposerAgent>(rsRenderComposer_);
+    ASSERT_NE(agent->rsRenderComposer_, nullptr);
+
+    auto output = rsRenderComposer_->hdiOutput_;
+    ASSERT_NE(output, nullptr);
+
+    constexpr uint64_t surfaceId = 91002;
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.empty());
+
+    agent->MarkTunnelSurfaceInvalid(surfaceId);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_EQ(output->invalidTunnelSurfaceIds_.size(), 1u);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId) > 0);
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_MultipleSurfaces_AllMarked
+ * @tc.desc: Test MarkTunnelSurfaceInvalid marks multiple surfaces correctly.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RsRenderComposerAgentTest, MarkTunnelSurfaceInvalid_MultipleSurfaces_AllMarked, TestSize.Level1)
+{
+    auto agent = std::make_shared<RSRenderComposerAgent>(rsRenderComposer_);
+    ASSERT_NE(agent->rsRenderComposer_, nullptr);
+
+    auto output = rsRenderComposer_->hdiOutput_;
+    ASSERT_NE(output, nullptr);
+
+    output->invalidTunnelSurfaceIds_.clear();
+
+    constexpr uint64_t surfaceId1 = 91010;
+    constexpr uint64_t surfaceId2 = 91011;
+    constexpr uint64_t surfaceId3 = 91012;
+
+    agent->MarkTunnelSurfaceInvalid(surfaceId1);
+    agent->MarkTunnelSurfaceInvalid(surfaceId2);
+    agent->MarkTunnelSurfaceInvalid(surfaceId3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    EXPECT_EQ(output->invalidTunnelSurfaceIds_.size(), 3u);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId1) > 0);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId2) > 0);
+    EXPECT_TRUE(output->invalidTunnelSurfaceIds_.count(surfaceId3) > 0);
 }
 } // namespace Rosen
 } // namespace OHOS

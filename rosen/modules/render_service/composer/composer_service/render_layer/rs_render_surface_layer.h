@@ -179,6 +179,12 @@ public:
     void DumpCurrentFrameLayer() const override;
     void SetIsNeedComposition(bool isNeedComposition) override;
     bool GetIsNeedComposition() const override;
+    void SetVcldInfo(const RSVcldParam& vcldInfo) override;
+    const RSVcldParam& GetVcldInfo() const override;
+    void SetDelegateModeCropRect(const GraphicIRect& crop) override;
+    GraphicIRect GetDelegateModeCropRect() override;
+    bool GetDelegateMode() const override;
+    void SetDelegateMode(bool isDelegateMode) override;
 
 private:
     // rs layer pipeline info
@@ -193,6 +199,7 @@ private:
     std::vector<GraphicIRect> visibleRegions_;
     std::vector<GraphicIRect> dirtyRegions_;
     GraphicIRect cropRect_ = {0};
+    GraphicIRect delegateModeCropRect_ = {0};
     GraphicMatrix matrix_ = {0.0}; // matrix used for uni render redraw
     int32_t gravity_ = 0; // used for uni render redraw
     bool isUniRender_ = false; // true for uni render layer (DisplayNode)
@@ -245,6 +252,8 @@ private:
     bool ignoreAlpha_ = false;
     GraphicIRect ancoSrcRect_ {-1, -1, -1, -1};
     sptr<IConsumerSurface> cSurface_ = nullptr;
+    RSVcldParam vcldInfo_;
+    bool isDelegateMode_ = false;
 };
 } // namespace Rosen
 } // namespace OHOS

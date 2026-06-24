@@ -42,6 +42,19 @@ RSAnimationTraceUtils::RSAnimationTraceUtils()
         GRAPHIC_TEST_MODE_TRACE_NAME, OnAnimationTraceEnabledChangedCallback, nullptr);
 }
 
+RSAnimationTraceUtils::~RSAnimationTraceUtils()
+{
+    RemoveSystemPropertyWatchers();
+}
+
+void RSAnimationTraceUtils::RemoveSystemPropertyWatchers()
+{
+    RSSystemProperties::RemoveWatchSystemProperty(
+        ANIMATION_TRACE_ENABLE_NAME, OnAnimationTraceEnabledChangedCallback, nullptr);
+    RSSystemProperties::RemoveWatchSystemProperty(
+        GRAPHIC_TEST_MODE_TRACE_NAME, OnAnimationTraceEnabledChangedCallback, nullptr);
+}
+
 RSAnimationTraceUtils& RSAnimationTraceUtils::GetInstance()
 {
     static RSAnimationTraceUtils instance;
@@ -89,6 +102,12 @@ std::string RSAnimationTraceUtils::ParseRenderPropertyValueInner(
         case RSPropertyType::VECTOR2F: {
             auto property = std::static_pointer_cast<RSRenderAnimatableProperty<Vector2f>>(value)->Get();
             str = "Vector2f:x:" + std::to_string(property.x_) + "," + "y:" + std::to_string(property.y_);
+            break;
+        }
+        case RSPropertyType::VECTOR3F: {
+            auto property = std::static_pointer_cast<RSRenderAnimatableProperty<Vector3f>>(value)->Get();
+            str = "Vector3f:x:" + std::to_string(property.x_) + "," + "y:" + std::to_string(property.y_) + "," +
+                  "z:" + std::to_string(property.z_);
             break;
         }
         case RSPropertyType::VECTOR4F: {

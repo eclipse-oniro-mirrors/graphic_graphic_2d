@@ -15,8 +15,10 @@
 
 #include "gtest/gtest.h"
 
+#include "animation/rs_render_curve_animation.h"
 #include "params/rs_render_params.h"
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "render_thread/rs_render_thread_visitor.h"
 #include "platform/common/rs_log.h"
 using namespace testing;
@@ -25,6 +27,8 @@ using namespace testing::ext;
 namespace OHOS::Rosen {
 namespace {
     const RectI DEFAULT_RECT = {0, 0, 100, 100};
+    constexpr uint64_t ANIMATION_ID = 12345;
+    constexpr uint64_t PROPERTY_ID = 54321;
 } // namespace
 
 class RSBaseRenderNodeTest : public testing::Test {
@@ -184,7 +188,7 @@ HWTEST_F(RSBaseRenderNodeTest, AddCrossParentChild001, TestSize.Level1)
      * @tc.steps: step1. AddChild
      */
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    auto childone = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    auto childone = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
     int index = -1;
     node->AddCrossParentChild(childone, index);
     ASSERT_EQ(node->GetChildrenCount(), 1);
@@ -208,7 +212,7 @@ HWTEST_F(RSBaseRenderNodeTest, RemoveCrossParentChild001, TestSize.Level1)
      * @tc.steps: step1. AddChild
      */
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
-    auto childone = std::make_shared<RSBaseRenderNode>(id + 1, context);
+    auto childone = std::make_shared<RSSurfaceRenderNode>(id + 1, context);
     auto newParent = std::make_shared<RSBaseRenderNode>(id + 2, context);
     int index = -1;
     node->AddCrossParentChild(childone, index);
@@ -248,8 +252,8 @@ HWTEST_F(RSBaseRenderNodeTest, AddCrossParentChildTest001, TestSize.Level1)
 {
     int32_t index = 1;
     int32_t index_ = 0;
-    std::shared_ptr<RSBaseRenderNode> child = nullptr;
-    std::shared_ptr<RSBaseRenderNode> child_;
+    std::shared_ptr<RSSurfaceRenderNode> child = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> child_;
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     EXPECT_NE(node, nullptr);
     node->AddCrossParentChild(child, index);
@@ -266,7 +270,7 @@ HWTEST_F(RSBaseRenderNodeTest, RemoveCrossParentChildTest001, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
     EXPECT_NE(node, nullptr);
-    std::shared_ptr<RSBaseRenderNode> child = nullptr;
+    std::shared_ptr<RSSurfaceRenderNode> child = nullptr;
     std::weak_ptr<RSBaseRenderNode> newParent;
     node->RemoveCrossParentChild(child, newParent);
 }
@@ -439,7 +443,7 @@ HWTEST_F(RSBaseRenderNodeTest, MarkNodeGroup, TestSize.Level1)
     isNodeGroup = true;
     type = RSRenderNode::NodeGroupType::GROUPED_BY_UI;
     node->MarkNodeGroup(type, isNodeGroup, includeProperty);
-    ASSERT_EQ(node->nodeGroupIncludeProperty_, includeProperty);
+    ASSERT_EQ(node->IsRenderGroupIncludeProperty(), includeProperty);
 }
 
 /**
@@ -488,6 +492,7 @@ HWTEST_F(RSBaseRenderNodeTest, GetFilterRect, TestSize.Level1)
 HWTEST_F(RSBaseRenderNodeTest, OnTreeStateChanged, TestSize.Level1)
 {
     auto node = std::make_shared<RSBaseRenderNode>(id, context);
+    node->InitRenderParams();
     node->OnTreeStateChanged();
 
     node->isOnTheTree_ = true;
@@ -969,6 +974,13 @@ HWTEST_F(RSBaseRenderNodeTest, Animate002, TestSize.Level1)
     node->displaySync_->vsyncTriggerCount_ = 60;
     node->displaySync_->skipPeriodCount_ = 12;
     node->displaySync_->skipPeriodCountNeedUpdate_ = true;
+ 
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    node->AddAnimation(renderCurveAnimation);
  
     int64_t timestamp = 1016666666;
     int64_t period = 16666666;

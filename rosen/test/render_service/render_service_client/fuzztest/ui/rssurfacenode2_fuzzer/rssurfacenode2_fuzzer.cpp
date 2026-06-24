@@ -33,9 +33,9 @@ constexpr uint8_t DO_SET_FOREGROUND = 4;
 constexpr uint8_t DO_SET_FORCE_UI_FIRST = 5;
 constexpr uint8_t DO_SET_ANCO_FLAGS = 6;
 constexpr uint8_t DO_SET_WATERMARK = 7;
-constexpr uint8_t DO_SET_HDR_PRESENT = 8;
 constexpr uint8_t DO_RS_SURFACE_NODE = 9;
 constexpr uint8_t MAX_CASE_NUM = 10;
+constexpr uint8_t SCREEN_ROTATION_MAX = 5;
 
 std::string ConsumeFixedLengthString(FuzzedDataProvider& fdp, int len)
 {
@@ -187,19 +187,6 @@ bool DoSetWatermark(FuzzedDataProvider& fdp)
     return true;
 }
 
-bool DoSetHDRPresent(FuzzedDataProvider& fdp)
-{
-    auto config = GetRSSurfaceNodeConfigFromData(fdp);
-    RSSurfaceNode::SharedPtr surfaceNode = RSSurfaceNode::Create(config);
-    if (surfaceNode == nullptr) {
-        return false;
-    }
-    bool hdrPresent = fdp.ConsumeBool();
-    NodeId id = fdp.ConsumeIntegral<NodeId>();
-    surfaceNode->SetHDRPresent(hdrPresent, id);
-    return true;
-}
-
 bool DoRSSurfaceNode(FuzzedDataProvider& fdp)
 {
     auto config = GetRSSurfaceNodeConfigFromData(fdp);
@@ -207,6 +194,28 @@ bool DoRSSurfaceNode(FuzzedDataProvider& fdp)
     RSSurfaceNode surfaceNode1(config, isRenderServiceNode);
     NodeId id = fdp.ConsumeIntegral<NodeId>();
     RSSurfaceNode surfaceNode2(config, isRenderServiceNode, id);
+    surfaceNode1.NeedForcedSendToRemote();
+    surfaceNode1.ResetContextAlpha();
+    surfaceNode1.SetLeashPersistentId(fdp.ConsumeIntegral<uint64_t>());
+    surfaceNode1.GetLeashPersistentId();
+    uint64_t screenId = fdp.ConsumeIntegral<uint64_t>();
+    surfaceNode1.AttachToWindowContainer(screenId);
+    surfaceNode1.DetachFromWindowContainer(screenId);
+    bool isMarkSingleFrame = fdp.ConsumeBool();
+    surfaceNode1.MarkNodeSingleFrameComposer(isMarkSingleFrame);
+    surfaceNode1.SetAppRotationCorrection(
+        static_cast<ScreenRotation>(fdp.ConsumeIntegral<uint8_t>() % SCREEN_ROTATION_MAX));
+    uint32_t hdrType = fdp.ConsumeIntegral<uint32_t>();
+    surfaceNode1.SetHDRType(hdrType);
+    float hdrBrightness = fdp.ConsumeFloatingPoint<float>();
+    surfaceNode1.SetHDRBrightnessWithType(hdrBrightness, hdrType);
+    std::string dumpOut;
+    surfaceNode1.DumpSubClass(dumpOut);
+    surfaceNode1.SetIsDepthResource(fdp.ConsumeBool());
+    surfaceNode1.GetSkipDraw();
+    surfaceNode1.GetGlobalPositionEnabled();
+    surfaceNode1.GetFrameGravityNewVersionEnabled();
+    surfaceNode1.GetCompositeLayerUtils();
     return true;
 }
 } // namespace Rosen
@@ -243,9 +252,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
             break;
         case OHOS::Rosen::DO_SET_WATERMARK:
             OHOS::Rosen::DoSetWatermark(fdp);
-            break;
-        case OHOS::Rosen::DO_SET_HDR_PRESENT:
-            OHOS::Rosen::DoSetHDRPresent(fdp);
             break;
         case OHOS::Rosen::DO_RS_SURFACE_NODE:
             OHOS::Rosen::DoRSSurfaceNode(fdp);

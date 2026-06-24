@@ -36,8 +36,8 @@
 #include "feature/tv_metadata/rs_tv_metadata_manager.h"
 #endif
 // hpae offline
-#include "feature/hwc/hpae_offline/rs_hpae_offline_processor.h"
-#include "feature/hwc/hpae_offline/rs_hpae_offline_util.h"
+#include "feature/hwc/hpae_offline/rs_offline_processor.h"
+#include "feature/hwc/hpae_offline/rs_offline_util.h"
 #include "gpuComposition/rs_gpu_cache_manager.h"
 #include "hpae_offline/rs_hpae_offline_layer_info.h"
 #include "info_collection/rs_layer_compose_collection.h"
@@ -51,6 +51,13 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 constexpr std::chrono::milliseconds HPAE_OFFLINE_TIMEOUT{100};
+
+bool GetTunnelLayerSnapshot(NodeId nodeId, RSRenderThreadParams::TunnelLayerSnapshot& snapshot)
+{
+    auto& renderThreadParams = RSUniRenderThread::Instance().GetRSRenderThreadParams();
+    return renderThreadParams != nullptr && renderThreadParams->GetTunnelLayerSnapshot(nodeId, snapshot) &&
+        snapshot.tunnelLayerId != 0;
+}
 }
 
 RSUniRenderProcessor::RSUniRenderProcessor(ScreenId screenId)
@@ -135,7 +142,9 @@ void RSUniRenderProcessor::PostProcess()
         }
     }
     uniComposerAdapter_->CommitLayers();
-    RSUniRenderThread::Instance().NotifyCommitDone(screenInfo_.id);
+    if (hasTunnelLayer_) {
+        RSUniRenderThread::Instance().NotifyCommitDone(screenInfo_.id);
+    }
     LayerComposeCollection::GetInstance().UpdateUniformOrOfflineComposeFrameNumberForDFX(layers_.size());
     RS_LOGD("RSUniRenderProcessor::PostProcess layers_:%{public}zu", layers_.size());
 }
@@ -158,11 +167,6 @@ static void SetDeviceOfflineOriginalInfo(RSLayerPtr& layer, RSSurfaceRenderParam
 void RSUniRenderProcessor::CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRenderParams& params,
     const std::shared_ptr<ProcessOfflineResult>& offlineResult)
 {
-    uint64_t tunnelLayerId = 0;
-    uint32_t tunnelLayerProperty = TUNNEL_PROP_INVALID;
-    node.GetTunnelLayerInfo(tunnelLayerId, tunnelLayerProperty);
-    params.SetTunnelLayerInfo(tunnelLayerId, tunnelLayerProperty);
-    params.SetTunnelLayerGeneration(node.GetTunnelRuntimeState().GetTunnelLayerGeneration());
     auto surfaceHandler = node.GetRSSurfaceHandler();
     auto buffer = offlineResult ? offlineResult->buffer : surfaceHandler->GetBuffer();
     auto consumer = offlineResult ? offlineResult->consumer : surfaceHandler->GetConsumer();
@@ -183,10 +187,15 @@ void RSUniRenderProcessor::CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRende
         return;
     }
     node.SetRSLayer(screenInfo_.id, layer);
+    layer->SetDelegateMode(node.GetDelegateMode());
     layer->SetSdrNit(params.GetSdrNit());
     layer->SetDisplayNit(params.GetDisplayNit());
     layer->SetBrightnessRatio(params.GetBrightnessRatio());
-    layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
+    if (offlineResult && offlineResult->isGPUOffline) {
+        layer->SetLayerLinearMatrix(offlineResult->linearMatrix);
+    } else {
+        layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
+    }
     if (bufferOwnerCount) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderProcessor::CreateLayer SetBufferOwnerCount bufferId %" PRIu64
             " layerId %" PRIu64, bufferOwnerCount->bufferId_, layer->GetRSLayerId());
@@ -207,6 +216,7 @@ void RSUniRenderProcessor::CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRende
         cropRect.x, cropRect.y, cropRect.w, cropRect.h,
         dirtyRect.x, dirtyRect.y, dirtyRect.w, dirtyRect.h, buffer->GetSurfaceBufferWidth(),
         buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layerInfo.layerType, layer->GetTransform());
+    HandleDelegateComposerLayer(layer, params);
     RS_LOGD_IF(DEBUG_PIPELINE,
         "CreateLayer name:%{public}s ScreenId:%{public}" PRIu64 " zorder:%{public}d layerRect:[%{public}d, %{public}d, "
         "%{public}d, %{public}d] cropRect:[%{public}d, %{public}d, %{public}d, %{public}d] "
@@ -254,7 +264,12 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     layer->SetSdrNit(renderParams.GetSdrNit());
     layer->SetDisplayNit(renderParams.GetDisplayNit());
     layer->SetBrightnessRatio(renderParams.GetBrightnessRatio());
-    layer->SetLayerLinearMatrix(renderParams.GetLayerLinearMatrix());
+    if (offlineResult && offlineResult->isGPUOffline) {
+        layer->SetLayerLinearMatrix(offlineResult->linearMatrix);
+    } else {
+        layer->SetLayerLinearMatrix(params.GetLayerLinearMatrix());
+    }
+    layer->SetDelegateMode(params.GetDelegateMode());
     if (bufferOwnerCount) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderProcessor::CreateLayerForRenderThread SetBufferOwnerCount "
             "bufferId %" PRIu64 " layerId %" PRIu64, bufferOwnerCount->bufferId_, layer->GetRSLayerId());
@@ -271,6 +286,7 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
         buffer->GetSurfaceBufferWidth(), buffer->GetSurfaceBufferHeight(), layerInfo.alpha, layerInfo.layerType,
         uniComposerAdapter_->GetScreenInfo().GetRogWidthRatio(),
         uniComposerAdapter_->GetScreenInfo().GetRogHeightRatio());
+    HandleDelegateComposerLayer(layer, params);
     RS_LOGD("CreateLayer name:%{public}s zorder:%{public}d src:[%{public}d, %{public}d, %{public}d, %{public}d] "
             "dst:[%{public}d, %{public}d, %{public}d, %{public}d] "
             "drity:[%{public}d, %{public}d, %{public}d, %{public}d] "
@@ -368,9 +384,11 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     }
     params.SetPreBuffer(nullptr, nullptr);
     layer->SetZorder(layerInfo.zOrder);
-    if (params.GetTunnelLayerId()) {
+    RSRenderThreadParams::TunnelLayerSnapshot tunnelLayerSnapshot;
+    if (GetTunnelLayerSnapshot(params.GetId(), tunnelLayerSnapshot)) {
         RS_TRACE_NAME_FMT("%s lpp set tunnel layer type", __func__);
         layerInfo.layerType = GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL;
+        hasTunnelLayer_ = true;
     }
     layer->SetType(layerInfo.layerType);
     layer->SetRotationFixed(params.GetFixRotationByUser());
@@ -410,6 +428,7 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     layer->SetCompositionType(forceClient ? GraphicCompositionType::GRAPHIC_COMPOSITION_CLIENT :
         GraphicCompositionType::GRAPHIC_COMPOSITION_DEVICE);
     layer->SetCornerRadiusInfoForDRM(params.GetCornerRadiusInfoForDRM());
+    layer->SetVcldInfo(params.GetVcldInfo());
     auto bufferBackgroundColor = params.GetBackgroundColor();
     GraphicLayerColor backgroundColor = {
         .r = bufferBackgroundColor.GetRed(),
@@ -467,7 +486,8 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     layer->SetGravity(layerInfo.gravity);
     if (offlineResult) {
         layer->SetCropRect(offlineResult->bufferRect);
-        layer->SetTransform(GraphicTransformType::GRAPHIC_ROTATE_NONE);
+        layer->SetTransform(
+            offlineResult->isGPUOffline ? offlineResult->transformType : GraphicTransformType::GRAPHIC_ROTATE_NONE);
         layer->SetUseDeviceOffline(true);
     } else {
         layer->SetCropRect(layerInfo.srcRect);
@@ -495,22 +515,23 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
     layer->SetSurfaceName(consumer->GetName());
     layer->SetSurfaceUniqueId(consumer->GetUniqueId());
     layer->SetIsNeedComposition(true);
-    HandleTunnelLayerParameters(params, layer);
+    HandleTunnelLayerParameters(params.GetId(), layer);
     return layer;
 }
 
 bool RSUniRenderProcessor::ProcessOfflineLayer(
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async)
 {
-    uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
+    offlineTaskId taskId = std::make_pair(RSUniRenderThread::Instance().GetVsyncId(),
+        surfaceDrawable->GetId());
     if (!async) {
-        if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(surfaceDrawable, taskId)) {
+        if (!RSOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(surfaceDrawable, taskId)) {
             RS_LOGW("RSUniRenderProcessor::ProcessOfflineLayer: post offline task failed, go redraw");
             return false;
         }
     }
     std::shared_ptr<ProcessOfflineResult> processOfflineResult = std::make_shared<ProcessOfflineResult>();
-    bool waitSuccess = RSHpaeOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
+    bool waitSuccess = RSOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
         taskId, HPAE_OFFLINE_TIMEOUT, *processOfflineResult);
     if (waitSuccess && processOfflineResult->taskSuccess) {
         CreateLayerForRenderThread(*surfaceDrawable, processOfflineResult);
@@ -524,13 +545,13 @@ bool RSUniRenderProcessor::ProcessOfflineLayer(
 bool RSUniRenderProcessor::ProcessOfflineLayer(std::shared_ptr<RSSurfaceRenderNode>& node)
 {
     RS_OFFLINE_LOGD("ProcessOfflineLayer(node)");
-    uint64_t taskId = RSUniRenderThread::Instance().GetVsyncId();
-    if (!RSHpaeOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(node, taskId)) {
+    offlineTaskId taskId = std::make_pair(RSUniRenderThread::Instance().GetVsyncId(), node->GetId());
+    if (!RSOfflineProcessor::GetOfflineProcessor().PostProcessOfflineTask(node, taskId)) {
         RS_LOGW("RSUniRenderProcessor::ProcessOfflineLayer: post offline task failed, go redraw");
         return false;
     }
     std::shared_ptr<ProcessOfflineResult> processOfflineResult = std::make_shared<ProcessOfflineResult>();
-    bool waitSuccess = RSHpaeOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
+    bool waitSuccess = RSOfflineProcessor::GetOfflineProcessor().WaitForProcessOfflineResult(
         taskId, HPAE_OFFLINE_TIMEOUT, *processOfflineResult);
     if (waitSuccess && processOfflineResult->taskSuccess) {
         auto params = static_cast<RSSurfaceRenderParams*>(node->GetStagingRenderParams().get());
@@ -612,18 +633,84 @@ void RSUniRenderProcessor::ProcessRcdSurface(RSRcdSurfaceRenderNode& node)
     layers_.emplace_back(layer);
 }
 
-void RSUniRenderProcessor::HandleTunnelLayerParameters(RSSurfaceRenderParams& params, RSLayerPtr& layer)
+void RSUniRenderProcessor::HandleTunnelLayerParameters(NodeId nodeId, RSLayerPtr& layer)
 {
-    if (layer->GetType() != GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL) {
-        layer->SetTunnelLayerId(0);
-        layer->SetTunnelLayerProperty(TUNNEL_PROP_INVALID);
-        layer->SetTunnelLayerGeneration(0);
+    if (layer == nullptr || layer->GetType() != GraphicLayerType::GRAPHIC_LAYER_TYPE_TUNNEL) {
         return;
     }
-    layer->SetTunnelLayerId(params.GetTunnelLayerId());
-    uint32_t tunnelProperty = params.GetTunnelLayerProperty();
-    layer->SetTunnelLayerProperty(tunnelProperty);
-    layer->SetTunnelLayerGeneration(params.GetTunnelLayerGeneration());
+    RSRenderThreadParams::TunnelLayerSnapshot snapshot;
+    if (!GetTunnelLayerSnapshot(nodeId, snapshot)) {
+        return;
+    }
+    layer->SetTunnelLayerId(snapshot.tunnelLayerId);
+    layer->SetTunnelLayerProperty(snapshot.property);
+    layer->SetTunnelLayerGeneration(snapshot.generation);
+}
+
+RectI RSUniRenderProcessor::GetDelegateDstRectByTranXY(RSSurfaceRenderParams& params)
+{
+    auto tranX = params.GetTotalMatrix().Get(Drawing::Matrix::TRANS_X);
+    auto tranY = params.GetTotalMatrix().Get(Drawing::Matrix::TRANS_Y);
+    RectI delegateDstRectNew = params.GetDelegateDstRect();
+    if (screenInfoForDelegateMode_.rotation == ScreenRotation::ROTATION_90) {
+        delegateDstRectNew.SetAll((screenInfoForDelegateMode_.GetRotatedPhyWidth() - tranY), tranX,
+            delegateDstRectNew.GetWidth(), delegateDstRectNew.GetHeight());
+    } else if (screenInfoForDelegateMode_.rotation == ScreenRotation::ROTATION_270) {
+        delegateDstRectNew.SetAll(tranY, (screenInfoForDelegateMode_.GetRotatedPhyHeight() - tranX),
+            delegateDstRectNew.GetWidth(), delegateDstRectNew.GetHeight());
+    } else if (screenInfoForDelegateMode_.rotation == ScreenRotation::ROTATION_0) {
+        delegateDstRectNew.SetAll(tranX, tranY,
+            delegateDstRectNew.GetWidth(), delegateDstRectNew.GetHeight());
+    } else if (screenInfoForDelegateMode_.rotation == ScreenRotation::ROTATION_180) {
+        delegateDstRectNew.SetAll(
+            (screenInfoForDelegateMode_.GetRotatedPhyWidth() - tranX),
+            (screenInfoForDelegateMode_.GetRotatedPhyHeight() - tranY),
+            delegateDstRectNew.GetWidth(), delegateDstRectNew.GetHeight());
+    }
+    return delegateDstRectNew;
+}
+
+void RSUniRenderProcessor::HandleDelegateComposerLayer(RSLayerPtr& layer, RSSurfaceRenderParams& params)
+{
+    if (!params.GetDelegateMode()) {
+        return;
+    }
+    if (params.GetDelegateDstRect().GetHeight() <= 0) {
+        RS_LOGE("HandleDelegateComposerLayer fail, delegateDstRect is invalid: %s",
+            params.GetDelegateDstRect().ToString().c_str());
+        return;
+    }
+    auto cropRect = layer->GetCropRect();
+    auto cropRectForWeb = cropRect;
+    auto layerRect = layer->GetLayerSize();
+    layer->SetDelegateModeCropRect(cropRectForWeb); // init CropRectForWeb
+    RectI delegateDstRectNew = GetDelegateDstRectByTranXY(params);
+    auto matrix = params.GetTotalMatrix();
+    RS_TRACE_NAME_FMT("HandleDelegateComposerLayer:[tranX=%.2f, tranY=%.2f,], "
+        "screenInfo:{rotation=%u, rotatedPhyWidth=%u, rotatedPhyHeight=%u }, "
+        "srcRect:%s, dstRect:%s, dstRectNew:%s",
+        matrix.Get(Drawing::Matrix::TRANS_X), matrix.Get(Drawing::Matrix::TRANS_Y),
+        screenInfoForDelegateMode_.rotation, screenInfoForDelegateMode_.GetRotatedPhyWidth(),
+        screenInfoForDelegateMode_.GetRotatedPhyHeight(), params.GetDelegateSrcRect().ToString().c_str(),
+        params.GetDelegateDstRect().ToString().c_str(), delegateDstRectNew.ToString().c_str());
+    scalar scalarTmp =
+        (scalar)params.GetDelegateSrcRect().GetHeight() / (scalar)params.GetDelegateDstRect().GetHeight();
+    if (delegateDstRectNew.GetLeft() < 0) {
+        int32_t offset = delegateDstRectNew.GetLeft();
+        offset = static_cast<int32_t>(offset * scalarTmp);
+        cropRectForWeb.x -= offset;
+        cropRectForWeb.x = cropRectForWeb.x > cropRectForWeb.w ? cropRectForWeb.w : cropRectForWeb.x;
+        cropRectForWeb.w = cropRectForWeb.w > 0 ? cropRectForWeb.w + offset : 0;
+    } else if (delegateDstRectNew.GetLeft() > 0) {
+        scalar endX = delegateDstRectNew.GetLeft() + delegateDstRectNew.GetWidth();
+        cropRectForWeb.w = endX <= screenInfoForDelegateMode_.GetRotatedPhyWidth() ?
+            cropRectForWeb.w : cropRectForWeb.w - (endX - screenInfoForDelegateMode_.GetRotatedPhyWidth()) * scalarTmp;
+    }
+    cropRectForWeb.w = cropRectForWeb.w >= 0 ? cropRectForWeb.w : 0;
+    RS_TRACE_NAME_FMT("CropRectForWeb:[%d, %d, %d, %d], CropRect:[%d, %d, %d, %d], layerSize:[%d, %d, %d, %d]",
+        cropRectForWeb.x, cropRectForWeb.y, cropRectForWeb.w, cropRectForWeb.h,
+        cropRect.x, cropRect.y, cropRect.w, cropRect.h, layerRect.x, layerRect.y, layerRect.w, layerRect.h);
+    layer->SetDelegateModeCropRect(cropRectForWeb);
 }
 
 #ifdef OHOS_BUILD_ENABLE_MAGICCURSOR

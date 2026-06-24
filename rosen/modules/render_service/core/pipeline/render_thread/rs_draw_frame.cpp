@@ -23,6 +23,7 @@
 #include "drawable/rs_canvas_drawing_render_node_drawable.h"
 #include "feature/layer/rs_layer_cache_manager_base.h"
 #include "feature/hpae/rs_hpae_manager.h"
+#include "feature/delegate_composite/rs_delegate_composite_callback_manager.h"
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/performance/rs_perfmonitor_reporter.h"
 #include "gpuComposition/rs_gpu_cache_manager.h"
@@ -95,6 +96,9 @@ void RSDrawFrame::RenderFrame()
     unirenderInstance_.IncreaseFrameCount();
     RSUifirstManager::Instance().ProcessSubDoneNode();
     Sync();
+#ifndef ROSEN_CROSS_PLATFORM
+    RsDelegateCompositeCallbackManager::GetInstance().NotifyCurrentSurfaceNodeBufferReleaseCallback();
+#endif
     RSJankStatsRenderFrameHelper::GetInstance().JankStatsAfterSync(unirenderInstance_.GetRSRenderThreadParams(),
         unirenderInstance_.GetMinAccumulatedBufferCount());
     unirenderInstance_.UpdateScreenNodeScreenId();
@@ -105,7 +109,7 @@ void RSDrawFrame::RenderFrame()
 #ifdef MHC_ENABLE
     RSMhcManager::Instance().UpdateFrameId();
 #endif
-    RSUifirstManager::Instance().PostUifistSubTasks();
+    RSUifirstManager::Instance().PostUifirstSubTasks();
     RSMainThread::Instance()->CheckWindowCapTasks();
     RSMainThread::Instance()->ProcessWindowCapTasks();
     UnblockMainThread();
@@ -189,7 +193,7 @@ void RSDrawFrame::PostAndWait()
         case RsParallelType::RS_PARALLEL_TYPE_SYNC: { // wait until render finish in render thread
             unirenderInstance_.PostSyncTask([this, renderFrameNumber]() {
                 unirenderInstance_.SetMainLooping(true);
-                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN();
+                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber);
                 RenderFrame();
                 unirenderInstance_.ClearResource();
                 RS_PROFILER_ON_PARALLEL_RENDER_END(renderFrameNumber);
@@ -208,7 +212,7 @@ void RSDrawFrame::PostAndWait()
             canUnblockMainThread = false;
             unirenderInstance_.PostTask([this, renderFrameNumber]() {
                 unirenderInstance_.SetMainLooping(true);
-                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN();
+                RS_PROFILER_ON_PARALLEL_RENDER_BEGIN(renderFrameNumber);
                 RSMainThread::Instance()->GetRSVsyncRateReduceManager().FrameDurationBegin();
                 RenderFrame();
                 unirenderInstance_.ClearResource();
@@ -339,6 +343,7 @@ void RSDrawFrame::Sync()
     HveFilter::GetHveFilter().Sync();
 
     unirenderInstance_.Sync(std::move(stagingRenderThreadParams_));
+    RSMainThread::Instance()->GetRSVsyncRateReduceManager().SyncOneFramePeriod();
 #ifdef SUBTREE_PARALLEL_ENABLE
     RSParallelManager::Singleton().Sync();
 #endif

@@ -68,6 +68,17 @@ int32_t RSRenderToComposerConnectionStub::OnRemoteRequest(uint32_t code, OHOS::M
             uint32_t level = 0;
             if (GetBacklightLevel(data, level) == COMPOSITOR_ERROR_OK) {
                 SetScreenBacklight(level);
+            } else {
+                ret = COMPOSITOR_ERROR_BINDER_ERROR;
+            }
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_SET_LINEAR_MATRIX: {
+            std::vector<float> matrix;
+            if (GetLinearMatrix(data, matrix) == COMPOSITOR_ERROR_OK) {
+                SetScreenLinearMatrix(matrix);
+            } else {
+                ret = COMPOSITOR_ERROR_BINDER_ERROR;
             }
             break;
         }
@@ -77,6 +88,10 @@ int32_t RSRenderToComposerConnectionStub::OnRemoteRequest(uint32_t code, OHOS::M
         }
         case IRENDER_TO_COMPOSER_CONNECTION_PREALLOC_PROTECTED_FRAME_BUFFERS: {
             ret = PreAllocProtectedFrameBuffersStub(data);
+            break;
+        }
+        case IRENDER_TO_COMPOSER_CONNECTION_MARK_TUNNEL_SURFACE_INVALID: {
+            ret = MarkTunnelSurfaceInvalidSurfaceIdStub(data);
             break;
         }
         default: {
@@ -178,6 +193,15 @@ int32_t RSRenderToComposerConnectionStub::GetBacklightLevel(OHOS::MessageParcel&
     return COMPOSITOR_ERROR_OK;
 }
 
+int32_t RSRenderToComposerConnectionStub::GetLinearMatrix(OHOS::MessageParcel& parcel, std::vector<float>& matrix)
+{
+    if (!parcel.ReadFloatVector(&matrix)) {
+        RS_LOGE("%{public}s failed.", __func__);
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    return COMPOSITOR_ERROR_OK;
+}
+
 int32_t RSRenderToComposerConnectionStub::SetComposerToRenderConnectionStub(OHOS::MessageParcel& parcel)
 {
     sptr<IRemoteObject> composerToRenderObject = parcel.ReadRemoteObject();
@@ -205,6 +229,17 @@ int32_t RSRenderToComposerConnectionStub::PreAllocProtectedFrameBuffersStub(OHOS
         return COMPOSITOR_ERROR_BINDER_ERROR;
     }
     PreAllocProtectedFrameBuffers(buffer);
+    return COMPOSITOR_ERROR_OK;
+}
+
+int32_t RSRenderToComposerConnectionStub::MarkTunnelSurfaceInvalidSurfaceIdStub(OHOS::MessageParcel& parcel)
+{
+    uint64_t surfaceId = 0;
+    if (!parcel.ReadUint64(surfaceId)) {
+        RS_LOGE("%{public}s read surface id failed.", __func__);
+        return COMPOSITOR_ERROR_BINDER_ERROR;
+    }
+    MarkTunnelSurfaceInvalid(surfaceId);
     return COMPOSITOR_ERROR_OK;
 }
 } // namespace Rosen

@@ -58,7 +58,6 @@ constexpr uint64_t INVALID_LEASH_PERSISTENTID = 0;
 constexpr uint8_t TOP_OCCLUSION_SURFACES_NUM = 3;
 constexpr uint8_t OCCLUSION_ENABLE_SCENE_NUM = 2;
 constexpr int16_t DEFAULT_OCCLUSION_SURFACE_ORDER = -1;
-constexpr int MAX_DIRTY_ALIGNMENT_SIZE = 128;
 constexpr uint32_t MAX_NODE_COUNT_PER_PID = 500000;
 constexpr const char* CAPTURE_WINDOW_NAME = "CapsuleWindow";
 constexpr uint32_t DEFAULT_DYNAMIC_RANGE_MODE_STANDARD = 2;
@@ -665,6 +664,17 @@ enum class RSSurfaceNodeAbilityState : uint8_t {
     FOREGROUND,
 };
 
+// lifecycle state of UI director (client-server sync)
+enum class RSUIDirectorLifecycleState : uint8_t {
+    CREATE,
+    RESUME,
+    FOREGROUND,
+    BACKGROUND,
+    STOP,
+    DESTROYED,
+    STATE_COUNT
+};
+
 struct SubSurfaceCntUpdateInfo {
     int updateCnt_ = 0;
     NodeId preParentId_ = INVALID_NODEID;
@@ -746,6 +756,7 @@ enum DrawNodeType : uint32_t {
     GeometryPropertyType
 };
 
+// HybridDraw Start
 enum class ComponentEnableSwitch : uint8_t {
     TEXTBLOB = 0,
     SVG,
@@ -753,6 +764,8 @@ enum class ComponentEnableSwitch : uint8_t {
     CANVAS,
     MAX_VALUE,
 };
+// HybridDraw End
+
 typedef enum : uint32_t {
     SA_WATER_MARK_DEFAULT_SIZE = 0, // 512KB
     SA_WATER_MARK_MIDDLE_SIZE = 1, // 6M
@@ -791,6 +804,9 @@ enum class EnergyEvent : int32_t {
     ANIMATION_EXEC_TIME = 2,
 };
 
+enum class ApsEventType : uint32_t {
+    SPLIT_LAYER = 0,
+};
 using EnergyCommonDataMap = std::unordered_map<EnergyEvent, std::unordered_map<std::string, std::string>>;
 } // namespace Rosen
 } // namespace OHOS

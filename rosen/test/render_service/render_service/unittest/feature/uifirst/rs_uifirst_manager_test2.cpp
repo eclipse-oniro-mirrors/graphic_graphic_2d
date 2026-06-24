@@ -697,12 +697,12 @@ HWTEST_F(RSUifirstManagerTest2, UpdateCompletedSurface, TestSize.Level1)
 }
 
 /**
- * @tc.name: PostUifistSubTasks
+ * @tc.name: PostUifirstSubTasks
  * @tc.desc: Test post task to subthread
  * @tc.type: FUNC
  * @tc.require: issueIBVHE7
  */
-HWTEST_F(RSUifirstManagerTest2, PostUifistSubTasks, TestSize.Level1)
+HWTEST_F(RSUifirstManagerTest2, PostUifirstSubTasks, TestSize.Level1)
 {
     uifirstManager_.sortedSubThreadNodeIds_.clear();
     uifirstManager_.pendingPostNodes_.clear();
@@ -718,7 +718,7 @@ HWTEST_F(RSUifirstManagerTest2, PostUifistSubTasks, TestSize.Level1)
     uifirstManager_.pendingPostNodes_.insert(std::make_pair(surfaceNode3->GetId(), surfaceNode3));
     auto surfaceNode4 = RSTestUtil::CreateSurfaceNode();
     uifirstManager_.pendingPostNodes_.insert(std::make_pair(surfaceNode4->GetId(), surfaceNode4));
-    uifirstManager_.PostUifistSubTasks();
+    uifirstManager_.PostUifirstSubTasks();
     ASSERT_TRUE(uifirstManager_.sortedSubThreadNodeIds_.empty());
 }
 
@@ -1198,6 +1198,31 @@ HWTEST_F(RSUifirstManagerTest2, CheckHasTransAndFilter_TransparentChildNoBlurOut
 }
 
 /**
+ * @tc.name: CheckHasTransAndFilter_TransBlurChildEmptyDirty
+ * @tc.desc: Transparent blur child with empty dirty rect should not be treated as outside main → false
+ * @tc.type: FUNC
+ * @tc.require: issue23596
+ */
+HWTEST_F(RSUifirstManagerTest2, CheckHasTransAndFilter_TransBlurChildEmptyDirty, TestSize.Level1)
+{
+    auto leashNode = RSTestUtil::CreateSurfaceNode();
+    leashNode->SetSurfaceNodeType(RSSurfaceNodeType::LEASH_WINDOW_NODE);
+    leashNode->childHasVisibleFilter_ = false;
+    auto appWindow = RSTestUtil::CreateSurfaceNode();
+    appWindow->SetSurfaceNodeType(RSSurfaceNodeType::APP_WINDOW_NODE);
+    SetNodeOpaque(*appWindow);
+    appWindow->oldDirty_ = {0, 0, 100, 100};
+    auto subWindow = RSTestUtil::CreateSurfaceNode();
+    SetNodeTransparent(*subWindow);
+    subWindow->childHasVisibleFilter_ = true;
+    subWindow->oldDirty_ = {0, 0, 0, 0}; // empty dirty rect
+    leashNode->AddChild(appWindow);
+    leashNode->AddChild(subWindow);
+    leashNode->GenerateFullChildrenList();
+    ASSERT_FALSE(uifirstManager_.CheckHasTransAndFilter(*leashNode));
+}
+
+/**
  * @tc.name: HasBgNodeBelowRootNode_NoChildren
  * @tc.desc: AppWindow with no children → false
  * @tc.type: FUNC
@@ -1456,6 +1481,11 @@ HWTEST_F(RSUifirstManagerTest2, ProcessDoneNodeInnerTest, TestSize.Level1)
     drawable->GetRsSubThreadCache().cacheSurface_ = std::make_shared<Drawing::Surface>();
     uifirstManager_.ProcessDoneNodeInner();
     ASSERT_EQ(uifirstManager_.pendingForceUpdateNode_.size(), 1);
+
+    uifirstManager_.subthreadProcessDoneNode_ = tmp;
+    drawable->renderParams_ = nullptr;
+    uifirstManager_.ProcessDoneNodeInner();
+    ASSERT_EQ(uifirstManager_.pendingForceUpdateNode_.size(), 2);
 
     uifirstManager_.subthreadProcessDoneNode_.clear();
     uifirstManager_.pendingForceUpdateNode_.clear();

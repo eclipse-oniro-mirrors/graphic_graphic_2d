@@ -36,6 +36,7 @@ const std::string GENERIC_METADATA_KEY_SDR_RATIO = "SDRBrightnessRatio";
 const std::string GENERIC_METADATA_KEY_BRIGHTNESS_NIT = "BrightnessNit";
 const std::string GENERIC_METADATA_KEY_LAYER_LINEAR_MATRIX = "LayerLinearMatrix";
 const std::string GENERIC_METADATA_KEY_SOURCE_CROP_TUNING = "SourceCropTuning";
+const std::string GENERIC_METADATA_KEY_VCLD_PARAM = "VcldParam";
 }
 
 template<typename T>
@@ -350,6 +351,19 @@ int32_t HdiLayer::SetLayerBlendType()
     return ret;
 }
 
+int32_t HdiLayer::SetDelegateModeLayerCrop()
+{
+    if (doLayerInfoCompare_ && Compare(rsLayer_->GetDelegateModeCropRect(), prevRSLayer_->GetDelegateModeCropRect())) {
+        return GRAPHIC_DISPLAY_SUCCESS;
+    }
+
+    GraphicIRect rect = rsLayer_->GetDelegateModeCropRect();
+    RS_TRACE_NAME_FMT("HdiLayer::SetDelegateModeLayerCrop, layerId=%u, rect={%d, %d, %d, %d}",
+        layerId_, rect.x, rect.y, rect.w, rect.h);
+    int32_t ret = device_->SetLayerCrop(screenId_, layerId_, rect);
+    return ret;
+}
+
 int32_t HdiLayer::SetLayerCrop()
 {
     if (doLayerInfoCompare_ && Compare(rsLayer_->GetCropRect(), prevRSLayer_->GetCropRect())) {
@@ -587,8 +601,8 @@ int32_t HdiLayer::SetHdiLayerInfo(bool isActiveRectSwitching)
     ret = SetLayerVisibleRegion();
     CheckRet(ret, "SetLayerVisibleRegion");
     // The crop needs to be set in the first order
-    ret = SetLayerCrop();
-    CheckRet(ret, "SetLayerCrop");
+    ret = (rsLayer_->GetDelegateMode() ? SetDelegateModeLayerCrop() : SetLayerCrop());
+    CheckRet(ret, rsLayer_->GetDelegateMode() ? "SetDelegateModeLayerCrop" : "SetLayerCrop");
     // The data space contained in the layerbuffer needs to be set in the second order
     ret = SetLayerBuffer();
     CheckRet(ret, "SetLayerBuffer");
@@ -864,6 +878,9 @@ int32_t HdiLayer::SetPerFrameParameters()
         } else if (key == GENERIC_METADATA_KEY_SOURCE_CROP_TUNING) {
             ret = SetPerFrameLayerSourceTuning();
             CheckRet(ret, "SetLayerSourceTuning");
+        } else if (key == GENERIC_METADATA_KEY_VCLD_PARAM) {
+            ret = SetPerFrameLayerVcldParam();
+            CheckRet(ret, "SetLayerVcldParam");
         }
     }
     SetTunnelLayerParameters();
@@ -943,6 +960,23 @@ int32_t HdiLayer::SetPerFrameLayerSourceTuning()
     *reinterpret_cast<int32_t*>(valueBlob.data()) = rsLayer_->GetLayerSourceTuning();
     return device_->SetLayerPerFrameParameterSmq(
         screenId_, layerId_, GENERIC_METADATA_KEY_SOURCE_CROP_TUNING, valueBlob);
+}
+
+int32_t HdiLayer::SetPerFrameLayerVcldParam()
+{
+    if (prevRSLayer_ != nullptr) {
+        if (rsLayer_->GetVcldInfo() == prevRSLayer_->GetVcldInfo()) {
+            return GRAPHIC_DISPLAY_SUCCESS;
+        }
+    } else {
+        if (!rsLayer_->GetVcldInfo().enable || rsLayer_->GetVcldInfo().radius == 0) {
+            return GRAPHIC_DISPLAY_SUCCESS;
+        }
+    }
+    std::vector<int8_t> valueBlob(sizeof(RSVcldParam));
+    *reinterpret_cast<RSVcldParam*>(valueBlob.data()) = rsLayer_->GetVcldInfo();
+    return device_->SetLayerPerFrameParameterSmq(
+        screenId_, layerId_, GENERIC_METADATA_KEY_VCLD_PARAM, valueBlob);
 }
 
 void HdiLayer::ClearBufferCache()

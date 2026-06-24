@@ -13,17 +13,19 @@
  * limitations under the License.
  */
 
-#include "rs_animation_base_test.h"
+#include "gtest/gtest.h"
 #include "rs_animation_test_utils.h"
 
 #include "animation/rs_animation_timing_protocol.h"
 #include "animation/rs_animation.h"
 #include "animation/rs_curve_animation.h"
 #include "animation/rs_path_animation.h"
+#include "animation/rs_property_animation.h"
 #include "animation/rs_spring_animation.h"
 #include "animation/rs_transition.h"
 #include "render/rs_path.h"
 #include "ui/rs_canvas_node.h"
+#include "ui/rs_ui_context.h"
 #include "ui/rs_ui_context_manager.h"
 #include "modifier_ng/geometry/rs_bounds_modifier.h"
 using namespace testing;
@@ -32,8 +34,46 @@ using namespace testing::ext;
 namespace OHOS {
 namespace Rosen {
 using namespace ANIMATIONTEST;
-class RSAnimationTest : public RSAnimationBaseTest {
+
+class RSRenderAnimationMock : public RSRenderAnimation {
+public:
+    RSRenderAnimationMock() : RSRenderAnimation() {}
+    explicit RSRenderAnimationMock(AnimationId id) : RSRenderAnimation(id) {}
+    ~RSRenderAnimationMock() override = default;
+    void RebuildPropertyValue(float fraction) override {}
 };
+
+class RSPropertyAnimationMock : public RSPropertyAnimation {
+public:
+    RSPropertyAnimationMock(const std::shared_ptr<RSUIContext>& rsUIContext,
+        std::shared_ptr<RSPropertyBase> property) : RSPropertyAnimation(rsUIContext, property) {}
+    void RebuildInRender() override {}
+};
+
+class RSAnimationTest : public testing::Test {
+public:
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    void SetUp() override;
+    void TearDown() override;
+
+    std::shared_ptr<RSUIContext> rsUIContext;
+    std::shared_ptr<RSCanvasNode> canvasNode;
+};
+
+void RSAnimationTest::SetUpTestCase() {}
+void RSAnimationTest::TearDownTestCase() {}
+
+void RSAnimationTest::SetUp()
+{
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    canvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    canvasNode->SetBounds(ANIMATION_START_BOUNDS);
+    canvasNode->SetFrame(ANIMATION_START_BOUNDS);
+}
+
+void RSAnimationTest::TearDown() {}
 
 /**
  * @tc.name: AnimationGetId001
@@ -43,25 +83,17 @@ class RSAnimationTest : public RSAnimationBaseTest {
 HWTEST_F(RSAnimationTest, AnimationGetId001, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetId001 start";
-    /**
-     * @tc.steps: step1. init AnimationGetId
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start AnimationGetId test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -69,7 +101,7 @@ HWTEST_F(RSAnimationTest, AnimationGetId001, TestSize.Level1)
     EXPECT_TRUE(timingCurve.type_ == RSAnimationTimingCurve::CurveType::SPRING);
     AnimationId id = animation->GetId();
     EXPECT_TRUE(id != 0);
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetId001 end";
 }
 
@@ -81,24 +113,17 @@ HWTEST_F(RSAnimationTest, AnimationGetId001, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationGetId002, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetId002 start";
-    /**
-     * @tc.steps: step1. init AnimationGetId
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::LINEAR;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
-    /**
-     * @tc.steps: step2. start AnimationGetId test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -106,7 +131,7 @@ HWTEST_F(RSAnimationTest, AnimationGetId002, TestSize.Level1)
     EXPECT_TRUE(timingCurve.type_ == RSAnimationTimingCurve::CurveType::INTERPOLATING);
     AnimationId id = animation->GetId();
     EXPECT_TRUE(id != 0);
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetId002 end";
 }
 
@@ -118,32 +143,22 @@ HWTEST_F(RSAnimationTest, AnimationGetId002, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationSetFinishCallback001, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSetFinishCallback001 start";
-    /**
-     * @tc.steps: step1. init AnimationSetFinishCallback
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::LINEAR;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start AnimationSetFinishCallback test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
     RSAnimationTimingCurve timingCurve = animation->GetTimingCurve();
     EXPECT_TRUE(timingCurve.type_ == RSAnimationTimingCurve::CurveType::INTERPOLATING);
-    NotifyStartAnimation();
-    sleep(DELAY_TIME_ONE);
     animation->Finish();
     EXPECT_TRUE(animation->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSetFinishCallback001 end";
@@ -157,31 +172,22 @@ HWTEST_F(RSAnimationTest, AnimationSetFinishCallback001, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationSetFinishCallback002, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSetFinishCallback002 start";
-    /**
-     * @tc.steps: step1. init AnimationSetFinishCallback
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::LINEAR;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
-    /**
-     * @tc.steps: step2. start AnimationSetFinishCallback test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
     RSAnimationTimingCurve timingCurve = animation->GetTimingCurve();
     EXPECT_TRUE(timingCurve.type_ == RSAnimationTimingCurve::CurveType::INTERPOLATING);
-    NotifyStartAnimation();
-    sleep(DELAY_TIME_ONE);
     animation->Finish();
     EXPECT_TRUE(animation->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSetFinishCallback002 end";
@@ -195,25 +201,17 @@ HWTEST_F(RSAnimationTest, AnimationSetFinishCallback002, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationGetTarget001, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetTarget001 start";
-    /**
-     * @tc.steps: step1. init AnimationGetTarget
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start AnimationGetTarget test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -221,7 +219,7 @@ HWTEST_F(RSAnimationTest, AnimationGetTarget001, TestSize.Level1)
     EXPECT_TRUE(timingCurve.type_ == RSAnimationTimingCurve::CurveType::SPRING);
     auto target = animation->GetTarget();
     EXPECT_TRUE(target.lock() != nullptr);
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetTarget001 end";
 }
 
@@ -233,25 +231,17 @@ HWTEST_F(RSAnimationTest, AnimationGetTarget001, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationGetTarget002, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetTarget002 start";
-    /**
-     * @tc.steps: step1. init AnimationGetTarget
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::LINEAR;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start AnimationGetTarget test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -259,7 +249,7 @@ HWTEST_F(RSAnimationTest, AnimationGetTarget002, TestSize.Level1)
     EXPECT_TRUE(timingCurve.type_ == RSAnimationTimingCurve::CurveType::INTERPOLATING);
     auto target = animation->GetTarget();
     EXPECT_TRUE(target.lock() != nullptr);
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetTarget002 end";
 }
 
@@ -271,25 +261,17 @@ HWTEST_F(RSAnimationTest, AnimationGetTarget002, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationStatus001, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationStatus001 start";
-    /**
-     * @tc.steps: step1. init AnimationStatus
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start AnimationStatus test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -301,8 +283,6 @@ HWTEST_F(RSAnimationTest, AnimationStatus001, TestSize.Level1)
     animation->Reverse();
     animation->Resume();
     EXPECT_TRUE(animation->IsRunning());
-    NotifyStartAnimation();
-    sleep(DELAY_TIME_ONE);
     animation->Finish();
     EXPECT_TRUE(animation->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationStatus001 end";
@@ -316,25 +296,17 @@ HWTEST_F(RSAnimationTest, AnimationStatus001, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationStatus002, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationStatus002 start";
-    /**
-     * @tc.steps: step1. init AnimationStatus
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::LINEAR;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start AnimationStatus test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSCurveAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -346,8 +318,6 @@ HWTEST_F(RSAnimationTest, AnimationStatus002, TestSize.Level1)
     animation->Reverse();
     animation->Resume();
     EXPECT_TRUE(animation->IsRunning());
-    NotifyStartAnimation();
-    sleep(DELAY_TIME_ONE);
     animation->Finish();
     EXPECT_TRUE(animation->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationStatus002 end";
@@ -365,12 +335,10 @@ HWTEST_F(RSAnimationTest, AnimationStatus004, TestSize.Level1)
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
@@ -383,7 +351,7 @@ HWTEST_F(RSAnimationTest, AnimationStatus004, TestSize.Level1)
     animation->state_ = RSAnimation::AnimationState::RUNNING;
     animation->Pause();
 
-    animation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    animation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     animation->OnReverse();
     animation->Resume();
     animation->Finish();
@@ -396,8 +364,8 @@ HWTEST_F(RSAnimationTest, AnimationStatus004, TestSize.Level1)
     animation->OnReverse();
     animation->OnSetFraction(0.5);
 
-    auto propAnimation = std::make_shared<RSPropertyAnimation>(canvasNode->GetRSUIContext(), nullptr);
-    propAnimation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    auto propAnimation = std::make_shared<RSPropertyAnimationMock>(rsUIContext, nullptr);
+    propAnimation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     propAnimation->property_ = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     propAnimation->UpdateStagingValueOnInteractiveFinish(RSInteractiveAnimationPosition::CURRENT);
     std::string dumpInfo = "";
@@ -418,12 +386,10 @@ HWTEST_F(RSAnimationTest, InteractivePause, TestSize.Level1)
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
@@ -435,7 +401,7 @@ HWTEST_F(RSAnimationTest, InteractivePause, TestSize.Level1)
     animation->state_ = RSAnimation::AnimationState::RUNNING;
     animation->target_.reset();
     animation->InteractivePause();
-    animation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    animation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     animation->InteractivePause();
     EXPECT_NE(nullptr, animation->uiAnimation_);
     GTEST_LOG_(INFO) << "RSAnimationTest InteractivePause end";
@@ -449,25 +415,17 @@ HWTEST_F(RSAnimationTest, InteractivePause, TestSize.Level1)
 HWTEST_F(RSAnimationTest, InteractiveContinue, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveContinue start";
-    /**
-     * @tc.steps: step1. init InteractiveContinue
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start InteractiveContinue test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -476,7 +434,7 @@ HWTEST_F(RSAnimationTest, InteractiveContinue, TestSize.Level1)
     animation->state_ = RSAnimation::AnimationState::PAUSED;
     animation->target_.reset();
     animation->InteractiveContinue();
-    animation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    animation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     animation->InteractiveContinue();
     EXPECT_NE(nullptr, animation->uiAnimation_);
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveContinue end";
@@ -490,25 +448,17 @@ HWTEST_F(RSAnimationTest, InteractiveContinue, TestSize.Level1)
 HWTEST_F(RSAnimationTest, InteractiveReverse, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveReverse start";
-    /**
-     * @tc.steps: step1. init InteractiveReverse
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start InteractiveReverse test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -517,7 +467,7 @@ HWTEST_F(RSAnimationTest, InteractiveReverse, TestSize.Level1)
     animation->state_ = RSAnimation::AnimationState::PAUSED;
     animation->target_.reset();
     animation->InteractiveReverse();
-    animation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    animation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     animation->InteractiveReverse();
     EXPECT_NE(nullptr, animation->uiAnimation_);
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveReverse end";
@@ -531,25 +481,17 @@ HWTEST_F(RSAnimationTest, InteractiveReverse, TestSize.Level1)
 HWTEST_F(RSAnimationTest, Finish, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest Finish start";
-    /**
-     * @tc.steps: step1. init Finish
-     */
     auto property = std::make_shared<RSAnimatableProperty<Vector4f>>(ANIMATION_START_BOUNDS);
     auto modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
     modifier->AttachProperty(ModifierNG::RSPropertyType::BOUNDS, property);
     canvasNode->AddModifier(modifier);
-    rsUiDirector->SendMessages();
-    sleep(DELAY_TIME_ONE);
     RSAnimationTimingProtocol protocol;
     protocol.SetDuration(ANIMATION_DURATION);
     RSAnimationTimingCurve curve = RSAnimationTimingCurve::SPRING;
-    auto animations = RSNode::Animate(canvasNode->GetRSUIContext(), protocol, curve, [&property]() {
+    auto animations = RSNode::Animate(rsUIContext, protocol, curve, [&property]() {
         property->Set(ANIMATION_END_BOUNDS);
     });
 
-    /**
-     * @tc.steps: step2. start Finish test
-     */
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSSpringAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -571,29 +513,23 @@ HWTEST_F(RSAnimationTest, Finish, TestSize.Level1)
 HWTEST_F(RSAnimationTest, IsSupportInteractiveAnimator001, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest IsSupportInteractiveAnimator001 start";
-    /**
-     * @tc.steps: step1. init IsSupportInteractiveAnimator
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
     OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start IsSupportInteractiveAnimator test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
     EXPECT_TRUE(animation->IsSupportInteractiveAnimator());
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest IsSupportInteractiveAnimator001 end";
 }
 
@@ -605,24 +541,18 @@ HWTEST_F(RSAnimationTest, IsSupportInteractiveAnimator001, TestSize.Level1)
 HWTEST_F(RSAnimationTest, Pause, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest Pause start";
-    /**
-     * @tc.steps: step1. init Pause
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start Pause test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -642,24 +572,18 @@ HWTEST_F(RSAnimationTest, Pause, TestSize.Level1)
 HWTEST_F(RSAnimationTest, InteractiveSetFraction, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveSetFraction start";
-    /**
-     * @tc.steps: step1. init InteractiveSetFraction
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
     OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start InteractiveSetFraction test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -669,7 +593,7 @@ HWTEST_F(RSAnimationTest, InteractiveSetFraction, TestSize.Level1)
     animation->state_ = RSAnimation::AnimationState::PAUSED;
     animation->target_.reset();
     animation->InteractiveSetFraction(3.14f);
-    animation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    animation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     animation->InteractiveSetFraction(3.14f);
     EXPECT_NE(nullptr, animation->uiAnimation_);
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveSetFraction end";
@@ -683,24 +607,18 @@ HWTEST_F(RSAnimationTest, InteractiveSetFraction, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationStatus003, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationStatus003 start";
-    /**
-     * @tc.steps: step1. init AnimationStatus
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start AnimationStatus test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSTransition>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -710,8 +628,6 @@ HWTEST_F(RSAnimationTest, AnimationStatus003, TestSize.Level1)
     animation->Reverse();
     animation->Resume();
     EXPECT_TRUE(animation->IsRunning());
-    NotifyStartAnimation();
-    sleep(DELAY_TIME_ONE);
     animation->Finish();
     EXPECT_TRUE(animation->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationStatus003 end";
@@ -725,24 +641,18 @@ HWTEST_F(RSAnimationTest, AnimationStatus003, TestSize.Level1)
 HWTEST_F(RSAnimationTest, InteractiveFinish, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveFinish start";
-    /**
-     * @tc.steps: step1. init InteractiveFinish
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start InteractiveFinish test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSAnimation>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
@@ -753,7 +663,7 @@ HWTEST_F(RSAnimationTest, InteractiveFinish, TestSize.Level1)
     animation->target_.reset();
     animation->InteractiveFinish(RSInteractiveAnimationPosition::CURRENT);
 
-    animation->uiAnimation_ = std::make_shared<RSRenderAnimation>();
+    animation->uiAnimation_ = std::make_shared<RSRenderAnimationMock>();
     animation->InteractiveFinish(RSInteractiveAnimationPosition::CURRENT);
     EXPECT_NE(nullptr, animation->uiAnimation_);
     GTEST_LOG_(INFO) << "RSAnimationTest InteractiveFinish end";
@@ -767,30 +677,24 @@ HWTEST_F(RSAnimationTest, InteractiveFinish, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationGetId003, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetId003 start";
-    /**
-     * @tc.steps: step1. init AnimationGetId
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start AnimationGetId test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSTransition>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
     AnimationId id = animation->GetId();
     EXPECT_TRUE(id != 0);
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetId003 end";
 }
 
@@ -802,32 +706,24 @@ HWTEST_F(RSAnimationTest, AnimationGetId003, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationSetFinishCallback003, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSetFinishCallback003 start";
-    /**
-     * @tc.steps: step1. init AnimationSetFinishCallback
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
     std::string testString;
     auto lambda = [&testString]() { testString = SUCCESS_STRING; };
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     }, lambda);
-    /**
-     * @tc.steps: step2. start AnimationSetFinishCallback test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSTransition>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
     EXPECT_TRUE(animation->IsRunning());
-    NotifyStartAnimation();
-    sleep(DELAY_TIME_ONE);
     animation->Finish();
     EXPECT_TRUE(animation->IsFinished());
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationSetFinishCallback003 end";
@@ -841,32 +737,54 @@ HWTEST_F(RSAnimationTest, AnimationSetFinishCallback003, TestSize.Level1)
 HWTEST_F(RSAnimationTest, AnimationGetTarget003, TestSize.Level1)
 {
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetTarget003 start";
-    /**
-     * @tc.steps: step1. init AnimationGetTarget
-     */
     auto effect = RSTransitionEffect::Create()->Scale({0.1f, 0.4f, 0.5f});
-        OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
-    auto rsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
-    auto newCanvasNode = RSCanvasNode::Create(false, false, rsUIContext);
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto newRsUIContext = std::make_shared<RSUIContext>(0, connectToRenderRemote);
+    auto newCanvasNode = RSCanvasNode::Create(false, false, newRsUIContext);
     newCanvasNode->SetFrame(ANIMATION_START_BOUNDS);
     newCanvasNode->SetBackgroundColor(SK_ColorRED);
-    rootNode->AddChild(newCanvasNode, -1);
     RSAnimationTimingProtocol protocol;
-    auto animations = RSNode::Animate(newCanvasNode->GetRSUIContext(), protocol, RSAnimationTimingCurve::EASE,
+    auto animations = RSNode::Animate(newRsUIContext, protocol, RSAnimationTimingCurve::EASE,
         [&newCanvasNode, &effect]() {
         newCanvasNode->NotifyTransition(effect, true);
     });
-    /**
-     * @tc.steps: step2. start AnimationGetTarget test
-     */
+
     ASSERT_TRUE(animations.size() == CORRECT_SIZE);
     auto animation = std::static_pointer_cast<RSTransition>(animations[FIRST_ANIMATION]);
     ASSERT_TRUE(animation != nullptr);
     EXPECT_TRUE(animation->IsRunning());
     auto target = animation->GetTarget();
     EXPECT_TRUE(target.lock() != nullptr);
-    NotifyStartAnimation();
+    animation->Finish();
     GTEST_LOG_(INFO) << "RSAnimationTest AnimationGetTarget003 end";
+}
+
+/**
+ * @tc.name: RebuildParam001
+ * @tc.desc: Verify RebuildParam struct default values
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSAnimationTest, RebuildParam001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationTest RebuildParam001 start";
+    RebuildParam param;
+    EXPECT_FLOAT_EQ(param.fraction, 0.f);
+    EXPECT_FALSE(param.isReverseCycle);
+    GTEST_LOG_(INFO) << "RSAnimationTest RebuildParam001 end";
+}
+
+/**
+ * @tc.name: RebuildParam002
+ * @tc.desc: Verify RebuildParam struct with custom values
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSAnimationTest, RebuildParam002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSAnimationTest RebuildParam002 start";
+    RebuildParam param{0.5f, true};
+    EXPECT_FLOAT_EQ(param.fraction, 0.5f);
+    EXPECT_TRUE(param.isReverseCycle);
+    GTEST_LOG_(INFO) << "RSAnimationTest RebuildParam002 end";
 }
 } // namespace Rosen
 } // namespace OHOS

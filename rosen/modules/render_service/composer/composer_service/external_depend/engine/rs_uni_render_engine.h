@@ -38,6 +38,7 @@ public:
     void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas,
         DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, BufferDrawParam& params, PreProcessFunc preProcess,
         PostProcessFunc postProcess) override;
+    void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params) override;
 #ifdef USE_VIDEO_PROCESSING_ENGINE
     void DrawLayers(RSPaintFilterCanvas& canvas, const std::vector<RSLayerPtr>& layers, bool forceCPU,
         const ComposerScreenInfo& composerScreenInfo = {},
@@ -57,6 +58,7 @@ private:
     void DrawHdiLayerWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
     void DrawLayerPreProcess(RSPaintFilterCanvas& canvas, const RSLayerPtr& layer,
         const ComposerScreenInfo& ComposerscreenInfo);
+    void ClipRoundRectForVCLD(RSPaintFilterCanvas& canvas, const RSLayerPtr& layer);
 
 #ifdef RS_ENABLE_TV_PQ_METADATA
     static inline RecordTvMetadataFunc recordTvMetadataCallback_ = nullptr;

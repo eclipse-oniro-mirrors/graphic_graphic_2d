@@ -47,13 +47,16 @@ public:
     int32_t GetScreenBacklight(uint32_t &level) const;
     int32_t SetScreenVsyncEnabled(bool enabled) const;
 
+    int32_t GetScreenVCPFeature(uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) const;
+    int32_t SetScreenVCPFeature(uint8_t vcpCode, uint16_t currentValue);
+
     int32_t GetScreenSupportedColorGamuts(std::vector<GraphicColorGamut> &gamuts) const;
     int32_t SetScreenColorGamut(GraphicColorGamut gamut) const;
     int32_t GetScreenColorGamut(GraphicColorGamut &gamut) const;
     int32_t SetScreenGamutMap(GraphicGamutMap gamutMap) const;
     int32_t GetScreenGamutMap(GraphicGamutMap &gamutMap) const;
     int32_t SetScreenColorTransform(const std::vector<float>& matrix) const;
-    int32_t SetScreenLinearMatrix(const std::vector<float> &matrix) const;
     int32_t GetHDRCapabilityInfos(GraphicHDRCapability &info) const;
     int32_t GetSupportedMetaDataKey(std::vector<GraphicHDRMetadataKey> &keys) const;
     int32_t SetScreenConstraint(uint64_t frameId, uint64_t timestamp, uint32_t type);

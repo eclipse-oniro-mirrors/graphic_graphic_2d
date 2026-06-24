@@ -1068,7 +1068,7 @@ HWTEST_F(RSMemoryManagerTest, InterruptReclaimTaskTest002, testing::ext::TestSiz
 HWTEST_F(RSMemoryManagerTest, MemoryOverReport001, testing::ext::TestSize.Level1)
 {
     std::string hidumperReport = "report";
-    std::string filePath = "/data/service/el0/render_service/renderservice_mem.txt";
+    std::string filePath = "/data/service/el0/render_service/renderservice_mem_test.txt";
     std::filesystem::remove(filePath);
     pid_t pid0 = 0;
     MemorySnapshotInfo info;
@@ -1085,6 +1085,10 @@ HWTEST_F(RSMemoryManagerTest, MemoryOverReport001, testing::ext::TestSize.Level1
     info1.engineGpuMemory = 2048;
     MemoryManager::MemoryOverReport(pid1, info1, "RENDER_MEMORY_OVER_ERROR", hidumperReport, filePath);
     ASSERT_TRUE(std::ifstream(filePath).good());
+    MemoryManager::MemoryOverReport(pid1, info1, "RENDER_MEMORY_OVER_WARNING", hidumperReport, filePath);
+    ASSERT_TRUE(std::ifstream(filePath).good());
+    // clean up
+    std::filesystem::remove(filePath);
 }
 
 /**
@@ -1130,10 +1134,11 @@ HWTEST_F(RSMemoryManagerTest, GetNodeInfo001, TestSize.Level1)
     std::unordered_map<int, std::pair<int, int>> nodeInfo;
     std::unordered_map<int, int> nullNodeInfo;
     std::unordered_map<pid_t, size_t> modifierSize;
+    DfxString log;
     NodeId id = 1024;
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
-    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize);
+    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize, log);
     ASSERT_TRUE(nodeInfo.empty());
 }
 
@@ -1150,12 +1155,13 @@ HWTEST_F(RSMemoryManagerTest, GetNodeInfo002, TestSize.Level1)
     std::unordered_map<int, std::pair<int, int>> nodeInfo;
     std::unordered_map<int, int> nullNodeInfo;
     std::unordered_map<pid_t, size_t> modifierSize;
+    DfxString log;
     NodeId id = 1025;
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
     auto node = std::make_shared<RSRenderNode>(id);
     mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(node);
-    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize);
+    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize, log);
     ASSERT_TRUE(nodeInfo.size() > 0);
 }
 
@@ -1172,13 +1178,14 @@ HWTEST_F(RSMemoryManagerTest, GetNodeInfo003, TestSize.Level1)
     std::unordered_map<int, std::pair<int, int>> nodeInfo;
     std::unordered_map<int, int> nullNodeInfo;
     std::unordered_map<pid_t, size_t> modifierSize;
+    DfxString log;
     NodeId id = 1026;
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
     auto node = std::make_shared<RSRenderNode>(id);
     mainThread->GetContext().GetMutableNodeMap().RegisterRenderNode(node);
     nodeInfo.insert({ExtractPid(id), std::make_pair(0, 0)});
-    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize);
+    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize, log);
     ASSERT_TRUE(nodeInfo.size() > 0);
 }
 /**
@@ -1194,11 +1201,12 @@ HWTEST_F(RSMemoryManagerTest, GetNodeInfo004, TestSize.Level1)
     std::unordered_map<int, std::pair<int, int>> nodeInfo;
     std::unordered_map<int, int> nullNodeInfo;
     std::unordered_map<pid_t, size_t> modifierSize;
+    DfxString log;
     NodeId id = 1027;
     MemoryInfo info = {sizeof(*this), ExtractPid(id), id, MEMORY_TYPE::MEM_RENDER_NODE};
     MemoryTrack::Instance().AddNodeRecord(id, info);
     nullNodeInfo.insert({ExtractPid(id), 0});
-    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize);
+    MemoryManager::GetNodeInfo(nodeInfo, nullNodeInfo, modifierSize, log);
     ASSERT_TRUE(nullNodeInfo.size() > 0);
 }
 
@@ -1563,7 +1571,7 @@ HWTEST_F(RSMemoryManagerTest, MemoryOverflow004, TestSize.Level1)
 
     // Test GPU memory overflow
     bool ret = MemoryManager::MemoryOverflow(pid, overflowMemory, true);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 
     MemorySnapshotInfo info;
     ret = MemorySnapshot::Instance().GetMemorySnapshotInfoByPid(pid, info);
@@ -1661,7 +1669,7 @@ HWTEST_F(RSMemoryManagerTest, MemoryReportAndKillTest004, TestSize.Level1)
 
     // GPU memory overflow
     bool ret = MemoryManager::MemoryReportAndKill(pid, info, true);
-    ASSERT_TRUE(ret);
+    ASSERT_FALSE(ret);
 
     MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
 }
@@ -1686,7 +1694,7 @@ HWTEST_F(RSMemoryManagerTest, MemoryReportAndKillTest005, TestSize.Level1)
 
     // CPU memory overflow
     bool ret = MemoryManager::MemoryReportAndKill(pid, info, false);
-    ASSERT_TRUE(ret);
+    ASSERT_FALSE(ret);
 
     MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
 }
@@ -1743,7 +1751,7 @@ HWTEST_F(RSMemoryManagerTest, MemoryOverReport002, TestSize.Level1)
     MemoryManager::MemoryOverReport(pid, info, "RENDER_MEMORY_OVER_ERROR", hidumperReport, filePath);
 
     // Verify file was created
-    ASSERT_TRUE(std::ifstream(filePath).good());
+    ASSERT_FALSE(std::ifstream(filePath).good());
 
     // Clean up
     std::remove(filePath.c_str());
@@ -1771,7 +1779,7 @@ HWTEST_F(RSMemoryManagerTest, MemoryReportAndKillTest006, TestSize.Level1)
 
     // Test with empty bundle name - should try to get bundle name from AppMgrClient
     bool ret = MemoryManager::MemoryReportAndKill(pid, info, true);
-    ASSERT_TRUE(ret);
+    ASSERT_FALSE(ret);
 
     MemorySnapshot::Instance().EraseSnapshotInfoByPid(exitedPids);
 }

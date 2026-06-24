@@ -27,9 +27,14 @@
 
 #include "image/image.h"
 
+#ifdef ROSEN_OHOS
+#include "surface_buffer.h"
+#endif
+
 #define RSPARCELVER_ALWAYS 0x100
 #define RSPARCELVER_ADD_ANIMTOKEN 0
 #define RSPARCELVER_ADD_ISPROPDIRTY 1
+#define RSPARCELVER_ADD_NONEED 2
 
 namespace OHOS {
 namespace Media {
@@ -103,6 +108,9 @@ template<typename T>
 class RRectT;
 struct PixelMapInfo;
 class RSRenderParticleVector;
+#ifndef ROSEN_CROSS_PLATFORM
+struct SurfaceRegionConfig;
+#endif
 
 class RSB_EXPORT RSMarshallingHelper {
 public:
@@ -286,6 +294,7 @@ public:
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<Media::PixelMap>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RectT<float>>)
     DECLARE_FUNCTION_OVERLOAD(RRectT<float>)
+    DECLARE_FUNCTION_OVERLOAD(RSSurfaceRenderNodeConfig)
     // animation
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransition>)
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransitionEffect>)
@@ -532,6 +541,11 @@ public:
     static bool SkipData(Parcel& parcel);
     static bool SkipImage(Parcel& parcel);
     static bool SkipPixelMap(Parcel& parcel);
+
+#ifndef ROSEN_CROSS_PLATFORM
+    static bool Marshalling(Parcel& parcel, const SurfaceRegionConfig& val);
+    static bool Unmarshalling(Parcel& parcel, SurfaceRegionConfig& val);
+#endif
 
 private:
     static bool WriteToParcel(Parcel& parcel, const void* data, size_t size);

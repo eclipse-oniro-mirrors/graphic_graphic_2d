@@ -125,7 +125,7 @@ void RSUnmarshalThread::RemoveTask(const std::string& name)
 
 void RSUnmarshalThread::RecvParcel(std::shared_ptr<MessageParcel>& parcel, bool isNonSystemAppCalling, pid_t callingPid,
     std::unique_ptr<AshmemFdWorker> ashmemFdWorker, std::shared_ptr<AshmemFlowControlUnit> ashmemFlowControlUnit,
-    uint32_t parcelNumber)
+    uint32_t parcelNumber, bool waitUnmarshalling)
 {
     if (!queue_ || !parcel) {
         RS_LOGE("RSUnmarshalThread::RecvParcel has nullptr, queue_: %{public}d, parcel: %{public}d",
@@ -134,7 +134,6 @@ void RSUnmarshalThread::RecvParcel(std::shared_ptr<MessageParcel>& parcel, bool 
     }
     bool isPendingUnmarshal = (parcel->GetDataSize() > MIN_PENDING_REQUEST_SYNC_DATA_SIZE);
     bool unmarshalParallel = RSSystemProperties::GetUnmarshalParallelEnabled() &&
-                             ashmemFdWorker == nullptr &&
                              parcel->GetDataSize() > RSSystemProperties::GetUnmarshalParallelMinDataSize();
     RSTaskMessage::RSTask task = [this, parcel = parcel, isPendingUnmarshal, isNonSystemAppCalling, callingPid,
         ashmemFdWorker = std::shared_ptr(std::move(ashmemFdWorker)), ashmemFlowControlUnit, parcelNumber]() {
@@ -185,6 +184,9 @@ void RSUnmarshalThread::RecvParcel(std::shared_ptr<MessageParcel>& parcel, bool 
                 RSMainThread::Instance()->RequestNextVSync("UI", time);
             }
         }
+        if (noNeedWaitTaskNum_ > 0) {
+            noNeedWaitTaskNum_--;
+        }
         RSMainThread::Instance()->NotifyUnmarshalTask(time);
         // ashmem parcel flow control ends in the destructor of ashmemFlowControlUnit
     };
@@ -199,6 +201,9 @@ void RSUnmarshalThread::RecvParcel(std::shared_ptr<MessageParcel>& parcel, bool 
     if (!isPendingUnmarshal) {
         RSMainThread::Instance()->RequestNextVSync();
     }
+    if (!waitUnmarshalling) {
+        noNeedWaitTaskNum_++;
+    }
 }
 
 TransactionDataMap RSUnmarshalThread::GetCachedTransactionData()
@@ -210,6 +215,15 @@ TransactionDataMap RSUnmarshalThread::GetCachedTransactionData()
         willHaveCachedData_ = false;
     }
     return transactionData;
+}
+
+bool RSUnmarshalThread::IsNoNeedWaitUnmarshalling()
+{
+    if (noNeedWaitTaskNum_ > 0) {
+        RSMainThread::Instance()->RequestNextVSync();
+        return true;
+    }
+    return false;
 }
 
 bool RSUnmarshalThread::CachedTransactionDataEmpty()

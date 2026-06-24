@@ -109,7 +109,9 @@ HWTEST_F(RSDropFrameProcessorTest, DropFrameProcessorTest002, TestSize.Level1)
     rsNode->GetRSSurfaceHandler()->SetConsumer(csurf);
     std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(rsNode);
     auto clientComposer = std::make_shared<RSComposerClientManager>();
-    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(surfaceRenderNode, clientComposer);
+    auto surfaceHandler(rsNode->GetRSSurfaceHandler());
+    sptr<IBufferConsumerListener> listener =
+        new RSRenderServiceListener(surfaceRenderNode, surfaceHandler, clientComposer);
     csurf->RegisterConsumerListener(listener);
     producer = csurf->GetProducer();
     psurf = Surface::CreateSurfaceAsProducer(producer);
@@ -164,7 +166,9 @@ HWTEST_F(RSDropFrameProcessorTest, DropFrameProcessorTest003, TestSize.Level1)
     csurf = IConsumerSurface::Create(config.name);
     rsNode->GetRSSurfaceHandler()->SetConsumer(csurf);
     std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(rsNode);
-    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(surfaceRenderNode, nullptr);
+    auto surfaceHandler(rsNode->GetRSSurfaceHandler());
+    sptr<IBufferConsumerListener> listener =
+        new RSRenderServiceListener(surfaceRenderNode, surfaceHandler, nullptr);
     csurf->RegisterConsumerListener(listener);
     producer = csurf->GetProducer();
     psurf = Surface::CreateSurfaceAsProducer(producer);
@@ -183,6 +187,53 @@ HWTEST_F(RSDropFrameProcessorTest, DropFrameProcessorTest003, TestSize.Level1)
     // create RSHardwareProcessor
     GSError result = RSBaseSurfaceUtil::DropFrameProcess(*rsNode->GetRSSurfaceHandler());
     ASSERT_EQ(result, OHOS::GSERROR_OK);
+    csurf->UnregisterConsumerListener();
+}
+
+/**
+ * @tc.name: DropFrameProcessorTest004
+ * @tc.desc: Test DropFrameProcess sets BufferDropped to true when frame is dropped
+ * @tc.type: FUNC
+ * @tc.require: issue23825
+ */
+HWTEST_F(RSDropFrameProcessorTest, DropFrameProcessorTest004, TestSize.Level1)
+{
+    RSSurfaceRenderNodeConfig config;
+    rsNode = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(rsNode, nullptr);
+    rsNode->InitRenderParams();
+
+    rsParentNode = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(rsParentNode, nullptr);
+    rsParentNode->InitRenderParams();
+
+    rsParentNode->AddChild(rsNode);
+    rsNode->SetIsOnTheTree(true);
+
+    csurf = IConsumerSurface::Create(config.name);
+    rsNode->GetRSSurfaceHandler()->SetConsumer(csurf);
+    std::weak_ptr<RSSurfaceRenderNode> surfaceRenderNode(rsNode);
+    auto surfaceHandler(rsNode->GetRSSurfaceHandler());
+    sptr<IBufferConsumerListener> listener = new RSRenderServiceListener(surfaceRenderNode, surfaceHandler, nullptr);
+    csurf->RegisterConsumerListener(listener);
+    producer = csurf->GetProducer();
+    psurf = Surface::CreateSurfaceAsProducer(producer);
+    psurf->SetQueueSize(4);
+
+    for (int i = 0; i < 3; i++) {
+        sptr<SurfaceBuffer> buffer;
+        sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+        [[maybe_unused]] GSError ret = psurf->RequestBuffer(buffer, requestFence, requestConfig);
+        sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+        ret = psurf->FlushBuffer(buffer, flushFence, flushConfig);
+        sleep(4);
+    }
+
+    rsNode->GetRSSurfaceHandler()->SetBufferDropped(false);
+    ASSERT_FALSE(rsNode->GetRSSurfaceHandler()->GetBufferDropped());
+    GSError result = RSBaseSurfaceUtil::DropFrameProcess(*rsNode->GetRSSurfaceHandler());
+    ASSERT_EQ(result, OHOS::GSERROR_OK);
+    ASSERT_TRUE(rsNode->GetRSSurfaceHandler()->GetBufferDropped());
     csurf->UnregisterConsumerListener();
 }
 } // namespace OHOS::Rosen

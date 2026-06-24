@@ -17,12 +17,23 @@
 
 #include "pipeline/buffer_manager/rs_buffer_manager.h"
 #include "pipeline/rs_surface_handler.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "iconsumer_surface.h"
 #include "surface.h"
 #include "surface_buffer.h"
 #include "sync_fence.h"
 #include "rs_surface_layer.h"
+#include "ibuffer_consumer_listener.h"
 #include <unistd.h>
+
+namespace OHOS::Rosen {
+class MockBufferConsumerListener : public IBufferConsumerListener {
+public:
+    MockBufferConsumerListener() = default;
+    ~MockBufferConsumerListener() override = default;
+    void OnBufferAvailable() override {}
+};
+}
 
 using namespace testing;
 using namespace testing::ext;
@@ -564,6 +575,59 @@ HWTEST_F(RSBufferManagerTest, AddPendingReleaseBuffer_WithConsumer_UpdateBufferO
 }
 
 /**
+ * @tc.name: ReplacePendingReleaseBufferFence_AllBranchesTest001
+ * @tc.desc: Test ReplacePendingReleaseBufferFence early return, insert, update, and preserve paths.
+ * @tc.type: FUNC
+ * @tc.require: issueI5N3G0
+ */
+HWTEST_F(RSBufferManagerTest, ReplacePendingReleaseBufferFence_AllBranchesTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    auto consumer = IConsumerSurface::Create("bm-ut-replace");
+    auto buffer = SurfaceBuffer::Create();
+    BufferRequestConfig cfg { BUFFER_WIDTH, BUFFER_HEIGHT, BUFFER_STRIDE, GRAPHIC_PIXEL_FMT_RGBA_8888,
+        BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA, 0 };
+    ASSERT_EQ(buffer->Alloc(cfg), GSERROR_OK);
+
+    auto owner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    owner->bufferId_ = buffer->GetBufferId();
+    sptr<SyncFence> fence = new SyncFence(dup(STDOUT_FILENO));
+    mgr->ReplacePendingReleaseBufferFence(consumer, nullptr, fence, owner);
+    mgr->ReplacePendingReleaseBufferFence(consumer, buffer, nullptr, owner);
+    EXPECT_TRUE(mgr->pendingReleaseBuffers_.empty());
+
+    mgr->ReplacePendingReleaseBufferFence(consumer, buffer, fence, owner);
+    auto iter = mgr->pendingReleaseBuffers_.find(buffer->GetBufferId());
+    ASSERT_NE(iter, mgr->pendingReleaseBuffers_.end());
+    EXPECT_EQ(iter->second.consumer_, consumer);
+    EXPECT_EQ(iter->second.buffer_, buffer);
+    EXPECT_EQ(iter->second.bufferOwnerCount_.lock(), owner);
+    ASSERT_EQ(iter->second.mergedFences_.size(), 1);
+    EXPECT_EQ(iter->second.mergedFences_.front(), fence);
+
+    auto newConsumer = IConsumerSurface::Create("bm-ut-replace-new");
+    auto newOwner = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    newOwner->bufferId_ = buffer->GetBufferId();
+    sptr<SyncFence> newFence = new SyncFence(dup(STDERR_FILENO));
+    mgr->ReplacePendingReleaseBufferFence(newConsumer, buffer, newFence, newOwner);
+    iter = mgr->pendingReleaseBuffers_.find(buffer->GetBufferId());
+    ASSERT_NE(iter, mgr->pendingReleaseBuffers_.end());
+    EXPECT_EQ(iter->second.consumer_, newConsumer);
+    EXPECT_EQ(iter->second.bufferOwnerCount_.lock(), newOwner);
+    ASSERT_EQ(iter->second.mergedFences_.size(), 1);
+    EXPECT_EQ(iter->second.mergedFences_.front(), newFence);
+
+    sptr<SyncFence> preserveFence = new SyncFence(dup(STDOUT_FILENO));
+    mgr->ReplacePendingReleaseBufferFence(nullptr, buffer, preserveFence, nullptr);
+    iter = mgr->pendingReleaseBuffers_.find(buffer->GetBufferId());
+    ASSERT_NE(iter, mgr->pendingReleaseBuffers_.end());
+    EXPECT_EQ(iter->second.consumer_, newConsumer);
+    EXPECT_EQ(iter->second.bufferOwnerCount_.lock(), newOwner);
+    ASSERT_EQ(iter->second.mergedFences_.size(), 1);
+    EXPECT_EQ(iter->second.mergedFences_.front(), preserveFence);
+}
+
+/**
  * @tc.name: AddPendingReleaseBuffer_WithoutConsumer_UpdateBufferOwnerCountTest001
  * @tc.desc: Test bufferOwnerCount_ update path in AddPendingReleaseBuffer without consumer
  *           When entry exists and bufferOwnerCount_ is expired and new bufferOwnerCount is provided,
@@ -1100,6 +1164,78 @@ HWTEST_F(RSBufferManagerTest, OnReleaseLayerBuffers_BufferOwnerCountTrueTest001,
     auto iter = mgr->pendingReleaseBuffers_.find(buffer->GetBufferId());
     ASSERT_NE(iter, mgr->pendingReleaseBuffers_.end());
     EXPECT_NE(iter->second.bufferOwnerCount_.lock(), nullptr);
+}
+
+/**
+ * @tc.name: ReleaseBufferById_ReleaseBufferSuccessTest001
+ * @tc.desc: Test ReleaseBuffer return success path in ReleaseBufferById
+ *           When consumer->ReleaseBuffer returns GSERROR_OK, no error log
+ *           This covers the false branch: ret == GSERROR_OK at line 421
+ *           Reference: RSBaseRenderUtilTest.ReleaseBuffer_002 - use RSSurfaceHandler with valid buffer
+ * @tc.type: FUNC
+ * @tc.require: issue23931
+ */
+HWTEST_F(RSBufferManagerTest, ReleaseBufferById_ReleaseBufferSuccessTest001, TestSize.Level2)
+{
+    auto mgr = std::make_shared<RSBufferManager>();
+    
+    RSSurfaceRenderNodeConfig config;
+    config.id = 9999;
+    config.name = "ReleaseBufferSuccessTest";
+    auto rsSurfaceRenderNode = std::make_shared<RSSurfaceRenderNode>(config);
+    ASSERT_NE(rsSurfaceRenderNode, nullptr);
+    rsSurfaceRenderNode->InitRenderParams();
+    
+    auto csurf = IConsumerSurface::Create(config.name);
+    ASSERT_NE(csurf, nullptr);
+    rsSurfaceRenderNode->GetRSSurfaceHandler()->SetConsumer(csurf);
+    
+    sptr<IBufferConsumerListener> listener = new MockBufferConsumerListener();
+    ASSERT_EQ(csurf->RegisterConsumerListener(listener), SURFACE_ERROR_OK);
+    
+    auto producer = csurf->GetProducer();
+    auto psurf = Surface::CreateSurfaceAsProducer(producer);
+    ASSERT_NE(psurf, nullptr);
+    psurf->SetQueueSize(1);
+    
+    BufferRequestConfig requestConfig = {
+        .width = 0x100,
+        .height = 0x100,
+        .strideAlignment = 0x8,
+        .format = GRAPHIC_PIXEL_FMT_RGBA_8888,
+        .usage = BUFFER_USAGE_CPU_READ | BUFFER_USAGE_CPU_WRITE | BUFFER_USAGE_MEM_DMA,
+        .timeout = 0
+    };
+    BufferFlushConfig flushConfig = {
+        .damage = { .w = 0x100, .h = 0x100 }
+    };
+    
+    sptr<SurfaceBuffer> buffer;
+    sptr<SyncFence> requestFence = SyncFence::INVALID_FENCE;
+    ASSERT_EQ(psurf->RequestBuffer(buffer, requestFence, requestConfig), GSERROR_OK);
+    ASSERT_NE(buffer, nullptr);
+    
+    sptr<SyncFence> flushFence = SyncFence::INVALID_FENCE;
+    ASSERT_EQ(psurf->FlushBuffer(buffer, flushFence, flushConfig), GSERROR_OK);
+    
+    sptr<SurfaceBuffer> acquiredBuffer;
+    sptr<SyncFence> acquireFence = SyncFence::INVALID_FENCE;
+    int64_t timestamp = 0;
+    Rect damage;
+    ASSERT_EQ(csurf->AcquireBuffer(acquiredBuffer, acquireFence, timestamp, damage), GSERROR_OK);
+    
+    auto& surfaceHandler = *rsSurfaceRenderNode->GetRSSurfaceHandler();
+    auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwnerCount>();
+    surfaceHandler.SetBuffer(acquiredBuffer, acquireFence, damage, timestamp, bufferOwnerCount);
+    
+    mgr->AddPendingReleaseBuffer(csurf, acquiredBuffer, acquireFence);
+    
+    EXPECT_NO_FATAL_FAILURE(mgr->ReleaseBufferById(acquiredBuffer->GetBufferId()));
+    
+    auto iter = mgr->pendingReleaseBuffers_.find(acquiredBuffer->GetBufferId());
+    EXPECT_EQ(iter, mgr->pendingReleaseBuffers_.end());
+    
+    csurf->UnregisterConsumerListener();
 }
 
 /**

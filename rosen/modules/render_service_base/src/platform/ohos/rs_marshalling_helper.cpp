@@ -73,6 +73,7 @@
 #include "recording/mask_cmd_list.h"
 
 #include "property/rs_properties_def.h"
+#include "screen_manager/rs_surface_region_config.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -103,6 +104,7 @@ DATA_CALLBACKS_REGISTER(
 static std::vector<uint8_t> supportedParcelVerFlags = {
     RSPARCELVER_ADD_ANIMTOKEN,
     RSPARCELVER_ADD_ISPROPDIRTY,
+    RSPARCELVER_ADD_NONEED,
 };
 
 #define MARSHALLING_AND_UNMARSHALLING(TYPE, TYPENAME)                      \
@@ -3652,6 +3654,53 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSRenderParticleVector& 
     return false;
 }
 
+#ifndef ROSEN_CROSS_PLATFORM
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SurfaceRegionConfig& val)
+{
+    if (!Marshalling(parcel, val.surface)) {
+        return false;
+    }
+    if (!Marshalling(parcel, val.region)) {
+        return false;
+    }
+    return true;
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SurfaceRegionConfig& val)
+{
+    if (!Unmarshalling(parcel, val.surface)) {
+        return false;
+    }
+    if (!Unmarshalling(parcel, val.region)) {
+        return false;
+    }
+    return true;
+}
+#endif
+
+bool RSMarshallingHelper::Marshalling(Parcel& parcel, const RSSurfaceRenderNodeConfig& val)
+{
+    return Marshalling(parcel, val.id) && Marshalling(parcel, val.name) &&
+           Marshalling(parcel, static_cast<uint8_t>(val.nodeType)) &&
+           Marshalling(parcel, val.isTextureExportNode) && Marshalling(parcel, val.isSync) &&
+           Marshalling(parcel, val.surfaceWindowType) && Marshalling(parcel, val.bundleName);
+}
+
+bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, RSSurfaceRenderNodeConfig& val)
+{
+    uint8_t nodeType = 0;
+    bool success = Unmarshalling(parcel, val.id);
+    success &= Unmarshalling(parcel, val.name);
+    success &= Unmarshalling(parcel, nodeType);
+    val.nodeType = static_cast<RSSurfaceNodeType>(nodeType);
+    val.additionalData = nullptr;
+    success &= Unmarshalling(parcel, val.isTextureExportNode);
+    success &= Unmarshalling(parcel, val.isSync);
+    success &= Unmarshalling(parcel, val.surfaceWindowType);
+    success &= Unmarshalling(parcel, val.bundleName);
+    return success;
+}
+
 bool RSMarshallingHelper::Marshalling(Parcel& parcel, sptr<Surface> surface)
 {
     if (surface != nullptr) {
@@ -3679,7 +3728,7 @@ bool RSMarshallingHelper::Marshalling(Parcel& parcel, sptr<Surface> surface)
 bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, sptr<Surface>& surface)
 {
     surface = nullptr;
-    bool hasSurface{false};
+    bool hasSurface { false };
     if (!parcel.ReadBool(hasSurface)) {
         return false;
     }

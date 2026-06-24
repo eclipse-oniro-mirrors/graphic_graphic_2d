@@ -17,7 +17,6 @@
 #define RENDER_SERVICE_BASE_COMMON_RS_COMMON_DEF_H
 
 #include <atomic>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -66,12 +65,12 @@ enum class SurfaceRegionDebugType {
 };
 
 enum class PartialRenderType {
-    DISABLED = 0,                               // 0, disable partial render, including set damage region
-    SET_DAMAGE,                                 // 1, set damageregion, without draw_op dropping
-    SET_DAMAGE_AND_DROP_OP,                     // 2, drop draw_op if node is not in dirty region
-    SET_DAMAGE_AND_DROP_OP_OCCLUSION,           // 3, drop draw_op if node is not in visible region (unirender)
-    SET_DAMAGE_AND_DROP_OP_NOT_VISIBLEDIRTY,    // 4, drop draw_op if node is not in visible dirty region (unirender)
-    SET_DAMAGE_BUT_COMPLETE_RENDER,             // 5, set full screen dirty region and set damage
+    DISABLED = 0,                    // 0, disable partial render
+    SET_DAMAGE,                      // 1, only set damage
+    CLIP,                            // 2, only clip
+    CLIP_AND_DROP_OP,                // 3, clip and drop op
+    SET_DAMAGE_AND_CLIP_AND_DROP_OP, // 4, set damage, clip and drop op
+    FORCE_FULL_SCREEN_DIRTY_REGION,  // 5, force setting full screen dirty region for set damage, clip and drop op
 };
 
 enum class StencilPixelOcclusionCullingType {
@@ -87,6 +86,7 @@ enum class AdvancedDirtyRegionType {
 };
 
 enum class DirtyAlignType {
+    DEFAULT = -1, // follow the ccm configuration
     DISABLED = 0,
     ENABLED = 1,
 };
@@ -136,11 +136,6 @@ enum class DdgrOpincType {
 enum class DdgrOpincDfxType {
     OPINC_DFX_NONE,
     OPINC_DFX_AUTO,
-};
-
-struct GetComponentSwitch {
-    ComponentEnableSwitch type;
-    bool (*ComponentHybridSwitch)();
 };
 
 using OnSystemPropertyChanged = void(*)(const char*, const char*, void*);
@@ -275,11 +270,15 @@ public:
     static bool GetNewTunnelEnabled();
     static bool GetBoolSystemProperty(const char* name, bool defaultValue);
     static int WatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
+    static int RemoveWatchSystemProperty(const char* name, OnSystemPropertyChanged func, void* context);
     static bool GetCacheOptimizeRotateEnable();
     static CrossNodeOffScreenRenderDebugType GetCrossNodeOffScreenStatus();
     static bool GetSingleDrawableLockerEnabled();
     static bool GetUIFirstEnabled();
     static bool GetHeterogeneousHDREnabled();
+    static bool GetGPUOfflineEnabled();
+    static bool GetHpaeOfflineEnabled();
+    static bool GetXcomponentEdrEnabled();
     static bool GetUIFirstDebugEnabled();
     static bool GetUIFirstOptScheduleEnabled();
     static bool GetUIFirstBehindWindowEnabled();
@@ -310,6 +309,9 @@ public:
     static bool GetSingleFrameComposerEnabled();
     static bool GetSingleFrameComposerCanvasNodeEnabled();
 
+    static float GetSplitTransactionMaxProcessTimeMs();
+    static size_t GetSplitTransactionCheckInterval();
+
     static bool GetSecurityPermissionCheckEnabled();
     static bool GetEffectMergeEnabled();
     static SubTreePrepareCheckType GetSubTreePrepareCheckType();
@@ -328,6 +330,7 @@ public:
     static bool GetOpincCacheMemThresholdEnabled();
     static bool GetLayerPartRenderEnabled();
     static bool GetLayerPartRenderDebugEnabled();
+    static bool GetLayerEnabled();
     static bool GetLayerDebugEnabled();
     static bool GetFilterCacheMemThresholdEnabled();
     static bool GetSkipDisplayIfScreenOffEnabled();
@@ -370,20 +373,8 @@ public:
     static bool GetDebugFmtTraceEnabled();
     static bool GetTimeVsyncDisabled();
 
-    static bool GetHybridRenderEnabled();
-    static bool GetHybridRenderDfxEnabled();
-    static uint32_t GetHybridRenderTextBlobLenCount();
-    static bool GetHybridRenderParallelConvertEnabled();
     static bool GetHybridRenderCanvasEnabled();
-    static bool GetHybridRenderMemeoryReleaseEnabled();
-    static bool GetHybridRenderSystemEnabled();
-    static int32_t GetHybridRenderCcmEnabled();
-    static bool GetHybridRenderSwitch(ComponentEnableSwitch bitSeq);
-    static bool GetHybridRenderTextBlobEnabled();
-    static bool GetHybridRenderSvgEnabled();
-    static bool GetHybridRenderHmsymbolEnabled();
-    static bool GetTypicalResidentProcess();
-    static void SetTypicalResidentProcess(bool isTypicalResidentProcess);
+    static bool GetHybridRenderDfxEnabled();
 
     static bool GetVKImageUseEnabled();
     static bool GetVKImageAdaptationForWallpaperEnabled();
@@ -417,7 +408,13 @@ public:
     static bool GetCanvasDrawingNodeRenderDmaEnabled();
 
     static bool GetReleaseImageOneByOneFlag();
+    static bool GetUsePrimList();
 
+    static bool GetRebuildSceneEnabled();
+    static bool IsRenderNodeRebuildEnabled();
+    static bool RebuildDebugEnabled();
+
+    static bool GetRsDelegateCompositeCleanCacheDfxEnable();
 private:
     RSSystemProperties() = default;
 
@@ -428,7 +425,6 @@ private:
     static inline bool debugFmtTraceEnable_ = false;
     static inline bool animationTestEnable_ = false;
     static inline bool isBehindWindowFilterEnabled_ = true;
-    static inline bool isTypicalResidentProcess_ = false;
     static bool isEnableEarlyZ_;
     static const GpuApiType systemGpuApiType_;
     static const DdgrOpincType ddgrOpincType_;

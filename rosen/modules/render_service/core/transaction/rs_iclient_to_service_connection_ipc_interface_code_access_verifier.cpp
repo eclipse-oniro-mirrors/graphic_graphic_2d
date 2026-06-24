@@ -171,6 +171,14 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_BACK_LIGHT");
             break;
         }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::GET_SCREEN_VCP_FEATURE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_SCREEN_VCP_FEATURE");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_VCP_FEATURE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_SCREEN_VCP_FEATURE");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_CONNECT_TO_RENDER): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_CONNECT_TO_RENDER");
             break;
@@ -197,6 +205,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_WATERMARK): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_WATERMARK");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_UIFIRST_SCALE): {
+            hasPermission = IsRssCalling(codeEnumTypeName_ + "::SET_UIFIRST_SCALE");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_SCREEN_GAMUT_MAP): {
@@ -261,6 +273,14 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_SCREEN_SURFACE): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIRTUAL_SCREEN_SURFACE");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::ADD_VIRTUAL_SCREEN_SURFACE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::ADD_VIRTUAL_SCREEN_SURFACE");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::REMOVE_VIRTUAL_SCREEN_SURFACE): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::REMOVE_VIRTUAL_SCREEN_SURFACE");
             break;
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIRTUAL_SCREEN_USING_STATUS): {
@@ -524,6 +544,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
             break;
         }
 #endif
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_VIDEO_RATE_INFO): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_VIDEO_RATE_INFO");
+            break;
+        }
         case static_cast<CodeUnderlyingType>(CodeEnumType::SET_BEHIND_WINDOW_FILTER_ENABLED): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_BEHIND_WINDOW_FILTER_ENABLED");
             break;
@@ -562,6 +586,10 @@ bool RSIClientToServiceConnectionInterfaceCodeAccessVerifier::IsExclusiveVerific
         }
         case static_cast<CodeUnderlyingType>(CodeEnumType::GET_PANEL_POWER_STATUS): {
             hasPermission = IsSystemCalling(codeEnumTypeName_ + "::GET_PANEL_POWER_STATUS");
+            break;
+        }
+        case static_cast<CodeUnderlyingType>(CodeEnumType::SET_APS_CONFIG_PARAMS): {
+            hasPermission = IsSystemCalling(codeEnumTypeName_ + "::SET_APS_CONFIG_PARAMS");
             break;
         }
         default: {

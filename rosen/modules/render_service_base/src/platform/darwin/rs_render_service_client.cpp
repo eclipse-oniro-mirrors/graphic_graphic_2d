@@ -54,6 +54,11 @@ bool RSRenderServiceClient::SetWatermark(const std::string& name, std::shared_pt
     return false;
 }
 
+bool RSRenderServiceClient::SetUifirstScale(float scaleFactor)
+{
+    return false;
+}
+
 bool RSRenderServiceClient::GetUniRenderEnabled()
 {
     return {};
@@ -324,6 +329,17 @@ int32_t RSRenderServiceClient::GetScreenBacklight(ScreenId id)
 
 void RSRenderServiceClient::SetScreenBacklight(const RsScreenBrightnessData& brightnessData)
 {
+}
+
+int32_t RSRenderServiceClient::GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    return {};
+}
+
+int32_t RSRenderServiceClient::SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue)
+{
+    return {};
 }
 
 PanelPowerStatus RSRenderServiceClient::GetPanelPowerStatus(ScreenId id)
@@ -625,6 +641,11 @@ void RSRenderServiceClient::SetOnRemoteDiedCallback(const OnRemoteDiedCallback& 
 {
 }
 
+int32_t RSRenderServiceClient::SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo)
+{
+    return {};
+}
+
 std::vector<ActiveDirtyRegionInfo> RSRenderServiceClient::GetActiveDirtyRegionInfo()
 {
     return {};
@@ -722,6 +743,12 @@ bool RSRenderServiceClient::SetBehindWindowFilterEnabled(bool enabled)
 }
 
 bool RSRenderServiceClient::GetBehindWindowFilterEnabled(bool& enabled)
+{
+    return false;
+}
+
+bool RSRenderServiceClient::SetApsConfigParams(
+    ApsEventType event, const std::unordered_map<std::string, std::string>& params)
 {
     return false;
 }

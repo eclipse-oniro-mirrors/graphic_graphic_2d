@@ -770,12 +770,15 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach003, TestSize.Level1)
 
     auto renderCurveAnimation =
         std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto renderCurveAnimation2 =
+        std::make_shared<RSRenderCurveAnimation>(ANIMATION_ID_2, PROPERTY_ID_2, property, property1, property2);
     ASSERT_NE(renderCurveAnimation, nullptr);
     renderCurveAnimation->AttachRenderProperty(property);
     auto renderNode = std::make_shared<RSCanvasRenderNode>(NODE_ID);
     std::string nodeName = "1"; // for test
     renderNode->SetNodeName(nodeName);
     renderCurveAnimation->Attach(renderNode.get());
+    renderNode->AddAnimation(renderCurveAnimation2);
     auto target = renderCurveAnimation->GetTarget();
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
@@ -812,6 +815,7 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach004, TestSize.Level1)
     std::string nodeName = "1"; // for test
     renderNode->SetNodeName(nodeName);
     renderCurveAnimation->Attach(renderNode.get());
+    renderNode->AddAnimation(renderCurveAnimation);
     auto target = renderCurveAnimation->GetTarget();
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
@@ -846,6 +850,7 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach005, TestSize.Level1)
     std::string nodeName = "1"; // for test
     renderNode->SetNodeName(nodeName);
     renderCurveAnimation->Attach(renderNode.get());
+    renderNode->AddAnimation(renderCurveAnimation);
     auto target = renderCurveAnimation->GetTarget();
     EXPECT_NE(target, nullptr);
     // test property type is DRAW_CMD_LIST
@@ -974,6 +979,64 @@ HWTEST_F(RSRenderCurveAnimationTest, OnAttach009, TestSize.Level1)
     // preAnimation has same propertyId, should call FinishOnCurrentPosition
     EXPECT_EQ(preAnimation->GetPropertyId(), renderCurveAnimation->property_->GetId());
     renderCurveAnimation->OnAttach();
+}
+
+/**
+ * @tc.name: RebuildPropertyValue001
+ * @tc.desc: Verify RebuildPropertyValue with null interpolator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, RebuildPropertyValue001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue001 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->interpolator_ = nullptr;
+    renderCurveAnimation->RebuildPropertyValue(0.5f);
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue001 end";
+}
+
+/**
+ * @tc.name: RebuildPropertyValue002
+ * @tc.desc: Verify RebuildPropertyValue with null valueEstimator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, RebuildPropertyValue002, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue002 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    renderCurveAnimation->valueEstimator_ = nullptr;
+    renderCurveAnimation->RebuildPropertyValue(0.5f);
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue002 end";
+}
+
+/**
+ * @tc.name: RebuildPropertyValue003
+ * @tc.desc: Verify RebuildPropertyValue with valid interpolator and estimator
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderCurveAnimationTest, RebuildPropertyValue003, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue003 start";
+    auto property = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property1 = std::make_shared<RSRenderAnimatableProperty<float>>(0.0f);
+    auto property2 = std::make_shared<RSRenderAnimatableProperty<float>>(1.0f);
+    auto renderCurveAnimation = std::make_shared<RSRenderCurveAnimation>(
+        ANIMATION_ID, PROPERTY_ID, property, property1, property2);
+    auto interpolator = std::make_shared<LinearInterpolator>();
+    renderCurveAnimation->SetInterpolator(interpolator);
+    renderCurveAnimation->property_ = property;
+    renderCurveAnimation->InitValueEstimator();
+    renderCurveAnimation->RebuildPropertyValue(0.5f);
+    EXPECT_NE(renderCurveAnimation->GetPropertyId(), 0);
+    GTEST_LOG_(INFO) << "RSRenderCurveAnimationTest RebuildPropertyValue003 end";
 }
 
 } // namespace Rosen

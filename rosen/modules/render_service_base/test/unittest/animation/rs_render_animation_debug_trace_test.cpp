@@ -191,6 +191,9 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, ParseRenderPropertyValue001, TestSize.
     auto vector2fProperty = std::make_shared<RSRenderAnimatableProperty<Vector2f>>(Vector2f(1.0f, 2.0f));
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(vector2fProperty),
         "None");
+    auto vector3fProperty = std::make_shared<RSRenderAnimatableProperty<Vector3f>>(Vector3f(1.0f, 2.0f, 3.0f));
+    EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(vector3fProperty),
+        "None");
     auto vector4fProperty = std::make_shared<RSRenderAnimatableProperty<Vector4f>>(Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
     EXPECT_NE(RSAnimationTraceUtils::GetInstance().ParseRenderPropertyValue(vector4fProperty),
         "None");
@@ -403,6 +406,19 @@ HWTEST_F(RSRenderAnimationDebugTraceTest, GetNodeTypeString, TestSize.Level1)
         RSAnimationTraceUtils::GetInstance().GetNodeTypeString(RSUINodeType::CANVAS_DRAWING_NODE), "CanvasDrawingNode");
 
     EXPECT_EQ(RSAnimationTraceUtils::GetInstance().GetNodeTypeString(static_cast<RSUINodeType>(-1)), "UNKNOW");
+}
+
+/**
+ * @tc.name: RemoveSystemPropertyWatchers_001
+ * @tc.desc: Verify RemoveSystemPropertyWatchers removes property
+ *           watchers without crash
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSRenderAnimationDebugTraceTest, RemoveSystemPropertyWatchers_001, TestSize.Level1)
+{
+    GTEST_LOG_(INFO) << "RSRenderAnimationDebugTraceTest RemoveSystemPropertyWatchers_001 start";
+    RSAnimationTraceUtils::GetInstance().RemoveSystemPropertyWatchers();
+    GTEST_LOG_(INFO) << "RSRenderAnimationDebugTraceTest RemoveSystemPropertyWatchers_001 end";
 }
 } // namespace Rosen
 } // namespace OHOS

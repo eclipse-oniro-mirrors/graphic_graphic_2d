@@ -40,6 +40,7 @@ class RSRenderToComposerConnectionTest : public Test {};
  *                  5. call OnScreenVBlankIdleCallback
  *                  6. call ClearRedrawGPUCompositionCache
  *                  7. call SetScreenBacklight; ensure no crash
+ *                  8. call SetScreenLinearMatrix; ensure no crash
  */
 HWTEST_F(RSRenderToComposerConnectionTest, Methods_Call_WithNullAgent, TestSize.Level1)
 {
@@ -62,6 +63,9 @@ HWTEST_F(RSRenderToComposerConnectionTest, Methods_Call_WithNullAgent, TestSize.
     conn.ClearRedrawGPUCompositionCache(ids);
 
     conn.SetScreenBacklight(10u);
+
+    std::vector<float> matrix1 = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+    conn.SetScreenLinearMatrix(matrix1);
     std::unordered_set<uint64_t> expectIds { 1u };
     EXPECT_EQ(ids, expectIds);
 }
@@ -87,6 +91,8 @@ HWTEST_F(RSRenderToComposerConnectionTest, Methods_Call_WithNullAgentPtr, TestSi
     std::unordered_set<uint64_t> ids { 2u };
     conn.ClearRedrawGPUCompositionCache(ids);
     conn.SetScreenBacklight(20u);
+    std::vector<float> matrix2 = { 1.0f, 2.0f };
+    conn.SetScreenLinearMatrix(matrix2);
     ASSERT_EQ(agent, nullptr);
 }
 
@@ -170,5 +176,47 @@ HWTEST_F(RSRenderToComposerConnectionTest, Connection_CleanLayerBufferBySurfaceI
     conn.CleanLayerBufferBySurfaceId(123u);
     ASSERT_NE(agent, nullptr);
     ASSERT_EQ(agent->rsRenderComposer_, nullptr);
+}
+
+/**
+ * @tc.name: Connection_MarkTunnelSurfaceInvalid_ZeroSurfaceId_EarlyReturn
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with surfaceId=0 returns early.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderToComposerConnectionTest,
+    Connection_MarkTunnelSurfaceInvalid_ZeroSurfaceId_EarlyReturn, TestSize.Level1)
+{
+    auto agent = std::make_shared<RSRenderComposerAgent>(std::shared_ptr<RSRenderComposer>(nullptr));
+    RSRenderToComposerConnection conn("conn", 8u, agent);
+    conn.MarkTunnelSurfaceInvalid(0);
+    ASSERT_NE(agent, nullptr);
+}
+
+/**
+ * @tc.name: Connection_MarkTunnelSurfaceInvalid_NullAgent_EarlyReturn
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with null agent returns early.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderToComposerConnectionTest, Connection_MarkTunnelSurfaceInvalid_NullAgent_EarlyReturn, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderComposerAgent> agent = nullptr;
+    RSRenderToComposerConnection conn("conn", 9u, agent);
+    constexpr uint64_t surfaceId = 60001u;
+    conn.MarkTunnelSurfaceInvalid(surfaceId);
+    ASSERT_EQ(agent, nullptr);
+}
+
+/**
+ * @tc.name: Connection_MarkTunnelSurfaceInvalid_ValidAgent_ForwardsCall
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with valid agent forwards call.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderToComposerConnectionTest, Connection_MarkTunnelSurfaceInvalid_ValidAgent_ForwardsCall, TestSize.Level1)
+{
+    auto agent = std::make_shared<RSRenderComposerAgent>(std::shared_ptr<RSRenderComposer>(nullptr));
+    RSRenderToComposerConnection conn("conn", 10u, agent);
+    constexpr uint64_t surfaceId = 60002u;
+    EXPECT_NO_FATAL_FAILURE(conn.MarkTunnelSurfaceInvalid(surfaceId));
+    ASSERT_NE(agent, nullptr);
 }
 } // namespace OHOS::Rosen

@@ -52,8 +52,7 @@ public:
     explicit RSScreenRenderNode(
         NodeId id, ScreenId screenId, const std::weak_ptr<RSContext>& context = {});
     ~RSScreenRenderNode() override;
-    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID,
-        NodeId firstLevelNodeId = INVALID_NODEID, NodeId cacheNodeId = INVALID_NODEID,
+    void SetIsOnTheTree(bool flag, NodeId instanceRootNodeId = INVALID_NODEID, NodeId firstLevelNodeId = INVALID_NODEID,
         NodeId uifirstRootNodeId = INVALID_NODEID, NodeId screenNodeId = INVALID_NODEID,
         NodeId logicalDisplayNodeId = INVALID_NODEID) override;
 
@@ -315,8 +314,6 @@ public:
 
     void SetMainAndLeashSurfaceDirty(bool isDirty);
 
-    void SetForceCloseHdr(bool isForceCloseHdr);
-
     bool GetForceCloseHdr() const;
 
     void SetHDRPresent(bool hdrPresent);
@@ -464,7 +461,7 @@ public:
 
     void CollectHdrStatus(NodeId id, HdrStatus hdrStatus);
 
-    const std::unordered_map<NodeId, HdrStatus>& GetDisplayHdrStatusMap() const;
+    const std::unordered_map<NodeId, uint32_t>& GetDisplayHdrStatusMap() const;
 
     void ResetDisplayHdrStatus();
 
@@ -526,6 +523,7 @@ public:
     void SetScreenDirtyFlag(bool flag) { screenDirtyFlag_ = flag; }
     bool GetAndResetScreenDirtyFlag() { return std::exchange(screenDirtyFlag_, false); }
     void SetVirtualSurfaceChanged(bool isChanged);
+    void SetActiveRectChanged(bool isChanged);
 
     using HeadroomMap = std::unordered_map<HdrStatus, std::unordered_map<uint32_t, uint32_t>>;
     const HeadroomMap& GetHeadroomMap() const {
@@ -537,7 +535,10 @@ public:
     
     void SetLogicalCameraRotationCorrection(ScreenRotation logicalCorrection);
     void SetHasForceHwcHdrSurface(bool hasForceHwcHdrSurface);
-    bool GetHasForceHwcHdrSurface() const;
+    void SetHdrForceHwcNodes(const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& hdrForceHwcNodes);
+    const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& GetHdrForceHwcNodes() const;
+    void ClearHdrForceHwcNodes();
+    void HandleHdrForceHwcNodes();
 
     void SetBootAnimation(bool isBootAnimation) override;
     bool GetBootAnimation() const override;
@@ -546,6 +547,7 @@ protected:
     void OnSync() override;
 private:
     void InitRenderParams() override;
+    void CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus);
 
     bool hasChildCrossNode_ = false;
     bool isFirstVisitCrossNodeDisplay_ = false;
@@ -553,7 +555,6 @@ private:
     bool isMirroredScreen_ = false;
     bool hasMirroredScreenChanged_ = false;
     bool isSecurityDisplay_ = false;
-    bool isForceCloseHdr_ = false;
     bool isFirstFrameVirtualScreenInit_ = true;
     bool isFixVirtualBuffer10Bit_ = false;
     bool existHWCNode_ = false;
@@ -626,7 +627,8 @@ private:
     // Enable HWCompose
     RSHwcDisplayRecorder hwcDisplayRecorder_;
 
-    bool hasForceHwcHdrSurface_ = false;
+    std::unordered_map<NodeId, uint32_t> displayHDRStatusMap_ = {};
+    std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>> hdrForceHwcNodes_ = {};
 };
 } // namespace Rosen
 } // namespace OHOS

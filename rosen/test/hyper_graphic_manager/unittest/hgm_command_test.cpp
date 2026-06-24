@@ -176,7 +176,6 @@ HWTEST_F(HgmCommandTest, Init001, Function | SmallTest | Level0)
     frameRateMgr->Init(nullptr, nullptr, nullptr, nullptr);
     frameRateMgr->HandleAppStrategyConfigEvent(1, "", {}); // pid=1
     EXPECT_EQ(&(configVisitorImpl->GetXmlData()), configData.get());
-    EXPECT_EQ(configVisitorImpl->xmlModeId_, std::to_string(hgmCore.customFrameRateMode_));
     EXPECT_EQ(configVisitorImpl->screenConfigType_, frameRateMgr->curScreenStrategyId_);
 
     // data null; visitor null
@@ -546,6 +545,87 @@ HWTEST_F(HgmCommandTest, SettingModeId2XmlModeId, Function | SmallTest | Level0)
         auto ret = visitor_->SettingModeId2XmlModeId(p.first);
         EXPECT_EQ(ret, p.second);
     }
+}
+
+/**
+ * @tc.name: HgmAbilityEnabledTest001
+ * @tc.desc: Verify the result of HgmAbilityEnabled function when enabled
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, HgmAbilityEnabledTest001, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    hgmCore.InitXmlConfig();
+    ASSERT_NE(hgmCore.mPolicyConfigData_, nullptr);
+ 
+    // test when hgm policy is enabled (default)
+    EXPECT_TRUE(hgmCore.HgmAbilityEnabled());
+}
+
+/**
+ * @tc.name: HgmAbilityEnabledTest002
+ * @tc.desc: Verify the result of HgmAbilityEnabled function when disabled
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, HgmAbilityEnabledTest002, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    hgmCore.InitXmlConfig();
+    ASSERT_NE(hgmCore.mPolicyConfigData_, nullptr);
+ 
+    // test when hgm policy is disabled
+    auto originalValue = hgmCore.hgmAbilityEnabled_;
+    hgmCore.hgmAbilityEnabled_ = false;
+    EXPECT_FALSE(hgmCore.HgmAbilityEnabled());
+    hgmCore.hgmAbilityEnabled_ = originalValue;
+}
+
+/**
+ * @tc.name: GetScreenActiveRefreshRateTest
+ * @tc.desc: Verify the result of GetScreenActiveRefreshRate function
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, GetScreenActiveRefreshRateTest, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    hgmCore.InitXmlConfig();
+    uint32_t testNum = 60;
+    ScreenId testId = 0;
+    auto oriCb = hgmCore.getScreenActiveRefreshRateCb_;
+ 
+    HgmCore::GetScreenActiveRefreshRateCallback testFunc = [testNum](ScreenId id) -> uint32_t {
+        return testNum;
+    };
+    hgmCore.getScreenActiveRefreshRateCb_ = testFunc;
+    EXPECT_EQ(hgmCore.GetScreenActiveRefreshRate(testId), testNum);
+ 
+    hgmCore.getScreenActiveRefreshRateCb_ = nullptr;
+    EXPECT_EQ(hgmCore.GetScreenActiveRefreshRate(testId), 0);
+ 
+    hgmCore.getScreenActiveRefreshRateCb_ = oriCb;
+}
+
+/**
+ * @tc.name: HgmCoreInit001
+ * @tc.desc: Verify the result of HgmCore.Init
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(HgmCommandTest, HgmCoreInit001, Function | SmallTest | Level0)
+{
+    auto& hgmCore = HgmCore::Instance();
+    hgmCore.InitXmlConfig();
+
+    // test init when mPolicyConfigData_ is null
+    auto oriData = std::move(hgmCore.mPolicyConfigData_);
+    hgmCore.mPolicyConfigData_ = nullptr;
+    hgmCore.Init();
+    hgmCore.mPolicyConfigData_ = std::move(oriData);
+    EXPECT_NE(hgmCore.mPolicyConfigData_, nullptr);
+    hgmCore.Init();
 }
 } // namespace Rosen
 } // namespace OHOS

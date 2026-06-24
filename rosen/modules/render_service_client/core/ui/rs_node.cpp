@@ -14,6 +14,7 @@
  */
 
 #include "ui/rs_node.h"
+#include "command_modifier/rs_node_command_modifier.h"
 
 #include <algorithm>
 #include <array>
@@ -23,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <queue>
 
 #include "feature/composite_layer/rs_composite_layer_utils.h"
 #include "feature/hyper_graphic_manager/rs_frame_rate_policy.h"
@@ -48,6 +50,7 @@
 #include "animation/rs_animation_callback.h"
 #include "animation/rs_implicit_animation_param.h"
 #include "animation/rs_implicit_animator.h"
+#include "animation/rs_property_animation.h"
 #include "animation/rs_render_particle_animation.h"
 #include "command/rs_base_node_command.h"
 #include "command/rs_canvas_node_command.h"
@@ -77,6 +80,7 @@
 #include "modifier_ng/appearance/rs_material_filter_modifier.h"
 #include "modifier_ng/appearance/rs_material_shader_modifier.h"
 #include "modifier_ng/appearance/rs_use_effect_modifier.h"
+#include "modifier_ng/appearance/rs_use_union_modifier.h"
 #include "modifier_ng/appearance/rs_visibility_modifier.h"
 #include "modifier_ng/background/rs_background_color_modifier.h"
 #include "modifier_ng/background/rs_background_image_modifier.h"
@@ -111,10 +115,6 @@
 #include "ui/rs_ui_director.h"
 #include "ui/rs_ui_patten_vec.h"
 #include "ui/rs_union_node.h"
-
-#if defined(RS_MODIFIERS_DRAW_ENABLE)
-#include "modifier_render_thread/rs_modifiers_draw.h"
-#endif
 
 #ifdef _WIN32
 #include <windows.h>
@@ -151,6 +151,7 @@ namespace OHOS {
 namespace Rosen {
 namespace {
 static bool g_isUniRenderEnabled = false;
+static bool g_isSceneBoardEnable = false;
 static const std::unordered_map<RSUINodeType, std::string> RSUINodeTypeStrs = {
     {RSUINodeType::UNKNOW,              "UNKNOW"},
     {RSUINodeType::DISPLAY_NODE,        "DisplayNode"},
@@ -183,9 +184,9 @@ const std::array<std::pair<uint16_t, uint16_t>, 4> RSNode::childOpCommandTypes_{
 
 RSNode::RSNode(bool isRenderServiceNode, NodeId id, bool isTextureExportNode, std::shared_ptr<RSUIContext> rsUIContext,
     bool isOnTheTree)
-    : isRenderServiceNode_(isRenderServiceNode), isTextureExportNode_(isTextureExportNode), id_(id),
-      rsUIContext_(rsUIContext), stagingPropertiesExtractor_(id, rsUIContext),
-      showingPropertiesFreezer_(id, rsUIContext), isOnTheTree_(isOnTheTree)
+    : isRenderServiceNode_(isRenderServiceNode), isTextureExportNode_(isTextureExportNode), isOnTheTree_(isOnTheTree),
+      id_(id), rsUIContext_(rsUIContext), stagingPropertiesExtractor_(id, rsUIContext),
+      showingPropertiesFreezer_(id, rsUIContext)
 {
     InitUniRenderEnabled();
     if (auto rsUIContextPtr = rsUIContext_) {
@@ -222,12 +223,7 @@ RSNode::~RSNode()
     FallbackAnimationsToContext();
 
     ClearAllModifiers();
-#if defined(RS_MODIFIERS_DRAW_ENABLE)
-    RSModifiersDraw::EraseOffTreeNode(instanceId_, id_);
-    if (RSSystemProperties::GetHybridRenderEnabled()) {
-        RSModifiersDraw::EraseDrawRegions(id_);
-    }
-#endif
+    ClearAllRSCmdModifiers();
 
     // break current (ui) parent-child relationship.
     // render nodes will check if its child is expired and remove it, no need to manually remove it here.
@@ -245,7 +241,7 @@ RSNode::~RSNode()
     }
     if (rsUIContext != nullptr) {
         // tell RT/RS to destroy related render node
-        if (!isShadowNode_ || g_isUniRenderEnabled) {
+        if (!isShadowNode_ || (g_isUniRenderEnabled && g_isSceneBoardEnable)) {
             rsUIContext->GetMutableNodeMap().UnregisterNode(id_);
         }
         auto transaction = rsUIContext->GetRSTransaction();
@@ -830,6 +826,7 @@ void RSNode::SetAlpha(float alpha)
         SetDrawNode();
         SetDrawNodeType(DrawNodeType::DrawPropertyType);
     }
+    OnAlphaValueChanged();
 }
 
 void RSNode::SetAlphaOffscreen(bool alphaOffscreen)
@@ -1667,8 +1664,9 @@ void RSNode::SetBackgroundColor(RSColor color)
     if (colorInP3.GetColorSpace() == GRAPHIC_COLOR_GAMUT_DISPLAY_P3 ||
         colorInP3.GetColorSpace() == GRAPHIC_COLOR_GAMUT_BT2020) {
         collectColorSpace_ = static_cast<int8_t>(colorInP3.GetColorSpace());
-        std::unique_ptr<RSCommand> command = std::make_unique<RSMarkNodeColorSpace>(GetId(), collectColorSpace_);
-        AddCommand(command, IsRenderServiceNode());
+        SetRSCmdProperty<IsP3ColorCmdModifier>(IsP3ColorCmdParam{
+            collectColorSpace_
+        });
     }
 #ifndef ROSEN_CROSS_PLATFORM
 #ifdef ROSEN_OHOS
@@ -2323,6 +2321,11 @@ void RSNode::SetVisualEffect(const VisualEffect* visualEffect)
         if (visualEffectPara == nullptr) {
             continue;
         }
+        if (visualEffectPara->GetParaType() == VisualEffectPara::DISTORTION_COLLAPSE_EFFECT) {
+            SetForegroundNGFilter(RSNGFilterHelper::CreateNGDistortionCollapseFilter(visualEffectPara));
+            SetSDFShape(RSNGFilterHelper::CreateNGSDFDistortOpShape(visualEffectPara));
+            continue;
+        }
         if (visualEffectPara->GetParaType() == VisualEffectPara::BORDER_LIGHT_EFFECT ||
             visualEffectPara->GetParaType() == VisualEffectPara::COLOR_GRADIENT_EFFECT ||
             visualEffectPara->GetParaType() == VisualEffectPara::HARMONIUM_EFFECT ||
@@ -2838,6 +2841,10 @@ void RSNode::SetHDRColorHeadroom(const float& headroom)
         ROSEN_LOGE("SetHDRColorHeadroom only can be greater than or equal to one");
         return;
     }
+    if (std::fabs(lastHDRColorHeadroom_ - headroom) < FLT_EPSILON) {
+        return;
+    }
+    lastHDRColorHeadroom_ = headroom;
     SetPropertyNG<ModifierNG::RSHDRBrightnessModifier, &ModifierNG::RSHDRBrightnessModifier::SetHDRColorHeadroom>(
         headroom);
 }
@@ -2867,6 +2874,11 @@ void RSNode::SetUseEffectType(UseEffectType useEffectType)
     SetPropertyNG<ModifierNG::RSUseEffectModifier, &ModifierNG::RSUseEffectModifier::SetUseEffectType>(useEffectType);
 }
 
+void RSNode::SetSDFUnionMode(int sdfUnionMode)
+{
+    SetPropertyNG<ModifierNG::RSUseUnionModifier, &ModifierNG::RSUseUnionModifier::SetSDFUnionMode>(sdfUnionMode);
+}
+
 void RSNode::SetAlwaysSnapshot(bool enable)
 {
     SetPropertyNG<ModifierNG::RSBackgroundFilterModifier, &ModifierNG::RSBackgroundFilterModifier::SetAlwaysSnapshot>(
@@ -2875,25 +2887,30 @@ void RSNode::SetAlwaysSnapshot(bool enable)
 
 void RSNode::SetUseUnion(bool useUnion)
 {
-    SetPropertyNG<ModifierNG::RSBoundsModifier, &ModifierNG::RSBoundsModifier::SetUseUnion>(useUnion);
+    SetPropertyNG<ModifierNG::RSUseUnionModifier, &ModifierNG::RSUseUnionModifier::SetUseUnion>(useUnion);
+}
+
+void RSNode::SetUnionSpacing(float unionSpacing)
+{
+    SetPropertyNG<ModifierNG::RSUseUnionModifier, &ModifierNG::RSUseUnionModifier::SetUnionSpacing>(unionSpacing);
 }
 
 void RSNode::SetGravityPullCenterFlag(bool isGravityPullModeCenter)
 {
-    SetPropertyNG<ModifierNG::RSBoundsModifier,
-        &ModifierNG::RSBoundsModifier::SetGravityPullCenterFlag>(isGravityPullModeCenter);
+    SetPropertyNG<ModifierNG::RSUseUnionModifier,
+        &ModifierNG::RSUseUnionModifier::SetGravityPullCenterFlag>(isGravityPullModeCenter);
 }
 
 void RSNode::SetGravityPullStrength(float gravityPullStrength)
 {
-    SetPropertyNG<ModifierNG::RSBoundsModifier,
-        &ModifierNG::RSBoundsModifier::SetGravityPullStrength>(gravityPullStrength);
+    SetPropertyNG<ModifierNG::RSUseUnionModifier,
+        &ModifierNG::RSUseUnionModifier::SetGravityPullStrength>(gravityPullStrength);
 }
 
 void RSNode::SetGravityHotZone(float hotZone)
 {
-    SetPropertyNG<ModifierNG::RSBoundsModifier,
-        &ModifierNG::RSBoundsModifier::SetGravityHotZone>(hotZone);
+    SetPropertyNG<ModifierNG::RSUseUnionModifier,
+        &ModifierNG::RSUseUnionModifier::SetGravityHotZone>(hotZone);
 }
 
 void RSNode::SetSDFShape(const std::shared_ptr<RSNGShapeBase>& shape)
@@ -2974,8 +2991,9 @@ void RSNode::SetNodeName(const std::string& nodeName)
 {
     if (nodeName_ != nodeName) {
         nodeName_ = nodeName;
-        std::unique_ptr<RSCommand> command = std::make_unique<RSSetNodeName>(GetId(), nodeName_);
-        AddCommand(command, IsRenderServiceNode());
+        SetRSCmdProperty<NodeNameCmdModifier>(NodeNameCmdParam{
+            nodeName
+        });
     }
 }
 
@@ -3182,6 +3200,17 @@ bool RSNode::AnimationCallback(AnimationId animationId, AnimationCallbackEvent e
     return false;
 }
 
+void RSNode::AnimationDestroyInRenderCallback(AnimationId animationId, float fraction, bool isReverseCycle)
+{
+    std::unique_lock<std::recursive_mutex> lock(animationMutex_);
+    auto animationItr = animations_.find(animationId);
+    if (animationItr == animations_.end()) {
+        ROSEN_LOGE("AnimationDestroyInRenderCallback: animation[%{public}" PRIu64 "] not found", animationId);
+        return;
+    }
+    animationItr->second->SetRebuildParam({fraction, isReverseCycle});
+}
+
 bool RSNode::FireColorPickerCallback(uint32_t color)
 {
     if (!colorPickerCallback_) {
@@ -3222,13 +3251,21 @@ void RSNode::LoadRenderNodeIfNeed() const
     }
     lazyLoadCommands_.clear();
     lazyLoad_ = false;
-
+    if (nodeState_ == RSNodeState::LAZY_LOAD) {
+        nodeState_ = RSNodeState::ACTIVE;
+    } else {
+        RS_LOGE("LoadRenderNodeIfNeed: nodeState_ is not LAZY_LOAD, nodeId: %{public}" PRIu64
+            ", current state: %{public}d", id_, static_cast<int>(nodeState_));
+    }
     int index{0};
     for (auto weakChild : children_) {
         auto child = weakChild.lock();
         if (child == nullptr) {
             continue;
         }
+        // since LoadRenderNodeIfNeed may called before addchild,
+        // we must rebuildtree here incase child node can not be found in map
+        child->RebuildTree();
         // construct command using child's GetHierarchyCommandNodeId(), not GetId()
         auto childId = child->GetHierarchyCommandNodeId();
         std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(id_, childId, index);
@@ -3240,6 +3277,11 @@ void RSNode::LoadRenderNodeIfNeed() const
         ++index;
     }
     NotifyPageNodeChanged();
+}
+
+void RSNode::ReleaseInRender()
+{
+    SetNodeState(RSNodeState::INACTIVE);
 }
 
 void RSNode::DoFlushModifier()
@@ -3378,9 +3420,9 @@ void RSNode::SetSkipCheckInMultiInstance(bool isSkipCheckInMultiInstance)
 
 void RSNode::UpdateOcclusionCullingStatus(bool enable, NodeId keyOcclusionNodeId)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSUpdateOcclusionCullingStatus>(GetId(), enable, keyOcclusionNodeId);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<OcclusionCullingStatusCmdModifier>(OcclusionCullingStatusCmdParam{
+        enable, keyOcclusionNodeId
+    });
 }
 
 void RSNode::SetSpatialEffectPara(const std::shared_ptr<SpatialEffectVariantPara>& para) {}
@@ -3429,8 +3471,9 @@ void RSNode::SetDrawRegion(std::shared_ptr<RectF> rect)
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
     if (drawRegion_ != rect) {
         drawRegion_ = rect;
-        std::unique_ptr<RSCommand> command = std::make_unique<RSSetDrawRegion>(GetId(), rect);
-        AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
+        SetRSCmdProperty<DrawRegionCmdModifier>(DrawRegionCmdParam{
+            rect
+        });
 #if defined(RS_MODIFIERS_DRAW_ENABLE)
         if (RSSystemProperties::GetHybridRenderEnabled() && !drawRegion_->IsEmpty()) {
             RSModifiersDraw::AddDrawRegions(id_, drawRegion_);
@@ -3442,9 +3485,9 @@ void RSNode::SetDrawRegion(std::shared_ptr<RectF> rect)
 void RSNode::SetNeedUseCmdlistDrawRegion(bool needUseCmdlistDrawRegion)
 {
     CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSetNeedUseCmdlistDrawRegion>(GetId(), needUseCmdlistDrawRegion);
-    AddCommand(command, IsRenderServiceNode(), GetFollowType(), GetId());
+    SetRSCmdProperty<UseCmdlistDrawRegionCmdModifier>(UseCmdlistDrawRegionCmdParam{
+        needUseCmdlistDrawRegion
+    });
 }
 
 void RSNode::RegisterTransitionPair(const std::shared_ptr<RSUIContext> rsUIContext, NodeId inNodeId, NodeId outNodeId,
@@ -3485,9 +3528,9 @@ void RSNode::MarkNodeGroup(bool isNodeGroup, bool isForced, bool includeProperty
         return;
     }
     isNodeGroup_ = isNodeGroup;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkNodeGroup>(GetId(), isNodeGroup, isForced,
-        includeProperty);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<NodeGroupCmdModifier>(NodeGroupCmdParam{
+        isNodeGroup, isForced, includeProperty
+    });
     if (isNodeGroup_) {
         SetDrawNode();
         if (GetParent()) {
@@ -3503,8 +3546,9 @@ void RSNode::ExcludedFromNodeGroup(bool isExcluded)
         return;
     }
     isExcludedFromNodeGroup_ = isExcluded;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSExcludedFromNodeGroup>(GetId(), isExcluded);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<ExcludeNodeGroupCmdModifier>(ExcludeNodeGroupCmdParam{
+        isExcluded
+    });
 }
 
 void RSNode::MarkNodeSingleFrameComposer(bool isNodeSingleFrameComposer) {}
@@ -3516,8 +3560,9 @@ void RSNode::MarkRepaintBoundary(const std::string& tag)
         return;
     }
     isRepaintBoundary_ = isRepaintBoundary;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkRepaintBoundary>(id_, isRepaintBoundary_);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<IsRepaintBoundaryCmdModifier>(IsRepaintBoundaryCmdParam{
+        isRepaintBoundary
+    });
 }
 
 void RSNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
@@ -3527,9 +3572,9 @@ void RSNode::MarkSuggestOpincNode(bool isOpincNode, bool isNeedCalculate)
         return;
     }
     isSuggestOpincNode_ = isOpincNode;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkSuggestOpincNode>(GetId(),
-        isOpincNode, isNeedCalculate);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<MarkOpincNodeCmdModifier>(MarkOpincNodeCmdParam{
+        isOpincNode, isNeedCalculate
+    });
     if (isSuggestOpincNode_) {
         SetDrawNode();
         if (GetParent()) {
@@ -3551,8 +3596,9 @@ void RSNode::MarkLayerPartRender(bool isLayerPartRender)
         return;
     }
     isLayerPartRender_ = isLayerPartRender;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkLayerPartRender>(GetId(), isLayerPartRender);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<LayerPartRenderCmdModifier>(LayerPartRenderCmdParam{
+        isLayerPartRender
+    });
     if (isLayerPartRender_) {
         SetDrawNode();
         if (GetParent()) {
@@ -3568,8 +3614,9 @@ void RSNode::MarkUifirstNode(bool isUifirstNode)
         return;
     }
     isUifirstNode_ = isUifirstNode;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSMarkUifirstNode>(GetId(), isUifirstNode);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<IsUifirstNodeCmdModifier>(IsUifirstNodeCmdParam{
+        isUifirstNode
+    });
 }
 
 void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
@@ -3580,8 +3627,9 @@ void RSNode::MarkUifirstNode(bool isForceFlag, bool isUifirstEnable)
     }
     isForceFlag_ = isForceFlag;
     isUifirstEnable_ = isUifirstEnable;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSForceUifirstNode>(GetId(), isForceFlag, isUifirstEnable);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<IsForceUifirstNodeCmdModifier>(IsForceUifirstNodeCmdParam{
+        isForceFlag, isUifirstEnable
+    });
 }
 
 void RSNode::SetDrawNode()
@@ -3631,11 +3679,9 @@ DrawNodeType RSNode::GetDrawNodeType() const
 
 void RSNode::SyncDrawNodeType(DrawNodeType nodeType)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSSetDrawNodeType>(GetId(), nodeType);
-    if (AddCommand(command, true)) {
-        ROSEN_LOGD("RSNode::SyncDrawNodeType nodeType: %{public}d", nodeType);
-    }
+    SetRSCmdProperty<SyncDrawNodeTypeCmdModifier>(SyncDrawNodeTypeCmdParam{
+        nodeType
+    });
 }
 
 void RSNode::SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
@@ -3645,8 +3691,9 @@ void RSNode::SetUIFirstSwitch(RSUIFirstSwitch uiFirstSwitch)
         return;
     }
     uiFirstSwitch_ = uiFirstSwitch;
-    std::unique_ptr<RSCommand> command = std::make_unique<RSSetUIFirstSwitch>(GetId(), uiFirstSwitch);
-    AddCommand(command, IsRenderServiceNode());
+    SetRSCmdProperty<UIFirstSwitchCmdModifier>(UIFirstSwitchCmdParam{
+        uiFirstSwitch
+    });
 }
 
 void RSNode::SetLightIntensity(float lightIntensity)
@@ -3799,8 +3846,9 @@ void RSNode::SetOutOfParent(OutOfParentType outOfParent)
     if (outOfParent != outOfParent_) {
         outOfParent_ = outOfParent;
 
-        std::unique_ptr<RSCommand> command = std::make_unique<RSSetOutOfParent>(GetId(), outOfParent);
-        AddCommand(command, IsRenderServiceNode());
+        SetRSCmdProperty<OutOfParentCmdModifier>(OutOfParentCmdParam{
+            outOfParent
+        });
     }
 }
 
@@ -3825,6 +3873,7 @@ void RSNode::InitUniRenderEnabled()
     if (!inited) {
         inited = true;
         g_isUniRenderEnabled = RSSystemProperties::GetUniRenderEnabled();
+        g_isSceneBoardEnable = RSSystemProperties::IsSceneBoardEnabled();
         ROSEN_LOGD("RSNode::InitUniRenderEnabled:%{public}d", g_isUniRenderEnabled);
     }
 }
@@ -3847,13 +3896,6 @@ void RSNode::SetIsOnTheTree(bool flag)
     }
     isOnTheTreeInit_ = true;
     isOnTheTree_ = flag;
-#if defined(RS_MODIFIERS_DRAW_ENABLE)
-    if (!flag) {
-        RSModifiersDraw::InsertOffTreeNode(instanceId_, id_);
-    } else {
-        RSModifiersDraw::EraseOffTreeNode(instanceId_, id_);
-    }
-#endif
     for (auto child : children_) {
         auto childPtr = child.lock();
         if (childPtr == nullptr) {
@@ -3863,12 +3905,33 @@ void RSNode::SetIsOnTheTree(bool flag)
     }
 }
 
+bool RSNode::SetNodeState(RSNodeState state)
+{
+    RSNodeState oldState = nodeState_;
+    if (oldState == state) {
+        return true;
+    }
+    bool isValidTransition = (oldState == RSNodeState::ACTIVE && state == RSNodeState::INACTIVE) ||
+                            (oldState == RSNodeState::INACTIVE && state == RSNodeState::ACTIVE) ||
+                            (oldState == RSNodeState::LAZY_LOAD && state == RSNodeState::ACTIVE);
+    
+    if (isValidTransition) {
+        nodeState_ = state;
+        return true;
+    } else {
+        ROSEN_LOGE("RSNode::SetNodeState: invalid state transition nodeid %{public}" PRIu64
+            ", from %{public}d to %{public}d", GetId(), static_cast<int>(oldState), static_cast<int>(state));
+        return false;
+    }
+}
+
 void RSNode::AddChild(SharedPtr child, int index)
 {
     if (child == nullptr) {
         ROSEN_LOGE("RSNode::AddChild, child is nullptr");
         return;
     }
+    child->RebuildTree();
     if (!IsTextureExportNode() && child->IsTextureExportNode() && AddCompositeNodeChild(child, index)) {
         return;
     }
@@ -4072,9 +4135,9 @@ void RSNode::RemoveCrossParentChild(SharedPtr child, SharedPtr newParent)
 
 void RSNode::SetIsCrossNode(bool isCrossNode)
 {
-    std::unique_ptr<RSCommand> command =
-        std::make_unique<RSBaseNodeSetIsCrossNode>(GetId(), isCrossNode);
-    AddCommand(command);
+    SetRSCmdProperty<IsCrossNodeCmdModifier>(IsCrossNodeCmdParam{
+        isCrossNode
+    });
 }
 
 void RSNode::AddCrossScreenChild(SharedPtr child, int index, bool autoClearCloneNode)
@@ -4179,6 +4242,98 @@ void RSNode::ClearChildren()
     auto nodeId = GetHierarchyCommandNodeId();
     std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeClearChild>(nodeId);
     AddCommand(command, IsRenderServiceNode(), GetFollowType(), nodeId);
+}
+
+bool RSNode::ReCreateNodeInRender()
+{
+    if (GetNodeState() == RSNodeState::LAZY_LOAD) {
+        // Skip rebuilding the LAZY_LOAD node itself, but keep rebuilding its subtree.
+        return true;
+    }
+    if (GetNodeState() == RSNodeState::ACTIVE) {
+        // ACTIVE node don't need rebuild
+        return false;
+    }
+    SetNodeState(RSNodeState::ACTIVE);
+    // 恢复node
+    CreateRenderNode();
+ 
+    SetUIContextToken();
+ 
+    SetSkipContentModifierDraw(true);
+    // 恢复modifier
+    DoFlushModifier();
+    SetSkipContentModifierDraw(false);
+ 
+    // 恢复其他特性变量（使用 RSCmdModifier）
+    UpdateAllRSCmdModifiersToRender();
+ 
+    RebuildAnimationInRender();
+ 
+    return true;
+}
+
+void RSNode::RebuildAnimationInRender()
+{
+    static constexpr int REPEAT_COUNT_INFINITE = -1;
+    std::unique_lock<std::recursive_mutex> lock(animationMutex_);
+    for (const auto& [animationId, animation] : animations_) {
+        if (animation->IsUiAnimation() || animation->GetRepeatCount() != REPEAT_COUNT_INFINITE) {
+            continue;
+        }
+        animation->RebuildInRender();
+    }
+}
+
+void RSNode::RebuildTree()
+{
+    if (GetNodeState() != RSNodeState::INACTIVE) {
+        return;
+    }
+    _RebuildTreeInternal();
+}
+
+void RSNode::_RebuildTreeInternal()
+{
+    ReCreateNodeInRender();
+ 
+    // BFS in level order
+    std::vector<std::tuple<RSNode*, RSNode*, size_t>> currentLevel;
+    for (size_t index = 0; index < children_.size(); index++) {
+        auto childPtr = children_[index].lock();
+        if (childPtr != nullptr) {
+            currentLevel.push_back({ childPtr.get(), this, index });
+        }
+    }
+    _RebuildTreeLevel(currentLevel);
+}
+
+void RSNode::_RebuildTreeLevel(const std::vector<std::tuple<RSNode*, RSNode*, size_t>>& level)
+{
+    if (level.empty()) {
+        return;
+    }
+ 
+    std::vector<std::tuple<RSNode*, RSNode*, size_t>> nextLevel;
+    for (const auto& [node, parent, childIndex] : level) {
+        if (node->ReCreateNodeInRender()) {
+            for (size_t index = 0; index < node->children_.size(); index++) {
+                auto childPtr = node->children_[index].lock();
+                if (childPtr != nullptr) {
+                    nextLevel.push_back({ childPtr.get(), node, index });
+                }
+            }
+        }
+ 
+        if (GetNodeState() != RSNodeState::LAZY_LOAD) {
+            // LAZY_LOAD will rebuild its child relationship in LoadRenderNodeIfNeed
+            auto childId = node->GetHierarchyCommandNodeId();
+            auto parentId = parent->GetHierarchyCommandNodeId();
+            std::unique_ptr<RSCommand> command = std::make_unique<RSBaseNodeAddChild>(parentId, childId, childIndex);
+            AddCommand(command, IsRenderServiceNode(), GetFollowType(), parentId);
+        }
+    }
+    _RebuildTreeLevel(nextLevel);
 }
 
 void RSNode::SetExportTypeChangedCallback(ExportTypeChangedCallback callback)
@@ -4295,12 +4450,130 @@ void RSNode::DumpModifiers(std::string& out) const
     }
 }
 
+namespace {
+std::string RSCmdModifierTypeToString(RSCmdModifierType type)
+{
+    static const std::map<RSCmdModifierType, std::string> NAMES = {
+        { RSCmdModifierType::NODE_NAME,                        "NODE_NAME" },
+        { RSCmdModifierType::OCCLUSION_CULLING_STATUS,         "OCCLUSION_CULLING_STATUS" },
+        { RSCmdModifierType::IS_P3COLOR,                       "IS_P3COLOR" },
+        { RSCmdModifierType::DRAW_REGION,                      "DRAW_REGION" },
+        { RSCmdModifierType::USE_CMDLIST_DRAWREGION,           "USE_CMDLIST_DRAWREGION" },
+        { RSCmdModifierType::MARK_NODE_GROUP,                  "MARK_NODE_GROUP" },
+        { RSCmdModifierType::EXCLUDE_NODE_GROUP,               "EXCLUDE_NODE_GROUP" },
+        { RSCmdModifierType::MARK_NODE_SINGLE_FRAME_COMPOSER,  "MARK_NODE_SINGLE_FRAME_COMPOSER" },
+        { RSCmdModifierType::IS_REPAINT_BOUNDARY,              "IS_REPAINT_BOUNDARY" },
+        { RSCmdModifierType::MARK_OPINC_NODE,                  "MARK_OPINC_NODE" },
+        { RSCmdModifierType::IS_UIFIRST_NODE,                  "IS_UIFIRST_NODE" },
+        { RSCmdModifierType::IS_FORCE_UIFIRST_NODE,            "IS_FORCE_UIFIRST_NODE" },
+        { RSCmdModifierType::SYNC_DRAW_NODE_TYPE,              "SYNC_DRAW_NODE_TYPE" },
+        { RSCmdModifierType::UI_FIRST_SWITCH,                  "UI_FIRST_SWITCH" },
+        { RSCmdModifierType::OUT_OF_PARENT,                    "OUT_OF_PARENT" },
+        { RSCmdModifierType::IS_CROSS_NODE,                    "IS_CROSS_NODE" },
+        { RSCmdModifierType::MARK_LAYER_PART_RENDER,           "MARK_LAYER_PART_RENDER" },
+        { RSCmdModifierType::HDR_PRESENT,                      "HDR_PRESENT" },
+        { RSCmdModifierType::COLOR_GAMUT,                      "COLOR_GAMUT" },
+        { RSCmdModifierType::IS_FREEZE,                        "IS_FREEZE" },
+        { RSCmdModifierType::CLEAR_RECORDING,                  "CLEAR_RECORDING" },
+        { RSCmdModifierType::FINISH_RECORD,                    "FINISH_RECORD" },
+        { RSCmdModifierType::DRAW_ON_NODE,                     "DRAW_ON_NODE" },
+        { RSCmdModifierType::LEASH_PERSISTENT_ID,              "LEASH_PERSISTENT_ID" },
+        { RSCmdModifierType::IS_SECURITY_LAYER,                "IS_SECURITY_LAYER" },
+        { RSCmdModifierType::IS_SKIP_LAYER,                    "IS_SKIP_LAYER" },
+        { RSCmdModifierType::IS_SNAPSHOT_SKIP_LAYER,           "IS_SNAPSHOT_SKIP_LAYER" },
+        { RSCmdModifierType::HAS_FINGER_PRINT,                 "HAS_FINGER_PRINT" },
+        { RSCmdModifierType::COLOR_SPACE,                      "COLOR_SPACE" },
+        { RSCmdModifierType::ABILITY_BG_ALPHA,                 "ABILITY_BG_ALPHA" },
+        { RSCmdModifierType::NOTIFY_UI_BUFFER_AVL,             "NOTIFY_UI_BUFFER_AVL" },
+        { RSCmdModifierType::SET_CONTAINER_WINDOW,             "SET_CONTAINER_WINDOW" },
+        { RSCmdModifierType::SF_IS_FREEZE,                     "SF_IS_FREEZE" },
+        { RSCmdModifierType::SF_IS_BOOT_ANIMATION,             "SF_IS_BOOT_ANIMATION" },
+        { RSCmdModifierType::IS_GLOBAL_POSITION_ENABLED,       "IS_GLOBAL_POSITION_ENABLED" },
+        { RSCmdModifierType::CLONED_NODE_INFO,                 "CLONED_NODE_INFO" },
+        { RSCmdModifierType::FORCE_UI_FIRST,                   "FORCE_UI_FIRST" },
+        { RSCmdModifierType::ANCO_FLAGS,                       "ANCO_FLAGS" },
+        { RSCmdModifierType::IS_SKIP_DRAW,                     "IS_SKIP_DRAW" },
+        { RSCmdModifierType::WATER_MARK_ENABLED,               "WATER_MARK_ENABLED" },
+        { RSCmdModifierType::ABILITY_STATE,                    "ABILITY_STATE" },
+        { RSCmdModifierType::API_COMPAT_VERSION,               "API_COMPAT_VERSION" },
+        { RSCmdModifierType::HARDWARE_ENABLED,                 "HARDWARE_ENABLED" },
+        { RSCmdModifierType::HARDWARE_ENABLE_HINT,             "HARDWARE_ENABLE_HINT" },
+        { RSCmdModifierType::VIRTUAL_DISPLAY_ID,               "VIRTUAL_DISPLAY_ID" },
+        { RSCmdModifierType::ATTACH_TO_WINDOW_CONTAINER,       "ATTACH_TO_WINDOW_CONTAINER" },
+        { RSCmdModifierType::REGION_TO_BE_MAGNIFIED,           "REGION_TO_BE_MAGNIFIED" },
+        { RSCmdModifierType::DETACH_TO_WINDOW_CONTAINER,       "DETACH_TO_WINDOW_CONTAINER" },
+        { RSCmdModifierType::IS_FRAME_GRAVITY_NEW_VER_ENABLED, "IS_FRAME_GRAVITY_NEW_VER_ENABLED" },
+        { RSCmdModifierType::IS_SURFACE_BUFFER_OPAQUE,         "IS_SURFACE_BUFFER_OPAQUE" },
+        { RSCmdModifierType::IS_CONTAINER_WINDOW_TRANSPARENT,  "IS_CONTAINER_WINDOW_TRANSPARENT" },
+        { RSCmdModifierType::UPDATE_COMPOSITE_LAYER,           "UPDATE_COMPOSITE_LAYER" },
+        { RSCmdModifierType::SET_STATIC_CACHED,                "SET_STATIC_CACHED" },
+        { RSCmdModifierType::SET_BUFFER_AVAILABLE,             "SET_BUFFER_AVAILABLE" },
+        { RSCmdModifierType::SET_HARDWARE_ENABLED,             "SET_HARDWARE_ENABLED" },
+        { RSCmdModifierType::SET_HIDE_PRIVACY_CONTENT,         "SET_HIDE_PRIVACY_CONTENT" },
+        { RSCmdModifierType::UPDATE_SURFACE_DEFAULT_SIZE,      "UPDATE_SURFACE_DEFAULT_SIZE" },
+        { RSCmdModifierType::FORCE_HARDWARE_AND_FIX_ROTATION,  "FORCE_HARDWARE_AND_FIX_ROTATION" },
+        { RSCmdModifierType::APP_ROTATION_CORRECTION,          "APP_ROTATION_CORRECTION" },
+        { RSCmdModifierType::HDR_TYPE,                         "HDR_TYPE" },
+        { RSCmdModifierType::SET_DARK_COLOR_MODE,              "SET_DARK_COLOR_MODE" },
+        { RSCmdModifierType::SET_DEPTH_SPACE_TYPE,             "SET_DEPTH_SPACE_TYPE" },
+        { RSCmdModifierType::PRE_FREEZE,                       "PRE_FREEZE" },
+        { RSCmdModifierType::ATTACH_ROOT_NODE,                 "ATTACH_ROOT_NODE" },
+        { RSCmdModifierType::WKF_IS_FREEZE,                    "WKF_IS_FREEZE" },
+        { RSCmdModifierType::WKF_LINKED_NODE_ID,               "WKF_LINKED_NODE_ID" },
+    };
+    auto it = NAMES.find(type);
+    if (it != NAMES.end()) {
+        return it->second;
+    }
+    return "UNKNOWN";
+}
+}
+ 
+void RSNode::DumpRSCmdModifiers(std::string& out) const
+{
+    std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+    if (rsCmdModifiers_.empty()) {
+        out += "RSCmdModifiers: [empty]";
+        return;
+    }
+ 
+    out += "RSCmdModifiers: [";
+    bool first = true;
+    for (const auto& [type, modifier] : rsCmdModifiers_) {
+        if (!modifier) {
+            continue;
+        }
+        if (!first) {
+            out += ", ";
+        }
+        out += "type=" + RSCmdModifierTypeToString(type);
+        out += ", param=";
+        modifier->DumpParam(out);
+        first = false;
+    }
+    out += "]";
+}
+ 
+std::string RSNode::DumpNodeState() const
+{
+    auto nodeState = GetNodeState();
+    switch (nodeState) {
+        case RSNodeState::ACTIVE:
+            return "ACTIVE";
+        case RSNodeState::INACTIVE:
+            return "INACTIVE";
+        case RSNodeState::LAZY_LOAD:
+            return "LAZY_LOAD";
+    }
+}
+
 void RSNode::Dump(std::string& out) const
 {
     auto iter = RSUINodeTypeStrs.find(GetType());
     auto rsUIContextPtr = rsUIContext_;
     out += (iter != RSUINodeTypeStrs.end() ? iter->second : "RSNode");
     out += "[" + std::to_string(id_);
+    out += "], nodeState[" + DumpNodeState();
     out += "], parent[" + std::to_string(parent_.lock() ? parent_.lock()->GetId() : -1);
     out += "], instanceId[" + std::to_string(instanceId_);
     out += "], UIContext[" + (rsUIContextPtr ? std::to_string(rsUIContextPtr->GetToken()) : "null");
@@ -4331,7 +4604,6 @@ void RSNode::Dump(std::string& out) const
         out += "null";
     }
     out += "], outOfParent[" + std::to_string(static_cast<int>(outOfParent_));
-    out += "], hybridRenderCanvas[" + std::string(hybridRenderCanvas_ ? "true" : "false");
     DumpSubClass(out);
     out += "], animations[";
     for (const auto& [id, anim] : animations_) {
@@ -4346,6 +4618,7 @@ void RSNode::Dump(std::string& out) const
     out += "], modifiers[";
     DumpModifiers(out);
     out += "]";
+    DumpRSCmdModifiers(out);
 }
 
 std::string RSNode::DumpNode(int depth) const
@@ -4361,6 +4634,7 @@ std::string RSNode::DumpNode(int depth) const
     }
     ss << "]";
     ss << " lazyLoad[" << std::to_string(lazyLoad_) << "]";
+    ss << " nodeState[" << DumpNodeState() << "]";
 
     if (!animations_.empty()) {
         ss << " animation:" << std::to_string(animations_.size());

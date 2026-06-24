@@ -13,18 +13,22 @@
  * limitations under the License.
  */
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #if defined(ROSEN_OHOS) && defined(RS_ENABLE_VK)
 #include "node_mem_release_param.h"
 #endif
 
+#include "consumer_surface.h"
 #include "feature/capture/rs_surface_capture_task_parallel.h"
 #include "ipc_callbacks/rs_frame_stability_callback_stub.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/rs_surface_render_node.h"
 #include "rs_render_pipeline_agent.h"
 #include "rs_render_pipeline.h"
+#include "surface_utils.h"
 #include "transaction/rs_frame_stability_types.h"
 
 using namespace testing;
@@ -36,6 +40,34 @@ constexpr uint64_t DEFAULT_ID = 10;
 constexpr FrameStabilityTarget INVALID_TARGET = { .id = 100, .type = FrameStabilityTargetType::SCREEN };
 constexpr FrameStabilityTarget VALID_TARGET = { .id = DEFAULT_ID, .type = FrameStabilityTargetType::SCREEN };
 constexpr FrameStabilityConfig DEFAULT_CONFIG = { .stableDuration = 200, .changePercent = 0.0f };
+constexpr NodeId FORCE_TUNNEL_NODE_ID = 10001;
+const std::string FORCE_TUNNEL_BUNDLE_NAME = "com.ohos.force.tunnel";
+const std::string FORCE_TUNNEL_SURFACE_NAME = "ForceTunnelSurface";
+const std::string FORCE_TUNNEL_CONFIG_KEY = FORCE_TUNNEL_BUNDLE_NAME + "+" + FORCE_TUNNEL_SURFACE_NAME;
+
+RSSurfaceRenderNodeConfig MakeForceTunnelConfig()
+{
+    return {
+        .id = FORCE_TUNNEL_NODE_ID,
+        .name = FORCE_TUNNEL_SURFACE_NAME,
+        .bundleName = FORCE_TUNNEL_BUNDLE_NAME,
+    };
+}
+
+void ClearForceTunnelConfig()
+{
+    auto surfaceUtils = SurfaceUtils::GetInstance();
+    ASSERT_NE(surfaceUtils, nullptr);
+    surfaceUtils->RemoveTunnelLayerConfig(FORCE_TUNNEL_CONFIG_KEY);
+}
+
+void AddForceTunnelConfig()
+{
+    auto surfaceUtils = SurfaceUtils::GetInstance();
+    ASSERT_NE(surfaceUtils, nullptr);
+    surfaceUtils->RemoveTunnelLayerConfig(FORCE_TUNNEL_CONFIG_KEY);
+    surfaceUtils->AddTunnelLayerConfig(FORCE_TUNNEL_CONFIG_KEY);
+}
 
 class RSFrameStabilityCallbackStubMock : public RSFrameStabilityCallbackStub {
 public:
@@ -51,7 +83,10 @@ public:
     static void SetUpTestCase();
     static void TearDownTestCase();
     void SetUp() override {}
-    void TearDown() override {}
+    void TearDown() override
+    {
+        ClearForceTunnelConfig();
+    }
 };
 
 void RSRenderPipelineAgentTest::SetUpTestCase()
@@ -114,6 +149,83 @@ HWTEST_F(RSRenderPipelineAgentTest, SetGlobalDarkColorMode_ValidPipeline_ReturnO
 }
 
 /**
+ * @tc.name: ConfigureForceTunnelLayer_NoConfig_ReturnsWithoutSettingInfo
+ * @tc.desc: Verify ConfigureForceTunnelLayer returns early when SurfaceUtils has no matching config.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ConfigureForceTunnelLayer_NoConfig_ReturnsWithoutSettingInfo, TestSize.Level1)
+{
+    ClearForceTunnelConfig();
+
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    sptr<IConsumerSurface> surface = IConsumerSurface::Create(FORCE_TUNNEL_SURFACE_NAME);
+    ASSERT_NE(surface, nullptr);
+
+    agent->ConfigureForceTunnelLayer(MakeForceTunnelConfig(), surface);
+    TunnelLayerState state;
+    ASSERT_EQ(surface->GetTunnelLayerInfo(state), GSERROR_OK);
+    EXPECT_EQ(state.tunnelLayerInfo.tunnelTypeMask, TUNNEL_TYPE_NONE);
+}
+
+/**
+ * @tc.name: ConfigureForceTunnelLayer_NullUtils_ReturnsWithoutSettingInfo
+ * @tc.desc: Verify ConfigureForceTunnelLayer returns early when SurfaceUtils is null.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ConfigureForceTunnelLayer_NullUtils_ReturnsWithoutSettingInfo, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    sptr<IConsumerSurface> surface = IConsumerSurface::Create(FORCE_TUNNEL_SURFACE_NAME);
+    ASSERT_NE(surface, nullptr);
+
+    agent->ConfigureForceTunnelLayer(MakeForceTunnelConfig(), surface, nullptr);
+    TunnelLayerState state;
+    ASSERT_EQ(surface->GetTunnelLayerInfo(state), GSERROR_OK);
+    EXPECT_EQ(state.tunnelLayerInfo.tunnelTypeMask, TUNNEL_TYPE_NONE);
+}
+
+/**
+ * @tc.name: ConfigureForceTunnelLayer_SetTunnelInfoFailed_Returns
+ * @tc.desc: Verify ConfigureForceTunnelLayer handles SetTunnelLayerInfo failure after config match.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ConfigureForceTunnelLayer_SetTunnelInfoFailed_Returns, TestSize.Level1)
+{
+    AddForceTunnelConfig();
+
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    sptr<IConsumerSurface> surface = new ConsumerSurface(FORCE_TUNNEL_SURFACE_NAME);
+    ASSERT_NE(surface, nullptr);
+
+    agent->ConfigureForceTunnelLayer(MakeForceTunnelConfig(), surface);
+    ClearForceTunnelConfig();
+}
+
+/**
+ * @tc.name: ConfigureForceTunnelLayer_SetTunnelInfoSucceed
+ * @tc.desc: Verify ConfigureForceTunnelLayer sets VIDEO tunnel info when config matches.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ConfigureForceTunnelLayer_SetTunnelInfoSucceed, TestSize.Level1)
+{
+    AddForceTunnelConfig();
+
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    sptr<IConsumerSurface> surface = IConsumerSurface::Create(FORCE_TUNNEL_SURFACE_NAME);
+    ASSERT_NE(surface, nullptr);
+
+    agent->ConfigureForceTunnelLayer(MakeForceTunnelConfig(), surface);
+    TunnelLayerState state;
+    ASSERT_EQ(surface->GetTunnelLayerInfo(state), GSERROR_OK);
+    EXPECT_EQ(state.tunnelLayerInfo.tunnelTypeMask, TUNNEL_TYPE_VIDEO);
+    ClearForceTunnelConfig();
+}
+
+/**
  * @tc.name: DropFrameByPid_NullPipeline_ReturnInvalidValue
  * @tc.desc: Verify DropFrameByPid returns ERR_INVALID_VALUE when pipeline is null.
  * @tc.type: FUNC
@@ -125,8 +237,8 @@ HWTEST_F(RSRenderPipelineAgentTest, DropFrameByPid_NullPipeline_ReturnInvalidVal
     ASSERT_NE(agent, nullptr);
 
     std::vector<int32_t> pidList = { 1001, 1002 };
-    constexpr int32_t DROP_FRAME_LEVEL = 1;
-    ErrCode ret = agent->DropFrameByPid(pidList, DROP_FRAME_LEVEL);
+    constexpr int32_t dropFrameLevel = 1;
+    ErrCode ret = agent->DropFrameByPid(pidList, dropFrameLevel);
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
 
@@ -146,9 +258,9 @@ HWTEST_F(RSRenderPipelineAgentTest, DropFrameByPid_ValidPipeline_ReturnOk, TestS
     renderPipeline->mainThread_ = mainThread;
 
     std::vector<int32_t> pidList = { 1001, 1002 };
-    constexpr int32_t DROP_FRAME_LEVEL = 1;
+    constexpr int32_t dropFrameLevel = 1;
 
-    ErrCode ret = agent->DropFrameByPid(pidList, DROP_FRAME_LEVEL);
+    ErrCode ret = agent->DropFrameByPid(pidList, dropFrameLevel);
     EXPECT_EQ(ret, ERR_OK);
 }
 
@@ -527,14 +639,14 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_NullPipeline, TestSize.Level1)
     std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
     sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
     ASSERT_NE(agent, nullptr);
-    ASSERT_EQ(agent->rsRenderPipeline_, nullptr);
+    ASSERT_EQ(agent->rsRenderPipeline_.lock(), nullptr);
 
     pid_t testPid = 12345;
     // Should return early without crash when rsRenderPipeline_ is nullptr
     agent->Clean(testPid, false);
     agent->Clean(testPid, true);
     // Verify agent state remains unchanged after Clean
-    EXPECT_EQ(agent->rsRenderPipeline_, nullptr);
+    EXPECT_EQ(agent->rsRenderPipeline_.lock(), nullptr);
 }
 
 /**
@@ -551,14 +663,14 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_ForRefreshFalse, TestSize.Level1)
     renderPipeline->mainThread_ = mainThread_;
 
     pid_t testPid = 12345;
-    ASSERT_NE(agent->rsRenderPipeline_, nullptr);
-    ASSERT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 
     // Execute Clean with forRefresh=false
     agent->Clean(testPid, false);
     // Verify agent and pipeline remain valid after Clean
-    EXPECT_NE(agent->rsRenderPipeline_, nullptr);
-    EXPECT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 }
 
 /**
@@ -575,14 +687,1013 @@ HWTEST_F(RSRenderPipelineAgentTest, CleanTest_ForRefreshTrue, TestSize.Level1)
     renderPipeline->mainThread_ = mainThread_;
 
     pid_t testPid = 12345;
-    ASSERT_NE(agent->rsRenderPipeline_, nullptr);
-    ASSERT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    ASSERT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
 
     // Execute Clean with forRefresh=true
     agent->Clean(testPid, true);
     // Verify agent and pipeline remain valid after Clean
-    EXPECT_NE(agent->rsRenderPipeline_, nullptr);
-    EXPECT_NE(agent->rsRenderPipeline_->mainThread_, nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock(), nullptr);
+    EXPECT_NE(agent->rsRenderPipeline_.lock()->mainThread_, nullptr);
+}
+
+/**
+ * @tc.name: RemoveConnection001
+ * @tc.desc: Verify RemoveConnection when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RemoveConnection001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+    auto token = sptr<RSIConnectionToken>();
+    auto ret = agent->RemoveConnection(getpid(), token);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: RemoveConnection002
+ * @tc.desc: Verify RemoveConnection when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RemoveConnection002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto token = sptr<RSIConnectionToken>();
+    auto ret = agent->RemoveConnection(getpid(), token);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name: UnRegisterApplicationAgent001
+ * @tc.desc: Verify UnRegisterApplicationAgent when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, UnRegisterApplicationAgent001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+    auto app = sptr<IApplicationAgent>();
+    agent->UnRegisterApplicationAgent(app);
+}
+
+/**
+ * @tc.name: UnRegisterApplicationAgent002
+ * @tc.desc: Verify UnRegisterApplicationAgent when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, UnRegisterApplicationAgent002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto app = sptr<IApplicationAgent>();
+    agent->UnRegisterApplicationAgent(app);
+}
+
+/**
+ * @tc.name: CreateDisplayNode001
+ * @tc.desc: Verify CreateDisplayNode when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, CreateDisplayNode001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    RSDisplayNodeConfig displayNodeConfig;
+    bool success = true;
+    auto ret = agent->CreateDisplayNode(displayNodeConfig, 0, success);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: CreateNode001
+ * @tc.desc: Verify CreateNode when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, CreateNode001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    RSSurfaceRenderNodeConfig config;
+    bool success = true;
+    auto ret = agent->CreateNode(config, success);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: ForceRefreshOneFrameWithNextVSync001
+ * @tc.desc: Verify ForceRefreshOneFrameWithNextVSync when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ForceRefreshOneFrameWithNextVSync001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    agent->ForceRefreshOneFrameWithNextVSync();
+}
+
+/**
+ * @tc.name: RegisterApplicationAgent001
+ * @tc.desc: Verify RegisterApplicationAgent when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterApplicationAgent001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto app = sptr<IApplicationAgent>();
+    agent->RegisterApplicationAgent(0, app);
+}
+
+/**
+ * @tc.name: RegisterApplicationAgent002
+ * @tc.desc: Verify RegisterApplicationAgent when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterApplicationAgent002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto app = sptr<IApplicationAgent>();
+    agent->RegisterApplicationAgent(0, app);
+}
+
+/**
+ * @tc.name: RegisterBufferClearListener001
+ * @tc.desc: Verify RegisterBufferClearListener when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterBufferClearListener001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSIBufferClearCallback>();
+    agent->RegisterBufferClearListener(0, callback);
+}
+
+/**
+ * @tc.name: RegisterBufferClearListener002
+ * @tc.desc: Verify RegisterBufferClearListener when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterBufferClearListener002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSIBufferClearCallback>();
+    agent->RegisterBufferClearListener(0, callback);
+}
+
+/**
+ * @tc.name: RegisterBufferAvailableListener001
+ * @tc.desc: Verify RegisterBufferAvailableListener when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterBufferAvailableListener001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSIBufferAvailableCallback>();
+    auto ret = agent->RegisterBufferAvailableListener(0, callback, true);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: RegisterBufferAvailableListener002
+ * @tc.desc: Verify RegisterBufferAvailableListener when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterBufferAvailableListener002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSIBufferAvailableCallback>();
+    auto ret = agent->RegisterBufferAvailableListener(0, callback, true);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetSystemAnimatedScenes001
+ * @tc.desc: Verify SetSystemAnimatedScenes when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetSystemAnimatedScenes001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto systemAnimatedScenes = SystemAnimatedScenes();
+    bool success = true;
+    auto ret = agent->SetSystemAnimatedScenes(systemAnimatedScenes, true, success);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetHardwareEnabled001
+ * @tc.desc: Verify SetHardwareEnabled when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetHardwareEnabled001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto selfDrawingType = SelfDrawingNodeType();
+    auto ret = agent->SetHardwareEnabled(0, true, selfDrawingType, true);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetHardwareEnabled002
+ * @tc.desc: Verify SetHardwareEnabled when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetHardwareEnabled002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto selfDrawingType = SelfDrawingNodeType();
+    auto ret = agent->SetHardwareEnabled(0, true, selfDrawingType, true);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetHidePrivacyContent001
+ * @tc.desc: Verify SetHidePrivacyContent when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetHidePrivacyContent001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    uint32_t resCode = 0;
+    auto ret = agent->SetHidePrivacyContent(0, true, resCode);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetHidePrivacyContent002
+ * @tc.desc: Verify SetHidePrivacyContent when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetHidePrivacyContent002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    uint32_t resCode = 0;
+    auto ret = agent->SetHidePrivacyContent(0, true, resCode);
+    EXPECT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetFocusAppInfo001
+ * @tc.desc: Verify SetFocusAppInfo when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetFocusAppInfo001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    FocusAppInfo info;
+    int32_t repCode = 0;
+    auto ret = agent->SetFocusAppInfo(info, repCode);
+    EXPECT_EQ(ret, INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: SetFocusAppInfo002
+ * @tc.desc: Verify SetFocusAppInfo when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetFocusAppInfo002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    FocusAppInfo info;
+    int32_t repCode = 0;
+    auto ret = agent->SetFocusAppInfo(info, repCode);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name: TakeSurfaceCapture001
+ * @tc.desc: Verify TakeSurfaceCapture when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeSurfaceCapture001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCaptureBlurParam blurParam;
+    Drawing::Rect specifiedAreaRect;
+    RSSurfaceCapturePermissions permissions;
+    agent->TakeSurfaceCapture(0, callback, captureConfig, blurParam, specifiedAreaRect, permissions);
+}
+
+/**
+ * @tc.name: TakeSurfaceCapture002
+ * @tc.desc: Verify TakeSurfaceCapture when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeSurfaceCapture002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCaptureBlurParam blurParam;
+    Drawing::Rect specifiedAreaRect;
+    RSSurfaceCapturePermissions permissions;
+    agent->TakeSurfaceCapture(0, callback, captureConfig, blurParam, specifiedAreaRect, permissions);
+}
+
+/**
+ * @tc.name: TakeSelfSurfaceCapture001
+ * @tc.desc: Verify TakeSelfSurfaceCapture when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeSelfSurfaceCapture001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    agent->TakeSelfSurfaceCapture(0, callback, captureConfig, true);
+}
+
+/**
+ * @tc.name: TakeSelfSurfaceCapture002
+ * @tc.desc: Verify TakeSelfSurfaceCapture when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeSelfSurfaceCapture002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    agent->TakeSelfSurfaceCapture(0, callback, captureConfig, true);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureWithAllWindows001
+ * @tc.desc: Verify TakeSurfaceCaptureWithAllWindows when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeSurfaceCaptureWithAllWindows001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCapturePermissions permissions;
+    auto ret = agent->TakeSurfaceCaptureWithAllWindows(0, callback, captureConfig, true, permissions);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: TakeSurfaceCaptureWithAllWindows002
+ * @tc.desc: Verify TakeSurfaceCaptureWithAllWindows when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeSurfaceCaptureWithAllWindows002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCapturePermissions permissions;
+    auto ret = agent->TakeSurfaceCaptureWithAllWindows(0, callback, captureConfig, true, permissions);
+    ASSERT_EQ(ret, ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name: FreezeScreen001
+ * @tc.desc: Verify FreezeScreen when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, FreezeScreen001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->FreezeScreen(0, true, true);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: FreezeScreen002
+ * @tc.desc: Verify FreezeScreen when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, FreezeScreen002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->FreezeScreen(0, true, true);
+    ASSERT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetWindowFreezeImmediately001
+ * @tc.desc: Verify SetWindowFreezeImmediately when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetWindowFreezeImmediately001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCaptureBlurParam blurParam;
+    agent->SetWindowFreezeImmediately(0, true, callback, captureConfig, blurParam, true);
+}
+
+/**
+ * @tc.name: SetWindowFreezeImmediately002
+ * @tc.desc: Verify SetWindowFreezeImmediately when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetWindowFreezeImmediately002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCaptureBlurParam blurParam;
+    agent->SetWindowFreezeImmediately(0, true, callback, captureConfig, blurParam, true);
+}
+
+/**
+ * @tc.name: TakeUICaptureInRange001
+ * @tc.desc: Verify TakeUICaptureInRange when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeUICaptureInRange001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCapturePermissions permissions;
+    agent->TakeUICaptureInRange(0, callback, captureConfig, permissions);
+}
+
+/**
+ * @tc.name: TakeUICaptureInRange002
+ * @tc.desc: Verify TakeUICaptureInRange when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, TakeUICaptureInRange002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSISurfaceCaptureCallback>();
+    RSSurfaceCaptureConfig captureConfig;
+    RSSurfaceCapturePermissions permissions;
+    agent->TakeUICaptureInRange(0, callback, captureConfig, permissions);
+}
+
+/**
+ * @tc.name: SetHwcNodeBounds001
+ * @tc.desc: Verify SetHwcNodeBounds when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetHwcNodeBounds001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->SetHwcNodeBounds(0, 0, 0, 0, 0);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetHwcNodeBounds002
+ * @tc.desc: Verify SetHwcNodeBounds when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetHwcNodeBounds002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->SetHwcNodeBounds(0, 0, 0, 0, 0);
+    ASSERT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: GetScreenHDRStatus001
+ * @tc.desc: Verify GetScreenHDRStatus when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, GetScreenHDRStatus001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    HdrStatus hdrStatus;
+    int32_t resCode = 0;
+    auto ret = agent->GetScreenHDRStatus(0, hdrStatus, resCode);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetAncoForceDoDirect001
+ * @tc.desc: Verify SetAncoForceDoDirect when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetAncoForceDoDirect001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    bool res = true;
+    auto ret = agent->SetAncoForceDoDirect(true, res);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetAncoForceDoDirect002
+ * @tc.desc: Verify SetAncoForceDoDirect when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetAncoForceDoDirect002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    bool res = true;
+    auto ret = agent->SetAncoForceDoDirect(true, res);
+    ASSERT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetLayerTopForHWC001
+ * @tc.desc: Verify SetLayerTopForHWC when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetLayerTopForHWC001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->SetLayerTopForHWC(0, true, 0);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetLayerTopForHWC002
+ * @tc.desc: Verify SetLayerTopForHWC when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetLayerTopForHWC002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->SetLayerTopForHWC(0, true, 0);
+    ASSERT_EQ(ret, ERR_OK);
+}
+
+/**
+ * @tc.name: SetWindowContainer001
+ * @tc.desc: Verify SetWindowContainer when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetWindowContainer001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    agent->SetWindowContainer(0, true);
+}
+
+/**
+ * @tc.name: SetWindowContainer002
+ * @tc.desc: Verify SetWindowContainer when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetWindowContainer002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    agent->SetWindowContainer(0, true);
+}
+
+/**
+ * @tc.name: ClearUifirstCache001
+ * @tc.desc: Verify ClearUifirstCache when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ClearUifirstCache001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    agent->ClearUifirstCache(0);
+}
+
+/**
+ * @tc.name: ClearUifirstCache002
+ * @tc.desc: Verify ClearUifirstCache when pipeline isn't null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ClearUifirstCache002, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = std::make_shared<RSRenderPipeline>();
+    ASSERT_NE(renderPipeline, nullptr);
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    agent->ClearUifirstCache(0);
+}
+
+/**
+ * @tc.name: SetCurtainScreenUsingStatus001
+ * @tc.desc: Verify SetCurtainScreenUsingStatus when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetCurtainScreenUsingStatus001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->SetCurtainScreenUsingStatus(false);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: GetBitmap001
+ * @tc.desc: Verify GetBitmap when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, GetBitmap001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    Drawing::Bitmap bitmap;
+    bool success = false;
+    auto ret = agent->GetBitmap(0, bitmap, success);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: ReportJankStats001
+ * @tc.desc: Verify ReportJankStats when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ReportJankStats001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->ReportJankStats();
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: ReportEventResponse001
+ * @tc.desc: Verify ReportEventResponse when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ReportEventResponse001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    DataBaseRs info;
+    auto ret = agent->ReportEventResponse(info);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: ReportEventComplete001
+ * @tc.desc: Verify ReportEventComplete when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ReportEventComplete001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    DataBaseRs info;
+    auto ret = agent->ReportEventComplete(info);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: ReportEventJankFrame001
+ * @tc.desc: Verify ReportEventJankFrame when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ReportEventJankFrame001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    DataBaseRs info;
+    auto ret = agent->ReportEventJankFrame(info);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: UpdateAnimationOcclusionStatus001
+ * @tc.desc: Verify UpdateAnimationOcclusionStatus when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, UpdateAnimationOcclusionStatus001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    std::string sceneId = "0";
+    agent->UpdateAnimationOcclusionStatus(sceneId, false);
+}
+
+/**
+ * @tc.name: ReportRsSceneJankStart001
+ * @tc.desc: Verify ReportRsSceneJankStart when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ReportRsSceneJankStart001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    AppInfo info;
+    auto ret = agent->ReportRsSceneJankStart(info);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: ReportRsSceneJankEnd001
+ * @tc.desc: Verify ReportRsSceneJankEnd when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, ReportRsSceneJankEnd001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    AppInfo info;
+    auto ret = agent->ReportRsSceneJankEnd(info);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: AvcodecVideoStop001
+ * @tc.desc: Verify AvcodecVideoStop when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, AvcodecVideoStop001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    std::vector<uint64_t> uniqueIdList;
+    std::vector<std::string> surfaceNameList;
+    auto ret = agent->AvcodecVideoStop(uniqueIdList, surfaceNameList, 0);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: AvcodecVideoStart001
+ * @tc.desc: Verify AvcodecVideoStart when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, AvcodecVideoStart001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    std::vector<uint64_t> uniqueIdList;
+    std::vector<std::string> surfaceNameList;
+    auto ret = agent->AvcodecVideoStart(uniqueIdList, surfaceNameList, 0, 0);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: AvcodecVideoGet001
+ * @tc.desc: Verify AvcodecVideoGet when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, AvcodecVideoGet001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->AvcodecVideoGet(0);
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: AvcodecVideoGetRecent001
+ * @tc.desc: Verify AvcodecVideoGetRecent when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, AvcodecVideoGetRecent001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto ret = agent->AvcodecVideoGetRecent();
+    ASSERT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: SetBrightnessInfoChangeCallback001
+ * @tc.desc: Verify SetBrightnessInfoChangeCallback when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, SetBrightnessInfoChangeCallback001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSIBrightnessInfoChangeCallback>();
+    auto ret = agent->SetBrightnessInfoChangeCallback(0, callback);
+    ASSERT_EQ(ret, StatusCode::INVALID_ARGUMENTS);
+}
+
+/**
+ * @tc.name: RegisterOcclusionChangeCallback001
+ * @tc.desc: Verify RegisterOcclusionChangeCallback when pipeline is null
+ * @tc.type: FUNC
+ * @tc.require:  issue22984
+ */
+HWTEST_F(RSRenderPipelineAgentTest, RegisterOcclusionChangeCallback001, TestSize.Level1)
+{
+    std::shared_ptr<RSRenderPipeline> renderPipeline = nullptr;
+    sptr<RSRenderPipelineAgent> agent = sptr<RSRenderPipelineAgent>::MakeSptr(renderPipeline);
+    ASSERT_NE(agent, nullptr);
+
+    auto callback = sptr<RSIOcclusionChangeCallback>();
+    auto ret = agent->RegisterOcclusionChangeCallback(0, callback);
+    ASSERT_EQ(ret, StatusCode::INVALID_ARGUMENTS);
 }
 
 /**

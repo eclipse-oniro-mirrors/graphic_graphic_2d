@@ -19,6 +19,7 @@
 #include "feature/watermark/rs_surface_watermark.h"
 #include "pipeline/main_thread/rs_main_thread.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
+#include "memory/rs_tag_tracker.h"
 #include "rs_trace.h"
 
 #undef LOG_TAG
@@ -72,7 +73,11 @@ std::shared_ptr<Drawing::Image> RSDrawWindowCache::CacheWindowContent(
         RS_LOGE("CacheWindowContent main surface nullptr.");
         return nullptr;
     }
-    auto windowSurface = mainSurface->MakeSurface(bounds.GetWidth(), bounds.GetHeight());
+    std::shared_ptr<Drawing::Surface> windowSurface = nullptr;
+    {
+        RSTagTracker tag(canvas.GetGPUContext(), RSTagTracker::TAGTYPE::TAG_WINDOW_SURFACE_CACHE);
+        windowSurface = mainSurface->MakeSurface(bounds.GetWidth(), bounds.GetHeight());
+    }
     if (windowSurface == nullptr) {
         RS_LOGE("CacheWindowContent surface nullptr.");
         return nullptr;
@@ -130,7 +135,7 @@ bool RSDrawWindowCache::DealWithCachedWindow(DrawableV2::RSSurfaceRenderNodeDraw
         return false;
     }
     // Non-CrosNode not cache for uifirst need clear cache,
-    // and if node not execute prepre process in the second frame, cache type will still be MultiThreadCacheType::NONE,
+    // and if node not execute prepare process in the second frame, cache type will still be MultiThreadCacheType::NONE,
     // we should avoid clear cache by checking GetNeedCacheSurface
     if (!surfaceParams.IsCrossNode() && surfaceParams.GetUifirstNodeEnableParam() == MultiThreadCacheType::NONE
         && !surfaceParams.ClonedSourceNode() && !surfaceParams.GetNeedCacheSurface()) {

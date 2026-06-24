@@ -91,12 +91,9 @@ void RSScreenRenderNode::Process(const std::shared_ptr<RSNodeVisitor>& visitor)
 }
 
 void RSScreenRenderNode::SetIsOnTheTree(bool flag, NodeId instanceRootNodeId, NodeId firstLevelNodeId,
-    NodeId cacheNodeId, NodeId uifirstRootNodeId, NodeId screenNodeId, NodeId logicalDisplayNodeId)
+    NodeId uifirstRootNodeId, NodeId screenNodeId, NodeId logicalDisplayNodeId)
 {
-    // if node is marked as cacheRoot, update subtree status when update surface
-    // in case prepare stage upper cacheRoot cannot specify dirty subnode
-    RSRenderNode::SetIsOnTheTree(flag, GetId(), firstLevelNodeId, cacheNodeId, uifirstRootNodeId, GetId(),
-        logicalDisplayNodeId);
+    RSRenderNode::SetIsOnTheTree(flag, GetId(), firstLevelNodeId, uifirstRootNodeId, GetId(), logicalDisplayNodeId);
 }
 
 void RSScreenRenderNode::SetForceSoftComposite(bool flag)
@@ -391,31 +388,44 @@ HdrStatus RSScreenRenderNode::GetDisplayHdrStatus() const
 
 void RSScreenRenderNode::CollectHdrStatus(NodeId id, HdrStatus hdrStatus)
 {
+    CollectHdrStatusMap(id, hdrStatus);
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
     if (screenParams == nullptr) {
         RS_LOGE("%{public}s screenParams is nullptr", __func__);
         return;
     }
-    screenParams->CollectHdrStatus(id, hdrStatus);
+    HdrStatus currentHDRStatus = screenParams->GetScreenHDRStatus();
+    HdrStatus newHDRStatus = static_cast<HdrStatus>(currentHDRStatus | hdrStatus);
+    screenParams->CollectHdrStatus(newHDRStatus);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
 }
 
-const std::unordered_map<NodeId, HdrStatus>& RSScreenRenderNode::GetDisplayHdrStatusMap() const
+void RSScreenRenderNode::CollectHdrStatusMap(NodeId id, HdrStatus hdrStatus)
 {
-    auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
-    if (screenParams == nullptr) {
-        RS_LOGE("%{public}s screenParams is nullptr", __func__);
-        static const std::unordered_map<NodeId, HdrStatus> emptyMap;
-        return emptyMap;
+    if (!RSSystemProperties::GetXcomponentEdrEnabled() || hdrStatus == HdrStatus::NO_HDR) {
+        return;
     }
-    return screenParams->GetScreenHDRStatusMap();
+    auto iter = displayHDRStatusMap_.find(id);
+    if (iter == displayHDRStatusMap_.end()) {
+        displayHDRStatusMap_.emplace(id, hdrStatus);
+    } else {
+        uint32_t currentNodeHDRStatus = iter->second;
+        uint32_t newNodeHDRStatus = (currentNodeHDRStatus | hdrStatus);
+        iter->second = newNodeHDRStatus;
+    }
+}
+
+const std::unordered_map<NodeId, uint32_t>& RSScreenRenderNode::GetDisplayHdrStatusMap() const
+{
+    return displayHDRStatusMap_;
 }
 
 // LCOV_EXCL_START
 void RSScreenRenderNode::ResetDisplayHdrStatus()
 {
+    displayHDRStatusMap_.clear();
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
     if (screenParams == nullptr) {
         RS_LOGE("%{public}s screenParams is nullptr", __func__);
@@ -563,11 +573,6 @@ void RSScreenRenderNode::SelectBestGamut(const std::vector<ScreenColorGamut>& mo
     }
 }
 
-void RSScreenRenderNode::SetForceCloseHdr(bool isForceCloseHdr)
-{
-    isForceCloseHdr_ = isForceCloseHdr;
-}
-
 // ScreeNode disable HDR only when all children displayNode disable HDR
 bool RSScreenRenderNode::GetForceCloseHdr() const
 {
@@ -697,6 +702,19 @@ void RSScreenRenderNode::SetVirtualSurfaceChanged(bool isChanged)
 }
 // LCOV_EXCL_STOP
 
+void RSScreenRenderNode::SetActiveRectChanged(bool isChanged)
+{
+    auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
+    if (screenParams == nullptr) {
+        RS_LOGE("RSScreenRenderNode::%{public}s screenParams is null", __func__);
+        return;
+    }
+    screenParams->SetActiveRectChanged(isChanged);
+    if (stagingRenderParams_->NeedSync()) {
+        AddToPendingSyncList();
+    }
+}
+
 void RSScreenRenderNode::SetLogicalCameraRotationCorrection(ScreenRotation logicalCorrection)
 {
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
@@ -747,24 +765,50 @@ void RSScreenRenderNode::ResetVideoHeadroomInfo()
 
 void RSScreenRenderNode::SetHasForceHwcHdrSurface(bool hasForceHwcHdrSurface)
 {
-    if (hasForceHwcHdrSurface_ == hasForceHwcHdrSurface) {
-        return;
-    }
     auto screenParams = static_cast<RSScreenRenderParams*>(stagingRenderParams_.get());
     if (screenParams == nullptr) {
         RS_LOGE("RSScreenRenderNode::SetHasForceHwcHdrSurface screenParams is null");
         return;
     }
-    hasForceHwcHdrSurface_ = hasForceHwcHdrSurface;
     screenParams->SetHasForceHwcHdrSurface(hasForceHwcHdrSurface);
     if (stagingRenderParams_->NeedSync()) {
         AddToPendingSyncList();
     }
 }
 
-bool RSScreenRenderNode::GetHasForceHwcHdrSurface() const
+void RSScreenRenderNode::SetHdrForceHwcNodes(
+    const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& hdrForceHwcNodes)
 {
-    return hasForceHwcHdrSurface_;
+    hdrForceHwcNodes_ = hdrForceHwcNodes;
+}
+
+const std::unordered_map<NodeId, std::weak_ptr<RSSurfaceRenderNode>>& RSScreenRenderNode::GetHdrForceHwcNodes() const
+{
+    return hdrForceHwcNodes_;
+}
+
+void RSScreenRenderNode::ClearHdrForceHwcNodes()
+{
+    hdrForceHwcNodes_.clear();
+}
+
+void RSScreenRenderNode::HandleHdrForceHwcNodes()
+{
+    if (!RSSystemProperties::GetXcomponentEdrEnabled() || hdrForceHwcNodes_.empty()) {
+        SetHasForceHwcHdrSurface(false);
+        ClearHdrForceHwcNodes();
+        return;
+    }
+    if (std::find_if(hdrForceHwcNodes_.begin(), hdrForceHwcNodes_.end(), [](const auto& iter) {
+            auto nodePtr = iter.second.lock();
+            return nodePtr && !nodePtr->IsHardwareForcedDisabled();
+        }) != hdrForceHwcNodes_.end()) {
+        RS_OPTIONAL_TRACE_FMT("RSScreenRenderNode::SetHasForceHwcHdrSurface: Node: %" PRIu64, GetId());
+        SetHasForceHwcHdrSurface(true);
+    } else {
+        SetHasForceHwcHdrSurface(false);
+    }
+    ClearHdrForceHwcNodes();
 }
 } // namespace Rosen
 } // namespace OHOS

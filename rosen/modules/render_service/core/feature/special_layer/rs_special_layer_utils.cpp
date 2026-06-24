@@ -55,7 +55,9 @@ void RSSpecialLayerUtils::CheckSpecialLayerIntersectMirrorDisplay(const RSLogica
     }
 
     const auto& specialLayerMgr = sourceNode.GetSpecialLayerMgr();
-    auto totalSpecialLayerType = specialLayerMgr.Get() | SpecialLayerType::HAS_BLACK_LIST;
+    // Virtual screen ignores the snapshotskip flag.
+    auto totalSpecialLayerType = (specialLayerMgr.Get() & ~SpecialLayerType::HAS_SNAPSHOT_SKIP)
+        | SpecialLayerType::HAS_BLACK_LIST;
     // Only one bit representing the currently processed type
     uint32_t currentType = SpecialLayerType::HAS_SECURITY;
     // skip security process if virtual screen is security exemption
@@ -277,35 +279,34 @@ void RSSpecialLayerUtils::NotifyScreenSpecialLayerChange()
 void RSSpecialLayerUtils::DealWithSpecialLayer(
     RSSurfaceRenderNode& surfaceNode, RSLogicalDisplayRenderNode& displayNode, bool needCalcScreenSpecialLayer)
 {
-    UpdateScreenSpecialLayersRecord(surfaceNode, displayNode, needCalcScreenSpecialLayer);
-    if (surfaceNode.IsCloneCrossNode()) {
-        auto sourceNode = surfaceNode.GetSourceCrossNode().lock();
-        auto sourceSurface = sourceNode ? sourceNode->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
-        if (sourceSurface == nullptr) {
-            return;
-        }
-        UpdateSpecialLayersRecord(*sourceSurface, displayNode);
-    } else {
-        UpdateSpecialLayersRecord(surfaceNode, displayNode);
-    }
+    // Handle the cross-screen node if it exists.
+    auto sourceCrossNode = surfaceNode.IsCloneCrossNode() ? surfaceNode.GetSourceCrossNode().lock() : nullptr;
+    auto sourceNodePtr = sourceCrossNode ? sourceCrossNode->ReinterpretCastTo<RSSurfaceRenderNode>() : nullptr;
+    RSSurfaceRenderNode& sourceNode = sourceNodePtr ? *sourceNodePtr : surfaceNode;
+
+    UpdateSpecialLayersRecord(sourceNode, displayNode);
+    UpdateScreenSpecialLayersRecord(sourceNode, surfaceNode, displayNode, needCalcScreenSpecialLayer);
 }
 
-void RSSpecialLayerUtils::UpdateScreenSpecialLayersRecord(
+void RSSpecialLayerUtils::UpdateScreenSpecialLayersRecord(RSSurfaceRenderNode& sourceNode,
     RSSurfaceRenderNode& surfaceNode, RSLogicalDisplayRenderNode& displayNode, bool needCalcScreenSpecialLayer)
 {
-    surfaceNode.GetMultableSpecialLayerMgr().ClearScreenSpecialLayer();
+    sourceNode.GetMultableSpecialLayerMgr().ClearScreenSpecialLayer();
     if (!needCalcScreenSpecialLayer) {
         return;
     }
     // update whitelist
-    surfaceNode.UpdateVirtualScreenWhiteListInfo();
+    auto whitelistScreenIds = ScreenSpecialLayerInfo::QueryEnableScreen(
+        SpecialLayerType::IS_WHITE_LIST, {sourceNode.GetId(), sourceNode.GetLeashPersistentId()});
+    surfaceNode.UpdateVirtualScreenWhiteListInfo(whitelistScreenIds);
+      
     // update blacklist
-    auto screenIds = ScreenSpecialLayerInfo::QueryEnableScreen(
-        SpecialLayerType::IS_BLACK_LIST, {surfaceNode.GetId(), surfaceNode.GetLeashPersistentId()});
-    for (const auto screenId : screenIds) {
-        surfaceNode.SetScreenSpecialLayerStatus(screenId, SpecialLayerType::IS_BLACK_LIST, true);
+    auto blacklistScreenIds = ScreenSpecialLayerInfo::QueryEnableScreen(
+        SpecialLayerType::IS_BLACK_LIST, {sourceNode.GetId(), sourceNode.GetLeashPersistentId()});
+    for (const auto screenId : blacklistScreenIds) {
+        sourceNode.SetScreenSpecialLayerStatus(screenId, SpecialLayerType::IS_BLACK_LIST, true);
         displayNode.GetMultableSpecialLayerMgr().AddIdsWithScreen(
-            screenId, SpecialLayerType::IS_BLACK_LIST, surfaceNode.GetId());
+            screenId, SpecialLayerType::IS_BLACK_LIST, sourceNode.GetId());
     }
 }
 
@@ -374,7 +375,8 @@ DrawType RSSpecialLayerUtils::GetDrawTypeInSnapshot(const RSSurfaceRenderParams&
 }
 
 void RSSpecialLayerUtils::SetWhiteListRectToMetaData(RSPaintFilterCanvas& canvas, const RSRenderThreadParams& uniParam,
-    const RSScreenProperty& mirrorScreenProperty, const RSLogicalDisplayRenderParams& sourceLogicalParam)
+    const RSScreenProperty& mirrorScreenProperty, const RSLogicalDisplayRenderParams& sourceLogicalParam,
+    const std::shared_ptr<RSSLRScaleFunction>& scaleManager)
 {
     auto processor = uniParam.GetRSProcessor();
     if (processor == nullptr) {
@@ -394,12 +396,10 @@ void RSSpecialLayerUtils::SetWhiteListRectToMetaData(RSPaintFilterCanvas& canvas
         return;
     }
 
-    const auto& matrix = canvas.GetTotalMatrix();
-    // Map whitelist rect with canvas matrix and convert to RectT<uint32_t>
-    const auto& rectI = whiteListRects[0];
-    Drawing::Rect whiteListRect(rectI.GetLeft(), rectI.GetTop(), rectI.GetRight(), rectI.GetBottom());
+    Drawing::Matrix matrix = (RSSystemProperties::GetSLRScaleEnabled() && scaleManager != nullptr) ?
+        scaleManager->GetScaleMatrix() : canvas.GetTotalMatrix();
     Drawing::Rect mappedWhiteListRect;
-    matrix.MapRect(mappedWhiteListRect, whiteListRect);
+    matrix.MapRect(mappedWhiteListRect, whiteListRects[0]);
     RectT<uint32_t> whiteListRectU = ConvertDrawingRectToUint32Rect(mappedWhiteListRect, true);
     DrawDebugRect(canvas, Drawing::Color::COLOR_WHITE, whiteListRectU);
 
@@ -450,8 +450,8 @@ uint32_t RSSpecialLayerUtils::ConvertFloatToUint32(float value)
     return static_cast<uint32_t>(value);
 }
 
-void RSSpecialLayerUtils::CollectWhiteListRect(
-    const RSSurfaceRenderNode& node, bool hasMirrorDisplay, bool isRotating, ScreenId ancestorScreenId)
+void RSSpecialLayerUtils::CollectWhiteListRect(RSSurfaceRenderNode& node, bool hasMirrorDisplay,
+    bool isRotating, RSScreenRenderNode& ancestorScreenNode, bool needConvertMatrix)
 {
     if (!hasMirrorDisplay || isRotating) {
         return;
@@ -465,13 +465,21 @@ void RSSpecialLayerUtils::CollectWhiteListRect(
         SpecialLayerType::IS_WHITE_LIST, {node.GetId(), node.GetLeashPersistentId()});
     for (auto it = enableScreenIds.begin(); it != enableScreenIds.end();) {
         ScreenId mirrorSourceId = ScreenSpecialLayerInfo::GetMirrorSourceScreenId(*it);
-        if (mirrorSourceId == INVALID_SCREEN_ID || mirrorSourceId != ancestorScreenId) {
+        if (mirrorSourceId == INVALID_SCREEN_ID || mirrorSourceId != ancestorScreenNode.GetScreenId()) {
             it = enableScreenIds.erase(it);
         } else {
             it++;
         }
     }
-    RSMainThread::Instance()->AddWhiteListRect(enableScreenIds, boundsGeometry->GetAbsRect());
+    // Process the drawing area of cross-screen nodes
+    auto absRectI = boundsGeometry->GetAbsRect();
+    Drawing::Rect absRect(absRectI.GetLeft(), absRectI.GetTop(), absRectI.GetRight(), absRectI.GetBottom());
+    if (needConvertMatrix) {
+        Drawing::Rect mappedRect;
+        node.GetCrossNodeSkipDisplayConversionMatrix(ancestorScreenNode.GetId()).MapRect(mappedRect, absRect);
+        absRect = mappedRect;
+    }
+    RSMainThread::Instance()->AddWhiteListRect(enableScreenIds, absRect);
 }
 
 RectT<uint32_t> RSSpecialLayerUtils::ConvertDrawingRectToUint32Rect(const Drawing::Rect& rect, bool expandPixels)

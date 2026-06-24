@@ -200,12 +200,22 @@ public:
     RSBorderDrawable() = default;
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
+    static bool IsSDFBorder(const RSProperties& properties, const std::shared_ptr<RSBorder>& border);
+#ifdef USE_PRIMITIVE
+    void OnSync() override;
+#endif
 
 private:
     static void DrawBorder(const RSProperties& properties, Drawing::Canvas& canvas,
         const std::shared_ptr<RSBorder>& border, const bool& isOutline);
     static void DrawBorderSDFShader(Drawing::Canvas& canvas, Drawing::Rect& rect, const bool& isOutline,
         std::shared_ptr<RSNGRenderShapeBase> shape, std::shared_ptr<RSNGRenderShaderBase> shader);
+
+#ifdef USE_PRIMITIVE
+    bool UsePrimList() const override;
+    bool stagingIsSDFBorder_ = false;
+    bool isSDFBorder_ = false;
+#endif
 };
 
 class RSOutlineDrawable : public RSPropertyDrawable {
@@ -216,7 +226,16 @@ public:
     static RSDrawable::Ptr OnGenerate(const RSRenderNode& node);
     bool OnUpdate(const RSRenderNode& node) override;
 
+#ifdef USE_PRIMITIVE
+    void OnSync() override;
+#endif
+
 private:
+#ifdef USE_PRIMITIVE
+    bool UsePrimList() const override;
+    bool stagingIsSDFOutline_ = false;
+    bool isSDFOutline_ = false;
+#endif
 };
 
 class RSParticleDrawable : public RSPropertyDrawable {

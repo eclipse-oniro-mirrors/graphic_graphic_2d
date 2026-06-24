@@ -54,6 +54,7 @@ GSError RSBaseSurfaceUtil::DropFrameProcess(RSSurfaceHandler& surfaceHandler, ui
         if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
             RS_TRACE_NAME("DropFrame");
         }
+        surfaceHandler.SetBufferDropped(true);
         IConsumerSurface::AcquireBufferReturnValue returnValue;
         returnValue.fence = SyncFence::InvalidFence();
         int32_t ret = surfaceConsumer->AcquireBuffer(returnValue, static_cast<int64_t>(presentWhen), false);
@@ -125,8 +126,10 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     }
 
     std::shared_ptr<RSSurfaceHandler::SurfaceBufferEntry> surfaceBuffer;
+    int32_t availableBufferCount = 0;
     if (surfaceHandler.GetHoldBuffer() == nullptr) {
         IConsumerSurface::AcquireBufferReturnValue returnValue;
+        availableBufferCount = consumer->GetAvailableBufferCount();
         int32_t ret = consumer->AcquireBuffer(returnValue, static_cast<int64_t>(acquireTimeStamp), false);
         if (returnValue.buffer == nullptr || ret != SURFACE_ERROR_OK) {
             auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
@@ -169,9 +172,10 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
             surfaceHandler.GetNodeId(), acquireTimeStamp, surfaceBuffer->timestamp, surfaceBuffer->buffer->GetSeqNum());
         if (IsTagEnabled(HITRACE_TAG_GRAPHIC_AGP)) {
             RS_TRACE_NAME_FMT("RsDebug surfaceHandler(id: %" PRIu64 ") AcquireBuffer success, parentNodeId = %"
-                PRIu64 ", acquireTimeStamp = %" PRIu64 ", buffer timestamp = %" PRId64 ", seq = %" PRIu32 ".",
+                PRIu64 ", acquireTimeStamp = %" PRIu64 ", buffer timestamp = %" PRId64 ", seq = %" PRIu32 "."
+                " uniqueId = %" PRIu64 ".",
                 surfaceHandler.GetNodeId(), parentNodeId, acquireTimeStamp, surfaceBuffer->timestamp,
-                surfaceBuffer->buffer->GetSeqNum());
+                surfaceBuffer->buffer->GetSeqNum(), consumer->GetUniqueId());
         }
         // The damages of buffer will be merged here, only single damage is supported so far
         MergeBufferDamages(surfaceBuffer->damageRect, returnValue.damages);
@@ -208,7 +212,7 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     if (consumer->GetName() != RENDER_NODE_NAME) {
         RS_TRACE_NAME_FMT("video node: %" PRIu64 "", surfaceHandler.GetNodeId());
         DelayedSingleton<RSFrameRateVote>::GetInstance()->VideoFrameRateVote(surfaceHandler.GetNodeId(),
-            consumer->GetSurfaceSourceType(), surfaceBuffer->buffer);
+            consumer->GetSurfaceSourceType(), surfaceBuffer->buffer, availableBufferCount);
     }
     OHSurfaceSource sourceType =  consumer->GetSurfaceSourceType();
     surfaceHandler.SetSourceType(static_cast<uint32_t>(sourceType));
@@ -222,5 +226,75 @@ CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBuffer(RSSurfaceHandler& surfa
     return true;
 }
 
+CM_INLINE bool RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple(RSSurfaceHandler& surfaceHandler, uint64_t presentWhen)
+{
+    auto nodeId = surfaceHandler.GetNodeId();
+    surfaceHandler.ResetCurrentFrameBufferConsumed();
+    if (surfaceHandler.GetAvailableBufferCount() <= 0) {
+        RS_LOGE(
+            "RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple: Invalid buffer count, nodeId=%{public}" PRIu64, nodeId);
+        return true;
+    }
+    const auto& consumer = surfaceHandler.GetConsumer();
+    if (consumer == nullptr) {
+        RS_LOGE("RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple: null consumer, nodeId=%{public}" PRIu64, nodeId);
+        return false;
+    }
+ 
+    std::shared_ptr<RSSurfaceHandler::SurfaceBufferEntry> surfaceBuffer;
+    if (surfaceHandler.GetHoldBuffer() == nullptr) {
+        IConsumerSurface::AcquireBufferReturnValue returnValue;
+        int32_t ret = consumer->AcquireBuffer(returnValue, static_cast<int64_t>(presentWhen), false);
+        if (returnValue.buffer == nullptr || ret != SURFACE_ERROR_OK) {
+            auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
+            if (UNLIKELY(holdReturnValue)) {
+                returnValue.buffer = holdReturnValue->buffer;
+                returnValue.fence = holdReturnValue->fence;
+                returnValue.timestamp = holdReturnValue->timestamp;
+                returnValue.damages = holdReturnValue->damages;
+                surfaceHandler.ResetHoldReturnValue();
+            }
+        }
+        auto holdReturnValue = surfaceHandler.GetHoldReturnValue();
+        if (UNLIKELY(holdReturnValue)) {
+            consumer->ReleaseBuffer(holdReturnValue->buffer, holdReturnValue->fence);
+            surfaceHandler.ResetHoldReturnValue();
+        }
+        surfaceBuffer = std::make_shared<RSSurfaceHandler::SurfaceBufferEntry>();
+        surfaceBuffer->buffer = returnValue.buffer;
+        surfaceBuffer->acquireFence = returnValue.fence;
+        surfaceBuffer->timestamp = returnValue.timestamp;
+        RS_OPTIONAL_TRACE_NAME_FMT("RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple bufferId=%" PRIu64,
+            surfaceBuffer->buffer ? surfaceBuffer->buffer->GetBufferId() : 0);
+        surfaceBuffer->RegisterReleaseBufferListener(
+            [](uint64_t bufferId) { RSUniRenderThread::Instance().ReleaseBufferById(bufferId); });
+        RSUniRenderThread::Instance().AddPendingReleaseBuffer(
+            consumer, surfaceBuffer->buffer, SyncFence::InvalidFence(), surfaceBuffer->bufferOwnerCount_);
+        if (consumer->IsBufferHold()) {
+            surfaceHandler.SetHoldBuffer(surfaceBuffer);
+            surfaceBuffer = nullptr;
+            RS_LOGW("RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple: surfaceHandler(id: %{public}" PRIu64
+                    ") set hold buffer",
+                nodeId);
+            return true;
+        }
+    }
+    if (consumer->IsBufferHold()) {
+        surfaceBuffer = surfaceHandler.GetHoldBuffer();
+        surfaceHandler.SetHoldBuffer(nullptr);
+        consumer->SetBufferHold(false);
+        RS_LOGW("RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple: surfaceHandler(id: %{public}" PRIu64
+            ") consume hold buffer", nodeId);
+    }
+    if (surfaceBuffer == nullptr || surfaceBuffer->buffer == nullptr) {
+        RS_LOGE("RSBaseSurfaceUtil::ConsumeAndUpdateBufferSimple: surfaceHandler(id: %{public}" PRIu64
+            ") no buffer to consume", nodeId);
+        return false;
+    }
+    surfaceHandler.ConsumeAndUpdateBuffer(*surfaceBuffer);
+    surfaceBuffer = nullptr;
+    surfaceHandler.SetAvailableBufferCount(static_cast<int32_t>(consumer->GetAvailableBufferCount()));
+    return true;
+}
 } // namespace Rosen
 } // namespace OHOS

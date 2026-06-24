@@ -18,17 +18,11 @@
 #include "rosen_text/font_collection.h"
 #include "rosen_text/font_collection_mgr.h"
 
-#ifdef USE_SKIA_TXT
 #include "skia_txt/font_collection.h"
-#else
-#include "txt/font_collection.h"
-#endif
 
 #include "utils/object_mgr.h"
 
 using namespace OHOS::Rosen::Drawing;
-
-static std::shared_ptr<ObjectMgr> g_objectMgr = ObjectMgr::GetInstance();
 
 template<typename T1, typename T2>
 inline T1* ConvertToFontCollection(T2* ptr)
@@ -44,7 +38,7 @@ OH_Drawing_FontCollection* OH_Drawing_CreateFontCollection(void)
     if (fc == nullptr) {
         return nullptr;
     }
-    g_objectMgr->AddObject(fc);
+    ObjectMgr::GetInstance().AddObject(fc);
     return fc;
 }
 
@@ -65,7 +59,7 @@ void OH_Drawing_DestroyFontCollection(OH_Drawing_FontCollection* fontCollection)
     if (OHOS::Rosen::FontCollectionMgr::GetInstance().RemoveSharedFontColleciton(fontCollection)) {
         return;
     }
-    if (!g_objectMgr->RemoveObject(fontCollection)) {
+    if (!ObjectMgr::GetInstance().RemoveObject(fontCollection)) {
         return;
     }
 
@@ -99,7 +93,7 @@ void OH_Drawing_ClearFontCaches(OH_Drawing_FontCollection* fontCollection)
         return;
     }
 
-    if (g_objectMgr->HasObject(fontCollection)) {
+    if (ObjectMgr::GetInstance().HasObject(fontCollection)) {
         ConvertToFontCollection<OHOS::Rosen::AdapterTxt::FontCollection>(fontCollection)->ClearCaches();
         return;
     }

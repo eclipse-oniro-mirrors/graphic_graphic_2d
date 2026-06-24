@@ -16,10 +16,14 @@
 #include "gtest/gtest.h"
 #include "include/command/rs_canvas_node_command.h"
 #include "include/command/rs_node_command.h"
+#include "include/command/rs_surface_node_command.h"
+#include "include/pipeline/rs_surface_render_node.h"
 #include "params/rs_canvas_drawing_render_params.h"
 #include "params/rs_render_params.h"
 #include "parameters.h"
 #include "platform/common/rs_system_properties.h"
+#include "feature/layer/rs_layer_cache_manager_base.h"
+#include "pipeline/rs_canvas_render_node.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -78,42 +82,105 @@ HWTEST_F(RSNodeCommandTest, MarkNodeGroupTest, TestSize.Level1)
  */
 HWTEST_F(RSNodeCommandTest, MarkLayerTest, TestSize.Level1)
 {
-    {
-        const std::string debugKey = "rosen.graphic.layerDebugEnabled";
-        const std::string oldDebugValue = system::GetParameter(debugKey, "0");
-        (void)system::SetParameter(debugKey, "1");
-        EXPECT_TRUE(RSSystemProperties::GetLayerDebugEnabled());
+    const std::string debugKey = "rosen.graphic.layerEnabled";
+    const std::string oldDebugValue = system::GetParameter(debugKey, "0");
+    (void)system::SetParameter(debugKey, "0");
+    EXPECT_TRUE(RSSystemProperties::GetLayerEnabled());
 
-        RSContext context;
-        NodeId nodeId = static_cast<NodeId>(-1);
-        bool isLayer = false;
-        RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
-        nodeId = 1;
-        RSCanvasNodeCommandHelper::Create(context, nodeId, false);
-        isLayer = true;
-        RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
-        auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
-        (void)system::SetParameter(debugKey, oldDebugValue);
-        ASSERT_NE(canvasNode, nullptr);
-    }
-    {
-        const std::string debugKey = "rosen.graphic.layerDebugEnabled";
-        const std::string oldDebugValue = system::GetParameter(debugKey, "0");
-        (void)system::SetParameter(debugKey, "0");
-        EXPECT_FALSE(RSSystemProperties::GetLayerDebugEnabled());
+    RSContext context;
+    NodeId nodeId = static_cast<NodeId>(-1);
+    bool isLayer = false;
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    isLayer = true;
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    (void)system::SetParameter(debugKey, oldDebugValue);
+    ASSERT_NE(canvasNode, nullptr);
+}
 
-        RSContext context;
-        NodeId nodeId = static_cast<NodeId>(-1);
-        bool isLayer = false;
-        RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
-        nodeId = 1;
-        RSCanvasNodeCommandHelper::Create(context, nodeId, false);
-        isLayer = true;
-        RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
-        auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
-        (void)system::SetParameter(debugKey, oldDebugValue);
-        ASSERT_NE(canvasNode, nullptr);
-    }
+/**
+ * @tc.name: MarkLayerTest001
+ * @tc.desc: TEST MarkLayer.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkLayerTest001, TestSize.Level1)
+{
+    const std::string key = "rosen.graphic.layerEnabled";
+    const std::string oldValue = system::GetParameter(key, "1");
+    (void)system::SetParameter(key, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerEnabled());
+
+    const std::string debugKey = "rosen.graphic.layerDebugEnabled";
+    const std::string oldDebugValue = system::GetParameter(debugKey, "0");
+    (void)system::SetParameter(debugKey, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerDebugEnabled());
+
+    RSContext context;
+    bool isLayer = false;
+    NodeId nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    isLayer = false;
+
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSRenderNode>(nodeId);
+    constexpr NodeId parentNodeId = 2;
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    parent->AddChild(node);
+
+    bool isCanvasNode = (node != nullptr) && (node->GetType() == RSRenderNodeType::CANVAS_NODE);
+    node->GetStagingRenderParams()->SetLayerParamsIsUnSupportLayer(true);
+    bool isSupportLayer = isLayer && isCanvasNode && !RSLayerCacheManagerBase::IsNodeUnSupportLayer(node);
+    EXPECT_FALSE(isSupportLayer);
+
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    (void)system::SetParameter(debugKey, oldDebugValue);
+    (void)system::SetParameter(key, oldValue);
+    ASSERT_NE(canvasNode, nullptr);
+}
+
+/**
+ * @tc.name: MarkLayerTest002
+ * @tc.desc: TEST MarkLayer.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, MarkLayerTest002, TestSize.Level1)
+{
+    const std::string key = "rosen.graphic.layerEnabled";
+    const std::string oldValue = system::GetParameter(key, "1");
+    (void)system::SetParameter(key, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerEnabled());
+
+    const std::string debugKey = "rosen.graphic.layerDebugEnabled";
+    const std::string oldDebugValue = system::GetParameter(debugKey, "0");
+    (void)system::SetParameter(debugKey, "1");
+    EXPECT_TRUE(RSSystemProperties::GetLayerDebugEnabled());
+
+    RSContext context;
+    bool isLayer = false;
+    NodeId nodeId = 1;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    isLayer = true;
+
+    auto& nodeMap = context.GetNodeMap();
+    auto node = nodeMap.GetRenderNode<RSCanvasRenderNode>(nodeId);
+    constexpr NodeId parentNodeId = 2;
+    auto parent = std::make_shared<RSRenderNode>(parentNodeId);
+    ASSERT_NE(parent, nullptr);
+    node->InitRenderParams();
+    parent->InitRenderParams();
+    parent->AddChild(node);
+
+    RSNodeCommandHelper::MarkLayer(context, nodeId, isLayer);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    (void)system::SetParameter(debugKey, oldDebugValue);
+    (void)system::SetParameter(key, oldValue);
+    ASSERT_NE(canvasNode, nullptr);
 }
 
 /**
@@ -808,5 +875,38 @@ HWTEST_F(RSNodeCommandTest, ReSortChildrenByZIndexTest, TestSize.Level1)
     RSNodeCommandHelper::ReSortChildrenByZIndex(context, nodeId);
     ASSERT_NE(canvasNode, nullptr);
     ASSERT_FALSE(canvasNode->isFullChildrenListValid_);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest001
+ * @tc.desc: SetUIFirstSwitch test with valid RSSurfaceRenderNode.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetUIFirstSwitchTest001, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 1;
+    SurfaceNodeCommandHelper::Create(context, nodeId);
+    RSNodeCommandHelper::SetUIFirstSwitch(context, nodeId, RSUIFirstSwitch::FORCE_ENABLE);
+    auto surfaceNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    ASSERT_NE(surfaceNode, nullptr);
+    EXPECT_EQ(surfaceNode->GetUIFirstSwitch(), RSUIFirstSwitch::FORCE_ENABLE);
+}
+
+/**
+ * @tc.name: SetUIFirstSwitchTest002
+ * @tc.desc: SetUIFirstSwitch test with RSRenderNode (not RSSurfaceRenderNode).
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSNodeCommandTest, SetUIFirstSwitchTest002, TestSize.Level1)
+{
+    RSContext context;
+    NodeId nodeId = 2;
+    RSCanvasNodeCommandHelper::Create(context, nodeId, false);
+    RSNodeCommandHelper::SetUIFirstSwitch(context, nodeId, RSUIFirstSwitch::FORCE_DISABLE);
+    auto canvasNode = context.GetNodeMap().GetRenderNode<RSRenderNode>(nodeId);
+    ASSERT_NE(canvasNode, nullptr);
+    auto surfaceNode = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId);
+    ASSERT_EQ(surfaceNode, nullptr);
 }
 } // namespace OHOS::Rosen

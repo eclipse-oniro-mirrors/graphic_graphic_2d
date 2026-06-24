@@ -29,6 +29,7 @@
 #include <system_ability_definition.h>
 #include <unistd.h>
 
+#include "hgm_core.h"
 #include "ipc_callbacks/rs_occlusion_change_callback_stub.h"
 #include "ipc_callbacks/rs_surface_occlusion_change_callback_stub.h"
 #include "parameters.h"
@@ -479,6 +480,34 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, GetRealtimeRefreshRate003, TestSiz
 }
 
 /**
+ * @tc.name: GetRealtimeRefreshRate004
+ * @tc.desc: Test GetRealtimeRefreshRate with valid screenId and whether hgmAbilityEnabled
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, GetRealtimeRefreshRate004, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::GET_REALTIME_REFRESH_RATE);
+    uint64_t screenId = 100;
+    data.WriteUint64(screenId);
+ 
+    EXPECT_TRUE(HgmCore::Instance().hgmAbilityEnabled_);
+    HgmCore::Instance().hgmAbilityEnabled_ = false;
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+ 
+    // Verify the response contains a valid refresh rate
+    uint32_t refreshRate = 0;
+    EXPECT_TRUE(reply.ReadUint32(refreshRate));
+    HgmCore::Instance().hgmAbilityEnabled_ = true;
+}
+
+/**
  * @tc.name: SetBrightnessInfoChangeCallbackTest
  * @tc.desc: Test SetBrightnessInfoChangeCallback
  * @tc.type: FUNC
@@ -662,7 +691,7 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, OnGlobalBlacklistChangedStubTest00
     option.SetFlags(MessageOption::TF_ASYNC);
     uint32_t code = static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::ON_GLOBAL_BLACKLIST_CHANGED);
     auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
-    ASSERT_EQ(ret, ERR_INVALID_DATA);
+    ASSERT_EQ(ret, ERR_NONE);
 }
 
 /**
@@ -1326,7 +1355,7 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, GetPixelMapByProcessId003, TestSiz
     uint64_t pid = 12345;
     data.WriteUint64(pid);
     auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
-    EXPECT_EQ(ret, ERR_INVALID_REPLY);
+    EXPECT_EQ(ret, ERR_NONE);
 }
 
 /**
@@ -2055,5 +2084,206 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, SetHdrForceHwcEnabledStubTest003, 
 
     auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+/**
+ * @tc.name: SetApsConfigParamsStub_ReadEventFailed
+ * @tc.desc: Test SetApsConfigParams when Read event fails (data parcel lacks event field)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_ReadEventFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_ReadParamsSizeFailed
+ * @tc.desc: Test SetApsConfigParams when ReadParamsSize fails (data parcel lacks paramsSize field)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_ReadParamsSizeFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_ParamsSizeExceed
+ * @tc.desc: Test SetApsConfigParams when paramsSize exceeds MAX_APS_PARAMS_SIZE (129 > 128)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_ParamsSizeExceed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(129));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_ReadStringKeyFailedValueOk
+ * @tc.desc: Test SetApsConfigParams when ReadString(key) fails and ReadString(value) succeeds
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_ReadStringKeyFailedValueOk, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(1));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_ReadStringKeyOkValueFailed
+ * @tc.desc: Test SetApsConfigParams when ReadString(key) succeeds and ReadString(value) fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_ReadStringKeyOkValueFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(1));
+    ASSERT_TRUE(data.WriteString("key1"));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_ReadStringBothFailed
+ * @tc.desc: Test SetApsConfigParams when both ReadString(key) and ReadString(value) fail
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_ReadStringBothFailed, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(1));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_INVALID_DATA);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_SuccessEmptyParams
+ * @tc.desc: Test SetApsConfigParams with paramsSize=0 (empty map)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_SuccessEmptyParams, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(0));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_SuccessOneParam
+ * @tc.desc: Test SetApsConfigParams with paramsSize=1 (single element)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_SuccessOneParam, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(1));
+    ASSERT_TRUE(data.WriteString("key1"));
+    ASSERT_TRUE(data.WriteString("value1"));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
+}
+
+/**
+ * @tc.name: SetApsConfigParamsStub_SuccessMultipleParams
+ * @tc.desc: Test SetApsConfigParams with paramsSize=2 (multiple elements)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSServiceToRenderConnectionStubTest, SetApsConfigParamsStub_SuccessMultipleParams, TestSize.Level1)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    option.SetFlags(MessageOption::TF_ASYNC);
+    ASSERT_TRUE(data.WriteInterfaceToken(RSIServiceToRenderConnection::GetDescriptor()));
+    ASSERT_TRUE(data.WriteUint32(static_cast<uint32_t>(ApsEventType::SPLIT_LAYER)));
+    ASSERT_TRUE(data.WriteUint32(2));
+    ASSERT_TRUE(data.WriteString("key1"));
+    ASSERT_TRUE(data.WriteString("value1"));
+    ASSERT_TRUE(data.WriteString("key2"));
+    ASSERT_TRUE(data.WriteString("value2"));
+    uint32_t code =
+        static_cast<uint32_t>(RSIServiceToRenderConnectionInterfaceCode::SET_APS_CONFIG_PARAMS);
+
+    auto ret = g_connectionStub->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(ret, ERR_NONE);
 }
 } // namespace OHOS::Rosen

@@ -113,7 +113,7 @@ void RSCanvasRenderNode::OnTreeStateChanged()
             SetCacheType(CacheType::NONE);
             SetDrawingCacheType(RSDrawingCacheType::DISABLED_CACHE);
         }
-        needClearSurface_ = true;
+        SetNeedClearRenderGroupCache(true);
         displayNodeId = preDisplayNodeId_;
         AddToPendingSyncList();
     }
@@ -421,6 +421,5 @@ void RSCanvasRenderNode::MarkNodeColorSpace(int8_t colorSpace)
         SetColorGamut(OHOS::ColorManager::ColorSpaceName::DISPLAY_P3);
     }
 }
-
 } // namespace Rosen
 } // namespace OHOS

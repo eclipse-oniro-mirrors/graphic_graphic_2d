@@ -94,14 +94,6 @@ void RSVsyncRateReduceManager::PushWindowNodeId(NodeId nodeId)
     curAllMainAndLeashWindowNodesIds_.emplace_back(nodeId);
 }
 
-void RSVsyncRateReduceManager::ClearLastVisMapForVsyncRate()
-{
-    if (!vRateReduceEnabled_) {
-        return;
-    }
-    lastVisMapForVSyncVisLevel_.clear();
-}
-
 void RSVsyncRateReduceManager::FrameDurationBegin()
 {
     if (!vRateConditionQualified_.load()) {
@@ -122,12 +114,9 @@ void RSVsyncRateReduceManager::FrameDurationEnd()
     curTime_ = 0;
 }
 
-void RSVsyncRateReduceManager::SetIsReduceBySystemAnimatedScenes(bool isReduceBySystemAnimatedScenes)
+void RSVsyncRateReduceManager::SyncOneFramePeriod()
 {
-    if (!vRateReduceEnabled_) {
-        return;
-    }
-    isReduceBySystemAnimatedScenes_ = isReduceBySystemAnimatedScenes;
+    oneFramePeriod_ = stagingOneFramePeriod_;
 }
 
 void RSVsyncRateReduceManager::EnqueueFrameDuration(float duration)
@@ -248,7 +237,7 @@ void RSVsyncRateReduceManager::CalcRates()
     }
     for (const auto& [nodeId, vRateInfo]: surfaceVRateMap_) {
         double vVal = 0;
-        int visArea = vRateInfo.visibleRegion.Area();
+        int visArea = static_cast<int>(vRateInfo.visibleRegion.Area());
         const bool visibleRegionBehindWindowEmpty = vRateInfo.visibleRegionBehindWindow.IsEmpty();
         if (vRateInfo.visibleRegion.IsEmpty()) {
             vVal = V_VAL_MIN;
@@ -338,7 +327,7 @@ Occlusion::Rect RSVsyncRateReduceManager::CalcMaxVisibleRect(const Occlusion::Re
     for (const auto &rect: rects) {
         if (rect.Area() > maxRArea) {
             maxRect = rect;
-            maxRArea = maxRect.Area();
+            maxRArea = static_cast<int>(maxRect.Area());
         }
         xPositionSet.emplace(rect.left_);
         xPositionSet.emplace(rect.right_);
@@ -363,7 +352,7 @@ Occlusion::Rect RSVsyncRateReduceManager::CalcMaxVisibleRect(const Occlusion::Re
             Occlusion::Rect tmpRect = GetMaxVerticalRect(verticalRegion);
             if (tmpRect.Area() > maxRArea) {
                 maxRect = tmpRect;
-                maxRArea = tmpRect.Area();
+                maxRArea = static_cast<int>(tmpRect.Area());
             }
         }
     }
@@ -423,18 +412,12 @@ bool RSVsyncRateReduceManager::CheckNeedNotify()
     if (focusChanged) {
         lastFocusedNodeId_ = focusedNodeId_;
     }
-    if (needRefresh) {
-        isReduceBySystemAnimatedScenes_ = false;
-    }
     if (surfaceIdsChanged || needRefresh) {
         for (const auto& [nodeId, rate]: lastVSyncRateMap_) {
             if (vSyncRateMap_.find(nodeId) == vSyncRateMap_.end()) {
                 vSyncRateMap_.emplace(nodeId, DEFAULT_RATE);
             }
         }
-    }
-    if (isSystemAnimatedScenes_) {
-        isReduceBySystemAnimatedScenes_ = true;
     }
     return true;
 }
@@ -458,12 +441,11 @@ void RSVsyncRateReduceManager::ResetFrameValues(uint32_t rsRefreshRate)
     vSyncRatesChanged_ = false;
     vSyncRateMap_.clear();
     curAllMainAndLeashWindowNodesIds_.clear();
-    visMapForVSyncVisLevel_.clear();
     vRateConditionQualified_ = rsRefreshRate > 0;
     if (!vRateConditionQualified_) {
         return;
     }
-    oneFramePeriod_ = PERIOD_CHECK_THRESHOLD / static_cast<int64_t>(rsRefreshRate);
+    stagingOneFramePeriod_ = PERIOD_CHECK_THRESHOLD / static_cast<int64_t>(rsRefreshRate);
     rsRefreshRate_ = rsRefreshRate;
 }
 

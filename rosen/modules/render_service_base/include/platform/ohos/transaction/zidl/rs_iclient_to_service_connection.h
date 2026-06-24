@@ -49,7 +49,7 @@
 #include "screen_manager/rs_screen_data.h"
 #include "screen_manager/rs_screen_hdr_capability.h"
 #include "screen_manager/rs_screen_mode_info.h"
-#include "screen_manager/screen_types.h"
+#include "screen_manager/rs_surface_region_config.h"
 #include "screen_manager/rs_virtual_screen_resolution.h"
 #include "transaction/rs_transaction_data.h"
 #include "ivsync_connection.h"
@@ -101,6 +101,12 @@ public:
         int32_t flags = 0,
         std::vector<NodeId> whiteList = {}) = 0;
 
+    // Multi-surface virtual screen dynamic surface management
+    virtual int32_t AddVirtualScreenSurface(
+        ScreenId screenId, const std::vector<SurfaceRegionConfig>& surfaceConfigs) = 0;
+    virtual int32_t RemoveVirtualScreenSurface(
+        ScreenId screenId, const std::vector<sptr<Surface>>& surfaces) = 0;
+
     // blacklist
     virtual int32_t SetVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList) = 0;
     virtual ErrCode AddVirtualScreenBlackList(ScreenId id, const std::vector<NodeId>& blackList, int32_t& repCode) = 0;
@@ -118,6 +124,8 @@ public:
     virtual ErrCode SetWatermark(const std::string& name, std::shared_ptr<Media::PixelMap> watermark,
         bool& success, uint32_t rowCount = 0, uint32_t colCount = 0) = 0;
 
+    virtual ErrCode SetUifirstScale(float scaleFactor) = 0;
+
     virtual int32_t SetVirtualScreenSecurityExemptionList(
         ScreenId id, const std::vector<NodeId>& securityExemptionList) = 0;
 
@@ -129,7 +137,7 @@ public:
 
     virtual int32_t SetCastScreenEnableSkipWindow(ScreenId id, bool enable) = 0;
 
-    virtual int32_t SetVirtualScreenSurface(ScreenId id, sptr<Surface> surface) = 0;
+    virtual int32_t SetVirtualScreenSurface(ScreenId screenId, sptr<Surface> surface) = 0;
 
     virtual void RemoveVirtualScreen(ScreenId id) = 0;
 
@@ -214,6 +222,11 @@ public:
     virtual ErrCode GetScreenBacklight(uint64_t id, int32_t& level) = 0;
 
     virtual void SetScreenBacklight(const RsScreenBrightnessData& brightnessData) = 0;
+
+    virtual ErrCode GetScreenVCPFeature(ScreenId id, uint8_t vcpCode,
+        uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode) = 0;
+
+    virtual ErrCode SetScreenVCPFeature(ScreenId id, uint8_t vcpCode, uint16_t currentValue) = 0;
 
     virtual int32_t GetScreenSupportedColorGamuts(ScreenId id, std::vector<ScreenColorGamut>& mode) = 0;
 
@@ -335,6 +348,9 @@ public:
     virtual void SetOnRemoteDiedCallback(const OnRemoteDiedCallback& callback) = 0;
 
     virtual void RunOnRemoteDiedCallback() = 0;
+
+    virtual ErrCode SendVideoRateInfo(const std::unordered_map<std::string, std::string>& videoRateInfo) = 0;
+
 #ifndef ENABLE_RS_PROXY
     virtual void SetVirtualScreenUsingStatus(bool isVirtualScreenUsingStatus) = 0;
 
@@ -386,6 +402,9 @@ public:
     virtual ErrCode SetBehindWindowFilterEnabled(bool enabled) = 0;
 
     virtual ErrCode GetBehindWindowFilterEnabled(bool& enabled) = 0;
+
+    virtual ErrCode SetApsConfigParams(
+        ApsEventType event, const std::unordered_map<std::string, std::string>& params) = 0;
 
     virtual int32_t GetPidGpuMemoryInMB(pid_t pid, float& gpuMemInMB) = 0;
 

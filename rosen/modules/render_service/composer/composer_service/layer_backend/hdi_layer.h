@@ -145,7 +145,9 @@ private:
     int32_t SetPerFrameParameterBrightnessRatio();
     int32_t SetPerFrameLayerLinearMatrix();
     int32_t SetPerFrameLayerSourceTuning(); // used for source crop tuning
+    int32_t SetPerFrameLayerVcldParam();
     int32_t SetTunnelLayerParameters();
+    int32_t SetDelegateModeLayerCrop();
 };
 } // namespace Rosen
 } // namespace OHOS

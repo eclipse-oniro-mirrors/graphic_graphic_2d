@@ -44,6 +44,7 @@
 #include "skia_canvas_op.h"
 
 #include "common/rs_macros.h"
+#include "draw/prim_list.h"
 #include "impl_interface/core_canvas_impl.h"
 
 namespace OHOS {
@@ -67,7 +68,7 @@ public:
     void Bind(const Bitmap& bitmap) override;
 
     void RecordState(Canvas* canvas) override;
-    bool InheritStateAndContentFrom(Canvas* canvas) override;
+    bool InheritStateAndContentFrom(Canvas* canvas, bool willReleaseSrcCanvas = true) override;
     void SetParallelRender(bool parallelEnable) override;
     Matrix GetTotalMatrix() const override;
     Rect GetLocalClipBounds() const override;
@@ -206,6 +207,11 @@ public:
     void InsertOpaqueRegion(const std::vector<RectI>& opaqueRects) override;
 
     bool IsOpaque() override;
+
+    void BeginPrimListCollecting(const Rect& bounds) override;
+    std::shared_ptr<PrimList> EndPrimListCollecting() override;
+    bool DrawPrimList(const PrimList& primList) override;
+
 private:
     void RoundRectCastToSkRRect(const RoundRect& roundRect, SkRRect& skRRect) const;
     bool ConvertToHMSymbolData(const DrawingHMSymbolData& symbol, HMSymbolData& skSymbol);

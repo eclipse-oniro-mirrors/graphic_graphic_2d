@@ -33,6 +33,14 @@ static constexpr int INFINITE = -1;
 static constexpr int REVERSE_COUNT = 2;
 static constexpr int MAX_SPEED = 1000000;
 constexpr const char* ANIMATION_SCALE_NAME = "persist.sys.graphic.animationscale";
+
+class RSAnimationFractionCleanup {
+public:
+    ~RSAnimationFractionCleanup()
+    {
+        RSAnimationFraction::UnInit();
+    }
+};
 } // namespace
 
 std::atomic<bool> RSAnimationFraction::isInitialized_ = false;
@@ -50,7 +58,17 @@ void RSAnimationFraction::Init()
     }
     SetAnimationScale(RSSystemProperties::GetAnimationScale());
     RSSystemProperties::WatchSystemProperty(ANIMATION_SCALE_NAME, OnAnimationScaleChangedCallback, nullptr);
+    static RSAnimationFractionCleanup cleanup;
     isInitialized_ = true;
+}
+
+void RSAnimationFraction::UnInit()
+{
+    if (!isInitialized_) {
+        return;
+    }
+    RSSystemProperties::RemoveWatchSystemProperty(ANIMATION_SCALE_NAME, OnAnimationScaleChangedCallback, nullptr);
+    isInitialized_ = false;
 }
 
 float RSAnimationFraction::GetAnimationScale()
@@ -371,6 +389,25 @@ void RSAnimationFraction::ResetFraction()
     currentRepeatCount_ = 0;
     currentIsReverseCycle_ = false;
     groupWaitingTime_ = 0;
+}
+
+void RSAnimationFraction::SetRebuildFraction(float fraction, int64_t time, bool isReverseCycle)
+{
+    fraction = std::clamp(fraction, 0.f, 1.f);
+    int64_t durationNs = duration_ * MS_TO_NS;
+    int64_t startDelayNs = startDelay_ * MS_TO_NS;
+    currentIsReverseCycle_ = isReverseCycle;
+    currentRepeatCount_ = autoReverse_ && isReverseCycle ? 1 : 0;
+    int64_t baseTime = startDelayNs + currentRepeatCount_ * durationNs;
+    runningTime_ =
+        baseTime + static_cast<int64_t>(durationNs * (currentIsReverseCycle_ ? (1.f - fraction) : fraction));
+    currentTimeFraction_ = fraction;
+    playTime_ = static_cast<int64_t>(durationNs * fraction);
+    lastFrameTime_ = time;
+    RS_TRACE_NAME_FMT("SetRebuildFraction animate[%llu] fraction[%f] runningTime[%lld] playTime[%lld] "
+        "durationNs[%lld] currentRepeatCount[%d] currentIsReverseCycle[%d]",
+        animationId_, fraction, static_cast<long long>(runningTime_), static_cast<long long>(playTime_),
+        static_cast<long long>(durationNs), currentRepeatCount_, static_cast<int>(currentIsReverseCycle_));
 }
 
 int RSAnimationFraction::GetRemainingRepeatCount() const

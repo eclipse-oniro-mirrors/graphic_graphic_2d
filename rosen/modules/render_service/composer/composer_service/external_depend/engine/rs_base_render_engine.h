@@ -84,7 +84,11 @@ public:
     }
     ~RSRenderFrame() noexcept
     {
-        Flush();
+        if (flushPhaseActive_) {
+            CancelActiveFlush();
+        } else {
+            Flush();
+        }
     }
 
     // noncopyable
@@ -105,7 +109,16 @@ public:
             targetSurface_ = nullptr;
             surfaceFrame_ = nullptr;
         }
+        flushPhaseActive_ = false;
     }
+
+    // 3-phase flush: allows splitting Flush into discrete steps for pipeline parallelism.
+    // Must be called in order: FlushGpu -> SubmitGpu -> FlushBuffer.
+    // Do not mix with Flush(). If you start a 3-phase sequence, complete it with FlushBuffer().
+    bool FlushGpu() noexcept;
+    bool SubmitGpu() noexcept;
+    bool FlushBuffer() noexcept;
+    void CancelActiveFlush() noexcept;
 
     void CancelCurrentFrame()
     {
@@ -119,6 +132,9 @@ public:
             }
 #endif
         }
+        flushPhaseActive_ = false;
+        targetSurface_ = nullptr;
+        surfaceFrame_ = nullptr;
     }
 
     const std::shared_ptr<RSSurfaceOhos>& GetSurface() const
@@ -159,6 +175,7 @@ public:
     {
         targetSurface_ = nullptr;
         surfaceFrame_ = nullptr;
+        flushPhaseActive_ = false;
     }
 
 protected:
@@ -169,6 +186,7 @@ private:
     std::shared_ptr<RSSurfaceOhos> targetSurface_;
     std::unique_ptr<RSSurfaceFrame> surfaceFrame_;
     sptr<SyncFence> acquireFence_ = SyncFence::InvalidFence();
+    bool flushPhaseActive_ = false;
 };
 
 // function that will be called before drawing Buffer / Image.
@@ -232,6 +250,7 @@ public:
     virtual void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas,
         DrawableV2::RSSurfaceRenderNodeDrawable& surfaceDrawable, BufferDrawParam& params,
         PreProcessFunc preProcess = nullptr, PostProcessFunc postProcess = nullptr) {}
+    virtual void DrawSurfaceNodeWithParams(RSPaintFilterCanvas& canvas, BufferDrawParam& params) {}
 
     void DrawScreenNodeWithParams(RSPaintFilterCanvas& canvas, RSScreenRenderNode& node,
         BufferDrawParam& params);
@@ -254,6 +273,7 @@ public:
         const ComposerScreenInfo& composerScreenInfo = {}) = 0;
 #endif
 
+    void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
     static void DrawBuffer(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
 
     void ShrinkCachesIfNeeded(bool isForUniRedraw = false);
@@ -303,7 +323,6 @@ public:
 #endif
 
 protected:
-    void DrawImage(RSPaintFilterCanvas& canvas, BufferDrawParam& params);
 
     static inline std::mutex colorFilterMutex_;
     static inline ColorFilterMode colorFilterMode_ = ColorFilterMode::COLOR_FILTER_END;

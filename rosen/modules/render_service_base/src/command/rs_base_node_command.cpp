@@ -16,6 +16,7 @@
 #include "command/rs_base_node_command.h"
 
 #include "pipeline/rs_base_render_node.h"
+#include "pipeline/rs_surface_render_node.h"
 #include "platform/common/rs_log.h"
 #include "rs_trace.h"
 
@@ -26,6 +27,10 @@ void BaseNodeCommandHelper::Destroy(RSContext& context, NodeId nodeId)
 {
     auto& nodeMap = context.GetMutableNodeMap();
     auto node = nodeMap.GetRenderNode(nodeId);
+    nodeMap.GetSurfaceHandler(nodeId, true);
+#ifndef ROSEN_CROSS_PLATFORM
+    nodeMap.RemoveSurfaceHandlerInfo(nodeId);
+#endif
     if (node == nullptr) {
         return;
     }
@@ -82,9 +87,12 @@ void BaseNodeCommandHelper::AddCrossParentChild(RSContext& context, NodeId id, N
 {
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode(id);
-    auto child = nodeMap.GetRenderNode(childId);
+    auto child = nodeMap.GetRenderNode<RSSurfaceRenderNode>(childId);
     if (node && child) {
         node->AddCrossParentChild(child, index);
+    } else {
+        RS_LOGE("BaseNodeCommandHelper::%s, node[%{public}" PRIu64 "] or [%{public}" PRIu64 "] is null",
+            __func__, id, childId);
     }
 }
 
@@ -93,17 +101,22 @@ void BaseNodeCommandHelper::RemoveCrossParentChild(RSContext& context, NodeId no
 {
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode(nodeId);
-    auto child = nodeMap.GetRenderNode(childNodeId);
+    auto child = nodeMap.GetRenderNode<RSSurfaceRenderNode>(childNodeId);
     auto newParent = nodeMap.GetRenderNode(newParentId);
     if (node && child && newParent) {
         node->RemoveCrossParentChild(child, newParent);
+    } else {
+        RS_LOGE("BaseNodeCommandHelper::%s, node[%{public}" PRIu64 "], childNode[%{public}" PRIu64
+            "] or newParent[%{public}" PRIu64 "] is null", __func__, nodeId, childNodeId, newParentId);
     }
 }
 
 void BaseNodeCommandHelper::SetIsCrossNode(RSContext& context, NodeId nodeId, bool isCrossNode)
 {
-    if (auto node = context.GetNodeMap().GetRenderNode(nodeId)) {
+    if (auto node = context.GetNodeMap().GetRenderNode<RSSurfaceRenderNode>(nodeId)) {
         node->SetIsCrossNode(isCrossNode);
+    } else {
+        RS_LOGE("BaseNodeCommandHelper::%s, node[%{public}" PRIu64 "] is null", __func__, nodeId);
     }
 }
 
@@ -112,7 +125,7 @@ void BaseNodeCommandHelper::AddCrossScreenChild(RSContext& context, NodeId id, N
 {
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode(id);
-    auto child = nodeMap.GetRenderNode(childId);
+    auto child = nodeMap.GetRenderNode<RSSurfaceRenderNode>(childId);
     if (node) {
         node->AddCrossScreenChild(child, cloneNodeId, index, autoClearCloneNode);
     }
@@ -122,9 +135,8 @@ void BaseNodeCommandHelper::RemoveCrossScreenChild(RSContext& context, NodeId no
 {
     auto& nodeMap = context.GetNodeMap();
     auto node = nodeMap.GetRenderNode(nodeId);
-    auto child = nodeMap.GetRenderNode(childNodeId);
     if (node) {
-        node->RemoveCrossScreenChild(child);
+        node->RemoveCrossScreenChild(nodeMap.GetRenderNode<RSSurfaceRenderNode>(childNodeId));
     }
 }
 

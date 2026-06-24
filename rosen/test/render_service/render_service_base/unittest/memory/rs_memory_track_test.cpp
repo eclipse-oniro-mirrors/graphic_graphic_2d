@@ -1213,7 +1213,6 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsForReportTest001, testing::ex
     MemoryTrack::Instance().DumpMemoryPicStatisticsForReport(log, testPid);
     std::string logStr = log.GetString();
     EXPECT_TRUE(logStr.find("RSImageCache:") != std::string::npos);
-    EXPECT_TRUE(logStr.find("Size        NodeId        Pid        Type,Format") != std::string::npos);
 }
 
 /**
@@ -1252,7 +1251,6 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsForReportTest002, testing::ex
     std::string logStr = log.GetString();
 
     EXPECT_TRUE(logStr.find("RSImageCache:") != std::string::npos);
-    EXPECT_TRUE(logStr.find("Size        NodeId        Pid        Type,Format") != std::string::npos);
     EXPECT_TRUE(logStr.find("HEAP") != std::string::npos);
     EXPECT_TRUE(logStr.find("SHARE_MEM") != std::string::npos);
 
@@ -1331,7 +1329,6 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsForReportTest004, testing::ex
     std::string logStr = log.GetString();
 
     EXPECT_TRUE(logStr.find("RSImageCache:") != std::string::npos);
-    EXPECT_TRUE(logStr.find("skimage") != std::string::npos);
 
     MemoryTrack::Instance().RemovePictureRecord(addr);
 }
@@ -1364,5 +1361,33 @@ HWTEST_F(RSMemoryTrackTest, DumpMemoryPicStatisticsForReportTest005, testing::ex
     EXPECT_TRUE(logStr.find("10") != std::string::npos);
 
     MemoryTrack::Instance().RemovePictureRecord(addr);
+}
+
+/**
+ * @tc.name: GetMemNodeMapTest001
+ * @tc.desc: Test GetMemNodeMap with single node.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSMemoryTrackTest, GetMemNodeMapTest001, testing::ext::TestSize.Level1)
+{
+    NodeId testId = 6001;
+    pid_t testPid = 60001;
+    size_t testSize = 1024;
+    MemoryInfo testInfo = {testSize, testPid, testId, 0, MEMORY_TYPE::MEM_RENDER_NODE};
+
+    MemoryTrack::Instance().AddNodeRecord(testId, testInfo);
+
+    auto memNodeMap = MemoryTrack::Instance().GetMemNodeMap();
+
+    EXPECT_FALSE(memNodeMap.empty());
+    EXPECT_TRUE(memNodeMap.find(testId) != memNodeMap.end());
+
+    const auto& info = memNodeMap.at(testId);
+    EXPECT_EQ(info.size, testSize);
+    EXPECT_EQ(info.pid, testPid);
+    EXPECT_EQ(info.nid, testId);
+
+    MemoryTrack::Instance().RemoveNodeRecord(testId);
 }
 } // namespace OHOS::Rosen

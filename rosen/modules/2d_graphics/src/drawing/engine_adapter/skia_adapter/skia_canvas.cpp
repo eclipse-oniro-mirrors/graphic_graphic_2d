@@ -129,7 +129,7 @@ void SkiaCanvas::RecordState(Canvas* canvas)
     LOGD("skia does not support RecordState.");
 }
 
-bool SkiaCanvas::InheritStateAndContentFrom(Canvas* canvas)
+bool SkiaCanvas::InheritStateAndContentFrom(Canvas* canvas, bool willReleaseSrcCanvas)
 {
     LOGD("skia does not support InheritStateAndContentFrom.");
     return false;
@@ -241,7 +241,9 @@ bool SkiaCanvas::AddSdfPara(SkRuntimeShaderBuilder& builder, const SDFShapeBase&
         }
     }
     std::vector<float> color = shape.GetColorPara();
-    builder.uniform("sdfalpha") = color[0]; // color_[0] is color alpha channel.
+    if (color.size() > 0) {
+        builder.uniform("sdfalpha") = color[0]; // color_[0] is color alpha channel.
+    }
     for (uint64_t i = 1; i < color.size(); i++) {
         char buf[MAX_PARA_LEN] = {0}; // maximum length of string needed is 15.
         if (sprintf_s(buf, sizeof(buf), "colpara%lu", i) != -1) {
@@ -548,7 +550,13 @@ void SkiaCanvas::DrawColor(ColorQuad color, BlendMode mode)
 
 void SkiaCanvas::DrawUIColor(UIColor color, BlendMode mode)
 {
-    LOGD("SKIA does not support HDR color. %{public}d", __LINE__);
+    if (!skCanvas_) {
+        LOGD("skCanvas_ is null, return on line %{public}d", __LINE__);
+        return;
+    }
+    Color generalColor;
+    generalColor.SetRgbF(color.GetRed(), color.GetGreen(), color.GetBlue(), color.GetAlpha());
+    skCanvas_->drawColor(static_cast<SkColor>(generalColor.CastToColorQuad()), static_cast<SkBlendMode>(mode));
 }
 
 void SkiaCanvas::DrawParticle(std::shared_ptr<ParticleEffect> particle)
@@ -817,8 +825,8 @@ void SkiaCanvas::DrawAtlas(const Image* atlas, const RSXform xform[], const Rect
         return;
     }
 
-    SkRSXform skRSXform[count];
-    SkRect skTex[count];
+    std::vector<SkRSXform> skRSXform(count);
+    std::vector<SkRect> skTex(count);
     for (int i = 0; i < count; ++i) {
         SkiaConvertUtils::DrawingRSXformCastToSkXform(xform[i], skRSXform[i]);
         SkiaConvertUtils::DrawingRectCastToSkRect(tex[i], skTex[i]);
@@ -842,7 +850,7 @@ void SkiaCanvas::DrawAtlas(const Image* atlas, const RSXform xform[], const Rect
     const SkRect* skCullRect = reinterpret_cast<const SkRect*>(cullRect);
     skPaint_ = defaultPaint_;
     SkiaPaint::PaintToSkPaint(paint, skPaint_);
-    skCanvas_->drawAtlas(img.get(), skRSXform, skTex, skColors.empty() ? nullptr : skColors.data(), count,
+    skCanvas_->drawAtlas(img.get(), skRSXform.data(), skTex.data(), skColors.empty() ? nullptr : skColors.data(), count,
         static_cast<SkBlendMode>(mode), *samplingOptions, skCullRect, &skPaint_);
 }
 
@@ -1522,6 +1530,23 @@ bool SkiaCanvas::IsOpaque()
         return false;
     }
     return skCanvas_->isOpaque();
+}
+
+void SkiaCanvas::BeginPrimListCollecting(const Rect& bounds)
+{
+    LOGD("SkiaCanvas does not support BeginPrimListCollecting");
+}
+
+std::shared_ptr<PrimList> SkiaCanvas::EndPrimListCollecting()
+{
+    LOGD("SkiaCanvas does not support EndPrimListCollecting");
+    return nullptr;
+}
+
+bool SkiaCanvas::DrawPrimList(const PrimList& primList)
+{
+    LOGD("SkiaCanvas does not support DrawPrimList");
+    return false;
 }
 } // namespace Drawing
 } // namespace Rosen

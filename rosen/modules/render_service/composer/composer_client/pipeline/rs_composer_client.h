@@ -49,6 +49,7 @@ public:
     void RegisterLayerStateChangedCB(OnLayerStateChangedCB cb);
     std::shared_ptr<RSComposerContext> GetComposerContext();
     void CleanLayerBufferBySurfaceId(uint64_t surfaceId);
+    void MarkTunnelSurfaceInvalid(uint64_t surfaceId);
     int32_t CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tunnelLayerId,
         const sptr<SurfaceBuffer>& buffer, const sptr<SyncFence>& acquireFence, sptr<SyncFence>& releaseFence);
     void ClearFrameBuffers();
@@ -60,6 +61,7 @@ public:
     void DumpCurrentFrameLayers();
     void ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds);
     void SetScreenBacklight(uint32_t level);
+    void SetScreenLinearMatrix(const std::vector<float>& matrix);
     static void ConvertScreenInfo(const ScreenInfo& screenInfo, ComposerScreenInfo& composerScreenInfo);
     void PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer);
     std::shared_ptr<HdiOutput> GetOutput() const;

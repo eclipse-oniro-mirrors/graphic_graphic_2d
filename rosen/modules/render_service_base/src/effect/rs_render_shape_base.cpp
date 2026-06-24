@@ -37,6 +37,14 @@ static std::unordered_map<RSNGEffectType, ShapeCreator> creatorLUT = {
             return std::make_shared<RSNGRenderSDFSmoothUnionOpShape>();
         }
     },
+    {RSNGEffectType::SDF_SUB_OP_SHAPE, [] {
+            return std::make_shared<RSNGRenderSDFSubOpShape>();
+        }
+    },
+    {RSNGEffectType::SDF_SMOOTH_SUB_OP_SHAPE, [] {
+            return std::make_shared<RSNGRenderSDFSmoothSubOpShape>();
+        }
+    },
     {RSNGEffectType::SDF_RRECT_SHAPE, [] {
             return std::make_shared<RSNGRenderSDFRRectShape>();
         }
@@ -92,24 +100,23 @@ static std::unordered_map<RSNGEffectType, ShapeGetTransformRect> getTransformRec
             float top = transformRect.GetTop() + std::min(luCorner[1], ruCorner[1]) * transformRect.GetHeight();
             float right = std::max(ruCorner[0], rbCorner[0]) * transformRect.GetWidth();
             float bottom = std::max(lbCorner[1], rbCorner[1]) * transformRect.GetHeight();
+            float width = std::abs(right - left);
+            float height = std::abs(bottom - top);
             constexpr float halfUV = 0.5f;
             constexpr float distortScale = 0.25f;
             constexpr float tuneNum = 4.0f;
             constexpr float tuneDenomBase = 2.0f;
             if (distortion[0] > 0) {
-                left -= rect.GetWidth() *
-                    (halfUV - distortScale * (tuneNum + distortion[0]) / (tuneDenomBase + distortion[0]));
+                left -= width * (halfUV - distortScale * (tuneNum + distortion[0]) / (tuneDenomBase + distortion[0]));
             }
             if (distortion[1] > 0) {
-                right += rect.GetWidth() *
-                    (halfUV - distortScale * (tuneNum + distortion[1]) / (tuneDenomBase + distortion[1]));
+                right += width * (halfUV - distortScale * (tuneNum + distortion[1]) / (tuneDenomBase + distortion[1]));
             }
             if (distortion[2] > 0) {
-                top -= rect.GetHeight() *
-                    (halfUV - distortScale * (tuneNum + distortion[2]) / (tuneDenomBase + distortion[2]));
+                top -= height * (halfUV - distortScale * (tuneNum + distortion[2]) / (tuneDenomBase + distortion[2]));
             }
             if (distortion[3] > 0) {
-                bottom += rect.GetHeight() *
+                bottom += height *
                     (halfUV - distortScale * (tuneNum + distortion[3]) / (tuneDenomBase + distortion[3]));
             }
             return RectF(floor(left), floor(top), ceil(right) - floor(left), ceil(bottom) - floor(top));
@@ -167,9 +174,35 @@ RectF RSNGRenderShapeHelper::CalcRect(
     auto iter = getTransformRectLUT.find(shape->GetType());
     auto result = iter == getTransformRectLUT.end() ? bound : iter->second(shape, bound);
     if (needUpdate) {
-        shape->transformDrawRect_ = bound.JoinRect(result);
+        shape->transformDrawRect_ = result;
     }
     return result;
+}
+
+void RSNGRenderShapeHelper::FillEmptyDistortOpShape(
+    std::shared_ptr<RSNGRenderShapeBase>& sdfShape, const RRect& sdfRRect, NodeId nodeId)
+{
+    if (!sdfShape || sdfShape->GetType() != RSNGEffectType::SDF_DISTORT_OP_SHAPE) {
+        return;
+    }
+    auto distortOpShape = std::static_pointer_cast<RSNGRenderSDFDistortOpShape>(sdfShape);
+    auto innerShape = distortOpShape->Getter<SDFDistortOpShapeShapeRenderTag>()->Get();
+    bool sync = distortOpShape->Getter<SDFDistortOpShapeSyncRenderTag>()->Get();
+    if (!innerShape) {
+        sync = true;
+        innerShape = RSNGRenderShapeBase::Create(RSNGEffectType::SDF_RRECT_SHAPE);
+        distortOpShape->Setter<SDFDistortOpShapeShapeRenderTag>(innerShape,
+            PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+        distortOpShape->Setter<SDFDistortOpShapeSyncRenderTag>(true, PropertyUpdateType::UPDATE_TYPE_ONLY_VALUE);
+        ROSEN_LOGD("RSNGRenderShapeHelper::FillEmptyDistortOpShape, add default SDF_RRECT_SHAPE, node %{public}"
+            PRIu64, nodeId);
+    }
+    if (sync) {
+        auto defaultShape = std::static_pointer_cast<RSNGRenderSDFRRectShape>(innerShape);
+        defaultShape->Setter<SDFRRectShapeRRectRenderTag>(sdfRRect);
+        ROSEN_LOGD("RSNGRenderShapeHelper::FillEmptyDistortOpShape, update SDF_RRECT_SHAPE, node %{public}"
+            PRIu64, nodeId);
+    }
 }
 } // namespace Rosen
 } // namespace OHOS

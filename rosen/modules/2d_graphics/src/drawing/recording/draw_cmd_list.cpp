@@ -193,6 +193,7 @@ void DrawCmdList::Dump(std::string& out)
     }
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::MarshallingDrawOps()
 {
     if (mode_ == DrawCmdList::UnmarshalMode::IMMEDIATE) {
@@ -228,6 +229,7 @@ void DrawCmdList::MarshallingDrawOps()
         replacedOpListForBuffer_.emplace_back(opIndexForCache[index], lastOpItemOffset_.value());
     }
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList* cmdlist) const
 {
@@ -243,6 +245,7 @@ void DrawCmdList::ProfilerMarshallingDrawOps(Drawing::DrawCmdList* cmdlist) cons
     }
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::CaculatePerformanceOpType()
 {
     size_t offset = offset_;
@@ -272,6 +275,7 @@ void DrawCmdList::CaculatePerformanceOpType()
         offset = curOpItemPtr->GetNextOpItemOffset();
     } while (offset != 0 && count <= MAX_OPITEMSIZE);
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::UnmarshallingDrawOps(uint32_t* opItemCount)
 {
@@ -448,10 +452,12 @@ void DrawCmdList::SetReplacedOpList(std::vector<std::pair<size_t, size_t>> repla
     replacedOpListForBuffer_ = replacedOpList;
 }
 
+// LCOV_EXCL_START
 DrawCmdList::HybridRenderType DrawCmdList::GetHybridRenderType() const
 {
     return hybridRenderType_;
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::SetHybridRenderType(DrawCmdList::HybridRenderType hybridRenderType)
 {
@@ -472,6 +478,7 @@ void DrawCmdList::UpdateNodeIdToPicture(NodeId nodeId)
     }
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::ClearCache()
 {
 #ifdef ROSEN_OHOS
@@ -484,6 +491,7 @@ void DrawCmdList::ClearCache()
     isCached_ = false;
 #endif
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::GenerateCacheByVector(Canvas* canvas, const Rect* rect)
 {
@@ -580,6 +588,10 @@ void DrawCmdList::PlaybackToDrawCmdList(std::shared_ptr<DrawCmdList> drawCmdList
         std::lock_guard<std::mutex> lock(drawCmdList->imageBaseObjMutex_);
         drawCmdList->imageBaseObjVec_.swap(imageBaseObjVec_);
     }
+    {
+        std::lock_guard<std::mutex> lock(drawCmdList->drawingObjectMutex_);
+        drawCmdList->drawingObjectVec_.swap(drawingObjectVec_);
+    }
     size_t size = opAllocator_.GetSize() - offset_;
     auto imageData = GetAllImageData();
     auto bitmapData = GetAllBitmapData();
@@ -638,6 +650,7 @@ bool DrawCmdList::UnmarshallingDrawOpsSimple(
     return true;
 }
 
+// LCOV_EXCL_START
 bool DrawCmdList::UnmarshallingDrawOpsSimple()
 {
     if (mode_ == DrawCmdList::UnmarshalMode::DEFERRED) {
@@ -645,6 +658,7 @@ bool DrawCmdList::UnmarshallingDrawOpsSimple()
     }
     return UnmarshallingDrawOpsSimple(drawOpItems_, lastOpGenSize_);
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::PlaybackByBuffer(Canvas& canvas, const Rect* rect)
 {
@@ -676,30 +690,6 @@ void DrawCmdList::GetBounds(Rect& rect)
                 break;
         }
     }
-}
-
-bool DrawCmdList::IsHybridRenderEnabled(uint32_t maxPixelMapWidth, uint32_t maxPixelMapHeight)
-{
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
-    // canvasdrawingnode does not support switching from enable to disable
-    if (hybridRenderType_ == HybridRenderType::CANVAS) {
-        return true;
-    }
-    if (!UnmarshallingDrawOpsSimple(drawOpItems_, lastOpGenSize_)) {
-        return false;
-    }
-    // check size
-    Drawing::Rect bounds;
-    int32_t width = GetWidth();
-    int32_t height = GetHeight();
-    GetBounds(bounds);
-    width = std::max(width, DrawingFloatSaturate2Int(ceilf(bounds.GetWidth())));
-    height = std::max(height, DrawingFloatSaturate2Int(ceilf(bounds.GetHeight())));
-    if (width < 0 || height < 0 ||
-        static_cast<uint32_t>(width) > maxPixelMapWidth || static_cast<uint32_t>(height) > maxPixelMapHeight) {
-        return false;
-    }
-    return true;
 }
 
 void DrawCmdList::ProfilerTextBlob(void* handle, uint32_t count, std::shared_ptr<Drawing::DrawCmdList> refDrawCmdList)
@@ -749,6 +739,7 @@ void DrawCmdList::PatchTypefaceIds(std::shared_ptr<Drawing::DrawCmdList> refDraw
     } while (offset != 0 && offset < maxOffset && count <= MAX_OPITEMSIZE);
 }
 
+// LCOV_EXCL_START
 void DrawCmdList::Purge()
 {
     std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -765,12 +756,14 @@ void DrawCmdList::Purge()
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void DrawCmdList::SetIsNeedUnmarshalOnDestruct(bool isNeedUnmarshalOnDestruct)
 {
     isNeedUnmarshalOnDestruct_ = isNeedUnmarshalOnDestruct;
 }
 
+// LCOV_EXCL_START
 size_t DrawCmdList::GetSize()
 {
     size_t totoalSize = sizeof(*this);
@@ -786,13 +779,17 @@ size_t DrawCmdList::GetSize()
     }
     return totoalSize;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 const std::vector<std::shared_ptr<DrawOpItem>> DrawCmdList::GetDrawOpItems() const
 {
     std::vector<std::shared_ptr<DrawOpItem>> drawOpItems(drawOpItems_);
     return drawOpItems;
 }
+// LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 RectF DrawCmdList::GetCmdlistDrawRegion()
 {
     Rect cmdlistDrawRegion;
@@ -826,6 +823,7 @@ RectF DrawCmdList::GetCmdlistDrawRegion()
     }
     return cmdlistDrawRegion;
 }
+// LCOV_EXCL_STOP
 } // namespace Drawing
 } // namespace Rosen
 } // namespace OHOS

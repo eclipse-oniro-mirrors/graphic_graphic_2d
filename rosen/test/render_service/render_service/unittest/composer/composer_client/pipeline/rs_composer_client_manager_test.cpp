@@ -37,12 +37,44 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 
+class MockRSRenderToComposerConnection : public IRSRenderToComposerConnection {
+public:
+    MockRSRenderToComposerConnection() = default;
+    ~MockRSRenderToComposerConnection() override = default;
+
+    bool CommitLayers(std::unique_ptr<RSLayerTransactionData>& transactionData)
+    {
+        return true;
+    }
+    void CleanLayerBufferBySurfaceId(uint64_t surfaceId) override {}
+    int32_t CommitTunnelLayerBySurfaceId(uint64_t surfaceId, uint64_t tunnelLayerId, const sptr<SurfaceBuffer>& buffer,
+        const sptr<SyncFence>& acquireFence, sptr<SyncFence>& releaseFence) override { return GRAPHIC_DISPLAY_SUCCESS; }
+    void ClearFrameBuffers() override {}
+    void ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds) override {}
+    void SetScreenBacklight(uint32_t level) override {}
+    void SetScreenLinearMatrix(const std::vector<float>& matirx) override {}
+    void SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn) override {}
+    void PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer) override {}
+    void MarkTunnelSurfaceInvalid(uint64_t surfaceId) override {}
+
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
+    }
+};
+
 class RSComposerClientManagerTest : public Test {};
 
 static std::shared_ptr<RSComposerClient> MakeClient()
 {
     sptr<IRSRenderToComposerConnection> conn = nullptr; // keep nullptr to avoid remote interactions
     return RSComposerClient::Create(conn, nullptr);
+}
+
+static std::shared_ptr<RSComposerClient> MakeClientWithMock()
+{
+    sptr<IRSRenderToComposerConnection> conn = sptr<MockRSRenderToComposerConnection>::MakeSptr();
+    return std::make_shared<RSComposerClient>(conn);
 }
 
 namespace {
@@ -69,14 +101,22 @@ public:
     void ClearFrameBuffers() override {}
     void ClearRedrawGPUCompositionCache(const std::unordered_set<uint64_t>& bufferIds) override {}
     void SetScreenBacklight(uint32_t level) override {}
+    void SetScreenLinearMatrix(const std::vector<float>& matirx) override {}
     void SetComposerToRenderConnection(const sptr<IRSComposerToRenderConnection>& composerToRenderConn) override {}
     void PreAllocProtectedFrameBuffers(const sptr<SurfaceBuffer>& buffer) override {}
+    void MarkTunnelSurfaceInvalid(uint64_t surfaceId) override
+    {
+        markTunnelInvalidCalled = true;
+        markTunnelInvalidSurfaceId = surfaceId;
+    }
 
     bool commitTunnelCalled = false;
     uint64_t lastSurfaceId = 0;
     uint64_t lastTunnelLayerId = 0;
     uint32_t lastBufferSeqNum = 0;
     int32_t returnValue = GRAPHIC_DISPLAY_SUCCESS;
+    bool markTunnelInvalidCalled = false;
+    uint64_t markTunnelInvalidSurfaceId = 0;
 };
 
 sptr<SurfaceBuffer> CreateTunnelTestBuffer()
@@ -259,6 +299,29 @@ HWTEST_F(RSComposerClientManagerTest, SetScreenBacklight_WithClientAndNoClient_N
     mgr.SetScreenBacklight(RsScreenBrightnessData(1, 90)); // with client path
     EXPECT_EQ(mgr.GetComposerClient(9999), nullptr);
     EXPECT_NE(mgr.GetComposerClient(1), nullptr);
+}
+
+ /**
+ * Function: SetScreenLinearMatrix_WithClientAndNoClient_NoCrash
+ * Type: Function
+ * Rank: Important(2)
+ * EnvConditions: N/A
+ * CaseDescription: 1. Call SetScreenLinearMatrix without client
+ *                  2. Add client then call again
+ *                  3. Ensure both paths run
+ */
+HWTEST_F(RSComposerClientManagerTest, SetScreenLinearMatrix_WithClientAndNoClient_NoCrash, TestSize.Level1)
+{
+    RSComposerClientManager mgr;
+    std::vector<float> matrix = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+    mgr.SetScreenLinearMatrix(9999, matrix); // no client path
+    mgr.AddComposerClient(1, MakeClient());
+    mgr.SetScreenLinearMatrix(1, matrix); // with client but nullptr connection path
+    mgr.AddComposerClient(2, MakeClientWithMock());
+    mgr.SetScreenLinearMatrix(2, matrix); // with client and valid connection path
+    EXPECT_EQ(mgr.GetComposerClient(9999), nullptr);
+    EXPECT_NE(mgr.GetComposerClient(1), nullptr);
+    EXPECT_NE(mgr.GetComposerClient(2), nullptr);
 }
 
 /**
@@ -819,6 +882,103 @@ HWTEST_F(RSComposerClientManagerTest, CommitTunnelLayerBySurfaceId_ForwardToMatc
     EXPECT_EQ(conn->lastSurfaceId, surfaceId);
     EXPECT_EQ(conn->lastTunnelLayerId, tunnelLayerId);
     EXPECT_EQ(conn->lastBufferSeqNum, buffer->GetSeqNum());
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_NoClient_NoCrash
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with no client for screenId does not crash.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, MarkTunnelSurfaceInvalid_NoClient_NoCrash, TestSize.Level1)
+{
+    RSComposerClientManager mgr;
+    constexpr ScreenId screenId = 8001;
+    constexpr uint64_t surfaceId = 8101;
+    EXPECT_NO_FATAL_FAILURE(mgr.MarkTunnelSurfaceInvalid(screenId, surfaceId));
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_ForwardToMatchedClient
+ * @tc.desc: Test MarkTunnelSurfaceInvalid forwards to the client for the matching screenId.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, MarkTunnelSurfaceInvalid_ForwardToMatchedClient, TestSize.Level1)
+{
+    auto conn = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    ASSERT_NE(conn, nullptr);
+    auto client = RSComposerClient::Create(conn, nullptr);
+    ASSERT_NE(client, nullptr);
+
+    RSComposerClientManager mgr;
+    constexpr ScreenId screenId = 8002;
+    constexpr uint64_t surfaceId = 8102;
+    mgr.AddComposerClient(screenId, client);
+
+    EXPECT_FALSE(conn->markTunnelInvalidCalled);
+    mgr.MarkTunnelSurfaceInvalid(screenId, surfaceId);
+
+    EXPECT_TRUE(conn->markTunnelInvalidCalled);
+    EXPECT_EQ(conn->markTunnelInvalidSurfaceId, surfaceId);
+}
+
+/**
+ * @tc.name: MarkTunnelSurfaceInvalid_DifferentScreenId_NotForwarded
+ * @tc.desc: Test MarkTunnelSurfaceInvalid with different screenId does not forward to unrelated client.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, MarkTunnelSurfaceInvalid_DifferentScreenId_NotForwarded, TestSize.Level1)
+{
+    auto conn = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    ASSERT_NE(conn, nullptr);
+    auto client = RSComposerClient::Create(conn, nullptr);
+    ASSERT_NE(client, nullptr);
+
+    RSComposerClientManager mgr;
+    constexpr ScreenId screenId1 = 8003;
+    constexpr ScreenId screenId2 = 8004;
+    constexpr uint64_t surfaceId = 8103;
+    mgr.AddComposerClient(screenId1, client);
+
+    mgr.MarkTunnelSurfaceInvalid(screenId2, surfaceId);
+    EXPECT_FALSE(conn->markTunnelInvalidCalled);
+}
+
+/**
+ * @tc.name: ComposerContext_MarkTunnelSurfaceInvalid_NullConnection_NoCrash
+ * @tc.desc: Test RSComposerContext::MarkTunnelSurfaceInvalid with null connection returns early.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, ComposerContext_MarkTunnelSurfaceInvalid_NullConnection_NoCrash, TestSize.Level1)
+{
+    sptr<IRSRenderToComposerConnection> nullConn = nullptr;
+    auto client = RSComposerClient::Create(nullConn, nullptr);
+    ASSERT_NE(client, nullptr);
+
+    auto ctx = client->GetComposerContext();
+    ASSERT_NE(ctx, nullptr);
+
+    constexpr uint64_t surfaceId = 8201;
+    EXPECT_NO_FATAL_FAILURE(ctx->MarkTunnelSurfaceInvalid(surfaceId));
+}
+
+/**
+ * @tc.name: ComposerClient_MarkTunnelSurfaceInvalid_ForwardsToContext
+ * @tc.desc: Test RSComposerClient::MarkTunnelSurfaceInvalid forwards to context.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSComposerClientManagerTest, ComposerClient_MarkTunnelSurfaceInvalid_ForwardsToContext, TestSize.Level1)
+{
+    auto conn = sptr<RecordingRenderToComposerConnection>::MakeSptr();
+    ASSERT_NE(conn, nullptr);
+    auto client = RSComposerClient::Create(conn, nullptr);
+    ASSERT_NE(client, nullptr);
+
+    constexpr uint64_t surfaceId = 8202;
+    EXPECT_FALSE(conn->markTunnelInvalidCalled);
+
+    client->MarkTunnelSurfaceInvalid(surfaceId);
+    EXPECT_TRUE(conn->markTunnelInvalidCalled);
+    EXPECT_EQ(conn->markTunnelInvalidSurfaceId, surfaceId);
 }
 
 } // namespace OHOS::Rosen
