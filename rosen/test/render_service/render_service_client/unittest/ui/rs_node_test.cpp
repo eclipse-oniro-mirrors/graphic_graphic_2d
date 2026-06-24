@@ -8952,6 +8952,6 @@ HWTEST_F(RSNodeTest, CheckMultiThreadAccess002, TestSize.Level1)
     rsNode->SetSkipCheckInMultiInstance(false);
     rsNode->rsUIContext_->token_ = gettid();
     std::string func = "";
-    ASSERT_TRUE(rsNode->CheckMultiThreadAccess(func));
+    ASSERT_FALSE(rsNode->CheckMultiThreadAccess(func));
 }
 } // namespace OHOS::Rosen

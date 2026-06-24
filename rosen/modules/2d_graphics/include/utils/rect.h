@@ -21,7 +21,7 @@
 #include "utils/drawing_macros.h"
 #include "utils/scalar.h"
 
-#if defined(__aarch64__) && defined(__ARM_NEON)
+#if defined(__aarch64__) && !defined(__arm__) && defined(__ARM_NEON)
 #include <arm_neon.h>
 #endif
 
@@ -564,7 +564,7 @@ inline void RectF::Dump(std::string& out) const
 
 inline bool operator==(const RectF& r1, const RectF& r2)
 {
-    #if defined(__aarch64__) && defined(__ARM_NEON)
+#if defined(__aarch64__) && !defined(__arm__) && defined(__ARM_NEON)
     // v1 = [r1.left_, r1.top_, r1.right_, r1.bottom_], v2 = [r2.left_, r2.top_, r2.right_, r2.bottom_]
     float32x4_t v1 = vld1q_f32(&r1.left_);
     float32x4_t v2 = vld1q_f32(&r2.left_);
