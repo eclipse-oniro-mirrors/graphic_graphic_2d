@@ -1913,7 +1913,7 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_ValidVa
  * @tc.desc: Test NotifyWindowModeTypeEvent with maximum windowModeType value
  * @tc.type: FUNC
  *
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_MaxValue, TestSize.Level1)
 {
