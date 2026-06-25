@@ -85,7 +85,8 @@ using SelfDrawingNodeRectChangeCallback = std::function<void(std::shared_ptr<RSS
 using FirstFrameCommitCallback = std::function<void(uint64_t, int64_t)>;
 using FrameStabilityCallback = std::function<void(bool)>;
 
-class RSB_EXPORT RSRenderPipelineClient : public RSIRenderClient {
+class RSB_EXPORT RSRenderPipelineClient : public RSIRenderClient,
+                                          public std::enable_shared_from_this<RSRenderPipelineClient> {
 public:
     RSRenderPipelineClient();
     RSRenderPipelineClient(sptr<IRemoteObject>& connectToRenderRemote);
@@ -203,6 +204,11 @@ public:
     int32_t GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight);
 
     void SetFreeMultiWindowStatus(bool enable);
+
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    sptr<Surface> GetCanvasSurface(NodeId nodeId);
+    void RemoveCanvasSurface(NodeId nodeId);
+#endif
 
     int32_t RegisterFrameStabilityDetection(
         const FrameStabilityTarget& target,

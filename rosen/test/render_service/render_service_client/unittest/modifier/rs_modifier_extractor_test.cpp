@@ -15,6 +15,7 @@
 
 #include "gtest/gtest.h"
 #include "modifier/rs_modifier_extractor.h"
+#include "ui/rs_canvas_node.h"
 #include "ui/rs_node.h"
 
 using namespace testing;
@@ -618,15 +619,18 @@ HWTEST_F(RSModifierExtractorTest, GetAllTransformPropertyValues002, TestSize.Lev
     node->SetPivot(0.3f, 0.7f);
     node->SetPivotZ(25.f);
     node->SetRotation(45.f);
+    Quaternion quaternion;
+    node->SetRotation(quaternion);
     node->SetRotationX(30.f);
     node->SetRotationY(60.f);
     node->SetCameraDistance(500.f);
-    node->SetTranslate(100.f, 200.f);
+    node->SetTranslate({100.f, 200.f});
     node->SetTranslateZ(50.f);
     node->SetScale(2.f, 3.f);
     node->SetScaleZ(2.5f);
     node->SetSkew(10.f, 20.f, 30.f);
     node->SetPersp(0.1f, 0.2f, 0.3f, 0.9f);
+    node->SetBackgroundColor(0xFF000000);
 
     RSModifierExtractor extractor(id);
     auto result = extractor.GetAllTransformPropertyValues();
@@ -636,6 +640,7 @@ HWTEST_F(RSModifierExtractorTest, GetAllTransformPropertyValues002, TestSize.Lev
     EXPECT_EQ(result.pivot.y_, 0.7f);
     EXPECT_EQ(result.pivotZ, 25.f);
     EXPECT_EQ(result.rotation, 45.f);
+    EXPECT_TRUE(result.quaternion.IsIdentity());
     EXPECT_EQ(result.rotationX, 30.f);
     EXPECT_EQ(result.rotationY, 60.f);
     EXPECT_EQ(result.cameraDistance, 500.f);
@@ -663,10 +668,26 @@ HWTEST_F(RSModifierExtractorTest, GetAllTransformPropertyValues003, TestSize.Lev
 {
     auto node = RSCanvasNode::Create();
     NodeId id = node->GetId();
+    node->SetPositionZ(10.f);
     RSModifierExtractor extractor(id);
     auto result = extractor.GetAllTransformPropertyValues();
-    EXPECT_EQ(result.positionZ, 0.f);
+    EXPECT_EQ(result.positionZ, 10.f);
     EXPECT_EQ(result.rotation, 0.f);
+    EXPECT_EQ(result.rotationX, 0.f);
+    EXPECT_EQ(result.rotationY, 0.f);
+    EXPECT_EQ(result.scale, Vector2f(1.f, 1.f));
+    EXPECT_EQ(result.scaleZ, 1.f);
+    EXPECT_EQ(result.translate, Vector2f(0.f, 0.f));
+    EXPECT_EQ(result.translateZ, 0.f);
+    EXPECT_EQ(result.skew, Vector3f(0.f, 0.f, 0.f));
+
+    auto node2 = RSCanvasNode::Create();
+    NodeId id2 = node2->GetId();
+    node2->SetRotation(45.f);
+    RSModifierExtractor extractor2(id2);
+    result = extractor2.GetAllTransformPropertyValues();
+    EXPECT_EQ(result.positionZ, 0.f);
+    EXPECT_EQ(result.rotation, 45.f);
     EXPECT_EQ(result.rotationX, 0.f);
     EXPECT_EQ(result.rotationY, 0.f);
     EXPECT_EQ(result.scale, Vector2f(1.f, 1.f));
