@@ -170,9 +170,8 @@ void RSCanvasNode::FinishRecording()
 
 void RSCanvasNode::OnFinishRecording(Drawing::DrawCmdListPtr& drawCmdList, ModifierNG::RSModifierType modifierType)
 {
-    auto simpleCmdList = RSSimpleDrawCmdList::CreateFromDrawCmdList(drawCmdList);
     SetRSCmdProperty<FinishRecordCmdModifier>(FinishRecordCmdParam{
-        simpleCmdList, static_cast<uint16_t>(modifierType)
+        static_cast<uint16_t>(modifierType), drawCmdList
     });
 }
 
@@ -196,9 +195,8 @@ void RSCanvasNode::DrawOnNode(ModifierNG::RSModifierType type, DrawFunc func)
         recording->GenerateCache();
     }
     auto modifierType = static_cast<uint16_t>(type);
-    auto simpleRecording = RSSimpleDrawCmdList::CreateFromDrawCmdList(recording);
     auto result = SetRSCmdPropertyWithResult<DrawOnNodeCmdModifier>(DrawOnNodeCmdParam{
-        simpleRecording, modifierType
+        modifierType, recording
     });
     if (std::holds_alternative<bool>(result) && std::get<bool>(result)) {
         recordingUpdated_ = true;

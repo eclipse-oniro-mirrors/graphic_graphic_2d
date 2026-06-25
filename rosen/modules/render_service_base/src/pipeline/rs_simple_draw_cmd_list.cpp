@@ -47,10 +47,9 @@ Drawing::DrawCmdListPtr RSSimpleDrawCmdList::ConvertToDrawCmdList() const
         return recordingCanvas_->GetDrawCmdList();
     }
     Drawing::Rect tmpRect;
-    std::lock_guard<std::recursive_mutex> lock(mutex_);
     for (auto op : drawOpItems_) {
         if (op) {
-            op->Playback(&recordingCanvas_, tmpRect);
+            op->Playback(recordingCanvas_.get(), &tmpRect);
         }
     }
     return recordingCanvas_->GetDrawCmdList();

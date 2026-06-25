@@ -177,8 +177,9 @@ private:
 };
 
 struct FinishRecordCmdParam {
-    SimpleDrawCmdListPtr drawCmdList_;
     uint16_t modifierType_;
+    Drawing::DrawCmdListPtr drawingCmdList_;          // Input parameter, converted to simpleDrawCmdList_ for storage
+    SimpleDrawCmdListPtr simpleDrawCmdList_ = nullptr; // Stored data, used when pushed to foreground
 };
 
 class FinishRecordCmdModifier : public RSCmdModifier {
@@ -215,8 +216,9 @@ private:
 };
 
 struct DrawOnNodeCmdParam {
-    SimpleDrawCmdListPtr drawCmdList_;
     uint16_t modifierType_;
+    Drawing::DrawCmdListPtr drawingCmdList_;          // Input parameter, converted to simpleDrawCmdList_ for storage
+    SimpleDrawCmdListPtr simpleDrawCmdList_ = nullptr; // Stored data, used when pushed to foreground
 };
 
 class DrawOnNodeCmdModifier : public RSCmdModifier {
