@@ -1929,9 +1929,9 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_MaxValu
 /**
  * @tc.name: NotifyWindowModeTypeEvent_SendRequestFail
  * @tc.desc: Test NotifyWindowModeTypeEvent when SendRequest fails
- *
  * @tc.type: FUNC
- * @tc.require: 
+ *
+ * @tc.require:
  */
 HWTEST_F(RSServiceToRenderConnectionProxyTest, NotifyWindowModeTypeEvent_SendRequestFail, TestSize.Level1)
 {

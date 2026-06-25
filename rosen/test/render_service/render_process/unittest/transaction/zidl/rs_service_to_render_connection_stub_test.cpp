@@ -2030,7 +2030,7 @@ HWTEST_F(RSServiceToRenderConnectionStubTest, SetCacheEnabledForRotationStubTest
  * @tc.name: NotifyWindowModeTypeEventStubTest001
  * @tc.desc: Test NotifyWindowModeTypeEvent stub with valid windowModeType
  * @tc.type: FUNC
- * @tc.require: 
+ * @tc.require:
  */
 HWTEST_F(RSServiceToRenderConnectionStubTest, NotifyWindowModeTypeEventStubTest001, TestSize.Level1)
 {

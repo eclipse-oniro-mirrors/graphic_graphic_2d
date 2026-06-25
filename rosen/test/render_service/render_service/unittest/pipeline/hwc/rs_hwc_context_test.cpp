@@ -341,7 +341,7 @@ HWTEST_F(RSHwcContextTest, IsSourceTuningConfig001, TestSize.Level1)
     hwcContext->sourceTuningConfig_["com.test.app"] = "2";
     
     bool result = hwcContext->IsSourceTuningConfig("com.test.app");
-    EXPECT_TRUE(result);    
+    EXPECT_TRUE(result);
     result = hwcContext->IsSourceTuningConfig("com.test1.app");
     EXPECT_FALSE(result);
     result = hwcContext->IsHwcSourceTuningConfig("com.test.app");
