@@ -16,7 +16,6 @@
 #include "command_modifier/rs_canvas_node_command_modifier.h"
 
 #include "command/rs_canvas_node_command.h"
-#include "pipeline/rs_simple_draw_cmd_list.h"
 #include "ui/rs_canvas_node.h"
 #include "platform/common/rs_log.h"
 
@@ -65,9 +64,8 @@ void FinishRecordCmdModifier::UpdateToRender()
 {
     auto node = std::static_pointer_cast<RSCanvasNode>(GetNode());
     if (!node) return;
-    auto drawCmdList = param_.drawCmdList_ ? param_.drawCmdList_->ConvertToDrawCmdList() : nullptr;
     std::unique_ptr<RSCommand> command = std::make_unique<RSCanvasNodeUpdateRecording>(
-        node->GetId(), drawCmdList, param_.modifierType_);
+        node->GetId(), param_.drawCmdList_, param_.modifierType_);
     AddCommand(command, node->IsRenderServiceNode());
 }
 
@@ -79,9 +77,8 @@ void DrawOnNodeCmdModifier::UpdateToRender()
         node->GetId());
     AddCommand(clearRecordingCommand, node->IsRenderServiceNode());
 
-    auto drawCmdList = param_.drawCmdList_ ? param_.drawCmdList_->ConvertToDrawCmdList() : nullptr;
     std::unique_ptr<RSCommand> updateRecordingCommand = std::make_unique<RSCanvasNodeUpdateRecording>(
-        node->GetId(), drawCmdList, param_.modifierType_);
+        node->GetId(), param_.drawCmdList_, param_.modifierType_);
     AddCommand(updateRecordingCommand, node->IsRenderServiceNode());
 }
 
@@ -93,9 +90,8 @@ RSCmdModifier::UpdateResult DrawOnNodeCmdModifier::UpdateToRenderWithResult()
         node->GetId());
     AddCommand(clearRecordingCommand, node->IsRenderServiceNode());
 
-    auto drawCmdList = param_.drawCmdList_ ? param_.drawCmdList_->ConvertToDrawCmdList() : nullptr;
     std::unique_ptr<RSCommand> updateRecordingCommand = std::make_unique<RSCanvasNodeUpdateRecording>(
-        node->GetId(), drawCmdList, param_.modifierType_);
+        node->GetId(), param_.drawCmdList_, param_.modifierType_);
     return AddCommand(updateRecordingCommand, node->IsRenderServiceNode());
 }
 
