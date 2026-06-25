@@ -83,7 +83,7 @@ bool HdiDeviceImpl::Init()
             HLOGE("%{public}s::get IServiceManager failed!", __func__);
             continue;
         }
-        sptr<IRemoteObject> remote = servMgr->Get(COMPOSER_SERVICE_NAME);
+        sptr<IRemoteObject> remote = servMgr->GetService(COMPOSER_SERVICE_NAME);
         if (remote != nullptr) {
             g_composer_service = remote;
             break;
