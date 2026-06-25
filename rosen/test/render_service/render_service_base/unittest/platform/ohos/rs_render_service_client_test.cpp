@@ -1456,6 +1456,19 @@ HWTEST_F(RSServiceClientTest, RemoveVirtualScreenSurface002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: NotifyWindowModeTypeEvent001
+ * @tc.desc: Test NotifyWindowModeTypeEvent with valid connection
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSServiceClientTest, NotifyWindowModeTypeEvent001, TestSize.Level1)
+{
+    ASSERT_NE(rsRenderServiceClient, nullptr);
+    rsRenderServiceClient->NotifyWindowModeTypeEvent(1);
+    rsRenderServiceClient->NotifyWindowModeTypeEvent(2);
+    rsRenderServiceClient->NotifyWindowModeTypeEvent(3);
+}
+
+/**
  * @tc.name: SetApsConfigParams_RetNotOK
  * @tc.desc: Test SetApsConfigParams when params size exceeds limit (129 elements > 128)
  * @tc.type: FUNC

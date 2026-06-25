@@ -120,6 +120,9 @@ private:
     bool IsTargetSolidLayer(RSSurfaceRenderNode& node);
     bool IsScaleSceneHwcEnabled(RSSurfaceRenderNode& node);
 
+    // Sourcetuning
+    bool IsTargetSourceTuning(RSSurfaceRenderNode& node);
+    
     bool IsRectIsInsideOfScreenRect(const RectI& rect) const;
 
     // indicates if hardware composer is totally disabled
