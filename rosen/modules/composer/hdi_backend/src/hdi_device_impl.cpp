@@ -46,7 +46,7 @@ static IDisplayComposerInterfaceSptr g_composer;
 using IDisplayComposerInterfaceSptr_v5 = sptr<Composer::V1_5::IDisplayComposerInterface>;
 static IDisplayComposerInterfaceSptr_v5 g_composer_v5;
 static sptr<IRemoteObject> g_composer_service;
-constexpr int DELAY_GET_COMPOSER_TIME = 10000; // 10 ms
+constexpr int GET_COMPOSER_DELAY_TIME = 10000; // 10 ms
 static const char* COMPOSER_SERVICE_NAME = "display_composer_service";
 }
 
@@ -86,9 +86,10 @@ bool HdiDeviceImpl::Init()
         sptr<IRemoteObject> remote = servMgr->Get(COMPOSER_SERVICE_NAME);
         if (remote != nullptr) {
             g_composer_service = remote;
+            break;
         }
-        HILOGE("%{public}s::get display_composer_service remote object failed!", __func__);
-        usleep(DELAY_GET_COMPOSER_TIME);
+        HLOGE("%{public}s:get display_composer_service remote object failed!", __func__);
+        usleep(GET_COMPOSER_DELAY_TIME);
     }
     if (g_composer_v5 == nullptr && g_composer == nullptr) {
         g_composer_v5 = Composer::V1_5::IDisplayComposerInterface::Get();
@@ -96,7 +97,7 @@ bool HdiDeviceImpl::Init()
             HLOGW("Composer::V1_5::IDisplayComposerInterface::Get fail");
             g_composer = Composer::V1_4::IDisplayComposerInterface::Get();
             if (g_composer == nullptr) {
-                HILOGE("Composer::V1_4::IDisplayComposerInterface::Get fail, return nullptr.");
+                HLOGE("Composer::V1_4::IDisplayComposerInterface::Get fail, return nullptr.");
                 return false;
             }
         }
