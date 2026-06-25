@@ -529,6 +529,9 @@ bool RSCanvasDrawingNode::SetNodeState(RSNodeState state)
         return false;
     }
     if (auto uiContext = GetRSUIContext()) {
+        if (state == RSNodeState::ACTIVE) {
+            uiContext->OnCanvasDrawingNodeUpdate();
+        }
         if (auto canvasModifiersDrawAgent = uiContext->GetCanvasModifiersDrawAgent()) {
             canvasModifiersDrawAgent->OnNodeStateChanged(GetId(), state);
         }
