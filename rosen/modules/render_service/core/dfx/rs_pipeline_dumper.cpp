@@ -28,6 +28,7 @@
 #include "memory/rs_memory_manager.h"
 #include "parameter.h"
 #include "pipeline/main_thread/rs_main_thread.h"
+#include "pipeline/rs_ui_render_director.h"
 #include "rs_profiler.h"
 #include "vsync_generator.h"
 #include "rs_trace.h"
@@ -51,6 +52,25 @@ static const int INIT_EGL_VERSION = 3;
 static EGLDisplay g_tmpDisplay = EGL_NO_DISPLAY;
 static EGLContext g_tmpContext = EGL_NO_CONTEXT;
 #endif
+
+static constexpr const char* LIFECYCLE_STATE_NAMES[] = {
+    "CREATE",      // CREATE
+    "RESUME",      // RESUME
+    "FOREGROUND",  // FOREGROUND
+    "BACKGROUND",  // BACKGROUND
+    "STOP",        // STOP
+    "DESTROYED",   // DESTROYED
+    "STATE_COUNT"  // STATE_COUNT
+};
+
+static std::string LifecycleStateToString(RSUIDirectorLifecycleState state)
+{
+    uint8_t index = static_cast<uint8_t>(state);
+    if (index < sizeof(LIFECYCLE_STATE_NAMES) / sizeof(LIFECYCLE_STATE_NAMES[0])) {
+        return LIFECYCLE_STATE_NAMES[index];
+    }
+    return "UNKNOWN";
+}
 }
 
 RSPipelineDumper::RSPipelineDumper(std::shared_ptr<AppExecFwk::EventHandler> mainHandler)
@@ -143,6 +163,7 @@ void RSPipelineDumper::RenderPipelineDumpInit(std::shared_ptr<RSPipelineDumpMana
     RegisterBufferFuncs(rpDumpManager);
     RegisterSurfaceInfoFuncs(rpDumpManager);
     RegisterFpsFuncs(rpDumpManager);
+    RegisterContextStatesFuncs(rpDumpManager);
 }
 
 void RSPipelineDumper::RegisterFpsFuncs(std::shared_ptr<RSPipelineDumpManager> rpDumpManager)
@@ -175,6 +196,52 @@ void RSPipelineDumper::RegisterFpsFuncs(std::shared_ptr<RSPipelineDumpManager> r
     };
 
     rpDumpManager->Register(handers);
+}
+
+void RSPipelineDumper::RegisterContextStatesFuncs(std::shared_ptr<RSPipelineDumpManager> rsDumpManager)
+{
+    RSDumpFunc pidInstanceFunc = [this](const std::u16string &cmd, std::unordered_set<std::u16string> &argSets,
+                                        std::string &dumpString) -> void {
+        argSets.erase(cmd);
+        if (argSets.size() < 2) {
+            dumpString.append("Usage: contextStates <pid> <uiContextToken>\n");
+            return;
+        }
+        std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+        std::vector<uint64_t> numericArgs;
+        for (const auto &arg : argSets) {
+            std::string argStr = converter.to_bytes(arg);
+            if (!IsNumber(argStr)) {
+                dumpString.append("Invalid arguments: pid and uiContextToken must be numbers\n");
+                return;
+            }
+            numericArgs.emplace_back(static_cast<uint64_t>(std::stoull(argStr)));
+        }
+        std::sort(numericArgs.begin(), numericArgs.end());
+        pid_t pid = static_cast<pid_t>(numericArgs[0]);
+        uint64_t token = numericArgs[1];
+        ScheduleTask([this, pid, token, &dumpString]() {
+            DumpUIContextStateInfo(pid, token, dumpString);
+        });
+    };
+
+    std::vector<RSDumpHander> handers = {
+        { RSDumpID::UICONTEXT_STATES_INFO, pidInstanceFunc },
+    };
+
+    rsDumpManager->Register(handers);
+}
+
+void RSPipelineDumper::DumpUIContextStateInfo(pid_t pid, uint64_t token, std::string& dumpString) const
+{
+    auto& context = RSMainThread::Instance()->GetContext();
+    dumpString.append("\n-- UIContextStates --\n");
+    dumpString.append("Set pid: " + std::to_string(pid) + ", Token: " + std::to_string(token) + "\n");
+    if (auto rsUIRenderDirector = context.GetUIRenderDirector(pid, token)) {
+        dumpString.append("rsUIRenderDirector state is:" +
+                          LifecycleStateToString(rsUIRenderDirector->GetCurrentState()) + "\n");
+    }
+    dumpString.append("-- Node Remain in Context\n");
 }
 
 void RSPipelineDumper::RegisterRSGfxFuncs(std::shared_ptr<RSPipelineDumpManager> rpDumpManager)
