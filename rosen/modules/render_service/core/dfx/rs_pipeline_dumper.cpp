@@ -23,6 +23,7 @@
 #include <string>
 #include <system_ability_definition.h>
 #include <unistd.h>
+#include <unordered_map>
 
 #include "hgm_core.h"
 #include "memory/rs_memory_manager.h"
@@ -35,6 +36,7 @@
 #include "ge_mesa_blur_shader_filter.h"
 
 #include "pipeline/rs_surface_render_node.h"
+#include "pipeline/rs_canvas_drawing_render_node.h"
 #include "system/rs_system_parameters.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "dfx/rs_pipeline_dump_manager.h"
@@ -242,6 +244,7 @@ void RSPipelineDumper::DumpUIContextStateInfo(pid_t pid, uint64_t token, std::st
                           LifecycleStateToString(rsUIRenderDirector->GetCurrentState()) + "\n");
     }
     dumpString.append("-- Node Remain in Context\n");
+    DumpNodeInfo(pid, token, dumpString);
 }
 
 void RSPipelineDumper::RegisterRSGfxFuncs(std::shared_ptr<RSPipelineDumpManager> rpDumpManager)
@@ -751,6 +754,79 @@ void RSPipelineDumper::ScheduleTask(std::function<void()> task) const
         return;
     }
     RS_LOGE("RSPipelineDumper::ScheduleTask mainHandler_ is null");
+}
+
+void RSPipelineDumper::DumpNodeInfo(pid_t pid, uint64_t token, std::string& dumpString) const
+{
+    dumpString.append("\n-- Node Count Statistics --\n");
+
+    std::unordered_map<RSRenderNodeType, uint32_t> nodeTypeCount = {
+        {RSRenderNodeType::UNKNOW, 0},
+        {RSRenderNodeType::RS_NODE, 0},
+        {RSRenderNodeType::SCREEN_NODE, 0},
+        {RSRenderNodeType::SURFACE_NODE, 0},
+        {RSRenderNodeType::PROXY_NODE, 0},
+        {RSRenderNodeType::CANVAS_NODE, 0},
+        {RSRenderNodeType::EFFECT_NODE, 0},
+        {RSRenderNodeType::LOGICAL_DISPLAY_NODE, 0},
+        {RSRenderNodeType::WINDOW_KEYFRAME_NODE, 0},
+        {RSRenderNodeType::ROOT_NODE, 0},
+        {RSRenderNodeType::CANVAS_DRAWING_NODE, 0},
+        {RSRenderNodeType::UNION_NODE, 0},
+    };
+
+    uint32_t gpuCanvasDrawingNodeCount = 0;
+    uint32_t nonGpuCanvasDrawingNodeCount = 0;
+
+    const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
+    nodeMap.TraversalNodes([&nodeTypeCount, token, &gpuCanvasDrawingNodeCount, &nonGpuCanvasDrawingNodeCount, pid](
+                               const std::shared_ptr<RSBaseRenderNode>& node) {
+        if (node == nullptr) {
+            return;
+        }
+
+        if (node->GetUIContextToken() == token && ExtractPid(node->GetId()) == pid) {
+            RSRenderNodeType nodeType = node->GetType();
+            if (nodeTypeCount.find(nodeType) != nodeTypeCount.end()) {
+                nodeTypeCount[nodeType]++;
+            }
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+            if (nodeType == RSRenderNodeType::CANVAS_DRAWING_NODE) {
+                const auto& canvasDrawingNode = RSBaseRenderNode::ReinterpretCast<RSCanvasDrawingRenderNode>(node);
+                if (canvasDrawingNode->sizeOutOfGpuLimit_) {
+                    nonGpuCanvasDrawingNodeCount++;
+                } else {
+                    gpuCanvasDrawingNodeCount++;
+                }
+            }
+#endif
+        }
+    });
+    
+    dumpString.append("RootNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::ROOT_NODE]) + "\n");
+    dumpString.append("SurfaceNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::SURFACE_NODE]) + "\n");
+    dumpString.append("CanvasNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::CANVAS_NODE]) + "\n");
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    dumpString.append("CanvasDrawingNode: " +
+                      std::to_string(nodeTypeCount[RSRenderNodeType::CANVAS_DRAWING_NODE]) + " (GPU: " +
+                      std::to_string(gpuCanvasDrawingNodeCount) + ", Non-GPU: " +
+                      std::to_string(nonGpuCanvasDrawingNodeCount) + ")\n");
+#else
+    dumpString.append("CanvasDrawingNode: " +
+                      std::to_string(nodeTypeCount[RSRenderNodeType::CANVAS_DRAWING_NODE]) + "\n");
+#endif
+    dumpString.append("EffectNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::EFFECT_NODE]) + "\n");
+    dumpString.append("ProxyNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::PROXY_NODE]) + "\n");
+    dumpString.append("WindowKeyFrameNode: " +
+                      std::to_string(nodeTypeCount[RSRenderNodeType::WINDOW_KEYFRAME_NODE]) + "\n");
+    dumpString.append("UnionNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::UNION_NODE]) + "\n");
+    dumpString.append("ScreenNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::SCREEN_NODE]) + "\n");
+    dumpString.append("LogicalDisplayNode: " +
+                      std::to_string(nodeTypeCount[RSRenderNodeType::LOGICAL_DISPLAY_NODE]) + "\n");
+    dumpString.append("RsNode: " + std::to_string(nodeTypeCount[RSRenderNodeType::RS_NODE]) + "\n");
+    dumpString.append("Unknow: " + std::to_string(nodeTypeCount[RSRenderNodeType::UNKNOW]) + "\n");
+    
+    dumpString.append("-- End Node Count Statistics --\n");
 }
 } // Rosen
 } // OHOS
