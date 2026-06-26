@@ -525,9 +525,6 @@ int32_t HdiLayer::SetTunnelLayerId()
             return GRAPHIC_DISPLAY_SUCCESS;
         }
     }
-    if (layerType_ == GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC) {
-        return GRAPHIC_DISPLAY_NOT_SUPPORT;
-    }
 
     int32_t ret = device_->SetTunnelLayerId(screenId_, layerId_, rsLayer_->GetTunnelLayerId());
     if (ret != GRAPHIC_DISPLAY_SUCCESS) {
@@ -545,9 +542,6 @@ int32_t HdiLayer::SetTunnelLayerProperty()
     }
     tunnelLayerProperty_ = property;
     hasSetTunnel_ = true;
-    if (layerType_ == GraphicLayerType::GRAPHIC_LAYER_TYPE_GRAPHIC) {
-        return GRAPHIC_DISPLAY_NOT_SUPPORT;
-    }
 
     int32_t ret = device_->SetTunnelLayerProperty(screenId_, layerId_, property);
     if (ret != GRAPHIC_DISPLAY_SUCCESS) {
