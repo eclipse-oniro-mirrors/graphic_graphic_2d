@@ -165,6 +165,7 @@ void RSOpincManager::QuickCheckOpincStable(
     RS_OPTIONAL_TRACE_BEGIN_LEVEL(TRACE_LEVEL_PRINT_NODEID, "%s, nodeId:" PRIu64, __func__, node.GetId());
     const auto* nodeOpincRootCache = node.TryGetOpincRootCachePtr();
     if (!GetOPIncSwitch() || !node.GetOpincCache().HasUnstableOpincNode()) {
+        RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
         return;
     }
 
