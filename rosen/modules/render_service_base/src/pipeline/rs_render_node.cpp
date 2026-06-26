@@ -4738,6 +4738,8 @@ void RSRenderNode::OnSync()
         } else {
             RSLayerCacheManagerBase::layerDrawables_.emplace_back(renderDrawable_);
         }
+        RS_OPTIONAL_TRACE_NAME_FMT("MarkLayer layerDrawables_ size:%d, id:%llu",
+            RSLayerCacheManagerBase::layerDrawables_.size(), renderDrawable_->GetId());
     }
 
     if (IsDrawableVecNeedClear()) {
