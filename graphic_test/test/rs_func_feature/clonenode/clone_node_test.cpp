@@ -22,6 +22,13 @@ using namespace testing::ext;
 namespace OHOS::Rosen {
 
 class CloneNodeTest : public RSGraphicTest {
+public:
+    // called before each tests
+    void BeforeEach() override
+    {
+        SetScreenSize(screenWidth, screenHeight);
+    }
+
 private:
     const int screenWidth = 1200;
     const int screenHeight = 2000;
@@ -35,6 +42,10 @@ private:
         std::shared_ptr<Media::PixelMap> pixelmap = smpixelmap,
         RSSurfaceNodeType type = RSSurfaceNodeType::APP_WINDOW_NODE)
     {
+        if (!pixelmap) {
+            LOGE("CreateClonedNodeWithImageCanvas pixelmap is nullptr");
+            return nullptr;
+        }
         RSSurfaceNodeConfig clonedSurfaceNodeConfig;
         clonedSurfaceNodeConfig.isSync = true;
         clonedSurfaceNodeConfig.SurfaceNodeName = "clonedSurfaceNode";
@@ -57,7 +68,8 @@ private:
         auto drawing = canvasNode->BeginRecording(bounds[2], bounds[3]);
         auto rosenImage = std::make_shared<Rosen::RSImage>();
         rosenImage->SetImageFit(static_cast<int>(ImageFit::SCALE_DOWN));
-        auto imageInfo = rosenImage->GetAdaptiveImageInfoWithCustomizedFrameRect(frameRect);
+        Drawing::Rect imageFrameRect(0, 0, bounds[2], bounds[3]);
+        auto imageInfo = rosenImage->GetAdaptiveImageInfoWithCustomizedFrameRect(imageFrameRect);
         drawing->DrawPixelMapWithParm(pixelmap, imageInfo, sampling);
         canvasNode->FinishRecording();
         RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
@@ -78,12 +90,6 @@ private:
         cloneSurfaceNode->SetBounds(bounds);
         cloneSurfaceNode->SetFrame(bounds);
         return cloneSurfaceNode;
-    }
-public:
-    // called before each tests
-    void BeforeEach() override
-    {
-        SetScreenSize(screenWidth, screenHeight);
     }
 };
 
