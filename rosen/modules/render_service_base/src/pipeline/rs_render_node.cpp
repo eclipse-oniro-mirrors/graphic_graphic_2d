@@ -154,6 +154,7 @@ bool RSRenderNode::IsPureBackgroundColor() const
         RSDrawableSlot::CLIP_TO_FRAME,
         RSDrawableSlot::CHILDREN,
         RSDrawableSlot::RESTORE_FRAME,
+        RSDrawableSlot::RESTORE_CLIP_TO_BOUNDS,
         RSDrawableSlot::RESTORE_ALL
     };
 
