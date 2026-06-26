@@ -2549,7 +2549,8 @@ void RSUniRenderVisitor::PrevalidateHwcNode()
     uint32_t zOrder = static_cast<uint32_t>(globalZOrder_);
     // add surfaceNode layer
     RSUniHwcPrevalidateUtil::GetInstance().CollectSurfaceNodeLayerInfo(
-        prevalidLayers, curMainAndLeashSurfaces, curFps, zOrder);
+        prevalidLayers, curMainAndLeashSurfaces, curFps, zOrder,
+        curScreenNode_->GetScreenProperty());
     RS_TRACE_NAME_FMT("PrevalidateHwcNode hwcLayer: %u", prevalidLayers.size());
     if (prevalidLayers.size() == 0) {
         RS_LOGI_IF(DEBUG_PREVALIDATE, "PrevalidateHwcNode no hardware layer");
