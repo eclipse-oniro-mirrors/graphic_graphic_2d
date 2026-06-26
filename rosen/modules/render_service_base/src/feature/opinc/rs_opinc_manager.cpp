@@ -162,6 +162,7 @@ void RSOpincManager::UpdateRootFlag(RSRenderNode& node, bool& unchangeMarkEnable
 void RSOpincManager::QuickCheckOpincStable(
     RSRenderNode& node, bool& unchangeMarkInApp, bool& unchangeMarkEnable, bool& hasUnstableOpincNode)
 {
+    RS_OPTIONAL_TRACE_BEGIN_LEVEL(TRACE_LEVEL_PRINT_NODEID, "%s, nodeId:" PRIu64, __func__, node.GetId());
     const auto* nodeOpincRootCache = node.TryGetOpincRootCachePtr();
     if (!GetOPIncSwitch() || !node.GetOpincCache().HasUnstableOpincNode()) {
         return;
@@ -198,6 +199,7 @@ void RSOpincManager::QuickCheckOpincStable(
         (nodeOpincRootCache != nullptr && nodeOpincRootCache->IsSuggestOpincNode() &&
             !nodeOpincRootCache->IsOpincUnchangeState()));
     hasUnstableOpincNode = node.GetOpincCache().HasUnstableOpincNode();
+    RS_OPTIONAL_TRACE_END_LEVEL(TRACE_LEVEL_PRINT_NODEID);
 }
 
 OpincUnsupportType RSOpincManager::GetUnsupportReason(RSRenderNode& node)
