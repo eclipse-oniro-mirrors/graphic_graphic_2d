@@ -204,9 +204,7 @@ void SymbolConfigParser::SymbolGlyphCase(const char* key, const cJSON* root,
     RSSymbolLayersGroups& symbolLayersGroups)
 {
     cJSON* item = cJSON_GetObjectItem(root, key);
-    if (item != nullptr) {
-        GetUint16FromCJSON(item, symbolLayersGroups.symbolGlyphId);
-    }
+    GetUint16FromCJSON(item, symbolLayersGroups.symbolGlyphId);
 }
 
 void SymbolConfigParser::ParseLayers(const cJSON* root, std::vector<std::vector<size_t>>& layers)
