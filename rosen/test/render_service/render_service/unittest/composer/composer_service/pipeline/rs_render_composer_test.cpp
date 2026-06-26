@@ -15,7 +15,9 @@
 
 #include <atomic>
 #include <chrono>
+#include <future>
 #include <gtest/gtest.h>
+#include <memory>
 
 #include "../layer_backend/mock_hdi_device.h"
 #include "hdi_output.h"
@@ -3262,33 +3264,33 @@ HWTEST_F(RsRenderComposerTest, SurfaceDump_Branches, TestSize.Level1)
  * Type: Function
  * Rank: Important(2)
  * EnvConditions: N/A
- * CaseDescription: 1. call with valid hdiOutput_ and null backlightThread_ to verify direct dispatch
- *                  2. call with valid hdiOutput_ and backlightThread_ to verify asynchronous dispatch
- *                  3. call with null hdiOutput_ to verify early return
+ * CaseDescription: 1. call with valid hdiOutput_ to verify asynchronous dispatch
+ *                  2. call with null hdiOutput_ to verify early return
  */
 HWTEST_F(RsRenderComposerTest, SetScreenBacklight_Branches, TestSize.Level1)
 {
-    constexpr uint32_t directLevel = 50u;
     constexpr uint32_t asyncLevel = 80u;
     auto output = rsRenderComposer_->hdiOutput_;
     ASSERT_NE(output, nullptr);
-    auto device = output->device_;
+    auto originalDevice = output->device_;
     output->SetHdiOutputDevice(hdiDeviceMock_);
 
-    rsRenderComposer_->backlightThread_.store(nullptr);
-    EXPECT_CALL(*hdiDeviceMock_, SetScreenBacklight(output->GetScreenId(), directLevel)).Times(1);
-    rsRenderComposer_->SetScreenBacklight(directLevel);
-
-    auto& backlightThread = RSBacklightThread::Instance();
-    rsRenderComposer_->SetBacklightThread(backlightThread);
-    EXPECT_CALL(*hdiDeviceMock_, SetScreenBacklight(output->GetScreenId(), asyncLevel)).Times(1);
+    constexpr auto waitTimeout = std::chrono::seconds(1);
+    auto taskFinished = std::make_shared<std::promise<void>>();
+    auto taskFuture = taskFinished->get_future();
+    EXPECT_CALL(*hdiDeviceMock_, SetScreenBacklight(output->GetScreenId(), asyncLevel))
+        .WillOnce([taskFinished](uint32_t, uint32_t) {
+            taskFinished->set_value();
+            return GRAPHIC_DISPLAY_SUCCESS;
+        });
     rsRenderComposer_->SetScreenBacklight(asyncLevel);
-    backlightThread.PostSyncTask([]() {});
+    EXPECT_EQ(taskFuture.wait_for(waitTimeout), std::future_status::ready);
 
     rsRenderComposer_->hdiOutput_ = nullptr;
     rsRenderComposer_->SetScreenBacklight(0);
+    EXPECT_EQ(rsRenderComposer_->hdiOutput_, nullptr);
     rsRenderComposer_->hdiOutput_ = output;
-    output->SetHdiOutputDevice(device);
+    output->SetHdiOutputDevice(originalDevice);
 }
 
 /**

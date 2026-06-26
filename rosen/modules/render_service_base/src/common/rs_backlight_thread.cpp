@@ -47,10 +47,4 @@ void RSBacklightThread::PostTask(const std::function<void()>& task)
     }
 }
 
-void RSBacklightThread::PostSyncTask(const std::function<void()>& task)
-{
-    if (handler_) {
-        handler_->PostSyncTask(task, AppExecFwk::EventQueue::Priority::IMMEDIATE);
-    }
-}
 } // namespace OHOS::Rosen

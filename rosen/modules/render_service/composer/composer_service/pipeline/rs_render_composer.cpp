@@ -135,11 +135,6 @@ RSRenderComposer::RSRenderComposer(const std::shared_ptr<HdiOutput>& output, con
     CreateAndInitComposer(output, property);
 }
 
-void RSRenderComposer::SetBacklightThread(RSBacklightThread& backlightThread)
-{
-    backlightThread_.store(&backlightThread, std::memory_order_release);
-}
-
 void RSRenderComposer::CreateAndInitComposer(const std::shared_ptr<HdiOutput>& output,
     const sptr<RSScreenProperty>& property)
 {
@@ -1514,12 +1509,7 @@ void RSRenderComposer::SetScreenBacklight(uint32_t level)
         RS_LOGW("%{public}s: hdiOutput_ is nullptr.", __func__);
         return;
     }
-    auto backlightThread = backlightThread_.load(std::memory_order_acquire);
-    if (backlightThread == nullptr) {
-        hdiOutput->SetScreenBacklight(level);
-        return;
-    }
-    backlightThread->PostTask([hdiOutput, level]() {
+    RSBacklightThread::Instance().PostTask([hdiOutput, level]() {
         hdiOutput->SetScreenBacklight(level);
     });
 }

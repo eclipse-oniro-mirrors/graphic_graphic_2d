@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include <atomic>
 #include <chrono>
 #include <future>
 #include <memory>
@@ -29,11 +28,11 @@ namespace OHOS::Rosen {
 class RSBacklightThreadTest : public testing::Test {};
 
 /**
- * @tc.name: PostTaskAndPostSyncTask
- * @tc.desc: Verify asynchronous and synchronous tasks are executed
+ * @tc.name: PostTask
+ * @tc.desc: Verify asynchronous tasks are executed
  * @tc.type: FUNC
  */
-HWTEST_F(RSBacklightThreadTest, PostTaskAndPostSyncTask, TestSize.Level1)
+HWTEST_F(RSBacklightThreadTest, PostTask, TestSize.Level1)
 {
     constexpr auto waitTimeout = std::chrono::seconds(1);
     auto& backlightThread = RSBacklightThread::Instance();
@@ -41,27 +40,22 @@ HWTEST_F(RSBacklightThreadTest, PostTaskAndPostSyncTask, TestSize.Level1)
     auto taskFuture = taskFinished->get_future();
     backlightThread.PostTask([taskFinished]() { taskFinished->set_value(); });
     EXPECT_EQ(taskFuture.wait_for(waitTimeout), std::future_status::ready);
-
-    std::atomic<bool> syncTaskExecuted = false;
-    backlightThread.PostSyncTask([&syncTaskExecuted]() { syncTaskExecuted = true; });
-    EXPECT_TRUE(syncTaskExecuted.load());
 }
 
 /**
- * @tc.name: PostTaskAndPostSyncTaskWithNullHandler
- * @tc.desc: Verify task APIs safely return when handler is null
+ * @tc.name: PostTaskWithNullHandler
+ * @tc.desc: Verify PostTask safely returns when handler is null
  * @tc.type: FUNC
  */
-HWTEST_F(RSBacklightThreadTest, PostTaskAndPostSyncTaskWithNullHandler, TestSize.Level1)
+HWTEST_F(RSBacklightThreadTest, PostTaskWithNullHandler, TestSize.Level1)
 {
     auto& backlightThread = RSBacklightThread::Instance();
     auto handler = backlightThread.handler_;
     backlightThread.handler_ = nullptr;
 
-    std::atomic<bool> taskExecuted = false;
+    bool taskExecuted = false;
     backlightThread.PostTask([&taskExecuted]() { taskExecuted = true; });
-    backlightThread.PostSyncTask([&taskExecuted]() { taskExecuted = true; });
-    EXPECT_FALSE(taskExecuted.load());
+    EXPECT_FALSE(taskExecuted);
     EXPECT_EQ(backlightThread.handler_, nullptr);
 
     backlightThread.handler_ = handler;

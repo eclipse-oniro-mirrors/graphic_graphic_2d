@@ -25,7 +25,6 @@ class RSB_EXPORT RSBacklightThread final {
 public:
     static RSBacklightThread& Instance();
     void PostTask(const std::function<void()>& task);
-    void PostSyncTask(const std::function<void()>& task);
 
 private:
     RSBacklightThread();

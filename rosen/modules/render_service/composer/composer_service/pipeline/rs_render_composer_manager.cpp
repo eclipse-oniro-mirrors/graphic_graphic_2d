@@ -26,12 +26,6 @@ namespace Rosen {
 RSRenderComposerManager::RSRenderComposerManager(std::shared_ptr<AppExecFwk::EventHandler>& handler)
     : handler_(handler) {}
 
-void RSRenderComposerManager::SetBacklightThread(RSBacklightThread& backlightThread)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    backlightThread_ = &backlightThread;
-}
-
 void RSRenderComposerManager::OnScreenConnected(const std::shared_ptr<HdiOutput>& output,
     const sptr<RSScreenProperty>& property)
 {
@@ -54,9 +48,6 @@ void RSRenderComposerManager::OnScreenConnected(const std::shared_ptr<HdiOutput>
         if (iter == rsRenderComposerAgentMap_.end()) {
             std::shared_ptr<RSRenderComposer> renderComposer = std::make_shared<RSRenderComposer>(output, property);
             renderComposerAgent = std::make_shared<RSRenderComposerAgent>(renderComposer);
-            if (backlightThread_ != nullptr) {
-                renderComposerAgent->SetBacklightThread(*backlightThread_);
-            }
             sptr<RSRenderToComposerConnection> composerConnection =
                 sptr<RSRenderToComposerConnection>::MakeSptr("composer_conn", screenId, renderComposerAgent);
             rsComposerConnectionMap_.insert(std::pair(screenId, composerConnection));
