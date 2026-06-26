@@ -428,6 +428,16 @@ public:
     const RSModifierExtractor& GetStagingProperties() const;
 
     const RSShowingPropertiesFreezer& GetShowingProperties() const;
+    
+    /**
+     * @brief Sets the bounds and frame of the node without mutex.
+     *
+     * The bounds typically define the position and size of the node within its parent.
+     *
+     * @param bounds A Vector4f representing the new bounds (X, Y, width, height).
+     * @param frame A Vector4f representing the new frame, containing values for x, y, width, and height.
+     */
+    void SetBoundsAndFrame(const Vector4f& bounds, const Vector4f& frame);
 
     /**
      * @brief Sets the bounds of the node.
@@ -2382,9 +2392,12 @@ private:
 
     bool AddCommandInner(std::unique_ptr<RSCommand>& command, bool isRenderServiceCommand,
         FollowType followType, NodeId nodeId) const;
-
+    
     void _RebuildTreeInternal();
     void _RebuildTreeLevel(const std::vector<std::tuple<RSNode*, RSNode*, size_t>>& level);
+
+    void SetBoundsInner(const Vector4f& bounds);
+    void SetFrameInner(const Vector4f& frame);
 
     uint32_t dirtyType_ = static_cast<uint32_t>(NodeDirtyType::NOT_DIRTY);
 

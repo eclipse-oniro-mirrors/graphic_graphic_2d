@@ -845,7 +845,43 @@ void RSNode::MarkLayer(bool isLayer)
     AddCommand(command, IsRenderServiceNode());
 }
 
+void RSNode::SetBoundsAndFrame(const Vector4f& bounds, const Vector4f& frame)
+{
+    if (auto surfaceNode = ReinterpretCastTo<RSSurfaceNode>()) {
+        auto compositeLayerUtils = surfaceNode->GetCompositeLayerUtils();
+        if (compositeLayerUtils) {
+            compositeLayerUtils->UpdateVirtualNodeBounds(bounds);
+        }
+    }
+    {
+        std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
+        SetBoundsInner(bounds);
+        SetFrameInner(frame);
+    }
+
+    OnBoundsSizeChanged();
+    if (bounds.x_ != 0 || bounds.y_ != 0 || frame.x_ != 0 || frame.y_ != 0) {
+        SetDrawNode();
+        SetDrawNodeType(DrawNodeType::MergeableType);
+    }
+}
+
 // Bounds
+void RSNode::SetBoundsInner(const Vector4f& bounds)
+{
+    auto modifier = GetModifierCreatedBySetter(ModifierNG::RSBoundsModifier::Type);
+    // Create corresponding modifier if not exist
+    if (modifier == nullptr) {
+        modifier = std::make_shared<ModifierNG::RSBoundsModifier>();
+        std::static_pointer_cast<ModifierNG::RSBoundsModifier>(modifier)->SetBounds(bounds);
+        modifiersNGCreatedBySetter_.emplace(ModifierNG::RSBoundsModifier::Type, modifier);
+        AddModifier(modifier);
+    } else {
+        std::static_pointer_cast<ModifierNG::RSBoundsModifier>(modifier)->SetBounds(bounds);
+        NotifyPageNodeChanged();
+    }
+}
+
 void RSNode::SetBounds(const Vector4f& bounds)
 {
     if (auto surfaceNode = ReinterpretCastTo<RSSurfaceNode>()) {
@@ -916,6 +952,21 @@ void RSNode::SetBoundsHeight(float height)
 }
 
 // Frame
+void RSNode::SetFrameInner(const Vector4f& frame)
+{
+    auto modifier = GetModifierCreatedBySetter(ModifierNG::RSFrameModifier::Type);
+    // Create corresponding modifier if not exist
+    if (modifier == nullptr) {
+        modifier = std::make_shared<ModifierNG::RSFrameModifier>();
+        std::static_pointer_cast<ModifierNG::RSFrameModifier>(modifier)->SetFrame(frame);
+        modifiersNGCreatedBySetter_.emplace(ModifierNG::RSFrameModifier::Type, modifier);
+        AddModifier(modifier);
+    } else {
+        std::static_pointer_cast<ModifierNG::RSFrameModifier>(modifier)->SetFrame(frame);
+        NotifyPageNodeChanged();
+    }
+}
+
 void RSNode::SetFrame(const Vector4f& bounds)
 {
     SetPropertyNG<ModifierNG::RSFrameModifier, &ModifierNG::RSFrameModifier::SetFrame>(bounds);
