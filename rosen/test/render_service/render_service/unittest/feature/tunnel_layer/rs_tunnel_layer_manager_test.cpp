@@ -312,6 +312,8 @@ HWTEST_F(RSTunnelLayerManagerTest, UpdateTunnelLayerState002, TestSize.Level1)
     ASSERT_TRUE(RegisterSurfaceNode(rsContext, newTunnelContext.node));
     TunnelLayerState tunnelState;
     ASSERT_TRUE(SetTunnelInfoForConsumer(newTunnelContext.consumer, tunnelState));
+    RSTunnelRuntimeStore::SetLayerInfo(
+        newTunnelContext.node->GetId(), tunnelState.tunnelLayerId, tunnelState.property);
     {
         ScopedNewTunnelSwitch scopedNewTunnelSwitch(true);
         tunnelLayerManager.UpdateTunnelLayerState(newTunnelContext.node->GetId(),
