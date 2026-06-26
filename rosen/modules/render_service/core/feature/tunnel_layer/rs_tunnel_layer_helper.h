@@ -39,7 +39,8 @@ public:
     };
 
     static bool ResolveTunnelLayerInfo(
-        const sptr<IConsumerSurface>& consumer, uint64_t& tunnelLayerId, uint32_t& property);
+        const sptr<IConsumerSurface>& consumer, uint64_t& tunnelLayerId, uint32_t& property,
+        NodeId nodeId = 0);
     static bool AcquirePendingBuffer(const std::shared_ptr<RSSurfaceRenderNode>& node);
     static bool TryCommitBufferDirect(const std::shared_ptr<RSSurfaceRenderNode>& node,
         const std::shared_ptr<RSComposerClientManager>& composerClientManager, bool consumePendingBuffer,
