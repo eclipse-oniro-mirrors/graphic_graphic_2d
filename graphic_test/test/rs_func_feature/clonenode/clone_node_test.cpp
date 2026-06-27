@@ -32,6 +32,8 @@ public:
 private:
     const int screenWidth = 1200;
     const int screenHeight = 2000;
+    const int boundsWidthIndex = 2;
+    const int boundsHeightIndex = 3;
     Drawing::SamplingOptions sampling;
     Drawing::Rect frameRect;
     inline static std::shared_ptr<Media::PixelMap> smpixelmap =
@@ -42,8 +44,6 @@ private:
         std::shared_ptr<Media::PixelMap> pixelmap = smpixelmap,
         RSSurfaceNodeType type = RSSurfaceNodeType::APP_WINDOW_NODE)
     {
-        constexpr int BOUNDS_WIDTH_INDEX = 2;
-        constexpr int BOUNDS_HEIGHT_INDEX = 3;
         if (!pixelmap) {
             LOGE("CreateClonedNodeWithImageCanvas pixelmap is nullptr");
             return nullptr;
@@ -63,14 +63,14 @@ private:
 
         auto canvasNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         canvasNode->SetClipToBounds(true);
-        canvasNode->SetBounds({0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]});
-        canvasNode->SetFrame({0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]});
+        canvasNode->SetBounds({0, 0, bounds[boundsWidthIndex], bounds[boundsHeightIndex]});
+        canvasNode->SetFrame({0, 0, bounds[boundsWidthIndex], bounds[boundsHeightIndex]});
         RegisterNode(canvasNode);
         clonedSurfaceNode->AddChild(canvasNode, 0);
-        auto drawing = canvasNode->BeginRecording(bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]);
+        auto drawing = canvasNode->BeginRecording(bounds[boundsWidthIndex], bounds[boundsHeightIndex]);
         auto rosenImage = std::make_shared<Rosen::RSImage>();
         rosenImage->SetImageFit(static_cast<int>(ImageFit::SCALE_DOWN));
-        Drawing::Rect imageFrameRect(0, 0, bounds[BOUNDS_WIDTH_INDEX], bounds[BOUNDS_HEIGHT_INDEX]);
+        Drawing::Rect imageFrameRect(0, 0, bounds[boundsWidthIndex], bounds[boundsHeightIndex]);
         auto imageInfo = rosenImage->GetAdaptiveImageInfoWithCustomizedFrameRect(imageFrameRect);
         drawing->DrawPixelMapWithParm(pixelmap, imageInfo, sampling);
         canvasNode->FinishRecording();
