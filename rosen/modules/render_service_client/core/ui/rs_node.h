@@ -2389,6 +2389,8 @@ private:
 
     std::shared_ptr<ModifierNG::RSModifier> GetModifierCreatedBySetter(ModifierNG::RSModifierType modifierType);
 
+    bool CheckMultiThreadContextAccess(const std::string& func) const;
+
     /**
      * @brief Clears all modifiers associated with this node.
      *

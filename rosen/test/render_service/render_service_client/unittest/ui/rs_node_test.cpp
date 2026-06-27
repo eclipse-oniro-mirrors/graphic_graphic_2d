@@ -8932,6 +8932,34 @@ HWTEST_F(RSNodeTest, SetMaterialShaderDetachPropertyTest, TestSize.Level1)
 }
 
 /**
+ * @tc.name: CheckMultiThreadAccess001
+ * @tc.desc: test results of CheckMultiThreadAccess
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, CheckMultiThreadAccess001, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    rsNode->SetSkipCheckInMultiInstance(false);
+    rsNode->rsUIContext_ = nullptr;
+    std::string func = "";
+    ASSERT_TRUE(rsNode->CheckMultiThreadAccess(func));
+}
+
+/**
+ * @tc.name: CheckMultiThreadAccess002
+ * @tc.desc: test results of CheckMultiThreadAccess
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSNodeTest, CheckMultiThreadAccess002, TestSize.Level1)
+{
+    auto rsNode = CreateCanvasNode();
+    rsNode->SetSkipCheckInMultiInstance(false);
+    rsNode->rsUIContext_->token_ = gettid();
+    std::string func = "";
+    ASSERT_FALSE(rsNode->CheckMultiThreadAccess(func));
+}
+
+/*
  * @tc.name: SetBoundsAndFrame001
  * @tc.desc: Test SetBoundsAndFrame with float and Vector4f parameters
  * @tc.type: FUNC
