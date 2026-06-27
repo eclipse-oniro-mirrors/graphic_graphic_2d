@@ -85,7 +85,7 @@ void RSPropertyBase::MarkCustomModifierDirty()
         auto node = target_.lock();
         auto ctx = node ? node->GetRSUIContext() : nullptr;
         if (ctx) {
-            modifier->SetDirty(true, node->GetRSUIContext()->GetRSModifierManager());
+            modifier->SetDirty(true, ctx->GetRSModifierManager());
         } else {
             modifier->SetDirty(true, RSModifierManagerMap::Instance()->GetModifierManager());
         }
