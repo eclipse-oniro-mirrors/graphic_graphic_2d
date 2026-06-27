@@ -100,9 +100,9 @@ bool HdiDeviceImpl::Init()
                 HLOGE("Composer::V1_4::IDisplayComposerInterface::Get fail, return nullptr.");
                 return false;
             }
+        } else {
+            g_composer = g_composer_v5;
         }
-    } else {
-        g_composer = g_composer_v5;
     }
     return true;
 }
