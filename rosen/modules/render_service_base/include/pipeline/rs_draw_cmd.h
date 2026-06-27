@@ -36,7 +36,7 @@
 #include "sync_fence.h"
 #include "external_window.h"
 #endif
-
+ 
 namespace OHOS {
 namespace Rosen {
 #ifdef ROSEN_OHOS
