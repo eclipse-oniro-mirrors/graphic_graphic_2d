@@ -110,6 +110,8 @@ bool HdiDeviceImpl::Init()
 void HdiDeviceImpl::Destroy()
 {
     g_composer = nullptr;
+    g_composer_v5 = nullptr;
+    g_composer_service = nullptr;
 }
 
 /* set & get device screen info begin */
