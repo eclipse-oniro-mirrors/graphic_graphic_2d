@@ -90,17 +90,6 @@ void RSCanvasRenderNode::QuickPrepare(const std::shared_ptr<RSNodeVisitor>& visi
     }
     ApplyModifiers();
 #if defined(ROSEN_OHOS)
-    auto blendMode = GetRenderProperties().GetColorBlendMode();
-    if (currentBlendMode_ != blendMode) {
-        if (!isNewOnTree_) {
-            UpdateDisplayBlendModeMap(false, GetLogicalDisplayNodeId());
-        }
-        if (IsOnTheTree()) {
-            UpdateDisplayBlendModeMap(true, GetLogicalDisplayNodeId());
-        }
-    } else if (isNewOnTree_ && blendMode == static_cast<int>(RSColorBlendMode::NONE)) {
-        UpdateDisplayBlendModeMap(true, GetLogicalDisplayNodeId());
-    }
     visitor->RegisterHpaeCallback(*this);
 #endif
     visitor->QuickPrepareCanvasRenderNode(*this);

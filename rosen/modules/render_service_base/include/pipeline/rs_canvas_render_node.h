@@ -74,6 +74,10 @@ public:
     {
         isNewOnTree_ = isNewOnTree;
     }
+    bool GetNewOnTree()
+    {
+        return isNewOnTree_;
+    }
     void OnSetPixelmap(const std::shared_ptr<Media::PixelMap>& pixelMap);
 
     void SetColorGamut(uint32_t colorGamut);
