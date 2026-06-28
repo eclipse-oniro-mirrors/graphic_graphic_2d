@@ -574,7 +574,6 @@ bool RSHdrUtil::NeedBackToFP16(NodeId id, RSScreenRenderParams* screenParams)
 {
     const auto& nodeMap = RSMainThread::Instance()->GetContext().GetNodeMap();
     auto displayNode = nodeMap.GetRenderNode<const RSLogicalDisplayRenderNode>(id);
-    auto scrColorSpace = screenParams->GetNewColorSpace();
     if (!displayNode) {
         RS_LOGE("RSHdrUtil::NeedBackToFP16 displayNode is nullptr");
         return true;

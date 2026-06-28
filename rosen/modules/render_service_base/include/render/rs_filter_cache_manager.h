@@ -170,7 +170,7 @@ private:
     void CheckCachedImages(RSPaintFilterCanvas& canvas);
 
     std::shared_ptr<Drawing::Surface> CreateOffscreenSurface(Drawing::Surface* surface,
-        const Drawing::RectI& offscreenRect) const;
+        const Drawing::RectI& offscreenRect, const std::shared_ptr<RSDrawingFilter>& filter) const;
 
     std::string GetCacheState() const;
 

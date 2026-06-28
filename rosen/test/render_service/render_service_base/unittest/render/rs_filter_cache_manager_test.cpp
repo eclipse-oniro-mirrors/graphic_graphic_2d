@@ -2481,17 +2481,7 @@ HWTEST_F(RSFilterCacheManagerTest, CreateOffscreenSurfaceTest, TestSize.Level1)
         auto surface = Drawing::Surface::MakeRaster(info);
         ASSERT_NE(surface, nullptr);
         
-        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect);
-        EXPECT_NE(offscreenSurface, nullptr);
-    }
-
-    {
-        Drawing::ImageInfo info(SURFACE_W, SURFACE_H,
-            Drawing::COLORTYPE_RGBA_1010102, Drawing::ALPHATYPE_PREMUL);
-        auto surface = Drawing::Surface::MakeRaster(info);
-        ASSERT_NE(surface, nullptr);
-
-        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect);
+        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect, nullptr);
         EXPECT_NE(offscreenSurface, nullptr);
     }
 
@@ -2500,11 +2490,22 @@ HWTEST_F(RSFilterCacheManagerTest, CreateOffscreenSurfaceTest, TestSize.Level1)
 
     {
         Drawing::ImageInfo info(SURFACE_W, SURFACE_H,
+            Drawing::COLORTYPE_RGBA_1010102, Drawing::ALPHATYPE_PREMUL);
+        auto surface = Drawing::Surface::MakeRaster(info);
+        ASSERT_NE(surface, nullptr);
+        auto shaderFilter = std::make_shared<RSRenderFilterParaBase>();
+        auto filter = std::make_shared<RSDrawingFilter>(shaderFilter);
+        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect, filter);
+        EXPECT_NE(offscreenSurface, nullptr);
+    }
+
+    {
+        Drawing::ImageInfo info(SURFACE_W, SURFACE_H,
             Drawing::COLORTYPE_RGBA_8888, Drawing::ALPHATYPE_OPAQUE);
         auto surface = Drawing::Surface::MakeRaster(info);
         ASSERT_NE(surface, nullptr);
 
-        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect);
+        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect, nullptr);
         EXPECT_NE(offscreenSurface, nullptr);
     }
 
@@ -2514,10 +2515,10 @@ HWTEST_F(RSFilterCacheManagerTest, CreateOffscreenSurfaceTest, TestSize.Level1)
         auto surface = Drawing::Surface::MakeRaster(info);
         ASSERT_NE(surface, nullptr);
 
-        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect);
+        auto offscreenSurface = manager->CreateOffscreenSurface(surface.get(), offscreenRect, nullptr);
         EXPECT_NE(offscreenSurface, nullptr);
 
-        EXPECT_EQ(offscreenSurface->GetImageInfo().GetColorType(), Drawing::COLORTYPE_RGBA_F16);
+        EXPECT_NE(offscreenSurface->GetImageInfo().GetColorType(), Drawing::COLORTYPE_RGBA_F16);
     }
 
     RSFilterCacheManager::SetScrHdr(1.0f);

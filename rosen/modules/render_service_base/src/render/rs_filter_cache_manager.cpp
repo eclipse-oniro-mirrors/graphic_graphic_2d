@@ -28,6 +28,7 @@
 #include "draw/canvas.h"
 #include "draw/surface.h"
 #include "drawable/rs_property_drawable_utils.h"
+#include "effect/rs_render_filter_base.h"
 #include "memory/rs_tag_tracker.h"
 #include "platform/common/rs_log.h"
 #include "platform/common/rs_system_properties.h"
@@ -357,7 +358,7 @@ void RSFilterCacheManager::GenerateFilteredSnapshot(
 
     // Create an offscreen canvas with the same size as the filter region.
     auto offscreenRect = dstRect;
-    std::shared_ptr<Drawing::Surface> offscreenSurface = CreateOffscreenSurface(surface, offscreenRect);
+    std::shared_ptr<Drawing::Surface> offscreenSurface = CreateOffscreenSurface(surface, offscreenRect, filter);
     if (offscreenSurface == nullptr) {
         RS_LOGD("RSFilterCacheManager::GenerateFilteredSnapshot offscreenSurface is nullptr");
         return;
@@ -1040,15 +1041,19 @@ float RSFilterCacheManager::GetScrHdr()
 }
 
 std::shared_ptr<Drawing::Surface> RSFilterCacheManager::CreateOffscreenSurface(
-    Drawing::Surface* surface, const Drawing::RectI& offscreenRect) const
+    Drawing::Surface* surface, const Drawing::RectI& offscreenRect,
+    const std::shared_ptr<RSDrawingFilter>& filter) const
 {
     // HDR FIX FORMAT
-    if (ROSEN_NE(g_hdrBrightnessRatio, 1.0f) &&
-        surface->GetImageInfo().GetColorType() == Drawing::ColorType::COLORTYPE_RGBA_1010102) {
-        auto info = Drawing::ImageInfo(offscreenRect.GetWidth(), offscreenRect.GetHeight(),
-            Drawing::ColorType::COLORTYPE_RGBA_F16, surface->GetImageInfo().GetAlphaType(),
-            surface->GetImageInfo().GetColorSpace());
-        return surface->MakeSurface(info);
+    if (ROSEN_LNE(g_hdrBrightnessRatio, 1.0f) &&
+        surface->GetImageInfo().GetColorType() == Drawing::ColorType::COLORTYPE_RGBA_1010102 && filter) {
+        auto ngFilter = filter->GetNGRenderFilter();
+        if (ngFilter && ngFilter->ContainsType(RSNGEffectType::FROSTED_GLASS)) {
+            auto info = Drawing::ImageInfo(offscreenRect.GetWidth(), offscreenRect.GetHeight(),
+                Drawing::ColorType::COLORTYPE_RGBA_F16, surface->GetImageInfo().GetAlphaType(),
+                surface->GetImageInfo().GetColorSpace());
+            return surface->MakeSurface(info);
+        }
     }
     return surface->MakeSurface(offscreenRect.GetWidth(), offscreenRect.GetHeight());
 }
