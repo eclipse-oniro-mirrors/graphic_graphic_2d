@@ -233,7 +233,7 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckNeedLeave_IsOpIncNodesChanged, Te
     std::atomic_store_explicit(&planner_->opIncParentNode_->fullChildrenList_, childrenList,
         std::memory_order_release);
 
-    planner_->lastOpIncNodes_ = { {999, Vector4f(\1, 0.0f, 0.0f)} };
+    planner_->lastOpIncNodes_ = { {999, Vector4f(10, 10, 0, 0)} };
     planner_->needLeave_ = false;
 
     planner_->CheckNeedLeave();
@@ -270,7 +270,7 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckNeedLeave_UpdateBufferBoundsOut, 
     std::atomic_store_explicit(&planner_->opIncParentNode_->fullChildrenList_, childrenList,
         std::memory_order_release);
 
-    planner_->lastOpIncNodes_ = { {300, Vector4f(\1, 0.0f, 0.0f)} };
+    planner_->lastOpIncNodes_ = { {300, Vector4f(0, 0, 0, 0)} };
     planner_->planStatus_ = PlanStatus::PREPARE;
     planner_->isUpdateBuffer_ = true;
     planner_->srcRect_ = RectF(0, 0, 200, 200);
@@ -310,7 +310,7 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckNeedLeave_AllPass, TestSize.Level
     std::atomic_store_explicit(&planner_->opIncParentNode_->fullChildrenList_, childrenList,
         std::memory_order_release);
 
-    planner_->lastOpIncNodes_ = { {300, Vector4f(\1, 0.0f, 0.0f)} };
+    planner_->lastOpIncNodes_ = { {300, Vector4f(0, 0, 0, 0)} };
     planner_->planStatus_ = PlanStatus::PREPARE;
     planner_->isUpdateBuffer_ = true;
     planner_->srcRect_ = RectF(0, 0, 100, 100);
@@ -711,11 +711,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetSurfaceStatus_SplitSurfaceNull, Tes
     ASSERT_EQ(status, SurfaceStatus::UNKNOWN);
 }
 
-
 /*
  * ── UnregisterSplitSurfaceNode ─────────────────────────────
  */
- 
+
 /**
  * @tc.name: UnregisterSplitSurfaceNode_SplitSurfaceNotNull_ControllerNotNull
  * @tc.desc: Test UnregisterSplitSurfaceNode when splitSurface_ and requestController_ are both not null
@@ -727,10 +726,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UnregisterSplitSurfaceNode_SplitSurfac
     ASSERT_NE(planner_, nullptr);
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->requestController_ = std::make_shared<RequestController>();
- 
+
     planner_->UnregisterSplitSurfaceNode();
 }
- 
+
 /**
  * @tc.name: UnregisterSplitSurfaceNode_SplitSurfaceNotNull_ControllerNull
  * @tc.desc: Test UnregisterSplitSurfaceNode when splitSurface_ is not null but requestController_ is null
@@ -742,10 +741,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UnregisterSplitSurfaceNode_SplitSurfac
     ASSERT_NE(planner_, nullptr);
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->requestController_ = nullptr;
- 
+
     planner_->UnregisterSplitSurfaceNode();
 }
- 
+
 /**
  * @tc.name: UnregisterSplitSurfaceNode_SplitSurfaceNull_ControllerNotNull
  * @tc.desc: Test UnregisterSplitSurfaceNode when splitSurface_ is null but requestController_ is not null
@@ -757,10 +756,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UnregisterSplitSurfaceNode_SplitSurfac
     ASSERT_NE(planner_, nullptr);
     planner_->splitSurface_ = nullptr;
     planner_->requestController_ = std::make_shared<RequestController>();
- 
+
     planner_->UnregisterSplitSurfaceNode();
 }
- 
+
 /**
  * @tc.name: UnregisterSplitSurfaceNode_SplitSurfaceNull_ControllerNull
  * @tc.desc: Test UnregisterSplitSurfaceNode when both splitSurface_ and requestController_ are null
@@ -772,14 +771,14 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UnregisterSplitSurfaceNode_SplitSurfac
     ASSERT_NE(planner_, nullptr);
     planner_->splitSurface_ = nullptr;
     planner_->requestController_ = nullptr;
- 
+
     planner_->UnregisterSplitSurfaceNode();
 }
- 
+
 /*
  * ── GetPlanStatusString ────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetPlanStatusString_StatusOFF
  * @tc.desc: Test GetPlanStatusString when planStatus_ is OFF
@@ -790,12 +789,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetPlanStatusString_StatusOFF, TestSiz
 {
     ASSERT_NE(planner_, nullptr);
     planner_->planStatus_ = PlanStatus::OFF;
- 
+
     std::string statusStr = planner_->GetPlanStatusString();
- 
+
     ASSERT_EQ(statusStr, "OFF");
 }
- 
+
 /**
  * @tc.name: GetPlanStatusString_StatusPREPARE
  * @tc.desc: Test GetPlanStatusString when planStatus_ is PREPARE
@@ -806,12 +805,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetPlanStatusString_StatusPREPARE, Tes
 {
     ASSERT_NE(planner_, nullptr);
     planner_->planStatus_ = PlanStatus::PREPARE;
- 
+
     std::string statusStr = planner_->GetPlanStatusString();
- 
+
     ASSERT_EQ(statusStr, "PREPARE");
 }
- 
+
 /**
  * @tc.name: GetPlanStatusString_StatusON
  * @tc.desc: Test GetPlanStatusString when planStatus_ is ON
@@ -822,12 +821,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetPlanStatusString_StatusON, TestSize
 {
     ASSERT_NE(planner_, nullptr);
     planner_->planStatus_ = PlanStatus::ON;
- 
+
     std::string statusStr = planner_->GetPlanStatusString();
- 
+
     ASSERT_EQ(statusStr, "ON");
 }
- 
+
 /**
  * @tc.name: GetPlanStatusString_StatusLEAVE
  * @tc.desc: Test GetPlanStatusString when planStatus_ is LEAVE
@@ -838,12 +837,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetPlanStatusString_StatusLEAVE, TestS
 {
     ASSERT_NE(planner_, nullptr);
     planner_->planStatus_ = PlanStatus::LEAVE;
- 
+
     std::string statusStr = planner_->GetPlanStatusString();
- 
+
     ASSERT_EQ(statusStr, "LEAVE");
 }
- 
+
 /**
  * @tc.name: GetPlanStatusString_StatusInvalid
  * @tc.desc: Test GetPlanStatusString when planStatus_ is invalid (>= 4, falls back to LEAVE)
@@ -854,19 +853,19 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetPlanStatusString_StatusInvalid, Tes
 {
     ASSERT_NE(planner_, nullptr);
     planner_->planStatus_ = static_cast<PlanStatus>(100);
- 
+
     std::string statusStr = planner_->GetPlanStatusString();
- 
+
     ASSERT_EQ(statusStr, "LEAVE");
 }
- 
+
 /*
- * ── clearAllChildrenLayerObjects ───────────────────────────
+ * ── ClearAllChildrenLayerObjects ───────────────────────────
  */
- 
+
 /**
  * @tc.name: ClearAllChildrenLayerObjects_SplitSurfaceNull_SetsEmpty
- * @tc.desc: Test clearAllChildrenLayerObjects when splitSurface_ is null and child sets are empty
+ * @tc.desc: Test ClearAllChildrenLayerObjects when splitSurface_ is null and child sets are empty
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -876,13 +875,13 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, ClearAllChildrenLayerObjects_SplitSurf
     planner_->splitSurface_ = nullptr;
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
-    planner_->clearAllChildrenLayerObjects();
+
+    planner_->ClearAllChildrenLayerObjects();
 }
- 
+
 /**
  * @tc.name: ClearAllChildrenLayerObjects_SplitSurfaceNotNull_DrawableNull
- * @tc.desc: Test clearAllChildrenLayerObjects when splitSurface_ is not null but splitSurfaceDrawable_ is null
+ * @tc.desc: Test ClearAllChildrenLayerObjects when splitSurface_ is not null but splitSurfaceDrawable_ is null
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -893,13 +892,13 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, ClearAllChildrenLayerObjects_SplitSurf
     planner_->splitSurface_->splitSurfaceDrawable_ = nullptr;
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
-    planner_->clearAllChildrenLayerObjects();
+
+    planner_->ClearAllChildrenLayerObjects();
 }
- 
+
 /**
  * @tc.name: ClearAllChildrenLayerObjects_SplitSurfaceNotNull_DrawableNotNull
- * @tc.desc: Test clearAllChildrenLayerObjects when splitSurface_ and splitSurfaceDrawable_ are both not null
+ * @tc.desc: Test ClearAllChildrenLayerObjects when splitSurface_ and splitSurfaceDrawable_ are both not null
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -909,13 +908,13 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, ClearAllChildrenLayerObjects_SplitSurf
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
-    planner_->clearAllChildrenLayerObjects();
+
+    planner_->ClearAllChildrenLayerObjects();
 }
- 
+
 /**
  * @tc.name: ClearAllChildrenLayerObjects_ChildSetsNotEmpty
- * @tc.desc: Test clearAllChildrenLayerObjects when child sets are not empty (tests loop execution)
+ * @tc.desc: Test ClearAllChildrenLayerObjects when child sets are not empty (tests loop execution)
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -926,17 +925,17 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, ClearAllChildrenLayerObjects_ChildSets
     auto childNode = CreateSurfaceNode(100);
     planner_->currFrameChildSet_.insert(childNode);
     planner_->lastFrameChildSet_.insert(childNode);
- 
-    planner_->clearAllChildrenLayerObjects();
- 
+
+    planner_->ClearAllChildrenLayerObjects();
+
     ASSERT_EQ(planner_->currFrameChildSet_.size(), 1);
     ASSERT_EQ(planner_->lastFrameChildSet_.size(), 1);
 }
- 
+
 /*
  * ── Sync ───────────────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: Sync_SplitSurfaceNull_SetsEmpty
  * @tc.desc: Test Sync when splitSurface_ is null and child sets are empty
@@ -949,11 +948,11 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Sync_SplitSurfaceNull_SetsEmpty, TestS
     planner_->splitSurface_ = nullptr;
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
+
     auto processor = std::make_shared<RSOpincLayerSplitterProcessor>();
     planner_->Sync(processor);
 }
- 
+
 /**
  * @tc.name: Sync_SplitSurfaceNotNull_DrawableNull
  * @tc.desc: Test Sync when splitSurface_ is not null but splitSurfaceDrawable_ is null
@@ -967,11 +966,11 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Sync_SplitSurfaceNotNull_DrawableNull,
     planner_->splitSurface_->splitSurfaceDrawable_ = nullptr;
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
+
     auto processor = std::make_shared<RSOpincLayerSplitterProcessor>();
     planner_->Sync(processor);
 }
- 
+
 /**
  * @tc.name: Sync_SplitSurfaceNotNull_DrawableNotNull
  * @tc.desc: Test Sync when splitSurface_ and splitSurfaceDrawable_ are both not null
@@ -984,11 +983,11 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Sync_SplitSurfaceNotNull_DrawableNotNu
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
+
     auto processor = std::make_shared<RSOpincLayerSplitterProcessor>();
     planner_->Sync(processor);
 }
- 
+
 /**
  * @tc.name: Sync_CurrFrameChildSet_HasNewNode
  * @tc.desc: Test Sync when currFrameChildSet_ has a node not in lastFrameChildSet_
@@ -1002,13 +1001,13 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Sync_CurrFrameChildSet_HasNewNode, Tes
     auto newNode = CreateSurfaceNode(100);
     planner_->currFrameChildSet_.insert(newNode);
     planner_->lastFrameChildSet_.clear();
- 
+
     auto processor = std::make_shared<RSOpincLayerSplitterProcessor>();
     planner_->Sync(processor);
- 
+
     ASSERT_EQ(planner_->currFrameChildSet_.count(newNode), 1);
 }
- 
+
 /**
  * @tc.name: Sync_LastFrameChildSet_HasRemovedNode
  * @tc.desc: Test Sync when lastFrameChildSet_ has a node not in currFrameChildSet_
@@ -1022,12 +1021,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Sync_LastFrameChildSet_HasRemovedNode,
     auto removedNode = CreateSurfaceNode(200);
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.insert(removedNode);
- 
+
     auto processor = std::make_shared<RSOpincLayerSplitterProcessor>();
     planner_->Sync(processor);
     ASSERT_EQ(planner_->lastFrameChildSet_.count(removedNode), 1);
 }
- 
+
 /**
  * @tc.name: Sync_BothSetsHaveSameNodes
  * @tc.desc: Test Sync when both sets have the same nodes (no changes)
@@ -1041,21 +1040,21 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Sync_BothSetsHaveSameNodes, TestSize.L
     auto sharedNode = CreateSurfaceNode(300);
     planner_->currFrameChildSet_.insert(sharedNode);
     planner_->lastFrameChildSet_.insert(sharedNode);
- 
+
     auto processor = std::make_shared<RSOpincLayerSplitterProcessor>();
     planner_->Sync(processor);
- 
+
     ASSERT_EQ(planner_->currFrameChildSet_.count(sharedNode), 1);
     ASSERT_EQ(planner_->lastFrameChildSet_.count(sharedNode), 1);
 }
- 
+
 /*
- * ── updateChildren ─────────────────────────────────────────
+ * ── UpdateChildren ─────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: UpdateChildren_ParentNull
- * @tc.desc: Test updateChildren when parent is nullptr (early return)
+ * @tc.desc: Test UpdateChildren when parent is nullptr (early return)
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -1064,16 +1063,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateChildren_ParentNull, TestSize.Le
     ASSERT_NE(planner_, nullptr);
     auto originalCurrSet = planner_->currFrameChildSet_;
     auto originalLastSet = planner_->lastFrameChildSet_;
- 
-    planner_->updateChildren(nullptr);
- 
+
+    planner_->UpdateChildren(nullptr);
+
     ASSERT_EQ(planner_->currFrameChildSet_.size(), originalCurrSet.size());
     ASSERT_EQ(planner_->lastFrameChildSet_.size(), originalLastSet.size());
 }
- 
+
 /**
  * @tc.name: UpdateChildren_ChildrenNull
- * @tc.desc: Test updateChildren when parent->GetSortedChildren() returns nullptr
+ * @tc.desc: Test UpdateChildren when parent->GetSortedChildren() returns nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -1083,16 +1082,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateChildren_ChildrenNull, TestSize.
     auto parentNode = CreateSurfaceNode(100);
     auto originalCurrSet = planner_->currFrameChildSet_;
     auto originalLastSet = planner_->lastFrameChildSet_;
- 
-    planner_->updateChildren(parentNode);
- 
+
+    planner_->UpdateChildren(parentNode);
+
     ASSERT_EQ(planner_->currFrameChildSet_.size(), originalCurrSet.size());
     ASSERT_EQ(planner_->lastFrameChildSet_.size(), originalLastSet.size());
 }
- 
+
 /**
  * @tc.name: UpdateChildren_NoOpincNodes
- * @tc.desc: Test updateChildren when children exist but none have OpincGetRootFlag()
+ * @tc.desc: Test UpdateChildren when children exist but none have OpincGetRootFlag()
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -1103,18 +1102,18 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateChildren_NoOpincNodes, TestSize.
     auto childNode = CreateSurfaceNode(200);
     parentNode->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     parentNode->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
- 
+
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
-    planner_->updateChildren(parentNode);
- 
+
+    planner_->UpdateChildren(parentNode);
+
     ASSERT_TRUE(planner_->currFrameChildSet_.empty());
 }
- 
+
 /**
  * @tc.name: UpdateChildren_HasOpincNodes
- * @tc.desc: Test updateChildren when children have OpincGetRootFlag() set
+ * @tc.desc: Test UpdateChildren when children have OpincGetRootFlag() set
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -1125,19 +1124,19 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateChildren_HasOpincNodes, TestSize
     auto childNode = CreateSurfaceNode(200);
     parentNode->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     parentNode->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
- 
+
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
-    planner_->updateChildren(parentNode);
- 
+
+    planner_->UpdateChildren(parentNode);
+
     ASSERT_TRUE(planner_->currFrameChildSet_.empty() || planner_->currFrameChildSet_.size() >= 0);
 }
- 
+
 /*
  * ── GetDfxString ───────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetDfxString_BothSetsEmpty
  * @tc.desc: Test GetDfxString when both child sets are empty
@@ -1149,13 +1148,13 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetDfxString_BothSetsEmpty, TestSize.L
     ASSERT_NE(planner_, nullptr);
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.clear();
- 
+
     std::string dfxStr = planner_->GetDfxString();
- 
+
     ASSERT_TRUE(dfxStr.find(", Cur[0]:") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(", Last[0]:") != std::string::npos);
 }
- 
+
 /**
  * @tc.name: GetDfxString_CurrSetHasNodes_LastSetEmpty
  * @tc.desc: Test GetDfxString when currFrameChildSet_ has nodes but lastFrameChildSet_ is empty
@@ -1168,14 +1167,14 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetDfxString_CurrSetHasNodes_LastSetEm
     auto node = CreateSurfaceNode(100);
     planner_->currFrameChildSet_.insert(node);
     planner_->lastFrameChildSet_.clear();
- 
+
     std::string dfxStr = planner_->GetDfxString();
- 
+
     ASSERT_TRUE(dfxStr.find(", Cur[1]:") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(" 100") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(", Last[0]:") != std::string::npos);
 }
- 
+
 /**
  * @tc.name: GetDfxString_CurrSetEmpty_LastSetHasNodes
  * @tc.desc: Test GetDfxString when currFrameChildSet_ is empty but lastFrameChildSet_ has nodes
@@ -1188,14 +1187,14 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetDfxString_CurrSetEmpty_LastSetHasNo
     auto node = CreateSurfaceNode(200);
     planner_->currFrameChildSet_.clear();
     planner_->lastFrameChildSet_.insert(node);
- 
+
     std::string dfxStr = planner_->GetDfxString();
- 
+
     ASSERT_TRUE(dfxStr.find(", Cur[0]:") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(", Last[1]:") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(" 200") != std::string::npos);
 }
- 
+
 /**
  * @tc.name: GetDfxString_BothSetsHaveNodes
  * @tc.desc: Test GetDfxString when both child sets have nodes
@@ -1209,19 +1208,19 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetDfxString_BothSetsHaveNodes, TestSi
     auto lastNode = CreateSurfaceNode(200);
     planner_->currFrameChildSet_.insert(currNode);
     planner_->lastFrameChildSet_.insert(lastNode);
- 
+
     std::string dfxStr = planner_->GetDfxString();
- 
+
     ASSERT_TRUE(dfxStr.find(", Cur[1]:") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(" 100") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(", Last[1]:") != std::string::npos);
     ASSERT_TRUE(dfxStr.find(" 200") != std::string::npos);
 }
- 
+
 /*
  * ── GetOpIncParentNode ─────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetOpIncParentNode_NotNull
  * @tc.desc: Test GetOpIncParentNode when opIncParentNode_ is not null
@@ -1233,12 +1232,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetOpIncParentNode_NotNull, TestSize.L
     ASSERT_NE(planner_, nullptr);
     auto parentNode = CreateSurfaceNode(100);
     planner_->opIncParentNode_ = parentNode;
- 
+
     auto result = planner_->GetOpIncParentNode();
- 
+
     ASSERT_EQ(result, parentNode);
 }
- 
+
 /**
  * @tc.name: GetOpIncParentNode_Null
  * @tc.desc: Test GetOpIncParentNode when opIncParentNode_ is null
@@ -1249,16 +1248,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetOpIncParentNode_Null, TestSize.Leve
 {
     ASSERT_NE(planner_, nullptr);
     planner_->opIncParentNode_ = nullptr;
- 
+
     auto result = planner_->GetOpIncParentNode();
- 
+
     ASSERT_EQ(result, nullptr);
 }
- 
+
 /*
  * ── GetPlanStatus ──────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetPlanStatus_ReturnsCorrectStatus
  * @tc.desc: Test GetPlanStatus returns the correct planStatus_
@@ -1269,16 +1268,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetPlanStatus_ReturnsCorrectStatus, Te
 {
     ASSERT_NE(planner_, nullptr);
     planner_->planStatus_ = PlanStatus::ON;
- 
+
     PlanStatus status = planner_->GetPlanStatus();
- 
+
     ASSERT_EQ(status, PlanStatus::ON);
 }
- 
+
 /*
  * ── GetSrcRect ─────────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetSrcRect_ReturnsCorrectRect
  * @tc.desc: Test GetSrcRect returns the correct srcRect_
@@ -1289,16 +1288,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetSrcRect_ReturnsCorrectRect, TestSiz
 {
     ASSERT_NE(planner_, nullptr);
     planner_->srcRect_ = RectF(10, 20, 100, 200);
- 
+
     RectF rect = planner_->GetSrcRect();
- 
+
     ASSERT_EQ(rect, RectF(10, 20, 100, 200));
 }
- 
+
 /*
  * ── GetDstRect ─────────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetDstRect_ReturnsCorrectRect
  * @tc.desc: Test GetDstRect returns the correct dstRect_
@@ -1309,16 +1308,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetDstRect_ReturnsCorrectRect, TestSiz
 {
     ASSERT_NE(planner_, nullptr);
     planner_->dstRect_ = RectF(30, 40, 300, 400);
- 
+
     RectF rect = planner_->GetDstRect();
- 
+
     ASSERT_EQ(rect, RectF(30, 40, 300, 400));
 }
- 
+
 /*
  * ── GetRequestController ───────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetRequestController_NotNull
  * @tc.desc: Test GetRequestController when requestController_ is not null
@@ -1330,12 +1329,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetRequestController_NotNull, TestSize
     ASSERT_NE(planner_, nullptr);
     auto controller = std::make_shared<RequestController>();
     planner_->requestController_ = controller;
- 
+
     auto result = planner_->GetRequestController();
- 
+
     ASSERT_EQ(result, controller);
 }
- 
+
 /**
  * @tc.name: GetRequestController_Null
  * @tc.desc: Test GetRequestController when requestController_ is null
@@ -1346,16 +1345,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetRequestController_Null, TestSize.Le
 {
     ASSERT_NE(planner_, nullptr);
     planner_->requestController_ = nullptr;
- 
+
     auto result = planner_->GetRequestController();
- 
+
     ASSERT_EQ(result, nullptr);
 }
- 
+
 /*
  * ── SetOpIncParentNode ─────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: SetOpIncParentNode_SetsCorrectNode
  * @tc.desc: Test SetOpIncParentNode correctly sets opIncParentNode_
@@ -1367,16 +1366,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, SetOpIncParentNode_SetsCorrectNode, Te
     ASSERT_NE(planner_, nullptr);
     auto parentNode = CreateSurfaceNode(100);
     planner_->opIncParentNode_ = nullptr;
- 
+
     planner_->SetOpIncParentNode(parentNode);
- 
+
     ASSERT_EQ(planner_->opIncParentNode_, parentNode);
 }
- 
+
 /*
  * ── GetOpIncNodes ──────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetOpIncNodes_ReturnsCorrectRef
  * @tc.desc: Test GetOpIncNodes returns correct reference to opIncNodes_
@@ -1387,18 +1386,18 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetOpIncNodes_ReturnsCorrectRef, TestS
 {
     ASSERT_NE(planner_, nullptr);
     planner_->opIncNodes_.clear();
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
- 
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     auto& result = planner_->GetOpIncNodes();
- 
+
     ASSERT_EQ(result.size(), 1);
     ASSERT_EQ(result[0].first, 100);
 }
- 
+
 /*
  * ── GetLastOpIncNodes ──────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetLastOpIncNodes_ReturnsCorrectRef
  * @tc.desc: Test GetLastOpIncNodes returns correct reference to lastOpIncNodes_
@@ -1409,18 +1408,18 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetLastOpIncNodes_ReturnsCorrectRef, T
 {
     ASSERT_NE(planner_, nullptr);
     planner_->lastOpIncNodes_.clear();
-    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(\1, 0.0f, 0.0f));
- 
+    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 5.0f, 6.0f));
+
     auto& result = planner_->GetLastOpIncNodes();
- 
+
     ASSERT_EQ(result.size(), 1);
     ASSERT_EQ(result[0].first, 200);
 }
- 
+
 /*
  * ── GetSplitSurface ────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetSplitSurface_NotNull
  * @tc.desc: Test GetSplitSurface when splitSurface_ is not null
@@ -1431,12 +1430,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetSplitSurface_NotNull, TestSize.Leve
 {
     ASSERT_NE(planner_, nullptr);
     planner_->splitSurface_ = CreateSplitSurface(100);
- 
+
     auto result = planner_->GetSplitSurface();
- 
+
     ASSERT_EQ(result, planner_->splitSurface_);
 }
- 
+
 /**
  * @tc.name: GetSplitSurface_Null
  * @tc.desc: Test GetSplitSurface when splitSurface_ is null
@@ -1447,41 +1446,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetSplitSurface_Null, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
     planner_->splitSurface_ = nullptr;
- 
+
     auto result = planner_->GetSplitSurface();
- 
+
     ASSERT_EQ(result, nullptr);
 }
- 
-/*
- */
- 
-/**
- * @tc.type: FUNC
- * @tc.require:
- */
-{
-    ASSERT_NE(planner_, nullptr);
- 
- 
-    ASSERT_EQ(result, true);
-}
- 
-/**
- * @tc.type: FUNC
- * @tc.require:
- */
-{
-    ASSERT_NE(planner_, nullptr);
- 
- 
-    ASSERT_EQ(result, false);
-}
- 
+
 /*
  * ── GetNeedLeave ───────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: GetNeedLeave_True
  * @tc.desc: Test GetNeedLeave when needLeave_ is true
@@ -1492,12 +1466,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetNeedLeave_True, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
     planner_->needLeave_ = true;
- 
+
     bool result = planner_->GetNeedLeave();
- 
+
     ASSERT_EQ(result, true);
 }
- 
+
 /**
  * @tc.name: GetNeedLeave_False
  * @tc.desc: Test GetNeedLeave when needLeave_ is false
@@ -1508,15 +1482,15 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetNeedLeave_False, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
     planner_->needLeave_ = false;
- 
+
     bool result = planner_->GetNeedLeave();
- 
+
     ASSERT_EQ(result, false);
 }
 /*
  * ── Reset ────────────────────────────────────────────────────
  */
- 
+
 /**
  * @tc.name: Reset_SplitSurfaceNull
  * @tc.desc: Test Reset when splitSurface_ is nullptr (early return at line 49)
@@ -1528,10 +1502,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_SplitSurfaceNull, TestSize.Level
     ASSERT_NE(planner_, nullptr);
     // Test Case: splitSurface_ == nullptr
     planner_->splitSurface_ = nullptr;
- 
+
     planner_->Reset();
 }
- 
+
 /**
  * @tc.name: Reset_SplitSurfaceNotNull_OpIncNodesEmpty
  * @tc.desc: Test Reset when splitSurface_ is not null and opIncNodes_ is empty
@@ -1546,10 +1520,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_SplitSurfaceNotNull_OpIncNodesEm
     planner_->opIncNodes_.clear();
     planner_->lastOpIncNodes_.clear();
     planner_->planStatus_ = PlanStatus::OFF;
- 
+
     planner_->Reset();
 }
- 
+
 /**
  * @tc.name: Reset_SplitSurfaceNotNull_OpIncNodesNotEmpty
  * @tc.desc: Test Reset when splitSurface_ is not null and opIncNodes_ is not empty
@@ -1561,16 +1535,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_SplitSurfaceNotNull_OpIncNodesNo
     ASSERT_NE(planner_, nullptr);
     // Test Case: splitSurface_ != nullptr, !opIncNodes_.empty()
     planner_->splitSurface_ = CreateSplitSurface(100);
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->opIncNodes_.emplace_back(200, Vector4f(\1, 0.0f, 0.0f));
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+    planner_->opIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 5.0f, 6.0f));
     planner_->lastOpIncNodes_.clear();
     planner_->planStatus_ = PlanStatus::OFF;
- 
+
     planner_->Reset();
- 
+
     ASSERT_TRUE(planner_->opIncNodes_.empty());
 }
- 
+
 /**
  * @tc.name: Reset_PlanStatusOFF_RequestControllerNull
  * @tc.desc: Test Reset when planStatus=OFF and requestController_ is nullptr
@@ -1585,10 +1559,10 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusOFF_RequestControllerN
     planner_->opIncNodes_.clear();
     planner_->planStatus_ = PlanStatus::OFF;
     planner_->requestController_ = nullptr;
- 
+
     planner_->Reset();
 }
- 
+
 /**
  * @tc.name: Reset_PlanStatusOFF
  * @tc.desc: Test Reset when planStatus_ is OFF (early return before IncStayOnCount)
@@ -1602,9 +1576,9 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusOFF, TestSize.Level0)
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->opIncNodes_.clear();
     planner_->planStatus_ = PlanStatus::OFF;
- 
+
     planner_->Reset();
- 
+
     ASSERT_EQ(planner_->planStatus_, PlanStatus::OFF);
 }
 
@@ -1612,11 +1586,13 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusOFF, TestSize.Level0)
  * @tc.name: Reset_PlanStatusON_RequestControllerNull
  * @tc.desc: Test Reset when planStatus=ON but requestController_ is nullptr (UNLIKELY returns)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusON_RequestControllerNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
-    planner_->SplitSurface_ = CreateSplitSurface(100);
+    // Test Case: planStatus_ == PlanStatus::ON, requestController_ == nullptr (UNLIKELY)
+    planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->opIncNodes_.clear();
     planner_->planStatus_ = PlanStatus::ON;
     planner_->requestController_ = nullptr;
@@ -1625,10 +1601,68 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusON_RequestControllerNu
 }
 
 /**
+ * @tc.name: Reset_PlanStatusON_SurfaceHandlerNull
+ * @tc.desc: Test Reset when planStatus=ON, surfaceHandler is nullptr (returns after IncStayOnCount)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+// HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusON_SurfaceHandlerNull, TestSize.Level0)
+// {
+//     ASSERT_NE(planner_, nullptr);
+//     // Test Case: planStatus_ == PlanStatus::ON, surfaceHandler == nullptr
+//     planner_->splitSurface_ = CreateSplitSurface(100);
+//     planner_->opIncNodes_.clear();
+//     planner_->planStatus_ = PlanStatus::ON;
+//     planner_->requestController_ = std::make_shared<RequestController>();
+
+//     planner_->Reset();
+// }
+
+/**
+ * @tc.name: Reset_PlanStatusON_SurfaceHandlerNotNull
+ * @tc.desc: Test Reset when planStatus=ON and surfaceHandler is not null (full execution)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+// HWTEST_F(RSOpincLayerSplitterPlannerTest, Reset_PlanStatusON_SurfaceHandlerNotNull, TestSize.Level0)
+// {
+//     ASSERT_NE(planner_, nullptr);
+//     // Test Case: planStatus_ == PlanStatus::ON, surfaceHandler != nullptr
+//     planner_->splitSurface_ = CreateSplitSurface(100);
+//     planner_->opIncNodes_.clear();
+//     planner_->planStatus_ = PlanStatus::ON;
+//     planner_->requestController_ = std::make_shared<RequestController>();
+
+//     planner_->Reset();
+
+//     ASSERT_EQ(planner_->canDoDirectComposition_, true);
+// }
+
+/*
+ * ── CheckOpIncNodeFromCommand ─────────────────────────────────
+ */
+
+/**
+ * @tc.name: CheckOpIncNodeFromCommand_CanDoDirectCompositionFalse
+ * @tc.desc: Test CheckOpIncNodeFromCommand when canDoDirectComposition_ is false (early return)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+// HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_CanDoDirectCompositionFalse, TestSize.Level0)
+// {
+//     ASSERT_NE(planner_, nullptr);
+//     // Test Case: canDoDirectComposition_ == false
+//     planner_->canDoDirectComposition_ = false;
+
+//     planner_->CheckOpIncNodeFromCommand(100);
+// }
+
+/**
  * @tc.name: CheckOpIncNodeFromCommand_NodeAlreadyVisited
  * @tc.desc: Test CheckOpIncNodeFromCommand when nodeId is already in visitedNodeId_ (early return)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_NodeAlreadyVisited, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
@@ -1642,12 +1676,15 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_NodeAlreadyV
  * @tc.name: CheckOpIncNodeFromCommand_NodeNotFound
  * @tc.desc: Test CheckOpIncNodeFromCommand when node is nullptr or not on tree (sets canDoDirectComposition_=false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_NodeNotFound, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: node == nullptr || !node->IsOnTheTree()
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
+
     planner_->CheckOpIncNodeFromCommand(999);
 
     ASSERT_NE(planner_->canDoDirectComposition_, false);
@@ -1657,13 +1694,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_NodeNotFound
  * @tc.name: CheckOpIncNodeFromCommand_ParentMismatch
  * @tc.desc: Test CheckOpIncNodeFromCommand when parent node ID doesn't match opIncParentNode_ (sets canDoDirectComposition_=false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_ParentMismatch, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: parent->GetId() != opIncParentNode_->GetId()
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
     planner_->opIncParentNode_ = CreateSurfaceNode(200);
+
     planner_->CheckOpIncNodeFromCommand(100);
 
     ASSERT_NE(planner_->canDoDirectComposition_, false);
@@ -1671,16 +1711,19 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_ParentMismat
 
 /**
  * @tc.name: CheckOpIncNodeFromCommand_NotInLastOpIncNodes
- * @tc.desc: Test CheckOpIncNodeFromCommand when nodeID not in lastOpIncNodeIds_ (sets canDoDirectComposition_=false)
+ * @tc.desc: Test CheckOpIncNodeFromCommand when nodeId not in lastOpIncNodeIds_ (sets canDoDirectComposition_=false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_NotInLastOpIncNodes, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: lastOpIncNodeIds_.find(nodeId) == lastOpIncNodeIds_.end()
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
     planner_->lastOpIncNodeIds_.clear();
     planner_->opIncParentNode_ = nullptr;
+
     planner_->CheckOpIncNodeFromCommand(100);
 
     ASSERT_NE(planner_->canDoDirectComposition_, false);
@@ -1690,16 +1733,19 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_NotInLastOpI
  * @tc.name: CheckOpIncNodeFromCommand_DirtyTypesExist
  * @tc.desc: Test CheckOpIncNodeFromCommand when dirty types exist beyond bounds/frame (sets canDoDirectComposition_=false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_DirtyTypesExist, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: dirtyTypes.count() > bounds test + frame test
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
     planner_->lastOpIncNodeIds_.clear();
     planner_->opIncParentNode_ = nullptr;
+
     planner_->CheckOpIncNodeFromCommand(100);
-    
+
     ASSERT_NE(planner_->canDoDirectComposition_, false);
 }
 
@@ -1707,13 +1753,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_DirtyTypesEx
  * @tc.name: CheckOpIncNodeFromCommand_BoundsSizeChange
  * @tc.desc: Test CheckOpIncNodeFromCommand when bounds size change is true (sets canDoDirectComposition_=false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_BoundsSizeChange, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: boundsSizeChange == true
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
     planner_->lastOpIncNodeIds_.clear();
+
     planner_->CheckOpIncNodeFromCommand(100);
 
     ASSERT_NE(planner_->canDoDirectComposition_, false);
@@ -1723,26 +1772,34 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_BoundsSizeCh
  * @tc.name: CheckOpIncNodeFromCommand_Success
  * @tc.desc: Test CheckOpIncNodeFromCommand when all conditions pass (inserts nodeId)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckOpIncNodeFromCommand_Success, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
     planner_->lastOpIncNodeIds_.clear();
+
     planner_->CheckOpIncNodeFromCommand(100);
 
     ASSERT_EQ(planner_->visitedNodeId_.count(100), 0);
 }
 
+/*
+ * ── GetBoundsFromModifier ──────────────────────────────────────
+ */
+
 /**
  * @tc.name: GetBoundsFromModifier_NodeNull
- * @tc.desc: Test GetBoundsFromModifier when node is nullptr (returns false);
+ * @tc.desc: Test GetBoundsFromModifier when node is nullptr (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, GetBoundsFromModifier_NodeNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: node == nullptr
     auto [result, bounds] = planner_->GetBoundsFromModifier(nullptr);
 
     ASSERT_EQ(result, false);
@@ -1750,12 +1807,14 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetBoundsFromModifier_NodeNull, TestSi
 
 /**
  * @tc.name: GetBoundsFromModifier_ModifiersEmpty
- * @tc.desc: Test GetBoundsFromModifier when boundsModifiers is empty (returns false);
+ * @tc.desc: Test GetBoundsFromModifier when boundsModifiers is empty (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, GetBoundsFromModifier_ModifiersEmpty, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: boundsModifiers is empty
     auto node = CreateSurfaceNode(100);
     auto [result, bounds] = planner_->GetBoundsFromModifier(node);
 
@@ -1766,25 +1825,34 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, GetBoundsFromModifier_ModifiersEmpty, 
  * @tc.name: GetBoundsFromModifier_Success
  * @tc.desc: Test GetBoundsFromModifier when bounds modifier exists (returns true with bounds)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, GetBoundsFromModifier_Success, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: bounds modifier found and returns {true, bounds}
     auto node = CreateSurfaceNode(100);
     auto [result, bounds] = planner_->GetBoundsFromModifier(node);
 
     ASSERT_EQ(result, false); // No modifier attached by default
 }
 
+/*
+ * ── CheckCanDoDirectComposition ────────────────────────────────
+ */
+
 /**
  * @tc.name: CheckCanDoDirectComposition_CanDoFalse
  * @tc.desc: Test CheckCanDoDirectComposition when canDoDirectComposition_ is false (early return)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_CanDoFalse, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: canDoDirectComposition_ == false
     planner_->canDoDirectComposition_ = false;
+
     bool result = planner_->CheckCanDoDirectComposition();
 
     ASSERT_EQ(result, false);
@@ -1794,13 +1862,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_CanDoFalse
  * @tc.name: CheckCanDoDirectComposition_VisitedNodesEmpty
  * @tc.desc: Test CheckCanDoDirectComposition when visitedNodeId_ is empty (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_VisitedNodesEmpty, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: visitedNodeId_.empty()
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.clear();
-    planner_->lastOpIncNodeIds_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->CheckCanDoDirectComposition();
 
     ASSERT_EQ(result, false);
@@ -1810,14 +1881,17 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_VisitedNod
  * @tc.name: CheckCanDoDirectComposition_VisitedSizeMismatch
  * @tc.desc: Test CheckCanDoDirectComposition when size mismatch (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_VisitedSizeMismatch, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: visitedNodeId_.size() != lastOpIncNodes_.size()
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.insert(100);
     planner_->visitedNodeId_.insert(200);
-    planner_->lastOpIncNodeIds_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->CheckCanDoDirectComposition();
 
     ASSERT_EQ(result, false);
@@ -1827,13 +1901,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_VisitedSiz
  * @tc.name: CheckCanDoDirectComposition_GetBoundsFailed
  * @tc.desc: Test CheckCanDoDirectComposition when GetBoundsFromModifier returns false (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_GetBoundsFailed, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: GetBoundsFromModifier returns !isSucc
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.insert(100);
-    planner_->lastOpIncNodeIds_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->CheckCanDoDirectComposition();
 
     ASSERT_EQ(result, false);
@@ -1843,13 +1920,16 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_GetBoundsF
  * @tc.name: CheckCanDoDirectComposition_OffsetMismatch
  * @tc.desc: Test CheckCanDoDirectComposition when node offsets don't match (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_OffsetMismatch, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: !Vector2fNearEqual(currentOffset_, nodeOffset)
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.insert(100);
-    planner_->lastOpIncNodeIds_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->CheckCanDoDirectComposition();
 
     ASSERT_EQ(result, false);
@@ -1857,91 +1937,120 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_OffsetMism
 
 /**
  * @tc.name: CheckCanDoDirectComposition_Success
- * @tc.desc: Test CheckCanDoDirectComposition when all conditions (returns false)
+ * @tc.desc: Test CheckCanDoDirectComposition when all conditions pass (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckCanDoDirectComposition_Success, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: all conditions pass
     planner_->canDoDirectComposition_ = true;
     planner_->visitedNodeId_.insert(100);
-    planner_->lastOpIncNodeIds_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->CheckCanDoDirectComposition();
 
-    ASSERT_EQ(result, false);
+    ASSERT_EQ(result, false); // GetBoundsFromModifier returns false by default
 }
 
+/*
+ * ── MoveSplitSurfaceNode ──────────────────────────────────────
+ */
+
 /**
- * @tc.name: MoveSplitSurfacNode_SplitSurfaceNull
- * @tc.desc: Test MoveSplitSurfacNode when splitSurface_ is nullptr (early return)
+ * @tc.name: MoveSplitSurfaceNode_SplitSurfaceNull
+ * @tc.desc: Test MoveSplitSurfaceNode when splitSurface_ is nullptr (early return)
  * @tc.type: FUNC
-*/
-HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfacNode_SplitSurfaceNull, TestSize.Level0)
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_SplitSurfaceNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: splitSurface_ == nullptr
     planner_->splitSurface_ = nullptr;
-    planner_->MoveSplitSurfacNode();
+
+    planner_->MoveSplitSurfaceNode();
 }
 
 /**
- * @tc.name: MoveSplitSurfacNode_SplitSurfaceNodeNull
- * @tc.desc: Test MoveSplitSurfacNode when splitSurface_->splitSurfaceNode_ is nullptr (early return)
+ * @tc.name: MoveSplitSurfaceNode_SplitSurfaceNodeNull
+ * @tc.desc: Test MoveSplitSurfaceNode when splitSurface_->splitSurfaceNode_ is nullptr (early return)
  * @tc.type: FUNC
-*/
-HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfacNode_SplitSurfaceNodeNull, TestSize.Level0)
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_SplitSurfaceNodeNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: splitSurface_->splitSurfaceNode_ == nullptr
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->splitSurface_->splitSurfaceNode_ = nullptr;
-    planner_->MoveSplitSurfacNode();
+
+    planner_->MoveSplitSurfaceNode();
 }
 
 /**
- * @tc.name: MoveSplitSurfacNode_BufferNotConsumed
- * @tc.desc: Test MoveSplitSurfacNode when IsBufferConsumed is false (early return)
+ * @tc.name: MoveSplitSurfaceNode_BufferNotConsumed
+ * @tc.desc: Test MoveSplitSurfaceNode when IsBufferConsumed is false (early return)
  * @tc.type: FUNC
-*/
-HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfacNode_BufferNotConsumed, TestSize.Level0)
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_BufferNotConsumed, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: !splitSurface_->IsBufferConsumed()
     planner_->splitSurface_ = CreateSplitSurface(100);
-    planner_->MoveSplitSurfacNode();
+
+    planner_->MoveSplitSurfaceNode();
 }
 
 /**
- * @tc.name: MoveSplitSurfacNode_ParentNull
- * @tc.desc: Test MoveSplitSurfacNode when parent is nullptr (early return after buffer consumed)
+ * @tc.name: MoveSplitSurfaceNode_ParentNull
+ * @tc.desc: Test MoveSplitSurfaceNode when parent is nullptr (early return after buffer consumed)
  * @tc.type: FUNC
-*/
-HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfacNode_ParentNull, TestSize.Level0)
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_ParentNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: parent == nullptr
     planner_->splitSurface_ = CreateSplitSurface(100);
-    planner_->MoveSplitSurfacNode();
+
+    planner_->MoveSplitSurfaceNode();
 }
 
 /**
- * @tc.name: MoveSplitSurfacNode_ChildrenPtrNull
- * @tc.desc: Test MoveSplitSurfacNode when childrenPtr is nullptr (early return)
+ * @tc.name: MoveSplitSurfaceNode_ChildrenPtrNull
+ * @tc.desc: Test MoveSplitSurfaceNode when childrenPtr is nullptr (early return)
  * @tc.type: FUNC
-*/
-HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfacNode_ChildrenPtrNull, TestSize.Level0)
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_ChildrenPtrNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: !childrenPtr
     planner_->splitSurface_ = CreateSplitSurface(100);
-    planner_->MoveSplitSurfacNode();
+
+    planner_->MoveSplitSurfaceNode();
 }
+
+/*
+ * ── CollectOpIncNodes ─────────────────────────────────────────
+ */
 
 /**
  * @tc.name: CollectOpIncNodes_ChildrenEmpty
- * @tc.desc: Test CollectOpIncNodes when children list is emptry (returns false)
+ * @tc.desc: Test CollectOpIncNodes when children list is empty (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_ChildrenEmpty, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: children is empty
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->splitSurface_ = CreateSplitSurface(200);
+
     bool result = planner_->CollectOpIncNodes();
 
     ASSERT_EQ(result, false);
@@ -1952,12 +2061,15 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_ChildrenEmpty, TestS
  * @tc.name: CollectOpIncNodes_NoOpIncChildren
  * @tc.desc: Test CollectOpIncNodes when no children have OpincGetRootFlag (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_NoOpIncChildren, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: no children with OpincGetRootFlag()
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->splitSurface_ = CreateSplitSurface(200);
+
     bool result = planner_->CollectOpIncNodes();
 
     ASSERT_EQ(result, false);
@@ -1967,27 +2079,33 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_NoOpIncChildren, Tes
  * @tc.name: CollectOpIncNodes_OverlapDetected
  * @tc.desc: Test CollectOpIncNodes when overlap is detected (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_OverlapDetected, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: isOverlap == true
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->splitSurface_ = CreateSplitSurface(200);
+
     bool result = planner_->CollectOpIncNodes();
 
-    ASSERT_EQ(result, false);
+    ASSERT_EQ(result, false); // No op inc children by default
 }
 
 /**
  * @tc.name: CollectOpIncNodes_NormalCase
  * @tc.desc: Test CollectOpIncNodes in normal case (returns false when no overlap)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_NormalCase, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: normal execution path
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->splitSurface_ = CreateSplitSurface(200);
+
     bool result = planner_->CollectOpIncNodes();
 
     ASSERT_EQ(result, false);
@@ -1997,27 +2115,37 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_NormalCase, TestSize
  * @tc.name: CollectOpIncNodes_ChildGeoPtrNull
  * @tc.desc: Test CollectOpIncNodes when child boundsGeoPtr is nullptr (skips child)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_ChildGeoPtrNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: geoPtr == nullptr (skips child)
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->splitSurface_ = CreateSplitSurface(200);
+
     bool result = planner_->CollectOpIncNodes();
 
     ASSERT_EQ(result, false);
 }
 
+/*
+ * ── IsOpIncNodesChanged ──────────────────────────────────────
+ */
+
 /**
  * @tc.name: IsOpIncNodesChanged_LastOpIncNodesEmpty
- * @tc.desc: Test IsOpIncNodesChanged when lastOpIncNodes_ is empty (reurns true)
+ * @tc.desc: Test IsOpIncNodesChanged when lastOpIncNodes_ is empty (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_LastOpIncNodesEmpty, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: lastOpIncNodes_.empty()
     planner_->lastOpIncNodes_.clear();
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->IsOpIncNodesChanged();
 
     ASSERT_EQ(result, true);
@@ -2025,15 +2153,18 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_LastOpIncNodesEmpt
 
 /**
  * @tc.name: IsOpIncNodesChanged_SizeMismatch
- * @tc.desc: Test IsOpIncNodesChanged when size doesn't match (reurns true)
+ * @tc.desc: Test IsOpIncNodesChanged when size doesn't match (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_SizeMismatch, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(\1, 0.0f, 0.0f));
+    // Test Case: opIncNodesSize != lastOpIncNodes_.size()
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 5.0f, 6.0f));
+
     bool result = planner_->IsOpIncNodesChanged();
 
     ASSERT_EQ(result, true);
@@ -2041,14 +2172,17 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_SizeMismatch, Test
 
 /**
  * @tc.name: IsOpIncNodesChanged_NodeIdMismatch
- * @tc.desc: Test IsOpIncNodesChanged when node IDs don't match (reurns true)
+ * @tc.desc: Test IsOpIncNodesChanged when node IDs don't match (returns true)
  * @tc.type: FUNC
-*/
-HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_SizeMismatch, TestSize.Level0)
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_NodeIdMismatch, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(\1, 0.0f, 0.0f));
+    // Test Case: opIncNodes_[i].first != lastOpIncNodes_[i].first
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+
     bool result = planner_->IsOpIncNodesChanged();
 
     ASSERT_EQ(result, true);
@@ -2056,48 +2190,63 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_SizeMismatch, Test
 
 /**
  * @tc.name: IsOpIncNodesChanged_OffsetMismatch
- * @tc.desc: Test IsOpIncNodesChanged when offsets don't match (reurns true)
+ * @tc.desc: Test IsOpIncNodesChanged when offsets don't match (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_OffsetMismatch, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
+    // Test Case: !Vector2fNearEqual(currentOffset_, nodeOffset)
+    planner_->opIncNodes_.emplace_back(100, Vector4f(10.0f, 20.0f, 50.0f, 50.0f));
+    planner_->opIncNodes_.emplace_back(200, Vector4f(10.0f, 20.0f, 50.0f, 50.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(30.0f, 40.0f, 50.0f, 50.0f));
+    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(30.0f, 50.0f, 50.0f, 50.0f));
+
     bool result = planner_->IsOpIncNodesChanged();
 
-    ASSERT_EQ(result, false);
+    ASSERT_EQ(result, true);
 }
 
 /**
  * @tc.name: IsOpIncNodesChanged_NoChange
- * @tc.desc: Test IsOpIncNodesChanged when all nodes match (reurns false)
+ * @tc.desc: Test IsOpIncNodesChanged when all nodes match (returns false)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_NoChange, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
-    planner_->opIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->opIncNodes_.emplace_back(200, Vector4f(\1, 0.0f, 0.0f));
-    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(\1, 0.0f, 0.0f));
-    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(\1, 0.0f, 0.0f));
+    // Test Case: all nodes match, no change detected
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+    planner_->opIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 5.0f, 6.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 3.0f, 4.0f));
+    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 5.0f, 6.0f));
+
     bool result = planner_->IsOpIncNodesChanged();
 
     ASSERT_EQ(result, false);
 }
 
+/*
+ * ── UpdateBufferBounds ─────────────────────────────────────────
+ */
+
 /**
  * @tc.name: UpdateBufferBounds_GeoPtrNull
- * @tc.desc: Test UpdateBufferBounds when boundsGeo_ is nullptr (reurns true early)
+ * @tc.desc: Test UpdateBufferBounds when boundsGeo_ is nullptr (returns true early)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_GeoPtrNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: geoPtr == nullptr
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->opIncParentNode_->GetMutableRenderProperties().boundsGeo_ = nullptr;
     planner_->splitSurface_ = CreateSplitSurface(200);
     planner_->planStatus_ = PlanStatus::OFF;
+
     bool result = planner_->UpdateBufferBounds();
 
     ASSERT_EQ(result, true);
@@ -2105,12 +2254,14 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_GeoPtrNull, TestSiz
 
 /**
  * @tc.name: UpdateBufferBounds_PlanStatusOFF
- * @tc.desc: Test UpdateBufferBounds when planStatus is OFF (normal execution path)
+ * @tc.desc: Test UpdateBufferBounds when planStatus_ is OFF (normal execution path)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusOFF, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: planStatus_ == PlanStatus::OFF
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
@@ -2122,7 +2273,8 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusOFF, Test
     planner_->screenHeight_ = 100;
     planner_->planStatus_ = PlanStatus::OFF;
 
-    bool result = planner->UpdateBufferBounds();
+    bool result = planner_->UpdateBufferBounds();
+
     ASSERT_NE(result, false);
 }
 
@@ -2130,10 +2282,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusOFF, Test
  * @tc.name: UpdateBufferBounds_PlanStatusPREPARE_IsUpdateBufferFalse
  * @tc.desc: Test UpdateBufferBounds when planStatus=PREPARE and isUpdateBuffer_ is false
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusPREPARE_IsUpdateBufferFalse, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: planStatus_ == PlanStatus::PREPARE, !isUpdateBuffer_
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
@@ -2146,18 +2300,21 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusPREPARE_I
     planner_->planStatus_ = PlanStatus::PREPARE;
     planner_->isUpdateBuffer_ = false;
 
-    bool result = planner->UpdateBufferBounds();
-    ASSERT_NE(result, false);
+    bool result = planner_->UpdateBufferBounds();
+
+    ASSERT_EQ(result, false);
 }
 
 /**
  * @tc.name: UpdateBufferBounds_PlanStatusPREPARE_GeoMatrixNull
  * @tc.desc: Test UpdateBufferBounds when planStatus=PREPARE but geoMatrix is nullptr (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusPREPARE_GeoMatrixNull, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: planStatus_ == PlanStatus::PREPARE, geoMatrix == nullptr
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
@@ -2170,18 +2327,21 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusPREPARE_G
     planner_->planStatus_ = PlanStatus::PREPARE;
     planner_->isUpdateBuffer_ = false;
 
-    bool result = planner->UpdateBufferBounds();
-    ASSERT_NE(result, true);
+    bool result = planner_->UpdateBufferBounds();
+
+    ASSERT_EQ(result, true);
 }
 
 /**
  * @tc.name: UpdateBufferBounds_PlanStatusON_IsUpdateBufferTrue
  * @tc.desc: Test UpdateBufferBounds when planStatus=ON and isUpdateBuffer_ is true (no-op branch)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusON_IsUpdateBufferTrue, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: planStatus_ == PlanStatus::ON, isUpdateBuffer_ == true
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
@@ -2193,18 +2353,21 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_PlanStatusON_IsUpda
     planner_->isUpdateBuffer_ = true;
     planner_->srcRect_ = RectF(0, 0, 50, 50);
 
-    bool result = planner->UpdateBufferBounds();
-    ASSERT_NE(result, false);
+    bool result = planner_->UpdateBufferBounds();
+
+    ASSERT_EQ(result, false);
 }
 
 /**
  * @tc.name: UpdateBufferBounds_SrcRectOutOfBounds
  * @tc.desc: Test UpdateBufferBounds when srcRect_ is out of buffer bounds (returns true)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_SrcRectOutOfBounds, TestSize.Level0)
 {
     ASSERT_NE(planner_, nullptr);
+    // Test Case: srcRect_ outside buffer
     planner_->opIncParentNode_ = CreateSurfaceNode(100);
     planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
     planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
@@ -2215,18 +2378,25 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_SrcRectOutOfBounds,
     planner_->planStatus_ = PlanStatus::OFF;
     planner_->srcRect_ = RectF(-10, -10, 200, 200);
 
-    bool result = planner->UpdateBufferBounds();
-    ASSERT_NE(result, true);
+    bool result = planner_->UpdateBufferBounds();
+
+    ASSERT_EQ(result, true);
 }
+
+/*
+ * ── SetSrcAndDstRect ───────────────────────────────────────────
+ */
 
 /**
  * @tc.name: SetSrcAndDstRect_SplitSurfaceNull
- * @tc.desc: Test SetSrcAndDstRect when splitSurface is nullptr (early return)
+ * @tc.desc: Test SetSrcAndDstRect when splitSurface_ is nullptr (early return)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SplitSurfaceNull, TestSize.Level0)
 {
-    ASSERT_NE(planner, nullptr);
+    ASSERT_NE(planner_, nullptr);
+    // Test Case: splitSurface_ == nullptr
     planner_->splitSurface_ = nullptr;
 
     planner_->SetSrcAndDstRect();
@@ -2236,10 +2406,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SplitSurfaceNull, Tes
  * @tc.name: SetSrcAndDstRect_SplitSurfaceNodeNull
  * @tc.desc: Test SetSrcAndDstRect when splitSurface_->splitSurfaceNode_ is nullptr (early return)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SplitSurfaceNodeNull, TestSize.Level0)
 {
-    ASSERT_NE(planner, nullptr);
+    ASSERT_NE(planner_, nullptr);
+    // Test Case: splitSurface_->splitSurfaceNode_ == nullptr
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->splitSurface_->splitSurfaceNode_ = nullptr;
 
@@ -2250,10 +2422,12 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SplitSurfaceNodeNull,
  * @tc.name: SetSrcAndDstRect_SurfaceParamsNull
  * @tc.desc: Test SetSrcAndDstRect when surfaceParams is nullptr (sets rects but returns early)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SurfaceParamsNull, TestSize.Level0)
 {
-    ASSERT_NE(planner, nullptr);
+    ASSERT_NE(planner_, nullptr);
+    // Test Case: surfaceParams == nullptr
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->srcRect_ = RectF(0, 0, 100, 100);
     planner_->dstRect_ = RectF(0, 0, 100, 100);
@@ -2265,16 +2439,351 @@ HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SurfaceParamsNull, Te
  * @tc.name: SetSrcAndDstRect_NormalCase
  * @tc.desc: Test SetSrcAndDstRect in normal case (full execution)
  * @tc.type: FUNC
-*/
+ * @tc.require:
+ */
 HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_NormalCase, TestSize.Level0)
 {
-    ASSERT_NE(planner, nullptr);
+    ASSERT_NE(planner_, nullptr);
+    // Test Case: normal execution
     planner_->splitSurface_ = CreateSplitSurface(100);
     planner_->srcRect_ = RectF(10, 20, 50, 60);
     planner_->dstRect_ = RectF(30, 40, 70, 80);
 
     planner_->SetSrcAndDstRect();
 }
+
+/*
+ * ── InitSplitSurface ──────────────────────────────────────────
+ */
+
+/**
+ * @tc.name: InitSplitSurface_SplitSurfaceNull
+ * @tc.desc: Test InitSplitSurface when splitSurface_ is nullptr (creates new split surface)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, InitSplitSurface_SplitSurfaceNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = nullptr;
+
+    ScreenInfo screenInfo;
+    screenInfo.width = 1920;
+    screenInfo.height = 1080;
+    planner_->InitSplitSurface(screenInfo);
+
+    ASSERT_NE(planner_->splitSurface_, nullptr);
+    ASSERT_EQ(planner_->screenWidth_, 1920);
+    ASSERT_EQ(planner_->screenHeight_, 1080);
+}
+
+/**
+ * @tc.name: InitSplitSurface_SplitSurfaceNotNull
+ * @tc.desc: Test InitSplitSurface when splitSurface_ is not null (no-op)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, InitSplitSurface_SplitSurfaceNotNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = std::make_shared<SplitSurface>(100, 100);
+    planner_->screenWidth_ = 0;
+    planner_->screenHeight_ = 0;
+
+    ScreenInfo screenInfo;
+    screenInfo.width = 1920;
+    screenInfo.height = 1080;
+    planner_->InitSplitSurface(screenInfo);
+
+    ASSERT_EQ(planner_->screenWidth_, 0);
+    ASSERT_EQ(planner_->screenHeight_, 0);
+}
+
+/*
+ * ── CheckSplitNodeIntersectFilter ─────────────────────────────
+ */
+
+/**
+ * @tc.name: CheckSplitNodeIntersectFilter_SplitSurfaceNull
+ * @tc.desc: Test CheckSplitNodeIntersectFilter when splitSurface_ is nullptr (early return)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckSplitNodeIntersectFilter_SplitSurfaceNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = nullptr;
+    planner_->needLeave_ = false;
+
+    auto hwcNode = CreateSurfaceNode(100);
+    planner_->CheckSplitNodeIntersectFilter(hwcNode);
+
+    ASSERT_EQ(planner_->needLeave_, false);
+}
+
+/**
+ * @tc.name: CheckSplitNodeIntersectFilter_SplitSurfaceNodeNull
+ * @tc.desc: Test CheckSplitNodeIntersectFilter when splitSurfaceNode_ is nullptr (early return)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckSplitNodeIntersectFilter_SplitSurfaceNodeNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = std::make_shared<SplitSurface>(100, 100);
+    planner_->splitSurface_->splitSurfaceNode_ = nullptr;
+    planner_->needLeave_ = false;
+
+    auto hwcNode = CreateSurfaceNode(100);
+    planner_->CheckSplitNodeIntersectFilter(hwcNode);
+
+    ASSERT_EQ(planner_->needLeave_, false);
+}
+
+/**
+ * @tc.name: CheckSplitNodeIntersectFilter_HwcNodeEqualsSplitSurfaceNode
+ * @tc.desc: Test CheckSplitNodeIntersectFilter when hwcNode equals splitSurfaceNode_ (sets needLeave_=true)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckSplitNodeIntersectFilter_HwcNodeEqualsSplitSurfaceNode, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    auto splitSurfaceNode = CreateSurfaceNode(100);
+    planner_->splitSurface_ = std::make_shared<SplitSurface>(100, 100);
+    planner_->splitSurface_->splitSurfaceNode_ = splitSurfaceNode;
+    planner_->needLeave_ = false;
+
+    planner_->CheckSplitNodeIntersectFilter(splitSurfaceNode);
+
+    ASSERT_EQ(planner_->needLeave_, true);
+}
+
+/**
+ * @tc.name: CheckSplitNodeIntersectFilter_HwcNodeNotEqualsSplitSurfaceNode
+ * @tc.desc: Test CheckSplitNodeIntersectFilter when hwcNode differs from splitSurfaceNode_ (no-op)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, CheckSplitNodeIntersectFilter_HwcNodeNotEqualsSplitSurfaceNode, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+    planner_->needLeave_ = false;
+
+    auto hwcNode = CreateSurfaceNode(200);
+    planner_->CheckSplitNodeIntersectFilter(hwcNode);
+
+    ASSERT_EQ(planner_->needLeave_, false);
+}
+
+/*
+ * ── SetSrcAndDstRect additional branches ─────────────────────
+ */
+
+/**
+ * @tc.name: SetSrcAndDstRect_GeoPtrNull
+ * @tc.desc: Test SetSrcAndDstRect when geoPtr is nullptr (returns early after setting layerInfo)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_GeoPtrNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+    planner_->srcRect_ = RectF(0, 0, 100, 100);
+    planner_->dstRect_ = RectF(0, 0, 100, 100);
+    planner_->splitSurface_->splitSurfaceNode_->GetMutableRenderProperties().boundsGeo_ = nullptr;
+
+    planner_->SetSrcAndDstRect();
+}
+
+/**
+ * @tc.name: SetSrcAndDstRect_SurfacHandlerNull
+ * @tc.desc: Test SetSrcAndDstRect when RSSurfaceHandler is nullptr (returns after layerInfo)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_SurfacHandlerNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+    planner_->srcRect_ = RectF(0, 0, 100, 100);
+    planner_->dstRect_ = RectF(0, 0, 100, 100);
+
+    auto originalHandler = planner_->splitSurface_->splitSurfaceNode_->GetRSSurfaceHandler();
+    ASSERT_NE(originalHandler, nullptr);
+    planner_->splitSurface_->splitSurfaceNode_->SetRSSurfaceHandler(nullptr);
+
+    planner_->SetSrcAndDstRect();
+
+    planner_->splitSurface_->splitSurfaceNode_->SetRSSurfaceHandler(originalHandler);
+}
+
+/**
+ * @tc.name: SetSrcAndDstRect_BufferNull
+ * @tc.desc: Test SetSrcAndDstRect when buffer is nullptr (skips SetCropMetadata)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, SetSrcAndDstRect_BufferNull, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+    planner_->srcRect_ = RectF(0, 0, 100, 100);
+    planner_->dstRect_ = RectF(0, 0, 100, 100);
+
+    planner_->SetSrcAndDstRect();
+}
+
+/*
+ * ── UpdateBufferBounds additional branches ────────────────────
+ */
+
+/**
+ * @tc.name: UpdateBufferBounds_CurrentOffsetNonZero
+ * @tc.desc: Test UpdateBufferBounds when planStatus=PREPARE and currentOffset_ != (0,0) (sets isUpdateBuffer_=true)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, UpdateBufferBounds_CurrentOffsetNonZero, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->opIncParentNode_ = CreateSurfaceNode(100);
+    planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
+    planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
+    planner_->opIncParentNode_->GetRenderProperties().GetBoundsGeometry()->UpdateByMatrixFromSelf();
+    planner_->splitSurface_ = CreateSplitSurface(200);
+    planner_->splitSurface_->bufferWidth_ = 1000;
+    planner_->splitSurface_->bufferHeight_ = 1000;
+    planner_->planStatus_ = PlanStatus::PREPARE;
+    planner_->isUpdateBuffer_ = false;
+    planner_->currentOffset_ = Vector2f(5.0f, 10.0f);
+    planner_->srcRect_ = RectF(100, 100, 200, 200);
+
+    bool result = planner_->UpdateBufferBounds();
+
+    ASSERT_EQ(result, false);
+    ASSERT_EQ(planner_->isUpdateBuffer_, true);
+}
+
+/*
+ * ── MoveSplitSurfaceNode additional branches ─────────────────
+ */
+
+/**
+ * @tc.name: MoveSplitSurfaceNode_ChildrenEmpty
+ * @tc.desc: Test MoveSplitSurfaceNode when children list is empty (no MoveChild)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_ChildrenEmpty, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+
+    planner_->MoveSplitSurfaceNode();
+}
+
+/**
+ * @tc.name: MoveSplitSurfaceNode_ChildFrontEqualsSplitSurfaceNode
+ * @tc.desc: Test MoveSplitSurfaceNode when first child is already splitSurfaceNode_ (no MoveChild needed)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, MoveSplitSurfaceNode_ChildFrontEqualsSplitSurfaceNode, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+
+    planner_->MoveSplitSurfaceNode();
+}
+
+/*
+ * ── IsOpIncNodesChanged fixes ────────────────────────────────
+ */
+
+/**
+ * @tc.name: IsOpIncNodesChanged_AllMatchSingle
+ * @tc.desc: Test IsOpIncNodesChanged when a single node matches (returns false)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_AllMatchSingle, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 50.0f, 50.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 50.0f, 50.0f));
+
+    bool result = planner_->IsOpIncNodesChanged();
+
+    ASSERT_EQ(result, false);
+}
+
+/**
+ * @tc.name: IsOpIncNodesChanged_MultipleNodesNoChange
+ * @tc.desc: Test IsOpIncNodesChanged when multiple nodes all match (returns false)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, IsOpIncNodesChanged_MultipleNodesNoChange, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->opIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 50.0f, 50.0f));
+    planner_->opIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 60.0f, 60.0f));
+    planner_->lastOpIncNodes_.emplace_back(100, Vector4f(1.0f, 2.0f, 50.0f, 50.0f));
+    planner_->lastOpIncNodes_.emplace_back(200, Vector4f(3.0f, 4.0f, 60.0f, 60.0f));
+
+    bool result = planner_->IsOpIncNodesChanged();
+
+    ASSERT_EQ(result, false);
+}
+
+/*
+ * ── ProcessPlanStatusAction ──────────────────────────────────
+ */
+
+/**
+ * @tc.name: ProcessPlanStatusAction_NeedLeaveAndBufferConsumed
+ * @tc.desc: Test ProcessPlanStatusAction when needLeave_=true and IsBufferConsumed() (calls SetBufferNull)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, ProcessPlanStatusAction_NeedLeaveAndBufferConsumed, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->splitSurface_ = CreateSplitSurface(100);
+    planner_->needLeave_ = true;
+    planner_->planStatus_ = PlanStatus::OFF;
+
+    planner_->ProcessPlanStatusAction();
+}
+
+/*
+ * ── CollectOpIncNodes additional branches ────────────────────
+ */
+
+/**
+ * @tc.name: CollectOpIncNodes_ChildIsSplitSurfaceNode
+ * @tc.desc: Test CollectOpIncNodes when a child is the splitSurfaceNode_ (skipped in loop)
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSOpincLayerSplitterPlannerTest, CollectOpIncNodes_ChildIsSplitSurfaceNode, TestSize.Level0)
+{
+    ASSERT_NE(planner_, nullptr);
+    planner_->opIncParentNode_ = CreateSurfaceNode(100);
+    planner_->splitSurface_ = CreateSplitSurface(200);
+
+    auto child = CreateSurfaceNode(300);
+    planner_->opIncParentNode_->GetMutableRenderProperties().SetBounds(Vector4f(0, 0, 100, 100));
+    planner_->opIncParentNode_->GetMutableRenderProperties().SetFrame(Vector4f(0, 0, 100, 100));
+
+    bool result = planner_->CollectOpIncNodes();
+
+    ASSERT_EQ(result, false);
+}
+
 } // namespace
 } // namespace Rosen
 } // namespace OHOS

@@ -127,12 +127,12 @@ HWTEST_F(RSSplitSurfaceTest, GetSurfaceNodeId_Null, TestSize.Level1)
 }
 
 /**
- * @tc.name: GetSurfaceNodeId_NodeNull
+ * @tc.name: GetSurfaceNodeId_NotNull
  * @tc.desc: Test GetSurfaceNodeId when splitSurfaceNode_ != nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSSplitSurfaceTest, GetSurfaceNodeId_NodeNull, TestSize.Level1)
+HWTEST_F(RSSplitSurfaceTest, GetSurfaceNodeId_NotNull, TestSize.Level1)
 {
     ASSERT_NE(splitSurface_, nullptr);
     auto node = CreateNode(TEST_NODE_ID);
@@ -144,12 +144,12 @@ HWTEST_F(RSSplitSurfaceTest, GetSurfaceNodeId_NodeNull, TestSize.Level1)
 }
 
 /**
- * @tc.name: CheckParentOnTree_NotNull
+ * @tc.name: CheckParentOnTree_NodeNull
  * @tc.desc: Test CheckParentNodeOnTheTree when splitSurfaceNode_ == nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSSplitSurfaceTest, CheckParentOnTree_NotNull, TestSize.Level1)
+HWTEST_F(RSSplitSurfaceTest, CheckParentOnTree_NodeNull, TestSize.Level1)
 {
     ASSERT_NE(splitSurface_, nullptr);
     splitSurface_->splitSurfaceNode_ = nullptr;
@@ -293,7 +293,7 @@ HWTEST_F(RSSplitSurfaceTest, IsBufferConsumed_NodeNull, TestSize.Level1)
 
 /**
  * @tc.name: IsBufferConsumed_NodeNotNullHandlerNull
- * @tc.desc: Test IsBufferConsumed when splitSurfaceNode_  != nullptr && surfaceHandler_ == nullptr
+ * @tc.desc: Test IsBufferConsumed when splitSurfaceNode_ != nullptr && surfaceHandler_ == nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -365,7 +365,7 @@ HWTEST_F(RSSplitSurfaceTest, IsBufferConsumed_BothNotNull, TestSize.Level1)
     splitSurface_->splitSurfaceNode_->surfaceHandler_->SetBuffer(buffer, nullptr, Rect(), 0, nullptr);
 
     bool result = splitSurface_->IsBufferConsumed();
-    ASSERT_TRUE(result);   
+    ASSERT_TRUE(result);
 }
 
 /**
@@ -517,7 +517,7 @@ HWTEST_F(RSSplitSurfaceTest, RequestFrame_ReleasedFrameNull, TestSize.Level1)
     splitSurface_->splitSurfaceBuffer_->surfaceCreated_ = true;
     splitSurface_->splitSurfaceBuffer_->GetSurfaceHandler()->SetConsumer(nullptr);
 
-    RSScreenRenderParams params(0);
+    RSSurfaceRenderParams params(0);
     bool result = splitSurface_->RequestFrame(params);
     ASSERT_FALSE(result);
 }
@@ -545,8 +545,65 @@ HWTEST_F(RSSplitSurfaceTest, RequestFrame_ReleasedFrameNotNull, TestSize.Level1)
     ASSERT_NE(renderFrame, nullptr);
     splitSurface_->splitRenderFrame_ = std::move(renderFrame);
 
-    RSScreenRenderParams params(0);
+    RSSurfaceRenderParams params(0);
     bool result = splitSurface_->RequestFrame(params);
     ASSERT_FALSE(result);
 }
+
+/**
+ * @tc.name: FlushFrame_DelegatesToBuffer
+ * @tc.desc: Test FlushFrame delegates to splitSurfaceBuffer_->FlushFrame
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSplitSurfaceTest, FlushFrame_DelegatesToBuffer, TestSize.Level1)
+{
+    ASSERT_NE(splitSurface_, nullptr);
+    auto buffer = CreateBuffer("test", TEST_NODE_ID);
+    ASSERT_NE(buffer, nullptr);
+    splitSurface_->splitSurfaceBuffer_ = buffer;
+    // FlushFrame delegates to buffer->FlushFrame(); won't crash
+    splitSurface_->FlushFrame();
+    SUCCEED();
+}
+
+/**
+ * @tc.name: IsBufferReleased_ConsumerWithAvailableBuffer
+ * @tc.desc: Test IsBufferReleased when consumer exists and buffer is available
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSplitSurfaceTest, IsBufferReleased_ConsumerWithAvailableBuffer, TestSize.Level1)
+{
+    ASSERT_NE(splitSurface_, nullptr);
+    auto buffer = CreateBuffer("test", TEST_NODE_ID);
+    ASSERT_NE(buffer, nullptr);
+    splitSurface_->splitSurfaceBuffer_ = buffer;
+    splitSurface_->splitSurfaceBuffer_->surfaceCreated_ = true;
+
+    sptr<IConsumerSurface> consumer = IConsumerSurface::Create("test");
+    ASSERT_NE(consumer, nullptr);
+    // A fresh consumer surface returns true from QueryIfBufferAvailable (0 < queueSize)
+    splitSurface_->splitSurfaceBuffer_->GetSurfaceHandler()->SetConsumer(consumer);
+
+    bool result = splitSurface_->IsBufferReleased();
+    ASSERT_TRUE(result);
+}
+
+// ===================== SetColorSpace / GetColorSpace =====================
+
+/**
+ * @tc.name: SetColorSpace_RoundTrip
+ * @tc.desc: Test SetColorSpace and GetColorSpace round trip
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSplitSurfaceTest, SetColorSpace_RoundTrip, TestSize.Level1)
+{
+    ASSERT_NE(splitSurface_, nullptr);
+    ASSERT_EQ(splitSurface_->GetColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_SRGB);
+    splitSurface_->SetColorSpace(GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DCI_P3);
+    ASSERT_EQ(splitSurface_->GetColorSpace(), GraphicColorGamut::GRAPHIC_COLOR_GAMUT_DCI_P3);
+}
+
 } // namespace OHOS::Rosen
