@@ -33,7 +33,7 @@ namespace {
 
 constexpr int32_t BUFFER_DEFAULT_WIDTH = 100;
 constexpr int32_t BUFFER_DEFAULT_HEIGHT = 100;
-constexpr int32_t kBusyWaitTimeout = 10000;
+constexpr int32_t K_BUSY_WAIT_TIMEOUT = 10000;
 
 class RSSplitSurfaceBufferTest : public testing::Test {
 public:
@@ -153,35 +153,35 @@ HWTEST_F(RSSplitSurfaceBufferTest, PreAllocateBuffer005_BufferRequestConfig, Tes
     splitBuffer_->isHebc_ = false;
     splitBuffer_->PreAllocateBuffer();
     int timeoutCount = 0;
-    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < kBusyWaitTimeout) {
+    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < K_BUSY_WAIT_TIMEOUT) {
         std::this_thread::yield();
         ++timeoutCount;
     }
-    ASSERT_LT(timeoutCount, kBusyWaitTimeout);
+    ASSERT_LT(timeoutCount, K_BUSY_WAIT_TIMEOUT);
     splitBuffer_->isHebc_ = true;
     splitBuffer_->PreAllocateBuffer();
     timeoutCount = 0;
-    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < kBusyWaitTimeout) {
+    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < K_BUSY_WAIT_TIMEOUT) {
         std::this_thread::yield();
         ++timeoutCount;
     }
-    ASSERT_LT(timeoutCount, kBusyWaitTimeout);
+    ASSERT_LT(timeoutCount, K_BUSY_WAIT_TIMEOUT);
     splitBuffer_->bufferConfig_.format = GRAPHIC_PIXEL_FMT_RGBA_1010108;
     splitBuffer_->PreAllocateBuffer();
     timeoutCount = 0;
-    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < kBusyWaitTimeout) {
+    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < K_BUSY_WAIT_TIMEOUT) {
         std::this_thread::yield();
         ++timeoutCount;
     }
-    ASSERT_LT(timeoutCount, kBusyWaitTimeout);
+    ASSERT_LT(timeoutCount, K_BUSY_WAIT_TIMEOUT);
     splitBuffer_->bufferConfig_.format = 1;
     splitBuffer_->PreAllocateBuffer();
     timeoutCount = 0;
-    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < kBusyWaitTimeout) {
+    while (splitBuffer_->isPreAllocInProgress_.load() && timeoutCount < K_BUSY_WAIT_TIMEOUT) {
         std::this_thread::yield();
         ++timeoutCount;
     }
-    ASSERT_LT(timeoutCount, kBusyWaitTimeout);
+    ASSERT_LT(timeoutCount, K_BUSY_WAIT_TIMEOUT);
     splitBuffer_->isPreAllocInProgress_.store(originInProgress);
     splitBuffer_->surfaceCreated_ = originCreated;
 }
