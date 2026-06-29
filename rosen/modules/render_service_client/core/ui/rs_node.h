@@ -2348,6 +2348,7 @@ private:
     void RemoveAnimationInner(const std::shared_ptr<RSAnimation>& animation);
     void CancelAnimationByProperty(const PropertyId& id, const bool needForceSync = false);
     void RebuildAnimationInRender();
+    void RemoveParticleAnimations();
 
     const std::shared_ptr<RSPropertyBase> GetProperty(const PropertyId& propertyId);
     void RegisterProperty(std::shared_ptr<RSPropertyBase> property);
@@ -2474,6 +2475,7 @@ private:
     friend class RSImplicitCancelAnimationParam;
     friend class RSImplicitAnimator;
     friend class RSCurveAnimation;
+    friend class RSParticleAnimation;
     friend class RSAnimation;
     friend class ModifierNG::RSForegroundFilterModifier;
     friend class ModifierNG::RSBackgroundFilterModifier;
