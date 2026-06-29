@@ -105,7 +105,7 @@ enum class RSDrawableSlot : int8_t {
     OVERLAY,
     PARTICLE_EFFECT,
     PIXEL_STRETCH,
-    
+
     // Restore state
     RESTORE_CLIP_TO_BOUNDS,
     OVERLAY_NG_SHADER,
