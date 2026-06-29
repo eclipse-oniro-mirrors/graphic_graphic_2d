@@ -1610,6 +1610,7 @@ bool RSSystemProperties::GetTextureExportDFXEnabled()
 bool RSSystemProperties::GetHybridRenderDfxEnabled()
 {
     static bool hybridRenderDfxEnabled =
+        OHOS::system::GetParameter("const.product.devicetype", "phone") == "phone" &&
         system::GetBoolParameter("persist.sys.graphic.hybrid_render_dfx_enabled", false);
     return hybridRenderDfxEnabled;
 }
