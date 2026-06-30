@@ -3864,21 +3864,21 @@ HWTEST_F(RSRenderNodeTest, IsPureBackgroundColorTest, TestSize.Level1)
     for (auto i = static_cast<int8_t>(RSDrawableSlot::SAVE_ALL); i < static_cast<int8_t>(RSDrawableSlot::MAX); ++i) {
         drawableVec[i] = nullptr;
     }
-    bool result = rsRenderNode->IsPureBackgroundColor(true);
+    bool result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_TRUE(result);
 
     drawableVec[static_cast<int8_t>(RSDrawableSlot::CLIP_TO_BOUNDS)] = std::make_shared<DrawableTest>();
-    result = rsRenderNode->IsPureBackgroundColor(true);
+    result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_TRUE(result);
 
     drawableVec[static_cast<int8_t>(RSDrawableSlot::CLIP_TO_BOUNDS)] = nullptr;
-    result = rsRenderNode->IsPureBackgroundColor(true);
+    result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_TRUE(result);
 
     for (int8_t i = 0; i < static_cast<int8_t>(RSDrawableSlot::MAX); ++i) {
         drawableVec[i] = std::make_shared<DrawableTest>();
     }
-    result = rsRenderNode->IsPureBackgroundColor(true);
+    result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_FALSE(result);
 }
 
@@ -3895,20 +3895,20 @@ HWTEST_F(RSRenderNodeTest, IsPureBackgroundColorTest002, TestSize.Level1)
     auto& drawableVec = rsRenderNode->GetDrawableVec(__func__);
 
     drawableVec[static_cast<int8_t>(RSDrawableSlot::BLENDER)] = std::make_shared<DrawableTest>();
-    bool result = rsRenderNode->IsPureBackgroundColor(true);
+    bool result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_FALSE(result);
 
     auto& property = rsRenderNode->GetMutableRenderProperties();
     property.SetColorBlendMode(static_cast<int>(RSColorBlendMode::SRC_OVER));
-    result = rsRenderNode->IsPureBackgroundColor(true);
+    result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_TRUE(result);
 
     property.SetColorBlendApplyType(static_cast<int>(RSColorBlendApplyType::SAVE_LAYER));
-    result = rsRenderNode->IsPureBackgroundColor(true);
+    result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_FALSE(result);
 
     drawableVec[static_cast<int8_t>(RSDrawableSlot::BACKGROUND_SHADER)] = std::make_shared<DrawableTest>();
-    result = rsRenderNode->IsPureBackgroundColor(true);
+    result = rsRenderNode->IsPureBackgroundColor(false);
     EXPECT_FALSE(result);
 }
 

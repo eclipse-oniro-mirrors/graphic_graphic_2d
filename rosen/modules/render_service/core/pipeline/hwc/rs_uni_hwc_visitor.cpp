@@ -159,7 +159,7 @@ void RSUniHwcVisitor::UpdateHwcNodeByTransform(RSSurfaceRenderNode& node, const 
 }
 
 bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& node,
-    const RectI& surfaceNodeAbsRect, Color& validBgColor)
+    const RectI& surfaceNodeAbsRect, Color& validBgColor, bool isSplitEnabled)
 {
     validBgColor = RgbPalette::Transparent();
     if (node == nullptr) {
@@ -177,7 +177,6 @@ bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& no
             return true;
         }
 
-        bool isSplitEnabled = IsSplitEnabled();
         bool willNotDraw = node->IsPureBackgroundColor(isSplitEnabled);
         RS_LOGD("solidLayer: id:%{public}" PRIu64 ", willNotDraw: %{public}d", node->GetId(), willNotDraw);
         if (!willNotDraw) {
@@ -188,7 +187,7 @@ bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& no
         const auto& nodeBgColorAlpha = nodeBgColor.GetAlpha();
         bool isSolid = ROSEN_EQ(nodeProperties.GetAlpha(), 1.f) && (nodeBgColorAlpha == MAX_ALPHA);
         if (isSolid) {
-            if (IsSurfaceInsideRect(surfaceNodeAbsRect, absRect, 1, isSplitEnabled)) {
+            if (surfaceNodeAbsRect.IsInsideOf(absRect)) {
                 validBgColor = nodeBgColor;
                 RS_LOGD("solidLayer: canvas node color, id:%{public}" PRIu64 ", color:%{public}08x",
                     node->GetId(), validBgColor.AsArgbInt());
@@ -203,32 +202,8 @@ bool RSUniHwcVisitor::CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& no
     return false;
 }
 
-bool RSUniHwcVisitor::IsSplitEnabled() const
-{
-    const auto& selfDrawingNodes = RSMainThread::Instance()->GetSelfDrawingNodes();
-    for (auto surfaceNode : selfDrawingNodes) {
-        if (surfaceNode && surfaceNode->IsSplitSurfaceNode()) {
-            RS_LOGW("IsSplitEnabled id:%{public}" PRIu64, surfaceNode->GetId());
-            return true;
-        }
-    }
-    return false;
-}
-
-bool RSUniHwcVisitor::IsSurfaceInsideRect(
-    const RectI& innerRect, const RectI& outerRect, int bottomTolerance, bool enableTolerance) const
-{
-    if (!enableTolerance) {
-        return innerRect.IsInsideOf(outerRect);
-    }
-    return innerRect.GetLeft() >= outerRect.GetLeft() &&
-           innerRect.GetTop() >= outerRect.GetTop() &&
-           innerRect.GetRight() <= outerRect.GetRight() &&
-           innerRect.GetBottom() <= outerRect.GetBottom() + bottomTolerance;
-}
-
-bool RSUniHwcVisitor::CheckSubTreeOcclusion(
-    const std::shared_ptr<RSRenderNode>& branchNode, const RectI& surfaceNodeAbsRect, std::stack<Color>& validBgColors)
+bool RSUniHwcVisitor::CheckSubTreeOcclusion(const std::shared_ptr<RSRenderNode>& branchNode,
+    const RectI& surfaceNodeAbsRect, std::stack<Color>& validBgColors, bool isSplitEnabled)
 {
     // Recursive operation, checking branches from top to bottom, looking for background color
     if (branchNode == nullptr) {
@@ -236,7 +211,7 @@ bool RSUniHwcVisitor::CheckSubTreeOcclusion(
     }
     RS_LOGD("solidLayer: check branch, id:%{public}" PRIu64, branchNode->GetId());
     Color bgColor = RgbPalette::Transparent();
-    if (CheckNodeOcclusion(branchNode, surfaceNodeAbsRect, bgColor)) {
+    if (CheckNodeOcclusion(branchNode, surfaceNodeAbsRect, bgColor, isSplitEnabled)) {
         RS_LOGD("solidLayer: node is occlusion, id:%{public}" PRIu64, branchNode->GetId());
         while (!validBgColors.empty()) {
             validBgColors.pop();
@@ -246,7 +221,7 @@ bool RSUniHwcVisitor::CheckSubTreeOcclusion(
         validBgColors.push(bgColor);
     }
     for (const auto& child : *branchNode->GetSortedChildren()) {
-        if (child != nullptr && CheckSubTreeOcclusion(child, surfaceNodeAbsRect, validBgColors)) {
+        if (child != nullptr && CheckSubTreeOcclusion(child, surfaceNodeAbsRect, validBgColors, isSplitEnabled)) {
             while (!validBgColors.empty()) {
                 validBgColors.pop();
             }
@@ -283,7 +258,7 @@ Color RSUniHwcVisitor::FindAppBackgroundColor(RSSurfaceRenderNode& node)
             if (child == nullptr) {
                 continue;
             }
-            if (CheckSubTreeOcclusion(child, surfaceNodeAbsRect, validBgColors)) {
+            if (CheckSubTreeOcclusion(child, surfaceNodeAbsRect, validBgColors, node.IsSplitSurfaceNode())) {
                 return RgbPalette::Transparent();
             } else if (!validBgColors.empty()) {
                 Color backgroundColor = validBgColors.top();
@@ -293,7 +268,7 @@ Color RSUniHwcVisitor::FindAppBackgroundColor(RSSurfaceRenderNode& node)
             }
         }
         Color bgColor = RgbPalette::Transparent();
-        if (CheckNodeOcclusion(parent, surfaceNodeAbsRect, bgColor)) {
+        if (CheckNodeOcclusion(parent, surfaceNodeAbsRect, bgColor, node.IsSplitSurfaceNode())) {
             return RgbPalette::Transparent();
         } else if (bgColor != RgbPalette::Transparent()) {
             return bgColor;
@@ -532,7 +507,6 @@ void RSUniHwcVisitor::UpdateHwcNodeEnableByRotate(const std::shared_ptr<RSSurfac
             hwcNode->GetName().c_str(), hwcNode->GetId(), parentNode ? parentNode->GetId() : 0, degree);
         PrintHiperfLog(hwcNode, "rotation");
         hwcNode->SetHardwareForcedDisabledState(true);
-        RSLayerSplitManager::GetInstance()->CheckSplitNodeIntersectFilter(hwcNode);
         Statistics().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
             HwcDisabledReasons::DISABLED_BY_ROTATION, hwcNode->GetName());
         return;
@@ -1049,6 +1023,8 @@ void RSUniHwcVisitor::CheckHwcNodeFilterIntersection(
             hwcNode->GetId(), parentNode ? parentNode->GetId() : 0, filterNode->GetId());
         PrintHiperfLog(hwcNode.get(), "filter rect");
         hwcNode->SetHardwareForcedDisabledState(true);
+        // opinc_split check if splitSufaceNode intersect with filter node
+        RSLayerSplitManager::GetInstance()->CheckSplitNodeIntersectFilter(hwcNode);
         Statistics().UpdateHwcDisabledReasonForDFX(hwcNode->GetId(),
             HwcDisabledReasons::DISABLED_BY_FLITER_RECT, hwcNode->GetName());
         break;

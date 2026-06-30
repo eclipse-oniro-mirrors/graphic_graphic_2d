@@ -82,41 +82,12 @@ void RSOpincLayerSplitterPlanner::Reset()
     surfaceHandler->SetCurrentFrameBufferConsumed();
 }
 
-bool RSOpincLayerSplitterPlanner::CheckDoDirectCompositionWithSplitLayer(
-    std::shared_ptr<TransactionDataMap> transactionDataEffective)
+bool RSOpincLayerSplitterPlanner::CheckOpIncNodeFromCommand(NodeId nodeId)
 {
     if (planStatus_ != PlanStatus::ON) {
         return false;
     }
 
-    auto checkTransactionFunc = [this](const auto& rsTransaction) -> bool {
-        for (auto& [nodeId, followType, command] : rsTransaction->GetPayload()) {
-            if (command == nullptr) {
-                continue;
-            }
-            if (!CheckOpIncNodeFromCommand(command->GetNodeId())) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    for (auto& rsTransactionElem : *transactionDataEffective) {
-        for (auto& rsTransaction : rsTransactionElem.second) {
-            if (!rsTransaction) {
-                continue;
-            }
-            if (!checkTransactionFunc(rsTransaction)) {
-                return false;
-            }
-        }
-    }
-    canDoDirectComposition_ = CheckCanDoDirectComposition();
-    return canDoDirectComposition_;
-}
-
-bool RSOpincLayerSplitterPlanner::CheckOpIncNodeFromCommand(NodeId nodeId)
-{
     if (visitedNodeId_.find(nodeId) != visitedNodeId_.end()) {
         return true;
     }
@@ -175,6 +146,10 @@ std::pair<bool, Vector4f> RSOpincLayerSplitterPlanner::GetBoundsFromModifier(con
 
 bool RSOpincLayerSplitterPlanner::CheckCanDoDirectComposition()
 {
+    if (planStatus_ != PlanStatus::ON) {
+        return false;
+    }
+
     if (visitedNodeId_.empty() || visitedNodeId_.size() != lastOpIncNodes_.size()) {
         LAYER_SPLIT_LOGD("%{public}s visitedNodeId_.size() != lastOpIncNodes_.size()", __func__);
         return false;
@@ -211,6 +186,7 @@ bool RSOpincLayerSplitterPlanner::CheckCanDoDirectComposition()
     }
 
     LAYER_SPLIT_LOGD("%{public}s DoComposition", __func__);
+    canDoDirectComposition_ = true;
     return true;
 }
 
@@ -253,7 +229,6 @@ bool RSOpincLayerSplitterPlanner::CollectOpIncNodes()
     bool isOverlap = false;
     std::vector<RectI> nonOpIncNodeRects;
     itemBounds_.Clear();
-    // 是否需要对 opIncParentNode_加入空指针判断
     auto& children = *(opIncParentNode_->GetSortedChildren());
     for (auto& child : children) {
         if (!child || child == splitSurface_->splitSurfaceNode_) {
@@ -273,7 +248,7 @@ bool RSOpincLayerSplitterPlanner::CollectOpIncNodes()
                 Vector4f(boundsPosition[0], boundsPosition[1], boundsSize[0], boundsSize[1]));
             if (!isOverlap && CheckRectOverlap(rect, nonOpIncNodeRects)) {
                 isOverlap = true;
-                LAYER_SPLIT_LOGD("%{public}s isOverLap nodeId=%{public}" PRIu64, __func__, child->GetId());
+                LAYER_SPLIT_LOGD("%{public}s isOverLap nodeId=%" PRIu64, __func__, child->GetId());
             }
         } else {
             nonOpIncNodeRects.emplace_back(rect);
@@ -556,7 +531,7 @@ void RSOpincLayerSplitterPlanner::UpdateSplitPlan()
     requestController_->Update(needLeave_, planStatus_, canDoDirectComposition_, isHardwareEnabled);
 
     LAYER_SPLIT_LOGD("%{public}s planStatus_=%d, needLeave=%d", __func__, static_cast<int>(planStatus_), needLeave_);
-    RS_TRACE_NAME_FMT("%s planStatus_=%d, needLeave=%d", __func__, static_cast<int>(planStatus_), needLeave_);
+    RS_OPTIONAL_TRACE_NAME_FMT("%s planStatus_=%d, needLeave=%d", __func__, static_cast<int>(planStatus_), needLeave_);
     ProcessPlanStatusAction();
 }
 

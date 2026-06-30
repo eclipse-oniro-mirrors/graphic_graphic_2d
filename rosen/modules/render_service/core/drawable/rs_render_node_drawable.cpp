@@ -502,7 +502,7 @@ void RSRenderNodeDrawable::DrawWithNodeGroupCache(Drawing::Canvas& canvas, const
     if (layerSplitterProcessor_ != nullptr) {
         if (layerSplitterProcessor_->NeedDrawSplitCanvas(canvas, GetId())) {
             DrawCachedImage(*(layerSplitterProcessor_->GetSplitCanvas()), params);
-            RS_LOGW("RSRenderNodeDrawable::DrawWithNodeGroupCache curCanvas");
+            RS_LOGD("RSRenderNodeDrawable::DrawWithNodeGroupCache curCanvas");
         }
         if (layerSplitterProcessor_->CanSkipOpIncNodeDraw(GetId())) {
             return;
