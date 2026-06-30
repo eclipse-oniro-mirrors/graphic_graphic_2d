@@ -169,7 +169,6 @@ std::unique_ptr<RSRenderFrame> RSGPUOfflineBuffer::RequestFrame(std::shared_ptr<
     if (currentConfig_ != config || switchType != SingleBufferMode::SINGLE_BUFFER_MODE_NONE) {
         RS_LOGD("RSGPUOfflineBuffer::CleanCache when config changed");
         CleanCache(true);
-        isFirstRequest_ = true;
         needFillSingleBuffer = (switchType != SingleBufferMode::SINGLE_BUFFER_MODE_TO_MULTI);
     }
     auto renderFrame = renderEngine->RequestFrame(
