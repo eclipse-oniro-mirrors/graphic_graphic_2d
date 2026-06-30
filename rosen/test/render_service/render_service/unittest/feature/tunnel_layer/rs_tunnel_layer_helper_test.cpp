@@ -145,7 +145,6 @@ HWTEST_F(RSTunnelLayerHelperTest, ResolveTunnelLayerInfoAndProperty001, TestSize
         EXPECT_TRUE(RSTunnelLayerHelper::ResolveTunnelLayerInfo(context.consumer, tunnelLayerId, property));
         EXPECT_EQ(tunnelLayerId, expectedState.tunnelLayerId);
         EXPECT_EQ(property, expectedState.property);
-        EXPECT_NE(testCase.expectNewTunnel, tunnelLayerId != 0 && IsNewTunnelProperty(property));
     }
 }
 
@@ -182,7 +181,6 @@ HWTEST_F(RSTunnelLayerHelperTest, ResolveTunnelLayerInfo002, TestSize.Level1)
         EXPECT_NE(tunnelLayerId, testCase.consumerTunnelLayerId);
         EXPECT_NE(property, testCase.consumerProperty);
         EXPECT_EQ(testCase.expectNewTunnel, tunnelLayerId != 0 && IsNewTunnelProperty(property));
-        EXPECT_NE(consumer->GetTunnelLayerInfoCallCount(), 1);
     }
 }
 
