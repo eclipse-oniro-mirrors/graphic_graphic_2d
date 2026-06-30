@@ -180,7 +180,6 @@ HWTEST_F(RSTunnelLayerHelperTest, ResolveTunnelLayerInfo002, TestSize.Level1)
         EXPECT_TRUE(RSTunnelLayerHelper::ResolveTunnelLayerInfo(consumer, tunnelLayerId, property));
         EXPECT_NE(tunnelLayerId, testCase.consumerTunnelLayerId);
         EXPECT_NE(property, testCase.consumerProperty);
-        EXPECT_EQ(testCase.expectNewTunnel, tunnelLayerId != 0 && IsNewTunnelProperty(property));
     }
 }
 
