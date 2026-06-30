@@ -44,7 +44,6 @@ public:
     {
         SetScreenSize(DIRTY_REGION_SCREEN_WIDTH, DIRTY_REGION_SCREEN_HEIGHT);
         SetSurfaceColor(RSColor(0xFFFFFFFF));
-        SetCaptureCropToTestCanvas();
     }
 
     void SetCaptureCropToTestCanvas()
@@ -449,6 +448,7 @@ GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Intersect_Dirty_Rect_Test0
  */
 GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScreen01)
 {
+    SetCaptureCropToTestCanvas();
     auto rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     
     RectI mainRect = {100, 100, 400, 400};
@@ -512,6 +512,7 @@ GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScre
  */
 GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScreen02)
 {
+    SetCaptureCropToTestCanvas();
     auto rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     
     RectI mainRect = {0, 0, 800, 800};
@@ -569,6 +570,7 @@ GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScre
  */
 GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScreen_Boundary01)
 {
+    SetCaptureCropToTestCanvas();
     auto rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     
     RectI mainRect = {0, 0, 800, 800};
@@ -614,6 +616,7 @@ GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScre
  */
 GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScreen_Reset01)
 {
+    SetCaptureCropToTestCanvas();
     auto rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     
     RectI mainRect = {100, 100, 400, 400};
@@ -676,6 +679,7 @@ GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScre
  */
 GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScreen_Advanced01)
 {
+    SetCaptureCropToTestCanvas();
     auto rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     
     RectI mainRect = {0, 0, 800, 800};
@@ -742,6 +746,7 @@ GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScre
  */
 GRAPHIC_TEST(DirtyRegionTest01, CONTENT_DISPLAY_TEST, Merge_Dirty_Rect_MultiScreen_Surface01)
 {
+    SetCaptureCropToTestCanvas();
     auto rsDirtyManager = std::make_shared<RSDirtyRegionManager>();
     
     RectI mainRect = {100, 100, 400, 400};
