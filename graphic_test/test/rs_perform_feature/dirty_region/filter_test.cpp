@@ -548,6 +548,7 @@ GRAPHIC_N_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, Filter13)
  */
 GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter01)
 {
+    SetCaptureCrop({0, 0, screenSize.x_, screenSize.y_});
     Vector4f bounds = { 0, 0, screenSize.x_, screenSize.y_ };
     auto testNode = SetUpNodeBgImage(TEST_IMG_PATH, bounds);
     RegisterNode(testNode);
@@ -587,6 +588,7 @@ GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter01)
  */
 GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter02)
 {
+    SetCaptureCrop({0, 0, screenSize.x_, screenSize.y_});
     Vector4f bounds = { 0, 0, screenSize.x_, screenSize.y_ };
     auto testNode = SetUpNodeBgImage(TEST_IMG_PATH, bounds);
     RegisterNode(testNode);
@@ -619,6 +621,7 @@ GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter02)
  */
 GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter03)
 {
+    SetCaptureCrop({0, 0, screenSize.x_, screenSize.y_});
     Vector4f bounds = { 0, 0, screenSize.x_, screenSize.y_ };
     auto testNode = SetUpNodeBgImage(TEST_IMG_PATH, bounds);
     RegisterNode(testNode);
@@ -666,6 +669,7 @@ GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter03)
  */
 GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter04)
 {
+    SetCaptureCrop({0, 0, screenSize.x_, screenSize.y_});
     Vector4f bounds = { 0, 0, screenSize.x_, screenSize.y_ };
     auto testNode = SetUpNodeBgImage(TEST_IMG_PATH, bounds);
     RegisterNode(testNode);
