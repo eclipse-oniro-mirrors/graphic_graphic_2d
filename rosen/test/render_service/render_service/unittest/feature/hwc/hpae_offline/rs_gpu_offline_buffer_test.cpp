@@ -64,7 +64,6 @@ HWTEST_F(RSGPUOfflineBufferPrivateTest, RequestFrameSwitchTypeNoneSameConfigTest
     auto frame1 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame1, nullptr);
 
-
     auto frame2 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame2, nullptr);
     if (frame2) {
@@ -89,7 +88,6 @@ HWTEST_F(RSGPUOfflineBufferPrivateTest, RequestFrameSwitchTypeToSingleTriggersCl
     auto frame1 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame1, nullptr);
 
-
     auto frame2 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_TO_SINGLE);
     EXPECT_EQ(frame2, nullptr);
     if (frame2) {
@@ -113,7 +111,6 @@ HWTEST_F(RSGPUOfflineBufferPrivateTest, RequestFrameSwitchTypeToMultiTriggersCle
 
     auto frame1 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame1, nullptr);
-
 
     auto frame2 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_TO_MULTI);
     EXPECT_EQ(frame2, nullptr);
@@ -142,7 +139,6 @@ HWTEST_F(RSGPUOfflineBufferPrivateTest, RequestFrameSwitchTypeToSingleConfigChan
     auto frame1 = buffer->RequestFrame(renderEngine, config1, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame1, nullptr);
 
-
     auto frame2 = buffer->RequestFrame(renderEngine, config2, false, SingleBufferMode::SINGLE_BUFFER_MODE_TO_SINGLE);
     EXPECT_EQ(frame2, nullptr);
     if (frame2) {
@@ -170,7 +166,6 @@ HWTEST_F(RSGPUOfflineBufferPrivateTest, RequestFrameSwitchTypeNoneConfigChangeTe
     auto frame1 = buffer->RequestFrame(renderEngine, config1, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame1, nullptr);
 
-
     auto frame2 = buffer->RequestFrame(renderEngine, config2, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame2, nullptr);
     if (frame2) {
@@ -195,7 +190,6 @@ HWTEST_F(RSGPUOfflineBufferPrivateTest, RequestFrameSwitchTypeToMultiNoAttachSin
 
     auto frame1 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_NONE);
     EXPECT_EQ(frame1, nullptr);
-
 
     auto frame2 = buffer->RequestFrame(renderEngine, config, false, SingleBufferMode::SINGLE_BUFFER_MODE_TO_MULTI);
     EXPECT_EQ(frame2, nullptr);
