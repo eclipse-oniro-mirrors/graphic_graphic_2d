@@ -323,7 +323,7 @@ HWTEST_F(RSCanvasDrawingNodeTest, GetPixelmapForHybridTest, TestSize.Level1)
     bool res = drawingNode->GetPixelmap(pixelmap, drawCmdList, &rect);
     EXPECT_EQ(res, false);
 }
- 
+
 /**
  * @tc.name: RenderInClientTest001
  * @tc.desc: Test RenderInClient with null drawCmdList
@@ -340,7 +340,7 @@ HWTEST_F(RSCanvasDrawingNodeTest, RenderInClientTest001, TestSize.Level1)
     drawingNode->RenderInClient(drawCmdList);
     EXPECT_FALSE(ret);
 }
- 
+
 /**
  * @tc.name: SetNodeStateTest001
  * @tc.desc: Test SetNodeState when not hybrid enabled
@@ -352,7 +352,7 @@ HWTEST_F(RSCanvasDrawingNodeTest, SetNodeStateTest001, TestSize.Level1)
     bool res = drawingNode->SetNodeState(RSNodeState::ACTIVE);
     EXPECT_EQ(res, RSSystemProperties::GetHybridRenderCanvasEnabled());
 }
- 
+
 /**
  * @tc.name: ResetSurfaceForClientRenderTest
  * @tc.desc: Test ResetSurfaceForClientRender
