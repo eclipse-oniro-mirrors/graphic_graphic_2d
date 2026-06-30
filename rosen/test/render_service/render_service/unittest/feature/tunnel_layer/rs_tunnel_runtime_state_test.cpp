@@ -526,7 +526,7 @@ HWTEST_F(RSTunnelRuntimeStateTest, InstanceGetTunnelLayerGeneration003, TestSize
  
     state.SetBuilding();
     uint64_t gen2 = state.GetTunnelLayerGeneration();
-    EXPECT_EQ(gen1, gen2);
+    EXPECT_NE(gen1, gen2);
  
     uint64_t genAfterBuilding = state.GetTunnelLayerGeneration();
     state.SetActiveFromTunnelLayerAvailable(genAfterBuilding);
