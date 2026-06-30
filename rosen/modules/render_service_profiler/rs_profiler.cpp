@@ -16,6 +16,7 @@
 #include "rs_profiler.h"
 
 #include <cstddef>
+#include <cerrno>
 #include <fstream>
 #include <filesystem>
 #include <numeric>
@@ -139,7 +140,14 @@ uint64_t ExtractTrace3DNumber(const std::string& str)
     if (colonPos == std::string::npos || colonPos + 1 >= str.length()) {
         return static_cast<uint64_t>(-1);
     }
-    return std::stoull(str.substr(colonPos + 1));
+    const char* start = str.c_str() + colonPos + 1;
+    char* end = nullptr;
+    errno = 0;
+    uint64_t result = strtoull(start, &end, 10);
+    if (errno != 0 || end == start) {
+        return static_cast<uint64_t>(-1);
+    }
+    return result;
 }
 
 Trace3DCoreParamValue CreateAndUpdateTraceParam(const std::vector<std::string>& args,

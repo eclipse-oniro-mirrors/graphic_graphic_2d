@@ -25,11 +25,11 @@ namespace OHOS::Rosen {
 
 static RetCodeHrpService ValidateOpenFlags(int32_t flags)
 {
-    constexpr int32_t allowedFlags = O_RDONLY | O_WRONLY | O_RDWR | O_CREAT;
-    if (flags & ~allowedFlags) {
+    constexpr uint32_t allowedFlags = O_RDONLY | O_WRONLY | O_RDWR | O_CREAT;
+    if (static_cast<uint32_t>(flags) & ~allowedFlags) {
         return RET_HRP_SERVICE_ERR_INVALID_PARAM;
     }
-    int accessMode = flags & (O_RDONLY | O_WRONLY | O_RDWR);
+    uint32_t accessMode = static_cast<uint32_t>(flags) & (O_RDONLY | O_WRONLY | O_RDWR);
     if (accessMode != O_RDONLY && accessMode != O_WRONLY && accessMode != O_RDWR) {
         return RET_HRP_SERVICE_ERR_INVALID_PARAM;
     }

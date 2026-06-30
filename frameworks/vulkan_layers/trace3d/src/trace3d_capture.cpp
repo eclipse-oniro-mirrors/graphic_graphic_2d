@@ -44,6 +44,9 @@ size_t GetFileSize(const char *fileName)
 
 void *DlopenSharedLibrary(const char *libFullName)
 {
+    if (libFullName == nullptr) {
+        return nullptr;
+    }
     void *handle = nullptr;
     handle = dlopen(libFullName, RTLD_LAZY);
     return handle;
