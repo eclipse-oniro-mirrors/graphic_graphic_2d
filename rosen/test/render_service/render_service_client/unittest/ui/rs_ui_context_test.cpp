@@ -732,6 +732,7 @@ HWTEST_F(RSUIContextTest, FlushCanvasDrawingNodeBuffersTest001, TestSize.Level1)
     auto rsUIContext = CreateRSUIContext();
     rsUIContext->canvasDrawingNodeUpdated_ = false;
     rsUIContext->FlushCanvasDrawingNodeBuffers();
+    EXPECT_FALSE(rsUIContext->canvasDrawingNodeUpdated_);
 }
  
 /**
@@ -745,6 +746,7 @@ HWTEST_F(RSUIContextTest, FlushCanvasDrawingNodeBuffersTest002, TestSize.Level1)
     rsUIContext->canvasDrawingNodeUpdated_ = true;
     rsUIContext->rsTransactionHandler_ = nullptr;
     rsUIContext->FlushCanvasDrawingNodeBuffers();
+    EXPECT_TRUE(rsUIContext->canvasDrawingNodeUpdated_);
 }
  
 /**
@@ -758,6 +760,7 @@ HWTEST_F(RSUIContextTest, FlushCanvasDrawingNodeBuffersTest003, TestSize.Level1)
     rsUIContext->canvasDrawingNodeUpdated_ = true;
     rsUIContext->canvasDrawingNodeBufferFlushed_ = true;
     rsUIContext->FlushCanvasDrawingNodeBuffers();
+    EXPECT_FALSE(rsUIContext->canvasDrawingNodeUpdated_);
 }
 #endif
 } // namespace OHOS::Rosen

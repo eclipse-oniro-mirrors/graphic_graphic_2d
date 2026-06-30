@@ -332,19 +332,13 @@ HWTEST_F(RSCanvasDrawingNodeTest, GetPixelmapForHybridTest, TestSize.Level1)
 HWTEST_F(RSCanvasDrawingNodeTest, RenderInClientTest001, TestSize.Level1)
 {
     auto drawingNode = RSCanvasDrawingNode::Create(true);
-    drawingNode->RenderInClient(nullptr);
-}
- 
-/**
- * @tc.name: RenderInClientTest002
- * @tc.desc: Test RenderInClient with empty drawCmdList
- * @tc.type: FUNC
- */
-HWTEST_F(RSCanvasDrawingNodeTest, RenderInClientTest002, TestSize.Level1)
-{
-    auto drawingNode = RSCanvasDrawingNode::Create(true);
+    auto ret = drawingNode->RenderInClient(nullptr);
+    EXPECT_FALSE(ret);
+
+    drawingNode = RSCanvasDrawingNode::Create(true);
     auto drawCmdList = std::make_shared<Drawing::DrawCmdList>();
     drawingNode->RenderInClient(drawCmdList);
+    EXPECT_FALSE(ret);
 }
  
 /**
@@ -369,7 +363,8 @@ HWTEST_F(RSCanvasDrawingNodeTest, ResetSurfaceForClientRenderTest, TestSize.Leve
     RSCanvasDrawingNode::SharedPtr canvasNode = RSCanvasDrawingNode::Create(true);
     int width = 100;
     int height = 100;
-    canvasNode->ResetSurface(width, height);
+    auto ret = canvasNode->ResetSurface(width, height);
+    EXPECT_TRUE(ret);
 }
 #endif
 } // namespace OHOS::Rosen
