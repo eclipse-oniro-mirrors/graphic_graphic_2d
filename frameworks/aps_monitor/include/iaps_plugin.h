@@ -49,11 +49,14 @@ public:
                 reinterpret_cast<LoadApsFunc>(dlsym(loadFileHandle_, "LoadApsPlugin"));
             if (loadApsFunc == nullptr) {
                 dlclose(loadFileHandle_);
+                loadFileHandle_ = nullptr;
                 instance_ = sptr<IApsPlugin>::MakeSptr();
                 return;
             }
             loadApsFunc(instance_);
             if (instance_ == nullptr) {
+                dlclose(loadFileHandle_);
+                loadFileHandle_ = nullptr;
                 instance_ = sptr<IApsPlugin>::MakeSptr();
             }
 #endif
@@ -62,7 +65,13 @@ public:
     }
 
     IApsPlugin() = default;
-    virtual ~IApsPlugin() = default;
+    virtual ~IApsPlugin()
+    {
+        if (loadFileHandle_ != nullptr) {
+            dlclose(loadFileHandle_);
+            loadFileHandle_ = nullptr;
+        }
+    }
 
     virtual void InitGameFpsCtrl() {}
     virtual void PowerControlOfSwapbuffer() {}
