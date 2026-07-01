@@ -344,8 +344,8 @@ void RSJankStats::UpdateJankFrame(JankFrames& jankFrames, bool skipJankStats, ui
         jankFrames.seqMissedFrames_ += missedFramesToReport;
         jankFrames.maxSeqMissedFrames_ = std::max<int32_t>(jankFrames.maxSeqMissedFrames_, jankFrames.seqMissedFrames_);
     } else {
-         // 统计丢帧直方图
- 	    if (!jankFrames.isFirstFrame_ && jankFrames.jankCount_.size() >= 1) {
+        // 统计丢帧直方图
+        if (!jankFrames.isFirstFrame_ && jankFrames.jankCount_.size() >= 1) {
             size_t jankIndex = std::min(static_cast<size_t>(missedFramesToReport), jankFrames.jankCount_.size()) - 1;
             jankFrames.jankCount_[jankIndex]++;
         }
