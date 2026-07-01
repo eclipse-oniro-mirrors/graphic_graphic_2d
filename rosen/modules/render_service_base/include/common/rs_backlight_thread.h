@@ -17,6 +17,7 @@
 #define RS_BACKLIGHT_THREAD_H
 
 #include "event_handler.h"
+#include "event_runner.h"
 
 #include "common/rs_macros.h"
 
@@ -29,10 +30,11 @@ public:
 private:
     RSBacklightThread();
     ~RSBacklightThread() = default;
+    void Init(const std::shared_ptr<AppExecFwk::EventRunner>& runner);
     RSBacklightThread(const RSBacklightThread&) = delete;
-    RSBacklightThread(const RSBacklightThread&&) = delete;
+    RSBacklightThread(RSBacklightThread&&) = delete;
     RSBacklightThread& operator=(const RSBacklightThread&) = delete;
-    RSBacklightThread& operator=(const RSBacklightThread&&) = delete;
+    RSBacklightThread& operator=(RSBacklightThread&&) = delete;
 
     std::shared_ptr<AppExecFwk::EventRunner> runner_ = nullptr;
     std::shared_ptr<AppExecFwk::EventHandler> handler_ = nullptr;
