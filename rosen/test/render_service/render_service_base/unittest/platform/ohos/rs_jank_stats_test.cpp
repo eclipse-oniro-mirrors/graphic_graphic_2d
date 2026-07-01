@@ -1277,7 +1277,6 @@ HWTEST_F(RSJankStatsTest, GetJankCountStrTest, TestSize.Level1)
 
 HWTEST_F(RSJankStatsTest, UpdateJankFrameTestWithJankHistogram, TestSize.Level1)
 {
-{
     auto rsJankStats = std::make_shared<RSJankStats>();
     rsJankStats->rsStartTime_ = 0;
     rsJankStats->rsStartTimeSteady_ = 0;
