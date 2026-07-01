@@ -407,7 +407,7 @@ RSLayerPtr RSTunnelLayerHelper::CreateTunnelLayer(const std::shared_ptr<RSSurfac
     }
     auto composerContext = composerClient->GetComposerContext();
     if (!composerContext) {
-        return;
+        return nullptr;
     }
     RSLayerPtr layer = RSSurfaceLayer::Create(node->GetId(), composerContext);
     if (!layer) {
