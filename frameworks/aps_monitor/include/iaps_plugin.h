@@ -31,37 +31,33 @@ private:
     using LoadApsFunc = void (*)(sptr<OHOS::Rosen::IApsPlugin>& instance);
     static void* loadFileHandle_;
     static sptr<IApsPlugin> instance_;
-    static std::mutex mutex_;
+    static std::once_flag initFlag;
 
 public:
     static sptr<IApsPlugin>& Instance()
     {
-        if (instance_ == nullptr) {
-            std::lock_guard<std::mutex> lock(mutex_);
-            if (instance_ != nullptr) {
-                return instance_;
-            }
+        std::call_once(initFlag, []() {
 #ifdef _WIN32
-            instance_ = new IApsPlugin();
-            return instance_;
+            instance_ = sptr<IApsPlugin>::MakeSptr();
 #else
             loadFileHandle_ = dlopen("libaps_client.z.so", RTLD_NOW);
             if (loadFileHandle_ == nullptr) {
-                instance_ = new IApsPlugin();
-                return instance_;
+                instance_ = sptr<IApsPlugin>::MakeSptr();
+                return;
             }
-            LoadApsFunc loadApsFunc = (LoadApsFunc)(dlsym(loadFileHandle_, "LoadApsPlugin"));
+            LoadApsFunc loadApsFunc =
+                reinterpret_cast<LoadApsFunc>(dlsym(loadFileHandle_, "LoadApsPlugin"));
             if (loadApsFunc == nullptr) {
                 dlclose(loadFileHandle_);
-                instance_ = new IApsPlugin();
-                return instance_;
+                instance_ = sptr<IApsPlugin>::MakeSptr();
+                return;
             }
             loadApsFunc(instance_);
             if (instance_ == nullptr) {
-                instance_ = new IApsPlugin();
+                instance_ = sptr<IApsPlugin>::MakeSptr();
             }
 #endif
-        }
+        });
         return instance_;
     }
 
@@ -73,6 +69,6 @@ public:
 };
 void* IApsPlugin::loadFileHandle_ = nullptr;
 sptr<IApsPlugin> IApsPlugin::instance_ = nullptr;
-std::mutex IApsPlugin::mutex_;
+std::once_flag IApsPlugin::initFlag{};
 } // namespace OHOS::Rosen
 #endif
