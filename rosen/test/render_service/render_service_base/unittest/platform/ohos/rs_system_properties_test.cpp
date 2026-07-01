@@ -1218,5 +1218,38 @@ HWTEST_F(RSSystemPropertiesTest, CanvasDrawingNodeDmaTest, TestSize.Level1)
     system::SetParameter("persist.sys.graphic.canvas_drawing_node_render_dma", "0");
     EXPECT_FALSE(RSSystemProperties::GetCanvasDrawingNodeRenderDmaEnabled());
 }
+
+/**
+ * @tc.name: GetHybridRenderCanvasEnabledTest
+ * @tc.desc: GetHybridRenderCanvasEnabled Test - covers all combinations of
+ *           hybrid_render_canvas_drawing_node_enabled parameter. GPU API type
+ *           and device type are compile-time constants and cannot be mocked.
+ * @tc.type:FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSSystemPropertiesTest, GetHybridRenderCanvasEnabledTest, TestSize.Level1)
+{
+    auto originDeviceType = OHOS::system::GetParameter("const.product.devicetype", "phone");
+    auto originHybridRender =
+        system::GetBoolParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", true);
+    OHOS::system::SetParameter("const.product.devicetype", "pc");
+    system::SetParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", "false");
+    EXPECT_FALSE(RSSystemProperties::GetHybridRenderCanvasEnabled());
+    OHOS::system::SetParameter("const.product.devicetype", "pc");
+    system::SetParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", "true");
+    EXPECT_FALSE(RSSystemProperties::GetHybridRenderCanvasEnabled());
+    OHOS::system::SetParameter("const.product.devicetype", "phone");
+    system::SetParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", "false");
+    EXPECT_FALSE(RSSystemProperties::GetHybridRenderCanvasEnabled());
+    OHOS::system::SetParameter("const.product.devicetype", "phone");
+    system::SetParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", "true");
+    EXPECT_EQ(
+        RSSystemProperties::GetHybridRenderCanvasEnabled(), RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN);
+    OHOS::system::SetParameter("const.product.devicetype", originDeviceType);
+    system::SetParameter(
+        "persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", std::to_string(originHybridRender));
+    EXPECT_EQ(RSSystemProperties::GetHybridRenderCanvasEnabled(),
+        RSSystemProperties::GetGpuApiType() == GpuApiType::VULKAN && originDeviceType == "phone" && originHybridRender);
+}
 } // namespace Rosen
 } // namespace OHOS
