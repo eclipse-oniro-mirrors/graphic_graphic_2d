@@ -1334,10 +1334,9 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHardwareStateByBoundNEDstRectInApps001, Test
     abovedBounds.emplace_back(RectI{0, 0, 200, 200});
     rsUniRenderVisitor->hwcVisitor_->UpdateHardwareStateByBoundNEDstRectInApps(hwcNodes, abovedBounds);
 
-    surfaceNode->GetRenderProperties().GetBoundsGeometry()->absRect_ = {-58, -1848, 21377, 704};
-    abovedBounds.emplace_back(RectI{-58, 703, 1337, 3255});
+    surfaceNode->GetRenderProperties().GetBoundsGeometry()->absRect_ = {-58, -1848, 1377, 704};
+    abovedBounds.emplace_back(RectI{-58, 703, 1377, 3255});
     rsUniRenderVisitor->hwcVisitor_->UpdateHardwareStateByBoundNEDstRectInApps(hwcNodes, abovedBounds);
-
 }
 
 /**
@@ -3771,8 +3770,8 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalPosition_003, TestSize.
  * @tc.type: FUNC
  * @tc.require: IAHFXD
  */
- HWTEST_F(RSUniHwcVisitorTest, IsIntersectWithAbovedRectTest001, TestSize.Level1)
- {
+HWTEST_F(RSUniHwcVisitorTest, IsIntersectWithAbovedRectTest001, TestSize.Level1)
+{
     auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     std::vector<RectI> abovedBounds;
     RectI boundRect = {0, 0, 200, 200};
@@ -3783,5 +3782,5 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalPosition_003, TestSize.
     abovedBounds.emplace_back(RectI{0, 201, 200, 200});
     ret = rsUniRenderVisitor->hwcVisitor_->IsIntersectWithAbovedRect(abovedBounds, boundRect);
     ASSERT_FALSE(ret);
- }
+}
 } // namespace OHOS::Rosen
