@@ -1627,7 +1627,9 @@ bool RSSystemProperties::GetHybridRenderDfxEnabled()
 bool RSSystemProperties::GetHybridRenderCanvasEnabled()
 {
     static bool canvasEnabled =
-        system::GetBoolParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", false);
+        Drawing::SystemProperties::IsUseVulkan() &&
+        system::GetParameter("const.product.devicetype", "phone") == "phone" &&
+        system::GetBoolParameter("persist.sys.graphic.hybrid_render_canvas_drawing_node_enabled", true);
     return canvasEnabled;
 }
 
