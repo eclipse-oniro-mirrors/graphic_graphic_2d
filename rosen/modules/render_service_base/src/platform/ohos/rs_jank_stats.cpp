@@ -741,7 +741,7 @@ void RSJankStats::ReportEventJankFrameWithoutDelay(const JankFrames& jankFrames)
             "MAX_HITCH_TIME_SINCE_START", static_cast<uint64_t>(maxHitchTimeFromStart),
             "DURATION", static_cast<uint64_t>(duration),
             "MAX_FRAME_REFRESH_RATE", static_cast<int32_t>(jankFrames.maxFrameRefreshRate_),
-            "SHADER_TIME", shaderTimeStr, "JANK_COUNT", GetJankCountStr(jankFrames.jankCount_);
+            "SHADER_TIME", shaderTimeStr, "JANK_COUNT", GetJankCountStr(jankFrames.jankCount_));
     });
 }
 
