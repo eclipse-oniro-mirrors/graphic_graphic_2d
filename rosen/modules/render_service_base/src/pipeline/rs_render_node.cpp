@@ -4410,10 +4410,7 @@ void RSRenderNode::DestroyAnimationInRender()
 
 void RSRenderNode::AddAnimation(const std::shared_ptr<RSRenderAnimation>& animation)
 {
-    if (!animationManager_) {
-        animationManager_ = std::make_shared<RSAnimationManager>();
-    }
-    animationManager_->AddAnimation(animation);
+    GetOrCreateAnimationManager()->AddAnimation(animation);
 }
 
 RectI RSRenderNode::GetOldDirty() const
