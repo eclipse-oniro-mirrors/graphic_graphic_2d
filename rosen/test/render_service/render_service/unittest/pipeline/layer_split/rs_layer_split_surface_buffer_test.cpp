@@ -33,7 +33,6 @@ namespace {
 
 constexpr int32_t BUFFER_DEFAULT_WIDTH = 100;
 constexpr int32_t BUFFER_DEFAULT_HEIGHT = 100;
-constexpr int32_t K_BUSY_WAIT_TIMEOUT = 10000;
 
 class RSSplitSurfaceBufferTest : public testing::Test {
 public:
