@@ -289,7 +289,6 @@ bool RSTunnelLayerHelper::TryCommitPendingBuffer(const std::shared_ptr<RSSurface
     commitInfo.buffer = pendingBuffer.buffer;
     commitInfo.acquireFence = pendingBuffer.acquireFence;
     if (!CommitBuffer(commitInfo, composerClientManager, releaseFence)) {
-        tunnelRuntime.SetLayerInfo(0, TUNNEL_PROP_INVALID);
         tunnelRuntime.SetBuilding();
         if (fallbackOnFailure) {
             PreparePendingTunnelBufferForFallback(surfaceHandler, pendingBuffer);
@@ -407,6 +406,9 @@ RSLayerPtr RSTunnelLayerHelper::CreateTunnelLayer(const std::shared_ptr<RSSurfac
         return nullptr;
     }
     auto composerContext = composerClient->GetComposerContext();
+    if (!composerContext) {
+        return;
+    }
     RSLayerPtr layer = RSSurfaceLayer::Create(node->GetId(), composerContext);
     if (!layer) {
         return nullptr;
@@ -420,7 +422,7 @@ RSLayerPtr RSTunnelLayerHelper::CreateTunnelLayer(const std::shared_ptr<RSSurfac
     if (uniRsLayer) {
         uniBufferCount = uniRsLayer->GetBufferOwnerCount();
     }
-    if (uniBufferCount) {
+    if (uniBufferCount && layer->GetBuffer()) {
         uniBufferCount->InsertUniOnDrawSet(layer->GetRSLayerId(), layer->GetBuffer()->GetBufferId());
     }
     return layer;
