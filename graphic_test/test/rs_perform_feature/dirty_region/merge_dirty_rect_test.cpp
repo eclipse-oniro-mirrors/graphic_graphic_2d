@@ -27,14 +27,14 @@ using namespace testing::ext;
 
 namespace OHOS::Rosen {
 namespace {
-constexpr int DIRTY_REGION_SCREEN_WIDTH = 1200;
-constexpr int DIRTY_REGION_SCREEN_HEIGHT = 2000;
-constexpr int DEFAULT_TRANS_Y = 1000;
 constexpr uint32_t COLOR_YELLOW = 0xFFFFFF00;
 constexpr uint32_t COLOR_BLUE = 0xFF0000FF;
 constexpr uint32_t COLOR_RED = 0xFFFF0000;
 constexpr uint32_t COLOR_DKGRAY = 0xFF444444;
 constexpr uint32_t COLOR_CYAN = 0xFF00FFFF;
+constexpr int DEFAULT_TRANS_Y = 1000;
+constexpr int DIRTY_REGION_SCREEN_WIDTH = 1200;
+constexpr int DIRTY_REGION_SCREEN_HEIGHT = 2000;
 constexpr uint32_t SLEEP_TIME_FOR_PROXY = 1000000;
 const std::string TEST_IMG_PATH = "/data/local/tmp/dr_test.jpg";
 class DirtyRegionTest01 : public RSGraphicTest {

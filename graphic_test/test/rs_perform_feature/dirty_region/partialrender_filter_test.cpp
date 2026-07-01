@@ -179,7 +179,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter02)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -215,7 +216,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter03)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -252,7 +254,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter04)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -294,7 +297,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter05)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -336,7 +340,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter06)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -374,7 +379,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter07)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -412,7 +418,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter08)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -456,7 +463,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter09)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -500,7 +508,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter10)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -546,7 +555,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter11)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -592,7 +602,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter12)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -630,7 +641,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter13)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -668,7 +680,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter14)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -706,7 +719,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter15)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
@@ -744,7 +758,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter16)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(translateNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    translateNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }

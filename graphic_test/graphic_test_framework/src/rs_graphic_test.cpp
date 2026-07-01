@@ -179,6 +179,11 @@ void RSGraphicTest::TestCaseCapture(bool isScreenshot)
         ::testing::UnitTest::GetInstance()->current_test_info();
     const auto& extInfo = ::OHOS::Rosen::TestDefManager::Instance().GetTestInfo(
         testInfo->test_case_name(), testInfo->name());
+    if (extInfo == nullptr) {
+        LOGE("RSGraphicTest::TestCaseCapture no testinfo %{public}s-%{public}s",
+            testInfo->test_case_name(), testInfo->name());
+        return;
+    }
 
     bool useDisplayCapture = isScreenshot ||
         (captureScope_ == CaptureScope::FULL_DISPLAY) ||
