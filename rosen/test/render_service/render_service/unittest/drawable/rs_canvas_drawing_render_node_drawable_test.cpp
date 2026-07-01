@@ -1134,6 +1134,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, DrawCustomContentTest, TestSize.
     auto params = static_cast<RSCanvasDrawingRenderParams*>(drawable->renderParams_.get());
     params->SetBufferDraw(true);
     drawable->DrawCustomContent(canvas);
+    ASSERT_EQ(drawable->surface_, nullptr);
 }
  
 /**
@@ -1178,6 +1179,7 @@ HWTEST_F(RSCanvasDrawingRenderNodeDrawableTest, DrawCaptureImageBufferDrawTest, 
     drawable->DrawCaptureImage(canvas);
     drawable->image_ = std::make_shared<Drawing::Image>();
     drawable->DrawCaptureImage(canvas);
+    ASSERT_EQ(drawable->surface_, nullptr);
 }
  
 /**
