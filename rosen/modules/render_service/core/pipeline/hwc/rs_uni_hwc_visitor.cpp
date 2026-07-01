@@ -1044,7 +1044,7 @@ void RSUniHwcVisitor::CheckHwcNodeFilterIntersection(
             continue;
         }
         auto parentNode = hwcNode->GetParent().lock();
-        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id%" PRIu64" parentId%" PRIu64
+        RS_OPTIONAL_TRACE_FMT("hwc debug: name:%s id:%" PRIu64" parentId:%" PRIu64
             " disabled by filter rect, filterId:%" PRIu64, hwcNode->GetName().c_str(),
             hwcNode->GetId(), parentNode ? parentNode->GetId() : 0, filterNode->GetId());
         PrintHiperfLog(hwcNode.get(), "filter rect");
