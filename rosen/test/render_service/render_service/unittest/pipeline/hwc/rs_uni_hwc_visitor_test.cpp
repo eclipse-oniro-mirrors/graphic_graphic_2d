@@ -3773,6 +3773,7 @@ HWTEST_F(RSUniHwcVisitorTest, UpdateHwcNodeEnableByGlobalPosition_003, TestSize.
  */
  HWTEST_F(RSUniHwcVisitorTest, IsIntersectWithAbovedRectTest001, TestSize.Level1)
  {
+    auto rsUniRenderVisitor = std::make_shared<RSUniRenderVisitor>();
     std::vector<RectI> aboveBounds;
     RectI boundRect = {0, 0, 200, 200};
     aboveBounds.emplace_back(RectI{0, 0, 200, 200});
