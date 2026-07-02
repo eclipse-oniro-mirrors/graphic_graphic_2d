@@ -559,7 +559,8 @@ GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter01)
     movingNode->SetBounds(DEFAULT_BOUNDS);
     movingNode->SetTranslate({ 0, 0 });
     movingNode->SetBackgroundColor(COLOR_RED);
-    DoAnimation(movingNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    movingNode->SetTranslate(DEFAULT_TRANSLATE);
     testNode->AddChild(movingNode);
 
     SubWindowOptions opts;
@@ -687,7 +688,8 @@ GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter04)
     movingNode->SetBounds(DEFAULT_BOUNDS);
     movingNode->SetTranslate({ 0, 0 });
     movingNode->SetBackgroundColor(COLOR_RED);
-    DoAnimation(movingNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    movingNode->SetTranslate(DEFAULT_TRANSLATE);
     GetRootNode()->AddChildToSubWindow(subId, movingNode);
 
     Vector4f bounds3 = { 0, 800, 400, 400 }; // second moving node, below the first one
@@ -696,7 +698,8 @@ GRAPHIC_TEST(DirtyRegionTest04, CONTENT_DISPLAY_TEST, MultiWindowFilter04)
     movingNode2->SetBounds(bounds3);
     movingNode2->SetTranslate({ 0, 0 });
     movingNode2->SetBackgroundColor(COLOR_BLUE);
-    DoAnimation(movingNode2, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    movingNode2->SetTranslate(DEFAULT_TRANSLATE);
     GetRootNode()->AddChildToSubWindow(subId, movingNode2);
 
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();

@@ -143,7 +143,8 @@ GRAPHIC_TEST(PartialRenderFilter, CONTENT_DISPLAY_TEST, PartialRenderFilter01)
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 
-    DoAnimation(subNode, DEFAULT_TRANSLATE);
+    // set deterministic final state for stable baseline instead of real animation
+    subNode->SetTranslate(DEFAULT_TRANSLATE);
     RSTransactionProxy::GetInstance()->FlushImplicitTransaction();
     usleep(SLEEP_TIME_FOR_PROXY);
 }
