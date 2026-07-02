@@ -34,16 +34,11 @@ namespace {
 constexpr pid_t TEST_PID = 1234;
 constexpr pid_t TEST_PID_2 = 5678;
 constexpr pid_t TEST_PID_3 = 124435;
-constexpr uint64_t TEST_TIMESTAMP = 100;
-constexpr uint64_t TEST_TIMESTAMP_2 = 200;
 constexpr ScreenId TEST_SCREEN_ID = 100;
 constexpr ScreenId TEST_VIRTUAL_SCREEN_ID = 300;
 constexpr ScreenId TEST_ASSOCIATED_SCREEN_ID = 400;
 constexpr GroupId TEST_GROUP_ID = 1;
 constexpr GroupId TEST_GROUP_ID_2 = 2;
-
-RSMultiRenderProcessManager::ProcessToken TEST_TOKEN = {TEST_PID, TEST_TIMESTAMP};
-RSMultiRenderProcessManager::ProcessToken TEST_TOKEN_2 = {TEST_PID_2, TEST_TIMESTAMP_2};
 } // namespace
 
 class RSMultiRenderProcessManagerTest : public testing::Test {
