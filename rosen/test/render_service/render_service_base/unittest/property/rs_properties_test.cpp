@@ -4074,7 +4074,7 @@ HWTEST_F(RSPropertiesTest, SetOverlayNGShader002, TestSize.Level1)
 
     overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::AURORA_NOISE);
     properties.SetOverlayNGShader(overlayShader);
-    EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader)
+    EXPECT_EQ(properties.GetOverlayNGShader(), overlayShader);
 
     overlayShader = RSNGRenderShaderBase::Create(RSNGEffectType::FROSTED_GLASS_EFFECT);
     properties.SetOverlayNGShader(overlayShader);
