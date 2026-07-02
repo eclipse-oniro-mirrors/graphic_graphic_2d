@@ -1289,25 +1289,22 @@ HWTEST_F(RSJankStatsTest, UpdateJankFrameTestWithJankHistogram, TestSize.Level1)
     jankFrames.jankCount_ = {0, 0, 0, 0, 0, 0, 0, 0};
 
     jankFrames.isFirstFrame_ = true;
-    rsJankStats->rtEndTimeSteady_ = 15;
+    rsJankStats->rtEndTimeSteady_ = 400;
     rsJankStats->UpdateJankFrame(jankFrames, false, 60);
     EXPECT_EQ(jankFrames.jankCount_[0], 0);
 
     jankFrames.isFirstFrame_ = true;
     jankFrames.jankCount_ = {};
-    rsJankStats->rtEndTimeSteady_ = 15;
     rsJankStats->UpdateJankFrame(jankFrames, false, 60);
     EXPECT_EQ(jankFrames.jankCount_.size(), 0);
 
     jankFrames.isFirstFrame_ = false;
     jankFrames.jankCount_ = {};
-    rsJankStats->rtEndTimeSteady_ = 15;
     rsJankStats->UpdateJankFrame(jankFrames, false, 60);
     EXPECT_EQ(jankFrames.jankCount_.size(), 0);
 
     jankFrames.isFirstFrame_ = false;
     jankFrames.jankCount_ = {0, 0, 0, 0, 0, 0, 0, 0};
-    rsJankStats->rtEndTimeSteady_ = 15;
     rsJankStats->UpdateJankFrame(jankFrames, false, 60);
     EXPECT_EQ(jankFrames.jankCount_[0], 1);
 }
