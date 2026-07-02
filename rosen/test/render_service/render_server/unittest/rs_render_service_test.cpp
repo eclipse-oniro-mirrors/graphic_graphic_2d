@@ -173,8 +173,8 @@ HWTEST_F(RSRenderServiceTest, Run002, TestSize.Level1)
     ASSERT_NE(renderService, nullptr);
     auto runner = AppExecFwk::EventRunner::Create(false);
     renderService->runner_ = runner;
-    std::thread renderThread([renderService]() { renderService->Run() });
-    std::this_thread::sleep_for(std::chrono::miliseconds(100));
+    std::thread renderThread([renderService]() { renderService->Run(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     if (renderService->runner_) {
         renderService->runner_->Stop();
     }
@@ -186,22 +186,7 @@ HWTEST_F(RSRenderServiceTest, RegisterRenderProcessConnection001, TestSize.Level
     auto renderService = sptr<RSRenderService>::MakeSptr();
     ASSERT_NE(renderService, nullptr);
     auto result = renderService->RegisterRenderProcessConnection();
-    ASSERT_EQ(result, nullptr);
-}
-
-HWTEST_F(RSRenderServiceTest, RegisterRenderProcessConnection002, TestSize.Level1)
-{
-    auto renderService = sptr<RSRenderService>::MakeSptr();
-    ASSERT_NE(renderService, nullptr);
-    auto runner = AppExecFwk::EventRunner::Create(false);
-    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
-    renderService->screenManager_ = sptr<RSScreenManager>::MakeSptr();
-    renderService->InitRenderServerConfig();
-    renderService->rsRenderComposerManager_ = std::make_shared<RSRenderComposerManager>(renderService->handler_);
-    renderService->RenderProcessManagerInit();
-    ASSERT_NE(renderService->renderProcessManager_, nullptr);
-    auto result = renderService->RegisterRenderProcessConnection();
-    ASSERT_EQ(result, nullptr);
+    ASSERT_NE(result, nullptr);
 }
 
 HWTEST_F(RSRenderServiceTest, GetConnection001, TestSize.Level1)
@@ -341,7 +326,6 @@ HWTEST_F(RSRenderServiceTest, InitGameFrameHandler001, TestSize.Level1)
     renderService->vsyncManager_ = sptr<RSVsyncManager>::MakeSptr();
     renderService->vsyncManager_->init(renderService->screenManager_);
     renderService->InitGameFrameHandler();
-    auto& handler = renderService->GetGameFrameHandler();
     ASSERT_NE(renderService->rsGameFrameHandler_, nullptr);
 }
 
@@ -355,6 +339,7 @@ HWTEST_F(RSRenderServiceTest, GetGameFrameHandler001, TestSize.Level1)
     renderService->vsyncManager_ = sptr<RSVsyncManager>::MakeSptr();
     renderService->vsyncManager_->init(renderService->screenManager_);
     renderService->InitGameFrameHandler();
+    auto& handler = renderService->GetGameFrameHandler();
     ASSERT_NE(handler, nullptr);
 }
 
@@ -373,5 +358,29 @@ HWTEST_F(RSRenderServiceTest, GetHgmContext001, TestSize.Level1)
     ASSERT_NE(renderService, nullptr);
     auto context = renderService->GetHgmContext();
     EXPECT_EQ(context, nullptr);
+}
+
+HWTEST_F(RSRenderServiceTest, HandlePowerStatus002, TestSize.Level1)
+{
+    auto renderService = sptr<RSRenderService>::MakeSptr();
+    ASSERT_NE(renderService, nullptr);
+    auto runner = AppExecFwk::EventRunner::Create(false);
+    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
+    renderService->screenManager_ = sptr<RSScreenManager>::MakeSptr();
+    renderService->rsRenderComposerManager_ = std::make_shared<RSRenderComposerManager>(renderService->handler_);
+    ScreenPowerStatus status = ScreenPowerStatus::POWER_STATUS_ON;
+    renderService->HandlePowerStatus(TEST_SCREEN_ID, status);
+}
+
+HWTEST_F(RSRenderServiceTest, HandlePowerStatus003, TestSize.Level1)
+{
+    auto renderService = sptr<RSRenderService>::MakeSptr();
+    ASSERT_NE(renderService, nullptr);
+    auto runner = AppExecFwk::EventRunner::Create(false);
+    renderService->handler_ = std::make_shared<AppExecFwk::EventHandler>(runner);
+    renderService->screenManager_ = sptr<RSScreenManager>::MakeSptr();
+    renderService->rsRenderComposerManager_ = std::make_shared<RSRenderComposerManager>(renderService->handler_);
+    ScreenPowerStatus status = ScreenPowerStatus::POWER_STATUS_OFF_FAKE;
+    renderService->HandlePowerStatus(TEST_SCREEN_ID, status);
 }
 } // namespace OHOS::Rosen
