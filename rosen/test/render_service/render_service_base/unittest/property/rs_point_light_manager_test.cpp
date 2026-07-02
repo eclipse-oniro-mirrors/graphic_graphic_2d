@@ -576,7 +576,7 @@ HWTEST_F(RSPointLightManagerTest, CheckIlluminated003, TestSize.Level1)
 HWTEST_F(RSPointLightManagerTest, CheckIlluminated004, TestSize.Level1)
 {
     auto& instance = RSPointLightManager::Instance(0);
-    auto lightSourceNode = std::make_shared<RSRenderNode>(0);
+    auto lightSourceNode = std::make_shared<RSRenderNode>(1);
     auto illuminatedNode = std::make_shared<RSRenderNode>(0);
     illuminatedNode->isOnTheTree_ = true;
 
