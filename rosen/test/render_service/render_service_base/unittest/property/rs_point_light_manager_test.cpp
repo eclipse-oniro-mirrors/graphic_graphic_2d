@@ -568,6 +568,34 @@ HWTEST_F(RSPointLightManagerTest, CheckIlluminated003, TestSize.Level1)
 }
 
 /**
+ * @tc.name: CheckIlluminated004
+ * @tc.desc: test CheckIlluminated when light source is out of radius (isIlluminated false)
+ * @tc.type: FUNC
+ * @tc.require: issueI9RBVH
+ */
+HWTEST_F(RSPointLightManagerTest, CheckIlluminated004, TestSize.Level1)
+{
+    auto& instance = RSPointLightManager::Instance(0);
+    auto lightSourceNode = std::make_shared<RSRenderNode>(0);
+    auto illuminatedNode = std::make_shared<RSRenderNode>(0);
+    illuminatedNode->isOnTheTree_ = true;
+
+    lightSourceNode->GetMutableRenderProperties().GetEffect().lightSourcePtr_ = std::make_shared<RSLightSource>();
+    lightSourceNode->GetMutableRenderProperties().GetEffect().lightSourcePtr_->SetLightPosition(
+        Vector4f(100.0f, 100.0f, 1.0f, 0.0f));
+    illuminatedNode->GetMutableRenderProperties().GetEffect().illuminatedPtr_ = std::make_shared<RSIlluminated>();
+    illuminatedNode->GetMutableRenderProperties().boundsGeo_->width_ = 1.f;
+    illuminatedNode->GetMutableRenderProperties().boundsGeo_->height_ = 1.f;
+    lightSourceNode->GetMutableRenderProperties().boundsGeo_->width_ = 1.f;
+    lightSourceNode->GetMutableRenderProperties().boundsGeo_->height_ = 1.f;
+
+    instance->CheckIlluminated(lightSourceNode, illuminatedNode);
+    EXPECT_FALSE(illuminatedNode->IsDirty());
+    EXPECT_TRUE(illuminatedNode->GetMutableRenderProperties().GetIlluminated()
+        ->GetLightSourcesAndPosMap().empty());
+}
+
+/**
  * @tc.name: ChildHasVisibleIlluminatedTest001
  * @tc.desc: test results of ChildHasVisibleIlluminated
  * @tc.type:FUNC
