@@ -74,7 +74,13 @@ std::shared_ptr<RSUIDirector> RSUIDirector::Create(sptr<IRemoteObject> connectTo
 
 RSUIDirector::~RSUIDirector()
 {
+    auto uiContext = rsUIContext_;
     Destroy();
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    if (uiContext != nullptr) {
+        uiContext->OnDestroy();
+    }
+#endif
 }
 
 void RSUIDirector::Init(sptr<IRemoteObject>& connectToRenderRemote, std::shared_ptr<RSUIContext> rsUIContext)

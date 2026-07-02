@@ -321,6 +321,18 @@ void RSUIContext::UnblockUIThread()
     }
 }
 
+void RSUIContext::OnDestroy()
+{
+    if (!RSSystemProperties::GetHybridRenderCanvasEnabled() || modifiersDrawThread_ == nullptr) {
+        return;
+    }
+    auto self = shared_from_this();
+    // Critical: hold strong reference to RSUIContext in task to delay its destruction,
+    // ensuring all tasks in modifiersDrawThread_ complete and avoiding task loss.
+    modifiersDrawThread_->PostTask(
+        [self]() { RS_TRACE_NAME_FMT("RSUIContext::OnDestroy Token: %" PRIu64, self->GetToken()); });
+}
+
 CommitTransactionCallback RSUIContext::CreateCommitTransactionCallback()
 {
     modifiersDrawThread_->Start();
