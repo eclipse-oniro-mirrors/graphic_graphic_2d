@@ -245,6 +245,9 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
     int32_t updateTimes = 0;
     bool needUpdateCache = CheckIfNeedUpdateCache(params, updateTimes);
     params.SetNeedUpdateCache(needUpdateCache);
+    if (!needUpdateCache) {
+        ClearDrawingCacheContiUpdateTimeMap();
+    }
     int32_t continuousUpdateTimes = 0;
     {
         std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
@@ -525,7 +528,6 @@ void RSRenderNodeDrawable::DrawWithNodeGroupCache(Drawing::Canvas& canvas, const
         DrawCachedImage(*curCanvas, params);
         DrawAfterCacheWithProperty(canvas, params.GetBounds());
     }
-    ClearDrawingCacheContiUpdateTimeMap();
     UpdateCacheInfoForDfx(canvas, params.GetBounds(), params.GetId());
 }
 

@@ -861,6 +861,91 @@ HWTEST_F(RSRenderNodeDrawableTest, ClearDrawingCacheContiUpdateTimeMapTest, Test
 }
 
 /**
+ * @tc.name: DrawWithNodeGroupCachePreserveContiUpdateTest
+ * @tc.desc: Verify DrawWithNodeGroupCache does not clear drawingCacheContinuousUpdateTimeMap_
+ * @tc.type: FUNC
+ * @tc.require: issueIAVPAJ
+ */
+HWTEST_F(RSRenderNodeDrawableTest, DrawWithNodeGroupCachePreserveContiUpdateTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    Drawing::Canvas canvas;
+    RSRenderParams params(RSRenderNodeDrawableTest::id);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_[drawable->nodeId_] = 3;
+    drawable->SetRenderGroupDrawableCacheType(DrawableCacheType::CONTENT);
+    drawable->CheckCacheTypeAndDraw(canvas, params);
+    EXPECT_EQ(RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.count(drawable->nodeId_), 1);
+    EXPECT_EQ(RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_[drawable->nodeId_], 3);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.erase(drawable->nodeId_);
+}
+
+/**
+ * @tc.name: GenerateCacheIfNeedClearContiUpdateWhenDisabledTest
+ * @tc.desc: Verify GenerateCacheIfNeed clears continuous update map when cache type is DISABLED_CACHE
+ * @tc.type: FUNC
+ * @tc.require: issueIAVPAJ
+ */
+HWTEST_F(RSRenderNodeDrawableTest, GenerateCacheIfNeedClearContiUpdateWhenDisabledTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    Drawing::Canvas canvas;
+    RSRenderParams params(RSRenderNodeDrawableTest::id);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_[drawable->nodeId_] = 3;
+    params.drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
+    drawable->GenerateCacheIfNeed(canvas, params);
+    EXPECT_EQ(RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.count(drawable->nodeId_), 0);
+}
+
+/**
+ * @tc.name: ContinuousUpdateDisableCacheTest
+ * @tc.desc: Verify cache is disabled when continuous update count exceeds DRAWING_CACHE_MAX_UPDATE_TIME
+ * @tc.type: FUNC
+ * @tc.require: issueIAVPAJ
+ */
+HWTEST_F(RSRenderNodeDrawableTest, ContinuousUpdateDisableCacheTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    Drawing::Canvas canvas;
+    RSRenderParams params(RSRenderNodeDrawableTest::id);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_[drawable->nodeId_] = 4;
+    drawable->SetRenderGroupCachedSurface(std::make_shared<Drawing::Surface>());
+    params.drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
+    params.SetCacheSize({ 100.0f, 100.0f });
+    drawable->GenerateCacheIfNeed(canvas, params);
+    EXPECT_EQ(params.GetDrawingCacheType(), RSDrawingCacheType::DISABLED_CACHE);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.erase(drawable->nodeId_);
+    drawable->drawingCacheUpdateTimeMap_.erase(drawable->nodeId_);
+}
+
+/**
+ * @tc.name: ContinuousUpdateNotDisableCacheBelowThresholdTest
+ * @tc.desc: Verify cache is not disabled when continuous update count is at threshold (not exceeding)
+ * @tc.type: FUNC
+ * @tc.require: issueIAVPAJ
+ */
+HWTEST_F(RSRenderNodeDrawableTest, ContinuousUpdateNotDisableCacheBelowThresholdTest, TestSize.Level1)
+{
+    auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
+    Drawing::Canvas canvas;
+    RSRenderParams params(RSRenderNodeDrawableTest::id);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_[drawable->nodeId_] = 3;
+    drawable->SetRenderGroupCachedSurface(std::make_shared<Drawing::Surface>());
+    params.drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
+    params.SetCacheSize({ 100.0f, 100.0f });
+    drawable->GenerateCacheIfNeed(canvas, params);
+    EXPECT_EQ(params.GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
+
+    RSRenderNodeDrawable::drawingCacheContinuousUpdateTimeMap_.erase(drawable->nodeId_);
+    drawable->drawingCacheUpdateTimeMap_.erase(drawable->nodeId_);
+}
+
+/**
  * @tc.name: UpdateCurRenderGroupCacheRootFilterStateTest
  * @tc.desc: Test If UpdateCurRenderGroupCacheRootFilterState Can Run
  * @tc.type: FUNC
