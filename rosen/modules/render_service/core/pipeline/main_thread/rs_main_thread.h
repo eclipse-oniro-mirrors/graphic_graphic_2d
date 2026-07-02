@@ -402,7 +402,7 @@ public:
     uint64_t GetRealTimeOffsetOfDvsync(int64_t time, int64_t& preTime);
 
     bool IsFoldScreenSwitching() const;
-    bool IsMultiDisplay() const;
+    bool IsMultiDisplay();
 
     bool GetMultiDisplayChange() const
     {
