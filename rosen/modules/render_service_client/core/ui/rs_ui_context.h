@@ -263,6 +263,7 @@ private:
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     CommitTransactionCallback CreateCommitTransactionCallback();
     void UnblockUIThread();
+    void OnDestroy();
 
     std::shared_ptr<RSCanvasModifiersDrawAgent> GetCanvasModifiersDrawAgent()
     {
