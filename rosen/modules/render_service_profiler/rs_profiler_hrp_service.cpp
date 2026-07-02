@@ -23,9 +23,9 @@
 
 namespace OHOS::Rosen {
 
-static RetCodeHrpService ValidateOpenFlags(uint32_t flags) 
+static RetCodeHrpService ValidateOpenFlags(uint32_t flags)
 {
-    constexpr uint32_t allowedFlags = static_cast<uint32_t>(O_ACCMODE) | 
+    constexpr uint32_t allowedFlags = static_cast<uint32_t>(O_ACCMODE) |
                                       static_cast<uint32_t>(O_CREAT);
                                       
     if (flags & ~allowedFlags) {
@@ -34,8 +34,8 @@ static RetCodeHrpService ValidateOpenFlags(uint32_t flags)
     
     uint32_t accessMode = flags & static_cast<uint32_t>(O_ACCMODE);
     
-    if (accessMode != static_cast<uint32_t>(O_RDONLY) && 
-        accessMode != static_cast<uint32_t>(O_WRONLY) && 
+    if (accessMode != static_cast<uint32_t>(O_RDONLY) &&
+        accessMode != static_cast<uint32_t>(O_WRONLY) &&
         accessMode != static_cast<uint32_t>(O_RDWR)) {
         return RET_HRP_SERVICE_ERR_INVALID_PARAM;
     }
