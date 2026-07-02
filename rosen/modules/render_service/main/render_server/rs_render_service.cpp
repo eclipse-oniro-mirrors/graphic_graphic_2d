@@ -277,6 +277,12 @@ void RSRenderService::Run()
 
 sptr<IRemoteObject> RSRenderService::RegisterRenderProcessConnection()
 {
+    pid_t callingPid = GetCallingPid();
+    if (!renderProcessManager_->IsValidRenderProcessPid(callingPid)) {
+        RS_LOGE("%{public}s: Invalid render_process pid %{public}u, not forked by render_service",
+            __func__, callingPid);
+        return nullptr;
+    }
     auto renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(*this);
     auto renderProcessManagerAgent = sptr<RSRenderProcessManagerAgent>::MakeSptr(renderProcessManager_);
     auto screenManagerAgent = sptr<RSScreenManagerAgent>::MakeSptr(screenManager_);

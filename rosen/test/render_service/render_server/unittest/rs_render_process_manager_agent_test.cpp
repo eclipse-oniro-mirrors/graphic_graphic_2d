@@ -23,6 +23,7 @@
 #include "rs_render_composer_agent.h"
 #include "rs_render_composer_manager.h"
 #include "rs_render_process_manager_agent.h"
+#include "rs_render_multi_process_manager.h"
 #include "rs_render_single_process_manager.h"
 #include "rs_render_to_composer_connection.h"
 #include "screen_manager/screen_types.h"
@@ -123,6 +124,8 @@ public:
     {
         return connectToRenderConnection_;
     }
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
+
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;

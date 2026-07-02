@@ -22,11 +22,17 @@
 #include "parameters.h"
 #include "pipeline/render_thread/rs_uni_render_thread.h"
 #include "rs_render_process_manager.h"
+#include "rs_render_multi_process_manager.h"
 #include "rs_render_service.h"
 #include "rs_render_to_composer_connection_proxy.h"
 #include "screen_manager/rs_screen_manager.h"
 #include "screen_manager/public/rs_screen_manager_agent.h"
 #include "transaction/rs_render_to_service_connection.h"
+#include "render_server/transaction/zidl/rs_irender_to_service_connection.h"
+#include "composer/composer_client/connection/rs_composer_to_render_connection.h"
+#include "render_process/transaction/rs_service_to_render_connection.h"
+#include "transaction/rs_connect_to_render_process.h"
+#include "core/rs_render_pipeline_agent.h"
 
 using namespace testing;
 using namespace testing::ext;
@@ -35,6 +41,8 @@ namespace OHOS::Rosen {
 namespace {
 RSRenderService renderService;
 sptr<RSRenderToServiceConnection> g_rsConn = nullptr;
+sptr<RSServiceToRenderConnection> g_serviceToRenderConnection = nullptr;
+sptr<RSConnectToRenderProcess> g_connectToRenderConnection = nullptr;
 }
 
 class RSRenderToServiceConnectionTest : public testing::Test {
@@ -48,6 +56,12 @@ public:
 void RSRenderToServiceConnectionTest::SetUpTestCase()
 {
     OHOS::system::SetParameter("bootevent.samgr.ready", "false");
+    renderService.renderModeConfig_ = RSRenderModeConfigParser().BuildRenderConfig();
+    renderService.renderProcessManager_ = sptr<RSMultiRenderProcessManager>::MakeSptr(renderService);
+    auto multiMgr = static_cast<RSMultiRenderProcessManager*>(renderService.renderProcessManager_.GetRefPtr());
+    pid_t testPid = getpid();
+    ProcessToken testToken = {testPid, 0};
+    multiMgr->renderProcessReadyPromise_[testToken];
     sptr<RSRenderServiceAgent> renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
     sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent =
         sptr<RSRenderProcessManagerAgent>::MakeSptr(renderService.renderProcessManager_);
@@ -55,6 +69,10 @@ void RSRenderToServiceConnectionTest::SetUpTestCase()
     sptr<RSScreenManagerAgent> screenManagerAgent = sptr<RSScreenManagerAgent>::MakeSptr(rsScreenManager);
     g_rsConn = sptr<RSRenderToServiceConnection>::MakeSptr(renderServiceAgent,
         renderProcessManagerAgent, screenManagerAgent);
+    
+    auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(renderService.renderPipeline_);
+    g_serviceToRenderConnection = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
+    g_connectToRenderConnection = sptr<RSConnectToRenderProcess>::MakeSptr(renderPipelineAgent);
 }
 void RSRenderToServiceConnectionTest::TearDownTestCase() {}
 void RSRenderToServiceConnectionTest::SetUp() {}
