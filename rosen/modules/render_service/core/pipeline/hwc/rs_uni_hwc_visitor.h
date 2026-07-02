@@ -34,9 +34,9 @@ public:
 
     Color FindAppBackgroundColor(RSSurfaceRenderNode& node);
     bool CheckNodeOcclusion(const std::shared_ptr<RSRenderNode>& node,
-        const RectI& nodeAbsRect, Color& nodeBgColor);
+        const RectI& nodeAbsRect, Color& nodeBgColor, bool isSplitEnabled = false);
     bool CheckSubTreeOcclusion(const std::shared_ptr<RSRenderNode>& branchNode,
-        const RectI& nodeAbsRect, std::stack<Color>& nodeBgColor);
+        const RectI& nodeAbsRect, std::stack<Color>& nodeBgColor, bool isSplitEnabled = false);
     void ProcessSolidLayerDisabled(RSSurfaceRenderNode& node);
     void ProcessSolidLayerEnabled(RSSurfaceRenderNode& node);
 
@@ -113,9 +113,6 @@ private:
     // Solid Layer
     bool IsTargetSolidLayer(RSSurfaceRenderNode& node);
     bool IsScaleSceneHwcEnabled(RSSurfaceRenderNode& node);
-    bool IsSurfaceInsideRect(const RectI& innerRect, const RectI& outerRect,
-        int bottomTolerance, bool enableTolerance) const;
-    bool IsSplitEnabled() const;
 
     // Sourcetuning
     bool IsTargetSourceTuning(RSSurfaceRenderNode& node);

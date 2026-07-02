@@ -542,7 +542,7 @@ void RSMainThread::Init(const std::shared_ptr<AppExecFwk::EventHandler>& handler
         ROSEN_TRACE_BEGIN(HITRACE_TAG_GRAPHIC_AGP, "RSMainThread::DoComposition: " + std::to_string(curTime_));
         ProcessDelegateCompositeCommand();
         ConsumeAndUpdateAllNodes();
-        RSLayerSplitManager::GetInstance()->Reset(vsyncId_);
+        RSLayerSplitManager::GetInstance()->Reset();
         ClearNeedDropframePidList();
         if (renderThreadParams_) {
             renderThreadParams_->ClearWhiteListRect();
@@ -1682,6 +1682,11 @@ void RSMainThread::ProcessCommandForUniRender()
         CheckAndUpdateTransactionIndex(transactionDataEffective, transactionFlags);
     }
     DelayedSingleton<RSFrameRateVote>::GetInstance()->SetTransactionFlags(transactionFlags);
+    bool delegateModeFlag = doDirectComposition_ ? true : false;
+    bool splitLayerFlag = doDirectComposition_ ? true : false;
+    if (transactionDataEffective != nullptr && !transactionDataEffective->empty()) {
+        delegateModeFlag &= UpdateDoDirectCompositionFlagForDelegateMode(transactionDataEffective);
+    }
     RS_TRACE_NAME("RSMainThread::ProcessCommandUni" + transactionFlags);
     if (transactionFlags != "") {
         transactionFlags_ = transactionFlags;
@@ -1702,17 +1707,21 @@ void RSMainThread::ProcessCommandForUniRender()
                 } else {
                     ProcessRSTransactionData(rsTransaction, rsTransactionElem.first);
                 }
-                UpdateDoDirectCompositionFlagForDelegateMode(rsTransaction);
+                delegateModeFlag &= UpdateDoDirectCompositionFlagForDelegateMode(rsTransaction);
+                splitLayerFlag &= RSLayerSplitManager::GetInstance()->CheckOpIncNodeFromCommand(rsTransaction);
             }
         }
+
+        splitLayerFlag &= RSLayerSplitManager::GetInstance()->CheckDoDirectCompositionWithSplitLayer();
+        if (!delegateModeFlag && !splitLayerFlag) {
+            doDirectComposition_ = false;
+            RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by delegateMode or splitLayer not enabled and "
+                "transactionDataEffective not empty");
+        }
+
         if (isWebCommandOnly_ && doDirectComposition_) {
             transactionDataEffective->clear();
         } else {
-            if (!RSLayerSplitManager::GetInstance()->CheckDoDirectCompositionWithSplitLayer(
-                transactionDataEffective, doDirectComposition_)) {
-                doDirectComposition_ = false;
-                RS_OPTIONAL_TRACE_NAME("hwc debug: disable directComposition by transactionDataEffective not empty");
-            }
             RSBackgroundThread::Instance().PostTask([transactionDataEffective]() {
                 RS_TRACE_NAME("RSMainThread::ProcessCommandForUniRender transactionDataEffective clear");
                 transactionDataEffective->clear();
@@ -1770,31 +1779,34 @@ void RSMainThread::ProcessCommandForUniRender()
     });
 }
 
-void RSMainThread::UpdateDoDirectCompositionFlagForDelegateMode(
+bool RSMainThread::UpdateDoDirectCompositionFlagForDelegateMode(
     std::shared_ptr<TransactionDataMap>& transactionDataEffective)
 {
 #ifndef ROSEN_CROSS_PLATFORM
     isWebCommandOnly_ =
         RsDelegateCompositeCallbackManager::GetInstance().CheckIsDelegateCompositeOnly(transactionDataEffective);
-    if (isWebCommandOnly_ && !doDirectComposition_) {
-        doDirectComposition_ = true;
-    }
+    return isWebCommandOnly_;
 #endif
+    return false;
 }
 
-void RSMainThread::UpdateDoDirectCompositionFlagForDelegateMode(std::unique_ptr<RSTransactionData>& transactionData)
+bool RSMainThread::UpdateDoDirectCompositionFlagForDelegateMode(std::unique_ptr<RSTransactionData>& transactionData)
 {
 #ifndef ROSEN_CROSS_PLATFORM
-    if (doDirectComposition_ && transactionData) {
+    if (!isWebCommandOnly_) {
+        return false;
+    }
+    if (transactionData) {
         if (!RsDelegateCompositeCallbackManager::GetInstance().CheckSurfaceTransactionIdentity(
             transactionData->GetSendingPid(), transactionData->GetSendingTid())) {
-            doDirectComposition_ = false;
             RS_OPTIONAL_TRACE_FMT("disable doDirectComposition, %u %u",
                 transactionData->GetSendingPid(), transactionData->GetSendingTid());
-            isWebCommandOnly_ = false;
+            return false;
         }
+        return true;
     }
 #endif
+    return false;
 }
 
 void RSMainThread::ProcessDelegateCompositeCommand()
