@@ -880,6 +880,10 @@ ohos_source_set("render_service_base_src") {
   subsystem_name = "graphic"
 }
 
+config("render_service_base_all_deps_config") {
+  include_dirs = [ "include" ]
+}
+
 config("render_service_base_link_config") {
   if (is_ohos && is_clang && (target_cpu == "arm" || target_cpu == "arm64")) {
     ldflags = [
