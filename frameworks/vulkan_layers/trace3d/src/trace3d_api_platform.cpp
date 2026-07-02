@@ -35,7 +35,7 @@ trace3d::api::RetCodePlatform PlatformHrpServiceOpenFile(
     } else if (flags & trace3d::api::HRP_SERVICE_FILE_FLAG_WRONLY) {
         flagsFiltered = static_cast<uint32_t>(O_WRONLY);
     } else if (flags & trace3d::api::HRP_SERVICE_FILE_FLAG_RDONLY) {
-        flagsFiltered = static_cast<uint32_t>(O_RDONLY); 
+        flagsFiltered = static_cast<uint32_t>(O_RDONLY);
     } else {
         return trace3d::api::RET_PLATFORM_ERR_INVALID_PARAM;
     }
