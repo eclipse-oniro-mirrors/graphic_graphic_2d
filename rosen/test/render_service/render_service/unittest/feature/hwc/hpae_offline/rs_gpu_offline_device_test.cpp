@@ -79,7 +79,7 @@ sptr<SurfaceBuffer> RSGPUOfflineDeviceTest::CreateSurfaceBuffer(int32_t width, i
 }
 
 void RSGPUOfflineDeviceTest::SetRSSurfaceHandlerBuffer(sptr<SurfaceBuffer> &surfaceBuffer,
-        std::shared_ptr<RSSurfaceHandler> surfaceHandler)
+    std::shared_ptr<RSSurfaceHandler> surfaceHandler)
 {
     surfaceBuffer->SetMetadata(ATTRKEY_HDR_STATIC_METADATA, g_hdrStatucMetadataVec);
     sptr<SyncFence> fence = SyncFence::InvalidFence();
