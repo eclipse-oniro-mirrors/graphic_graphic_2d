@@ -29,7 +29,7 @@
 #include "platform/common/rs_log.h"
 #include "rs_composer_client_manager.h"
 #include "rs_trace.h"
-#include "rs_optional_trace.h"
+#include "common/rs_optional_trace.h"
 
 namespace OHOS {
 namespace Rosen {
