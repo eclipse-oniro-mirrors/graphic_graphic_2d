@@ -33,15 +33,15 @@
 
 namespace OHOS {
 namespace Rosen {
-class ProcessToken {
+class ProcessUniqueId {
 public:
-    ProcessToken(pid_t pid, uint64_t timeStamp) : pid_(pid), timestamp_(timeStamp) {}
-    bool operator==(const ProcessToken& other) const
+    ProcessUniqueId(pid_t pid, uint64_t timeStamp) : pid_(pid), timestamp_(timeStamp) {}
+    bool operator==(const ProcessUniqueId& other) const
     {
         return GetPid() == other.GetPid() && GetTimestamp() == other.GetTimestamp();
     }
     struct Hash {
-        size_t operator()(const ProcessToken& token) const
+        size_t operator()(const ProcessUniqueId& token) const
         {
             return std::hash<pid_t>()(token.GetPid()) ^ (std::hash<uint64_t>()(token.GetTimestamp()) << 1);
         }
@@ -86,37 +86,37 @@ public:
 
 private:
 
-    sptr<IRemoteObject> HandleExistingGroup(ProcessToken token, ScreenId screenId,
+    sptr<IRemoteObject> HandleExistingGroup(ProcessUniqueId token, ScreenId screenId,
         const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property);
     sptr<IRemoteObject> HandleNewGroup(GroupId groupId, ScreenId screenId,
         const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property);
     GroupId GetGroupIdByScreenId(ScreenId screenId) const;
     std::optional<GroupId> CheckGroupIdByScreenId(ScreenId screenId) const;
 
-    std::optional<ProcessToken> GetRenderProcessTokenByGroupId(GroupId groupId) const;
-    std::optional<ProcessToken> GetRenderProcessTokenByGroupIdLocked(GroupId groupId) const;
-    void UpdateGroupIdToRenderProcessToken(GroupId groupId, ProcessToken token);
-    void UpdateGroupIdToRenderProcessTokenLocked(GroupId groupId, ProcessToken token);
-    void RemoveGroupIdByRenderProcessToken(ProcessToken token);
-    void RemoveGroupIdByRenderProcessTokenLocked(ProcessToken token);
+    std::optional<ProcessUniqueId> GetRenderProcessUniqueIdByGroupId(GroupId groupId) const;
+    std::optional<ProcessUniqueId> GetRenderProcessUniqueIdByGroupIdLocked(GroupId groupId) const;
+    void UpdateGroupIdToRenderProcessUniqueId(GroupId groupId, ProcessUniqueId token);
+    void UpdateGroupIdToRenderProcessUniqueIdLocked(GroupId groupId, ProcessUniqueId token);
+    void RemoveGroupIdByRenderProcessUniqueId(ProcessUniqueId token);
+    void RemoveGroupIdByRenderProcessUniqueIdLocked(ProcessUniqueId token);
 
-    std::optional<ProcessToken> GetValidRenderProcessTokenByPid(pid_t pid) const;
-    std::optional<ProcessToken> GetValidRenderProcessTokenByPidLocked(pid_t pid) const;
+    std::optional<ProcessUniqueId> GetValidRenderProcessUniqueIdByPid(pid_t pid) const;
+    std::optional<ProcessUniqueId> GetValidRenderProcessUniqueIdByPidLocked(pid_t pid) const;
 
-    // GetServiceToRenderConnByToken is with lock and returns nullptr when no connection is found for the given token
-    sptr<RSIServiceToRenderConnection> GetServiceToRenderConnByToken(ProcessToken token) const;
-    // GotServiceToRenderConnByToken is with lock and throws std::out_of_range when no connection is found
-    sptr<RSIServiceToRenderConnection> GotServiceToRenderConnByToken(ProcessToken token) const;
-    // GetServiceToRenderConnByTokenLocked is without lock and returns nullptr when no connection is found
-    sptr<RSIServiceToRenderConnection> GetServiceToRenderConnByTokenLocked(ProcessToken token) const;
+    // GetServiceToRenderConnByUniqueId is with lock and returns nullptr when no connection is found for the given token
+    sptr<RSIServiceToRenderConnection> GetServiceToRenderConnByUniqueId(ProcessUniqueId token) const;
+    // GotServiceToRenderConnByUniqueId is with lock and throws std::out_of_range when no connection is found
+    sptr<RSIServiceToRenderConnection> GotServiceToRenderConnByUniqueId(ProcessUniqueId token) const;
+    // GetServiceToRenderConnByUniqueIdLocked is without lock and returns nullptr when no connection is found
+    sptr<RSIServiceToRenderConnection> GetServiceToRenderConnByUniqueIdLocked(ProcessUniqueId token) const;
 
-    sptr<RSIConnectToRenderProcess> GetConnectToRenderConnByToken(ProcessToken token) const;
-    sptr<RSIConnectToRenderProcess> GotConnectToRenderConnByToken(ProcessToken token) const;
-    sptr<RSIConnectToRenderProcess> GetConnectToRenderConnByTokenLocked(ProcessToken token) const;
+    sptr<RSIConnectToRenderProcess> GetConnectToRenderConnByUniqueId(ProcessUniqueId token) const;
+    sptr<RSIConnectToRenderProcess> GotConnectToRenderConnByUniqueId(ProcessUniqueId token) const;
+    sptr<RSIConnectToRenderProcess> GetConnectToRenderConnByUniqueIdLocked(ProcessUniqueId token) const;
 
-    sptr<IRSComposerToRenderConnection> GotComposerToRenderConnByToken(ProcessToken token) const;
-    sptr<IRSComposerToRenderConnection> GetComposerToRenderConnByToken(ProcessToken token) const;
-    sptr<IRSComposerToRenderConnection> GetComposerToRenderConnByTokenLocked(ProcessToken token) const;
+    sptr<IRSComposerToRenderConnection> GotComposerToRenderConnByUniqueId(ProcessUniqueId token) const;
+    sptr<IRSComposerToRenderConnection> GetComposerToRenderConnByUniqueId(ProcessUniqueId token) const;
+    sptr<IRSComposerToRenderConnection> GetComposerToRenderConnByUniqueIdLocked(ProcessUniqueId token) const;
 
     ScreenId InsertVirtualToPhysicalScreenMap(ScreenId screenId, ScreenId associatedScreenId);
     std::optional<ScreenId> DeleteVirtualToPhysicalScreenMap(ScreenId id);
@@ -124,45 +124,45 @@ private:
 
     class RenderProcessDeathRecipient : public IRemoteObject::DeathRecipient {
     public:
-        explicit RenderProcessDeathRecipient(ProcessToken token, wptr<RSMultiRenderProcessManager> manager)
+        explicit RenderProcessDeathRecipient(ProcessUniqueId token, wptr<RSMultiRenderProcessManager> manager)
             : token_(token), manager_(manager) {}
         ~RenderProcessDeathRecipient() noexcept override = default;
         void OnRemoteDied(const wptr<IRemoteObject>& token) override;
 
     private:
-        ProcessToken token_;
+        ProcessUniqueId token_;
         wptr<RSMultiRenderProcessManager> manager_;
     };
 
-    void RegisterDeathRecipient(ProcessToken token, const sptr<IRemoteObject>& binderObject);
-    void RegisterDeathRecipientLocked(ProcessToken token, const sptr<IRemoteObject>& binderObject);
-    void UnregisterDeathRecipient(ProcessToken token);
-    void UnregisterDeathRecipientLocked(ProcessToken token);
-    void HandleRenderProcessDeath(ProcessToken token);
-    std::unordered_map<ProcessToken, sptr<RenderProcessDeathRecipient>, ProcessToken::Hash> deathRecipients_;
+    void RegisterDeathRecipient(ProcessUniqueId token, const sptr<IRemoteObject>& binderObject);
+    void RegisterDeathRecipientLocked(ProcessUniqueId token, const sptr<IRemoteObject>& binderObject);
+    void UnregisterDeathRecipient(ProcessUniqueId token);
+    void UnregisterDeathRecipientLocked(ProcessUniqueId token);
+    void HandleRenderProcessDeath(ProcessUniqueId token);
+    std::unordered_map<ProcessUniqueId, sptr<RenderProcessDeathRecipient>, ProcessUniqueId::Hash> deathRecipients_;
 
-    void AddValidRenderProcessToken(ProcessToken token);
-    void AddValidRenderProcessTokenLocked(ProcessToken token);
-    void RemoveValidRenderProcessToken(ProcessToken token);
-    void RemoveValidRenderProcessTokenLocked(ProcessToken token);
-    bool IsValidRenderProcessTokenLocked(ProcessToken token) const;
+    void AddValidRenderProcessUniqueId(ProcessUniqueId token);
+    void AddValidRenderProcessUniqueIdLocked(ProcessUniqueId token);
+    void RemoveValidRenderProcessUniqueId(ProcessUniqueId token);
+    void RemoveValidRenderProcessUniqueIdLocked(ProcessUniqueId token);
+    bool IsValidRenderProcessUniqueIdLocked(ProcessUniqueId token) const;
 
-    void AddScreenOutputToProcess(ProcessToken token, ScreenId screenId, const std::shared_ptr<HdiOutput>& output);
-    void AddScreenOutputToProcessLocked(ProcessToken token, ScreenId screenId,
+    void AddScreenOutputToProcess(ProcessUniqueId token, ScreenId screenId, const std::shared_ptr<HdiOutput>& output);
+    void AddScreenOutputToProcessLocked(ProcessUniqueId token, ScreenId screenId,
         const std::shared_ptr<HdiOutput>& output);
-    void RemoveScreenOutputFromProcess(ProcessToken token, ScreenId screenId);
+    void RemoveScreenOutputFromProcess(ProcessUniqueId token, ScreenId screenId);
 
     mutable std::mutex mutex_;
     mutable std::condition_variable validPidCv_;
-    std::unordered_set<ProcessToken, ProcessToken::Hash> validRenderProcessTokens_;
-    std::unordered_map<GroupId, ProcessToken> groupIdToRenderProcessToken_;
-    std::unordered_map<ProcessToken, std::promise<bool>, ProcessToken::Hash> renderProcessReadyPromises_;
-    std::unordered_map<ProcessToken, sptr<IRSComposerToRenderConnection>, ProcessToken::Hash>
+    std::unordered_set<ProcessUniqueId, ProcessUniqueId::Hash> validRenderProcessUniqueIds_;
+    std::unordered_map<GroupId, ProcessUniqueId> groupIdToRenderProcessUniqueId_;
+    std::unordered_map<ProcessUniqueId, std::promise<bool>, ProcessUniqueId::Hash> renderProcessReadyPromises_;
+    std::unordered_map<ProcessUniqueId, sptr<IRSComposerToRenderConnection>, ProcessUniqueId::Hash>
         composerToRenderConnections_;
-    std::unordered_map<ProcessToken, sptr<RSIServiceToRenderConnection>, ProcessToken::Hash>
+    std::unordered_map<ProcessUniqueId, sptr<RSIServiceToRenderConnection>, ProcessUniqueId::Hash>
         serviceToRenderConnections_;
-    std::unordered_map<ProcessToken, sptr<RSIConnectToRenderProcess>, ProcessToken::Hash> connectToRenderConnections_;
-    std::unordered_map<ProcessToken, std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>>, ProcessToken::Hash>
+    std::unordered_map<ProcessUniqueId, sptr<RSIConnectToRenderProcess>, ProcessUniqueId::Hash> connectToRenderConnections_;
+    std::unordered_map<ProcessUniqueId, std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>>, ProcessUniqueId::Hash>
         processToScreenOutputMap_;
     std::function<void(std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>>&)> renderProcessDeathCallback_;
 
@@ -173,7 +173,7 @@ private:
         ScreenId screenId = INVALID_SCREEN_ID;
         sptr<RSScreenProperty> property = nullptr;
     };
-    std::unordered_map<ProcessToken, PendingScreenConnectInfo, ProcessToken::Hash> pendingScreenConnectInfos_;
+    std::unordered_map<ProcessUniqueId, PendingScreenConnectInfo, ProcessUniqueId::Hash> pendingScreenConnectInfos_;
 
     const std::shared_ptr<RSIpcPersistenceManager> ipcPersistenceManager_;
 

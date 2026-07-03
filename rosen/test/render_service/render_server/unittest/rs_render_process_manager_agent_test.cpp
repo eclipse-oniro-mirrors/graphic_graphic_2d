@@ -164,8 +164,8 @@ void RSRenderProcessManagerAgentTest::TearDown() {}
 HWTEST_F(RSRenderProcessManagerAgentTest, GetServiceToRenderConnTest, TestSize.Level1)
 {
     ScreenId screenId = 1;
-    ASSERT_TRUE(g_rsManager->GetServiceToRenderConn(screenId));
-    ASSERT_FALSE(g_rsManager->GetServiceToRenderConns().empty());
+    ASSERT_TRUE(renderService_.renderProcessManager_->GetServiceToRenderConn(screenId));
+    ASSERT_FALSE(renderService_.renderProcessManager_->GetServiceToRenderConns().empty());
     ASSERT_TRUE(g_rsManager);
 }
 } // namespace OHOS::Rosen

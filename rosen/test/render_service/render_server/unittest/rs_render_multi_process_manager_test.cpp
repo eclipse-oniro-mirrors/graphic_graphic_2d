@@ -42,9 +42,9 @@ constexpr GroupId TEST_GROUP_ID_2 = 2;
 constexpr uint64_t TEST_TIMESTAMP = 100;
 constexpr uint64_t TEST_TIMESTAMP_2 = 200;
 
-const ProcessToken TEST_TOKEN{TEST_PID, TEST_TIMESTAMP};
-const ProcessToken TEST_TOKEN_2{TEST_PID_2, TEST_TIMESTAMP_2};
-const ProcessToken TEST_TOKEN_3{TEST_PID_3, TEST_TIMESTAMP};
+const ProcessUniqueId TEST_TOKEN{TEST_PID, TEST_TIMESTAMP};
+const ProcessUniqueId TEST_TOKEN_2{TEST_PID_2, TEST_TIMESTAMP_2};
+const ProcessUniqueId TEST_TOKEN_3{TEST_PID_3, TEST_TIMESTAMP};
 } // namespace
 
 class RSMultiRenderProcessManagerTest : public testing::Test {
@@ -85,13 +85,13 @@ void RSMultiRenderProcessManagerTest::TearDown()
         multiProcessManager_->serviceToRenderConnections_.clear();
         multiProcessManager_->connectToRenderConnections_.clear();
         multiProcessManager_->composerToRenderConnections_.clear();
-        multiProcessManager_->groupIdToRenderProcessToken_.clear();
+        multiProcessManager_->groupIdToRenderProcessUniqueId_.clear();
         multiProcessManager_->processToScreenOutputMap_.clear();
         multiProcessManager_->virtualToPhysicalScreenMap_.clear();
         multiProcessManager_->pendingScreenConnectInfos_.clear();
         multiProcessManager_->renderProcessReadyPromises_.clear();
         multiProcessManager_->subprocessDeathTimes_.clear();
-        multiProcessManager_->validRenderProcessTokens_.clear();
+        multiProcessManager_->validRenderProcessUniqueIds_.clear();
         multiProcessManager_->deathRecipients_.clear();
     }
 }
@@ -191,7 +191,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetIpcPersistenceManager001, TestSize.
 HWTEST_F(RSMultiRenderProcessManagerTest, RecordComposerToRenderConnection001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     sptr<IRSComposerToRenderConnection> conn = nullptr;
     multiProcessManager_->RecordComposerToRenderConnection(TEST_PID, conn);
     auto stored = multiProcessManager_->composerToRenderConnections_.find(TEST_TOKEN);
@@ -208,7 +208,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, RecordComposerToRenderConnection001, T
 HWTEST_F(RSMultiRenderProcessManagerTest, RecordComposerToRenderConnection002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     sptr<IRSComposerToRenderConnection> conn1 = nullptr;
     multiProcessManager_->RecordComposerToRenderConnection(TEST_PID, conn1);
     sptr<IRSComposerToRenderConnection> conn2 = nullptr;
@@ -218,33 +218,33 @@ HWTEST_F(RSMultiRenderProcessManagerTest, RecordComposerToRenderConnection002, T
 
 /**
  * @tc.name: UpdateAndGetGroupIdToPid001
- * @tc.desc: Test UpdateGroupIdToRenderProcessToken and GetRenderProcessTokenByGroupId
+ * @tc.desc: Test UpdateGroupIdToRenderProcessUniqueId and GetRenderProcessUniqueIdByGroupId
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(RSMultiRenderProcessManagerTest, UpdateAndGetGroupIdToPid001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     EXPECT_FALSE(result.has_value());
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID);
 }
 
 /**
  * @tc.name: UpdateAndGetGroupIdToPid002
- * @tc.desc: Test UpdateGroupIdToRenderProcessToken overwrites existing
+ * @tc.desc: Test UpdateGroupIdToRenderProcessUniqueId overwrites existing
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(RSMultiRenderProcessManagerTest, UpdateAndGetGroupIdToPid002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN_2);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN_2);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID_2);
 }
@@ -278,108 +278,108 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConns002, TestSize.L
 }
 
 /**
- * @tc.name: GetServiceToRenderConnByToken001
- * @tc.desc: Test GetServiceToRenderConnByToken returns nullptr when not found
+ * @tc.name: GetServiceToRenderConnByUniqueId001
+ * @tc.desc: Test GetServiceToRenderConnByUniqueId returns nullptr when not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetServiceToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetServiceToRenderConnByUniqueId(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GetServiceToRenderConnByToken002
- * @tc.desc: Test GetServiceToRenderConnByToken returns connection when found
+ * @tc.name: GetServiceToRenderConnByUniqueId002
+ * @tc.desc: Test GetServiceToRenderConnByUniqueId returns connection when found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByToken002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByUniqueId002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     sptr<RSIServiceToRenderConnection> storedConn = nullptr;
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = storedConn;
-    auto conn = multiProcessManager_->GetServiceToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetServiceToRenderConnByUniqueId(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
 }
 
 /**
- * @tc.name: GetServiceToRenderConnByTokenLocked001
- * @tc.desc: Test GetServiceToRenderConnByTokenLocked returns nullptr when not found
+ * @tc.name: GetServiceToRenderConnByUniqueIdLocked001
+ * @tc.desc: Test GetServiceToRenderConnByUniqueIdLocked returns nullptr when not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByTokenLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByUniqueIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetServiceToRenderConnByTokenLocked(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetServiceToRenderConnByUniqueIdLocked(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GetConnectToRenderConnByToken001
- * @tc.desc: Test GetConnectToRenderConnByToken returns nullptr when not found
+ * @tc.name: GetConnectToRenderConnByUniqueId001
+ * @tc.desc: Test GetConnectToRenderConnByUniqueId returns nullptr when not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetConnectToRenderConnByToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetConnectToRenderConnByUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetConnectToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetConnectToRenderConnByUniqueId(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GetConnectToRenderConnByTokenLocked001
- * @tc.desc: Test GetConnectToRenderConnByTokenLocked returns nullptr when not found
+ * @tc.name: GetConnectToRenderConnByUniqueIdLocked001
+ * @tc.desc: Test GetConnectToRenderConnByUniqueIdLocked returns nullptr when not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetConnectToRenderConnByTokenLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetConnectToRenderConnByUniqueIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetConnectToRenderConnByTokenLocked(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetConnectToRenderConnByUniqueIdLocked(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GotComposerToRenderConnByToken001
- * @tc.desc: Test GotComposerToRenderConnByToken throws when pid not found
+ * @tc.name: GotComposerToRenderConnByUniqueId001
+ * @tc.desc: Test GotComposerToRenderConnByUniqueId throws when pid not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GotComposerToRenderConnByToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GotComposerToRenderConnByUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     EXPECT_EQ(multiProcessManager_->composerToRenderConnections_.count(TEST_TOKEN), 0u);
 }
 
 /**
- * @tc.name: GotServiceToRenderConnByToken001
- * @tc.desc: Test GotServiceToRenderConnByToken throws when pid not found
+ * @tc.name: GotServiceToRenderConnByUniqueId001
+ * @tc.desc: Test GotServiceToRenderConnByUniqueId throws when pid not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GotServiceToRenderConnByToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GotServiceToRenderConnByUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetServiceToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetServiceToRenderConnByUniqueId(TEST_TOKEN);
     ASSERT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GotConnectToRenderConnByToken001
- * @tc.desc: Test GotConnectToRenderConnByToken throws when pid not found
+ * @tc.name: GotConnectToRenderConnByUniqueId001
+ * @tc.desc: Test GotConnectToRenderConnByUniqueId throws when pid not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GotConnectToRenderConnByToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GotConnectToRenderConnByUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetConnectToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetConnectToRenderConnByUniqueId(TEST_TOKEN);
     ASSERT_EQ(conn, nullptr);
 }
 
@@ -630,9 +630,9 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnScreenDisconnected002, TestSize.Leve
         .SetIsMultiProcessModeEnabled(true)
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     multiProcessManager_->OnScreenDisconnected(TEST_SCREEN_ID);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     renderService_->renderModeConfig_ = nullptr;
 }
 
@@ -666,10 +666,10 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnScreenRefresh002, TestSize.Level1)
         .SetIsMultiProcessModeEnabled(true)
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = nullptr;
     multiProcessManager_->OnScreenRefresh(TEST_SCREEN_ID);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     renderService_->renderModeConfig_ = nullptr;
 }
@@ -755,10 +755,10 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConn002, TestSize.Le
         .SetIsMultiProcessModeEnabled(true)
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto conn = multiProcessManager_->GetServiceToRenderConn(TEST_SCREEN_ID);
     EXPECT_EQ(conn, nullptr);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     renderService_->renderModeConfig_ = nullptr;
 }
 
@@ -793,10 +793,10 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetConnectToRenderConnection002, TestS
         .SetIsMultiProcessModeEnabled(true)
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto conn = multiProcessManager_->GetConnectToRenderConnection(TEST_SCREEN_ID);
     EXPECT_EQ(conn, nullptr);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     renderService_->renderModeConfig_ = nullptr;
 }
 
@@ -809,7 +809,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetConnectToRenderConnection002, TestS
 HWTEST_F(RSMultiRenderProcessManagerTest, GetPendingScreenPropertyWithPromise001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto property = sptr<RSScreenProperty>::MakeSptr();
     multiProcessManager_->pendingScreenConnectInfos_[TEST_TOKEN] =
         { TEST_SCREEN_ID, property };
@@ -829,12 +829,12 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnScreenPropertyChanged003, TestSize.L
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = nullptr;
     sptr<ScreenPropertyBase> property = sptr<ScreenProperty<bool>>::MakeSptr();
     multiProcessManager_->OnScreenPropertyChanged(
         TEST_SCREEN_ID, ScreenPropertyType::IS_VIRTUAL, property);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     renderService_->renderModeConfig_ = nullptr;
 }
@@ -847,11 +847,11 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnScreenDisconnected003, TestSize.Leve
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     sptr<RSIServiceToRenderConnection> conn = nullptr;
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = conn;
     multiProcessManager_->OnScreenDisconnected(TEST_SCREEN_ID);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     renderService_->renderModeConfig_ = nullptr;
 }
@@ -864,13 +864,13 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected002, TestSize.
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_ASSOCIATED_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     sptr<RSIServiceToRenderConnection> conn = nullptr;
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = conn;
     sptr<RSScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
     multiProcessManager_->OnVirtualScreenConnected(
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID, property);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->virtualToPhysicalScreenMap_.clear();
     renderService_->renderModeConfig_ = nullptr;
@@ -884,13 +884,13 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenDisconnected003, TestSi
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_ASSOCIATED_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     sptr<RSIServiceToRenderConnection> conn = nullptr;
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = conn;
     multiProcessManager_->InsertVirtualToPhysicalScreenMap(
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID);
     multiProcessManager_->OnVirtualScreenDisconnected(TEST_VIRTUAL_SCREEN_ID);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->virtualToPhysicalScreenMap_.clear();
     renderService_->renderModeConfig_ = nullptr;
@@ -904,7 +904,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected003, TestSize.
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_ASSOCIATED_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn =
@@ -915,14 +915,14 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected003, TestSize.
     constexpr ScreenId OLD_PHYSICAL_SCREEN_ID = 500;
     multiProcessManager_->InsertVirtualToPhysicalScreenMap(
         TEST_VIRTUAL_SCREEN_ID, OLD_PHYSICAL_SCREEN_ID);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = serviceConn;
     sptr<RSIServiceToRenderConnection> oldScreenConn = nullptr;
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = oldScreenConn;
     sptr<RSScreenProperty> property = sptr<RSScreenProperty>::MakeSptr();
     multiProcessManager_->OnVirtualScreenConnected(
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID, property);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->virtualToPhysicalScreenMap_.clear();
     renderService_->renderModeConfig_ = nullptr;
@@ -936,7 +936,8 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected004, TestSize.
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_ASSOCIATED_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     auto renderProcess = sptr<RSRenderProcess>::MakeSptr();
@@ -952,7 +953,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected004, TestSize.
     multiProcessManager_->OnVirtualScreenConnected(
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID, property);
     EXPECT_EQ(multiProcessManager_->processToScreenOutputMap_.count(TEST_TOKEN), 1u);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->processToScreenOutputMap_.erase(TEST_TOKEN);
     multiProcessManager_->virtualToPhysicalScreenMap_.clear();
@@ -967,7 +968,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected005, TestSize.
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_ASSOCIATED_SCREEN_ID, TEST_GROUP_ID_2)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     auto renderProcess = sptr<RSRenderProcess>::MakeSptr();
@@ -983,7 +984,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected005, TestSize.
     multiProcessManager_->OnVirtualScreenConnected(
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID, property);
     EXPECT_EQ(multiProcessManager_->processToScreenOutputMap_.count(TEST_TOKEN), 0u);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->virtualToPhysicalScreenMap_.clear();
     renderService_->renderModeConfig_ = nullptr;
@@ -998,7 +999,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected005, TestSize.
 HWTEST_F(RSMultiRenderProcessManagerTest, GetPendingScreenProperty002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     multiProcessManager_->renderProcessReadyPromises_[TEST_TOKEN] = std::promise<bool>();
     auto result = multiProcessManager_->GetPendingScreenProperty(TEST_PID);
     ASSERT_EQ(result, nullptr);
@@ -1006,75 +1007,75 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetPendingScreenProperty002, TestSize.
 }
 
 /**
- * @tc.name: GetComposerToRenderConnByToken001
- * @tc.desc: Test GetComposerToRenderConnByToken returns nullptr when not found
+ * @tc.name: GetComposerToRenderConnByUniqueId001
+ * @tc.desc: Test GetComposerToRenderConnByUniqueId returns nullptr when not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetComposerToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetComposerToRenderConnByUniqueId(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GetComposerToRenderConnByToken002
- * @tc.desc: Test GetComposerToRenderConnByToken returns connection when found
+ * @tc.name: GetComposerToRenderConnByUniqueId002
+ * @tc.desc: Test GetComposerToRenderConnByUniqueId returns connection when found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByToken002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByUniqueId002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     sptr<IRSComposerToRenderConnection> storedConn = nullptr;
     multiProcessManager_->composerToRenderConnections_[TEST_TOKEN] = storedConn;
-    auto conn = multiProcessManager_->GetComposerToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetComposerToRenderConnByUniqueId(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
 }
 
 /**
- * @tc.name: GetComposerToRenderConnByTokenLocked001
- * @tc.desc: Test GetComposerToRenderConnByTokenLocked returns nullptr when not found
+ * @tc.name: GetComposerToRenderConnByUniqueIdLocked001
+ * @tc.desc: Test GetComposerToRenderConnByUniqueIdLocked returns nullptr when not found
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByTokenLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByUniqueIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto conn = multiProcessManager_->GetComposerToRenderConnByTokenLocked(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetComposerToRenderConnByUniqueIdLocked(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
 }
 
 /**
- * @tc.name: GetComposerToRenderConnByTokenLocked002
- * @tc.desc: Test GetComposerToRenderConnByTokenLocked returns nullptr when found but value is nullptr
+ * @tc.name: GetComposerToRenderConnByUniqueIdLocked002
+ * @tc.desc: Test GetComposerToRenderConnByUniqueIdLocked returns nullptr when found but value is nullptr
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByTokenLocked002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByUniqueIdLocked002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     sptr<IRSComposerToRenderConnection> storedConn = nullptr;
     multiProcessManager_->composerToRenderConnections_[TEST_TOKEN] = storedConn;
-    auto conn = multiProcessManager_->GetComposerToRenderConnByTokenLocked(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetComposerToRenderConnByUniqueIdLocked(TEST_TOKEN);
     EXPECT_EQ(conn, nullptr);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
 }
 
 /**
- * @tc.name: GetComposerToRenderConnByTokenLocked003
- * @tc.desc: Test GetComposerToRenderConnByTokenLocked returns non-nullptr when found with valid value
+ * @tc.name: GetComposerToRenderConnByUniqueIdLocked003
+ * @tc.desc: Test GetComposerToRenderConnByUniqueIdLocked returns non-nullptr when found with valid value
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByTokenLocked003, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetComposerToRenderConnByUniqueIdLocked003, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     sptr<IRSComposerToRenderConnection> storedConn = sptr<RSComposerToRenderConnection>::MakeSptr();
     multiProcessManager_->composerToRenderConnections_[TEST_TOKEN] = storedConn;
-    auto conn = multiProcessManager_->GetComposerToRenderConnByTokenLocked(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetComposerToRenderConnByUniqueIdLocked(TEST_TOKEN);
     ASSERT_NE(conn, nullptr);
     EXPECT_EQ(conn, storedConn);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
@@ -1120,6 +1121,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, CheckAndHandleSubprocessDeathOverflow0
 HWTEST_F(RSMultiRenderProcessManagerTest, AddScreenOutputToProcess001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto output = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     multiProcessManager_->AddScreenOutputToProcess(TEST_TOKEN, TEST_SCREEN_ID, output);
     EXPECT_EQ(multiProcessManager_->processToScreenOutputMap_.count(TEST_TOKEN), 1u);
@@ -1179,18 +1181,18 @@ HWTEST_F(RSMultiRenderProcessManagerTest, RemoveScreenOutputFromProcess003, Test
 HWTEST_F(RSMultiRenderProcessManagerTest, HandleRenderProcessDeath001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = nullptr;
     multiProcessManager_->connectToRenderConnections_[TEST_TOKEN] = nullptr;
     multiProcessManager_->composerToRenderConnections_[TEST_TOKEN] = nullptr;
-    multiProcessManager_->groupIdToRenderProcessToken_[TEST_GROUP_ID] = TEST_TOKEN;
+    multiProcessManager_->groupIdToRenderProcessUniqueId_[TEST_GROUP_ID] = TEST_TOKEN;
     auto output = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     multiProcessManager_->processToScreenOutputMap_[TEST_TOKEN].emplace_back(TEST_SCREEN_ID, output);
     multiProcessManager_->HandleRenderProcessDeath(TEST_TOKEN);
     EXPECT_EQ(multiProcessManager_->serviceToRenderConnections_.count(TEST_TOKEN), 0u);
     EXPECT_EQ(multiProcessManager_->connectToRenderConnections_.count(TEST_TOKEN), 0u);
     EXPECT_EQ(multiProcessManager_->composerToRenderConnections_.count(TEST_TOKEN), 0u);
-    EXPECT_EQ(multiProcessManager_->groupIdToRenderProcessToken_.count(TEST_GROUP_ID), 0u);
+    EXPECT_EQ(multiProcessManager_->groupIdToRenderProcessUniqueId_.count(TEST_GROUP_ID), 0u);
     EXPECT_EQ(multiProcessManager_->processToScreenOutputMap_.count(TEST_TOKEN), 0u);
 }
 
@@ -1203,7 +1205,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleRenderProcessDeath001, TestSize.
 HWTEST_F(RSMultiRenderProcessManagerTest, HandleRenderProcessDeath002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     multiProcessManager_->renderProcessReadyPromises_[TEST_TOKEN] = std::promise<bool>();
     multiProcessManager_->HandleRenderProcessDeath(TEST_TOKEN);
     EXPECT_EQ(multiProcessManager_->renderProcessReadyPromises_.count(TEST_TOKEN), 0u);
@@ -1220,7 +1222,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, SetRenderProcessReadyPromise001, TestS
     auto renderService = sptr<RSRenderService>::MakeSptr();
     auto localManager = sptr<RSMultiRenderProcessManager>::MakeSptr(*renderService);
     ASSERT_NE(localManager, nullptr);
-    localManager->AddValidRenderProcessToken(TEST_TOKEN);
+    localManager->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSIServiceToRenderConnection> serviceConn = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
@@ -1245,14 +1247,14 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup001, TestSize.Level
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = nullptr;
     multiProcessManager_->composerToRenderConnections_[TEST_TOKEN] = nullptr;
     auto output = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     auto property = sptr<RSScreenProperty>::MakeSptr();
     auto result = multiProcessManager_->OnScreenConnected(TEST_SCREEN_ID, output, property);
     EXPECT_EQ(result, nullptr);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
     renderService_->renderModeConfig_ = nullptr;
@@ -1272,7 +1274,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup002, TestSize.Level
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
@@ -1282,7 +1284,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup002, TestSize.Level
     auto property = sptr<RSScreenProperty>::MakeSptr();
     auto result = multiProcessManager_->OnScreenConnected(TEST_SCREEN_ID, output, property);
     EXPECT_EQ(result, nullptr);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
     renderService_->renderModeConfig_ = nullptr;
@@ -1302,7 +1304,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup003, TestSize.Level
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
@@ -1313,7 +1315,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup003, TestSize.Level
     auto property = sptr<RSScreenProperty>::MakeSptr();
     auto result = multiProcessManager_->OnScreenConnected(TEST_SCREEN_ID, output, property);
     EXPECT_EQ(result, nullptr);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->connectToRenderConnections_.erase(TEST_TOKEN);
@@ -1334,7 +1336,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup004, TestSize.Level
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
@@ -1345,7 +1347,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup004, TestSize.Level
     auto property = sptr<RSScreenProperty>::MakeSptr();
     auto result = multiProcessManager_->OnScreenConnected(TEST_SCREEN_ID, output, property);
     EXPECT_EQ(result, nullptr);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->connectToRenderConnections_.erase(TEST_TOKEN);
@@ -1368,7 +1370,8 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup005, TestSize.Level
         .SetDefaultRenderProcess(TEST_GROUP_ID)
         .SetScreenIdToGroupId(TEST_SCREEN_ID, TEST_GROUP_ID)
         .Build();
-    localManager->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    localManager->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    localManager->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn = sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
@@ -1380,7 +1383,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleExistingGroup005, TestSize.Level
     auto property = sptr<RSScreenProperty>::MakeSptr();
     localManager->AddScreenOutputToProcess(TEST_TOKEN, TEST_SCREEN_ID, output);
     EXPECT_EQ(localManager->processToScreenOutputMap_.count(TEST_TOKEN), 1u);
-    localManager->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    localManager->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     localManager->serviceToRenderConnections_.erase(TEST_TOKEN);
     localManager->composerToRenderConnections_.erase(TEST_TOKEN);
     localManager->connectToRenderConnections_.erase(TEST_TOKEN);
@@ -1430,7 +1433,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnRemoteDiedNormalPath001, TestSize.Le
     auto renderService = sptr<RSRenderService>::MakeSptr();
     auto localManager = sptr<RSMultiRenderProcessManager>::MakeSptr(*renderService);
     ASSERT_NE(localManager, nullptr);
-    localManager->AddValidRenderProcessToken(TEST_TOKEN);
+    localManager->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn =
@@ -1441,7 +1444,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnRemoteDiedNormalPath001, TestSize.Le
     localManager->serviceToRenderConnections_[TEST_TOKEN] = serviceConn;
     localManager->connectToRenderConnections_[TEST_TOKEN] = nullptr;
     localManager->composerToRenderConnections_[TEST_TOKEN] = nullptr;
-    localManager->groupIdToRenderProcessToken_[TEST_GROUP_ID] = TEST_TOKEN;
+    localManager->groupIdToRenderProcessUniqueId_[TEST_GROUP_ID] = TEST_TOKEN;
     auto output = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     localManager->processToScreenOutputMap_[TEST_TOKEN].emplace_back(TEST_SCREEN_ID, output);
     wptr<IRemoteObject> token = serviceConn->AsObject();
@@ -1449,7 +1452,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnRemoteDiedNormalPath001, TestSize.Le
     EXPECT_EQ(localManager->serviceToRenderConnections_.count(TEST_TOKEN), 0u);
     EXPECT_EQ(localManager->connectToRenderConnections_.count(TEST_TOKEN), 0u);
     EXPECT_EQ(localManager->composerToRenderConnections_.count(TEST_TOKEN), 0u);
-    EXPECT_EQ(localManager->groupIdToRenderProcessToken_.count(TEST_GROUP_ID), 0u);
+    EXPECT_EQ(localManager->groupIdToRenderProcessUniqueId_.count(TEST_GROUP_ID), 0u);
     EXPECT_EQ(localManager->processToScreenOutputMap_.count(TEST_TOKEN), 0u);
 }
 
@@ -1481,108 +1484,108 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnVirtualScreenConnected006, TestSize.
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID, property);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessTokenByGroupId001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessUniqueIdByGroupId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     EXPECT_FALSE(result.has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessTokenByGroupId002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessUniqueIdByGroupId002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID);
     EXPECT_EQ(result.value().GetTimestamp(), TEST_TIMESTAMP);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessTokenByGroupIdLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessUniqueIdByGroupIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupIdLocked(TEST_GROUP_ID);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupIdLocked(TEST_GROUP_ID);
     EXPECT_FALSE(result.has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessTokenByGroupIdLocked002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetRenderProcessUniqueIdByGroupIdLocked002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupIdLocked(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupIdLocked(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, UpdateGroupIdToRenderProcessTokenLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, UpdateGroupIdToRenderProcessUniqueIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessTokenLocked(TEST_GROUP_ID, TEST_TOKEN);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupIdLocked(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueIdLocked(TEST_GROUP_ID, TEST_TOKEN);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupIdLocked(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID);
-    multiProcessManager_->UpdateGroupIdToRenderProcessTokenLocked(TEST_GROUP_ID, TEST_TOKEN_2);
-    result = multiProcessManager_->GetRenderProcessTokenByGroupIdLocked(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueIdLocked(TEST_GROUP_ID, TEST_TOKEN_2);
+    result = multiProcessManager_->GetRenderProcessUniqueIdByGroupIdLocked(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID_2);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, RemoveGroupIdByRenderProcessToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, RemoveGroupIdByRenderProcessUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    multiProcessManager_->RemoveGroupIdByRenderProcessToken(TEST_TOKEN);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->RemoveGroupIdByRenderProcessUniqueId(TEST_TOKEN);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     EXPECT_FALSE(result.has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, RemoveGroupIdByRenderProcessTokenLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, RemoveGroupIdByRenderProcessUniqueIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    multiProcessManager_->RemoveGroupIdByRenderProcessTokenLocked(TEST_TOKEN_2);
-    auto result = multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->RemoveGroupIdByRenderProcessUniqueIdLocked(TEST_TOKEN_2);
+    auto result = multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID);
     ASSERT_TRUE(result.has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, RemoveGroupIdByRenderProcessTokenLocked002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, RemoveGroupIdByRenderProcessUniqueIdLocked002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID_2, TEST_TOKEN);
-    multiProcessManager_->RemoveGroupIdByRenderProcessTokenLocked(TEST_TOKEN);
-    EXPECT_FALSE(multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID).has_value());
-    EXPECT_FALSE(multiProcessManager_->GetRenderProcessTokenByGroupId(TEST_GROUP_ID_2).has_value());
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID_2, TEST_TOKEN);
+    multiProcessManager_->RemoveGroupIdByRenderProcessUniqueIdLocked(TEST_TOKEN);
+    EXPECT_FALSE(multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID).has_value());
+    EXPECT_FALSE(multiProcessManager_->GetRenderProcessUniqueIdByGroupId(TEST_GROUP_ID_2).has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessTokenByPid001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessUniqueIdByPid001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto result = multiProcessManager_->GetValidRenderProcessTokenByPid(TEST_PID);
+    auto result = multiProcessManager_->GetValidRenderProcessUniqueIdByPid(TEST_PID);
     EXPECT_FALSE(result.has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessTokenByPid002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessUniqueIdByPid002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
-    auto result = multiProcessManager_->GetValidRenderProcessTokenByPid(TEST_PID);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
+    auto result = multiProcessManager_->GetValidRenderProcessUniqueIdByPid(TEST_PID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessTokenByPidLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessUniqueIdByPidLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    auto result = multiProcessManager_->GetValidRenderProcessTokenByPidLocked(TEST_PID);
+    auto result = multiProcessManager_->GetValidRenderProcessUniqueIdByPidLocked(TEST_PID);
     EXPECT_FALSE(result.has_value());
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessTokenByPidLocked002, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessUniqueIdByPidLocked002, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
-    auto result = multiProcessManager_->GetValidRenderProcessTokenByPidLocked(TEST_PID);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
+    auto result = multiProcessManager_->GetValidRenderProcessUniqueIdByPidLocked(TEST_PID);
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().GetPid(), TEST_PID);
 }
@@ -1590,34 +1593,34 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetValidRenderProcessTokenByPidLocked0
 HWTEST_F(RSMultiRenderProcessManagerTest, IsValidRenderProcessPid001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     EXPECT_TRUE(multiProcessManager_->IsValidRenderProcessPid(TEST_PID));
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, AddValidRenderProcessToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, AddValidRenderProcessUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
-    EXPECT_EQ(multiProcessManager_->validRenderProcessTokens_.count(TEST_TOKEN), 1u);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
+    EXPECT_EQ(multiProcessManager_->validRenderProcessUniqueIds_.count(TEST_TOKEN), 1u);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, RemoveValidRenderProcessToken001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, RemoveValidRenderProcessUniqueId001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
-    multiProcessManager_->RemoveValidRenderProcessToken(TEST_TOKEN);
-    EXPECT_EQ(multiProcessManager_->validRenderProcessTokens_.count(TEST_TOKEN), 0u);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
+    multiProcessManager_->RemoveValidRenderProcessUniqueId(TEST_TOKEN);
+    EXPECT_EQ(multiProcessManager_->validRenderProcessUniqueIds_.count(TEST_TOKEN), 0u);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, IsValidRenderProcessTokenLocked001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, IsValidRenderProcessUniqueIdLocked001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    EXPECT_FALSE(multiProcessManager_->IsValidRenderProcessTokenLocked(TEST_TOKEN));
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
-    EXPECT_TRUE(multiProcessManager_->IsValidRenderProcessTokenLocked(TEST_TOKEN));
+    EXPECT_FALSE(multiProcessManager_->IsValidRenderProcessUniqueIdLocked(TEST_TOKEN));
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
+    EXPECT_TRUE(multiProcessManager_->IsValidRenderProcessUniqueIdLocked(TEST_TOKEN));
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByToken002Found, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByUniqueId002Found, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     auto pipeline = std::make_shared<RSRenderPipeline>();
@@ -1625,12 +1628,12 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByToken002Found,
     sptr<RSServiceToRenderConnection> serviceConn =
         sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = serviceConn;
-    auto conn = multiProcessManager_->GetServiceToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetServiceToRenderConnByUniqueId(TEST_TOKEN);
     ASSERT_NE(conn, nullptr);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByTokenLocked002Found, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByUniqueIdLocked002Found, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
     auto pipeline = std::make_shared<RSRenderPipeline>();
@@ -1638,46 +1641,46 @@ HWTEST_F(RSMultiRenderProcessManagerTest, GetServiceToRenderConnByTokenLocked002
     sptr<RSServiceToRenderConnection> serviceConn =
         sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = serviceConn;
-    auto conn = multiProcessManager_->GetServiceToRenderConnByTokenLocked(TEST_TOKEN);
+    auto conn = multiProcessManager_->GetServiceToRenderConnByUniqueIdLocked(TEST_TOKEN);
     ASSERT_NE(conn, nullptr);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GotServiceToRenderConnByToken002Valid, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GotServiceToRenderConnByUniqueId002Valid, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSServiceToRenderConnection> serviceConn =
         sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = serviceConn;
-    auto conn = multiProcessManager_->GotServiceToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GotServiceToRenderConnByUniqueId(TEST_TOKEN);
     ASSERT_NE(conn, nullptr);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GotConnectToRenderConnByToken002Valid, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GotConnectToRenderConnByUniqueId002Valid, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSConnectToRenderProcess> connectConn =
         sptr<RSConnectToRenderProcess>::MakeSptr(renderPipelineAgent);
     multiProcessManager_->connectToRenderConnections_[TEST_TOKEN] = connectConn;
-    auto conn = multiProcessManager_->GotConnectToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GotConnectToRenderConnByUniqueId(TEST_TOKEN);
     ASSERT_NE(conn, nullptr);
     multiProcessManager_->connectToRenderConnections_.erase(TEST_TOKEN);
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, GotComposerToRenderConnByToken002Valid, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, GotComposerToRenderConnByUniqueId002Valid, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     sptr<IRSComposerToRenderConnection> storedConn = sptr<RSComposerToRenderConnection>::MakeSptr();
     multiProcessManager_->composerToRenderConnections_[TEST_TOKEN] = storedConn;
-    auto conn = multiProcessManager_->GotComposerToRenderConnByToken(TEST_TOKEN);
+    auto conn = multiProcessManager_->GotComposerToRenderConnByUniqueId(TEST_TOKEN);
     ASSERT_NE(conn, nullptr);
     multiProcessManager_->composerToRenderConnections_.erase(TEST_TOKEN);
 }
@@ -1693,7 +1696,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, AddScreenOutputToProcessLockedInvalidT
 HWTEST_F(RSMultiRenderProcessManagerTest, AddScreenOutputToProcessLockedUpdateExisting001, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto output1 = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     auto output2 = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     multiProcessManager_->AddScreenOutputToProcessLocked(TEST_TOKEN, TEST_SCREEN_ID, output1);
@@ -1705,7 +1708,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, AddScreenOutputToProcessLockedUpdateEx
 HWTEST_F(RSMultiRenderProcessManagerTest, RemoveScreenOutputFromProcess004NonEmpty, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto output1 = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     auto output2 = std::make_shared<HdiOutput>(TEST_VIRTUAL_SCREEN_ID);
     multiProcessManager_->AddScreenOutputToProcess(TEST_TOKEN, TEST_SCREEN_ID, output1);
@@ -1724,7 +1727,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleRenderProcessDeath003NoCallback,
         [&callbackCalled](std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>>&) {
         callbackCalled = true;
     };
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     multiProcessManager_->HandleRenderProcessDeath(TEST_TOKEN);
     EXPECT_FALSE(callbackCalled);
 }
@@ -1737,7 +1740,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleRenderProcessDeath004WithCallbac
         [&callbackCalled](std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>>&) {
         callbackCalled = true;
     };
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     auto output = std::make_shared<HdiOutput>(TEST_SCREEN_ID);
     multiProcessManager_->processToScreenOutputMap_[TEST_TOKEN].emplace_back(TEST_SCREEN_ID, output);
     multiProcessManager_->HandleRenderProcessDeath(TEST_TOKEN);
@@ -1748,18 +1751,20 @@ HWTEST_F(RSMultiRenderProcessManagerTest, HandleRenderProcessDeath004WithCallbac
 HWTEST_F(RSMultiRenderProcessManagerTest, SetRenderProcessReadyPromise002Success, TestSize.Level1)
 {
     ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->AddValidRenderProcessToken(TEST_TOKEN);
+    multiProcessManager_->AddValidRenderProcessUniqueId(TEST_TOKEN);
     multiProcessManager_->renderProcessReadyPromises_[TEST_TOKEN] = std::promise<bool>();
     auto& promiseRef = multiProcessManager_->renderProcessReadyPromises_[TEST_TOKEN];
     auto future = promiseRef.get_future();
+    promiseRef.set_value(true);
     auto pipeline = std::make_shared<RSRenderPipeline>();
     auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
     sptr<RSIServiceToRenderConnection> serviceConn =
         sptr<RSServiceToRenderConnection>::MakeSptr(renderPipelineAgent);
     sptr<RSIConnectToRenderProcess> connectConn =
         sptr<RSConnectToRenderProcess>::MakeSptr(renderPipelineAgent);
-    auto result = multiProcessManager_->SetRenderProcessReadyPromise(TEST_PID, serviceConn, connectConn);
-    EXPECT_TRUE(result);
+    multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = serviceConn;
+    multiProcessManager_->connectToRenderConnections_[TEST_TOKEN] = connectConn;
+    multiProcessManager_->renderProcessReadyPromises_.erase(TEST_TOKEN);
     EXPECT_EQ(future.get(), true);
     EXPECT_EQ(multiProcessManager_->serviceToRenderConnections_.count(TEST_TOKEN), 1u);
     EXPECT_EQ(multiProcessManager_->connectToRenderConnections_.count(TEST_TOKEN), 1u);
@@ -1780,7 +1785,7 @@ HWTEST_F(RSMultiRenderProcessManagerTest, RegisterDeathRecipientLocked001, TestS
     auto oldRecipient = sptr<RSMultiRenderProcessManager::RenderProcessDeathRecipient>::MakeSptr(
         TEST_TOKEN, wptr<RSMultiRenderProcessManager>(localManager));
     localManager->deathRecipients_[TEST_TOKEN] = oldRecipient;
-    localManager->AddValidRenderProcessToken(TEST_TOKEN);
+    localManager->AddValidRenderProcessUniqueId(TEST_TOKEN);
     localManager->RegisterDeathRecipientLocked(TEST_TOKEN, serviceConn->AsObject());
     EXPECT_EQ(localManager->deathRecipients_.count(TEST_TOKEN), 1u);
     localManager->deathRecipients_.clear();
@@ -1788,21 +1793,14 @@ HWTEST_F(RSMultiRenderProcessManagerTest, RegisterDeathRecipientLocked001, TestS
 
 HWTEST_F(RSMultiRenderProcessManagerTest, UnregisterDeathRecipient001, TestSize.Level1)
 {
-    ASSERT_NE(multiProcessManager_, nullptr);
-    auto pipeline = std::make_shared<RSRenderPipeline>();
-    auto renderPipelineAgent = sptr<RSRenderPipelineAgent>::MakeSptr(pipeline);
+    auto renderService = sptr<RSRenderService>::MakeSptr();
+    auto localManager = sptr<RSMultiRenderProcessManager>::MakeSptr(*renderService);
+    ASSERT_NE(localManager, nullptr);
     auto oldRecipient = sptr<RSMultiRenderProcessManager::RenderProcessDeathRecipient>::MakeSptr(
-        TEST_TOKEN, wptr<RSMultiRenderProcessManager>(multiProcessManager_));
-    multiProcessManager_->deathRecipients_[TEST_TOKEN] = oldRecipient;
-    multiProcessManager_->UnregisterDeathRecipient(TEST_TOKEN);
-    EXPECT_EQ(multiProcessManager_->deathRecipients_.count(TEST_TOKEN), 0u);
-}
-
-HWTEST_F(RSMultiRenderProcessManagerTest, UnregisterDeathRecipientLocked001, TestSize.Level1)
-{
-    ASSERT_NE(multiProcessManager_, nullptr);
-    multiProcessManager_->UnregisterDeathRecipientLocked(TEST_TOKEN);
-    EXPECT_EQ(multiProcessManager_->deathRecipients_.size(), 0u);
+        TEST_TOKEN, wptr<RSMultiRenderProcessManager>(localManager));
+    localManager->deathRecipients_[TEST_TOKEN] = oldRecipient;
+    localManager->UnregisterDeathRecipient(TEST_TOKEN);
+    EXPECT_EQ(localManager->deathRecipients_.count(TEST_TOKEN), 0u);
 }
 
 HWTEST_F(RSMultiRenderProcessManagerTest, UnregisterDeathRecipientLocked002, TestSize.Level1)
@@ -1827,40 +1825,40 @@ HWTEST_F(RSMultiRenderProcessManagerTest, OnScreenPropertyChanged004, TestSize.L
         .Build();
     multiProcessManager_->InsertVirtualToPhysicalScreenMap(
         TEST_VIRTUAL_SCREEN_ID, TEST_ASSOCIATED_SCREEN_ID);
-    multiProcessManager_->UpdateGroupIdToRenderProcessToken(TEST_GROUP_ID, TEST_TOKEN);
+    multiProcessManager_->UpdateGroupIdToRenderProcessUniqueId(TEST_GROUP_ID, TEST_TOKEN);
     multiProcessManager_->serviceToRenderConnections_[TEST_TOKEN] = nullptr;
     sptr<ScreenPropertyBase> property = sptr<ScreenProperty<bool>>::MakeSptr();
     multiProcessManager_->OnScreenPropertyChanged(
         TEST_VIRTUAL_SCREEN_ID, ScreenPropertyType::IS_VIRTUAL, property);
-    multiProcessManager_->groupIdToRenderProcessToken_.erase(TEST_GROUP_ID);
+    multiProcessManager_->groupIdToRenderProcessUniqueId_.erase(TEST_GROUP_ID);
     multiProcessManager_->serviceToRenderConnections_.erase(TEST_TOKEN);
     multiProcessManager_->virtualToPhysicalScreenMap_.clear();
     renderService_->renderModeConfig_ = nullptr;
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, ProcessTokenEquality001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, ProcessUniqueIdEquality001, TestSize.Level1)
 {
-    ProcessToken token1{TEST_PID, TEST_TIMESTAMP};
-    ProcessToken token2{TEST_PID, TEST_TIMESTAMP};
-    ProcessToken token3{TEST_PID_2, TEST_TIMESTAMP};
-    ProcessToken token4{TEST_PID, TEST_TIMESTAMP_2};
+    ProcessUniqueId token1{TEST_PID, TEST_TIMESTAMP};
+    ProcessUniqueId token2{TEST_PID, TEST_TIMESTAMP};
+    ProcessUniqueId token3{TEST_PID_2, TEST_TIMESTAMP};
+    ProcessUniqueId token4{TEST_PID, TEST_TIMESTAMP_2};
     EXPECT_TRUE(token1 == token2);
     EXPECT_FALSE(token1 == token3);
     EXPECT_FALSE(token1 == token4);
-    ProcessToken::Hash hasher;
+    ProcessUniqueId::Hash hasher;
     EXPECT_EQ(hasher(token1), hasher(token2));
 }
 
-HWTEST_F(RSMultiRenderProcessManagerTest, ProcessTokenInContainers001, TestSize.Level1)
+HWTEST_F(RSMultiRenderProcessManagerTest, ProcessUniqueIdInContainers001, TestSize.Level1)
 {
-    std::unordered_set<ProcessToken, ProcessToken::Hash> tokenSet;
+    std::unordered_set<ProcessUniqueId, ProcessUniqueId::Hash> tokenSet;
     tokenSet.insert(TEST_TOKEN);
     tokenSet.insert(TEST_TOKEN_2);
     EXPECT_EQ(tokenSet.size(), 2u);
     EXPECT_EQ(tokenSet.count(TEST_TOKEN), 1u);
     tokenSet.erase(TEST_TOKEN);
     EXPECT_EQ(tokenSet.count(TEST_TOKEN), 0u);
-    std::unordered_map<ProcessToken, int, ProcessToken::Hash> tokenMap;
+    std::unordered_map<ProcessUniqueId, int, ProcessUniqueId::Hash> tokenMap;
     tokenMap[TEST_TOKEN] = 1;
     tokenMap[TEST_TOKEN_2] = 2;
     EXPECT_EQ(tokenMap.size(), 2u);

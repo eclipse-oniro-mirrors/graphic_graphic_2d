@@ -36,7 +36,7 @@ constexpr int32_t DEFAULT_MAX_FD = 1024;
 constexpr int32_t SUBPROCESS_DEATH_THRESHOLD_COUNT = 2;
 constexpr int32_t SUBPROCESS_DEATH_TIME_WINDOW_SECS = 180;
 
-uint64_t GetProcessTokenTimeStamp()
+uint64_t GetProcessUniqueIdTimeStamp()
 {
     return std::chrono::steady_clock::now().time_since_epoch().count();
 }
@@ -93,7 +93,7 @@ void RSMultiRenderProcessManager::RecordComposerToRenderConnection(
     pid_t pid, sptr<IRSComposerToRenderConnection> composerToRenderConnection)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto tokenOpt = GetValidRenderProcessTokenByPidLocked(pid);
+    auto tokenOpt = GetValidRenderProcessUniqueIdByPidLocked(pid);
     if (!tokenOpt.has_value()) {
         RS_LOGE("%{public}s: token not found for pid %{public}u", __func__, pid);
         return;
@@ -101,61 +101,61 @@ void RSMultiRenderProcessManager::RecordComposerToRenderConnection(
     composerToRenderConnections_.insert_or_assign(tokenOpt.value(), composerToRenderConnection);
 }
 
-std::optional<ProcessToken> RSMultiRenderProcessManager::GetRenderProcessTokenByGroupId(GroupId groupId) const
+std::optional<ProcessUniqueId> RSMultiRenderProcessManager::GetRenderProcessUniqueIdByGroupId(GroupId groupId) const
 {
     // lock version
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetRenderProcessTokenByGroupIdLocked(groupId);
+    return GetRenderProcessUniqueIdByGroupIdLocked(groupId);
 }
 
-std::optional<ProcessToken> RSMultiRenderProcessManager::GetRenderProcessTokenByGroupIdLocked(GroupId groupId) const
+std::optional<ProcessUniqueId> RSMultiRenderProcessManager::GetRenderProcessUniqueIdByGroupIdLocked(GroupId groupId) const
 {
     // without lock version
-    if (auto iter = groupIdToRenderProcessToken_.find(groupId); iter != groupIdToRenderProcessToken_.end()) {
+    if (auto iter = groupIdToRenderProcessUniqueId_.find(groupId); iter != groupIdToRenderProcessUniqueId_.end()) {
         return iter->second;
     }
     return std::nullopt;
 }
 
-void RSMultiRenderProcessManager::UpdateGroupIdToRenderProcessToken(GroupId groupId, ProcessToken token)
+void RSMultiRenderProcessManager::UpdateGroupIdToRenderProcessUniqueId(GroupId groupId, ProcessUniqueId token)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    UpdateGroupIdToRenderProcessTokenLocked(groupId, token);
+    UpdateGroupIdToRenderProcessUniqueIdLocked(groupId, token);
 }
 
-void RSMultiRenderProcessManager::UpdateGroupIdToRenderProcessTokenLocked(GroupId groupId, ProcessToken token)
+void RSMultiRenderProcessManager::UpdateGroupIdToRenderProcessUniqueIdLocked(GroupId groupId, ProcessUniqueId token)
 {
-    groupIdToRenderProcessToken_.insert_or_assign(groupId, token);
+    groupIdToRenderProcessUniqueId_.insert_or_assign(groupId, token);
 }
 
-void RSMultiRenderProcessManager::RemoveGroupIdByRenderProcessToken(ProcessToken token)
+void RSMultiRenderProcessManager::RemoveGroupIdByRenderProcessUniqueId(ProcessUniqueId token)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    RemoveGroupIdByRenderProcessTokenLocked(token);
+    RemoveGroupIdByRenderProcessUniqueIdLocked(token);
 }
 
-void RSMultiRenderProcessManager::RemoveGroupIdByRenderProcessTokenLocked(ProcessToken token)
+void RSMultiRenderProcessManager::RemoveGroupIdByRenderProcessUniqueIdLocked(ProcessUniqueId token)
 {
-    for (auto iter = groupIdToRenderProcessToken_.begin(); iter != groupIdToRenderProcessToken_.end();) {
+    for (auto iter = groupIdToRenderProcessUniqueId_.begin(); iter != groupIdToRenderProcessUniqueId_.end();) {
         if (iter->second == token) {
-            iter = groupIdToRenderProcessToken_.erase(iter);
+            iter = groupIdToRenderProcessUniqueId_.erase(iter);
         } else {
             ++iter;
         }
     }
 }
 
-std::optional<ProcessToken> RSMultiRenderProcessManager::GetValidRenderProcessTokenByPid(pid_t pid) const
+std::optional<ProcessUniqueId> RSMultiRenderProcessManager::GetValidRenderProcessUniqueIdByPid(pid_t pid) const
 {
     // lock version
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetValidRenderProcessTokenByPidLocked(pid);
+    return GetValidRenderProcessUniqueIdByPidLocked(pid);
 }
 
-std::optional<ProcessToken> RSMultiRenderProcessManager::GetValidRenderProcessTokenByPidLocked(pid_t pid) const
+std::optional<ProcessUniqueId> RSMultiRenderProcessManager::GetValidRenderProcessUniqueIdByPidLocked(pid_t pid) const
 {
     // without lock version
-    for (const auto& token : validRenderProcessTokens_) {
+    for (const auto& token : validRenderProcessUniqueIds_) {
         if (token.GetPid() == pid) {
             return token;
         }
@@ -166,12 +166,12 @@ std::optional<ProcessToken> RSMultiRenderProcessManager::GetValidRenderProcessTo
 sptr<RSScreenProperty> RSMultiRenderProcessManager::GetPendingScreenProperty(pid_t pid)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto tokenOpt = GetValidRenderProcessTokenByPidLocked(pid);
+    auto tokenOpt = GetValidRenderProcessUniqueIdByPidLocked(pid);
     if (!tokenOpt.has_value()) {
         RS_LOGE("%{public}s: token not found for pid %{public}u", __func__, pid);
         return nullptr;
     }
-    ProcessToken token = tokenOpt.value();
+    ProcessUniqueId token = tokenOpt.value();
 
     const auto node = pendingScreenConnectInfos_.extract(token);
     if (!node) {
@@ -188,12 +188,12 @@ bool RSMultiRenderProcessManager::SetRenderProcessReadyPromise(pid_t pid,
     const sptr<RSIConnectToRenderProcess>& connectToRenderConnection)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto tokenOpt = GetValidRenderProcessTokenByPidLocked(pid);
+    auto tokenOpt = GetValidRenderProcessUniqueIdByPidLocked(pid);
     if (!tokenOpt.has_value()) {
         RS_LOGE("%{public}s: token not found for pid %{public}u", __func__, pid);
         return false;
     }
-    ProcessToken token = tokenOpt.value();
+    ProcessUniqueId token = tokenOpt.value();
 
     RegisterDeathRecipientLocked(token, serviceToRenderConnection->AsObject());
     serviceToRenderConnections_.insert_or_assign(token, serviceToRenderConnection);
@@ -230,11 +230,11 @@ bool RSMultiRenderProcessManager::IsValidRenderProcessPid(pid_t pid) const
     std::unique_lock<std::mutex> lock(mutex_);
     bool result = validPidCv_.wait_for(lock, std::chrono::seconds(5),
         [this, pid]() {
-            return std::any_of(validRenderProcessTokens_.begin(), validRenderProcessTokens_.end(),
-                [pid](const ProcessToken& t) { return t.GetPid() == pid; });
+            return std::any_of(validRenderProcessUniqueIds_.begin(), validRenderProcessUniqueIds_.end(),
+                [pid](const ProcessUniqueId& t) { return t.GetPid() == pid; });
         });
     if (!result) {
-        RS_LOGE("%{public}s: pid %{public}u not found in validRenderProcessTokens after 5s", __func__, pid);
+        RS_LOGE("%{public}s: pid %{public}u not found in validRenderProcessUniqueIds after 5s", __func__, pid);
     }
     return result;
 }
@@ -244,23 +244,23 @@ sptr<IRemoteObject> RSMultiRenderProcessManager::OnScreenConnected(
 {
     // Find the corresponding groupId for the screenId
     GroupId groupId = GetGroupIdByScreenId(screenId);
-    auto optionalToken = GetRenderProcessTokenByGroupId(groupId);
+    auto optionalToken = GetRenderProcessUniqueIdByGroupId(groupId);
     auto renderConnProxy = optionalToken.has_value() ?
         HandleExistingGroup(optionalToken.value(), screenId, output, property) :
         HandleNewGroup(groupId, screenId, output, property);
     return renderConnProxy;
 }
 
-sptr<IRemoteObject> RSMultiRenderProcessManager::HandleExistingGroup(ProcessToken token, ScreenId screenId,
+sptr<IRemoteObject> RSMultiRenderProcessManager::HandleExistingGroup(ProcessUniqueId token, ScreenId screenId,
     const std::shared_ptr<HdiOutput>& output, const sptr<RSScreenProperty>& property)
 {
     RS_LOGI("%{public}s: GroupId has connected already, screenId is %{public}" PRIu64, __func__, screenId);
-    auto serviceToRenderConnection = GetServiceToRenderConnByToken(token);
+    auto serviceToRenderConnection = GetServiceToRenderConnByUniqueId(token);
     if (!serviceToRenderConnection) {
         RS_LOGE("%{public}s: serviceToRenderConnection is nullptr", __func__);
         return nullptr;
     }
-    auto composerToRenderConn = GetComposerToRenderConnByToken(token);
+    auto composerToRenderConn = GetComposerToRenderConnByUniqueId(token);
     if (!composerToRenderConn) {
         RS_LOGE("%{public}s: composerToRenderConn is nullptr", __func__);
         return nullptr;
@@ -274,7 +274,7 @@ sptr<IRemoteObject> RSMultiRenderProcessManager::HandleExistingGroup(ProcessToke
         return nullptr;
     }
 
-    auto connectToRender = GetConnectToRenderConnByToken(token);
+    auto connectToRender = GetConnectToRenderConnByUniqueId(token);
     if (!connectToRender) {
         RS_LOGE("%{public}s: connectToRender is nullptr", __func__);
         return nullptr;
@@ -291,16 +291,16 @@ sptr<IRemoteObject> RSMultiRenderProcessManager::HandleNewGroup(GroupId groupId,
 
     // Fork Subprocess for the screenId
     int32_t pid = -1;
-    uint64_t timeStamp = GetProcessTokenTimeStamp();
+    uint64_t timeStamp = GetProcessUniqueIdTimeStamp();
     for (int32_t retryCount = MAX_RETRIES; retryCount > 0; --retryCount) {
         pid = ForkAndExec(groupId);
         if (pid > 0) {
-            ProcessToken token = {pid, timeStamp};
+            ProcessUniqueId token = {pid, timeStamp};
             PendingScreenConnectInfo screenConnectInfo { .screenId = screenId, .property = property };
             {
                 std::lock_guard<std::mutex> lock(mutex_);
-                UpdateGroupIdToRenderProcessTokenLocked(groupId, token);
-                AddValidRenderProcessTokenLocked(token);
+                UpdateGroupIdToRenderProcessUniqueIdLocked(groupId, token);
+                AddValidRenderProcessUniqueIdLocked(token);
                 AddScreenOutputToProcessLocked(token, screenId, output);
                 pendingScreenConnectInfos_.insert_or_assign(token, screenConnectInfo);
                 renderProcessReadyPromises_[token] = std::move(renderProcessReadyPromise);
@@ -319,7 +319,7 @@ sptr<IRemoteObject> RSMultiRenderProcessManager::HandleNewGroup(GroupId groupId,
     // Block and wait for the clientToRenderConnectionProxy to be ready
     renderProcessReadyFuture.wait();
     RS_LOGI("%{public}s: render process is ready", __func__);
-    auto renderConnProxy = GotConnectToRenderConnByToken(ProcessToken{pid, timeStamp});
+    auto renderConnProxy = GotConnectToRenderConnByUniqueId(ProcessUniqueId{pid, timeStamp});
     if (!renderConnProxy) {
         RS_LOGE("%{public}s: token invalidated by death cleanup", __func__);
         return nullptr;
@@ -392,7 +392,7 @@ void RSMultiRenderProcessManager::OnVirtualScreenConnected(
             __func__, screenId);
     }
     auto groupId = GetGroupIdByScreenId(associatedScreenId);
-    auto optionalToken = GetRenderProcessTokenByGroupId(groupId);
+    auto optionalToken = GetRenderProcessUniqueIdByGroupId(groupId);
     if (optionalToken.has_value()) {
         AddScreenOutputToProcess(optionalToken.value(), screenId, nullptr);
         RS_LOGI("%{public}s: Added virtualScreenId %{public}" PRIu64 " to render_process %{public}u",
@@ -424,7 +424,7 @@ void RSMultiRenderProcessManager::OnVirtualScreenDisconnected(ScreenId screenId)
     }
 
     auto groupId = GetGroupIdByScreenId(associatedScreenId);
-    auto optionalToken = GetRenderProcessTokenByGroupId(groupId);
+    auto optionalToken = GetRenderProcessUniqueIdByGroupId(groupId);
     if (optionalToken.has_value()) {
         RemoveScreenOutputFromProcess(optionalToken.value(), screenId);
         RS_LOGI("%{public}s: Removed virtualScreenId %{public}" PRIu64 " from render_process %{public}u",
@@ -436,12 +436,12 @@ sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GetServiceToRend
 {
     auto groupId = GetGroupIdByScreenId(screenId);
     std::lock_guard<std::mutex> lock(mutex_);
-    auto optionalToken = GetRenderProcessTokenByGroupIdLocked(groupId);
+    auto optionalToken = GetRenderProcessUniqueIdByGroupIdLocked(groupId);
     if (!optionalToken.has_value()) {
         RS_LOGE("%{public}s: get render process token failed", __func__);
         return nullptr;
     }
-    return GetServiceToRenderConnByTokenLocked(optionalToken.value());
+    return GetServiceToRenderConnByUniqueIdLocked(optionalToken.value());
 }
 
 std::vector<sptr<RSIServiceToRenderConnection>> RSMultiRenderProcessManager::GetServiceToRenderConns() const
@@ -459,34 +459,34 @@ sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GetConnectToRenderC
 {
     auto groupId = GetGroupIdByScreenId(screenId);
     std::lock_guard<std::mutex> lock(mutex_);
-    auto optionalToken = GetRenderProcessTokenByGroupIdLocked(groupId);
+    auto optionalToken = GetRenderProcessUniqueIdByGroupIdLocked(groupId);
     if (!optionalToken.has_value()) {
         RS_LOGE("%{public}s: get render process token failed", __func__);
         return nullptr;
     }
-    return GetConnectToRenderConnByTokenLocked(optionalToken.value());
+    return GetConnectToRenderConnByUniqueIdLocked(optionalToken.value());
 }
 
-sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GetServiceToRenderConnByToken(ProcessToken token) const
+sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GetServiceToRenderConnByUniqueId(ProcessUniqueId token) const
 {
     // lock version
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetServiceToRenderConnByTokenLocked(token);
+    return GetServiceToRenderConnByUniqueIdLocked(token);
 }
 
-sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GotServiceToRenderConnByToken(ProcessToken token) const
+sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GotServiceToRenderConnByUniqueId(ProcessUniqueId token) const
 {
     // Must success, or gonna throw an exception if failed. Caller must ensure token is valid.
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!IsValidRenderProcessTokenLocked(token)) {
+    if (!IsValidRenderProcessUniqueIdLocked(token)) {
         RS_LOGE("%{public}s: token invalidated by death cleanup", __func__);
         return nullptr;
     }
     return serviceToRenderConnections_.at(token);
 }
 
-sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GetServiceToRenderConnByTokenLocked(
-    ProcessToken token) const
+sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GetServiceToRenderConnByUniqueIdLocked(
+    ProcessUniqueId token) const
 {
     // without lock version
     if (auto iter = serviceToRenderConnections_.find(token); iter != serviceToRenderConnections_.end()) {
@@ -495,26 +495,26 @@ sptr<RSIServiceToRenderConnection> RSMultiRenderProcessManager::GetServiceToRend
     return nullptr;
 }
 
-sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GetConnectToRenderConnByToken(ProcessToken token) const
+sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GetConnectToRenderConnByUniqueId(ProcessUniqueId token) const
 {
     // lock version
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetConnectToRenderConnByTokenLocked(token);
+    return GetConnectToRenderConnByUniqueIdLocked(token);
 }
 
-sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GotConnectToRenderConnByToken(ProcessToken token) const
+sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GotConnectToRenderConnByUniqueId(ProcessUniqueId token) const
 {
     // Must success, or gonna throw an exception if failed. Caller must ensure token is valid.
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!IsValidRenderProcessTokenLocked(token)) {
+    if (!IsValidRenderProcessUniqueIdLocked(token)) {
         RS_LOGE("%{public}s: token invalidated by death cleanup", __func__);
         return nullptr;
     }
     return connectToRenderConnections_.at(token);
 }
 
-sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GetConnectToRenderConnByTokenLocked(
-    ProcessToken token) const
+sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GetConnectToRenderConnByUniqueIdLocked(
+    ProcessUniqueId token) const
 {
     // without lock version
     if (auto iter = connectToRenderConnections_.find(token); iter != connectToRenderConnections_.end()) {
@@ -523,28 +523,28 @@ sptr<RSIConnectToRenderProcess> RSMultiRenderProcessManager::GetConnectToRenderC
     return nullptr;
 }
 
-sptr<IRSComposerToRenderConnection> RSMultiRenderProcessManager::GotComposerToRenderConnByToken(
-    ProcessToken token) const
+sptr<IRSComposerToRenderConnection> RSMultiRenderProcessManager::GotComposerToRenderConnByUniqueId(
+    ProcessUniqueId token) const
 {
     // Must success, or gonna throw an exception if failed. Caller must ensure token is valid.
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!IsValidRenderProcessTokenLocked(token)) {
+    if (!IsValidRenderProcessUniqueIdLocked(token)) {
         RS_LOGE("%{public}s: token invalidated by death cleanup", __func__);
         return nullptr;
     }
     return composerToRenderConnections_.at(token);
 }
 
-sptr<IRSComposerToRenderConnection> RSMultiRenderProcessManager::GetComposerToRenderConnByToken(
-    ProcessToken token) const
+sptr<IRSComposerToRenderConnection> RSMultiRenderProcessManager::GetComposerToRenderConnByUniqueId(
+    ProcessUniqueId token) const
 {
     // lock version
     std::lock_guard<std::mutex> lock(mutex_);
-    return GetComposerToRenderConnByTokenLocked(token);
+    return GetComposerToRenderConnByUniqueIdLocked(token);
 }
 
-sptr<IRSComposerToRenderConnection> RSMultiRenderProcessManager::GetComposerToRenderConnByTokenLocked(
-    ProcessToken token) const
+sptr<IRSComposerToRenderConnection> RSMultiRenderProcessManager::GetComposerToRenderConnByUniqueIdLocked(
+    ProcessUniqueId token) const
 {
     // without lock version
     if (auto iter = composerToRenderConnections_.find(token); iter != composerToRenderConnections_.end()) {
@@ -611,7 +611,7 @@ void RSMultiRenderProcessManager::RenderProcessDeathRecipient::OnRemoteDied(cons
     managerSptr->HandleRenderProcessDeath(token_);
 }
 
-void RSMultiRenderProcessManager::HandleRenderProcessDeath(ProcessToken token)
+void RSMultiRenderProcessManager::HandleRenderProcessDeath(ProcessUniqueId token)
 {
     RS_LOGI("Handling render_process death, pid=%{public}u, timeStamp=%{public}" PRIu64,
         token.GetPid(), token.GetTimestamp());
@@ -620,8 +620,8 @@ void RSMultiRenderProcessManager::HandleRenderProcessDeath(ProcessToken token)
     std::vector<std::pair<ScreenId, std::shared_ptr<HdiOutput>>> affectedScreenOutputs;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        RemoveValidRenderProcessTokenLocked(token);
-        RemoveGroupIdByRenderProcessTokenLocked(token);
+        RemoveValidRenderProcessUniqueIdLocked(token);
+        RemoveGroupIdByRenderProcessUniqueIdLocked(token);
 
         auto node = processToScreenOutputMap_.extract(token);
         if (node) {
@@ -650,14 +650,14 @@ void RSMultiRenderProcessManager::HandleRenderProcessDeath(ProcessToken token)
     }
 }
 
-void RSMultiRenderProcessManager::RegisterDeathRecipient(ProcessToken token, const sptr<IRemoteObject>& binderObject)
+void RSMultiRenderProcessManager::RegisterDeathRecipient(ProcessUniqueId token, const sptr<IRemoteObject>& binderObject)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     RegisterDeathRecipientLocked(token, binderObject);
 }
 
 void RSMultiRenderProcessManager::RegisterDeathRecipientLocked(
-    ProcessToken token, const sptr<IRemoteObject>& binderObject)
+    ProcessUniqueId token, const sptr<IRemoteObject>& binderObject)
 {
     if (deathRecipients_.find(token) != deathRecipients_.end()) {
         RS_LOGW("%{public}s: DeathRecipient already registered for token(pid=%{public}u), replacing.",
@@ -675,13 +675,13 @@ void RSMultiRenderProcessManager::RegisterDeathRecipientLocked(
         __func__, token.GetPid(), token.GetTimestamp());
 }
 
-void RSMultiRenderProcessManager::UnregisterDeathRecipient(ProcessToken token)
+void RSMultiRenderProcessManager::UnregisterDeathRecipient(ProcessUniqueId token)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     UnregisterDeathRecipientLocked(token);
 }
 
-void RSMultiRenderProcessManager::UnregisterDeathRecipientLocked(ProcessToken token)
+void RSMultiRenderProcessManager::UnregisterDeathRecipientLocked(ProcessUniqueId token)
 {
     auto it = deathRecipients_.find(token);
     if (it != deathRecipients_.end()) {
@@ -691,44 +691,44 @@ void RSMultiRenderProcessManager::UnregisterDeathRecipientLocked(ProcessToken to
     }
 }
 
-void RSMultiRenderProcessManager::AddValidRenderProcessToken(ProcessToken token)
+void RSMultiRenderProcessManager::AddValidRenderProcessUniqueId(ProcessUniqueId token)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AddValidRenderProcessTokenLocked(token);
+    AddValidRenderProcessUniqueIdLocked(token);
 }
 
-void RSMultiRenderProcessManager::AddValidRenderProcessTokenLocked(ProcessToken token)
+void RSMultiRenderProcessManager::AddValidRenderProcessUniqueIdLocked(ProcessUniqueId token)
 {
-    validRenderProcessTokens_.insert(token);
+    validRenderProcessUniqueIds_.insert(token);
 }
 
-void RSMultiRenderProcessManager::RemoveValidRenderProcessToken(ProcessToken token)
+void RSMultiRenderProcessManager::RemoveValidRenderProcessUniqueId(ProcessUniqueId token)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    RemoveValidRenderProcessTokenLocked(token);
+    RemoveValidRenderProcessUniqueIdLocked(token);
 }
 
-void RSMultiRenderProcessManager::RemoveValidRenderProcessTokenLocked(ProcessToken token)
+void RSMultiRenderProcessManager::RemoveValidRenderProcessUniqueIdLocked(ProcessUniqueId token)
 {
-    validRenderProcessTokens_.erase(token);
+    validRenderProcessUniqueIds_.erase(token);
 }
 
-bool RSMultiRenderProcessManager::IsValidRenderProcessTokenLocked(ProcessToken token) const
+bool RSMultiRenderProcessManager::IsValidRenderProcessUniqueIdLocked(ProcessUniqueId token) const
 {
-    return validRenderProcessTokens_.find(token) != validRenderProcessTokens_.end();
+    return validRenderProcessUniqueIds_.find(token) != validRenderProcessUniqueIds_.end();
 }
 
-void RSMultiRenderProcessManager::AddScreenOutputToProcess(ProcessToken token, ScreenId screenId,
+void RSMultiRenderProcessManager::AddScreenOutputToProcess(ProcessUniqueId token, ScreenId screenId,
     const std::shared_ptr<HdiOutput>& output)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AddScreenOutputToProcessLocked(token, screenId, output);
 }
 
-void RSMultiRenderProcessManager::AddScreenOutputToProcessLocked(ProcessToken token, ScreenId screenId,
+void RSMultiRenderProcessManager::AddScreenOutputToProcessLocked(ProcessUniqueId token, ScreenId screenId,
     const std::shared_ptr<HdiOutput>& output)
 {
-    if (!IsValidRenderProcessTokenLocked(token)) {
+    if (!IsValidRenderProcessUniqueIdLocked(token)) {
         RS_LOGW("%{public}s: Token no longer valid, skip adding screen %{public}" PRIu64,
             __func__, screenId);
         return;
@@ -745,7 +745,7 @@ void RSMultiRenderProcessManager::AddScreenOutputToProcessLocked(ProcessToken to
         "replaced=%{public}d", screenId, token.GetPid(), token.GetTimestamp(), existing != screenOutputs.end());
 }
 
-void RSMultiRenderProcessManager::RemoveScreenOutputFromProcess(ProcessToken token, ScreenId screenId)
+void RSMultiRenderProcessManager::RemoveScreenOutputFromProcess(ProcessUniqueId token, ScreenId screenId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it = processToScreenOutputMap_.find(token);

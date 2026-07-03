@@ -60,7 +60,7 @@ void RSRenderToServiceConnectionTest::SetUpTestCase()
     renderService.renderProcessManager_ = sptr<RSMultiRenderProcessManager>::MakeSptr(renderService);
     auto multiMgr = static_cast<RSMultiRenderProcessManager*>(renderService.renderProcessManager_.GetRefPtr());
     pid_t testPid = getpid();
-    ProcessToken testToken = {testPid, 0};
+    ProcessUniqueId testToken = {testPid, 0};
     multiMgr->renderProcessReadyPromise_[testToken];
     sptr<RSRenderServiceAgent> renderServiceAgent = sptr<RSRenderServiceAgent>::MakeSptr(renderService);
     sptr<RSRenderProcessManagerAgent> renderProcessManagerAgent =
