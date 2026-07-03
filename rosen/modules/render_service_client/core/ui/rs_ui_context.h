@@ -299,7 +299,6 @@ private:
     TaskRunner taskRunner_ = TaskRunner();
     sptr<IRemoteObject> connectToRenderRemote_;
     std::function<void()> requestVsyncCallback_;
-    std::mutex requestVsyncCallbackMutex_;
     std::mutex implicitAnimatorMutex_;
     std::mutex uiPipelineNumMutex_;
     int32_t uiPipelineNum_ = UI_PiPLINE_NUM_UNDEFINED;
