@@ -76,11 +76,9 @@ RSUIDirector::~RSUIDirector()
 {
     auto uiContext = rsUIContext_;
     Destroy();
-#ifdef RS_MODIFIERS_DRAW_ENABLE
     if (uiContext != nullptr) {
-        uiContext->OnDestroy();
+        uiContext->PostLastModifiersDrawThreadTask();
     }
-#endif
 }
 
 void RSUIDirector::Init(sptr<IRemoteObject>& connectToRenderRemote, std::shared_ptr<RSUIContext> rsUIContext)

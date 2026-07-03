@@ -625,6 +625,23 @@ HWTEST_F(RSUIContextTest, WaitForRebuildNormal_NotifyWakes, TestSize.Level1)
     notifier.join();
 }
 
+/**
+ * @tc.name: PostLastModifiersDrawThreadTaskTest
+ * @tc.desc: Test PostLastModifiersDrawThreadTask
+ * @tc.type:FUNC
+ */
+HWTEST_F(RSUIContextTest, PostLastModifiersDrawThreadTaskTest, TestSize.Level1)
+{
+    auto rsUIContext = CreateRSUIContext();
+    ASSERT_NE(rsUIContext, nullptr);
+    ASSERT_EQ(rsUIContext->modifiersDrawThread_ != nullptr, RSSystemProperties::GetHybridRenderCanvasEnabled());
+    rsUIContext->PostLastModifiersDrawThreadTask();
+    ASSERT_EQ(rsUIContext->modifiersDrawThread_ != nullptr, RSSystemProperties::GetHybridRenderCanvasEnabled());
+    rsUIContext->modifiersDrawThread_ = nullptr;
+    rsUIContext->PostLastModifiersDrawThreadTask();
+    ASSERT_EQ(rsUIContext->modifiersDrawThread_, nullptr);
+}
+
 #ifdef RS_MODIFIERS_DRAW_ENABLE
 /**
  * @tc.name: FlushCanvasDrawingNodeBuffersTest
@@ -761,23 +778,6 @@ HWTEST_F(RSUIContextTest, FlushCanvasDrawingNodeBuffersTest003, TestSize.Level1)
     rsUIContext->canvasDrawingNodeBufferFlushed_ = true;
     rsUIContext->FlushCanvasDrawingNodeBuffers();
     EXPECT_FALSE(rsUIContext->canvasDrawingNodeUpdated_);
-}
-
-/**
- * @tc.name: OnDestroyTest
- * @tc.desc: Test OnDestroy
- * @tc.type:FUNC
- */
-HWTEST_F(RSUIContextTest, OnDestroyTest, TestSize.Level1)
-{
-    auto rsUIContext = CreateRSUIContext();
-    ASSERT_NE(rsUIContext, nullptr);
-    ASSERT_EQ(rsUIContext->modifiersDrawThread_ != nullptr, RSSystemProperties::GetHybridRenderCanvasEnabled());
-    rsUIContext->OnDestroy();
-    ASSERT_EQ(rsUIContext->modifiersDrawThread_ != nullptr, RSSystemProperties::GetHybridRenderCanvasEnabled());
-    rsUIContext->modifiersDrawThread_ = nullptr;
-    rsUIContext->OnDestroy();
-    ASSERT_EQ(rsUIContext->modifiersDrawThread_, nullptr);
 }
 #endif
 } // namespace OHOS::Rosen

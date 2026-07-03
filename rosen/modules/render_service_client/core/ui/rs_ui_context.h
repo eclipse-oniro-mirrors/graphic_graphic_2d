@@ -259,11 +259,11 @@ private:
     RSUIContext& operator=(const RSUIContext&&) = delete;
 
     void DumpNodeTreeProcessor(NodeId nodeId, pid_t pid, uint32_t taskId, std::string& out);
+    void PostLastModifiersDrawThreadTask();
 
 #ifdef RS_MODIFIERS_DRAW_ENABLE
     CommitTransactionCallback CreateCommitTransactionCallback();
     void UnblockUIThread();
-    void OnDestroy();
 
     std::shared_ptr<RSCanvasModifiersDrawAgent> GetCanvasModifiersDrawAgent()
     {
