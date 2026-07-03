@@ -2016,17 +2016,17 @@ public:
     void MarkLayerPartRender(bool isLayerPartRender);
 
     /**
-     * @brief Set the spatial effect parameters of the node
-     *
-     * @param para spatial effect parameters
-     */
+    * @brief Set the spatial effect parameters of the node
+    *
+    * @param para spatial effect parameters
+    */
     void SetSpatialEffectPara(const std::shared_ptr<SpatialEffectVariantPara>& para);
 
     /**
-     * @brief Set whether the node is a depth background node
-     *
-     * @param isDepthBackground True if the node is a depth background node
-     */
+    * @brief Set whether the node is a depth background node
+    *
+    * @param isDepthBackground True if the node is a depth background node
+    */
     void SetIsDepthBackground(bool isDepthBackground);
 
     void ReSortChildrenByZIndex();

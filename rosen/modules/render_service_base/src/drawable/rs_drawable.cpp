@@ -94,7 +94,7 @@ static const std::array<RSDrawable::Generator, GEN_LUT_SIZE> g_drawableGenerator
     ModifierGenerator<ModifierNG::RSModifierType::TRANSITION_STYLE>, // TRANSITION_STYLE,
     RSEnvFGColorDrawable::OnGenerate,                                // ENV_FOREGROUND_COLOR,
     RSColorPickerDrawable::OnGenerate,                               // COLOR_PICKER,
-    RSSpatialEffectDrawable::OnGenerate,                             // SPATIAL_EFFECT
+    RSSpatialEffectDrawable::OnGenerate,                             // SPATIAL_EFFECT,
     RSMaterialFilterDrawable::OnGenerate,                            // MATERIAL_FILTER,
     RSShadowDrawable::OnGenerate,                                    // SHADOW,
     RSForegroundFilterDrawable::OnGenerate,                          // FOREGROUND_FILTER

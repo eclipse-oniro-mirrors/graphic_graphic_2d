@@ -49,7 +49,6 @@ public:
         }
         SetAbsRect();
     }
-
     // Using by RenderService
     void UpdateByMatrixFromSelf();
 

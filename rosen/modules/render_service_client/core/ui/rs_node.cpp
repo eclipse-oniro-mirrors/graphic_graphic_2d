@@ -3527,6 +3527,8 @@ void RSNode::SetSpatialEffectPara(const std::shared_ptr<SpatialEffectVariantPara
         SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
             &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectRightBottom>(
                 corners[SpatialEffectPara::RIGHT_BOTTOM_INDEX]);
+        SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
+            &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectOcclusionWeight>(para->occlusionWeight);
 
         std::unique_lock<std::recursive_mutex> lock(propertyMutex_);
         CHECK_FALSE_RETURN(CheckMultiThreadAccess(__func__));

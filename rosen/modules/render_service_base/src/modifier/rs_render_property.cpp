@@ -662,8 +662,8 @@ void RSRenderProperty<DepthCameraPara>::Dump(std::string& out) const
     const auto& quaternion = depthCameraPara.quaternion;
     ss << ", quaternion: (" << quaternion.x_ << ", " << quaternion.y_ << ", " << quaternion.z_ << ", "
         << quaternion.w_ << ")";
-    ss << ", yFov: " << depthCameraPara.yFov << ", zNear: " << depthCameraPara.zNear <<
-        ", zFar: " << depthCameraPara.zFar;
+    ss << ", yFov: " << depthCameraPara.yFov << ", zNear: " << depthCameraPara.zNear
+        << ", zFar: " << depthCameraPara.zFar;
     const auto& offset = depthCameraPara.offset;
     ss << ", offset: (" << offset.x_ << ", " << offset.y_ << ")";
     ss << "]";

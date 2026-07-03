@@ -176,7 +176,7 @@ void RSSpatialEffectManager::ProcessDepthNodeAndSpatialEffectNodeDirty()
             }
         }
 
-        // 2. Mark spatialeffectnode of dirty depthnode dirty
+        // 2. Mark spatialeffectnode of dirty depthnode dirty.
         if (spNode->IsDirty()) {
             SetSpatialEffectNodeDirty(entry.second);
         }
@@ -215,7 +215,7 @@ void RSSpatialEffectManager::CleanExpiredNodes()
             return false;
         });
         // Do not erase depth node when there are no spatial effect node under it,
-        // because is may be used as a master-global depth node
+        // because it may be used as a master-global depth node
         return false;
     });
 

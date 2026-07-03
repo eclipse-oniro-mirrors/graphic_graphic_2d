@@ -38,7 +38,7 @@ ADD_COMMAND(RSDepthNodeCreate, ARG(PERMISSION_APP, DEPTH_NODE, DEPTH_NODE_CREATE
     NodeId, bool))
 ADD_COMMAND(RSDepthNodeSetType, ARG(PERMISSION_APP, DEPTH_NODE, DEPTH_NODE_SET_TYPE, RSDepthNodeCommandHelper::SetType,
     NodeId, DepthSpaceType))
-} // namespace OHOS
 } // namespace Rosen
+} // namespace OHOS
 
 #endif // ROSEN_RENDER_SERVICE_BASE_COMMAND_RS_DEPTH_NODE_COMMAND_H

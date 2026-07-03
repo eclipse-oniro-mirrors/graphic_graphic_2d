@@ -1187,8 +1187,13 @@ void RSUniRenderVisitor::QuickPrepareDepthRenderNode(RSDepthRenderNode& node, bo
     // 1. Recursively traverse child nodes
     hasAccumulatedClip_ = node.SetAccumulatedClipFlag(hasAccumulatedClip_);
     bool isSubTreeNeedPrepare = node.IsSubTreeNeedPrepare(filterInGlobal_) || ForcePrepareSubTree();
-    isSubTreeNeedPrepare ? QuickPrepareChildren(node) :
+    node.ClearAllHwcNodeAndFilterNode();
+    if (isSubTreeNeedPrepare) {
+        QuickPrepareChildren(node);
+    } else {
+        CollectHwcAndFilterNodesInSkippedSubTree(node);
         node.SubTreeSkipPrepare(*dirtyManager, curDirty_, dirtyFlag_, prepareClipRect_);
+    }
     PostPrepare(node, isParentPrepareInReverseOrder, !isSubTreeNeedPrepare);
     prepareClipRect_ = prepareClipRect;
     hasAccumulatedClip_ = hasAccumulatedClip;
@@ -2215,6 +2220,7 @@ void RSUniRenderVisitor::QuickPrepareWindowKeyFrameRenderNode(RSWindowKeyFrameRe
 
     dirtyFlag_ = node.UpdateDrawRectAndDirtyRegion(
         *dirtyManager, dirtyFlag_, prepareClipRect_, parentSurfaceNodeMatrix_);
+    node.AccumulateParentGeoDirty();
     node.UpdateCurCornerInfo(curCornerRadius_, curCornerRect_);
     PostPrepare(node, isParentPrepareInReverseOrder, true);
     node.CollectLinkedNodeInfo();

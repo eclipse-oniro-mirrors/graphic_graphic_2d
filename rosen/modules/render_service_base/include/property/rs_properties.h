@@ -382,7 +382,7 @@ public:
     void SetDynamicLightUpDegree(const std::optional<float>& degree);
     void SetDynamicDimDegree(const std::optional<float>& DimDegree);
 
-    void SetDepthImage(const std::shared_ptr<RSImage>& image);
+    void SetDepthImage(const std::shared_ptr<RSImage>& depthImage);
     std::shared_ptr<RSImage> GetDepthImage() const;
     void SetDepthCameraPara(const DepthCameraPara& depthCameraPara);
     std::optional<DepthCameraPara> GetDepthCameraPara() const;

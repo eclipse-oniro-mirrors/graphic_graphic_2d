@@ -19,7 +19,7 @@
 #include "modifier_ng/rs_modifier_ng.h"
 
 namespace OHOS::Rosen::ModifierNG {
-class RSC_EXPORT RSSpatialEffectModifier : public Modifier {
+class RSC_EXPORT RSSpatialEffectModifier : public RSModifier {
 public:
     RSSpatialEffectModifier() = default;
     ~RSSpatialEffectModifier() override = default;

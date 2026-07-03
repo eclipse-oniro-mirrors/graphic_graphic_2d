@@ -353,7 +353,7 @@ RSProperties::SpatialEffectPerspectiveResults RSProperties::CalculateSpatialEffe
     
     SpatialEffectPerspectiveResults ret;
     ret.transformMatrix = Drawing::Matrix();
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 4; ++i) {
         const Vector3f& point = params.cornerPoints[i];
         
         float x = point.x_;
@@ -365,7 +365,7 @@ RSProperties::SpatialEffectPerspectiveResults RSProperties::CalculateSpatialEffe
         float outY = vpMatrix[1] * x + vpMatrix[5] * y + vpMatrix[9]  * z + vpMatrix[13] * w;
         float outZ = vpMatrix[2] * x + vpMatrix[6] * y + vpMatrix[10] * z + vpMatrix[14] * w;
         float outW = vpMatrix[3] * x + vpMatrix[7] * y + vpMatrix[11] * z + vpMatrix[15] * w;
-
+        
         if (std::abs(outW) > 1e-6f) {
             outX /= outW;
             outY /= outW;
@@ -408,13 +408,13 @@ void RSProperties::ApplySpatialEffectMatrix()
         return;
     }
 
-    std::shared_ptr<RSRenderNode> masterGlobalDepthNode = nullptr;
+    std::shared_ptr<RSRenderNode> masterGlobalDepNode = nullptr;
 
     if (auto node = depthNode->template ReinterpretCastTo<RSDepthRenderNode>()) {
         if (node->GetDepthSpaceType() == DepthSpaceType::GLOBAL) {
-            masterGlobalDepthNode = RSSpatialEffectManager::Instance()->GetMasterGlobalDepthNode(
+            masterGlobalDepNode = RSSpatialEffectManager::Instance()->GetMasterGlobalDepthNode(
                 renderNode->GetLogicalDisplayNodeId()).lock();
-            if (!masterGlobalDepthNode) {
+            if (!masterGlobalDepNode) {
                 ROSEN_LOGE("ApplySpatialEffectMatrix: global depthNode not found");
                 return;
             }
@@ -449,7 +449,7 @@ void RSProperties::ApplySpatialEffectMatrix()
         return;
     }
     
-    auto cameraPara = masterGlobalDepthNode ? masterGlobalDepthNode->GetMutableRenderProperties().GetDepthCameraPara()
+    auto cameraPara = masterGlobalDepNode ? masterGlobalDepNode->GetMutableRenderProperties().GetDepthCameraPara()
         : propertiesDep.GetDepthCameraPara();
 
     if (!cameraPara.has_value()) {
@@ -495,7 +495,7 @@ void RSProperties::ApplySpatialEffectMatrix()
         boundsGeo_->ReplaceMatrix(matrixRelaDepNoSelfInv * perspectiveResults.transformMatrix,
             absMatrixDep * perspectiveResults.transformMatrix);
     } else {
-        ROSEN_LOGE("ApplySpatialEffectEffectMatrix: transform is identity (SetPolyToPoly may have failed)");
+        ROSEN_LOGE("ApplySpatialEffectMatrix: transformMatrix is identity (SetPolyToPoly may have failed)");
     }
 }
 
@@ -2355,6 +2355,7 @@ void RSProperties::SetSpatialEffectPara(const std::optional<SpatialEffectPara>& 
     GetEffect().spatialEffectVariantPara_ = spatialEffectPara;
     SetDirty();
     contentDirty_ = true;
+    geoDirty_ = true;
 
     auto renderNode = backref_.lock();
     if (renderNode == nullptr) {
@@ -2956,7 +2957,7 @@ void RSProperties::SetDirty()
 
 void RSProperties::SetGeoDirty()
 {
-    geoDirty_ = false;
+    geoDirty_ = true;
 }
 
 void RSProperties::ResetDirty()

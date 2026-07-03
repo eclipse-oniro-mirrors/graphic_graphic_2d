@@ -43,7 +43,7 @@ RSDepthNode::SharedPtr RSDepthNode::Create(bool isRenderServiceNode, bool isText
 
 void RSDepthNode::CreateRenderNode()
 {
-    std::unique_ptr<RSCommand> command = std::make_unique<RSDepthNodeCreate>(GetId(), IsTextureExportNode());
+    std::unique_ptr<RSCommand> command = std::make_unique<RSDepthNodeCreate>(GetId(), isTextureExportNode_);
     AddCommand(command, IsRenderServiceNode());
 }
 

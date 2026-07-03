@@ -20,7 +20,7 @@
 #include "modifier_ng/rs_modifier_ng.h"
 
 namespace OHOS::Rosen::ModifierNG {
-class RSC_EXPORT RSDepthSpaceModifier : public Modifier {
+class RSC_EXPORT RSDepthSpaceModifier : public RSModifier {
 public:
     RSDepthSpaceModifier() = default;
     ~RSDepthSpaceModifier() override = default;

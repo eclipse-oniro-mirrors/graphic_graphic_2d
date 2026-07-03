@@ -15,6 +15,7 @@
 
 #include "rs_graphic_test.h"
 #include "rs_graphic_test_img.h"
+#include "rs_graphic_test_director.h"
 #include "ui/rs_depth_node.h"
 
 using namespace testing;
@@ -35,7 +36,7 @@ struct DepthSpaceConfig {
 struct SpatialParaConfig {
     Vector3f topLeft = {0.23733f, 0.20563f, 1.74357f};
     Vector3f topRight = {0.59956f, 0.27635f, 1.89782f};
-    Vector3f bottomLeft = {0.23733f, -0.79426f, 1.74357f};
+    Vector3f bottomLeft = {0.23733f, -0.79436f, 1.74357f};
     Vector3f bottomRight = {0.59956f, -0.72365f, 1.89782f};
     float depthRatio = 1.0f;
 };
@@ -76,7 +77,7 @@ public:
         std::shared_ptr<RSDepthNode> depthNode,
         const DepthSpaceConfig& config)
     {
-        auto backgroundNode = RSCanvasNode::Create();
+        auto backgroundNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         backgroundNode->SetBounds({0, 0, static_cast<float>(config.screenWidth),
             static_cast<float>(config.screenHeight)});
         backgroundNode->SetFrame({0, 0, static_cast<float>(config.screenWidth),
@@ -103,7 +104,7 @@ public:
         uint32_t bgColor,
         const SpatialParaConfig& spatialPara)
     {
-        auto cardNode = RSCanvasNode::Create();
+        auto cardNode = RSCanvasNode::Create(false, false, RSGraphicTestDirector::Instance().GetRSUIContext());
         cardNode->SetBounds({x, y, width, height});
         cardNode->SetFrame({x, y, width, height});
         cardNode->SetBackgroundColor(bgColor);
@@ -113,7 +114,7 @@ public:
         corners[SpatialEffectPara::LEFT_TOP_INDEX] = spatialPara.topLeft;
         corners[SpatialEffectPara::RIGHT_TOP_INDEX] = spatialPara.topRight;
         corners[SpatialEffectPara::LEFT_BOTTOM_INDEX] = spatialPara.bottomLeft;
-        corners[SpatialEffectPara::RIGHT_TOP_INDEX] = spatialPara.bottomRight;
+        corners[SpatialEffectPara::RIGHT_BOTTOM_INDEX] = spatialPara.bottomRight;
         spaParaPtr->position = corners;
         spaParaPtr->occlusionWeight = spatialPara.depthRatio;
         cardNode->SetSpatialEffectPara(spaParaPtr);
@@ -161,8 +162,8 @@ private:
             {
                 {
                     {-0.38547484433986123f, -0.2038568888335805f, -0.8747313775404545f},
-                    {-0.041059382906627806f, -0.18955884902662175f, -1.0200015122067532f},
-                    {-0.3854748443398613f, -0.70886599980776776f, -0.8747313775404545f},
+                    {-0.041059382906627806f, -0.18955884902662176f, -1.0200015122067532f},
+                    {-0.3854748443398613f, -0.7088659998076776f, -0.8747313775404545f},
                     {-0.041059382906627764f, -0.694567960000719f, -1.0200015122067532f}, 1.0f
                 },
                 {
@@ -215,9 +216,9 @@ private:
                 },
                 {
                     {0.21890121200258839f, 0.7469099971943828f, -1.6124389151328704f},
-                    {0.7736241839920267f, 0.7918412190459211f, -1.759761999249333f},
+                    {0.7736241839920268f, 0.7918412190459211f, -1.759761999249333f},
                     {0.21890121200258839f, -0.11390494427974307f, -1.6124389151328704f},
-                    {0.7736241839920267f, -0.06897372242820479f, -1.7597619992493332f}, 1.0f
+                    {0.7736241839920268f, -0.06897372242820479f, -1.7597619992493332f}, 1.0f
                 }
             }
         },
@@ -249,7 +250,7 @@ private:
                     {0.29804616650515486f, 1.2521002376338268f, -2.7028497625464833f},
                     {1.2394504383376939f, 1.3369854900910987f, -2.819376418772971f},
                     {0.29804616650515486f, -0.31186894718899405f, -2.7028497625464833f},
-                    {1.2394504383376939f, -0.22698369473172225f, -2.819376418772971f}, 1.0f
+                    {1.2394504383376939f, -0.22698369473172225f, -2.819376418772971}, 1.0f
                 }
             }
         },
@@ -273,7 +274,7 @@ private:
 };
 
 static constexpr float CARD_X = 300;
-static constexpr float CARD_Y = 400;
+static constexpr float CARD_Y = 300;
 static constexpr float CARD_WIDTH = 500;
 static constexpr float CARD_HEIGHT = 500;
 static constexpr uint32_t CARD_BG_COLOR = 0xffffffff;
@@ -420,7 +421,7 @@ GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Spatial_Effect_Tes
 
 GRAPHIC_TEST(AppearanceTest, CONTENT_DISPLAY_TEST, Appearance_Spatial_Effect_Test_8)
 {
-    auto& imgConfig = AppearanceTest::GetImageConfigs()[8];
+    auto& imgConfig = AppearanceTest::GetImageConfigs()[7];
     DepthSpaceConfig spaceConfig;
     spaceConfig.depthImagePath = imgConfig.depthImagePath;
     spaceConfig.backgroundImagePath = imgConfig.backgroundImagePath;

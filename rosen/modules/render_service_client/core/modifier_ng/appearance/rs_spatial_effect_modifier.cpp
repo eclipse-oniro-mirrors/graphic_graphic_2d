@@ -18,27 +18,27 @@
 namespace OHOS::Rosen::ModifierNG {
 void RSSpatialEffectModifier::SetSpatialEffectDepth(float depth)
 {
-    Setter<RSProperty>(RSPropertyType::SPATIAL_EFFECT_DEPTH, depth);
+    Setter(RSPropertyType::SPATIAL_EFFECT_DEPTH, depth);
 }
 
 void RSSpatialEffectModifier::SetSpatialEffectLeftTop(const Vector3f& leftTop)
 {
-    Setter<RSProperty>(RSPropertyType::SPATIAL_EFFECT_LEFT_TOP, leftTop);
+    Setter(RSPropertyType::SPATIAL_EFFECT_LEFT_TOP, leftTop);
 }
 
 void RSSpatialEffectModifier::SetSpatialEffectRightTop(const Vector3f& rightTop)
 {
-    Setter<RSProperty>(RSPropertyType::SPATIAL_EFFECT_RIGHT_TOP, rightTop);
+    Setter(RSPropertyType::SPATIAL_EFFECT_RIGHT_TOP, rightTop);
 }
 
 void RSSpatialEffectModifier::SetSpatialEffectLeftBottom(const Vector3f& leftBottom)
 {
-    Setter<RSProperty>(RSPropertyType::SPATIAL_EFFECT_LEFT_BOTTOM, leftBottom);
+    Setter(RSPropertyType::SPATIAL_EFFECT_LEFT_BOTTOM, leftBottom);
 }
 
 void RSSpatialEffectModifier::SetSpatialEffectRightBottom(const Vector3f& rightBottom)
 {
-    Setter<RSProperty>(RSPropertyType::SPATIAL_EFFECT_RIGHT_BOTTOM, rightBottom);
+    Setter(RSPropertyType::SPATIAL_EFFECT_RIGHT_BOTTOM, rightBottom);
 }
 
 void RSSpatialEffectModifier::SetSpatialEffectOcclusionWeight(float occlusionWeight)

@@ -27,6 +27,7 @@
 #include "platform/common/rs_log.h"
 #include "property/rs_color_picker_def.h"
 #include "property/rs_properties_painter.h"
+#include "property/rs_spatial_effect_manager.h"
 #include "render/rs_blur_filter.h"
 #include "render/rs_color_picker.h"
 #include "render/rs_drawing_filter.h"

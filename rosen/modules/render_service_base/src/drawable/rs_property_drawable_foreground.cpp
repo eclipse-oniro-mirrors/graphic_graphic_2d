@@ -962,7 +962,7 @@ void RSSpatialEffectDrawable::RenderOcclusionEffect(Drawing::Canvas* canvas, con
 
 bool RSSpatialEffectDrawable::IsNeedSkipOcclusion(const RSDepthRenderParams& depthParam) const
 {
-    if (!ROSEN_LE(spatialEffectPara_->occlusionWeight, 0.0f)) {
+    if (!ROSEN_LE(spatialEffectPara_->occlusionWeight, 0.f)) {
         RS_LOGD("RSSpatialEffectDrawable::IsNeedSkipOcclusion: occlusionWeight > 0, need to draw occlusion");
         return false;
     }
