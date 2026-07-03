@@ -337,6 +337,7 @@ public:
             case RSPropertyType::COLOR_PICKER_INTERVAL : return "ColorPickerInterval";
             case RSPropertyType::COLOR_PICKER_NOTIFY_THRESHOLD : return "ColorPickerNotifyThreshold";
             case RSPropertyType::COLOR_ADAPTIVE : return "ColorAdaptive";
+            case RSPropertyType::COVERAGE_NG_SHADER: return "CoverageNGShader";
             case RSPropertyType::DOUBLE_SIDED: return "DoubleSided";
             case RSPropertyType::CHILDREN: return "Children";
             case RSPropertyType::MATERIAL_SHADER: return "MaterialShader";

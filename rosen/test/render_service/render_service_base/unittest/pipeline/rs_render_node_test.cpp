@@ -1798,7 +1798,7 @@ HWTEST_F(RSRenderNodeTest, UpdateOverlayNGShaderDirtySlotTest1, TestSize.Level1)
     EXPECT_TRUE(node->dirtySlots_.empty());
     auto overlayShader = std::make_shared<RSNGRenderAIBarRectHalo>();
     node->GetMutableRenderProperties().SetOverlayNGShader(overlayShader);
-    node->UpdatePointLightDirtySlot();
+    node->UpdateDirtySlotsAndPendingNodes(RSDrawableSlot::OVERLAY_NG_SHADER);
     EXPECT_FALSE(node->dirtySlots_.empty());
     EXPECT_TRUE(node->dirtySlots_.count(RSDrawableSlot::OVERLAY_NG_SHADER) > 0);
 }
