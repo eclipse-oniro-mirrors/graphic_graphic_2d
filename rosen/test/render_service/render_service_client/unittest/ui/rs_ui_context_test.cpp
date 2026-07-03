@@ -632,7 +632,8 @@ HWTEST_F(RSUIContextTest, WaitForRebuildNormal_NotifyWakes, TestSize.Level1)
  */
 HWTEST_F(RSUIContextTest, PostLastModifiersDrawThreadTaskTest, TestSize.Level1)
 {
-    auto rsUIContext = CreateRSUIContext();
+    OHOS::sptr<OHOS::IRemoteObject> connectToRenderRemote;
+    auto rsUIContext = RSUIContextManager::MutableInstance().CreateRSUIContext(connectToRenderRemote);
     ASSERT_NE(rsUIContext, nullptr);
     ASSERT_EQ(rsUIContext->modifiersDrawThread_ != nullptr, RSSystemProperties::GetHybridRenderCanvasEnabled());
     rsUIContext->PostLastModifiersDrawThreadTask();
