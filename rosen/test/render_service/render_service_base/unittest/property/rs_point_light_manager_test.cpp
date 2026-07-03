@@ -211,6 +211,57 @@ HWTEST_F(RSPointLightManagerTest, RegisterIlluminated002, TestSize.Level1)
 }
 
 /**
+ * @tc.name: RegisterLightSource003
+ * @tc.desc: test RegisterLightSource overwrites stale entry when same NodeId re-registers
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPointLightManagerTest, RegisterLightSource003, TestSize.Level1)
+{
+    auto& instance = RSPointLightManager::Instance(0);
+    instance->lightSourceNodeMap_.clear();
+
+    auto node1 = std::make_shared<RSRenderNode>(1);
+    instance->RegisterLightSource(node1);
+    EXPECT_EQ(instance->lightSourceNodeMap_.count(1), 1u);
+    EXPECT_EQ(instance->lightSourceNodeMap_[1].lock().get(), node1.get());
+
+    // Same NodeId, new object (simulates node rebuild)
+    auto node2 = std::make_shared<RSRenderNode>(1);
+    instance->RegisterLightSource(node2);
+    EXPECT_EQ(instance->lightSourceNodeMap_.count(1), 1u);
+    EXPECT_EQ(instance->lightSourceNodeMap_[1].lock().get(), node2.get());
+    EXPECT_NE(instance->lightSourceNodeMap_[1].lock().get(), node1.get());
+
+    instance->lightSourceNodeMap_.clear();
+}
+
+/**
+ * @tc.name: RegisterIlluminated003
+ * @tc.desc: test RegisterIlluminated overwrites stale entry when same NodeId re-registers
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSPointLightManagerTest, RegisterIlluminated003, TestSize.Level1)
+{
+    auto& instance = RSPointLightManager::Instance(0);
+    instance->illuminatedNodeMap_.clear();
+
+    auto node1 = std::make_shared<RSRenderNode>(1);
+    instance->RegisterIlluminated(node1);
+    EXPECT_EQ(instance->illuminatedNodeMap_.count(1), 1u);
+    EXPECT_EQ(instance->illuminatedNodeMap_[1].lock().get(), node1.get());
+
+    auto node2 = std::make_shared<RSRenderNode>(1);
+    instance->RegisterIlluminated(node2);
+    EXPECT_EQ(instance->illuminatedNodeMap_.count(1), 1u);
+    EXPECT_EQ(instance->illuminatedNodeMap_[1].lock().get(), node2.get());
+    EXPECT_NE(instance->illuminatedNodeMap_[1].lock().get(), node1.get());
+
+    instance->illuminatedNodeMap_.clear();
+}
+
+/**
  * @tc.name: UnRegisterLightSource001
  * @tc.desc: test results of UnRegisterLightSource
  * @tc.type:FUNC
