@@ -625,6 +625,7 @@ HWTEST_F(RSUIContextTest, WaitForRebuildNormal_NotifyWakes, TestSize.Level1)
     notifier.join();
 }
 
+#ifdef RS_MODIFIERS_DRAW_ENABLE
 /**
  * @tc.name: PostLastModifiersDrawThreadTaskTest
  * @tc.desc: Test PostLastModifiersDrawThreadTask
@@ -643,7 +644,6 @@ HWTEST_F(RSUIContextTest, PostLastModifiersDrawThreadTaskTest, TestSize.Level1)
     ASSERT_EQ(rsUIContext->modifiersDrawThread_, nullptr);
 }
 
-#ifdef RS_MODIFIERS_DRAW_ENABLE
 /**
  * @tc.name: FlushCanvasDrawingNodeBuffersTest
  * @tc.desc: Test FlushCanvasDrawingNodeBuffers early return when hybrid canvas disabled
