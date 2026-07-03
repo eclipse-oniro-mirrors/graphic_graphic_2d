@@ -303,6 +303,21 @@ bool RSUIContext::WaitForRebuildNormal(uint32_t timeoutMs)
     return true;
 }
 
+void RSUIContext::PostLastModifiersDrawThreadTask()
+{
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+    if (!RSSystemProperties::GetHybridRenderCanvasEnabled() || modifiersDrawThread_ == nullptr) {
+        return;
+    }
+    auto self = shared_from_this();
+    // Critical: hold strong reference to RSUIContext in task to delay its destruction,
+    // ensuring all tasks in modifiersDrawThread_ complete and avoiding task loss.
+    modifiersDrawThread_->PostTask([self]() {
+        RS_TRACE_NAME_FMT("RSUIContext::PostLastModifiersDrawThreadTask Token: %" PRIu64, self->GetToken());
+    });
+#endif
+}
+
 #ifdef RS_MODIFIERS_DRAW_ENABLE
 void RSUIContext::UnblockUIThread()
 {
