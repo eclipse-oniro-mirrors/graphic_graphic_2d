@@ -3206,8 +3206,7 @@ HWTEST_F(RSSurfaceRenderNodeDrawableTest, OnDrawAbnormalProcessTest, TestSize.Le
 
     // OnDraw should return early for abnormal process
     surfaceDrawable_->OnDraw(*canvas_);
-    bool isAbnormal = MemorySnapshot::Instance().IsAbnormalProcess(pid);
-    ASSERT_TRUE(isAbnormal);
+    ASSERT_EQ(surfaceDrawable_->GetDrawSkipType(), DrawSkipType::MEMORYOVER_SKIP);
     
     // Clean up
     std::set<pid_t> exitedPids = {pid};

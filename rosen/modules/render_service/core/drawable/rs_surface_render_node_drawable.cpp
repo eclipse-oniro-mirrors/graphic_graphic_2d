@@ -703,11 +703,12 @@ void RSSurfaceRenderNodeDrawable::SyncUifirstDrawCmds()
 
 void RSSurfaceRenderNodeDrawable::OnDraw(Drawing::Canvas& canvas)
 {
+    SetDrawSkipType(DrawSkipType::NONE);
     if (MemorySnapshot::Instance().IsAbnormalProcess(ExtractPid(GetId()))) {
         RS_LOGE("RSSurfaceRenderNodeDrawable::OnDraw abnormal process %{public}d .", ExtractPid(GetId()));
+        SetDrawSkipType(DrawSkipType::MEMORYOVER_SKIP);
         return;
     }
-    SetDrawSkipType(DrawSkipType::NONE);
     if (!ShouldPaint()) {
         SetDrawSkipType(DrawSkipType::SHOULD_NOT_PAINT);
         RS_TRACE_NAME_FMT("RSSurfaceRenderNodeDrawable::OnDraw %s should not paint", name_.c_str());
