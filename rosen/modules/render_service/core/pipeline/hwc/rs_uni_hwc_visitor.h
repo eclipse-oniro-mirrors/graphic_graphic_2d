@@ -128,8 +128,6 @@ private:
     // Track surfaces that have ColorPicker tasks this frame with their rects for intersection checking
     std::unordered_map<NodeId, std::pair<NodeId, RectI>> colorPickerHwcDisabledSurfaces_;
 
-    uint32_t curZOrderForHwcEnableByFilter_ = 0;
-
     size_t solidLayerHwcEnableCount_ = 0;
 
     bool isOffscreen_ = false;
