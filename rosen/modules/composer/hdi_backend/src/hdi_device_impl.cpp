@@ -305,19 +305,6 @@ int32_t HdiDeviceImpl::SetScreenBacklight(uint32_t screenId, uint32_t level)
     return g_composer->SetDisplayBacklight(screenId, level);
 }
 
-int32_t HdiDeviceImpl::GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
-    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
-{
-    CHECK_FUNC(g_composer_v5);
-    return g_composer_v5->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
-}
-
-int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
-{
-    CHECK_FUNC(g_composer_v5);
-    return g_composer_v5->SetDisplayVCPFeature(screenId, vcpCode, currentValue);
-}
-
 int32_t HdiDeviceImpl::PrepareScreenLayers(uint32_t screenId, bool &needFlush)
 {
     CHECK_FUNC(g_composer);
@@ -846,5 +833,17 @@ int32_t HdiDeviceImpl::CommitTunnelLayer(uint32_t screenId, uint64_t tunnleId, i
     return g_composer->CommitTunnelLayer(screenId, tunnleId, releaseFence);
 }
 
+int32_t HdiDeviceImpl::GetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode,
+    uint16_t& currentValue, uint16_t& maximumValue, int32_t& errorCode)
+{
+    CHECK_FUNC(g_composer_v5);
+    return g_composer_v5->GetDisplayVCPFeature(screenId, vcpCode, currentValue, maximumValue, errorCode);
+}
+
+int32_t HdiDeviceImpl::SetScreenVCPFeature(uint32_t screenId, uint8_t vcpCode, uint16_t currentValue)
+{
+    CHECK_FUNC(g_composer_v5);
+    return g_composer_v5->SetDisplayVCPFeature(screenId, vcpCode, currentValue);
+}
 } // namespace Rosen
 } // namespace OHOS
