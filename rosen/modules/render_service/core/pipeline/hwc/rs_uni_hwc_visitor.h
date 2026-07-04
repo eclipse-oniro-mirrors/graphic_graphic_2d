@@ -60,8 +60,6 @@ public:
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
     void UpdateTransparentHwcNodeEnable(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
-    bool IsBackgroundFilterUnderSurface(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
-        const std::shared_ptr<RSRenderNode>& filterNode);
     bool IsHveBlurFilterEnabled(const RSRenderNode& filterNode, const RectI& filterRect, RSSurfaceRenderNode& hwcNode);
     void UpdateHwcNodeEnableByColorPicker();
     void UpdateHwcNodeEnableByFilterIntersection();
