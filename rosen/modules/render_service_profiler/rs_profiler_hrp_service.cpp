@@ -27,7 +27,7 @@ static RetCodeHrpService ValidateOpenFlags(uint32_t flags)
 {
     constexpr uint32_t allowedFlags = static_cast<uint32_t>(O_ACCMODE) |
                                       static_cast<uint32_t>(O_CREAT);
-                                      
+
     if (flags & ~allowedFlags) {
         return RET_HRP_SERVICE_ERR_INVALID_PARAM;
     }
