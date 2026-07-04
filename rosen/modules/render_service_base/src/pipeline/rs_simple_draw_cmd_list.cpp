@@ -28,7 +28,7 @@ std::shared_ptr<RSSimpleDrawCmdList> RSSimpleDrawCmdList::CreateFromDrawCmdList(
         return nullptr;
     }
     if (drawCmdList->IsEmpty()) {
-        return nullptr;
+        return std::make_shared<RSSimpleDrawCmdList>(drawCmdList->GetWidth(), drawCmdList->GetHeight());
     }
     if (!drawCmdList->UnmarshallingDrawOpsSimple()) {
         RS_LOGE("RSSimpleDrawCmdList::CreateFromDrawCmdList: UnmarshallingDrawOpsSimple fail.");
