@@ -3517,16 +3517,16 @@ void RSNode::SetSpatialEffectPara(const std::shared_ptr<SpatialEffectVariantPara
         const auto& corners = std::get<SpatialEffectPara::CornerPositions>(para->position);
         SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
             &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectLeftTop>(
-                corners[SpatialEffectPara::LEFT_TOP_INDEX]);
+            corners[SpatialEffectPara::LEFT_TOP_INDEX]);
         SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
             &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectRightTop>(
-                corners[SpatialEffectPara::RIGHT_TOP_INDEX]);
+            corners[SpatialEffectPara::RIGHT_TOP_INDEX]);
         SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
             &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectLeftBottom>(
-                corners[SpatialEffectPara::LEFT_BOTTOM_INDEX]);
+            corners[SpatialEffectPara::LEFT_BOTTOM_INDEX]);
         SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
             &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectRightBottom>(
-                corners[SpatialEffectPara::RIGHT_BOTTOM_INDEX]);
+            corners[SpatialEffectPara::RIGHT_BOTTOM_INDEX]);
         SetPropertyNG<ModifierNG::RSSpatialEffectModifier,
             &ModifierNG::RSSpatialEffectModifier::SetSpatialEffectOcclusionWeight>(para->occlusionWeight);
 

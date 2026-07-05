@@ -598,11 +598,13 @@ public:
     IsDepthBackgroundCmdModifier(std::weak_ptr<RSNode> node, const IsDepthBackgroundCmdParam& param)
         : RSCmdModifier(std::move(node)), param_(param) {}
 
-    RSCmdModifierType GetType() const override {
+    RSCmdModifierType GetType() const override
+    {
         return Type;
     }
 
-    bool SetParam(const IsDepthBackgroundCmdParam& param) {
+    bool SetParam(const IsDepthBackgroundCmdParam& param)
+    {
         param_ = param;
         return true;
     }

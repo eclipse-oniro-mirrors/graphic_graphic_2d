@@ -766,7 +766,7 @@ void RSSpatialEffectDrawable::OnSync()
 
 constexpr float SafeReciprocal(float x) noexcept
 {
-    constexpr float EPSILON = 1e-6f;
+    constexpr static float EPSILON = 1e-6f;
     float clamped = std::copysign(std::max(std::abs(x), EPSILON), x);
     return 1.f / clamped;
 }
@@ -911,7 +911,7 @@ std::shared_ptr<Drawing::Image> RSSpatialEffectDrawable::CaptureSurfaceSnapshot(
 }
 
 std::shared_ptr<Drawing::Image> RSSpatialEffectDrawable::CreateOcclusionImage(const RSDepthRenderParams& depthParam,
-    Drawing::Canvas* canvas,const Drawing::RectI& drawRect, std::shared_ptr<Drawing::Image> backgroundImage) const
+    Drawing::Canvas* canvas, const Drawing::RectI& drawRect, std::shared_ptr<Drawing::Image> backgroundImage) const
 {
     const auto& cameraPara = depthParam.GetDepthCameraPara();
     Vector2f nearFar = cameraPara.has_value() ?

@@ -54,7 +54,7 @@
 #include "property/rs_point_light_manager.h"
 #include "property/rs_properties_def.h"
 #include "property/rs_spatial_effect_manager.h"
-#include "util/ge_transform_helper.h" 
+#include "util/ge_transform_helper.h"
 #include "render/rs_attraction_effect_filter.h"
 #include "render/rs_color_adaptive_filter.h"
 #include "render/rs_colorful_shadow_filter.h"
@@ -335,13 +335,13 @@ RSProperties::SpatialEffectPerspectiveResults RSProperties::CalculateSpatialEffe
     const Drawing::GECameraIntrinsics& intrinsics, const Drawing::GECameraExtrinsics& extrinsics)
 {
     RS_OPTIONAL_TRACE_NAME_FMT(
-        "RSProperties::CalculateSpatialEffectMatrix intrinsics: fov=%f, aspectRatio=%f, near=%f, far=%f"
+        "RSProperties::CalculateSpatialEffectMatrix intrinsics: fov=%f, aspectRatio=%f, near=%f, far=%f, "
         "extrinsics: position=[%f, %f, %f], rotation=[%f, %f, %f, %f]",
         intrinsics.fov, intrinsics.aspectRatio, intrinsics.near, intrinsics.far,
         extrinsics.position[0], extrinsics.position[1], extrinsics.position[2],
         extrinsics.rotation.x_, extrinsics.rotation.y_, extrinsics.rotation.z_, extrinsics.rotation.w_);
     // src Points
-    std::array<Drawing::Point, 4> srcPoints = {
+    std::array<Drawing::Point, SpatialEffectPara::CORNER_NUMBER> srcPoints = {
         Drawing::Point(params.rectSelf.GetLeft(), params.rectSelf.GetTop()),
         Drawing::Point(params.rectSelf.GetRight(), params.rectSelf.GetTop()),
         Drawing::Point(params.rectSelf.GetRight(), params.rectSelf.GetBottom()),
@@ -350,22 +350,22 @@ RSProperties::SpatialEffectPerspectiveResults RSProperties::CalculateSpatialEffe
 
     std::array<float, 16> vpMatrix = PerspectiveTransformCalculator::ComputeVPMatrix(intrinsics,
         extrinsics, params.cornerPoints);
-    
+
     SpatialEffectPerspectiveResults ret;
     ret.transformMatrix = Drawing::Matrix();
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < SpatialEffectPara::CORNER_NUMBER; ++i) {
         const Vector3f& point = params.cornerPoints[i];
-        
+
         float x = point.x_;
         float y = point.y_;
         float z = point.z_;
         float w = 1.0f;
-        
+
         float outX = vpMatrix[0] * x + vpMatrix[4] * y + vpMatrix[8]  * z + vpMatrix[12] * w;
         float outY = vpMatrix[1] * x + vpMatrix[5] * y + vpMatrix[9]  * z + vpMatrix[13] * w;
         float outZ = vpMatrix[2] * x + vpMatrix[6] * y + vpMatrix[10] * z + vpMatrix[14] * w;
         float outW = vpMatrix[3] * x + vpMatrix[7] * y + vpMatrix[11] * z + vpMatrix[15] * w;
-        
+
         if (std::abs(outW) > 1e-6f) {
             outX /= outW;
             outY /= outW;
@@ -374,7 +374,7 @@ RSProperties::SpatialEffectPerspectiveResults RSProperties::CalculateSpatialEffe
             ROSEN_LOGE("CalculateSpatialEffectMatrix: ndc calculation failed, outW=%{public}f", outW);
             return ret;
         }
-        
+
         ret.dstPoints[i] = {
             (1.0 + outX) * 0.5 * params.depNodeRect.GetWidth(),
             (1.0 + outY) * 0.5 * params.depNodeRect.GetHeight()
@@ -389,7 +389,7 @@ RSProperties::SpatialEffectPerspectiveResults RSProperties::CalculateSpatialEffe
     if (!succ) {
         ROSEN_LOGE("CalculateSpatialEffectMatrix: SetPolyToPoly failed");
     }
-    
+
     return ret;
 }
 
@@ -422,7 +422,7 @@ void RSProperties::ApplySpatialEffectMatrix()
     }
 
     auto& propertiesDep = depthNode->GetMutableRenderProperties();
-    
+
     auto absMatrixDep = propertiesDep.GetBoundsGeometry()->GetAbsMatrix();
     auto absMatrixSelf = GetBoundsGeometry()->GetAbsMatrix();
     auto matrixSelf = GetBoundsGeometry()->GetMatrix();
@@ -448,7 +448,7 @@ void RSProperties::ApplySpatialEffectMatrix()
         RS_LOGE("matrixRelaDepNoSelfInv failed to get invert matrix");
         return;
     }
-    
+
     auto cameraPara = masterGlobalDepNode ? masterGlobalDepNode->GetMutableRenderProperties().GetDepthCameraPara()
         : propertiesDep.GetDepthCameraPara();
 
@@ -473,7 +473,7 @@ void RSProperties::ApplySpatialEffectMatrix()
     extrinsics.rotation = cameraPara->quaternion;
 
     auto para = GetSpatialEffectPara().value();
-    std::array<Vector3f, 4> cornerPoints = {para.leftTop, para.rightTop, para.rightBottom, para.leftBottom};
+    SpatialEffectPara::CornerPositions cornerPoints = {para.leftTop, para.rightTop, para.rightBottom, para.leftBottom};
 
     RectF depNodeRect(
         propertiesDep.GetBoundsPositionX(),
@@ -489,7 +489,6 @@ void RSProperties::ApplySpatialEffectMatrix()
     };
 
     auto perspectiveResults = CalculateSpatialEffectMatrix(matrixParams, intrinsics, extrinsics);
-
     if (!perspectiveResults.transformMatrix.IsIdentity()) {
         ProcessSpatialEffectDstPoints(perspectiveResults, depNodeRect, absMatrixDep, renderNode);
         boundsGeo_->ReplaceMatrix(matrixRelaDepNoSelfInv * perspectiveResults.transformMatrix,

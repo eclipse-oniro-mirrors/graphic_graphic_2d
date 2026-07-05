@@ -152,7 +152,7 @@ void RSSpatialEffectManager::ProcessDepthNodeAndSpatialEffectNodeDirty()
             continue;
         }
 
-        //Test whether this depthnode is master-global
+        // Test whether this depthnode is master-global
         if (IsMasterGlobalDepthNodeAndUpdate(depthNode) && depthNode->IsDirty()) {
             depthNode->ApplyDepthSpaceModifier();
         }

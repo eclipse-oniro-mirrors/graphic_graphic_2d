@@ -16,8 +16,8 @@
 #include "modifier_ng/appearance/rs_spatial_effect_render_modifier.h"
 
 namespace OHOS::Rosen::ModifierNG {
-const RSSpatialEffectRenderModifier::LegacyPropertyApplierMap RSSpatialEffectRenderModifier::LegacyPropertyApplierMap_
-    = {
+const RSSpatialEffectRenderModifier::LegacyPropertyApplierMap
+    RSSpatialEffectRenderModifier::LegacyPropertyApplierMap_ = {
         { RSPropertyType::SPATIAL_EFFECT_DEPTH,
             RSRenderModifier::PropertyApplyHelper<float, &RSProperties::SetSpatialEffectDepth> },
         { RSPropertyType::SPATIAL_EFFECT_LEFT_TOP,

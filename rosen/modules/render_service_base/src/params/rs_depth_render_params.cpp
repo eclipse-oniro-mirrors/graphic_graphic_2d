@@ -30,7 +30,7 @@ void RSDepthRenderParams::OnSyncDepthSpaceParams(const std::unique_ptr<RSRenderP
 {
     auto targetDepthParams = static_cast<RSDepthRenderParams*>(target.get());
     if (targetDepthParams == nullptr) {
-        RS_LOGE("RSDepthRenderParams::OnSync targetDepthParams is null");
+        RS_LOGE("RSDepthRenderParams::OnSyncDepthSpaceParams targetDepthParams is null");
         return;
     }
     targetDepthParams->depthImage_ = depthImage_;

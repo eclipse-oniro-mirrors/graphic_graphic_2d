@@ -2114,7 +2114,6 @@ bool RSRenderNode::UpdateDrawRectAndDirtyRegion(RSDirtyRegionManager& dirtyManag
         if (geoPtr && (accumGeoDirty || properties.geoDirty_ ||
             HasSurfaceBuffer() || selfDrawRectChanged || GetNeedUseCmdlistDrawRegion())) {
             auto absDrawRectF = geoPtr->MapRectWithoutRounding(selfDrawRect_, geoPtr->GetAbsMatrix());
-
             absDrawRect_ = geoPtr->InflateToRectI(absDrawRectF);
             innerAbsDrawRect_ = geoPtr->DeflateToRectI(absDrawRectF);
             absCmdlistDrawRect_ = GetNeedUseCmdlistDrawRegion() ?
