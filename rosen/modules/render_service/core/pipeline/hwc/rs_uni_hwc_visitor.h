@@ -60,8 +60,6 @@ public:
     void UpdateChildHwcNodeEnableByHwcNodeBelow(std::vector<RectI>& hwcRects,
         const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
     void UpdateTransparentHwcNodeEnable(const std::vector<std::weak_ptr<RSSurfaceRenderNode>>& hwcNodes);
-    bool IsBackgroundFilterUnderSurface(const std::shared_ptr<RSSurfaceRenderNode>& hwcNode,
-        const std::shared_ptr<RSRenderNode>& filterNode);
     bool IsHveBlurFilterEnabled(const RSRenderNode& filterNode, const RectI& filterRect, RSSurfaceRenderNode& hwcNode);
     void UpdateHwcNodeEnableByColorPicker();
     void UpdateHwcNodeEnableByFilterIntersection();
@@ -129,8 +127,6 @@ private:
 
     // Track surfaces that have ColorPicker tasks this frame with their rects for intersection checking
     std::unordered_map<NodeId, std::pair<NodeId, RectI>> colorPickerHwcDisabledSurfaces_;
-
-    uint32_t curZOrderForHwcEnableByFilter_ = 0;
 
     size_t solidLayerHwcEnableCount_ = 0;
 
