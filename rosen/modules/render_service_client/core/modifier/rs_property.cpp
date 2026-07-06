@@ -689,12 +689,6 @@ void RSProperty<DepthLightPara>::UpdateToRender(const DepthLightPara& value, Pro
 }
 
 template<>
-void RSProperty<SpatialEffectPara>::UpdateToRender(const SpatialEffectPara& value, PropertyUpdateType type) const
-{
-    UPDATE_TO_RENDER(RSUpdatePropertySpatialEffectPara, value, type);
-}
-
-template<>
 void RSProperty<std::shared_ptr<RSNGFilterBase>>::UpdateToRender(
     const std::shared_ptr<RSNGFilterBase>& value, PropertyUpdateType type) const
 {

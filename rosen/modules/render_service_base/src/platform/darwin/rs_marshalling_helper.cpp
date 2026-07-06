@@ -497,16 +497,6 @@ bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, DepthLightPara& val)
     return {};
 }
 
-bool RSMarshallingHelper::Marshalling(Parcel& parcel, const SpatialEffectPara& val)
-{
-    return {};
-}
-
-bool RSMarshallingHelper::Unmarshalling(Parcel& parcel, SpatialEffectPara& val)
-{
-    return {};
-}
-
 #define MARSHALLING_AND_UNMARSHALLING(TYPE)                                                 \
     bool RSMarshallingHelper::Marshalling(Parcel& parcel, const std::shared_ptr<TYPE>& val) \
     {                                                                                       \

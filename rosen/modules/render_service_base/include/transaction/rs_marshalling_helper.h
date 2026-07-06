@@ -112,7 +112,6 @@ struct PixelMapInfo;
 class RSRenderParticleVector;
 struct DepthCameraPara;
 struct DepthLightPara;
-struct SpatialEffectPara;
 #ifndef ROSEN_CROSS_PLATFORM
 struct SurfaceRegionConfig;
 #endif
@@ -301,7 +300,6 @@ public:
     DECLARE_FUNCTION_OVERLOAD(RRectT<float>)
     DECLARE_FUNCTION_OVERLOAD(DepthCameraPara)
     DECLARE_FUNCTION_OVERLOAD(DepthLightPara)
-    DECLARE_FUNCTION_OVERLOAD(SpatialEffectPara)
     DECLARE_FUNCTION_OVERLOAD(RSSurfaceRenderNodeConfig)
     // animation
     DECLARE_FUNCTION_OVERLOAD(std::shared_ptr<RSRenderTransition>)

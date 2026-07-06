@@ -72,7 +72,7 @@ enum RSNodeCommandType : uint16_t {
     UPDATE_MODIFIER_HDR_DARKEN_BLENDER_PARA = 0x012D,
     UPDATE_MODIFIER_DEPTH_CAMERA_PARA = 0x012E,
     UPDATE_MODIFIER_DEPTH_LIGHT_PARA = 0x012F,
-    UPDATE_MODIFIER_SPATIAL_EFFECT_PARA = 0x0130,
+    // 0x0130 deleted, do not use this value never
     UPDATE_MODIFIER_PARTICLE_FIELDS_PTR = 0x0131,
 
     SET_FREEZE = 0x0200,
@@ -479,11 +479,6 @@ ADD_COMMAND(RSUpdatePropertyDepthLightPara,
     ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_DEPTH_LIGHT_PARA,
         RSNodeCommandHelper::UpdateProperty<DepthLightPara>,
         NodeId, DepthLightPara, PropertyId, PropertyUpdateType))
-
-ADD_COMMAND(RSUpdatePropertySpatialEffectPara,
-    ARG(PERMISSION_APP, RS_NODE, UPDATE_MODIFIER_SPATIAL_EFFECT_PARA,
-        RSNodeCommandHelper::UpdateProperty<SpatialEffectPara>,
-        NodeId, SpatialEffectPara, PropertyId, PropertyUpdateType))
 
 ADD_COMMAND(RSSortChildrenByZIndex,
     ARG(PERMISSION_APP, RS_NODE, SORT_CHILDREN_BY_INDEX,
