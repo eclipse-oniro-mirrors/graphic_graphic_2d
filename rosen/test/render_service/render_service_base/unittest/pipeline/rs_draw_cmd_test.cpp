@@ -615,7 +615,7 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageObjectRecord001, TestSize.Level1)
 
 /**
  * @tc.name: RSExtendImageBaseObjRecord001
- * @tc.desc: test RSExtendImageBaseObj::Record for both overloads
+ * @tc.desc: test RSExtendImageBaseObj::Record
  * @tc.type:FUNC
  */
 HWTEST_F(RSDrawCmdTest, RSExtendImageBaseObjRecord001, TestSize.Level1)
@@ -637,18 +637,18 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageBaseObjRecord001, TestSize.Level1)
     ASSERT_NE(obj.rsImage_, nullptr);
 
     auto sizeBefore = cmdList->GetSize();
-    obj.Record(extendCanvas, sampling, Drawing::SrcRectConstraint::STRICT_SRC_RECT_CONSTRAINT);
+    obj.Record(extendCanvas, sampling);
     EXPECT_GT(cmdList->GetSize(), sizeBefore);
-    sizeBefore = cmdList->GetSize();
 
-    Drawing::Canvas& canvasRef = extendCanvas;
-    obj.Record(canvasRef, sampling);
-    EXPECT_GT(cmdList->GetSize(), sizeBefore);
+    obj.rsImage_->SetPixelMap(nullptr);
+    sizeBefore = cmdList->GetSize();
+    obj.Record(extendCanvas, sampling);
+    EXPECT_EQ(cmdList->GetSize(), sizeBefore);
 }
 
 /**
  * @tc.name: RSExtendImageNineObjectRecord001
- * @tc.desc: test RSExtendImageNineObject::Record for both overloads
+ * @tc.desc: test RSExtendImageNineObject::Record
  * @tc.type:FUNC
  */
 HWTEST_F(RSDrawCmdTest, RSExtendImageNineObjectRecord001, TestSize.Level1)
@@ -672,16 +672,16 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageNineObjectRecord001, TestSize.Level1)
     auto sizeBefore = cmdList->GetSize();
     obj.Record(extendCanvas, center, dst, filterMode);
     EXPECT_GT(cmdList->GetSize(), sizeBefore);
-    sizeBefore = cmdList->GetSize();
 
-    Drawing::Canvas& canvasRef = extendCanvas;
-    obj.Record(canvasRef, center, dst, filterMode);
-    EXPECT_GT(cmdList->GetSize(), sizeBefore);
+    obj.rsImage_->SetPixelMap(nullptr);
+    sizeBefore = cmdList->GetSize();
+    obj.Record(extendCanvas, center, dst, filterMode);
+    EXPECT_EQ(cmdList->GetSize(), sizeBefore);
 }
 
 /**
  * @tc.name: RSExtendImageLatticeObjectRecord001
- * @tc.desc: test RSExtendImageLatticeObject::Record for both overloads
+ * @tc.desc: test RSExtendImageLatticeObject::Record
  * @tc.type:FUNC
  */
 HWTEST_F(RSDrawCmdTest, RSExtendImageLatticeObjectRecord001, TestSize.Level1)
@@ -707,11 +707,11 @@ HWTEST_F(RSDrawCmdTest, RSExtendImageLatticeObjectRecord001, TestSize.Level1)
     auto sizeBefore = cmdList->GetSize();
     obj.Record(extendCanvas, lattice, dst, filterMode);
     EXPECT_GT(cmdList->GetSize(), sizeBefore);
-    sizeBefore = cmdList->GetSize();
 
-    Drawing::Canvas& canvasRef = extendCanvas;
-    obj.Record(canvasRef, lattice, dst, filterMode);
-    EXPECT_GT(cmdList->GetSize(), sizeBefore);
+    obj.rsImage_->SetPixelMap(nullptr);
+    sizeBefore = cmdList->GetSize();
+    obj.Record(extendCanvas, lattice, dst, filterMode);
+    EXPECT_EQ(cmdList->GetSize(), sizeBefore);
 }
 
 /**
