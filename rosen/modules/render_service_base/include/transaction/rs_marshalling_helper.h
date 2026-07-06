@@ -24,8 +24,6 @@
 
 #include "common/rs_common_def.h"
 #include "common/rs_macros.h"
-#include "common/rs_vector4.h"
-#include "common/rs_vector3.h"
 
 #include "image/image.h"
 
