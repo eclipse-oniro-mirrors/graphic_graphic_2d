@@ -246,7 +246,6 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
     bool needUpdateCache = CheckIfNeedUpdateCache(params, updateTimes);
     params.SetNeedUpdateCache(needUpdateCache);
     int32_t continuousUpdateTimes = 0;
-    // Read and conditional clear are not atomic; safe because called on RSUniRenderThread only.
     auto infoOpt = GetContinuousUpdateInfo();
     if (infoOpt.has_value()) {
         uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
