@@ -246,19 +246,15 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
     bool needUpdateCache = CheckIfNeedUpdateCache(params, updateTimes);
     params.SetNeedUpdateCache(needUpdateCache);
     int32_t continuousUpdateTimes = 0;
-    {
-        std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
-        auto iter = drawingCacheContinuousUpdateTimeMap_.find(nodeId_);
-        if (iter != drawingCacheContinuousUpdateTimeMap_.end()) {
-            auto& info = iter->second;
-            uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
-            // Reset counter only when a new frame arrives AND cache content hasn't changed.
-            // Same-frame re-entry (needUpdateCache=false because cache was just updated) must not reset.
-            if (info.vsyncId != currentVsyncId && !needUpdateCache) {
-                drawingCacheContinuousUpdateTimeMap_.erase(iter);
-            } else {
-                continuousUpdateTimes = info.count;
-            }
+    // Read and conditional clear are not atomic; safe because called on RSUniRenderThread only.
+    auto infoOpt = GetContinuousUpdateInfo();
+    if (infoOpt.has_value()) {
+        uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
+        if (infoOpt->vsyncId != currentVsyncId && !needUpdateCache) {
+            // Reset counter on cross-frame no-change; same-frame re-entry must not reset to avoid death loop.
+            ClearDrawingCacheContiUpdateTimeMap();
+        } else {
+            continuousUpdateTimes = infoOpt->count;
         }
     }
     if (needUpdateCache && params.GetDrawingCacheType() == RSDrawingCacheType::TARGETED_CACHE &&
@@ -633,8 +629,23 @@ void RSRenderNodeDrawable::ClearDrawingCacheDataMap()
 
 void RSRenderNodeDrawable::ClearDrawingCacheContiUpdateTimeMap()
 {
-    std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
-    drawingCacheContinuousUpdateTimeMap_.erase(nodeId_);
+    RSRenderGroupCacheDrawable::ClearContinuousUpdateCount(nodeId_);
+}
+
+std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo>
+RSRenderNodeDrawable::GetContinuousUpdateInfo() const
+{
+    return RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(nodeId_);
+}
+
+void RSRenderNodeDrawable::SetContinuousUpdateInfo(int32_t count, uint64_t vsyncId)
+{
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(nodeId_, count, vsyncId);
+}
+
+void RSRenderNodeDrawable::UpdateContinuousUpdateCount(uint64_t vsyncId)
+{
+    RSRenderGroupCacheDrawable::UpdateContinuousUpdateCount(nodeId_, vsyncId);
 }
 
 void RSRenderNodeDrawable::SetDrawBlurForCache(bool value)
@@ -1335,15 +1346,9 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
     }
     {
-        std::lock_guard<std::mutex> lock(drawingCacheContiUpdateTimeMapMutex_);
         uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
-        auto& info = drawingCacheContinuousUpdateTimeMap_[nodeId_];
-        // A node may be visited multiple times per vsync (e.g. layer cache + normal draw);
-        // only increment once per frame so count reflects consecutive VSYNC frames.
-        if (info.vsyncId != currentVsyncId) {
-            info.count++;
-            info.vsyncId = currentVsyncId;
-        }
+        // Deduplicate per vsync: increment only on new VSYNC so count reflects consecutive frames.
+        UpdateContinuousUpdateCount(currentVsyncId);
     }
     {
         std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);

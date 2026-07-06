@@ -107,5 +107,40 @@ const Drawing::BackendTexture& RSRenderGroupCacheDrawable::GetCachedBackendTextu
     return cachedBackendTexture_;
 }
 #endif
+
+std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo>
+RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(NodeId nodeId)
+{
+    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
+    auto iter = contiUpdateTimeMap_.find(nodeId);
+    if (iter != contiUpdateTimeMap_.end()) {
+        return iter->second;
+    }
+    return std::nullopt;
+}
+
+void RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(NodeId nodeId, int32_t count, uint64_t vsyncId)
+{
+    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
+    contiUpdateTimeMap_[nodeId] = {count, vsyncId};
+}
+
+void RSRenderGroupCacheDrawable::ClearContinuousUpdateCount(NodeId nodeId)
+{
+    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
+    contiUpdateTimeMap_.erase(nodeId);
+}
+
+void RSRenderGroupCacheDrawable::UpdateContinuousUpdateCount(NodeId nodeId, uint64_t vsyncId)
+{
+    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
+    auto& info = contiUpdateTimeMap_[nodeId];
+    // A node may be visited multiple times per vsync (e.g. layer cache + normal draw);
+    // only increment once per frame so count reflects consecutive VSYNC frames.
+    if (info.vsyncId != vsyncId) {
+        info.count++;
+        info.vsyncId = vsyncId;
+    }
+}
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

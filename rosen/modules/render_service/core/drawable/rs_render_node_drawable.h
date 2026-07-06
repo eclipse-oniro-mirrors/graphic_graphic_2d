@@ -203,6 +203,10 @@ protected:
     bool SkipDrawByWhiteList(Drawing::Canvas& canvas);
     void SetShouldClipHole(bool value) override;
     bool ShouldClipHole() const override;
+    std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo> GetContinuousUpdateInfo() const;
+    void SetContinuousUpdateInfo(int32_t count, uint64_t vsyncId);
+    void UpdateContinuousUpdateCount(uint64_t vsyncId);
+    void ClearDrawingCacheContiUpdateTimeMap();
     // !used for render group cache
 
     static int GetProcessedNodeCount();
@@ -225,12 +229,6 @@ private:
 
     static inline std::mutex drawingCacheMapMutex_;
     static inline std::unordered_map<NodeId, int32_t> drawingCacheUpdateTimeMap_;
-    static inline std::mutex drawingCacheContiUpdateTimeMapMutex_;
-    struct DrawingCacheContinuousUpdateInfo {
-        int32_t count = 0;
-        uint64_t vsyncId = UINT64_MAX;
-    };
-    static inline std::unordered_map<NodeId, DrawingCacheContinuousUpdateInfo> drawingCacheContinuousUpdateTimeMap_;
 
     static thread_local bool isOpDropped_;
     static thread_local bool occlusionCullingEnabled_;
@@ -253,7 +251,6 @@ private:
         Drawing::RectI& dstRect);
     bool IsOverlappedWithExistingFilters(Drawing::Canvas& canvas, const RSRenderParams& params) const;
     void ClearDrawingCacheDataMap();
-    void ClearDrawingCacheContiUpdateTimeMap();
     friend class RsSubThreadCache;
     friend class OHOS::Rosen::RSLayerCacheManager;
     std::unique_ptr<RSOpincDrawCache> opincDrawCache_ = nullptr;
