@@ -51,7 +51,7 @@ enum RSCommandType : uint16_t {
     UNION_NODE = 13,
     WINDOW_KEYFRAME_NODE = 14,
     DEPTH_NODE = 15,
-    SPATIAL_EFFECT =  16,
+    SPATIAL_EFFECT = 16,
     DELEGATE_COMPOSITE = 17,
     UI_DIRECTOR = 18,
 };

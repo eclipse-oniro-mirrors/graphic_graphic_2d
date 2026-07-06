@@ -43,6 +43,6 @@ void RSSpatialEffectModifier::SetSpatialEffectRightBottom(const Vector3f& rightB
 
 void RSSpatialEffectModifier::SetSpatialEffectOcclusionWeight(float occlusionWeight)
 {
-    Setter<RSProperty>(RSPropertyType::SPATIAL_EFFECT_OCCLUSION_WEIGHT, occlusionWeight);
+    Setter(RSPropertyType::SPATIAL_EFFECT_OCCLUSION_WEIGHT, occlusionWeight);
 }
 } // namespace OHOS::Rosen::ModifierNG
