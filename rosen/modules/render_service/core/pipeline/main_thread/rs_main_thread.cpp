@@ -2335,15 +2335,21 @@ bool RSMainThread::IsFoldScreenSwitching() const
     return res;
 }
 
-bool RSMainThread::IsMultiDisplay() const
+bool RSMainThread::IsMultiDisplay()
 {
     uint32_t validCount = 0;
+    uint32_t nonInternalDisplayCount = 0;
     const auto& nodeMap = context_->GetNodeMap();
-    nodeMap.TraverseScreenNodes([&validCount](const auto& node) {
-        if (node && node->GetChildrenCount() > 0) {
-            validCount++;
+    nodeMap.TraverseScreenNodes([&validCount, &nonInternalDisplayCount](const auto& node) {
+        if (!node || node->GetChildrenCount() == 0) {
+            return;
+        }
+        validCount++;
+        if (node->GetScreenProperty().GetConnectionType() != ScreenConnectionType::DISPLAY_CONNECTION_TYPE_INTERNAL) {
+            nonInternalDisplayCount++;
         }
     });
+    MultiDisplayChange(nonInternalDisplayCount > 0);
     return validCount > 1;
 }
 
@@ -2354,7 +2360,6 @@ void RSMainThread::CheckIfHardwareForcedDisabled()
         colorFilterMode <= ColorFilterMode::INVERT_DALTONIZATION_TRITANOMALY_MODE;
     std::shared_ptr<RSBaseRenderNode> rootNode = context_->GetGlobalRootRenderNode();
     bool isMultiDisplay = IsMultiDisplay();
-    MultiDisplayChange(isMultiDisplay);
 
     // check all children of global root node, and only disable hardware composer
     // in case node's composite type is UNI_RENDER_EXPAND_COMPOSITE or Wired projection
