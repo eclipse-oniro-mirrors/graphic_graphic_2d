@@ -968,14 +968,21 @@ bool RSSpatialEffectDrawable::IsNeedSkipOcclusion(const RSDepthRenderParams& dep
     }
 
     const SpatialEffectVariantPara& variantPara = spatialEffectPara_.value();
-    if (!variantPara.PerspectiveEnabled()) {
-        return false;
-    }
-    const auto& cornerPositions = std::get<SpatialEffectPara::CornerPositions>(variantPara.position);
     const auto& cameraPara = depthParam.GetDepthCameraPara();
     Vector2f nearFar = cameraPara.has_value() ?
         Vector2f(cameraPara->zNear - cameraPara->position.z_, cameraPara->zFar - cameraPara->position.z_) :
         Vector2f(0.1f, 100.f);
+
+    if (!variantPara.PerspectiveEnabled()) {
+        auto& depth = std::get<float>(variantPara.position);
+        if (-depth < nearFar.x_ || -depth > nearFar.y_) {
+            RS_LOGD("RSSpatialEffectDrawable::IsNeedSkipOcclusion: plane not in NearFar, need to draw occlusion");
+            return false;
+        }
+        return true;
+    }
+
+    const auto& cornerPositions = std::get<SpatialEffectPara::CornerPositions>(variantPara.position);
     for (const auto& point : cornerPositions) {
         if (-point.z_ < nearFar.x_ || -point.z_ > nearFar.y_) {
             RS_LOGD("RSSpatialEffectDrawable::IsNeedSkipOcclusion: plane not in NearFar, need to draw occlusion");
