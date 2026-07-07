@@ -23,6 +23,7 @@
 #include "rs_render_composer_agent.h"
 #include "rs_render_composer_manager.h"
 #include "rs_render_process_manager_agent.h"
+#include "rs_render_multi_process_manager.h"
 #include "rs_render_single_process_manager.h"
 #include "rs_render_to_composer_connection.h"
 #include "screen_manager/screen_types.h"
@@ -123,6 +124,8 @@ public:
     {
         return connectToRenderConnection_;
     }
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
+
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;
@@ -161,8 +164,8 @@ void RSRenderProcessManagerAgentTest::TearDown() {}
 HWTEST_F(RSRenderProcessManagerAgentTest, GetServiceToRenderConnTest, TestSize.Level1)
 {
     ScreenId screenId = 1;
-    ASSERT_TRUE(g_rsManager->GetServiceToRenderConn(screenId));
-    ASSERT_FALSE(g_rsManager->GetServiceToRenderConns().empty());
+    ASSERT_TRUE(renderService_.renderProcessManager_->GetServiceToRenderConn(screenId));
+    ASSERT_FALSE(renderService_.renderProcessManager_->GetServiceToRenderConns().empty());
     ASSERT_TRUE(g_rsManager);
 }
 } // namespace OHOS::Rosen
