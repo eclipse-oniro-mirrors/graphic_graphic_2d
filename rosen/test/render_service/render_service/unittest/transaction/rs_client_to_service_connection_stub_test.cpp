@@ -4231,6 +4231,24 @@ HWTEST_F(RSClientToServiceConnectionStubTest, SetWindowExpectedRefreshRate004, T
 }
 
 /**
+ * @tc.name: GetBackgroundRebuildEnabled001
+ * @tc.desc: Test success path
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionStubTest, GetBackgroundRebuildEnabled001, TestSize.Level1)
+{
+    ASSERT_NE(connectionStub_, nullptr);
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    data.WriteInterfaceToken(RSIClientToServiceConnection::GetDescriptor());
+    uint32_t code = static_cast<uint32_t>(RSIClientToServiceConnectionInterfaceCode::GET_BACKGROUND_REBUILD_ENABLED);
+    int res = connectionStub_->OnRemoteRequest(code, data, reply, option);
+    EXPECT_EQ(res, ERR_NONE);
+}
+
+/**
  * @tc.name: SetRefreshRateMode
  * @tc.desc: Test SetRefreshRateMode
  * @tc.type: FUNC

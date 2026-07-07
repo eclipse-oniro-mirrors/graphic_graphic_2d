@@ -165,6 +165,7 @@ public:
     static void SetSaveRDC(bool flag);
 
     static bool GetUniRenderEnabled();
+    static bool GetBackgroundRebuildEnabled();
     static bool GetRenderNodeTraceEnabled();
     static bool GetDrawOpTraceEnabled();
     static bool GetDrawOpLimitEnabled();
@@ -420,6 +421,7 @@ private:
     RSSystemProperties() = default;
 
     static inline bool isUniRenderEnabled_ = false;
+    static inline bool isBackgroundRebuildEnabled_ = false;
     inline static bool isDrawTextAsBitmap_ = false;
     inline static std::atomic_bool cacheEnabledForRotation_ = false;
     static inline bool forceHpsBlurDisabled_ = false;
