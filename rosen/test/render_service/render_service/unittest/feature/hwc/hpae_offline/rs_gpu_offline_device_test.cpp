@@ -85,7 +85,7 @@ void RSGPUOfflineDeviceTest::SetRSSurfaceHandlerBuffer(sptr<SurfaceBuffer> &surf
     sptr<SyncFence> fence = SyncFence::InvalidFence();
     int64_t timestamp = 0;
     Rect damage = {0, 0, BUFFER_WIDTH, BUFFER_HEIGHT};
-    std::shared_ptr<RSRcdSurfaceRenderNode::BufferOwnerCount> buffferOwnerCount = 
+    std::shared_ptr<RSRcdSurfaceRenderNode::BufferOwnerCount> buffferOwnerCount =
         std::make_shared<RSRcdSurfaceRenderNode::BufferOwnerCount>();
     surfaceHandler->SetBuffer(surfaceBuffer, fence, damage, timestamp, buffferOwnerCount);
 }
@@ -390,7 +390,7 @@ HWTEST_F(RSGPUOfflineDeviceTest, DrawHDRImagePassesSwitchTypeTest001, Level1)
     bufferOwnerCount->bufferId_ = 888u;
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
     Rect damageRect = {0, 0, 100, 100 };
-    surfaceParams.SetBuffer(buffer,bufferOwnerCount, damageRect);
+    surfaceParams.SetBuffer(buffer, bufferOwnerCount, damageRect);
 
     GPUOfflineSubThreadData taskContext;
     taskContext.offlineBuffer = std::make_shared<RSGPUOfflineBuffer>("text", TEST_NODE_ID);
