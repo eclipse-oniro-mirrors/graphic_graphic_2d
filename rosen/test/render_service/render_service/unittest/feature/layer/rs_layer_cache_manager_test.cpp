@@ -492,10 +492,11 @@ HWTEST_F(RSLayerCacheManagerTest, TryPrepareLayerCacheTest009, TestSize.Level2)
     auto& captureParam = RSUniRenderThread::GetCaptureParam();
     NodeId id = 100;
     captureParam.endNodeId_ = id;
+    canvasDrawable->nodeId_ = id;
     canvasDrawable->renderParams_ = nullptr;
     bool shouldPaint =
         canvasDrawable->ShouldPaint() || (canvas.GetUICapture() && canvasDrawable->IsUiRangeCaptureEndNode());
-    EXPECT_FALSE(shouldPaint);
+    EXPECT_TRUE(shouldPaint);
     EXPECT_TRUE(canvasDrawable->isDrawingCacheEnabled_);
     EXPECT_TRUE(canvasDrawable->GetRenderParams() == nullptr);
     EXPECT_TRUE(canvasDrawable);
