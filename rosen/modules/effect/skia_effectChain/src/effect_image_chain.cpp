@@ -716,11 +716,6 @@ DrawingError EffectImageChain::Draw()
             ret = DrawingError::ERR_PIXEL_READ;
             break;
         }
-
-        if (gpuContext_) {
-            gpuContext_->FlushAndSubmit(true);
-            gpuContext_->VmaDefragment();
-        }
     } while (false);
 
     ROSEN_TRACE_END(HITRACE_TAG_GRAPHIC_AGP);
@@ -891,13 +886,7 @@ EffectImageChain::~EffectImageChain()
 {
     if (gpuContext_ && forceReleaseGpuContext_) {
         gpuContext_->ReleaseResourcesAndAbandonContext();
-#ifdef RS_ENABLE_VK
-        RsVulkanContext::ReleaseDrawingContextForThread(gettid());
-#endif
         gpuContext_ = nullptr;
-    }
-    if (renderContext_ && forceReleaseGpuContext_) {
-        renderContext_.reset();
     }
 }
 
