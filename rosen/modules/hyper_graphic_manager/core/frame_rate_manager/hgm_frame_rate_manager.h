@@ -143,7 +143,7 @@ public:
     void UpdateASStateForFps(bool state);
     bool IsGameNodeOnTree() const { return isGameNodeOnTree_.load(); }
     void SetIsGameNodeOnTree(bool isGameNodeOnTree) { isGameNodeOnTree_.store(isGameNodeOnTree); }
-    void SetAdaptiveVsyncUpdateCallback(std::function<void(bool, const std::string&)> adaptiveVsyncUpdateCallback);
+    void SetAdaptiveVsyncUpdateCallback(std::function<void(int32_t, const std::string&)> adaptiveVsyncUpdateCallback);
 
     // called by RSHardwareThread
     void UniProcessDataForLtpo(uint64_t timestamp, std::shared_ptr<RSRenderFrameRateLinker> rsFrameRateLinker,
@@ -317,7 +317,7 @@ private:
     std::atomic<bool> isGameNodeOnTree_ = false;
     std::atomic<int32_t> lastIsAdaptive_ = SupportASStatus::NOT_SUPPORT;
     std::string lastGameNodeName_;
-    std::function<void(bool, const std::string&)> adaptiveVsyncUpdateCallback_ = nullptr;
+    std::function<void(int32_t, const std::string&)> adaptiveVsyncUpdateCallback_ = nullptr;
 
     std::atomic<uint64_t> timestamp_ = 0;
 

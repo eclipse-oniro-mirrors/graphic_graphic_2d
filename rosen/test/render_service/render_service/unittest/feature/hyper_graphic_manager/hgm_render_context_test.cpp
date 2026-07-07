@@ -140,7 +140,7 @@ HWTEST_F(HgmRenderContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
     renderService.hgmContext_->ltpoEnabled_ = true;
     renderService.hgmContext_->isDelayMode_ = true;
     renderService.hgmContext_->pipelineOffsetPulseNum_ = 1;
-    renderService.hgmContext_->isAdaptive_ = true;
+    renderService.hgmContext_->isAdaptive_ = SupportASStatus::SUPPORT_AS;
     renderService.hgmContext_->gameNodeName_ = "gameNodeName";
     hgmCore.SetPendingScreenRefreshRate(60);
     hgmCore.SetPendingConstraintRelativeTime(2);
@@ -162,7 +162,7 @@ HWTEST_F(HgmRenderContextTest, NotifyRpHgmFrameRateTest, TestSize.Level1)
     EXPECT_EQ(hgmRenderContext.ltpoEnabled_, true);
     EXPECT_EQ(hgmRenderContext.isDelayMode_, true);
     EXPECT_EQ(hgmRenderContext.pipelineOffsetPulseNum_, 1);
-    EXPECT_EQ(hgmRenderContext.isAdaptive_, false);
+    EXPECT_EQ(hgmRenderContext.isAdaptive_.load(), SupportASStatus::NOT_SUPPORT);
     EXPECT_EQ(pipelineParam.pendingScreenRefreshRate, 60);
     EXPECT_EQ(pipelineParam.pendingConstraintRelativeTime, 2);
     EXPECT_EQ(renderService.hgmContext_->currVsyncId_, 100);
@@ -293,18 +293,18 @@ HWTEST_F(HgmRenderContextTest, SetServiceToProcessInfoTest, TestSize.Level1)
     serviceToProcessInfo->ltpoEnabled = true;
     serviceToProcessInfo->isDelayMode = true;
     serviceToProcessInfo->pipelineOffsetPulseNum = 1;
-    serviceToProcessInfo->isAdaptive = true;
+    serviceToProcessInfo->isAdaptive = SupportASStatus::SUPPORT_AS;
     serviceToProcessInfo->gameNodeName = "gameNodeName";
     serviceToProcessInfo->isPowerIdle = true;
     hgmRenderContext.SetServiceToProcessInfo(serviceToProcessInfo, refreshRate, relativeTime);
     EXPECT_EQ(refreshRate, 60);
-    EXPECT_EQ(hgmRenderContext.isAdaptive_, false);
+    EXPECT_EQ(hgmRenderContext.isAdaptive_.load(), SupportASStatus::NOT_SUPPORT);
     EXPECT_EQ(hgmRenderContext.ltpoEnabled_, false);
     EXPECT_EQ(hgmRenderContext.hgmRPEnergy_->isTouchIdle_, true);
 
     serviceToProcessInfo->hgmDataChangeTypes.set(HgmDataChangeType::ADAPTIVE_VSYNC);
     hgmRenderContext.SetServiceToProcessInfo(serviceToProcessInfo, refreshRate, relativeTime);
-    EXPECT_EQ(hgmRenderContext.isAdaptive_, true);
+    EXPECT_EQ(hgmRenderContext.isAdaptive_.load(), SupportASStatus::SUPPORT_AS);
 
     serviceToProcessInfo->hgmDataChangeTypes.set(HgmDataChangeType::HGM_CONFIG_DATA);
     hgmRenderContext.SetServiceToProcessInfo(serviceToProcessInfo, refreshRate, relativeTime);
