@@ -118,6 +118,7 @@ public:
     {
         return connectToRenderConnection_;
     }
+    bool IsValidRenderProcessPid(pid_t pid) const override { return false; }
     sptr<RSIServiceToRenderConnection> serviceToRenderConnection_ = nullptr;
     sptr<IRSComposerToRenderConnection> composerToRenderConnection_ = nullptr;
     sptr<RSIRenderToServiceConnection> renderToServiceConnection_ = nullptr;

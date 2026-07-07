@@ -227,6 +227,7 @@ ohos_unittest("RSRenderSingleProcessManagerTest") {
     external_deps = [
         "c_utils:utils",
         "eventhandler:libeventhandler",
+        "ffrt:libffrt",
         "hilog:libhilog",
         "hisysevent:libhisysevent",
         "hitrace:hitrace_meter",
