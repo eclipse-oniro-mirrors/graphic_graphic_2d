@@ -386,7 +386,7 @@ HWTEST_F(RSGPUOfflineDeviceTest, DrawHDRImagePassesSwitchTypeTest001, Level1)
     EXPECT_NE(device, nullptr);
 
     RSSurfaceRenderParams surfaceParams(0);
-    auto bufferOwnerCount = std::make_shared<RSSurfaceHander::BufferOwenerCount>();
+    auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwenerCount>();
     bufferOwnerCount->bufferId_ = 888u;
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
     Rect damageRect = {0, 0, 100, 100 };
@@ -417,7 +417,7 @@ HWTEST_F(RSGPUOfflineDeviceTest, DrawHDRImageSwitchTypeToMultiTest001, Level1)
     EXPECT_NE(device, nullptr);
 
     RSSurfaceRenderParams surfaceParams(0);
-    auto bufferOwnerCount = std::make_shared<RSSurfaceHander::BufferOwenerCount>();
+    auto bufferOwnerCount = std::make_shared<RSSurfaceHandler::BufferOwenerCount>();
     bufferOwnerCount->bufferId_ = 888u;
     sptr<SurfaceBuffer> buffer = SurfaceBuffer::Create();
     Rect damageRect = {0, 0, 100, 100 };
