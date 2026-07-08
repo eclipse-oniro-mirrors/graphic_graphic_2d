@@ -21,6 +21,7 @@
 #include "pipeline/rs_render_node.h"
 #include "pipeline/rs_ui_render_director.h"
 #include "command/rs_ui_director_command.h"
+#include "common/rs_common_def.h"
 #include "platform/common/rs_log.h"
 
 using namespace testing;
@@ -388,7 +389,7 @@ HWTEST_F(RSContextTest, UIDirectorCommandHelperLifecycleTest, TestSize.Level1)
     RSContext rsContext;
     constexpr pid_t pid = 200;
     constexpr uint64_t token = 201;
-    constexpr NodeId nodeId = 0;
+    constexpr NodeId nodeId = MakeNodeId(pid, 0);
 
     RSUIDirectorCommandHelper::GoCreate(rsContext, nodeId, pid, token);
     auto director = rsContext.GetUIRenderDirector(pid, token);
@@ -426,7 +427,7 @@ HWTEST_F(RSContextTest, UIDirectorCommandHelperMissingDirectorTest, TestSize.Lev
     RSContext rsContext;
     constexpr pid_t pid = 300;
     constexpr uint64_t token = 301;
-    constexpr NodeId nodeId = 0;
+    constexpr NodeId nodeId = MakeNodeId(pid, 0);
 
     RSUIDirectorCommandHelper::GoResume(rsContext, nodeId, pid, token);
     RSUIDirectorCommandHelper::GoForeground(rsContext, nodeId, pid, token);
@@ -435,5 +436,62 @@ HWTEST_F(RSContextTest, UIDirectorCommandHelperMissingDirectorTest, TestSize.Lev
     RSUIDirectorCommandHelper::GoDestroy(rsContext, nodeId, pid, token);
 
     EXPECT_EQ(rsContext.GetUIRenderDirector(pid, token), nullptr);
+}
+
+/**
+ * @tc.name: UIDirectorCommandHelperNodeIdPidMismatchTest
+ * @tc.desc: Test RSUIDirectorCommandHelper rejects commands whose nodeId high 32 bits do not match pid.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSContextTest, UIDirectorCommandHelperNodeIdPidMismatchTest, TestSize.Level1)
+{
+    RSContext rsContext;
+    constexpr pid_t pid = 400;
+    constexpr uint64_t token = 401;
+    constexpr NodeId nodeId = MakeNodeId(pid + 1, 0);
+
+    RSUIDirectorCommandHelper::GoCreate(rsContext, nodeId, pid, token);
+    EXPECT_EQ(rsContext.GetUIRenderDirector(pid, token), nullptr);
+
+    RSUIDirectorCommandHelper::GoResume(rsContext, nodeId, pid, token);
+    RSUIDirectorCommandHelper::GoForeground(rsContext, nodeId, pid, token);
+    RSUIDirectorCommandHelper::GoBackground(rsContext, nodeId, pid, token);
+    RSUIDirectorCommandHelper::GoStop(rsContext, nodeId, pid, token);
+    RSUIDirectorCommandHelper::GoDestroy(rsContext, nodeId, pid, token);
+    EXPECT_EQ(rsContext.GetUIRenderDirector(pid, token), nullptr);
+}
+
+/**
+ * @tc.name: UIDirectorCommandHelperMismatchWithExistingDirectorTest
+ * @tc.desc: Test mismatched nodeId does not affect an already created director.
+ * @tc.type: FUNC
+ */
+HWTEST_F(RSContextTest, UIDirectorCommandHelperMismatchWithExistingDirectorTest, TestSize.Level1)
+{
+    RSContext rsContext;
+    constexpr pid_t pid = 500;
+    constexpr uint64_t token = 501;
+    constexpr NodeId validNodeId = MakeNodeId(pid, 0);
+    constexpr NodeId invalidNodeId = MakeNodeId(pid + 1, 0);
+
+    RSUIDirectorCommandHelper::GoCreate(rsContext, validNodeId, pid, token);
+    auto director = rsContext.GetUIRenderDirector(pid, token);
+    ASSERT_NE(director, nullptr);
+    EXPECT_EQ(director->GetCurrentState(), RSUIDirectorLifecycleState::CREATE);
+
+    RSUIDirectorCommandHelper::GoResume(rsContext, invalidNodeId, pid, token);
+    EXPECT_EQ(director->GetCurrentState(), RSUIDirectorLifecycleState::CREATE);
+
+    RSUIDirectorCommandHelper::GoForeground(rsContext, invalidNodeId, pid, token);
+    EXPECT_EQ(director->GetCurrentState(), RSUIDirectorLifecycleState::CREATE);
+
+    RSUIDirectorCommandHelper::GoBackground(rsContext, invalidNodeId, pid, token);
+    EXPECT_EQ(director->GetCurrentState(), RSUIDirectorLifecycleState::CREATE);
+
+    RSUIDirectorCommandHelper::GoStop(rsContext, invalidNodeId, pid, token);
+    EXPECT_EQ(director->GetCurrentState(), RSUIDirectorLifecycleState::CREATE);
+
+    RSUIDirectorCommandHelper::GoDestroy(rsContext, invalidNodeId, pid, token);
+    EXPECT_NE(rsContext.GetUIRenderDirector(pid, token), nullptr);
 }
 } // namespace OHOS::Rosen
