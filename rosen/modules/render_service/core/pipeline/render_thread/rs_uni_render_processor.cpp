@@ -205,6 +205,7 @@ void RSUniRenderProcessor::CreateLayer(RSSurfaceRenderNode& node, RSSurfaceRende
     CreateSolidColorLayer(layer, params);
     auto& layerRect = layer->GetLayerSize();
     auto& cropRect = layer->GetCropRect();
+
     RS_OPTIONAL_TRACE_NAME_FMT(
         "CreateLayer name:%s ScreenId:%llu zorder:%d layerRect:[%d, %d, %d, %d] cropRect:[%d, %d, %d, %d]"
         "dirty:[%d, %d, %d, %d] buffer:[%d, %d] alpha:[%f] type:[%d] transform:[%d]",
@@ -263,7 +264,7 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
     layer->SetLayerLinearMatrix((offlineResult && offlineResult->isGPUOffline) ?
         offlineResult->linearMatrix : renderParams.GetLayerLinearMatrix());
     layer->SetDelegateMode(params.GetDelegateMode());
-    auto bufferOwnerCount = offlineResult ? offlineResult->bufferOwnerCount : params.GetBufferOwnerCount();
+    auto bufferOwnerCount = offlineResult ? offlineResult->bufferOwnerCount : renderParams.GetBufferOwnerCount();
     if (bufferOwnerCount) {
         RS_OPTIONAL_TRACE_NAME_FMT("RSUniRenderProcessor::CreateLayerForRenderThread SetBufferOwnerCount "
             "bufferId %" PRIu64 " layerId %" PRIu64, bufferOwnerCount->bufferId_, layer->GetRSLayerId());
@@ -285,7 +286,7 @@ void RSUniRenderProcessor::CreateLayerForRenderThread(DrawableV2::RSSurfaceRende
             "dst:[%{public}d, %{public}d, %{public}d, %{public}d] "
             "dirty:[%{public}d, %{public}d, %{public}d, %{public}d] "
             "buffer:[%{public}d, %{public}d] alpha:[%{public}f]"
-            "type:%{public}d]",
+            "type:[%{public}d]",
         offlineResult ? "DeviceOfflineLayer" : surfaceDrawable.GetName().c_str(), layerInfo.zOrder,
         srcRect.x, srcRect.y, srcRect.w, srcRect.h,
         layerInfo.dstRect.x, layerInfo.dstRect.y, layerInfo.dstRect.w, layerInfo.dstRect.h,
@@ -517,6 +518,7 @@ RSLayerPtr RSUniRenderProcessor::GetLayerInfo(RSSurfaceRenderParams& params, spt
 bool RSUniRenderProcessor::ProcessOfflineLayer(
     std::shared_ptr<DrawableV2::RSSurfaceRenderNodeDrawable>& surfaceDrawable, bool async)
 {
+    RS_OFFLINE_LOGD("ProcessOfflineLayer(drawable)");
     offlineTaskId taskId = std::make_pair(RSUniRenderThread::Instance().GetVsyncId(),
         surfaceDrawable->GetId());
     if (!async) {
@@ -642,6 +644,17 @@ void RSUniRenderProcessor::HandleTunnelLayerParameters(NodeId nodeId, RSLayerPtr
     layer->SetTunnelLayerGeneration(snapshot.generation);
 }
 
+#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
+std::vector<RSLayerPtr> RSUniRenderProcessor::GetLayers() const
+{
+    std::vector<RSLayerPtr> layers;
+    for (const auto& weakPtr : layers_) {
+        layers.emplace_back(weakPtr.lock());
+    }
+    return layers;
+}
+#endif
+
 RectI RSUniRenderProcessor::GetDelegateDstRectByTranXY(RSSurfaceRenderParams& params)
 {
     auto tranX = params.GetTotalMatrix().Get(Drawing::Matrix::TRANS_X);
@@ -681,9 +694,9 @@ void RSUniRenderProcessor::HandleDelegateComposerLayer(RSLayerPtr& layer, RSSurf
     layer->SetDelegateModeCropRect(cropRectForWeb); // init CropRectForWeb
     RectI delegateDstRectNew = GetDelegateDstRectByTranXY(params);
     auto matrix = params.GetTotalMatrix();
-    RS_TRACE_NAME_FMT("HandleDelegateComposerLayer:[tranX=%.2f, tranY=%.2f,], "
-        "screenInfo:{rotation=%u, rotatedPhyWidth=%u, rotatedPhyHeight=%u }, "
-        "srcRect:%s, dstRect:%s, dstRectNew:%s",
+    RS_TRACE_NAME_FMT("HandleDelegateComposerLayer:[tranX=%.2f, tranY=%.2f,],"
+        " screenInfo:{rotation=%u, rotatedPhyWidth=%u, rotatedPhyHeight=%u }"
+        ", srcRect:%s, dstRect:%s, dstRectNew:%s",
         matrix.Get(Drawing::Matrix::TRANS_X), matrix.Get(Drawing::Matrix::TRANS_Y),
         screenInfoForDelegateMode_.rotation, screenInfoForDelegateMode_.GetRotatedPhyWidth(),
         screenInfoForDelegateMode_.GetRotatedPhyHeight(), params.GetDelegateSrcRect().ToString().c_str(),
@@ -707,16 +720,5 @@ void RSUniRenderProcessor::HandleDelegateComposerLayer(RSLayerPtr& layer, RSSurf
         cropRect.x, cropRect.y, cropRect.w, cropRect.h, layerRect.x, layerRect.y, layerRect.w, layerRect.h);
     layer->SetDelegateModeCropRect(cropRectForWeb);
 }
-
-#ifdef OHOS_BUILD_ENABLE_MAGICCURSOR
-std::vector<RSLayerPtr> RSUniRenderProcessor::GetLayers() const
-{
-    std::vector<RSLayerPtr> layers;
-    for (const auto& weakPtr : layers_) {
-        layers.emplace_back(weakPtr.lock());
-    }
-    return layers;
-}
-#endif
 } // namespace Rosen
 } // namespace OHOS
