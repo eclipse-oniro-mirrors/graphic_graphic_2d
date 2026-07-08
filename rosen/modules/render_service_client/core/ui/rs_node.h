@@ -29,6 +29,7 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 #define RENDER_SERVICE_CLIENT_CORE_UI_RS_NODE_H
 
+#include <algorithm>
 #include <optional>
 #include <unordered_map>
 
