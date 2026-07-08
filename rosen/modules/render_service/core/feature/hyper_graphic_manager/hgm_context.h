@@ -17,6 +17,7 @@
 #define HGM_CONTEXT_H
 
 #include "event_handler.h"
+#include "hgm_frame_rate_manager.h"
 #include "hgm_info_parcel.h"
 #include "ipc_callbacks/rs_ihgm_config_change_callback.h"
 #include "screen_manager/rs_screen_property.h"
@@ -113,7 +114,7 @@ private:
     int32_t pipelineOffsetPulseNum_ = 0;
     std::shared_ptr<RPHgmConfigData> rpHgmConfigData_ = nullptr;
 
-    bool isAdaptive_ = false;
+    int32_t isAdaptive_ = SupportASStatus::NOT_SUPPORT;
     std::string gameNodeName_;
 };
 } // namespace OHOS

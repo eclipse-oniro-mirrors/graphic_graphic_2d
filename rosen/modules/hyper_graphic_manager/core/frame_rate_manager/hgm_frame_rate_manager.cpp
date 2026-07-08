@@ -1654,7 +1654,7 @@ void HgmFrameRateManager::SyncHgmConfigUpdateCallback()
 }
 
 void HgmFrameRateManager::SetAdaptiveVsyncUpdateCallback(
-    std::function<void(bool, const std::string&)> adaptiveVsyncUpdateCallback)
+    std::function<void(int32_t, const std::string&)> adaptiveVsyncUpdateCallback)
 {
     adaptiveVsyncUpdateCallback_ = std::move(adaptiveVsyncUpdateCallback);
 }
