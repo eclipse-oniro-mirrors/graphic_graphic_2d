@@ -105,6 +105,7 @@ bool RSOfflineProcessor::IsRSOfflineProcessorReady(std::shared_ptr<RSSurfaceRend
     if (static_cast<int>(deviceTypeMap_.size()) >= deviceTypeMapMaxSize_) {
         auto it = deviceTypeMap_.begin();
         deviceTypeMap_.erase(it);
+        
     }
     deviceTypeMap_.insert(std::make_pair(surfaceNode->GetId(), deviceType));
     return true;
