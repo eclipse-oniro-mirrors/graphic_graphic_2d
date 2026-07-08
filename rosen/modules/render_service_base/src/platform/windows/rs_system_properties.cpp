@@ -59,6 +59,11 @@ bool RSSystemProperties::GetUniRenderEnabled()
     return isUniRenderEnabled_;
 }
 
+bool RSSystemProperties::GetBackgroundRebuildEnabled()
+{
+    return false;
+}
+
 bool RSSystemProperties::GetRenderNodeTraceEnabled()
 {
     return {};

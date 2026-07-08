@@ -38,6 +38,11 @@ bool RSRenderServiceClient::GetUniRenderEnabled()
     return {};
 }
 
+bool RSRenderServiceClient::GetBackgroundRebuildEnabled()
+{
+    return {};
+}
+
 MemoryGraphic RSRenderServiceClient::GetMemoryGraphic(int pid)
 {
     return {};

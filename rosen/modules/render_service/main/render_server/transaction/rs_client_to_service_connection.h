@@ -81,6 +81,7 @@ private:
     ErrCode GetMemoryGraphics(std::vector<MemoryGraphic>& memoryGraphics) override;
     ErrCode GetTotalAppMemSize(float& cpuMemSize, float& gpuMemSize) override;
     ErrCode GetUniRenderEnabled(bool& enable) override;
+    ErrCode GetBackgroundRebuildEnabled(bool& enable) override;
 
     ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
                                   const std::string& name,

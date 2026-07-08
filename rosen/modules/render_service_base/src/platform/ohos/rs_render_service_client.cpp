@@ -114,6 +114,17 @@ MemoryGraphic RSRenderServiceClient::GetMemoryGraphic(int pid)
     return memoryGraphic;
 }
 
+bool RSRenderServiceClient::GetBackgroundRebuildEnabled()
+{
+    auto clientToService = RSConnectHub::GetClientToServiceConnection();
+    if (clientToService == nullptr) {
+        return false;
+    }
+    bool enable;
+    clientToService->GetBackgroundRebuildEnabled(enable);
+    return enable;
+}
+
 std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
 {
     auto clientToService = RSConnectHub::GetClientToServiceConnection();
