@@ -16,11 +16,13 @@
 #ifndef RENDER_SERVICE_CLIENT_CORE_COMMAND_MODIFIER_RS_COMMAND_MODIFIER_H
 #define RENDER_SERVICE_CLIENT_CORE_COMMAND_MODIFIER_RS_COMMAND_MODIFIER_H
 
+#include <atomic>
 #include <memory>
 #include <variant>
 
 #include "command/rs_command.h"
 #include "common/rs_common_def.h"
+#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -121,7 +123,7 @@ public:
 
     RSCmdModifier(std::weak_ptr<RSNode> node) : node_(std::move(node))
     {
-        index_ = nextIndex_++;
+        index_ = GenerateCmdModifierIndex();
     }
     virtual ~RSCmdModifier() = default;
 
@@ -138,6 +140,18 @@ public:
     uint64_t GetIndex() const
     {
         return index_;
+    }
+
+    static uint64_t GenerateCmdModifierIndex()
+    {
+        static std::atomic<uint64_t> currentIndex_ = 1;
+
+        auto currentIndex = currentIndex_.fetch_add(1, std::memory_order_relaxed);
+        if (currentIndex == UINT64_MAX) {
+            ROSEN_LOGE("CmdModifier index overflow");
+        }
+
+        return currentIndex;
     }
 
     virtual void DumpParam(std::string& out) const
@@ -157,7 +171,6 @@ protected:
 
     std::weak_ptr<RSNode> node_;
     uint64_t index_ = 0;
-    static inline uint64_t nextIndex_ = 0;
 
     friend class RSNode;
 };

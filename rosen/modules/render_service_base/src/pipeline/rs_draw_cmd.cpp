@@ -1400,6 +1400,13 @@ void DrawSurfaceBufferOpItem::Playback(Canvas* canvas, const Rect* rect)
         recordingCanvas->DrawSurfaceBuffer(surfaceBufferInfo_);
         return;
     }
+    if (canvas->GetDrawingType() == Drawing::DrawingType::RECORDING) {
+        auto recordingCanvas = static_cast<ExtendRecordingCanvas*>(canvas);
+        if (recordingCanvas) {
+            recordingCanvas->DrawSurfaceBuffer(surfaceBufferInfo_);
+            return;
+        }
+    }
     Clear();
 #if defined(RS_ENABLE_GL) || defined(RS_ENABLE_VK)
     if (surfaceBufferInfo_.surfaceBuffer_ == nullptr) {

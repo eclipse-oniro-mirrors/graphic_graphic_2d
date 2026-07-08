@@ -2053,7 +2053,7 @@ public:
             bool paramChanged = typedModifier->SetParam(param);
             // Only update when parameter changed
             if (paramChanged) {
-                modifier->index_ = modifier->nextIndex_++;
+                modifier->index_ = RSCmdModifier::GenerateCmdModifierIndex();
                 if (GetNodeState() != RSNodeState::INACTIVE) {
                     modifier->UpdateToRender();
                 }
@@ -2081,7 +2081,7 @@ public:
             bool paramChanged = typedModifier->SetParam(param);
             // Only update when parameter changed
             if (paramChanged) {
-                modifier->index_ = modifier->nextIndex_++;
+                modifier->index_ = RSCmdModifier::GenerateCmdModifierIndex();
                 if (GetNodeState() != RSNodeState::INACTIVE) {
                     return modifier->UpdateToRenderWithResult();
                 }
