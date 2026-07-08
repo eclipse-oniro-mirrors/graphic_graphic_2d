@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+#ifdef RS_MODIFIERS_DRAW_ENABLE
+#undef RS_MODIFIERS_DRAW_ENABLE
+#endif
+
 #include <string>
 
 #include "gtest/gtest.h"
