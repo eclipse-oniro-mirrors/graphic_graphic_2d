@@ -204,6 +204,20 @@ bool RSSystemProperties::GetUniRenderEnabled()
     return isUniRenderEnabled_;
 }
 
+bool RSSystemProperties::GetBackgroundRebuildEnabled()
+{
+    static bool inited = false;
+    if (inited) {
+        return isBackgroundRebuildEnabled_;
+    }
+
+    isBackgroundRebuildEnabled_ = std::static_pointer_cast<RSRenderServiceClient>(
+        RSIRenderClient::CreateRenderServiceClient())->GetBackgroundRebuildEnabled();
+    inited = true;
+    ROSEN_LOGD("RSSystemProperties::GetBackgroundRebuildEnabled:%{public}d", isBackgroundRebuildEnabled_);
+    return isBackgroundRebuildEnabled_;
+}
+
 bool RSSystemProperties::GetDrawOpTraceEnabled()
 {
     static bool code = system::GetParameter("persist.rosen.drawoptrace.enabled", "0") != "0";
@@ -649,6 +663,13 @@ bool RSSystemProperties::GetHardCursorEnabled()
     int changed = 0;
     const char *enable = CachedParameterGetChanged(g_Handle, &changed);
     return ConvertToInt(enable, 1) != 0;
+}
+
+bool RSSystemProperties::DvsyncSkipRsCommitDelayEnabled()
+{
+    static bool dvsyncSkipRsCommitDelayEnabled =
+        std::atoi((system::GetParameter("persist.sys.graphic.dvsyncSkipRsCommitDelay.enabled", "1")).c_str()) != 0;
+    return dvsyncSkipRsCommitDelayEnabled;
 }
 
 bool RSSystemProperties::GetSkipForAlphaZeroEnabled()
@@ -1855,7 +1876,7 @@ bool RSSystemProperties::IsRenderNodeRebuildEnabled()
 
 bool RSSystemProperties::RebuildDebugEnabled()
 {
-    static bool rebuildDebugEnabled = OHOS::system::GetBoolParameter("persist.sys.graphic.rebuildscene.enabled", false);
+    static bool rebuildDebugEnabled = OHOS::system::GetBoolParameter("persist.sys.graphic.rebuilddebug.enabled", true);
     return rebuildDebugEnabled;
 }
 

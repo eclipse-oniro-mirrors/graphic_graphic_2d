@@ -266,7 +266,7 @@ void RSUIDirector::GoResume()
 // Excute resume
 void RSUIDirector::ExecuteGoResume()
 {
-    if (RSSystemProperties::IsRenderNodeRebuildEnabled() && RSSystemProperties::RebuildDebugEnabled()) {
+    if (RSSystemProperties::IsRenderNodeRebuildEnabled() && RSSystemProperties::GetBackgroundRebuildEnabled()) {
         RebuildNodeTree();
     }
 }
@@ -423,7 +423,7 @@ void RSUIDirector::GoStop()
     // Normal states
     if (currentUIDirectorState_ == RSUIDirectorLifecycleState::BACKGROUND ||
         currentUIDirectorState_ == RSUIDirectorLifecycleState::RESUME) {
-        if (RSSystemProperties::IsRenderNodeRebuildEnabled() && RSSystemProperties::RebuildDebugEnabled()) {
+        if (RSSystemProperties::IsRenderNodeRebuildEnabled() && RSSystemProperties::GetBackgroundRebuildEnabled()) {
             ExecuteGoStop();
             AddUIDirectorCommand<RSUIDirectorGoStop>();
         }

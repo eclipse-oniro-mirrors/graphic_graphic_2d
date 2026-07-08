@@ -1005,6 +1005,7 @@ int32_t RSRenderPipelineAgent::SetLogicalCameraRotationCorrection(ScreenId scree
 ErrCode RSRenderPipelineAgent::GetMaxGpuBufferSize(uint32_t& maxWidth, uint32_t& maxHeight)
 {
     auto pipeline = rsRenderPipeline_.lock();
+    RS_LOGI("RSRenderPipelineAgent::GetMaxGpuBufferSize");
     if (!pipeline) {
         RS_LOGE("GetMaxGpuBufferSize: rsRenderPipeline_ is nullptr");
         return ERR_INVALID_VALUE;

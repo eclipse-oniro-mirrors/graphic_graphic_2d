@@ -126,6 +126,94 @@ HWTEST_F(RSClientToServiceConnectionProxyTest, GetUniRenderEnabled, TestSize.Lev
 }
 
 /**
+ * @tc.name: GetBackgroundRebuildEnabled001
+ * @tc.desc: Test GetBackgroundRebuildEnabled returns true
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetBackgroundRebuildEnabled001, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(true);
+                return 0;
+            }));
+
+    bool enable = false;
+    auto ret = mockproxy->GetBackgroundRebuildEnabled(enable);
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_TRUE(enable);
+}
+
+/**
+ * @tc.name: GetBackgroundRebuildEnabled002
+ * @tc.desc: Test GetBackgroundRebuildEnabled returns false
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetBackgroundRebuildEnabled002, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                reply.WriteBool(false);
+                return 0;
+            }));
+
+    bool enable = true;
+    auto ret = mockproxy->GetBackgroundRebuildEnabled(enable);
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_FALSE(enable);
+}
+
+/**
+ * @tc.name: GetBackgroundRebuildEnabled003
+ * @tc.desc: Test GetBackgroundRebuildEnabled when SendRequest fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetBackgroundRebuildEnabled003, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
+
+    bool enable = false;
+    auto ret = mockproxy->GetBackgroundRebuildEnabled(enable);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
+ * @tc.name: GetBackgroundRebuildEnabled004
+ * @tc.desc: Test GetBackgroundRebuildEnabled when ReadBool fails
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(RSClientToServiceConnectionProxyTest, GetBackgroundRebuildEnabled004, TestSize.Level1)
+{
+    auto remoteObject = sptr<IRemoteObjectMock>::MakeSptr();
+    auto mockproxy = std::make_shared<RSClientToServiceConnectionProxy>(remoteObject);
+
+    EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _))
+        .WillRepeatedly(
+            testing::Invoke([](uint32_t code, MessageParcel& data, MessageParcel& reply, MessageOption& option) {
+                return 0;
+            }));
+
+    bool enable = false;
+    auto ret = mockproxy->GetBackgroundRebuildEnabled(enable);
+    EXPECT_EQ(ret, ERR_INVALID_VALUE);
+}
+
+/**
  * @tc.name: CreateVSyncConnection Test
  * @tc.desc: CreateVSyncConnection Test
  * @tc.type:FUNC

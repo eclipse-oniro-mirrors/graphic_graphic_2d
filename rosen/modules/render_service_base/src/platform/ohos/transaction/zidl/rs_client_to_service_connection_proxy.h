@@ -33,6 +33,7 @@ public:
     ErrCode CommitTransaction(std::unique_ptr<RSTransactionData>& transactionData) override;
     ErrCode ExecuteSynchronousTask(const std::shared_ptr<RSSyncTask>& task) override;
     ErrCode GetUniRenderEnabled(bool& enable) override;
+    ErrCode GetBackgroundRebuildEnabled(bool& enable) override;
 
     virtual ErrCode CreateVSyncConnection(sptr<IVSyncConnection>& vsyncConn,
                                           const std::string& name,

@@ -38,6 +38,11 @@ MemoryGraphic RSRenderServiceClient::GetMemoryGraphic(int pid)
     return {};
 }
 
+bool RSRenderServiceClient::GetBackgroundRebuildEnabled()
+{
+    return {};
+}
+
 std::vector<MemoryGraphic> RSRenderServiceClient::GetMemoryGraphics()
 {
     return {};

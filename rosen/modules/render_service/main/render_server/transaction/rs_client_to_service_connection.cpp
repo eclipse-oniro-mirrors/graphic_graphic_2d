@@ -49,6 +49,7 @@
 #include "feature/uifirst/rs_uifirst_manager.h"
 #include "gfx/fps_info/rs_surface_fps_manager.h"
 #include "gfx/first_frame_notifier/rs_first_frame_notifier.h"
+#include "pipeline/rs_background_rebuild_param.h"
 #ifdef RS_ENABLE_OVERLAY_DISPLAY
 #include "feature/overlay_display/rs_overlay_display_manager.h"
 #endif
@@ -310,6 +311,12 @@ ErrCode RSClientToServiceConnection::ExecuteSynchronousTask(const std::shared_pt
 ErrCode RSClientToServiceConnection::GetUniRenderEnabled(bool& res)
 {
     res = RSUniRenderJudgement::IsUniRender();
+    return ERR_OK;
+}
+
+ErrCode RSClientToServiceConnection::GetBackgroundRebuildEnabled(bool& res)
+{
+    res = RSBackgroundRebuildParam::Instance().IsBackgroundRebuildEnabled();
     return ERR_OK;
 }
 
