@@ -70,10 +70,9 @@ public:
     MOCK_METHOD(int32_t, UpdateMetadataBasedOnScaler, (const sptr<SurfaceBuffer>& input, float scaler,
         HdrStatus hdrStatus), (override));
 
-    float AIHDRCalScaler(const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
-        const RSSurfaceRenderNode& surfaceNode, const float& ratio, HdrStatus hdrStatus) override;
     float CalScaler(const float& maxContentLightLevel,
         const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus) override;
+    float CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio, HdrStatus hdrStatus) override;
 };
 
 float MockRSLuminanceControl::CalScaler(const float& maxContentLightLevel,
@@ -87,8 +86,7 @@ float MockRSLuminanceControl::CalScaler(const float& maxContentLightLevel,
     }
 }
 
-float MockRSLuminanceControl::AIHDRCalScaler(const float& maxContentLightLevel,
-    const std::vector<uint8_t>& dynamicMetadata, RSSurfaceRenderNode& surfaceNode,
+float MockRSLuminanceControl::CalAIHDRScaler(RSSurfaceRenderNode& surfaceNode,
     const float& ratio, HdrStatus hdrStatus)
 {
     return AI_HDR_SCALER;
