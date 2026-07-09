@@ -3044,7 +3044,9 @@ HWTEST_F(RSMainThreadTest, CheckSurfaceOcclusionNeedProcess001, TestSize.Level1)
     ASSERT_NE(node, nullptr);
     mainThread->context_->GetMutableNodeMap().RegisterRenderNode(node);
     auto appNode = mainThread->savedAppWindowNode_.find(1);
-    appNode->second = {};
+    if (appNode != mainThread->savedAppWindowNode_.end()) {
+        appNode->second = {};
+    }
 
     bool result = mainThread->CheckSurfaceOcclusionNeedProcess(1);
     ASSERT_FALSE(result);
