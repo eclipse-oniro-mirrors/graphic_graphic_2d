@@ -174,7 +174,7 @@ void RSLuminanceControl::SetDualScreenStatus(ScreenId screenId, DualScreenStatus
     // Set dual screen coordination status
 }
 
-float RSLuminanceControl::HdrDimmingProcess(ScreenId screenId, RSSurfaceRenderNode& surfaceNode)
+float RSLuminanceControl::HdrDimmingProcess(ScreenId screenId, const RSSurfaceRenderNode& surfaceNode)
 {
     return 1.0f;
 }
