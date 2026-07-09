@@ -852,12 +852,12 @@ HWTEST_F(RSRenderNodeDrawableTest, ClearDrawingCacheContinuousUpdateTimeMapTest,
 
     RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable1->GetId(), 1, UINT64_MAX);
     RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable2->GetId(), 1, UINT64_MAX);
-    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable1->GetNodeId())->count, 1);
-    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable2->GetNodeId())->count, 1);
+    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable1->GetId())->count, 1);
+    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable2->GetId())->count, 1);
 
     drawable1->ClearDrawingCacheContinuousUpdateTimeMap();
-    EXPECT_FALSE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable1->GetNodeId()).has_value());
-    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable2->GetNodeId())->count, 1);
+    EXPECT_FALSE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable1->GetId()).has_value());
+    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable2->GetId())->count, 1);
 }
 
 /**
@@ -875,7 +875,7 @@ HWTEST_F(RSRenderNodeDrawableTest, GenerateCacheIfNeedClearContinuousUpdateWhenD
     RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable->GetId(), 3, UINT64_MAX);
     params.drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     drawable->GenerateCacheIfNeed(canvas, params);
-    EXPECT_FALSE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable->GetNodeId()).has_value());
+    EXPECT_FALSE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable->GetId()).has_value());
 }
 
 /**
@@ -944,7 +944,7 @@ HWTEST_F(RSRenderNodeDrawableTest, CrossFramePreserveContinuousUpdateTest, TestS
     params.drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
     params.SetCacheSize({ 100.0f, 100.0f });
     drawable->GenerateCacheIfNeed(canvas, params);
-    EXPECT_TRUE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable->GetNodeId()).has_value());
+    EXPECT_TRUE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable->GetId()).has_value());
 
     drawable->ClearDrawingCacheContinuousUpdateTimeMap();
     drawable->drawingCacheUpdateTimeMap_.erase(drawable->nodeId_);
