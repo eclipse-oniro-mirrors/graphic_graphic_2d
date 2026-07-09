@@ -168,6 +168,7 @@ std::unique_ptr<RSRenderFrame> RSGPUOfflineBuffer::RequestFrame(std::shared_ptr<
     bool needFillSingleBuffer = false;
     if (currentConfig_ != config || switchType != SingleBufferMode::SINGLE_BUFFER_MODE_NONE) {
         RS_LOGD("RSGPUOfflineBuffer::CleanCache when config changed");
+        RS_OPTIONAL_TRACE_NAME("RSGPUOfflineBuffer_ClearCache");
         CleanCache(true);
         needFillSingleBuffer = (switchType != SingleBufferMode::SINGLE_BUFFER_MODE_TO_MULTI);
     }
@@ -178,6 +179,7 @@ std::unique_ptr<RSRenderFrame> RSGPUOfflineBuffer::RequestFrame(std::shared_ptr<
         return nullptr;
     }
     if (needFillSingleBuffer) {
+        RS_OPTIONAL_TRACE_NAME("RSGPUOfflineBuffer_SwitchSingle");
         AttachSingleBuffer(renderFrame);
     }
     currentConfig_ = config;
