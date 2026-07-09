@@ -170,11 +170,11 @@ double RSLuminanceControl::GetHdrBrightnessRatio(ScreenId screenId, uint32_t mod
         rSLuminanceControlInterface_->GetNonlinearRatio(screenId, mode) : 1.0;
 }
 
-float RSLuminanceControl::AIHDRCalScaler(const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
-    const RSSurfaceRenderNode& surfaceNode, const float& ratio, HdrStatus hdrStatus)
+float RSLuminanceControl::CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio,
+    HdrStatus hdrStatus)
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
-        rSLuminanceControlInterface_->AIHDRCalScaler(maxContentLightLevel,
+        rSLuminanceControlInterface_->CalAIHDRScaler(maxContentLightLevel,
             dynamicMetadata, surfaceNode, ratio, hdrStatus) : HDR_DEFAULT_SCALER * ratio;
 }
 
