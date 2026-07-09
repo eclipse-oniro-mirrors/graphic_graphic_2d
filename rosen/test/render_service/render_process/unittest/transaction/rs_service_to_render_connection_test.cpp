@@ -250,10 +250,10 @@ HWTEST_F(RSServiceToRenderConnectionTest, NotifyPackageEventTest, TestSize.Level
  */
 HWTEST_F(RSServiceToRenderConnectionTest, SetRogScreenResolutionTest001, TestSize.Level1)
 {
-    constexpr uint32_t WIDTH = 1920;
-    constexpr uint32_t HEIGHT = 1080;
+    constexpr uint32_t width = 1920;
+    constexpr uint32_t height = 1080;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = g_rsConn->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = g_rsConn->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, ERR_OK);
 }
  
@@ -265,10 +265,10 @@ HWTEST_F(RSServiceToRenderConnectionTest, SetRogScreenResolutionTest001, TestSiz
  */
 HWTEST_F(RSServiceToRenderConnectionTest, SetRogScreenResolutionTest002, TestSize.Level1)
 {
-    constexpr uint32_t WIDTH = 0;
-    constexpr uint32_t HEIGHT = 0;
+    constexpr uint32_t width = 0;
+    constexpr uint32_t height = 0;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = g_rsConn->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = g_rsConn->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, ERR_OK);
 }
 
