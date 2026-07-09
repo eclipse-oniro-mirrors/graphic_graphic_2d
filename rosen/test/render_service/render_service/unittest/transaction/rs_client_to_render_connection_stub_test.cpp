@@ -1685,10 +1685,10 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetRogScreenResolutionTest001, Test
     sptr<RSRenderPipelineAgent> newAgent = sptr<RSRenderPipelineAgent>::MakeSptr(nullPipeline);
     ASSERT_NE(newAgent, nullptr);
  
-    constexpr uint32_t WIDTH = 1920;
-    constexpr uint32_t HEIGHT = 1080;
+    constexpr uint32_t width = 1920;
+    constexpr uint32_t height = 1080;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = newAgent->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = newAgent->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
  
@@ -1703,10 +1703,10 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetRogScreenResolutionTest002, Test
     ASSERT_NE(renderPipelineAgent_, nullptr);
     ASSERT_NE(renderPipelineAgent_->rsRenderPipeline_.lock(), nullptr);
  
-    constexpr uint32_t WIDTH = 1920;
-    constexpr uint32_t HEIGHT = 1080;
+    constexpr uint32_t width = 1920;
+    constexpr uint32_t height = 1080;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = renderPipelineAgent_->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = renderPipelineAgent_->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, ERR_OK);
 }
  
@@ -1721,10 +1721,10 @@ HWTEST_F(RSClientToRenderConnectionStubTest, SetRogScreenResolutionTest003, Test
     ASSERT_NE(renderPipelineAgent_, nullptr);
     ASSERT_NE(renderPipelineAgent_->rsRenderPipeline_.lock(), nullptr);
  
-    constexpr uint32_t WIDTH = 0;
-    constexpr uint32_t HEIGHT = 0;
+    constexpr uint32_t width = 0;
+    constexpr uint32_t height = 0;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = renderPipelineAgent_->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = renderPipelineAgent_->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, ERR_OK);
 }
 
