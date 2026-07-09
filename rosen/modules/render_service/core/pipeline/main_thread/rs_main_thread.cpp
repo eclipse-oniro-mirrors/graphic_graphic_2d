@@ -4388,9 +4388,12 @@ void RSMainThread::SurfaceOcclusionChangeCallback(VisibleData& dstCurVisVec)
 bool RSMainThread::SurfaceOcclusionCallBackIfOnTreeStateChanged()
 {
     std::vector<NodeId> registeredSurfaceOnTree;
-    for (auto it = savedAppWindowNode_.begin(); it != savedAppWindowNode_.end(); ++it) {
-        if (it->second.first->IsOnTheTree()) {
-            registeredSurfaceOnTree.push_back(it->first);
+    {
+        std::lock_guard<std::mutex> lock(surfaceOcclusionMutex_);
+        for (auto it = savedAppWindowNode_.begin(); it != savedAppWindowNode_.end(); ++it) {
+            if (it->second.first != nullptr && it->second.first->IsOnTheTree()) {
+                registeredSurfaceOnTree.push_back(it->first);
+            }
         }
     }
     if (lastRegisteredSurfaceOnTree_ != registeredSurfaceOnTree) {
