@@ -22,7 +22,6 @@
 
 #include "command/rs_command.h"
 #include "common/rs_common_def.h"
-#include "platform/common/rs_log.h"
 
 namespace OHOS {
 namespace Rosen {
@@ -142,17 +141,7 @@ public:
         return index_;
     }
 
-    static uint64_t GenerateCmdModifierIndex()
-    {
-        static std::atomic<uint64_t> currentIndex_ = 1;
-
-        auto currentIndex = currentIndex_.fetch_add(1, std::memory_order_relaxed);
-        if (currentIndex == UINT64_MAX) {
-            ROSEN_LOGE("CmdModifier index overflow");
-        }
-
-        return currentIndex;
-    }
+    static uint64_t GenerateCmdModifierIndex();
 
     virtual void DumpParam(std::string& out) const
     {
