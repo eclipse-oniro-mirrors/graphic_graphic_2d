@@ -3568,10 +3568,10 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetRogScreenResolution_SendReques
                 return NO_ERROR;
             }));
  
-    constexpr uint32_t WIDTH = 1920;
-    constexpr uint32_t HEIGHT = 1080;
+    constexpr uint32_t width = 1920;
+    constexpr uint32_t height = 1080;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = mockProxy->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = mockProxy->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, NO_ERROR);
 }
  
@@ -3588,10 +3588,10 @@ HWTEST_F(RSServiceToRenderConnectionProxyTest, SetRogScreenResolution_SendReques
  
     EXPECT_CALL(*remoteObject, SendRequest(_, _, _, _)).WillRepeatedly(testing::Return(-1));
  
-    constexpr uint32_t WIDTH = 1920;
+    constexpr uint32_t width = 1920;
     constexpr uint32_t HEIGHT = 1080;
     constexpr ScreenId screenId = 0;
-    ErrCode ret = mockProxy->SetRogScreenResolution(screenId, WIDTH, HEIGHT);
+    ErrCode ret = mockProxy->SetRogScreenResolution(screenId, width, height);
     EXPECT_EQ(ret, ERR_INVALID_VALUE);
 }
 
