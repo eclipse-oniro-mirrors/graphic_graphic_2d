@@ -97,8 +97,8 @@ public:
     virtual float GetSdrDisplayNits(ScreenId screenId) = 0;
     virtual float GetDisplayNits(ScreenId screenId) = 0;
     virtual double GetNonlinearRatio(ScreenId screenId, uint32_t mode) = 0;
-    virtual float AIHDRCalScaler(const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
-        const RSSurfaceRenderNode& surfaceNode, const float& ratio = 1.0f, HdrStatus hdrStatus = HdrStatus::NO_HDR) = 0;
+    virtual float CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio = 1.0f,
+        HdrStatus hdrStatus = HdrStatus::NO_HDR) = 0;
     virtual float CalScaler(const float& maxContentLightLevel,
         const std::vector<uint8_t>& dynamicMetadata, const float& ratio, HdrStatus hdrStatus) = 0;
     virtual float GetSurfaceNodeMaxScaler(RSSurfaceRenderNode& surfaceNode, ScreenId screenId, HdrStatus hdrstatus) = 0;
@@ -149,8 +149,8 @@ public:
     RSB_EXPORT float GetSdrDisplayNits(ScreenId screenId);
     RSB_EXPORT float GetDisplayNits(ScreenId screenId);
     RSB_EXPORT double GetHdrBrightnessRatio(ScreenId screenId, uint32_t mode);
-    RSB_EXPORT float AIHDRCalScaler(const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
-        const RSSurfaceRenderNode& surfaceNode, const float& ratio = 1.0f, HdrStatus hdrStatus = HdrStatus::NO_HDR);
+    RSB_EXPORT float CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode, const float& ratio = 1.0f,
+        HdrStatus hdrStatus = HdrStatus::NO_HDR);
     RSB_EXPORT float CalScaler(const float& maxContentLightLevel, const std::vector<uint8_t>& dynamicMetadata,
         const float& ratio = 1.0f, HdrStatus hdrStatus = HdrStatus::NO_HDR);
     RSB_EXPORT float GetSurfaceNodeMaxScaler(RSSurfaceRenderNode& surfaceNode, ScreenId screenId, HdrStatus hdrstatus);
