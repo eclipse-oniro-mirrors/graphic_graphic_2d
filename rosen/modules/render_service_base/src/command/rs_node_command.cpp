@@ -352,6 +352,9 @@ void RSNodeCommandHelper::UpdateModifierNGDrawCmdList(
     if (!baseProperty) {
         return;
     }
+    if (UNLIKELY(!CheckPropertyType(*baseProperty, RSPropertyType::SIMPLE_DRAW_CMD_LIST, nodeId))) {
+        return;
+    }
     auto property = std::static_pointer_cast<RSRenderProperty<SimpleDrawCmdListPtr>>(baseProperty);
     auto simpleDrawCmds = value != nullptr ? RSSimpleDrawCmdList::CreateFromDrawCmdList(value) : nullptr;
     property->Set(simpleDrawCmds);
@@ -445,17 +448,12 @@ bool RSNodeCommandHelper::CheckPropertyType(RSRenderPropertyBase& prop,
     RSPropertyType updateType, NodeId nodeId)
 {
     if (prop.GetPropertyType() != updateType) {
-        TypeErrorInfoPrint(nodeId, prop.GetId(), updateType, prop.GetPropertyType());
+        RS_COLD_LOGE("UpdateProperty type mismatch, nodeId=%{public}" PRIu64 ", propertyId=%{public}" PRIu64
+            " update type:%{public}hhu, property type:%{public}hhu", nodeId, prop.GetId(),
+            updateType, prop.GetPropertyType());
         return false;
     }
     return true;
-}
-
-__attribute__((noinline)) void RSNodeCommandHelper::TypeErrorInfoPrint(NodeId nodeId,
-    PropertyId propId, RSPropertyType updateType, RSPropertyType propType)
-{
-    ROSEN_LOGE("UpdateProperty type mismatch, nodeId=%{public}" PRIu64 ", propertyId=%{public}" PRIu64
-        " update type:%{public}hhu, property type:%{public}hhu", nodeId, propId, updateType, propType);
 }
 } // namespace Rosen
 } // namespace OHOS
