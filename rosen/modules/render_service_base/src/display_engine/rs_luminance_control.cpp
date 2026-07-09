@@ -174,8 +174,7 @@ float RSLuminanceControl::CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode,
     HdrStatus hdrStatus)
 {
     return (rSLuminanceControlInterface_ != nullptr) ?
-        rSLuminanceControlInterface_->CalAIHDRScaler(maxContentLightLevel,
-            dynamicMetadata, surfaceNode, ratio, hdrStatus) : HDR_DEFAULT_SCALER * ratio;
+        rSLuminanceControlInterface_->CalAIHDRScaler(surfaceNode, ratio, hdrStatus) : HDR_DEFAULT_SCALER * ratio;
 }
 
 float RSLuminanceControl::CalScaler(const float& maxContentLightLevel,
