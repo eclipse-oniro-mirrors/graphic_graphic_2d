@@ -759,7 +759,7 @@ void RSExtendDrawFuncObj::Record(Drawing::Canvas& canvas)
 {
     ExtendRecordingCanvas* extendRecordingCanvas = static_cast<ExtendRecordingCanvas*>(&canvas);
     if (drawFunc_) {
-        extendRecordingCanvas->DrawDrawFunc(drawFunc_);
+        extendRecordingCanvas->DrawDrawFunc(Drawing::RecordingCanvas::DrawFunc(drawFunc_));
     }
 }
 
