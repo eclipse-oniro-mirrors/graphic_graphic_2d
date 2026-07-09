@@ -203,10 +203,9 @@ protected:
     bool SkipDrawByWhiteList(Drawing::Canvas& canvas);
     void SetShouldClipHole(bool value) override;
     bool ShouldClipHole() const override;
-    std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo> GetContinuousUpdateInfo() const;
-    void SetContinuousUpdateInfo(int32_t count, uint64_t vsyncId);
+    int32_t GetAndMaybeClearContinuousUpdateCount(uint64_t currentVsyncId, bool needUpdateCache);
     void UpdateContinuousUpdateCount(uint64_t vsyncId);
-    void ClearDrawingCacheContiUpdateTimeMap();
+    void ClearDrawingCacheContinuousUpdateTimeMap();
     // !used for render group cache
 
     static int GetProcessedNodeCount();

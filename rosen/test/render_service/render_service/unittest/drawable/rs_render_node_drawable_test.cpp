@@ -833,12 +833,12 @@ HWTEST_F(RSRenderNodeDrawableTest, ClearDrawingCacheDataMapTest, TestSize.Level1
 }
 
 /**
- * @tc.name: ClearDrawingCacheContiUpdateTimeMapTest
- * @tc.desc: Test If ClearDrawingCacheContiUpdateTimeMap Can Run
+ * @tc.name: ClearDrawingCacheContinuousUpdateTimeMapTest
+ * @tc.desc: Test If ClearDrawingCacheContinuousUpdateTimeMap Can Run
  * @tc.type: FUNC
  * @tc.require: issueIAVPAJ
  */
-HWTEST_F(RSRenderNodeDrawableTest, ClearDrawingCacheContiUpdateTimeMapTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeDrawableTest, ClearDrawingCacheContinuousUpdateTimeMapTest, TestSize.Level1)
 {
     auto renderNode1 = std::make_shared<RSRenderNode>(1);
     auto renderNode2 = std::make_shared<RSRenderNode>(2);
@@ -850,32 +850,32 @@ HWTEST_F(RSRenderNodeDrawableTest, ClearDrawingCacheContiUpdateTimeMapTest, Test
     EXPECT_NE(drawable1, nullptr);
     EXPECT_NE(drawable2, nullptr);
 
-    drawable1->SetContinuousUpdateInfo(1, UINT64_MAX);
-    drawable2->SetContinuousUpdateInfo(1, UINT64_MAX);
-    EXPECT_EQ(drawable1->GetContinuousUpdateInfo()->count, 1);
-    EXPECT_EQ(drawable2->GetContinuousUpdateInfo()->count, 1);
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable1->GetId(), 1, UINT64_MAX);
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable2->GetId(), 1, UINT64_MAX);
+    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable1->GetNodeId())->count, 1);
+    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable2->GetNodeId())->count, 1);
 
-    drawable1->ClearDrawingCacheContiUpdateTimeMap();
-    EXPECT_FALSE(drawable1->GetContinuousUpdateInfo().has_value());
-    EXPECT_EQ(drawable2->GetContinuousUpdateInfo()->count, 1);
+    drawable1->ClearDrawingCacheContinuousUpdateTimeMap();
+    EXPECT_FALSE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable1->GetNodeId()).has_value());
+    EXPECT_EQ(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable2->GetNodeId())->count, 1);
 }
 
 /**
- * @tc.name: GenerateCacheIfNeedClearContiUpdateWhenDisabledTest
+ * @tc.name: GenerateCacheIfNeedClearContinuousUpdateWhenDisabledTest
  * @tc.desc: Verify GenerateCacheIfNeed clears continuous update map when cache type is DISABLED_CACHE
  * @tc.type: FUNC
  * @tc.require: issueIAVPAJ
  */
-HWTEST_F(RSRenderNodeDrawableTest, GenerateCacheIfNeedClearContiUpdateWhenDisabledTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeDrawableTest, GenerateCacheIfNeedClearContinuousUpdateWhenDisabledTest, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
     Drawing::Canvas canvas;
     RSRenderParams params(RSRenderNodeDrawableTest::id);
 
-    drawable->SetContinuousUpdateInfo(3, UINT64_MAX);
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable->GetId(), 3, UINT64_MAX);
     params.drawingCacheType_ = RSDrawingCacheType::DISABLED_CACHE;
     drawable->GenerateCacheIfNeed(canvas, params);
-    EXPECT_FALSE(drawable->GetContinuousUpdateInfo().has_value());
+    EXPECT_FALSE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable->GetNodeId()).has_value());
 }
 
 /**
@@ -890,14 +890,14 @@ HWTEST_F(RSRenderNodeDrawableTest, ContinuousUpdateDisableCacheTest, TestSize.Le
     Drawing::Canvas canvas;
     RSRenderParams params(RSRenderNodeDrawableTest::id);
 
-    drawable->SetContinuousUpdateInfo(4, 0);
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable->GetId(), 4, 0);
     drawable->SetRenderGroupCachedSurface(std::make_shared<Drawing::Surface>());
     params.drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
     params.SetCacheSize({ 100.0f, 100.0f });
     drawable->GenerateCacheIfNeed(canvas, params);
     EXPECT_EQ(params.GetDrawingCacheType(), RSDrawingCacheType::DISABLED_CACHE);
 
-    drawable->ClearDrawingCacheContiUpdateTimeMap();
+    drawable->ClearDrawingCacheContinuousUpdateTimeMap();
     drawable->drawingCacheUpdateTimeMap_.erase(drawable->nodeId_);
 }
 
@@ -913,24 +913,24 @@ HWTEST_F(RSRenderNodeDrawableTest, ContinuousUpdateNotDisableCacheBelowThreshold
     Drawing::Canvas canvas;
     RSRenderParams params(RSRenderNodeDrawableTest::id);
 
-    drawable->SetContinuousUpdateInfo(3, 0);
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable->GetId(), 3, 0);
     drawable->SetRenderGroupCachedSurface(std::make_shared<Drawing::Surface>());
     params.drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
     params.SetCacheSize({ 100.0f, 100.0f });
     drawable->GenerateCacheIfNeed(canvas, params);
     EXPECT_EQ(params.GetDrawingCacheType(), RSDrawingCacheType::TARGETED_CACHE);
 
-    drawable->ClearDrawingCacheContiUpdateTimeMap();
+    drawable->ClearDrawingCacheContinuousUpdateTimeMap();
     drawable->drawingCacheUpdateTimeMap_.erase(drawable->nodeId_);
 }
 
 /**
- * @tc.name: CrossFramePreserveContiUpdateTest
+ * @tc.name: CrossFramePreserveContinuousUpdateTest
  * @tc.desc: Verify counter is preserved when content changed across frames (no false reset)
  * @tc.type: FUNC
  * @tc.require: issueIAVPAJ
  */
-HWTEST_F(RSRenderNodeDrawableTest, CrossFramePreserveContiUpdateTest, TestSize.Level1)
+HWTEST_F(RSRenderNodeDrawableTest, CrossFramePreserveContinuousUpdateTest, TestSize.Level1)
 {
     auto drawable = RSRenderNodeDrawableTest::CreateDrawable();
     Drawing::Canvas canvas;
@@ -939,14 +939,14 @@ HWTEST_F(RSRenderNodeDrawableTest, CrossFramePreserveContiUpdateTest, TestSize.L
     // vsyncId=100 differs from current (0 in test env), simulating a cross-frame entry.
     // needUpdateCache will be true (surface has null canvas → NeedInitCachedSurface=true).
     // Counter must be preserved: different frame + content changed → no reset.
-    drawable->SetContinuousUpdateInfo(2, 100);
+    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(drawable->GetId(), 2, 100);
     drawable->SetRenderGroupCachedSurface(std::make_shared<Drawing::Surface>());
     params.drawingCacheType_ = RSDrawingCacheType::TARGETED_CACHE;
     params.SetCacheSize({ 100.0f, 100.0f });
     drawable->GenerateCacheIfNeed(canvas, params);
-    EXPECT_TRUE(drawable->GetContinuousUpdateInfo().has_value());
+    EXPECT_TRUE(RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(drawable->GetNodeId()).has_value());
 
-    drawable->ClearDrawingCacheContiUpdateTimeMap();
+    drawable->ClearDrawingCacheContinuousUpdateTimeMap();
     drawable->drawingCacheUpdateTimeMap_.erase(drawable->nodeId_);
 }
 

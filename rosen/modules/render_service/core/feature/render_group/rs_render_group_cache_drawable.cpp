@@ -108,12 +108,12 @@ const Drawing::BackendTexture& RSRenderGroupCacheDrawable::GetCachedBackendTextu
 }
 #endif
 
-std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo>
-RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(NodeId nodeId)
+std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo> RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(
+    NodeId nodeId)
 {
-    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
-    auto iter = contiUpdateTimeMap_.find(nodeId);
-    if (iter != contiUpdateTimeMap_.end()) {
+    std::lock_guard<std::mutex> lock(continuousUpdateTimeMapMutex_);
+    auto iter = continuousUpdateTimeMap_.find(nodeId);
+    if (iter != continuousUpdateTimeMap_.end()) {
         return iter->second;
     }
     return std::nullopt;
@@ -121,26 +121,42 @@ RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(NodeId nodeId)
 
 void RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(NodeId nodeId, int32_t count, uint64_t vsyncId)
 {
-    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
-    contiUpdateTimeMap_[nodeId] = {count, vsyncId};
+    std::lock_guard<std::mutex> lock(continuousUpdateTimeMapMutex_);
+    continuousUpdateTimeMap_[nodeId] = {count, vsyncId};
 }
 
 void RSRenderGroupCacheDrawable::ClearContinuousUpdateCount(NodeId nodeId)
 {
-    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
-    contiUpdateTimeMap_.erase(nodeId);
+    std::lock_guard<std::mutex> lock(continuousUpdateTimeMapMutex_);
+    continuousUpdateTimeMap_.erase(nodeId);
 }
 
 void RSRenderGroupCacheDrawable::UpdateContinuousUpdateCount(NodeId nodeId, uint64_t vsyncId)
 {
-    std::lock_guard<std::mutex> lock(contiUpdateTimeMapMutex_);
-    auto& info = contiUpdateTimeMap_[nodeId];
+    std::lock_guard<std::mutex> lock(continuousUpdateTimeMapMutex_);
+    auto& info = continuousUpdateTimeMap_[nodeId];
     // A node may be visited multiple times per vsync (e.g. layer cache + normal draw);
     // only increment once per frame so count reflects consecutive VSYNC frames.
     if (info.vsyncId != vsyncId) {
         info.count++;
         info.vsyncId = vsyncId;
     }
+}
+
+int32_t RSRenderGroupCacheDrawable::GetAndMaybeClearContinuousUpdateCount(
+    NodeId nodeId, uint64_t currentVsyncId, bool needUpdateCache)
+{
+    std::lock_guard<std::mutex> lock(continuousUpdateTimeMapMutex_);
+    auto iter = continuousUpdateTimeMap_.find(nodeId);
+    if (iter == continuousUpdateTimeMap_.end()) {
+        return 0;
+    }
+    auto& info = iter->second;
+    if (info.vsyncId != currentVsyncId && !needUpdateCache) {
+        continuousUpdateTimeMap_.erase(iter);
+        return 0;
+    }
+    return info.count;
 }
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

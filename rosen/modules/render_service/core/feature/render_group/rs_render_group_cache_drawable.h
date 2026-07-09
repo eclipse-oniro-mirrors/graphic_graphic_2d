@@ -52,6 +52,8 @@ public:
     static void SetContinuousUpdateInfo(NodeId nodeId, int32_t count, uint64_t vsyncId);
     static void ClearContinuousUpdateCount(NodeId nodeId);
     static void UpdateContinuousUpdateCount(NodeId nodeId, uint64_t vsyncId);
+    static int32_t GetAndMaybeClearContinuousUpdateCount(
+        NodeId nodeId, uint64_t currentVsyncId, bool needUpdateCache);
 
     void SetLastFrameCacheRootHasExcludedChild(bool hasFilter);
     bool IsLastFrameCacheRootHasExcludedChild() const
@@ -106,8 +108,8 @@ private:
     static thread_local bool drawBlurForCache_;
     static thread_local bool drawExcludedSubTreeForCache_;
 
-    static inline std::mutex contiUpdateTimeMapMutex_;
-    static inline std::unordered_map<NodeId, ContinuousUpdateInfo> contiUpdateTimeMap_;
+    static inline std::mutex continuousUpdateTimeMapMutex_;
+    static inline std::unordered_map<NodeId, ContinuousUpdateInfo> continuousUpdateTimeMap_;
 };
 } // namespace DrawableV2
 } // namespace OHOS::Rosen

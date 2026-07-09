@@ -225,7 +225,7 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
         !opincCachedMark) && !params.GetRSFreezeFlag()) {
         ClearCachedSurface();
         ClearDrawingCacheDataMap();
-        ClearDrawingCacheContiUpdateTimeMap();
+        ClearDrawingCacheContinuousUpdateTimeMap();
         return;
     }
 
@@ -238,24 +238,15 @@ CM_INLINE void RSRenderNodeDrawable::GenerateCacheIfNeed(
             // If this node is marked node group by arkui again, we should first clear update time here, otherwise
             // update time will accumulate.)
             ClearDrawingCacheDataMap();
-            ClearDrawingCacheContiUpdateTimeMap();
+            ClearDrawingCacheContinuousUpdateTimeMap();
         }
     }
     // generate(first time)/update cache(cache changed) [TARGET -> DISABLED if >= MAX UPDATE TIME]
     int32_t updateTimes = 0;
     bool needUpdateCache = CheckIfNeedUpdateCache(params, updateTimes);
     params.SetNeedUpdateCache(needUpdateCache);
-    int32_t continuousUpdateTimes = 0;
-    auto infoOpt = GetContinuousUpdateInfo();
-    if (infoOpt.has_value()) {
-        uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
-        if (infoOpt->vsyncId != currentVsyncId && !needUpdateCache) {
-            // Reset counter on cross-frame no-change; same-frame re-entry must not reset to avoid death loop.
-            ClearDrawingCacheContiUpdateTimeMap();
-        } else {
-            continuousUpdateTimes = infoOpt->count;
-        }
-    }
+    uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
+    int32_t continuousUpdateTimes = GetAndMaybeClearContinuousUpdateCount(currentVsyncId, needUpdateCache);
     if (needUpdateCache && params.GetDrawingCacheType() == RSDrawingCacheType::TARGETED_CACHE &&
         continuousUpdateTimes > DRAWING_CACHE_MAX_UPDATE_TIME) {
         RS_LOGD("RSRenderNodeDrawable::GenerateCacheCondition totalUpdateTimes:%{public}d "
@@ -626,20 +617,15 @@ void RSRenderNodeDrawable::ClearDrawingCacheDataMap()
     RSPerfMonitorReporter::GetInstance().ClearRendergroupDataMap(nodeId_);
 }
 
-void RSRenderNodeDrawable::ClearDrawingCacheContiUpdateTimeMap()
+void RSRenderNodeDrawable::ClearDrawingCacheContinuousUpdateTimeMap()
 {
     RSRenderGroupCacheDrawable::ClearContinuousUpdateCount(nodeId_);
 }
 
-std::optional<RSRenderGroupCacheDrawable::ContinuousUpdateInfo>
-RSRenderNodeDrawable::GetContinuousUpdateInfo() const
+int32_t RSRenderNodeDrawable::GetAndMaybeClearContinuousUpdateCount(
+    uint64_t currentVsyncId, bool needUpdateCache)
 {
-    return RSRenderGroupCacheDrawable::GetContinuousUpdateInfo(nodeId_);
-}
-
-void RSRenderNodeDrawable::SetContinuousUpdateInfo(int32_t count, uint64_t vsyncId)
-{
-    RSRenderGroupCacheDrawable::SetContinuousUpdateInfo(nodeId_, count, vsyncId);
+    return RSRenderGroupCacheDrawable::GetAndMaybeClearContinuousUpdateCount(nodeId_, currentVsyncId, needUpdateCache);
 }
 
 void RSRenderNodeDrawable::UpdateContinuousUpdateCount(uint64_t vsyncId)
@@ -1344,11 +1330,9 @@ void RSRenderNodeDrawable::UpdateCacheSurface(Drawing::Canvas& canvas, const RSR
         drawingCacheUpdateTimeMap_[nodeId_]++;
         updateTimes = drawingCacheUpdateTimeMap_[nodeId_];
     }
-    {
-        uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
-        // Deduplicate per vsync: increment only on new VSYNC so count reflects consecutive frames.
-        UpdateContinuousUpdateCount(currentVsyncId);
-    }
+    uint64_t currentVsyncId = RSUniRenderThread::Instance().GetVsyncId();
+    // Deduplicate per vsync: increment only on new VSYNC so count reflects consecutive frames.
+    UpdateContinuousUpdateCount(currentVsyncId);
     {
         std::lock_guard<std::mutex> lock(drawingCacheInfoMutex_);
         cacheUpdatedNodeMap_.emplace(params.GetId(), true);
