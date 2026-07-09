@@ -86,7 +86,7 @@ float MockRSLuminanceControl::CalScaler(const float& maxContentLightLevel,
     }
 }
 
-float MockRSLuminanceControl::CalAIHDRScaler(RSSurfaceRenderNode& surfaceNode,
+float MockRSLuminanceControl::CalAIHDRScaler(const RSSurfaceRenderNode& surfaceNode,
     const float& ratio, HdrStatus hdrStatus)
 {
     return AI_HDR_SCALER;
