@@ -143,7 +143,7 @@ void RSRenderGroupCacheDrawable::UpdateContinuousUpdateCount(NodeId nodeId, uint
     }
 }
 
-int32_t RSRenderGroupCacheDrawable::GetAndMaybeClearContinuousUpdateCount(
+int32_t RSRenderGroupCacheDrawable::GetOrClearContinuousUpdateCount(
     NodeId nodeId, uint64_t currentVsyncId, bool needUpdateCache)
 {
     std::lock_guard<std::mutex> lock(continuousUpdateTimeMapMutex_);
